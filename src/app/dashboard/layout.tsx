@@ -22,11 +22,10 @@ export default async function DashboardLayout({
     <SidebarProvider>
       <AppSidebar />
       <main className="w-full">
-         <div className="p-4 border-b border-zinc-800 flex items-center gap-4 bg-zinc-950">
+         <div className="p-4 border-b bg-background flex items-center gap-4">
             <SidebarTrigger />
-            <div className="font-semibold text-white">Dashboard</div>
          </div>
-         <div className="p-4 md:p-8 bg-black min-h-[calc(100vh-65px)]">
+         <div className="p-4 md:p-8 bg-background min-h-[calc(100vh-65px)]">
             {children}
          </div>
       </main>

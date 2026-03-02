@@ -31,6 +31,8 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // CRITICAL: Use getUser() to refresh and validate token
+  // This is the official Supabase pattern for server-side auth
   const {
     data: { user },
   } = await supabase.auth.getUser()

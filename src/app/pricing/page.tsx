@@ -1,52 +1,113 @@
-import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
+"use client"
+
+import { PricingCard } from "@/components/ui/pricing-card"
+import { toast } from "sonner"
+import { createClient } from "@/utils/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function PricingPage() {
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handlePurchase = async (plan: string) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+        toast.error("Please log in to purchase credits")
+        router.push('/login?next=/pricing')
+        return
+    }
+
+    // Mock purchase flow for now
+    toast.success(`Selected ${plan} plan. Checkout flow coming soon!`)
+    
+    // In a real app, you would redirect to Stripe Checkout here
+    // router.push(`/api/checkout?plan=${plan}`)
+  }
+
   return (
-    <div className="container py-24 px-4 mx-auto">
-      <div className="text-center mb-16">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Simple Pricing</h1>
-        <p className="text-xl text-zinc-400">Start for free, upgrade for power.</p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        {/* Free Tier */}
-        <div className="p-8 rounded-2xl border border-zinc-800 bg-zinc-900/30 flex flex-col">
-          <h3 className="text-2xl font-bold text-white mb-2">Free</h3>
-          <div className="text-4xl font-bold text-white mb-6">$0<span className="text-lg text-zinc-500 font-normal">/mo</span></div>
-          <ul className="space-y-4 mb-8 flex-1">
-            <li className="flex items-center text-zinc-300">
-              <Check className="h-5 w-5 mr-3 text-green-500" /> Full Auto-Captions
-            </li>
-            <li className="flex items-center text-zinc-300">
-              <Check className="h-5 w-5 mr-3 text-green-500" /> Unlimited Export Formats
-            </li>
-            <li className="flex items-center text-zinc-300">
-              <Check className="h-5 w-5 mr-3 text-green-500" /> Basic Search
-            </li>
-          </ul>
-          <Button className="w-full" variant="outline">Current Plan</Button>
+    <div className="min-h-screen bg-background">
+      <div className="container py-24 px-4 sm:px-6 lg:px-8 mx-auto">
+        
+        {/* Header */}
+        <div className="text-center mb-20 max-w-3xl mx-auto space-y-4">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
+            Simple, Transparent Pricing
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Pay once, use credits as you need. No subscriptions, no hidden fees. Your credits never expire.
+          </p>
         </div>
-
-        {/* Pro Tier */}
-        <div className="p-8 rounded-2xl border border-white/10 bg-zinc-900/80 relative overflow-hidden flex flex-col">
-           <div className="absolute top-0 right-0 bg-white text-black text-xs font-bold px-3 py-1 rounded-bl-lg">
-            COMING SOON
+        
+        {/* Pricing cards grid */}
+        <div className="grid md:grid-cols-3 gap-8 lg:gap-12 max-w-6xl mx-auto items-start">
+          
+          <PricingCard 
+            name="Starter"
+            price="€4.99"
+            credits={50}
+            description="Perfect for casual users trying out the platform."
+            features={[
+              "50 transcript credits",
+              "Videos up to 4 hours",
+              "TXT, JSON, SRT exports",
+              "Email support"
+            ]}
+            onSelect={() => handlePurchase('starter')}
+          />
+          
+          <PricingCard 
+            name="Regular"
+            price="€9.99"
+            credits={120}
+            description="Best value for creators and researchers."
+            featured={true}
+            features={[
+              "120 transcript credits",
+              "Videos up to 4 hours",
+              "All export formats (VTT, CSV)",
+              "Priority processing",
+              "Batch playlist extraction"
+            ]}
+            onSelect={() => handlePurchase('regular')}
+          />
+          
+          <PricingCard 
+            name="Power"
+            price="€24.99"
+            credits={350}
+            description="For heavy users and archiving."
+            features={[
+              "350 transcript credits",
+              "Videos up to 4 hours",
+              "All export formats",
+              "Priority support",
+              "Batch processing queries",
+              "API access (Beta)"
+            ]}
+            onSelect={() => handlePurchase('power')}
+          />
+        </div>
+        
+        {/* FAQ section (Placeholder) */}
+        <div className="mt-32 max-w-3xl mx-auto border-t pt-16 border-muted">
+          <h2 className="text-3xl font-bold text-center mb-12 text-foreground">
+            Frequently Asked Questions
+          </h2>
+          <div className="grid gap-6">
+              <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">Do my credits expire?</h3>
+                  <p className="text-muted-foreground">No, your credits never expire. You can use them whenever you need.</p>
+              </div>
+              <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">How are credits calculated?</h3>
+                  <p className="text-muted-foreground">1 credit = 1 video transcript (any duration up to 4 hours). Simple as that.</p>
+              </div>
+               <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">Can I get a refund?</h3>
+                  <p className="text-muted-foreground">We offer refunds within 7 days if you haven't used more than 5 credits.</p>
+              </div>
           </div>
-          <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
-          <div className="text-4xl font-bold text-white mb-6">Credits<span className="text-lg text-zinc-500 font-normal">/pay-as-you-go</span></div>
-          <ul className="space-y-4 mb-8 flex-1">
-             <li className="flex items-center text-zinc-300">
-              <Check className="h-5 w-5 mr-3 text-green-500" /> Bulk Extraction
-            </li>
-             <li className="flex items-center text-zinc-300">
-              <Check className="h-5 w-5 mr-3 text-green-500" /> Advanced Search
-            </li>
-             <li className="flex items-center text-zinc-300">
-              <Check className="h-5 w-5 mr-3 text-green-500" /> API Access
-            </li>
-          </ul>
-          <Button className="w-full" disabled>Join Waitlist</Button>
         </div>
       </div>
     </div>

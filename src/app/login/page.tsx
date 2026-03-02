@@ -1,23 +1,76 @@
-import { login } from "./actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
+"use client"
 
-export default function LoginPage({
-    searchParams,
-  }: {
-    searchParams?: { [key: string]: string | string[] | undefined }
-  }) {
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/PasswordInput"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { Chrome, Apple } from "lucide-react"
+import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
+import { loginAction, loginWithGoogleAction } from "@/app/auth/actions"
+
+export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const redirectTo = searchParams?.get('redirect')
+  
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError(null)
     
-    // Casting searchParams to handle potentially undefined or array values safely if needed in logic,
-    // but for simple display:
-    const errorMessage = typeof searchParams?.error === 'string' ? searchParams.error : null;
+    try {
+      const formData = new FormData()
+      formData.append('email', email)
+      formData.append('password', password)
+      if (redirectTo) {
+        formData.append('redirectTo', redirectTo)
+      }
+
+      // Call Server Action
+      const result = await loginAction(null, formData)
+
+      if (result?.error) {
+        setError(result.error)
+        toast.error(result.error)
+        setIsSubmitting(false)
+      } else {
+        toast.success("Logged in successfully!")
+        
+        // CRITICAL: Refresh router to update Server Components with new session
+        router.refresh()
+        
+        // Then navigate
+        const target = redirectTo || '/dashboard/transcribe'
+        router.push(target)
+      }
+    } catch (err) {
+      // Check if it's a redirect error (NEXT_REDIRECT) - although we removed redirect from action,
+      // good practice to keep it safe.
+      if ((err as Error).message === 'NEXT_REDIRECT' || (err as any)?.digest?.startsWith('NEXT_REDIRECT')) {
+        throw err
+      }
+      console.error(err)
+      setError("An unexpected error occurred")
+      setIsSubmitting(false)
+    }
+  }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black px-4">
-      <Card className="w-full max-w-sm bg-zinc-900 border-zinc-800 text-white">
+    <div className="flex items-center justify-center min-h-screen bg-[#020617] relative overflow-hidden px-4">
+      {/* Decorative background elements to match the marketing theme */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 blur-[120px] rounded-full" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 blur-[120px] rounded-full" />
+      
+      <Card className="w-full max-w-sm bg-zinc-950/50 border-zinc-800/50 text-white backdrop-blur-xl relative z-10 shadow-2xl">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription className="text-zinc-400">
@@ -25,7 +78,7 @@ export default function LoginPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={login} className="grid gap-4">
+          <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -33,6 +86,8 @@ export default function LoginPage({
                 name="email"
                 type="email"
                 placeholder="m@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="bg-zinc-950 border-zinc-800 text-white"
               />
@@ -40,40 +95,75 @@ export default function LoginPage({
             <div className="grid gap-2">
               <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link href="#" className="ml-auto inline-block text-sm underline text-zinc-400">
+                <Link href="/forgot-password" className="ml-auto inline-block text-sm underline text-zinc-400 hover:text-zinc-300">
                   Forgot your password?
                 </Link>
               </div>
-              <Input 
-                id="password" 
-                name="password" 
-                type="password" 
-                required 
+              <PasswordInput
+                id="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
                 className="bg-zinc-950 border-zinc-800 text-white"
               />
             </div>
-            {errorMessage && (
-                <div className="text-red-500 text-sm font-medium">
-                    {errorMessage}
-                </div>
+            
+            {error && (
+              <div className="text-red-500 text-sm font-medium bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                {error}
+              </div>
             )}
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-            <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-800 hover:text-white bg-transparent">
-              Login with Google
+            
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Logging in..." : "Log In"}
             </Button>
           </form>
+            
+            {/* OAuth Divider */}
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-zinc-800" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[#020617] px-2 text-zinc-500">Or continue with</span>
+              </div>
+            </div>
+
+            {/* OAuth Buttons */}
+            <div className="grid grid-cols-2 gap-4">
+              <form action={loginWithGoogleAction}>
+                <Button 
+                  type="submit"
+                  variant="outline" 
+                  className="w-full bg-zinc-950/50 border-zinc-800 text-white hover:bg-zinc-900" 
+                >
+                  <Chrome className="mr-2 h-4 w-4" /> Google
+                </Button>
+              </form>
+              <Button 
+                type="button"
+                variant="outline" 
+                className="bg-zinc-950/50 border-zinc-800 text-zinc-400 opacity-50 cursor-not-allowed" 
+                disabled
+              >
+                <Apple className="mr-2 h-4 w-4" /> Apple
+              </Button>
+            </div>
+            <p className="text-xs text-center text-zinc-500">
+              OAuth providers coming soon
+            </p>
+
         </CardContent>
         <CardFooter>
-           <div className="mt-4 text-center text-sm text-zinc-400 w-full">
+          <div className="mt-4 text-center text-sm text-zinc-400 w-full">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline text-white">
+            <Link href="/signup" className="underline text-white hover:text-zinc-300">
               Sign up
             </Link>
           </div>
         </CardFooter>
       </Card>
     </div>
-  );
+  )
 }
