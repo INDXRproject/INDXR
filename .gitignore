@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+backend/debug_*.py
+backend/reproduce_*.py
+backend/inspect_*.py
+backend/.env
+.env
+.env.local
