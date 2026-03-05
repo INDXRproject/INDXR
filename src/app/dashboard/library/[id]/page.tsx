@@ -38,7 +38,11 @@ export default async function TranscriptPage({ params }: PageProps) {
       transcript={transcript.transcript}
       title={transcript.title || "Untitled Transcript"}
       videoUrl={`https://www.youtube.com/watch?v=${transcript.video_id}`}
+      videoId={transcript.video_id}
       thumbnailUrl={transcript.thumbnail_url}
+      editedContent={transcript.edited_content ?? null}
+      aiSummary={transcript.ai_summary ?? null}
+      viewedAt={transcript.viewed_at}
     />
   );
 }

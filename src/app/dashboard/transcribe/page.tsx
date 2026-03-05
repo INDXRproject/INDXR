@@ -45,6 +45,7 @@ export default function TranscribePage() {
     transcript: TranscriptItem[], 
     metadata: TranscriptMetadata
   ) => {
+    if (!transcript) return
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -53,6 +54,9 @@ export default function TranscribePage() {
       const duration = transcript.length > 0 
         ? Math.ceil(transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration)
         : 0
+
+      // Calculate total character count for size estimation in Library
+      const characterCount = transcript.reduce((acc, item) => acc + item.text.length, 0)
       
       // Prepare thumbnail URL (YouTube only)
       const thumbnailUrl = metadata.videoId 
@@ -60,20 +64,66 @@ export default function TranscribePage() {
         : null
 
       // Save to database
-      const { error } = await supabase
-        .from('transcripts')
-        .insert({
-          user_id: user.id,
-          source_type: metadata.source,
-          title: metadata.title,
+      let error = null
+      
+      if (metadata.duplicateId && metadata.duplicateAction) {
+        // Handle Duplicate (Replace or Reset) — or internal placeholder reconciliation
+        const updateData: Record<string, unknown> = {
           transcript: transcript,
           duration: duration,
-          thumbnail_url: thumbnailUrl,
-          video_id: metadata.videoId,
-          filename: metadata.filename,
-          credits_used: metadata.creditsUsed,
-          processing_method: metadata.processingMethod || 'youtube_captions'
-        })
+          character_count: characterCount,
+          processing_method: metadata.processingMethod || 'youtube_captions',
+          updated_at: new Date().toISOString(),
+        }
+
+        // Always write thumbnail if present
+        if (thumbnailUrl) updateData.thumbnail_url = thumbnailUrl
+        if (metadata.creditsUsed) updateData.credits_used = metadata.creditsUsed
+
+        if (metadata.isPlaceholder) {
+          // Internal handoff: always write real title and collection back
+          updateData.title = metadata.title
+          if (metadata.collectionId !== undefined) updateData.collection_id = metadata.collectionId
+        } else if (metadata.duplicateAction === 'reset') {
+          // User-triggered full reset: overwrite title and nuke edits/summaries
+          updateData.title = metadata.title
+          updateData.edited_content = null
+          updateData.ai_summary = null
+        }
+        // User-triggered 'replace': title, edited_content, ai_summary are intentionally preserved
+        
+        const result = await supabase
+          .from('transcripts')
+          .update(updateData)
+          .eq('id', metadata.duplicateId)
+        
+        error = result.error
+      } else {
+        // Normal Insert
+        const result = await supabase
+          .from('transcripts')
+          .insert({
+            user_id: user.id,
+            source_type: metadata.source,
+            title: metadata.title,
+            transcript: transcript,
+            duration: duration,
+            character_count: characterCount,
+            thumbnail_url: thumbnailUrl,
+            video_id: metadata.videoId,
+            filename: metadata.filename,
+            credits_used: metadata.creditsUsed,
+            processing_method: metadata.processingMethod || 'youtube_captions',
+            collection_id: metadata.collectionId
+          })
+          
+        error = result.error
+      }
+      
+      // Tell sidebar to refresh using the custom event
+      if (!error) {
+         window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+      }
 
       if (error) {
         const errorMsg = error.message || 'Unknown database error'
@@ -114,17 +164,61 @@ export default function TranscribePage() {
     }
   }
 
-  const processVideo = async (videoId: string, status?: string) => {
+  const processVideo = async (videoId: string, options?: { status?: string; duplicateId?: string; duplicateAction?: 'replace' | 'reset'; collectionId?: string; title?: string }) => {
     try {
         let response;
-        let processingMethod: 'youtube_captions' | 'whisper_ai' = 'youtube_captions';
+        const effectiveMethod = options?.status === 'needs_whisper' ? 'whisper_ai' : 'youtube_captions';
 
-        // Choose endpoint based on status
-        if (status === 'needs_whisper') {
-           processingMethod = 'whisper_ai';
+      // 1. Initial placeholder or update existing record to show "Processing" status
+      let transcriptId: string;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      if (options?.duplicateId) {
+        // Update existing record with placeholder title
+        const { error: updateError } = await supabase
+          .from('transcripts')
+          .update({
+            title: `Processing Video ${videoId}...`,
+            processing_method: effectiveMethod,
+          })
+          .eq('id', options.duplicateId);
+          
+        if (updateError) {
+          console.error("Error updating early transcript record:", updateError);
+          throw new Error("Failed to update transcript record.");
+        }
+        transcriptId = options.duplicateId;
+      } else {
+        // Insert new placeholder
+        const { data: earlyTranscript, error: insertError } = await supabase
+          .from('transcripts')
+          .insert({
+            user_id: user.id,
+            source_type: 'youtube',
+            title: `Processing Video ${videoId}...`,
+            transcript: [],
+            duration: 0,
+            character_count: 0,
+            video_id: videoId,
+            processing_method: effectiveMethod,
+            collection_id: options?.collectionId,
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error("Error inserting early transcript record:", insertError);
+          throw new Error("Failed to create initial transcript record.");
+        }
+        transcriptId = earlyTranscript.id;
+      }
+
+        if (options?.status === 'needs_whisper') {
            const formData = new FormData();
            formData.append('source_type', 'youtube');
            formData.append('video_id', videoId);
+           formData.append('transcript_id', transcriptId); // Pass the transcript ID
            
            response = await fetch('/api/transcribe/whisper', {
                method: 'POST',
@@ -135,7 +229,7 @@ export default function TranscribePage() {
             response = await fetch('/api/extract', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ videoIdOrUrl: videoId }),
+                body: JSON.stringify({ videoIdOrUrl: videoId, transcriptId }), // Pass transcriptId
             })
         }
         
@@ -145,19 +239,27 @@ export default function TranscribePage() {
             throw new Error(data.error || 'Failed to extract transcript')
         }
 
-        // Auto-save with unified metadata
+        // Auto-save: always update the placeholder record with real data
         await handleTranscriptLoaded(data.transcript, { 
           source: 'youtube',
-          title: data.title || `Video ${videoId}`,
+          // Bug 1 fix: for Whisper responses data.title is undefined — use the
+          // title passed in from the playlist availability map as the fallback
+          title: data.title || options?.title || `Video ${videoId}`,
           duration: 0, // Will be calculated from transcript
           videoId, 
           videoUrl: data.video_url,
-          processingMethod
+          processingMethod: effectiveMethod,
+          duplicateId: transcriptId,
+          duplicateAction: options?.duplicateAction || 'replace',
+          collectionId: options?.collectionId,
+          isPlaceholder: !options?.duplicateId, // True for new videos (placeholder), false for user-triggered duplicate
         })
         
     } catch (error) {
         console.error(`Process video ${videoId} failed:`, error)
-        throw error // Re-throw so PlaylistTab knows it failed
+        // Re-throw with the original message so callers can detect specific errors
+        // (e.g. 'no_speech_detected' from Whisper on silent videos)
+        throw error
     }
   }
 

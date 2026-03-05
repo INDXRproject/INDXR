@@ -1,6 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
+// const 'fs');
+// const 'path');
 const { YoutubeTranscript } = require('youtube-transcript');
 
 // Read .env.local

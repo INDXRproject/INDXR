@@ -105,7 +105,7 @@ export function WhisperFallbackModal({
             <div className="p-2 bg-purple-500/10 rounded-lg">
               <Sparkles className="h-5 w-5 text-purple-500" />
             </div>
-            <DialogTitle className="text-white">No Captions Found</DialogTitle>
+            <DialogTitle className="text-foreground">No Captions Found</DialogTitle>
           </div>
           <DialogDescription className="text-zinc-400">
             This video doesn&apos;t have auto-generated captions. INDXR.AI will use Whisper AI to transcribe your video.
@@ -115,7 +115,7 @@ export function WhisperFallbackModal({
         <div className="space-y-4 py-4">
           {/* Video Info */}
           <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
-            <p className="text-sm font-medium text-white truncate">{videoTitle}</p>
+            <p className="text-sm font-medium text-foreground truncate">{videoTitle}</p>
             {estimatedDuration && (
               <p className="text-xs text-zinc-500 mt-1">
                 ~{Math.round(estimatedDuration / 60)} minutes
@@ -127,7 +127,7 @@ export function WhisperFallbackModal({
           <div className="p-4 rounded-lg border border-zinc-800 bg-zinc-900/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-zinc-400">Credit Cost</span>
-              <span className="text-lg font-bold text-white">{estimatedCredits} credits</span>
+              <span className="text-lg font-bold text-foreground">{estimatedCredits} credits</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-zinc-500">Your balance</span>

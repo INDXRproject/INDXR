@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > /home/aladdin/Documents/Antigravity/INDXR.AI\ V2/src/app/dashboard/billing/page.tsx
 import { redirect } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -29,7 +30,7 @@ export default async function BillingPage() {
   const { data: creditsData } = await supabase.rpc("get_user_credits", { p_user_id: user.id }).single()
   
   // Use a less restrictive type to avoid TS errors
-  const credits = creditsData ? (creditsData as any).total_credits_purchased + (creditsData as any).credits_bonus - (creditsData as any).total_credits_used : 0
+  const credits = creditsData
     ? ((creditsData as any).total_credits_purchased || 0) + ((creditsData as any).credits_bonus || 0) - ((creditsData as any).total_credits_used || 0)
     : 0
 
@@ -76,3 +77,4 @@ export default async function BillingPage() {
     </div>
   )
 }
+INNER_EOF

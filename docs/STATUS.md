@@ -14,19 +14,12 @@
 
 ### Analytics & Monitoring
 
-- **PostHog Integration**: Event tracking, session replay, error monitoring
+- **PostHog Integration**: Fully implemented on frontend (`posthog-js`) and Next.js server (`posthog-node`). **Not** implemented on Python FastAPI backend.
 - **Tracked Events**:
   - `signup_source` (google/email)
   - `credits_purchased` (server + client-side tracking)
   - `transcript_extracted` (video/playlist, youtube/whisper)
 - **Conversion Funnel**: Signup → First extraction → Credit purchase
-
-### Payments
-
-- **Stripe Integration**: Test mode operational
-- **Packages**: Starter (€4.99/50cr), Regular (€9.99/120cr), Power (€24.99/350cr)
-- **Webhooks**: checkout.session.completed handling credits via RPC
-- **Security**: Signature verification, idempotency
 
 ### 1. Account Management (Phase 5 - COMPLETE)
 
@@ -55,9 +48,22 @@
 
 - **Single Video**: YouTube captions (XML/Text) extraction.
 - **Playlist**: Full playlist extraction with video selection.
-- **Whisper AI**: Audio upload + OpenAI Whisper transcription fallback.
-- **Export**: 6 formats (TXT, JSON, SRT, VTT, CSV, MD).
-- **Stability**: LunaProxy integration (prevents IP bans) + Retry logic.
+  - Credit pre-flight check: upfront check on `needs_whisper` videos, button shows exact cost, blocked if insufficient credits.
+  - Correct video titles passed to library, clean availability screen on re-fetch.
+  - Silence/no-speech detection with clear amber failure badge inline.
+- **Audio Upload**: Manually upload `.mp3` etc. (< 25MB) to transcribe via Whisper. Fully verified and working.
+- **Duplicate Detection**:
+  - Composite key (`video_id` + `processing_method`) prevents cross-method false positives.
+  - In-memory session tracking (`useRef<Set>`) for instant same-session duplicate catching.
+  - Blocking UI prompt on extraction: "Toch extraheren" of "Bekijk in library" (voorkomt ongewenste aftrek credits).
+- **Whisper AI**: ✅ Fully working end-to-end:
+  - Two-step audio pipeline: yt-dlp downloads audio-only stream via IPRoyal proxy, ffmpeg converts separately to 16kHz mono 32kbps MP3
+  - Format selector prioritizes `m4a` stream (iOS client native format), locked to audio-only.
+  - YouTube 403 / Proxy Split fix: `extractor_args` explicitly requests `ios` (and `web_embedded`) player client to bypass the GVS PO Token requirement that breaks Android clients when no JS runtime is present.
+  - PO Token UX: Specific frontend error shown for un-bypassable YouTube restrictions ("152" / "unavailable") directing users to manual upload.
+  - Credit pre-check: frontend displays exact cost inline before user clicks (formula: `Math.ceil(duration_seconds / 600)`)
+  - Navigation guard: `beforeunload` event listener prevents accidental tab close during extraction
+  - Credit deduction: atomic RPC (`deduct_credits_atomic`) with pre-check
 
 ### 4. Rate Limiting (Phase 3 - COMPLETE)
 
@@ -74,22 +80,36 @@
 
 - **State**: Scaffolding exists at `/dashboard`.
 - **Functionality**: Users can view saved lists (Partial).
-- **Needs**: "Delete" capability, Search/Filter, better Export UI.
+- **Needs**: Search/Filter, better Export UI.
 
 ---
 
 ## ❌ NOT BUILT YET
 
-### Admin Dashboard (Phase 8)
+### Stripe Payments
 
-- **Operations**: No internal tool to view user stats or ban abusers.
+- **Integration**: Complete Stripe checkout flow needs to be built before launch.
+- **Packages**: Starter (€4.99/50cr), Regular (€9.99/120cr), Power (€24.99/350cr).
+- **Webhooks**: Handling `checkout.session.completed` to assign credits via RPC safely.
+
+### Admin Dashboard
+
+- **Operations**: Live overview of all accounts, usage, and credits. No internal tool to view user stats or ban abusers yet.
+
+### System Infrastructure
+
+- **Error Tracking & Analytics**: PostHog Backend implementation needed. Will act as the single source for both product analytics and error tracking (Sentry / Google Analytics are explicitly excluded).
+- **Database Backups**: Automated Supabase backups (Point-in-Time Recovery) strategy needs confirmation.
+- **Supabase Security (RLS)**: Row Level Security policies have not been rigorously checked/tested yet.
 
 ---
 
-## 🔍 NEXT STEPS (Phase 6)
+## 🔍 NEXT STEPS (Planned Features)
 
-1.  **Export Options**: Polish the download flow (TXT, JSON, SRT).
-2.  **Library Improvements**: Add "Delete" button and Search.
+1.  **Redesign / UI Overhaul**: Full visual redesign (postponed but mandatory before launch).
+2.  **AI Summarization**: Button in Library to generate summaries + action points using a fast/cheap model (e.g., gpt-4o-mini or claude-haiku).
+3.  **Whisper Language Support**: Investigate and expose supported Whisper languages in the frontend UI.
+4.  **Timestamp & Chapter Generation**: Button in Library to auto-generate YouTube-style chapters based on transcripts.
 
 ## 🚀 PRE-DEPLOYMENT CHECKLIST
 
@@ -121,7 +141,7 @@
 
 - [ ] Set all environment variables in Vercel production
 - [ ] Test rate limiting in production (Upstash Redis)
-- [ ] Verify LunaProxy credentials (backend Railway deployment)
+  - [ ] Verify IPRoyal proxy credentials in backend `.env` (note: password contains capital `I` and lowercase `l` — easy to confuse)
 - [ ] Run security audit (npm audit, dependency check)
 
 ---
@@ -167,11 +187,14 @@
 
 ### ⚠️ Known Issues & Gaps
 
-#### Critical Issues
+#### Low Priority / Non-Blocker Gaps
 
-1. **Navbar broken** - Settings button appeared, avatar missing
-2. **Error states inconsistent** - No unified Alert/Toast pattern
-3. **Loading states missing** - Many actions show blank screen
+1. **YouTube PO Token Enforcement**: Whisper upsell fails on videos with GVS PO Token enforcement.
+   - _Temporary fix_: Force `ios` player client.
+   - _Structural fix_: Install `yt-dlp-pot-bgutil-http` plugin (requires Node.js on Railway). Can wait, not a launch blocker.
+2. **Frontend Credit Estimation (UX)**: Bij video's zonder captions toont de frontend "1 credit" schatting vóór de download. Werkelijke kosten (gebaseerd op exacte audioduur) pas bekend ná de audio download. Low priority UX issue.
+3. **Error states inconsistent** - No unified Alert/Toast pattern (will be solved during UI Redesign).
+4. **Loading states missing** - Some actions show blank screens during fetching.
 
 #### Component Gaps
 
@@ -215,36 +238,18 @@
 
 ---
 
-## 🎯 PHASE E PRIORITIES (Next Steps)
+## 🎯 IMMEDIATE PRIORITIES (Based on Roadmap)
 
-Based on implementation status, these are critical:
+We are consciously deferring the UI Redesign until the core business blocks and differentiating AI features are built.
 
-### Priority 1: Fix Broken Navbar
+1. **Stripe Payments**: Hard blocker. Zonder betalingen geen business.
+2. **Supabase RLS Audit**: Veiligheidscheck vóór echte gebruikers/euro's (isolatie van userdata).
+3. **PostHog Backend Implementatie**: Eén tool voor analytics én error tracking vóór lancering.
+4. **AI Summarization**: Bibliotheek knop voor samenvattingen/actiepunten via gpt-4o-mini. Grootste UX differentiator.
+5. **Whisper Language Support**: Welke talen ondersteunt Whisper? Tonen in dropdown.
+6. **Timestamp & Chapter Generation**: Logische iteratie na AI Summarization.
+7. **UI Redesign / Overhaul**: Pas op dit punt wordt de frontend esthetiek (Linear/Notion stijl) aangepakt. Mandatory voor launch.
+8. **Admin Dashboard**: Om gebruikers gedrag en credits op te volgen.
+9. **Database Backups Bevestigen**: Point-in-Time Recovery documenteren.
 
-- Restore avatar display
-- Remove/fix settings button placement
-- Verify desktop + mobile layouts
-
-### Priority 2: Error State Pattern
-
-- Design Alert component styling
-- Implement Toast notifications
-- Add form validation error display
-
-### Priority 3: Complete Loading States
-
-- Add LoadingSkeleton to all async actions
-- Button loading states (spinner in button)
-- Page transition loading
-
-### Priority 4: Mobile Testing
-
-- Test on real iOS/Android devices
-- Fix responsive table in Settings
-- Verify 44px touch targets everywhere
-
-### Priority 5: Remaining Pages
-
-- Redesign FAQ (accordion styling)
-- Redesign Onboarding (step indicator)
-- Redesign Forgot Password (similar to login)
+_(Notitie: Sentry en Google Analytics zijn bewust geschrapt; PostHog vangt deze Use Cases op)._

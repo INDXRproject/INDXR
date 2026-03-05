@@ -272,7 +272,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Processing file...</h3>
-              <p className="text-zinc-400">Reading audio duration</p>
+              <p className="text-muted-foreground">Reading audio duration</p>
             </>
           ) : file ? (
             <>
@@ -280,7 +280,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 <FileAudio className="h-8 w-8 text-green-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">{file.name}</h3>
-              <div className="flex gap-4 text-sm text-zinc-400 mb-4">
+              <div className="flex gap-4 text-sm text-muted-foreground mb-4">
                 <span>{formatFileSize(file.size)}</span>
                 <span>•</span>
                 <span>{formatDuration(audioDuration)}</span>
@@ -292,7 +292,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                   e.stopPropagation()
                   handleRemoveFile()
                 }}
-                className="text-zinc-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4 mr-2" />
                 Remove file
@@ -301,11 +301,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           ) : (
             <>
               <div className="p-4 bg-zinc-900 rounded-full mb-4 group-hover:scale-110 transition-transform">
-                <UploadCloud className="h-8 w-8 text-zinc-400" />
+                <UploadCloud className="h-8 w-8 text-muted-foreground" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Upload Audio File</h3>
-              <p className="text-zinc-400 mb-2">Drag and drop your audio file here, or click to browse</p>
-              <p className="text-sm text-zinc-500">Supported: MP3, WAV, M4A, OGG, FLAC (max 25MB)</p>
+              <p className="text-muted-foreground mb-2">Drag and drop your audio file here, or click to browse</p>
+              <p className="text-sm text-muted-foreground">Supported: MP3, WAV, M4A, OGG, FLAC (max 25MB)</p>
             </>
           )}
         </div>
@@ -316,11 +316,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         <div className="p-4 rounded-lg border border-zinc-800 bg-zinc-900/50">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="font-semibold text-white mb-1">Credit Cost</h4>
-              <p className="text-sm text-zinc-400">
-                This will use <span className="font-semibold text-white">{estimatedCredits} credits</span> ({formatDuration(audioDuration)})
+              <h4 className="font-semibold text-foreground mb-1">Credit Cost</h4>
+              <p className="text-sm text-muted-foreground">
+                This will use <span className="font-semibold text-foreground">{estimatedCredits} credits</span> ({formatDuration(audioDuration)})
               </p>
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Your balance: {credits ?? 0} credits
               </p>
             </div>

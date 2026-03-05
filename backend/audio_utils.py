@@ -63,13 +63,14 @@ def get_audio_duration(file_path: str) -> float:
         raise Exception(f"Could not determine audio duration: {str(e)}")
 
 
-def extract_youtube_audio(video_id: str, output_dir: str = "/tmp") -> str:
+def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Optional[str] = None) -> str:
     """
     Extract audio from YouTube video using yt-dlp.
     
     Args:
         video_id: YouTube video ID
         output_dir: Directory to save audio file
+        proxy_url: Optional proxy URL (e.g. http://user:pass@host:port)
         
     Returns:
         Path to downloaded audio file
@@ -77,28 +78,83 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp") -> str:
     Raises:
         Exception: If download fails
     """
-    output_path = os.path.join(output_dir, f"yt_audio_{video_id}.m4a")
-    
+    import glob
+    base_output_path = os.path.join(output_dir, f"yt_audio_{video_id}")
+    final_output_path = f"{base_output_path}.mp3"
+
+    # NOTE: ydl_opts deliberately has NO postprocessors.
+    # Adding FFmpegExtractAudio widens yt-dlp's format selection to include
+    # DASH video+audio pairs, which triggers a second CDN download that does
+    # NOT go through the proxy — causing 403. We mirror the exact CLI command
+    # that works and run ffmpeg separately after the download.
+    #
+    # extractor_args forces the iOS player client (m4a formats).
+    # Reason: YouTube's GVS PO Token experiment (active on many videos) requires
+    # a JS runtime (node/deno/bun) to compute a Player Orchestration token.
+    # Without one, the default Android client formats get a 403 at CDN level.
+    # The iOS client bypasses PO token requirements entirely and works reliably
+    # with HTTP proxies without strict IP-bound CDN validation.
     ydl_opts = {
-        'format': 'bestaudio[ext=m4a]/bestaudio',
-        'outtmpl': output_path,
-        'quiet': True,
-        'no_warnings': True,
+        'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio',
+        'outtmpl': f"{base_output_path}.%(ext)s",
+        'quiet': False,
+        'no_warnings': False,
+        'verbose': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios', 'web_embedded'],
+            }
+        },
     }
-    
+
+    if proxy_url:
+        ydl_opts['proxy'] = proxy_url
+        masked = proxy_url.split('@')[-1] if '@' in proxy_url else proxy_url
+        logger.info(f"YouTube audio download: using proxy @{masked}")
+    else:
+        logger.warning("YouTube audio download: NO proxy configured — this may cause 403 errors from YouTube")
+
+    logger.info(f"Starting yt-dlp audio download for video_id={video_id}")
+    logger.info(f"YT-DLP OPTIONS: {str(ydl_opts)}")
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
-        
-        if not os.path.exists(output_path):
-            raise Exception("Audio file was not created")
-        
-        logger.info(f"YouTube audio extracted: {output_path} ({os.path.getsize(output_path) / 1024 / 1024:.2f}MB)")
-        return output_path
-        
+
+        # Find the downloaded file (could be .webm, .m4a, .opus, etc.)
+        raw_files = [f for f in glob.glob(f"{base_output_path}.*") if not f.endswith('.mp3')]
+        if not raw_files:
+            raise Exception("yt-dlp did not produce any audio file")
+
+        raw_path = raw_files[0]
+        raw_size = os.path.getsize(raw_path) / 1024 / 1024
+        logger.info(f"yt-dlp downloaded: {raw_path} ({raw_size:.2f}MB)")
+
+        # Convert to 16kHz mono mp3 using ffmpeg subprocess (avoids proxy split issue)
+        ffmpeg_cmd = [
+            'ffmpeg', '-y',
+            '-i', raw_path,
+            '-ar', '16000',
+            '-ac', '1',
+            '-b:a', '32k',
+            final_output_path
+        ]
+        logger.info(f"Running ffmpeg: {' '.join(ffmpeg_cmd)}")
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=120)
+        if result.returncode != 0:
+            raise Exception(f"ffmpeg failed: {result.stderr[-500:]}")
+
+        os.remove(raw_path)  # Clean up raw download
+
+        final_size = os.path.getsize(final_output_path) / 1024 / 1024
+        logger.info(f"Audio conversion done: {raw_size:.2f}MB -> {final_size:.2f}MB mp3")
+
+        return final_output_path
+
     except Exception as e:
         logger.error(f"YouTube audio extraction failed: {e}")
         raise Exception(f"Failed to extract audio from YouTube: {str(e)}")
+
 
 
 def validate_audio_file(file_path: str) -> Dict[str, any]:

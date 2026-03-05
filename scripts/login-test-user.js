@@ -1,6 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
+// const 'fs');
+// const 'path');
 
 // Read .env.local
 const envPath = path.join(__dirname, '../.env.local');

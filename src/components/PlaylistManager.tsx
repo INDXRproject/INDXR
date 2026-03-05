@@ -11,6 +11,8 @@ import Image from "next/image";
 import { validateYouTubeUrl } from "@/utils/youtube";
 import { PlaylistAvailabilitySummary } from "@/components/PlaylistAvailabilitySummary";
 import { useAuth } from "@/hooks/useAuth";
+import { createClient } from "@/utils/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface PlaylistEntry {
   id: string;
@@ -40,10 +42,10 @@ interface AvailabilitySummary {
   totalCredits: number
 }
 
-export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable'
+export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech'
 
 interface PlaylistManagerProps {
-  onExtract: (videoIds: string[], availabilityData?: VideoAvailability[]) => void;
+  onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string) => void;
   isExtracting: boolean;
   videoStatuses?: Record<string, VideoStatus>;
   isAuthenticated: boolean;
@@ -66,6 +68,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const [hasExtracted, setHasExtracted] = useState(false);
+  const [existingDuplicates, setExistingDuplicates] = useState<Record<string, string>>({}); // video_id -> transcript_id
+  const supabase = createClient();
 
   // Monitor extraction progress
   useEffect(() => {
@@ -113,6 +117,10 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
     setPlaylist(null);
     setSelectedIds(new Set());
     setVisibleCount(25);
+    // Bug 2 fix: Reset availability breakdown so old results don't persist
+    setAvailabilityResults(null);
+    setAvailabilitySummary(null);
+    setShowAvailabilityModal(false);
     onError(null);
 
     const controller = new AbortController();
@@ -132,9 +140,30 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
       if (!response.ok) throw new Error(data.error || "Failed to fetch playlist");
 
       setPlaylist(data);
-      // Select first 10 by default, filtering out private videos
+      
+      // Fetch duplicates in background or await here so we can uncheck them
+      const videoIds = data.entries.map((e: PlaylistEntry) => e.id);
+      
+      // We safely fetch the first 1000 items (unlikely to have a 1000+ playlist here)
+      const { data: { user } } = await supabase.auth.getUser()
+      const dupes: Record<string, string> = {}
+      if (user && videoIds.length > 0) {
+        // Query Supabase
+        const { data: existing } = await supabase
+          .from('transcripts')
+          .select('id, video_id')
+          .eq('user_id', user.id)
+          .in('video_id', videoIds)
+          
+        if (existing) {
+          existing.forEach(t => dupes[t.video_id] = t.id)
+        }
+      }
+      setExistingDuplicates(dupes);
+
+      // Select first 10 by default, filtering out private videos AND duplicates
       const validEntries = data.entries.slice(0, 10).filter((e: PlaylistEntry) => 
-        e.title !== "[Private video]" && e.title !== "[Private Video]" && e.title !== "Private video"
+        e.title !== "[Private video]" && e.title !== "[Private Video]" && e.title !== "Private video" && !dupes[e.id]
       );
       const initialSelected = new Set<string>(validEntries.map((e: PlaylistEntry) => e.id));
       setSelectedIds(initialSelected);
@@ -196,9 +225,6 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
       const results: VideoAvailability[] = [];
       let total = 0;
       let hasCaptions = 0;
-      let needsWhisper = 0;
-      const unavailable = 0;
-      let totalCredits = 0;
 
       for (const id of selectedIds) {
         const entry = playlist?.entries.find(e => e.id === id);
@@ -207,23 +233,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
         total++;
         const duration = entry.duration || 0;
         
-        // Logic: Always try Standard Extraction first (Free) because yt-dlp can fetch auto-captions
-        // even if the YouTube API reports has_captions=false (which only counts manual subtitles).
-        
-        let status: 'has_captions' | 'needs_whisper' | 'unavailable' = 'has_captions';
-        let credits = 0;
-
-        // Only mark as unavailable/whisper needed if we have stronger signals in the future.
-        // For now, we assume everything might have captions to protect users' credits.
-        // If Standard Extraction fails, the user will see an error and can decide to retry manually.
-        
-        status = 'has_captions';
+        // Logical constants for availability check
         hasCaptions++;
-
-        // Calculate potential credits just for display info if we wanted to show "Potential Cost if Whisper needed"
-        // But for status setting, we stick to FREE.
-        const durationMinutes = Math.ceil(duration / 60);
-        const potentialCredits = Math.max(1, Math.ceil(durationMinutes / 8));
         
         results.push({
           videoId: entry.id,
@@ -231,16 +242,16 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
           duration: duration,
           thumbnail: entry.thumbnail || `https://img.youtube.com/vi/${entry.id}/mqdefault.jpg`,
           status: 'has_captions', // Force Free Attempt
-          estimatedCredits: 0 // Show 0 cost
+          estimatedCredits: 0, // Show 0 cost
         });
       }
       
       const summary: AvailabilitySummary = {
           total,
           hasCaptions,
-          needsWhisper,
-          unavailable,
-          totalCredits
+          needsWhisper: 0,
+          unavailable: 0,
+          totalCredits: 0
       };
 
       // Simulate a tiny delay for UX so it doesn't feel glitchy
@@ -259,19 +270,26 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
     }
   };
 
-  const handleProceedWithExtraction = () => {
+  const handleProceedWithExtraction = (finalResults: VideoAvailability[], duplicateAction?: 'replace' | 'reset') => {
     // Prevent double extraction
     if (hasExtracted) return;
 
     // Filter to only extract available videos (has_captions or needs_whisper)
-    if (availabilityResults) {
-      const extractableIds = availabilityResults
+    if (finalResults) {
+      const extractableIds = finalResults
         .filter(r => r.status === 'has_captions' || r.status === 'needs_whisper')
         .map(r => r.videoId);
       
+      // Inject the duplicate logic into the results that go back up
+      const enhancedResults = finalResults.map(r => ({
+        ...r,
+        duplicateId: existingDuplicates[r.videoId],
+        duplicateAction: existingDuplicates[r.videoId] ? duplicateAction : undefined
+      }));
+
       setHasExtracted(true);
       setShowAvailabilityModal(false); // Hide inline summary
-      onExtract(extractableIds, availabilityResults);
+      onExtract(extractableIds, enhancedResults, playlist?.title);
     }
   };
 
@@ -288,7 +306,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
           </div>
           <Input
             placeholder="Paste YouTube Playlist URL..."
-            className="pl-10 h-12 bg-zinc-900/50 border-white/10 text-white"
+            className="pl-10 h-12 bg-background border-input text-foreground"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchPlaylistInfo()}
@@ -316,8 +334,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                              <CheckCircle2 className="h-6 w-6" />
                         </div>
                         <div>
-                             <h3 className="text-lg font-bold text-white">Extraction Complete!</h3>
-                             <p className="text-zinc-400 text-sm">
+                             <h3 className="text-lg font-bold text-foreground">Extraction Complete!</h3>
+                             <p className="text-muted-foreground text-sm">
                                  {Object.values(videoStatuses).filter(s => s === 'success').length}/{Object.keys(videoStatuses).length} processed successfully • {Object.values(videoStatuses).filter(s => s === 'error').length} failed
                              </p>
                         </div>
@@ -327,7 +345,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                         <Button 
                             onClick={handleReset}
                             variant="outline"
-                            className="bg-zinc-900 border-zinc-700 hover:bg-zinc-800 text-zinc-100"
+                            className="bg-background border-border hover:bg-muted text-foreground"
                         >
                             Start New Extraction
                         </Button>
@@ -343,11 +361,11 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                 // In Progress View
                 <>
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium flex items-center gap-2 text-white">
+                        <span className="text-sm font-medium flex items-center gap-2 text-foreground">
                             <Loader2 className="h-4 w-4 animate-spin text-primary" />
                             Extracting Playlist...
                         </span>
-                        <span className="text-xs text-zinc-400">
+                        <span className="text-xs text-muted-foreground">
                             {Object.values(videoStatuses).filter(s => s === 'success').length} / {Object.keys(videoStatuses).length} completed
                         </span>
                     </div>
@@ -368,6 +386,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
           results={availabilityResults}
           summary={availabilitySummary}
           userCredits={credits}
+          existingDuplicates={existingDuplicates} // <--- Added this line
           onProceed={handleProceedWithExtraction}
           onCancel={() => {
              setShowAvailabilityModal(false);
@@ -378,18 +397,18 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
       )}
 
       {playlist && !showAvailabilityModal && (
-        <div className="bg-zinc-900/30 border border-zinc-800 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="p-6 border-b border-border bg-muted/30 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg text-primary">
                 <ListMusic className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white truncate max-w-[300px] md:max-w-md">
+                <h3 className="text-lg font-semibold text-foreground truncate max-w-[300px] md:max-w-md">
                   {playlist.title}
                 </h3>
                 <div className="flex items-center gap-3">
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-muted-foreground">
                     {selectedIds.size} of {availableCount} available videos selected
                   </p>
                   <div className="flex gap-2">
@@ -402,7 +421,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                     <span className="text-zinc-700">|</span>
                     <button 
                       onClick={deselectAll}
-                      className="text-xs text-zinc-500 hover:text-zinc-400 font-medium transition-colors"
+                      className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
                     >
                       Deselect All
                     </button>
@@ -435,7 +454,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
           </div>
 
           {missingCount > 0 && (
-            <div className="px-6 py-2 bg-amber-500/10 border-b border-zinc-800 flex items-center gap-2 text-amber-500 text-xs font-medium">
+            <div className="px-6 py-2 bg-amber-500/10 border-b border-border flex items-center gap-2 text-amber-600 dark:text-amber-500 text-xs font-medium">
               <AlertCircle className="h-3.5 w-3.5" />
               <span>{missingCount} videos unavailable (private, members-only, or deleted). Showing {availableCount} available videos.</span>
             </div>
@@ -449,24 +468,25 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                   return (
                     <div
                       key={entry.id}
-                      className={`flex items-center gap-4 p-3 rounded-xl transition-all border ${
+                      className={cn(
+                        "flex items-center gap-4 p-3 rounded-xl transition-all border",
                         isPrivate 
-                          ? "opacity-50 cursor-not-allowed border-transparent bg-zinc-900/20" 
+                          ? "opacity-50 cursor-not-allowed border-transparent bg-muted/20" 
                           : selectedIds.has(entry.id)
                             ? "bg-primary/5 border-primary/20 ring-1 ring-primary/20 cursor-pointer"
-                            : "bg-transparent border-transparent hover:bg-zinc-800/50 cursor-pointer"
-                      }`}
+                            : "bg-transparent border-transparent hover:bg-muted/50 cursor-pointer"
+                      )}
                       onClick={() => !isPrivate && toggleSelection(entry.id)}
                     >
                       <Checkbox
                         checked={selectedIds.has(entry.id)}
                         onCheckedChange={() => !isPrivate && toggleSelection(entry.id)}
                         disabled={isPrivate}
-                        className="border-zinc-700"
+                        className="border-input"
                         onClick={(e) => e.stopPropagation()}
                       />
                       {entry.thumbnail && (
-                        <div className="relative h-12 w-20 rounded-lg overflow-hidden shrink-0 border border-zinc-800">
+                        <div className="relative h-12 w-20 rounded-lg overflow-hidden shrink-0 border border-border">
                           <Image
                             src={entry.thumbnail}
                             alt={entry.title}
@@ -478,7 +498,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm text-zinc-200 truncate font-medium">
+                          <span className="text-sm text-foreground truncate font-medium">
                             {entry.title}
                           </span>
                           {videoStatuses[entry.id] === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />}
@@ -488,12 +508,27 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                         </div>
                         {entry.duration && (
                           <div className="flex items-center gap-3">
-                            <span className="text-xs text-zinc-500 font-mono flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
                                 {Math.floor(entry.duration / 60)}:{Math.floor(entry.duration % 60).toString().padStart(2, '0')}
                             </span>
-                            {videoStatuses[entry.id] === 'unavailable' && <span className="text-[10px] uppercase font-bold text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">Unavailable</span>}
-                            {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-red-900 bg-red-500/20 px-1.5 py-0.5 rounded">Failed</span>}
+                            {videoStatuses[entry.id] === 'unavailable' && <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Unavailable</span>}
+                           {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">Failed</span>}
+                             {videoStatuses[entry.id] === 'no_speech' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">No speech detected</span>}
+                             
+                             {/* Duplicate Badge */}
+                             {!hasExtracted && existingDuplicates[entry.id] && (
+                                <a 
+                                  href={`/dashboard/library/${existingDuplicates[entry.id]}`}
+                                  target="_blank"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-amber-500/20 transition-colors"
+                                  title="View existing transcript"
+                                >
+                                  Already in library
+                                </a>
+                             )}
+                             
                              {/* Show Whisper Needed badge if checked */}
                              {availabilityResults?.find(r => r.videoId === entry.id)?.status === 'needs_whisper' && (
                                <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
@@ -510,7 +545,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
               {availableCount > visibleCount && (
                 <Button 
                   variant="ghost" 
-                  className="w-full mt-2 h-12 text-zinc-400 hover:text-white hover:bg-zinc-800/50 border border-zinc-900 border-dashed"
+                  className="w-full mt-2 h-12 text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border border-dashed"
                   onClick={loadMore}
                 >
                   <ChevronDown className="h-4 w-4 mr-2" />

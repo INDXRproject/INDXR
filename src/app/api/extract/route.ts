@@ -19,7 +19,8 @@ export async function POST(request: Request) {
     let isPremium = false;
     if (user) {
       const { data } = await supabase.rpc('get_user_credits', { p_user_id: user.id }).single();
-      if (data && data.total_credits_purchased > 0) {
+      const typedData = data as { total_credits_purchased: number } | null;
+      if (typedData && typedData.total_credits_purchased > 0) {
         isPremium = true;
       }
     }
@@ -84,7 +85,8 @@ export async function POST(request: Request) {
         success: true,
         transcript: data.transcript,
         title: data.title,
-        video_url: data.video_url
+        video_url: data.video_url,
+        duration: data.duration
       });
     } catch (error) {
       console.error('Python Backend Error:', error);

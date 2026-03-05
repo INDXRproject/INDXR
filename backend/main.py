@@ -68,6 +68,7 @@ class ExtractResponse(BaseModel):
     transcript: Optional[List[TranscriptItem]] = None
     title: Optional[str] = None
     video_url: Optional[str] = None
+    duration: Optional[float] = None
     error: Optional[str] = None
 
 class PlaylistEntry(BaseModel):
@@ -340,7 +341,8 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True) -> List[dict
             return {
                 'transcript': transcript,
                 'title': info.get('title'),
-                'video_url': info.get('webpage_url')
+                'video_url': info.get('webpage_url'),
+                'duration': info.get('duration')
             }
             
     except Exception as e:
@@ -384,7 +386,8 @@ async def extract_youtube_transcript(request: ExtractRequest):
             success=True,
             transcript=transcript,
             title=result['title'],
-            video_url=result['video_url']
+            video_url=result['video_url'],
+            duration=result.get('duration')
         )
         
     except Exception as e:
@@ -586,13 +589,19 @@ async def transcribe_with_whisper(
         if source_type == "youtube":
             logger.info(f"Extracting YouTube audio for video: {video_id}")
             try:
-                audio_path = extract_youtube_audio(video_id)
+                proxy_url = get_proxy_url()
+                if proxy_url:
+                    logger.info(f"Whisper audio download: proxy ENABLED for video {video_id}")
+                else:
+                    logger.warning(f"Whisper audio download: proxy DISABLED — PROXY_ENABLED={PROXY_ENABLED}. This may cause 403 errors from YouTube.")
+                audio_path = extract_youtube_audio(video_id, proxy_url=proxy_url)
                 temp_files.append(audio_path)
             except Exception as e:
                 return WhisperResponse(
                     success=False,
                     error=f"Failed to extract audio from YouTube: {str(e)}"
                 )
+
         
         else:  # upload
             logger.info(f"Processing uploaded audio file: {audio_file.filename}")
@@ -668,6 +677,14 @@ async def transcribe_with_whisper(
             return WhisperResponse(
                 success=False,
                 error=whisper_result['error']
+            )
+        
+        # Check for empty transcript (silent video / no speech)
+        if not whisper_result.get('transcript'):
+            logger.warning(f"Whisper returned empty transcript for {video_id} — no speech detected")
+            return WhisperResponse(
+                success=False,
+                error="no_speech_detected"
             )
         
         # Step 9: Deduct credits (only after successful transcription)

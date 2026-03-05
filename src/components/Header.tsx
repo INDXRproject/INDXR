@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Menu, User, Settings, LogOut } from "lucide-react"
+import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/ui/logo"
@@ -42,6 +42,13 @@ function AvatarDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
+            <LayoutDashboard className="h-4 w-4" />
+            Dashboard
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/dashboard/account" className="flex items-center gap-2 cursor-pointer">
             <User className="h-4 w-4" />

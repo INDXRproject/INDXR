@@ -79,14 +79,14 @@ export async function POST(request: Request) {
     }
 
     // Forward response
-    if (!response.ok) {
+    if (!response.ok || !data.success) {
       return NextResponse.json(
         { 
           success: false, 
           error: data.error || 'Transcription failed',
-          user_friendly_message: data.error || 'Something went wrong. Please try again.'
+          user_friendly_message: data.user_friendly_message || data.error || 'Something went wrong. Please try again.'
         },
-        { status: response.status }
+        { status: response.ok ? 400 : response.status }
       );
     }
 

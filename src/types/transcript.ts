@@ -15,4 +15,11 @@ export interface TranscriptMetadata {
   videoUrl?: string
   filename?: string
   thumbnailUrl?: string
+  collectionId?: string
+
+  // Duplicate handling
+  duplicateId?: string
+  duplicateAction?: 'replace' | 'reset'
+  // Internal flag: true when reconciling a placeholder record (always writes all fields back)
+  isPlaceholder?: boolean
 }

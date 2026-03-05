@@ -7,7 +7,7 @@ INDXR.AI is a premium, "Apple-like" tool designed to democratize access to YouTu
 ### Core Pillars
 
 1.  **Aesthetics**: A "Wow" factor design with high-contrast dark mode, glassmorphism, and smooth animations.
-2.  **Reliability**: Robust extraction using industry-standard tools (`yt-dlp`) backed by enterprise-grade proxy rotation (`LunaProxy`) to bypass rate limits.
+2.  **Reliability**: Robust extraction using industry-standard tools (`yt-dlp`) backed by enterprise-grade proxy rotation (**IPRoyal** residential proxies) to bypass rate limits.
 3.  **Simplicity**: A frictionless "Free Tool" that requires no login for basic use, with a natural upsell path to a powerful Dashboard for power users.
 
 ---
@@ -32,8 +32,8 @@ INDXR.AI is a premium, "Apple-like" tool designed to democratize access to YouTu
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12+)
 - **Core Logic**:
   - **YouTube Data API v3**: Instant metadata fetching.
-  - **yt-dlp**: Fallback engine for captions/video access.
-- **Proxy**: **LunaProxy** (Residential IP rotation to prevent 429s).
+  - **yt-dlp**: Fallback engine for captions/video access and Whisper audio download.
+- **Proxy**: **IPRoyal** residential proxy (`geo.iproyal.com:12321`) — prevents IP bans and 403s from YouTube CDN.
 - **Validation**: `Pydantic` models.
 
 ### 3. Infrastructure & Data
@@ -48,6 +48,47 @@ INDXR.AI is a premium, "Apple-like" tool designed to democratize access to YouTu
 ---
 
 ## Feature Implementations
+
+### Whisper AI Audio Pipeline
+
+When a user requests Whisper re-extraction, the backend performs a **two-step** audio pipeline to avoid a known yt-dlp proxy-split issue:
+
+**Step 1 — yt-dlp download (proxy-consistent):**
+
+```python
+ydl_opts = {
+    'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio',
+    'proxy': proxy_url,
+    'extractor_args': {
+        'youtube': {
+            'player_client': ['ios', 'web_embedded'],
+        }
+    }
+}
+```
+
+Format preference: `m4a` first (native to iOS client, bypassing strict PO Token bindings), `webm/opus` second, any `bestaudio` as fallback. The `/best` video fallback is explicitly excluded.
+
+**Step 2 — ffmpeg conversion (subprocess):**
+
+```bash
+ffmpeg -i <raw_file> -ar 16000 -ac 1 -b:a 32k output.mp3
+```
+
+Converts the raw audio to 16kHz mono 32kbps MP3, optimised for Whisper API (speech recognition).
+
+**Player Client & YouTube Restrictions:**
+We explicitly use the `ios` player client. YouTube's GVS PO Token experiment blocks default clients (like Android) unless a JS runtime is installed to compute a token. The iOS client (`m4a`) bypasses this requirement completely and is highly stable with HTTP proxies. If a video strictly enforces PO tokens despite the iOS client, users receive a specific frontend error directing them to manual upload.
+
+**Credit Calculation:**
+
+```
+credits = Math.ceil(duration_seconds / 600)  # 1 credit per 10 minutes, minimum 1
+```
+
+The frontend displays the exact cost before the user clicks (`duration` is returned by `/api/extract` and stored in component state). The backend uses the same formula for the atomic deduction.
+
+---
 
 ### Rate Limiting System (Phase 3)
 
@@ -67,31 +108,30 @@ The system protects the extraction API using a 3-tier strategy via `@upstash/rat
 4.  **Enforcement**: Check Redis usage counters. 429 Error if exceeded.
 5.  **Configuration**: Centralized in `src/lib/ratelimit.ts`.
 
-### Analytics & Monitoring (Phase C)
+### Analytics & Monitoring (Phase C & Planned)
 
-**PostHog Integration:**
+**PostHog Integration (Active):**
 
 - Project: INDXR.AI (US region, app.posthog.com)
-- SDK: posthog-js (frontend), posthog (Python backend)
+- SDK: `posthog-js` (frontend React provider), `posthog-node` (Next.js server-side Stripe webhook)
+- Backend: Python FastAPI backend is currently **NOT** tracked by PostHog.
 - User Identification: Tied to Supabase user ID on login
-- Auto-tracking: Pageviews, clicks, session replay, JavaScript errors
+- Auto-tracking: Pageviews, clicks,
+- **Tracked Events**:
+  - `signup_source` (google/email)
+  - `credits_purchased` (server-side via Stripe Webhook + client-side)
+  - `transcript_extracted` (video/playlist, youtube/whisper)
 
-**Custom Events:**
-| Event | Trigger | Properties |
-|-------|---------|------------|
-| `signup_source` | User registration | method: 'google' \| 'email' |
-| `credits_purchased` | Stripe success (server + client) | amount, credits_added, package_name |
-| `transcript_extracted` | Extraction complete | type: 'video' \| 'playlist_video', processing_method: 'youtube' \| 'whisper', credits_used |
+**Error Tracking (Planned):**
 
-**Conversion Funnel:**
-Signup → First extraction → Credit purchase (enables drop-off analysis)
+- **Sentry**: Planned integration for comprehensive frontend/backend stacktrace logging.
 
-**Stripe Payments:**
+**Stripe Payments (Planned for Pre-Launch):**
 
-- Mode: Test (live keys required for production)
-- Webhook: /api/stripe/webhook (validates signatures, prevents fake payments)
+- Mode: Development / Testing (Live keys required for production)
+- Webhook: `/api/stripe/webhook` (needs handling logic for credit assignment)
 - Credit Packages: Starter €4.99/50cr, Regular €9.99/120cr, Power €24.99/350cr
-- Security: Idempotency keys, metadata validation, RPC atomic credit additions
+- Security: RPC atomic credit additions and signature validation to be implemented.
 
 ### Playlist Engine
 
@@ -110,6 +150,6 @@ Signup → First extraction → Credit purchase (enables drop-off analysis)
   - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - **Backend**: `.env`
   - `OPENAI_API_KEY` (Whisper)
-  - `LUNAPROXY_HOST`/`PORT`/`USER`/`PASS`
+  - `PROXY_HOST`, `PROXY_PORT`, `PROXY_USER`, `PROXY_PASSWORD` (IPRoyal)
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `POSTHOG_API_KEY`
