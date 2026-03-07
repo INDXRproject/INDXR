@@ -6,7 +6,7 @@ INDXR.AI is a premium, "Apple-like" tool designed to democratize access to YouTu
 
 ### Core Pillars
 
-1.  **Aesthetics**: A "Wow" factor design with high-contrast dark mode, glassmorphism, and smooth animations.
+1.  **Aesthetics**: A "Wow" factor design with high-contrast dark mode, glassmorphism, and smooth animations. The hero section features a custom-built **HeroUIPreview** component — a high-fidelity app mockup that demonstrates the product's UX without requiring a login.
 2.  **Reliability**: Robust extraction using industry-standard tools (`yt-dlp`) backed by enterprise-grade proxy rotation (**IPRoyal** residential proxies) to bypass rate limits.
 3.  **Simplicity**: A frictionless "Free Tool" that requires no login for basic use, with a natural upsell path to a powerful Dashboard for power users.
 
@@ -42,6 +42,7 @@ INDXR.AI is a premium, "Apple-like" tool designed to democratize access to YouTu
   - `auth.users`: Managed Identity.
   - `public.profiles`: User metadata (Role, Username).
   - `public.user_credits` + `credit_transactions`: Billing logic.
+  - `public.transcripts`: Stores video/playlist transcripts, including `edited_content` (text) and `ai_summary` (JSONB: {text, action_points, edited_html}).
 - **Cache/Rate Limit**: **Upstash Redis** (Serverless Redis).
 - **Hosting**: Vercel (Frontend), Railway (Backend - recommended).
 
@@ -132,6 +133,37 @@ The system protects the extraction API using a 3-tier strategy via `@upstash/rat
 - Webhook: `/api/stripe/webhook` (needs handling logic for credit assignment)
 - Credit Packages: Starter €4.99/50cr, Regular €9.99/120cr, Power €24.99/350cr
 - Security: RPC atomic credit additions and signature validation to be implemented.
+- **Provider**: DeepSeek V3 (`deepseek-chat`) is used as the default engine for high-quality, cost-effective summarization.
+
+---
+
+### Phase G: AI Summarization
+
+The summarization engine transforms raw transcripts into concise summaries with actionable takeaways.
+
+**Workflow**:
+
+1. **Trigger**: User clicks "Summarize" on the Original Transcript tab.
+2. **Pre-check**: Backend verifies ≥ 1 credit balance and deducts 1 credit atomically.
+3. **Extraction**: Backend fetches the raw transcript from the `transcript` column.
+4. **DeepSeek API**:
+   - Model: `deepseek-chat` (DeepSeek V3).
+   - Prompt: "Output JSON with two keys: 'text' (summary) and 'action_points' (array of strings)."
+5. **Persistence**: Result saved to `ai_summary` column.
+
+### Phase H: Transcript Tab Architecture
+
+The Dashboard uses a robust "Keep the Original" pattern across all transcript views to ensure data integrity.
+
+- **Tab Groups**:
+  - **Original**: Read-only raw transcript (Edit button hidden if an Edited version exists).
+  - **Edited**: User-modified version of the transcript (stored in `edited_content`).
+  - **AI Summary**: Read-only original summary from DeepSeek.
+  - **Edited Summary**: User-modified version of the summary (stored in `ai_summary.edited_html`).
+- **Navigation**: URL-based (`?tab=x`) for SEO and deep-linking.
+- **State**: Reactive `setEditable` syncing via Tiptap ensures zero-lag transition between read and edit modes.
+
+---
 
 ### Playlist Engine
 
@@ -174,3 +206,12 @@ All 6 user data tables have strict Row Level Security (RLS) enabled to guarantee
 
 - **Frontend**: The frontend codebase has no RLS bypass vulnerabilities and strictly uses the `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - **Backend / Admin**: The `SUPABASE_SERVICE_ROLE_KEY` is completely confined to the Python FastAPI backend, which handles secure administrative actions.
+
+---
+
+## Developer Productivity & Custom Skills
+
+To ensure consistent application of the INDXR design language, the project uses a custom agent skill:
+
+- **indxr-design**: Located in `.agent/skills/indxr-design/`. This skill provides Antigravity (AI assistant) with the exact tokens and component patterns needed for **Midnight** (dark) and **Starlight** (light) modes.
+- **Design System Reference**: Detailed tokens are defined in [design-system.md](file:///home/aladdin/Documents/Antigravity/INDXR.AI%20V2/.agent/skills/indxr-design/references/design-system.md).

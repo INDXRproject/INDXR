@@ -1,0 +1,25 @@
+# INDXR.AI — Cline Project Rules
+
+## Project Context
+YouTube transcript extraction SaaS. Stack: Next.js 14 (App Router, TypeScript), FastAPI (Python), Supabase (PostgreSQL + Auth), Tailwind CSS, shadcn/ui, Upstash Redis, Railway (backend), Vercel (frontend).
+
+## Before Starting Any Task
+- Read ARCHITECTURE.md, STATUS.md, and ROADMAP.md for full context
+- Check STATUS.md for current priority order before proposing anything
+
+## Design Rules
+- Design system is defined in .cline/skills/indxr-design/ — use the indxr-design skill for all UI/styling work
+- Never combine copy changes with design changes in one session
+- Always support both Starlight (light mode) and Midnight (dark mode) in every component
+- Prefer inline patterns over modals — modals cause information loss on dismiss
+
+## Code Rules
+- No band-aids — architectural fixes only, no timeouts or static workarounds
+- Frontend uses NEXT_PUBLIC_SUPABASE_ANON_KEY only — never the service role key
+- Backend (FastAPI) uses SUPABASE_SERVICE_ROLE_KEY for admin actions only
+- Credit mutations must go through the deduct_credits_atomic RPC — never direct DB writes
+
+## Documentation
+- Four core doc files only: ARCHITECTURE.md, STATUS.md, ROADMAP.md, DEVELOPMENT.md
+- Update docs at the end of every session — AG handles this
+- No new doc files without explicit reason

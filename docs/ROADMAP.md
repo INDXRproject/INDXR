@@ -6,6 +6,8 @@
 - **Phase C**: Error Handling & Analytics (Jan 2025) ✅
 - **Phase D**: UI Polish & Design System (Feb 2025) ✅
 - **Phase E (partial)**: Whisper AI end-to-end (Mar 2025) ✅
+- **Phase G**: AI Summarization (Mar 2025) ✅
+- **Phase H**: Transcript Tab Architecture & Visuals (Mar 2025) ✅
 
 ### Whisper AI — Completed (Mar 2025)
 
@@ -17,15 +19,19 @@
 - ✅ Credit pre-check and atomic deduction on backend
 - ✅ YouTube captions `duration` returned from `/api/extract` and forwarded by Next.js route
 
----
+### Phase H — Branding & Visuals (Mar 2025)
 
-## 🎯 Current Focus: Phase G - AI Summarization
+- ✅ **Landing Page Overhaul**: New copy, personas, testimonials, and bottom CTA added.
+- ✅ **Hero UI Preview**: High-fidelity app mockup (`HeroUIPreview.tsx`) added to hero section.
+- ✅ **Design System Definition**: Formalized Starlight/Midnight tokens defined in `.agent/skills/indxr-design/`.
+- ✅ **Tab Architecture**: Multi-tab detail view with "Original vs Edited" pattern for both transcripts and AI summaries.
 
-**Goal:** Add high-value AI features for retention before the final visual overhaul. This is the biggest UX differentiator before launch.
+### Phase G — AI Summarization — Completed (Mar 2025)
 
-**Tasks:**
-
-- [ ] Implement AI Summarization using DeepSeek V3 (`deepseek-chat` via `api.deepseek.com`). Button in Library ("Samenvatten"). Generates summaries + action points.
+- ✅ **Provider**: DeepSeek V3 (`deepseek-chat`) integration via Python backend.
+- ✅ **Formatting**: Markdown/HTML bullet point restore logic with custom CSS.
+- ✅ **Editing**: Support for editing summaries with automatic creation of "Edited Summary" tab.
+- ✅ **Credit Logic**: 1-credit cost with atomic deduction and failure refund.
 
 ---
 
@@ -39,13 +45,8 @@
       _Note: Checkout flow implemented and tested. Webhook credit assignment pending — will be verified after Railway deployment._
 - [x] **Supabase RLS Audit**: Security check to guarantee strict data isolation (User A cannot see User B data). Watertight requirement. ✅
 
-### Phase G: Product Value Expansion
-
-**Goal:** Add high-value AI features for retention before the final visual overhaul.
-
-- [ ] **AI Summarization**: Button in Library ("Samenvatten"). Generates summaries + action points using cheap models (gpt-4o-mini/claude-haiku). Biggest value-add.
 - [ ] **Whisper Language Support**: Detect and select languages directly in the UI. Small frontend addition, huge UX win.
-- [ ] **Timestamp & Chapter Generation**: Button in Library to auto-generate YouTube-style chapters from transcripts.
+- [ ] **Timestamp & Chapter Generation**: Button in Library to auto-generate YouTube-style chapters from transcripts. Logic should mirror the Summarization pattern.
 
 ### Phase H: Polish, Operations, and Launch (Q2 2025)
 
@@ -55,8 +56,8 @@
       _Note: PostHog backend tracks feature usage, but the AI features (summarization, chapters) don't exist yet. Tracking empty events has no value. After the UI Redesign, the feature set is stable and we'll know exactly which events matter._
 - [ ] **UI Redesign / Overhaul**: Full visual redesign inspired by Linear/Notion. Consciously postponed until features are complete, but mandatory before launch.
 - [ ] **Admin Dashboard**: Live overview of accounts, usage, and credits. Required to support live users.
-      _Note: Delete User feature: do NOT use Supabase's built-in delete — it fails due to foreign key constraints. Build a delete_user_cascade(user_id uuid) RPC that deletes in order: credit_transactions → user_credits → transcripts → collections → profiles → auth.users._
-      _Note: Email templates: after UI redesign, add custom branded email templates in Supabase for: account creation confirmation, password reset, email verification. Templates should match INDXR.AI visual identity._
+  - [IMPORTANT] **Delete User feature**: do NOT use Supabase's built-in delete — it fails due to foreign key constraints. Build a `delete_user_cascade(user_id uuid)` RPC that deletes in order: `credit_transactions` → `user_credits` → `transcripts` → `collections` → `profiles` → `auth.users`.
+  - [NOTE] **Email templates**: after UI redesign, add custom branded email templates in Supabase for: account creation confirmation, password reset, email verification. Templates should match INDXR.AI visual identity.
 - [ ] **Database Backups**: Confirm and strictly document Supabase Point-in-Time Recovery settings.
 - [ ] Load Testing & Production Deploy (Vercel + Railway)
 - [ ] **Stripe Go-Live Checklist**:

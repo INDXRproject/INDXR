@@ -27,6 +27,7 @@ venv/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 The backend must be running for:
 
 - `/api/extract` (YouTube caption extraction)
+- `/api/summarize` (AI Summarization via DeepSeek V3)
 - `/api/transcribe/whisper` (Whisper AI re-extraction)
 - `/api/transcribe/upload` (file upload transcription)
 - All playlist-related endpoints
@@ -74,6 +75,23 @@ When debugging Whisper issues, the full flow is:
 5. MP3 sent to OpenAI Whisper API
 6. Transcript inserted into Supabase, credits deducted atomically
 
+## AI Summarization Workflow
+
+1. Frontend calls `POST /api/ai/summarize` (Next.js route)
+2. Next.js route forwards to Python backend `POST /api/summarize`
+3. Backend fetches `transcript` row, verifies credits
+4. DeepSeek V3 (`deepseek-chat`) processes the text
+5. Result saved to `ai_summary` JSONB column
+6. UI redirects to `Edited Summary` tab if user saves changes
+
+## Tab Architecture & Editing
+
+The dashboard uses a 4-tab system for transcripts and summaries.
+
+- **Reactivity**: Tiptap editors use `immediatelyRender: false` to prevent SSR hydration mismatches.
+- **Editable State**: The `setEditable(true)` call is synced via `useEffect` to the `isEditedMode` or `isEditing` state. This avoids the "editing lockout" issue where a cursor cannot be placed in a div.
+- **Formatting**: Bullet points and numbered lists require explicit CSS in `globals.css` (targeting `.prose ul` and `.prose ol`) because Tailwind's `prose` class often overrides browser defaults.
+
 **Known warning (non-breaking):** yt-dlp logs `No supported JavaScript runtime could be found` on every run. This is harmless — we explicitly force the `ios` player client, which bypasses YouTube's JS requirement (PO Token) entirely for audio extractions.
 
 ## Stripe Webhook Setup
@@ -99,10 +117,35 @@ When testing the Stripe Checkout flow in development mode, use the standard Stri
 
 ## Common Issues
 
-| Symptom                                       | Likely cause                                     | Fix                                                        |
-| --------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
-| Whisper returns 403                           | Proxy credentials wrong or expired               | Re-check `PROXY_PASSWORD` (I vs l confusion)               |
-| Credit cost shows "1" for any video           | `duration` not flowing through Next.js API route | Confirm `route.ts` returns `duration: data.duration`       |
-| Frontend doesn't reflect backend code changes | uvicorn started without `--reload`               | Restart with `--reload` flag                               |
-| yt-dlp selects video format instead of audio  | Format selector reverted to `bestaudio/best`     | Must be `bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio` |
-| Whisper 403 on CDN download despite proxy     | `FFmpegExtractAudio` postprocessor re-added      | Remove it — it causes proxy split on DASH format selection |
+| Symptom                                       | Likely cause                                               | Fix                                                               |
+| --------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
+| Whisper returns 403                           | Proxy credentials wrong or expired                         | Re-check `PROXY_PASSWORD` (I vs l confusion)                      |
+| Credit cost shows "1" for any video           | `duration` not flowing through Next.js API route           | Confirm `route.ts` returns `duration: data.duration`              |
+| Frontend doesn't reflect backend code changes | uvicorn started without `--reload`                         | Restart with `--reload` flag                                      |
+| yt-dlp selects video format instead of audio  | Format selector reverted to `bestaudio/best`               | Must be `bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio`        |
+| Whisper 403 on CDN download despite proxy     | `FFmpegExtractAudio` postprocessor re-added                | Remove it — it causes proxy split on DASH format selection        |
+| Tiptap SSR Hydration Error                    | `immediatelyRender` set to true (default)                  | Set `immediatelyRender: false` in `useEditor` config              |
+| Bullet points hidden in summary               | Tailwind `prose` resetting list styles                     | Add explicit `list-style-type: disc` to `.prose ul` in CSS        |
+| Cannot click to edit (Lockout)                | `pointer-events-none` on editor or non-reactive `editable` | Remove `pointer-events-none` and use `setEditable` in `useEffect` |
+
+---
+
+## Design System & AI Skills
+
+To maintain the premium "Apple-like" aesthetic, all visual changes should be guided by the project's internal design tokens.
+
+### 1. indxr-design Skill
+
+The project includes a custom agent skill located in `.agent/skills/indxr-design/`. This skill provides the AI assistant with:
+
+- **Color Tokens**: Midnight (dark) and Starlight (light) palettes.
+- **Typography**: Inter for body, JetBrains Mono for code.
+- **Spacing**: Standardized border-radius and shadows.
+
+### 2. References
+
+Refer to these files before making any UI updates:
+
+- `docs/ARCHITECTURE.md` (Aesthetics section)
+- `.agent/skills/indxr-design/references/design-system.md`
+- `.agent/skills/indxr-design/references/component-patterns.md`
