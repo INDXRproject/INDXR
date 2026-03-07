@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { PricingCard } from "@/components/ui/pricing-card"
 import { toast } from "sonner"
 import { createClient } from "@/utils/supabase/client"
@@ -8,6 +9,7 @@ import { useRouter } from "next/navigation"
 export default function PricingPage() {
   const router = useRouter()
   const supabase = createClient()
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
 
   const handlePurchase = async (plan: string) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -18,11 +20,31 @@ export default function PricingPage() {
         return
     }
 
-    // Mock purchase flow for now
-    toast.success(`Selected ${plan} plan. Checkout flow coming soon!`)
-    
-    // In a real app, you would redirect to Stripe Checkout here
-    // router.push(`/api/checkout?plan=${plan}`)
+    try {
+      setLoadingPlan(plan)
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ plan }),
+      })
+
+      if (!res.ok) {
+        const message = await res.text()
+        throw new Error(message || 'Failed to create checkout session')
+      }
+
+      const { url } = await res.json()
+      if (url) {
+        window.location.href = url
+      }
+    } catch (error) {
+      console.error('Checkout error:', error)
+      const msg = error instanceof Error ? error.message : "An error occurred during checkout."
+      toast.error(msg)
+      setLoadingPlan(null)
+    }
   }
 
   return (
@@ -47,6 +69,7 @@ export default function PricingPage() {
             price="€4.99"
             credits={50}
             description="Perfect for casual users trying out the platform."
+            ctaLabel={loadingPlan === 'starter' ? 'Redirecting...' : 'Buy Now'}
             features={[
               "50 transcript credits",
               "Videos up to 4 hours",
@@ -62,6 +85,7 @@ export default function PricingPage() {
             credits={120}
             description="Best value for creators and researchers."
             featured={true}
+            ctaLabel={loadingPlan === 'regular' ? 'Redirecting...' : 'Buy Now'}
             features={[
               "120 transcript credits",
               "Videos up to 4 hours",
@@ -77,6 +101,7 @@ export default function PricingPage() {
             price="€24.99"
             credits={350}
             description="For heavy users and archiving."
+            ctaLabel={loadingPlan === 'power' ? 'Redirecting...' : 'Buy Now'}
             features={[
               "350 transcript credits",
               "Videos up to 4 hours",
@@ -105,7 +130,7 @@ export default function PricingPage() {
               </div>
                <div className="space-y-2">
                   <h3 className="font-semibold text-lg">Can I get a refund?</h3>
-                  <p className="text-muted-foreground">We offer refunds within 7 days if you haven't used more than 5 credits.</p>
+                  <p className="text-muted-foreground">We offer refunds within 7 days if you haven&apos;t used more than 5 credits.</p>
               </div>
           </div>
         </div>

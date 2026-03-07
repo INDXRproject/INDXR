@@ -1,15 +1,25 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect, notFound } from "next/navigation";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { TranscriptViewer } from "@/components/library/TranscriptViewer";
+import { AiSummaryView } from "@/components/library/AiSummaryView";
 
 interface PageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function TranscriptPage({ params }: PageProps) {
+export default async function TranscriptPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  const validTabs = ["original", "edited", "summary", "summary_edited"];
+  const activeTab = validTabs.includes(resolvedSearchParams.tab as string) 
+    ? (resolvedSearchParams.tab as string) 
+    : "original";
+  
   const supabase = await createClient();
 
   const {
@@ -33,16 +43,84 @@ export default async function TranscriptPage({ params }: PageProps) {
   }
 
   return (
-    <TranscriptViewer
-      id={transcript.id}
-      transcript={transcript.transcript}
-      title={transcript.title || "Untitled Transcript"}
-      videoUrl={`https://www.youtube.com/watch?v=${transcript.video_id}`}
-      videoId={transcript.video_id}
-      thumbnailUrl={transcript.thumbnail_url}
-      editedContent={transcript.edited_content ?? null}
-      aiSummary={transcript.ai_summary ?? null}
-      viewedAt={transcript.viewed_at}
-    />
+    <div className="flex flex-col bg-background min-h-screen overflow-x-hidden p-6 max-w-7xl mx-auto w-full">
+      <div className="mb-6 flex space-x-4 border-b border-border text-sm">
+        <Link
+          href={`/dashboard/library/${id}?tab=original`}
+          className={cn(
+            "pb-3 border-b-2 px-2 transition-colors",
+            activeTab === "original"
+              ? "border-primary font-medium text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          Original
+        </Link>
+        {transcript.edited_content && (
+          <Link
+            href={`/dashboard/library/${id}?tab=edited`}
+            className={cn(
+              "pb-3 border-b-2 px-2 transition-colors",
+              activeTab === "edited"
+                ? "border-primary font-medium text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Edited
+          </Link>
+        )}
+        {transcript.ai_summary && (
+          <>
+            <Link
+              href={`/dashboard/library/${id}?tab=summary`}
+              className={cn(
+                "pb-3 border-b-2 px-2 transition-colors",
+                activeTab === "summary"
+                  ? "border-primary font-medium text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              AI Summary
+            </Link>
+            {transcript.ai_summary.edited_html && (
+              <Link
+                href={`/dashboard/library/${id}?tab=summary_edited`}
+                className={cn(
+                  "pb-3 border-b-2 px-2 transition-colors",
+                  activeTab === "summary_edited"
+                    ? "border-primary font-medium text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Edited Summary
+              </Link>
+            )}
+          </>
+        )}
+      </div>
+
+      {activeTab === "original" || activeTab === "edited" ? (
+        <TranscriptViewer
+          id={transcript.id}
+          transcript={transcript.transcript}
+          title={transcript.title || "Untitled Transcript"}
+          videoUrl={`https://www.youtube.com/watch?v={transcript.video_id}`}
+          videoId={transcript.video_id}
+          thumbnailUrl={transcript.thumbnail_url}
+          editedContent={transcript.edited_content ?? null}
+          aiSummary={transcript.ai_summary ?? null}
+          viewedAt={transcript.viewed_at}
+          mode={activeTab as "original" | "edited"}
+        />
+      ) : (activeTab === "summary" || activeTab === "summary_edited") && transcript.ai_summary ? (
+        <div className="pb-12 bg-background w-full relative z-10 w-full mt-2">
+          <AiSummaryView 
+            id={transcript.id} 
+            initialSummary={transcript.ai_summary} 
+            mode={activeTab === "summary" ? "original" : "edited"}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }

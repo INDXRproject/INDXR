@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 import re
 import uuid
 import logging
@@ -25,7 +25,9 @@ from whisper_client import transcribe_audio
 from credit_manager import (
     check_user_balance,
     calculate_credit_cost,
-    deduct_credits
+    deduct_credits,
+    add_credits,
+    get_supabase_client
 )
 
 # Setup logging
@@ -98,6 +100,15 @@ class WhisperResponse(BaseModel):
     error: Optional[str] = None
     required_credits: Optional[int] = None
     available_credits: Optional[int] = None
+
+class SummarizeRequest(BaseModel):
+    transcript_id: str
+    user_id: str
+
+class SummarizeResponse(BaseModel):
+    success: bool
+    summary: Optional[Dict] = None
+    error: Optional[str] = None
 
 # Helper function to extract video ID from URL
 def extract_video_id(input_str: str) -> str:
@@ -324,18 +335,32 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True) -> List[dict
             
             subtitle_url = vtt_subtitle['url']
             
-            if use_proxy:
-                proxy_url = get_proxy_url()
-                if proxy_url:
-                    proxy_handler = urllib.request.ProxyHandler({
-                        'http': proxy_url,
-                        'https': proxy_url
-                    })
-                    opener = urllib.request.build_opener(proxy_handler)
-                    urllib.request.install_opener(opener)
+            import httpx
+            import time
             
-            with urllib.request.urlopen(subtitle_url) as response:
-                subtitle_data = response.read().decode('utf-8')
+            max_retries = 3
+            subtitle_data = None
+            proxy_url = get_proxy_url() if use_proxy else None
+            
+            for attempt in range(max_retries):
+                try:
+                    kwargs = {"timeout": 15.0}
+                    if proxy_url:
+                        kwargs["proxy"] = proxy_url
+                        
+                    with httpx.Client(**kwargs) as client:
+                        resp = client.get(subtitle_url)
+                        resp.raise_for_status()
+                        subtitle_data = resp.text
+                        break
+                except Exception as e:
+                    logger.warning(f"VTT download attempt {attempt+1} failed: {e}")
+                    if attempt == max_retries - 1:
+                        raise Exception(f"Failed to download subtitles after {max_retries} attempts: {e}")
+                    time.sleep(1)
+            
+            if not subtitle_data:
+                return []
             
             transcript = parse_vtt_to_transcript(subtitle_data)
             return {
@@ -748,6 +773,119 @@ async def transcribe_with_whisper(
                     logger.info(f"Cleaned up temp file: {temp_file}")
             except Exception as e:
                 logger.warning(f"Failed to clean up temp file {temp_file}: {e}")
+
+@app.post("/api/summarize", response_model=SummarizeResponse)
+async def summarize_transcript(request: SummarizeRequest):
+    """Summarize transcript using DeepSeek V3 chat model."""
+    try:
+        # 1. Check balance
+        try:
+            current_balance = check_user_balance(request.user_id)
+        except Exception as e:
+            return SummarizeResponse(success=False, error=f"Could not check credit balance: {str(e)}")
+            
+        if current_balance < 1:
+            logger.warning(f"Insufficient credits for summary: user {request.user_id} has {current_balance}, needs 1")
+            return SummarizeResponse(success=False, error="Insufficient credits")
+        
+        # 2. Deduct credit atomically
+        deduction_result = deduct_credits(
+            user_id=request.user_id,
+            amount=1,
+            reason="AI Summarization",
+            metadata={"transcript_id": request.transcript_id}
+        )
+        if not deduction_result.get('success'):
+            logger.error(f"Credit deduction failed: {deduction_result.get('error')}")
+            return SummarizeResponse(success=False, error="Credit deduction failed")
+            
+        # 3. Fetch transcript from Supabase
+        supabase = get_supabase_client()
+        try:
+            response = supabase.table('transcripts').select('transcript').eq('id', request.transcript_id).single().execute()
+            if not response.data or 'transcript' not in response.data:
+                raise Exception("Transcript not found or empty")
+            transcript_data = response.data['transcript']
+        except Exception as e:
+            logger.error(f"Failed to fetch transcript {request.transcript_id}: {e}")
+            add_credits(request.user_id, 1, "AI Summarization Refund (Transcript fetch failed)")
+            return SummarizeResponse(success=False, error="Transcript not found")
+            
+        # Combine transcript text
+        full_text = " ".join([item['text'] for item in transcript_data if 'text' in item])
+        if not full_text.strip():
+            add_credits(request.user_id, 1, "AI Summarization Refund (Empty text)")
+            return SummarizeResponse(success=False, error="Transcript is empty")
+            
+        # 4. Call DeepSeek API
+        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not deepseek_api_key:
+            add_credits(request.user_id, 1, "AI Summarization Refund (DeepSeek API key missing)")
+            return SummarizeResponse(success=False, error="DeepSeek API key not configured")
+            
+        deepseek_url = "https://api.deepseek.com/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {deepseek_api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        system_prompt = (
+            "You are a helpful assistant that summarizes transcripts. "
+            "Output JSON with two keys: 'text' (a summary paragraph) and 'action_points' (an array of strings representing key takeaways). "
+            "Let the length be determined by the content."
+        )
+        
+        # TODO: model selector - future BYOK feature
+        data = {
+            "model": "deepseek-chat",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Transcript:\\n{full_text}"}
+            ],
+            "response_format": {"type": "json_object"}
+        }
+        
+        import httpx
+        from datetime import datetime, timezone
+        import json
+        
+        try:
+            with httpx.Client(timeout=120.0) as client:
+                logger.info(f"Calling DeepSeek API for transcript {request.transcript_id}")
+                ds_resp = client.post(deepseek_url, headers=headers, json=data)
+            
+            if ds_resp.status_code != 200:
+                logger.error(f"DeepSeek API error: {ds_resp.status_code} {ds_resp.text}")
+                add_credits(request.user_id, 1, "AI Summarization Refund (DeepSeek API Error)")
+                return SummarizeResponse(success=False, error="Failed to generate summary")
+                
+            result_json = ds_resp.json()
+            content = result_json['choices'][0]['message']['content']
+            summary_data = json.loads(content)
+            
+            ai_summary = {
+                "text": summary_data.get("text", ""),
+                "action_points": summary_data.get("action_points", []),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "edited": False
+            }
+            
+            # 5. Save to Supabase
+            update_resp = supabase.table('transcripts').update({"ai_summary": ai_summary}).eq('id', request.transcript_id).execute()
+            if not update_resp.data:
+                logger.warning(f"Could not confirm transcript update for {request.transcript_id}")
+                
+            logger.info(f"Summary generated and saved for {request.transcript_id}")
+            return SummarizeResponse(success=True, summary=ai_summary)
+            
+        except Exception as e:
+            logger.error(f"DeepSeek call exception: {type(e).__name__}: {e}")
+            add_credits(request.user_id, 1, f"AI Summarization Refund ({type(e).__name__})")
+            return SummarizeResponse(success=False, error="Failed to generate summary")
+            
+    except Exception as e:
+        logger.error(f"Summarize endpoint error: {e}")
+        return SummarizeResponse(success=False, error=str(e))
 
 if __name__ == "__main__":
     import uvicorn

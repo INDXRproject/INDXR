@@ -95,9 +95,11 @@ function buildMetaLine(t: Transcript): string {
     parts.push('Whisper AI');
   }
 
-  // Edited & Summarized
+  // Edited
   if (t.edited_content) parts.push('Edited');
-  if (t.ai_summary) parts.push('Summarized');
+
+  // AI Summary
+  if (t.ai_summary) parts.push('AI Summary');
 
   return parts.join(' · ');
 }

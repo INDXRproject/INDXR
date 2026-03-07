@@ -251,7 +251,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded }: VideoTabPro
              processingMethod: 'youtube_captions'
            })
 
-           // Now record is in DB — fetch its ID so the duplicate banner shows immediately
            if (videoId2) {
              const { data: saved } = await supabase
                .from('transcripts')
@@ -264,6 +263,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded }: VideoTabPro
              if (saved) setExistingTranscriptId(saved.id);
            }
         }
+        
+        // Clear URL input field after successful extraction
+        setUrl("")
 
       } else {
         toast.info("Video has no captions available")
@@ -323,22 +325,25 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded }: VideoTabPro
         })
         setSaveStatus('saved')
 
-        // Record is now in DB — fetch its ID so the duplicate banner shows immediately
-        const { data: saved } = await supabase
-          .from('transcripts')
-          .select('id')
-          .eq('video_id', metadata.videoId)
-          .eq('processing_method', 'whisper_ai')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (saved) setExistingTranscriptId(saved.id);
-      } catch (error) {
-        console.error('Failed to save Whisper transcript:', error)
-        setSaveStatus('error')
+          // Record is now in DB — fetch its ID so the duplicate banner shows immediately
+          const { data: saved } = await supabase
+            .from('transcripts')
+            .select('id')
+            .eq('video_id', metadata.videoId)
+            .eq('processing_method', 'whisper_ai')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (saved) setExistingTranscriptId(saved.id);
+        } catch (error) {
+          console.error('Failed to save Whisper transcript:', error)
+          setSaveStatus('error')
+        }
       }
+      
+      // Clear URL input field after successful transcription
+      setUrl("")
     }
-  }
 
   const handleWhisperError = (errorMessage: string) => {
     setError({ message: errorMessage })

@@ -12,4 +12,8 @@ ENV/
 dist/
 build/
 .env
-
+backend/backend.log
+backend/add-credits.js
+backend/check-credits.js
+backend/check-profiles.js
+scripts/

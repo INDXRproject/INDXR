@@ -242,14 +242,13 @@
 
 We are consciously deferring the UI Redesign until the core business blocks and differentiating AI features are built.
 
-1. **Stripe Payments**: Hard blocker. Zonder betalingen geen business.
-2. **Supabase RLS Audit**: Veiligheidscheck vóór echte gebruikers/euro's (isolatie van userdata).
-3. **PostHog Backend Implementatie**: Eén tool voor analytics én error tracking vóór lancering.
-4. **AI Summarization**: Bibliotheek knop voor samenvattingen/actiepunten via gpt-4o-mini. Grootste UX differentiator.
-5. **Whisper Language Support**: Welke talen ondersteunt Whisper? Tonen in dropdown.
-6. **Timestamp & Chapter Generation**: Logische iteratie na AI Summarization.
-7. **UI Redesign / Overhaul**: Pas op dit punt wordt de frontend esthetiek (Linear/Notion stijl) aangepakt. Mandatory voor launch.
-8. **Admin Dashboard**: Om gebruikers gedrag en credits op te volgen.
-9. **Database Backups Bevestigen**: Point-in-Time Recovery documenteren.
+1. **Stripe Payments**: Hard blocker. Zonder betalingen geen business. _(Checkout geïmplementeerd, webhooks te testen na deploy)_
+2. **AI Summarization**: Bibliotheek knop voor samenvattingen/actiepunten via DeepSeek V3 (`deepseek-chat`). Grootste UX differentiator.
+3. **Whisper Language Support**: Welke talen ondersteunt Whisper? Tonen in dropdown.
+4. **Timestamp & Chapter Generation**: Logische iteratie na AI Summarization.
+5. **UI Redesign / Overhaul**: Pas op dit punt wordt de frontend esthetiek (Linear/Notion stijl) aangepakt. Mandatory voor launch.
+6. **PostHog Backend Implementatie**: Eén tool voor analytics én error tracking vóór lancering. Uitgesteld tot na feature vriespunt.
+7. **Admin Dashboard**: Om gebruikers gedrag en credits op te volgen.
+8. **Database Backups Bevestigen**: Point-in-Time Recovery documenteren.
 
 _(Notitie: Sentry en Google Analytics zijn bewust geschrapt; PostHog vangt deze Use Cases op)._

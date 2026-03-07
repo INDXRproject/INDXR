@@ -19,16 +19,13 @@
 
 ---
 
-## 🎯 Current Focus: Playlist Whisper Testing (Completed)
+## 🎯 Current Focus: Phase G - AI Summarization
 
-**Goal:** Verify Whisper re-extraction works within playlist context.
+**Goal:** Add high-value AI features for retention before the final visual overhaul. This is the biggest UX differentiator before launch.
 
 **Tasks:**
 
-- [x] Test Whisper re-extraction on individual videos within a playlist
-- [x] Confirm credit cost display works and upfront pre-flight check blocks extraction on insufficient funds
-- [x] Confirm navigation guard fires correctly in playlist context
-- [x] Fix specific bugs: Video title parsing, clean availability state on re-fetch, silence/no-speech amber badge handling
+- [ ] Implement AI Summarization using DeepSeek V3 (`deepseek-chat` via `api.deepseek.com`). Button in Library ("Samenvatten"). Generates summaries + action points.
 
 ---
 
@@ -39,8 +36,8 @@
 **Goal:** Ensure the app can monetize securely before real users join.
 
 - [ ] **Stripe Payments**: Implement checkout flow and secure webhooks. Hard blocker; no business without payments.
-- [ ] **Supabase RLS Audit**: Security check to guarantee strict data isolation (User A cannot see User B data). Watertight requirement.
-- [ ] **PostHog Implementation (Backend)**: Expand existing frontend PostHog to the backend. Serves as single tool for analytics AND error tracking (replaces Sentry). Get visibility from Day 1.
+      _Note: Checkout flow implemented and tested. Webhook credit assignment pending — will be verified after Railway deployment._
+- [x] **Supabase RLS Audit**: Security check to guarantee strict data isolation (User A cannot see User B data). Watertight requirement. ✅
 
 ### Phase G: Product Value Expansion
 
@@ -54,8 +51,22 @@
 
 **Goal:** Final visual coat of paint, system observation, and deployment.
 
+- [ ] **PostHog Implementation (Backend)**: Expand existing frontend PostHog to the backend. Serves as single tool for analytics AND error tracking (replaces Sentry).
+      _Note: PostHog backend tracks feature usage, but the AI features (summarization, chapters) don't exist yet. Tracking empty events has no value. After the UI Redesign, the feature set is stable and we'll know exactly which events matter._
 - [ ] **UI Redesign / Overhaul**: Full visual redesign inspired by Linear/Notion. Consciously postponed until features are complete, but mandatory before launch.
 - [ ] **Admin Dashboard**: Live overview of accounts, usage, and credits. Required to support live users.
+      _Note: Delete User feature: do NOT use Supabase's built-in delete — it fails due to foreign key constraints. Build a delete_user_cascade(user_id uuid) RPC that deletes in order: credit_transactions → user_credits → transcripts → collections → profiles → auth.users._
+      _Note: Email templates: after UI redesign, add custom branded email templates in Supabase for: account creation confirmation, password reset, email verification. Templates should match INDXR.AI visual identity._
 - [ ] **Database Backups**: Confirm and strictly document Supabase Point-in-Time Recovery settings.
 - [ ] Load Testing & Production Deploy (Vercel + Railway)
-- [ ] Switch Stripe & IPRoyal to live/production credentials
+- [ ] **Stripe Go-Live Checklist**:
+  - [ ] Add KVK details in Stripe Dashboard (required for EU verification)
+  - [ ] Switch Stripe & IPRoyal to live/production credentials
+  - [ ] Update webhook endpoint to production URL in Stripe Dashboard
+  - [ ] Test a live payment with a real card (small amount)
+
+---
+
+### Future Considerations / Parking Lot
+
+- **BYOK (Bring Your Own Key) + markup model**: users can plug in their own OpenAI/Anthropic/etc API key for AI features, or use our default cheap model (DeepSeek). Stripe's new LLM token billing (currently private preview) could handle automatic cost pass-through + markup. Build when: (1) Stripe token billing exits preview, (2) we have validated demand from paying users.

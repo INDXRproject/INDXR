@@ -9,7 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 
 function timeAgo(dateString: string) {
     const date = new Date(dateString)
@@ -38,6 +39,10 @@ interface Transaction {
 }
 
 export function TransactionHistoryCard({ transactions, credits = 0 }: { transactions: Transaction[], credits?: number }) {
+  const [showAll, setShowAll] = useState(false)
+  
+  const displayedTransactions = showAll ? transactions : transactions.slice(0, 10)
+
   return (
     <Card className="bg-card/50 border-border">
       <CardHeader>
@@ -63,14 +68,14 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.length === 0 ? (
+              {displayedTransactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
                     No transactions found.
                   </TableCell>
                 </TableRow>
               ) : (
-                transactions.map((tx) => (
+                displayedTransactions.map((tx) => (
                   <TableRow key={tx.id} className="border-border hover:bg-muted/50 transition-colors">
                     <TableCell className="font-medium text-foreground whitespace-nowrap">
                       {timeAgo(tx.created_at)}
@@ -78,7 +83,7 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
                     <TableCell className="text-muted-foreground min-w-[150px]">{tx.reason}</TableCell>
                     <TableCell className="text-right">
                       <span className={`flex items-center justify-end gap-1 font-mono ${
-                        tx.type === 'credit' ? 'text-green-500' : 'text-foreground'
+                        tx.type === 'credit' ? 'text-green-500' : 'text-muted-foreground'
                       }`}>
                         {tx.type === 'credit' ? '+' : '-'}
                         {tx.amount}
@@ -90,6 +95,17 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
             </TableBody>
           </Table>
           </div>
+          {transactions.length > 10 && (
+            <div className="p-4 border-t border-border bg-muted/10 flex justify-center">
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowAll(!showAll)}
+                className="text-muted-foreground hover:text-foreground w-full"
+              >
+                {showAll ? "Show less" : `View all transactions (${transactions.length})`}
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -76,6 +76,25 @@ When debugging Whisper issues, the full flow is:
 
 **Known warning (non-breaking):** yt-dlp logs `No supported JavaScript runtime could be found` on every run. This is harmless — we explicitly force the `ios` player client, which bypasses YouTube's JS requirement (PO Token) entirely for audio extractions.
 
+## Stripe Webhook Setup
+
+Local webhook testing is currently skipped — webhooks will be tested directly after deployment.
+
+**For Production (Railway):**
+
+1. Add the Railway public URL as a webhook endpoint in the [Stripe Dashboard](https://dashboard.stripe.com/webhooks) under **Developers** → **Webhooks** → **Add endpoint** (e.g., `https://yourapp.up.railway.app/api/stripe/webhook`).
+2. Select the event: `checkout.session.completed`.
+3. Copy the signing secret (starts with `whsec_...`).
+4. Add it as `STRIPE_WEBHOOK_SECRET` in your Railway environment variables.
+5. Also add `STRIPE_WEBHOOK_SECRET` to your local `.env.local` for consistency.
+
+**Test Card:**
+When testing the Stripe Checkout flow in development mode, use the standard Stripe test card:
+
+- **Card number:** `4242 4242 4242 4242`
+- **Expiry:** Any date in the future (e.g., `12/34`)
+- **CVC:** Any 3 digits (e.g., `123`)
+
 ---
 
 ## Common Issues

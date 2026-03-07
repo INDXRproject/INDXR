@@ -5,24 +5,40 @@ import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 
 export async function POST(req: Request) {
+  console.log('Webhook endpoint hit')
   const body = await req.text()
   const signature = (await headers()).get('Stripe-Signature') as string
 
   let event: Stripe.Event
 
-  try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    )
-  } catch (error: any) {
-    return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 })
+  if (process.env.STRIPE_WEBHOOK_SECRET) {
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET
+      )
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error'
+      console.error('Webhook signature verification failed:', msg)
+      return new NextResponse(`Webhook Error: ${msg}`, { status: 400 })
+    }
+  } else {
+    console.warn('⚠️ STRIPE_WEBHOOK_SECRET is not set. Skipping signature verification. Do NOT do this in production!')
+    // Fallback to parsing the body if no secret is provided for local testing
+    try {
+      event = JSON.parse(body) as Stripe.Event
+    } catch (parseError) {
+      const msg = parseError instanceof Error ? parseError.message : 'Unknown error'
+      console.error('Failed to parse webhook body as JSON:', msg)
+      return new NextResponse(`Webhook Parse Error: ${msg}`, { status: 400 })
+    }
   }
 
   const session = event.data.object as Stripe.Checkout.Session
 
   if (event.type === 'checkout.session.completed') {
+    console.log('Processing checkout.session.completed event')
     const supabase = await createClient()
     
     const userId = session.metadata?.userId

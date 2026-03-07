@@ -150,6 +150,27 @@ The system protects the extraction API using a 3-tier strategy via `@upstash/rat
   - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - **Backend**: `.env`
   - `OPENAI_API_KEY` (Whisper)
+  - `DEEPSEEK_API_KEY` (DeepSeek V3 chat)
   - `PROXY_HOST`, `PROXY_PORT`, `PROXY_USER`, `PROXY_PASSWORD` (IPRoyal)
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `POSTHOG_API_KEY`
+
+---
+
+## Security — Supabase RLS Audit
+
+All 6 user data tables have strict Row Level Security (RLS) enabled to guarantee data isolation between users.
+
+### Table Policies
+
+- **`collections`**: ALL operations allowed for own rows (`user_id = auth.uid()`).
+- **`credit_transactions`**: SELECT only — inserts are handled exclusively by backend logic/RPC.
+- **`transcripts`**: Full CRUD for own rows (`user_id = auth.uid()`).
+- **`profiles`**: SELECT, INSERT, UPDATE for own rows (`id = auth.uid()`).
+- **`usage_logs`**: SELECT only.
+- **`user_credits`**: SELECT only. The UPDATE policy ("users can update own credits") was removed during this audit. Credit mutations are exclusively handled by the secure `deduct_credits_atomic` RPC on the backend. Direct client-side modification of credits is not possible.
+
+### Codebase Security
+
+- **Frontend**: The frontend codebase has no RLS bypass vulnerabilities and strictly uses the `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- **Backend / Admin**: The `SUPABASE_SERVICE_ROLE_KEY` is completely confined to the Python FastAPI backend, which handles secure administrative actions.

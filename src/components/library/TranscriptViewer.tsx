@@ -10,19 +10,20 @@ import {
   VideoOff,
   Bold,
   Italic,
-  Highlighter,
+  Underline as UnderlineIcon,
+  List,
+  ListOrdered,
   Sparkles,
   Search,
   ChevronUp,
   ChevronDown,
-  Check,
   Loader2,
   X,
-  RotateCcw,
+  Save
 } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Highlight from "@tiptap/extension-highlight";
+import Underline from "@tiptap/extension-underline";
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
@@ -42,15 +43,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   generateTxt,
@@ -183,6 +190,7 @@ interface TranscriptViewerProps {
   editedContent: JSONContent | null;
   aiSummary: JSONContent | null;
   viewedAt: string | null;
+  mode: "original" | "edited";
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -236,15 +244,7 @@ function transcriptToJSON(
   };
 }
 
-// ─── Save indicator ───────────────────────────────────────────────────────────
 
-function UnsavedBadge() {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-500 ring-1 ring-amber-500/30">
-      Unsaved changes
-    </span>
-  );
-}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -258,24 +258,34 @@ export function TranscriptViewer({
   editedContent,
   aiSummary,
   viewedAt,
+  mode,
 }: TranscriptViewerProps) {
   const router = useRouter();
   const supabase = createClient();
+  const { user, credits, refreshCredits } = useAuth();
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summarySuccess, setSummarySuccess] = useState(false);
 
   // UI state
-  const [showTimestamps, setShowTimestamps] = useState(true);
+  const [showTimestamps, setShowTimestamps] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isEditingOriginal, setIsEditingOriginal] = useState(false);
 
   // Title editing
   const [title, setTitle] = useState(initialTitle);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const titleIsSaving = useRef(false);
 
+  // Editor mode state
+  const isOriginalMode = mode === "original";
+  const isEditedMode = mode === "edited";
+
   // Editor dirty state
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
   // True when an edited version has been persisted in Supabase
   const [hasSavedEdits, setHasSavedEdits] = useState(editedContent !== null);
 
@@ -308,15 +318,16 @@ export function TranscriptViewer({
 
   // ── Tiptap editor ──────────────────────────────────────────────────────────
 
-  // Initial content: use saved JSON if present, else build from transcript array
+  // Initial content: original JSON or edited JSON based on mode
   const originalJSON = transcriptToJSON(transcript, videoId);
-  const initialContent: JSONContent = editedContent ?? originalJSON;
+  const initialContent: JSONContent = isEditedMode && editedContent ? editedContent : originalJSON;
 
   const editor = useEditor({
+    editable: isEditedMode || isEditingOriginal,
     immediatelyRender: false,
     extensions: [
       StarterKit,
-      Highlight.configure({ multicolor: true }),
+      Underline,
       SearchExtension.configure({
         onSearchUpdate: (count, index) => {
           setSearchMatchesCount(count);
@@ -327,14 +338,23 @@ export function TranscriptViewer({
     content: initialContent,
     editorProps: {
       attributes: {
-        class:
+        class: cn(
           "prose prose-sm max-w-none focus:outline-none min-h-[300px] text-foreground/90 leading-relaxed",
+          (!isEditedMode && !isEditingOriginal) && "read-only-mode" 
+        )
       },
     },
     onUpdate: () => {
       setIsDirty(true);
     },
-  });
+  }, [mode, isEditingOriginal, isEditedMode]); // Reinitialize if mode or editing state changes
+
+  // Synchronize editor editable state
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(isEditedMode || isEditingOriginal);
+    }
+  }, [editor, isEditedMode, isEditingOriginal]);
 
   // ── Title save ─────────────────────────────────────────────────────────────
 
@@ -378,40 +398,14 @@ export function TranscriptViewer({
     } else {
       setIsDirty(false);
       setHasSavedEdits(true);
+      setIsEditingOriginal(false);
       toast.success("Saved!");
+      // If we are saving an unsaved edit, reload cleanly to '?tab=edited'
+      if (!isEditedMode) {
+        router.replace(`?tab=edited`);
+      }
     }
-  }, [editor, id, supabase]);
-
-  // ── Reset to original ──────────────────────────────────────────────────────
-
-  const handleReset = useCallback(async () => {
-    if (
-      !confirm(
-        "Are you sure? This will discard all your edits and restore the original transcript."
-      )
-    )
-      return;
-
-    setIsResetting(true);
-    // Clear edited_content in DB (set to null)
-    const { error } = await supabase
-      .from("transcripts")
-      .update({ edited_content: null })
-      .eq("id", id);
-
-    if (error) {
-      toast.error("Failed to reset transcript");
-      setIsResetting(false);
-      return;
-    }
-
-    // Restore original content in editor
-    editor?.commands.setContent(originalJSON);
-    setIsDirty(false);
-    setHasSavedEdits(false);
-    setIsResetting(false);
-    toast.success("Transcript restored to original");
-  }, [editor, id, originalJSON, supabase]);
+  }, [editor, id, supabase, router, isEditedMode]);
 
   // ── Search ────────────────────────────────────────────────────────────────
 
@@ -580,8 +574,8 @@ export function TranscriptViewer({
     toast.success("Transcript copied to clipboard");
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this transcript?")) return;
+  const handleDeleteConfirm = async () => {
+    setShowDeleteDialog(false);
     setIsDeleting(true);
     const { error } = await supabase
       .from("transcripts")
@@ -596,26 +590,45 @@ export function TranscriptViewer({
     }
   };
 
+  const handleSummarizeConfirm = async () => {
+    setShowSummaryDialog(false);
+    setIsSummarizing(true);
+    try {
+      const response = await fetch('/api/ai/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript_id: id, user_id: user?.id })
+      });
+      
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        console.error("Failed to parse response:", e);
+        toast.error("Server error: received invalid response.");
+        setIsSummarizing(false);
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        toast.error(data?.error || "Failed to generate summary");
+        setIsSummarizing(false);
+        return;
+      }
+      await refreshCredits();
+      setSummarySuccess(true);
+    } catch (error) {
+      console.error("Summarize error:", error);
+      toast.error("Failed to summarize transcript");
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <style>{`
-        .ts-link {
-          font-family: monospace;
-          font-size: 0.75rem;
-          color: hsl(var(--muted-foreground));
-          text-decoration: none;
-          opacity: 0.6;
-          margin-right: 0.25rem;
-          transition: opacity 0.15s;
-        }
-        .ts-link:hover { opacity: 1; text-decoration: underline; color: hsl(var(--primary)); }
-        .hide-timestamps .ts-link { display: none; }
-        .ProseMirror p { margin-bottom: 0.5rem; }
-        .ProseMirror:focus { outline: none; }
-      `}</style>
-
+    <>
       <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden bg-background">
         {/* ── VIDEO SIDEBAR ── */}
         <div
@@ -694,6 +707,58 @@ export function TranscriptViewer({
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Summarize is strictly bound to the Original tab */}
+              {isOriginalMode && (
+                summarySuccess ? (
+                  <div className="flex items-center gap-2 mr-2">
+                    <span className="text-xs font-medium text-green-500 mr-1 hidden sm:inline">Summary ready!</span>
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs px-3 bg-amber-500 text-white hover:bg-amber-600 border border-amber-600/50"
+                      onClick={() => {
+                        router.replace(`?tab=summary`);
+                      }}
+                    >
+                      View Summary
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 px-3 text-xs font-medium hover:text-amber-500 hover:bg-amber-500/10 mr-2 transition-colors border border-border"
+                    disabled={isSummarizing || !user}
+                    onClick={() => {
+                      if (!user) {
+                        toast.error("Please sign in to summarize.");
+                        return;
+                      }
+                      if (credits !== null && credits < 1) {
+                        toast.error(
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold text-sm">Not enough credits</span>
+                            <span className="text-xs">You need 1 credit to generate a summary.</span>
+                            <Link href="/dashboard/billing" className="text-primary hover:underline text-xs mt-1">
+                              Top up here
+                            </Link>
+                          </div>
+                        );
+                        return;
+                      }
+                      
+                      setShowSummaryDialog(true);
+                    }}
+                  >
+                    {isSummarizing ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    )}
+                    {aiSummary ? "Regenerate Summary" : "Summarize"}
+                  </Button>
+                )
+              )}
+
               <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8">
                 <Copy className="mr-2 h-3.5 w-3.5" />
                 Copy
@@ -726,8 +791,8 @@ export function TranscriptViewer({
                   <DropdownMenuItem onClick={() => handleDownload("vtt")}>VTT Subtitles</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={handleDelete}
+                    className="text-destructive font-medium focus:text-destructive focus:bg-destructive/10"
+                    onClick={() => setShowDeleteDialog(true)}
                     disabled={isDeleting}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -735,6 +800,50 @@ export function TranscriptViewer({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Edit button logic for Original tab */}
+              {isOriginalMode && !hasSavedEdits && !isEditingOriginal && (
+                <>
+                  <div className="h-5 w-px bg-border mx-1" />
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1.5 px-3"
+                    onClick={() => setIsEditingOriginal(true)}
+                  >
+                    Edit
+                  </Button>
+                </>
+              )}
+
+              {/* Save/Cancel logic for active editing */}
+              {(isEditedMode || isEditingOriginal) && (
+                <>
+                  <div className="h-5 w-px bg-border mx-1" />
+                  {isEditingOriginal && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-3 mr-1"
+                      onClick={() => {
+                        setIsEditingOriginal(false);
+                        setIsDirty(false);
+                        editor?.commands.setContent(originalJSON);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1.5 px-3"
+                    onClick={handleSave}
+                    disabled={isSaving || !editor || !isDirty}
+                  >
+                    {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    Save
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -768,29 +877,7 @@ export function TranscriptViewer({
                   )}
                 </div>
 
-                {/* AI Summary card — placeholder for coming-soon */}
-                {aiSummary && (
-                  <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                      <Sparkles className="h-4 w-4 text-amber-500" />
-                      AI Summary
-                    </div>
-                    <ul className="space-y-1.5">
-                      {Array.isArray((aiSummary as JSONContent).content)
-                        ? ((aiSummary as JSONContent).content ?? []).map((node, i) => (
-                            <li key={i} className="text-sm text-muted-foreground flex gap-2">
-                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
-                              <span>
-                                {node.content
-                                  ?.map((c: JSONContent) => c.text)
-                                  .join("") ?? ""}
-                              </span>
-                            </li>
-                          ))
-                        : null}
-                    </ul>
-                  </div>
-                )}
+                {/* AI Summary card replaced by bottom section */}
 
                 {/* Search bar */}
                 <div className="flex items-center gap-2">
@@ -830,100 +917,58 @@ export function TranscriptViewer({
                 </div>
 
                 {/* Toolbar */}
-                <div className="flex items-center gap-1 p-1.5 rounded-lg border border-border bg-muted/30 flex-wrap">
-                  {/* Formatting */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn("h-8 w-8 p-0", editor?.isActive("bold") && "bg-accent text-accent-foreground")}
-                    onClick={() => editor?.chain().focus().toggleBold().run()}
-                    title="Bold"
-                  >
-                    <Bold className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn("h-8 w-8 p-0", editor?.isActive("italic") && "bg-accent text-accent-foreground")}
-                    onClick={() => editor?.chain().focus().toggleItalic().run()}
-                    title="Italic"
-                  >
-                    <Italic className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn("h-8 w-8 p-0", editor?.isActive("highlight") && "bg-accent text-accent-foreground")}
-                    onClick={() => editor?.chain().focus().toggleHighlight({ color: "#facc15" }).run()}
-                    title="Highlight"
-                  >
-                    <Highlighter className="h-3.5 w-3.5" />
-                  </Button>
+                {(isEditedMode || isEditingOriginal) && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg border border-border flex-wrap mb-4 bg-muted/30">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn("h-8 w-8 p-0", editor?.isActive("bold") && "bg-accent text-accent-foreground")}
+                      onClick={() => editor?.chain().focus().toggleBold().run()}
+                      title="Bold"
+                    >
+                      <Bold className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn("h-8 w-8 p-0", editor?.isActive("italic") && "bg-accent text-accent-foreground")}
+                      onClick={() => editor?.chain().focus().toggleItalic().run()}
+                      title="Italic"
+                    >
+                      <Italic className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn("h-8 w-8 p-0", editor?.isActive("underline") && "bg-accent text-accent-foreground")}
+                      onClick={() => editor?.chain().focus().toggleUnderline().run()}
+                      title="Underline"
+                    >
+                      <UnderlineIcon className="h-4 w-4" />
+                    </Button>
 
-                  <div className="h-5 w-px bg-border mx-1" />
+                    <div className="h-5 w-px bg-border/80 mx-1" />
 
-                  {/* AI Summarize — coming soon */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 gap-1.5 px-3 text-xs font-medium opacity-50 cursor-not-allowed"
-                          disabled
-                        >
-                          <Sparkles className="h-3.5 w-3.5 text-yellow-500" />
-                          Summarize
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">Coming soon</TooltipContent>
-                  </Tooltip>
-
-                  {/* Spacer */}
-                  <div className="flex-1" />
-
-                  {/* Unsaved badge */}
-                  {isDirty && <UnsavedBadge />}
-
-                  <div className="h-5 w-px bg-border mx-1" />
-
-                  {/* Reset */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 gap-1.5 px-3 text-xs text-muted-foreground hover:text-destructive"
-                        onClick={handleReset}
-                        disabled={isResetting}
-                      >
-                        {isResetting ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <RotateCcw className="h-3.5 w-3.5" />
-                        )}
-                        Reset
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">Restore original transcript</TooltipContent>
-                  </Tooltip>
-
-                  {/* Save */}
-                  <Button
-                    size="sm"
-                    className="h-8 gap-1.5 px-3 text-xs"
-                    onClick={handleSave}
-                    disabled={isSaving || !isDirty}
-                  >
-                    {isSaving ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Check className="h-3.5 w-3.5" />
-                    )}
-                    {isSaving ? "Saving…" : "Save"}
-                  </Button>
-                </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn("h-8 w-8 p-0", editor?.isActive("bulletList") && "bg-accent text-accent-foreground")}
+                      onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                      title="Bullet List"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn("h-8 w-8 p-0", editor?.isActive("orderedList") && "bg-accent text-accent-foreground")}
+                      onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+                      title="Numbered List"
+                    >
+                      <ListOrdered className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
 
                 {/* Editor */}
                 <div
@@ -939,6 +984,52 @@ export function TranscriptViewer({
           </div>
         </div>
       </div>
-    </TooltipProvider>
+
+      {/* ── ALERTS & DIALOGS ── */}
+      <AlertDialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate AI Summary</AlertDialogTitle>
+            <AlertDialogDescription>
+              {aiSummary 
+                ? "You already have a summary for this video. Regenerating will cost 1 credit and overwrite the current version. Continue?"
+                : "Generating an AI Summary costs 1 credit. Would you like to proceed?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSummarizeConfirm}
+              className="bg-amber-500 hover:bg-amber-600 text-white gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              Generate Summary
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transcript</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the transcript
+              and all associated edits and summaries.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

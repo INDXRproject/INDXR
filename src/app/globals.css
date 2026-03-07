@@ -155,42 +155,42 @@
 
 .dark {
   /* Base colors */
-  --background: oklch(0.15 0.01 300);      /* Deep purple-black */
-  --foreground: oklch(0.95 0.01 300);      /* Soft white */
-  
+  --background: oklch(0.15 0.01 300); /* Deep purple-black */
+  --foreground: oklch(0.95 0.01 300); /* Soft white */
+
   /* Primary brand (adjusted for dark) */
-  --primary: oklch(0.70 0.15 300);         /* Richer purple in dark */
+  --primary: oklch(0.7 0.15 300); /* Richer purple in dark */
   --primary-foreground: oklch(0.98 0 0);
-  
+
   /* Secondary UI elements */
-  --secondary: oklch(0.22 0.02 300);       /* Dark purple tint */
+  --secondary: oklch(0.22 0.02 300); /* Dark purple tint */
   --secondary-foreground: oklch(0.85 0.02 300);
-  
+
   /* Muted backgrounds */
-  --muted: oklch(0.20 0.015 300);          /* Elevated surfaces */
+  --muted: oklch(0.2 0.015 300); /* Elevated surfaces */
   --muted-foreground: oklch(0.65 0.02 300);
-  
+
   /* Accent */
-  --accent: oklch(0.25 0.03 300);          /* Interactive backgrounds */
-  --accent-foreground: oklch(0.90 0.03 300);
-  
+  --accent: oklch(0.25 0.03 300); /* Interactive backgrounds */
+  --accent-foreground: oklch(0.9 0.03 300);
+
   /* Destructive */
-  --destructive: oklch(0.55 0.22 25);      /* Slightly muted red */
+  --destructive: oklch(0.55 0.22 25); /* Slightly muted red */
   --destructive-foreground: oklch(0.98 0 0);
-  
+
   /* Borders */
-  --border: oklch(0.28 0.02 300);          /* Subtle contrast */
-  --input: oklch(0.30 0.02 300);
-  --ring: oklch(0.70 0.15 300);            /* Focus ring */
-  
+  --border: oklch(0.28 0.02 300); /* Subtle contrast */
+  --input: oklch(0.3 0.02 300);
+  --ring: oklch(0.7 0.15 300); /* Focus ring */
+
   /* Semantic colors (adjusted for dark) */
   --success: oklch(0.75 0.12 160);
   --success-foreground: oklch(0.95 0.02 160);
-  
+
   --warning: oklch(0.78 0.11 40);
   --warning-foreground: oklch(0.95 0.02 40);
-  
-  --info: oklch(0.72 0.10 240);
+
+  --info: oklch(0.72 0.1 240);
   --info-foreground: oklch(0.95 0.02 240);
 
   /* Chart colors */
@@ -223,4 +223,49 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Transcript Viewer Timestamp Links */
+.ts-link {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  opacity: 0.6;
+  margin-right: 0.25rem;
+  transition: opacity 0.15s;
+}
+
+.ts-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+  color: hsl(var(--primary));
+}
+
+.hide-timestamps .ts-link {
+  display: none !important;
+}
+
+/* Tiptap List Styles */
+.prose ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.prose ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.prose li {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.read-only-mode {
+  cursor: text;
 }
