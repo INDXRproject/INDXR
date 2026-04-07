@@ -106,19 +106,19 @@ export default function FreeToolPage() {
         <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-muted/30 h-auto rounded-xl">
           <TabsTrigger 
             value="video" 
-            className="rounded-lg py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200 text-muted-foreground font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
           >
             <Video className="h-4 w-4" /> Single Video
           </TabsTrigger>
           <TabsTrigger 
             value="playlist" 
-            className="rounded-lg py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200 text-muted-foreground font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
           >
             <ListMusic className="h-4 w-4" /> Playlist
           </TabsTrigger>
           <TabsTrigger 
             value="audio" 
-            className="rounded-lg py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200 text-muted-foreground font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
           >
             <Mic className="h-4 w-4" /> Audio Upload
           </TabsTrigger>

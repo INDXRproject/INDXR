@@ -55,7 +55,7 @@ export function HeroUIPreview() {
               </div>
             </div>
 
-            <Button className="w-full h-11 bg-primary text-primary-foreground font-bold text-sm shadow-lg shadow-primary/20">
+            <Button className="w-full h-11 bg-[var(--accent)] text-white font-bold text-sm shadow-lg shadow-primary/20">
               Extract Transcript <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
 

@@ -84,12 +84,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] bg-zinc-950 border-zinc-800">
+      <DialogContent className="sm:max-w-[400px] bg-[var(--bg-surface)] border-[var(--border)]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white">
+          <DialogTitle className="text-2xl font-bold text-[var(--text-primary)]">
             {mode === "login" ? "Log In" : "Sign Up"}
           </DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className="text-[var(--text-secondary)]">
             {mode === "login" 
               ? "Enter your credentials to access your account"
               : "Create an account to start extracting transcripts"
@@ -98,7 +98,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="modal-email" className="text-zinc-300">
+            <Label htmlFor="modal-email" className="text-[var(--text-secondary)]">
               Email Address
             </Label>
             <Input
@@ -107,20 +107,20 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-zinc-900 border-zinc-800 text-white"
+              className="bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-primary)]"
               required
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="modal-password" className="text-zinc-300">
+            <Label htmlFor="modal-password" className="text-[var(--text-secondary)]">
               Password
             </Label>
             <PasswordInput
               id="modal-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-zinc-900 border-zinc-800 text-white"
+              className="bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-primary)]"
               required
             />
             
@@ -129,31 +129,31 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               <div className="space-y-1 mt-2">
                 <div className="flex items-center gap-2 text-xs">
                   {passwordValidation.requirements.minLength ? (
-                    <Check className="h-3 w-3 text-green-500" />
+                    <Check className="h-3 w-3 text-[var(--color-success)]" />
                   ) : (
-                    <X className="h-3 w-3 text-zinc-600" />
+                    <X className="h-3 w-3 text-[var(--text-muted)]" />
                   )}
-                  <span className={passwordValidation.requirements.minLength ? "text-green-500" : "text-zinc-500"}>
+                  <span className={passwordValidation.requirements.minLength ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}>
                     At least 8 characters
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   {passwordValidation.requirements.hasUppercase ? (
-                    <Check className="h-3 w-3 text-green-500" />
+                    <Check className="h-3 w-3 text-[var(--color-success)]" />
                   ) : (
-                    <X className="h-3 w-3 text-zinc-600" />
+                    <X className="h-3 w-3 text-[var(--text-muted)]" />
                   )}
-                  <span className={passwordValidation.requirements.hasUppercase ? "text-green-500" : "text-zinc-500"}>
+                  <span className={passwordValidation.requirements.hasUppercase ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}>
                     At least 1 uppercase letter
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   {passwordValidation.requirements.hasNumber ? (
-                    <Check className="h-3 w-3 text-green-500" />
+                    <Check className="h-3 w-3 text-[var(--color-success)]" />
                   ) : (
-                    <X className="h-3 w-3 text-zinc-600" />
+                    <X className="h-3 w-3 text-[var(--text-muted)]" />
                   )}
-                  <span className={passwordValidation.requirements.hasNumber ? "text-green-500" : "text-zinc-500"}>
+                  <span className={passwordValidation.requirements.hasNumber ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}>
                     At least 1 number
                   </span>
                 </div>
@@ -175,10 +175,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           {/* OAuth Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-zinc-800" />
+              <span className="w-full border-t border-[var(--border)]" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-zinc-950 px-2 text-zinc-500">Or continue with</span>
+              <span className="bg-[var(--bg-surface)] px-2 text-[var(--text-muted)]">Or continue with</span>
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             <Button 
               type="button"
               variant="outline" 
-              className="bg-zinc-900 border-zinc-800 text-zinc-500 opacity-50 cursor-not-allowed" 
+              className="bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-muted)] opacity-50 cursor-not-allowed" 
               disabled
             >
               <Chrome className="mr-2 h-4 w-4" /> Google
@@ -195,26 +195,26 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             <Button 
               type="button"
               variant="outline" 
-              className="bg-zinc-900 border-zinc-800 text-zinc-500 opacity-50 cursor-not-allowed" 
+              className="bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-muted)] opacity-50 cursor-not-allowed" 
               disabled
             >
               <Apple className="mr-2 h-4 w-4" /> Apple
             </Button>
           </div>
 
-          <p className="text-xs text-center text-zinc-500">
+          <p className="text-xs text-center text-[var(--text-muted)]">
             OAuth providers coming soon
           </p>
 
           {/* Mode Toggle */}
-          <div className="text-center text-sm text-zinc-400 pt-2">
+          <div className="text-center text-sm text-[var(--text-secondary)] pt-2">
             {mode === "login" ? (
               <>
-                Don&apos;t have an account?{" "}
+                Don't have an account?{" "}
                 <button
                   type="button"
                   onClick={toggleMode}
-                  className="underline text-white hover:text-zinc-300"
+                  className="underline text-[var(--text-primary)] hover:text-[var(--text-secondary)]"
                 >
                   Sign up
                 </button>
@@ -225,7 +225,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 <button
                   type="button"
                   onClick={toggleMode}
-                  className="underline text-white hover:text-zinc-300"
+                  className="underline text-[var(--text-primary)] hover:text-[var(--text-secondary)]"
                 >
                   Log in
                 </button>

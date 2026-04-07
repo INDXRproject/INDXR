@@ -113,15 +113,15 @@ function LibraryContent() {
       {/* Top bar */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-bold text-foreground wrap-break-word">
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] wrap-break-word">
             {pageTitle}
-            <span className="text-muted-foreground font-normal text-xl ml-3 whitespace-nowrap">
+            <span className="text-[var(--text-muted)] font-normal text-xl ml-3 whitespace-nowrap">
               · {pageSubtitle}
             </span>
           </h1>
           {selectedCollectionId && (
             <button
-              className="mt-1 text-xs underline text-muted-foreground hover:text-foreground cursor-pointer"
+              className="mt-1 text-xs underline text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer transition-colors duration-150"
               onClick={() => router.push("/dashboard/library")}
             >
               ← All Transcripts
@@ -132,20 +132,20 @@ function LibraryContent() {
         <div className="flex items-center gap-3">
           {/* Search */}
           <div className="relative w-56">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--text-muted)]" />
             <Input
               placeholder="Search…"
-              className="pl-9 h-9 bg-background border-input text-foreground"
+              className="pl-9 h-9 bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-subtle)] transition-all duration-150"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
           {/* View toggle */}
-          <div className="flex items-center border border-border rounded-lg p-1 bg-background">
+          <div className="flex items-center border border-[var(--border)] rounded-lg p-1 bg-[var(--bg-elevated)]">
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-7 w-7 rounded", viewMode === "grid" ? "bg-accent text-accent-foreground" : "text-muted-foreground")}
+              className={cn("h-7 w-7 rounded transition-all duration-150", viewMode === "grid" ? "bg-[var(--accent)] text-[var(--bg-base)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}
               onClick={() => setViewMode("grid")}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -153,7 +153,7 @@ function LibraryContent() {
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-7 w-7 rounded", viewMode === "list" ? "bg-accent text-accent-foreground" : "text-muted-foreground")}
+              className={cn("h-7 w-7 rounded transition-all duration-150", viewMode === "list" ? "bg-[var(--accent)] text-[var(--bg-base)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}
               onClick={() => setViewMode("list")}
             >
               <ListIcon className="h-4 w-4" />
@@ -164,7 +164,7 @@ function LibraryContent() {
 
       {/* Count label with search/filter context */}
       {(searchQuery || selectedCollectionId) && (
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-sm text-[var(--text-muted)] mb-4">
           {searchQuery && `Searching for "${searchQuery}"`}
           {searchQuery && selectedCollectionId && " in "}
           {selectedCollectionId && !searchQuery && "Filtered by collection"}
@@ -174,7 +174,7 @@ function LibraryContent() {
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--text-muted)]" />
         </div>
       ) : (
         <TranscriptList
@@ -191,7 +191,7 @@ function LibraryContent() {
 export default function LibraryPage() {
   return (
     // useSearchParams requires Suspense boundary in Next.js 14 app router
-    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--text-muted)]" /></div>}>
       <LibraryContent />
     </Suspense>
   );

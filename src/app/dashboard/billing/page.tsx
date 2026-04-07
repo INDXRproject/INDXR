@@ -34,21 +34,24 @@ export default async function BillingPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Credits Card */}
-        <Card className="bg-zinc-950/50 border-zinc-800/50 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-10 blur-xl rounded-full bg-primary/50 w-32 h-32 -mr-10 -mt-10" />
+        <Card className="bg-[var(--bg-surface)] border-[var(--border)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-10 blur-xl rounded-full bg-[var(--accent)]/50 w-32 h-32 -mr-10 -mt-10" />
           <CardHeader>
-            <CardTitle>Credits Balance</CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardTitle className="text-[var(--text-primary)]">Credits Balance</CardTitle>
+            <CardDescription className="text-[var(--text-secondary)]">
               Your available credits for transcription
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
               <div className="flex items-end gap-2">
-                <span className="text-6xl font-bold tracking-tighter text-foreground">{credits}</span>
-                <span className="text-lg text-muted-foreground font-medium mb-1">credits</span>
+                <span className="text-6xl font-bold tracking-tighter text-[var(--text-primary)]">{credits}</span>
+                <span className="text-lg text-[var(--text-secondary)] font-medium mb-1">credits</span>
               </div>
-              <Button className="w-fit" variant="secondary" asChild>
+              <Button 
+                className="w-fit bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
+                asChild
+              >
                 <Link href="#packages">Buy Credits</Link>
               </Button>
             </div>

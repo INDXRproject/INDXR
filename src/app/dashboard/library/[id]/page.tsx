@@ -50,8 +50,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           className={cn(
             "pb-3 border-b-2 px-2 transition-colors",
             activeTab === "original"
-              ? "border-primary font-medium text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              ? "border-[var(--accent)] font-medium text-foreground"
+              : "border-transparent text-[var(--text-muted)] hover:text-foreground"
           )}
         >
           Original
@@ -62,8 +62,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             className={cn(
               "pb-3 border-b-2 px-2 transition-colors",
               activeTab === "edited"
-                ? "border-primary font-medium text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "border-[var(--accent)] font-medium text-foreground"
+                : "border-transparent text-[var(--text-muted)] hover:text-foreground"
             )}
           >
             Edited
@@ -76,8 +76,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
               className={cn(
                 "pb-3 border-b-2 px-2 transition-colors",
                 activeTab === "summary"
-                  ? "border-primary font-medium text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "border-[var(--accent)] font-medium text-foreground"
+                  : "border-transparent text-[var(--text-muted)] hover:text-foreground"
               )}
             >
               AI Summary
@@ -88,8 +88,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
                 className={cn(
                   "pb-3 border-b-2 px-2 transition-colors",
                   activeTab === "summary_edited"
-                    ? "border-primary font-medium text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    ? "border-[var(--accent)] font-medium text-foreground"
+                    : "border-transparent text-[var(--text-muted)] hover:text-foreground"
                 )}
               >
                 Edited Summary

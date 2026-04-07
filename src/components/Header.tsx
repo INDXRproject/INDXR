@@ -78,24 +78,24 @@ export function Header() {
   const { user } = useAuth()
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--bg-base)]/95 backdrop-blur supports-backdrop-filter:bg-[var(--bg-base)]/60">
       <div className="container flex h-16 items-center px-4 mx-auto">
 
         {/* Logo — left */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Logo className="size-8 text-primary" />
-          <span className="text-xl font-semibold">INDXR.AI</span>
+          <Logo className="size-8 text-[var(--accent)]" />
+          <span className="text-xl font-semibold text-[var(--text-primary)]">INDXR.AI</span>
         </Link>
 
         {/* Desktop nav — centered */}
         <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
-          <Link href="/youtube-transcript-generator" className="text-sm font-medium transition-colors hover:text-primary">
+          <Link href="/youtube-transcript-generator" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
             Transcript Generator
           </Link>
-          <Link href="/pricing" className="text-sm font-medium transition-colors hover:text-primary">
+          <Link href="/pricing" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
             Pricing
           </Link>
-          <Link href="/faq" className="text-sm font-medium transition-colors hover:text-primary">
+          <Link href="/faq" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
             FAQ
           </Link>
         </nav>
@@ -133,28 +133,28 @@ export function Header() {
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <div className="flex flex-col gap-6 mt-8">
                 {user && (
-                  <div className="pb-4 border-b">
+                  <div className="pb-4 border-b border-[var(--border)]">
                     <CreditBalance />
                   </div>
                 )}
                 <nav className="flex flex-col gap-4">
                   <SheetClose asChild>
-                    <Link href="/youtube-transcript-generator" className="text-lg font-medium transition-colors hover:text-primary">
+                    <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
                       Transcript Generator
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/pricing" className="text-lg font-medium transition-colors hover:text-primary">
+                    <Link href="/pricing" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
                       Pricing
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/faq" className="text-lg font-medium transition-colors hover:text-primary">
+                    <Link href="/faq" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
                       FAQ
                     </Link>
                   </SheetClose>
                 </nav>
-                <div className="flex flex-col gap-3 pt-4 border-t">
+                <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border)]">
                   {user ? (
                     <>
                       <SheetClose asChild>

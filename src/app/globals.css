@@ -1,3 +1,6 @@
+/* Inter & JetBrains Mono Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
@@ -50,7 +53,7 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* SF Pro Fonts */
+/* SF Pro Fonts (keep for fallback) */
 @font-face {
   font-family: 'SF Pro Display';
   src: url('https://cdn.jsdelivr.net/gh/AppleDesignResources/SanFranciscoFont/SFProDisplay-Regular.woff2')
@@ -88,44 +91,41 @@
 }
 
 :root {
-  /* Base colors */
-  --background: oklch(0.99 0 0); /* Almost white, warm tint */
-  --foreground: oklch(0.2 0 0); /* Soft black for text */
+  /* Starlight surfaces */
+  --bg-base:     #F5F3EF;
+  --bg-surface:  #FDFCFA;
+  --bg-elevated: #FFFFFF;
+  --border:      #E8E4DC;
 
-  /* Primary brand */
-  --primary: oklch(0.78 0.12 300); /* Lavender purple */
-  --primary-foreground: oklch(0.98 0 0);
+  /* Starlight text */
+  --text-primary:   #0F0F14;
+  --text-secondary: #5C5A58;
+  --text-muted:     #9B9894;
 
-  /* Secondary UI elements */
-  --secondary: oklch(0.96 0.01 300); /* Very light purple tint */
-  --secondary-foreground: oklch(0.25 0.02 300);
+  /* Starlight accent */
+  --accent:          #4A90D9; /* Steel Blue */
+  --accent-hover:    #3A80C9;
+  --accent-subtle:   rgba(74, 144, 217, 0.08);
+  --accent-border:   rgba(74, 144, 217, 0.20);
 
-  /* Muted backgrounds (cards, sidebars) */
-  --muted: oklch(0.97 0.005 300); /* Barely-there purple */
-  --muted-foreground: oklch(0.5 0.01 300);
+  /* Semantic — same both modes */
+  --color-success:        #34C77A;
+  --color-success-subtle: rgba(52, 199, 122, 0.10);
+  --color-success-border: rgba(52, 199, 122, 0.20);
 
-  /* Accent (interactive elements) */
-  --accent: oklch(0.95 0.02 300); /* Subtle purple highlight */
-  --accent-foreground: oklch(0.25 0.04 300);
+  --color-warning:        #F59E0B;
+  --color-warning-subtle: rgba(245, 158, 11, 0.10);
+  --color-warning-border: rgba(245, 158, 11, 0.20);
 
-  /* Destructive (errors, delete) */
-  --destructive: oklch(0.6 0.2 25); /* Soft red, not harsh */
-  --destructive-foreground: oklch(0.98 0 0);
+  --color-error:          #DC4A4A;
+  --color-error-subtle:   rgba(220, 74, 74, 0.10);
+  --color-error-border:   rgba(220, 74, 74, 0.20);
 
-  /* Borders */
-  --border: oklch(0.92 0.01 300); /* Subtle purple-gray */
-  --input: oklch(0.94 0.01 300); /* Input borders slightly darker */
-  --ring: oklch(0.78 0.12 300); /* Focus ring = primary */
+  --color-info:           #4A90D9;
+  --color-info-subtle:    rgba(74, 144, 217, 0.10);
 
-  /* Semantic colors */
-  --success: oklch(0.82 0.1 160); /* Mint green */
-  --success-foreground: oklch(0.25 0.08 160);
-
-  --warning: oklch(0.83 0.09 40); /* Warm peach */
-  --warning-foreground: oklch(0.3 0.08 40);
-
-  --info: oklch(0.8 0.08 240); /* Sky blue */
-  --info-foreground: oklch(0.25 0.06 240);
+  --color-sage:           #A7C4B5;
+  --color-sage-subtle:    rgba(167, 196, 181, 0.10);
 
   /* Radius */
   --radius: 0.75rem; /* 12px - Apple's signature roundness */
@@ -137,61 +137,100 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
 
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+  /* Interactive components map - map to new tokens */
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: var(--bg-base);
+  --secondary: var(--bg-elevated);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-elevated);
+  --muted-foreground: var(--text-muted);
+  --accent-old: var(--accent-subtle);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--color-error);
+  --destructive-foreground: var(--bg-base);
+  --border: var(--border);
+  --input: var(--border);
+  --ring: var(--accent);
+  --success: var(--color-success);
+  --success-foreground: var(--bg-base);
+  --warning: var(--color-warning);
+  --warning-foreground: var(--bg-base);
+  --info: var(--color-info);
+  --info-foreground: var(--bg-base);
 
-  /* Interactive components map */
-  --card: var(--background);
-  --card-foreground: var(--foreground);
-  --popover: var(--background);
-  --popover-foreground: var(--foreground);
+  /* Sidebar tokens */
+  --sidebar: var(--bg-surface);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--bg-base);
+  --sidebar-accent: var(--accent-subtle);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--accent);
 }
 
 .dark {
-  /* Base colors */
-  --background: oklch(0.15 0.01 300); /* Deep purple-black */
-  --foreground: oklch(0.95 0.01 300); /* Soft white */
+  /* Midnight surfaces */
+  --bg-base:     #0A0A0F;
+  --bg-surface:  #111118;
+  --bg-elevated: #1A1A24;
+  --border:      #242433;
 
-  /* Primary brand (adjusted for dark) */
-  --primary: oklch(0.7 0.15 300); /* Richer purple in dark */
-  --primary-foreground: oklch(0.98 0 0);
+  /* Midnight text */
+  --text-primary:   #F0EEF8;
+  --text-secondary: #9B99B0;
+  --text-muted:     #55536A;
 
-  /* Secondary UI elements */
-  --secondary: oklch(0.22 0.02 300); /* Dark purple tint */
-  --secondary-foreground: oklch(0.85 0.02 300);
+  /* Midnight accent */
+  --accent:          #A78BFA; /* Soft Lavender */
+  --accent-hover:    #BFA8FC;
+  --accent-subtle:   rgba(167, 139, 250, 0.10);
+  --accent-border:   rgba(167, 139, 250, 0.20);
 
-  /* Muted backgrounds */
-  --muted: oklch(0.2 0.015 300); /* Elevated surfaces */
-  --muted-foreground: oklch(0.65 0.02 300);
+  /* Semantic tokens identical — no changes needed */
 
-  /* Accent */
-  --accent: oklch(0.25 0.03 300); /* Interactive backgrounds */
-  --accent-foreground: oklch(0.9 0.03 300);
+  /* Interactive components map - map to new tokens */
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: var(--bg-base);
+  --secondary: var(--bg-elevated);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-elevated);
+  --muted-foreground: var(--text-muted);
+  --accent-old: var(--accent-subtle);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--color-error);
+  --destructive-foreground: var(--bg-base);
+  --border: var(--border);
+  --input: var(--border);
+  --ring: var(--accent);
+  --success: var(--color-success);
+  --success-foreground: var(--bg-base);
+  --warning: var(--color-warning);
+  --warning-foreground: var(--bg-base);
+  --info: var(--color-info);
+  --info-foreground: var(--bg-base);
 
-  /* Destructive */
-  --destructive: oklch(0.55 0.22 25); /* Slightly muted red */
-  --destructive-foreground: oklch(0.98 0 0);
-
-  /* Borders */
-  --border: oklch(0.28 0.02 300); /* Subtle contrast */
-  --input: oklch(0.3 0.02 300);
-  --ring: oklch(0.7 0.15 300); /* Focus ring */
-
-  /* Semantic colors (adjusted for dark) */
-  --success: oklch(0.75 0.12 160);
-  --success-foreground: oklch(0.95 0.02 160);
-
-  --warning: oklch(0.78 0.11 40);
-  --warning-foreground: oklch(0.95 0.02 40);
-
-  --info: oklch(0.72 0.1 240);
-  --info-foreground: oklch(0.95 0.02 240);
+  /* Sidebar tokens */
+  --sidebar: var(--bg-surface);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--bg-base);
+  --sidebar-accent: var(--accent-subtle);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--accent);
 
   /* Chart colors */
   --chart-1: oklch(0.488 0.243 264.376);
@@ -199,21 +238,6 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.274 0.006 286.033);
-  --sidebar-ring: oklch(0.442 0.017 285.786);
-
-  /* Interactive components map */
-  --card: var(--muted);
-  --card-foreground: var(--foreground);
-  --popover: var(--muted);
-  --popover-foreground: var(--foreground);
 }
 
 @layer base {

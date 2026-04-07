@@ -48,32 +48,36 @@ export function SecuritySettingsCard() {
   }
 
   return (
-    <Card className="bg-zinc-950/50 border-zinc-800">
+    <Card className="bg-[var(--bg-surface)] border-[var(--border)]">
       <CardHeader>
-        <CardTitle className="text-white">Security</CardTitle>
-        <CardDescription className="text-zinc-400">Update your password to keep your account secure</CardDescription>
+        <CardTitle className="text-[var(--text-primary)]">Security</CardTitle>
+        <CardDescription className="text-[var(--text-secondary)]">Update your password to keep your account secure</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleUpdatePassword} className="space-y-4">
             <div className="grid gap-2">
-                <Label className="text-zinc-300">New Password</Label>
+                <Label className="text-[var(--text-primary)]">New Password</Label>
                 <PasswordInput 
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="!bg-zinc-900 !border-zinc-800 !text-white placeholder:text-zinc-600"
+                    className="!bg-[var(--bg-elevated)] !border-[var(--border)] !text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                     placeholder="•••••••"
                 />
             </div>
             <div className="grid gap-2">
-                <Label className="text-zinc-300">Confirm New Password</Label>
+                <Label className="text-[var(--text-primary)]">Confirm New Password</Label>
                 <PasswordInput 
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="!bg-zinc-900 !border-zinc-800 !text-white placeholder:text-zinc-600"
+                    className="!bg-[var(--bg-elevated)] !border-[var(--border)] !text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                     placeholder="•••••••"
                 />
             </div>
-            <Button type="submit" disabled={isSubmitting || !newPassword} className="w-full bg-white text-black hover:bg-zinc-200 font-semibold">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !newPassword} 
+              className="w-full bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
+            >
                 {isSubmitting ? "Updating..." : "Update Password"}
             </Button>
         </form>

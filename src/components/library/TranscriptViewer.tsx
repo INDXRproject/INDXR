@@ -141,8 +141,8 @@ const SearchExtension = Extension.create<SearchOptions>({
                       pos + idx + lowerSearch.length,
                       {
                         class: "search-highlight",
-                        style: `background-color:#facc15;border-radius:2px;${
-                          isCurrent ? "outline:2px solid #f97316;" : ""
+                        style: `background-color:var(--color-warning);border-radius:2px;${
+                          isCurrent ? "outline:2px solid var(--color-warning-border);" : ""
                         }`,
                       }
                     )
@@ -687,7 +687,7 @@ export function TranscriptViewer({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowVideo(true)}
-                    className="gap-2 h-8"
+                    className="gap-2 h-8 hover:bg-[var(--accent)] hover:text-white transition-all duration-150"
                   >
                     <Video className="h-4 w-4" />
                     <span className="hidden sm:inline">Show Video</span>
@@ -714,7 +714,7 @@ export function TranscriptViewer({
                     <span className="text-xs font-medium text-green-500 mr-1 hidden sm:inline">Summary ready!</span>
                     <Button
                       size="sm"
-                      className="h-8 text-xs px-3 bg-amber-500 text-white hover:bg-amber-600 border border-amber-600/50"
+                      className="h-8 text-xs px-3 bg-[var(--color-warning)] text-white hover:bg-[var(--color-warning-hover)] border border-[var(--color-warning-border)]"
                       onClick={() => {
                         router.replace(`?tab=summary`);
                       }}
@@ -726,7 +726,7 @@ export function TranscriptViewer({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 gap-1.5 px-3 text-xs font-medium hover:text-amber-500 hover:bg-amber-500/10 mr-2 transition-colors border border-border"
+                    className="h-8 gap-1.5 px-3 text-xs font-medium hover:bg-[var(--accent)] hover:text-white mr-2 transition-all duration-150 border border-border"
                     disabled={isSummarizing || !user}
                     onClick={() => {
                       if (!user) {
@@ -752,7 +752,7 @@ export function TranscriptViewer({
                     {isSummarizing ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                      <Sparkles className="h-3.5 w-3.5" />
                     )}
                     {aiSummary ? "Regenerate Summary" : "Summarize"}
                   </Button>
@@ -765,7 +765,7 @@ export function TranscriptViewer({
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 gap-2">
+                  <Button variant="outline" size="sm" className="h-8 gap-2 hover:bg-[var(--accent)] hover:text-white transition-all duration-150">
                     <Download className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Export</span>
                   </Button>
@@ -1000,7 +1000,7 @@ export function TranscriptViewer({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleSummarizeConfirm}
-              className="bg-amber-500 hover:bg-amber-600 text-white gap-2"
+              className="bg-[var(--color-warning)] hover:bg-[var(--color-warning)]/90 text-white gap-2"
             >
               <Sparkles className="h-4 w-4" />
               Generate Summary

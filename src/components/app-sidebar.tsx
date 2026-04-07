@@ -4,8 +4,9 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import {
-  Home, Library, Mic, CreditCard, Settings, User, LogOut,
+  LayoutDashboard, BookOpen, FileText, Coins, Settings, User, LogOut,
   ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2,
+  PanelLeftClose, PanelLeftOpen,
 } from "lucide-react"
 
 import {
@@ -43,9 +44,9 @@ interface SimplifiedTranscript {
 }
 
 const topNavItems = [
-  { title: "Overview",   url: "/dashboard",           icon: Home },
-  { title: "Transcribe", url: "/dashboard/transcribe", icon: Mic },
-  { title: "Credits",    url: "/dashboard/billing",    icon: CreditCard },
+  { title: "Overview",   url: "/dashboard",           icon: LayoutDashboard },
+  { title: "Transcribe", url: "/dashboard/transcribe", icon: FileText },
+  { title: "Credits",    url: "/dashboard/billing",    icon: Coins },
 ]
 
 const footerItems = [
@@ -62,6 +63,15 @@ export function AppSidebar() {
   const [collections, setCollections]         = useState<Collection[]>([])
   const [transcripts, setTranscripts]         = useState<{id: string, collection_id: string | null, character_count: number | null}[]>([])
   const [libraryOpen, setLibraryOpen]         = useState(true)
+
+  // ── Collapsible sidebar state ──────────────────────────────────────────────
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sidebar-collapsed")
+      return saved === "true"
+    }
+    return false
+  })
 
   // Inline create
   const [creating, setCreating] = useState(false)
@@ -148,7 +158,18 @@ export function AppSidebar() {
     if (editingId) editRef.current?.focus()
   }, [editingId])
 
+  // Save collapsed state to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sidebar-collapsed", collapsed.toString())
+    }
+  }, [collapsed])
+
   // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleToggleCollapse = () => {
+    setCollapsed(!collapsed)
+  }
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/login")
@@ -282,27 +303,55 @@ export function AppSidebar() {
   }
 
   const selectedId = getSelectedId()
-  const dropHighlight = "ring-2 ring-primary ring-inset bg-primary/10"
+  const dropHighlight = "ring-2 ring-[var(--accent)] ring-inset bg-[var(--accent)]/10"
 
   return (
     <TooltipProvider delayDuration={300}>
-      <Sidebar variant="inset">
+      <Sidebar variant="inset" className={cn(collapsed ? "w-14" : "w-64")}>
         <SidebarContent>
+          {/* Collapse toggle button */}
+          <div className="px-3 py-2 border-b border-[var(--border)]/50">
+            <button
+              onClick={handleToggleCollapse}
+              className="h-8 w-8 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+          
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
 
                 {/* ── Top nav items ── */}
-                {topNavItems.map(item => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <a href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {topNavItems.map(item => {
+                  const isActive = pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <a 
+                          href={item.url} 
+                          className={cn(
+                            "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
+                            isActive 
+                              ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
+                              : "text-[var(--text-secondary)] [&_svg]:text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                            collapsed && "justify-center"
+                          )}
+                          title={collapsed ? item.title : undefined}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          <span className={cn(collapsed && "hidden")}>{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
 
                 {/* ── Library + Collections ── */}
                 <SidebarMenuItem>
@@ -312,35 +361,48 @@ export function AppSidebar() {
                       asChild
                       className="flex-1"
                     >
-                      <Link href="/dashboard/library">
-                        <Library />
-                        <span>Library</span>
+                      <Link 
+                        href="/dashboard/library" 
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
+                          pathname === "/dashboard/library" || pathname?.startsWith("/dashboard/library/")
+                            ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
+                            : "text-[var(--text-secondary)] [&_svg]:text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                          collapsed && "justify-center"
+                        )}
+                        title={collapsed ? "Library" : undefined}
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        <span className={cn(collapsed && "hidden")}>Library</span>
                       </Link>
                     </SidebarMenuButton>
-                    <button
-                      onClick={(e) => { e.preventDefault(); setLibraryOpen(o => !o) }}
-                      className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0 mr-1 cursor-pointer"
-                      aria-label={libraryOpen ? "Collapse library" : "Expand library"}
-                    >
-                      <ChevronRight
-                        className={cn(
-                          "h-3 w-3 transition-transform duration-200",
-                          libraryOpen && "rotate-90"
-                        )}
-                      />
-                    </button>
+                    {!collapsed && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); setLibraryOpen(o => !o) }}
+                        className="h-6 w-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors shrink-0 mr-1 cursor-pointer"
+                        aria-label={libraryOpen ? "Collapse library" : "Expand library"}
+                      >
+                        <ChevronRight
+                          className={cn(
+                            "h-3 w-3 transition-transform duration-200",
+                            libraryOpen && "rotate-90"
+                          )}
+                        />
+                      </button>
+                    )}
                   </div>
 
-                  {/* Collapsible sub-section */}
-                  <div
-                    className={cn(
-                      "overflow-hidden transition-all duration-200",
-                      libraryOpen ? "opacity-100" : "max-h-0 opacity-0"
-                    )}
-                    style={libraryOpen ? { maxHeight: "40vh" } : { maxHeight: 0 }}
-                  >
-                    <div className="overflow-y-auto" style={{ maxHeight: "40vh" }}>
-                      <div className="pl-4 py-1 space-y-0.5">
+                  {/* Collapsible sub-section - hidden when sidebar is collapsed */}
+                  {!collapsed && (
+                    <div
+                      className={cn(
+                        "overflow-hidden transition-all duration-200",
+                        libraryOpen ? "opacity-100" : "max-h-0 opacity-0"
+                      )}
+                      style={libraryOpen ? { maxHeight: "40vh" } : { maxHeight: 0 }}
+                    >
+                      <div className="overflow-y-auto" style={{ maxHeight: "40vh" }}>
+                        <div className="pl-12 py-1 space-y-0.5">
 
                         {/* All Transcripts */}
                         <button
@@ -351,12 +413,12 @@ export function AppSidebar() {
                           className={cn(
                             "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors cursor-pointer",
                             isLibraryPage && !selectedId
-                              ? "bg-accent text-accent-foreground font-medium"
-                              : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                              ? "bg-[var(--accent-subtle)] text-[var(--accent)] font-medium"
+                              : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/50",
                             dragOverId === "all" && dropHighlight
                           )}
                         >
-                          <Library className="h-3 w-3 shrink-0" />
+                          <BookOpen className="h-3 w-3 shrink-0" />
                           <span className="flex-1 text-left">All Transcripts</span>
                           <span className="tabular-nums opacity-60">{transcripts.length}</span>
                         </button>
@@ -375,8 +437,8 @@ export function AppSidebar() {
                                 className={cn(
                                   "group/col flex items-center gap-1 px-2 py-1.5 rounded-md text-xs transition-colors",
                                   isSelected
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                                    ? "bg-[var(--accent-subtle)] text-[var(--accent)] font-medium"
+                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/50",
                                   isDragging && dropHighlight
                                 )}
                                 onDragOver={(e) => handleDragOver(e, col.id)}
@@ -401,7 +463,7 @@ export function AppSidebar() {
                                           if (e.key === "Enter") { e.currentTarget.blur() }
                                           if (e.key === "Escape") { setEditingId(null) }
                                         }}
-                                        className="w-full bg-transparent border-b border-border outline-none text-xs text-foreground"
+                                        className="w-full bg-transparent border-b border-[var(--border)] outline-none text-xs text-[var(--text-primary)]"
                                         maxLength={150}
                                       />
                                       {editingName.length > 120 && (
@@ -410,10 +472,10 @@ export function AppSidebar() {
                                         </span>
                                       )}
                                     </div>
-                                    <button onClick={handleRenameSave} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0">
+                                    <button onClick={handleRenameSave} className="h-4 w-4 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0">
                                       <Check className="h-2.5 w-2.5" />
                                     </button>
-                                    <button onClick={() => setEditingId(null)} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0">
+                                    <button onClick={() => setEditingId(null)} className="h-4 w-4 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0">
                                       <X className="h-2.5 w-2.5" />
                                     </button>
                                   </>
@@ -430,14 +492,14 @@ export function AppSidebar() {
                                     {/* Action icons — only visible on hover */}
                                     <button
                                       onClick={(e) => { e.stopPropagation(); handleRenameStart(col) }}
-                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0 cursor-pointer"
                                       title="Rename"
                                     >
                                       <Pencil className="h-2.5 w-2.5" />
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(isConfirmDelete ? null : col.id); setEditingId(null) }}
-                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-muted-foreground hover:text-red-500 shrink-0 cursor-pointer"
+                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0 cursor-pointer"
                                       title="Delete collection"
                                     >
                                       <Trash2 className="h-2.5 w-2.5" />
@@ -449,14 +511,14 @@ export function AppSidebar() {
                               {/* Inline delete confirmation */}
                               {isConfirmDelete && (
                                 <div className="mx-2 mb-1 p-2 rounded-md bg-destructive/10 border border-destructive/20 text-xs">
-                                  <p className="text-foreground mb-2 leading-snug">
+                                  <p className="text-[var(--text-primary)] mb-2 leading-snug">
                                     Delete <span className="font-medium">&ldquo;{col.name}&rdquo;</span>?{" "}
-                                    <span className="text-muted-foreground">Transcripts will be moved to All Transcripts.</span>
+                                    <span className="text-[var(--text-muted)]">Transcripts will be moved to All Transcripts.</span>
                                   </p>
                                   <div className="flex gap-1.5">
                                     <button
                                       onClick={() => setConfirmDeleteId(null)}
-                                      className="flex-1 py-1 rounded text-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                                      className="flex-1 py-1 rounded text-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/50 transition-colors cursor-pointer"
                                     >
                                       Cancel
                                     </button>
@@ -500,16 +562,17 @@ export function AppSidebar() {
                         ) : (
                           <button
                             onClick={() => setCreating(true)}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors cursor-pointer"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/50 transition-colors cursor-pointer"
                           >
                             <Plus className="h-3 w-3" />
                             <span>New Collection</span>
                           </button>
                         )}
 
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </SidebarMenuItem>
 
               </SidebarMenu>
@@ -519,38 +582,59 @@ export function AppSidebar() {
 
         <SidebarFooter>
           {/* Transcript stats — StorageMeter */}
-          <div className="px-3 pb-3 space-y-2 border-t border-border/50 pt-4 mt-2">
-            <div className="flex justify-between items-end">
-              <span className="text-xs font-medium text-foreground">Storage</span>
-              <span className="text-[10px] text-muted-foreground">{usedMB > 0.1 ? usedMB.toFixed(1) + ' MB' : usedKB.toFixed(0) + ' KB'} / {MAX_MB} MB</span>
+          {!collapsed && (
+            <div className="px-3 pb-3 space-y-2 border-t border-[var(--border)]/50 pt-4 mt-2">
+              <div className="flex justify-between items-end">
+                <span className="text-xs text-[var(--text-muted)]">Storage</span>
+                <span className="text-[10px] text-[var(--text-muted)]">{usedMB > 0.1 ? usedMB.toFixed(1) + ' MB' : usedKB.toFixed(0) + ' KB'} / {MAX_MB} MB</span>
+              </div>
+              <Progress 
+                value={storagePercentage} 
+                className={cn("h-1.5", storagePercentage > 80 && "bg-destructive/20")}
+                style={{ "--accent": "var(--accent)" } as React.CSSProperties}
+              />
+              <p className="text-[10px] text-[var(--text-muted)]">
+                {transcripts.length} transcript{transcripts.length !== 1 ? "s" : ""} saved
+              </p>
             </div>
-            <Progress 
-              value={storagePercentage} 
-              className={cn("h-1.5", storagePercentage > 80 && "bg-destructive/20")}
-            />
-            <p className="text-[10px] text-muted-foreground">
-              {transcripts.length} transcript{transcripts.length !== 1 ? "s" : ""} saved
-            </p>
-          </div>
+          )}
 
           <SidebarMenu>
-            {footerItems.map(item => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <a href={item.url}>
-                    {item.title === "Account" ? <UserAvatar className="h-4 w-4 text-[10px]" /> : <item.icon />}
-                    <span>{item.title}</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {footerItems.map(item => {
+              const isActive = pathname === item.url || (item.url === "/dashboard/account" && pathname?.startsWith("/dashboard/account"));
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a 
+                      href={item.url} 
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
+                        isActive 
+                          ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
+                          : "text-[var(--text-secondary)] [&_svg]:text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                        collapsed && "justify-center"
+                      )}
+                      title={collapsed ? item.title : undefined}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className={cn(collapsed && "hidden")}>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={handleSignOut}
-                className="w-full text-red-400 hover:text-red-300 hover:bg-red-950/30 cursor-pointer"
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 w-full cursor-pointer",
+                  "text-[var(--text-secondary)] [&_svg]:text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                  collapsed && "justify-center"
+                )}
+                title={collapsed ? "Sign Out" : undefined}
               >
                 <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
+                <span className={cn(collapsed && "hidden")}>Sign Out</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

@@ -12,8 +12,8 @@ export default async function SettingsPage() {
   return (
     <div className="container max-w-2xl py-10 px-4 sm:px-6 mx-auto animate-in fade-in zoom-in-95 duration-500">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
-        <p className="text-muted-foreground">Manage your security preferences.</p>
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Settings</h1>
+        <p className="text-[var(--text-muted)]">Manage your security preferences.</p>
       </div>
 
       <div className="space-y-8">
@@ -21,15 +21,15 @@ export default async function SettingsPage() {
         <SecuritySettingsCard />
 
         {/* Preferences */}
-        <div className="rounded-lg border border-border bg-card/50 p-6 space-y-4">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 space-y-4">
           <div>
-            <h2 className="text-foreground font-semibold mb-1">Preferences</h2>
-            <p className="text-muted-foreground text-sm">Custom themes coming soon.</p>
+            <h2 className="text-[var(--text-primary)] font-semibold mb-1">Preferences</h2>
+            <p className="text-[var(--text-muted)] text-sm">Custom themes coming soon.</p>
           </div>
-          <div className="flex items-center justify-between py-3 border-t border-border/50">
+          <div className="flex items-center justify-between py-3 border-t border-[var(--border)]/50">
             <div>
-              <p className="text-sm font-medium text-foreground">Theme</p>
-              <p className="text-xs text-muted-foreground">Switch between light and dark mode</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">Theme</p>
+              <p className="text-xs text-[var(--text-muted)]">Switch between light and dark mode</p>
             </div>
             <ThemeToggle />
           </div>

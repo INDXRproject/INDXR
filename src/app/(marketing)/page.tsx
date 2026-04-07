@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { ArrowRight, Zap, AudioWaveform, ListVideo, Library } from "lucide-react"
 import { FeatureCard } from "@/components/FeatureCard"
 
@@ -9,30 +8,46 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col items-center">
       {/* Hero Section */}
-      <section className="w-full py-16 sm:py-24 lg:py-32 bg-background flex justify-center border-b border-border relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none"></div>
+      <section className="w-full py-16 sm:py-24 lg:py-32 flex justify-center border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)]">
+        <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%),var(--bg-base)] pointer-events-none"></div>
         <div className="container px-4 text-center relative z-10 flex flex-col items-center">
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground mb-6 max-w-4xl leading-[1.1]">
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-[800] tracking-[-0.03em] mb-6 max-w-4xl leading-[1.1] text-[var(--text-primary)]">
             Every word. Every video. Yours.
           </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-[720px] mx-auto mb-10 leading-relaxed">
+          <p className="text-lg sm:text-xl max-w-[720px] mx-auto mb-10 leading-relaxed text-[var(--text-secondary)]">
             Extract transcripts from any YouTube video, playlist, 
-            or audio file — with AI fallback when captions don&apos;t exist or 
+            or audio file — with AI fallback when captions don't exist or 
             get blocked. No browser extension. No meeting bot. Just text.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
             <Link href="/youtube-transcript-generator" className="w-full sm:w-auto">
-              <Button size="lg" className="h-12 px-8 text-base w-full sm:w-auto shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-                Get Free Transcript <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <button className="
+                px-8 py-3 rounded-lg font-semibold text-base
+                bg-[var(--accent)] text-white
+                hover:bg-[var(--accent-hover)]
+                active:scale-[0.97]
+                transition-all duration-150 ease-out
+                cursor-pointer
+                h-12 w-full sm:w-auto
+              ">
+                Get Free Transcript <ArrowRight className="ml-2 h-4 w-4 inline" />
+              </button>
             </Link>
             <Link href="/pricing" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="h-12 px-8 text-base w-full sm:w-auto bg-transparent border-border hover:bg-muted hover:text-foreground transition-all">
+              <button className="
+                px-8 py-3 rounded-lg font-medium text-base
+                bg-transparent border border-[var(--border)]
+                text-[var(--text-primary)]
+                hover:border-[var(--text-muted)]
+                transition-all duration-150 ease-out
+                cursor-pointer
+                h-12 w-full sm:w-auto
+              ">
                 View Pricing
-              </Button>
+              </button>
             </Link>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-4 text-sm text-[var(--text-muted)]">
             No account needed for basic use.
           </p>
 
@@ -41,7 +56,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="w-full py-16 sm:py-24 bg-background flex justify-center border-b border-border">
+      <section className="w-full py-16 sm:py-24 flex justify-center border-b border-[var(--border)] bg-[var(--bg-base)]">
         <div className="container px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             <FeatureCard 
@@ -69,9 +84,9 @@ export default function LandingPage() {
       </section>
 
       {/* Who uses INDXR Section */}
-      <section className="w-full py-16 sm:py-24 bg-background flex justify-center border-b border-border">
+      <section className="w-full py-16 sm:py-24 flex justify-center border-b border-[var(--border)] bg-[var(--bg-base)]">
         <div className="container px-4">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-12 text-[var(--text-primary)]">
             Built for people who take content seriously.
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-6">
@@ -105,9 +120,9 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="w-full py-16 sm:py-24 bg-background flex justify-center border-b border-border">
+      <section className="w-full py-16 sm:py-24 flex justify-center border-b border-[var(--border)] bg-[var(--bg-base)]">
         <div className="container px-4">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-12 text-[var(--text-primary)]">
             Trusted by researchers, creators, and students.
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -131,20 +146,28 @@ export default function LandingPage() {
       </section>
 
       {/* Bottom CTA Section */}
-      <section className="w-full py-16 sm:py-24 bg-background flex justify-center">
+      <section className="w-full py-16 sm:py-24 flex justify-center bg-[var(--bg-base)]">
         <div className="container px-4 text-center">
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-tighter mb-6">
+          <h2 className="text-4xl sm:text-5xl font-bold tracking-tighter mb-6 text-[var(--text-primary)]">
             Start free. No credit card.
           </h2>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-[640px] mx-auto mb-10 leading-relaxed">
+          <p className="text-lg sm:text-xl max-w-[640px] mx-auto mb-10 leading-relaxed text-[var(--text-secondary)]">
             Casual users never need an account. When you're ready 
             for playlists, Whisper AI, and your personal library — 
             credits start at €4.99.
           </p>
-          <Link href="/youtube-transcript-generator">
-            <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+          <Link href="/youtube-transcript-generator" className="inline-block">
+            <button className="
+              px-8 py-3 rounded-lg font-semibold text-base
+              bg-[var(--accent)] text-white
+              hover:bg-[var(--accent-hover)]
+              active:scale-[0.97]
+              transition-all duration-150 ease-out
+              cursor-pointer
+              h-12
+            ">
               Try INDXR free →
-            </Button>
+            </button>
           </Link>
         </div>
       </section>
@@ -154,21 +177,27 @@ export default function LandingPage() {
 
 function PersonaCard({ emoji, label, body }: { emoji: string; label: string; body: string }) {
   return (
-    <div className="p-6 rounded-2xl bg-card border border-border">
+    <div className="p-6 rounded-xl border bg-[var(--bg-surface)] border-[var(--border)]">
       <div className="text-4xl mb-4">{emoji}</div>
-      <h3 className="text-lg font-bold mb-2 text-foreground">{label}</h3>
-      <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+      <h3 className="text-lg font-bold mb-2 text-[var(--text-primary)]">{label}</h3>
+      <p className="text-sm leading-relaxed text-[var(--text-muted)]">{body}</p>
     </div>
   )
 }
 
 function TestimonialCard({ quote, name, role }: { quote: string; name: string; role: string }) {
   return (
-    <div className="p-8 rounded-2xl bg-card border border-border flex flex-col h-full">
-      <p className="text-lg text-foreground italic mb-6 flex-grow">&quot;{quote}&quot;</p>
+    <div className="
+      p-8 rounded-xl border-l-2 border-[var(--accent)]
+      bg-[var(--bg-surface)] border border-[var(--border)]
+      border-l-[var(--accent)] flex flex-col h-full
+    ">
+      <p className="text-[15px] italic leading-relaxed text-[var(--text-secondary)] mb-6 flex-grow">
+        "{quote}"
+      </p>
       <div>
-        <div className="font-bold text-foreground">{name}</div>
-        <div className="text-sm text-muted-foreground">{role}</div>
+        <div className="text-sm font-semibold text-[var(--text-primary)]">{name}</div>
+        <div className="text-xs text-[var(--text-muted)]">{role}</div>
       </div>
     </div>
   )

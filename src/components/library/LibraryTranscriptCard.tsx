@@ -88,9 +88,9 @@ export function LibraryTranscriptCard({ transcript, onDelete, onExport }: Transc
         {/* Actions */}
         <div className="flex items-center gap-2 pt-2">
           <Button 
-            size="sm" 
-            variant="outline" 
-            className="flex-1 h-9 bg-transparent border-zinc-700 hover:bg-zinc-800 hover:text-foreground"
+            size="sm"
+            variant="outline"
+            className="flex-1 h-9 bg-transparent border-zinc-700 hover:bg-[var(--accent)] hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
               onExport(transcript);
@@ -101,9 +101,9 @@ export function LibraryTranscriptCard({ transcript, onDelete, onExport }: Transc
           </Button>
           
           <Button 
-            size="sm" 
-            variant="ghost" 
-            className="h-9 w-9 px-0 text-muted-foreground hover:text-red-400 hover:bg-red-400/10"
+            size="sm"
+            variant="ghost"
+            className="h-9 w-9 px-0 text-muted-foreground hover:text-[var(--color-error)] hover:bg-destructive/10"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(transcript.id);

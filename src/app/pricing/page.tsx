@@ -48,15 +48,15 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[var(--bg-base)]">
       <div className="container py-24 px-4 sm:px-6 lg:px-8 mx-auto">
         
         {/* Header */}
         <div className="text-center mb-20 max-w-3xl mx-auto space-y-4">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--text-primary)]">
             Simple, Transparent Pricing
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-[var(--text-muted)] max-w-2xl mx-auto">
             Pay once, use credits as you need. No subscriptions, no hidden fees. Your credits never expire.
           </p>
         </div>
@@ -115,22 +115,22 @@ export default function PricingPage() {
         </div>
         
         {/* FAQ section (Placeholder) */}
-        <div className="mt-32 max-w-3xl mx-auto border-t pt-16 border-muted">
-          <h2 className="text-3xl font-bold text-center mb-12 text-foreground">
+        <div className="mt-32 max-w-3xl mx-auto border-t pt-16 border-[var(--border)]">
+          <h2 className="text-3xl font-bold text-center mb-12 text-[var(--text-primary)]">
             Frequently Asked Questions
           </h2>
           <div className="grid gap-6">
               <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Do my credits expire?</h3>
-                  <p className="text-muted-foreground">No, your credits never expire. You can use them whenever you need.</p>
+                  <h3 className="font-semibold text-lg text-[var(--text-primary)]">Do my credits expire?</h3>
+                  <p className="text-[var(--text-muted)]">No, your credits never expire. You can use them whenever you need.</p>
               </div>
               <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">How are credits calculated?</h3>
-                  <p className="text-muted-foreground">1 credit = 1 video transcript (any duration up to 4 hours). Simple as that.</p>
+                  <h3 className="font-semibold text-lg text-[var(--text-primary)]">How are credits calculated?</h3>
+                  <p className="text-[var(--text-muted)]">1 credit = 1 video transcript (any duration up to 4 hours). Simple as that.</p>
               </div>
                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Can I get a refund?</h3>
-                  <p className="text-muted-foreground">We offer refunds within 7 days if you haven&apos;t used more than 5 credits.</p>
+                  <h3 className="font-semibold text-lg text-[var(--text-primary)]">Can I get a refund?</h3>
+                  <p className="text-[var(--text-muted)]">We offer refunds within 7 days if you haven't used more than 5 credits.</p>
               </div>
           </div>
         </div>
