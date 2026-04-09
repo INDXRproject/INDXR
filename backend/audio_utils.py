@@ -93,7 +93,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
     """
     import glob
     base_output_path = os.path.join(output_dir, f"yt_audio_{video_id}")
-    final_output_path = f"{base_output_path}.mp3"
+    final_output_path = f"{base_output_path}.ogg"
 
     # NOTE: ydl_opts deliberately has NO postprocessors.
     # Adding FFmpegExtractAudio widens yt-dlp's format selection to include
@@ -139,14 +139,14 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         try:
             # Clean up any partial files from a previous attempt
             for stale in glob.glob(f"{base_output_path}.*"):
-                if not stale.endswith('.mp3'):
+                if not stale.endswith('.ogg'):
                     os.remove(stale)
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
 
             # Find the downloaded file (could be .webm, .m4a, .opus, etc.)
-            raw_files = [f for f in glob.glob(f"{base_output_path}.*") if not f.endswith('.mp3')]
+            raw_files = [f for f in glob.glob(f"{base_output_path}.*") if not f.endswith('.ogg')]
             if not raw_files:
                 raise Exception("yt-dlp did not produce any audio file")
 
@@ -154,36 +154,16 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
             raw_size = os.path.getsize(raw_path) / 1024 / 1024
             logger.info(f"yt-dlp downloaded: {raw_path} ({raw_size:.2f}MB)")
 
-            # Calculate bitrate dynamically so output stays under 24MB regardless of video length.
-            # Use ffprobe directly on the raw file to get duration before conversion.
-            raw_duration = None
-            try:
-                probe = subprocess.run(
-                    ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
-                     '-of', 'default=noprint_wrappers=1:nokey=1', raw_path],
-                    capture_output=True, text=True, timeout=30
-                )
-                if probe.returncode == 0 and probe.stdout.strip():
-                    raw_duration = float(probe.stdout.strip())
-            except Exception:
-                pass
-
-            if raw_duration:
-                bitrate_kbps = int((24 * 1024 * 1024 * 8) / raw_duration / 1000)
-                bitrate_kbps = max(8, min(32, bitrate_kbps))
-            else:
-                bitrate_kbps = 32
-            duration_str = f"{raw_duration:.1f}s" if raw_duration else "unknown"
-            logger.info(f"ffmpeg bitrate: {bitrate_kbps}k (duration={duration_str})")
-
-            # Convert to 16kHz mono mp3 using ffmpeg subprocess (avoids proxy split issue)
+            # Convert to mono Opus/OGG using ffmpeg (12kbps handles up to ~5 hours within 25MB)
             ffmpeg_cmd = [
-                'ffmpeg', '-y',
-                '-i', raw_path,
-                '-ar', '16000',
-                '-ac', '1',
-                f'-b:a', f'{bitrate_kbps}k',
-                final_output_path
+                'ffmpeg', '-i', str(raw_path),
+                '-vn',                    # no video
+                '-map_metadata', '-1',    # strip metadata
+                '-ac', '1',               # mono
+                '-c:a', 'libopus',        # Opus codec
+                '-b:a', '12k',            # 12kbps — handles up to ~5 hours within 25MB
+                '-application', 'voip',   # optimized for speech
+                str(final_output_path)
             ]
             logger.info(f"Running ffmpeg: {' '.join(ffmpeg_cmd)}")
             result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=120)
@@ -193,7 +173,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
             os.remove(raw_path)  # Clean up raw download
 
             final_size = os.path.getsize(final_output_path) / 1024 / 1024
-            logger.info(f"Audio conversion done: {raw_size:.2f}MB -> {final_size:.2f}MB mp3")
+            logger.info(f"Audio conversion done: {raw_size:.2f}MB -> {final_size:.2f}MB ogg")
 
             return final_output_path
 
@@ -283,32 +263,32 @@ def compress_audio_if_needed(file_path: str, output_dir: str = "/tmp") -> str:
     
     try:
         logger.info(f"Compressing audio from {file_size / 1024 / 1024:.2f}MB...")
-        
-        audio = AudioSegment.from_file(file_path)
-        
-        # Convert to mono and reduce bitrate
-        audio = audio.set_channels(1)
-        
-        # Generate output path
+
         base_name = os.path.splitext(os.path.basename(file_path))[0]
-        output_path = os.path.join(output_dir, f"{base_name}_compressed.mp3")
-        
-        # Export with low bitrate
-        audio.export(
-            output_path,
-            format="mp3",
-            bitrate="64k",
-            parameters=["-ar", "16000"]  # 16kHz sample rate (good for speech)
-        )
-        
+        output_path = os.path.join(output_dir, f"{base_name}_compressed.ogg")
+
+        ffmpeg_cmd = [
+            'ffmpeg', '-i', str(file_path),
+            '-vn',                    # no video
+            '-map_metadata', '-1',    # strip metadata
+            '-ac', '1',               # mono
+            '-c:a', 'libopus',        # Opus codec
+            '-b:a', '12k',            # 12kbps — handles up to ~5 hours within 25MB
+            '-application', 'voip',   # optimized for speech
+            str(output_path)
+        ]
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=120)
+        if result.returncode != 0:
+            raise Exception(f"ffmpeg failed: {result.stderr[-500:]}")
+
         compressed_size = os.path.getsize(output_path)
         logger.info(f"Audio compressed: {compressed_size / 1024 / 1024:.2f}MB")
-        
+
         if compressed_size > MAX_FILE_SIZE_BYTES:
             raise Exception("Compressed file still exceeds 25MB limit")
-        
+
         return output_path
-        
+
     except Exception as e:
         logger.error(f"Audio compression failed: {e}")
         raise Exception(f"Failed to compress audio: {str(e)}")
