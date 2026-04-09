@@ -182,9 +182,12 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
                 logger.warning(f"Members-only video detected during audio extraction: {video_id}")
                 raise MembersOnlyVideoError("This video is only available to channel members and cannot be transcribed.")
             is_timeout = any(kw in error_str for kw in ('timed out', 'timeout', 'read timeout', 'connectionpool'))
-            if is_timeout and attempt < max_attempts:
-                logger.warning(f"yt-dlp download timeout (attempt {attempt}/{max_attempts}), retrying in 5s...")
-                time.sleep(5)
+            is_ssl_error = any(kw in error_str for kw in ('ssl', 'unexpected_eof', 'eof', 'connectionreset', 'remotedisconnected'))
+            if (is_timeout or is_ssl_error) and attempt < max_attempts:
+                delay = 2 ** attempt  # 2s, 4s, 8s
+                reason = "SSL/connection error" if is_ssl_error else "timeout"
+                logger.warning(f"yt-dlp download {reason} (attempt {attempt}/{max_attempts}), retrying in {delay}s...")
+                time.sleep(delay)
             else:
                 break
 
