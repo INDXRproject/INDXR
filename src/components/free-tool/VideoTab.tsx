@@ -363,6 +363,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unable to retrieve captions — this video may be restricted or our server is temporarily blocked"
 
+      if (errorMessage === 'members_only') {
+        setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+        return
+      }
+
       // Check if error is due to no captions available
       if (errorMessage.includes("No captions") || errorMessage.includes("captions")) {
         // Extract video ID for Whisper fallback
@@ -798,7 +803,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         {!existingTranscriptId && !showDuplicateChoices && !showWhisperConfirm && (
           <div className="flex justify-between items-start px-1">
              {error?.isMembersOnly ? (
-               <p className="text-sm text-destructive">{error.message}</p>
+               <div className="flex flex-col gap-2 w-full">
+                 <p className="text-sm font-medium text-destructive">Members-Only Video</p>
+                 <p className="text-sm text-destructive">This video is only available to channel members and cannot be transcribed by INDXR.AI.</p>
+               </div>
              ) : error?.isYouTubeRestricted ? (
                <div className="flex flex-col gap-2 w-full">
                  <p className="text-sm text-destructive">
