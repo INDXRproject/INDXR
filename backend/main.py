@@ -15,6 +15,7 @@ import tempfile
 import time
 from dotenv import load_dotenv
 import posthog
+from datetime import datetime, timezone
 
 # Load environment variables
 load_dotenv()
@@ -626,11 +627,6 @@ async def get_video_metadata(video_id: str):
         logger.error(f"Video metadata error for {video_id}: {e}")
         raise HTTPException(status_code=404, detail=f"Failed to fetch video metadata: {str(e)}")
 
-# In-memory job store: job_id → job dict
-# Jobs are ephemeral (TTL: 1 hour). Railway keeps the process alive across requests.
-whisper_jobs: Dict[str, dict] = {}
-
-
 async def run_whisper_job(
     job_id: str,
     user_id: str,
@@ -640,24 +636,27 @@ async def run_whisper_job(
     audio_filename: Optional[str],
 ) -> None:
     """
-    Background task: runs the full Whisper pipeline and updates whisper_jobs[job_id].
+    Background task: runs the full Whisper pipeline and updates whisper_jobs in Supabase.
     Credits are deducted after audio is downloaded (duration is needed for cost calculation).
     On any failure after deduction, credits are refunded automatically.
     """
     temp_files: list = []
     credit_cost = 0
     credits_deducted = False
+    supabase = get_supabase_client()
 
-    def update_job(**kwargs):
-        if job_id in whisper_jobs:
-            whisper_jobs[job_id].update(kwargs)
+    async def update_job(**kwargs):
+        kwargs['updated_at'] = datetime.now(timezone.utc).isoformat()
+        await asyncio.to_thread(
+            lambda: supabase.table('whisper_jobs').update(kwargs).eq('id', job_id).execute()
+        )
 
     try:
         audio_path: Optional[str] = None
 
         # --- Step 1: Get audio ---
         if source_type == "youtube":
-            update_job(status="downloading")
+            await update_job(status="downloading")
             logger.info(f"[job {job_id}] Downloading YouTube audio for video: {video_id}")
             try:
                 proxy_url = get_proxy_url()
@@ -668,12 +667,12 @@ async def run_whisper_job(
                 audio_path = await asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url)
                 temp_files.append(audio_path)
             except MembersOnlyVideoError:
-                update_job(status="error", error_message="members_only", error_code="members_only")
+                await update_job(status="error", error_message="members_only")
                 return
             except Exception as e:
                 error_msg = str(e)
                 if any(kw in error_msg.lower() for kw in MEMBERS_ONLY_KEYWORDS):
-                    update_job(status="error", error_message="members_only", error_code="members_only")
+                    await update_job(status="error", error_message="members_only")
                     return
                 is_restricted = '152' in error_msg or 'unavailable' in error_msg.lower()
                 track_event(user_id, 'whisper_failed', {
@@ -682,11 +681,7 @@ async def run_whisper_job(
                     'error_type': 'youtube_restricted' if is_restricted else 'extraction_error',
                     'error_message': error_msg
                 })
-                update_job(
-                    status="error",
-                    error_message=error_msg,
-                    error_code="youtube_restricted" if is_restricted else "download_failed"
-                )
+                await update_job(status="error", error_message=error_msg)
                 return
         else:
             logger.info(f"[job {job_id}] Writing uploaded audio to temp file: {audio_filename}")
@@ -699,14 +694,14 @@ async def run_whisper_job(
         # --- Step 2: Validate audio ---
         validation = await asyncio.to_thread(validate_audio_file, audio_path)
         if not validation['valid']:
-            update_job(status="error", error_message=validation['error'], error_code="invalid_audio")
+            await update_job(status="error", error_message=validation['error'])
             return
 
         # --- Step 3: Duration ---
         try:
             duration = await asyncio.to_thread(get_audio_duration, audio_path)
         except Exception as e:
-            update_job(status="error", error_message=f"Could not determine audio duration: {str(e)}", error_code="duration_error")
+            await update_job(status="error", error_message=f"Could not determine audio duration: {str(e)}")
             return
 
         # --- Step 4: Credit check and deduction ---
@@ -714,18 +709,12 @@ async def run_whisper_job(
         try:
             current_balance = await asyncio.to_thread(check_user_balance, user_id)
         except Exception as e:
-            update_job(status="error", error_message=f"Could not check credit balance: {str(e)}", error_code="balance_error")
+            await update_job(status="error", error_message=f"Could not check credit balance: {str(e)}")
             return
 
         if current_balance < credit_cost:
             logger.warning(f"[job {job_id}] Insufficient credits: user has {current_balance}, needs {credit_cost}")
-            update_job(
-                status="error",
-                error_message="Insufficient credits",
-                error_code="insufficient_credits",
-                required_credits=credit_cost,
-                available_credits=current_balance
-            )
+            await update_job(status="error", error_message="Insufficient credits")
             return
 
         metadata = {
@@ -744,7 +733,7 @@ async def run_whisper_job(
         )
         if not deduction_result.get('success'):
             logger.error(f"[job {job_id}] Credit deduction failed: {deduction_result.get('error')}")
-            update_job(status="error", error_message="Credit deduction failed", error_code="deduction_failed")
+            await update_job(status="error", error_message="Credit deduction failed")
             return
         credits_deducted = True
         track_event(user_id, 'credits_deducted', {
@@ -761,11 +750,11 @@ async def run_whisper_job(
                     temp_files.append(compressed_path)
                     audio_path = compressed_path
             except Exception as e:
-                update_job(status="error", error_message=f"Audio compression failed: {str(e)}", error_code="compression_error")
+                await update_job(status="error", error_message=f"Audio compression failed: {str(e)}")
                 return
 
         # --- Step 6: Transcribe ---
-        update_job(status="transcribing")
+        await update_job(status="transcribing")
         logger.info(f"[job {job_id}] Calling Whisper API for {duration:.2f}s audio ({credit_cost} credits)")
         whisper_start_time = time.time()
 
@@ -781,7 +770,7 @@ async def run_whisper_job(
                 'video_id': video_id, 'source_type': source_type,
                 'error_type': 'api_error', 'error_message': whisper_result['error']
             })
-            update_job(status="error", error_message=whisper_result['error'], error_code="api_error")
+            await update_job(status="error", error_message=whisper_result['error'])
             return
 
         if not whisper_result.get('transcript'):
@@ -790,11 +779,11 @@ async def run_whisper_job(
                 'video_id': video_id, 'source_type': source_type,
                 'error_type': 'no_speech', 'error_message': 'no_speech_detected'
             })
-            update_job(status="error", error_message="no_speech_detected", error_code="no_speech")
+            await update_job(status="error", error_message="no_speech_detected")
             return
 
-        # --- Step 7: Package result ---
-        update_job(status="saving")
+        # --- Step 7: Save transcript to Supabase, then mark job complete ---
+        await update_job(status="saving")
 
         transcript = [
             {'text': item['text'], 'offset': item['offset'], 'duration': item['duration']}
@@ -808,18 +797,33 @@ async def run_whisper_job(
             'credits_used': credit_cost
         })
 
-        logger.info(f"[job {job_id}] Complete: {len(transcript)} segments, {credit_cost} credits deducted")
-        update_job(
+        video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
+        transcript_insert = await asyncio.to_thread(
+            lambda: supabase.table('transcripts').insert({
+                'user_id': user_id,
+                'transcript': transcript,
+                'source_type': source_type,
+                'duration_seconds': int(duration),
+                'video_url': video_url,
+            }).execute()
+        )
+        transcript_id = transcript_insert.data[0]['id']
+
+        logger.info(f"[job {job_id}] Complete: {len(transcript)} segments, {credit_cost} credits deducted, transcript_id={transcript_id}")
+        await update_job(
             status="complete",
-            transcript=transcript,
-            duration=duration,
-            credits_used=credit_cost,
+            transcript_id=transcript_id,
+            duration_seconds=int(duration),
+            credits_cost=credit_cost,
         )
         credits_deducted = False  # Success — do not refund
 
     except Exception as e:
         logger.error(f"[job {job_id}] Unexpected error: {type(e).__name__}: {e}")
-        update_job(status="error", error_message=f"Internal error: {str(e)}", error_code="internal_error")
+        try:
+            await update_job(status="error", error_message=f"Internal error: {str(e)}")
+        except Exception:
+            pass
 
     finally:
         # Refund credits if they were deducted before the failure
@@ -878,21 +882,17 @@ async def transcribe_with_whisper(
             "available_credits": current_balance
         })
 
-    # Create job entry
+    # Insert job row into Supabase whisper_jobs
     job_id = str(uuid.uuid4())
-    whisper_jobs[job_id] = {
-        "job_id": job_id,
-        "user_id": user_id,
-        "status": "pending",
-        "transcript": None,
-        "duration": None,
-        "credits_used": None,
-        "error_message": None,
-        "error_code": None,
-        "required_credits": None,
-        "available_credits": None,
-        "created_at": time.time(),
-    }
+    video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
+    supabase = get_supabase_client()
+    supabase.table('whisper_jobs').insert({
+        'id': job_id,
+        'user_id': user_id,
+        'status': 'pending',
+        'video_url': video_url,
+        'source_type': source_type,
+    }).execute()
 
     asyncio.create_task(run_whisper_job(
         job_id=job_id,
@@ -912,30 +912,42 @@ async def get_job_status(job_id: str, user_id: str):
     """
     Poll a Whisper transcription job.
     Returns job status and, when complete, the full transcript + metadata.
-    Lazily evicts jobs older than 1 hour.
     """
-    # Lazy TTL eviction
-    now = time.time()
-    stale = [jid for jid, j in list(whisper_jobs.items()) if now - j.get("created_at", 0) > 3600]
-    for jid in stale:
-        whisper_jobs.pop(jid, None)
+    supabase = get_supabase_client()
+    try:
+        result = await asyncio.to_thread(
+            lambda: supabase.table('whisper_jobs').select('*').eq('id', job_id).single().execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Job not found")
 
-    job = whisper_jobs.get(job_id)
+    job = result.data
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    if job["user_id"] != user_id:
+    if job['user_id'] != user_id:
         raise HTTPException(status_code=403, detail="Access denied")
+
+    # Fetch transcript data when job is complete
+    transcript = None
+    if job.get('transcript_id'):
+        try:
+            t_result = await asyncio.to_thread(
+                lambda: supabase.table('transcripts').select('transcript').eq('id', job['transcript_id']).single().execute()
+            )
+            transcript = t_result.data.get('transcript') if t_result.data else None
+        except Exception:
+            pass
 
     return JSONResponse({
         "job_id": job_id,
-        "status": job["status"],
-        "transcript": job.get("transcript"),
-        "duration": job.get("duration"),
-        "credits_used": job.get("credits_used"),
-        "error_message": job.get("error_message"),
-        "error_code": job.get("error_code"),
-        "required_credits": job.get("required_credits"),
-        "available_credits": job.get("available_credits"),
+        "status": job['status'],
+        "transcript": transcript,
+        "duration": job.get('duration_seconds'),
+        "credits_used": job.get('credits_cost'),
+        "error_message": job.get('error_message'),
+        "error_code": None,
+        "required_credits": None,
+        "available_credits": None,
     })
 
 @app.post("/api/summarize", response_model=SummarizeResponse)
