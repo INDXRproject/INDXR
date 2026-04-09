@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { createClient } from '@/utils/supabase/server';
 
+export const maxDuration = 60;
+
 const requestSchema = z.object({
   videoIdOrUrl: z.string().min(1, 'URL or Video ID is required'),
 });

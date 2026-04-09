@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 
+export const maxDuration = 60;
+
 const requestSchema = z.object({
   url: z.string().optional(),
   videoIdOrUrl: z.string().optional(),
