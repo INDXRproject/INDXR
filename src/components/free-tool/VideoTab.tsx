@@ -120,6 +120,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   // SSE streaming state
   const [whisperStatus, setWhisperStatus] = useState<WhisperStatus>('idle')
   const [isStreaming, setIsStreaming] = useState(false)
+  // True while fetching video metadata for Whisper cost estimation
+  const [isFetchingMeta, setIsFetchingMeta] = useState(false)
 
   // Navigation guard while SSE stream is open
   useEffect(() => {
@@ -292,6 +294,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setTranscript(null)
     setError(null)
     setVideoDuration(null)
+    setSaveStatus('idle')
+    setWhisperMetadata(null)
 
     // Extract video ID for Whisper path
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -300,6 +304,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
     // If Whisper toggle is ON, first fetch video metadata for accurate credit calculation
     if (useWhisper && videoId) {
+      setIsFetchingMeta(true)
       try {
         // First, fetch video metadata to get duration
         const metaResponse = await fetch('/api/extract', {
@@ -353,6 +358,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         setShowWhisperConfirm(true)
         setLoading(false)
         return
+      } finally {
+        setIsFetchingMeta(false)
       }
     }
 
@@ -530,6 +537,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setLoading(true)
     setError(null)
     setWhisperStatus('idle')
+    setSaveStatus('idle')
+    setWhisperMetadata(null)
 
     const { videoId } = pendingWhisperData
 
@@ -755,7 +764,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               disabled={loading || !url || isCheckingDuplicate}
             >
               {loading || isCheckingDuplicate ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {loading ? "Extracting" : isCheckingDuplicate ? "Checking..." : "Extract"}
+              {loading && isFetchingMeta ? "Checking..." : loading ? "Extracting" : isCheckingDuplicate ? "Checking..." : "Extract"}
             </Button>
           )}
         </div>
@@ -992,7 +1001,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       )}
 
       {/* Loading Skeleton */}
-      {loading && !transcript && (
+      {loading && !transcript && !isStreaming && (
           <div className="w-full max-w-4xl mx-auto mt-8">
              <CardSkeleton />
           </div>
@@ -1037,6 +1046,23 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
              );
           })()}
 
+          {/* Success Banner for Whisper Transcription */}
+          {saveStatus === 'saved' && whisperMetadata && (
+            <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center justify-between text-left animate-in fade-in duration-300">
+              <div className="flex-1">
+                <p className="text-green-600 dark:text-green-400 text-sm font-medium mb-1">Transcript saved to library</p>
+                <p className="text-xs text-muted-foreground">
+                  Used {whisperMetadata.creditsUsed} credits • {Math.round(whisperMetadata.duration / 60)} minutes
+                </p>
+              </div>
+              <Link href="/dashboard/library">
+                <Button variant="outline" size="sm" className="ml-4">
+                  View in Library
+                </Button>
+              </Link>
+            </div>
+          )}
+
           <TranscriptCard transcript={transcript} videoTitle={videoTitle} videoUrl={videoUrl} />
         </div>
       ) : !loading && !transcript && (
@@ -1049,23 +1075,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       {transcript !== null && transcript.length === 0 && !loading && (
         <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-600 dark:text-yellow-400 text-sm">
           No captions available for this video
-        </div>
-      )}
-
-      {/* Success Banner for Whisper Transcription */}
-      {saveStatus === 'saved' && whisperMetadata && (
-        <div className="mb-8 p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center justify-between text-left animate-in fade-in duration-300">
-          <div className="flex-1">
-            <p className="text-green-600 dark:text-green-400 text-sm font-medium mb-1">Transcript saved to library</p>
-            <p className="text-xs text-muted-foreground">
-              Used {whisperMetadata.creditsUsed} credits • {Math.round(whisperMetadata.duration / 60)} minutes
-            </p>
-          </div>
-          <Link href="/dashboard/library">
-            <Button variant="outline" size="sm" className="ml-4">
-              View in Library
-            </Button>
-          </Link>
         </div>
       )}
 
