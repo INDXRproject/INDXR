@@ -100,6 +100,15 @@ async function pollWhisperJob(
   return { type: 'error', error: 'Transcription timed out', code: 'timeout' }
 }
 
+function getWhisperProcessingEstimate(durationSeconds: number): string {
+  const minutes = durationSeconds / 60
+  if (minutes < 10) return "~1 min"
+  if (minutes < 30) return "~2-3 min"
+  if (minutes < 60) return "~4-5 min"
+  if (minutes < 120) return "~6-8 min"
+  return "~10+ min"
+}
+
 export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAudio }: VideoTabProps) {
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
@@ -647,6 +656,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           if (saved) setExistingTranscriptId(saved.id)
         }
 
+        setSaveStatus('saved')
         refreshCredits()
         setUrl("")
         setUseWhisper(false)
@@ -789,7 +799,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               disabled={loading || !url || isCheckingDuplicate}
             >
               {loading || isCheckingDuplicate ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {loading && isFetchingMeta ? "Checking..." : loading ? "Extracting" : isCheckingDuplicate ? "Checking..." : "Extract"}
+              {loading && isFetchingMeta ? "Checking..." : loading ? "Extracting" : isCheckingDuplicate ? "Checking..." : useWhisper ? "Check" : "Extract"}
             </Button>
           )}
         </div>
@@ -862,12 +872,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     <>Video duration unknown.</>
                   )}
                 </p>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-muted-foreground mb-1">
                   {pendingWhisperData.duration > 0 ? (
                     <>Whisper AI will cost <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired} credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span>. You have <span className="font-semibold">{credits}</span> credits.</>
                   ) : (
                     <>Whisper AI will cost approximately <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per 10 min). You have <span className="font-semibold">{credits}</span> credits.</>
                   )}
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Estimated processing time: {pendingWhisperData.duration > 0 ? getWhisperProcessingEstimate(pendingWhisperData.duration) : "varies by length"}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1074,15 +1087,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
           {/* Success Banner for Whisper Transcription */}
           {saveStatus === 'saved' && whisperMetadata && (
-            <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center justify-between text-left animate-in fade-in duration-300">
+            <div className="mb-4 p-4 bg-green-500/15 border border-green-500/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex-1">
-                <p className="text-green-600 dark:text-green-400 text-sm font-medium mb-1">Transcript saved to library</p>
+                <p className="text-green-600 dark:text-green-400 font-semibold mb-1">Transcript ready! Whisper AI processed your video successfully.</p>
                 <p className="text-xs text-muted-foreground">
-                  Used {whisperMetadata.creditsUsed} credits • {Math.round(whisperMetadata.duration / 60)} minutes
+                  Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {Math.round(whisperMetadata.duration / 60)} min
                 </p>
               </div>
               <Link href="/dashboard/library">
-                <Button variant="outline" size="sm" className="ml-4">
+                <Button variant="outline" size="sm" className="ml-4 border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-500/10">
                   View in Library
                 </Button>
               </Link>

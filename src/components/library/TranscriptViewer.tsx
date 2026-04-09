@@ -24,7 +24,6 @@ import {
 import posthog from "posthog-js";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
@@ -328,7 +327,6 @@ export function TranscriptViewer({
     immediatelyRender: false,
     extensions: [
       StarterKit,
-      Underline,
       SearchExtension.configure({
         onSearchUpdate: (count, index) => {
           setSearchMatchesCount(count);

@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import {
@@ -60,7 +59,6 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
           keepAttributes: false,
         },
       }),
-      Underline,
     ],
     content: displayContent,
     editorProps: {
