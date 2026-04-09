@@ -802,8 +802,6 @@ async def run_whisper_job(
             lambda: supabase.table('transcripts').insert({
                 'user_id': user_id,
                 'transcript': transcript,
-                'source_type': source_type,
-                'video_url': video_url,
             }).execute()
         )
         transcript_id = transcript_insert.data[0]['id']
