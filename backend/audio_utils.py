@@ -18,6 +18,18 @@ SUPPORTED_FORMATS = {'.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', 
 MAX_FILE_SIZE_MB = 25
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
+MEMBERS_ONLY_KEYWORDS = [
+    'join this channel to get access to members-only content',
+    'this video is available to this channel\'s members',
+    'unplayable',
+    'members-only',
+]
+
+
+class MembersOnlyVideoError(Exception):
+    """Raised when a YouTube video is members-only and cannot be accessed."""
+    pass
+
 
 def get_audio_duration(file_path: str) -> float:
     """
@@ -165,7 +177,11 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
 
         except Exception as e:
             last_error = e
-            is_timeout = any(kw in str(e).lower() for kw in ('timed out', 'timeout', 'read timeout', 'connectionpool'))
+            error_str = str(e).lower()
+            if any(kw in error_str for kw in MEMBERS_ONLY_KEYWORDS):
+                logger.warning(f"Members-only video detected during audio extraction: {video_id}")
+                raise MembersOnlyVideoError("This video is only available to channel members and cannot be transcribed.")
+            is_timeout = any(kw in error_str for kw in ('timed out', 'timeout', 'read timeout', 'connectionpool'))
             if is_timeout and attempt < max_attempts:
                 logger.warning(f"yt-dlp download timeout (attempt {attempt}/{max_attempts}), retrying in 5s...")
                 time.sleep(5)

@@ -78,6 +78,14 @@ export async function POST(request: Request) {
 
     const data = await response.json();
 
+    // Handle members-only video
+    if (data.error === 'members_only') {
+      return NextResponse.json(
+        { success: false, error: 'members_only', message: data.message || 'This video is only available to channel members and cannot be transcribed.' },
+        { status: 403 }
+      );
+    }
+
     // Handle insufficient credits with user-friendly message
     if (!data.success && data.error === 'Insufficient credits') {
       return NextResponse.json(

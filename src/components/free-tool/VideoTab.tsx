@@ -28,7 +28,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [transcript, setTranscript] = useState<TranscriptItem[] | null>(null)
   const [videoTitle, setVideoTitle] = useState<string>("")
   const [videoUrl, setVideoUrl] = useState<string>("")
-  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean } | null>(null)
+  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean } | null>(null)
   const [isPlaylistUrl, setIsPlaylistUrl] = useState(false)
   const [showWhisperModal, setShowWhisperModal] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState("")
@@ -288,6 +288,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const data = await response.json()
 
       if (!response.ok || data.success === false) {
+        if (data.error === 'members_only') {
+          setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+          return
+        }
         throw new Error(data.error || 'Failed to extract transcript')
       }
 
@@ -457,6 +461,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const data = await response.json();
 
       if (!response.ok || !data.success) {
+        if (data.error === 'members_only') {
+          setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+          return
+        }
         throw new Error(data.error || 'Failed to extract transcript with Whisper AI');
       }
 
@@ -561,7 +569,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       const data = await response.json();
 
-      if (!response.ok || !data.success) throw new Error(data.error || 'Failed to extract transcript with Whisper AI');
+      if (!response.ok || !data.success) {
+        if (data.error === 'members_only') {
+          setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+          return
+        }
+        throw new Error(data.error || 'Failed to extract transcript with Whisper AI')
+      }
 
       posthog.capture('transcript_extracted', {
           type: 'video',
@@ -783,7 +797,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         {/* Normal error text */}
         {!existingTranscriptId && !showDuplicateChoices && !showWhisperConfirm && (
           <div className="flex justify-between items-start px-1">
-             {error?.isYouTubeRestricted ? (
+             {error?.isMembersOnly ? (
+               <p className="text-sm text-destructive">{error.message}</p>
+             ) : error?.isYouTubeRestricted ? (
                <div className="flex flex-col gap-2 w-full">
                  <p className="text-sm text-destructive">
                    {error.message}

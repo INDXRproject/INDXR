@@ -232,15 +232,20 @@ The project uses a neutral utility skin (April 2025) replacing the previous Star
 - [ ] Verify webhook signature validation in production
 
 **Supabase Security:**
-- [ ] Re-enable email verification (disabled for testing)
+- [ ] Re-enable email verification (currently disabled — must enable before launch)
 - [ ] Test OAuth redirect URLs on production domain
 - [ ] Backup database before launch
 
 **Infrastructure:**
 - [ ] Set all environment variables in Vercel
 - [ ] Verify IPRoyal proxy credentials (password has confusable `I`/`l`)
-- [ ] Test rate limiting in production
+- [ ] Fill in `STRIPE_WEBHOOK_SECRET` in Vercel — currently set but empty; required for live webhook signature validation
+- [ ] Configure Upstash Redis: add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to Vercel environment variables — rate limiting is currently disabled (app falls back to `noopLimiter` automatically)
+- [ ] Test rate limiting in production (after Upstash is configured)
 - [ ] Run `npm audit`
+
+**Security:**
+- [ ] Add `BACKEND_API_SECRET` shared header between Vercel and Railway — the Railway backend currently has no authentication; any client that knows the Railway URL can call the API directly
 
 **PostHog:**
 - [ ] Verify event tracking in production

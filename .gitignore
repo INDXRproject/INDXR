@@ -49,3 +49,9 @@ backend/.env
 
 # Test credentials
 tests/test_accounts.json
+
+# Generated test output
+tests/playwright-report/
+tests/results/
+tests/__pycache__/
+test-results/

@@ -39,6 +39,42 @@ The backend must be running for:
 
 ---
 
+## Deployment
+
+### Railway (Backend)
+
+The Python backend is deployed on Railway at https://indxr-production.up.railway.app.
+
+- **Dockerfile**: `backend/Dockerfile` (Python 3.12-slim with ffmpeg, unzip, Deno)
+- **Auto-deploy**: Every push to `master` triggers a Railway rebuild — no manual steps needed
+- **Service variables** (set in Railway dashboard): `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`, `DENO_PATH=/root/.deno/bin`
+- **Deno inside Railway container**: installed at `/root/.deno/bin` — `DENO_PATH` is already set as a Railway service variable
+
+**To update yt-dlp or any Python package and redeploy:**
+
+```bash
+cd backend
+venv/bin/pip install --upgrade yt-dlp
+venv/bin/pip freeze > requirements.txt
+git add backend/requirements.txt
+git commit -m "chore: upgrade yt-dlp"
+git push
+```
+
+Railway will detect the push and rebuild automatically.
+
+### Vercel (Frontend)
+
+The Next.js frontend is deployed on Vercel at https://indxr.ai.
+
+- **Vercel account**: contact@indxr.ai (old sinbadthesyncer account deleted)
+- **GitHub connection**: INDXRproject/INDXR, branch `master`
+- **Auto-deploy**: Every push to `master` triggers a Vercel deployment
+- **Key environment variables** (set in Vercel dashboard): `PYTHON_BACKEND_URL=https://indxr-production.up.railway.app`, `NEXT_PUBLIC_APP_URL=https://indxr.ai`
+- **DNS**: `indxr.ai` points to `76.76.21.21` (Vercel)
+
+---
+
 ## Proxy Configuration (IPRoyal)
 
 The backend routes all yt-dlp requests through an IPRoyal residential proxy.
@@ -71,8 +107,9 @@ venv/bin/python3 -m yt_dlp \
 
 Deno is required for yt-dlp's YouTube JS challenge solving (introduced in yt-dlp 2026.03.17+).
 
-- **Installed at**: `~/.deno/bin/deno`
-- **PATH injection**: Automatic — `DENO_PATH=/home/aladdin/.deno/bin` in `backend/.env` is read at startup in `main.py`; no manual `export PATH` needed when starting uvicorn
+- **Installed at (local)**: `~/.deno/bin/deno` — `DENO_PATH=/home/aladdin/.deno/bin` in `backend/.env`
+- **Installed at (Railway)**: `/root/.deno/bin/deno` — `DENO_PATH=/root/.deno/bin` set as a Railway service variable
+- **PATH injection**: Automatic — `DENO_PATH` in `backend/.env` (or Railway service variable) is read at startup in `main.py`; no manual `export PATH` needed when starting uvicorn
 - **To install deno**:
   ```bash
   curl -fsSL https://deno.land/install.sh | sh
@@ -244,6 +281,19 @@ python3 test_suite.py
 ```
 
 Results saved to `tests/results/run_{timestamp}.json`. Superseded by Playwright suite but retained for reference.
+
+---
+
+## Git Hygiene
+
+The following paths are in `.gitignore` and removed from git tracking:
+
+- `tests/playwright-report/` — Playwright HTML reports and per-run metrics JSON
+- `tests/results/` — Legacy Python test suite JSON results
+- `tests/__pycache__/` — Python bytecode cache
+- `test-results/` — Playwright raw test artifacts
+
+Do not commit any of the above. If they reappear in `git status`, run `git rm -r --cached <path>` to remove them from tracking without deleting the local files.
 
 ---
 

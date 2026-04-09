@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict
@@ -40,7 +41,9 @@ from audio_utils import (
     get_audio_duration,
     extract_youtube_audio,
     validate_audio_file,
-    compress_audio_if_needed
+    compress_audio_if_needed,
+    MembersOnlyVideoError,
+    MEMBERS_ONLY_KEYWORDS,
 )
 from whisper_client import transcribe_audio
 from credit_manager import (
@@ -393,7 +396,13 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True) -> List[dict
                 'duration': info.get('duration')
             }
             
+    except MembersOnlyVideoError:
+        raise
     except Exception as e:
+        error_str = str(e).lower()
+        if any(kw in error_str for kw in MEMBERS_ONLY_KEYWORDS):
+            logger.warning(f"Members-only video detected during caption extraction: {video_id}")
+            raise MembersOnlyVideoError("This video is only available to channel members and cannot be transcribed.")
         logger.error(f"yt-dlp extraction error: {type(e).__name__}: {e}")
         raise Exception(f"yt-dlp extraction failed: {str(e)}")
 
@@ -438,6 +447,11 @@ async def extract_youtube_transcript(request: ExtractRequest):
             duration=result.get('duration')
         )
         
+    except MembersOnlyVideoError:
+        return JSONResponse(
+            status_code=403,
+            content={"success": False, "error": "members_only", "message": "This video is only available to channel members and cannot be transcribed."}
+        )
     except Exception as e:
         logger.error(f"Extraction terminal error: {type(e).__name__}: {e}")
         return ExtractResponse(
@@ -648,8 +662,18 @@ async def transcribe_with_whisper(
                     logger.warning(f"Whisper audio download: proxy DISABLED — PROXY_ENABLED={PROXY_ENABLED}. This may cause 403 errors from YouTube.")
                 audio_path = extract_youtube_audio(video_id, proxy_url=proxy_url)
                 temp_files.append(audio_path)
+            except MembersOnlyVideoError:
+                return JSONResponse(
+                    status_code=403,
+                    content={"success": False, "error": "members_only", "message": "This video is only available to channel members and cannot be transcribed."}
+                )
             except Exception as e:
                 error_msg = str(e)
+                if any(kw in error_msg.lower() for kw in MEMBERS_ONLY_KEYWORDS):
+                    return JSONResponse(
+                        status_code=403,
+                        content={"success": False, "error": "members_only", "message": "This video is only available to channel members and cannot be transcribed."}
+                    )
                 is_restricted = '152' in error_msg or 'unavailable' in error_msg.lower()
                 track_event(user_id, 'whisper_failed', {
                     'video_id': video_id,

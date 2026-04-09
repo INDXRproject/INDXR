@@ -86,10 +86,16 @@ export async function POST(request: Request) {
 
       // Forward the response from Python backend
       if (!response.ok || data.success === false) {
+        if (data.error === 'members_only') {
+          return NextResponse.json(
+            { success: false, error: 'members_only', message: data.message || 'This video is only available to channel members and cannot be transcribed.' },
+            { status: 403 }
+          );
+        }
         return NextResponse.json(
-          { 
+          {
             success: false,
-            error: data.error || 'Failed to extract transcript' 
+            error: data.error || 'Failed to extract transcript'
           },
           { status: 400 } // Use 400 for bad request logic from backend
         );

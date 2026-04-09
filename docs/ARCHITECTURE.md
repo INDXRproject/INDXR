@@ -44,7 +44,27 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
   - `public.user_credits` + `credit_transactions`: Billing logic
   - `public.transcripts`: Stores video/playlist transcripts, including `edited_content` (text) and `ai_summary` (JSONB)
 - **Cache/Rate Limit**: Upstash Redis (Serverless Redis)
-- **Hosting**: Vercel (Frontend), Railway (Backend - recommended)
+- **Hosting**: Vercel (Frontend — https://indxr.ai), Railway (Backend — https://indxr-production.up.railway.app)
+
+### 4. Deployment
+
+#### Railway (Backend)
+
+- **URL**: https://indxr-production.up.railway.app
+- **Dockerfile**: `backend/Dockerfile` (Python 3.12-slim, includes ffmpeg, unzip, Deno)
+- **Deno path inside container**: `/root/.deno/bin` — set as `DENO_PATH=/root/.deno/bin` in Railway service variables
+- **Auto-deploy**: Every push to `master` branch triggers a Railway rebuild
+- **Service variables**: `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`
+- **To update yt-dlp or any Python package**: `cd backend && venv/bin/pip install --upgrade yt-dlp && venv/bin/pip freeze > requirements.txt` then commit and push — Railway rebuilds automatically
+- **Security gap**: No authentication on the Railway backend — any client that knows the Railway URL can call the API. Post-launch: add a shared `BACKEND_API_SECRET` header between Vercel and Railway.
+
+#### Vercel (Frontend)
+
+- **URL**: https://indxr.ai (DNS: `76.76.21.21`)
+- **GitHub repo**: INDXRproject/INDXR, branch `master`
+- **Vercel account**: contact@indxr.ai
+- **Auto-deploy**: Every push to `master` triggers a Vercel deployment
+- **Key environment variables**: `PYTHON_BACKEND_URL=https://indxr-production.up.railway.app`, `NEXT_PUBLIC_APP_URL=https://indxr.ai`
 
 ---
 
@@ -280,7 +300,7 @@ SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_URL
 POSTHOG_API_KEY         # Backend event tracking
 POSTHOG_HOST            # https://app.posthog.com
-DENO_PATH               # Path to deno binary (e.g. /home/user/.deno/bin)
+DENO_PATH               # Path to deno binary — Railway: /root/.deno/bin, local: /home/aladdin/.deno/bin
 LOG_LEVEL               # Logging verbosity: WARNING (prod) or INFO (debug)
 ```
 
