@@ -757,28 +757,28 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           <div className="px-1 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-500">
               <AlertCircle className="h-4 w-4 shrink-0" />
-              <span className="font-medium">Je hebt dit transcript al. Opnieuw extraheren?</span>
+              <span className="font-medium">You already have this transcript in your library. Extract again?</span>
             </div>
             <div className="flex items-center gap-2 pl-5">
               <Link
                 href={`/dashboard/library/${existingTranscriptId}`}
                 className="text-sm font-medium text-primary hover:underline"
               >
-                Bekijk in library
+                View in Library
               </Link>
               <span className="text-muted-foreground/40 text-xs">·</span>
               <button
                 className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
                 onClick={() => handleExtract()}
               >
-                Toch extraheren
+                Extract anyway
               </button>
               <span className="text-muted-foreground/40 text-xs">·</span>
               <button
                 className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
                 onClick={() => setShowDuplicateChoices(false)}
               >
-                Annuleer
+                Cancel
               </button>
             </div>
           </div>
@@ -790,11 +790,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>
               {existingTranscriptMethod === 'whisper_ai'
-                ? 'Je hebt dit transcript al (Whisper AI) — '
-                : 'Je hebt dit transcript al — '}
+                ? 'You already have this transcript (Whisper AI) — '
+                : 'You already have this transcript in your library — '}
             </span>
             <Link href={`/dashboard/library/${existingTranscriptId}`} className="font-medium hover:underline">
-              bekijk het in je library
+              View in Library
             </Link>
           </div>
         )}
@@ -803,9 +803,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         {!existingTranscriptId && !showDuplicateChoices && !showWhisperConfirm && (
           <div className="flex justify-between items-start px-1">
              {error?.isMembersOnly ? (
-               <div className="flex flex-col gap-2 w-full">
-                 <p className="text-sm font-medium text-destructive">Members-Only Video</p>
-                 <p className="text-sm text-destructive">This video is only available to channel members and cannot be transcribed by INDXR.AI.</p>
+               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                 <div>
+                   <p className="text-sm font-medium text-destructive">Members-Only Video</p>
+                   <p className="text-sm text-destructive/80 mt-0.5">This video is only available to channel members and cannot be transcribed by INDXR.AI.</p>
+                 </div>
                </div>
              ) : error?.isYouTubeRestricted ? (
                <div className="flex flex-col gap-2 w-full">
