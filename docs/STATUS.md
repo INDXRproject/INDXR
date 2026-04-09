@@ -72,6 +72,12 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 - **Status**: Retained at `tests/test_suite.py` (28 tests); superseded by Playwright suite
 - **Results**: `tests/results/run_{timestamp}.json`
 
+### Error Handling & UI Fixes (Apr 2026)
+
+- **Members-only video detection**: `MembersOnlyVideoError` raised in `audio_utils.py` and `extract_with_ytdlp` when yt-dlp returns error messages containing members-only keywords (`UNPLAYABLE`, `members-only`, etc.). Backend returns HTTP 403 with `{"error": "members_only"}` before any credit check or deduction. Frontend shows a bordered error card with `AlertCircle` icon and title "Members-Only Video". Whisper modal is suppressed for members-only URLs.
+- **Dutch strings removed from VideoTab.tsx**: All duplicate-detection messages, confirmations, and library links replaced with English ("Je hebt dit transcript al" → "You already have this transcript in your library", "Bekijk in library" → "View in Library", "Toch extraheren" → "Extract anyway", "Annuleer" → "Cancel").
+- **Members-only error card styling**: Consistent with other inline error states — `p-3 rounded-lg bg-destructive/10 border border-destructive/20` with `AlertCircle` icon, bold title, and message line.
+
 ### Logging Verbosity Control
 
 - `LOG_LEVEL` env var in `backend/.env` controls log output (`WARNING` in production, `INFO` for debug)
@@ -195,6 +201,13 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 
 - Only single video and playlist extraction
 - No "extract entire channel" feature
+
+---
+
+## 🐛 KNOWN ISSUES
+
+- **SSL error on long Whisper videos**: `[SSL: UNEXPECTED_EOF_WHILE_READING]` — Railway proxy drops the connection during long audio downloads. Not yet fixed; affects videos over ~30 minutes.
+- **Toast messages inconsistent**: Some success/error toasts appear alongside inline error cards, creating duplicate feedback. Cleanup deferred to the visual redesign phase.
 
 ---
 

@@ -56,6 +56,17 @@
 
 ## 🔮 Current & Future Phases
 
+### Phase M: Whisper SSE / Real-Time Progress (Immediate — Next Up)
+
+**Goal**: Replace the blocking Whisper POST with a streaming response so users see live status during the 60–180 second processing window.
+
+This is infrastructure, not a feature. It enables honest progress feedback at scale and is the foundation for future long-running tasks (batch Whisper, playlist processing).
+
+- [ ] **`backend/main.py`**: Refactor Whisper endpoint to `StreamingResponse`, emitting newline-delimited JSON events: `downloading`, `transcribing`, `saving`, `complete`, `error`
+- [ ] **`src/app/api/transcribe/whisper/route.ts`**: Forward the stream to the frontend using a Next.js streaming response
+- [ ] **`src/components/free-tool/VideoTab.tsx`**: Use `fetch` with `ReadableStream` to consume events and display real-time status messages inline
+- [ ] **`beforeunload` guard**: Attach when stream opens, remove on `complete` or `error`
+
 ### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
 
 **Goal**: Launch-ready operations and monitoring.
