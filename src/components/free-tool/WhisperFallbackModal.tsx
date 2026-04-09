@@ -56,7 +56,6 @@ export function WhisperFallbackModal({
         body: formData,
       })
 
-      // Non-OK = pre-stream JSON error (auth, suspended, validation)
       if (!response.ok) {
         const errorData = await response.json()
         if (errorData.error === 'members_only') {
@@ -69,30 +68,44 @@ export function WhisperFallbackModal({
         return
       }
 
-      // Consume SSE stream (no status display needed in modal)
-      const reader = response.body!.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
+      const jobData = await response.json()
+      if (!jobData.job_id) {
+        onError('Failed to start transcription job')
+        onOpenChange(false)
+        return
+      }
+
+      // Poll for job completion (no status display needed in modal)
+      const POLL_INTERVAL_MS = 3000
+      const MAX_POLLS = 200
       let finalEvent: { type: string; transcript?: unknown[]; duration?: number; credits_used?: number; error?: string; code?: string; required_credits?: number; available_credits?: number } | null = null
 
-      outer: while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          try {
-            const event = JSON.parse(line.slice(6))
-            if (event.type === 'complete' || event.type === 'error') {
-              finalEvent = event
-              break outer
-            }
-          } catch { /* ignore malformed lines */ }
+      for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+        try {
+          const resp = await fetch(`/api/jobs/${jobData.job_id}`)
+          if (!resp.ok) {
+            finalEvent = { type: 'error', error: 'Failed to check job status' }
+            break
+          }
+          const job = await resp.json()
+          if (job.status === 'complete') {
+            finalEvent = { type: 'complete', transcript: job.transcript, duration: job.duration, credits_used: job.credits_used }
+            break
+          } else if (job.status === 'error') {
+            finalEvent = { type: 'error', error: job.error_message, code: job.error_code, required_credits: job.required_credits, available_credits: job.available_credits }
+            break
+          }
+          // Still in progress — keep polling
+        } catch {
+          finalEvent = { type: 'error', error: 'Network error while checking job status' }
+          break
         }
       }
-      reader.releaseLock()
+
+      if (!finalEvent) {
+        finalEvent = { type: 'error', error: 'Transcription timed out' }
+      }
 
       if (!finalEvent || finalEvent.type === 'error') {
         if (finalEvent?.code === 'insufficient_credits') {

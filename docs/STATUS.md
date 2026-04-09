@@ -78,12 +78,18 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 - **Dutch strings removed from VideoTab.tsx**: All duplicate-detection messages, confirmations, and library links replaced with English ("Je hebt dit transcript al" → "You already have this transcript in your library", "Bekijk in library" → "View in Library", "Toch extraheren" → "Extract anyway", "Annuleer" → "Cancel").
 - **Members-only error card styling**: Consistent with other inline error states — `p-3 rounded-lg bg-destructive/10 border border-destructive/20` with `AlertCircle` icon, bold title, and message line.
 
-### Whisper SSE / Real-Time Progress (Phase M)
+### Whisper SSE / Real-Time Progress (Phase M) — superseded by Phase N
 
-- **Backend** (`backend/main.py`): `/api/transcribe/whisper` is now a `StreamingResponse` (`text/event-stream`). All blocking steps run via `asyncio.to_thread` so the event loop is not blocked. Emits newline-delimited JSON SSE events: `downloading` (yt-dlp starts), `transcribing` (Whisper API call starts), `saving` (credits deducted, packaging result), `complete` (with full transcript data), `error` (with `error` string and `code`). Members-only detection and credit pre-check logic unchanged.
-- **Next.js route** (`src/app/api/transcribe/whisper/route.ts`): Auth and suspension checks remain as JSON responses. The backend SSE stream is piped directly to the client via `new Response(response.body, ...)` with `Content-Type: text/event-stream`.
-- **Frontend** (`src/components/free-tool/VideoTab.tsx`): `consumeWhisperStream` helper parses the stream; `whisperStatus` state drives inline status messages ("Downloading audio from YouTube…", "Transcribing with Whisper AI…", "Saving transcript…") shown below the URL input. `isStreaming` state triggers a `beforeunload` guard via `useEffect`. Both `handleWhisperConfirm` and `handleWhisperUpsell` use the streaming path.
-- **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Updated to consume the SSE stream (no status display; returns complete/error event).
+- Original SSE architecture replaced by background job polling (Phase N).
+
+### Whisper Background Job Architecture (Phase N)
+
+- **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the in-memory `whisper_jobs` dict at each step. Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction. Jobs expire after 1 hour via lazy TTL eviction.
+- **GET** `/api/jobs/{job_id}?user_id=...`: Returns current job dict for the authenticated owner. Used by frontend polling. Returns 404 for unknown/expired jobs, 403 for wrong owner.
+- **Next.js whisper route** (`src/app/api/transcribe/whisper/route.ts`): Auth and suspension checks unchanged. Returns the `{ job_id, status }` JSON from backend directly — no SSE piping. `maxDuration` reduced to 60s (POST returns immediately).
+- **Next.js jobs route** (`src/app/api/jobs/[job_id]/route.ts`): New file. Auth check (login required), suspended check, forwards GET to Railway backend with `?user_id` query param.
+- **Frontend** (`src/components/free-tool/VideoTab.tsx`): `pollWhisperJob` helper polls `/api/jobs/{job_id}` every 3 seconds; `WhisperStatus` type includes `'pending'`; status display shows "Starting transcription..." for pending state. Both `handleWhisperConfirm` and `handleWhisperUpsell` use the polling path.
+- **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Updated to poll `/api/jobs/{job_id}` (no status display; waits for complete/error).
 
 ### Logging Verbosity Control
 
@@ -213,7 +219,6 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 
 ## 🐛 KNOWN ISSUES
 
-- **SSL error on long Whisper videos**: `[SSL: UNEXPECTED_EOF_WHILE_READING]` — Railway proxy drops the connection during long audio downloads. Not yet fixed; affects videos over ~30 minutes.
 - **Toast messages inconsistent**: Some success/error toasts appear alongside inline error cards, creating duplicate feedback. Cleanup deferred to the visual redesign phase.
 
 ---

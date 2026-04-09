@@ -56,16 +56,19 @@
 
 ## 🔮 Current & Future Phases
 
-### Phase M: Whisper SSE / Real-Time Progress ✅
+### Phase M: Whisper SSE / Real-Time Progress ✅ (superseded by Phase N)
 
-**Goal**: Replace the blocking Whisper POST with a streaming response so users see live status during the 60–180 second processing window.
+- SSE architecture was implemented then replaced by background job polling to eliminate Vercel timeout constraints.
 
-This is infrastructure, not a feature. It enables honest progress feedback at scale and is the foundation for future long-running tasks (batch Whisper, playlist processing).
+### Phase N: Whisper Background Job Architecture ✅
 
-- [x] **`backend/main.py`**: Refactor Whisper endpoint to `StreamingResponse`, emitting newline-delimited JSON events: `downloading`, `transcribing`, `saving`, `complete`, `error`
-- [x] **`src/app/api/transcribe/whisper/route.ts`**: Forward the stream to the frontend using a Next.js streaming response
-- [x] **`src/components/free-tool/VideoTab.tsx`**: `consumeWhisperStream` helper; `whisperStatus` state drives inline status messages; `isStreaming` + `useEffect` `beforeunload` guard
-- [x] **`src/components/free-tool/WhisperFallbackModal.tsx`**: Updated to consume SSE stream (silent, no status display)
+**Goal**: Decouple the Whisper transcription from the HTTP request lifecycle so long-running jobs (30–180 seconds) cannot be killed by Vercel's function timeout.
+
+- [x] **`backend/main.py`**: POST returns `{"job_id", "status": "pending"}` immediately; background task `run_whisper_job` runs the full pipeline and updates in-memory `whisper_jobs` dict; GET `/api/jobs/{job_id}` returns current job status with ownership check and 1-hour TTL eviction
+- [x] **`src/app/api/transcribe/whisper/route.ts`**: Returns `{ job_id, status }` JSON directly; `maxDuration` reduced to 60s
+- [x] **`src/app/api/jobs/[job_id]/route.ts`**: New file — auth check, suspended check, forwards GET to Railway with `?user_id` query param
+- [x] **`src/components/free-tool/VideoTab.tsx`**: `pollWhisperJob` helper polls every 3s; `WhisperStatus` includes `'pending'`; "Starting transcription..." status message added
+- [x] **`src/components/free-tool/WhisperFallbackModal.tsx`**: Replaced SSE reader with 3-second polling loop
 
 ### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
 

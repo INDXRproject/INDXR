@@ -22,7 +22,7 @@ interface VideoTabProps {
   onSwitchToAudio?: () => void
 }
 
-type WhisperStatus = 'idle' | 'downloading' | 'transcribing' | 'saving'
+type WhisperStatus = 'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'
 
 type WhisperCompleteEvent = {
   type: 'complete'
@@ -42,48 +42,62 @@ type WhisperErrorEvent = {
 type WhisperFinalEvent = WhisperCompleteEvent | WhisperErrorEvent
 
 /**
- * Consumes a Server-Sent Events response from /api/transcribe/whisper.
- * Calls onStatus for each progress event, then returns the terminal event.
+ * Polls GET /api/jobs/{jobId} every 3 seconds until the job reaches
+ * a terminal state (complete or error). Calls onStatus for each
+ * in-progress status update.
  */
-async function consumeWhisperStream(
-  response: Response,
-  onStatus: (status: 'downloading' | 'transcribing' | 'saving') => void
+async function pollWhisperJob(
+  jobId: string,
+  onStatus: (status: 'pending' | 'downloading' | 'transcribing' | 'saving') => void
 ): Promise<WhisperFinalEvent> {
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
+  const POLL_INTERVAL_MS = 3000
+  const MAX_POLLS = 200 // 10 minutes max
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+  for (let i = 0; i < MAX_POLLS; i++) {
+    await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
 
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() ?? ''
-
-      let streamDone = false
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue
-        try {
-          const event = JSON.parse(line.slice(6))
-          if (event.type === 'downloading' || event.type === 'transcribing' || event.type === 'saving') {
-            onStatus(event.type)
-          } else if (event.type === 'complete' || event.type === 'error') {
-            streamDone = true
-            return event as WhisperFinalEvent
-          }
-        } catch {
-          // ignore malformed SSE lines
-        }
-      }
-      if (streamDone) break
+    let job: {
+      status: string
+      transcript?: TranscriptItem[]
+      duration?: number
+      credits_used?: number
+      error_message?: string
+      error_code?: string
+      required_credits?: number
+      available_credits?: number
     }
-  } finally {
-    reader.releaseLock()
+    try {
+      const resp = await fetch(`/api/jobs/${jobId}`)
+      if (!resp.ok) {
+        return { type: 'error', error: 'Failed to check job status' }
+      }
+      job = await resp.json()
+    } catch {
+      return { type: 'error', error: 'Network error while checking job status' }
+    }
+
+    if (job.status === 'pending' || job.status === 'downloading' ||
+        job.status === 'transcribing' || job.status === 'saving') {
+      onStatus(job.status as 'pending' | 'downloading' | 'transcribing' | 'saving')
+    } else if (job.status === 'complete') {
+      return {
+        type: 'complete',
+        transcript: job.transcript!,
+        duration: job.duration!,
+        credits_used: job.credits_used!,
+      }
+    } else if (job.status === 'error') {
+      return {
+        type: 'error',
+        error: job.error_message || 'Transcription failed',
+        code: job.error_code,
+        required_credits: job.required_credits,
+        available_credits: job.available_credits,
+      }
+    }
   }
 
-  return { type: 'error', error: 'Stream ended without a result', code: 'stream_ended' }
+  return { type: 'error', error: 'Transcription timed out', code: 'timeout' }
 }
 
 export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAudio }: VideoTabProps) {
@@ -552,7 +566,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         body: formData,
       })
 
-      // Non-OK means a pre-stream error (auth, suspended, validation) — returned as JSON
       if (!response.ok) {
         const errorData = await response.json()
         if (errorData.error === 'members_only') {
@@ -562,8 +575,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         throw new Error(errorData.error || 'Failed to extract transcript with Whisper AI')
       }
 
+      const jobData = await response.json()
+      if (!jobData.job_id) {
+        throw new Error('Failed to start transcription job')
+      }
+
       setIsStreaming(true)
-      const event = await consumeWhisperStream(response, (status) => setWhisperStatus(status))
+      setWhisperStatus('pending')
+      const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
       setIsStreaming(false)
 
       if (event.type === 'error') {
@@ -687,8 +706,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         throw new Error(errorData.error || 'Failed to extract transcript with Whisper AI')
       }
 
+      const jobData = await response.json()
+      if (!jobData.job_id) {
+        throw new Error('Failed to start transcription job')
+      }
+
       setIsStreaming(true)
-      const event = await consumeWhisperStream(response, (status) => setWhisperStatus(status))
+      setWhisperStatus('pending')
+      const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
       setIsStreaming(false)
 
       if (event.type === 'error') {
@@ -963,7 +988,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                  <Loader2 className="h-3 w-3 animate-spin" />
                  <span>
-                   {whisperStatus === 'downloading' ? 'Downloading audio from YouTube...'
+                   {whisperStatus === 'pending' ? 'Starting transcription...'
+                   : whisperStatus === 'downloading' ? 'Downloading audio from YouTube...'
                    : whisperStatus === 'transcribing' ? 'Transcribing with Whisper AI...'
                    : 'Saving transcript...'}
                  </span>

@@ -626,9 +626,216 @@ async def get_video_metadata(video_id: str):
         logger.error(f"Video metadata error for {video_id}: {e}")
         raise HTTPException(status_code=404, detail=f"Failed to fetch video metadata: {str(e)}")
 
-def sse_event(data: dict) -> str:
-    """Format a dict as a Server-Sent Event frame."""
-    return f"data: {json.dumps(data)}\n\n"
+# In-memory job store: job_id → job dict
+# Jobs are ephemeral (TTL: 1 hour). Railway keeps the process alive across requests.
+whisper_jobs: Dict[str, dict] = {}
+
+
+async def run_whisper_job(
+    job_id: str,
+    user_id: str,
+    source_type: str,
+    video_id: Optional[str],
+    audio_content: Optional[bytes],
+    audio_filename: Optional[str],
+) -> None:
+    """
+    Background task: runs the full Whisper pipeline and updates whisper_jobs[job_id].
+    Credits are deducted after audio is downloaded (duration is needed for cost calculation).
+    On any failure after deduction, credits are refunded automatically.
+    """
+    temp_files: list = []
+    credit_cost = 0
+    credits_deducted = False
+
+    def update_job(**kwargs):
+        if job_id in whisper_jobs:
+            whisper_jobs[job_id].update(kwargs)
+
+    try:
+        audio_path: Optional[str] = None
+
+        # --- Step 1: Get audio ---
+        if source_type == "youtube":
+            update_job(status="downloading")
+            logger.info(f"[job {job_id}] Downloading YouTube audio for video: {video_id}")
+            try:
+                proxy_url = get_proxy_url()
+                if proxy_url:
+                    logger.info(f"[job {job_id}] Proxy ENABLED for video {video_id}")
+                else:
+                    logger.warning(f"[job {job_id}] Proxy DISABLED — PROXY_ENABLED={PROXY_ENABLED}")
+                audio_path = await asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url)
+                temp_files.append(audio_path)
+            except MembersOnlyVideoError:
+                update_job(status="error", error_message="members_only", error_code="members_only")
+                return
+            except Exception as e:
+                error_msg = str(e)
+                if any(kw in error_msg.lower() for kw in MEMBERS_ONLY_KEYWORDS):
+                    update_job(status="error", error_message="members_only", error_code="members_only")
+                    return
+                is_restricted = '152' in error_msg or 'unavailable' in error_msg.lower()
+                track_event(user_id, 'whisper_failed', {
+                    'video_id': video_id,
+                    'source_type': source_type,
+                    'error_type': 'youtube_restricted' if is_restricted else 'extraction_error',
+                    'error_message': error_msg
+                })
+                update_job(
+                    status="error",
+                    error_message=error_msg,
+                    error_code="youtube_restricted" if is_restricted else "download_failed"
+                )
+                return
+        else:
+            logger.info(f"[job {job_id}] Writing uploaded audio to temp file: {audio_filename}")
+            suffix = os.path.splitext(audio_filename or "")[1] or ".mp3"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                tmp.write(audio_content)
+                audio_path = tmp.name
+                temp_files.append(audio_path)
+
+        # --- Step 2: Validate audio ---
+        validation = await asyncio.to_thread(validate_audio_file, audio_path)
+        if not validation['valid']:
+            update_job(status="error", error_message=validation['error'], error_code="invalid_audio")
+            return
+
+        # --- Step 3: Duration ---
+        try:
+            duration = await asyncio.to_thread(get_audio_duration, audio_path)
+        except Exception as e:
+            update_job(status="error", error_message=f"Could not determine audio duration: {str(e)}", error_code="duration_error")
+            return
+
+        # --- Step 4: Credit check and deduction ---
+        credit_cost = calculate_credit_cost(duration)
+        try:
+            current_balance = await asyncio.to_thread(check_user_balance, user_id)
+        except Exception as e:
+            update_job(status="error", error_message=f"Could not check credit balance: {str(e)}", error_code="balance_error")
+            return
+
+        if current_balance < credit_cost:
+            logger.warning(f"[job {job_id}] Insufficient credits: user has {current_balance}, needs {credit_cost}")
+            update_job(
+                status="error",
+                error_message="Insufficient credits",
+                error_code="insufficient_credits",
+                required_credits=credit_cost,
+                available_credits=current_balance
+            )
+            return
+
+        metadata = {
+            'source_type': source_type,
+            'duration_seconds': duration,
+            'video_id': video_id if source_type == 'youtube' else None,
+            'filename': audio_filename if source_type == 'upload' else None,
+            'job_id': job_id
+        }
+        deduction_result = await asyncio.to_thread(
+            deduct_credits,
+            user_id=user_id,
+            amount=credit_cost,
+            reason="Whisper AI transcription",
+            metadata=metadata
+        )
+        if not deduction_result.get('success'):
+            logger.error(f"[job {job_id}] Credit deduction failed: {deduction_result.get('error')}")
+            update_job(status="error", error_message="Credit deduction failed", error_code="deduction_failed")
+            return
+        credits_deducted = True
+        track_event(user_id, 'credits_deducted', {
+            'amount': credit_cost, 'reason': 'whisper',
+            'balance_after': deduction_result.get('new_balance')
+        })
+
+        # --- Step 5: Compress if needed (>25MB) ---
+        if validation['size_mb'] > 25:
+            logger.info(f"[job {job_id}] Audio exceeds 25MB, compressing...")
+            try:
+                compressed_path = await asyncio.to_thread(compress_audio_if_needed, audio_path)
+                if compressed_path != audio_path:
+                    temp_files.append(compressed_path)
+                    audio_path = compressed_path
+            except Exception as e:
+                update_job(status="error", error_message=f"Audio compression failed: {str(e)}", error_code="compression_error")
+                return
+
+        # --- Step 6: Transcribe ---
+        update_job(status="transcribing")
+        logger.info(f"[job {job_id}] Calling Whisper API for {duration:.2f}s audio ({credit_cost} credits)")
+        whisper_start_time = time.time()
+
+        track_event(user_id, 'whisper_started', {
+            'video_id': video_id, 'source_type': source_type, 'duration_seconds': duration
+        })
+
+        whisper_result = await asyncio.to_thread(transcribe_audio, audio_path)
+
+        if not whisper_result['success']:
+            logger.error(f"[job {job_id}] Whisper API failed: {whisper_result['error']}")
+            track_event(user_id, 'whisper_failed', {
+                'video_id': video_id, 'source_type': source_type,
+                'error_type': 'api_error', 'error_message': whisper_result['error']
+            })
+            update_job(status="error", error_message=whisper_result['error'], error_code="api_error")
+            return
+
+        if not whisper_result.get('transcript'):
+            logger.warning(f"[job {job_id}] Whisper returned empty transcript — no speech detected")
+            track_event(user_id, 'whisper_failed', {
+                'video_id': video_id, 'source_type': source_type,
+                'error_type': 'no_speech', 'error_message': 'no_speech_detected'
+            })
+            update_job(status="error", error_message="no_speech_detected", error_code="no_speech")
+            return
+
+        # --- Step 7: Package result ---
+        update_job(status="saving")
+
+        transcript = [
+            {'text': item['text'], 'offset': item['offset'], 'duration': item['duration']}
+            for item in whisper_result['transcript']
+        ]
+
+        processing_time_ms = int((time.time() - whisper_start_time) * 1000)
+        track_event(user_id, 'whisper_completed', {
+            'video_id': video_id, 'source_type': source_type,
+            'duration_seconds': duration, 'processing_time_ms': processing_time_ms,
+            'credits_used': credit_cost
+        })
+
+        logger.info(f"[job {job_id}] Complete: {len(transcript)} segments, {credit_cost} credits deducted")
+        update_job(
+            status="complete",
+            transcript=transcript,
+            duration=duration,
+            credits_used=credit_cost,
+        )
+        credits_deducted = False  # Success — do not refund
+
+    except Exception as e:
+        logger.error(f"[job {job_id}] Unexpected error: {type(e).__name__}: {e}")
+        update_job(status="error", error_message=f"Internal error: {str(e)}", error_code="internal_error")
+
+    finally:
+        # Refund credits if they were deducted before the failure
+        if credits_deducted and credit_cost > 0:
+            try:
+                await asyncio.to_thread(add_credits, user_id, credit_cost, f"Whisper job refund (job_id={job_id})")
+                logger.info(f"[job {job_id}] Refunded {credit_cost} credits to user {user_id}")
+            except Exception as e:
+                logger.error(f"[job {job_id}] Failed to refund {credit_cost} credits: {e}")
+
+        for temp_file in temp_files:
+            try:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+            except Exception as e:
+                logger.warning(f"[job {job_id}] Failed to clean up temp file {temp_file}: {e}")
 
 
 @app.post("/api/transcribe/whisper")
@@ -639,221 +846,97 @@ async def transcribe_with_whisper(
     audio_file: Optional[UploadFile] = File(None)
 ):
     """
-    Transcribe audio using OpenAI Whisper API via Server-Sent Events.
-    Emits: downloading → transcribing → saving → complete  (or error at any step).
-    Credits are checked before transcription and deducted only on success.
+    Start a Whisper transcription background job.
+    Returns immediately with { job_id, status: "pending" }.
+    Poll GET /api/jobs/{job_id}?user_id=... for progress and result.
     """
-    # UploadFile must be read in the async context before the generator starts —
-    # it cannot be read from inside an async generator.
+    # Validate request
+    if source_type not in ["youtube", "upload"]:
+        return JSONResponse(status_code=400, content={"error": "Invalid source_type", "code": "invalid_request"})
+    if source_type == "youtube" and not video_id:
+        return JSONResponse(status_code=400, content={"error": "video_id required for YouTube transcription", "code": "invalid_request"})
+    if source_type == "upload" and not audio_file:
+        return JSONResponse(status_code=400, content={"error": "audio_file required for upload transcription", "code": "invalid_request"})
+
+    # Read upload bytes now — UploadFile cannot be read inside a background task
     audio_content: Optional[bytes] = None
     audio_filename: Optional[str] = None
     if source_type == "upload" and audio_file:
         audio_content = await audio_file.read()
         audio_filename = audio_file.filename
 
-    async def event_stream():
-        temp_files: list = []
-        try:
-            # --- Validate request ---
-            if source_type not in ["youtube", "upload"]:
-                yield sse_event({"type": "error", "error": "Invalid source_type", "code": "invalid_request"})
-                return
-            if source_type == "youtube" and not video_id:
-                yield sse_event({"type": "error", "error": "video_id required for YouTube transcription", "code": "invalid_request"})
-                return
-            if source_type == "upload" and not audio_content:
-                yield sse_event({"type": "error", "error": "audio_file required for upload transcription", "code": "invalid_request"})
-                return
+    # Basic credit pre-check (balance must be > 0 to start any job)
+    try:
+        current_balance = await asyncio.to_thread(check_user_balance, user_id)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Could not check credit balance: {str(e)}"})
 
-            audio_path: Optional[str] = None
+    if current_balance < 1:
+        return JSONResponse(status_code=402, content={
+            "error": "Insufficient credits",
+            "code": "insufficient_credits",
+            "available_credits": current_balance
+        })
 
-            # --- Step 1: Get audio ---
-            if source_type == "youtube":
-                yield sse_event({"type": "downloading"})
-                logger.info(f"Extracting YouTube audio for video: {video_id}")
-                try:
-                    proxy_url = get_proxy_url()
-                    if proxy_url:
-                        logger.info(f"Whisper audio download: proxy ENABLED for video {video_id}")
-                    else:
-                        logger.warning(f"Whisper audio download: proxy DISABLED — PROXY_ENABLED={PROXY_ENABLED}. This may cause 403 errors from YouTube.")
-                    audio_path = await asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url)
-                    temp_files.append(audio_path)
-                except MembersOnlyVideoError:
-                    yield sse_event({"type": "error", "error": "members_only", "code": "members_only"})
-                    return
-                except Exception as e:
-                    error_msg = str(e)
-                    if any(kw in error_msg.lower() for kw in MEMBERS_ONLY_KEYWORDS):
-                        yield sse_event({"type": "error", "error": "members_only", "code": "members_only"})
-                        return
-                    is_restricted = '152' in error_msg or 'unavailable' in error_msg.lower()
-                    track_event(user_id, 'whisper_failed', {
-                        'video_id': video_id,
-                        'source_type': source_type,
-                        'error_type': 'youtube_restricted' if is_restricted else 'extraction_error',
-                        'error_message': error_msg
-                    })
-                    yield sse_event({"type": "error", "error": error_msg, "code": "download_failed"})
-                    return
-            else:
-                logger.info(f"Processing uploaded audio file: {audio_filename}")
-                suffix = os.path.splitext(audio_filename or "")[1] or ".mp3"
-                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                    tmp.write(audio_content)
-                    audio_path = tmp.name
-                    temp_files.append(audio_path)
+    # Create job entry
+    job_id = str(uuid.uuid4())
+    whisper_jobs[job_id] = {
+        "job_id": job_id,
+        "user_id": user_id,
+        "status": "pending",
+        "transcript": None,
+        "duration": None,
+        "credits_used": None,
+        "error_message": None,
+        "error_code": None,
+        "required_credits": None,
+        "available_credits": None,
+        "created_at": time.time(),
+    }
 
-            # --- Step 2: Validate audio ---
-            validation = validate_audio_file(audio_path)
-            if not validation['valid']:
-                yield sse_event({"type": "error", "error": validation['error'], "code": "invalid_audio"})
-                return
+    asyncio.create_task(run_whisper_job(
+        job_id=job_id,
+        user_id=user_id,
+        source_type=source_type,
+        video_id=video_id,
+        audio_content=audio_content,
+        audio_filename=audio_filename,
+    ))
 
-            # --- Step 3: Duration ---
-            try:
-                duration = await asyncio.to_thread(get_audio_duration, audio_path)
-            except Exception as e:
-                yield sse_event({"type": "error", "error": f"Could not determine audio duration: {str(e)}", "code": "duration_error"})
-                return
+    logger.info(f"Whisper job created: {job_id} (user={user_id}, source={source_type}, video={video_id})")
+    return JSONResponse({"job_id": job_id, "status": "pending"})
 
-            # --- Step 4: Credit pre-check ---
-            credit_cost = calculate_credit_cost(duration)
-            try:
-                current_balance = await asyncio.to_thread(check_user_balance, user_id)
-            except Exception as e:
-                yield sse_event({"type": "error", "error": f"Could not check credit balance: {str(e)}", "code": "balance_error"})
-                return
 
-            if current_balance < credit_cost:
-                logger.warning(f"Insufficient credits: user {user_id} has {current_balance}, needs {credit_cost}")
-                yield sse_event({
-                    "type": "error",
-                    "error": "Insufficient credits",
-                    "code": "insufficient_credits",
-                    "required_credits": credit_cost,
-                    "available_credits": current_balance
-                })
-                return
+@app.get("/api/jobs/{job_id}")
+async def get_job_status(job_id: str, user_id: str):
+    """
+    Poll a Whisper transcription job.
+    Returns job status and, when complete, the full transcript + metadata.
+    Lazily evicts jobs older than 1 hour.
+    """
+    # Lazy TTL eviction
+    now = time.time()
+    stale = [jid for jid, j in list(whisper_jobs.items()) if now - j.get("created_at", 0) > 3600]
+    for jid in stale:
+        whisper_jobs.pop(jid, None)
 
-            # --- Step 5: Compress if needed (>25MB) ---
-            if validation['size_mb'] > 25:
-                logger.info("Audio file exceeds 25MB, compressing...")
-                try:
-                    compressed_path = await asyncio.to_thread(compress_audio_if_needed, audio_path)
-                    if compressed_path != audio_path:
-                        temp_files.append(compressed_path)
-                        audio_path = compressed_path
-                except Exception as e:
-                    yield sse_event({"type": "error", "error": f"Audio file too large and compression failed: {str(e)}", "code": "compression_error"})
-                    return
+    job = whisper_jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
 
-            # --- Step 6: Transcribe ---
-            yield sse_event({"type": "transcribing"})
-            logger.info(f"Calling Whisper API for {duration:.2f}s audio (cost: {credit_cost} credits)")
-            whisper_start_time = time.time()
-
-            track_event(user_id, 'whisper_started', {
-                'video_id': video_id,
-                'source_type': source_type,
-                'duration_seconds': duration
-            })
-
-            whisper_result = await asyncio.to_thread(transcribe_audio, audio_path)
-
-            if not whisper_result['success']:
-                logger.error(f"Whisper API failed: {whisper_result['error']}")
-                track_event(user_id, 'whisper_failed', {
-                    'video_id': video_id,
-                    'source_type': source_type,
-                    'error_type': 'api_error',
-                    'error_message': whisper_result['error']
-                })
-                yield sse_event({"type": "error", "error": whisper_result['error'], "code": "api_error"})
-                return
-
-            if not whisper_result.get('transcript'):
-                logger.warning(f"Whisper returned empty transcript for {video_id} — no speech detected")
-                track_event(user_id, 'whisper_failed', {
-                    'video_id': video_id,
-                    'source_type': source_type,
-                    'error_type': 'no_speech',
-                    'error_message': 'no_speech_detected'
-                })
-                yield sse_event({"type": "error", "error": "no_speech_detected", "code": "no_speech"})
-                return
-
-            # --- Step 7: Deduct credits (only after successful transcription) ---
-            yield sse_event({"type": "saving"})
-
-            metadata = {
-                'source_type': source_type,
-                'duration_seconds': duration,
-                'video_id': video_id if source_type == 'youtube' else None,
-                'filename': audio_filename if source_type == 'upload' else None
-            }
-
-            deduction_result = await asyncio.to_thread(
-                deduct_credits,
-                user_id=user_id,
-                amount=credit_cost,
-                reason="Whisper AI transcription",
-                metadata=metadata
-            )
-
-            if not deduction_result.get('success'):
-                logger.error(f"Credit deduction failed after successful transcription: {deduction_result.get('error')}")
-                yield sse_event({"type": "error", "error": "Transcription succeeded but credit deduction failed. Please contact support.", "code": "deduction_failed"})
-                return
-
-            track_event(user_id, 'credits_deducted', {
-                'amount': credit_cost,
-                'reason': 'whisper',
-                'balance_after': deduction_result.get('new_balance')
-            })
-
-            # --- Step 8: Emit complete ---
-            transcript = [
-                {'text': item['text'], 'offset': item['offset'], 'duration': item['duration']}
-                for item in whisper_result['transcript']
-            ]
-
-            logger.info(f"Whisper transcription successful: {len(transcript)} segments, {credit_cost} credits deducted")
-
-            processing_time_ms = int((time.time() - whisper_start_time) * 1000)
-            track_event(user_id, 'whisper_completed', {
-                'video_id': video_id,
-                'source_type': source_type,
-                'duration_seconds': duration,
-                'processing_time_ms': processing_time_ms,
-                'credits_used': credit_cost
-            })
-
-            yield sse_event({
-                "type": "complete",
-                "transcript": transcript,
-                "duration": duration,
-                "credits_used": credit_cost
-            })
-
-        except Exception as e:
-            logger.error(f"Whisper SSE error: {type(e).__name__}: {e}")
-            yield sse_event({"type": "error", "error": f"Internal server error: {str(e)}", "code": "internal_error"})
-
-        finally:
-            for temp_file in temp_files:
-                try:
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-                        logger.info(f"Cleaned up temp file: {temp_file}")
-                except Exception as e:
-                    logger.warning(f"Failed to clean up temp file {temp_file}: {e}")
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return JSONResponse({
+        "job_id": job_id,
+        "status": job["status"],
+        "transcript": job.get("transcript"),
+        "duration": job.get("duration"),
+        "credits_used": job.get("credits_used"),
+        "error_message": job.get("error_message"),
+        "error_code": job.get("error_code"),
+        "required_credits": job.get("required_credits"),
+        "available_credits": job.get("available_credits"),
+    })
 
 @app.post("/api/summarize", response_model=SummarizeResponse)
 async def summarize_transcript(request: SummarizeRequest):

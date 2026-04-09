@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
 
@@ -78,8 +78,6 @@ export async function POST(request: Request) {
       body: backendFormData,
     });
 
-    // Non-2xx means the backend failed before starting the SSE stream
-    // (e.g. FastAPI form-parsing error). Forward as JSON.
     if (!response.ok) {
       try {
         const errorData = await response.json();
@@ -95,16 +93,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // Forward the SSE stream directly to the client.
-    // All error cases (members_only, insufficient_credits, etc.) are now
-    // delivered as SSE error events inside the stream.
-    return new Response(response.body, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
+    // Backend returns { job_id, status: "pending" } — forward directly.
+    const data = await response.json();
+    return NextResponse.json(data, { status: 200 });
 
   } catch (error) {
     console.error('Whisper API route error:', error);
