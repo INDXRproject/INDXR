@@ -76,43 +76,33 @@ export async function POST(request: Request) {
       body: backendFormData,
     });
 
-    const data = await response.json();
-
-    // Handle members-only video
-    if (data.error === 'members_only') {
-      return NextResponse.json(
-        { success: false, error: 'members_only', message: data.message || 'This video is only available to channel members and cannot be transcribed.' },
-        { status: 403 }
-      );
+    // Non-2xx means the backend failed before starting the SSE stream
+    // (e.g. FastAPI form-parsing error). Forward as JSON.
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        return NextResponse.json(
+          { success: false, error: errorData.detail || errorData.error || 'Backend error' },
+          { status: response.status }
+        );
+      } catch {
+        return NextResponse.json(
+          { success: false, error: 'Backend error' },
+          { status: response.status }
+        );
+      }
     }
 
-    // Handle insufficient credits with user-friendly message
-    if (!data.success && data.error === 'Insufficient credits') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Not enough credits',
-          required_credits: data.required_credits,
-          available_credits: data.available_credits,
-          user_friendly_message: `You need ${data.required_credits} credits but only have ${data.available_credits}. Purchase more credits to continue.`
-        },
-        { status: 402 }
-      );
-    }
-
-    // Forward response
-    if (!response.ok || !data.success) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: data.error || 'Transcription failed',
-          user_friendly_message: data.user_friendly_message || data.error || 'Something went wrong. Please try again.'
-        },
-        { status: response.ok ? 400 : response.status }
-      );
-    }
-
-    return NextResponse.json(data);
+    // Forward the SSE stream directly to the client.
+    // All error cases (members_only, insufficient_credits, etc.) are now
+    // delivered as SSE error events inside the stream.
+    return new Response(response.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
 
   } catch (error) {
     console.error('Whisper API route error:', error);

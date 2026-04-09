@@ -78,6 +78,13 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 - **Dutch strings removed from VideoTab.tsx**: All duplicate-detection messages, confirmations, and library links replaced with English ("Je hebt dit transcript al" → "You already have this transcript in your library", "Bekijk in library" → "View in Library", "Toch extraheren" → "Extract anyway", "Annuleer" → "Cancel").
 - **Members-only error card styling**: Consistent with other inline error states — `p-3 rounded-lg bg-destructive/10 border border-destructive/20` with `AlertCircle` icon, bold title, and message line.
 
+### Whisper SSE / Real-Time Progress (Phase M)
+
+- **Backend** (`backend/main.py`): `/api/transcribe/whisper` is now a `StreamingResponse` (`text/event-stream`). All blocking steps run via `asyncio.to_thread` so the event loop is not blocked. Emits newline-delimited JSON SSE events: `downloading` (yt-dlp starts), `transcribing` (Whisper API call starts), `saving` (credits deducted, packaging result), `complete` (with full transcript data), `error` (with `error` string and `code`). Members-only detection and credit pre-check logic unchanged.
+- **Next.js route** (`src/app/api/transcribe/whisper/route.ts`): Auth and suspension checks remain as JSON responses. The backend SSE stream is piped directly to the client via `new Response(response.body, ...)` with `Content-Type: text/event-stream`.
+- **Frontend** (`src/components/free-tool/VideoTab.tsx`): `consumeWhisperStream` helper parses the stream; `whisperStatus` state drives inline status messages ("Downloading audio from YouTube…", "Transcribing with Whisper AI…", "Saving transcript…") shown below the URL input. `isStreaming` state triggers a `beforeunload` guard via `useEffect`. Both `handleWhisperConfirm` and `handleWhisperUpsell` use the streaming path.
+- **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Updated to consume the SSE stream (no status display; returns complete/error event).
+
 ### Logging Verbosity Control
 
 - `LOG_LEVEL` env var in `backend/.env` controls log output (`WARNING` in production, `INFO` for debug)

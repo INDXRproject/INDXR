@@ -56,18 +56,51 @@ export function WhisperFallbackModal({
         body: formData,
       })
 
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        // Handle insufficient credits
-        if (response.status === 402) {
-          onError(`Not enough credits. You need ${data.required_credits} credits but only have ${data.available_credits}.`)
+      // Non-OK = pre-stream JSON error (auth, suspended, validation)
+      if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.error === 'members_only') {
+          onError('This video is members-only and cannot be transcribed by INDXR.AI.')
           onOpenChange(false)
           return
         }
+        onError(errorData.user_friendly_message || errorData.error || 'Transcription failed')
+        onOpenChange(false)
+        return
+      }
 
-        // Other errors
-        onError(data.user_friendly_message || data.error || 'Transcription failed')
+      // Consume SSE stream (no status display needed in modal)
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let finalEvent: { type: string; transcript?: unknown[]; duration?: number; credits_used?: number; error?: string; code?: string; required_credits?: number; available_credits?: number } | null = null
+
+      outer: while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const event = JSON.parse(line.slice(6))
+            if (event.type === 'complete' || event.type === 'error') {
+              finalEvent = event
+              break outer
+            }
+          } catch { /* ignore malformed lines */ }
+        }
+      }
+      reader.releaseLock()
+
+      if (!finalEvent || finalEvent.type === 'error') {
+        if (finalEvent?.code === 'insufficient_credits') {
+          onError(`Not enough credits. You need ${finalEvent.required_credits} credits but only have ${finalEvent.available_credits}.`)
+          onOpenChange(false)
+          return
+        }
+        onError(finalEvent?.error || 'Transcription failed')
         onOpenChange(false)
         return
       }
@@ -76,16 +109,15 @@ export function WhisperFallbackModal({
       await new Promise(resolve => setTimeout(resolve, 500))
       await refreshCredits()
 
-      // Call success callback with credits used
-      onSuccess(data.transcript, {
+      // Call success callback
+      onSuccess(finalEvent.transcript as TranscriptItem[], {
         videoId,
         title: videoTitle,
-        duration: data.duration,
-        creditsUsed: data.credits_used,
+        duration: finalEvent.duration ?? 0,
+        creditsUsed: finalEvent.credits_used ?? 1,
         source: 'whisper'
       })
 
-      // Close modal
       onOpenChange(false)
 
     } catch (error) {

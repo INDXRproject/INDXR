@@ -22,6 +22,70 @@ interface VideoTabProps {
   onSwitchToAudio?: () => void
 }
 
+type WhisperStatus = 'idle' | 'downloading' | 'transcribing' | 'saving'
+
+type WhisperCompleteEvent = {
+  type: 'complete'
+  transcript: TranscriptItem[]
+  duration: number
+  credits_used: number
+}
+
+type WhisperErrorEvent = {
+  type: 'error'
+  error: string
+  code?: string
+  required_credits?: number
+  available_credits?: number
+}
+
+type WhisperFinalEvent = WhisperCompleteEvent | WhisperErrorEvent
+
+/**
+ * Consumes a Server-Sent Events response from /api/transcribe/whisper.
+ * Calls onStatus for each progress event, then returns the terminal event.
+ */
+async function consumeWhisperStream(
+  response: Response,
+  onStatus: (status: 'downloading' | 'transcribing' | 'saving') => void
+): Promise<WhisperFinalEvent> {
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      let streamDone = false
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const event = JSON.parse(line.slice(6))
+          if (event.type === 'downloading' || event.type === 'transcribing' || event.type === 'saving') {
+            onStatus(event.type)
+          } else if (event.type === 'complete' || event.type === 'error') {
+            streamDone = true
+            return event as WhisperFinalEvent
+          }
+        } catch {
+          // ignore malformed SSE lines
+        }
+      }
+      if (streamDone) break
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  return { type: 'error', error: 'Stream ended without a result', code: 'stream_ended' }
+}
+
 export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAudio }: VideoTabProps) {
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
@@ -52,6 +116,21 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [useWhisper, setUseWhisper] = useState(false)
   // Track if Whisper was triggered automatically (no captions available)
   const [whisperAutoTriggered, setWhisperAutoTriggered] = useState(false)
+
+  // SSE streaming state
+  const [whisperStatus, setWhisperStatus] = useState<WhisperStatus>('idle')
+  const [isStreaming, setIsStreaming] = useState(false)
+
+  // Navigation guard while SSE stream is open
+  useEffect(() => {
+    if (!isStreaming) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isStreaming]);
 
   // Add navigation guard during extraction
   useEffect(() => {
@@ -450,50 +529,66 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setShowWhisperConfirm(false)
     setLoading(true)
     setError(null)
+    setWhisperStatus('idle')
 
     const { videoId } = pendingWhisperData
 
     try {
-      const formData = new FormData();
-      formData.append('source_type', 'youtube');
-      formData.append('video_id', videoId);
+      const formData = new FormData()
+      formData.append('source_type', 'youtube')
+      formData.append('video_id', videoId)
 
       const response = await fetch('/api/transcribe/whisper', {
         method: 'POST',
         body: formData,
-      });
+      })
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        if (data.error === 'members_only') {
+      // Non-OK means a pre-stream error (auth, suspended, validation) — returned as JSON
+      if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.error === 'members_only') {
           setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
           return
         }
-        throw new Error(data.error || 'Failed to extract transcript with Whisper AI');
+        throw new Error(errorData.error || 'Failed to extract transcript with Whisper AI')
       }
 
-      setTranscript(data.transcript)
-      setVideoTitle(data.title || pendingWhisperData.title || "")
+      setIsStreaming(true)
+      const event = await consumeWhisperStream(response, (status) => setWhisperStatus(status))
+      setIsStreaming(false)
+
+      if (event.type === 'error') {
+        if (event.error === 'members_only') {
+          setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+          return
+        }
+        if (event.code === 'insufficient_credits') {
+          setError({ message: `Not enough credits. This video requires ${event.required_credits} credit${event.required_credits !== 1 ? 's' : ''}, you have ${event.available_credits}.`, isCreditsError: true })
+          return
+        }
+        throw new Error(event.error || 'Transcription failed')
+      }
+
+      // event.type === 'complete'
+      setTranscript(event.transcript)
+      setVideoTitle(pendingWhisperData.title || "")
       setVideoUrl(`https://www.youtube.com/watch?v=${videoId}`)
-      setVideoDuration(data.duration || null)
+      setVideoDuration(event.duration || null)
       setLastProcessingMethod('whisper_ai')
-      setWhisperMetadata({ duration: data.duration, creditsUsed: data.credits_used || 1 })
+      setWhisperMetadata({ duration: event.duration, creditsUsed: event.credits_used || 1 })
       setCurrentVideoId(videoId)
 
-      // Track in session
-      sessionSavedKeys.current.add(`${videoId}:whisper_ai`);
-      setExistingTranscriptMethod('whisper_ai');
+      sessionSavedKeys.current.add(`${videoId}:whisper_ai`)
+      setExistingTranscriptMethod('whisper_ai')
 
-      // Track in PostHog
       posthog.capture('transcript_extracted', {
         type: 'video',
-        credits_used: data.credits_used || 1,
+        credits_used: event.credits_used || 1,
         processing_method: 'whisper_ai',
         user_selected_whisper: true
       })
 
-      if (data.transcript && data.transcript.length > 0) {
+      if (event.transcript && event.transcript.length > 0) {
         toast.success("Transcript extracted & saved with Whisper AI", {
           description: "Added to your library automatically.",
           action: {
@@ -503,13 +598,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         })
 
         if (onTranscriptLoaded) {
-          await onTranscriptLoaded(data.transcript, {
+          await onTranscriptLoaded(event.transcript, {
             source: 'youtube',
-            title: data.title,
+            title: pendingWhisperData.title,
             videoId: videoId,
             videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
-            duration: data.duration || 0,
-            creditsUsed: data.credits_used || 1,
+            duration: event.duration || 0,
+            creditsUsed: event.credits_used || 1,
             processingMethod: 'whisper_ai'
           })
 
@@ -520,17 +615,17 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             .eq('processing_method', 'whisper_ai')
             .order('created_at', { ascending: false })
             .limit(1)
-            .maybeSingle();
-          if (saved) setExistingTranscriptId(saved.id);
+            .maybeSingle()
+          if (saved) setExistingTranscriptId(saved.id)
         }
 
-        refreshCredits();
+        refreshCredits()
         setUrl("")
         setUseWhisper(false)
       }
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : 'Whisper extraction failed';
-      const isYouTubeRestricted = errMsg.includes('152') || errMsg.toLowerCase().includes('unavailable');
+      const errMsg = error instanceof Error ? error.message : 'Whisper extraction failed'
+      const isYouTubeRestricted = errMsg.includes('152') || errMsg.toLowerCase().includes('unavailable')
       setError({
         message: isYouTubeRestricted
           ? "This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload here."
@@ -542,6 +637,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       }
     } finally {
       setLoading(false)
+      setWhisperStatus('idle')
+      setIsStreaming(false)
       setShowDuplicateChoices(false)
       setPendingWhisperData(null)
     }
@@ -553,67 +650,78 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   }
 
   const handleWhisperUpsell = async () => {
-    if (!currentVideoId) return;
-    posthog.capture('whisper_upsell_clicked');
+    if (!currentVideoId) return
+    posthog.capture('whisper_upsell_clicked')
 
-    setLoading(true);
-    setIsReextracting(true);
-    setError(null);
-    setTranscript(null); // Clear current transcript to show loading
+    setLoading(true)
+    setIsReextracting(true)
+    setError(null)
+    setTranscript(null)
+    setWhisperStatus('idle')
 
     try {
-      const formData = new FormData();
-      formData.append('source_type', 'youtube');
-      formData.append('video_id', currentVideoId);
-      // Bug 3: do NOT append transcript_id — we always want a fresh INSERT
+      const formData = new FormData()
+      formData.append('source_type', 'youtube')
+      formData.append('video_id', currentVideoId)
 
       const response = await fetch('/api/transcribe/whisper', {
         method: 'POST',
         body: formData,
-      });
+      })
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        if (data.error === 'members_only') {
+      if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.error === 'members_only') {
           setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
           return
         }
-        throw new Error(data.error || 'Failed to extract transcript with Whisper AI')
+        throw new Error(errorData.error || 'Failed to extract transcript with Whisper AI')
+      }
+
+      setIsStreaming(true)
+      const event = await consumeWhisperStream(response, (status) => setWhisperStatus(status))
+      setIsStreaming(false)
+
+      if (event.type === 'error') {
+        if (event.error === 'members_only') {
+          setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+          return
+        }
+        throw new Error(event.error || 'Transcription failed')
       }
 
       posthog.capture('transcript_extracted', {
-          type: 'video',
-          credits_used: data.credits_used || 1,
-          processing_method: 'whisper_ai'
-      });
+        type: 'video',
+        credits_used: event.credits_used || 1,
+        processing_method: 'whisper_ai'
+      })
 
-      // Bug 2 fix: await handleWhisperSuccess so the Supabase INSERT
-      // completes before refreshCredits() queries the updated balance
-      await handleWhisperSuccess(data.transcript, {
-         videoId: currentVideoId,
-         title: videoTitle,
-         duration: data.duration,
-         creditsUsed: data.credits_used || 1,
-         source: 'youtube'
-      });
+      await handleWhisperSuccess(event.transcript, {
+        videoId: currentVideoId,
+        title: videoTitle,
+        duration: event.duration,
+        creditsUsed: event.credits_used || 1,
+        source: 'youtube'
+      })
 
-      refreshCredits();
+      refreshCredits()
     } catch (err: unknown) {
-      console.error('[WHISPER UPSELL] ERROR caught:', err);
-      const errMsg = err instanceof Error ? err.message : 'Whisper extraction failed';
-      const isYouTubeRestricted = errMsg.includes('152') || errMsg.toLowerCase().includes('unavailable');
+      console.error('[WHISPER UPSELL] ERROR caught:', err)
+      const errMsg = err instanceof Error ? err.message : 'Whisper extraction failed'
+      const isYouTubeRestricted = errMsg.includes('152') || errMsg.toLowerCase().includes('unavailable')
       if (isYouTubeRestricted) {
         setError({
           message: "This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload here.",
           isYouTubeRestricted: true
         })
       } else {
-        handleWhisperError(errMsg);
+        handleWhisperError(errMsg)
       }
     } finally {
-      setLoading(false);
-      setIsReextracting(false);
+      setLoading(false)
+      setWhisperStatus('idle')
+      setIsStreaming(false)
+      setIsReextracting(false)
     }
   }
 
@@ -841,6 +949,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                      Buy Credits →
                    </Button>
                  </Link>
+               </div>
+             ) : loading && whisperStatus !== 'idle' ? (
+               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                 <Loader2 className="h-3 w-3 animate-spin" />
+                 <span>
+                   {whisperStatus === 'downloading' ? 'Downloading audio from YouTube...'
+                   : whisperStatus === 'transcribing' ? 'Transcribing with Whisper AI...'
+                   : 'Saving transcript...'}
+                 </span>
                </div>
              ) : (
                <p className={cn("text-sm text-muted-foreground", error && "text-destructive")}>
