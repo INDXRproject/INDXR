@@ -803,7 +803,6 @@ async def run_whisper_job(
                 'user_id': user_id,
                 'transcript': transcript,
                 'source_type': source_type,
-                'duration_seconds': int(duration),
                 'video_url': video_url,
             }).execute()
         )
