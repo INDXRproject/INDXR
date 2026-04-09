@@ -155,14 +155,23 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
             logger.info(f"yt-dlp downloaded: {raw_path} ({raw_size:.2f}MB)")
 
             # Calculate bitrate dynamically so output stays under 24MB regardless of video length.
-            # Formula: bitrate = min(32, int(24MB_in_bits / duration_seconds / 1000))
-            # Falls back to 32k if duration cannot be determined.
+            # Use ffprobe directly on the raw file to get duration before conversion.
             raw_duration = None
             try:
-                raw_duration = get_audio_duration(raw_path)
-                bitrate_kbps = min(32, int(24 * 1024 * 1024 * 8 / raw_duration / 1000))
-                bitrate_kbps = max(8, bitrate_kbps)  # 8kbps floor — Whisper handles low-bitrate speech
+                probe = subprocess.run(
+                    ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+                     '-of', 'default=noprint_wrappers=1:nokey=1', raw_path],
+                    capture_output=True, text=True, timeout=30
+                )
+                if probe.returncode == 0 and probe.stdout.strip():
+                    raw_duration = float(probe.stdout.strip())
             except Exception:
+                pass
+
+            if raw_duration:
+                bitrate_kbps = int((24 * 1024 * 1024 * 8) / raw_duration / 1000)
+                bitrate_kbps = max(8, min(32, bitrate_kbps))
+            else:
                 bitrate_kbps = 32
             duration_str = f"{raw_duration:.1f}s" if raw_duration else "unknown"
             logger.info(f"ffmpeg bitrate: {bitrate_kbps}k (duration={duration_str})")
