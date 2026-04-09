@@ -56,16 +56,16 @@ export function LibraryTranscriptCard({ transcript, onDelete, onExport }: Transc
           </div>
         )}
         
-        {/* Play overlay (optional visual flair) */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[1px]">
-             <div className="p-3 bg-white/10 rounded-full backdrop-blur-md border border-white/20">
+        {/* Play overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40">
+             <div className="p-3 bg-white/20 rounded-full border border-white/30">
                 <Play className="size-6 text-foreground fill-white" />
              </div>
         </div>
 
         {/* Duration badge */}
         {transcript.duration ? (
-          <Badge className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-foreground border-0 font-mono text-xs hover:bg-black/70">
+          <Badge className="absolute bottom-2 right-2 bg-black/80 text-foreground border-0 font-mono text-xs hover:bg-black/80">
             {formatDuration(transcript.duration)}
           </Badge>
         ) : null}
@@ -75,7 +75,7 @@ export function LibraryTranscriptCard({ transcript, onDelete, onExport }: Transc
       <CardContent className="p-4 sm:p-5 space-y-3">
         
         {/* Title */}
-        <h3 className="font-semibold text-base sm:text-lg line-clamp-2 text-zinc-100 group-hover:text-primary transition-colors h-14" title={transcript.title}>
+        <h3 className="font-semibold text-base sm:text-lg line-clamp-2 text-foreground group-hover:text-primary transition-colors h-14" title={transcript.title}>
           {transcript.title}
         </h3>
         
@@ -87,10 +87,10 @@ export function LibraryTranscriptCard({ transcript, onDelete, onExport }: Transc
         
         {/* Actions */}
         <div className="flex items-center gap-2 pt-2">
-          <Button 
+          <Button
             size="sm"
             variant="outline"
-            className="flex-1 h-9 bg-transparent border-zinc-700 hover:bg-[var(--accent)] hover:text-white"
+            className="flex-1 h-9 hover:bg-primary hover:text-primary-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onExport(transcript);

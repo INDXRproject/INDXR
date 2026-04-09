@@ -1,0 +1,107 @@
+[
+  {
+    "video_id": "8jPQjjsBbIc",
+    "duration_minutes": 60,
+    "processing_time_ms": 18172,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "HtSuA80QTyo",
+    "duration_minutes": 90,
+    "processing_time_ms": 29377,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8mAITcNt710",
+    "duration_minutes": 120,
+    "processing_time_ms": 46939,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8jPQjjsBbIc",
+    "duration_minutes": 60,
+    "processing_time_ms": 204094,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "HtSuA80QTyo",
+    "duration_minutes": 90,
+    "processing_time_ms": 302510,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8mAITcNt710",
+    "duration_minutes": 120,
+    "processing_time_ms": 238045,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8jPQjjsBbIc",
+    "duration_minutes": 60,
+    "processing_time_ms": 302407,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "HtSuA80QTyo",
+    "duration_minutes": 90,
+    "processing_time_ms": 302729,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8mAITcNt710",
+    "duration_minutes": 120,
+    "processing_time_ms": 305105,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8jPQjjsBbIc",
+    "duration_minutes": 60,
+    "processing_time_ms": 303335,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "HtSuA80QTyo",
+    "duration_minutes": 90,
+    "processing_time_ms": 303213,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8mAITcNt710",
+    "duration_minutes": 120,
+    "processing_time_ms": 303180,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8jPQjjsBbIc",
+    "duration_minutes": 60,
+    "processing_time_ms": 302287,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "HtSuA80QTyo",
+    "duration_minutes": 90,
+    "processing_time_ms": 302233,
+    "word_count": 0,
+    "method": "auto-captions"
+  },
+  {
+    "video_id": "8mAITcNt710",
+    "duration_minutes": 120,
+    "processing_time_ms": 302281,
+    "word_count": 0,
+    "method": "auto-captions"
+  }
+]

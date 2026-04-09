@@ -145,7 +145,7 @@ export function AppSidebar() {
   const totalCharacters = transcripts.reduce((acc, t) => acc + (t.character_count || 0), 0)
   const usedKB = totalCharacters / 1024
   const usedMB = usedKB / 1024
-  const MAX_MB = 10
+  const MAX_MB = 500
   const storagePercentage = Math.min(100, Math.max(0, (usedMB / MAX_MB) * 100))
 
   // Auto-open library section when on library page

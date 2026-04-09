@@ -1,0 +1,431 @@
+{
+  "config": {
+    "configFile": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/playwright.config.ts",
+    "rootDir": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/specs",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "tests/playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "tests/playwright-report/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "02-playlist.spec.ts",
+      "file": "02-playlist.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "2.1 — Small playlist (11 videos)",
+          "file": "02-playlist.spec.ts",
+          "line": 108,
+          "column": 6,
+          "specs": [
+            {
+              "title": "extracts at least 9/11 videos from Crash Course playlist",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 360000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 19983,
+                      "error": {
+                        "message": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+                        "stack": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at loginAs (/home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/helpers/auth.ts:32:14)\n    at /home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/specs/02-playlist.spec.ts:112:5",
+                        "location": {
+                          "file": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/helpers/auth.ts",
+                          "column": 14,
+                          "line": 32
+                        },
+                        "snippet": "\u001b[90m   at \u001b[39m../helpers/auth.ts:32\n\n\u001b[0m \u001b[90m 30 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'form'\u001b[39m)\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'Log In'\u001b[39m })\u001b[33m.\u001b[39mclick()\n \u001b[90m 31 |\u001b[39m   \u001b[90m// May land on /dashboard or /onboarding (accounts that haven't finished onboarding)\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 32 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[35m/\\/(dashboard|onboarding)/\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15\u001b[39m_000 })\n \u001b[90m    |\u001b[39m              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 33 |\u001b[39m   \u001b[36mif\u001b[39m (page\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/onboarding'\u001b[39m)) {\n \u001b[90m 34 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/dashboard/transcribe'\u001b[39m)\n \u001b[90m 35 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[32m'**/dashboard**'\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m10\u001b[39m_000 })\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/helpers/auth.ts",
+                            "column": 14,
+                            "line": 32
+                          },
+                          "message": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n\n\u001b[90m   at \u001b[39m../helpers/auth.ts:32\n\n\u001b[0m \u001b[90m 30 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'form'\u001b[39m)\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'Log In'\u001b[39m })\u001b[33m.\u001b[39mclick()\n \u001b[90m 31 |\u001b[39m   \u001b[90m// May land on /dashboard or /onboarding (accounts that haven't finished onboarding)\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 32 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[35m/\\/(dashboard|onboarding)/\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15\u001b[39m_000 })\n \u001b[90m    |\u001b[39m              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 33 |\u001b[39m   \u001b[36mif\u001b[39m (page\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/onboarding'\u001b[39m)) {\n \u001b[90m 34 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/dashboard/transcribe'\u001b[39m)\n \u001b[90m 35 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[32m'**/dashboard**'\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m10\u001b[39m_000 })\u001b[0m\n\u001b[2m    at loginAs (/home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/helpers/auth.ts:32:14)\u001b[22m\n\u001b[2m    at /home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/specs/02-playlist.spec.ts:112:5\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-09T09:04:44.629Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/test-results/02-playlist-2-1-—-Small-pl-8a3e0--from-Crash-Course-playlist-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/test-results/02-playlist-2-1-—-Small-pl-8a3e0--from-Crash-Course-playlist-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/test-results/02-playlist-2-1-—-Small-pl-8a3e0--from-Crash-Course-playlist-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/test-results/02-playlist-2-1-—-Small-pl-8a3e0--from-Crash-Course-playlist-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/aladdin/Documents/Antigravity/INDXR.AI V2/tests/playwright/helpers/auth.ts",
+                        "column": 14,
+                        "line": 32
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "dd14de7f54b6cba4d02e-9c9305f8f0bbf656df57",
+              "file": "02-playlist.spec.ts",
+              "line": 115,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "2.2 — Large playlist stress test (12 videos ~20min each)",
+          "file": "02-playlist.spec.ts",
+          "line": 158,
+          "column": 6,
+          "specs": [
+            {
+              "title": "processes at least 10/12 long videos",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 660000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 192770,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Fetched 12 videos\n"
+                        },
+                        {
+                          "text": "Extraction waited 176.6s\n"
+                        },
+                        {
+                          "text": "2.2 results: 12 succeeded, 0 failed, total 184.6s\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-09T09:05:06.691Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dd14de7f54b6cba4d02e-af65008628377ba6def7",
+              "file": "02-playlist.spec.ts",
+              "line": 165,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "2.3 — Playlist with Whisper mix (first 5 of 9 videos)",
+          "file": "02-playlist.spec.ts",
+          "line": 202,
+          "column": 6,
+          "specs": [
+            {
+              "title": "extracts 5 videos, 2 via Whisper, deducts correct credits",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 360000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 167414,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Extraction waited 155.7s\n"
+                        },
+                        {
+                          "text": "2.3 results: 5 succeeded, 0 failed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-09T09:08:20.101Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dd14de7f54b6cba4d02e-ba49e7840bf87f08b70d",
+              "file": "02-playlist.spec.ts",
+              "line": 209,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "2.4 — Maximum playlist: 20 TED talks",
+          "file": "02-playlist.spec.ts",
+          "line": 269,
+          "column": 6,
+          "specs": [
+            {
+              "title": "processes 20 videos, logs completion rate and errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 960000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 249149,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "2.4 — selected 17 videos\n"
+                        },
+                        {
+                          "text": "Extraction waited 237.1s\n"
+                        },
+                        {
+                          "text": "2.4 results:\n  - Succeeded: 17\n  - Failed:    0\n  - Total:     17\n  - Duration:  242.3s\n  - UI frozen: false\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-09T09:11:07.547Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dd14de7f54b6cba4d02e-f00287b836d63da62cf7",
+              "file": "02-playlist.spec.ts",
+              "line": 276,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "2.5 — 100-video playlist: fetch renders, extract first 10",
+          "file": "02-playlist.spec.ts",
+          "line": 336,
+          "column": 6,
+          "specs": [
+            {
+              "title": "fetches large playlist without crash, extracts first 10",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 420000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 134965,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "2.5: fetched 17 videos from large playlist\n"
+                        },
+                        {
+                          "text": "Extraction waited 122.0s\n"
+                        },
+                        {
+                          "text": "2.5 results: 9 succeeded, 0 failed, 128.6s\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-09T09:15:16.759Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dd14de7f54b6cba4d02e-e3329caca789eb39af4a",
+              "file": "02-playlist.spec.ts",
+              "line": 343,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "2.6 — Long videos in playlist (3 × ~20 min)",
+          "file": "02-playlist.spec.ts",
+          "line": 416,
+          "column": 6,
+          "specs": [
+            {
+              "title": "extracts 3 long videos, logs per-video time",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 136610,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "2.6: fetched 12 videos\n"
+                        },
+                        {
+                          "text": "Extraction waited 125.8s\n"
+                        },
+                        {
+                          "text": "2.6 results:\n  - Succeeded: 8\n  - Failed:    0\n  - Extract time: 126.3s\n  - Total time:   130.5s\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-09T09:17:31.780Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dd14de7f54b6cba4d02e-45c6c408c89f67e6cf70",
+              "file": "02-playlist.spec.ts",
+              "line": 423,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-04-09T09:04:41.181Z",
+    "duration": 907749.0970000001,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

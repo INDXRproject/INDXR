@@ -2,72 +2,182 @@
 
 ## ✅ Completed Phases
 
-- **Phase A**: Authentication Enhancement (Jan 2025) ✅
-- **Phase C**: Error Handling & Analytics (Jan 2025) ✅
-- **Phase D**: UI Polish & Design System (Feb 2025) ✅
-- **Phase E (partial)**: Whisper AI end-to-end (Mar 2025) ✅
-- **Phase G**: AI Summarization (Mar 2025) ✅
-- **Phase H**: Transcript Tab Architecture & Visuals (Mar 2025) ✅
+### Phase A: Authentication Enhancement (Jan 2025) ✅
 
-### Whisper AI — Completed (Mar 2025)
+- Email/Password + Google OAuth
+- Server-Side Hydration (no-flicker sessions)
+- Rate limiting on auth endpoints
+- Disposable email blocking
+- Onboarding flow with welcome credits
 
-- ✅ Two-step audio pipeline (yt-dlp + ffmpeg subprocess) — eliminates proxy split / 403
-- ✅ Format selector locked to audio-only streams (no accidental video download)
-- ✅ IPRoyal proxy consistently applied to yt-dlp download step
-- ✅ Credit cost displayed inline on button before user clicks
-- ✅ Navigation guard (`beforeunload`) + double-click prevention
-- ✅ Credit pre-check and atomic deduction on backend
-- ✅ YouTube captions `duration` returned from `/api/extract` and forwarded by Next.js route
+### Phase B: Stripe Payments (Feb 2025) ✅
 
-### Phase H — Branding & Visuals (Mar 2025)
+- Checkout flow with 3 packages (Starter/Regular/Power)
+- Webhook handler for `checkout.session.completed`
+- Secure credit assignment via `add_credits` RPC
+- Server-side PostHog tracking on purchase
 
-- ✅ **Landing Page Overhaul**: New copy, personas, testimonials, and bottom CTA added.
-- ✅ **Hero UI Preview**: High-fidelity app mockup (`HeroUIPreview.tsx`) added to hero section.
-- ✅ **Design System Definition**: Formalized Starlight/Midnight tokens defined in `.agent/skills/indxr-design/`.
-- ✅ **Tab Architecture**: Multi-tab detail view with "Original vs Edited" pattern for both transcripts and AI summaries.
+### Phase C: Analytics (Feb 2025) ✅
 
-### Phase G — AI Summarization — Completed (Mar 2025)
+- PostHog frontend integration
+- Event tracking: `signup_source`, `credits_purchased`, `transcript_extracted`
+- User identification tied to Supabase user ID
 
-- ✅ **Provider**: DeepSeek V3 (`deepseek-chat`) integration via Python backend.
-- ✅ **Formatting**: Markdown/HTML bullet point restore logic with custom CSS.
-- ✅ **Editing**: Support for editing summaries with automatic creation of "Edited Summary" tab.
-- ✅ **Credit Logic**: 1-credit cost with atomic deduction and failure refund.
+### Phase D: UI Polish (Feb 2025) ✅
 
----
+- Dashboard Library grid/list views
+- Component styling (buttons, inputs, cards)
+- Theme toggle (light/dark mode)
+- Responsive layouts
 
-## 🔮 Future Phases
+### Phase E: Whisper AI Pipeline (Mar 2025) ✅
 
-### Phase F: Commercialization & Security (Launch Blockers)
+- Two-step audio pipeline (yt-dlp + ffmpeg subprocess)
+- iOS player client to bypass PO Token restrictions
+- IPRoyal proxy integration
+- Credit pre-check and atomic deduction
+- Navigation guard (beforeunload)
 
-**Goal:** Ensure the app can monetize securely before real users join.
+### Phase G: AI Summarization (Mar 2025) ✅
 
-- [ ] **Stripe Payments**: Implement checkout flow and secure webhooks. Hard blocker; no business without payments.
-      _Note: Checkout flow implemented and tested. Webhook credit assignment pending — will be verified after Railway deployment._
-- [x] **Supabase RLS Audit**: Security check to guarantee strict data isolation (User A cannot see User B data). Watertight requirement. ✅
+- DeepSeek V3 integration (`deepseek-chat`)
+- JSON output with summary + action points
+- 1-credit cost with failure refund
+- Markdown/HTML formatting support
 
-- [ ] **Whisper Language Support**: Detect and select languages directly in the UI. Small frontend addition, huge UX win.
-- [ ] **Timestamp & Chapter Generation**: Button in Library to auto-generate YouTube-style chapters from transcripts. Logic should mirror the Summarization pattern.
+### Phase H: Transcript Tab Architecture (Mar 2025) ✅
 
-### Phase H: Polish, Operations, and Launch (Q2 2025)
-
-**Goal:** Final visual coat of paint, system observation, and deployment.
-
-- [ ] **PostHog Implementation (Backend)**: Expand existing frontend PostHog to the backend. Serves as single tool for analytics AND error tracking (replaces Sentry).
-      _Note: PostHog backend tracks feature usage, but the AI features (summarization, chapters) don't exist yet. Tracking empty events has no value. After the UI Redesign, the feature set is stable and we'll know exactly which events matter._
-- [ ] **UI Redesign / Overhaul**: Full visual redesign inspired by Linear/Notion. Consciously postponed until features are complete, but mandatory before launch.
-- [ ] **Admin Dashboard**: Live overview of accounts, usage, and credits. Required to support live users.
-  - [IMPORTANT] **Delete User feature**: do NOT use Supabase's built-in delete — it fails due to foreign key constraints. Build a `delete_user_cascade(user_id uuid)` RPC that deletes in order: `credit_transactions` → `user_credits` → `transcripts` → `collections` → `profiles` → `auth.users`.
-  - [NOTE] **Email templates**: after UI redesign, add custom branded email templates in Supabase for: account creation confirmation, password reset, email verification. Templates should match INDXR.AI visual identity.
-- [ ] **Database Backups**: Confirm and strictly document Supabase Point-in-Time Recovery settings.
-- [ ] Load Testing & Production Deploy (Vercel + Railway)
-- [ ] **Stripe Go-Live Checklist**:
-  - [ ] Add KVK details in Stripe Dashboard (required for EU verification)
-  - [ ] Switch Stripe & IPRoyal to live/production credentials
-  - [ ] Update webhook endpoint to production URL in Stripe Dashboard
-  - [ ] Test a live payment with a real card (small amount)
+- "Keep the Original" pattern (4 tabs)
+- Tiptap editor with SSR compatibility
+- URL-based tab navigation
+- Edited content persistence
 
 ---
 
-### Future Considerations / Parking Lot
+## 🔮 Current & Future Phases
 
-- **BYOK (Bring Your Own Key) + markup model**: users can plug in their own OpenAI/Anthropic/etc API key for AI features, or use our default cheap model (DeepSeek). Stripe's new LLM token billing (currently private preview) could handle automatic cost pass-through + markup. Build when: (1) Stripe token billing exits preview, (2) we have validated demand from paying users.
+### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
+
+**Goal**: Launch-ready operations and monitoring.
+
+- [x] **Admin Dashboard**: Protected `/admin` route — overview, user management, credits, transcripts, paid-users
+  - User management: list accounts, view credit balance, suspend/unsuspend, delete
+  - Credit management: manually add credits, full transaction log
+  - **IMPORTANT**: Deletions use `delete_user_cascade(user_id)` RPC (FK constraints)
+  - Protected by `ADMIN_EMAIL` env var in middleware
+- [x] **Suspended User Enforcement**: `profiles.suspended` boolean checked on all write-path API routes
+- [x] **Welcome Bonus Double-Claim Prevention**: Atomic `claim_welcome_reward` RPC + server-side pre-check
+- [x] **Playwright E2E Test Suite**: 29 tests across 4 spec files; global setup auto-tops-up test accounts to ≥ 50 credits; metrics logged per run
+- [ ] **Email Verification**: Re-enable (currently disabled for testing)
+- [ ] **Stripe Go-Live**: Switch to live keys, verify webhook in production
+- [ ] **Database Backups**: Document Supabase PITR settings
+
+### Phase I: SEO & Content Foundation (Q2 2025) ✅
+
+**Goal**: Organic traffic acquisition through content and SEO.
+
+- [x] **SEO Landing Pages** (8 pages built):
+  - `/youtube-transcript-generator` (primary)
+  - `/youtube-to-text`
+  - `/bulk-youtube-transcript`
+  - `/youtube-transcript-downloader`
+  - `/youtube-transcript-without-extension`
+  - `/youtube-srt-download`
+  - `/youtube-playlist-transcript`
+  - `/audio-to-text`
+- [x] **FAQ Page**: Schema markup for Google rich results
+- [x] **Sitemap**: `sitemap.ts` auto-generates XML sitemap
+- [x] **Footer**: Resource links across all pages
+- [x] **Competitor Alternative Pages**: `/alternative/downsub`, `/alternative/tactiq`
+- [ ] **Blog Infrastructure**: MDX or CMS integration for content marketing
+
+### Phase J: AI Feature Expansion (Q3 2025)
+
+**Goal**: Differentiate with AI-powered features.
+
+- [ ] **Whisper Language Support**: UI selector + backend `language` param
+- [ ] **Timestamp/Chapter Generation**: Auto-generate YouTube-style chapters
+- [ ] **Smart Search**: Search within transcripts using embeddings
+
+### Phase K: Visual Redesign (Q3 2025)
+
+**Goal**: Replace utility skin with premium design.
+
+- [ ] **Design System**: Linear/Notion-inspired aesthetic
+- [ ] **Component Library**: Fully styled variants for all components
+- [ ] **Motion Design**: Purposeful animations (not decorative)
+- [ ] **Mobile Optimization**: Touch targets, responsive tables
+
+### Phase L: Scale & Enterprise (Q4 2025)
+
+**Goal**: Handle growth and enterprise customers.
+
+- [ ] **API Access**: REST API for developers with rate limits
+- [ ] **Team Features**: Shared workspaces, team billing
+- [ ] **Usage Analytics**: Detailed dashboards for power users
+
+---
+
+## 🅿️ Parking Lot (Future Considerations)
+
+Ideas validated but not prioritized:
+
+### Content Features
+
+- **Channel-Level Extraction**: Extract all videos from a YouTube channel
+- **Batch Processing UI**: Select multiple videos from search results
+- **Collection Folders**: Organize transcripts into projects
+
+### Export & Integration
+
+- **RAG-Optimized JSON Export**: Configurable chunk size (15s/30s/60s) with explicit `start_time`/`end_time`
+- **Notion Integration**: Direct export to Notion pages
+- **Obsidian Integration**: Export as linked markdown notes
+- **Zapier/Make Webhooks**: Automation triggers on new transcripts
+
+### Monetization
+
+- **BYOK (Bring Your Own Key)**: Users provide their own OpenAI/Anthropic API keys
+- **Subscription Tiers**: Monthly plans alongside credit packs
+- **Pricing Calculator**: Interactive tool on homepage
+- **Affiliate Program**: Revenue share for referrals
+
+### Developer Experience
+
+- **Public API**: REST endpoints with API key auth
+- **Webhook Notifications**: Real-time updates on transcript completion
+- **SDK Libraries**: Python, JavaScript, Go clients
+
+### Infrastructure
+
+- **Custom Email Templates**: Branded transactional emails (Supabase)
+- **Multi-Region Deployment**: EU + US hosting options
+- **Railway Deno Runtime**: Railway does not have deno pre-installed. Add to Railway build or Dockerfile:
+  ```bash
+  curl -fsSL https://deno.land/install.sh | sh
+  export DENO_INSTALL=/root/.deno
+  export PATH=$DENO_INSTALL/bin:$PATH
+  ```
+  Or set `DENO_PATH` environment variable in Railway dashboard pointing to the deno binary location after install.
+
+---
+
+## 📝 Notes
+
+### Deprecated Items
+
+The following have been explicitly removed or deprecated:
+
+- **Sentry**: Error tracking handled by PostHog
+- **Google Analytics**: Replaced by PostHog
+- **Starlight/Midnight Design System**: Replaced by utility skin (April 2025)
+- **`.cline/skills/indxr-design/`**: References deprecated design system
+
+### Design Decision: Utility Skin
+
+As of April 2025, the project uses a neutral utility skin:
+- Background: `#f8f9fa` (light) / `#111111` (dark)
+- Accent: `#2563eb`
+- Border radius: `6px`
+
+This is intentionally minimal — a "holding design" that will be replaced wholesale during Phase K.

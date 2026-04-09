@@ -9,10 +9,31 @@ import yt_dlp
 import urllib.request
 import os
 import tempfile
+import time
 from dotenv import load_dotenv
+import posthog
 
 # Load environment variables
 load_dotenv()
+
+# Add deno to PATH so yt-dlp can find it for JS challenge solving
+_deno_path = os.getenv("DENO_PATH", "")
+if _deno_path and _deno_path not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = _deno_path + ":" + os.environ.get("PATH", "")
+
+# Initialize PostHog
+posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
+posthog.host = "https://app.posthog.com"
+
+
+def track_event(distinct_id: str, event: str, properties: Optional[Dict] = None):
+    """Fire and forget PostHog event tracking. Never blocks main flow."""
+    if not posthog.api_key:
+        return
+    try:
+        posthog.capture(distinct_id=distinct_id, event=event, properties=properties or {})
+    except Exception as e:
+        logging.getLogger("indxr-backend").warning(f"PostHog tracking failed: {e}")
 
 # Import Whisper modules
 from audio_utils import (
@@ -32,7 +53,7 @@ from credit_manager import (
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("indxr-backend")
@@ -301,6 +322,8 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True) -> List[dict
         'extract_flat': False,
         'socket_timeout': 10,  # Fail fast
         'retries': 3,
+        'enabled_runtimes': ['node', 'deno'],  # Enable node.js/deno for n challenge solving
+        'remote_components': ['ejs:github'],  # Download challenge solver script
     }
     
     if use_proxy:
@@ -489,6 +512,8 @@ async def get_playlist_info(request: ExtractRequest):
         'retries': 3,  # Retry 3 times
         'ignoreerrors': True,  # Skip bad/private videos without failing
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'enabled_runtimes': ['node', 'deno'],  # Enable node.js/deno for n challenge solving
+        'remote_components': ['ejs:github'],  # Download challenge solver script
     }
     
     proxy_url = get_proxy_url()
@@ -562,23 +587,25 @@ async def get_video_metadata(video_id: str):
         'socket_timeout': 10,
         'retries': 3,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'enabled_runtimes': ['node', 'deno'],  # Enable node.js/deno for n challenge solving
+        'remote_components': ['ejs:github'],  # Download challenge solver script
     }
-    
+
     proxy_url = get_proxy_url()
     if proxy_url:
         ydl_opts['proxy'] = proxy_url
-    
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
-            
+
             return {
                 "success": True,
                 "title": info.get('title', 'Unknown Title'),
                 "duration": info.get('duration', 0),
                 "thumbnail": info.get('thumbnail') or f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
             }
-            
+
     except Exception as e:
         logger.error(f"Video metadata error for {video_id}: {e}")
         raise HTTPException(status_code=404, detail=f"Failed to fetch video metadata: {str(e)}")
@@ -622,9 +649,17 @@ async def transcribe_with_whisper(
                 audio_path = extract_youtube_audio(video_id, proxy_url=proxy_url)
                 temp_files.append(audio_path)
             except Exception as e:
+                error_msg = str(e)
+                is_restricted = '152' in error_msg or 'unavailable' in error_msg.lower()
+                track_event(user_id, 'whisper_failed', {
+                    'video_id': video_id,
+                    'source_type': source_type,
+                    'error_type': 'youtube_restricted' if is_restricted else 'extraction_error',
+                    'error_message': error_msg
+                })
                 return WhisperResponse(
                     success=False,
-                    error=f"Failed to extract audio from YouTube: {str(e)}"
+                    error=f"Failed to extract audio from YouTube: {error_msg}"
                 )
 
         
@@ -694,11 +729,26 @@ async def transcribe_with_whisper(
         
         # Step 8: Call Whisper API
         logger.info(f"Calling Whisper API for {duration:.2f}s audio (cost: {credit_cost} credits)")
+        whisper_start_time = time.time()
+
+        # Track whisper_started
+        track_event(user_id, 'whisper_started', {
+            'video_id': video_id,
+            'source_type': source_type,
+            'duration_seconds': duration
+        })
+
         whisper_result = transcribe_audio(audio_path)
         
         if not whisper_result['success']:
             # Whisper API failed - DO NOT deduct credits
             logger.error(f"Whisper API failed: {whisper_result['error']}")
+            track_event(user_id, 'whisper_failed', {
+                'video_id': video_id,
+                'source_type': source_type,
+                'error_type': 'api_error',
+                'error_message': whisper_result['error']
+            })
             return WhisperResponse(
                 success=False,
                 error=whisper_result['error']
@@ -707,6 +757,12 @@ async def transcribe_with_whisper(
         # Check for empty transcript (silent video / no speech)
         if not whisper_result.get('transcript'):
             logger.warning(f"Whisper returned empty transcript for {video_id} — no speech detected")
+            track_event(user_id, 'whisper_failed', {
+                'video_id': video_id,
+                'source_type': source_type,
+                'error_type': 'no_speech',
+                'error_message': 'no_speech_detected'
+            })
             return WhisperResponse(
                 success=False,
                 error="no_speech_detected"
@@ -734,7 +790,14 @@ async def transcribe_with_whisper(
                 success=False,
                 error="Transcription succeeded but credit deduction failed. Please contact support."
             )
-        
+
+        # Track credits_deducted
+        track_event(user_id, 'credits_deducted', {
+            'amount': credit_cost,
+            'reason': 'whisper',
+            'balance_after': deduction_result.get('new_balance')
+        })
+
         # Step 10: Return success
         transcript = [
             TranscriptItem(
@@ -746,7 +809,17 @@ async def transcribe_with_whisper(
         ]
         
         logger.info(f"Whisper transcription successful: {len(transcript)} segments, {credit_cost} credits deducted")
-        
+
+        # Track whisper_completed
+        processing_time_ms = int((time.time() - whisper_start_time) * 1000)
+        track_event(user_id, 'whisper_completed', {
+            'video_id': video_id,
+            'source_type': source_type,
+            'duration_seconds': duration,
+            'processing_time_ms': processing_time_ms,
+            'credits_used': credit_cost
+        })
+
         return WhisperResponse(
             success=True,
             transcript=transcript,
@@ -798,7 +871,16 @@ async def summarize_transcript(request: SummarizeRequest):
         if not deduction_result.get('success'):
             logger.error(f"Credit deduction failed: {deduction_result.get('error')}")
             return SummarizeResponse(success=False, error="Credit deduction failed")
-            
+
+        # Track credits_deducted for summary
+        track_event(request.user_id, 'credits_deducted', {
+            'amount': 1,
+            'reason': 'summary',
+            'balance_after': deduction_result.get('new_balance')
+        })
+
+        summary_start_time = time.time()
+
         # 3. Fetch transcript from Supabase
         supabase = get_supabase_client()
         try:
@@ -876,6 +958,14 @@ async def summarize_transcript(request: SummarizeRequest):
                 logger.warning(f"Could not confirm transcript update for {request.transcript_id}")
                 
             logger.info(f"Summary generated and saved for {request.transcript_id}")
+
+            # Track summarization_completed
+            processing_time_ms = int((time.time() - summary_start_time) * 1000)
+            track_event(request.user_id, 'summarization_completed', {
+                'transcript_id': request.transcript_id,
+                'processing_time_ms': processing_time_ms
+            })
+
             return SummarizeResponse(success=True, summary=ai_summary)
             
         except Exception as e:

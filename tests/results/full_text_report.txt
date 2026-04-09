@@ -1,0 +1,12 @@
+
+global-setup: checking credits for 4 test accounts...
+  ✓ test1@indxr-test.com: has 175 credits (≥ 50, no top-up needed)
+  ✓ test2@indxr-test.com: has 113 credits (≥ 50, no top-up needed)
+  ✓ test3@indxr-test.com: has 118 credits (≥ 50, no top-up needed)
+  ✓ test4@indxr-test.com: has 124 credits (≥ 50, no top-up needed)
+global-setup: credit top-up complete
+
+
+Running 29 tests using 1 worker
+
+  ✓   1 [chromium] › tests/playwright/specs/01-single-video.spec.ts:28:9 › 1.1 — Auto-captions: short videos › extracts: 19s (first YouTube video) (27.4s)

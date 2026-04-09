@@ -11,6 +11,20 @@ export async function claimWelcomeRewardAction() {
     return { error: 'Not authenticated' }
   }
 
+  // Defense-in-depth: check credit_transactions before calling RPC
+  // The RPC also checks welcome_reward_claimed atomically, but this avoids
+  // unnecessary DB work if the reward was clearly already given.
+  const { data: existing } = await supabase
+    .from('credit_transactions')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('reason', 'Welcome Reward')
+    .maybeSingle()
+
+  if (existing) {
+    return { error: 'Reward already claimed' }
+  }
+
   // Atomic RPC call to prevent race conditions and partial failures
   const { data, error: rpcError } = await supabase.rpc('claim_welcome_reward', {
     p_user_id: user.id

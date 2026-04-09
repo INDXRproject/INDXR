@@ -75,7 +75,7 @@ def transcribe_audio(
                 
                 logger.info(f"Whisper API call attempt {attempt + 1}/{MAX_RETRIES}")
                 
-                with httpx.Client(timeout=300.0) as client:  # 5 minute timeout
+                with httpx.Client(timeout=600.0) as client:  # 10 minute timeout for long audio files
                     response = client.post(
                         OPENAI_API_URL,
                         headers=headers,

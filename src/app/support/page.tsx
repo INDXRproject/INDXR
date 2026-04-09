@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Button } from "@/components/ui/button"
+import { Footer } from "@/components/Footer"
 import Link from "next/link"
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 
 export default function SupportPage() {
   return (
+    <>
     <div className="container max-w-4xl py-24 px-4 mx-auto">
       <h1 className="text-4xl font-bold text-white mb-8">Support</h1>
       
@@ -40,5 +42,7 @@ export default function SupportPage() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   )
 }

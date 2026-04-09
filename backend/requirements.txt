@@ -8,5 +8,6 @@ ffmpeg-python
 pydub
 supabase
 python-multipart
+posthog
 
 

@@ -165,6 +165,9 @@ export default function TranscribePage() {
   }
 
   const processVideo = async (videoId: string, options?: { status?: string; duplicateId?: string; duplicateAction?: 'replace' | 'reset'; collectionId?: string; title?: string }) => {
+    // Track placeholder for cleanup on failure
+    let createdPlaceholderId: string | null = null;
+
     try {
         let response;
         const effectiveMethod = options?.status === 'needs_whisper' ? 'whisper_ai' : 'youtube_captions';
@@ -212,6 +215,7 @@ export default function TranscribePage() {
           throw new Error("Failed to create initial transcript record.");
         }
         transcriptId = earlyTranscript.id;
+        createdPlaceholderId = transcriptId; // Track for cleanup on failure
       }
 
         if (options?.status === 'needs_whisper') {
@@ -257,6 +261,17 @@ export default function TranscribePage() {
         
     } catch (error) {
         console.error(`Process video ${videoId} failed:`, error)
+
+        // Clean up placeholder row if we created one and extraction failed
+        if (createdPlaceholderId) {
+          try {
+            await supabase.from('transcripts').delete().eq('id', createdPlaceholderId);
+            window.dispatchEvent(new CustomEvent('indxr-library-refresh'));
+          } catch (cleanupError) {
+            console.error('Failed to clean up placeholder:', cleanupError);
+          }
+        }
+
         // Re-throw with the original message so callers can detect specific errors
         // (e.g. 'no_speech_detected' from Whisper on silent videos)
         throw error
@@ -294,17 +309,19 @@ export default function TranscribePage() {
         </TabsList>
 
         <TabsContent value="video">
-          <VideoTab 
-            onPlaylistDetected={() => setActiveTab('playlist')} 
+          <VideoTab
+            onPlaylistDetected={() => setActiveTab('playlist')}
             onTranscriptLoaded={handleTranscriptLoaded}
+            onSwitchToAudio={() => setActiveTab('audio')}
           />
         </TabsContent>
 
         <TabsContent value="playlist">
-          <PlaylistTab 
+          <PlaylistTab
             isAuthenticated={true}
-            onAuthRequired={() => {}} 
+            onAuthRequired={() => {}}
             onExtractVideo={processVideo}
+            onSwitchToAudio={() => setActiveTab('audio')}
           />
         </TabsContent>
 

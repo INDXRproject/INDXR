@@ -40,31 +40,28 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#020617] relative overflow-hidden px-4">
-      {/* Decorative background */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 blur-[120px] rounded-full" />
-      
-      <Card className="w-full max-w-sm bg-zinc-950/50 border-zinc-800/50 text-white backdrop-blur-xl relative z-10">
+    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+      <Card className="w-full max-w-sm border shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Reset Password</CardTitle>
-          <CardDescription className="text-zinc-400">
-            {isSent 
-              ? "Check your email for the reset link" 
+          <CardDescription>
+            {isSent
+              ? "Check your email for the reset link"
               : "Enter your email to receive a reset link"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isSent ? (
             <div className="flex flex-col items-center justify-center space-y-4 py-6">
-              <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Mail className="h-6 w-6 text-green-500" />
+              <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
+                <Mail className="h-6 w-6 text-success" />
               </div>
-              <p className="text-center text-sm text-zinc-300">
-                We have sent a password reset link to <span className="font-semibold text-white">{email}</span>.
+              <p className="text-center text-sm text-muted-foreground">
+                We have sent a password reset link to <span className="font-semibold text-foreground">{email}</span>.
               </p>
-              <Button 
-                variant="outline" 
-                className="w-full border-zinc-800 text-white hover:bg-zinc-800"
+              <Button
+                variant="outline"
+                className="w-full"
                 onClick={() => setIsSent(false)}
               >
                 Try another email
@@ -81,7 +78,6 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-zinc-950 border-zinc-800 text-white"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
@@ -90,10 +86,10 @@ export default function ForgotPasswordPage() {
             </form>
           )}
         </CardContent>
-        <CardFooter className="flex justify-center border-t border-zinc-800/50 pt-4">
-          <Link 
-            href="/login" 
-            className="text-sm text-zinc-400 hover:text-white flex items-center gap-2 transition-colors"
+        <CardFooter className="flex justify-center border-t pt-4">
+          <Link
+            href="/login"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Login
           </Link>

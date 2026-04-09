@@ -2,13 +2,13 @@
 
 ## Vision
 
-INDXR.AI is a premium, "Apple-like" tool designed to democratize access to YouTube video transcripts. It bridges the gap between video content and text-based indexing, offering users instant, high-quality, and granular transcripts for single videos and entire playlists.
+INDXR.AI is a premium tool designed to democratize access to YouTube video transcripts. It bridges the gap between video content and text-based indexing, offering users instant, high-quality, and granular transcripts for single videos and entire playlists.
 
 ### Core Pillars
 
-1.  **Aesthetics**: A "Wow" factor design with high-contrast dark mode, glassmorphism, and smooth animations. The hero section features a custom-built **HeroUIPreview** component — a high-fidelity app mockup that demonstrates the product's UX without requiring a login.
-2.  **Reliability**: Robust extraction using industry-standard tools (`yt-dlp`) backed by enterprise-grade proxy rotation (**IPRoyal** residential proxies) to bypass rate limits.
-3.  **Simplicity**: A frictionless "Free Tool" that requires no login for basic use, with a natural upsell path to a powerful Dashboard for power users.
+1. **Functionality First**: Clean, usable interface with clear visual hierarchy. Currently using a neutral utility skin; full redesign planned post-launch.
+2. **Reliability**: Robust extraction using industry-standard tools (`yt-dlp`) backed by enterprise-grade proxy rotation (IPRoyal residential proxies) to bypass rate limits.
+3. **Simplicity**: A frictionless "Free Tool" that requires no login for basic use, with a natural upsell path to a powerful Dashboard for power users.
 
 ---
 
@@ -16,49 +16,71 @@ INDXR.AI is a premium, "Apple-like" tool designed to democratize access to YouTu
 
 ### 1. Frontend (Application)
 
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router, TypeScript)
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router, TypeScript)
 - **Styling**:
-  - **Tailwind CSS**: Core utility-first styling.
-  - **shadcn/ui**: Reusable, accessible component primitives.
-  - **Lucide React**: Iconography.
-- **State**: React Hooks (`useState`) and URL state (`searchParams`).
+  - **Tailwind CSS**: Core utility-first styling
+  - **shadcn/ui**: Reusable, accessible component primitives
+  - **Lucide React**: Iconography
+- **State**: React Hooks (`useState`) and URL state (`searchParams`)
 - **Auth**:
-  - **Supabase Auth**: Email/Password + Google OAuth.
-  - **Session Strategy**: Server-Side Hydration (Root Layout) for zero-flicker experience.
-  - **Security**: Middleware chaining for Route Protection + Rate Limiting.
+  - **Supabase Auth**: Email/Password + Google OAuth
+  - **Session Strategy**: Server-Side Hydration (Root Layout) for zero-flicker experience
+  - **Security**: Middleware chaining for Route Protection + Rate Limiting
 
 ### 2. Backend (Extraction Service)
 
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12+)
 - **Core Logic**:
-  - **YouTube Data API v3**: Instant metadata fetching.
-  - **yt-dlp**: Fallback engine for captions/video access and Whisper audio download.
-- **Proxy**: **IPRoyal** residential proxy (`geo.iproyal.com:12321`) — prevents IP bans and 403s from YouTube CDN.
-- **Validation**: `Pydantic` models.
+  - **YouTube Data API v3**: Instant metadata fetching
+  - **yt-dlp**: Fallback engine for captions/video access and Whisper audio download
+- **Proxy**: IPRoyal residential proxy (`geo.iproyal.com:12321`) — prevents IP bans and 403s from YouTube CDN
+- **Validation**: Pydantic models
 
 ### 3. Infrastructure & Data
 
-- **Database**: **Supabase** (PostgreSQL)
-  - `auth.users`: Managed Identity.
-  - `public.profiles`: User metadata (Role, Username).
-  - `public.user_credits` + `credit_transactions`: Billing logic.
-  - `public.transcripts`: Stores video/playlist transcripts, including `edited_content` (text) and `ai_summary` (JSONB: {text, action_points, edited_html}).
-- **Cache/Rate Limit**: **Upstash Redis** (Serverless Redis).
-- **Hosting**: Vercel (Frontend), Railway (Backend - recommended).
+- **Database**: Supabase (PostgreSQL)
+  - `auth.users`: Managed Identity
+  - `public.profiles`: User metadata (Role, Username, `suspended` boolean for account bans)
+  - `public.user_credits` + `credit_transactions`: Billing logic
+  - `public.transcripts`: Stores video/playlist transcripts, including `edited_content` (text) and `ai_summary` (JSONB)
+- **Cache/Rate Limit**: Upstash Redis (Serverless Redis)
+- **Hosting**: Vercel (Frontend), Railway (Backend - recommended)
 
 ---
 
 ## Feature Implementations
 
+### Stripe Payments
+
+**Status**: Fully implemented and tested.
+
+**Checkout Flow** (`/api/stripe/checkout`):
+- Creates Stripe checkout session with server-side pricing
+- Packages: Starter (€1.99/15cr), Basic (€4.99/50cr), Plus (€9.99/130cr), Pro (€24.99/400cr), Power (€49.99/850cr)
+- Metadata includes `userId` and `credits` for webhook processing
+
+**Webhook Handler** (`/api/stripe/webhook`):
+- Listens for `checkout.session.completed` events
+- Validates signature using `STRIPE_WEBHOOK_SECRET`
+- Assigns credits via `add_credits` RPC with metadata:
+  ```json
+  {
+    "stripe_session_id": "cs_...",
+    "amount_paid": 4.99,
+    "currency": "eur"
+  }
+  ```
+- Tracks `credits_purchased` event in PostHog (server-side)
+
 ### Whisper AI Audio Pipeline
 
-When a user requests Whisper re-extraction, the backend performs a **two-step** audio pipeline to avoid a known yt-dlp proxy-split issue:
+When a user requests Whisper re-extraction, the backend performs a **two-step** audio pipeline:
 
 **Step 1 — yt-dlp download (proxy-consistent):**
 
 ```python
 ydl_opts = {
-    'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio',
+    'format': 'bestaudio/best',
     'proxy': proxy_url,
     'extractor_args': {
         'youtube': {
@@ -68,7 +90,7 @@ ydl_opts = {
 }
 ```
 
-Format preference: `m4a` first (native to iOS client, bypassing strict PO Token bindings), `webm/opus` second, any `bestaudio` as fallback. The `/best` video fallback is explicitly excluded.
+Format: `bestaudio/best` — DASH m4a/webm formats are no longer available in yt-dlp 2026.03.17+; ffmpeg handles conversion to mp3 regardless of container.
 
 **Step 2 — ffmpeg conversion (subprocess):**
 
@@ -76,10 +98,7 @@ Format preference: `m4a` first (native to iOS client, bypassing strict PO Token 
 ffmpeg -i <raw_file> -ar 16000 -ac 1 -b:a 32k output.mp3
 ```
 
-Converts the raw audio to 16kHz mono 32kbps MP3, optimised for Whisper API (speech recognition).
-
-**Player Client & YouTube Restrictions:**
-We explicitly use the `ios` player client. YouTube's GVS PO Token experiment blocks default clients (like Android) unless a JS runtime is installed to compute a token. The iOS client (`m4a`) bypasses this requirement completely and is highly stable with HTTP proxies. If a video strictly enforces PO tokens despite the iOS client, users receive a specific frontend error directing them to manual upload.
+Converts to 16kHz mono 32kbps MP3, optimized for Whisper API.
 
 **Credit Calculation:**
 
@@ -87,131 +106,200 @@ We explicitly use the `ios` player client. YouTube's GVS PO Token experiment blo
 credits = Math.ceil(duration_seconds / 600)  # 1 credit per 10 minutes, minimum 1
 ```
 
-The frontend displays the exact cost before the user clicks (`duration` is returned by `/api/extract` and stored in component state). The backend uses the same formula for the atomic deduction.
+### AI Summarization
 
----
-
-### Rate Limiting System (Phase 3)
-
-The system protects the extraction API using a 3-tier strategy via `@upstash/ratelimit`.
-
-| Tier          | Limit                  | Scope    | Logic                                      |
-| ------------- | ---------------------- | -------- | ------------------------------------------ |
-| **Anonymous** | 10 requests / 24 hours | IP-based | Prevents abuse from guests and bots.       |
-| **Free User** | 50 requests / 1 hour   | User ID  | Generous limit for logged-in free users.   |
-| **Premium**   | **Unlimited**          | User ID  | Bypassed if `total_credits_purchased > 0`. |
-
-**How it works**:
-
-1.  **Request**: `/api/extract` called.
-2.  **Check**: Middleware checks Supabase session.
-3.  **Premium Bypass**: If user has `total_credits_purchased > 0`, skip limits.
-4.  **Enforcement**: Check Redis usage counters. 429 Error if exceeded.
-5.  **Configuration**: Centralized in `src/lib/ratelimit.ts`.
-
-### Analytics & Monitoring (Phase C & Planned)
-
-**PostHog Integration (Active):**
-
-- Project: INDXR.AI (US region, app.posthog.com)
-- SDK: `posthog-js` (frontend React provider), `posthog-node` (Next.js server-side Stripe webhook)
-- Backend: Python FastAPI backend is currently **NOT** tracked by PostHog.
-- User Identification: Tied to Supabase user ID on login
-- Auto-tracking: Pageviews, clicks,
-- **Tracked Events**:
-  - `signup_source` (google/email)
-  - `credits_purchased` (server-side via Stripe Webhook + client-side)
-  - `transcript_extracted` (video/playlist, youtube/whisper)
-
-**Error Tracking (Planned):**
-
-- **Sentry**: Planned integration for comprehensive frontend/backend stacktrace logging.
-
-**Stripe Payments (Planned for Pre-Launch):**
-
-- Mode: Development / Testing (Live keys required for production)
-- Webhook: `/api/stripe/webhook` (needs handling logic for credit assignment)
-- Credit Packages: Starter €4.99/50cr, Regular €9.99/120cr, Power €24.99/350cr
-- Security: RPC atomic credit additions and signature validation to be implemented.
-- **Provider**: DeepSeek V3 (`deepseek-chat`) is used as the default engine for high-quality, cost-effective summarization.
-
----
-
-### Phase G: AI Summarization
-
-The summarization engine transforms raw transcripts into concise summaries with actionable takeaways.
+**Provider**: DeepSeek V3 (`deepseek-chat`)
 
 **Workflow**:
+1. User clicks "Summarize" on Original Transcript tab
+2. Backend verifies ≥ 1 credit balance and deducts atomically
+3. Fetches raw transcript from `transcript` column
+4. Calls DeepSeek API with structured prompt
+5. Returns JSON: `{ "text": "...", "action_points": ["...", "..."] }`
+6. Saves to `ai_summary` JSONB column
+7. On failure: automatic credit refund
 
-1. **Trigger**: User clicks "Summarize" on the Original Transcript tab.
-2. **Pre-check**: Backend verifies ≥ 1 credit balance and deducts 1 credit atomically.
-3. **Extraction**: Backend fetches the raw transcript from the `transcript` column.
-4. **DeepSeek API**:
-   - Model: `deepseek-chat` (DeepSeek V3).
-   - Prompt: "Output JSON with two keys: 'text' (summary) and 'action_points' (array of strings)."
-5. **Persistence**: Result saved to `ai_summary` column.
+### Export Formats
 
-### Phase H: Transcript Tab Architecture
+**Available Formats**:
 
-The Dashboard uses a robust "Keep the Original" pattern across all transcript views to ensure data integrity.
+| Format | Structure | Use Case |
+|--------|-----------|----------|
+| TXT | Plain text (optional timestamps) | Reading |
+| JSON | `[{text, duration, offset}, ...]` | Developer integration |
+| CSV | `Start, Duration, Text` | Spreadsheets |
+| SRT | Standard subtitle format | Video editing |
+| VTT | WebVTT format | Web video players |
 
-- **Tab Groups**:
-  - **Original**: Read-only raw transcript (Edit button hidden if an Edited version exists).
-  - **Edited**: User-modified version of the transcript (stored in `edited_content`).
-  - **AI Summary**: Read-only original summary from DeepSeek.
-  - **Edited Summary**: User-modified version of the summary (stored in `ai_summary.edited_html`).
-- **Navigation**: URL-based (`?tab=x`) for SEO and deep-linking.
-- **State**: Reactive `setEditable` syncing via Tiptap ensures zero-lag transition between read and edit modes.
+**JSON Export Structure**:
 
----
+```typescript
+interface TranscriptItem {
+  text: string;      // Segment text
+  duration: number;  // Length in seconds
+  offset: number;    // Start time in seconds
+}
+```
+
+Segments are granular (typically 2-5 seconds). For RAG pipelines, post-processing may be needed to create larger chunks.
+
+### Rate Limiting System
+
+Three-tier strategy via `@upstash/ratelimit`:
+
+| Tier | Limit | Scope | Logic |
+|------|-------|-------|-------|
+| Anonymous | 10 req / 24h | IP-based | Prevents abuse from guests |
+| Free User | 50 req / 1h | User ID | Generous limit for logged-in users |
+| Premium | Unlimited | User ID | Bypassed if `total_credits_purchased > 0` |
+
+### Admin Dashboard
+
+**Routes** (server-rendered, protected by `ADMIN_EMAIL` middleware):
+
+| Route | Description |
+|-------|-------------|
+| `/admin` | Overview: total users, weekly signups, credit stats |
+| `/admin/users` | User list with search, credit balance, suspend/unsuspend |
+| `/admin/credits` | Credit transaction log |
+| `/admin/transcripts` | All transcripts with delete capability |
+| `/admin/transcripts/[id]` | Individual transcript detail |
+| `/admin/paid-users` | Users with `total_credits_purchased > 0`, PostHog deep-link |
+
+**Admin API Routes** (all require `ADMIN_EMAIL` session check):
+
+| Endpoint | Method | Action |
+|----------|--------|--------|
+| `/api/admin/add-credits` | POST | Manually grant credits to a user |
+| `/api/admin/suspend-user` | POST | Toggle `suspended` on `profiles` |
+| `/api/admin/delete-user` | POST | Cascade-delete user (uses `delete_user_cascade` RPC) |
+| `/api/admin/delete-transcript` | POST | Remove a transcript record |
+| `/api/admin/user-detail` | GET | Full user profile + credit history |
+
+**Suspended User Enforcement**: The `suspended` boolean on `profiles` is checked at the start of every write-path API route:
+- `/api/extract`
+- `/api/ai/summarize`
+- `/api/transcribe/whisper`
+- `/api/playlist/info`
+- `/api/check-playlist-availability`
+
+Suspended users receive HTTP 403 with `"Account suspended. Contact support@indxr.ai"`. A `/suspended` page is shown for blocked sessions.
+
+### Analytics & Monitoring
+
+**PostHog Integration**:
+- **Frontend**: `posthog-js` React provider
+- **Server**: `posthog-node` in Stripe webhook
+- **Backend**: `posthog` Python SDK in FastAPI — all Whisper and credit events tracked
+
+**Tracked Events**:
+
+| Event | Source | Key Properties |
+|---|---|---|
+| `signup_source` | Frontend | `provider` (google/email) |
+| `credits_purchased` | Stripe webhook | `amount`, `currency`, `credits` |
+| `transcript_extracted` | Frontend | `method`, `video_id` |
+| `whisper_started` | Python backend | `video_id`, `source_type`, `duration_seconds` |
+| `whisper_completed` | Python backend | `video_id`, `processing_time_ms`, `credits_used` |
+| `whisper_failed` | Python backend | `video_id`, `error_type`, `error_message` |
+| `credits_deducted` | Python backend | `amount`, `reason`, `balance_after` |
+| `summarization_completed` | Python backend | `video_id`, `duration_ms` |
+
+**Error Tracking**: PostHog handles both analytics and error tracking. Sentry is explicitly excluded from this project.
+
+### Transcript Tab Architecture
+
+The Dashboard uses a "Keep the Original" pattern:
+
+- **Original**: Read-only raw transcript
+- **Edited**: User-modified version (stored in `edited_content`)
+- **AI Summary**: Read-only summary from DeepSeek
+- **Edited Summary**: User-modified summary (stored in `ai_summary.edited_html`)
+
+Navigation: URL-based (`?tab=x`) for SEO and deep-linking.
 
 ### Playlist Engine
 
-- **Source**: Switched to YouTube Data API v3 for reliability.
-- **Job Queue**: Large playlists are processed asynchronously.
-- **Availability**: Live pre-scan checks "availabilty" of videos before extraction.
-
-### Environment Variables
-
-- **Frontend**: `.env.local`
-  - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - `PYTHON_BACKEND_URL`
-  - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
-  - `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`
-  - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-  - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
-- **Backend**: `.env`
-  - `OPENAI_API_KEY` (Whisper)
-  - `DEEPSEEK_API_KEY` (DeepSeek V3 chat)
-  - `PROXY_HOST`, `PROXY_PORT`, `PROXY_USER`, `PROXY_PASSWORD` (IPRoyal)
-  - `SUPABASE_SERVICE_ROLE_KEY`
-  - `POSTHOG_API_KEY`
+- **Source**: YouTube Data API v3
+- **Job Queue**: Large playlists processed asynchronously
+- **Availability**: Live pre-scan checks video availability before extraction
 
 ---
 
 ## Security — Supabase RLS Audit
 
-All 6 user data tables have strict Row Level Security (RLS) enabled to guarantee data isolation between users.
+All 6 user data tables have strict Row Level Security (RLS) enabled:
 
 ### Table Policies
 
-- **`collections`**: ALL operations allowed for own rows (`user_id = auth.uid()`).
-- **`credit_transactions`**: SELECT only — inserts are handled exclusively by backend logic/RPC.
-- **`transcripts`**: Full CRUD for own rows (`user_id = auth.uid()`).
-- **`profiles`**: SELECT, INSERT, UPDATE for own rows (`id = auth.uid()`).
-- **`usage_logs`**: SELECT only.
-- **`user_credits`**: SELECT only. The UPDATE policy ("users can update own credits") was removed during this audit. Credit mutations are exclusively handled by the secure `deduct_credits_atomic` RPC on the backend. Direct client-side modification of credits is not possible.
+| Table | Allowed Operations | Notes |
+|-------|-------------------|-------|
+| `collections` | ALL for own rows | `user_id = auth.uid()` |
+| `credit_transactions` | SELECT only | Inserts via backend RPC |
+| `transcripts` | Full CRUD for own | `user_id = auth.uid()` |
+| `profiles` | SELECT, INSERT, UPDATE | `id = auth.uid()` |
+| `usage_logs` | SELECT only | Read-only audit |
+| `user_credits` | SELECT only | Mutations via RPC only |
 
 ### Codebase Security
 
-- **Frontend**: The frontend codebase has no RLS bypass vulnerabilities and strictly uses the `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-- **Backend / Admin**: The `SUPABASE_SERVICE_ROLE_KEY` is completely confined to the Python FastAPI backend, which handles secure administrative actions.
+- **Frontend**: Uses `NEXT_PUBLIC_SUPABASE_ANON_KEY` only
+- **Backend**: `SUPABASE_SERVICE_ROLE_KEY` confined to Python FastAPI
 
 ---
 
-## Developer Productivity & Custom Skills
+## Environment Variables
 
-To ensure consistent application of the INDXR design language, the project uses a custom agent skill:
+### Frontend (`.env.local`)
 
-- **indxr-design**: Located in `.agent/skills/indxr-design/`. This skill provides Antigravity (AI assistant) with the exact tokens and component patterns needed for **Midnight** (dark) and **Starlight** (light) modes.
-- **Design System Reference**: Detailed tokens are defined in [design-system.md](file:///home/aladdin/Documents/Antigravity/INDXR.AI%20V2/.agent/skills/indxr-design/references/design-system.md).
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+PYTHON_BACKEND_URL
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
+NEXT_PUBLIC_POSTHOG_KEY
+NEXT_PUBLIC_POSTHOG_HOST
+NEXT_PUBLIC_POSTHOG_PROJECT_ID  # Admin dashboard PostHog deep-links
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
+ADMIN_EMAIL                     # Single admin email address — guards /admin routes
+```
+
+### Backend (`.env`)
+
+```
+OPENAI_API_KEY          # Whisper
+DEEPSEEK_API_KEY        # Summarization
+PROXY_HOST              # IPRoyal
+PROXY_PORT
+PROXY_USER
+PROXY_PASSWORD
+SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_URL
+POSTHOG_API_KEY         # Backend event tracking
+POSTHOG_HOST            # https://app.posthog.com
+DENO_PATH               # Path to deno binary (e.g. /home/user/.deno/bin)
+LOG_LEVEL               # Logging verbosity: WARNING (prod) or INFO (debug)
+```
+
+---
+
+## Developer Productivity
+
+### IDE & Tools
+
+- **Cline** (VSCode extension) with **DeepSeek Chat** for AI-assisted development
+- Custom rules in `.cline/rules/` for project-specific guidance
+
+### Design System
+
+The project currently uses a **neutral utility skin** (April 2025):
+
+- Background: `#f8f9fa` (light) / `#111111` (dark)
+- Surface: `#ffffff` (light) / `#1a1a1a` (dark)
+- Accent: `#2563eb` (both modes)
+- Border radius: `6px`
+
+**Deprecated**: The `.cline/skills/indxr-design/` skill references the old Starlight/Midnight design system and should not be used. A full visual redesign is planned post-launch.

@@ -36,52 +36,84 @@ export function BillingPurchaseGrid() {
   }
 
   return (
-    <div className="grid md:grid-cols-3 gap-6 items-start mt-8">
-      <PricingCard 
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start mt-8">
+      <PricingCard
         name="Starter"
-        price="€4.99"
-        credits={50}
-        description="Perfect for casual users trying out the platform."
+        price="€1.99"
+        credits={15}
+        label="Try it out"
+        description="Perfect for trying out the platform."
         ctaLabel={loadingPlan === 'starter' ? 'Redirecting...' : 'Buy Now'}
         features={[
-          "50 transcript credits",
+          "15 transcript credits",
           "Videos up to 4 hours",
-          "TXT, JSON, SRT exports",
-          "Email support"
+          "All export formats",
         ]}
         onSelect={() => handlePurchase('starter')}
       />
-      
-      <PricingCard 
-        name="Regular"
-        price="€9.99"
-        credits={120}
-        description="Best value for creators and researchers."
-        featured={true}
-        ctaLabel={loadingPlan === 'regular' ? 'Redirecting...' : 'Buy Now'}
+
+      <PricingCard
+        name="Basic"
+        price="€4.99"
+        credits={50}
+        description="Great for regular users."
+        ctaLabel={loadingPlan === 'basic' ? 'Redirecting...' : 'Buy Now'}
         features={[
-          "120 transcript credits",
+          "50 transcript credits",
           "Videos up to 4 hours",
-          "All export formats (VTT, CSV)",
-          "Priority processing",
-          "Batch playlist extraction"
+          "All export formats",
+          "Email support",
         ]}
-        onSelect={() => handlePurchase('regular')}
+        onSelect={() => handlePurchase('basic')}
       />
-      
-      <PricingCard 
-        name="Power"
-        price="€24.99"
-        credits={350}
-        description="For heavy users and archiving."
-        ctaLabel={loadingPlan === 'power' ? 'Redirecting...' : 'Buy Now'}
+
+      <PricingCard
+        name="Plus"
+        price="€9.99"
+        credits={130}
+        label="Most Popular"
+        featured={true}
+        description="Best value for creators and researchers."
+        ctaLabel={loadingPlan === 'plus' ? 'Redirecting...' : 'Buy Now'}
         features={[
-          "350 transcript credits",
+          "130 transcript credits",
+          "Videos up to 4 hours",
+          "All export formats",
+          "Priority processing",
+          "Batch playlist extraction",
+        ]}
+        onSelect={() => handlePurchase('plus')}
+      />
+
+      <PricingCard
+        name="Pro"
+        price="€24.99"
+        credits={400}
+        description="For heavy users and teams."
+        ctaLabel={loadingPlan === 'pro' ? 'Redirecting...' : 'Buy Now'}
+        features={[
+          "400 transcript credits",
           "Videos up to 4 hours",
           "All export formats",
           "Priority support",
-          "Batch processing queries",
-          "API access (Beta)"
+          "Batch processing",
+        ]}
+        onSelect={() => handlePurchase('pro')}
+      />
+
+      <PricingCard
+        name="Power"
+        price="€49.99"
+        credits={850}
+        label="Best Value"
+        description="Maximum value for archiving."
+        ctaLabel={loadingPlan === 'power' ? 'Redirecting...' : 'Buy Now'}
+        features={[
+          "850 transcript credits",
+          "Videos up to 4 hours",
+          "All export formats",
+          "Priority support",
+          "API access (Beta)",
         ]}
         onSelect={() => handlePurchase('power')}
       />

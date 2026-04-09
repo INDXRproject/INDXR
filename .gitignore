@@ -46,3 +46,6 @@ backend/inspect_*.py
 backend/.env
 .env
 .env.local
+
+# Test credentials
+tests/test_accounts.json

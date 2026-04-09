@@ -37,7 +37,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
+  const pathname = request.nextUrl.pathname
+
+  // Protect /admin routes — only the admin email can access
+  if (pathname.startsWith('/admin')) {
+    const adminEmail = process.env.ADMIN_EMAIL
+    if (!user || !adminEmail || user.email !== adminEmail) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
+  // Protect /dashboard routes — must be logged in
+  if (pathname.startsWith('/dashboard') && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

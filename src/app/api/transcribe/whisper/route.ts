@@ -16,6 +16,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Block suspended users
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('suspended')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.suspended) {
+      return NextResponse.json(
+        { success: false, error: 'Account suspended. Contact support@indxr.ai' },
+        { status: 403 }
+      );
+    }
+
     // Parse form data
     const formData = await request.formData();
     const sourceType = formData.get('source_type') as string;

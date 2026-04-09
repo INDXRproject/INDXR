@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createClient } from '@/utils/supabase/server';
 
 const requestSchema = z.object({
   url: z.string().optional(),
@@ -12,6 +13,23 @@ const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8
 
 export async function POST(request: Request) {
   try {
+    // Block suspended users
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('suspended')
+        .eq('id', user.id)
+        .single();
+      if (profile?.suspended) {
+        return NextResponse.json(
+          { success: false, error: 'Account suspended. Contact support@indxr.ai' },
+          { status: 403 }
+        );
+      }
+    }
+
     const body = await request.json();
     const result = requestSchema.safeParse(body);
 

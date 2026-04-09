@@ -99,39 +99,39 @@ export function WhisperFallbackModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800">
+      <DialogContent className="sm:max-w-md bg-background border-border">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-purple-500/10 rounded-lg">
-              <Sparkles className="h-5 w-5 text-purple-500" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <DialogTitle className="text-foreground">No Captions Found</DialogTitle>
           </div>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className="text-muted-foreground">
             This video doesn&apos;t have auto-generated captions. INDXR.AI will use Whisper AI to transcribe your video.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Video Info */}
-          <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <div className="p-3 rounded-lg bg-muted/50 border border-border">
             <p className="text-sm font-medium text-foreground truncate">{videoTitle}</p>
             {estimatedDuration && (
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 ~{Math.round(estimatedDuration / 60)} minutes
               </p>
             )}
           </div>
 
           {/* Credit Cost */}
-          <div className="p-4 rounded-lg border border-zinc-800 bg-zinc-900/50">
+          <div className="p-4 rounded-lg border border-border bg-muted/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-zinc-400">Credit Cost</span>
+              <span className="text-sm text-muted-foreground">Credit Cost</span>
               <span className="text-lg font-bold text-foreground">{estimatedCredits} credits</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">Your balance</span>
-              <span className={credits !== null && credits >= estimatedCredits ? "text-green-500" : "text-amber-500"}>
+              <span className="text-muted-foreground">Your balance</span>
+              <span className={credits !== null && credits >= estimatedCredits ? "text-green-600 dark:text-green-500" : "text-amber-600 dark:text-amber-500"}>
                 {credits ?? 0} credits
               </span>
             </div>
@@ -140,18 +140,23 @@ export function WhisperFallbackModal({
           {/* Insufficient Credits Warning */}
           {!hasEnoughCredits && credits !== null && (
             <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
               <div className="flex-1">
-                <p className="text-sm text-amber-200 font-medium">Not enough credits</p>
-                <p className="text-xs text-amber-300/80 mt-1">
+                <p className="text-sm text-amber-700 dark:text-amber-200 font-medium">Not enough credits</p>
+                <p className="text-xs text-amber-600 dark:text-amber-300/80 mt-1">
                   You need {estimatedCredits} credits but only have {credits}.
                 </p>
+                <Link href="/pricing" className="inline-block mt-2">
+                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                    Buy Credits →
+                  </Button>
+                </Link>
               </div>
             </div>
           )}
 
           {/* Info */}
-          <div className="text-xs text-zinc-500 space-y-1">
+          <div className="text-xs text-muted-foreground space-y-1">
             <p>• AI transcription uses OpenAI&apos;s Whisper model</p>
             <p>• Credits are only charged after successful transcription</p>
             <p>• Processing takes 10-30 seconds depending on video length</p>
@@ -187,9 +192,9 @@ export function WhisperFallbackModal({
               )}
             </Button>
           ) : (
-            <Link href="/account/credits" className="w-full sm:w-auto">
+            <Link href="/pricing" className="w-full sm:w-auto">
               <Button className="w-full">
-                Purchase Credits
+                Buy Credits →
               </Button>
             </Link>
           )}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, ListOrdered, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic } from "lucide-react";
+import { Loader2, ListOrdered, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
@@ -42,7 +42,7 @@ interface AvailabilitySummary {
   totalCredits: number
 }
 
-export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech'
+export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech' | 'youtube_restricted'
 
 interface PlaylistManagerProps {
   onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string) => void;
@@ -51,9 +51,10 @@ interface PlaylistManagerProps {
   isAuthenticated: boolean;
   onAuthRequired: () => void;
   onError: (message: string | null) => void;
+  onSwitchToAudio?: () => void;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, isAuthenticated, onAuthRequired, onError }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, isAuthenticated, onAuthRequired, onError, onSwitchToAudio }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -74,8 +75,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
   // Monitor extraction progress
   useEffect(() => {
     if (!isExtracting && Object.keys(videoStatuses).length > 0) {
-      // Check if all are done (success or error)
-      const allDone = Object.values(videoStatuses).every(s => s === 'success' || s === 'error' || s === 'unavailable')
+      // Check if all are done (success or any failure type)
+      const allDone = Object.values(videoStatuses).every(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted')
       if (allDone) {
          setIsCompleted(true)
          refreshCredits()
@@ -279,7 +280,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
       const extractableIds = finalResults
         .filter(r => r.status === 'has_captions' || r.status === 'needs_whisper')
         .map(r => r.videoId);
-      
+
       // Inject the duplicate logic into the results that go back up
       const enhancedResults = finalResults.map(r => ({
         ...r,
@@ -336,7 +337,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                         <div>
                              <h3 className="text-lg font-bold text-foreground">Extraction Complete!</h3>
                              <p className="text-muted-foreground text-sm">
-                                 {Object.values(videoStatuses).filter(s => s === 'success').length}/{Object.keys(videoStatuses).length} processed successfully • {Object.values(videoStatuses).filter(s => s === 'error').length} failed
+                                 {Object.values(videoStatuses).filter(s => s === 'success').length}/{Object.keys(videoStatuses).length} processed successfully • {Object.values(videoStatuses).filter(s => s === 'error' || s === 'no_speech' || s === 'youtube_restricted').length} failed
                              </p>
                         </div>
                     </div>
@@ -372,7 +373,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                     <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                         <div 
                             className="h-full bg-primary transition-all duration-500 ease-out"
-                            style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
+                            style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
                         />
                     </div>
                 </>
@@ -504,6 +505,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                           {videoStatuses[entry.id] === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />}
                           {videoStatuses[entry.id] === 'error' && <XCircle className="h-4 w-4 text-red-500 shrink-0" />}
                           {videoStatuses[entry.id] === 'unavailable' && <XCircle className="h-4 w-4 text-zinc-500 shrink-0" />}
+                          {videoStatuses[entry.id] === 'youtube_restricted' && <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />}
                           {videoStatuses[entry.id] === 'extracting' && <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />}
                         </div>
                         {entry.duration && (
@@ -515,6 +517,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                             {videoStatuses[entry.id] === 'unavailable' && <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Unavailable</span>}
                            {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">Failed</span>}
                              {videoStatuses[entry.id] === 'no_speech' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">No speech detected</span>}
+                             {videoStatuses[entry.id] === 'youtube_restricted' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">YouTube restricted</span>}
                              
                              {/* Duplicate Badge */}
                              {!hasExtracted && existingDuplicates[entry.id] && (
@@ -535,6 +538,27 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                                  <AlertCircle className="h-3 w-3" /> Whisper
                                </span>
                              )}
+                          </div>
+                        )}
+
+                        {/* YouTube Restricted Expanded Message */}
+                        {videoStatuses[entry.id] === 'youtube_restricted' && (
+                          <div className="mt-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                            <p className="text-xs text-amber-600 dark:text-amber-500 mb-2">
+                              This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload via our Audio Upload tab.
+                            </p>
+                            {onSwitchToAudio && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onSwitchToAudio();
+                                }}
+                                className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+                              >
+                                <Mic className="h-3 w-3" />
+                                Try Audio Upload →
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

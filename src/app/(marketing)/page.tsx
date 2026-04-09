@@ -1,11 +1,12 @@
 import Link from "next/link"
 import { ArrowRight, Zap, AudioWaveform, ListVideo, Library } from "lucide-react"
 import { FeatureCard } from "@/components/FeatureCard"
-
+import { Footer } from "@/components/Footer"
 import { HeroUIPreview } from "@/components/HeroUIPreview"
 
 export default function LandingPage() {
   return (
+    <>
     <div className="flex flex-col items-center">
       {/* Hero Section */}
       <section className="w-full py-16 sm:py-24 lg:py-32 flex justify-center border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)]">
@@ -152,9 +153,9 @@ export default function LandingPage() {
             Start free. No credit card.
           </h2>
           <p className="text-lg sm:text-xl max-w-[640px] mx-auto mb-10 leading-relaxed text-[var(--text-secondary)]">
-            Casual users never need an account. When you're ready 
-            for playlists, Whisper AI, and your personal library — 
-            credits start at €4.99.
+            Casual users never need an account. When you're ready
+            for playlists, Whisper AI, and your personal library —
+            from €1.99. Credits never expire.
           </p>
           <Link href="/youtube-transcript-generator" className="inline-block">
             <button className="
@@ -172,6 +173,8 @@ export default function LandingPage() {
         </div>
       </section>
     </div>
+    <Footer />
+    </>
   )
 }
 

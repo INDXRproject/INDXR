@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/utils/supabase/server'
 
 interface VideoAvailability {
   videoId: string
@@ -15,6 +16,23 @@ const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8
 
 export async function POST(request: NextRequest) {
   try {
+    // Block suspended users
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('suspended')
+        .eq('id', user.id)
+        .single()
+      if (profile?.suspended) {
+        return NextResponse.json(
+          { error: 'Account suspended. Contact support@indxr.ai' },
+          { status: 403 }
+        )
+      }
+    }
+
     const { videos } = await request.json()
 
     if (!Array.isArray(videos) || videos.length === 0) {

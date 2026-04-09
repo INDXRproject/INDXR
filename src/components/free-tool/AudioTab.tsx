@@ -9,6 +9,7 @@ import { TranscriptCard, TranscriptItem } from "@/components/TranscriptCard"
 import { TranscriptMetadata } from "@/types/transcript"
 import Link from "next/link"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
+import posthog from "posthog-js"
 
 interface AudioTabProps {
   onTranscriptLoaded?: (transcript: TranscriptItem[], metadata: TranscriptMetadata) => void
@@ -133,7 +134,13 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
     setFile(selectedFile)
     setTranscript(null) // Clear previous transcript
-    
+
+    // Track audio upload started
+    posthog.capture('audio_upload_started', {
+      file_type: fileExt,
+      file_size_mb: selectedFile.size / (1024 * 1024)
+    })
+
     // Get actual audio duration
     try {
       const duration = await getAudioDuration(selectedFile)
@@ -179,8 +186,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             <div>
               <p className="font-semibold">Not enough credits</p>
               <p className="text-sm">You need {data.required_credits} credits but only have {data.available_credits}.</p>
-              <Link href="/account/credits" className="text-primary underline text-sm">
-                Purchase more credits
+              <Link href="/pricing" className="text-primary underline text-sm">
+                Buy Credits →
               </Link>
             </div>
           )
@@ -334,9 +341,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           </div>
 
           {!hasEnoughCredits && credits !== null && (
-            <Link href="/account/credits">
+            <Link href="/pricing">
               <Button variant="outline" size="sm" className="mt-3 w-full">
-                Purchase Credits
+                Buy Credits →
               </Button>
             </Link>
           )}

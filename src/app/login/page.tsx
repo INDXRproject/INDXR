@@ -65,15 +65,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#020617] relative overflow-hidden px-4">
-      {/* Decorative background elements to match the marketing theme */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 blur-[120px] rounded-full" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 blur-[120px] rounded-full" />
-      
-      <Card className="w-full max-w-sm bg-zinc-950/50 border-zinc-800/50 text-white backdrop-blur-xl relative z-10 shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+      <Card className="w-full max-w-sm border shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardDescription>
             Enter your email below to login to your account
           </CardDescription>
         </CardHeader>
@@ -89,13 +85,12 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-zinc-950 border-zinc-800 text-white"
               />
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="ml-auto inline-block text-sm underline text-zinc-400 hover:text-zinc-300">
+                <Link href="/forgot-password" className="ml-auto inline-block text-sm underline text-muted-foreground hover:text-foreground">
                   Forgot your password?
                 </Link>
               </div>
@@ -105,7 +100,6 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-zinc-950 border-zinc-800 text-white"
               />
             </div>
             
@@ -123,42 +117,42 @@ export default function LoginPage() {
             {/* OAuth Divider */}
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-zinc-800" />
+                <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#020617] px-2 text-zinc-500">Or continue with</span>
+                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
               </div>
             </div>
 
             {/* OAuth Buttons */}
             <div className="grid grid-cols-2 gap-4">
               <form action={loginWithGoogleAction}>
-                <Button 
+                <Button
                   type="submit"
-                  variant="outline" 
-                  className="w-full bg-zinc-950/50 border-zinc-800 text-white hover:bg-zinc-900" 
+                  variant="outline"
+                  className="w-full"
                 >
                   <Chrome className="mr-2 h-4 w-4" /> Google
                 </Button>
               </form>
-              <Button 
+              <Button
                 type="button"
-                variant="outline" 
-                className="bg-zinc-950/50 border-zinc-800 text-zinc-400 opacity-50 cursor-not-allowed" 
+                variant="outline"
+                className="opacity-50 cursor-not-allowed"
                 disabled
               >
                 <Apple className="mr-2 h-4 w-4" /> Apple
               </Button>
             </div>
-            <p className="text-xs text-center text-zinc-500">
+            <p className="text-xs text-center text-muted-foreground">
               OAuth providers coming soon
             </p>
 
         </CardContent>
         <CardFooter>
-          <div className="mt-4 text-center text-sm text-zinc-400 w-full">
+          <div className="mt-4 text-center text-sm text-muted-foreground w-full">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline text-white hover:text-zinc-300">
+            <Link href="/signup" className="underline text-foreground hover:text-primary">
               Sign up
             </Link>
           </div>

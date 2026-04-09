@@ -6,6 +6,7 @@ import { CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp, Coins } fro
 import { useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
+import Link from "next/link"
 
 interface VideoAvailability {
   videoId: string
@@ -273,9 +274,14 @@ export function PlaylistAvailabilityModal({
                 <div className="flex-1">
                   <p className="text-sm text-amber-200 font-medium">Not enough credits</p>
                   <p className="text-xs text-amber-300/80 mt-1">
-                    You need {summary.totalCredits} credits but only have {userCredits ?? 0}. 
+                    You need {summary.totalCredits} credits but only have {userCredits ?? 0}.
                     Videos requiring Whisper will be skipped.
                   </p>
+                  <Link href="/pricing" className="inline-block mt-2">
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      Buy Credits →
+                    </Button>
+                  </Link>
                 </div>
               </div>
             )}

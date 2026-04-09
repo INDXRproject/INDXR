@@ -11,6 +11,7 @@ import { PlaylistTab } from "@/components/free-tool/PlaylistTab"
 import { AudioTab } from "@/components/free-tool/AudioTab"
 import { TranscriptItem } from "@/components/TranscriptCard"
 import { TranscriptMetadata } from "@/types/transcript"
+import { Footer } from "@/components/Footer"
 
 export default function FreeToolPage() {
   const [activeTab, setActiveTab] = useState("video")
@@ -98,6 +99,7 @@ export default function FreeToolPage() {
   }
 
   return (
+    <>
     <div className="container max-w-4xl py-24 px-4 mx-auto text-center">
       <h1 className="text-4xl font-bold text-foreground mb-6">YouTube Transcript Generator</h1>
       <p className="text-muted-foreground mb-10 text-lg max-w-2xl mx-auto">Extract accurate transcripts from YouTube videos and playlists. Export to TXT, JSON, CSV, SRT, VTT formats.</p>
@@ -125,17 +127,19 @@ export default function FreeToolPage() {
         </TabsList>
 
         <TabsContent value="video">
-          <VideoTab 
-             onPlaylistDetected={() => setActiveTab('playlist')} 
+          <VideoTab
+             onPlaylistDetected={() => setActiveTab('playlist')}
              onTranscriptLoaded={handleTranscriptLoaded}
+             onSwitchToAudio={() => setActiveTab('audio')}
           />
         </TabsContent>
 
         <TabsContent value="playlist">
-          <PlaylistTab 
+          <PlaylistTab
             isAuthenticated={!!user}
             onAuthRequired={() => setIsAuthModalOpen(true)}
             onExtractVideo={processVideo}
+            onSwitchToAudio={() => setActiveTab('audio')}
           />
         </TabsContent>
 
@@ -144,8 +148,8 @@ export default function FreeToolPage() {
         </TabsContent>
       </Tabs>
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={() => {
           setIsAuthModalOpen(false)
@@ -153,5 +157,7 @@ export default function FreeToolPage() {
         }}
       />
     </div>
+    <Footer />
+    </>
   )
 }

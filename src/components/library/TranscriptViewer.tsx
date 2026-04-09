@@ -21,6 +21,7 @@ import {
   X,
   Save
 } from "lucide-react";
+import posthog from "posthog-js";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -674,7 +675,7 @@ export function TranscriptViewer({
         {/* ── MAIN EDITOR ── */}
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
           {/* Top action bar */}
-          <div className="h-14 border-b flex items-center justify-between px-6 shrink-0 bg-background/95 backdrop-blur z-10">
+          <div className="h-14 border-b flex items-center justify-between px-6 shrink-0 bg-background z-10">
             <div className="flex items-center gap-3">
               {!showVideo && (
                 <div className="flex items-center gap-2">
@@ -738,14 +739,15 @@ export function TranscriptViewer({
                           <div className="flex flex-col gap-1">
                             <span className="font-semibold text-sm">Not enough credits</span>
                             <span className="text-xs">You need 1 credit to generate a summary.</span>
-                            <Link href="/dashboard/billing" className="text-primary hover:underline text-xs mt-1">
-                              Top up here
+                            <Link href="/pricing" className="text-primary hover:underline text-xs mt-1">
+                              Buy Credits →
                             </Link>
                           </div>
                         );
                         return;
                       }
-                      
+
+                      posthog.capture('summary_requested', { transcript_id: id })
                       setShowSummaryDialog(true);
                     }}
                   >

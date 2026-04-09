@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { PlaylistManager, VideoStatus } from "@/components/PlaylistManager"
 import { AlertCircle, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { createClient } from "@/utils/supabase/client"
 import posthog from "posthog-js"
@@ -11,10 +13,11 @@ interface PlaylistTabProps {
   isAuthenticated: boolean
   onAuthRequired: () => void
   onExtractVideo?: (videoId: string, options?: { status?: string; duplicateId?: string; duplicateAction?: 'replace' | 'reset'; collectionId?: string; title?: string }) => Promise<void>
+  onSwitchToAudio?: () => void
 }
 
-export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo }: PlaylistTabProps) {
-  const [error, setError] = useState<{ message: string } | null>(null)
+export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, onSwitchToAudio }: PlaylistTabProps) {
+  const [error, setError] = useState<{ message: string; isCreditsError?: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [videoStatuses, setVideoStatuses] = useState<Record<string, VideoStatus>>({})
   const [progressMessage, setProgressMessage] = useState<string>("")
@@ -44,7 +47,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo }:
       const avgCostPerVideo = totalWhisperCredits / whisperVideoCount;
       const videosToDeselect = Math.ceil(shortfall / avgCostPerVideo);
       setError({
-        message: `Not enough credits. You need ${totalWhisperCredits} credits for ${whisperVideoCount} Whisper video${whisperVideoCount !== 1 ? 's' : ''} but only have ${credits}. Deselect at least ${videosToDeselect} Whisper video${videosToDeselect !== 1 ? 's' : ''} or top up to proceed.`
+        message: `Not enough credits. You need ${totalWhisperCredits} credits for ${whisperVideoCount} Whisper video${whisperVideoCount !== 1 ? 's' : ''} but only have ${credits}. Deselect at least ${videosToDeselect} Whisper video${videosToDeselect !== 1 ? 's' : ''} or top up to proceed.`,
+        isCreditsError: true
       });
       setProgressMessage("");
       return;
@@ -105,7 +109,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo }:
           try {
               setVideoStatuses(prev => ({ ...prev, [videoId]: 'extracting' }))
               const videoData = availabilityMap.get(videoId);
-              
+
               await onExtractVideo(videoId, {
                  status: videoData?.status,
                  duplicateId: videoData?.duplicateId,
@@ -130,8 +134,15 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo }:
               refreshCredits(); // Live update!
           } catch (e) {
               console.error(`Failed to extract ${videoId}:`, e);
-              const isNoSpeech = e instanceof Error && e.message === 'no_speech_detected';
-              setVideoStatuses(prev => ({ ...prev, [videoId]: isNoSpeech ? 'no_speech' : 'error' }))
+              const errMsg = e instanceof Error ? e.message : '';
+              const isNoSpeech = errMsg === 'no_speech_detected';
+              const isYouTubeRestricted = errMsg.includes('152') || errMsg.toLowerCase().includes('unavailable');
+
+              let status: VideoStatus = 'error';
+              if (isNoSpeech) status = 'no_speech';
+              else if (isYouTubeRestricted) status = 'youtube_restricted';
+
+              setVideoStatuses(prev => ({ ...prev, [videoId]: status }))
           }
       }
       
@@ -157,15 +168,24 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo }:
       {/* Error Display */}
       {error && (
         <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between text-left animate-in shake duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-500/20 rounded-lg text-red-500">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="p-2 bg-red-500/20 rounded-lg text-red-500 shrink-0">
               <AlertCircle className="h-5 w-5" />
             </div>
-            <p className="text-destructive text-sm font-medium">{error.message}</p>
+            <div className="flex flex-col gap-2">
+              <p className="text-destructive text-sm font-medium">{error.message}</p>
+              {error.isCreditsError && (
+                <Link href="/pricing">
+                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                    Buy Credits →
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
-          <button 
+          <button
             onClick={() => setError(null)}
-            className="p-1 hover:bg-destructive/20 rounded-lg transition-colors text-destructive"
+            className="p-1 hover:bg-destructive/20 rounded-lg transition-colors text-destructive shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
@@ -180,13 +200,14 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo }:
         </div>
       )}
 
-      <PlaylistManager 
+      <PlaylistManager
         onExtract={handlePlaylistExtract}
         isExtracting={loading}
         videoStatuses={videoStatuses}
         isAuthenticated={isAuthenticated}
         onAuthRequired={onAuthRequired}
         onError={(message) => setError(message ? { message } : null)}
+        onSwitchToAudio={onSwitchToAudio}
       />
     </div>
   )

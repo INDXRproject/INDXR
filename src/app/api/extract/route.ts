@@ -18,6 +18,20 @@ export async function POST(request: Request) {
 
     let isPremium = false;
     if (user) {
+      // Block suspended users
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('suspended')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.suspended) {
+        return NextResponse.json(
+          { error: 'Account suspended. Contact support@indxr.ai' },
+          { status: 403 }
+        );
+      }
+
       const { data } = await supabase.rpc('get_user_credits', { p_user_id: user.id }).single();
       const typedData = data as { total_credits_purchased: number } | null;
       if (typedData && typedData.total_credits_purchased > 0) {

@@ -53,61 +53,61 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
   }
 
   return (
-    <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-purple-500/30 mb-8">
+    <Card className="bg-primary/10 border-primary/30 mb-8">
       <CardHeader>
         <div className="flex items-center gap-2">
-           <Gift className="h-6 w-6 text-purple-400" />
-           <CardTitle className="text-xl text-white">Get Started with Free Credits</CardTitle>
+           <Gift className="h-6 w-6 text-primary" />
+           <CardTitle className="text-xl">Get Started with Free Credits</CardTitle>
         </div>
-        <CardDescription className="text-zinc-300">
+        <CardDescription>
           We want you to experience the power of Indxr.AI. Here are 5 free credits on the house.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-6 md:grid-cols-3 text-sm">
-           
+
            {/* Single Video */}
            <div className="space-y-2">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <span className="bg-blue-500/20 text-blue-400 p-1 rounded">📺</span> Single Video
+              <h3 className="font-semibold flex items-center gap-2">
+                <span className="bg-primary/20 text-primary p-1 rounded">📺</span> Single Video
               </h3>
-              <ul className="space-y-1 text-zinc-400">
+              <ul className="space-y-1 text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <span className="text-green-400">●</span> Captions: <b>Always Free</b>
+                  <span className="text-success">●</span> Captions: <b>Always Free</b>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-yellow-500">●</span> AI Whisper: <b>1 Credit</b> / 10 mins
-                  <span className="text-xs text-zinc-500 block ml-6 leading-tight">(Fallback if no captions available)</span>
+                  <span className="text-warning">●</span> AI Whisper: <b>1 Credit</b> / 10 mins
+                  <span className="text-xs text-muted-foreground block ml-6 leading-tight">(Fallback if no captions available)</span>
                 </li>
               </ul>
            </div>
 
            {/* Playlist */}
            <div className="space-y-2">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <span className="bg-purple-500/20 text-purple-400 p-1 rounded">📑</span> Playlists
+              <h3 className="font-semibold flex items-center gap-2">
+                <span className="bg-primary/20 text-primary p-1 rounded">📑</span> Playlists
               </h3>
-               <ul className="space-y-1 text-zinc-400">
+               <ul className="space-y-1 text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <span className="text-green-400">●</span> Quota: <b>50 Videos</b> / month Free
+                  <span className="text-success">●</span> Quota: <b>50 Videos</b> / month Free
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-yellow-500">●</span> Extra: <b>1 Credit</b> = +10 Videos
+                  <span className="text-warning">●</span> Extra: <b>1 Credit</b> = +10 Videos
                 </li>
               </ul>
            </div>
 
            {/* Audio */}
            <div className="space-y-2">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <span className="bg-pink-500/20 text-pink-400 p-1 rounded">🎙️</span> Audio Upload
+              <h3 className="font-semibold flex items-center gap-2">
+                <span className="bg-primary/20 text-primary p-1 rounded">🎙️</span> Audio Upload
               </h3>
-               <ul className="space-y-1 text-zinc-400">
+               <ul className="space-y-1 text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <span className="text-zinc-500">●</span> Powered by Whisper AI
+                  <span className="text-muted-foreground">●</span> Powered by Whisper AI
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-yellow-500">●</span> Rate: <b>1 Credit</b> / 10 mins
+                  <span className="text-warning">●</span> Rate: <b>1 Credit</b> / 10 mins
                 </li>
               </ul>
            </div>
@@ -115,16 +115,16 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
         </div>
       </CardContent>
       <CardFooter className="flex gap-3">
-        <Button 
-            onClick={handleClaim} 
+        <Button
+            onClick={handleClaim}
             disabled={isClaiming}
-            className="flex-1 bg-white text-purple-950 hover:bg-zinc-200 font-semibold"
+            className="flex-1"
         >
           {isClaiming ? "Claiming..." : "Claim 5 Free Credits"}
         </Button>
-        <Button 
+        <Button
             variant="outline"
-            className="flex-1 border-purple-500/30 text-purple-200 hover:bg-purple-500/10 hover:text-white"
+            className="flex-1"
             onClick={() => window.location.href = '/pricing'}
         >
             Buy More Credits

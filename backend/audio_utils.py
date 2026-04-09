@@ -6,6 +6,7 @@ Handles audio duration detection, YouTube audio extraction, and file validation
 import os
 import subprocess
 import logging
+import time
 from typing import Dict, Optional
 from pydub import AudioSegment
 import yt_dlp
@@ -95,16 +96,19 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
     # The iOS client bypasses PO token requirements entirely and works reliably
     # with HTTP proxies without strict IP-bound CDN validation.
     ydl_opts = {
-        'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio',
+        'format': 'bestaudio/best',
         'outtmpl': f"{base_output_path}.%(ext)s",
-        'quiet': False,
+        'quiet': True,
         'no_warnings': False,
-        'verbose': True,
+        'verbose': False,
+        'socket_timeout': 120,
         'extractor_args': {
             'youtube': {
                 'player_client': ['ios', 'web_embedded'],
             }
         },
+        'enabled_runtimes': ['node', 'deno'],  # Enable node.js/deno for n challenge solving
+        'remote_components': ['ejs:github'],  # Download challenge solver script
     }
 
     if proxy_url:
@@ -117,43 +121,59 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
     logger.info(f"Starting yt-dlp audio download for video_id={video_id}")
     logger.info(f"YT-DLP OPTIONS: {str(ydl_opts)}")
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
+    max_attempts = 3
+    last_error = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            # Clean up any partial files from a previous attempt
+            for stale in glob.glob(f"{base_output_path}.*"):
+                if not stale.endswith('.mp3'):
+                    os.remove(stale)
 
-        # Find the downloaded file (could be .webm, .m4a, .opus, etc.)
-        raw_files = [f for f in glob.glob(f"{base_output_path}.*") if not f.endswith('.mp3')]
-        if not raw_files:
-            raise Exception("yt-dlp did not produce any audio file")
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
 
-        raw_path = raw_files[0]
-        raw_size = os.path.getsize(raw_path) / 1024 / 1024
-        logger.info(f"yt-dlp downloaded: {raw_path} ({raw_size:.2f}MB)")
+            # Find the downloaded file (could be .webm, .m4a, .opus, etc.)
+            raw_files = [f for f in glob.glob(f"{base_output_path}.*") if not f.endswith('.mp3')]
+            if not raw_files:
+                raise Exception("yt-dlp did not produce any audio file")
 
-        # Convert to 16kHz mono mp3 using ffmpeg subprocess (avoids proxy split issue)
-        ffmpeg_cmd = [
-            'ffmpeg', '-y',
-            '-i', raw_path,
-            '-ar', '16000',
-            '-ac', '1',
-            '-b:a', '32k',
-            final_output_path
-        ]
-        logger.info(f"Running ffmpeg: {' '.join(ffmpeg_cmd)}")
-        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=120)
-        if result.returncode != 0:
-            raise Exception(f"ffmpeg failed: {result.stderr[-500:]}")
+            raw_path = raw_files[0]
+            raw_size = os.path.getsize(raw_path) / 1024 / 1024
+            logger.info(f"yt-dlp downloaded: {raw_path} ({raw_size:.2f}MB)")
 
-        os.remove(raw_path)  # Clean up raw download
+            # Convert to 16kHz mono mp3 using ffmpeg subprocess (avoids proxy split issue)
+            ffmpeg_cmd = [
+                'ffmpeg', '-y',
+                '-i', raw_path,
+                '-ar', '16000',
+                '-ac', '1',
+                '-b:a', '32k',
+                final_output_path
+            ]
+            logger.info(f"Running ffmpeg: {' '.join(ffmpeg_cmd)}")
+            result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=120)
+            if result.returncode != 0:
+                raise Exception(f"ffmpeg failed: {result.stderr[-500:]}")
 
-        final_size = os.path.getsize(final_output_path) / 1024 / 1024
-        logger.info(f"Audio conversion done: {raw_size:.2f}MB -> {final_size:.2f}MB mp3")
+            os.remove(raw_path)  # Clean up raw download
 
-        return final_output_path
+            final_size = os.path.getsize(final_output_path) / 1024 / 1024
+            logger.info(f"Audio conversion done: {raw_size:.2f}MB -> {final_size:.2f}MB mp3")
 
-    except Exception as e:
-        logger.error(f"YouTube audio extraction failed: {e}")
-        raise Exception(f"Failed to extract audio from YouTube: {str(e)}")
+            return final_output_path
+
+        except Exception as e:
+            last_error = e
+            is_timeout = any(kw in str(e).lower() for kw in ('timed out', 'timeout', 'read timeout', 'connectionpool'))
+            if is_timeout and attempt < max_attempts:
+                logger.warning(f"yt-dlp download timeout (attempt {attempt}/{max_attempts}), retrying in 5s...")
+                time.sleep(5)
+            else:
+                break
+
+    logger.error(f"YouTube audio extraction failed after {attempt} attempt(s): {last_error}")
+    raise Exception(f"Failed to extract audio from YouTube: {str(last_error)}")
 
 
 

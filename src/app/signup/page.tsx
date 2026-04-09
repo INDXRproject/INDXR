@@ -63,7 +63,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
-      <Card className="w-full max-w-md p-8 border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="w-full max-w-md p-8 border shadow-sm">
         
         {/* Logo + Title */}
         <div className="text-center mb-8">

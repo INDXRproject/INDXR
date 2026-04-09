@@ -9,7 +9,12 @@ npm install
 npm run dev        # starts on http://localhost:3000
 ```
 
-Environment file: `.env.local` (see ARCHITECTURE.md for required keys)
+Environment file: `.env.local` (see ARCHITECTURE.md for full key list). Additional keys needed for admin features:
+
+```
+ADMIN_EMAIL=your@email.com           # Protects /admin routes via middleware
+NEXT_PUBLIC_POSTHOG_PROJECT_ID=...   # Admin PostHog deep-links (paid-users page)
+```
 
 ---
 
@@ -22,21 +27,21 @@ cd backend
 venv/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-> **Add `--reload`** so the server picks up code changes automatically without a manual restart. Without it, edits to `main.py`, `audio_utils.py`, etc. have no effect until you kill and restart the process.
+> **Add `--reload`** so the server picks up code changes automatically.
 
 The backend must be running for:
 
-- `/api/extract` (YouTube caption extraction)
-- `/api/summarize` (AI Summarization via DeepSeek V3)
-- `/api/transcribe/whisper` (Whisper AI re-extraction)
-- `/api/transcribe/upload` (file upload transcription)
+- `/api/extract` — YouTube caption extraction
+- `/api/summarize` — AI Summarization via DeepSeek V3
+- `/api/transcribe/whisper` — Whisper AI re-extraction (YouTube fallback)
+- `/api/transcribe/whisper` with `source_type=upload` — Audio file upload transcription
 - All playlist-related endpoints
 
 ---
 
 ## Proxy Configuration (IPRoyal)
 
-The backend routes all yt-dlp requests through an IPRoyal residential proxy to avoid YouTube 403/429 errors.
+The backend routes all yt-dlp requests through an IPRoyal residential proxy.
 
 Credentials are stored in `backend/.env`:
 
@@ -47,105 +52,222 @@ PROXY_USER=RgV6nsz0OmCBRIXv
 PROXY_PASSWORD=IhObPDmdrLKDInQT
 ```
 
-> ⚠️ **Password confusion warning:** The password contains both a capital `I` (India) and a lowercase `l` (lima). They look nearly identical in most fonts. If the proxy returns `407 Proxy Auth Required`, double-check the password character-by-character.
+> **Password confusion warning:** The password contains both a capital `I` (India) and a lowercase `l` (lima). They look nearly identical in most fonts. If the proxy returns `407 Proxy Auth Required`, double-check character-by-character.
 
-To test the proxy manually from the backend directory:
+**Manual proxy test:**
 
 ```bash
 venv/bin/python3 -m yt_dlp \
   --proxy "http://RgV6nsz0OmCBRIXv:IhObPDmdrLKDInQT@geo.iproyal.com:12321" \
   --extractor-args "youtube:player_client=ios,web_embedded" \
   "https://youtu.be/VIDEO_ID" \
-  -f "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio" \
+  -f "bestaudio/best" \
   -o "/tmp/test_audio.%(ext)s"
 ```
 
-A successful download (no 403) confirms the proxy credentials and format selector are working correctly.
+---
+
+## Deno JS Runtime
+
+Deno is required for yt-dlp's YouTube JS challenge solving (introduced in yt-dlp 2026.03.17+).
+
+- **Installed at**: `~/.deno/bin/deno`
+- **PATH injection**: Automatic — `DENO_PATH=/home/aladdin/.deno/bin` in `backend/.env` is read at startup in `main.py`; no manual `export PATH` needed when starting uvicorn
+- **To install deno**:
+  ```bash
+  curl -fsSL https://deno.land/install.sh | sh
+  ```
 
 ---
 
 ## Whisper Audio Pipeline
 
-When debugging Whisper issues, the full flow is:
+Full flow when debugging Whisper issues:
 
-1. Frontend calls `POST /api/transcribe/whisper` with `video_id`
+1. Frontend calls `POST /api/transcribe/whisper` with `video_id` or `audio_file`
 2. `main.py` → `extract_youtube_audio()` in `audio_utils.py`
 3. yt-dlp downloads audio-only stream (`m4a` via iOS client) via IPRoyal proxy
 4. ffmpeg subprocess converts to 16kHz mono 32kbps MP3
 5. MP3 sent to OpenAI Whisper API
 6. Transcript inserted into Supabase, credits deducted atomically
 
+**Deno JS runtime**: yt-dlp uses deno (at `~/.deno/bin`) to solve YouTube JS challenges. You should see `[jsc:deno] Solving JS challenges using deno` in the logs. If missing, check `DENO_PATH` in `backend/.env`.
+
+---
+
 ## AI Summarization Workflow
 
 1. Frontend calls `POST /api/ai/summarize` (Next.js route)
 2. Next.js route forwards to Python backend `POST /api/summarize`
-3. Backend fetches `transcript` row, verifies credits
-4. DeepSeek V3 (`deepseek-chat`) processes the text
-5. Result saved to `ai_summary` JSONB column
-6. UI redirects to `Edited Summary` tab if user saves changes
+3. Backend fetches `transcript` row, verifies credits (≥ 1)
+4. Deducts 1 credit atomically
+5. DeepSeek V3 (`deepseek-chat`) processes the text
+6. Result saved to `ai_summary` JSONB column
+7. On failure: automatic refund via `add_credits`
+
+---
+
+## Stripe Payments
+
+### Checkout Flow
+
+1. User clicks "Buy" on pricing page
+2. Frontend calls `POST /api/stripe/checkout` with `{ plan: "starter" | "regular" | "power" }`
+3. Backend creates Stripe checkout session with server-side pricing
+4. User redirected to Stripe Checkout
+5. On success: redirected to `/dashboard/billing/success`
+
+### Webhook Handling
+
+1. Stripe sends `checkout.session.completed` to `/api/stripe/webhook`
+2. Handler validates signature (requires `STRIPE_WEBHOOK_SECRET`)
+3. Extracts `userId` and `credits` from session metadata
+4. Calls `add_credits` RPC with metadata (session_id, amount, currency)
+5. Tracks `credits_purchased` event in PostHog (server-side)
+
+### Local Testing
+
+For local development, set `STRIPE_WEBHOOK_SECRET` to empty or omit it — the handler will skip signature verification with a warning.
+
+**Production:** Add the Railway/Vercel URL as webhook endpoint in [Stripe Dashboard](https://dashboard.stripe.com/webhooks):
+- Endpoint: `https://yourapp.com/api/stripe/webhook`
+- Event: `checkout.session.completed`
+- Copy the signing secret to `STRIPE_WEBHOOK_SECRET`
+
+**Test Card:**
+- Number: `4242 4242 4242 4242`
+- Expiry: Any future date
+- CVC: Any 3 digits
+
+---
 
 ## Tab Architecture & Editing
 
 The dashboard uses a 4-tab system for transcripts and summaries.
 
-- **Reactivity**: Tiptap editors use `immediatelyRender: false` to prevent SSR hydration mismatches.
-- **Editable State**: The `setEditable(true)` call is synced via `useEffect` to the `isEditedMode` or `isEditing` state. This avoids the "editing lockout" issue where a cursor cannot be placed in a div.
-- **Formatting**: Bullet points and numbered lists require explicit CSS in `globals.css` (targeting `.prose ul` and `.prose ol`) because Tailwind's `prose` class often overrides browser defaults.
-
-**Known warning (non-breaking):** yt-dlp logs `No supported JavaScript runtime could be found` on every run. This is harmless — we explicitly force the `ios` player client, which bypasses YouTube's JS requirement (PO Token) entirely for audio extractions.
-
-## Stripe Webhook Setup
-
-Local webhook testing is currently skipped — webhooks will be tested directly after deployment.
-
-**For Production (Railway):**
-
-1. Add the Railway public URL as a webhook endpoint in the [Stripe Dashboard](https://dashboard.stripe.com/webhooks) under **Developers** → **Webhooks** → **Add endpoint** (e.g., `https://yourapp.up.railway.app/api/stripe/webhook`).
-2. Select the event: `checkout.session.completed`.
-3. Copy the signing secret (starts with `whsec_...`).
-4. Add it as `STRIPE_WEBHOOK_SECRET` in your Railway environment variables.
-5. Also add `STRIPE_WEBHOOK_SECRET` to your local `.env.local` for consistency.
-
-**Test Card:**
-When testing the Stripe Checkout flow in development mode, use the standard Stripe test card:
-
-- **Card number:** `4242 4242 4242 4242`
-- **Expiry:** Any date in the future (e.g., `12/34`)
-- **CVC:** Any 3 digits (e.g., `123`)
+- **Reactivity**: Tiptap editors use `immediatelyRender: false` to prevent SSR hydration mismatches
+- **Editable State**: The `setEditable(true)` call is synced via `useEffect`
+- **Formatting**: Bullet points require explicit CSS in `globals.css` (`.prose ul`, `.prose ol`)
 
 ---
 
 ## Common Issues
 
-| Symptom                                       | Likely cause                                               | Fix                                                               |
-| --------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| Whisper returns 403                           | Proxy credentials wrong or expired                         | Re-check `PROXY_PASSWORD` (I vs l confusion)                      |
-| Credit cost shows "1" for any video           | `duration` not flowing through Next.js API route           | Confirm `route.ts` returns `duration: data.duration`              |
-| Frontend doesn't reflect backend code changes | uvicorn started without `--reload`                         | Restart with `--reload` flag                                      |
-| yt-dlp selects video format instead of audio  | Format selector reverted to `bestaudio/best`               | Must be `bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio`        |
-| Whisper 403 on CDN download despite proxy     | `FFmpegExtractAudio` postprocessor re-added                | Remove it — it causes proxy split on DASH format selection        |
-| Tiptap SSR Hydration Error                    | `immediatelyRender` set to true (default)                  | Set `immediatelyRender: false` in `useEditor` config              |
-| Bullet points hidden in summary               | Tailwind `prose` resetting list styles                     | Add explicit `list-style-type: disc` to `.prose ul` in CSS        |
-| Cannot click to edit (Lockout)                | `pointer-events-none` on editor or non-reactive `editable` | Remove `pointer-events-none` and use `setEditable` in `useEffect` |
+| Symptom | Likely Cause | Fix |
+|---------|--------------|-----|
+| Whisper returns 403 | Proxy credentials wrong/expired | Re-check `PROXY_PASSWORD` (I vs l) |
+| Credit cost shows "1" for any video | `duration` not flowing through API | Confirm route returns `duration` |
+| Backend changes not reflected | uvicorn without `--reload` | Restart with `--reload` flag |
+| yt-dlp selects video format | Format selector reverted | Must be `bestaudio/best` |
+| Tiptap SSR Hydration Error | `immediatelyRender` not set | Set `immediatelyRender: false` |
+| Bullet points hidden | Tailwind `prose` reset | Add `list-style-type: disc` to CSS |
+| Cannot click to edit (Lockout) | `pointer-events-none` or non-reactive editable | Use `setEditable` in `useEffect` |
+| Stripe webhook 400 | Invalid signature | Check `STRIPE_WEBHOOK_SECRET` |
+| Credits not added after purchase | Webhook not receiving events | Check Stripe Dashboard webhook logs |
+| `/admin` returns 403 | `ADMIN_EMAIL` not set or doesn't match session email | Add `ADMIN_EMAIL=your@email.com` to `.env.local` |
+| User gets 403 on extract/whisper/summarize | Account suspended | Check `profiles.suspended` — toggle via `/admin/users` or `/api/admin/suspend-user` |
 
 ---
 
-## Design System & AI Skills
+## Backend Endpoints Reference
 
-To maintain the premium "Apple-like" aesthetic, all visual changes should be guided by the project's internal design tokens.
+### Python FastAPI (port 8000)
 
-### 1. indxr-design Skill
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/extract` | POST | Extract YouTube captions |
+| `/api/summarize` | POST | AI summarization via DeepSeek |
+| `/api/transcribe/whisper` | POST | Whisper transcription (YouTube or upload) |
+| `/api/playlist/info` | GET | Get playlist metadata |
+| `/api/check-playlist-availability` | POST | Check video availability in playlist |
 
-The project includes a custom agent skill located in `.agent/skills/indxr-design/`. This skill provides the AI assistant with:
+### Next.js Admin API Routes (require `ADMIN_EMAIL` session)
 
-- **Color Tokens**: Midnight (dark) and Starlight (light) palettes.
-- **Typography**: Inter for body, JetBrains Mono for code.
-- **Spacing**: Standardized border-radius and shadows.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/admin/add-credits` | POST | Grant credits to a user |
+| `/api/admin/suspend-user` | POST | Toggle `profiles.suspended` |
+| `/api/admin/delete-user` | POST | Cascade-delete user via RPC |
+| `/api/admin/delete-transcript` | POST | Remove a transcript |
+| `/api/admin/user-detail` | GET | Full user profile + credit history |
 
-### 2. References
+---
 
-Refer to these files before making any UI updates:
+## Logging & Debugging
 
-- `docs/ARCHITECTURE.md` (Aesthetics section)
-- `.agent/skills/indxr-design/references/design-system.md`
-- `.agent/skills/indxr-design/references/component-patterns.md`
+**Default log level**: `WARNING` (production) — only warnings and errors are emitted.
+
+To enable verbose logging, set in `backend/.env`:
+```
+LOG_LEVEL=INFO
+```
+
+yt-dlp verbose output is suppressed by default (`quiet=True`, `verbose=False` in `audio_utils.py`). To debug a specific download issue, temporarily set `verbose=True` and `quiet=False` in the `ydl_opts` dict in `audio_utils.py:98`.
+
+---
+
+## Test Suite
+
+### Playwright E2E Suite (primary)
+
+```bash
+npx playwright test                        # run all 29 tests headless
+npx playwright test specs/01-single-video  # run one spec
+npx playwright test "extracts: 19s" --headed  # run by test name, headed
+```
+
+Requires:
+- Dev server running: `npm run dev` (on `http://localhost:3000`)
+- Backend running: `uvicorn main:app --host 0.0.0.0 --port 8000 --reload`
+- `tests/test_accounts.json` present (4 accounts: `test1–4@indxr-test.com`)
+- `PLAYWRIGHT_BASE_URL` in `.env.local` (defaults to `http://localhost:3000`)
+
+**Global setup** (`tests/playwright/global-setup.ts`) runs once before all tests. It reads `tests/test_accounts.json` and auto-tops-up any account below 50 credits via the `add_credits` Supabase RPC, so tests always start with sufficient credits.
+
+**Metrics**: Per-test results (timing, method, success/fail) logged to `tests/playwright-report/metrics_{date}.json`.
+
+**Spec files**:
+
+| File | Tests | Description |
+|------|-------|-------------|
+| `01-single-video.spec.ts` | 14 | Auto-captions, Whisper, duplicate detection, long videos |
+| `02-playlist.spec.ts` | 6 | Small/large/mixed Whisper playlists, 100-video fetch |
+| `03-library.spec.ts` | 5 | Library operations, AI summary, transcript/summary editing |
+| `04-stress.spec.ts` | 4 | Concurrent extraction, rapid sequential, race conditions |
+
+### Legacy Python Suite
+
+```bash
+cd tests
+pip3 install -r requirements.txt --break-system-packages
+python3 test_suite.py
+```
+
+Results saved to `tests/results/run_{timestamp}.json`. Superseded by Playwright suite but retained for reference.
+
+---
+
+## Design System
+
+The project currently uses a **neutral utility skin**. All design tokens are defined in `src/app/globals.css`:
+
+```css
+:root {
+  --bg-base: #f8f9fa;
+  --bg-surface: #ffffff;
+  --accent: #2563eb;
+  --radius: 6px;
+}
+
+.dark {
+  --bg-base: #111111;
+  --bg-surface: #1a1a1a;
+}
+```
+
+**Deprecated:**
+- The `.cline/skills/indxr-design/` skill references the old Starlight/Midnight design system
+- OKLCH color functions have been replaced with hex values
+- Glassmorphism effects (`backdrop-blur`, `bg-gradient`) have been removed
+
+A full visual redesign is planned post-launch. Until then, use the CSS variables in `globals.css` as the source of truth for colors and spacing.

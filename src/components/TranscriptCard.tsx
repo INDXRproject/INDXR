@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, Download, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import posthog from "posthog-js";
 import {
   Card,
   CardContent,
@@ -135,12 +136,14 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   };
 
   const downloadTxt = () => {
+    posthog.capture('export_clicked', { format: 'txt' })
     const content = showTimestamps ? fullTextWithTimestamps : createParagraphMode();
     const finalContent = getBrandingHeader('txt') + content;
     downloadFile(finalContent, "transcript.txt", "text/plain");
   };
 
   const downloadJson = () => {
+    posthog.capture('export_clicked', { format: 'json' })
     const jsonOutput = {
       metadata: {
         source: "INDXR.AI",
@@ -158,6 +161,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   };
 
   const downloadCsv = () => {
+    posthog.capture('export_clicked', { format: 'csv' })
     const branding = getBrandingHeader('csv');
     const header = "Start,Duration,Text\n";
     const rows = transcript
@@ -167,12 +171,13 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   };
 
   const downloadSrt = () => {
+    posthog.capture('export_clicked', { format: 'srt' })
     const branding = getBrandingHeader('srt_vtt');
     const srtContent = transcript
       .map((item, index) => {
         const startTime = formatSrtTimestamp(item.offset);
-        const endOffset = index < transcript.length - 1 
-          ? transcript[index + 1].offset 
+        const endOffset = index < transcript.length - 1
+          ? transcript[index + 1].offset
           : item.offset + item.duration;
         const endTime = formatSrtTimestamp(endOffset);
         return `${index + 1}\n${startTime} --> ${endTime}\n${item.text}\n`;
@@ -182,12 +187,13 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   };
 
   const downloadVtt = () => {
+    posthog.capture('export_clicked', { format: 'vtt' })
     const branding = getBrandingHeader('srt_vtt');
     const vttContent = "WEBVTT\n\n" + branding + transcript
       .map((item, index) => {
         const startTime = formatVttTimestamp(item.offset);
-        const endOffset = index < transcript.length - 1 
-          ? transcript[index + 1].offset 
+        const endOffset = index < transcript.length - 1
+          ? transcript[index + 1].offset
           : item.offset + item.duration;
         const endTime = formatVttTimestamp(endOffset);
         return `${index + 1}\n${startTime} --> ${endTime}\n${item.text}\n`;

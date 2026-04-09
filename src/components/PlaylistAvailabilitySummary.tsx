@@ -1,5 +1,6 @@
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Coins, XCircle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -88,13 +89,13 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
       if (useWhisper) {
         return {
           ...r,
-          status: 'needs_whisper',
+          status: 'needs_whisper' as const,
           estimatedCredits: Math.max(1, Math.ceil((r.duration / 60) / 10)) // 1 credit per 10min
         }
       } else {
         return {
           ...r,
-          status: 'has_captions',
+          status: 'has_captions' as const,
           estimatedCredits: 0
         }
       }
@@ -290,7 +291,14 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                        After extraction: <span className="text-foreground font-medium">{remainingCredits} credits</span>
                    </p>
                ) : (
-                   <p className="text-xs text-red-500 font-medium">Insufficient credits</p>
+                   <div className="flex items-center gap-2">
+                       <p className="text-xs text-red-500 font-medium">Insufficient credits</p>
+                       <Link href="/pricing">
+                           <Button variant="outline" size="sm" className="h-6 text-xs px-2">
+                               Buy Credits →
+                           </Button>
+                       </Link>
+                   </div>
                )}
             </div>
 
@@ -314,8 +322,10 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                                Full reset
                             </button>
                          </div>
-                         <Button 
-                             onClick={() => onProceed(localResults, duplicateAction)} 
+                         <Button
+                             onClick={() => {
+                               onProceed(localResults, duplicateAction);
+                             }}
                              className="shadow-lg shrink-0"
                          >
                              {currentSummary.totalCredits > 0
@@ -330,9 +340,11 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                       <Button variant="outline" onClick={onCancel} className="flex-1 md:flex-none">
                           Cancel
                       </Button>
-                      <Button 
-                          onClick={() => onProceed(localResults)} 
-                          disabled={!hasEnoughCredits && currentSummary.totalCredits > 0} 
+                      <Button
+                          onClick={() => {
+                            onProceed(localResults);
+                          }}
+                          disabled={!hasEnoughCredits && currentSummary.totalCredits > 0}
                           className="flex-1 md:flex-none px-8 shadow-lg shadow-primary/20"
                       >
                           {currentSummary.totalCredits > 0

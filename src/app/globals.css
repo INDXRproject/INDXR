@@ -8,10 +8,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans:
-    SF Pro Display, -apple-system, BlinkMacSystemFont, Segoe UI, system-ui,
-    sans-serif;
-  --font-mono: SF Mono, Menlo, Consolas, monospace;
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, system-ui, sans-serif;
+  --font-mono: JetBrains Mono, Menlo, Consolas, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -53,91 +51,55 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* SF Pro Fonts (keep for fallback) */
-@font-face {
-  font-family: 'SF Pro Display';
-  src: url('https://cdn.jsdelivr.net/gh/AppleDesignResources/SanFranciscoFont/SFProDisplay-Regular.woff2')
-    format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'SF Pro Display';
-  src: url('https://cdn.jsdelivr.net/gh/AppleDesignResources/SanFranciscoFont/SFProDisplay-Medium.woff2')
-    format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'SF Pro Display';
-  src: url('https://cdn.jsdelivr.net/gh/AppleDesignResources/SanFranciscoFont/SFProDisplay-Semibold.woff2')
-    format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'SF Mono';
-  src: url('https://cdn.jsdelivr.net/gh/AppleDesignResources/SanFranciscoFont/SFMono-Regular.woff2')
-    format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
-  /* Starlight surfaces */
-  --bg-base:     #F5F3EF;
-  --bg-surface:  #FDFCFA;
-  --bg-elevated: #FFFFFF;
-  --border:      #E8E4DC;
+  /* Utility Skin - Light Mode */
+  /* Surfaces */
+  --bg-base: #f8f9fa;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --border: #e2e4e8;
 
-  /* Starlight text */
-  --text-primary:   #0F0F14;
-  --text-secondary: #5C5A58;
-  --text-muted:     #9B9894;
+  /* Text */
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --text-muted: #888888;
 
-  /* Starlight accent */
-  --accent:          #4A90D9; /* Steel Blue */
-  --accent-hover:    #3A80C9;
-  --accent-subtle:   rgba(74, 144, 217, 0.08);
-  --accent-border:   rgba(74, 144, 217, 0.20);
+  /* Accent */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-subtle: rgba(37, 99, 235, 0.08);
+  --accent-border: rgba(37, 99, 235, 0.20);
 
-  /* Semantic — same both modes */
-  --color-success:        #34C77A;
-  --color-success-subtle: rgba(52, 199, 122, 0.10);
-  --color-success-border: rgba(52, 199, 122, 0.20);
+  /* Semantic */
+  --color-success: #16a34a;
+  --color-success-subtle: rgba(22, 163, 74, 0.10);
+  --color-success-border: rgba(22, 163, 74, 0.20);
 
-  --color-warning:        #F59E0B;
-  --color-warning-subtle: rgba(245, 158, 11, 0.10);
-  --color-warning-border: rgba(245, 158, 11, 0.20);
+  --color-warning: #d97706;
+  --color-warning-subtle: rgba(217, 119, 6, 0.10);
+  --color-warning-border: rgba(217, 119, 6, 0.20);
 
-  --color-error:          #DC4A4A;
-  --color-error-subtle:   rgba(220, 74, 74, 0.10);
-  --color-error-border:   rgba(220, 74, 74, 0.20);
+  --color-error: #dc2626;
+  --color-error-subtle: rgba(220, 38, 38, 0.10);
+  --color-error-border: rgba(220, 38, 38, 0.20);
 
-  --color-info:           #4A90D9;
-  --color-info-subtle:    rgba(74, 144, 217, 0.10);
+  --color-info: #2563eb;
+  --color-info-subtle: rgba(37, 99, 235, 0.10);
 
-  --color-sage:           #A7C4B5;
-  --color-sage-subtle:    rgba(167, 196, 181, 0.10);
+  /* Radius - functional, not decorative */
+  --radius: 6px;
 
-  /* Radius */
-  --radius: 0.75rem; /* 12px - Apple's signature roundness */
+  /* Chart colors - simple hex values */
+  --chart-1: #2563eb;
+  --chart-2: #16a34a;
+  --chart-3: #d97706;
+  --chart-4: #dc2626;
+  --chart-5: #7c3aed;
 
-  /* Chart colors (preserved/mapped) */
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* Shadow - minimal */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
 
-  /* Interactive components map - map to new tokens */
+  /* Interactive components map */
   --background: var(--bg-base);
   --foreground: var(--text-primary);
   --card: var(--bg-surface);
@@ -145,30 +107,28 @@
   --popover: var(--bg-surface);
   --popover-foreground: var(--text-primary);
   --primary: var(--accent);
-  --primary-foreground: var(--bg-base);
+  --primary-foreground: #ffffff;
   --secondary: var(--bg-elevated);
   --secondary-foreground: var(--text-primary);
   --muted: var(--bg-elevated);
   --muted-foreground: var(--text-muted);
-  --accent-old: var(--accent-subtle);
   --accent-foreground: var(--text-primary);
   --destructive: var(--color-error);
-  --destructive-foreground: var(--bg-base);
-  --border: var(--border);
+  --destructive-foreground: #ffffff;
   --input: var(--border);
   --ring: var(--accent);
   --success: var(--color-success);
-  --success-foreground: var(--bg-base);
+  --success-foreground: #ffffff;
   --warning: var(--color-warning);
-  --warning-foreground: var(--bg-base);
+  --warning-foreground: #ffffff;
   --info: var(--color-info);
-  --info-foreground: var(--bg-base);
+  --info-foreground: #ffffff;
 
   /* Sidebar tokens */
   --sidebar: var(--bg-surface);
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--accent);
-  --sidebar-primary-foreground: var(--bg-base);
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--accent-subtle);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border);
@@ -176,26 +136,25 @@
 }
 
 .dark {
-  /* Midnight surfaces */
-  --bg-base:     #0A0A0F;
-  --bg-surface:  #111118;
-  --bg-elevated: #1A1A24;
-  --border:      #242433;
+  /* Utility Skin - Dark Mode */
+  /* Surfaces */
+  --bg-base: #111111;
+  --bg-surface: #1a1a1a;
+  --bg-elevated: #222222;
+  --border: #2a2a2a;
 
-  /* Midnight text */
-  --text-primary:   #F0EEF8;
-  --text-secondary: #9B99B0;
-  --text-muted:     #55536A;
+  /* Text */
+  --text-primary: #f0f0f0;
+  --text-secondary: #888888;
+  --text-muted: #666666;
 
-  /* Midnight accent */
-  --accent:          #A78BFA; /* Soft Lavender */
-  --accent-hover:    #BFA8FC;
-  --accent-subtle:   rgba(167, 139, 250, 0.10);
-  --accent-border:   rgba(167, 139, 250, 0.20);
+  /* Accent - same blue for consistency */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-subtle: rgba(37, 99, 235, 0.15);
+  --accent-border: rgba(37, 99, 235, 0.30);
 
-  /* Semantic tokens identical — no changes needed */
-
-  /* Interactive components map - map to new tokens */
+  /* Interactive components map */
   --background: var(--bg-base);
   --foreground: var(--text-primary);
   --card: var(--bg-surface);
@@ -203,41 +162,39 @@
   --popover: var(--bg-surface);
   --popover-foreground: var(--text-primary);
   --primary: var(--accent);
-  --primary-foreground: var(--bg-base);
+  --primary-foreground: #ffffff;
   --secondary: var(--bg-elevated);
   --secondary-foreground: var(--text-primary);
   --muted: var(--bg-elevated);
   --muted-foreground: var(--text-muted);
-  --accent-old: var(--accent-subtle);
   --accent-foreground: var(--text-primary);
   --destructive: var(--color-error);
-  --destructive-foreground: var(--bg-base);
-  --border: var(--border);
+  --destructive-foreground: #ffffff;
   --input: var(--border);
   --ring: var(--accent);
   --success: var(--color-success);
-  --success-foreground: var(--bg-base);
+  --success-foreground: #ffffff;
   --warning: var(--color-warning);
-  --warning-foreground: var(--bg-base);
+  --warning-foreground: #ffffff;
   --info: var(--color-info);
-  --info-foreground: var(--bg-base);
+  --info-foreground: #ffffff;
+
+  /* Chart colors - same as light */
+  --chart-1: #3b82f6;
+  --chart-2: #22c55e;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
 
   /* Sidebar tokens */
   --sidebar: var(--bg-surface);
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--accent);
-  --sidebar-primary-foreground: var(--bg-base);
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--accent-subtle);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--accent);
-
-  /* Chart colors */
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
 }
 
 @layer base {
@@ -253,7 +210,7 @@
 .ts-link {
   font-family: monospace;
   font-size: 0.75rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--text-muted);
   text-decoration: none;
   opacity: 0.6;
   margin-right: 0.25rem;
@@ -263,7 +220,7 @@
 .ts-link:hover {
   opacity: 1;
   text-decoration: underline;
-  color: hsl(var(--primary));
+  color: var(--accent);
 }
 
 .hide-timestamps .ts-link {
