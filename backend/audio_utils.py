@@ -154,13 +154,26 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
             raw_size = os.path.getsize(raw_path) / 1024 / 1024
             logger.info(f"yt-dlp downloaded: {raw_path} ({raw_size:.2f}MB)")
 
+            # Calculate bitrate dynamically so output stays under 24MB regardless of video length.
+            # Formula: bitrate = min(32, int(24MB_in_bits / duration_seconds / 1000))
+            # Falls back to 32k if duration cannot be determined.
+            raw_duration = None
+            try:
+                raw_duration = get_audio_duration(raw_path)
+                bitrate_kbps = min(32, int(24 * 1024 * 1024 * 8 / raw_duration / 1000))
+                bitrate_kbps = max(8, bitrate_kbps)  # 8kbps floor — Whisper handles low-bitrate speech
+            except Exception:
+                bitrate_kbps = 32
+            duration_str = f"{raw_duration:.1f}s" if raw_duration else "unknown"
+            logger.info(f"ffmpeg bitrate: {bitrate_kbps}k (duration={duration_str})")
+
             # Convert to 16kHz mono mp3 using ffmpeg subprocess (avoids proxy split issue)
             ffmpeg_cmd = [
                 'ffmpeg', '-y',
                 '-i', raw_path,
                 '-ar', '16000',
                 '-ac', '1',
-                '-b:a', '32k',
+                f'-b:a', f'{bitrate_kbps}k',
                 final_output_path
             ]
             logger.info(f"Running ffmpeg: {' '.join(ffmpeg_cmd)}")
