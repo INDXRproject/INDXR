@@ -66,6 +66,14 @@ logger = logging.getLogger("indxr-backend")
 
 app = FastAPI(title="INDXR.AI Backend", version="1.0.0")
 
+# Start bgutil PO token HTTP server (Rust binary, no Node/Deno required)
+import subprocess as _subprocess
+_bgutil_process = _subprocess.Popen(
+    ['/usr/local/bin/bgutil-pot', 'server', '--host', '127.0.0.1', '--port', '4416'],
+    stdout=_subprocess.DEVNULL,
+    stderr=_subprocess.DEVNULL,
+)
+
 # CORS configuration for Next.js frontend
 app.add_middleware(
     CORSMiddleware,

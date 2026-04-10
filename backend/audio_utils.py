@@ -118,6 +118,9 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
             'youtube': {
                 'player_client': ['mweb', 'web_embedded'],
             },
+            'youtubepot-bgutilhttp': {
+                'base_url': ['http://127.0.0.1:4416'],
+            },
         },
     }
 
