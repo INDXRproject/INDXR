@@ -360,12 +360,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     if (useWhisperRef.current && videoId) {
       setIsFetchingMeta(true)
       try {
-        // First, fetch video metadata to get duration
-        const metaResponse = await fetch('/api/extract', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoIdOrUrl: targetUrl, metadataOnly: true }),
-        })
+        // Fetch video metadata to get duration — use dedicated endpoint so we always
+        // get duration/title even when the video has no captions
+        const metaResponse = await fetch(`/api/video/metadata/${videoId}`)
 
         const metaData = await metaResponse.json()
 

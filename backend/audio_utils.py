@@ -149,7 +149,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
-                video_title = info.get('title', video_id) if info else video_id
+                video_title = info.get('title') or video_id if info else video_id
 
             # Find the downloaded file (could be .webm, .m4a, .opus, etc.)
             raw_files = [f for f in glob.glob(f"{base_output_path}.*") if not f.endswith('.ogg')]
