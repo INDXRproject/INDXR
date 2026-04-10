@@ -104,7 +104,7 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
               </h3>
                <ul className="space-y-1 text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <span className="text-muted-foreground">●</span> Powered by Whisper AI
+                  <span className="text-muted-foreground">●</span> Powered by AI Transcription
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-warning">●</span> Rate: <b>1 Credit</b> / 10 mins

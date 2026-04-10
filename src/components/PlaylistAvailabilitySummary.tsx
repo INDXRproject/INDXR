@@ -123,7 +123,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
         
         {/* Global Whisper Toggle */}
         <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">Use Whisper AI for all</span>
+            <span className="text-xs text-muted-foreground font-medium">Use AI Transcription for all</span>
             <div 
               onClick={() => toggleAllWhisper(currentSummary.hasCaptions > 0)}
               className={`w-10 h-5 rounded-full p-0.5 cursor-pointer transition-colors ${currentSummary.hasCaptions === 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`}
@@ -150,7 +150,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
           <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-5 w-5 text-amber-500" />
-              <span className="font-semibold text-amber-600 dark:text-amber-400">Whisper AI</span>
+              <span className="font-semibold text-amber-600 dark:text-amber-400">AI Transcription</span>
             </div>
             <div className="text-3xl font-bold text-foreground mb-1">{currentSummary.needsWhisper}</div>
             <div className="text-sm text-muted-foreground">{currentSummary.totalCredits} credits required</div>
@@ -175,7 +175,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                   <div className="px-4 py-3 border-b border-amber-500/10 flex items-center gap-2 text-sm">
                       <AlertCircle className="h-4 w-4 text-amber-500" />
                       <span className="font-medium text-amber-600 dark:text-amber-400">
-                        {currentSummary.needsWhisper} videos using Whisper AI ({currentSummary.totalCredits} credits)
+                        {currentSummary.needsWhisper} videos using AI Transcription ({currentSummary.totalCredits} credits)
                       </span>
                   </div>
                   <div className="max-h-60 overflow-y-auto p-2 space-y-1">
@@ -231,7 +231,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                              onClick={() => toggleSingleWhisper(video.videoId, true)}
                              className="text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-500/20"
                            >
-                              Use Whisper AI
+                              Use AI Transcription
                            </Button>
                         </div>
                       ))}
