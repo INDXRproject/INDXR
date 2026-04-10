@@ -48,7 +48,7 @@ from audio_utils import (
     MembersOnlyVideoError,
     MEMBERS_ONLY_KEYWORDS,
 )
-from whisper_client import transcribe_audio
+from assemblyai_client import transcribe_with_assemblyai
 from credit_manager import (
     check_user_balance,
     calculate_credit_cost,
@@ -773,7 +773,7 @@ async def run_whisper_job(
             'video_id': video_id, 'source_type': source_type, 'duration_seconds': duration
         })
 
-        whisper_result = await asyncio.to_thread(transcribe_audio, audio_path)
+        whisper_result = await asyncio.to_thread(transcribe_with_assemblyai, str(audio_path))
 
         if not whisper_result['success']:
             logger.error(f"[job {job_id}] Whisper API failed: {whisper_result['error']}")

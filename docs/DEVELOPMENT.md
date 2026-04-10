@@ -47,7 +47,7 @@ The Python backend is deployed on Railway at https://indxr-production.up.railway
 
 - **Dockerfile**: `backend/Dockerfile` (Python 3.12-slim with ffmpeg, unzip, Deno)
 - **Auto-deploy**: Every push to `master` triggers a Railway rebuild — no manual steps needed
-- **Service variables** (set in Railway dashboard): `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`, `DENO_PATH=/root/.deno/bin`
+- **Service variables** (set in Railway dashboard): `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`, `DENO_PATH=/root/.deno/bin`, `ASSEMBLYAI_API_KEY=<your key>`
 - **Deno inside Railway container**: installed at `/root/.deno/bin` — `DENO_PATH` is already set as a Railway service variable
 
 **To update yt-dlp or any Python package and redeploy:**
@@ -126,7 +126,7 @@ Full flow when debugging Whisper issues:
 3. `run_whisper_job` background task begins: `extract_youtube_audio()` in `audio_utils.py`
 4. yt-dlp downloads audio-only stream (`bestaudio/best` via iOS client) via IPRoyal proxy
 5. ffmpeg converts to **mono 12kbps Opus/OGG** (`libopus`, `-application voip`, output `.ogg`)
-6. OGG file sent to OpenAI Whisper API (`gpt-4o-transcribe`, timeout 1800s)
+6. OGG file sent to AssemblyAI Universal-3 Pro (`assemblyai_client.py`)
 7. Truncation check: if `audio_duration − last_segment_end > 60s`, warning written to `whisper_jobs.error_message`
 8. Transcript inserted into Supabase `transcripts` (with `video_id` and `title`), credits deducted atomically
 9. `whisper_jobs` row updated to `status: complete` with `completed_at` and `processing_time_seconds`
@@ -134,7 +134,7 @@ Full flow when debugging Whisper issues:
 
 > **Job state in Supabase**: All job state lives in `whisper_jobs` — not in-memory. This means Railway restarts mid-job will not lose job metadata, though the background task itself will be lost and the job will stall (no automatic recovery yet).
 
-> **Whisper timeout**: `httpx.Client(timeout=1800.0)` — 30 minutes. Long videos (90+ min) may approach this limit. AssemblyAI migration (Phase O) will remove this constraint.
+> **AssemblyAI**: No file size limit, no timeout constraint. The SDK handles polling internally until the job completes.
 
 **Deno JS runtime**: yt-dlp uses deno (at `~/.deno/bin`) to solve YouTube JS challenges. You should see `[jsc:deno] Solving JS challenges using deno` in the logs. If missing, check `DENO_PATH` in `backend/.env`.
 
