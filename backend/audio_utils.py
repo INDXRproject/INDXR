@@ -116,7 +116,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         'socket_timeout': 120,
         'extractor_args': {
             'youtube': {
-                'player_client': ['ios', 'web_embedded'],
+                'player_client': ['mweb', 'web_embedded'],
             },
             'youtubepot-bgutilscript': {
                 'server_home': ['/root/bgutil-ytdlp-pot-provider/server'],
