@@ -122,7 +122,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
                 'server_home': ['/root/bgutil-ytdlp-pot-provider/server'],
             }
         },
-        'enabled_runtimes': ['node', 'deno'],  # Enable node.js/deno for n challenge solving
+        'enabled_runtimes': ['node'],  # Node only — bgutil reads this; 'deno' causes script-deno provider timeouts
         'remote_components': ['ejs:github'],  # Download challenge solver script
         'js_runtimes': {'node': {'path': '/usr/bin/node'}},  # Force Node.js — Deno breaks https-proxy-agent in bgutil
     }
