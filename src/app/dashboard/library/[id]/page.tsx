@@ -104,7 +104,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           id={transcript.id}
           transcript={transcript.transcript}
           title={transcript.title || "Untitled Transcript"}
-          videoUrl={`https://www.youtube.com/watch?v={transcript.video_id}`}
+          videoUrl={`https://www.youtube.com/watch?v=${transcript.video_id}`}
           videoId={transcript.video_id}
           thumbnailUrl={transcript.thumbnail_url}
           editedContent={transcript.edited_content ?? null}

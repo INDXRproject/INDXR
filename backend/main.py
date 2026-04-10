@@ -812,6 +812,8 @@ async def run_whisper_job(
         transcript_insert = await asyncio.to_thread(
             lambda: supabase.table('transcripts').insert({
                 'user_id': user_id,
+                'video_id': video_id,
+                'title': video_id or 'Untitled',
                 'transcript': transcript,
             }).execute()
         )
