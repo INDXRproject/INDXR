@@ -155,13 +155,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   // Live elapsed timer for Whisper processing
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [finalElapsed, setFinalElapsed] = useState<number | null>(null)
-  useEffect(() => {
-    if (!isStreaming) return
-    setElapsedSeconds(0)
-    setFinalElapsed(null)
-    const interval = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
-    return () => clearInterval(interval)
-  }, [isStreaming])
+  const elapsedRef = useRef(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const currentJobIdRef = useRef<string | null>(null)
 
   // Navigation guard while SSE stream is open
   useEffect(() => {
@@ -606,11 +602,29 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         throw new Error('Failed to start transcription job')
       }
 
+      // Clear any previous interval and reset timer state before starting new job
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      elapsedRef.current = 0
+      setElapsedSeconds(0)
+      setFinalElapsed(null)
+      currentJobIdRef.current = jobData.job_id
+
       setIsStreaming(true)
       setWhisperStatus('pending')
+      intervalRef.current = setInterval(() => {
+        elapsedRef.current += 1
+        setElapsedSeconds(s => s + 1)
+      }, 1000)
+
       const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
+
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
       setIsStreaming(false)
-      setFinalElapsed(elapsedSeconds)
+      setFinalElapsed(elapsedRef.current)
 
       if (event.type === 'error') {
         if (event.error === 'members_only') {
@@ -739,11 +753,29 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         throw new Error('Failed to start transcription job')
       }
 
+      // Clear any previous interval and reset timer state before starting new job
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      elapsedRef.current = 0
+      setElapsedSeconds(0)
+      setFinalElapsed(null)
+      currentJobIdRef.current = jobData.job_id
+
       setIsStreaming(true)
       setWhisperStatus('pending')
+      intervalRef.current = setInterval(() => {
+        elapsedRef.current += 1
+        setElapsedSeconds(s => s + 1)
+      }, 1000)
+
       const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
+
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
       setIsStreaming(false)
-      setFinalElapsed(elapsedSeconds)
+      setFinalElapsed(elapsedRef.current)
 
       if (event.type === 'error') {
         if (event.error === 'members_only') {
