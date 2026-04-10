@@ -935,7 +935,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 Generate with AI
               </label>
               <p className="text-xs text-muted-foreground">
-                Costs credits based on video length (~{estimatedCredits}+ credit). Auto-captions are free.
+                1 credit per 10 min of audio. Auto-captions are free.
               </p>
               {useWhisper && credits !== null && (
                 <p className="text-xs text-primary mt-0.5">
