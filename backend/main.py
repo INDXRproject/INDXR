@@ -657,7 +657,7 @@ async def run_whisper_job(
         kwargs['updated_at'] = now.isoformat()
         if kwargs.get('status') in ('complete', 'error') and 'completed_at' not in kwargs:
             kwargs['completed_at'] = now.isoformat()
-            kwargs['processing_time_seconds'] = (now - job_started_at).total_seconds()
+            kwargs['processing_time_seconds'] = int((now - job_started_at).total_seconds())
         await asyncio.to_thread(
             lambda: supabase.table('whisper_jobs').update(kwargs).eq('id', job_id).execute()
         )
@@ -853,7 +853,7 @@ async def run_whisper_job(
                 status="error",
                 error_message=f"Internal error: {str(e)}",
                 completed_at=job_completed_at.isoformat(),
-                processing_time_seconds=(job_completed_at - job_started_at).total_seconds(),
+                processing_time_seconds=int((job_completed_at - job_started_at).total_seconds()),
             )
         except Exception:
             pass

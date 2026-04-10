@@ -14,7 +14,7 @@ def transcribe_with_assemblyai(audio_path: str) -> dict:
     """
     try:
         config = aai.TranscriptionConfig(
-            speech_model=aai.SpeechModel.universal,
+            speech_models=["universal-3-pro", "universal-2"],
             punctuate=True,
             format_text=True,
         )
