@@ -84,12 +84,21 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 
 ### Whisper Background Job Architecture (Phase N)
 
-- **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the in-memory `whisper_jobs` dict at each step. Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction. Jobs expire after 1 hour via lazy TTL eviction.
-- **GET** `/api/jobs/{job_id}?user_id=...`: Returns current job dict for the authenticated owner. Used by frontend polling. Returns 404 for unknown/expired jobs, 403 for wrong owner.
-- **Next.js whisper route** (`src/app/api/transcribe/whisper/route.ts`): Auth and suspension checks unchanged. Returns the `{ job_id, status }` JSON from backend directly — no SSE piping. `maxDuration` reduced to 60s (POST returns immediately).
-- **Next.js jobs route** (`src/app/api/jobs/[job_id]/route.ts`): New file. Auth check (login required), suspended check, forwards GET to Railway backend with `?user_id` query param.
-- **Frontend** (`src/components/free-tool/VideoTab.tsx`): `pollWhisperJob` helper polls `/api/jobs/{job_id}` every 3 seconds; `WhisperStatus` type includes `'pending'`; status display shows "Starting transcription..." for pending state. Both `handleWhisperConfirm` and `handleWhisperUpsell` use the polling path.
-- **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Updated to poll `/api/jobs/{job_id}` (no status display; waits for complete/error).
+- **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the **Supabase `whisper_jobs` table** at each step (replaces prior in-memory dict — Railway-restart resilient). Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction.
+- **Job timing**: `started_at`, `completed_at`, and `processing_time_seconds` written to `whisper_jobs` on each job; frontend shows a live elapsed timer and "Completed in M:SS" on finish.
+- **Truncation detection**: After Whisper returns, backend computes `gap = audio_duration − transcript_end`. If gap > 60s, sets `error_message` to `"Transcript may be incomplete — last {N} seconds of audio were not transcribed."` on the `complete` row. Job is still marked complete; no refund. Frontend shows an amber warning banner instead of the green success banner when this warning is present.
+- **90-minute risk warning**: Whisper confirmation modal shows an amber notice if `duration > 5400s` — "Videos over 90 minutes may produce incomplete transcripts due to API limitations."
+- **Audio codec**: ffmpeg converts downloaded audio to **Opus/OGG at 12kbps mono** (`libopus`, `-application voip`), replacing the previous MP3 pipeline. Handles up to ~5 hours within the 25MB OpenAI limit. Output extension: `.ogg`.
+- **Whisper API timeout**: `httpx.Client(timeout=1800.0)` — 30-minute timeout for long audio files.
+- **GET** `/api/jobs/{job_id}?user_id=...`: Queries Supabase `whisper_jobs` table. Returns current status with ownership check; 404 for unknown jobs, 403 for wrong owner.
+- **Next.js whisper route** (`src/app/api/transcribe/whisper/route.ts`): Auth, suspension check, and **rate limiting** (`checkRateLimit`). Returns `{ job_id, status }` JSON from backend directly. `maxDuration` 60s.
+- **Next.js jobs route** (`src/app/api/jobs/[job_id]/route.ts`): Auth check, suspended check, forwards GET to Railway with `?user_id` query param.
+- **Frontend** (`src/components/free-tool/VideoTab.tsx`): `pollWhisperJob` polls every 3s; refs-based interval management prevents stale job_id bug when starting a new job while a previous one is active; button label "Check" while Whisper toggle is on; processing time estimate shown in confirm modal.
+- **Transcripts insert**: `video_id` and `title` (falls back to video_id) now saved alongside `user_id` and `transcript`.
+- **CORS**: Production domains (`indxr.ai`, `www.indxr.ai`, `indxr.vercel.app`) added to Railway backend allowed origins.
+- **AudioTab** (`src/components/free-tool/AudioTab.tsx`): Fixed to use polling (`/api/jobs/{job_id}`) instead of the old SSE approach.
+- **Stripe**: Suspended user check added to `/api/stripe/checkout` before Stripe session creation.
+- **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Polls `/api/jobs/{job_id}` (waits for complete/error).
 
 ### Logging Verbosity Control
 
@@ -289,6 +298,6 @@ The project uses a neutral utility skin (April 2025) replacing the previous Star
 
 | Setting | Value | File |
 |---------|-------|------|
-| Whisper API (`httpx.Client`) | 600s | `backend/whisper_client.py` |
+| Whisper API (`httpx.Client`) | 1800s | `backend/whisper_client.py` |
 | yt-dlp `socket_timeout` | 120s | `backend/audio_utils.py` |
 | Storage display limit (`MAX_MB`) | 500 MB | `src/components/app-sidebar.tsx` (display only, no enforcement) |

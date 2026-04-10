@@ -122,11 +122,19 @@ Deno is required for yt-dlp's YouTube JS challenge solving (introduced in yt-dlp
 Full flow when debugging Whisper issues:
 
 1. Frontend calls `POST /api/transcribe/whisper` with `video_id` or `audio_file`
-2. `main.py` → `extract_youtube_audio()` in `audio_utils.py`
-3. yt-dlp downloads audio-only stream (`m4a` via iOS client) via IPRoyal proxy
-4. ffmpeg subprocess converts to 16kHz mono 32kbps MP3
-5. MP3 sent to OpenAI Whisper API
-6. Transcript inserted into Supabase, credits deducted atomically
+2. `main.py` creates a `whisper_jobs` row in Supabase (`status: pending`) and returns `{ job_id }` immediately
+3. `run_whisper_job` background task begins: `extract_youtube_audio()` in `audio_utils.py`
+4. yt-dlp downloads audio-only stream (`bestaudio/best` via iOS client) via IPRoyal proxy
+5. ffmpeg converts to **mono 12kbps Opus/OGG** (`libopus`, `-application voip`, output `.ogg`)
+6. OGG file sent to OpenAI Whisper API (`gpt-4o-transcribe`, timeout 1800s)
+7. Truncation check: if `audio_duration − last_segment_end > 60s`, warning written to `whisper_jobs.error_message`
+8. Transcript inserted into Supabase `transcripts` (with `video_id` and `title`), credits deducted atomically
+9. `whisper_jobs` row updated to `status: complete` with `completed_at` and `processing_time_seconds`
+10. Frontend polling detects `complete`, loads transcript, shows green (or amber if truncation warning) banner
+
+> **Job state in Supabase**: All job state lives in `whisper_jobs` — not in-memory. This means Railway restarts mid-job will not lose job metadata, though the background task itself will be lost and the job will stall (no automatic recovery yet).
+
+> **Whisper timeout**: `httpx.Client(timeout=1800.0)` — 30 minutes. Long videos (90+ min) may approach this limit. AssemblyAI migration (Phase O) will remove this constraint.
 
 **Deno JS runtime**: yt-dlp uses deno (at `~/.deno/bin`) to solve YouTube JS challenges. You should see `[jsc:deno] Solving JS challenges using deno` in the logs. If missing, check `DENO_PATH` in `backend/.env`.
 
@@ -214,7 +222,8 @@ The dashboard uses a 4-tab system for transcripts and summaries.
 |----------|--------|-------------|
 | `/api/extract` | POST | Extract YouTube captions |
 | `/api/summarize` | POST | AI summarization via DeepSeek |
-| `/api/transcribe/whisper` | POST | Whisper transcription (YouTube or upload) |
+| `/api/transcribe/whisper` | POST | Start Whisper job — returns `{ job_id, status }` immediately |
+| `/api/jobs/{job_id}` | GET | Poll Whisper job status (`?user_id=`) |
 | `/api/playlist/info` | GET | Get playlist metadata |
 | `/api/check-playlist-availability` | POST | Check video availability in playlist |
 

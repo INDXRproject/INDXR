@@ -94,7 +94,7 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
 
 ### Whisper AI Audio Pipeline
 
-When a user requests Whisper re-extraction, the backend performs a **two-step** audio pipeline:
+When a user requests Whisper re-extraction, the backend runs `run_whisper_job` as an `asyncio` background task. The HTTP POST returns `{ job_id, status: "pending" }` immediately; the frontend polls `/api/jobs/{job_id}` every 3 seconds. Job state is persisted in the Supabase `whisper_jobs` table (columns: `id, user_id, status, video_url, source_type, credits_cost, transcript_id, error_message, created_at, updated_at, started_at, completed_at, processing_time_seconds`).
 
 **Step 1 — yt-dlp download (proxy-consistent):**
 
@@ -110,15 +110,22 @@ ydl_opts = {
 }
 ```
 
-Format: `bestaudio/best` — DASH m4a/webm formats are no longer available in yt-dlp 2026.03.17+; ffmpeg handles conversion to mp3 regardless of container.
+Format: `bestaudio/best` — DASH m4a/webm formats are no longer available in yt-dlp 2026.03.17+.
 
-**Step 2 — ffmpeg conversion (subprocess):**
+**Step 2 — ffmpeg conversion to Opus/OGG (subprocess):**
 
 ```bash
-ffmpeg -i <raw_file> -ar 16000 -ac 1 -b:a 32k output.mp3
+ffmpeg -i <raw_file> -vn -map_metadata -1 -ac 1 -c:a libopus -b:a 12k -application voip output.ogg
 ```
 
-Converts to 16kHz mono 32kbps MP3, optimized for Whisper API.
+Converts to mono 12kbps Opus/OGG. At 12kbps, ~5 hours of audio fits within the 25MB OpenAI file limit. Replaces the previous 32kbps MP3 pipeline.
+
+**Step 3 — OpenAI Whisper API:**
+
+- Model: `gpt-4o-transcribe` (configurable via `WHISPER_MODEL` env var)
+- Timeout: 1800s (`httpx.Client`)
+- Response format: `verbose_json` (includes per-segment timestamps)
+- Truncation detection: if `audio_duration − last_segment_end > 60s`, a warning is written to `whisper_jobs.error_message` and surfaced as an amber banner in the UI. Job is still marked complete.
 
 **Credit Calculation:**
 

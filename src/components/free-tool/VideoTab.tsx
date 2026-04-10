@@ -29,6 +29,7 @@ type WhisperCompleteEvent = {
   transcript: TranscriptItem[]
   duration: number
   credits_used: number
+  truncation_warning?: string
 }
 
 type WhisperErrorEvent = {
@@ -65,6 +66,7 @@ async function pollWhisperJob(
       error_code?: string
       required_credits?: number
       available_credits?: number
+      truncation_warning?: string
     }
     try {
       const resp = await fetch(`/api/jobs/${jobId}`)
@@ -85,6 +87,7 @@ async function pollWhisperJob(
         transcript: job.transcript!,
         duration: job.duration!,
         credits_used: job.credits_used!,
+        truncation_warning: job.error_message?.startsWith('Transcript may be incomplete') ? job.error_message : undefined,
       }
     } else if (job.status === 'error') {
       return {
@@ -127,7 +130,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [currentVideoId, setCurrentVideoId] = useState("")
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
-  const [whisperMetadata, setWhisperMetadata] = useState<{ duration: number; creditsUsed: number } | null>(null)
+  const [whisperMetadata, setWhisperMetadata] = useState<{ duration: number; creditsUsed: number; truncationWarning?: string } | null>(null)
   const [lastProcessingMethod, setLastProcessingMethod] = useState<'youtube_captions' | 'whisper_ai' | null>(null)
   const [isReextracting, setIsReextracting] = useState(false)
   const { user, credits, refreshCredits } = useAuth()
@@ -511,11 +514,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
 
 
-  const handleWhisperSuccess = async (transcript: TranscriptItem[], metadata: { videoId: string; title: string; duration: number; creditsUsed: number; source: string }) => {
+  const handleWhisperSuccess = async (transcript: TranscriptItem[], metadata: { videoId: string; title: string; duration: number; creditsUsed: number; source: string; truncationWarning?: string }) => {
     setTranscript(transcript)
     setVideoTitle(metadata.title || "")
     setVideoUrl(`https://www.youtube.com/watch?v=${metadata.videoId}`)
-    setWhisperMetadata({ duration: metadata.duration, creditsUsed: metadata.creditsUsed })
+    setWhisperMetadata({ duration: metadata.duration, creditsUsed: metadata.creditsUsed, truncationWarning: metadata.truncationWarning })
     setLastProcessingMethod('whisper_ai')
     setWhisperAutoTriggered(true) // Mark that Whisper was auto-triggered
     // Track whisper save in session so a second click is instantly flagged as duplicate
@@ -644,7 +647,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setVideoUrl(`https://www.youtube.com/watch?v=${videoId}`)
       setVideoDuration(event.duration || null)
       setLastProcessingMethod('whisper_ai')
-      setWhisperMetadata({ duration: event.duration, creditsUsed: event.credits_used || 1 })
+      setWhisperMetadata({ duration: event.duration, creditsUsed: event.credits_used || 1, truncationWarning: event.truncation_warning })
       setCurrentVideoId(videoId)
 
       sessionSavedKeys.current.add(`${videoId}:whisper_ai`)
@@ -796,7 +799,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         title: videoTitle,
         duration: event.duration,
         creditsUsed: event.credits_used || 1,
-        source: 'youtube'
+        source: 'youtube',
+        truncationWarning: event.truncation_warning,
       })
 
       refreshCredits()
@@ -930,9 +934,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     <>Whisper AI will cost approximately <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per 10 min). You have <span className="font-semibold">{credits}</span> credits.</>
                   )}
                 </p>
-                <p className="text-xs text-muted-foreground mb-3">
+                <p className="text-xs text-muted-foreground mb-2">
                   Estimated processing time: {pendingWhisperData.duration > 0 ? getWhisperProcessingEstimate(pendingWhisperData.duration) : "varies by length"}
                 </p>
+                {pendingWhisperData.duration > 5400 && (
+                  <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-3">
+                    ⚠️ Videos over 90 minutes may produce incomplete transcripts due to API limitations. Proceed at your own risk.
+                  </p>
+                )}
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
@@ -1141,24 +1150,44 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
              );
           })()}
 
-          {/* Success Banner for Whisper Transcription */}
+          {/* Success / Truncation Warning Banner for Whisper Transcription */}
           {saveStatus === 'saved' && whisperMetadata && (
-            <div className="mb-4 p-4 bg-green-500/15 border border-green-500/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="flex-1">
-                <p className="text-green-600 dark:text-green-400 font-semibold mb-1">Transcript ready! Whisper AI processed your video successfully.</p>
-                <p className="text-xs text-muted-foreground">
-                  Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {Math.round(whisperMetadata.duration / 60)} min
-                  {finalElapsed !== null && (
-                    <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
-                  )}
-                </p>
+            whisperMetadata.truncationWarning ? (
+              <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex-1">
+                  <p className="text-yellow-700 dark:text-yellow-400 font-semibold mb-1">⚠️ Transcript saved with a warning</p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-1">{whisperMetadata.truncationWarning}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {Math.round(whisperMetadata.duration / 60)} min
+                    {finalElapsed !== null && (
+                      <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
+                    )}
+                  </p>
+                </div>
+                <Link href="/dashboard/library">
+                  <Button variant="outline" size="sm" className="ml-4 border-yellow-500/40 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/10">
+                    View in Library
+                  </Button>
+                </Link>
               </div>
-              <Link href="/dashboard/library">
-                <Button variant="outline" size="sm" className="ml-4 border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-500/10">
-                  View in Library
-                </Button>
-              </Link>
-            </div>
+            ) : (
+              <div className="mb-4 p-4 bg-green-500/15 border border-green-500/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex-1">
+                  <p className="text-green-600 dark:text-green-400 font-semibold mb-1">Transcript ready! Whisper AI processed your video successfully.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {Math.round(whisperMetadata.duration / 60)} min
+                    {finalElapsed !== null && (
+                      <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
+                    )}
+                  </p>
+                </div>
+                <Link href="/dashboard/library">
+                  <Button variant="outline" size="sm" className="ml-4 border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-500/10">
+                    View in Library
+                  </Button>
+                </Link>
+              </div>
+            )
           )}
 
           <TranscriptCard transcript={transcript} videoTitle={videoTitle} videoUrl={videoUrl} />

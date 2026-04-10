@@ -801,6 +801,18 @@ async def run_whisper_job(
             for item in whisper_result['transcript']
         ]
 
+        # Truncation detection: check if Whisper covered the full audio
+        audio_duration = whisper_result.get('duration', 0)
+        last_segment = transcript[-1] if transcript else None
+        transcript_end = (last_segment['offset'] + last_segment['duration']) if last_segment else 0
+        gap = audio_duration - transcript_end if audio_duration > 0 else 0
+        truncation_warning = (
+            f"Transcript may be incomplete — last {int(gap)} seconds of audio were not transcribed."
+            if gap > 60 else None
+        )
+        if truncation_warning:
+            logger.warning(f"[job {job_id}] Truncation detected: audio={audio_duration:.1f}s, transcript_end={transcript_end:.1f}s, gap={gap:.1f}s")
+
         processing_time_ms = int((time.time() - whisper_start_time) * 1000)
         track_event(user_id, 'whisper_completed', {
             'video_id': video_id, 'source_type': source_type,
@@ -829,6 +841,7 @@ async def run_whisper_job(
             credits_cost=credit_cost,
             completed_at=job_completed_at.isoformat(),
             processing_time_seconds=processing_time_seconds,
+            **({"error_message": truncation_warning} if truncation_warning else {}),
         )
         credits_deducted = False  # Success — do not refund
 

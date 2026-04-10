@@ -62,13 +62,30 @@
 
 ### Phase N: Whisper Background Job Architecture ✅
 
-**Goal**: Decouple the Whisper transcription from the HTTP request lifecycle so long-running jobs (30–180 seconds) cannot be killed by Vercel's function timeout.
+**Goal**: Decouple the Whisper transcription from the HTTP request lifecycle so long-running jobs (30–180 seconds) cannot be killed by Vercel's function timeout. Job state persisted in Supabase — Railway-restart resilient.
 
-- [x] **`backend/main.py`**: POST returns `{"job_id", "status": "pending"}` immediately; background task `run_whisper_job` runs the full pipeline and updates in-memory `whisper_jobs` dict; GET `/api/jobs/{job_id}` returns current job status with ownership check and 1-hour TTL eviction
-- [x] **`src/app/api/transcribe/whisper/route.ts`**: Returns `{ job_id, status }` JSON directly; `maxDuration` reduced to 60s
-- [x] **`src/app/api/jobs/[job_id]/route.ts`**: New file — auth check, suspended check, forwards GET to Railway with `?user_id` query param
-- [x] **`src/components/free-tool/VideoTab.tsx`**: `pollWhisperJob` helper polls every 3s; `WhisperStatus` includes `'pending'`; "Starting transcription..." status message added
+- [x] **`backend/main.py`**: POST returns `{"job_id", "status": "pending"}` immediately; background task `run_whisper_job` runs the full pipeline and updates **Supabase `whisper_jobs` table**; GET `/api/jobs/{job_id}` queries Supabase with ownership check
+- [x] **Job timing**: `started_at`, `completed_at`, `processing_time_seconds` written per job
+- [x] **Truncation detection**: Gap > 60s between audio duration and last transcript segment triggers amber warning banner on frontend; job still marked complete
+- [x] **Opus codec**: Audio compressed to 12kbps mono Opus/OGG (replaces MP3); handles ~5 hours within 25MB
+- [x] **Whisper timeout**: 1800s (`httpx.Client`)
+- [x] **`src/app/api/transcribe/whisper/route.ts`**: Returns `{ job_id, status }` JSON directly; `maxDuration` 60s; rate limiting added
+- [x] **`src/app/api/jobs/[job_id]/route.ts`**: Auth check, suspended check, forwards GET to Railway with `?user_id` query param
+- [x] **`src/components/free-tool/VideoTab.tsx`**: `pollWhisperJob` polls every 3s; refs-based interval prevents stale job_id bug; "Check" button label; processing estimate in confirm modal; 90-min risk warning; elapsed timer; amber/green success banner
+- [x] **`src/components/free-tool/AudioTab.tsx`**: Rewritten to use polling instead of SSE
 - [x] **`src/components/free-tool/WhisperFallbackModal.tsx`**: Replaced SSE reader with 3-second polling loop
+- [x] **CORS**: Production domains added to Railway backend
+- [x] **Stripe**: Suspended user check added to `/api/stripe/checkout`
+- [x] **Transcripts**: `video_id` and `title` now saved in `transcripts` insert
+
+### Phase O: AssemblyAI Integration (Upcoming)
+
+**Goal**: Replace OpenAI Whisper API with AssemblyAI Universal-3 Pro to eliminate truncation, reduce cost, and improve speed.
+
+- [ ] Retain yt-dlp audio download pipeline; upload file to AssemblyAI instead of OpenAI
+- [ ] Benefits: no token-limit truncation, 3–5× faster turnaround, 42% cheaper ($0.21/hr vs $0.36/hr), no 25MB file size limit
+- [ ] Update `whisper_client.py` → `assemblyai_client.py`; adapt segment format to INDXR schema
+- [ ] Remove truncation detection workaround once confirmed unnecessary
 
 ### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
 
