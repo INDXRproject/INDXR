@@ -50,6 +50,7 @@ export function WhisperFallbackModal({
       const formData = new FormData()
       formData.append('source_type', 'youtube')
       formData.append('video_id', videoId)
+      if (videoTitle) formData.append('title', videoTitle)
 
       const response = await fetch('/api/transcribe/whisper', {
         method: 'POST',
@@ -153,7 +154,7 @@ export function WhisperFallbackModal({
             <DialogTitle className="text-foreground">No Captions Found</DialogTitle>
           </div>
           <DialogDescription className="text-muted-foreground">
-            This video doesn&apos;t have auto-generated captions. INDXR.AI will use Whisper AI to transcribe your video.
+            This video doesn&apos;t have auto-generated captions. INDXR.AI will use AI transcription for your video.
           </DialogDescription>
         </DialogHeader>
 

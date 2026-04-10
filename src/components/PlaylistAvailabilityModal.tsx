@@ -98,7 +98,7 @@ export function PlaylistAvailabilityModal({
               <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
-                  <span className="text-sm font-medium text-amber-400 truncate">Whisper AI</span>
+                  <span className="text-sm font-medium text-amber-400 truncate">AI Transcription</span>
                 </div>
                 <div className="text-2xl font-bold text-white truncate">{summary.needsWhisper}</div>
                 <div className="text-xs text-zinc-400 truncate">{summary.totalCredits} credits</div>
@@ -170,7 +170,7 @@ export function PlaylistAvailabilityModal({
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-amber-500" />
                       <span className="text-sm font-medium text-white">
-                        {summary.needsWhisper} videos need Whisper AI ({summary.totalCredits} credits)
+                        {summary.needsWhisper} videos need AI Transcription ({summary.totalCredits} credits)
                       </span>
                     </div>
                     {expandedSection === 'whisper' ? (

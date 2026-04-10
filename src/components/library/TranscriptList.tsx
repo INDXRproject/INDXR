@@ -92,7 +92,7 @@ function buildMetaLine(t: Transcript): string {
   if (!method || method === 'youtube_captions') {
     parts.push('Auto-captions');
   } else if (method === 'whisper_ai' || method === 'whisper') {
-    parts.push('Whisper AI');
+    parts.push('AI Transcription');
   }
 
   // Edited

@@ -640,6 +640,7 @@ async def run_whisper_job(
     video_id: Optional[str],
     audio_content: Optional[bytes],
     audio_filename: Optional[str],
+    title: Optional[str] = None,
 ) -> None:
     """
     Background task: runs the full Whisper pipeline and updates whisper_jobs in Supabase.
@@ -664,6 +665,7 @@ async def run_whisper_job(
 
     try:
         audio_path: Optional[str] = None
+        video_title = title or video_id or 'Untitled'  # default; overridden by yt-dlp for youtube path
 
         # --- Step 1: Get audio ---
         if source_type == "youtube":
@@ -675,7 +677,7 @@ async def run_whisper_job(
                     logger.info(f"[job {job_id}] Proxy ENABLED for video {video_id}")
                 else:
                     logger.warning(f"[job {job_id}] Proxy DISABLED — PROXY_ENABLED={PROXY_ENABLED}")
-                audio_path = await asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url)
+                audio_path, video_title = await asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url)
                 temp_files.append(audio_path)
             except MembersOnlyVideoError:
                 await update_job(status="error", error_message="members_only")
@@ -701,6 +703,7 @@ async def run_whisper_job(
                 tmp.write(audio_content)
                 audio_path = tmp.name
                 temp_files.append(audio_path)
+            video_title = title or audio_filename or 'Untitled'
 
         # --- Step 2: Validate audio ---
         validation = await asyncio.to_thread(validate_audio_file, audio_path)
@@ -825,7 +828,7 @@ async def run_whisper_job(
             lambda: supabase.table('transcripts').insert({
                 'user_id': user_id,
                 'video_id': video_id,
-                'title': video_id or 'Untitled',
+                'title': video_title,
                 'transcript': transcript,
             }).execute()
         )
@@ -881,6 +884,7 @@ async def transcribe_with_whisper(
     user_id: str = Form(...),
     source_type: str = Form(...),
     video_id: Optional[str] = Form(None),
+    title: Optional[str] = Form(None),
     audio_file: Optional[UploadFile] = File(None)
 ):
     """
@@ -935,6 +939,7 @@ async def transcribe_with_whisper(
         video_id=video_id,
         audio_content=audio_content,
         audio_filename=audio_filename,
+        title=title,
     ))
 
     logger.info(f"Whisper job created: {job_id} (user={user_id}, source={source_type}, video={video_id})")

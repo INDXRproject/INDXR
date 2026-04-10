@@ -410,7 +410,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               {whisperStatus === 'pending' ? 'Uploading...'
                 : whisperStatus === 'downloading' ? 'Processing audio...'
-                : whisperStatus === 'transcribing' ? 'Transcribing with Whisper AI...'
+                : whisperStatus === 'transcribing' ? 'Transcribing with AI...'
                 : whisperStatus === 'saving' ? 'Saving...'
                 : 'Processing...'}
             </>

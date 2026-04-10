@@ -161,6 +161,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const elapsedRef = useRef(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const currentJobIdRef = useRef<string | null>(null)
+  // Ref mirror of useWhisper — always up-to-date regardless of closure staleness
+  const useWhisperRef = useRef(false)
+  // Cooldown: tracks the last successful extraction to suppress immediate duplicate warnings
+  const lastSuccessTimestampRef = useRef<{ videoId: string; time: number } | null>(null)
 
   // Navigation guard while SSE stream is open
   useEffect(() => {
@@ -216,6 +220,16 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const videoId = (match && match[2].length === 11) ? match[2] : "";
 
       if (videoId) {
+        // Cooldown: don't show duplicate warning within 10s of a successful extraction
+        const recent = lastSuccessTimestampRef.current
+        if (recent && recent.videoId === videoId && Date.now() - recent.time < 10000) {
+          setExistingTranscriptId(null)
+          setExistingTranscriptMethod(null)
+          setShowDuplicateChoices(false)
+          setIsCheckingDuplicate(false)
+          return
+        }
+
         // Check in-memory session first (instant, no network)
         const captionsKey = `${videoId}:youtube_captions`;
         const whisperKey = `${videoId}:whisper_ai`;
@@ -277,6 +291,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   // Reset Whisper toggle when URL changes
   useEffect(() => {
     setUseWhisper(false)
+    useWhisperRef.current = false
     setWhisperAutoTriggered(false)
   }, [url])
 
@@ -342,7 +357,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     const videoId = (match && match[2].length === 11) ? match[2] : "";
 
     // If Whisper toggle is ON, first fetch video metadata for accurate credit calculation
-    if (useWhisper && videoId) {
+    if (useWhisperRef.current && videoId) {
       setIsFetchingMeta(true)
       try {
         // First, fetch video metadata to get duration
@@ -433,6 +448,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         // In-memory session tracking so repeat extractions on same page are detected instantly
         sessionSavedKeys.current.add(`${videoId}:youtube_captions`);
         setExistingTranscriptMethod('youtube_captions');
+        lastSuccessTimestampRef.current = { videoId, time: Date.now() };
       }
 
       // Track in PostHog
@@ -585,6 +601,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const formData = new FormData()
       formData.append('source_type', 'youtube')
       formData.append('video_id', videoId)
+      if (pendingWhisperData.title) formData.append('title', pendingWhisperData.title)
 
       const response = await fetch('/api/transcribe/whisper', {
         method: 'POST',
@@ -597,7 +614,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
           return
         }
-        throw new Error(errorData.error || 'Failed to extract transcript with Whisper AI')
+        throw new Error(errorData.error || 'Failed to extract transcript with AI transcription')
       }
 
       const jobData = await response.json()
@@ -661,7 +678,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       })
 
       if (event.transcript && event.transcript.length > 0) {
-        toast.success("Transcript extracted & saved with Whisper AI", {
+        toast.success("Transcript extracted & saved with AI", {
           description: "Added to your library automatically.",
           action: {
             label: "View",
@@ -695,6 +712,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         refreshCredits()
         setUrl("")
         setUseWhisper(false)
+        useWhisperRef.current = false
+        lastSuccessTimestampRef.current = { videoId, time: Date.now() }
       }
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : 'Whisper extraction failed'
@@ -736,6 +755,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const formData = new FormData()
       formData.append('source_type', 'youtube')
       formData.append('video_id', currentVideoId)
+      if (videoTitle) formData.append('title', videoTitle)
 
       const response = await fetch('/api/transcribe/whisper', {
         method: 'POST',
@@ -748,7 +768,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
           return
         }
-        throw new Error(errorData.error || 'Failed to extract transcript with Whisper AI')
+        throw new Error(errorData.error || 'Failed to extract transcript with AI transcription')
       }
 
       const jobData = await response.json()
@@ -825,6 +845,23 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   }
 
 
+  const handleGuardedTabSwitch = (callback: (() => void) | undefined) => {
+    if (!callback) return
+    if (isStreaming) {
+      const confirmed = window.confirm(
+        "A transcription is in progress. Are you sure you want to leave? Your transcript will still be saved."
+      )
+      if (!confirmed) return
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      setIsStreaming(false)
+      setWhisperStatus('idle')
+    }
+    callback()
+  }
+
   return (
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
       <div className="flex flex-col gap-4 max-w-xl mx-auto mb-12">
@@ -867,10 +904,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               role="switch"
               aria-checked={useWhisper}
               onClick={() => {
-                if (!useWhisper) {
-                  posthog.capture('whisper_toggle_enabled')
-                }
-                setUseWhisper(!useWhisper)
+                const next = !useWhisper
+                useWhisperRef.current = next
+                if (next) posthog.capture('whisper_toggle_enabled')
+                setUseWhisper(next)
               }}
               className={cn(
                 "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -891,14 +928,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   useWhisper ? "text-primary" : "text-foreground"
                 )}
                 onClick={() => {
-                  if (!useWhisper) {
-                    posthog.capture('whisper_toggle_enabled')
-                  }
-                  setUseWhisper(!useWhisper)
+                  const next = !useWhisper
+                  useWhisperRef.current = next
+                  if (next) posthog.capture('whisper_toggle_enabled')
+                  setUseWhisper(next)
                 }}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                Use Whisper AI for higher accuracy
+                Generate with AI
               </label>
               <p className="text-xs text-muted-foreground">
                 Costs credits based on video length (~{estimatedCredits}+ credit). Auto-captions are free.
@@ -929,9 +966,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 </p>
                 <p className="text-sm text-muted-foreground mb-1">
                   {pendingWhisperData.duration > 0 ? (
-                    <>Whisper AI will cost <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired} credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span>. You have <span className="font-semibold">{credits}</span> credits.</>
+                    <>AI Transcription will cost <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired} credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span>. You have <span className="font-semibold">{credits}</span> credits.</>
                   ) : (
-                    <>Whisper AI will cost approximately <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per 10 min). You have <span className="font-semibold">{credits}</span> credits.</>
+                    <>AI Transcription will cost approximately <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per 10 min). You have <span className="font-semibold">{credits}</span> credits.</>
                   )}
                 </p>
                 <p className="text-xs text-muted-foreground mb-2">
@@ -1005,7 +1042,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>
               {existingTranscriptMethod === 'whisper_ai'
-                ? 'You already have this transcript (Whisper AI) — '
+                ? 'You already have this transcript (AI Transcription) — '
                 : 'You already have this transcript in your library — '}
             </span>
             <Link href={`/dashboard/library/${existingTranscriptId}`} className="font-medium hover:underline">
@@ -1034,7 +1071,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    <Button
                      variant="outline"
                      size="sm"
-                     onClick={onSwitchToAudio}
+                     onClick={() => handleGuardedTabSwitch(onSwitchToAudio)}
                      className="self-start h-8 text-xs"
                    >
                      <Mic className="h-3 w-3 mr-1.5" />
@@ -1063,7 +1100,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  <span>
                    {whisperStatus === 'pending' ? 'Starting transcription...'
                    : whisperStatus === 'downloading' ? 'Downloading audio from YouTube...'
-                   : whisperStatus === 'transcribing' ? 'Transcribing with Whisper AI...'
+                   : whisperStatus === 'transcribing' ? 'Transcribing with AI...'
                    : 'Saving transcript...'}
                  </span>
                  {isStreaming && (
@@ -1096,7 +1133,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           <Button
             variant="outline"
             size="sm"
-            onClick={onPlaylistDetected}
+            onClick={() => handleGuardedTabSwitch(onPlaylistDetected)}
             className="bg-background hover:bg-muted"
           >
             Switch to Playlist
@@ -1143,7 +1180,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    {isReextracting ? (
                      <><Loader2 className="h-3 w-3 animate-spin mr-2" /> Extracting...</>
                    ) : (
-                     `✨ Re-extract with Whisper AI · ${requiredCredits} credit${requiredCredits !== 1 ? 's' : ''}`
+                     `✨ Re-extract with AI · ${requiredCredits} credit${requiredCredits !== 1 ? 's' : ''}`
                    )}
                  </Button>
                </div>
@@ -1173,7 +1210,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             ) : (
               <div className="mb-4 p-4 bg-green-500/15 border border-green-500/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex-1">
-                  <p className="text-green-600 dark:text-green-400 font-semibold mb-1">Transcript ready! Whisper AI processed your video successfully.</p>
+                  <p className="text-green-600 dark:text-green-400 font-semibold mb-1">Transcript ready! AI transcription completed successfully.</p>
                   <p className="text-xs text-muted-foreground">
                     Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {Math.round(whisperMetadata.duration / 60)} min
                     {finalElapsed !== null && (
