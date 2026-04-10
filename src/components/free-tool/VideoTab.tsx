@@ -100,6 +100,12 @@ async function pollWhisperJob(
   return { type: 'error', error: 'Transcription timed out', code: 'timeout' }
 }
 
+function formatElapsed(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
 function getWhisperProcessingEstimate(durationSeconds: number): string {
   const minutes = durationSeconds / 60
   if (minutes < 10) return "~1 min"
@@ -145,6 +151,17 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [isStreaming, setIsStreaming] = useState(false)
   // True while fetching video metadata for Whisper cost estimation
   const [isFetchingMeta, setIsFetchingMeta] = useState(false)
+
+  // Live elapsed timer for Whisper processing
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [finalElapsed, setFinalElapsed] = useState<number | null>(null)
+  useEffect(() => {
+    if (!isStreaming) return
+    setElapsedSeconds(0)
+    setFinalElapsed(null)
+    const interval = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+    return () => clearInterval(interval)
+  }, [isStreaming])
 
   // Navigation guard while SSE stream is open
   useEffect(() => {
@@ -593,6 +610,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setWhisperStatus('pending')
       const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
       setIsStreaming(false)
+      setFinalElapsed(elapsedSeconds)
 
       if (event.type === 'error') {
         if (event.error === 'members_only') {
@@ -725,6 +743,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setWhisperStatus('pending')
       const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
       setIsStreaming(false)
+      setFinalElapsed(elapsedSeconds)
 
       if (event.type === 'error') {
         if (event.error === 'members_only') {
@@ -1006,6 +1025,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    : whisperStatus === 'transcribing' ? 'Transcribing with Whisper AI...'
                    : 'Saving transcript...'}
                  </span>
+                 {isStreaming && (
+                   <span className="ml-1 font-mono text-xs text-muted-foreground/70">
+                     Processing: {formatElapsed(elapsedSeconds)}
+                   </span>
+                 )}
                </div>
              ) : (
                <p className={cn("text-sm text-muted-foreground", error && "text-destructive")}>
@@ -1092,6 +1116,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 <p className="text-green-600 dark:text-green-400 font-semibold mb-1">Transcript ready! Whisper AI processed your video successfully.</p>
                 <p className="text-xs text-muted-foreground">
                   Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {Math.round(whisperMetadata.duration / 60)} min
+                  {finalElapsed !== null && (
+                    <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
+                  )}
                 </p>
               </div>
               <Link href="/dashboard/library">

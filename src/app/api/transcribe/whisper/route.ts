@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 export const maxDuration = 60;
 
@@ -29,6 +30,32 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: 'Account suspended. Contact support@indxr.ai' },
         { status: 403 }
+      );
+    }
+
+    // Rate limiting — same tier logic as /api/extract
+    let isPremium = false;
+    const { data: creditsData } = await supabase.rpc('get_user_credits', { p_user_id: user.id }).single();
+    const typedCredits = creditsData as { total_credits_purchased: number } | null;
+    if (typedCredits && typedCredits.total_credits_purchased > 0) {
+      isPremium = true;
+    }
+
+    const rateLimit = await checkRateLimit(request, user.id, isPremium);
+    if (!rateLimit.success) {
+      const message = isPremium
+        ? 'Free tier: 50 requests/hour. Upgrade to premium for unlimited extractions.'
+        : 'Anonymous users: 10 requests/day. Sign up free for 50 requests/hour.';
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rate limit exceeded',
+          message,
+          limit: rateLimit.limit,
+          remaining: rateLimit.remaining,
+          reset: rateLimit.reset,
+        },
+        { status: 429, headers: { 'Retry-After': Math.ceil((rateLimit.reset - Date.now()) / 1000).toString() } }
       );
     }
 

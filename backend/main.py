@@ -69,7 +69,13 @@ app = FastAPI(title="INDXR.AI Backend", version="1.0.0")
 # CORS configuration for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://indxr.ai",
+        "https://www.indxr.ai",
+        "https://indxr.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -644,9 +650,14 @@ async def run_whisper_job(
     credit_cost = 0
     credits_deducted = False
     supabase = get_supabase_client()
+    job_started_at = datetime.now(timezone.utc)
 
     async def update_job(**kwargs):
-        kwargs['updated_at'] = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(timezone.utc)
+        kwargs['updated_at'] = now.isoformat()
+        if kwargs.get('status') in ('complete', 'error') and 'completed_at' not in kwargs:
+            kwargs['completed_at'] = now.isoformat()
+            kwargs['processing_time_seconds'] = (now - job_started_at).total_seconds()
         await asyncio.to_thread(
             lambda: supabase.table('whisper_jobs').update(kwargs).eq('id', job_id).execute()
         )
@@ -656,7 +667,7 @@ async def run_whisper_job(
 
         # --- Step 1: Get audio ---
         if source_type == "youtube":
-            await update_job(status="downloading")
+            await update_job(status="downloading", started_at=job_started_at.isoformat())
             logger.info(f"[job {job_id}] Downloading YouTube audio for video: {video_id}")
             try:
                 proxy_url = get_proxy_url()
@@ -754,7 +765,7 @@ async def run_whisper_job(
                 return
 
         # --- Step 6: Transcribe ---
-        await update_job(status="transcribing")
+        await update_job(status="transcribing", started_at=job_started_at.isoformat())
         logger.info(f"[job {job_id}] Calling Whisper API for {duration:.2f}s audio ({credit_cost} credits)")
         whisper_start_time = time.time()
 
@@ -806,19 +817,29 @@ async def run_whisper_job(
         )
         transcript_id = transcript_insert.data[0]['id']
 
-        logger.info(f"[job {job_id}] Complete: {len(transcript)} segments, {credit_cost} credits deducted, transcript_id={transcript_id}")
+        job_completed_at = datetime.now(timezone.utc)
+        processing_time_seconds = (job_completed_at - job_started_at).total_seconds()
+        logger.info(f"[job {job_id}] Complete: {len(transcript)} segments, {credit_cost} credits deducted, transcript_id={transcript_id}, processing_time={processing_time_seconds:.1f}s")
         await update_job(
             status="complete",
             transcript_id=transcript_id,
             duration_seconds=int(duration),
             credits_cost=credit_cost,
+            completed_at=job_completed_at.isoformat(),
+            processing_time_seconds=processing_time_seconds,
         )
         credits_deducted = False  # Success — do not refund
 
     except Exception as e:
         logger.error(f"[job {job_id}] Unexpected error: {type(e).__name__}: {e}")
         try:
-            await update_job(status="error", error_message=f"Internal error: {str(e)}")
+            job_completed_at = datetime.now(timezone.utc)
+            await update_job(
+                status="error",
+                error_message=f"Internal error: {str(e)}",
+                completed_at=job_completed_at.isoformat(),
+                processing_time_seconds=(job_completed_at - job_started_at).total_seconds(),
+            )
         except Exception:
             pass
 
@@ -826,7 +847,8 @@ async def run_whisper_job(
         # Refund credits if they were deducted before the failure
         if credits_deducted and credit_cost > 0:
             try:
-                await asyncio.to_thread(add_credits, user_id, credit_cost, f"Whisper job refund (job_id={job_id})")
+                refund_reason = f"whisper_timeout | job_id={job_id}"
+                await asyncio.to_thread(add_credits, user_id, credit_cost, refund_reason)
                 logger.info(f"[job {job_id}] Refunded {credit_cost} credits to user {user_id}")
             except Exception as e:
                 logger.error(f"[job {job_id}] Failed to refund {credit_cost} credits: {e}")

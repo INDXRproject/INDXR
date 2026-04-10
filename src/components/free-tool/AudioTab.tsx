@@ -25,6 +25,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [audioMetadata, setAudioMetadata] = useState<{ filename: string; duration: number; creditsUsed: number } | null>(null)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [isUploading, setIsUploading] = useState(false)
+  const [whisperStatus, setWhisperStatus] = useState<'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Get actual audio duration from file
@@ -166,6 +167,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     if (!file || !user) return
 
     setIsTranscribing(true)
+    setWhisperStatus('pending')
 
     try {
       const formData = new FormData()
@@ -179,8 +181,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
       const data = await response.json()
 
-      if (!response.ok || !data.success) {
-        // Handle insufficient credits
+      if (!response.ok) {
         if (response.status === 402) {
           toast.error(
             <div>
@@ -193,48 +194,94 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           )
           return
         }
-
-        // Other errors
         toast.error(data.user_friendly_message || data.error || 'Transcription failed')
         return
       }
 
-      // Success!
-      setTranscript(data.transcript)
-      setAudioMetadata({
-        filename: file.name,
-        duration: data.duration,
-        creditsUsed: data.credits_used
-      })
-      
-      // Refresh credits from shared context
-      // Small delay to ensure DB transaction completes
-      await new Promise(resolve => setTimeout(resolve, 500))
-      await refreshCredits()
-      
-      console.log('Credits refreshed in shared context')
-      
-      // Don't show toast - will show persistent status message instead
-      setSaveStatus('saving')
-
-      // Auto-save to library
-      if (onTranscriptLoaded) {
-        await onTranscriptLoaded(data.transcript, {
-          source: 'audio',
-          title: file.name,
-          duration: data.duration,
-          creditsUsed: data.credits_used,
-          processingMethod: 'whisper_ai',
-          filename: file.name
-        })
-        setSaveStatus('saved')
+      const { job_id } = data
+      if (!job_id) {
+        toast.error('Failed to start transcription job')
+        return
       }
+
+      // Poll until terminal state
+      const POLL_INTERVAL_MS = 3000
+      const MAX_POLLS = 200
+
+      for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+
+        let job: {
+          status: string
+          transcript?: TranscriptItem[]
+          duration?: number
+          credits_used?: number
+          error_message?: string
+          required_credits?: number
+          available_credits?: number
+        }
+
+        try {
+          const resp = await fetch(`/api/jobs/${job_id}`)
+          if (!resp.ok) {
+            toast.error('Failed to check job status')
+            return
+          }
+          job = await resp.json()
+        } catch {
+          toast.error('Network error while checking job status')
+          return
+        }
+
+        if (
+          job.status === 'pending' ||
+          job.status === 'downloading' ||
+          job.status === 'transcribing' ||
+          job.status === 'saving'
+        ) {
+          setWhisperStatus(job.status as 'pending' | 'downloading' | 'transcribing' | 'saving')
+        } else if (job.status === 'complete') {
+          setTranscript(job.transcript!)
+          setAudioMetadata({
+            filename: file.name,
+            duration: job.duration!,
+            creditsUsed: job.credits_used!,
+          })
+
+          await new Promise(resolve => setTimeout(resolve, 500))
+          await refreshCredits()
+
+          setSaveStatus('saving')
+          if (onTranscriptLoaded) {
+            await onTranscriptLoaded(job.transcript!, {
+              source: 'audio',
+              title: file.name,
+              duration: job.duration!,
+              creditsUsed: job.credits_used!,
+              processingMethod: 'whisper_ai',
+              filename: file.name,
+            })
+            setSaveStatus('saved')
+          }
+          return
+        } else if (job.status === 'error') {
+          if (job.error_message === 'Insufficient credits') {
+            toast.error('Not enough credits to transcribe this file.')
+          } else {
+            toast.error(job.error_message || 'Transcription failed')
+          }
+          return
+        }
+      }
+
+      toast.error('Transcription timed out. Please try again.')
 
     } catch (error) {
       console.error('Transcription error:', error)
       toast.error('Something went wrong. Please try again.')
     } finally {
       setIsTranscribing(false)
+      setWhisperStatus('idle')
     }
   }
 
@@ -361,7 +408,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           {isTranscribing ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Transcribing... this may take up to 30 seconds
+              {whisperStatus === 'pending' ? 'Uploading...'
+                : whisperStatus === 'downloading' ? 'Processing audio...'
+                : whisperStatus === 'transcribing' ? 'Transcribing with Whisper AI...'
+                : whisperStatus === 'saving' ? 'Saving...'
+                : 'Processing...'}
             </>
           ) : (
             <>

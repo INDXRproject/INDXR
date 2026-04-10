@@ -47,6 +47,17 @@ export async function POST(req: Request) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
+    // Block suspended users before touching Stripe
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('suspended')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.suspended) {
+      return new NextResponse('Account suspended. Contact support@indxr.ai', { status: 403 })
+    }
+
     const { plan } = await req.json()
 
     if (!plan || !PACKAGES[plan as keyof typeof PACKAGES]) {
