@@ -840,7 +840,7 @@ async def run_whisper_job(
             duration_seconds=int(duration),
             credits_cost=credit_cost,
             completed_at=job_completed_at.isoformat(),
-            processing_time_seconds=processing_time_seconds,
+            processing_time_seconds=int(processing_time_seconds),
             **({"error_message": truncation_warning} if truncation_warning else {}),
         )
         credits_deducted = False  # Success — do not refund

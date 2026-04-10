@@ -117,6 +117,9 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         'extractor_args': {
             'youtube': {
                 'player_client': ['ios', 'web_embedded'],
+            },
+            'youtubepot-bgutilscript': {
+                'server_home': ['/root/bgutil-ytdlp-pot-provider/server'],
             }
         },
         'enabled_runtimes': ['node', 'deno'],  # Enable node.js/deno for n challenge solving
