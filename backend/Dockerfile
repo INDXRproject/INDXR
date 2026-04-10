@@ -10,6 +10,11 @@ RUN wget -q https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/la
     && chmod +x bgutil-pot-linux-x86_64 \
     && mv bgutil-pot-linux-x86_64 /usr/local/bin/bgutil-pot
 
+# Install bgutil yt-dlp Python plugin from GitHub releases (not on PyPI)
+RUN wget -q https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-ytdlp-pot-provider-rs.zip \
+    && pip install bgutil-ytdlp-pot-provider-rs.zip --break-system-packages \
+    && rm bgutil-ytdlp-pot-provider-rs.zip
+
 # Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
