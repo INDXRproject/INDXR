@@ -12,7 +12,8 @@ ENV PATH=$DENO_INSTALL/bin:$PATH
 
 # bgutil PO token provider for yt-dlp
 RUN pip install bgutil-ytdlp-pot-provider --break-system-packages
-RUN git clone --depth 1 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git /root/bgutil-ytdlp-pot-provider \
+RUN apt-get install -y git nodejs npm && \
+    git clone --depth 1 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git /root/bgutil-ytdlp-pot-provider \
     && cd /root/bgutil-ytdlp-pot-provider/server \
     && npm ci
 
