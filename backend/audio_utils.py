@@ -114,6 +114,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         'no_warnings': False,
         'verbose': False,
         'socket_timeout': 120,
+        'plugin_dirs': ['/root/yt-dlp-plugins'],  # bgutil-ytdlp-pot-provider-rs zip extracted here
         'extractor_args': {
             'youtube': {
                 'player_client': ['mweb', 'web_embedded'],

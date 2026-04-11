@@ -66,13 +66,23 @@ logger = logging.getLogger("indxr-backend")
 
 app = FastAPI(title="INDXR.AI Backend", version="1.0.0")
 
-# Start bgutil PO token HTTP server (Rust binary, no Node/Deno required)
+# Start bgutil PO token HTTP server (Rust binary, no Node/Deno required).
+# Guard with a socket probe so only the first uvicorn worker starts it —
+# subsequent workers will see the port already bound and skip.
 import subprocess as _subprocess
-_bgutil_process = _subprocess.Popen(
-    ['/usr/local/bin/bgutil-pot', 'server', '--host', '127.0.0.1', '--port', '4416'],
-    stdout=_subprocess.DEVNULL,
-    stderr=_subprocess.DEVNULL,
-)
+import socket as _socket
+def _start_bgutil_server() -> None:
+    try:
+        with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as _s:
+            _s.bind(('127.0.0.1', 4416))
+    except OSError:
+        return  # Another worker already owns the port
+    _subprocess.Popen(
+        ['/usr/local/bin/bgutil-pot', 'server', '--host', '127.0.0.1', '--port', '4416'],
+        stdout=_subprocess.DEVNULL,
+        stderr=_subprocess.DEVNULL,
+    )
+_start_bgutil_server()
 
 # CORS configuration for Next.js frontend
 app.add_middleware(
