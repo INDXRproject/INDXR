@@ -628,8 +628,6 @@ async def get_video_metadata(video_id: str):
         'socket_timeout': 10,
         'retries': 3,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'enabled_runtimes': ['node', 'deno'],  # Enable node.js/deno for n challenge solving
-        'remote_components': ['ejs:github'],  # Download challenge solver script
     }
 
     proxy_url = get_proxy_url()

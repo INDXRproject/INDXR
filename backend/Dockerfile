@@ -3,18 +3,17 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y ffmpeg wget unzip && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg wget && rm -rf /var/lib/apt/lists/*
 
 # Install bgutil-pot Rust binary for YouTube PO token generation
 RUN wget -q https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-pot-linux-x86_64 \
     && chmod +x bgutil-pot-linux-x86_64 \
     && mv bgutil-pot-linux-x86_64 /usr/local/bin/bgutil-pot
 
-# Install bgutil yt-dlp plugin zip into yt-dlp plugins directory
+# Keep bgutil plugin zip intact — yt-dlp loads plugins directly from zips in plugin_dirs
 RUN wget -q https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-ytdlp-pot-provider-rs.zip \
     && mkdir -p /root/yt-dlp-plugins \
-    && unzip -q bgutil-ytdlp-pot-provider-rs.zip -d /root/yt-dlp-plugins/ \
-    && rm bgutil-ytdlp-pot-provider-rs.zip
+    && mv bgutil-ytdlp-pot-provider-rs.zip /root/yt-dlp-plugins/
 
 # Python dependencies
 COPY requirements.txt .
