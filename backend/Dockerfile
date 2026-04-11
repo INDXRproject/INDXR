@@ -3,7 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y ffmpeg wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg wget nodejs npm && rm -rf /var/lib/apt/lists/*
 
 # Bundle bgutil-pot Rust binary (pre-downloaded to avoid Railway wget failures)
 COPY bin/bgutil-pot-linux-x86_64 /usr/local/bin/bgutil-pot

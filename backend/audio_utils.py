@@ -117,6 +117,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         'verbose': True,
         'socket_timeout': 120,
         'plugin_dirs': ['/root/yt-dlp-plugins', '/root/yt-dlp-plugins/bgutil-ytdlp-pot-provider-rs.zip'],
+        'js_runtimes': {'node': {}},  # Use Node.js for n-challenge solving (Deno not installed)
         'extractor_args': {
             'youtube': {
                 'player_client': ['mweb', 'web_embedded'],
