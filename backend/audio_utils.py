@@ -121,7 +121,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         'js_runtimes': {'node': {}},  # Use Node.js for n-challenge solving (Deno not installed)
         'extractor_args': {
             'youtube': {
-                'player_client': ['mweb', 'web_embedded'],
+                'player_client': ['ios', 'web_embedded'],
             },
             'youtubepot-bgutilhttp': {
                 'base_url': ['http://127.0.0.1:4416'],
