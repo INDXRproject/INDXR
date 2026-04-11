@@ -92,6 +92,8 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         Exception: If download fails
     """
     import glob
+    import yt_dlp
+    print(f"yt-dlp version: {yt_dlp.version.__version__}", file=__import__('sys').stderr, flush=True)
     base_output_path = os.path.join(output_dir, f"yt_audio_{video_id}")
     final_output_path = f"{base_output_path}.ogg"
 
@@ -110,11 +112,11 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': f"{base_output_path}.%(ext)s",
-        'quiet': True,
+        'quiet': False,
         'no_warnings': False,
-        'verbose': False,
+        'verbose': True,
         'socket_timeout': 120,
-        'plugin_dirs': ['/root/yt-dlp-plugins'],  # bgutil-ytdlp-pot-provider-rs zip extracted here
+        'plugin_dirs': ['/root/yt-dlp-plugins', '/root/yt-dlp-plugins/bgutil-ytdlp-pot-provider-rs.zip'],
         'extractor_args': {
             'youtube': {
                 'player_client': ['mweb', 'web_embedded'],
