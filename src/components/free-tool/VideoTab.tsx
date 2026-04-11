@@ -683,27 +683,19 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           }
         })
 
-        if (onTranscriptLoaded) {
-          await onTranscriptLoaded(event.transcript, {
-            source: 'youtube',
-            title: pendingWhisperData.title,
-            videoId: videoId,
-            videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
-            duration: event.duration || 0,
-            creditsUsed: event.credits_used || 1,
-            processingMethod: 'whisper_ai'
-          })
+        // Backend already saved the transcript — skip onTranscriptLoaded() to avoid duplicate insert.
+        // Just refresh the sidebar and fetch the saved row ID for UI state.
+        window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
 
-          const { data: saved } = await supabase
-            .from('transcripts')
-            .select('id')
-            .eq('video_id', videoId)
-            .eq('processing_method', 'whisper_ai')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          if (saved) setExistingTranscriptId(saved.id)
-        }
+        const { data: saved } = await supabase
+          .from('transcripts')
+          .select('id')
+          .eq('video_id', videoId)
+          .eq('processing_method', 'whisper_ai')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (saved) setExistingTranscriptId(saved.id)
 
         setSaveStatus('saved')
         refreshCredits()
