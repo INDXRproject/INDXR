@@ -538,39 +538,21 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     sessionSavedKeys.current.add(`${metadata.videoId}:whisper_ai`);
     setExistingTranscriptMethod('whisper_ai');
 
-    // Auto-save: always INSERT a NEW record — never overwrite the existing auto-captions transcript
-    setSaveStatus('saving')
+    // Backend already saved the transcript — skip onTranscriptLoaded() to avoid duplicate insert.
+    // Just refresh the sidebar and fetch the saved row ID for UI state.
+    window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
 
-    if (onTranscriptLoaded) {
-      try {
-        await onTranscriptLoaded(transcript, {
-          source: 'youtube',
-          title: metadata.title,
-          videoId: metadata.videoId,
-          videoUrl: `https://www.youtube.com/watch?v=${metadata.videoId}`,
-          duration: metadata.duration,
-          creditsUsed: metadata.creditsUsed,
-          processingMethod: 'whisper_ai',
-          // Explicitly NO duplicateId — always creates a new record
-          // Bug 3 fix: original auto-captions transcript stays untouched
-        })
-        setSaveStatus('saved')
+    const { data: saved } = await supabase
+      .from('transcripts')
+      .select('id')
+      .eq('video_id', metadata.videoId)
+      .eq('processing_method', 'whisper_ai')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (saved) setExistingTranscriptId(saved.id)
 
-          // Record is now in DB — fetch its ID so the duplicate banner shows immediately
-          const { data: saved } = await supabase
-            .from('transcripts')
-            .select('id')
-            .eq('video_id', metadata.videoId)
-            .eq('processing_method', 'whisper_ai')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (saved) setExistingTranscriptId(saved.id);
-        } catch (error) {
-          console.error('Failed to save Whisper transcript:', error)
-          setSaveStatus('error')
-        }
-      }
+    setSaveStatus('saved')
 
       // Clear URL input field after successful transcription
       setUrl("")
