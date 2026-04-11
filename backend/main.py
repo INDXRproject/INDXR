@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 import asyncio
 import json
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +9,6 @@ import re
 import uuid
 import logging
 import yt_dlp
-import urllib.request
 import os
 import tempfile
 import time
