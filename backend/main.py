@@ -82,16 +82,19 @@ def _start_bgutil_server() -> None:
             ['/usr/local/bin/bgutil-pot', '--version'],
             capture_output=True, text=True, timeout=5
         )
-        print(f"bgutil-pot version: {result.stdout.strip()} {result.stderr.strip()}")
+        print(f"bgutil-pot version: {result.stdout.strip()} {result.stderr.strip()}", file=sys.stderr, flush=True)
     except Exception as e:
-        print(f"bgutil-pot binary check failed: {e}")
+        print(f"bgutil-pot binary check failed: {e}", file=sys.stderr, flush=True)
         return
     _subprocess.Popen(
         ['/usr/local/bin/bgutil-pot', 'server', '--host', '127.0.0.1', '--port', '4416'],
         stdout=_subprocess.DEVNULL,
         stderr=_subprocess.DEVNULL,
     )
+import sys
+print("=== BGUTIL SERVER START ATTEMPT ===", file=sys.stderr, flush=True)
 _start_bgutil_server()
+print("=== BGUTIL SERVER START DONE ===", file=sys.stderr, flush=True)
 
 # CORS configuration for Next.js frontend
 app.add_middleware(
