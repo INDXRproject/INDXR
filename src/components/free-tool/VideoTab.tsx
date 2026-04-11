@@ -956,7 +956,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-foreground mb-1">
                   {pendingWhisperData.duration > 0 ? (
-                    <>This video is {Math.round(pendingWhisperData.duration / 60)} minutes.</>
+                    <>This video is {Math.ceil(pendingWhisperData.duration / 60)} minutes.</>
                   ) : (
                     <>Video duration unknown.</>
                   )}
