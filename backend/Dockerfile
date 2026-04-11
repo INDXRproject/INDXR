@@ -5,10 +5,9 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y ffmpeg wget && rm -rf /var/lib/apt/lists/*
 
-# Install bgutil-pot Rust binary for YouTube PO token generation
-RUN wget -q https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-pot-linux-x86_64 \
-    && chmod +x bgutil-pot-linux-x86_64 \
-    && mv bgutil-pot-linux-x86_64 /usr/local/bin/bgutil-pot
+# Bundle bgutil-pot Rust binary (pre-downloaded to avoid Railway wget failures)
+COPY bin/bgutil-pot-linux-x86_64 /usr/local/bin/bgutil-pot
+RUN chmod +x /usr/local/bin/bgutil-pot
 
 # Keep bgutil plugin zip intact — yt-dlp loads plugins directly from zips in plugin_dirs
 RUN wget -q https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-ytdlp-pot-provider-rs.zip \
