@@ -859,6 +859,8 @@ async def run_whisper_job(
                 'video_id': video_id,
                 'title': video_title,
                 'transcript': transcript,
+                'duration': int(duration),
+                'processing_method': 'whisper_ai',
             }).execute()
         )
         transcript_id = transcript_insert.data[0]['id']
