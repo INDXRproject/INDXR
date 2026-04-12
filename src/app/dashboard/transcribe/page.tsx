@@ -139,7 +139,7 @@ export default function TranscribePage() {
         setSaveErrorMessage(errorMsg)
         setPendingSave({ transcript, metadata })
         setShowSaveError(true)
-        return
+        throw new Error(errorMsg)
       }
 
       // Success - no toast, AudioTab shows persistent message
