@@ -69,7 +69,7 @@ The Next.js frontend is deployed on Vercel at https://indxr.ai.
 - **Vercel account**: contact@indxr.ai (old sinbadthesyncer account deleted)
 - **GitHub connection**: INDXRproject/INDXR, branch `master`
 - **Auto-deploy**: Every push to `master` triggers a Vercel deployment
-- **Key environment variables** (set in Vercel dashboard): `PYTHON_BACKEND_URL=https://indxr-production.up.railway.app`, `NEXT_PUBLIC_APP_URL=https://indxr.ai`
+- **Key environment variables** (set in Vercel dashboard): `PYTHON_BACKEND_URL=https://indxr-production.up.railway.app`, `NEXT_PUBLIC_APP_URL=https://indxr.ai`, `NEXT_PUBLIC_PYTHON_BACKEND_URL=https://indxr-production.up.railway.app` (browser-visible — required for direct audio uploads that bypass Vercel's 4.5MB body limit)
 - **DNS**: `indxr.ai` points to `76.76.21.21` (Vercel)
 
 ---
@@ -89,13 +89,13 @@ PROXY_PASSWORD=your-proxy-password
 
 > **Password confusion warning:** The password contains both a capital `I` (India) and a lowercase `l` (lima). They look nearly identical in most fonts. If the proxy returns `407 Proxy Auth Required`, double-check character-by-character.
 
-**Sticky session**: `get_proxy_url()` in `main.py` automatically appends `_session-indxr1_lifetime-10m` to the password. This pins all requests within a job to the same IPRoyal exit IP — required because YouTube CDN URLs are IP-locked, and a rotating IP between the format-selection request and the actual download causes HTTP 403.
+**Sticky session**: `get_proxy_url(session_id)` in `main.py` automatically appends `_session-{session_id}_lifetime-10m` to the password. For Whisper jobs, `session_id=job_id[:8]` — this pins all requests within a job to the same IPRoyal exit IP (required because YouTube CDN URLs are IP-locked). For one-off requests, a random `secrets.token_hex(4)` is used.
 
 **Manual proxy test (with sticky session):**
 
 ```bash
 venv/bin/python3 -m yt_dlp \
-  --proxy "http://your-proxy-username:your-proxy-password_session-indxr1_lifetime-10m@geo.iproyal.com:12321" \
+  --proxy "http://your-proxy-username:your-proxy-password_session-test0001_lifetime-10m@geo.iproyal.com:12321" \
   --extractor-args "youtube:player_client=ios,web_embedded" \
   "https://youtu.be/VIDEO_ID" \
   -f "bestaudio/best" \
@@ -130,20 +130,20 @@ git push
 
 Full flow when debugging transcription issues:
 
-1. Frontend calls `POST /api/transcribe/whisper` with `video_id` or `audio_file`
-2. `main.py` creates a `whisper_jobs` row in Supabase (`status: pending`) and returns `{ job_id }` immediately
-3. `run_whisper_job` background task begins: `extract_youtube_audio()` in `audio_utils.py`
-4. yt-dlp downloads audio-only stream (`bestaudio/best` via iOS + web_embedded clients) via IPRoyal sticky-session proxy; bgutil-pot provides GVS PO tokens for `web_embedded`
+1. **YouTube path**: Frontend calls `POST /api/transcribe/whisper` (Next.js route) → forwards to Railway. **Audio upload path**: Browser calls `POST /api/transcribe/preflight` (rate limit + suspended check), then posts the file directly to Railway with `Authorization: Bearer <jwt>`.
+2. `main.py` verifies JWT (upload path), creates a `transcription_jobs` row in Supabase (`status: pending`), and returns `{ job_id }` immediately
+3. `run_whisper_job` background task begins: for YouTube, `extract_youtube_audio()` in `audio_utils.py`; for uploads, the file is already in memory
+4. yt-dlp downloads audio-only stream (`bestaudio/best` via iOS + web_embedded clients) via IPRoyal sticky-session proxy (`session_id=job_id[:8]`); bgutil-pot provides GVS PO tokens for `web_embedded`
 5. ffmpeg converts to **mono 12kbps Opus/OGG** (`libopus`, `-application voip`, output `.ogg`)
 6. OGG file sent to AssemblyAI Universal-3 Pro (`assemblyai_client.py`); SDK polls until complete
 7. Truncation check: retained in code but inactive — AssemblyAI has no 25MB limit
-8. Transcript inserted into Supabase `transcripts` (with `video_id`, `title`, `duration`, `processing_method: 'whisper_ai'`), credits deducted atomically
-9. `whisper_jobs` row updated to `status: complete` with `completed_at` and `processing_time_seconds`
-10. Frontend polling detects `complete`, loads transcript, shows green banner
+8. Transcript inserted into Supabase `transcripts` (with `video_id`, `title`, `duration`, `processing_method: 'assemblyai'`, `character_count`), credits deducted atomically
+9. `transcription_jobs` row updated to `status: complete` with `completed_at` and `processing_time_seconds`
+10. Frontend polling detects `complete`, loads transcript, shows green banner with processing time
 
-> **Job state in Supabase**: All job state lives in `whisper_jobs` — not in-memory. Railway restarts mid-job lose the background task; job will stall with no automatic recovery.
+> **Job state in Supabase**: All job state lives in `transcription_jobs` — not in-memory. Railway restarts mid-job lose the background task; job will stall with no automatic recovery.
 
-> **No duplicate inserts**: Frontend's `onTranscriptLoaded()` is intentionally skipped after Whisper jobs — backend is the sole writer. Only the auto-captions path uses `onTranscriptLoaded()`.
+> **No duplicate inserts**: AudioTab dispatches `indxr-library-refresh` CustomEvent instead of calling `onTranscriptLoaded()` — backend is the sole writer for AssemblyAI jobs. Only the auto-captions path uses `onTranscriptLoaded()`.
 
 **Node.js JS runtime**: yt-dlp uses Node.js (installed via apt in Docker) with `yt-dlp-ejs` to solve YouTube n-challenges. Configured via `js_runtimes: {'node': {}}` in `ydl_opts`.
 
@@ -209,7 +209,7 @@ The dashboard uses a 4-tab system for transcripts and summaries.
 
 | Symptom | Likely Cause | Fix |
 |---------|--------------|-----|
-| YouTube audio download 403 | Proxy IP rotated mid-job | Check sticky session is appended in `get_proxy_url()` — `_session-indxr1_lifetime-10m` |
+| YouTube audio download 403 | Proxy IP rotated mid-job | Check sticky session is appended in `get_proxy_url()` — `_session-{job_id[:8]}_lifetime-10m` |
 | YouTube audio download 403 | bgutil-pot not running | Check `bgutil-pot --version` and that port 4416 is listening |
 | Credit cost shows "1" for any video | Metadata route returning no duration | Check `/api/video/metadata/{id}` returns `duration` |
 | Backend changes not reflected | uvicorn without `--reload` | Restart with `--reload` flag |

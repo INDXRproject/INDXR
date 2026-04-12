@@ -58,7 +58,7 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
 - **Auto-deploy**: Every push to `master` branch triggers a Railway rebuild
 - **Service variables**: `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`, `ASSEMBLYAI_API_KEY=<your key>`
 - **To update yt-dlp or any Python package**: `cd backend && venv/bin/pip install --upgrade yt-dlp && venv/bin/pip freeze > requirements.txt` then commit and push — Railway rebuilds automatically
-- **Security gap**: No authentication on the Railway backend — any client that knows the Railway URL can call the API. Post-launch: add a shared `BACKEND_API_SECRET` header between Vercel and Railway.
+- **Security gap**: No authentication on the Railway backend for most endpoints — any client that knows the Railway URL can call the API. Exception: the audio upload endpoint (`/api/transcribe/whisper` with `source_type=upload`) verifies a Supabase JWT. Post-launch: add a shared `BACKEND_API_SECRET` header between Vercel and Railway for the remaining endpoints.
 
 #### Vercel (Frontend)
 
@@ -66,7 +66,7 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
 - **GitHub repo**: INDXRproject/INDXR, branch `master`
 - **Vercel account**: contact@indxr.ai
 - **Auto-deploy**: Every push to `master` triggers a Vercel deployment
-- **Key environment variables**: `PYTHON_BACKEND_URL=https://indxr-production.up.railway.app`, `NEXT_PUBLIC_APP_URL=https://indxr.ai`
+- **Key environment variables**: `PYTHON_BACKEND_URL=https://indxr-production.up.railway.app`, `NEXT_PUBLIC_APP_URL=https://indxr.ai`, `NEXT_PUBLIC_PYTHON_BACKEND_URL=https://indxr-production.up.railway.app` (browser-visible — required for direct audio uploads that bypass Vercel's 4.5MB body limit)
 
 ---
 
@@ -96,14 +96,16 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
 
 ### AI Transcription Pipeline
 
-When a user requests AI transcription, the backend runs `run_whisper_job` as an `asyncio` background task. The HTTP POST returns `{ job_id, status: "pending" }` immediately; the frontend polls `/api/jobs/{job_id}` every 3 seconds. Job state is persisted in the Supabase `whisper_jobs` table (columns: `id, user_id, status, video_url, source_type, credits_cost, transcript_id, error_message, created_at, updated_at, started_at, completed_at, processing_time_seconds`).
+When a user requests AI transcription, the backend runs `run_whisper_job` as an `asyncio` background task. The HTTP POST returns `{ job_id, status: "pending" }` immediately; the frontend polls `/api/jobs/{job_id}` every 3 seconds. Job state is persisted in the Supabase `transcription_jobs` table (columns: `id, user_id, status, video_url, source_type, credits_cost, transcript_id, error_message, file_size_bytes, file_format, processing_time_seconds, created_at, updated_at, started_at, completed_at`).
+
+**Audio file upload**: Browser posts directly to Railway (`NEXT_PUBLIC_PYTHON_BACKEND_URL`) with `Authorization: Bearer <supabase_jwt>`. A lightweight Next.js preflight endpoint (`/api/transcribe/preflight`) handles rate limiting and suspended checks without touching the file body. The Python backend verifies the JWT via `supabase.auth.get_user(token)` and extracts the real `user_id` — never trusts the form body. Maximum file size: 500MB.
 
 **Step 1 — yt-dlp download (proxy-consistent):**
 
 ```python
 ydl_opts = {
     'format': 'bestaudio/best',
-    'proxy': proxy_url,  # IPRoyal sticky session: password_session-indxr1_lifetime-10m
+    'proxy': proxy_url,  # IPRoyal sticky session: password_session-{job_id[:8]}_lifetime-10m (per-job)
     'nocheckcertificate': True,
     'plugin_dirs': ['/root/yt-dlp-plugins', '/root/yt-dlp-plugins/bgutil-ytdlp-pot-provider-rs.zip'],
     'js_runtimes': {'node': {}},
@@ -148,11 +150,12 @@ supabase.table('transcripts').insert({
     'title': video_title,
     'transcript': transcript,
     'duration': int(duration),
-    'processing_method': 'whisper_ai',  # tech debt: should be renamed to 'assemblyai'
+    'processing_method': 'assemblyai',
+    'character_count': character_count,  # sum of len(item['text']) for all segments
 })
 ```
 
-Frontend skips `onTranscriptLoaded()` after Whisper jobs — backend is the sole writer to prevent duplicate rows.
+Backend is the sole writer for AssemblyAI jobs — frontend dispatches `indxr-library-refresh` CustomEvent instead of calling `onTranscriptLoaded()` to prevent duplicate rows.
 
 **Credit Calculation:**
 

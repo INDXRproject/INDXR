@@ -86,12 +86,14 @@
 - [x] Retain yt-dlp audio download pipeline; upload file to AssemblyAI instead of OpenAI
 - [x] Benefits: no token-limit truncation, 3–5× faster turnaround, 42% cheaper ($0.21/hr vs $0.36/hr), no 25MB file size limit
 - [x] `assemblyai_client.py` created; models `["universal-3-pro", "universal-2"]`; word-level timestamps → ~5s segments
-- [x] `processing_method: 'whisper_ai'` and `duration` now saved in `transcripts` insert
-- [x] Frontend duplicate-insert bug fixed: `onTranscriptLoaded()` skipped after Whisper jobs; backend is sole writer
+- [x] `processing_method: 'assemblyai'` and `duration` and `character_count` now saved in `transcripts` insert
+- [x] Frontend duplicate-insert bug fixed: `onTranscriptLoaded()` removed from AudioTab; backend is sole writer; `indxr-library-refresh` CustomEvent dispatched instead
 - [x] Verified working at: 11 min, 22 min, 54 min, 113 min, 148 min, 214 min
+- [x] Direct browser→Railway audio upload with JWT auth — bypasses Vercel 4.5MB body limit; preflight endpoint handles rate limiting; 500MB max
+- [x] `whisper_jobs` table renamed → `transcription_jobs`; added `file_size_bytes`, `file_format`, `processing_time_seconds` columns
+- [x] AudioTab light-mode UI fixed (theme-aware Tailwind classes); live elapsed timer during job
 
 **Tech debt remaining**:
-- `processing_method: 'whisper_ai'` should be renamed to `assemblyai` — requires DB migration + coordinated frontend update
 - 90-min warning in Whisper confirmation modal references old OpenAI limitations — should be removed
 
 ### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
@@ -215,8 +217,8 @@ Ideas validated but not prioritized:
 
 **Tech Debt**
 - [ ] iOS PO token for bgutil — currently only `web_embedded` client receives PO tokens; iOS client bypasses the flow entirely but may need tokens in future yt-dlp versions
-- [ ] Random session ID per job — replace hardcoded `indxr1` in `get_proxy_url()` with `uuid4().hex[:8]` so concurrent jobs don't share a session slot
-- [ ] Rename `processing_method: 'whisper_ai'` → `assemblyai` — requires DB migration + coordinated frontend update
+- [x] Random session ID per job — `get_proxy_url(session_id)` now uses `job_id[:8]`; falls back to `secrets.token_hex(4)` for one-off requests
+- [x] Rename `processing_method: 'whisper_ai'` → `assemblyai` — done; `transcription_jobs` table renamed from `whisper_jobs`; `character_count` added to transcript insert
 
 **Infrastructure & Go-Live**
 - [ ] Stripe live keys — switch from test to live, verify webhook, fill `STRIPE_WEBHOOK_SECRET` in Vercel

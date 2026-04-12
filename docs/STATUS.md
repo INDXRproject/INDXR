@@ -23,14 +23,14 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 - **Playlist**: Full playlist extraction with video selection and availability pre-scan
 - **AI Transcription**: Two-step audio pipeline (yt-dlp + ffmpeg → AssemblyAI Universal-3 Pro)
   - Format selector `bestaudio/best` via iOS + web_embedded player clients
-  - IPRoyal residential proxy with sticky session (`_session-indxr1_lifetime-10m`) to prevent CDN 403 from IP rotation
+  - IPRoyal residential proxy with per-job sticky session (`_session-{job_id[:8]}_lifetime-10m`) — each job gets a unique exit IP slot; one-off requests (captions, metadata) use `secrets.token_hex(4)` random sessions
   - bgutil-pot Rust binary (`/usr/local/bin/bgutil-pot`) provides GVS PO tokens via HTTP server at `127.0.0.1:4416`
   - bgutil yt-dlp plugin loaded from `/root/yt-dlp-plugins/` zip via `plugin_dirs`
   - Node.js installed in Docker image for yt-dlp-ejs n-challenge solving
   - Credit cost: `Math.ceil(duration_seconds / 600)` (1 credit per 10 mins)
   - yt-dlp updated to 2026.03.17 (fixes YouTube Error 152 regression from March 2026)
   - Verified working video lengths: 11 min, 22 min, 54 min, 113 min, 148 min, 214 min
-- **Audio Upload**: Manual `.mp3/.wav` file upload → AssemblyAI transcription (no file size limit)
+- **Audio Upload**: Browser uploads directly to Railway (bypasses Vercel 4.5MB limit); Supabase JWT verified by Python backend; 500MB limit enforced on both frontend and backend; preflight endpoint handles rate-limiting before transfer
 - **Duplicate Detection**: Composite key (`video_id` + `processing_method`) prevents duplicates
 
 ### AI Summarization (Phase G)
@@ -86,26 +86,26 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 
 ### AI Transcription Background Job Architecture (Phase N + Phase O)
 
-- **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the **Supabase `whisper_jobs` table** at each step. Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction.
+- **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the **Supabase `transcription_jobs` table** at each step. Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction.
 - **Transcription engine**: AssemblyAI Universal-3 Pro (`assemblyai_client.py`). Falls back to Universal-2. No file size limit, no truncation. The SDK polls internally until the job completes.
-- **Job timing**: `started_at`, `completed_at`, and `processing_time_seconds` written to `whisper_jobs` on each job; frontend shows a live elapsed timer and "Completed in M:SS" on finish.
+- **Job tracking columns** (`transcription_jobs`): `started_at`, `completed_at`, `processing_time_seconds`, `file_size_bytes`, `file_format` (e.g. `mp3`, `wav`, `youtube`). Frontend shows a live elapsed timer and "Completed in M:SS" on finish.
 - **Truncation detection**: Retained in code but effectively inactive with AssemblyAI — no 25MB limit means no truncation.
 - **Audio codec**: ffmpeg converts downloaded audio to **Opus/OGG at 12kbps mono** (`libopus`, `-application voip`). Output extension: `.ogg`.
-- **GET** `/api/jobs/{job_id}?user_id=...`: Queries Supabase `whisper_jobs` table. Returns current status with ownership check; 404 for unknown jobs, 403 for wrong owner.
-- **Next.js whisper route** (`src/app/api/transcribe/whisper/route.ts`): Auth, suspension check, and **rate limiting** (`checkRateLimit`). Returns `{ job_id, status }` JSON from backend directly. `maxDuration` 60s.
+- **GET** `/api/jobs/{job_id}?user_id=...`: Queries Supabase `transcription_jobs` table. Returns current status, `processing_time_seconds`, and transcript with ownership check; 404 for unknown jobs, 403 for wrong owner.
+- **Next.js whisper route** (`src/app/api/transcribe/whisper/route.ts`): YouTube path only — auth, suspension check, and **rate limiting** (`checkRateLimit`). Returns `{ job_id, status }` JSON from backend directly. `maxDuration` 60s.
+- **Next.js preflight route** (`src/app/api/transcribe/preflight/route.ts`): Auth, suspension check, and rate limiting for the audio upload path. Returns `{ ok: true }` before the browser sends the file. `maxDuration` 10s.
+- **Audio upload — direct to Railway**: `AudioTab.tsx` calls preflight, gets Supabase JWT via `supabase.auth.getSession()`, then POSTs the file directly to `${NEXT_PUBLIC_PYTHON_BACKEND_URL}/api/transcribe/whisper` with `Authorization: Bearer <jwt>`. Python backend verifies the JWT via `supabase.auth.get_user(token)` and extracts the real `user_id` — the form body `user_id` field is ignored for uploads. Bypasses Vercel's 4.5MB body limit.
 - **Next.js jobs route** (`src/app/api/jobs/[job_id]/route.ts`): Auth check, suspended check, forwards GET to Railway with `?user_id` query param.
 - **Next.js metadata route** (`src/app/api/video/metadata/[videoId]/route.ts`): Proxies to FastAPI `GET /api/video/metadata/{video_id}`. Used by frontend for accurate credit pre-calculation before showing Whisper confirmation modal.
 - **Frontend** (`src/components/free-tool/VideoTab.tsx`): `pollWhisperJob` polls every 3s; refs-based interval management prevents stale job_id bug; button label "Generate with AI" while toggle is on; processing time estimate shown in confirm modal.
-- **Transcripts insert**: `video_id`, `title`, `duration`, and `processing_method: 'whisper_ai'` saved alongside `user_id` and `transcript`. Frontend skips `onTranscriptLoaded()` after Whisper jobs (backend is the sole writer) to prevent duplicate rows.
+- **Transcripts insert**: `video_id`, `title`, `duration`, `character_count`, and `processing_method: 'assemblyai'` saved alongside `user_id` and `transcript`. Frontend skips `onTranscriptLoaded()` after Whisper jobs (backend is the sole writer) to prevent duplicate rows.
 - **CORS**: Production domains (`indxr.ai`, `www.indxr.ai`, `indxr.vercel.app`) added to Railway backend allowed origins.
-- **AudioTab** (`src/components/free-tool/AudioTab.tsx`): Uses polling (`/api/jobs/{job_id}`) instead of SSE.
+- **AudioTab** (`src/components/free-tool/AudioTab.tsx`): Direct upload to Railway with JWT; polling (`/api/jobs/{job_id}`) for status; live elapsed timer; light-mode contrast fixed (replaced hardcoded `text-white`/`bg-zinc-900` with `text-foreground`/`bg-muted`).
 - **Stripe**: Suspended user check added to `/api/stripe/checkout` before Stripe session creation.
 - **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Polls `/api/jobs/{job_id}` (waits for complete/error).
 
 **Tech debt**:
-- `processing_method: 'whisper_ai'` should eventually be renamed to `assemblyai` now that the engine has changed. Frontend queries and backend inserts use `whisper_ai` consistently — a rename requires a DB migration and coordinated frontend update.
 - The 90-min warning in the Whisper confirmation modal still references old OpenAI limitations. AssemblyAI has no such limit — this warning should be removed.
-- Sticky proxy session ID is hardcoded as `indxr1` in `get_proxy_url()` (`main.py`). Should generate a unique random ID per extraction job (e.g. `uuid4().hex[:8]`) so concurrent jobs don't share the same session slot.
 
 ### Logging Verbosity Control
 
@@ -278,7 +278,7 @@ The project uses a neutral utility skin (April 2025) replacing the previous Star
 - [ ] Backup database before launch
 
 **Infrastructure:**
-- [ ] Set all environment variables in Vercel
+- [ ] Set all environment variables in Vercel — including `NEXT_PUBLIC_PYTHON_BACKEND_URL=https://indxr-production.up.railway.app` (required for direct audio uploads)
 - [ ] Verify IPRoyal proxy credentials (password has confusable `I`/`l`)
 - [ ] Fill in `STRIPE_WEBHOOK_SECRET` in Vercel — currently set but empty; required for live webhook signature validation
 - [ ] Configure Upstash Redis: add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to Vercel environment variables — rate limiting is currently disabled (app falls back to `noopLimiter` automatically)
