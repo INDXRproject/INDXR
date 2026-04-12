@@ -1082,6 +1082,7 @@ async def get_job_status(job_id: str, user_id: str):
         "job_id": job_id,
         "status": job['status'],
         "transcript": transcript,
+        "transcript_id": job.get('transcript_id'),
         "duration": job.get('duration_seconds'),
         "credits_used": job.get('credits_cost'),
         "processing_time_seconds": job.get('processing_time_seconds'),

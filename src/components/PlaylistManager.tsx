@@ -75,6 +75,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
   const [availabilitySummary, setAvailabilitySummary] = useState<AvailabilitySummary | null>(null)
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
+  const [finalElapsed, setFinalElapsed] = useState(0)
   const [hasExtracted, setHasExtracted] = useState(false);
   const [existingDuplicates, setExistingDuplicates] = useState<Record<string, string>>({}); // video_id -> transcript_id
   const supabase = createClient();
@@ -90,12 +91,13 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
       )
       if (allDone) {
          setIsCompleted(true)
+         setFinalElapsed(elapsedSeconds)
          refreshCredits()
       }
     } else if (isExtracting) {
       setIsCompleted(false)
     }
-  }, [isExtracting, videoStatuses, refreshCredits])
+  }, [isExtracting, videoStatuses, refreshCredits, elapsedSeconds])
 
   const handleReset = () => {
     setHasExtracted(false);
@@ -350,6 +352,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                              <p className="text-muted-foreground text-sm">
                                  {Object.values(videoStatuses).filter(s => s === 'success').length}/{Object.keys(videoStatuses).length} processed successfully
                                  {(() => { const f = Object.values(videoStatuses).filter(s => s !== 'success' && s !== 'pending' && s !== 'extracting' && s !== 'unavailable').length; return f > 0 ? ` • ${f} failed` : ''; })()}
+                                 {finalElapsed > 0 ? ` • Completed in ${formatElapsed(finalElapsed)}` : ''}
                              </p>
                         </div>
                     </div>

@@ -16,6 +16,7 @@ import { useEffect } from "react"
 
 export default function TranscribePage() {
   const [activeTab, setActiveTab] = useState("video")
+  const [isExtracting, setIsExtracting] = useState(false)
   const [showSaveError, setShowSaveError] = useState(false)
   const [saveErrorMessage, setSaveErrorMessage] = useState("")
   const [pendingSave, setPendingSave] = useState<{ transcript: TranscriptItem[], metadata: TranscriptMetadata } | null>(null)
@@ -287,9 +288,12 @@ export default function TranscribePage() {
 
             if (job.status === 'complete') {
               jobDone = true
-              // The backend is the sole writer for Whisper transcript content.
-              // Update only the placeholder row with the real title and data so it
-              // no longer shows "Processing Video [ID]...".
+              // run_whisper_job always INSERTs its own transcript row. Delete it
+              // to avoid a duplicate — we keep the frontend placeholder and update
+              // it with the real data instead.
+              if (job.transcript_id && job.transcript_id !== transcriptId) {
+                await supabase.from('transcripts').delete().eq('id', job.transcript_id)
+              }
               const transcript: typeof job.transcript = job.transcript ?? []
               const duration = transcript.length > 0
                 ? Math.ceil(transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration)
@@ -372,27 +376,34 @@ export default function TranscribePage() {
          <p className="text-[var(--text-muted)]">Extract captions from videos, playlists, or audio files.</p>
        </div>
 
-       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
+       <Tabs value={activeTab} onValueChange={(v) => { if (!isExtracting) setActiveTab(v) }} className="w-full space-y-8">
         <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-[var(--bg-elevated)] h-auto rounded-xl">
-          <TabsTrigger 
-            value="video" 
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
+          <TabsTrigger
+            value="video"
+            disabled={isExtracting}
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Video className="h-4 w-4" /> Single Video
           </TabsTrigger>
-          <TabsTrigger 
-            value="playlist" 
+          <TabsTrigger
+            value="playlist"
             className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
           >
             <ListMusic className="h-4 w-4" /> Playlist
           </TabsTrigger>
-          <TabsTrigger 
-            value="audio" 
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
+          <TabsTrigger
+            value="audio"
+            disabled={isExtracting}
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Mic className="h-4 w-4" /> Audio Upload
           </TabsTrigger>
         </TabsList>
+        {isExtracting && (
+          <p className="text-xs text-amber-500/80 text-center -mt-4">
+            Extraction in progress — switching tabs will cancel it.
+          </p>
+        )}
 
         <TabsContent value="video">
           <VideoTab
@@ -409,6 +420,7 @@ export default function TranscribePage() {
             onExtractVideo={processVideo}
             onSwitchToAudio={() => setActiveTab('audio')}
             onPlaylistComplete={handlePlaylistComplete}
+            onExtractingChange={setIsExtracting}
           />
         </TabsContent>
 

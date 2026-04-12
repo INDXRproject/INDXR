@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { PlaylistManager, VideoStatus } from "@/components/PlaylistManager"
 import { AlertCircle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -28,9 +28,10 @@ interface PlaylistTabProps {
   onExtractVideo?: (videoId: string, options?: { status?: string; duplicateId?: string; duplicateAction?: 'replace' | 'reset'; collectionId?: string; title?: string }) => Promise<void>
   onSwitchToAudio?: () => void
   onPlaylistComplete?: (stats: PlaylistStats) => void
+  onExtractingChange?: (extracting: boolean) => void
 }
 
-export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, onSwitchToAudio, onPlaylistComplete }: PlaylistTabProps) {
+export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, onSwitchToAudio, onPlaylistComplete, onExtractingChange }: PlaylistTabProps) {
   const [error, setError] = useState<{ message: string; isCreditsError?: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [videoStatuses, setVideoStatuses] = useState<Record<string, VideoStatus>>({})
@@ -39,6 +40,17 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
   const { credits, refreshCredits } = useAuth()
+
+  // Notify parent of extraction state changes
+  useEffect(() => { onExtractingChange?.(loading) }, [loading, onExtractingChange])
+
+  // Warn before browser/tab close while extraction is running
+  useEffect(() => {
+    if (!loading) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [loading])
 
   const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string) => {
     setError(null)
