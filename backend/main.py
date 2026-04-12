@@ -713,17 +713,27 @@ async def run_whisper_job(
                 return
             except Exception as e:
                 error_msg = str(e)
-                if any(kw in error_msg.lower() for kw in MEMBERS_ONLY_KEYWORDS):
+                error_lower = error_msg.lower()
+                if any(kw in error_lower for kw in MEMBERS_ONLY_KEYWORDS):
                     await update_job(status="error", error_message="members_only")
                     return
-                is_restricted = '152' in error_msg or 'unavailable' in error_msg.lower()
+                if any(kw in error_lower for kw in ('age-restricted', 'age restricted', 'only available on youtube')):
+                    error_type = 'age_restricted'
+                elif any(kw in error_lower for kw in ('sign in to confirm', 'confirming you', 'not a bot')):
+                    error_type = 'bot_detection'
+                elif any(kw in error_lower for kw in ('timed out', 'timeout', 'read timed out')):
+                    error_type = 'timeout'
+                elif '152' in error_msg or 'unavailable' in error_lower:
+                    error_type = 'youtube_restricted'
+                else:
+                    error_type = 'extraction_error'
                 track_event(user_id, 'whisper_failed', {
                     'video_id': video_id,
                     'source_type': source_type,
-                    'error_type': 'youtube_restricted' if is_restricted else 'extraction_error',
+                    'error_type': error_type,
                     'error_message': error_msg
                 })
-                await update_job(status="error", error_message=error_msg)
+                await update_job(status="error", error_message=error_msg, error_type=error_type)
                 return
         else:
             logger.info(f"[job {job_id}] Writing uploaded audio to temp file: {audio_filename}")

@@ -42,7 +42,7 @@ interface AvailabilitySummary {
   totalCredits: number
 }
 
-export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech' | 'youtube_restricted'
+export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech' | 'youtube_restricted' | 'age_restricted' | 'bot_detection' | 'timeout' | 'members_only'
 
 interface PlaylistManagerProps {
   onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string) => void;

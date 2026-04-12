@@ -244,13 +244,13 @@ export default function TranscribePage() {
         }
 
         // Auto-save: always update the placeholder record with real data
-        await handleTranscriptLoaded(data.transcript, { 
+        await handleTranscriptLoaded(data.transcript, {
           source: 'youtube',
           // Bug 1 fix: for Whisper responses data.title is undefined — use the
           // title passed in from the playlist availability map as the fallback
           title: data.title || options?.title || `Video ${videoId}`,
           duration: 0, // Will be calculated from transcript
-          videoId, 
+          videoId,
           videoUrl: data.video_url,
           processingMethod: effectiveMethod,
           duplicateId: transcriptId,
@@ -258,11 +258,16 @@ export default function TranscribePage() {
           collectionId: options?.collectionId,
           isPlaceholder: !options?.duplicateId, // True for new videos (placeholder), false for user-triggered duplicate
         })
+        // Placeholder was promoted to a real transcript — don't delete it in finally
+        createdPlaceholderId = null;
         
     } catch (error) {
         console.error(`Process video ${videoId} failed:`, error)
-
-        // Clean up placeholder row if we created one and extraction failed
+        // Re-throw with the original message so callers can detect specific errors
+        // (e.g. 'no_speech_detected' from Whisper on silent videos)
+        throw error
+    } finally {
+        // Always clean up placeholder row if we created one and it wasn't promoted to a real transcript
         if (createdPlaceholderId) {
           try {
             await supabase.from('transcripts').delete().eq('id', createdPlaceholderId);
@@ -271,10 +276,6 @@ export default function TranscribePage() {
             console.error('Failed to clean up placeholder:', cleanupError);
           }
         }
-
-        // Re-throw with the original message so callers can detect specific errors
-        // (e.g. 'no_speech_detected' from Whisper on silent videos)
-        throw error
     }
   }
 

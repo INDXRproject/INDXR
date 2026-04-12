@@ -95,7 +95,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
       
       let successCount = 0;
       let processedCount = 0;
-      
+      // Local status tracker — React state updates are async so we can't read videoStatuses mid-loop
+      const localStatuses: Record<string, VideoStatus> = { ...initialStatuses };
+
       for (const videoId of videoIds) {
           // Skip if already marked unavailable
           if (initialStatuses[videoId] === 'unavailable') {
@@ -117,12 +119,13 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
                  collectionId: autoCollectionId,
                  title: videoData?.title,
               });
-              
+
+              localStatuses[videoId] = 'success';
               setVideoStatuses(prev => ({ ...prev, [videoId]: 'success' }))
               successCount++;
-              
+
               const isWhisper = videoData?.status === 'needs_whisper' || videoData?.status === 'whisper_ai';
-              
+
               // Track in PostHog
               posthog.capture('transcript_extracted', {
                   type: 'playlist_video',
@@ -135,25 +138,60 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
           } catch (e) {
               console.error(`Failed to extract ${videoId}:`, e);
               const errMsg = e instanceof Error ? e.message : '';
-              const isNoSpeech = errMsg === 'no_speech_detected';
-              const isYouTubeRestricted = errMsg.includes('152') || errMsg.toLowerCase().includes('unavailable');
+              const errLower = errMsg.toLowerCase();
 
               let status: VideoStatus = 'error';
-              if (isNoSpeech) status = 'no_speech';
-              else if (isYouTubeRestricted) status = 'youtube_restricted';
+              if (errMsg === 'no_speech_detected') status = 'no_speech';
+              else if (errLower.includes('members_only') || errLower.includes('members-only')) status = 'members_only';
+              else if (errLower.includes('age')) status = 'age_restricted';
+              else if (errLower.includes('sign in') || errLower.includes('bot')) status = 'bot_detection';
+              else if (errLower.includes('timed out') || errLower.includes('timeout')) status = 'timeout';
+              else if (errMsg.includes('152') || errLower.includes('unavailable')) status = 'youtube_restricted';
 
+              localStatuses[videoId] = status;
               setVideoStatuses(prev => ({ ...prev, [videoId]: status }))
           }
       }
-      
-      
-      if (successCount === videoIds.length) {
-          // PlaylistManager handles the "Extraction Complete" view
-          setProgressMessage(""); 
-      } else {
-          setProgressMessage("");
+
+      // Retry videos that were blocked by bot detection or timed out — wait 30s then retry once
+      const retryIds = videoIds.filter(id => localStatuses[id] === 'bot_detection' || localStatuses[id] === 'timeout');
+
+      if (retryIds.length > 0) {
+          setProgressMessage(`Retrying ${retryIds.length} temporarily blocked video${retryIds.length !== 1 ? 's' : ''}... (waiting 30s)`);
+          await new Promise(resolve => setTimeout(resolve, 30000));
+
+          for (const videoId of retryIds) {
+              setProgressMessage(`Retrying ${videoId}...`);
+              try {
+                  setVideoStatuses(prev => ({ ...prev, [videoId]: 'extracting' }))
+                  const videoData = availabilityMap.get(videoId);
+                  await onExtractVideo(videoId, {
+                      status: videoData?.status,
+                      duplicateId: videoData?.duplicateId,
+                      duplicateAction: videoData?.duplicateAction,
+                      collectionId: autoCollectionId,
+                      title: videoData?.title,
+                  });
+                  setVideoStatuses(prev => ({ ...prev, [videoId]: 'success' }))
+                  successCount++;
+                  refreshCredits();
+              } catch (e) {
+                  console.error(`Retry failed for ${videoId}:`, e);
+                  const errMsg = e instanceof Error ? e.message : '';
+                  const errLower = errMsg.toLowerCase();
+                  let status: VideoStatus = 'error';
+                  if (errMsg === 'no_speech_detected') status = 'no_speech';
+                  else if (errLower.includes('members_only') || errLower.includes('members-only')) status = 'members_only';
+                  else if (errLower.includes('age')) status = 'age_restricted';
+                  else if (errLower.includes('sign in') || errLower.includes('bot')) status = 'bot_detection';
+                  else if (errLower.includes('timed out') || errLower.includes('timeout')) status = 'timeout';
+                  else if (errMsg.includes('152') || errLower.includes('unavailable')) status = 'youtube_restricted';
+                  setVideoStatuses(prev => ({ ...prev, [videoId]: status }))
+              }
+          }
       }
-      // setProgressMessage("") <- Don't clear immediately
+
+      setProgressMessage("");
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to extract playlist"
