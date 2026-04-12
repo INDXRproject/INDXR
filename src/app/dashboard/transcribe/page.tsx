@@ -265,16 +265,41 @@ export default function TranscribePage() {
         }
         
         const data = await response.json()
-        
+
         if (!response.ok || data.success === false) {
             throw new Error(data.error || 'Failed to extract transcript')
         }
 
+        // Whisper jobs return { job_id, status: "pending" } — poll until terminal state.
+        // captions jobs return the transcript directly, so this block is skipped for them.
+        let transcript = data.transcript
+        if (data.job_id && data.status === 'pending') {
+          const POLL_INTERVAL_MS = 3000
+          const MAX_POLLS = 200 // 10 minutes max
+          let jobDone = false
+
+          for (let i = 0; i < MAX_POLLS; i++) {
+            await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+            const pollResp = await fetch(`/api/jobs/${data.job_id}`)
+            if (!pollResp.ok) throw new Error('Failed to check job status')
+            const job = await pollResp.json()
+
+            if (job.status === 'complete') {
+              transcript = job.transcript
+              jobDone = true
+              break
+            } else if (job.status === 'error') {
+              throw new Error(job.error_message || 'Transcription failed')
+            }
+            // pending / downloading / transcribing / saving — keep polling
+          }
+
+          if (!jobDone) throw new Error('Transcription timed out')
+        }
+
         // Auto-save: always update the placeholder record with real data
-        await handleTranscriptLoaded(data.transcript, {
+        await handleTranscriptLoaded(transcript, {
           source: 'youtube',
-          // Bug 1 fix: for Whisper responses data.title is undefined — use the
-          // title passed in from the playlist availability map as the fallback
           title: data.title || options?.title || `Video ${videoId}`,
           duration: 0, // Will be calculated from transcript
           videoId,
