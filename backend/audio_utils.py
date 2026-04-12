@@ -13,7 +13,7 @@ import yt_dlp
 
 logger = logging.getLogger("indxr-backend")
 
-# Supported audio formats for Whisper API
+# Supported audio formats for AssemblyAI compatibility
 SUPPORTED_FORMATS = {'.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', '.ogg', '.flac'}
 MAX_FILE_SIZE_MB = 25
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024

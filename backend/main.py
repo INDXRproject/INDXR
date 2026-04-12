@@ -767,7 +767,7 @@ async def run_whisper_job(
             deduct_credits,
             user_id=user_id,
             amount=credit_cost,
-            reason="Whisper AI transcription",
+            reason="AssemblyAI transcription",
             metadata=metadata
         )
         if not deduction_result.get('success'):
@@ -794,7 +794,7 @@ async def run_whisper_job(
 
         # --- Step 6: Transcribe ---
         await update_job(status="transcribing", started_at=job_started_at.isoformat())
-        logger.info(f"[job {job_id}] Calling Whisper API for {duration:.2f}s audio ({credit_cost} credits)")
+        logger.info(f"[job {job_id}] Calling AssemblyAI for {duration:.2f}s audio ({credit_cost} credits)")
         whisper_start_time = time.time()
 
         track_event(user_id, 'whisper_started', {
