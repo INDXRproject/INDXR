@@ -1360,9 +1360,9 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                         if collection_id:
                             insert_data['collection_id'] = collection_id
                         t = await asyncio.to_thread(
-                            lambda: supabase.table('transcripts').insert(insert_data).select('id').single().execute()
+                            lambda data=insert_data: supabase.table('transcripts').insert(data).execute()
                         )
-                        transcript_id = t.data['id']
+                        transcript_id = t.data[0]['id']
                         video_results[video_id] = {'status': 'success', 'transcript_id': transcript_id}
                         await update_playlist_job(current_video_title=title)
                         completed += 1
@@ -1466,9 +1466,9 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                             if collection_id:
                                 insert_data['collection_id'] = collection_id
                             t = await asyncio.to_thread(
-                                lambda data=insert_data: supabase.table('transcripts').insert(data).select('id').single().execute()
+                                lambda data=insert_data: supabase.table('transcripts').insert(data).execute()
                             )
-                            transcript_id = t.data['id']
+                            transcript_id = t.data[0]['id']
                             video_results[vid] = {'status': 'success', 'transcript_id': transcript_id}
                             failed -= 1
                             completed += 1
