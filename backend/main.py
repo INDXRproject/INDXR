@@ -496,7 +496,7 @@ async def extract_youtube_transcript(request: ExtractRequest):
     except Exception as e:
         error_msg = str(e)
         error_lower = error_msg.lower()
-        if any(kw in error_lower for kw in ('age-restricted', 'age restricted', 'only available on youtube')):
+        if any(kw in error_lower for kw in ('age-restricted', 'age restricted', 'only available on youtube', 'confirm your age')):
             error_type = 'age_restricted'
         elif any(kw in error_lower for kw in ('sign in to confirm', 'confirming you', 'not a bot', '429', 'too many requests')):
             error_type = 'bot_detection'
@@ -731,7 +731,7 @@ async def run_whisper_job(
                 if any(kw in error_lower for kw in MEMBERS_ONLY_KEYWORDS):
                     await update_job(status="error", error_message="members_only")
                     return
-                if any(kw in error_lower for kw in ('age-restricted', 'age restricted', 'only available on youtube')):
+                if any(kw in error_lower for kw in ('age-restricted', 'age restricted', 'only available on youtube', 'confirm your age')):
                     error_type = 'age_restricted'
                 elif any(kw in error_lower for kw in ('sign in to confirm', 'confirming you', 'not a bot', '429', 'too many requests')):
                     error_type = 'bot_detection'
