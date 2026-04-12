@@ -137,13 +137,35 @@ Full flow when debugging transcription issues:
 5. ffmpeg converts to **mono 12kbps Opus/OGG** (`libopus`, `-application voip`, output `.ogg`)
 6. OGG file sent to AssemblyAI Universal-3 Pro (`assemblyai_client.py`); SDK polls until complete
 7. Truncation check: retained in code but inactive — AssemblyAI has no 25MB limit
-8. Transcript inserted into Supabase `transcripts` (with `video_id`, `title`, `duration`, `processing_method: 'assemblyai'`, `character_count`), credits deducted atomically
-9. `transcription_jobs` row updated to `status: complete` with `completed_at` and `processing_time_seconds`
-10. Frontend polling detects `complete`, loads transcript, shows green banner with processing time
+8. Transcript inserted into Supabase `transcripts` (with `video_id`, `title`, `duration`, `processing_method: 'assemblyai'`, `character_count`), credits deducted atomically; `transcript_id` stored in `transcription_jobs`
+9. `transcription_jobs` row updated to `status: complete` with `completed_at`, `processing_time_seconds`, and `transcript_id`
+10. Frontend polling detects `complete`; behavior differs by entry point:
+    - **Single video / AudioTab**: backend is sole writer; frontend dispatches `indxr-library-refresh` only
+    - **Playlist (`processVideo`)**: frontend **deletes** the backend-created row (via `job.transcript_id`) and updates the placeholder it created, so the library shows one row throughout
 
 > **Job state in Supabase**: All job state lives in `transcription_jobs` — not in-memory. Railway restarts mid-job lose the background task; job will stall with no automatic recovery.
 
-> **No duplicate inserts**: AudioTab dispatches `indxr-library-refresh` CustomEvent instead of calling `onTranscriptLoaded()` — backend is the sole writer for AssemblyAI jobs. Only the auto-captions path uses `onTranscriptLoaded()`.
+> **Error classification**: `run_whisper_job` classifies download/extraction exceptions into `bot_detection | timeout | age_restricted | members_only | youtube_restricted | extraction_error` and writes `error_type` to `transcription_jobs`. Requires `error_type` column — add via migration if not present.
+
+## Playlist Extraction Pipeline
+
+Key points for debugging playlist issues:
+
+- **Placeholder rows**: `processVideo` creates a `"Processing Video [ID]..."` row before extraction starts. On failure, `finally` block deletes it (new video) or restores the previous title (existing duplicate). No orphan rows should appear.
+- **Whisper poll loop**: `processVideo` polls `/api/jobs/{job_id}` every 3s (up to 200 polls = 10 min). If it times out or errors, the placeholder is cleaned up via `finally`.
+- **Duplicate prevention**: After Whisper poll completes, frontend deletes `job.transcript_id` row (backend-created) and updates placeholder. If you see duplicate rows, check that `job.transcript_id` is present in the poll response and that the frontend Supabase delete isn't being blocked by RLS.
+- **Error classification**: Thrown as `"error_type:message"`. PlaylistTab catch blocks extract the prefix first, then fall back to keyword matching.
+- **Retry**: `bot_detection` and `timeout` videos retry once after 30s. If both attempts fail, the per-video VideoStatus reflects the retry outcome.
+
+### Required migrations (run manually in Supabase SQL editor)
+
+```sql
+-- playlist_jobs table
+-- Run: supabase/migrations/add_playlist_jobs.sql
+
+-- transcription_jobs.error_type column (if not already present)
+ALTER TABLE transcription_jobs ADD COLUMN IF NOT EXISTS error_type TEXT;
+```
 
 **Node.js JS runtime**: yt-dlp uses Node.js (installed via apt in Docker) with `yt-dlp-ejs` to solve YouTube n-challenges. Configured via `js_runtimes: {'node': {}}` in `ydl_opts`.
 
@@ -221,6 +243,11 @@ The dashboard uses a 4-tab system for transcripts and summaries.
 | Credits not added after purchase | Webhook not receiving events | Check Stripe Dashboard webhook logs |
 | `/admin` returns 403 | `ADMIN_EMAIL` not set or doesn't match session email | Add `ADMIN_EMAIL=your@email.com` to `.env.local` |
 | User gets 403 on extract/whisper/summarize | Account suspended | Check `profiles.suspended` — toggle via `/admin/users` or `/api/admin/suspend-user` |
+| Duplicate transcript rows after playlist Whisper job | `job.transcript_id` missing or delete blocked | Verify `GET /api/jobs/{id}` returns `transcript_id`; check Supabase RLS allows user DELETE on `transcripts` |
+| "Processing Video [ID]..." rows stuck in library | `finally` cleanup not running | Confirm `handleTranscriptLoaded` throws on DB error; check `createdPlaceholderId`/`updatedDuplicateId` are set before the fetch call |
+| Playlist Whisper videos all show `extraction_error` | `error_type` column missing | Run `ALTER TABLE transcription_jobs ADD COLUMN IF NOT EXISTS error_type TEXT` in Supabase |
+| `playlist_jobs` insert fails | Table doesn't exist | Run `supabase/migrations/add_playlist_jobs.sql` in Supabase SQL editor |
+| Age-restricted videos classified as `bot_detection` | Missing `confirm your age` keyword | Verify keyword present in both classification blocks in `main.py` |
 
 ---
 

@@ -88,24 +88,34 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 
 - **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the **Supabase `transcription_jobs` table** at each step. Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction.
 - **Transcription engine**: AssemblyAI Universal-3 Pro (`assemblyai_client.py`). Falls back to Universal-2. No file size limit, no truncation. The SDK polls internally until the job completes.
-- **Job tracking columns** (`transcription_jobs`): `started_at`, `completed_at`, `processing_time_seconds`, `file_size_bytes`, `file_format` (e.g. `mp3`, `wav`, `youtube`). Frontend shows a live elapsed timer and "Completed in M:SS" on finish.
+- **Job tracking columns** (`transcription_jobs`): `started_at`, `completed_at`, `processing_time_seconds`, `file_size_bytes`, `file_format` (e.g. `mp3`, `wav`, `youtube`), `error_type` (structured failure category). Frontend shows a live elapsed timer and "Completed in M:SS" on finish.
 - **Truncation detection**: Retained in code but effectively inactive with AssemblyAI — no 25MB limit means no truncation.
 - **Audio codec**: ffmpeg converts downloaded audio to **Opus/OGG at 12kbps mono** (`libopus`, `-application voip`). Output extension: `.ogg`.
-- **GET** `/api/jobs/{job_id}?user_id=...`: Queries Supabase `transcription_jobs` table. Returns current status, `processing_time_seconds`, and transcript with ownership check; 404 for unknown jobs, 403 for wrong owner.
+- **GET** `/api/jobs/{job_id}?user_id=...`: Queries Supabase `transcription_jobs` table. Returns current status, `processing_time_seconds`, `transcript_id` (ID of backend-created transcript row), and transcript with ownership check; 404 for unknown jobs, 403 for wrong owner.
 - **Next.js whisper route** (`src/app/api/transcribe/whisper/route.ts`): YouTube path only — auth, suspension check, and **rate limiting** (`checkRateLimit`). Returns `{ job_id, status }` JSON from backend directly. `maxDuration` 60s.
 - **Next.js preflight route** (`src/app/api/transcribe/preflight/route.ts`): Auth, suspension check, and rate limiting for the audio upload path. Returns `{ ok: true }` before the browser sends the file. `maxDuration` 10s.
 - **Audio upload — direct to Railway**: `AudioTab.tsx` calls preflight, gets Supabase JWT via `supabase.auth.getSession()`, then POSTs the file directly to `${NEXT_PUBLIC_PYTHON_BACKEND_URL}/api/transcribe/whisper` with `Authorization: Bearer <jwt>`. Python backend verifies the JWT via `supabase.auth.get_user(token)` and extracts the real `user_id` — the form body `user_id` field is ignored for uploads. Bypasses Vercel's 4.5MB body limit.
 - **Next.js jobs route** (`src/app/api/jobs/[job_id]/route.ts`): Auth check, suspended check, forwards GET to Railway with `?user_id` query param.
 - **Next.js metadata route** (`src/app/api/video/metadata/[videoId]/route.ts`): Proxies to FastAPI `GET /api/video/metadata/{video_id}`. Used by frontend for accurate credit pre-calculation before showing Whisper confirmation modal.
-- **Frontend** (`src/components/free-tool/VideoTab.tsx`): `pollWhisperJob` polls every 3s; refs-based interval management prevents stale job_id bug; button label "Generate with AI" while toggle is on; processing time estimate shown in confirm modal.
-- **Transcripts insert**: `video_id`, `title`, `duration`, `character_count`, and `processing_method: 'assemblyai'` saved alongside `user_id` and `transcript`. Frontend skips `onTranscriptLoaded()` after Whisper jobs (backend is the sole writer) to prevent duplicate rows.
+- **Frontend single-video** (`src/components/free-tool/VideoTab.tsx`): `pollWhisperJob` polls every 3s; refs-based interval management prevents stale job_id bug; button label "Generate with AI" while toggle is on; processing time estimate shown in confirm modal.
+- **Frontend playlist** (`src/app/dashboard/transcribe/page.tsx` `processVideo`): inline poll loop (3s interval, 200-poll max = 10 min). Previously fire-and-forget — `handleTranscriptLoaded(undefined)` was called immediately, leaving placeholder rows orphaned. Now polls to completion before saving.
+- **Duplicate transcript fix**: `run_whisper_job` always INSERTs its own `transcripts` row. `get_job_status` exposes `transcript_id`; on poll complete, the frontend deletes that backend-created row and updates the frontend placeholder instead — one row per video.
+- **Transcripts insert**: `video_id`, `title`, `duration`, `character_count`, and `processing_method: 'assemblyai'` saved alongside `user_id` and `transcript`. For AudioTab: backend is the sole writer; `indxr-library-refresh` CustomEvent dispatched instead of `onTranscriptLoaded()`. For playlist Whisper: placeholder row is updated with real data after poll completes.
 - **CORS**: Production domains (`indxr.ai`, `www.indxr.ai`, `indxr.vercel.app`) added to Railway backend allowed origins.
 - **AudioTab** (`src/components/free-tool/AudioTab.tsx`): Direct upload to Railway with JWT; polling (`/api/jobs/{job_id}`) for status; live elapsed timer; light-mode contrast fixed (replaced hardcoded `text-white`/`bg-zinc-900` with `text-foreground`/`bg-muted`).
 - **Stripe**: Suspended user check added to `/api/stripe/checkout` before Stripe session creation.
 - **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Polls `/api/jobs/{job_id}` (waits for complete/error).
 
-**Tech debt**:
-- The 90-min warning in the Whisper confirmation modal still references old OpenAI limitations. AssemblyAI has no such limit — this warning should be removed.
+### Playlist Pipeline Reliability (Phase P, Apr 2026)
+
+- **Structured error classification**: Both `extract_youtube_transcript` (caption path) and `run_whisper_job` (AI Transcription path) now classify errors into: `bot_detection`, `timeout`, `age_restricted`, `members_only`, `youtube_restricted`, `extraction_error`. The `error_type` field is returned by both Python endpoints and forwarded through Next.js routes to the frontend. `processVideo` throws `"error_type:message"` so PlaylistTab catch blocks apply prefix-first classification before keyword fallback.
+- **`confirm your age` keyword**: Added to `age_restricted` classifier in both backend blocks to prevent "Sign in to confirm your age" from matching `bot_detection` (which also contains "sign in to confirm").
+- **Non-blocking retry**: `bot_detection` and `timeout` videos are retried once after a 30-second wait. `localStatuses` updated in the retry catch block so `onPlaylistComplete` stats reflect the final outcome.
+- **Placeholder cleanup via `finally`**: `processVideo` tracks `createdPlaceholderId` (INSERT path) and `updatedDuplicateId` (UPDATE path). On failure, `finally` deletes the orphan placeholder or restores the previous title. `handleTranscriptLoaded` now throws on DB save error (previously returned silently, nulling the cleanup trackers before `finally` ran).
+- **Navigation guards**: `beforeunload` listener fires in `PlaylistTab.tsx` while `loading === true`. In `transcribe/page.tsx`, Single Video and Audio Upload tabs are `disabled` and visually dimmed during extraction; `onValueChange` is blocked; inline amber warning displayed.
+- **Completion screen**: Processing time shown as "Completed in M:SS" in `PlaylistManager.tsx`; `finalElapsed` captured when `allDone` fires.
+- **`playlist_jobs` table**: Per-extraction stats stored in Supabase (total selected, succeeded, per-error-type counts, processing time). Run `supabase/migrations/add_playlist_jobs.sql` manually.
+- **`transcription_jobs.error_type` column**: Required for `update_job(error_type=...)` calls. Add via migration before deploying.
 
 ### Logging Verbosity Control
 

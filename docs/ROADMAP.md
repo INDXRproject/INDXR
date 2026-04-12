@@ -96,6 +96,21 @@
 **Tech debt remaining**:
 - 90-min warning in Whisper confirmation modal references old OpenAI limitations — should be removed
 
+### Phase P: Playlist Pipeline Reliability (Apr 2026) ✅
+
+**Goal**: Eliminate orphan rows, duplicate transcripts, misclassified errors, and navigation hazards in the playlist extraction pipeline.
+
+- [x] **Structured error classification**: `bot_detection`, `timeout`, `age_restricted`, `members_only`, `youtube_restricted`, `extraction_error` — classified in both `extract_youtube_transcript` (captions) and `run_whisper_job` (AI Transcription); `error_type` forwarded through `/api/extract/route.ts`; `processVideo` throws `"error_type:message"` for prefix-first parsing in PlaylistTab catch blocks
+- [x] **`confirm your age` keyword**: Added to `age_restricted` classifier in both backend blocks — prevents "Sign in to confirm your age" from matching `bot_detection` first
+- [x] **Non-blocking retry**: `bot_detection` and `timeout` videos retried once after 30s; `localStatuses` updated in retry catch block for accurate `onPlaylistComplete` stats
+- [x] **Placeholder cleanup**: `processVideo` `finally` block deletes orphan placeholder (INSERT path) or restores title (UPDATE/duplicate path) on any failure; `handleTranscriptLoaded` now throws on DB save error so cleanup trackers are not prematurely nulled
+- [x] **AI Transcription poll-to-completion in `processVideo`**: Was fire-and-forget — `handleTranscriptLoaded(undefined)` called immediately, placeholders orphaned. Now: inline 3s-interval poll loop (max 200 polls = 10 min), throws on error/timeout, saves only after confirmed `complete`
+- [x] **Duplicate transcript fix**: `run_whisper_job` always INSERTs its own row; `get_job_status` now exposes `transcript_id`; frontend deletes that row on poll complete and updates the placeholder only
+- [x] **`playlist_jobs` table**: Per-extraction stats in Supabase. Run `supabase/migrations/add_playlist_jobs.sql`
+- [x] **`transcription_jobs.error_type` column**: Required for structured error storage. Add via `ALTER TABLE transcription_jobs ADD COLUMN IF NOT EXISTS error_type TEXT`
+- [x] **Navigation guards**: `beforeunload` listener in `PlaylistTab.tsx` while extracting; Single Video / Audio Upload tabs disabled with dimming and inline warning in `transcribe/page.tsx`
+- [x] **Completion screen**: "Completed in M:SS" shown next to success count in `PlaylistManager.tsx`
+
 ### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
 
 **Goal**: Launch-ready operations and monitoring.
@@ -219,6 +234,16 @@ Ideas validated but not prioritized:
 - [ ] iOS PO token for bgutil — currently only `web_embedded` client receives PO tokens; iOS client bypasses the flow entirely but may need tokens in future yt-dlp versions
 - [x] Random session ID per job — `get_proxy_url(session_id)` now uses `job_id[:8]`; falls back to `secrets.token_hex(4)` for one-off requests
 - [x] Rename `processing_method: 'whisper_ai'` → `assemblyai` — done; `transcription_jobs` table renamed from `whisper_jobs`; `character_count` added to transcript insert
+- [x] Playlist pipeline reliability — see Phase P above (orphan rows, duplicates, error classification, retry, nav guards)
+
+**Pending Migrations (must run before deploy)**
+- [ ] `supabase/migrations/add_playlist_jobs.sql` — creates `playlist_jobs` table
+- [ ] `ALTER TABLE transcription_jobs ADD COLUMN IF NOT EXISTS error_type TEXT` — required for Whisper error classification
+
+**Playwright specs (not yet written)**
+- [ ] `02-playlist.spec.ts` — small/large/mixed Whisper playlists, error classification, retry behaviour
+- [ ] `03-library.spec.ts` — library operations, AI summary, transcript/summary editing
+- [ ] `04-stress.spec.ts` — concurrent extraction, rapid sequential, race conditions
 
 **Infrastructure & Go-Live**
 - [ ] Stripe live keys — switch from test to live, verify webhook, fill `STRIPE_WEBHOOK_SECRET` in Vercel

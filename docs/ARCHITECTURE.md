@@ -43,6 +43,8 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
   - `public.profiles`: User metadata (Role, Username, `suspended` boolean for account bans)
   - `public.user_credits` + `credit_transactions`: Billing logic
   - `public.transcripts`: Stores video/playlist transcripts, including `edited_content` (text) and `ai_summary` (JSONB)
+  - `public.transcription_jobs`: AI Transcription job tracking (`id, user_id, status, video_url, source_type, credits_cost, transcript_id, error_message, error_type, file_size_bytes, file_format, processing_time_seconds, created_at, updated_at, started_at, completed_at`)
+  - `public.playlist_jobs`: Per-playlist extraction stats (`total_selected`, `total_succeeded`, `total_failed`, per-error-type counts, `processing_time_seconds`). Requires `supabase/migrations/add_playlist_jobs.sql`.
 - **Cache/Rate Limit**: Upstash Redis (Serverless Redis)
 - **Hosting**: Vercel (Frontend — https://indxr.ai), Railway (Backend — https://indxr-production.up.railway.app)
 
@@ -155,7 +157,11 @@ supabase.table('transcripts').insert({
 })
 ```
 
-Backend is the sole writer for AssemblyAI jobs — frontend dispatches `indxr-library-refresh` CustomEvent instead of calling `onTranscriptLoaded()` to prevent duplicate rows.
+Backend always INSERTs its own transcript row. The `transcript_id` of this row is stored in `transcription_jobs` and returned by `GET /api/jobs/{job_id}`.
+
+**Single video path** (`AudioTab`, `VideoTab`): Backend is the sole writer — frontend dispatches `indxr-library-refresh` instead of calling `onTranscriptLoaded()`.
+
+**Playlist path** (`processVideo` in `transcribe/page.tsx`): Frontend creates a placeholder row before the job starts. After poll completes, the frontend **deletes** the backend-created row (identified via `job.transcript_id`) and updates the placeholder with the real data. This avoids duplicate rows while keeping the placeholder visible in the library during processing.
 
 **Credit Calculation:**
 
@@ -278,8 +284,14 @@ Navigation: URL-based (`?tab=x`) for SEO and deep-linking.
 ### Playlist Engine
 
 - **Source**: YouTube Data API v3
-- **Job Queue**: Large playlists processed asynchronously
-- **Availability**: Live pre-scan checks video availability before extraction
+- **Availability pre-scan**: Live check before extraction — marks unavailable, members-only, needs_whisper, and duplicate videos
+- **Sequential processing**: Videos processed one-at-a-time; `processVideo` handles the full lifecycle per video (placeholder → extract/poll → save)
+- **Error classification**: Both caption and Whisper errors classified into `bot_detection | timeout | age_restricted | members_only | youtube_restricted | extraction_error`. `error_type` forwarded from Python backend through Next.js route to frontend as `"error_type:message"` thrown string.
+- **Non-blocking retry**: Videos with `bot_detection` or `timeout` status are retried once after 30 seconds.
+- **Placeholder lifecycle**: `processVideo` inserts a `"Processing Video [ID]..."` placeholder before fetching. On failure, `finally` block deletes it (INSERT path) or restores the previous title (UPDATE path for duplicates). `handleTranscriptLoaded` throws on DB error so cleanup always runs.
+- **AI Transcription in playlists**: Inline poll loop in `processVideo` (3s interval, 10-min max). On complete: deletes backend-created row, updates placeholder. On error: throws structured `error_type:message`.
+- **Stats tracking**: `playlist_jobs` Supabase table stores per-extraction statistics. Run `supabase/migrations/add_playlist_jobs.sql`.
+- **Navigation guards**: `beforeunload` listener active during extraction; Single Video and Audio Upload tabs disabled with visual feedback.
 
 ---
 
@@ -332,7 +344,8 @@ DEEPSEEK_API_KEY        # Summarization
 PROXY_HOST              # IPRoyal (geo.iproyal.com)
 PROXY_PORT              # 12321
 PROXY_USER
-PROXY_PASSWORD          # Sticky session appended in code: {PROXY_PASSWORD}_session-indxr1_lifetime-10m
+PROXY_PASSWORD          # Sticky session appended: {PROXY_PASSWORD}_session-{job_id[:8]}_lifetime-10m (Whisper jobs)
+                        #   or _session-{secrets.token_hex(4)}_lifetime-10m (one-off caption/metadata requests)
 SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_URL
 POSTHOG_API_KEY         # Backend event tracking
