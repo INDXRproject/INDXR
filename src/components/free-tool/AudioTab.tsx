@@ -23,7 +23,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [transcript, setTranscript] = useState<TranscriptItem[] | null>(null)
   const [audioDuration, setAudioDuration] = useState<number | null>(null)
-  const [audioMetadata, setAudioMetadata] = useState<{ filename: string; duration: number; creditsUsed: number } | null>(null)
+  const [audioMetadata, setAudioMetadata] = useState<{ filename: string; duration: number; creditsUsed: number; processingTimeSecs: number } | null>(null)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [isUploading, setIsUploading] = useState(false)
   const [whisperStatus, setWhisperStatus] = useState<'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'>('idle')
@@ -236,6 +236,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           transcript?: TranscriptItem[]
           duration?: number
           credits_used?: number
+          processing_time_seconds?: number
           error_message?: string
           required_credits?: number
           available_credits?: number
@@ -266,6 +267,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             filename: file.name,
             duration: job.duration!,
             creditsUsed: job.credits_used!,
+            processingTimeSecs: job.processing_time_seconds ?? 0,
           })
 
           await refreshCredits()
@@ -442,7 +444,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 <div className="h-2 w-2 bg-green-500 rounded-full" />
                 <div>
                   <p className="text-sm font-medium text-green-400">Transcript saved to library</p>
-                  <p className="text-xs text-green-300/70">Used {audioMetadata.creditsUsed} credits • {Math.round(audioMetadata.duration / 60)} minutes</p>
+                  <p className="text-xs text-green-300/70">
+                    Used {audioMetadata.creditsUsed} credits • {Math.round(audioMetadata.duration / 60)} min
+                    {audioMetadata.processingTimeSecs > 0 && (
+                      <> • Completed in {Math.floor(audioMetadata.processingTimeSecs / 60)}:{String(audioMetadata.processingTimeSecs % 60).padStart(2, '0')}</>
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">

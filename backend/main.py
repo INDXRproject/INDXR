@@ -668,7 +668,7 @@ async def run_whisper_job(
     title: Optional[str] = None,
 ) -> None:
     """
-    Background task: runs the full Whisper pipeline and updates whisper_jobs in Supabase.
+    Background task: runs the full transcription pipeline and updates transcription_jobs in Supabase.
     Credits are deducted after audio is downloaded (duration is needed for cost calculation).
     On any failure after deduction, credits are refunded automatically.
     """
@@ -685,7 +685,7 @@ async def run_whisper_job(
             kwargs['completed_at'] = now.isoformat()
             kwargs['processing_time_seconds'] = int((now - job_started_at).total_seconds())
         await asyncio.to_thread(
-            lambda: supabase.table('whisper_jobs').update(kwargs).eq('id', job_id).execute()
+            lambda: supabase.table('transcription_jobs').update(kwargs).eq('id', job_id).execute()
         )
 
     try:
@@ -856,7 +856,7 @@ async def run_whisper_job(
                 'title': video_title,
                 'transcript': transcript,
                 'duration': int(duration),
-                'processing_method': 'whisper_ai',
+                'processing_method': 'assemblyai',
             }).execute()
         )
         transcript_id = transcript_insert.data[0]['id']
@@ -984,16 +984,23 @@ async def transcribe_with_whisper(
             "available_credits": current_balance
         })
 
-    # Insert job row into Supabase whisper_jobs
+    # Insert job row into Supabase transcription_jobs
     job_id = str(uuid.uuid4())
     video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
+    file_size_bytes = len(audio_content) if audio_content else 0
+    file_format = (
+        os.path.splitext(audio_filename or '')[1].lstrip('.').lower() or 'unknown'
+        if source_type == "upload" else "youtube"
+    )
     supabase = get_supabase_client()
-    supabase.table('whisper_jobs').insert({
+    supabase.table('transcription_jobs').insert({
         'id': job_id,
         'user_id': user_id,
         'status': 'pending',
         'video_url': video_url,
         'source_type': source_type,
+        'file_size_bytes': file_size_bytes,
+        'file_format': file_format,
     }).execute()
 
     asyncio.create_task(run_whisper_job(
@@ -1019,7 +1026,7 @@ async def get_job_status(job_id: str, user_id: str):
     supabase = get_supabase_client()
     try:
         result = await asyncio.to_thread(
-            lambda: supabase.table('whisper_jobs').select('*').eq('id', job_id).single().execute()
+            lambda: supabase.table('transcription_jobs').select('*').eq('id', job_id).single().execute()
         )
     except Exception:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -1047,6 +1054,7 @@ async def get_job_status(job_id: str, user_id: str):
         "transcript": transcript,
         "duration": job.get('duration_seconds'),
         "credits_used": job.get('credits_cost'),
+        "processing_time_seconds": job.get('processing_time_seconds'),
         "error_message": job.get('error_message'),
         "error_code": None,
         "required_credits": None,
