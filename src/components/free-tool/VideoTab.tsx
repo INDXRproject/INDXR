@@ -945,11 +945,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 <p className="text-xs text-muted-foreground mb-2">
                   Estimated processing time: {pendingWhisperData.duration > 0 ? getWhisperProcessingEstimate(pendingWhisperData.duration) : "varies by length"}
                 </p>
-                {pendingWhisperData.duration > 5400 && (
-                  <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-3">
-                    ⚠️ Videos over 90 minutes may produce incomplete transcripts due to API limitations. Proceed at your own risk.
-                  </p>
-                )}
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"

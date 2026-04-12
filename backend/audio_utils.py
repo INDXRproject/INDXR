@@ -111,7 +111,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         'format': 'bestaudio/best',
         'outtmpl': f"{base_output_path}.%(ext)s",
         'quiet': True,
-        'no_warnings': False,
+        'no_warnings': True,
         'verbose': False,
         'socket_timeout': 120,
         'nocheckcertificate': True,
