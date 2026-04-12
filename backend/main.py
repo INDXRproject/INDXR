@@ -719,9 +719,9 @@ async def run_whisper_job(
                     return
                 if any(kw in error_lower for kw in ('age-restricted', 'age restricted', 'only available on youtube')):
                     error_type = 'age_restricted'
-                elif any(kw in error_lower for kw in ('sign in to confirm', 'confirming you', 'not a bot')):
+                elif any(kw in error_lower for kw in ('sign in to confirm', 'confirming you', 'not a bot', '429', 'too many requests')):
                     error_type = 'bot_detection'
-                elif any(kw in error_lower for kw in ('timed out', 'timeout', 'read timed out')):
+                elif any(kw in error_lower for kw in ('timed out', 'timeout', 'read timed out', '504', 'gateway timeout')):
                     error_type = 'timeout'
                 elif '152' in error_msg or 'unavailable' in error_lower:
                     error_type = 'youtube_restricted'
