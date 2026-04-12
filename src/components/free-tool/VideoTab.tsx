@@ -1007,7 +1007,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           <div className="px-1 -mt-1 flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-500 animate-in fade-in">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>
-              {existingTranscriptMethod === 'whisper_ai'
+              {existingTranscriptMethod === 'whisper_ai' || existingTranscriptMethod === 'assemblyai'
                 ? 'You already have this transcript (AI Transcription) — '
                 : 'You already have this transcript in your library — '}
             </span>

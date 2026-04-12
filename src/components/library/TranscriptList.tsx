@@ -91,7 +91,7 @@ function buildMetaLine(t: Transcript): string {
   const method = t.processing_method;
   if (!method || method === 'youtube_captions') {
     parts.push('Auto-captions');
-  } else if (method === 'whisper_ai' || method === 'whisper') {
+  } else if (method === 'whisper_ai' || method === 'whisper' || method === 'assemblyai') {
     parts.push('AI Transcription');
   }
 
