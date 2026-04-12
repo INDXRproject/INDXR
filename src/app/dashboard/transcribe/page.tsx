@@ -272,7 +272,6 @@ export default function TranscribePage() {
 
         // Whisper jobs return { job_id, status: "pending" } — poll until terminal state.
         // captions jobs return the transcript directly, so this block is skipped for them.
-        let transcript = data.transcript
         if (data.job_id && data.status === 'pending') {
           const POLL_INTERVAL_MS = 3000
           const MAX_POLLS = 200 // 10 minutes max
@@ -285,8 +284,28 @@ export default function TranscribePage() {
             const job = await pollResp.json()
 
             if (job.status === 'complete') {
-              transcript = job.transcript
               jobDone = true
+              // The backend is the sole writer for Whisper transcript content.
+              // Update only the placeholder row with the real title and data so it
+              // no longer shows "Processing Video [ID]...".
+              const transcript: typeof job.transcript = job.transcript ?? []
+              const duration = transcript.length > 0
+                ? Math.ceil(transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration)
+                : 0
+              const characterCount = transcript.reduce((acc: number, item: { text: string }) => acc + item.text.length, 0)
+              const { error: updateErr } = await supabase.from('transcripts').update({
+                title: options?.title || `Video ${videoId}`,
+                transcript,
+                duration,
+                character_count: characterCount,
+                processing_method: effectiveMethod,
+                credits_used: job.credits_used ?? null,
+                updated_at: new Date().toISOString(),
+              }).eq('id', transcriptId)
+              if (updateErr) throw new Error(updateErr.message)
+              window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+              createdPlaceholderId = null;
+              updatedDuplicateId = null;
               break
             } else if (job.status === 'error') {
               throw new Error(`${job.error_type || 'extraction_error'}:${job.error_message || 'Transcription failed'}`)
@@ -295,24 +314,24 @@ export default function TranscribePage() {
           }
 
           if (!jobDone) throw new Error('Transcription timed out')
+        } else {
+          // Captions path — backend returns transcript directly; save via unified handler
+          await handleTranscriptLoaded(data.transcript, {
+            source: 'youtube',
+            title: data.title || options?.title || `Video ${videoId}`,
+            duration: 0, // Will be calculated from transcript
+            videoId,
+            videoUrl: data.video_url,
+            processingMethod: effectiveMethod,
+            duplicateId: transcriptId,
+            duplicateAction: options?.duplicateAction || 'replace',
+            collectionId: options?.collectionId,
+            isPlaceholder: !options?.duplicateId,
+          })
+          // Placeholder was promoted to a real transcript — don't delete/restore in finally
+          createdPlaceholderId = null;
+          updatedDuplicateId = null;
         }
-
-        // Auto-save: always update the placeholder record with real data
-        await handleTranscriptLoaded(transcript, {
-          source: 'youtube',
-          title: data.title || options?.title || `Video ${videoId}`,
-          duration: 0, // Will be calculated from transcript
-          videoId,
-          videoUrl: data.video_url,
-          processingMethod: effectiveMethod,
-          duplicateId: transcriptId,
-          duplicateAction: options?.duplicateAction || 'replace',
-          collectionId: options?.collectionId,
-          isPlaceholder: !options?.duplicateId, // True for new videos (placeholder), false for user-triggered duplicate
-        })
-        // Placeholder was promoted to a real transcript — don't delete/restore in finally
-        createdPlaceholderId = null;
-        updatedDuplicateId = null;
 
     } catch (error) {
         console.error(`Process video ${videoId} failed:`, error)
