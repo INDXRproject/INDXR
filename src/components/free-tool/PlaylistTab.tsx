@@ -158,10 +158,16 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
           } catch (e) {
               console.error(`Failed to extract ${videoId}:`, e);
               const errMsg = e instanceof Error ? e.message : '';
+              const errorType = errMsg.includes(':') ? errMsg.split(':')[0] : null;
               const errLower = errMsg.toLowerCase();
 
               let status: VideoStatus = 'error';
-              if (errMsg === 'no_speech_detected') status = 'no_speech';
+              if (errorType === 'bot_detection') status = 'bot_detection';
+              else if (errorType === 'timeout') status = 'timeout';
+              else if (errorType === 'age_restricted') status = 'age_restricted';
+              else if (errorType === 'members_only') status = 'members_only';
+              else if (errorType === 'youtube_restricted') status = 'youtube_restricted';
+              else if (errMsg === 'no_speech_detected') status = 'no_speech';
               else if (errLower.includes('members_only') || errLower.includes('members-only')) status = 'members_only';
               else if (errLower.includes('age')) status = 'age_restricted';
               else if (errLower.includes('sign in') || errLower.includes('bot')) status = 'bot_detection';
@@ -198,9 +204,15 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
               } catch (e) {
                   console.error(`Retry failed for ${videoId}:`, e);
                   const errMsg = e instanceof Error ? e.message : '';
+                  const errorType = errMsg.includes(':') ? errMsg.split(':')[0] : null;
                   const errLower = errMsg.toLowerCase();
                   let status: VideoStatus = 'error';
-                  if (errMsg === 'no_speech_detected') status = 'no_speech';
+                  if (errorType === 'bot_detection') status = 'bot_detection';
+                  else if (errorType === 'timeout') status = 'timeout';
+                  else if (errorType === 'age_restricted') status = 'age_restricted';
+                  else if (errorType === 'members_only') status = 'members_only';
+                  else if (errorType === 'youtube_restricted') status = 'youtube_restricted';
+                  else if (errMsg === 'no_speech_detected') status = 'no_speech';
                   else if (errLower.includes('members_only') || errLower.includes('members-only')) status = 'members_only';
                   else if (errLower.includes('age')) status = 'age_restricted';
                   else if (errLower.includes('sign in') || errLower.includes('bot')) status = 'bot_detection';

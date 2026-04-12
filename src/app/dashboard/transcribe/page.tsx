@@ -289,7 +289,7 @@ export default function TranscribePage() {
               jobDone = true
               break
             } else if (job.status === 'error') {
-              throw new Error(job.error_message || 'Transcription failed')
+              throw new Error(`${job.error_type || 'extraction_error'}:${job.error_message || 'Transcription failed'}`)
             }
             // pending / downloading / transcribing / saving — keep polling
           }
