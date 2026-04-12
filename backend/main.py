@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 import re
 import uuid
+import secrets
 import logging
 import yt_dlp
 import os
@@ -184,16 +185,19 @@ def extract_video_id(input_str: str) -> str:
     
     return input_str
 
-def get_proxy_url() -> Optional[str]:
+def get_proxy_url(session_id: Optional[str] = None) -> Optional[str]:
     """Build proxy URL from environment config.
     Returns None when PROXY_ENABLED is not 'true' in .env.
+    Pass session_id to pin a job to a consistent exit IP (sticky session).
+    Omit it for one-off requests — a random 8-char session is generated each call.
     """
     if not PROXY_ENABLED:
         return None
     if not PROXY_USERNAME or not PROXY_PASSWORD or not PROXY_HOST:
         logger.warning("PROXY_ENABLED=true but credentials are missing — running without proxy")
         return None
-    sticky_password = f"{PROXY_PASSWORD}_session-indxr1_lifetime-10m"
+    sid = session_id or secrets.token_hex(4)
+    sticky_password = f"{PROXY_PASSWORD}_session-{sid}_lifetime-10m"
     return f"http://{PROXY_USERNAME}:{sticky_password}@{PROXY_HOST}:{PROXY_PORT}"
 
 def find_longest_overlap(text1: str, text2: str) -> int:
@@ -697,7 +701,7 @@ async def run_whisper_job(
             await update_job(status="downloading", started_at=job_started_at.isoformat())
             logger.info(f"[job {job_id}] Downloading YouTube audio for video: {video_id}")
             try:
-                proxy_url = get_proxy_url()
+                proxy_url = get_proxy_url(session_id=job_id[:8])
                 if proxy_url:
                     logger.info(f"[job {job_id}] Proxy ENABLED for video {video_id}")
                 else:
