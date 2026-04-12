@@ -138,7 +138,6 @@ export default function FreeToolPage() {
           <PlaylistTab
             isAuthenticated={!!user}
             onAuthRequired={() => setIsAuthModalOpen(true)}
-            onExtractVideo={processVideo}
             onSwitchToAudio={() => setActiveTab('audio')}
           />
         </TabsContent>
