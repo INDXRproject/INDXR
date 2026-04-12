@@ -90,16 +90,17 @@ export async function POST(request: Request) {
       if (!response.ok || data.success === false) {
         if (data.error === 'members_only') {
           return NextResponse.json(
-            { success: false, error: 'members_only', message: data.message || 'This video is only available to channel members and cannot be transcribed.' },
+            { success: false, error: 'members_only', error_type: 'members_only', message: data.message || 'This video is only available to channel members and cannot be transcribed.' },
             { status: 403 }
           );
         }
         return NextResponse.json(
           {
             success: false,
-            error: data.error || 'Failed to extract transcript'
+            error: data.error || 'Failed to extract transcript',
+            error_type: data.error_type || null,
           },
-          { status: 400 } // Use 400 for bad request logic from backend
+          { status: 400 }
         );
       }
 

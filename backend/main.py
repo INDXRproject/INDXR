@@ -132,6 +132,7 @@ class ExtractResponse(BaseModel):
     video_url: Optional[str] = None
     duration: Optional[float] = None
     error: Optional[str] = None
+    error_type: Optional[str] = None
 
 class PlaylistEntry(BaseModel):
     id: str
@@ -490,13 +491,26 @@ async def extract_youtube_transcript(request: ExtractRequest):
     except MembersOnlyVideoError:
         return JSONResponse(
             status_code=403,
-            content={"success": False, "error": "members_only", "message": "This video is only available to channel members and cannot be transcribed."}
+            content={"success": False, "error": "members_only", "error_type": "members_only", "message": "This video is only available to channel members and cannot be transcribed."}
         )
     except Exception as e:
-        logger.error(f"Extraction terminal error: {type(e).__name__}: {e}")
+        error_msg = str(e)
+        error_lower = error_msg.lower()
+        if any(kw in error_lower for kw in ('age-restricted', 'age restricted', 'only available on youtube')):
+            error_type = 'age_restricted'
+        elif any(kw in error_lower for kw in ('sign in to confirm', 'confirming you', 'not a bot', '429', 'too many requests')):
+            error_type = 'bot_detection'
+        elif any(kw in error_lower for kw in ('timed out', 'timeout', 'read timed out', '504', 'gateway timeout')):
+            error_type = 'timeout'
+        elif '152' in error_msg or 'unavailable' in error_lower:
+            error_type = 'youtube_restricted'
+        else:
+            error_type = 'extraction_error'
+        logger.error(f"Extraction terminal error [{error_type}]: {type(e).__name__}: {e}")
         return ExtractResponse(
             success=False,
-            error="Unable to retrieve captions — this video may be restricted or our server is temporarily blocked"
+            error=error_msg,
+            error_type=error_type
         )
 
 from youtube_client import YouTubeClient

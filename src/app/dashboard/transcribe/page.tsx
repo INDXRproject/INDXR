@@ -267,7 +267,9 @@ export default function TranscribePage() {
         const data = await response.json()
 
         if (!response.ok || data.success === false) {
-            throw new Error(data.error || 'Failed to extract transcript')
+            const errorType = data.error_type || null
+            const errorMsg = data.error || 'Failed to extract transcript'
+            throw new Error(errorType ? `${errorType}:${errorMsg}` : errorMsg)
         }
 
         // Whisper jobs return { job_id, status: "pending" } — poll until terminal state.
