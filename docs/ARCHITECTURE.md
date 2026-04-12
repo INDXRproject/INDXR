@@ -51,10 +51,12 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
 #### Railway (Backend)
 
 - **URL**: https://indxr-production.up.railway.app
-- **Dockerfile**: `backend/Dockerfile` (Python 3.12-slim, includes ffmpeg, unzip, Deno)
-- **Deno path inside container**: `/root/.deno/bin` — set as `DENO_PATH=/root/.deno/bin` in Railway service variables
+- **Dockerfile**: `backend/Dockerfile` (Python 3.12-slim, includes ffmpeg, wget, Node.js/npm)
+  - `backend/bin/bgutil-pot-linux-x86_64` bundled in repo and copied to `/usr/local/bin/bgutil-pot` at build time (avoids Railway wget failures)
+  - bgutil yt-dlp plugin zip downloaded from GitHub releases and kept intact at `/root/yt-dlp-plugins/bgutil-ytdlp-pot-provider-rs.zip` — yt-dlp loads plugins directly from zips via `plugin_dirs`
+  - Node.js/npm installed for yt-dlp-ejs n-challenge solving
 - **Auto-deploy**: Every push to `master` branch triggers a Railway rebuild
-- **Service variables**: `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`
+- **Service variables**: `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`, `ASSEMBLYAI_API_KEY=<your key>`
 - **To update yt-dlp or any Python package**: `cd backend && venv/bin/pip install --upgrade yt-dlp && venv/bin/pip freeze > requirements.txt` then commit and push — Railway rebuilds automatically
 - **Security gap**: No authentication on the Railway backend — any client that knows the Railway URL can call the API. Post-launch: add a shared `BACKEND_API_SECRET` header between Vercel and Railway.
 
@@ -92,25 +94,35 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
   ```
 - Tracks `credits_purchased` event in PostHog (server-side)
 
-### Whisper AI Audio Pipeline
+### AI Transcription Pipeline
 
-When a user requests Whisper re-extraction, the backend runs `run_whisper_job` as an `asyncio` background task. The HTTP POST returns `{ job_id, status: "pending" }` immediately; the frontend polls `/api/jobs/{job_id}` every 3 seconds. Job state is persisted in the Supabase `whisper_jobs` table (columns: `id, user_id, status, video_url, source_type, credits_cost, transcript_id, error_message, created_at, updated_at, started_at, completed_at, processing_time_seconds`).
+When a user requests AI transcription, the backend runs `run_whisper_job` as an `asyncio` background task. The HTTP POST returns `{ job_id, status: "pending" }` immediately; the frontend polls `/api/jobs/{job_id}` every 3 seconds. Job state is persisted in the Supabase `whisper_jobs` table (columns: `id, user_id, status, video_url, source_type, credits_cost, transcript_id, error_message, created_at, updated_at, started_at, completed_at, processing_time_seconds`).
 
 **Step 1 — yt-dlp download (proxy-consistent):**
 
 ```python
 ydl_opts = {
     'format': 'bestaudio/best',
-    'proxy': proxy_url,
+    'proxy': proxy_url,  # IPRoyal sticky session: password_session-indxr1_lifetime-10m
+    'nocheckcertificate': True,
+    'plugin_dirs': ['/root/yt-dlp-plugins', '/root/yt-dlp-plugins/bgutil-ytdlp-pot-provider-rs.zip'],
+    'js_runtimes': {'node': {}},
     'extractor_args': {
         'youtube': {
             'player_client': ['ios', 'web_embedded'],
-        }
+        },
+        'youtubepot-bgutilhttp': {
+            'base_url': ['http://127.0.0.1:4416'],
+        },
     }
 }
 ```
 
-Format: `bestaudio/best` — DASH m4a/webm formats are no longer available in yt-dlp 2026.03.17+.
+- Format: `bestaudio/best` — DASH m4a/webm formats no longer available in yt-dlp 2026.03.17+
+- `ios` client bypasses mweb's sefc=1 server-enforced download restriction
+- `web_embedded` receives GVS PO tokens from bgutil-pot HTTP server
+- bgutil-pot Rust binary started at app startup on `127.0.0.1:4416`; socket-probe guard prevents duplicate start across uvicorn workers
+- Sticky proxy session pins all requests within a job to one exit IP (CDN URLs are IP-locked)
 
 **Step 2 — ffmpeg conversion to Opus/OGG (subprocess):**
 
@@ -118,14 +130,29 @@ Format: `bestaudio/best` — DASH m4a/webm formats are no longer available in yt
 ffmpeg -i <raw_file> -vn -map_metadata -1 -ac 1 -c:a libopus -b:a 12k -application voip output.ogg
 ```
 
-Converts to mono 12kbps Opus/OGG. At 12kbps, ~5 hours of audio fits within the 25MB OpenAI file limit. Replaces the previous 32kbps MP3 pipeline.
+Converts to mono 12kbps Opus/OGG. Replaces the previous 32kbps MP3 pipeline.
 
-**Step 3 — OpenAI Whisper API:**
+**Step 3 — AssemblyAI Universal-3 Pro (`assemblyai_client.py`):**
 
-- Model: `gpt-4o-transcribe` (configurable via `WHISPER_MODEL` env var)
-- Timeout: 1800s (`httpx.Client`)
-- Response format: `verbose_json` (includes per-segment timestamps)
-- Truncation detection: if `audio_duration − last_segment_end > 60s`, a warning is written to `whisper_jobs.error_message` and surfaced as an amber banner in the UI. Job is still marked complete.
+- Models: `["universal-3-pro", "universal-2"]` (fallback)
+- No file size limit, no timeout constraint — SDK polls internally
+- Word-level timestamps converted to ~5-second segments matching INDXR schema
+- Truncation detection code is retained but effectively inactive (no 25MB limit)
+
+**Step 4 — Transcript saved to Supabase:**
+
+```python
+supabase.table('transcripts').insert({
+    'user_id': user_id,
+    'video_id': video_id,
+    'title': video_title,
+    'transcript': transcript,
+    'duration': int(duration),
+    'processing_method': 'whisper_ai',  # tech debt: should be renamed to 'assemblyai'
+})
+```
+
+Frontend skips `onTranscriptLoaded()` after Whisper jobs — backend is the sole writer to prevent duplicate rows.
 
 **Credit Calculation:**
 
@@ -297,17 +324,16 @@ ADMIN_EMAIL                     # Single admin email address — guards /admin r
 ### Backend (`.env`)
 
 ```
-OPENAI_API_KEY          # Whisper
+ASSEMBLYAI_API_KEY      # AssemblyAI transcription
 DEEPSEEK_API_KEY        # Summarization
-PROXY_HOST              # IPRoyal
-PROXY_PORT
+PROXY_HOST              # IPRoyal (geo.iproyal.com)
+PROXY_PORT              # 12321
 PROXY_USER
-PROXY_PASSWORD
+PROXY_PASSWORD          # Sticky session appended in code: {PROXY_PASSWORD}_session-indxr1_lifetime-10m
 SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_URL
 POSTHOG_API_KEY         # Backend event tracking
 POSTHOG_HOST            # https://app.posthog.com
-DENO_PATH               # Path to deno binary — Railway: /root/.deno/bin, local: /home/aladdin/.deno/bin
 LOG_LEVEL               # Logging verbosity: WARNING (prod) or INFO (debug)
 ```
 

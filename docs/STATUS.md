@@ -21,14 +21,16 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 
 - **Single Video**: YouTube captions (XML/Text) extraction via YouTube Data API v3
 - **Playlist**: Full playlist extraction with video selection and availability pre-scan
-- **Whisper AI**: Two-step audio pipeline (yt-dlp + ffmpeg → OpenAI Whisper)
-  - Format selector prioritizes `m4a` (iOS client) to bypass PO Token restrictions
-  - IPRoyal residential proxy for YouTube CDN access
+- **AI Transcription**: Two-step audio pipeline (yt-dlp + ffmpeg → AssemblyAI Universal-3 Pro)
+  - Format selector `bestaudio/best` via iOS + web_embedded player clients
+  - IPRoyal residential proxy with sticky session (`_session-indxr1_lifetime-10m`) to prevent CDN 403 from IP rotation
+  - bgutil-pot Rust binary (`/usr/local/bin/bgutil-pot`) provides GVS PO tokens via HTTP server at `127.0.0.1:4416`
+  - bgutil yt-dlp plugin loaded from `/root/yt-dlp-plugins/` zip via `plugin_dirs`
+  - Node.js installed in Docker image for yt-dlp-ejs n-challenge solving
   - Credit cost: `Math.ceil(duration_seconds / 600)` (1 credit per 10 mins)
   - yt-dlp updated to 2026.03.17 (fixes YouTube Error 152 regression from March 2026)
-  - Format selector updated to `bestaudio/best` (DASH m4a formats no longer available in newer yt-dlp)
-  - Deno JS runtime installed and configured for YouTube challenge solving
-- **Audio Upload**: Manual `.mp3/.wav` file upload → Whisper transcription (< 25MB limit)
+  - Verified working video lengths: 11 min, 22 min, 54 min, 113 min, 148 min, 214 min
+- **Audio Upload**: Manual `.mp3/.wav` file upload → AssemblyAI transcription (no file size limit)
 - **Duplicate Detection**: Composite key (`video_id` + `processing_method`) prevents duplicates
 
 ### AI Summarization (Phase G)
@@ -82,23 +84,27 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 
 - Original SSE architecture replaced by background job polling (Phase N).
 
-### Whisper Background Job Architecture (Phase N)
+### AI Transcription Background Job Architecture (Phase N + Phase O)
 
-- **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the **Supabase `whisper_jobs` table** at each step (replaces prior in-memory dict — Railway-restart resilient). Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction.
+- **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the **Supabase `whisper_jobs` table** at each step. Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction.
+- **Transcription engine**: AssemblyAI Universal-3 Pro (`assemblyai_client.py`). Falls back to Universal-2. No file size limit, no truncation. The SDK polls internally until the job completes.
 - **Job timing**: `started_at`, `completed_at`, and `processing_time_seconds` written to `whisper_jobs` on each job; frontend shows a live elapsed timer and "Completed in M:SS" on finish.
-- **Truncation detection**: After Whisper returns, backend computes `gap = audio_duration − transcript_end`. If gap > 60s, sets `error_message` to `"Transcript may be incomplete — last {N} seconds of audio were not transcribed."` on the `complete` row. Job is still marked complete; no refund. Frontend shows an amber warning banner instead of the green success banner when this warning is present.
-- **90-minute risk warning**: Whisper confirmation modal shows an amber notice if `duration > 5400s` — "Videos over 90 minutes may produce incomplete transcripts due to API limitations."
-- **Audio codec**: ffmpeg converts downloaded audio to **Opus/OGG at 12kbps mono** (`libopus`, `-application voip`), replacing the previous MP3 pipeline. Handles up to ~5 hours within the 25MB OpenAI limit. Output extension: `.ogg`.
-- **Whisper API timeout**: `httpx.Client(timeout=1800.0)` — 30-minute timeout for long audio files.
+- **Truncation detection**: Retained in code but effectively inactive with AssemblyAI — no 25MB limit means no truncation.
+- **Audio codec**: ffmpeg converts downloaded audio to **Opus/OGG at 12kbps mono** (`libopus`, `-application voip`). Output extension: `.ogg`.
 - **GET** `/api/jobs/{job_id}?user_id=...`: Queries Supabase `whisper_jobs` table. Returns current status with ownership check; 404 for unknown jobs, 403 for wrong owner.
 - **Next.js whisper route** (`src/app/api/transcribe/whisper/route.ts`): Auth, suspension check, and **rate limiting** (`checkRateLimit`). Returns `{ job_id, status }` JSON from backend directly. `maxDuration` 60s.
 - **Next.js jobs route** (`src/app/api/jobs/[job_id]/route.ts`): Auth check, suspended check, forwards GET to Railway with `?user_id` query param.
-- **Frontend** (`src/components/free-tool/VideoTab.tsx`): `pollWhisperJob` polls every 3s; refs-based interval management prevents stale job_id bug when starting a new job while a previous one is active; button label "Check" while Whisper toggle is on; processing time estimate shown in confirm modal.
-- **Transcripts insert**: `video_id` and `title` (falls back to video_id) now saved alongside `user_id` and `transcript`.
+- **Next.js metadata route** (`src/app/api/video/metadata/[videoId]/route.ts`): Proxies to FastAPI `GET /api/video/metadata/{video_id}`. Used by frontend for accurate credit pre-calculation before showing Whisper confirmation modal.
+- **Frontend** (`src/components/free-tool/VideoTab.tsx`): `pollWhisperJob` polls every 3s; refs-based interval management prevents stale job_id bug; button label "Generate with AI" while toggle is on; processing time estimate shown in confirm modal.
+- **Transcripts insert**: `video_id`, `title`, `duration`, and `processing_method: 'whisper_ai'` saved alongside `user_id` and `transcript`. Frontend skips `onTranscriptLoaded()` after Whisper jobs (backend is the sole writer) to prevent duplicate rows.
 - **CORS**: Production domains (`indxr.ai`, `www.indxr.ai`, `indxr.vercel.app`) added to Railway backend allowed origins.
-- **AudioTab** (`src/components/free-tool/AudioTab.tsx`): Fixed to use polling (`/api/jobs/{job_id}`) instead of the old SSE approach.
+- **AudioTab** (`src/components/free-tool/AudioTab.tsx`): Uses polling (`/api/jobs/{job_id}`) instead of SSE.
 - **Stripe**: Suspended user check added to `/api/stripe/checkout` before Stripe session creation.
 - **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Polls `/api/jobs/{job_id}` (waits for complete/error).
+
+**Tech debt**:
+- `processing_method: 'whisper_ai'` should eventually be renamed to `assemblyai` now that the engine has changed. Frontend queries and backend inserts use `whisper_ai` consistently — a rename requires a DB migration and coordinated frontend update.
+- The 90-min warning in the Whisper confirmation modal still references old OpenAI limitations. AssemblyAI has no such limit — this warning should be removed.
 
 ### Logging Verbosity Control
 
@@ -298,6 +304,6 @@ The project uses a neutral utility skin (April 2025) replacing the previous Star
 
 | Setting | Value | File |
 |---------|-------|------|
-| Whisper API (`httpx.Client`) | 1800s | `backend/whisper_client.py` |
+| AssemblyAI SDK (internal polling) | No fixed timeout | `backend/assemblyai_client.py` |
 | yt-dlp `socket_timeout` | 120s | `backend/audio_utils.py` |
 | Storage display limit (`MAX_MB`) | 500 MB | `src/components/app-sidebar.tsx` (display only, no enforcement) |

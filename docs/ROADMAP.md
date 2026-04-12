@@ -30,11 +30,12 @@
 - Theme toggle (light/dark mode)
 - Responsive layouts
 
-### Phase E: Whisper AI Pipeline (Mar 2025) ✅
+### Phase E: AI Transcription Pipeline (Mar 2025) ✅
 
-- Two-step audio pipeline (yt-dlp + ffmpeg subprocess)
-- iOS player client to bypass PO Token restrictions
-- IPRoyal proxy integration
+- Two-step audio pipeline (yt-dlp + ffmpeg subprocess → AssemblyAI)
+- iOS + web_embedded player clients; bgutil-pot Rust binary provides GVS PO tokens
+- IPRoyal proxy integration with sticky session (IP-consistent CDN downloads)
+- Node.js installed in Docker for yt-dlp-ejs n-challenge solving
 - Credit pre-check and atomic deduction
 - Navigation guard (beforeunload)
 
@@ -78,14 +79,20 @@
 - [x] **Stripe**: Suspended user check added to `/api/stripe/checkout`
 - [x] **Transcripts**: `video_id` and `title` now saved in `transcripts` insert
 
-### Phase O: AssemblyAI Integration (Upcoming)
+### Phase O: AssemblyAI Integration ✅
 
 **Goal**: Replace OpenAI Whisper API with AssemblyAI Universal-3 Pro to eliminate truncation, reduce cost, and improve speed.
 
-- [ ] Retain yt-dlp audio download pipeline; upload file to AssemblyAI instead of OpenAI
-- [ ] Benefits: no token-limit truncation, 3–5× faster turnaround, 42% cheaper ($0.21/hr vs $0.36/hr), no 25MB file size limit
-- [ ] Update `whisper_client.py` → `assemblyai_client.py`; adapt segment format to INDXR schema
-- [ ] Remove truncation detection workaround once confirmed unnecessary
+- [x] Retain yt-dlp audio download pipeline; upload file to AssemblyAI instead of OpenAI
+- [x] Benefits: no token-limit truncation, 3–5× faster turnaround, 42% cheaper ($0.21/hr vs $0.36/hr), no 25MB file size limit
+- [x] `assemblyai_client.py` created; models `["universal-3-pro", "universal-2"]`; word-level timestamps → ~5s segments
+- [x] `processing_method: 'whisper_ai'` and `duration` now saved in `transcripts` insert
+- [x] Frontend duplicate-insert bug fixed: `onTranscriptLoaded()` skipped after Whisper jobs; backend is sole writer
+- [x] Verified working at: 11 min, 22 min, 54 min, 113 min, 148 min, 214 min
+
+**Tech debt remaining**:
+- `processing_method: 'whisper_ai'` should be renamed to `assemblyai` — requires DB migration + coordinated frontend update
+- 90-min warning in Whisper confirmation modal references old OpenAI limitations — should be removed
 
 ### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
 

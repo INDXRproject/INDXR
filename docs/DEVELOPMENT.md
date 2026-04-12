@@ -45,10 +45,9 @@ The backend must be running for:
 
 The Python backend is deployed on Railway at https://indxr-production.up.railway.app.
 
-- **Dockerfile**: `backend/Dockerfile` (Python 3.12-slim with ffmpeg, unzip, Deno)
+- **Dockerfile**: `backend/Dockerfile` (Python 3.12-slim with ffmpeg, wget, Node.js/npm, bgutil-pot binary and plugin zip)
 - **Auto-deploy**: Every push to `master` triggers a Railway rebuild — no manual steps needed
-- **Service variables** (set in Railway dashboard): `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`, `DENO_PATH=/root/.deno/bin`, `ASSEMBLYAI_API_KEY=<your key>`
-- **Deno inside Railway container**: installed at `/root/.deno/bin` — `DENO_PATH` is already set as a Railway service variable
+- **Service variables** (set in Railway dashboard): `RAILWAY_DOCKERFILE_PATH=/backend/Dockerfile`, `NO_CACHE=1`, `ASSEMBLYAI_API_KEY=<your key>`
 
 **To update yt-dlp or any Python package and redeploy:**
 
@@ -90,11 +89,13 @@ PROXY_PASSWORD=IhObPDmdrLKDInQT
 
 > **Password confusion warning:** The password contains both a capital `I` (India) and a lowercase `l` (lima). They look nearly identical in most fonts. If the proxy returns `407 Proxy Auth Required`, double-check character-by-character.
 
-**Manual proxy test:**
+**Sticky session**: `get_proxy_url()` in `main.py` automatically appends `_session-indxr1_lifetime-10m` to the password. This pins all requests within a job to the same IPRoyal exit IP — required because YouTube CDN URLs are IP-locked, and a rotating IP between the format-selection request and the actual download causes HTTP 403.
+
+**Manual proxy test (with sticky session):**
 
 ```bash
 venv/bin/python3 -m yt_dlp \
-  --proxy "http://RgV6nsz0OmCBRIXv:IhObPDmdrLKDInQT@geo.iproyal.com:12321" \
+  --proxy "http://RgV6nsz0OmCBRIXv:IhObPDmdrLKDInQT_session-indxr1_lifetime-10m@geo.iproyal.com:12321" \
   --extractor-args "youtube:player_client=ios,web_embedded" \
   "https://youtu.be/VIDEO_ID" \
   -f "bestaudio/best" \
@@ -103,40 +104,48 @@ venv/bin/python3 -m yt_dlp \
 
 ---
 
-## Deno JS Runtime
+## bgutil-pot PO Token Server
 
-Deno is required for yt-dlp's YouTube JS challenge solving (introduced in yt-dlp 2026.03.17+).
+YouTube's GVS PO Token experiment requires a Player Orchestration token for the `web_embedded` client. bgutil-pot provides this via a local HTTP server.
 
-- **Installed at (local)**: `~/.deno/bin/deno` — `DENO_PATH=/home/aladdin/.deno/bin` in `backend/.env`
-- **Installed at (Railway)**: `/root/.deno/bin/deno` — `DENO_PATH=/root/.deno/bin` set as a Railway service variable
-- **PATH injection**: Automatic — `DENO_PATH` in `backend/.env` (or Railway service variable) is read at startup in `main.py`; no manual `export PATH` needed when starting uvicorn
-- **To install deno**:
-  ```bash
-  curl -fsSL https://deno.land/install.sh | sh
-  ```
+- **Binary**: `backend/bin/bgutil-pot-linux-x86_64` (bundled in repo, copied to `/usr/local/bin/bgutil-pot` in Docker)
+- **Plugin**: `bgutil-ytdlp-pot-provider-rs.zip` downloaded at Docker build time to `/root/yt-dlp-plugins/`
+- **Server**: Started at app startup in `main.py` on `127.0.0.1:4416`; socket-probe guard ensures only one uvicorn worker starts it
+- **yt-dlp config**: `plugin_dirs` points to `/root/yt-dlp-plugins/`; `extractor_args` includes `youtubepot-bgutilhttp.base_url = http://127.0.0.1:4416`
+- **Note**: The iOS client bypasses PO token requirements entirely. Only `web_embedded` uses bgutil.
+
+**To update the bgutil-pot binary** (when a new release fixes issues):
+```bash
+wget https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-pot-linux-x86_64 \
+  -O backend/bin/bgutil-pot-linux-x86_64
+chmod +x backend/bin/bgutil-pot-linux-x86_64
+git add backend/bin/bgutil-pot-linux-x86_64
+git commit -m "chore: update bgutil-pot binary"
+git push
+```
 
 ---
 
-## Whisper Audio Pipeline
+## AI Transcription Pipeline
 
-Full flow when debugging Whisper issues:
+Full flow when debugging transcription issues:
 
 1. Frontend calls `POST /api/transcribe/whisper` with `video_id` or `audio_file`
 2. `main.py` creates a `whisper_jobs` row in Supabase (`status: pending`) and returns `{ job_id }` immediately
 3. `run_whisper_job` background task begins: `extract_youtube_audio()` in `audio_utils.py`
-4. yt-dlp downloads audio-only stream (`bestaudio/best` via iOS client) via IPRoyal proxy
+4. yt-dlp downloads audio-only stream (`bestaudio/best` via iOS + web_embedded clients) via IPRoyal sticky-session proxy; bgutil-pot provides GVS PO tokens for `web_embedded`
 5. ffmpeg converts to **mono 12kbps Opus/OGG** (`libopus`, `-application voip`, output `.ogg`)
-6. OGG file sent to AssemblyAI Universal-3 Pro (`assemblyai_client.py`)
-7. Truncation check: if `audio_duration − last_segment_end > 60s`, warning written to `whisper_jobs.error_message`
-8. Transcript inserted into Supabase `transcripts` (with `video_id` and `title`), credits deducted atomically
+6. OGG file sent to AssemblyAI Universal-3 Pro (`assemblyai_client.py`); SDK polls until complete
+7. Truncation check: retained in code but inactive — AssemblyAI has no 25MB limit
+8. Transcript inserted into Supabase `transcripts` (with `video_id`, `title`, `duration`, `processing_method: 'whisper_ai'`), credits deducted atomically
 9. `whisper_jobs` row updated to `status: complete` with `completed_at` and `processing_time_seconds`
-10. Frontend polling detects `complete`, loads transcript, shows green (or amber if truncation warning) banner
+10. Frontend polling detects `complete`, loads transcript, shows green banner
 
-> **Job state in Supabase**: All job state lives in `whisper_jobs` — not in-memory. This means Railway restarts mid-job will not lose job metadata, though the background task itself will be lost and the job will stall (no automatic recovery yet).
+> **Job state in Supabase**: All job state lives in `whisper_jobs` — not in-memory. Railway restarts mid-job lose the background task; job will stall with no automatic recovery.
 
-> **AssemblyAI**: No file size limit, no timeout constraint. The SDK handles polling internally until the job completes.
+> **No duplicate inserts**: Frontend's `onTranscriptLoaded()` is intentionally skipped after Whisper jobs — backend is the sole writer. Only the auto-captions path uses `onTranscriptLoaded()`.
 
-**Deno JS runtime**: yt-dlp uses deno (at `~/.deno/bin`) to solve YouTube JS challenges. You should see `[jsc:deno] Solving JS challenges using deno` in the logs. If missing, check `DENO_PATH` in `backend/.env`.
+**Node.js JS runtime**: yt-dlp uses Node.js (installed via apt in Docker) with `yt-dlp-ejs` to solve YouTube n-challenges. Configured via `js_runtimes: {'node': {}}` in `ydl_opts`.
 
 ---
 
@@ -200,8 +209,9 @@ The dashboard uses a 4-tab system for transcripts and summaries.
 
 | Symptom | Likely Cause | Fix |
 |---------|--------------|-----|
-| Whisper returns 403 | Proxy credentials wrong/expired | Re-check `PROXY_PASSWORD` (I vs l) |
-| Credit cost shows "1" for any video | `duration` not flowing through API | Confirm route returns `duration` |
+| YouTube audio download 403 | Proxy IP rotated mid-job | Check sticky session is appended in `get_proxy_url()` — `_session-indxr1_lifetime-10m` |
+| YouTube audio download 403 | bgutil-pot not running | Check `bgutil-pot --version` and that port 4416 is listening |
+| Credit cost shows "1" for any video | Metadata route returning no duration | Check `/api/video/metadata/{id}` returns `duration` |
 | Backend changes not reflected | uvicorn without `--reload` | Restart with `--reload` flag |
 | yt-dlp selects video format | Format selector reverted | Must be `bestaudio/best` |
 | Tiptap SSR Hydration Error | `immediatelyRender` not set | Set `immediatelyRender: false` |
@@ -222,8 +232,9 @@ The dashboard uses a 4-tab system for transcripts and summaries.
 |----------|--------|-------------|
 | `/api/extract` | POST | Extract YouTube captions |
 | `/api/summarize` | POST | AI summarization via DeepSeek |
-| `/api/transcribe/whisper` | POST | Start Whisper job — returns `{ job_id, status }` immediately |
-| `/api/jobs/{job_id}` | GET | Poll Whisper job status (`?user_id=`) |
+| `/api/transcribe/whisper` | POST | Start AI transcription job — returns `{ job_id, status }` immediately |
+| `/api/jobs/{job_id}` | GET | Poll transcription job status (`?user_id=`) |
+| `/api/video/metadata/{video_id}` | GET | Fetch video title + duration (YouTube API → yt-dlp fallback) |
 | `/api/playlist/info` | GET | Get playlist metadata |
 | `/api/check-playlist-availability` | POST | Check video availability in playlist |
 
@@ -248,7 +259,7 @@ To enable verbose logging, set in `backend/.env`:
 LOG_LEVEL=INFO
 ```
 
-yt-dlp verbose output is suppressed by default (`quiet=True`, `verbose=False` in `audio_utils.py`). To debug a specific download issue, temporarily set `verbose=True` and `quiet=False` in the `ydl_opts` dict in `audio_utils.py:98`.
+yt-dlp verbose output is suppressed by default (`quiet=True`, `verbose=False` in `audio_utils.py`). To debug a specific download issue, temporarily set `verbose=True` and `quiet=False` in the `ydl_opts` dict in `audio_utils.py` (around line 113).
 
 ---
 
