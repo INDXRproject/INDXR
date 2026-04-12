@@ -417,7 +417,6 @@ export default function TranscribePage() {
           <PlaylistTab
             isAuthenticated={true}
             onAuthRequired={() => {}}
-            onExtractVideo={processVideo}
             onSwitchToAudio={() => setActiveTab('audio')}
             onPlaylistComplete={handlePlaylistComplete}
             onExtractingChange={setIsExtracting}

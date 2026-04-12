@@ -303,56 +303,26 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                {containsDuplicates && hasEnoughCredits ? (
-                   <>
-                     <div className="flex flex-col gap-2">
-                       <span className="text-xs text-amber-600 dark:text-amber-400 font-medium text-center sm:text-right">What to do with the existing transcript?</span>
-                       <div className="flex gap-2">
-                         <div className="flex items-center border border-border rounded-md overflow-hidden bg-background">
-                            <button
-                               onClick={() => setDuplicateAction('replace')}
-                               className={`px-3 py-1.5 text-xs font-medium transition-colors ${duplicateAction === 'replace' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}
-                            >
-                               Replace text only
-                            </button>
-                            <button
-                               onClick={() => setDuplicateAction('reset')}
-                               className={`px-3 py-1.5 text-xs font-medium transition-colors border-l border-border ${duplicateAction === 'reset' ? 'bg-destructive text-destructive-foreground' : 'text-foreground hover:bg-muted'}`}
-                            >
-                               Full reset
-                            </button>
-                         </div>
-                         <Button
-                             onClick={() => {
-                               onProceed(localResults, duplicateAction);
-                             }}
-                             className="shadow-lg shrink-0"
-                         >
-                             {currentSummary.totalCredits > 0
-                                ? `Extract — ${currentSummary.totalCredits} credits for AI Transcription videos`
-                                : 'Extract Selected'}
-                         </Button>
-                       </div>
-                     </div>
-                   </>
-                ) : (
-                    <>
-                      <Button variant="outline" onClick={onCancel} className="flex-1 md:flex-none">
-                          Cancel
-                      </Button>
-                      <Button
-                          onClick={() => {
-                            onProceed(localResults);
-                          }}
-                          disabled={!hasEnoughCredits && currentSummary.totalCredits > 0}
-                          className="flex-1 md:flex-none px-8 shadow-lg shadow-primary/20"
-                      >
-                          {currentSummary.totalCredits > 0
-                            ? `Extract — ${currentSummary.totalCredits} credits for AI Transcription videos`
-                            : 'Extract Selected'}
-                      </Button>
-                    </>
+                {/* TODO Phase R step 2: re-enable when backend supports duplicate_map */}
+                {containsDuplicates && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium self-center">
+                        {localResults.filter(r => r.isDuplicate && r.status !== 'unavailable').length} duplicate(s) will be skipped — already in your library.
+                    </p>
                 )}
+                <Button variant="outline" onClick={onCancel} className="flex-1 md:flex-none">
+                    Cancel
+                </Button>
+                <Button
+                    onClick={() => {
+                      onProceed(localResults);
+                    }}
+                    disabled={!hasEnoughCredits && currentSummary.totalCredits > 0}
+                    className="flex-1 md:flex-none px-8 shadow-lg shadow-primary/20"
+                >
+                    {currentSummary.totalCredits > 0
+                      ? `Extract — ${currentSummary.totalCredits} credits for AI Transcription videos`
+                      : 'Extract Selected'}
+                </Button>
             </div>
         </div>
       </div>

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { createClient } from "@/utils/supabase/client"
-import posthog from "posthog-js"
 
 export interface PlaylistStats {
   playlistTitle?: string
@@ -25,13 +24,25 @@ export interface PlaylistStats {
 interface PlaylistTabProps {
   isAuthenticated: boolean
   onAuthRequired: () => void
-  onExtractVideo?: (videoId: string, options?: { status?: string; duplicateId?: string; duplicateAction?: 'replace' | 'reset'; collectionId?: string; title?: string }) => Promise<void>
   onSwitchToAudio?: () => void
   onPlaylistComplete?: (stats: PlaylistStats) => void
   onExtractingChange?: (extracting: boolean) => void
 }
 
-export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, onSwitchToAudio, onPlaylistComplete, onExtractingChange }: PlaylistTabProps) {
+function mapBackendStatus(res: { status: string; error_type?: string }): VideoStatus {
+  if (res.status === 'success') return 'success'
+  switch (res.error_type) {
+    case 'bot_detection':      return 'bot_detection'
+    case 'timeout':            return 'timeout'
+    case 'age_restricted':     return 'age_restricted'
+    case 'members_only':       return 'members_only'
+    case 'youtube_restricted': return 'youtube_restricted'
+    case 'no_speech_detected': return 'no_speech'
+    default:                   return 'error'
+  }
+}
+
+export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, onPlaylistComplete, onExtractingChange }: PlaylistTabProps) {
   const [error, setError] = useState<{ message: string; isCreditsError?: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [videoStatuses, setVideoStatuses] = useState<Record<string, VideoStatus>>({})
@@ -39,30 +50,25 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
+  const playlistJobIdRef = useRef<string | null>(null)
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const { credits, refreshCredits } = useAuth()
 
   // Notify parent of extraction state changes
   useEffect(() => { onExtractingChange?.(loading) }, [loading, onExtractingChange])
 
-  // Warn before browser/tab close while extraction is running
+  // Clean up poll interval on unmount
   useEffect(() => {
-    if (!loading) return
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [loading])
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    }
+  }, [])
 
   const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string) => {
     setError(null)
     setProgressMessage("Initializing...")
-    
-    if (!onExtractVideo) {
-         setError({ message: "Extraction function not provided" });
-         return;
-    }
 
     // ── Pre-flight credit check ────────────────────────────────────────────
-    // Sum credits required for all needs_whisper videos in this extraction batch.
     const totalWhisperCredits = (availabilityData ?? [])
       .filter((v) => videoIds.includes(v.videoId) && v.status === 'needs_whisper')
       .reduce((sum: number, v) => sum + (v.estimatedCredits ?? 0), 0);
@@ -72,7 +78,6 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
         (v) => videoIds.includes(v.videoId) && v.status === 'needs_whisper'
       ).length;
       const shortfall = totalWhisperCredits - credits;
-      // Estimate how many Whisper videos to deselect to cover the shortfall
       const avgCostPerVideo = totalWhisperCredits / whisperVideoCount;
       const videosToDeselect = Math.ceil(shortfall / avgCostPerVideo);
       setError({
@@ -90,173 +95,162 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
       startTimeRef.current = Date.now()
       intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
 
+      // Create or find collection for this playlist
       let autoCollectionId: string | undefined = undefined;
       if (playlistTitle) {
-          const supabase = createClient()
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-              const { data: existingCol } = await supabase.from('collections').select('id').eq('user_id', user.id).ilike('name', playlistTitle).limit(1).maybeSingle()
-              if (existingCol) {
-                  autoCollectionId = existingCol.id
-              } else {
-                  const { data: newCol } = await supabase.from('collections').insert({ user_id: user.id, name: playlistTitle }).select('id').single()
-                  if (newCol) autoCollectionId = newCol.id
-              }
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: existingCol } = await supabase.from('collections').select('id').eq('user_id', user.id).ilike('name', playlistTitle).limit(1).maybeSingle()
+          if (existingCol) {
+            autoCollectionId = existingCol.id
+          } else {
+            const { data: newCol } = await supabase.from('collections').insert({ user_id: user.id, name: playlistTitle }).select('id').single()
+            if (newCol) autoCollectionId = newCol.id
           }
+        }
       }
-      
-      // Initialize statuses
+
+      // Initialize statuses: all pending, unavailable ones marked
       const initialStatuses: Record<string, VideoStatus> = {}
       videoIds.forEach(id => {
         initialStatuses[id] = 'pending'
       })
-      
-      // Mark unavailable videos if availability data is present
+
       const availabilityMap = new Map<string, any>();
       if (availabilityData) {
         availabilityData.forEach(video => {
           if (video.status === 'unavailable' && videoIds.includes(video.videoId)) {
             initialStatuses[video.videoId] = 'unavailable'
           }
-          // Store entire object for extraction routing
           availabilityMap.set(video.videoId, video);
         })
       }
-      
+
       setVideoStatuses(initialStatuses)
-      
-      let successCount = 0;
-      let processedCount = 0;
-      // Local status tracker — React state updates are async so we can't read videoStatuses mid-loop
-      const localStatuses: Record<string, VideoStatus> = { ...initialStatuses };
 
-      for (const videoId of videoIds) {
-          // Skip if already marked unavailable
-          if (initialStatuses[videoId] === 'unavailable') {
-              processedCount++;
-              continue;
-          }
+      // Build use_whisper_ids from availabilityData
+      const useWhisperIds = (availabilityData ?? [])
+        .filter((v: any) => videoIds.includes(v.videoId) && v.status === 'needs_whisper')
+        .map((v: any) => v.videoId)
 
-          processedCount++;
-          setProgressMessage(`Processing video ${processedCount}/${videoIds.length}...`)
-
-          try {
-              setVideoStatuses(prev => ({ ...prev, [videoId]: 'extracting' }))
-              const videoData = availabilityMap.get(videoId);
-
-              await onExtractVideo(videoId, {
-                 status: videoData?.status,
-                 duplicateId: videoData?.duplicateId,
-                 duplicateAction: videoData?.duplicateAction,
-                 collectionId: autoCollectionId,
-                 title: videoData?.title,
-              });
-
-              localStatuses[videoId] = 'success';
-              setVideoStatuses(prev => ({ ...prev, [videoId]: 'success' }))
-              successCount++;
-
-              const isWhisper = videoData?.status === 'needs_whisper' || videoData?.status === 'whisper_ai';
-
-              // Track in PostHog
-              posthog.capture('transcript_extracted', {
-                  type: 'playlist_video',
-                  credits_used: isWhisper ? videoData?.estimatedCredits || 1 : 0,
-                  processing_method: isWhisper ? 'whisper_ai' : 'youtube_captions',
-                  duplicate_action: videoData?.duplicateAction
-              })
-
-              refreshCredits(); // Live update!
-          } catch (e) {
-              console.error(`Failed to extract ${videoId}:`, e);
-              const errMsg = e instanceof Error ? e.message : '';
-              const errorType = errMsg.includes(':') ? errMsg.split(':')[0] : null;
-              const errLower = errMsg.toLowerCase();
-
-              let status: VideoStatus = 'error';
-              if (errorType === 'bot_detection') status = 'bot_detection';
-              else if (errorType === 'timeout') status = 'timeout';
-              else if (errorType === 'age_restricted') status = 'age_restricted';
-              else if (errorType === 'members_only') status = 'members_only';
-              else if (errorType === 'youtube_restricted') status = 'youtube_restricted';
-              else if (errMsg === 'no_speech_detected') status = 'no_speech';
-              else if (errLower.includes('members_only') || errLower.includes('members-only')) status = 'members_only';
-              else if (errLower.includes('age')) status = 'age_restricted';
-              else if (errLower.includes('sign in') || errLower.includes('bot')) status = 'bot_detection';
-              else if (errLower.includes('timed out') || errLower.includes('timeout')) status = 'timeout';
-              else if (errMsg.includes('152') || errLower.includes('unavailable')) status = 'youtube_restricted';
-
-              localStatuses[videoId] = status;
-              setVideoStatuses(prev => ({ ...prev, [videoId]: status }))
-          }
-      }
-
-      // Retry videos that were blocked by bot detection or timed out — wait 30s then retry once
-      const retryIds = videoIds.filter(id => localStatuses[id] === 'bot_detection' || localStatuses[id] === 'timeout');
-
-      if (retryIds.length > 0) {
-          setProgressMessage(`Retrying ${retryIds.length} temporarily blocked video${retryIds.length !== 1 ? 's' : ''}... (waiting 30s)`);
-          await new Promise(resolve => setTimeout(resolve, 30000));
-
-          for (const videoId of retryIds) {
-              setProgressMessage(`Retrying ${videoId}...`);
-              try {
-                  setVideoStatuses(prev => ({ ...prev, [videoId]: 'extracting' }))
-                  const videoData = availabilityMap.get(videoId);
-                  await onExtractVideo(videoId, {
-                      status: videoData?.status,
-                      duplicateId: videoData?.duplicateId,
-                      duplicateAction: videoData?.duplicateAction,
-                      collectionId: autoCollectionId,
-                      title: videoData?.title,
-                  });
-                  setVideoStatuses(prev => ({ ...prev, [videoId]: 'success' }))
-                  successCount++;
-                  refreshCredits();
-              } catch (e) {
-                  console.error(`Retry failed for ${videoId}:`, e);
-                  const errMsg = e instanceof Error ? e.message : '';
-                  const errorType = errMsg.includes(':') ? errMsg.split(':')[0] : null;
-                  const errLower = errMsg.toLowerCase();
-                  let status: VideoStatus = 'error';
-                  if (errorType === 'bot_detection') status = 'bot_detection';
-                  else if (errorType === 'timeout') status = 'timeout';
-                  else if (errorType === 'age_restricted') status = 'age_restricted';
-                  else if (errorType === 'members_only') status = 'members_only';
-                  else if (errorType === 'youtube_restricted') status = 'youtube_restricted';
-                  else if (errMsg === 'no_speech_detected') status = 'no_speech';
-                  else if (errLower.includes('members_only') || errLower.includes('members-only')) status = 'members_only';
-                  else if (errLower.includes('age')) status = 'age_restricted';
-                  else if (errLower.includes('sign in') || errLower.includes('bot')) status = 'bot_detection';
-                  else if (errLower.includes('timed out') || errLower.includes('timeout')) status = 'timeout';
-                  else if (errMsg.includes('152') || errLower.includes('unavailable')) status = 'youtube_restricted';
-                  localStatuses[videoId] = status;
-                  setVideoStatuses(prev => ({ ...prev, [videoId]: status }))
-              }
-          }
-      }
-
-      onPlaylistComplete?.({
-        playlistTitle,
-        playlistUrl,
-        totalSelected: videoIds.length,
-        totalSucceeded: successCount,
-        failedBotDetection: Object.values(localStatuses).filter(s => s === 'bot_detection').length,
-        failedTimeout: Object.values(localStatuses).filter(s => s === 'timeout').length,
-        failedAgeRestricted: Object.values(localStatuses).filter(s => s === 'age_restricted').length,
-        failedMembersOnly: Object.values(localStatuses).filter(s => s === 'members_only').length,
-        failedOther: Object.values(localStatuses).filter(s => s === 'error' || s === 'no_speech' || s === 'youtube_restricted').length,
-        processingTimeSecs: Math.floor((Date.now() - startTimeRef.current) / 1000),
+      // Exclude duplicates — backend always INSERTs; videos already in the library are skipped.
+      // Their existing "Already in library" badge in PlaylistManager continues to display as-is.
+      const extractableIds = videoIds.filter(vid => {
+        const av = availabilityMap.get(vid)
+        return !av?.duplicateId
       })
 
-      setProgressMessage("");
+      // Start extraction job on the backend
+      const response = await fetch('/api/playlist/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          video_ids: extractableIds,
+          collection_id: autoCollectionId ?? null,
+          use_whisper_ids: useWhisperIds,
+          playlist_title: playlistTitle ?? null,
+          playlist_url: playlistUrl ?? null,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Failed to start playlist extraction')
+      }
+
+      const { job_id } = await response.json()
+      playlistJobIdRef.current = job_id
+      setProgressMessage(`Starting extraction of ${extractableIds.length} video${extractableIds.length !== 1 ? 's' : ''}...`)
+
+      // Poll for progress every 3s
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const pollResp = await fetch(`/api/playlist/jobs/${job_id}`)
+          if (!pollResp.ok) return  // transient error — keep polling
+
+          const job = await pollResp.json()
+          const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string }>
+
+          // Update per-video statuses from video_results
+          const newStatuses: Record<string, VideoStatus> = {}
+          for (const [vid, res] of Object.entries(vr)) {
+            newStatuses[vid] = mapBackendStatus(res)
+          }
+          // Mark the currently-processing video as 'extracting'
+          if (job.current_video_index != null && Array.isArray(job.video_ids)) {
+            const currentVid = job.video_ids[job.current_video_index]
+            if (currentVid && !vr[currentVid]) newStatuses[currentVid] = 'extracting'
+          }
+          setVideoStatuses(prev => ({ ...prev, ...newStatuses }))
+
+          // Update progress message
+          if (job.current_video_title && job.total_videos) {
+            setProgressMessage(
+              `Extracting video ${(job.current_video_index ?? 0) + 1} of ${job.total_videos}: ${job.current_video_title}`
+            )
+          }
+
+          // Terminal states
+          if (job.status === 'complete' || job.status === 'error') {
+            clearInterval(pollIntervalRef.current!)
+            pollIntervalRef.current = null
+            playlistJobIdRef.current = null
+            setProgressMessage("")
+
+            // Final status pass — apply all video_results
+            const finalStatuses: Record<string, VideoStatus> = {}
+            for (const [vid, res] of Object.entries(vr)) {
+              finalStatuses[vid] = mapBackendStatus(res)
+            }
+            setVideoStatuses(prev => ({ ...prev, ...finalStatuses }))
+
+            // Refresh library sidebar
+            window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+
+            if (job.status === 'error') {
+              setError({ message: 'Something went wrong during extraction. Any successfully extracted transcripts have been saved to your library.' })
+            }
+
+            // Derive PlaylistStats from job row and call completion callback
+            const errVids = Object.values(vr)
+            onPlaylistComplete?.({
+              playlistTitle: job.playlist_title ?? playlistTitle,
+              playlistUrl:   job.playlist_url  ?? playlistUrl,
+              totalSelected: job.total_videos ?? videoIds.length,
+              totalSucceeded: job.completed ?? 0,
+              failedBotDetection:  errVids.filter(r => r.error_type === 'bot_detection').length,
+              failedTimeout:       errVids.filter(r => r.error_type === 'timeout').length,
+              failedAgeRestricted: errVids.filter(r => r.error_type === 'age_restricted').length,
+              failedMembersOnly:   errVids.filter(r => r.error_type === 'members_only').length,
+              failedOther:         errVids.filter(r =>
+                r.status === 'error' &&
+                !['bot_detection', 'timeout', 'age_restricted', 'members_only'].includes(r.error_type ?? '')
+              ).length,
+              processingTimeSecs: job.processing_time_seconds
+                ?? Math.floor((Date.now() - startTimeRef.current) / 1000),
+            })
+
+            refreshCredits()
+            setLoading(false)
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current)
+              intervalRef.current = null
+            }
+          }
+        } catch (pollErr) {
+          console.error('Playlist poll error:', pollErr)
+          // Non-fatal — keep polling
+        }
+      }, 3000)
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to extract playlist"
       setError({ message: errorMessage })
-    } finally {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
       setLoading(false)
+      setProgressMessage("")
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null }
     }
   }
 

@@ -350,9 +350,16 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                         <div>
                              <h3 className="text-lg font-bold text-foreground">Extraction Complete!</h3>
                              <p className="text-muted-foreground text-sm">
-                                 {Object.values(videoStatuses).filter(s => s === 'success').length}/{Object.keys(videoStatuses).length} processed successfully
-                                 {(() => { const f = Object.values(videoStatuses).filter(s => s !== 'success' && s !== 'pending' && s !== 'extracting' && s !== 'unavailable').length; return f > 0 ? ` • ${f} failed` : ''; })()}
-                                 {finalElapsed > 0 ? ` • Completed in ${formatElapsed(finalElapsed)}` : ''}
+                                 {(() => {
+                                   const succeeded = Object.values(videoStatuses).filter(s => s === 'success').length;
+                                   const total = Object.keys(videoStatuses).length;
+                                   const failed = Object.values(videoStatuses).filter(s => s !== 'success' && s !== 'pending' && s !== 'extracting' && s !== 'unavailable').length;
+                                   const time = finalElapsed > 0 ? ` in ${formatElapsed(finalElapsed)}` : '';
+                                   if (failed === 0) {
+                                     return `All ${total} video${total !== 1 ? 's' : ''} extracted successfully${time}. Your transcripts are ready in the library.`;
+                                   }
+                                   return `Extracted ${succeeded} of ${total} video${total !== 1 ? 's' : ''}${time}. ${failed} video${failed !== 1 ? 's' : ''} couldn't be processed.`;
+                                 })()}
                              </p>
                         </div>
                     </div>
