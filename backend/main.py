@@ -1378,6 +1378,110 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
 
             await update_playlist_job(completed=completed, failed=failed, video_results=video_results)
 
+        # --- Retry pass: bot_detection and timeout (once, after 30s) ---
+        retry_ids = [
+            v for v, res in video_results.items()
+            if res.get('error_type') in ('bot_detection', 'timeout')
+        ]
+        if retry_ids:
+            logger.info(f"[playlist job {job_id}] Retrying {len(retry_ids)} video(s) after 30s delay")
+            await asyncio.sleep(30)
+            for vid in retry_ids:
+                logger.info(f"[playlist job {job_id}] Retry: {vid}")
+                try:
+                    if vid in use_whisper_set:
+                        whisper_job_id = str(uuid.uuid4())
+                        await asyncio.to_thread(
+                            lambda vid=vid, wjid=whisper_job_id: supabase.table('transcription_jobs').insert({
+                                'id': wjid,
+                                'user_id': user_id,
+                                'status': 'pending',
+                                'video_url': f'https://www.youtube.com/watch?v={vid}',
+                                'source_type': 'youtube',
+                                'file_size_bytes': 0,
+                                'file_format': 'youtube',
+                            }).execute()
+                        )
+                        await run_whisper_job(
+                            job_id=whisper_job_id,
+                            user_id=user_id,
+                            source_type='youtube',
+                            video_id=vid,
+                            audio_content=None,
+                            audio_filename=None,
+                        )
+                        job_row = await asyncio.to_thread(
+                            lambda wjid=whisper_job_id: supabase.table('transcription_jobs')
+                                .select('status,transcript_id,error_message,error_type')
+                                .eq('id', wjid)
+                                .single()
+                                .execute()
+                        )
+                        job_data = job_row.data or {}
+                        if job_data.get('status') == 'complete' and job_data.get('transcript_id'):
+                            transcript_id = job_data['transcript_id']
+                            if collection_id:
+                                await asyncio.to_thread(
+                                    lambda cid=collection_id, tid=transcript_id: supabase.table('transcripts')
+                                        .update({'collection_id': cid})
+                                        .eq('id', tid)
+                                        .execute()
+                                )
+                            t_row = await asyncio.to_thread(
+                                lambda tid=transcript_id: supabase.table('transcripts')
+                                    .select('title')
+                                    .eq('id', tid)
+                                    .single()
+                                    .execute()
+                            )
+                            title = (t_row.data or {}).get('title', vid)
+                            video_results[vid] = {'status': 'success', 'transcript_id': transcript_id}
+                            failed -= 1
+                            completed += 1
+                        else:
+                            err = job_data.get('error_message') or ''
+                            error_type = job_data.get('error_type') or _classify_error_type(err)
+                            video_results[vid] = {'status': 'error', 'error_type': error_type}
+                    else:
+                        result = await extract_with_ytdlp(vid, use_proxy=True)
+                        if isinstance(result, dict) and 'transcript' in result:
+                            transcript = result['transcript']
+                            title = result.get('title') or vid
+                            char_count = sum(len(x['text']) for x in transcript)
+                            duration = int(max(
+                                (x['offset'] + x['duration'] for x in transcript),
+                                default=0
+                            ))
+                            insert_data: dict = {
+                                'user_id': user_id,
+                                'source_type': 'youtube',
+                                'title': title,
+                                'transcript': transcript,
+                                'duration': duration,
+                                'character_count': char_count,
+                                'video_id': vid,
+                                'thumbnail_url': f'https://img.youtube.com/vi/{vid}/mqdefault.jpg',
+                                'processing_method': 'youtube_captions',
+                            }
+                            if collection_id:
+                                insert_data['collection_id'] = collection_id
+                            t = await asyncio.to_thread(
+                                lambda data=insert_data: supabase.table('transcripts').insert(data).select('id').single().execute()
+                            )
+                            transcript_id = t.data['id']
+                            video_results[vid] = {'status': 'success', 'transcript_id': transcript_id}
+                            failed -= 1
+                            completed += 1
+                        else:
+                            video_results[vid] = {'status': 'error', 'error_type': 'no_captions'}
+                except MembersOnlyVideoError:
+                    video_results[vid] = {'status': 'error', 'error_type': 'members_only'}
+                except Exception as e:
+                    error_type = _classify_error_type(str(e))
+                    video_results[vid] = {'status': 'error', 'error_type': error_type}
+                    logger.warning(f"[playlist job {job_id}] retry {vid} failed ({error_type}): {e}")
+            await update_playlist_job(completed=completed, failed=failed, video_results=video_results)
+
         now = datetime.now(timezone.utc)
         await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs').update({
