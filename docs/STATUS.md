@@ -105,6 +105,7 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 **Tech debt**:
 - `processing_method: 'whisper_ai'` should eventually be renamed to `assemblyai` now that the engine has changed. Frontend queries and backend inserts use `whisper_ai` consistently — a rename requires a DB migration and coordinated frontend update.
 - The 90-min warning in the Whisper confirmation modal still references old OpenAI limitations. AssemblyAI has no such limit — this warning should be removed.
+- Sticky proxy session ID is hardcoded as `indxr1` in `get_proxy_url()` (`main.py`). Should generate a unique random ID per extraction job (e.g. `uuid4().hex[:8]`) so concurrent jobs don't share the same session slot.
 
 ### Logging Verbosity Control
 
