@@ -329,7 +329,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                              className="shadow-lg shrink-0"
                          >
                              {currentSummary.totalCredits > 0
-                                ? `Extract — ${currentSummary.totalCredits} credits for Whisper videos`
+                                ? `Extract — ${currentSummary.totalCredits} credits for AI Transcription videos`
                                 : 'Extract Selected'}
                          </Button>
                        </div>
@@ -348,7 +348,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                           className="flex-1 md:flex-none px-8 shadow-lg shadow-primary/20"
                       >
                           {currentSummary.totalCredits > 0
-                            ? `Extract — ${currentSummary.totalCredits} credits for Whisper videos`
+                            ? `Extract — ${currentSummary.totalCredits} credits for AI Transcription videos`
                             : 'Extract Selected'}
                       </Button>
                     </>
