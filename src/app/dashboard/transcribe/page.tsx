@@ -189,8 +189,10 @@ export default function TranscribePage() {
   }
 
   const processVideo = async (videoId: string, options?: { status?: string; duplicateId?: string; duplicateAction?: 'replace' | 'reset'; collectionId?: string; title?: string }) => {
-    // Track placeholder for cleanup on failure
+    // Track placeholder for cleanup on failure (INSERT path)
     let createdPlaceholderId: string | null = null;
+    // Track updated duplicate for title restoration on failure (UPDATE path)
+    let updatedDuplicateId: string | null = null;
 
     try {
         let response;
@@ -210,12 +212,13 @@ export default function TranscribePage() {
             processing_method: effectiveMethod,
           })
           .eq('id', options.duplicateId);
-          
+
         if (updateError) {
           console.error("Error updating early transcript record:", updateError);
           throw new Error("Failed to update transcript record.");
         }
         transcriptId = options.duplicateId;
+        updatedDuplicateId = options.duplicateId; // Track for title restoration on failure
       } else {
         // Insert new placeholder
         const { data: earlyTranscript, error: insertError } = await supabase
@@ -282,22 +285,34 @@ export default function TranscribePage() {
           collectionId: options?.collectionId,
           isPlaceholder: !options?.duplicateId, // True for new videos (placeholder), false for user-triggered duplicate
         })
-        // Placeholder was promoted to a real transcript — don't delete it in finally
+        // Placeholder was promoted to a real transcript — don't delete/restore in finally
         createdPlaceholderId = null;
-        
+        updatedDuplicateId = null;
+
     } catch (error) {
         console.error(`Process video ${videoId} failed:`, error)
         // Re-throw with the original message so callers can detect specific errors
         // (e.g. 'no_speech_detected' from Whisper on silent videos)
         throw error
     } finally {
-        // Always clean up placeholder row if we created one and it wasn't promoted to a real transcript
+        // INSERT path: delete orphan placeholder row
         if (createdPlaceholderId) {
           try {
             await supabase.from('transcripts').delete().eq('id', createdPlaceholderId);
             window.dispatchEvent(new CustomEvent('indxr-library-refresh'));
           } catch (cleanupError) {
             console.error('Failed to clean up placeholder:', cleanupError);
+          }
+        }
+        // UPDATE path: restore title so the existing row isn't stuck as "Processing Video [ID]..."
+        if (updatedDuplicateId) {
+          try {
+            await supabase.from('transcripts')
+              .update({ title: options?.title || videoId })
+              .eq('id', updatedDuplicateId);
+            window.dispatchEvent(new CustomEvent('indxr-library-refresh'));
+          } catch (cleanupError) {
+            console.error('Failed to restore transcript title after failure:', cleanupError);
           }
         }
     }
