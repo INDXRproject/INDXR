@@ -111,6 +111,16 @@
 - [x] **Navigation guards**: `beforeunload` listener in `PlaylistTab.tsx` while extracting; Single Video / Audio Upload tabs disabled with dimming and inline warning in `transcribe/page.tsx`
 - [x] **Completion screen**: "Completed in M:SS" shown next to success count in `PlaylistManager.tsx`
 
+### Phase R: Backend Playlist Orchestration (planned)
+
+**Goal**: Move playlist extraction loop from frontend to backend so jobs survive browser navigation, tab closes, and page refreshes.
+
+- [ ] **`POST /api/playlist/extract`**: Accepts full video list, starts background job, returns `job_id` immediately
+- [ ] **`GET /api/playlist/jobs/{job_id}`**: Returns live progress (`current_video_index`, `completed`, `failed`, `video_results`)
+- [ ] **`playlist_extraction_jobs` Supabase table**: Persists job state across Railway restarts
+- [ ] **Frontend refactor**: `PlaylistTab` polls job status instead of driving the extraction loop
+- [ ] **Navigation guards simplified**: Top navbar active-job indicator + job detection on page load
+
 ### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
 
 **Goal**: Launch-ready operations and monitoring.
