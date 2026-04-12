@@ -367,7 +367,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                       const extractionError = vals.filter(s => s === 'error').length;
                       const groups: string[] = [
                         ...(botOrTimeout > 0 ? [`⚠️ ${botOrTimeout} video${botOrTimeout !== 1 ? 's' : ''} were temporarily blocked by YouTube. These were retried automatically — if still failing, try again later or use Audio Upload.`] : []),
-                        ...(ageRestricted > 0 ? [`🔞 ${ageRestricted} video${ageRestricted !== 1 ? 's' : ''} are age-restricted. YouTube prevents transcription of these videos. Download the audio manually and use Audio Upload instead.`] : []),
+                        ...(ageRestricted > 0 ? [`🔞 ${ageRestricted} video${ageRestricted !== 1 ? 's' : ''} ${ageRestricted !== 1 ? 'are' : 'is'} age-restricted. YouTube prevents transcription of these videos. Download the audio manually and use Audio Upload instead.`] : []),
                         ...(membersOnly > 0 ? [`🔒 ${membersOnly} video${membersOnly !== 1 ? 's' : ''} are members-only. You need a channel membership to access these videos.`] : []),
                         ...(youtubeRestricted > 0 ? [`🚫 ${youtubeRestricted} video${youtubeRestricted !== 1 ? 's' : ''} are unavailable or restricted on YouTube.`] : []),
                         ...(extractionError > 0 ? [`❌ ${extractionError} video${extractionError !== 1 ? 's' : ''} failed due to an unexpected error. Try again later.`] : []),

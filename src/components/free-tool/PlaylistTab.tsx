@@ -230,6 +230,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
                   else if (errLower.includes('sign in') || errLower.includes('bot')) status = 'bot_detection';
                   else if (errLower.includes('timed out') || errLower.includes('timeout')) status = 'timeout';
                   else if (errMsg.includes('152') || errLower.includes('unavailable')) status = 'youtube_restricted';
+                  localStatuses[videoId] = status;
                   setVideoStatuses(prev => ({ ...prev, [videoId]: status }))
               }
           }

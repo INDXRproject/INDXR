@@ -401,7 +401,7 @@ export default function TranscribePage() {
         </TabsList>
         {isExtracting && (
           <p className="text-xs text-amber-500/80 text-center -mt-4">
-            Extraction in progress — switching tabs will cancel it.
+            Extraction in progress — tab switching is disabled.
           </p>
         )}
 
