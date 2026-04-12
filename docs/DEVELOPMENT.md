@@ -83,8 +83,8 @@ Credentials are stored in `backend/.env`:
 ```
 PROXY_HOST=geo.iproyal.com
 PROXY_PORT=12321
-PROXY_USER=RgV6nsz0OmCBRIXv
-PROXY_PASSWORD=IhObPDmdrLKDInQT
+PROXY_USER=your-proxy-username
+PROXY_PASSWORD=your-proxy-password
 ```
 
 > **Password confusion warning:** The password contains both a capital `I` (India) and a lowercase `l` (lima). They look nearly identical in most fonts. If the proxy returns `407 Proxy Auth Required`, double-check character-by-character.
@@ -95,7 +95,7 @@ PROXY_PASSWORD=IhObPDmdrLKDInQT
 
 ```bash
 venv/bin/python3 -m yt_dlp \
-  --proxy "http://RgV6nsz0OmCBRIXv:IhObPDmdrLKDInQT_session-indxr1_lifetime-10m@geo.iproyal.com:12321" \
+  --proxy "http://your-proxy-username:your-proxy-password_session-indxr1_lifetime-10m@geo.iproyal.com:12321" \
   --extractor-args "youtube:player_client=ios,web_embedded" \
   "https://youtu.be/VIDEO_ID" \
   -f "bestaudio/best" \
