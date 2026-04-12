@@ -12,6 +12,12 @@ import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "@/utils/supabase/client"
 
+function formatElapsed(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
 interface AudioTabProps {
   onTranscriptLoaded?: (transcript: TranscriptItem[], metadata: TranscriptMetadata) => void
 }
@@ -27,6 +33,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [isUploading, setIsUploading] = useState(false)
   const [whisperStatus, setWhisperStatus] = useState<'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'>('idle')
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Get actual audio duration from file
@@ -224,6 +232,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         return
       }
 
+      // Start elapsed timer
+      setElapsedSeconds(0)
+      intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+
       // Poll until terminal state
       const POLL_INTERVAL_MS = 3000
       const MAX_POLLS = 200
@@ -292,6 +304,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       console.error('Transcription error:', error)
       toast.error('Something went wrong. Please try again.')
     } finally {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
       setIsTranscribing(false)
       setWhisperStatus('idle')
     }
@@ -425,6 +438,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 : whisperStatus === 'transcribing' ? 'Transcribing with AI...'
                 : whisperStatus === 'saving' ? 'Saving...'
                 : 'Processing...'}
+              {elapsedSeconds > 0 && (
+                <span className="ml-2 font-mono text-xs opacity-70">{formatElapsed(elapsedSeconds)}</span>
+              )}
             </>
           ) : (
             <>

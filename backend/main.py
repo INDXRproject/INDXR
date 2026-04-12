@@ -848,6 +848,7 @@ async def run_whisper_job(
             'credits_used': credit_cost
         })
 
+        character_count = sum(len(item.get('text', '')) for item in transcript)
         video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
         transcript_insert = await asyncio.to_thread(
             lambda: supabase.table('transcripts').insert({
@@ -857,6 +858,7 @@ async def run_whisper_job(
                 'transcript': transcript,
                 'duration': int(duration),
                 'processing_method': 'assemblyai',
+                'character_count': character_count,
             }).execute()
         )
         transcript_id = transcript_insert.data[0]['id']
