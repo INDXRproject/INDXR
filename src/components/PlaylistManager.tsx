@@ -45,16 +45,23 @@ interface AvailabilitySummary {
 export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech' | 'youtube_restricted' | 'age_restricted' | 'bot_detection' | 'timeout' | 'members_only'
 
 interface PlaylistManagerProps {
-  onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string) => void;
+  onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string, playlistUrl?: string) => void;
   isExtracting: boolean;
   videoStatuses?: Record<string, VideoStatus>;
   isAuthenticated: boolean;
   onAuthRequired: () => void;
   onError: (message: string | null) => void;
   onSwitchToAudio?: () => void;
+  elapsedSeconds?: number;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, isAuthenticated, onAuthRequired, onError, onSwitchToAudio }: PlaylistManagerProps) {
+function formatElapsed(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, elapsedSeconds = 0 }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -76,7 +83,11 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
   useEffect(() => {
     if (!isExtracting && Object.keys(videoStatuses).length > 0) {
       // Check if all are done (success or any failure type)
-      const allDone = Object.values(videoStatuses).every(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted')
+      const allDone = Object.values(videoStatuses).every(s =>
+        s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' ||
+        s === 'youtube_restricted' || s === 'age_restricted' || s === 'bot_detection' ||
+        s === 'timeout' || s === 'members_only'
+      )
       if (allDone) {
          setIsCompleted(true)
          refreshCredits()
@@ -290,7 +301,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
 
       setHasExtracted(true);
       setShowAvailabilityModal(false); // Hide inline summary
-      onExtract(extractableIds, enhancedResults, playlist?.title);
+      onExtract(extractableIds, enhancedResults, playlist?.title, url);
     }
   };
 
@@ -337,20 +348,46 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                         <div>
                              <h3 className="text-lg font-bold text-foreground">Extraction Complete!</h3>
                              <p className="text-muted-foreground text-sm">
-                                 {Object.values(videoStatuses).filter(s => s === 'success').length}/{Object.keys(videoStatuses).length} processed successfully • {Object.values(videoStatuses).filter(s => s === 'error' || s === 'no_speech' || s === 'youtube_restricted').length} failed
+                                 {Object.values(videoStatuses).filter(s => s === 'success').length}/{Object.keys(videoStatuses).length} processed successfully
+                                 {(() => { const f = Object.values(videoStatuses).filter(s => s !== 'success' && s !== 'pending' && s !== 'extracting' && s !== 'unavailable').length; return f > 0 ? ` • ${f} failed` : ''; })()}
                              </p>
                         </div>
                     </div>
-                    
+
+                    {/* Grouped failure summary */}
+                    {(() => {
+                      const vals = Object.values(videoStatuses);
+                      const botOrTimeout = vals.filter(s => s === 'bot_detection' || s === 'timeout').length;
+                      const ageRestricted = vals.filter(s => s === 'age_restricted').length;
+                      const membersOnly = vals.filter(s => s === 'members_only').length;
+                      const youtubeRestricted = vals.filter(s => s === 'youtube_restricted').length;
+                      const extractionError = vals.filter(s => s === 'error').length;
+                      const groups: string[] = [
+                        ...(botOrTimeout > 0 ? [`⚠️ ${botOrTimeout} video${botOrTimeout !== 1 ? 's' : ''} were temporarily blocked by YouTube. These were retried automatically — if still failing, try again later or use Audio Upload.`] : []),
+                        ...(ageRestricted > 0 ? [`🔞 ${ageRestricted} video${ageRestricted !== 1 ? 's' : ''} are age-restricted. YouTube prevents transcription of these videos. Download the audio manually and use Audio Upload instead.`] : []),
+                        ...(membersOnly > 0 ? [`🔒 ${membersOnly} video${membersOnly !== 1 ? 's' : ''} are members-only. You need a channel membership to access these videos.`] : []),
+                        ...(youtubeRestricted > 0 ? [`🚫 ${youtubeRestricted} video${youtubeRestricted !== 1 ? 's' : ''} are unavailable or restricted on YouTube.`] : []),
+                        ...(extractionError > 0 ? [`❌ ${extractionError} video${extractionError !== 1 ? 's' : ''} failed due to an unexpected error. Try again later.`] : []),
+                      ];
+                      if (groups.length === 0) return null;
+                      return (
+                        <div className="flex flex-col gap-1.5 p-3 bg-muted/50 border border-border rounded-lg">
+                          {groups.map((msg, i) => (
+                            <p key={i} className="text-sm text-muted-foreground leading-snug">{msg}</p>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
                     <div className="flex items-center gap-3 mt-2">
-                        <Button 
+                        <Button
                             onClick={handleReset}
                             variant="outline"
                             className="bg-background border-border hover:bg-muted text-foreground"
                         >
                             Start New Extraction
                         </Button>
-                        <Button 
+                        <Button
                             className="bg-primary hover:bg-primary/90 text-primary-foreground"
                             onClick={() => window.location.href = '/dashboard/library'} // Simple redirect
                         >
@@ -367,13 +404,13 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                             Extracting Playlist...
                         </span>
                         <span className="text-xs text-muted-foreground">
-                            {Object.values(videoStatuses).filter(s => s === 'success').length} / {Object.keys(videoStatuses).length} completed
+                            {Object.values(videoStatuses).filter(s => s === 'success').length} / {Object.keys(videoStatuses).length} completed · {formatElapsed(elapsedSeconds)}
                         </span>
                     </div>
                     <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div 
+                        <div
                             className="h-full bg-primary transition-all duration-500 ease-out"
-                            style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
+                            style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted' || s === 'age_restricted' || s === 'bot_detection' || s === 'timeout' || s === 'members_only').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
                         />
                     </div>
                 </>
@@ -505,7 +542,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                           {videoStatuses[entry.id] === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />}
                           {videoStatuses[entry.id] === 'error' && <XCircle className="h-4 w-4 text-red-500 shrink-0" />}
                           {videoStatuses[entry.id] === 'unavailable' && <XCircle className="h-4 w-4 text-zinc-500 shrink-0" />}
-                          {videoStatuses[entry.id] === 'youtube_restricted' && <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />}
+                          {(videoStatuses[entry.id] === 'youtube_restricted' || videoStatuses[entry.id] === 'bot_detection' || videoStatuses[entry.id] === 'timeout') && <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />}
+                          {(videoStatuses[entry.id] === 'age_restricted' || videoStatuses[entry.id] === 'members_only') && <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
                           {videoStatuses[entry.id] === 'extracting' && <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />}
                         </div>
                         {entry.duration && (
@@ -515,9 +553,13 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                                 {Math.floor(entry.duration / 60)}:{Math.floor(entry.duration % 60).toString().padStart(2, '0')}
                             </span>
                             {videoStatuses[entry.id] === 'unavailable' && <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Unavailable</span>}
-                           {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">Failed</span>}
-                             {videoStatuses[entry.id] === 'no_speech' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">No speech detected</span>}
-                             {videoStatuses[entry.id] === 'youtube_restricted' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">YouTube restricted</span>}
+                            {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">Failed</span>}
+                            {videoStatuses[entry.id] === 'no_speech' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">No speech detected</span>}
+                            {videoStatuses[entry.id] === 'youtube_restricted' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Unavailable</span>}
+                            {videoStatuses[entry.id] === 'bot_detection' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Temporarily blocked</span>}
+                            {videoStatuses[entry.id] === 'timeout' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Connection timeout</span>}
+                            {videoStatuses[entry.id] === 'age_restricted' && <span className="text-[10px] uppercase font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Age-restricted</span>}
+                            {videoStatuses[entry.id] === 'members_only' && <span className="text-[10px] uppercase font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Members only</span>}
                              
                              {/* Duplicate Badge */}
                              {!hasExtracted && existingDuplicates[entry.id] && (

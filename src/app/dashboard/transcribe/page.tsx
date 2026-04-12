@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Video, ListMusic, Mic } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { VideoTab } from "@/components/free-tool/VideoTab"
-import { PlaylistTab } from "@/components/free-tool/PlaylistTab"
+import { PlaylistTab, PlaylistStats } from "@/components/free-tool/PlaylistTab"
 import { AudioTab } from "@/components/free-tool/AudioTab"
 import { createClient } from "@/utils/supabase/client"
 import { TranscriptItem } from "@/components/TranscriptCard"
@@ -161,6 +161,30 @@ export default function TranscribePage() {
   const handleRetry = () => {
     if (pendingSave) {
       handleTranscriptLoaded(pendingSave.transcript, pendingSave.metadata)
+    }
+  }
+
+  const handlePlaylistComplete = async (stats: PlaylistStats) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('playlist_jobs').insert({
+        user_id: user.id,
+        playlist_url: stats.playlistUrl ?? null,
+        playlist_title: stats.playlistTitle ?? null,
+        total_selected: stats.totalSelected,
+        total_succeeded: stats.totalSucceeded,
+        total_failed: stats.totalSelected - stats.totalSucceeded,
+        failed_bot_detection: stats.failedBotDetection,
+        failed_timeout: stats.failedTimeout,
+        failed_age_restricted: stats.failedAgeRestricted,
+        failed_members_only: stats.failedMembersOnly,
+        failed_other: stats.failedOther,
+        processing_time_seconds: stats.processingTimeSecs,
+        completed_at: new Date().toISOString(),
+      })
+    } catch (err) {
+      console.error('Failed to save playlist job stats:', err)
     }
   }
 
@@ -323,6 +347,7 @@ export default function TranscribePage() {
             onAuthRequired={() => {}}
             onExtractVideo={processVideo}
             onSwitchToAudio={() => setActiveTab('audio')}
+            onPlaylistComplete={handlePlaylistComplete}
           />
         </TabsContent>
 

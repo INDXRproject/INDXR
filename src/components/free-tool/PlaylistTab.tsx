@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { PlaylistManager, VideoStatus } from "@/components/PlaylistManager"
 import { AlertCircle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,21 +9,38 @@ import { useAuth } from "@/hooks/useAuth"
 import { createClient } from "@/utils/supabase/client"
 import posthog from "posthog-js"
 
+export interface PlaylistStats {
+  playlistTitle?: string
+  playlistUrl?: string
+  totalSelected: number
+  totalSucceeded: number
+  failedBotDetection: number
+  failedTimeout: number
+  failedAgeRestricted: number
+  failedMembersOnly: number
+  failedOther: number
+  processingTimeSecs: number
+}
+
 interface PlaylistTabProps {
   isAuthenticated: boolean
   onAuthRequired: () => void
   onExtractVideo?: (videoId: string, options?: { status?: string; duplicateId?: string; duplicateAction?: 'replace' | 'reset'; collectionId?: string; title?: string }) => Promise<void>
   onSwitchToAudio?: () => void
+  onPlaylistComplete?: (stats: PlaylistStats) => void
 }
 
-export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, onSwitchToAudio }: PlaylistTabProps) {
+export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, onSwitchToAudio, onPlaylistComplete }: PlaylistTabProps) {
   const [error, setError] = useState<{ message: string; isCreditsError?: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [videoStatuses, setVideoStatuses] = useState<Record<string, VideoStatus>>({})
   const [progressMessage, setProgressMessage] = useState<string>("")
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const startTimeRef = useRef<number>(0)
   const { credits, refreshCredits } = useAuth()
 
-  const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string) => {
+  const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string) => {
     setError(null)
     setProgressMessage("Initializing...")
     
@@ -57,7 +74,10 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
 
     try {
       setLoading(true)
-      
+      setElapsedSeconds(0)
+      startTimeRef.current = Date.now()
+      intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+
       let autoCollectionId: string | undefined = undefined;
       if (playlistTitle) {
           const supabase = createClient()
@@ -191,12 +211,26 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
           }
       }
 
+      onPlaylistComplete?.({
+        playlistTitle,
+        playlistUrl,
+        totalSelected: videoIds.length,
+        totalSucceeded: successCount,
+        failedBotDetection: Object.values(localStatuses).filter(s => s === 'bot_detection').length,
+        failedTimeout: Object.values(localStatuses).filter(s => s === 'timeout').length,
+        failedAgeRestricted: Object.values(localStatuses).filter(s => s === 'age_restricted').length,
+        failedMembersOnly: Object.values(localStatuses).filter(s => s === 'members_only').length,
+        failedOther: Object.values(localStatuses).filter(s => s === 'error' || s === 'no_speech' || s === 'youtube_restricted').length,
+        processingTimeSecs: Math.floor((Date.now() - startTimeRef.current) / 1000),
+      })
+
       setProgressMessage("");
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to extract playlist"
       setError({ message: errorMessage })
     } finally {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
       setLoading(false)
     }
   }
@@ -246,6 +280,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onExtractVideo, o
         onAuthRequired={onAuthRequired}
         onError={(message) => setError(message ? { message } : null)}
         onSwitchToAudio={onSwitchToAudio}
+        elapsedSeconds={elapsedSeconds}
       />
     </div>
   )
