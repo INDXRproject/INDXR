@@ -15,7 +15,7 @@ logger = logging.getLogger("indxr-backend")
 
 # Supported audio formats for AssemblyAI compatibility
 SUPPORTED_FORMATS = {'.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', '.ogg', '.flac'}
-MAX_FILE_SIZE_MB = 25
+MAX_FILE_SIZE_MB = 500
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 MEMBERS_ONLY_KEYWORDS = [
@@ -291,7 +291,7 @@ def compress_audio_if_needed(file_path: str, output_dir: str = "/tmp") -> str:
         logger.info(f"Audio compressed: {compressed_size / 1024 / 1024:.2f}MB")
 
         if compressed_size > MAX_FILE_SIZE_BYTES:
-            raise Exception("Compressed file still exceeds 25MB limit")
+            raise Exception(f"Compressed file still exceeds {MAX_FILE_SIZE_MB}MB limit")
 
         return output_path
 

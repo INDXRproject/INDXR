@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse
 import asyncio
 import json
@@ -908,18 +908,19 @@ async def run_whisper_job(
 
 @app.post("/api/transcribe/whisper")
 async def transcribe_with_whisper(
-    user_id: str = Form(...),
+    request: Request,
     source_type: str = Form(...),
     video_id: Optional[str] = Form(None),
     title: Optional[str] = Form(None),
-    audio_file: Optional[UploadFile] = File(None)
+    audio_file: Optional[UploadFile] = File(None),
+    user_id: Optional[str] = Form(None),  # youtube path only (server-to-server); ignored for upload
 ):
     """
     Start a Whisper transcription background job.
     Returns immediately with { job_id, status: "pending" }.
     Poll GET /api/jobs/{job_id}?user_id=... for progress and result.
     """
-    # Validate request
+    # Validate source_type
     if source_type not in ["youtube", "upload"]:
         return JSONResponse(status_code=400, content={"error": "Invalid source_type", "code": "invalid_request"})
     if source_type == "youtube" and not video_id:
@@ -927,12 +928,48 @@ async def transcribe_with_whisper(
     if source_type == "upload" and not audio_file:
         return JSONResponse(status_code=400, content={"error": "audio_file required for upload transcription", "code": "invalid_request"})
 
+    # --- Auth ---
+    # Upload path: browser sends Supabase JWT in Authorization header; verify and extract real user_id.
+    # YouTube path: Next.js server-to-server call passes user_id as a form field (already auth-checked).
+    if source_type == "upload":
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return JSONResponse(status_code=401, content={"error": "Authorization required", "code": "unauthorized"})
+        token = auth_header[len("Bearer "):]
+        _supabase = get_supabase_client()
+        try:
+            user_response = await asyncio.to_thread(_supabase.auth.get_user, token)
+            if not user_response.user:
+                return JSONResponse(status_code=401, content={"error": "Invalid or expired token", "code": "unauthorized"})
+            user_id = user_response.user.id
+        except Exception as e:
+            logger.error(f"JWT verification failed: {e}")
+            return JSONResponse(status_code=401, content={"error": "Authentication failed", "code": "unauthorized"})
+        try:
+            profile_resp = await asyncio.to_thread(
+                lambda: _supabase.table('profiles').select('suspended').eq('id', user_id).single().execute()
+            )
+            if profile_resp.data and profile_resp.data.get('suspended'):
+                return JSONResponse(status_code=403, content={"error": "Account suspended. Contact support@indxr.ai", "code": "suspended"})
+        except Exception:
+            pass  # Non-fatal: proceed if profile check fails
+    elif not user_id:
+        return JSONResponse(status_code=400, content={"error": "user_id required for YouTube transcription", "code": "invalid_request"})
+
     # Read upload bytes now — UploadFile cannot be read inside a background task
     audio_content: Optional[bytes] = None
     audio_filename: Optional[str] = None
     if source_type == "upload" and audio_file:
         audio_content = await audio_file.read()
         audio_filename = audio_file.filename
+
+        # 500MB hard limit
+        max_upload_bytes = 500 * 1024 * 1024
+        if len(audio_content) > max_upload_bytes:
+            return JSONResponse(status_code=413, content={
+                "error": f"File too large ({len(audio_content) / 1024 / 1024:.0f}MB). Maximum upload size is 500MB.",
+                "code": "file_too_large"
+            })
 
     # Basic credit pre-check (balance must be > 0 to start any job)
     try:

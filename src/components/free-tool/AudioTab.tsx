@@ -10,6 +10,7 @@ import { TranscriptMetadata } from "@/types/transcript"
 import Link from "next/link"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import posthog from "posthog-js"
+import { createClient } from "@/utils/supabase/client"
 
 interface AudioTabProps {
   onTranscriptLoaded?: (transcript: TranscriptItem[], metadata: TranscriptMetadata) => void
@@ -125,10 +126,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       return
     }
 
-    // Check file size (25MB limit)
-    const maxSize = 25 * 1024 * 1024
+    // Check file size (500MB limit)
+    const maxSize = 500 * 1024 * 1024
     if (selectedFile.size > maxSize) {
-      toast.error(`File too large (${formatFileSize(selectedFile.size)}). Maximum size is 25 MB.`)
+      toast.error(`File too large (${formatFileSize(selectedFile.size)}). Maximum size is 500 MB.`)
       setIsUploading(false)
       return
     }
@@ -170,12 +171,31 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     setWhisperStatus('pending')
 
     try {
+      // Step 1: Preflight — auth, suspended check, rate limit (no file involved)
+      const preflightRes = await fetch('/api/transcribe/preflight', { method: 'POST' })
+      if (!preflightRes.ok) {
+        const preflightData = await preflightRes.json()
+        toast.error(preflightData.error || 'Request blocked. Please try again.')
+        return
+      }
+
+      // Step 2: Get Supabase JWT for direct Railway upload
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        toast.error('Session expired. Please sign in again.')
+        return
+      }
+
+      // Step 3: POST file directly to Railway (bypasses Vercel 4.5MB body limit)
       const formData = new FormData()
       formData.append('source_type', 'upload')
       formData.append('audio_file', file)
 
-      const response = await fetch('/api/transcribe/whisper', {
+      const backendUrl = process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL || 'http://localhost:8000'
+      const response = await fetch(`${backendUrl}/api/transcribe/whisper`, {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
         body: formData,
       })
 
