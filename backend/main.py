@@ -148,6 +148,14 @@ class PlaylistInfoResponse(BaseModel):
     total_count: Optional[int] = None
     error: Optional[str] = None
 
+class PlaylistExtractRequest(BaseModel):
+    video_ids: List[str]
+    user_id: str
+    collection_id: Optional[str] = None
+    use_whisper_ids: List[str] = []
+    playlist_title: Optional[str] = None
+    playlist_url: Optional[str] = None
+
 class WhisperRequest(BaseModel):
     user_id: str
     source_type: str  # "youtube" or "upload"
@@ -1221,6 +1229,233 @@ async def summarize_transcript(request: SummarizeRequest):
     except Exception as e:
         logger.error(f"Summarize endpoint error: {e}")
         return SummarizeResponse(success=False, error=str(e))
+
+def _classify_error_type(error_msg: str) -> str:
+    """Map an error message string to a canonical error_type slug."""
+    lower = error_msg.lower()
+    if any(kw in lower for kw in MEMBERS_ONLY_KEYWORDS):
+        return 'members_only'
+    if any(kw in lower for kw in ('age-restricted', 'age restricted', 'confirm your age')):
+        return 'age_restricted'
+    if any(kw in lower for kw in ('sign in to confirm', 'not a bot', '429', 'too many requests')):
+        return 'bot_detection'
+    if any(kw in lower for kw in ('timed out', 'timeout', 'read timed out', '504')):
+        return 'timeout'
+    if '152' in error_msg or 'unavailable' in lower:
+        return 'youtube_restricted'
+    return 'extraction_error'
+
+
+async def run_playlist_job(job_id: str, payload: dict) -> None:
+    """
+    Background task: sequentially extracts transcripts for every video in a playlist job.
+    Updates playlist_extraction_jobs progress after each video.
+    """
+    supabase = get_supabase_client()
+    video_ids: List[str] = payload["video_ids"]
+    user_id: str = payload["user_id"]
+    collection_id: Optional[str] = payload.get("collection_id")
+    use_whisper_set = set(payload.get("use_whisper_ids", []))
+    job_started_at = datetime.now(timezone.utc)
+
+    async def update_playlist_job(**kwargs):
+        await asyncio.to_thread(
+            lambda: supabase.table('playlist_extraction_jobs').update(kwargs).eq('id', job_id).execute()
+        )
+
+    video_results: Dict[str, dict] = {}
+    completed = 0
+    failed = 0
+
+    try:
+        for idx, video_id in enumerate(video_ids):
+            await update_playlist_job(current_video_index=idx, current_video_title=video_id)
+            logger.info(f"[playlist job {job_id}] Processing video {idx + 1}/{len(video_ids)}: {video_id}")
+
+            try:
+                if video_id in use_whisper_set:
+                    # --- Whisper path: spawn a transcription_jobs row and run inline ---
+                    whisper_job_id = str(uuid.uuid4())
+                    vid = video_id
+                    await asyncio.to_thread(
+                        lambda: supabase.table('transcription_jobs').insert({
+                            'id': whisper_job_id,
+                            'user_id': user_id,
+                            'status': 'pending',
+                            'video_url': f'https://www.youtube.com/watch?v={vid}',
+                            'source_type': 'youtube',
+                            'file_size_bytes': 0,
+                            'file_format': 'youtube',
+                        }).execute()
+                    )
+                    await run_whisper_job(
+                        job_id=whisper_job_id,
+                        user_id=user_id,
+                        source_type='youtube',
+                        video_id=video_id,
+                        audio_content=None,
+                        audio_filename=None,
+                    )
+                    job_row = await asyncio.to_thread(
+                        lambda: supabase.table('transcription_jobs')
+                            .select('status,transcript_id,error_message,error_type')
+                            .eq('id', whisper_job_id)
+                            .single()
+                            .execute()
+                    )
+                    job_data = job_row.data or {}
+                    if job_data.get('status') == 'complete' and job_data.get('transcript_id'):
+                        transcript_id = job_data['transcript_id']
+                        if collection_id:
+                            cid = collection_id
+                            tid = transcript_id
+                            await asyncio.to_thread(
+                                lambda: supabase.table('transcripts')
+                                    .update({'collection_id': cid})
+                                    .eq('id', tid)
+                                    .execute()
+                            )
+                        t_row = await asyncio.to_thread(
+                            lambda: supabase.table('transcripts')
+                                .select('title')
+                                .eq('id', transcript_id)
+                                .single()
+                                .execute()
+                        )
+                        title = (t_row.data or {}).get('title', video_id)
+                        video_results[video_id] = {'status': 'success', 'transcript_id': transcript_id}
+                        await update_playlist_job(current_video_title=title)
+                        completed += 1
+                    else:
+                        err = job_data.get('error_message') or ''
+                        error_type = job_data.get('error_type') or _classify_error_type(err)
+                        video_results[video_id] = {'status': 'error', 'error_type': error_type}
+                        failed += 1
+
+                else:
+                    # --- Captions path: extract via yt-dlp and save directly ---
+                    result = await extract_with_ytdlp(video_id, use_proxy=True)
+                    if isinstance(result, list) or not result:
+                        video_results[video_id] = {'status': 'error', 'error_type': 'no_captions'}
+                        failed += 1
+                    else:
+                        transcript = result['transcript']
+                        title = result.get('title') or video_id
+                        char_count = sum(len(x['text']) for x in transcript)
+                        duration = int(max(
+                            (x['offset'] + x['duration'] for x in transcript),
+                            default=0
+                        ))
+                        insert_data: dict = {
+                            'user_id': user_id,
+                            'source_type': 'youtube',
+                            'title': title,
+                            'transcript': transcript,
+                            'duration': duration,
+                            'character_count': char_count,
+                            'video_id': video_id,
+                            'thumbnail_url': f'https://img.youtube.com/vi/{video_id}/mqdefault.jpg',
+                            'processing_method': 'youtube_captions',
+                        }
+                        if collection_id:
+                            insert_data['collection_id'] = collection_id
+                        t = await asyncio.to_thread(
+                            lambda: supabase.table('transcripts').insert(insert_data).select('id').single().execute()
+                        )
+                        transcript_id = t.data['id']
+                        video_results[video_id] = {'status': 'success', 'transcript_id': transcript_id}
+                        await update_playlist_job(current_video_title=title)
+                        completed += 1
+
+            except MembersOnlyVideoError:
+                video_results[video_id] = {'status': 'error', 'error_type': 'members_only'}
+                failed += 1
+            except Exception as e:
+                error_type = _classify_error_type(str(e))
+                video_results[video_id] = {'status': 'error', 'error_type': error_type}
+                failed += 1
+                logger.warning(f"[playlist job {job_id}] video {video_id} failed ({error_type}): {e}")
+
+            await update_playlist_job(completed=completed, failed=failed, video_results=video_results)
+
+        now = datetime.now(timezone.utc)
+        await asyncio.to_thread(
+            lambda: supabase.table('playlist_extraction_jobs').update({
+                'status': 'complete',
+                'completed_at': now.isoformat(),
+                'processing_time_seconds': int((now - job_started_at).total_seconds()),
+            }).eq('id', job_id).execute()
+        )
+        logger.info(f"[playlist job {job_id}] Complete: {completed} succeeded, {failed} failed")
+
+    except Exception as e:
+        logger.error(f"[playlist job {job_id}] Unexpected error: {type(e).__name__}: {e}")
+        try:
+            await asyncio.to_thread(
+                lambda: supabase.table('playlist_extraction_jobs').update({
+                    'status': 'error',
+                    'completed_at': datetime.now(timezone.utc).isoformat(),
+                }).eq('id', job_id).execute()
+            )
+        except Exception:
+            pass
+
+
+@app.post("/api/playlist/extract")
+async def start_playlist_extraction(request: PlaylistExtractRequest):
+    """
+    Start a background playlist extraction job.
+    Returns immediately with { job_id, status: "running" }.
+    Poll GET /api/playlist/jobs/{job_id}?user_id=... for progress.
+    """
+    if not request.video_ids:
+        return JSONResponse(status_code=400, content={"error": "video_ids must not be empty"})
+
+    supabase = get_supabase_client()
+    job_id = str(uuid.uuid4())
+
+    try:
+        await asyncio.to_thread(
+            lambda: supabase.table('playlist_extraction_jobs').insert({
+                'id': job_id,
+                'user_id': request.user_id,
+                'status': 'running',
+                'playlist_url': request.playlist_url,
+                'playlist_title': request.playlist_title,
+                'total_videos': len(request.video_ids),
+                'video_ids': request.video_ids,
+                'use_whisper_ids': request.use_whisper_ids,
+                'collection_id': request.collection_id,
+            }).execute()
+        )
+    except Exception as e:
+        logger.error(f"Failed to create playlist_extraction_jobs row: {e}")
+        return JSONResponse(status_code=500, content={"error": "Failed to create job"})
+
+    asyncio.create_task(run_playlist_job(job_id, request.dict()))
+    logger.info(f"Playlist job created: {job_id} (user={request.user_id}, videos={len(request.video_ids)})")
+    return JSONResponse({"job_id": job_id, "status": "running"})
+
+
+@app.get("/api/playlist/jobs/{job_id}")
+async def get_playlist_job(job_id: str, user_id: str):
+    """Return the full playlist_extraction_jobs row for progress polling."""
+    supabase = get_supabase_client()
+    try:
+        result = await asyncio.to_thread(
+            lambda: supabase.table('playlist_extraction_jobs').select('*').eq('id', job_id).single().execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job = result.data
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job['user_id'] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    return JSONResponse(job)
+
 
 if __name__ == "__main__":
     import uvicorn
