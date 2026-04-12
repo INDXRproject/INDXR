@@ -193,6 +193,38 @@ Ideas validated but not prioritized:
 - **Custom Email Templates**: Branded transactional emails (Supabase)
 - **Multi-Region Deployment**: EU + US hosting options
 
+### Phase Q: Pre-Launch Validation & Launch
+
+**Goal**: Validate all user flows under real conditions, resolve remaining tech debt, and go live.
+
+**Testing & QA**
+- [ ] Free tool vs logged-in limits testing — Playwright automation covering rate limits, credit gates, and anonymous vs authenticated flows
+- [ ] Audio upload + AssemblyAI stress test — multiple concurrent uploads, large files, edge-case formats
+- [ ] 4+ hour video stress test — confirm no regression on very long content
+
+**Product**
+- [ ] JSON output: research 30-second chunk format for content creators; implement configurable chunk size with explicit `start_time`/`end_time` fields
+- [ ] `INTERACTION_MAP.md`: full audit of all user flows; standardize all error and success messages across VideoTab, AudioTab, and Whisper modals
+
+**Growth**
+- [ ] Google Analytics / Search Console setup and verification
+- [ ] Google Ads account setup — US market, long-tail keywords (e.g. "youtube transcript generator", "transcribe youtube video")
+
+**Admin & Observability**
+- [ ] Admin dashboard: add processing times, error rates, and success ratios per time window
+
+**Tech Debt**
+- [ ] iOS PO token for bgutil — currently only `web_embedded` client receives PO tokens; iOS client bypasses the flow entirely but may need tokens in future yt-dlp versions
+- [ ] Random session ID per job — replace hardcoded `indxr1` in `get_proxy_url()` with `uuid4().hex[:8]` so concurrent jobs don't share a session slot
+- [ ] Rename `processing_method: 'whisper_ai'` → `assemblyai` — requires DB migration + coordinated frontend update
+
+**Infrastructure & Go-Live**
+- [ ] Stripe live keys — switch from test to live, verify webhook, fill `STRIPE_WEBHOOK_SECRET` in Vercel
+- [ ] Email verification — re-enable in Supabase (currently disabled for testing)
+- [ ] Configure Upstash Redis for rate limiting (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` in Vercel)
+- [ ] Add `BACKEND_API_SECRET` shared header between Vercel and Railway
+- [ ] Go live 🚀
+
 ---
 
 ## 📝 Notes
