@@ -268,21 +268,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             creditsUsed: job.credits_used!,
           })
 
-          await new Promise(resolve => setTimeout(resolve, 500))
           await refreshCredits()
 
-          setSaveStatus('saving')
-          if (onTranscriptLoaded) {
-            await onTranscriptLoaded(job.transcript!, {
-              source: 'audio',
-              title: file.name,
-              duration: job.duration!,
-              creditsUsed: job.credits_used!,
-              processingMethod: 'whisper_ai',
-              filename: file.name,
-            })
-            setSaveStatus('saved')
-          }
+          // Backend already saved the transcript — skip onTranscriptLoaded() to avoid duplicate insert.
+          window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+          setSaveStatus('saved')
           return
         } else if (job.status === 'error') {
           if (job.error_message === 'Insufficient credits') {
