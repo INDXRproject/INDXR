@@ -78,7 +78,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       <div className="mt-8">
         <div className="p-8 rounded-lg border border-amber-500/50 bg-amber-500/10 text-center">
           <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">Authentication Required</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Authentication Required</h3>
           <p className="text-sm text-amber-200 mb-4">
             Please <Link href="/login" className="underline font-semibold">sign in</Link> to use audio transcription.
           </p>
@@ -315,7 +315,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             ? 'border-primary bg-primary/10 scale-105' 
             : file 
               ? 'border-green-500/50 bg-green-500/5'
-              : 'border-zinc-800 bg-zinc-900/10 hover:bg-zinc-900/20 hover:border-zinc-700'
+              : 'border-border bg-muted/10 hover:bg-muted/20 hover:border-border'
           }
           ${isUploading ? 'opacity-50 cursor-wait' : ''}
         `}
@@ -335,7 +335,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               <div className="p-4 bg-primary/10 rounded-full mb-4">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Processing file...</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Processing file...</h3>
               <p className="text-muted-foreground">Reading audio duration</p>
             </>
           ) : file ? (
@@ -343,7 +343,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               <div className="p-4 bg-green-500/10 rounded-full mb-4">
                 <FileAudio className="h-8 w-8 text-green-500" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">{file.name}</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">{file.name}</h3>
               <div className="flex gap-4 text-sm text-muted-foreground mb-4">
                 <span>{formatFileSize(file.size)}</span>
                 <span>•</span>
@@ -364,10 +364,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             </>
           ) : (
             <>
-              <div className="p-4 bg-zinc-900 rounded-full mb-4 group-hover:scale-110 transition-transform">
+              <div className="p-4 bg-muted rounded-full mb-4 group-hover:scale-110 transition-transform">
                 <UploadCloud className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Upload Audio File</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Upload Audio File</h3>
               <p className="text-muted-foreground mb-2">Drag and drop your audio file here, or click to browse</p>
               <p className="text-sm text-muted-foreground">Supported: MP3, WAV, M4A, OGG, FLAC (max 25MB)</p>
             </>
@@ -377,7 +377,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
       {/* Credit Cost Preview */}
       {file && (
-        <div className="p-4 rounded-lg border border-zinc-800 bg-zinc-900/50">
+        <div className="p-4 rounded-lg border border-border bg-muted">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h4 className="font-semibold text-foreground mb-1">Credit Cost</h4>
