@@ -75,8 +75,18 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
   // Check for a running job on mount — handles page reload / navigation away and back
   useEffect(() => {
-    const activeJobId = sessionStorage.getItem('indxr-active-playlist-job')
-    if (!activeJobId) return
+    const raw = sessionStorage.getItem('indxr-active-playlist-job')
+    if (!raw) return
+
+    // Parse JSON format { jobId, startTime, playlistTitle }; fall back to plain string for legacy entries
+    let activeJobId: string
+    try {
+      const parsed = JSON.parse(raw)
+      activeJobId = typeof parsed === 'string' ? parsed : parsed.jobId
+    } catch {
+      sessionStorage.removeItem('indxr-active-playlist-job')
+      return
+    }
 
     ;(async () => {
       try {
@@ -251,8 +261,18 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     setResumeData(null)
     playlistJobIdRef.current = jobId
     setLoading(true)
-    startTimeRef.current = Date.now()
-    setElapsedSeconds(0)
+
+    // Restore the real job start time so the elapsed timer reflects actual job age
+    let storedStartTime = Date.now()
+    try {
+      const raw = sessionStorage.getItem('indxr-active-playlist-job')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed?.startTime) storedStartTime = parsed.startTime
+      }
+    } catch { /* fall back to now */ }
+    startTimeRef.current = storedStartTime
+    setElapsedSeconds(Math.floor((Date.now() - storedStartTime) / 1000))
     intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
     startPollInterval(jobId)
   }
@@ -353,7 +373,11 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
       const { job_id } = await response.json()
       playlistJobIdRef.current = job_id
-      sessionStorage.setItem('indxr-active-playlist-job', job_id)
+      sessionStorage.setItem('indxr-active-playlist-job', JSON.stringify({
+        jobId: job_id,
+        startTime: Date.now(),
+        playlistTitle: playlistTitle ?? null,
+      }))
       setProgressMessage(`Starting extraction of ${extractableIds.length} video${extractableIds.length !== 1 ? 's' : ''}...`)
 
       startPollInterval(job_id, playlistTitle, playlistUrl, extractableIds.length)
@@ -389,7 +413,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Button size="sm" onClick={handleResume} className="h-8 text-xs">
-              Resume
+              View Progress
             </Button>
             <Button
               size="sm"

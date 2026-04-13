@@ -100,12 +100,31 @@ export function AppSidebar() {
     return params.get("collection")
   }, [])
 
-  const navigateToCollection = useCallback((id: string | null) => {
-    if (id) {
-      router.push(`/dashboard/library?collection=${id}`)
-    } else {
-      router.push("/dashboard/library")
+  // Guard client-side navigation while a playlist job is active.
+  // Uses a Sonner toast with action buttons — no modal, no blocking.
+  const guardedNavigate = (href: string) => {
+    const activeJob = sessionStorage.getItem('indxr-active-playlist-job')
+    if (!activeJob) {
+      router.push(href)
+      return
     }
+    toast("Extraction is still running — your progress is safe. You can leave, but you'll need to resume when you return.", {
+      duration: 10000,
+      action: {
+        label: "Leave anyway",
+        onClick: () => router.push(href),
+      },
+      cancel: {
+        label: "Stay on page",
+        onClick: () => {},
+      },
+    })
+  }
+
+  const navigateToCollection = useCallback((id: string | null) => {
+    const href = id ? `/dashboard/library?collection=${id}` : "/dashboard/library"
+    guardedNavigate(href)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   // ── Data fetch ─────────────────────────────────────────────────────────────
@@ -361,8 +380,14 @@ export function AppSidebar() {
                       asChild
                       className="flex-1"
                     >
-                      <Link 
-                        href="/dashboard/library" 
+                      <Link
+                        href="/dashboard/library"
+                        onClick={(e) => {
+                          if (sessionStorage.getItem('indxr-active-playlist-job')) {
+                            e.preventDefault()
+                            guardedNavigate('/dashboard/library')
+                          }
+                        }}
                         className={cn(
                           "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                           pathname === "/dashboard/library" || pathname?.startsWith("/dashboard/library/")
