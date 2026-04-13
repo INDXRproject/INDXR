@@ -78,7 +78,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
       return {
         ...r,
         status: newStatus,
-        estimatedCredits: useWhisper ? Math.max(1, Math.ceil((r.duration / 60) / 10)) : 0,
+        estimatedCredits: useWhisper ? Math.max(1, Math.ceil(r.duration / 60)) : 0,
         isDuplicate: isDuplicateForStatus(r.videoId, newStatus),
       }
     }))
@@ -91,7 +91,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
       return {
         ...r,
         status: newStatus,
-        estimatedCredits: useWhisper ? Math.max(1, Math.ceil((r.duration / 60) / 10)) : 0,
+        estimatedCredits: useWhisper ? Math.max(1, Math.ceil(r.duration / 60)) : 0,
         isDuplicate: isDuplicateForStatus(r.videoId, newStatus),
       }
     }))

@@ -2,39 +2,34 @@ import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/utils/supabase/server'
 
-// TODO: Create the 'starter' and 'power' products in Stripe Dashboard and replace placeholder IDs before going live.
-// The existing 3 products (basic, plus, pro) are already configured and should NOT be modified.
+// TODO: Create all 5 products in Stripe Dashboard (live mode) before going live.
+// Keys: try, basic, plus, pro, power
 
 const PACKAGES = {
-  // NEW: €1.99 / 15 credits - TODO: Create in Stripe Dashboard
-  starter: {
-    name: 'Starter Package',
-    price: 199, // in cents (EUR 1.99)
-    credits: 15,
+  try: {
+    name: 'Try Package',
+    price: 249, // in cents (EUR 2.49)
+    credits: 200,
   },
-  // Existing: €4.99 / 50 credits (was 'starter', now 'basic')
   basic: {
     name: 'Basic Package',
-    price: 499, // in cents (EUR 4.99)
-    credits: 50,
+    price: 599, // in cents (EUR 5.99)
+    credits: 500,
   },
-  // Existing: €9.99 / 130 credits (was 'regular', now 'plus' with updated credits)
   plus: {
     name: 'Plus Package',
-    price: 999, // in cents (EUR 9.99)
-    credits: 130,
+    price: 1199, // in cents (EUR 11.99)
+    credits: 1100,
   },
-  // Existing: €24.99 / 400 credits (was 'power', now 'pro' with updated credits)
   pro: {
     name: 'Pro Package',
     price: 2499, // in cents (EUR 24.99)
-    credits: 400,
+    credits: 2600,
   },
-  // NEW: €49.99 / 850 credits - TODO: Create in Stripe Dashboard
   power: {
     name: 'Power Package',
     price: 4999, // in cents (EUR 49.99)
-    credits: 850,
+    credits: 5500,
   }
 }
 

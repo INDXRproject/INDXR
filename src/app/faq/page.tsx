@@ -124,7 +124,7 @@ const faqCategories: FAQCategory[] = [
       {
         question: "How does the credit system work?",
         answer:
-          "Credits are the currency for premium features. Whisper AI transcription uses 1 credit per 10 minutes of audio (rounded up). AI summarization uses 1 credit per summary. Playlist extraction beyond your 50 free monthly videos uses 1 credit per 10 additional videos. Your credit balance is shown in the dashboard, and you'll always see the cost before confirming any action. View packages on our <a href='/pricing'>pricing page</a>.",
+          "Credits are the currency for premium features. Whisper AI transcription uses 1 credit per minute of audio (rounded up). AI summarization uses 3 credits per summary. Playlist extraction beyond your 50 free monthly videos uses 1 credit per 10 additional videos. Your credit balance is shown in the dashboard, and you'll always see the cost before confirming any action. View packages on our <a href='/pricing'>pricing page</a>.",
       },
     ],
   },

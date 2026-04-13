@@ -732,11 +732,11 @@ export function TranscriptViewer({
                         toast.error("Please sign in to summarize.");
                         return;
                       }
-                      if (credits !== null && credits < 1) {
+                      if (credits !== null && credits < 3) {
                         toast.error(
                           <div className="flex flex-col gap-1">
                             <span className="font-semibold text-sm">Not enough credits</span>
-                            <span className="text-xs">You need 1 credit to generate a summary.</span>
+                            <span className="text-xs">You need 3 credits to generate a summary.</span>
                             <Link href="/pricing" className="text-primary hover:underline text-xs mt-1">
                               Buy Credits →
                             </Link>
@@ -992,8 +992,8 @@ export function TranscriptViewer({
             <AlertDialogTitle>Generate AI Summary</AlertDialogTitle>
             <AlertDialogDescription>
               {aiSummary 
-                ? "You already have a summary for this video. Regenerating will cost 1 credit and overwrite the current version. Continue?"
-                : "Generating an AI Summary costs 1 credit. Would you like to proceed?"}
+                ? "You already have a summary for this video. Regenerating will cost 3 credits and overwrite the current version. Continue?"
+                : "Generating an AI Summary costs 3 credits. Would you like to proceed?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -41,7 +41,7 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
       if (result.error) {
         toast.error(result.error)
       } else {
-        toast.success("5 Credits added to your account!")
+        toast.success("25 Credits added to your account!")
         await refreshCredits()
         setIsHidden(true)
       }
@@ -60,7 +60,7 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
            <CardTitle className="text-xl">Get Started with Free Credits</CardTitle>
         </div>
         <CardDescription>
-          We want you to experience the power of Indxr.AI. Here are 5 free credits on the house.
+          We want you to experience the power of Indxr.AI. Here are 25 free credits on the house.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -76,7 +76,7 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
                   <span className="text-success">●</span> Captions: <b>Always Free</b>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-warning">●</span> AI Whisper: <b>1 Credit</b> / 10 mins
+                  <span className="text-warning">●</span> AI Whisper: <b>1 Credit</b> / min
                   <span className="text-xs text-muted-foreground block ml-6 leading-tight">(Fallback if no captions available)</span>
                 </li>
               </ul>
@@ -107,7 +107,7 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
                   <span className="text-muted-foreground">●</span> Powered by AI Transcription
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-warning">●</span> Rate: <b>1 Credit</b> / 10 mins
+                  <span className="text-warning">●</span> Rate: <b>1 Credit</b> / min
                 </li>
               </ul>
            </div>
@@ -120,7 +120,7 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
             disabled={isClaiming}
             className="flex-1"
         >
-          {isClaiming ? "Claiming..." : "Claim 5 Free Credits"}
+          {isClaiming ? "Claiming..." : "Claim 25 Free Credits"}
         </Button>
         <Button
             variant="outline"

@@ -30,9 +30,9 @@ export function WhisperFallbackModal({
   const { user, credits, refreshCredits } = useAuth()
   const [isTranscribing, setIsTranscribing] = useState(false)
 
-  // Calculate credit cost (1 credit = 10 minutes)
-  const estimatedCredits = estimatedDuration 
-    ? Math.ceil(estimatedDuration / 600) 
+  // Calculate credit cost (1 credit = 1 minute)
+  const estimatedCredits = estimatedDuration
+    ? Math.ceil(estimatedDuration / 60)
     : 1 // Default to 1 credit if duration unknown
 
   const hasEnoughCredits = credits !== null && credits >= estimatedCredits

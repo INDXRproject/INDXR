@@ -35,21 +35,21 @@ def get_supabase_client() -> Client:
 def calculate_credit_cost(duration_seconds: float) -> int:
     """
     Calculate credit cost for audio transcription.
-    
-    Formula: 1 credit = 10 minutes (600 seconds)
+
+    Formula: 1 credit = 1 minute (60 seconds)
     Minimum: 1 credit for any audio
-    
+
     Args:
         duration_seconds: Audio duration in seconds
-        
+
     Returns:
         Number of credits required
     """
     if duration_seconds <= 0:
         return 1
-    
+
     # Round up to nearest credit
-    credits = math.ceil(duration_seconds / 600.0)
+    credits = math.ceil(duration_seconds / 60.0)
     
     logger.info(f"Credit cost for {duration_seconds:.2f}s: {credits} credits")
     return max(credits, 1)

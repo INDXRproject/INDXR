@@ -27,15 +27,15 @@ export function PricingCard({
   ctaLabel = "Buy Now",
   onSelect
 }: PricingCardProps) {
-  // Calculate minutes (1 credit = 10 min)
-  const minutes = credits * 10;
+  // Calculate minutes (1 credit = 1 min)
+  const minutes = credits;
 
   // Parse price for calculations (remove € and convert to number)
   const priceNum = parseFloat(price.replace('€', ''));
   const perMinute = (priceNum / minutes).toFixed(3);
 
-  // Calculate cost for a 1-hour video (6 credits)
-  const hourCredits = 6;
+  // Calculate cost for a 1-hour video (60 credits)
+  const hourCredits = 60;
   const hourCost = ((priceNum / credits) * hourCredits).toFixed(2);
 
   return (

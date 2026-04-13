@@ -1110,14 +1110,14 @@ async def summarize_transcript(request: SummarizeRequest):
         except Exception as e:
             return SummarizeResponse(success=False, error=f"Could not check credit balance: {str(e)}")
             
-        if current_balance < 1:
-            logger.warning(f"Insufficient credits for summary: user {request.user_id} has {current_balance}, needs 1")
+        if current_balance < 3:
+            logger.warning(f"Insufficient credits for summary: user {request.user_id} has {current_balance}, needs 3")
             return SummarizeResponse(success=False, error="Insufficient credits")
         
         # 2. Deduct credit atomically
         deduction_result = deduct_credits(
             user_id=request.user_id,
-            amount=1,
+            amount=3,
             reason="AI Summarization",
             metadata={"transcript_id": request.transcript_id}
         )
@@ -1127,7 +1127,7 @@ async def summarize_transcript(request: SummarizeRequest):
 
         # Track credits_deducted for summary
         track_event(request.user_id, 'credits_deducted', {
-            'amount': 1,
+            'amount': 3,
             'reason': 'summary',
             'balance_after': deduction_result.get('new_balance')
         })
@@ -1143,19 +1143,19 @@ async def summarize_transcript(request: SummarizeRequest):
             transcript_data = response.data['transcript']
         except Exception as e:
             logger.error(f"Failed to fetch transcript {request.transcript_id}: {e}")
-            add_credits(request.user_id, 1, "AI Summarization Refund (Transcript fetch failed)")
+            add_credits(request.user_id, 3, "AI Summarization Refund (Transcript fetch failed)")
             return SummarizeResponse(success=False, error="Transcript not found")
             
         # Combine transcript text
         full_text = " ".join([item['text'] for item in transcript_data if 'text' in item])
         if not full_text.strip():
-            add_credits(request.user_id, 1, "AI Summarization Refund (Empty text)")
+            add_credits(request.user_id, 3, "AI Summarization Refund (Empty text)")
             return SummarizeResponse(success=False, error="Transcript is empty")
             
         # 4. Call DeepSeek API
         deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
         if not deepseek_api_key:
-            add_credits(request.user_id, 1, "AI Summarization Refund (DeepSeek API key missing)")
+            add_credits(request.user_id, 3, "AI Summarization Refund (DeepSeek API key missing)")
             return SummarizeResponse(success=False, error="DeepSeek API key not configured")
             
         deepseek_url = "https://api.deepseek.com/chat/completions"
@@ -1191,7 +1191,7 @@ async def summarize_transcript(request: SummarizeRequest):
             
             if ds_resp.status_code != 200:
                 logger.error(f"DeepSeek API error: {ds_resp.status_code} {ds_resp.text}")
-                add_credits(request.user_id, 1, "AI Summarization Refund (DeepSeek API Error)")
+                add_credits(request.user_id, 3, "AI Summarization Refund (DeepSeek API Error)")
                 return SummarizeResponse(success=False, error="Failed to generate summary")
                 
             result_json = ds_resp.json()
@@ -1223,7 +1223,7 @@ async def summarize_transcript(request: SummarizeRequest):
             
         except Exception as e:
             logger.error(f"DeepSeek call exception: {type(e).__name__}: {e}")
-            add_credits(request.user_id, 1, f"AI Summarization Refund ({type(e).__name__})")
+            add_credits(request.user_id, 3, f"AI Summarization Refund ({type(e).__name__})")
             return SummarizeResponse(success=False, error="Failed to generate summary")
             
     except Exception as e:

@@ -53,8 +53,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   // Calculate credits from actual duration
   const calculateCredits = (durationInSeconds: number): number => {
-    // 1 credit = 10 minutes = 600 seconds
-    return Math.ceil(durationInSeconds / 600)
+    // 1 credit = 1 minute = 60 seconds
+    return Math.ceil(durationInSeconds / 60)
   }
 
   const formatFileSize = (bytes: number): string => {
