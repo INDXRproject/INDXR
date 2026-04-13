@@ -184,10 +184,29 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                               <p className="text-xs text-amber-600 dark:text-amber-400">
                                 {Math.floor(video.duration / 60)}:{Math.floor(video.duration % 60).toString().padStart(2, '0')} • {video.estimatedCredits} credits
                               </p>
+                              {(() => {
+                                const entries = existingDuplicates[video.videoId] || [];
+                                const whisperEntry = entries.find(e => e.processingMethod === 'whisper_ai' || e.processingMethod === 'assemblyai');
+                                const captionsEntry = entries.find(e => e.processingMethod === 'youtube_captions');
+                                return (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {whisperEntry && (
+                                      <a href={`/dashboard/library/${whisperEntry.transcriptId}`} target="_blank" onClick={(e) => e.stopPropagation()} className="text-[10px] uppercase font-bold text-violet-500 bg-violet-500/10 px-1.5 py-0.5 rounded hover:bg-violet-500/20 transition-colors">
+                                        AI transcript in library
+                                      </a>
+                                    )}
+                                    {captionsEntry && (
+                                      <a href={`/dashboard/library/${captionsEntry.transcriptId}`} target="_blank" onClick={(e) => e.stopPropagation()} className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded hover:bg-amber-500/20 transition-colors">
+                                        Captions in library
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                            </div>
-                           <Button 
-                             variant="ghost" 
-                             size="sm" 
+                           <Button
+                             variant="ghost"
+                             size="sm"
                              onClick={() => toggleSingleWhisper(video.videoId, false)}
                              className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-500/20"
                            >
@@ -219,10 +238,29 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                               <p className="text-xs text-green-600 dark:text-green-400">
                                 {Math.floor(video.duration / 60)}:{Math.floor(video.duration % 60).toString().padStart(2, '0')}
                               </p>
+                              {(() => {
+                                const entries = existingDuplicates[video.videoId] || [];
+                                const captionsEntry = entries.find(e => e.processingMethod === 'youtube_captions');
+                                const whisperEntry = entries.find(e => e.processingMethod === 'whisper_ai' || e.processingMethod === 'assemblyai');
+                                return (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {captionsEntry && (
+                                      <a href={`/dashboard/library/${captionsEntry.transcriptId}`} target="_blank" onClick={(e) => e.stopPropagation()} className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded hover:bg-amber-500/20 transition-colors">
+                                        Captions in library
+                                      </a>
+                                    )}
+                                    {whisperEntry && (
+                                      <a href={`/dashboard/library/${whisperEntry.transcriptId}`} target="_blank" onClick={(e) => e.stopPropagation()} className="text-[10px] uppercase font-bold text-violet-500 bg-violet-500/10 px-1.5 py-0.5 rounded hover:bg-violet-500/20 transition-colors">
+                                        AI transcript in library
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                            </div>
-                           <Button 
-                             variant="ghost" 
-                             size="sm" 
+                           <Button
+                             variant="ghost"
+                             size="sm"
                              onClick={() => toggleSingleWhisper(video.videoId, true)}
                              className="text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-500/20"
                            >
