@@ -111,21 +111,20 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         }
       }
 
-      // Initialize statuses: all pending, unavailable ones marked
-      const initialStatuses: Record<string, VideoStatus> = {}
-      videoIds.forEach(id => {
-        initialStatuses[id] = 'pending'
-      })
-
+      // Build availabilityMap first so duplicates can be excluded from initialStatuses
       const availabilityMap = new Map<string, any>();
       if (availabilityData) {
-        availabilityData.forEach(video => {
-          if (video.status === 'unavailable' && videoIds.includes(video.videoId)) {
-            initialStatuses[video.videoId] = 'unavailable'
-          }
-          availabilityMap.set(video.videoId, video);
-        })
+        availabilityData.forEach(video => availabilityMap.set(video.videoId, video))
       }
+
+      // Initialize statuses: skip duplicates entirely (they keep their "Already in library" badge),
+      // mark unavailable ones, everything else starts as pending.
+      const initialStatuses: Record<string, VideoStatus> = {}
+      videoIds.forEach(id => {
+        const av = availabilityMap.get(id)
+        if (av?.duplicateId) return  // excluded — allDone check must not see these as 'pending'
+        initialStatuses[id] = av?.status === 'unavailable' ? 'unavailable' : 'pending'
+      })
 
       setVideoStatuses(initialStatuses)
 
