@@ -197,12 +197,12 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
             playlistJobIdRef.current = null
             setProgressMessage("")
 
-            // Final status pass — apply all video_results
-            const finalStatuses: Record<string, VideoStatus> = {}
+            // Final status pass — replace entirely (no merge) so no stale 'pending'/'extracting' entries remain
+            const finalOnlyStatuses: Record<string, VideoStatus> = {}
             for (const [vid, res] of Object.entries(vr)) {
-              finalStatuses[vid] = mapBackendStatus(res)
+              finalOnlyStatuses[vid] = mapBackendStatus(res)
             }
-            setVideoStatuses(prev => ({ ...prev, ...finalStatuses }))
+            setVideoStatuses(finalOnlyStatuses)
 
             // Refresh library sidebar
             window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
@@ -231,11 +231,16 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
             })
 
             refreshCredits()
-            setLoading(false)
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current)
-              intervalRef.current = null
-            }
+            // Delay setLoading so React processes the final videoStatuses update first,
+            // ensuring the allDone useEffect in PlaylistManager sees isExtracting=false
+            // only after all statuses are terminal — preventing the banner race condition.
+            setTimeout(() => {
+              setLoading(false)
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current)
+                intervalRef.current = null
+              }
+            }, 0)
           }
         } catch (pollErr) {
           console.error('Playlist poll error:', pollErr)

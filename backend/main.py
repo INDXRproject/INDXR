@@ -1269,7 +1269,7 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
 
     try:
         for idx, video_id in enumerate(video_ids):
-            await update_playlist_job(current_video_index=idx, current_video_title=video_id)
+            await update_playlist_job(current_video_index=idx, current_video_title=f"Loading video {idx + 1} of {len(video_ids)}...")
             logger.info(f"[playlist job {job_id}] Processing video {idx + 1}/{len(video_ids)}: {video_id}")
 
             try:
