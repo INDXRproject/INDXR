@@ -133,13 +133,26 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         }
 
         if (job.status === 'running') {
-          // Restore partial statuses so the video list shows correct badges immediately
-          const partialStatuses: Record<string, VideoStatus> = {}
+          // Build a complete status map: start all stored videoIds as 'pending',
+          // then override with actual results from the job and mark the current video as 'extracting'.
+          // This gives the full picture so badges update correctly once polling resumes.
+          const storedVideoIds: string[] = (() => {
+            try {
+              const parsed = JSON.parse(raw)
+              return Array.isArray(parsed?.videoIds) ? parsed.videoIds : []
+            } catch { return [] }
+          })()
+          const restoredStatuses: Record<string, VideoStatus> = {}
+          storedVideoIds.forEach(id => { restoredStatuses[id] = 'pending' })
           for (const [vid, res] of Object.entries(vr)) {
-            partialStatuses[vid] = mapBackendStatus(res)
+            restoredStatuses[vid] = mapBackendStatus(res)
           }
-          if (Object.keys(partialStatuses).length > 0) {
-            setVideoStatuses(partialStatuses)
+          if (job.current_video_index != null && Array.isArray(job.video_ids)) {
+            const currentVid = job.video_ids[job.current_video_index]
+            if (currentVid && !vr[currentVid]) restoredStatuses[currentVid] = 'extracting'
+          }
+          if (Object.keys(restoredStatuses).length > 0) {
+            setVideoStatuses(restoredStatuses)
           }
           setResumeData({
             jobId: activeJobId,
@@ -187,10 +200,15 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         }
         setVideoStatuses(prev => ({ ...prev, ...newStatuses }))
 
-        // Update progress message
+        // Update progress message.
+        // If the backend hasn't resolved the title yet (still "Loading video X of N..."),
+        // show that string directly to avoid "Extracting video 3 of 6: Loading video 3 of 6..."
         if (job.current_video_title && job.total_videos) {
+          const title = job.current_video_title as string
           setProgressMessage(
-            `Extracting video ${(job.current_video_index ?? 0) + 1} of ${job.total_videos}: ${job.current_video_title}`
+            title.startsWith('Loading video')
+              ? title
+              : `Extracting video ${(job.current_video_index ?? 0) + 1} of ${job.total_videos}: ${title}`
           )
         }
 
@@ -377,6 +395,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         jobId: job_id,
         startTime: Date.now(),
         playlistTitle: playlistTitle ?? null,
+        videoIds: extractableIds,
       }))
       setProgressMessage(`Starting extraction of ${extractableIds.length} video${extractableIds.length !== 1 ? 's' : ''}...`)
 

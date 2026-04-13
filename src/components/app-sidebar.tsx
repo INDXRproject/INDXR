@@ -90,6 +90,9 @@ export function AppSidebar() {
   // Drag over
   const [dragOverId, setDragOverId] = useState<string | "all" | null>(null)
 
+  // Pending navigation — set when user tries to navigate during active extraction
+  const [pendingNavHref, setPendingNavHref] = useState<string | null>(null)
+
   // Active collection from URL
   const isLibraryPage = pathname === "/dashboard/library"
 
@@ -101,24 +104,14 @@ export function AppSidebar() {
   }, [])
 
   // Guard client-side navigation while a playlist job is active.
-  // Uses a Sonner toast with action buttons — no modal, no blocking.
+  // Sets pendingNavHref to show the inline confirmation card instead of navigating.
   const guardedNavigate = (href: string) => {
     const activeJob = sessionStorage.getItem('indxr-active-playlist-job')
     if (!activeJob) {
       router.push(href)
       return
     }
-    toast("Extraction is still running — your progress is safe. You can leave, but you'll need to resume when you return.", {
-      duration: 10000,
-      action: {
-        label: "Leave anyway",
-        onClick: () => router.push(href),
-      },
-      cancel: {
-        label: "Stay on page",
-        onClick: () => {},
-      },
-    })
+    setPendingNavHref(href)
   }
 
   const navigateToCollection = useCallback((id: string | null) => {
@@ -621,6 +614,36 @@ export function AppSidebar() {
               <p className="text-[10px] text-[var(--text-muted)]">
                 {transcripts.length} transcript{transcripts.length !== 1 ? "s" : ""} saved
               </p>
+            </div>
+          )}
+
+          {/* Nav guard — inline confirmation card when user tries to leave during active extraction */}
+          {pendingNavHref && (
+            <div className="mx-3 mb-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-in fade-in slide-in-from-bottom-2">
+              <p className="text-xs font-semibold text-foreground mb-1">Are you sure you want to leave?</p>
+              <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
+                Your extraction will continue in the background, but leaving may cause unexpected behavior. We recommend staying on this page until extraction is complete.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="h-7 text-xs flex-1"
+                  onClick={() => setPendingNavHref(null)}
+                >
+                  Stay on page
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs flex-1 text-muted-foreground"
+                  onClick={() => {
+                    router.push(pendingNavHref)
+                    setPendingNavHref(null)
+                  }}
+                >
+                  Leave anyway
+                </Button>
+              </div>
             </div>
           )}
 
