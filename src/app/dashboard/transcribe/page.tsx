@@ -376,12 +376,11 @@ export default function TranscribePage() {
          <p className="text-[var(--text-muted)]">Extract captions from videos, playlists, or audio files.</p>
        </div>
 
-       <Tabs value={activeTab} onValueChange={(v) => { if (!isExtracting) setActiveTab(v) }} className="w-full space-y-8">
+       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
         <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-[var(--bg-elevated)] h-auto rounded-xl">
           <TabsTrigger
             value="video"
-            disabled={isExtracting}
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
           >
             <Video className="h-4 w-4" /> Single Video
           </TabsTrigger>
@@ -393,18 +392,11 @@ export default function TranscribePage() {
           </TabsTrigger>
           <TabsTrigger
             value="audio"
-            disabled={isExtracting}
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
           >
             <Mic className="h-4 w-4" /> Audio Upload
           </TabsTrigger>
         </TabsList>
-        {isExtracting && (
-          <p className="text-xs text-amber-500/80 text-center -mt-4">
-            Extraction in progress — tab switching is disabled.
-          </p>
-        )}
-
         <TabsContent value="video">
           <VideoTab
             onPlaylistDetected={() => setActiveTab('playlist')}
