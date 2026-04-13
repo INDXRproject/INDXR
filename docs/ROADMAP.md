@@ -111,15 +111,20 @@
 - [x] **Navigation guards**: `beforeunload` listener in `PlaylistTab.tsx` while extracting; Single Video / Audio Upload tabs disabled with dimming and inline warning in `transcribe/page.tsx`
 - [x] **Completion screen**: "Completed in M:SS" shown next to success count in `PlaylistManager.tsx`
 
-### Phase R: Backend Playlist Orchestration (planned)
+### Phase R: Backend Playlist Orchestration (Apr 2026) ✅
 
 **Goal**: Move playlist extraction loop from frontend to backend so jobs survive browser navigation, tab closes, and page refreshes.
 
-- [ ] **`POST /api/playlist/extract`**: Accepts full video list, starts background job, returns `job_id` immediately
-- [ ] **`GET /api/playlist/jobs/{job_id}`**: Returns live progress (`current_video_index`, `completed`, `failed`, `video_results`)
-- [ ] **`playlist_extraction_jobs` Supabase table**: Persists job state across Railway restarts
-- [ ] **Frontend refactor**: `PlaylistTab` polls job status instead of driving the extraction loop
-- [ ] **Navigation guards simplified**: Top navbar active-job indicator + job detection on page load
+- [x] **`POST /api/playlist/extract`**: Accepts `{ video_ids, user_id, collection_id?, use_whisper_ids, playlist_title?, playlist_url? }`, starts background job via `asyncio.create_task`, returns `{ job_id, status: "running" }` immediately
+- [x] **`GET /api/playlist/jobs/{job_id}`**: Returns full `playlist_extraction_jobs` row with live progress (`current_video_index`, `current_video_title`, `completed`, `failed`, `video_results`)
+- [x] **`playlist_extraction_jobs` Supabase table**: Persists job state across Railway restarts; columns: `id, user_id, status, playlist_url, playlist_title, total_videos, completed, failed, current_video_index, current_video_title, video_results JSONB, video_ids TEXT[], use_whisper_ids TEXT[], collection_id, created_at, completed_at, processing_time_seconds`; RLS: users can only read own jobs
+- [x] **`run_playlist_job()` background task**: Processes all videos sequentially (captions via yt-dlp or AI Transcription via `run_whisper_job`); writes progress to Supabase after each video; retry pass for `bot_detection`/`timeout` after 30s wait
+- [x] **`_classify_error_type()`**: Centralised error classification helper extracted from inline blocks
+- [x] **Next.js API routes**: `src/app/api/playlist/extract/route.ts` (auth, suspended check, rate limit, forwards to Python with server-side `user_id`); `src/app/api/playlist/jobs/[jobId]/route.ts` (auth, suspended check, forwards GET)
+- [x] **`PlaylistTab.tsx` refactor**: Per-video extraction loop removed; one POST to `/api/playlist/extract` → poll `/api/playlist/jobs/{job_id}` every 3s; per-video status badges update live from poll response; progress banner with title; elapsed timer; completion banner with grouped failure summary; library refresh event on complete
+- [x] **Job recovery (sessionStorage)**: Active job stored as `{ jobId, startTime, playlistTitle, videoIds }`; mount `useEffect` detects in-progress jobs on page load and shows "View Progress" resume banner; restores full UI including video list with per-video status badges
+- [x] **Navigation guards**: `beforeunload` listener active during extraction; sidebar (`app-sidebar.tsx`) inline amber confirmation card intercepts `<Link>` and `router.push()` navigation attempts; tab-switching freed — Single Video and Audio Upload tabs no longer disabled during extraction
+- [x] **Per-method duplicate detection**: `existingDuplicates` extended to `Record<string, Array<{ transcriptId, processingMethod }>>` — captions (`youtube_captions`) and AI Transcription (`whisper_ai`/`assemblyai`) transcripts can coexist for the same video; availability breakdown shows amber "CAPTIONS IN LIBRARY" and violet "AI TRANSCRIPT IN LIBRARY" badges per video in both pre- and post-check views; duplicate count recalculates dynamically on method toggles
 
 ### Phase F: Commercialization & Admin (Q2 2025) — Partially Complete
 
@@ -219,6 +224,7 @@ Ideas validated but not prioritized:
 
 - **Custom Email Templates**: Branded transactional emails (Supabase)
 - **Multi-Region Deployment**: EU + US hosting options
+- **Table consolidation**: Consider merging `playlist_jobs` (per-extraction stats) and `playlist_extraction_jobs` (job orchestration state) — currently two separate tables with overlapping concerns
 
 ### Phase Q: Pre-Launch Validation & Launch
 
@@ -247,7 +253,8 @@ Ideas validated but not prioritized:
 - [x] Playlist pipeline reliability — see Phase P above (orphan rows, duplicates, error classification, retry, nav guards)
 
 **Pending Migrations (must run before deploy)**
-- [ ] `supabase/migrations/add_playlist_jobs.sql` — creates `playlist_jobs` table
+- [x] `playlist_extraction_jobs` table — created and RLS configured (Phase R migration already applied)
+- [ ] `supabase/migrations/add_playlist_jobs.sql` — creates `playlist_jobs` stats table (if not yet run)
 - [ ] `ALTER TABLE transcription_jobs ADD COLUMN IF NOT EXISTS error_type TEXT` — required for Whisper error classification
 
 **Playwright specs (not yet written)**

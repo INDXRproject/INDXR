@@ -106,13 +106,24 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 - **Stripe**: Suspended user check added to `/api/stripe/checkout` before Stripe session creation.
 - **WhisperFallbackModal** (`src/components/free-tool/WhisperFallbackModal.tsx`): Polls `/api/jobs/{job_id}` (waits for complete/error).
 
+### Backend Playlist Orchestration (Phase R, Apr 2026)
+
+- **Backend (`backend/main.py`)**: `POST /api/playlist/extract` starts `run_playlist_job()` as an `asyncio` background task and returns `{ job_id, status: "running" }` immediately. `GET /api/playlist/jobs/{job_id}` returns the full `playlist_extraction_jobs` row with live progress. `_classify_error_type()` provides centralised error classification. Retry pass after main loop: `bot_detection` and `timeout` videos retried once after 30s.
+- **Supabase**: New `playlist_extraction_jobs` table — `id, user_id, status, playlist_url, playlist_title, total_videos, completed, failed, current_video_index, current_video_title, video_results JSONB, video_ids TEXT[], use_whisper_ids TEXT[], collection_id, created_at, completed_at, processing_time_seconds`. RLS: users can only read own jobs. Migration already applied.
+- **Next.js API routes**: `src/app/api/playlist/extract/route.ts` (auth, suspended check, rate limit, forwards to Python backend with server-side `user_id`); `src/app/api/playlist/jobs/[jobId]/route.ts` (auth, suspended check, forwards GET).
+- **`PlaylistTab.tsx` refactor**: Per-video browser extraction loop removed. New flow: one `POST /api/playlist/extract` → poll `/api/playlist/jobs/{job_id}` every 3s. Per-video status badges update live from poll response. Progress banner: "Loading video X of N…" transitions to "Extracting video X of N: {title}". Completion banner with grouped failure summary. Library refresh event on complete.
+- **Job recovery**: sessionStorage stores `{ jobId, startTime, playlistTitle, videoIds }` on job start. Mount `useEffect` detects in-progress jobs on page load. Running job: shows "You have an extraction in progress" banner with "View Progress" button that restores full UI including video list with per-video status badges. Complete/error job: shows completion or error banner directly.
+- **Navigation guards**: `beforeunload` listener active during extraction (browser-level). Sidebar (`app-sidebar.tsx`) shows inline amber confirmation card when user attempts `<Link>` or `router.push()` navigation — "Are you sure you want to leave? Your extraction will continue in the background." Tab-switching freed: Single Video and Audio Upload tabs are no longer disabled during extraction.
+- **Per-method duplicate detection**: `existingDuplicates` type extended to `Record<string, Array<{ transcriptId: string; processingMethod: string }>>`. Captions (`youtube_captions`) and AI Transcription (`whisper_ai`/`assemblyai`) transcripts can coexist for the same video. Availability breakdown (both pre- and post-check video lists) shows per-video amber "CAPTIONS IN LIBRARY" and violet "AI TRANSCRIPT IN LIBRARY" badges, each linking to the existing transcript. Duplicate count in action bar recalculates dynamically when user toggles methods.
+- **`transcribe/page.tsx`**: `onExtractVideo` prop removed from `PlaylistTab` and from SEO landing page. Tab-disabling logic removed.
+
 ### Playlist Pipeline Reliability (Phase P, Apr 2026)
 
 - **Structured error classification**: Both `extract_youtube_transcript` (caption path) and `run_whisper_job` (AI Transcription path) now classify errors into: `bot_detection`, `timeout`, `age_restricted`, `members_only`, `youtube_restricted`, `extraction_error`. The `error_type` field is returned by both Python endpoints and forwarded through Next.js routes to the frontend. `processVideo` throws `"error_type:message"` so PlaylistTab catch blocks apply prefix-first classification before keyword fallback.
 - **`confirm your age` keyword**: Added to `age_restricted` classifier in both backend blocks to prevent "Sign in to confirm your age" from matching `bot_detection` (which also contains "sign in to confirm").
 - **Non-blocking retry**: `bot_detection` and `timeout` videos are retried once after a 30-second wait. `localStatuses` updated in the retry catch block so `onPlaylistComplete` stats reflect the final outcome.
 - **Placeholder cleanup via `finally`**: `processVideo` tracks `createdPlaceholderId` (INSERT path) and `updatedDuplicateId` (UPDATE path). On failure, `finally` deletes the orphan placeholder or restores the previous title. `handleTranscriptLoaded` now throws on DB save error (previously returned silently, nulling the cleanup trackers before `finally` ran).
-- **Navigation guards**: `beforeunload` listener fires in `PlaylistTab.tsx` while `loading === true`. In `transcribe/page.tsx`, Single Video and Audio Upload tabs are `disabled` and visually dimmed during extraction; `onValueChange` is blocked; inline amber warning displayed.
+- **Navigation guards**: `beforeunload` listener fires in `PlaylistTab.tsx` while `loading === true`. In `transcribe/page.tsx`, Single Video and Audio Upload tabs were `disabled` and visually dimmed during extraction; `onValueChange` was blocked; inline amber warning displayed. *(Navigation guard approach superseded by Phase R — tabs freed, sidebar confirmation card added.)*
 - **Completion screen**: Processing time shown as "Completed in M:SS" in `PlaylistManager.tsx`; `finalElapsed` captured when `allDone` fires.
 - **`playlist_jobs` table**: Per-extraction stats stored in Supabase (total selected, succeeded, per-error-type counts, processing time). Run `supabase/migrations/add_playlist_jobs.sql` manually.
 - **`transcription_jobs.error_type` column**: Required for `update_job(error_type=...)` calls. Add via migration before deploying.
@@ -283,6 +294,7 @@ The project uses a neutral utility skin (April 2025) replacing the previous Star
 - [ ] Verify webhook signature validation in production
 
 **Supabase Security:**
+- [x] `playlist_extraction_jobs` table migration applied (Phase R)
 - [ ] Re-enable email verification (currently disabled — must enable before launch)
 - [ ] Test OAuth redirect URLs on production domain
 - [ ] Backup database before launch

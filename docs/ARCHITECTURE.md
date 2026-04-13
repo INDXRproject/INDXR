@@ -45,6 +45,7 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
   - `public.transcripts`: Stores video/playlist transcripts, including `edited_content` (text) and `ai_summary` (JSONB)
   - `public.transcription_jobs`: AI Transcription job tracking (`id, user_id, status, video_url, source_type, credits_cost, transcript_id, error_message, error_type, file_size_bytes, file_format, processing_time_seconds, created_at, updated_at, started_at, completed_at`)
   - `public.playlist_jobs`: Per-playlist extraction stats (`total_selected`, `total_succeeded`, `total_failed`, per-error-type counts, `processing_time_seconds`). Requires `supabase/migrations/add_playlist_jobs.sql`.
+  - `public.playlist_extraction_jobs`: Live job orchestration state for backend-driven playlist extraction (`id, user_id, status, playlist_url, playlist_title, total_videos, completed, failed, current_video_index, current_video_title, video_results JSONB, video_ids TEXT[], use_whisper_ids TEXT[], collection_id, created_at, completed_at, processing_time_seconds`). RLS: users can only read own rows.
 - **Cache/Rate Limit**: Upstash Redis (Serverless Redis)
 - **Hosting**: Vercel (Frontend — https://indxr.ai), Railway (Backend — https://indxr-production.up.railway.app)
 
@@ -245,6 +246,8 @@ Three-tier strategy via `@upstash/ratelimit`:
 - `/api/transcribe/whisper`
 - `/api/playlist/info`
 - `/api/check-playlist-availability`
+- `/api/playlist/extract`
+- `/api/playlist/jobs/[jobId]`
 
 Suspended users receive HTTP 403 with `"Account suspended. Contact support@indxr.ai"`. A `/suspended` page is shown for blocked sessions.
 
@@ -283,15 +286,35 @@ Navigation: URL-based (`?tab=x`) for SEO and deep-linking.
 
 ### Playlist Engine
 
-- **Source**: YouTube Data API v3
-- **Availability pre-scan**: Live check before extraction — marks unavailable, members-only, needs_whisper, and duplicate videos
-- **Sequential processing**: Videos processed one-at-a-time; `processVideo` handles the full lifecycle per video (placeholder → extract/poll → save)
-- **Error classification**: Both caption and Whisper errors classified into `bot_detection | timeout | age_restricted | members_only | youtube_restricted | extraction_error`. `error_type` forwarded from Python backend through Next.js route to frontend as `"error_type:message"` thrown string.
-- **Non-blocking retry**: Videos with `bot_detection` or `timeout` status are retried once after 30 seconds.
-- **Placeholder lifecycle**: `processVideo` inserts a `"Processing Video [ID]..."` placeholder before fetching. On failure, `finally` block deletes it (INSERT path) or restores the previous title (UPDATE path for duplicates). `handleTranscriptLoaded` throws on DB error so cleanup always runs.
-- **AI Transcription in playlists**: Inline poll loop in `processVideo` (3s interval, 10-min max). On complete: deletes backend-created row, updates placeholder. On error: throws structured `error_type:message`.
-- **Stats tracking**: `playlist_jobs` Supabase table stores per-extraction statistics. Run `supabase/migrations/add_playlist_jobs.sql`.
-- **Navigation guards**: `beforeunload` listener active during extraction; Single Video and Audio Upload tabs disabled with visual feedback.
+**Architecture**: Backend-orchestrated (Phase R). The extraction loop runs entirely on Railway — jobs survive browser navigation, tab closes, and page refreshes.
+
+**Extraction flow**:
+1. Frontend sends one `POST /api/playlist/extract` with `{ video_ids, use_whisper_ids, playlist_title, playlist_url, collection_id }` → Next.js route adds `user_id` server-side → forwards to Python backend
+2. Python starts `run_playlist_job()` via `asyncio.create_task` and returns `{ job_id, status: "running" }` immediately
+3. Frontend polls `GET /api/playlist/jobs/{job_id}` every 3 seconds; per-video status badges update live from `video_results` JSONB
+4. On complete: `indxr-library-refresh` event dispatched; completion banner shown
+
+**Key backend components**:
+- `POST /api/playlist/extract`: Auth via `user_id` from Next.js route; creates `playlist_extraction_jobs` row; starts background task
+- `GET /api/playlist/jobs/{job_id}?user_id=...`: Returns full job row with RLS ownership check
+- `run_playlist_job()`: Sequential per-video processing (captions via yt-dlp or AI Transcription via `run_whisper_job`); writes `current_video_index`, `current_video_title`, and per-video `video_results` to Supabase after each video; retry pass after main loop for `bot_detection`/`timeout` videos (30s wait)
+- `_classify_error_type()`: Centralised error classification (`bot_detection | timeout | age_restricted | members_only | youtube_restricted | extraction_error`)
+
+**Job persistence**: All state in `playlist_extraction_jobs` Supabase table. Railway restart mid-job loses the background task; the job row remains but won't progress — no automatic recovery.
+
+**Frontend (PlaylistTab.tsx)**:
+- No per-video fetch loop in the browser
+- Progress banner transitions: "Loading video X of N…" → "Extracting video X of N: {title}"
+- sessionStorage stores `{ jobId, startTime, playlistTitle, videoIds }` — mount `useEffect` detects active jobs on page load and shows "View Progress" resume banner
+- Navigation guard: `beforeunload` listener during extraction; sidebar shows inline amber confirmation card for `<Link>`/`router.push()` attempts
+
+**Per-method duplicate detection**:
+- `existingDuplicates: Record<string, Array<{ transcriptId: string; processingMethod: string }>>` — one entry per existing transcript per video
+- Captions (`youtube_captions`) and AI Transcription (`whisper_ai`/`assemblyai`) can coexist for the same video
+- Availability breakdown shows amber "CAPTIONS IN LIBRARY" and violet "AI TRANSCRIPT IN LIBRARY" badges per video, visible in both the playlist selection grid and the post-check breakdown lists
+- `handleProceedWithExtraction` matches `duplicateId` by method: only sets duplicate for same-method existing transcript
+
+**Stats tracking**: `playlist_jobs` Supabase table stores per-extraction aggregate statistics. Run `supabase/migrations/add_playlist_jobs.sql`.
 
 ---
 

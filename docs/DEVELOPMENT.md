@@ -149,18 +149,48 @@ Full flow when debugging transcription issues:
 
 ## Playlist Extraction Pipeline
 
-Key points for debugging playlist issues:
+The extraction loop runs on Railway — not in the browser. Key points for debugging:
 
-- **Placeholder rows**: `processVideo` creates a `"Processing Video [ID]..."` row before extraction starts. On failure, `finally` block deletes it (new video) or restores the previous title (existing duplicate). No orphan rows should appear.
-- **Whisper poll loop**: `processVideo` polls `/api/jobs/{job_id}` every 3s (up to 200 polls = 10 min). If it times out or errors, the placeholder is cleaned up via `finally`.
-- **Duplicate prevention**: After Whisper poll completes, frontend deletes `job.transcript_id` row (backend-created) and updates placeholder. If you see duplicate rows, check that `job.transcript_id` is present in the poll response and that the frontend Supabase delete isn't being blocked by RLS.
-- **Error classification**: Thrown as `"error_type:message"`. PlaylistTab catch blocks extract the prefix first, then fall back to keyword matching.
-- **Retry**: `bot_detection` and `timeout` videos retry once after 30s. If both attempts fail, the per-video VideoStatus reflects the retry outcome.
+### Flow overview
+
+```
+Browser → POST /api/playlist/extract (Next.js)
+        → POST /api/playlist/extract (Python, with server-side user_id)
+        → run_playlist_job() background task
+        → Supabase playlist_extraction_jobs (live progress)
+Browser ← poll GET /api/playlist/jobs/{job_id} every 3s
+```
+
+### Debugging tips
+
+- **Job stuck / no progress after Railway restart**: Railway restart mid-job kills the background task. The `playlist_extraction_jobs` row remains with its last-written state but won't progress — no automatic recovery. Trigger a new extraction.
+- **Per-video status not updating**: Check that the poll response `video_results` JSONB contains the video ID. Verify RLS on `playlist_extraction_jobs` allows the user to SELECT their own row.
+- **Duplicate rows in library**: After Whisper completes within `run_playlist_job`, the backend creates its own transcript row. The frontend should delete it (`job.transcript_id`) and update the placeholder. If you see duplicates, verify `GET /api/playlist/jobs/{job_id}` returns `transcript_id` and that the frontend Supabase DELETE isn't blocked by RLS.
+- **Error classification**: Errors written to `video_results[video_id].error_type` by `_classify_error_type()`. Frontend maps these to `VideoStatus` values.
+- **Retry**: After the main loop, `run_playlist_job` does one retry pass — waits 30s, then re-processes any `bot_detection` or `timeout` videos.
+- **Progress text "Extracting video 3 of 6: Loading video 3 of 6…"**: Backend sets `current_video_title = "Loading video X of N..."` while fetching; frontend checks `startsWith('Loading video')` and does not prepend "Extracting video X of N:" in that case.
+
+### Job recovery (sessionStorage)
+
+When a job starts, `PlaylistTab` writes to sessionStorage:
+```json
+{ "jobId": "...", "startTime": 1712345678000, "playlistTitle": "...", "videoIds": ["id1", "id2"] }
+```
+
+On mount, `useEffect` checks for this key. If a job is found:
+- Polls `/api/playlist/jobs/{jobId}` immediately
+- Running job → shows "View Progress" resume banner; clicking it restores full UI with video list and per-video badges
+- Complete/error job → shows completion or error banner directly
+
+sessionStorage is cleared on job completion or when the user starts a new extraction.
 
 ### Required migrations (run manually in Supabase SQL editor)
 
 ```sql
--- playlist_jobs table
+-- playlist_extraction_jobs table (Phase R — should already be applied)
+-- If missing, run the migration from backend/supabase/migrations/
+
+-- playlist_jobs stats table (Phase P)
 -- Run: supabase/migrations/add_playlist_jobs.sql
 
 -- transcription_jobs.error_type column (if not already present)
@@ -248,6 +278,10 @@ The dashboard uses a 4-tab system for transcripts and summaries.
 | Playlist Whisper videos all show `extraction_error` | `error_type` column missing | Run `ALTER TABLE transcription_jobs ADD COLUMN IF NOT EXISTS error_type TEXT` in Supabase |
 | `playlist_jobs` insert fails | Table doesn't exist | Run `supabase/migrations/add_playlist_jobs.sql` in Supabase SQL editor |
 | Age-restricted videos classified as `bot_detection` | Missing `confirm your age` keyword | Verify keyword present in both classification blocks in `main.py` |
+| Playlist job stuck after Railway restart | Background task killed on restart | No auto-recovery — job row persists but won't progress; trigger a new extraction |
+| "View Progress" banner not appearing after page reload | sessionStorage key missing or cleared | Check `indxr-active-playlist-job` in browser DevTools Application → sessionStorage; verify `PlaylistTab` mount `useEffect` reads it |
+| Playlist extraction job returns 504 from Next.js proxy | Vercel proxy timeout on long-running POST | Next.js route has `maxDuration` set; the Python backend should return immediately — verify `run_playlist_job` is launched via `asyncio.create_task` and not awaited before the response |
+| Sidebar nav guard not triggering | sessionStorage key absent | The confirmation card only shows if `indxr-active-playlist-job` exists in sessionStorage — check that `PlaylistTab` writes it before the first poll |
 
 ---
 
@@ -260,10 +294,12 @@ The dashboard uses a 4-tab system for transcripts and summaries.
 | `/api/extract` | POST | Extract YouTube captions |
 | `/api/summarize` | POST | AI summarization via DeepSeek |
 | `/api/transcribe/whisper` | POST | Start AI transcription job — returns `{ job_id, status }` immediately |
-| `/api/jobs/{job_id}` | GET | Poll transcription job status (`?user_id=`) |
+| `/api/jobs/{job_id}` | GET | Poll AI transcription job status (`?user_id=`) |
 | `/api/video/metadata/{video_id}` | GET | Fetch video title + duration (YouTube API → yt-dlp fallback) |
 | `/api/playlist/info` | GET | Get playlist metadata |
 | `/api/check-playlist-availability` | POST | Check video availability in playlist |
+| `/api/playlist/extract` | POST | Start backend playlist extraction job — returns `{ job_id, status: "running" }` immediately |
+| `/api/playlist/jobs/{job_id}` | GET | Poll playlist extraction job status (`?user_id=`) — returns full `playlist_extraction_jobs` row |
 
 ### Next.js Admin API Routes (require `ADMIN_EMAIL` session)
 
