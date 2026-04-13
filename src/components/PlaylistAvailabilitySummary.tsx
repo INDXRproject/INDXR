@@ -28,19 +28,26 @@ interface PlaylistAvailabilitySummaryProps {
   results: VideoAvailability[]
   summary?: AvailabilitySummary // Mark as optional and keep for backward compat if needed, but not used now
   userCredits: number | null
-  existingDuplicates: Record<string, string>
+  existingDuplicates: Record<string, Array<{ transcriptId: string; processingMethod: string }>>
   onProceed: (results: VideoAvailability[], duplicateAction?: 'replace' | 'reset') => void
   onCancel: () => void
 }
 
 export function PlaylistAvailabilitySummary({ results, userCredits, existingDuplicates, onProceed, onCancel }: PlaylistAvailabilitySummaryProps) {
   const [expandedSection, setExpandedSection] = useState<'captions' | 'unavailable' | null>('unavailable')
-  
+
+  const isDuplicateForStatus = (videoId: string, status: string): boolean => {
+    const entries = existingDuplicates[videoId] || [];
+    if (status === 'has_captions') return entries.some(e => e.processingMethod === 'youtube_captions');
+    if (status === 'needs_whisper') return entries.some(e => e.processingMethod === 'whisper_ai' || e.processingMethod === 'assemblyai');
+    return false;
+  };
+
   // Track local results for Whisper toggling
   const [localResults, setLocalResults] = useState<VideoAvailability[]>(() => {
     return results.map(r => ({
       ...r,
-      isDuplicate: !!existingDuplicates[r.videoId]
+      isDuplicate: isDuplicateForStatus(r.videoId, r.status)
     }))
   })
 
@@ -67,18 +74,12 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
   const toggleAllWhisper = (useWhisper: boolean) => {
     setLocalResults(prev => prev.map(r => {
       if (r.status === 'unavailable') return r
-      if (useWhisper) {
-        return {
-          ...r,
-          status: 'needs_whisper',
-          estimatedCredits: Math.max(1, Math.ceil((r.duration / 60) / 10)) // 1 credit per 10min
-        }
-      } else {
-        return {
-          ...r,
-          status: 'has_captions',
-          estimatedCredits: 0
-        }
+      const newStatus = useWhisper ? 'needs_whisper' as const : 'has_captions' as const
+      return {
+        ...r,
+        status: newStatus,
+        estimatedCredits: useWhisper ? Math.max(1, Math.ceil((r.duration / 60) / 10)) : 0,
+        isDuplicate: isDuplicateForStatus(r.videoId, newStatus),
       }
     }))
   }
@@ -86,18 +87,12 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
   const toggleSingleWhisper = (videoId: string, useWhisper: boolean) => {
     setLocalResults(prev => prev.map(r => {
       if (r.videoId !== videoId) return r
-      if (useWhisper) {
-        return {
-          ...r,
-          status: 'needs_whisper' as const,
-          estimatedCredits: Math.max(1, Math.ceil((r.duration / 60) / 10)) // 1 credit per 10min
-        }
-      } else {
-        return {
-          ...r,
-          status: 'has_captions' as const,
-          estimatedCredits: 0
-        }
+      const newStatus = useWhisper ? 'needs_whisper' as const : 'has_captions' as const
+      return {
+        ...r,
+        status: newStatus,
+        estimatedCredits: useWhisper ? Math.max(1, Math.ceil((r.duration / 60) / 10)) : 0,
+        isDuplicate: isDuplicateForStatus(r.videoId, newStatus),
       }
     }))
   }
@@ -303,10 +298,9 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                {/* TODO Phase R step 2: re-enable when backend supports duplicate_map */}
                 {containsDuplicates && (
                     <p className="text-xs text-amber-600 dark:text-amber-400 font-medium self-center">
-                        {localResults.filter(r => r.isDuplicate && r.status !== 'unavailable').length} duplicate(s) will be skipped — already in your library.
+                        {localResults.filter(r => r.isDuplicate && r.status !== 'unavailable').length} video(s) already in your library — existing transcripts will be updated.
                     </p>
                 )}
                 <Button variant="outline" onClick={onCancel} className="flex-1 md:flex-none">

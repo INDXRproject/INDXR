@@ -77,7 +77,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
   const [isCompleted, setIsCompleted] = useState(false)
   const [finalElapsed, setFinalElapsed] = useState(0)
   const [hasExtracted, setHasExtracted] = useState(false);
-  const [existingDuplicates, setExistingDuplicates] = useState<Record<string, string>>({}); // video_id -> transcript_id
+  const [existingDuplicates, setExistingDuplicates] = useState<Record<string, Array<{ transcriptId: string; processingMethod: string }>>>({}); // video_id -> [{ transcriptId, processingMethod }]
   const supabase = createClient();
 
   // Monitor extraction progress
@@ -160,24 +160,28 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
       
       // We safely fetch the first 1000 items (unlikely to have a 1000+ playlist here)
       const { data: { user } } = await supabase.auth.getUser()
-      const dupes: Record<string, string> = {}
+      const dupes: Record<string, Array<{ transcriptId: string; processingMethod: string }>> = {}
       if (user && videoIds.length > 0) {
         // Query Supabase
         const { data: existing } = await supabase
           .from('transcripts')
-          .select('id, video_id')
+          .select('id, video_id, processing_method')
           .eq('user_id', user.id)
           .in('video_id', videoIds)
-          
+
         if (existing) {
-          existing.forEach(t => dupes[t.video_id] = t.id)
+          existing.forEach(t => {
+            if (!dupes[t.video_id]) dupes[t.video_id] = []
+            dupes[t.video_id].push({ transcriptId: t.id, processingMethod: t.processing_method || 'youtube_captions' })
+          })
         }
       }
       setExistingDuplicates(dupes);
 
-      // Select first 10 by default, filtering out private videos AND duplicates
-      const validEntries = data.entries.slice(0, 10).filter((e: PlaylistEntry) => 
-        e.title !== "[Private video]" && e.title !== "[Private Video]" && e.title !== "Private video" && !dupes[e.id]
+      // Select first 10 by default, filtering out private videos AND captions duplicates
+      const validEntries = data.entries.slice(0, 10).filter((e: PlaylistEntry) =>
+        e.title !== "[Private video]" && e.title !== "[Private Video]" && e.title !== "Private video" &&
+        !dupes[e.id]?.some(d => d.processingMethod === 'youtube_captions')
       );
       const initialSelected = new Set<string>(validEntries.map((e: PlaylistEntry) => e.id));
       setSelectedIds(initialSelected);
@@ -294,12 +298,17 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
         .filter(r => r.status === 'has_captions' || r.status === 'needs_whisper')
         .map(r => r.videoId);
 
-      // Inject the duplicate logic into the results that go back up
-      const enhancedResults = finalResults.map(r => ({
-        ...r,
-        duplicateId: existingDuplicates[r.videoId],
-        duplicateAction: existingDuplicates[r.videoId] ? duplicateAction : undefined
-      }));
+      // Inject method-aware duplicate logic into the results that go back up
+      const enhancedResults = finalResults.map(r => {
+        const existingEntries = existingDuplicates[r.videoId] || [];
+        const effectiveMethod = r.status === 'needs_whisper' ? 'whisper_ai' : 'youtube_captions';
+        const matchingEntry = existingEntries.find(e => e.processingMethod === effectiveMethod);
+        return {
+          ...r,
+          duplicateId: matchingEntry?.transcriptId,
+          duplicateAction: matchingEntry ? duplicateAction : undefined,
+        };
+      });
 
       setHasExtracted(true);
       setShowAvailabilityModal(false); // Hide inline summary
@@ -571,18 +580,38 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                             {videoStatuses[entry.id] === 'age_restricted' && <span className="text-[10px] uppercase font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Age-restricted</span>}
                             {videoStatuses[entry.id] === 'members_only' && <span className="text-[10px] uppercase font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Members only</span>}
                              
-                             {/* Duplicate Badge */}
-                             {!hasExtracted && existingDuplicates[entry.id] && (
-                                <a 
-                                  href={`/dashboard/library/${existingDuplicates[entry.id]}`}
-                                  target="_blank"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-amber-500/20 transition-colors"
-                                  title="View existing transcript"
-                                >
-                                  Already in library
-                                </a>
-                             )}
+                             {/* Duplicate Badges */}
+                             {!hasExtracted && existingDuplicates[entry.id] && (() => {
+                               const entries = existingDuplicates[entry.id];
+                               const captionsEntry = entries.find(e => e.processingMethod === 'youtube_captions');
+                               const whisperEntry = entries.find(e => e.processingMethod === 'whisper_ai' || e.processingMethod === 'assemblyai');
+                               return (
+                                 <>
+                                   {captionsEntry && (
+                                     <a
+                                       href={`/dashboard/library/${captionsEntry.transcriptId}`}
+                                       target="_blank"
+                                       onClick={(e) => e.stopPropagation()}
+                                       className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-amber-500/20 transition-colors"
+                                       title="View existing captions transcript"
+                                     >
+                                       Captions in library <ExternalLink className="h-2.5 w-2.5" />
+                                     </a>
+                                   )}
+                                   {whisperEntry && (
+                                     <a
+                                       href={`/dashboard/library/${whisperEntry.transcriptId}`}
+                                       target="_blank"
+                                       onClick={(e) => e.stopPropagation()}
+                                       className="text-[10px] uppercase font-bold text-violet-500 bg-violet-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-violet-500/20 transition-colors"
+                                       title="View existing AI transcript"
+                                     >
+                                       AI transcript in library <ExternalLink className="h-2.5 w-2.5" />
+                                     </a>
+                                   )}
+                                 </>
+                               );
+                             })()}
                              
                              {/* Show Whisper Needed badge if checked */}
                              {availabilityResults?.find(r => r.videoId === entry.id)?.status === 'needs_whisper' && (
