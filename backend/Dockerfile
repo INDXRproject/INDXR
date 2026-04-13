@@ -9,10 +9,9 @@ RUN apt-get update && apt-get install -y ffmpeg wget nodejs npm && rm -rf /var/l
 COPY bin/bgutil-pot-linux-x86_64 /usr/local/bin/bgutil-pot
 RUN chmod +x /usr/local/bin/bgutil-pot
 
-# Keep bgutil plugin zip intact — yt-dlp loads plugins directly from zips in plugin_dirs
-RUN wget -q https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-ytdlp-pot-provider-rs.zip \
-    && mkdir -p /root/yt-dlp-plugins \
-    && mv bgutil-ytdlp-pot-provider-rs.zip /root/yt-dlp-plugins/
+# Bundle bgutil plugin zip (pre-downloaded to avoid Railway wget failures)
+RUN mkdir -p /root/yt-dlp-plugins
+COPY bin/bgutil-ytdlp-pot-provider-rs.zip /root/yt-dlp-plugins/
 
 # Python dependencies
 COPY requirements.txt .
