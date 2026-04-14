@@ -1103,6 +1103,7 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
     return JSONResponse({
         "job_id": job_id,
         "status": job['status'],
+        "created_at": job.get('created_at'),
         "transcript": transcript,
         "transcript_id": job.get('transcript_id'),
         "duration": job.get('duration_seconds'),

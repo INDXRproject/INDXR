@@ -322,3 +322,26 @@ src/components/free-tool/AudioTab.tsx
 ---
 
 [2026-04-15] taak: AudioTab upload warning + Resume status fix — isUploadingFile state toegevoegd (true tijdens Railway fetch, finally-cleanup), "Do not close" waarschuwing getoond terwijl bestand geüpload wordt; resumeData bevat nu initialStatus (opgehaald in mount-effect), handleResume gebruikt dit als startwaarde voor whisperStatus zodat "Transcribing with AI..." i.p.v. "Uploading..." verschijnt bij resumed job | gewijzigd: src/components/free-tool/AudioTab.tsx
+[2026-04-15 00:35] commit: fix: audio upload "do not close" warning + Resume shows correct status
+
+AudioTab.tsx:
+
+Problem 1 — no warning during file upload:
+- Added isUploadingFile state, set true immediately before the Railway
+  POST fetch (Step 3 in handleTranscribe), cleared in finally block
+- Shows "Do not close this page while uploading." in amber below the
+  Transcribe button while the file is in transit
+- Automatically disappears once the server responds and the job starts
+
+Problem 2 — Resume showed "Uploading..." for an already-uploaded job:
+- Mount-time useEffect now passes job.status into resumeData as initialStatus
+- handleResume reads initialStatus and uses it for setWhisperStatus instead
+  of always defaulting to 'pending' (which maps to "Uploading...")
+- Resumed jobs that are transcribing show "Transcribing with AI..." immediately,
+  matching the actual backend state
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+src/components/free-tool/AudioTab.tsx
+---
+[2026-04-15] taak: AudioTab upload warning fix + Resume timer fix — warning gebruikt nu isTranscribing && whisperStatus==='pending' i.p.v. isUploadingFile (betrouwbaar voor alle bestandsgroottes); backend geeft created_at terug in job response; mount-effect berekent elapsedAtResume, runPollLoop accepteert startElapsed param, handleResume start timer op correcte positie | gewijzigd: backend/main.py, src/components/free-tool/AudioTab.tsx
