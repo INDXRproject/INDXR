@@ -387,7 +387,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         ...(ageRestricted > 0 ? [`🔞 ${ageRestricted} video${ageRestricted !== 1 ? 's' : ''} ${ageRestricted !== 1 ? 'are' : 'is'} age-restricted. YouTube prevents transcription of these videos. Download the audio manually and use Audio Upload instead.`] : []),
                         ...(membersOnly > 0 ? [`🔒 ${membersOnly} video${membersOnly !== 1 ? 's' : ''} are members-only. You need a channel membership to access these videos.`] : []),
                         ...(youtubeRestricted > 0 ? [`🚫 ${youtubeRestricted} video${youtubeRestricted !== 1 ? 's' : ''} are unavailable or restricted on YouTube.`] : []),
-                        ...(extractionError > 0 ? [`❌ ${extractionError} video${extractionError !== 1 ? 's' : ''} failed due to an unexpected error. Try again later.`] : []),
+                        ...(extractionError > 0 ? [`❌ ${extractionError} video${extractionError !== 1 ? 's' : ''} failed due to a temporary connection error — try again later.`] : []),
                       ];
                       if (groups.length === 0) return null;
                       return (
