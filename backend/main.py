@@ -68,8 +68,14 @@ app = FastAPI(title="INDXR.AI Backend", version="1.0.0")
 
 _BACKEND_API_SECRET = os.getenv("BACKEND_API_SECRET", "")
 
-async def verify_backend_secret(x_backend_secret: str = Header(default="")):
-    """Reject requests from callers that don't know the shared secret."""
+async def verify_backend_secret(request: Request, x_backend_secret: str = Header(default="")):
+    """Reject requests that lack the shared backend secret.
+
+    Exception: direct browser uploads send a Supabase JWT (Authorization: Bearer).
+    Their auth is validated inside the endpoint body — backend-secret check is skipped here.
+    """
+    if request.headers.get("Authorization", "").startswith("Bearer "):
+        return  # JWT-authenticated upload — validated in endpoint body
     if _BACKEND_API_SECRET and x_backend_secret != _BACKEND_API_SECRET:
         raise HTTPException(status_code=401, detail="Invalid backend secret")
 

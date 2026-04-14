@@ -214,3 +214,34 @@ Changed: docs/LOG.md
 src/components/free-tool/VideoTab.tsx
 ---
 [2026-04-14] taak: Sticky session ID fix + audio job recovery — extract_with_ytdlp() accepteert nu session_id param (doorgegeven aan beide get_proxy_url() calls), run_playlist_job passes job_id[:8] bij captions-extractie (first pass + retry); AudioTab heeft sessionStorage recovery gekregen: runPollLoop extracted, mount useEffect, resumeData state, resume banner consistent met PlaylistTab | gewijzigd: backend/main.py, src/components/free-tool/AudioTab.tsx
+[2026-04-14 16:59] commit: fix: sticky proxy session ID + audio job page-refresh recovery
+
+Fix 1 — sticky proxy session ID (backend/main.py):
+- extract_with_ytdlp() now accepts session_id: Optional[str] = None
+- Both get_proxy_url() calls inside the function pass session_id through
+- run_playlist_job() passes session_id=job_id[:8] at both call sites
+  (first pass line ~1354 and retry pass line ~1471)
+- Single-video /api/extract/youtube endpoint unchanged (no job_id context,
+  random session per call is acceptable for one-off requests)
+- Each playlist job now pins caption extraction to a stable exit IP,
+  consistent with the existing run_whisper_job() behaviour
+
+Fix 2 — audio upload job recovery after page refresh (AudioTab.tsx):
+- AUDIO_JOB_KEY = 'indxr-active-audio-job' saved to sessionStorage on job start
+  (stores { jobId, filename } so filename survives the refresh)
+- Mount useEffect checks sessionStorage on load: if job is still running,
+  sets resumeData to trigger the resume banner
+- Polling loop extracted from handleTranscribe() into runPollLoop(jobId, filename)
+  shared by both handleTranscribe (new jobs) and handleResume (recovered jobs)
+- Resume banner matches PlaylistTab style: spinning loader, filename, Resume + Dismiss
+- sessionStorage cleared on complete, error, timeout, or Dismiss
+
+Also: audio success banner now shows creditsUsed as minutes (consistent with
+VideoTab fix) instead of Math.round(duration / 60)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+src/components/free-tool/AudioTab.tsx
+---
+[2026-04-14] taak: Audio upload 401 gefixed + duplicate messaging gecorrigeerd — verify_backend_secret slaat secret-check over als Bearer token aanwezig (JWT wordt al gevalideerd in endpoint body); PlaylistAvailabilitySummary "will be updated" → "will be skipped" (duplicates worden gefilterd uit extractableIds, nooit overschreven) | gewijzigd: backend/main.py, src/components/PlaylistAvailabilitySummary.tsx

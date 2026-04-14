@@ -362,7 +362,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 {containsDuplicates && (
                     <p className="text-xs text-amber-600 dark:text-amber-400 font-medium self-center">
-                        {localResults.filter(r => r.isDuplicate && r.status !== 'unavailable').length} video(s) already in your library — existing transcripts will be updated.
+                        {localResults.filter(r => r.isDuplicate && r.status !== 'unavailable').length} video(s) already in your library — existing transcripts will be skipped.
                     </p>
                 )}
                 <Button variant="outline" onClick={onCancel} className="flex-1 md:flex-none">
