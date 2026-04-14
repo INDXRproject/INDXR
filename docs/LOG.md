@@ -300,3 +300,25 @@ Changed: docs/LOG.md
 src/components/PlaylistManager.tsx
 src/components/free-tool/AudioTab.tsx
 ---
+[2026-04-14 22:46] commit: fix: playlist credit text + audio Resume button visibility
+
+PlaylistManager.tsx:
+- Updated credit explanation under URL input to be more precise:
+  "Auto-captions are free for the first 3 videos. From video 4:
+  1 credit per video (with auto-captions). Videos using AI
+  Transcription cost 1 credit per minute instead — no per-video charge."
+
+AudioTab.tsx:
+- Fixed Resume button: after clicking Resume, the spinner + progress
+  was invisible because the Transcribe button condition was `file && !transcript`,
+  but after a page refresh `file` is null (only jobId survives in sessionStorage).
+- Changed to `(file || isTranscribing) && !transcript` so the button renders
+  and shows the spinner + whisper status + elapsed timer during a resumed job.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+src/components/PlaylistManager.tsx
+src/components/free-tool/AudioTab.tsx
+---
+
+[2026-04-15] taak: AudioTab upload warning + Resume status fix — isUploadingFile state toegevoegd (true tijdens Railway fetch, finally-cleanup), "Do not close" waarschuwing getoond terwijl bestand geüpload wordt; resumeData bevat nu initialStatus (opgehaald in mount-effect), handleResume gebruikt dit als startwaarde voor whisperStatus zodat "Transcribing with AI..." i.p.v. "Uploading..." verschijnt bij resumed job | gewijzigd: src/components/free-tool/AudioTab.tsx

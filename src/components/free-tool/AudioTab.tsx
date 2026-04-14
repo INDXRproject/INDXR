@@ -34,9 +34,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [audioMetadata, setAudioMetadata] = useState<{ filename: string; duration: number; creditsUsed: number; processingTimeSecs: number } | null>(null)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [isUploading, setIsUploading] = useState(false)
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
   const [whisperStatus, setWhisperStatus] = useState<'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'>('idle')
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const [resumeData, setResumeData] = useState<{ jobId: string; filename: string } | null>(null)
+  const [resumeData, setResumeData] = useState<{ jobId: string; filename: string; initialStatus: string } | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -61,7 +62,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         if (job.status === 'complete' || job.status === 'error') {
           sessionStorage.removeItem(AUDIO_JOB_KEY)
         } else if (['pending', 'downloading', 'transcribing', 'saving'].includes(job.status)) {
-          setResumeData({ jobId, filename })
+          setResumeData({ jobId, filename, initialStatus: job.status })
         } else {
           sessionStorage.removeItem(AUDIO_JOB_KEY)
         }
@@ -280,10 +281,14 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   const handleResume = () => {
     if (!resumeData) return
-    const { jobId, filename } = resumeData
+    const { jobId, filename, initialStatus } = resumeData
+    const validStatuses = ['pending', 'downloading', 'transcribing', 'saving'] as const
+    const status = (validStatuses as readonly string[]).includes(initialStatus)
+      ? (initialStatus as typeof validStatuses[number])
+      : 'transcribing'
     setResumeData(null)
     setIsTranscribing(true)
-    setWhisperStatus('pending')
+    setWhisperStatus(status)
     runPollLoop(jobId, filename)
   }
 
@@ -316,11 +321,17 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       formData.append('audio_file', file)
 
       const backendUrl = process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL || 'http://localhost:8000'
-      const response = await fetch(`${backendUrl}/api/transcribe/whisper`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
-        body: formData,
-      })
+      setIsUploadingFile(true)
+      let response: Response
+      try {
+        response = await fetch(`${backendUrl}/api/transcribe/whisper`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+          body: formData,
+        })
+      } finally {
+        setIsUploadingFile(false)
+      }
 
       const data = await response.json()
 
@@ -531,6 +542,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             </>
           )}
         </Button>
+      )}
+
+      {isUploadingFile && (
+        <p className="text-xs text-amber-500 text-center -mt-2">
+          Do not close this page while uploading.
+        </p>
       )}
 
       {/* Transcript Display with TranscriptCard */}
