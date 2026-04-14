@@ -86,3 +86,83 @@ src/components/ui/pricing-card.tsx
 ---
 [2026-04-14] taak: 5 fixes geïmplementeerd — AudioTab credit card fix, BACKEND_API_SECRET (10 routes + FastAPI), export gating (anoniem TXT-only), playlist eerste 3 gratis (backend deductie + FREE label), WelcomeCreditCard playlist tekst gecorrigeerd | gewijzigd: src/components/free-tool/AudioTab.tsx, backend/main.py, src/app/api/extract/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/playlist/info/route.ts, src/app/api/playlist/extract/route.ts, src/app/api/playlist/jobs/[jobId]/route.ts, src/app/api/jobs/[job_id]/route.ts, src/app/api/transcribe/whisper/route.ts, src/app/api/video/metadata/[videoId]/route.ts, src/app/api/check-playlist-availability/route.ts, src/components/TranscriptCard.tsx, src/components/free-tool/PlaylistTab.tsx, src/components/PlaylistManager.tsx, src/components/dashboard/WelcomeCreditCard.tsx, docs/wiki/operations/known-issues.md
 ---
+[2026-04-14 02:34] commit: Implement 5 pre-launch fixes + codebase audit & wiki corrections
+
+Codebase audit & wiki:
+- Added CODEBASE_AUDIT.md and WIKI_GAPS.md (full inventory)
+- Fixed critical wiki discrepancies: credit formula /600→/60 in CLAUDE.md,
+  tiptap_content→edited_content in database-schema, corrected endpoint names,
+  marked has_ever_purchased/isPaidUser as not-yet-implemented, ADR-009 status
+  corrected to implemented, ADR-010 and ADR-014 marked as not-yet-implemented
+
+Fix 1 — AudioTab: hide credit cost card and transcribe button after job completes
+- Added `&& !transcript` guard to both conditionals (lines 394, 426)
+
+Fix 2 — BACKEND_API_SECRET validation:
+- backend/main.py: `verify_backend_secret` FastAPI Depends added to all 8
+  endpoints (excluding /health); reads BACKEND_API_SECRET env var
+- All 10 Next.js→Python fetch calls now send X-Backend-Secret header
+
+Fix 3 — Export gating (TranscriptCard):
+- Anonymous users clicking CSV/SRT/VTT/JSON now see an inline sign-in prompt
+  instead of downloading; TXT remains available to everyone
+
+Fix 4 — Playlist first-3-free (ADR-010):
+- backend/main.py run_playlist_job: captions path now checks balance and deducts
+  1 credit per video for idx>=3; first 3 are free (marked free:true in results)
+- PlaylistTab.tsx: tracks freeVideoIds from video_results; passes to PlaylistManager
+- PlaylistManager.tsx: shows green FREE badge for free videos
+
+Fix 5 — WelcomeCreditCard playlist section:
+- "50 Videos / month Free" → "First 3 videos free per extraction"
+- "1 Credit = +10 Videos" → "1 Credit per video" (after first 3)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: CLAUDE.md
+backend/main.py
+docs/CODEBASE_AUDIT.md
+docs/LOG.md
+docs/WIKI_GAPS.md
+docs/wiki/architecture/credit-system.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/decisions/009-credit-granularity.md
+docs/wiki/decisions/010-playlist-pricing.md
+docs/wiki/decisions/014-export-format-gating.md
+docs/wiki/operations/known-issues.md
+src/app/api/ai/summarize/route.ts
+src/app/api/check-playlist-availability/route.ts
+src/app/api/extract/route.ts
+src/app/api/jobs/[job_id]/route.ts
+src/app/api/playlist/extract/route.ts
+src/app/api/playlist/info/route.ts
+src/app/api/playlist/jobs/[jobId]/route.ts
+src/app/api/transcribe/whisper/route.ts
+src/app/api/video/metadata/[videoId]/route.ts
+src/components/PlaylistManager.tsx
+src/components/TranscriptCard.tsx
+src/components/dashboard/WelcomeCreditCard.tsx
+src/components/free-tool/AudioTab.tsx
+src/components/free-tool/PlaylistTab.tsx
+---
+[2026-04-14 04:54] commit: feat: pre-extraction FREE badges and info line for first 3 playlist videos
+
+PlaylistManager.tsx:
+- Videolijst na Fetch Playlist: groen FREE badge op video 1-3 (idx < 3)
+  in de title row, alleen zichtbaar vóór extractie (!hasExtracted)
+- Infobalk onder de videolijst: "The first 3 videos are always free.
+  Credits apply from video 4 onwards." (verborgen na extractie)
+
+PlaylistAvailabilitySummary.tsx:
+- FREE badge in zowel de captions- als whisper-videorijen op basis van
+  positie in totale extractievolgorde (excl. unavailable, slice(0,3)) —
+  matcht de backend idx < 3 logica
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/PlaylistAvailabilitySummary.tsx
+src/components/PlaylistManager.tsx
+---
+[2026-04-14 05:29] precompact: context compaction triggered
+---
+[2026-04-14] taak: PlaylistAvailabilitySummary credit logica gefixed (Fix 1 frontend) — 4 bugs: freeVideoIds filtert nu op has_captions (whisper op idx 0-2 niet gratis), captionCredits (idx>=3, 1/video) meegeteld, hasEnoughCredits+remainingCredits gebruiken totalExtractionCredits, caption-rijen tonen "1 credit" bij idx>=3, sectie-header toont credits, button-label gebruikt totalExtractionCredits | gewijzigd: src/components/PlaylistAvailabilitySummary.tsx
+---
+[2026-04-14] taak: Fix 2 retry credit + verificaties — captions retry-pass deducts nu 1 credit voor idx>=3 na succesvolle transcript-opslag; BACKEND_API_SECRET geverifieerd: 401 zonder header (secret IS gezet in Railway); no_warnings was al True; Fix 1 backend was al correct | gewijzigd: backend/main.py, docs/wiki/operations/known-issues.md

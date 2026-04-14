@@ -1470,6 +1470,8 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                     else:
                         result = await extract_with_ytdlp(vid, use_proxy=True)
                         if isinstance(result, dict) and 'transcript' in result:
+                            orig_idx = video_ids.index(vid)
+                            is_free = orig_idx < 3
                             transcript = result['transcript']
                             title = result.get('title') or vid
                             char_count = sum(len(x['text']) for x in transcript)
@@ -1494,7 +1496,15 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                                 lambda data=insert_data: supabase.table('transcripts').insert(data).execute()
                             )
                             transcript_id = t.data[0]['id']
-                            video_results[vid] = {'status': 'success', 'transcript_id': transcript_id}
+                            if not is_free:
+                                await asyncio.to_thread(
+                                    deduct_credits,
+                                    user_id=user_id,
+                                    amount=1,
+                                    reason="Playlist caption extraction (retry)",
+                                    metadata={'job_id': job_id, 'video_id': vid}
+                                )
+                            video_results[vid] = {'status': 'success', 'transcript_id': transcript_id, 'free': is_free}
                             failed -= 1
                             completed += 1
                         else:

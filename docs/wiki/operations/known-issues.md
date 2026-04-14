@@ -117,7 +117,7 @@ Geen externe service die alarmeert bij downtime.
 - [ ] `UPSTASH_REDIS_REST_URL` + `_TOKEN` configureren in Vercel
 - [ ] Anoniem rate limit instellen op 10/dag
 - [ ] `no_warnings: True` in `audio_utils.py`
-- [ ] `BACKEND_API_SECRET` env var instellen in Vercel + Railway (code is klaar)
+- [x] `BACKEND_API_SECRET` env var instellen in Railway ✓ (401 geverifieerd); Vercel nog te doen
 - [ ] Supabase database backups configureren
 - [ ] `LOG_LEVEL=WARNING` in Railway
 - [ ] Stripe webhook endpoint registreren + `STRIPE_WEBHOOK_SECRET` in Vercel

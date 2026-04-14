@@ -56,24 +56,32 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
   const [duplicateAction, setDuplicateAction] = useState<'replace' | 'reset'>('replace')
 
   // Live recalculate summary
+  const extractableResults = localResults.filter(r => r.status !== 'unavailable')
+  const extractableIndex = new Map(extractableResults.map((r, idx) => [r.videoId, idx]))
+
+  // captions idx 0–2 are free; captions idx >= 3 cost 1 credit each; whisper costs per-minute at any idx
+  const captionCredits = extractableResults.filter((r, idx) => r.status === 'has_captions' && idx >= 3).length
+  const whisperCredits = extractableResults.filter(r => r.status === 'needs_whisper').reduce((acc, r) => acc + r.estimatedCredits, 0)
+  const totalExtractionCredits = captionCredits + whisperCredits
+
   const currentSummary = {
     total: localResults.length,
     hasCaptions: localResults.filter(r => r.status === 'has_captions').length,
     needsWhisper: localResults.filter(r => r.status === 'needs_whisper').length,
     unavailable: localResults.filter(r => r.status === 'unavailable').length,
-    totalCredits: localResults.filter(r => r.status === 'needs_whisper').reduce((acc, curr) => acc + curr.estimatedCredits, 0)
+    totalCredits: whisperCredits
   }
 
-  const hasEnoughCredits = userCredits === null || userCredits >= currentSummary.totalCredits
-  const remainingCredits = userCredits !== null ? userCredits - currentSummary.totalCredits : null
+  const hasEnoughCredits = userCredits === null || userCredits >= totalExtractionCredits
+  const remainingCredits = userCredits !== null ? userCredits - totalExtractionCredits : null
 
   const captionVideos = localResults.filter(r => r.status === 'has_captions')
   const whisperVideos = localResults.filter(r => r.status === 'needs_whisper')
   const unavailableVideos = localResults.filter(r => r.status === 'unavailable')
 
-  // First 3 extractable videos (excl. unavailable) are always free — matches backend idx < 3 logic
+  // Only captions at idx 0–2 are free; whisper at any idx always costs credits (matches backend logic)
   const freeVideoIds = new Set(
-    localResults.filter(r => r.status !== 'unavailable').slice(0, 3).map(r => r.videoId)
+    extractableResults.slice(0, 3).filter(r => r.status === 'has_captions').map(r => r.videoId)
   )
 
   const toggleAllWhisper = (useWhisper: boolean) => {
@@ -234,7 +242,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                   <div className="px-4 py-3 border-b border-green-500/10 flex items-center gap-2 text-sm">
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
                       <span className="font-medium text-green-600 dark:text-green-400">
-                        {currentSummary.hasCaptions} videos using Free Auto-captions
+                        {currentSummary.hasCaptions} videos using Free Auto-captions{captionCredits > 0 ? ` (${captionCredits} credits)` : ''}
                       </span>
                   </div>
                   <div className="max-h-60 overflow-y-auto p-2 space-y-1">
@@ -252,6 +260,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                               </div>
                               <p className="text-xs text-green-600 dark:text-green-400">
                                 {Math.floor(video.duration / 60)}:{Math.floor(video.duration % 60).toString().padStart(2, '0')}
+                                {(extractableIndex.get(video.videoId) ?? 0) >= 3 && <span className="ml-1 text-amber-600 dark:text-amber-400">• 1 credit</span>}
                               </p>
                               {(() => {
                                 const entries = existingDuplicates[video.videoId] || [];
@@ -363,11 +372,11 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                     onClick={() => {
                       onProceed(localResults);
                     }}
-                    disabled={!hasEnoughCredits && currentSummary.totalCredits > 0}
+                    disabled={!hasEnoughCredits && totalExtractionCredits > 0}
                     className="flex-1 md:flex-none px-8 shadow-lg shadow-primary/20"
                 >
-                    {currentSummary.totalCredits > 0
-                      ? `Extract — ${currentSummary.totalCredits} credits for AI Transcription videos`
+                    {totalExtractionCredits > 0
+                      ? `Extract — ${totalExtractionCredits} credit${totalExtractionCredits !== 1 ? 's' : ''}`
                       : 'Extract Selected'}
                 </Button>
             </div>
