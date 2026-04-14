@@ -195,3 +195,22 @@ docs/wiki/operations/known-issues.md
 src/components/PlaylistAvailabilitySummary.tsx
 ---
 [2026-04-14] taak: VideoTab display bugs gefixed — creditsRequired /600→/60 (confirmatie modal + re-extract knop), success banner toont nu creditsUsed ipv Math.round(duration/60) | gewijzigd: src/components/free-tool/VideoTab.tsx
+[2026-04-14 16:38] commit: fix: VideoTab credit calculation and success banner minutes
+
+Bug 1 — Re-extract button showed wrong credit count:
+- creditsRequired used / 600 (old: 1 credit per 10 min) instead of / 60
+- Fixed in two places: Whisper confirmation modal (line 377) and
+  the upsell banner requiredCredits calculation (line 1123)
+
+Bug 2 — Success banner showed wrong minutes:
+- "Used X credits • Y min" showed Math.round(duration / 60) which is
+  the raw video length, not the billing minutes (= credits charged)
+- Fixed to show whisperMetadata.creditsUsed instead, which equals
+  ceil(duration / 60) — the actual billed amount
+- Fixed in both the normal and truncation-warning success banners
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+src/components/free-tool/VideoTab.tsx
+---
+[2026-04-14] taak: Sticky session ID fix + audio job recovery — extract_with_ytdlp() accepteert nu session_id param (doorgegeven aan beide get_proxy_url() calls), run_playlist_job passes job_id[:8] bij captions-extractie (first pass + retry); AudioTab heeft sessionStorage recovery gekregen: runPollLoop extracted, mount useEffect, resumeData state, resume banner consistent met PlaylistTab | gewijzigd: backend/main.py, src/components/free-tool/AudioTab.tsx

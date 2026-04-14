@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { UploadCloud, FileAudio, X, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/useAuth"
@@ -11,6 +11,8 @@ import Link from "next/link"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "@/utils/supabase/client"
+
+const AUDIO_JOB_KEY = 'indxr-active-audio-job'
 
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60)
@@ -34,8 +36,40 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [whisperStatus, setWhisperStatus] = useState<'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'>('idle')
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [resumeData, setResumeData] = useState<{ jobId: string; filename: string } | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // On mount: check for a running audio job from a previous page session
+  useEffect(() => {
+    const raw = sessionStorage.getItem(AUDIO_JOB_KEY)
+    if (!raw) return
+    let jobId: string, filename: string
+    try {
+      const parsed = JSON.parse(raw)
+      jobId = parsed.jobId
+      filename = parsed.filename ?? 'Audio Upload'
+    } catch {
+      sessionStorage.removeItem(AUDIO_JOB_KEY)
+      return
+    }
+    ;(async () => {
+      try {
+        const resp = await fetch(`/api/jobs/${jobId}`)
+        if (!resp.ok) { sessionStorage.removeItem(AUDIO_JOB_KEY); return }
+        const job = await resp.json()
+        if (job.status === 'complete' || job.status === 'error') {
+          sessionStorage.removeItem(AUDIO_JOB_KEY)
+        } else if (['pending', 'downloading', 'transcribing', 'saving'].includes(job.status)) {
+          setResumeData({ jobId, filename })
+        } else {
+          sessionStorage.removeItem(AUDIO_JOB_KEY)
+        }
+      } catch {
+        sessionStorage.removeItem(AUDIO_JOB_KEY)
+      }
+    })()
+  }, [])
 
   // Get actual audio duration from file
   const getAudioDuration = async (file: File): Promise<number> => {
@@ -123,11 +157,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   const validateAndSetFile = async (selectedFile: File) => {
     setIsUploading(true)
-    
+
     // Check file type
     const validTypes = ['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.mp4', '.mpeg', '.mpga', '.webm']
     const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
-    
+
     if (!validTypes.includes(fileExt)) {
       toast.error(`Unsupported file type. Please use: ${validTypes.join(', ')}`)
       setIsUploading(false)
@@ -170,6 +204,87 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
+  }
+
+  // Core polling loop — shared by handleTranscribe (new jobs) and handleResume (recovered jobs)
+  const runPollLoop = async (jobId: string, filename: string) => {
+    setElapsedSeconds(0)
+    intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+    const POLL_INTERVAL_MS = 3000
+    const MAX_POLLS = 200
+    try {
+      for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+
+        let job: {
+          status: string
+          transcript?: TranscriptItem[]
+          duration?: number
+          credits_used?: number
+          processing_time_seconds?: number
+          error_message?: string
+          required_credits?: number
+          available_credits?: number
+        }
+
+        try {
+          const resp = await fetch(`/api/jobs/${jobId}`)
+          if (!resp.ok) {
+            toast.error('Failed to check job status')
+            return
+          }
+          job = await resp.json()
+        } catch {
+          toast.error('Network error while checking job status')
+          return
+        }
+
+        if (
+          job.status === 'pending' ||
+          job.status === 'downloading' ||
+          job.status === 'transcribing' ||
+          job.status === 'saving'
+        ) {
+          setWhisperStatus(job.status as 'pending' | 'downloading' | 'transcribing' | 'saving')
+        } else if (job.status === 'complete') {
+          sessionStorage.removeItem(AUDIO_JOB_KEY)
+          setTranscript(job.transcript!)
+          setAudioMetadata({
+            filename,
+            duration: job.duration!,
+            creditsUsed: job.credits_used!,
+            processingTimeSecs: job.processing_time_seconds ?? 0,
+          })
+          await refreshCredits()
+          window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+          setSaveStatus('saved')
+          return
+        } else if (job.status === 'error') {
+          sessionStorage.removeItem(AUDIO_JOB_KEY)
+          if (job.error_message === 'Insufficient credits') {
+            toast.error('Not enough credits to transcribe this file.')
+          } else {
+            toast.error(job.error_message || 'Transcription failed')
+          }
+          return
+        }
+      }
+      sessionStorage.removeItem(AUDIO_JOB_KEY)
+      toast.error('Transcription timed out. Please try again.')
+    } finally {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      setIsTranscribing(false)
+      setWhisperStatus('idle')
+    }
+  }
+
+  const handleResume = () => {
+    if (!resumeData) return
+    const { jobId, filename } = resumeData
+    setResumeData(null)
+    setIsTranscribing(true)
+    setWhisperStatus('pending')
+    runPollLoop(jobId, filename)
   }
 
   const handleTranscribe = async () => {
@@ -232,85 +347,21 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         return
       }
 
-      // Start elapsed timer
-      setElapsedSeconds(0)
-      intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+      // Persist job so page refresh can recover it
+      sessionStorage.setItem(AUDIO_JOB_KEY, JSON.stringify({ jobId: job_id, filename: file.name }))
+      setResumeData(null)
 
-      // Poll until terminal state
-      const POLL_INTERVAL_MS = 3000
-      const MAX_POLLS = 200
-
-      for (let i = 0; i < MAX_POLLS; i++) {
-        await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
-
-        let job: {
-          status: string
-          transcript?: TranscriptItem[]
-          duration?: number
-          credits_used?: number
-          processing_time_seconds?: number
-          error_message?: string
-          required_credits?: number
-          available_credits?: number
-        }
-
-        try {
-          const resp = await fetch(`/api/jobs/${job_id}`)
-          if (!resp.ok) {
-            toast.error('Failed to check job status')
-            return
-          }
-          job = await resp.json()
-        } catch {
-          toast.error('Network error while checking job status')
-          return
-        }
-
-        if (
-          job.status === 'pending' ||
-          job.status === 'downloading' ||
-          job.status === 'transcribing' ||
-          job.status === 'saving'
-        ) {
-          setWhisperStatus(job.status as 'pending' | 'downloading' | 'transcribing' | 'saving')
-        } else if (job.status === 'complete') {
-          setTranscript(job.transcript!)
-          setAudioMetadata({
-            filename: file.name,
-            duration: job.duration!,
-            creditsUsed: job.credits_used!,
-            processingTimeSecs: job.processing_time_seconds ?? 0,
-          })
-
-          await refreshCredits()
-
-          // Backend already saved the transcript — skip onTranscriptLoaded() to avoid duplicate insert.
-          window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
-          setSaveStatus('saved')
-          return
-        } else if (job.status === 'error') {
-          if (job.error_message === 'Insufficient credits') {
-            toast.error('Not enough credits to transcribe this file.')
-          } else {
-            toast.error(job.error_message || 'Transcription failed')
-          }
-          return
-        }
-      }
-
-      toast.error('Transcription timed out. Please try again.')
+      await runPollLoop(job_id, file.name)
 
     } catch (error) {
       console.error('Transcription error:', error)
       toast.error('Something went wrong. Please try again.')
-    } finally {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
       setIsTranscribing(false)
       setWhisperStatus('idle')
     }
   }
 
-  const estimatedCredits = file 
+  const estimatedCredits = file
     ? (audioDuration ? calculateCredits(audioDuration) : Math.ceil((file.size / (1024 * 1024)) / 10) || 1)
     : 0
   const hasEnoughCredits = credits !== null && credits >= estimatedCredits
@@ -318,6 +369,34 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   return (
     <div className="mt-8 space-y-6">
+      {/* Resume Banner — shown when a running job is detected on mount */}
+      {resumeData && !isTranscribing && (
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Transcription in progress</p>
+              <p className="text-xs text-muted-foreground">{resumeData.filename} is still being processed</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" onClick={handleResume} className="h-8 text-xs">
+              Resume
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => { sessionStorage.removeItem(AUDIO_JOB_KEY); setResumeData(null) }}
+              className="h-8 text-xs text-muted-foreground"
+            >
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Upload Area */}
       <div
         onDragOver={handleDragOver}
@@ -326,9 +405,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         onClick={() => !isUploading && fileInputRef.current?.click()}
         className={`
           p-12 rounded-2xl border-2 border-dashed transition-all cursor-pointer
-          ${isDragging 
-            ? 'border-primary bg-primary/10 scale-105' 
-            : file 
+          ${isDragging
+            ? 'border-primary bg-primary/10 scale-105'
+            : file
               ? 'border-green-500/50 bg-green-500/5'
               : 'border-border bg-muted/10 hover:bg-muted/20 hover:border-border'
           }
@@ -461,7 +540,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 <div>
                   <p className="text-sm font-medium text-green-400">Transcript saved to library</p>
                   <p className="text-xs text-green-300/70">
-                    Used {audioMetadata.creditsUsed} credits • {Math.round(audioMetadata.duration / 60)} min
+                    Used {audioMetadata.creditsUsed} credits • {audioMetadata.creditsUsed} min
                     {audioMetadata.processingTimeSecs > 0 && (
                       <> • Completed in {Math.floor(audioMetadata.processingTimeSecs / 60)}:{String(audioMetadata.processingTimeSecs % 60).padStart(2, '0')}</>
                     )}
@@ -485,8 +564,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           )}
 
           <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-            <TranscriptCard 
-              transcript={transcript} 
+            <TranscriptCard
+              transcript={transcript}
               videoTitle={audioMetadata.filename}
               videoUrl=""
             />

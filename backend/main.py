@@ -369,7 +369,7 @@ def parse_vtt_to_transcript(subtitle_data: str) -> List[dict]:
     
     return final_transcript
 
-async def extract_with_ytdlp(video_id: str, use_proxy: bool = True) -> List[dict]:
+async def extract_with_ytdlp(video_id: str, use_proxy: bool = True, session_id: Optional[str] = None) -> List[dict]:
     """Extract transcript using yt-dlp."""
     ydl_opts = {
         'skip_download': True,
@@ -386,13 +386,13 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True) -> List[dict
     }
     
     if use_proxy:
-        proxy_url = get_proxy_url()
+        proxy_url = get_proxy_url(session_id=session_id)
         if proxy_url:
             ydl_opts['proxy'] = proxy_url
             logger.info("Using proxy for extraction")
         else:
             logger.info("Proxy disabled — extracting directly (no proxy)")
-    
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
@@ -422,7 +422,7 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True) -> List[dict
             
             max_retries = 3
             subtitle_data = None
-            proxy_url = get_proxy_url() if use_proxy else None
+            proxy_url = get_proxy_url(session_id=session_id) if use_proxy else None
             
             for attempt in range(max_retries):
                 try:
@@ -1351,7 +1351,7 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                             failed += 1
                             await update_playlist_job(completed=completed, failed=failed, video_results=video_results)
                             continue
-                    result = await extract_with_ytdlp(video_id, use_proxy=True)
+                    result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=job_id[:8])
                     if isinstance(result, list) or not result:
                         video_results[video_id] = {'status': 'error', 'error_type': 'no_captions'}
                         failed += 1
@@ -1468,7 +1468,7 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                             error_type = job_data.get('error_type') or _classify_error_type(err)
                             video_results[vid] = {'status': 'error', 'error_type': error_type}
                     else:
-                        result = await extract_with_ytdlp(vid, use_proxy=True)
+                        result = await extract_with_ytdlp(vid, use_proxy=True, session_id=job_id[:8])
                         if isinstance(result, dict) and 'transcript' in result:
                             orig_idx = video_ids.index(vid)
                             is_free = orig_idx < 3
