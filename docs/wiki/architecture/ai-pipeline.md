@@ -56,7 +56,7 @@ Frontend pollt GET /api/jobs/{job_id} elke 2 seconden
 ```
 
 **Tijdsduur:** 1–10 minuten  
-**Kosten:** ⌈duur_min / 10⌉ credits
+**Kosten:** ⌈duur_seconden / 60⌉ credits (1 credit per minuut, minimum 1)
 
 ---
 
@@ -69,8 +69,8 @@ Frontend
   └─ POST /api/ai/summarize (Next.js)
        └─ POST {PYTHON_BACKEND_URL}/api/summarize
             └─ Python backend:
-                 ├─ check_user_balance(user_id) — ≥1 credit?
-                 ├─ deduct_credits_atomic(user_id, 1, "AI Summarization")
+                 ├─ check_user_balance(user_id) — ≥3 credits?
+                 ├─ deduct_credits_atomic(user_id, 3, "AI Summarization")
                  ├─ Haal transcript op uit Supabase
                  ├─ Combineer alle {text} velden tot volledige tekst
                  ├─ POST naar DeepSeek API:
@@ -80,13 +80,13 @@ Frontend
                  ├─ Parse JSON: {text, action_points}
                  ├─ Sla op als ai_summary JSONB in transcripts tabel:
                  │    {text, action_points, generated_at, edited: false}
-                 └─ Bij ELKE fout: add_credits(user_id, 1, "Refund: ...")
+                 └─ Bij ELKE fout: add_credits(user_id, 3, "Refund: ...")
 
 Frontend: toont samenvatting in Summary tab
 ```
 
 **Tijdsduur:** 5–30 seconden  
-**Kosten:** 1 credit (automatisch teruggestort bij fout)
+**Kosten:** 3 credits (automatisch teruggestort bij fout)
 
 ### System Prompt
 
@@ -112,6 +112,29 @@ Let the length be determined by the content."
 ```
 
 Het `edited` veld wordt `true` zodra de gebruiker de samenvatting aanpast in de Tiptap editor.
+
+### Audio Upload path
+
+Gebruikers kunnen een lokaal audiobestand uploaden (MP3, MP4, WAV, M4A, OGG, FLAC, WEBM, MPEG, MPGA — max 500MB). Dit gaat via een aparte flow die de Vercel bodylimiet van 4.5MB omzeilt:
+
+```
+Frontend (AudioTab.tsx)
+  └─ POST /api/transcribe/preflight (Next.js) — auth + rate check, geen bestand
+  └─ GET supabase.auth.getSession() — haalt JWT op
+  └─ POST {NEXT_PUBLIC_PYTHON_BACKEND_URL}/api/transcribe/whisper (direct naar Railway)
+       Headers: Authorization: Bearer <supabase-jwt>
+       Body: FormData { source_type: 'upload', audio_file: <file> }
+       └─ verify_backend_secret: slaat X-Backend-Secret check OVER als Bearer header aanwezig
+          → JWT wordt gevalideerd in de endpoint body zelf
+       └─ Verder identiek aan YouTube Whisper path (AssemblyAI job)
+
+Frontend pollt GET /api/jobs/{job_id} (via Next.js proxy) elke 3 seconden
+  └─ Response bevat ook: created_at (voor elapsed timer na page refresh + Resume)
+```
+
+**Beveiligingsaspect:** De browser kan geen server-side `BACKEND_API_SECRET` meesturen. De JWT (Supabase session token) vervangt de secret-check voor dit pad. De upload is dus beveiligd via Supabase JWT, niet via het gedeelde backend-secret.
+
+**SessionStorage recovery:** Bij page refresh wordt `indxr-active-audio-job` uit sessionStorage gelezen. De frontend haalt de job status op (inclusief `created_at`) en berekent de elapsed tijd zodat de timer na Resume op de juiste positie start.
 
 ---
 
@@ -189,3 +212,5 @@ PROXY_PASSWORD=password_session-{job_id[:8]}_lifetime-10m
 ```
 
 Sticky sessions worden via de wachtwoord-suffix opgegeven (`_session-X_lifetime-10m`). Ondersteunde providers: LunaProxy, IPRoyal, BrightData.
+
+**Implementatiedetail:** `extract_with_ytdlp(video_id, use_proxy=True, session_id=job_id[:8])` geeft de session_id door aan `get_proxy_url(session_id)`. Binnen een playlist-job wordt `job_id[:8]` als vaste session_id gebruikt, zodat alle caption-extracties van één job via hetzelfde exit-IP lopen (YouTube CDN is IP-locked). De retry-pass gebruikt dezelfde session_id.

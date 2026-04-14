@@ -31,23 +31,12 @@ Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-14.
 
 ## Actieve Bugs
 
-### Library KB-weergave ontbreekt bij audio upload transcripts
-Audio-upload transcripts tonen geen bestandsgrootte in de library.
-
 ### Processing time teller loopt niet tijdens verwerking
 Teller toont alleen eindtijd, geen real-time voortgang tijdens polling.
 
-### Hardcoded `indxr1` sticky session ID
-**Bestand:** `backend/audio_utils.py` / `backend/main.py`
-**Fix:** `get_proxy_url(session_id)` altijd `session_id=job_id[:8]` meegeven.
-
-### `no_warnings: False` in audio_utils.py
-**Bestand:** `backend/audio_utils.py` (~regel 113)
-**Fix:** `'no_warnings': True` in `ydl_opts`.
-
 ### iOS PO token ontbreekt voor bgutil
-**Status:** Tech debt — niet urgent.
-**Fix (post-launch):** iOS PO token ondersteuning in bgutil-pot.
+**Status:** Tech debt — zie priorities.md (PRE-LAUNCH).
+**Fix:** iOS PO token ondersteuning in bgutil-pot toevoegen als fallback.
 
 ---
 
@@ -109,18 +98,23 @@ Geen externe service die alarmeert bij downtime.
 - [x] Welcome credits RPC updaten: 5 → 25 in `claim_welcome_reward`
 - [x] AudioTab: credit cost card verbergen na succesvolle transcriptie
 - [x] BACKEND_API_SECRET validatie: header toegevoegd aan alle 10 Next.js→Python routes + FastAPI `verify_backend_secret` dependency
+- [x] BACKEND_API_SECRET ingesteld in Railway ✓ (401 geverifieerd); **Vercel nog te doen**
+- [x] verify_backend_secret: Bearer-token bypass voor directe audio uploads (browser → Railway)
 - [x] Export gating: anonymous users krijgen alleen TXT; andere formaten tonen inline sign-up prompt
-- [x] Playlist "eerste 3 gratis": backend credit-deductie voor video's 4+ (1 credit/video captions), FREE label in UI
-- [x] WelcomeCreditCard playlist sectie gecorrigeerd: "first 3 videos free per extraction"
-- [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten aanmaken in live mode
+- [x] Playlist "eerste 3 gratis": backend + frontend correct geïmplementeerd (ADR-010)
+- [x] Playlist retry-pass: credit-aftrek voor idx≥3 na succesvolle opslag
+- [x] Sticky session ID: `job_id[:8]` doorgegeven via `extract_with_ytdlp(session_id=...)` — `indxr1` hardcoding verwijderd
+- [x] WelcomeCreditCard playlist sectie gecorrigeerd
+- [x] AudioTab: job recovery na page refresh (sessionStorage, resume banner, elapsed timer via `created_at`)
+- [x] `no_warnings`: was al `True` in `audio_utils.py` — geen fix nodig geweest
+- [ ] **BACKEND_API_SECRET toevoegen aan Vercel environment variables**
+- [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten in live mode + webhook registreren
+- [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel
 - [ ] Supabase email verificatie re-enablen
-- [ ] `UPSTASH_REDIS_REST_URL` + `_TOKEN` configureren in Vercel
-- [ ] Anoniem rate limit instellen op 10/dag
-- [ ] `no_warnings: True` in `audio_utils.py`
-- [x] `BACKEND_API_SECRET` env var instellen in Railway ✓ (401 geverifieerd); Vercel nog te doen
+- [ ] `UPSTASH_REDIS_REST_URL` + `_TOKEN` configureren in Vercel (activeert rate limiting)
 - [ ] Supabase database backups configureren
-- [ ] `LOG_LEVEL=WARNING` in Railway
-- [ ] Stripe webhook endpoint registreren + `STRIPE_WEBHOOK_SECRET` in Vercel
+- [ ] `LOG_LEVEL=WARNING` instellen in Railway
+- [ ] `has_ever_purchased` implementeren in Stripe webhook (zie priorities.md)
 - [ ] Anonymous user flows testen via Playwright
 - [ ] 4+ uur video stress test
 

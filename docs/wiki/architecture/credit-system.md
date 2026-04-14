@@ -128,23 +128,23 @@ Zie [ADR-012](../decisions/012-pricing-tiers.md) voor de rationale achter deze t
 
 ### Verbruik (Playlist)
 
-**⚠️ Intentie vs. werkelijkheid:** ADR-010 beschrijft "eerste 3 video's gratis" — dit is **nog niet geïmplementeerd** in `backend/main.py`.
+Geïmplementeerd conform ADR-010. Zie `backend/main.py` → `run_playlist_job()`.
 
-Wat nu werkelijk gebeurt:
 ```
-1. Caption-extractie video's: 0 credits (gratis, yt-dlp captions)
-2. Whisper video's: math.ceil(duration_seconds / 60.0) credits per video
-3. Geen dubbele rekening: Whisper-pad vervangt caption-pad (correct)
-4. Geen "eerste 3 gratis" tier — alle video's direct verwerkt
+1. Eerste 3 video's (idx < 3), captions: 0 credits (gratis)
+2. Eerste 3 video's (idx < 3), Whisper: math.ceil(duration_seconds / 60.0) credits
+   → Whisper op idx 0-2 is NIET gratis — alleen captions zijn gratis
+3. Vanaf video 4 (idx >= 3), captions: 1 credit per video
+4. Vanaf video 4 (idx >= 3), Whisper: math.ceil(duration_seconds / 60.0) credits
+5. Geen dubbele rekening: Whisper-pad vervangt caption-krediet (nooit opgeteld)
+6. De retry-pass (na bot_detection/timeout) deducts ook correct: orig_idx bepaalt tier
 ```
 
-Wanneer ADR-010 geïmplementeerd is (intentie):
-```
-1. Eerste 3 video's: altijd gratis
-2. Vanaf video 4, captions: 1 credit per video
-3. Vanaf video 4, Whisper: math.ceil(duration_seconds / 60.0) credits
-4. Geen dubbele rekening: Whisper vervangt caption-krediet
-```
+De frontend (`PlaylistAvailabilitySummary.tsx`) spiegelt deze logica:
+- `freeVideoIds` bevat alleen de eerste 3 video's met `has_captions` (niet Whisper)
+- `captionCredits` = aantal caption-video's op idx ≥ 3
+- `whisperCredits` = som van `ceil(duration/60)` voor alle Whisper-video's
+- `totalExtractionCredits` = `captionCredits + whisperCredits`
 
 ### Welcome Reward
 

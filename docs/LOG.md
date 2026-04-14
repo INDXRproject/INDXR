@@ -345,3 +345,30 @@ Changed: docs/LOG.md
 src/components/free-tool/AudioTab.tsx
 ---
 [2026-04-15] taak: AudioTab upload warning fix + Resume timer fix — warning gebruikt nu isTranscribing && whisperStatus==='pending' i.p.v. isUploadingFile (betrouwbaar voor alle bestandsgroottes); backend geeft created_at terug in job response; mount-effect berekent elapsedAtResume, runPollLoop accepteert startElapsed param, handleResume start timer op correcte positie | gewijzigd: backend/main.py, src/components/free-tool/AudioTab.tsx
+[2026-04-15 01:00] commit: fix: audio upload warning reliability + Resume elapsed timer
+
+AudioTab.tsx — Problem 1 (warning not visible):
+- Removed isUploadingFile state and try/finally fetch wrapper
+- Changed warning condition from isUploadingFile to
+  isTranscribing && whisperStatus === 'pending'
+- isUploadingFile was unreliable: React may not paint between
+  setIsUploadingFile(true) and setIsUploadingFile(false) for
+  small files on fast connections (e.g. localhost dev server)
+- New condition is set at button click and stays true until the
+  backend's first poll response (~3s), covering the full upload
+  window for all file sizes reliably
+
+AudioTab.tsx + backend/main.py — Problem 2 (timer resets to 0):
+- Backend get_job_status now includes created_at in the response
+- Mount useEffect calculates elapsedAtResume from created_at
+  (seconds since job was created) and stores it in resumeData
+- runPollLoop now accepts startElapsed param (default 0)
+- handleResume passes resumeData.elapsedAtResume to runPollLoop
+- Timer now starts at the actual job age after Resume instead of 0
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+src/components/free-tool/AudioTab.tsx
+---
+[2026-04-15] taak: Codebase audit + wiki-update — credit-system.md playlist sectie gecorrigeerd (ADR-010 is geïmplementeerd), ai-pipeline.md: AI summary 1→3 credits, Whisper /10→/1 credit/min, audio upload subsectie toegevoegd, proxy sessie-implementatiedetail toegevoegd; known-issues.md: opgeloste bugs gemarkeerd, checklist bijgewerkt; deployment.md: Stripe checklist herschreven met correcte pakketten; nieuw: roadmap/priorities.md (BLOCKERS/PRE-LAUNCH/POST-LAUNCH); backlog.md: BYOK/Sentry/random-session/library-KB verwijderd; INDEX.md bijgewerkt | gewijzigd: docs/wiki/architecture/credit-system.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md, docs/wiki/operations/deployment.md, docs/wiki/roadmap/priorities.md (nieuw), docs/wiki/roadmap/backlog.md, docs/wiki/INDEX.md

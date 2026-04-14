@@ -26,20 +26,17 @@ Functies en verbeteringen gepland voor na de launch. Geen vaste volgorde — pri
 - [ ] CSV export: Speaker-kolom toevoegen (AssemblyAI speaker diarization)
 
 ### Transcript & Library
-- [ ] Duplicate transcript detectie: geen nieuwe rij als `video_id + user_id` al bestaat
+- [ ] Duplicate transcript detectie: geen nieuwe rij als `video_id + user_id` al bestaat (op DB-niveau)
 - [ ] Volledig credit transaction history (nu max 20 rijen) — hogere of onbeperkte cut-off
 - [ ] Library visibility gating (Otter.ai-model): 25 meest recente zichtbaar voor free users, upgrade voor meer — zie toekomstige ADR-020
 
 ### AI & Transcriptie
-- [ ] Opus 249 audio format (na validatietest van 50 video's) — zie [ADR-016](../decisions/016-opus-249-audio-format.md)
-- [ ] BYOK: gebruikers eigen API keys laten gebruiken (OpenAI, Anthropic, DeepSeek) — `backend/main.py:1173`
 - [ ] Multi-language Whisper: taaldetectie verbeteren voor 99+ talen via Universal-2
 - [ ] AssemblyAI: automatic retry voor gefaalde playlist-video's
 
 ### Bulk & Channel
 - [ ] Channel extractie: heel YouTube-kanaal transcriberen (vereist queue-architectuur: Redis/BullMQ of Supabase Realtime)
 - [ ] Batch processing: CSV upload van video URLs
-- [ ] Random session ID fix voor schaal (huidige hardcoded `indxr1` sticky session)
 
 ### Integraties
 - [ ] Notion integratie (export direct naar Notion pagina)
@@ -50,10 +47,7 @@ Functies en verbeteringen gepland voor na de launch. Geen vaste volgorde — pri
 
 ## Platform & Stabiliteit
 
-- [ ] iOS PO token fix voor bgutil (fallback als YouTube iOS client blokkeert)
-- [ ] Sentry / error tracking (nu alleen Railway logs)
 - [ ] Uptime monitoring (UptimeRobot of BetterUptime)
-- [ ] Admin dashboard: processing times + error rates per tijdvenster
 - [ ] Multi-region deployment (Railway)
 
 ---

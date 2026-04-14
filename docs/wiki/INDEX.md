@@ -29,7 +29,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 → [Deployment](operations/deployment.md) → [Known Issues](operations/known-issues.md)
 
 **...de roadmap wilt zien:**
-→ [Post-Launch Backlog](roadmap/backlog.md)
+→ [Launch Priorities](roadmap/priorities.md) (BLOCKERS / PRE-LAUNCH / POST-LAUNCH) → [Post-Launch Backlog](roadmap/backlog.md)
 
 ---
 
@@ -94,6 +94,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 
 | Bestand | Onderwerp |
 |---------|-----------|
+| [priorities.md](roadmap/priorities.md) | Gestructureerde prioriteitenlijst: BLOCKERS / PRE-LAUNCH / POST-LAUNCH |
 | [backlog.md](roadmap/backlog.md) | Post-launch features, marketing, stabiliteit, gamification |
 
 ---

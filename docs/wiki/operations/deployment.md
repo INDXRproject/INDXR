@@ -142,12 +142,20 @@ Migrations zitten in `supabase/migrations/`. Chronologische volgorde is belangri
 ## Stripe Live Mode
 
 Productie-checklist Stripe:
-- [ ] Webhook endpoint geregistreerd: `https://indxr.ai/api/stripe/webhook`
-- [ ] `STRIPE_WEBHOOK_SECRET` ingesteld in Vercel (Live mode)
-- [ ] Starter pakket aangemaakt (€1.99/15 credits)
-- [ ] Power pakket aangemaakt (€49.99/850 credits)
-- [ ] Live mode keys geconfigureerd (`sk_live_*`)
-- [ ] Test met kleine aankoop voor live mode verificatie
+- [ ] Stripe account activeren met KVK/bedrijfsinfo
+- [ ] Switch naar live mode
+- [ ] 5 producten aanmaken (type: One-off, EUR):
+  - Try — €2.49 / 200 credits
+  - Basic — €5.99 / 500 credits
+  - Plus — €11.99 / 1.100 credits *(meest populair)*
+  - Pro — €24.99 / 2.600 credits
+  - Power — €49.99 / 5.500 credits
+- [ ] Webhook endpoint registreren: `https://indxr.ai/api/stripe/webhook`
+- [ ] `STRIPE_WEBHOOK_SECRET` (live mode) instellen in Vercel
+- [ ] Live mode keys configureren in Vercel (`sk_live_*`, `pk_live_*`)
+- [ ] Test met kleine aankoop (Try €2.49) ter verificatie
+
+**Code is al klaar** — `PACKAGES` object in `src/app/api/stripe/checkout/route.ts` bevat de juiste bedragen en credits.
 
 ---
 
