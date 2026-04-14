@@ -166,3 +166,32 @@ src/components/PlaylistManager.tsx
 [2026-04-14] taak: PlaylistAvailabilitySummary credit logica gefixed (Fix 1 frontend) — 4 bugs: freeVideoIds filtert nu op has_captions (whisper op idx 0-2 niet gratis), captionCredits (idx>=3, 1/video) meegeteld, hasEnoughCredits+remainingCredits gebruiken totalExtractionCredits, caption-rijen tonen "1 credit" bij idx>=3, sectie-header toont credits, button-label gebruikt totalExtractionCredits | gewijzigd: src/components/PlaylistAvailabilitySummary.tsx
 ---
 [2026-04-14] taak: Fix 2 retry credit + verificaties — captions retry-pass deducts nu 1 credit voor idx>=3 na succesvolle transcript-opslag; BACKEND_API_SECRET geverifieerd: 401 zonder header (secret IS gezet in Railway); no_warnings was al True; Fix 1 backend was al correct | gewijzigd: backend/main.py, docs/wiki/operations/known-issues.md
+[2026-04-14 05:38] commit: fix: playlist credit logic (frontend) + retry credit bug + verification
+
+PlaylistAvailabilitySummary.tsx — Fix 1 (4 bugs):
+- freeVideoIds now filters has_captions only (whisper at idx 0-2 is NOT free)
+- captionCredits (idx>=3 captions, 1 each) + whisperCredits = totalExtractionCredits
+- hasEnoughCredits and remainingCredits use totalExtractionCredits
+- Caption video rows show '• 1 credit' at idx>=3; section header shows credit count
+- Extract button label uses totalExtractionCredits
+
+backend/main.py — Fix 2 (retry credit bug):
+- Captions retry-pass now deducts 1 credit for idx>=3 after successful DB insert
+- orig_idx = video_ids.index(vid) to determine correct credit tier
+- video_results entry now includes 'free': is_free (consistent with first pass)
+- Whisper retry unchanged: run_whisper_job() handles its own credits
+
+Verification results:
+- Fix 1 backend: already correct (captions free idx<3, 1cr idx>=3, no double billing)
+- Fix 3 (no_warnings): already True in audio_utils.py — no change needed
+- BACKEND_API_SECRET: Railway returns 401 without header → secret IS set ✓
+  (local dev unaffected: empty env var → validation disabled locally)
+- BACKEND_API_SECRET still needs to be added to Vercel env vars
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/operations/known-issues.md
+src/components/PlaylistAvailabilitySummary.tsx
+---
+[2026-04-14] taak: VideoTab display bugs gefixed — creditsRequired /600→/60 (confirmatie modal + re-extract knop), success banner toont nu creditsUsed ipv Math.round(duration/60) | gewijzigd: src/components/free-tool/VideoTab.tsx

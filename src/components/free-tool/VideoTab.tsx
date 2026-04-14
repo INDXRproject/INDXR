@@ -374,7 +374,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         if (metaResponse.ok && metaData.duration) {
           fetchedDuration = metaData.duration
           fetchedTitle = metaData.title || ""
-          creditsRequired = Math.ceil(fetchedDuration / 600) // 1 credit per 10 min
+          creditsRequired = Math.ceil(fetchedDuration / 60) // 1 credit per minute
         }
 
         // Check credits
@@ -1120,7 +1120,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
           {/* Whisper Promo Banner - only show if NOT already using Whisper */}
           {lastProcessingMethod === 'youtube_captions' && (credits !== null) && (() => {
-             const requiredCredits = videoDuration ? Math.ceil(videoDuration / 600) : 1;
+             const requiredCredits = videoDuration ? Math.ceil(videoDuration / 60) : 1;
              const hasEnoughCredits = credits >= requiredCredits;
              return (
                <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between text-left gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1161,7 +1161,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   <p className="text-yellow-700 dark:text-yellow-400 font-semibold mb-1">⚠️ Transcript saved with a warning</p>
                   <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-1">{whisperMetadata.truncationWarning}</p>
                   <p className="text-xs text-muted-foreground">
-                    Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {Math.round(whisperMetadata.duration / 60)} min
+                    Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {whisperMetadata.creditsUsed} min
                     {finalElapsed !== null && (
                       <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
                     )}
@@ -1178,7 +1178,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 <div className="flex-1">
                   <p className="text-green-600 dark:text-green-400 font-semibold mb-1">Transcript ready! AI transcription completed successfully.</p>
                   <p className="text-xs text-muted-foreground">
-                    Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {Math.round(whisperMetadata.duration / 60)} min
+                    Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {whisperMetadata.creditsUsed} min
                     {finalElapsed !== null && (
                       <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
                     )}
