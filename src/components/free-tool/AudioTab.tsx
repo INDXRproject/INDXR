@@ -506,7 +506,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       )}
 
       {/* Transcribe Button */}
-      {file && !transcript && (
+      {(file || isTranscribing) && !transcript && (
         <Button
           onClick={handleTranscribe}
           disabled={!canTranscribe}

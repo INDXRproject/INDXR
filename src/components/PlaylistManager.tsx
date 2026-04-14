@@ -347,7 +347,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
         </Button>
       </div>
       <p className="text-xs text-muted-foreground text-center -mt-4">
-        First 3 videos are always free. From video 4: 1 credit per video. AI Transcription: 1 credit per minute.
+        Auto-captions are free for the first 3 videos. From video 4: 1 credit per video (with auto-captions). Videos using AI Transcription cost 1 credit per minute instead — no per-video charge.
       </p>
 
       {/* Progress / Completion Bar */}

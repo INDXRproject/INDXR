@@ -280,4 +280,23 @@ Changed: src/components/PlaylistManager.tsx
 ---
 [2026-04-14 22:32] precompact: context compaction triggered
 ---
+[2026-04-14] taak: Playlist credit uitleg tekst aangepast + AudioTab Resume-knop fix — PlaylistManager tekst verduidelijkt (captions gratis 1-3, 1cr/video daarna, whisper 1cr/min geen per-video charge); AudioTab Resume button toonde geen voortgang na klik: Transcribe-knop conditioneel was `file && !transcript` → `(file || isTranscribing) && !transcript` zodat de spinner zichtbaar is bij resumed job zonder file in state | gewijzigd: src/components/PlaylistManager.tsx, src/components/free-tool/AudioTab.tsx
+---
 [2026-04-14] taak: UI tekst fixes — PlaylistManager credit uitleg toegevoegd onder URL-input, AudioTab formaat/grootte tekst gecorrigeerd (25MB→500MB, ontbrekende MP4/MPEG/MPGA/WEBM toegevoegd), credit uitleg toegevoegd onder dropzone | gewijzigd: src/components/PlaylistManager.tsx, src/components/free-tool/AudioTab.tsx
+[2026-04-14 22:36] commit: fix: credit explanation text + AudioTab format/size corrections
+
+PlaylistManager.tsx:
+- Added credit explanation under playlist URL input:
+  "First 3 videos are always free. From video 4: 1 credit per video.
+  AI Transcription: 1 credit per minute."
+
+AudioTab.tsx:
+- Fixed supported formats: MP3, MP4, WAV, M4A, OGG, FLAC, WEBM (was missing MP4/MPEG/MPGA/WEBM)
+- Fixed max size: 25MB → 500MB (matches frontend validation and backend audio_utils.py)
+- Added credit explanation under dropzone: "1 credit per minute of audio. Minimum 1 credit."
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+src/components/PlaylistManager.tsx
+src/components/free-tool/AudioTab.tsx
+---
