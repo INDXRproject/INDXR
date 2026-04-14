@@ -245,3 +245,39 @@ docs/LOG.md
 src/components/free-tool/AudioTab.tsx
 ---
 [2026-04-14] taak: Audio upload 401 gefixed + duplicate messaging gecorrigeerd — verify_backend_secret slaat secret-check over als Bearer token aanwezig (JWT wordt al gevalideerd in endpoint body); PlaylistAvailabilitySummary "will be updated" → "will be skipped" (duplicates worden gefilterd uit extractableIds, nooit overschreven) | gewijzigd: backend/main.py, src/components/PlaylistAvailabilitySummary.tsx
+[2026-04-14 18:20] commit: fix: audio upload 401 + playlist duplicate messaging
+
+Fix 1 — audio upload 401 (backend/main.py):
+- verify_backend_secret now accepts requests with Authorization: Bearer header,
+  skipping the X-Backend-Secret check for those requests
+- Direct browser uploads (AudioTab) send a Supabase JWT but cannot send the
+  server-side BACKEND_API_SECRET — JWT auth is validated inside the endpoint body
+- Next.js server-to-server calls (no Bearer header) still require X-Backend-Secret
+- Security: upload path remains protected by Supabase JWT validation at lines 981-993
+
+Fix 2 — playlist duplicate messaging (PlaylistAvailabilitySummary.tsx):
+- Changed "existing transcripts will be updated" → "existing transcripts will be skipped"
+- Actual behavior: duplicates are excluded from extractableIds in PlaylistTab before
+  being sent to the backend; backend always INSERTs and never upserts
+- Completion message (showing only extracted count) was already correct
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+src/components/PlaylistAvailabilitySummary.tsx
+---
+[2026-04-14 22:27] commit: fix: clarify extraction_error message in playlist completion screen
+
+Changed 'failed due to an unexpected error' to
+'failed due to a temporary connection error — try again later'
+
+extraction_error is typically a transient YouTube network/SSL issue,
+not a permanent failure. The new wording communicates this and
+gives the user a clear action to take.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/PlaylistManager.tsx
+---
+[2026-04-14 22:32] precompact: context compaction triggered
+---
+[2026-04-14] taak: UI tekst fixes — PlaylistManager credit uitleg toegevoegd onder URL-input, AudioTab formaat/grootte tekst gecorrigeerd (25MB→500MB, ontbrekende MP4/MPEG/MPGA/WEBM toegevoegd), credit uitleg toegevoegd onder dropzone | gewijzigd: src/components/PlaylistManager.tsx, src/components/free-tool/AudioTab.tsx

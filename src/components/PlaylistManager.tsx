@@ -346,6 +346,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
           {loading ? "Fetching..." : "Fetch Playlist"}
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground text-center -mt-4">
+        First 3 videos are always free. From video 4: 1 credit per video. AI Transcription: 1 credit per minute.
+      </p>
 
       {/* Progress / Completion Bar */}
       {(isExtracting || isCompleted) && (

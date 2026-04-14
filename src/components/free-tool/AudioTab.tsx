@@ -463,11 +463,15 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">Upload Audio File</h3>
               <p className="text-muted-foreground mb-2">Drag and drop your audio file here, or click to browse</p>
-              <p className="text-sm text-muted-foreground">Supported: MP3, WAV, M4A, OGG, FLAC (max 25MB)</p>
+              <p className="text-sm text-muted-foreground">Supported: MP3, MP4, WAV, M4A, OGG, FLAC, WEBM (max 500MB)</p>
             </>
           )}
         </div>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        1 credit per minute of audio. Minimum 1 credit.
+      </p>
 
       {/* Credit Cost Preview */}
       {file && !transcript && (
