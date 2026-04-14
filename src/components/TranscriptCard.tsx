@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, FileText, FileJson, FileType, Film, Video, Download, ChevronDown, Check } from "lucide-react";
+import { Copy, FileText, FileJson, FileType, Film, Video, Download, ChevronDown, Check, LogIn } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
 import {
@@ -39,6 +40,8 @@ interface TranscriptCardProps {
 export function TranscriptCard({ transcript, videoTitle = "YouTube Video", videoUrl = "" }: TranscriptCardProps) {
   const [copied, setCopied] = useState(false);
   const [showTimestamps, setShowTimestamps] = useState(true);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const { user } = useAuth();
 
   // Helper: Format timestamp for SRT (HH:MM:SS,mmm)
   const formatSrtTimestamp = (seconds: number): string => {
@@ -142,7 +145,16 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     downloadFile(finalContent, "transcript.txt", "text/plain");
   };
 
+  const requireAuth = (): boolean => {
+    if (!user) {
+      setShowSignupPrompt(true);
+      return false;
+    }
+    return true;
+  };
+
   const downloadJson = () => {
+    if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'json' })
     const jsonOutput = {
       metadata: {
@@ -161,6 +173,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   };
 
   const downloadCsv = () => {
+    if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'csv' })
     const branding = getBrandingHeader('csv');
     const header = "Start,Duration,Text\n";
@@ -171,6 +184,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   };
 
   const downloadSrt = () => {
+    if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'srt' })
     const branding = getBrandingHeader('srt_vtt');
     const srtContent = transcript
@@ -187,6 +201,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   };
 
   const downloadVtt = () => {
+    if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'vtt' })
     const branding = getBrandingHeader('srt_vtt');
     const vttContent = "WEBVTT\n\n" + branding + transcript
@@ -295,6 +310,17 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
           </Label>
         </div>
       </CardHeader>
+      {showSignupPrompt && (
+        <div className="mx-6 mb-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          <div className="flex items-center gap-2">
+            <LogIn className="size-4 text-primary shrink-0" />
+            <span className="text-foreground"><strong>Sign in for free</strong> to export as CSV, SRT, VTT, or JSON.</span>
+          </div>
+          <a href="/login" className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+            Sign in
+          </a>
+        </div>
+      )}
       <CardContent className="p-0">
         <ScrollArea className="h-[500px] w-full bg-muted/30">
           <div className="p-6">

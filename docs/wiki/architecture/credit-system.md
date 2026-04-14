@@ -128,11 +128,22 @@ Zie [ADR-012](../decisions/012-pricing-tiers.md) voor de rationale achter deze t
 
 ### Verbruik (Playlist)
 
+**⚠️ Intentie vs. werkelijkheid:** ADR-010 beschrijft "eerste 3 video's gratis" — dit is **nog niet geïmplementeerd** in `backend/main.py`.
+
+Wat nu werkelijk gebeurt:
 ```
-1. Backend: eerste 3 video's zijn altijd gratis
-2. Vanaf video 4: 1 credit per video (captions)
-3. Bij AI-transcriptie video's: math.ceil(duration_seconds / 60.0) credits
-4. Geen dubbele rekening: AI-transcriptie vervangt caption-krediet
+1. Caption-extractie video's: 0 credits (gratis, yt-dlp captions)
+2. Whisper video's: math.ceil(duration_seconds / 60.0) credits per video
+3. Geen dubbele rekening: Whisper-pad vervangt caption-pad (correct)
+4. Geen "eerste 3 gratis" tier — alle video's direct verwerkt
+```
+
+Wanneer ADR-010 geïmplementeerd is (intentie):
+```
+1. Eerste 3 video's: altijd gratis
+2. Vanaf video 4, captions: 1 credit per video
+3. Vanaf video 4, Whisper: math.ceil(duration_seconds / 60.0) credits
+4. Geen dubbele rekening: Whisper vervangt caption-krediet
 ```
 
 ### Welcome Reward
@@ -162,10 +173,17 @@ Dit is atomisch — parallelle requests kunnen credits niet dubbel verbruiken.
 
 ## Paid User Status
 
-Zodra een gebruiker credits heeft gekocht via Stripe (`has_ever_purchased = true` in `profiles`):
+**⚠️ Gedeeltelijk geïmplementeerd.** De `isPremium`-check in API routes werkt via `total_credits_purchased > 0` (uit de `get_user_credits` RPC). Een apart `has_ever_purchased` veld in `profiles` en een `isPaidUser` boolean in AuthContext bestaan **nog niet** in de code.
+
+Huidig gedrag:
+- Premium = gebruiker heeft ooit een positieve credit-transactie gehad (gecheckt ad-hoc per API route)
+- Bij saldo 0 zonder ooit gekochte credits: geen premium rate-limit bypass
+- Rate limiting bypass: `total_credits_purchased > 0` per verzoek
+
+Wat de bedoeling is (nog te implementeren):
 - Permanente paid user status, ook bij saldo 0
-- Alle export-formaten beschikbaar (TXT, SRT, VTT, JSON, CSV)
-- Geen of ontspannen rate limiting
+- `has_ever_purchased = true` in `profiles` na eerste Stripe-aankoop
+- `isPaidUser: boolean` in AuthContext
 
 Welcome credits (25 gratis) geven GEEN paid user status.
 
@@ -200,14 +218,16 @@ created_at  TIMESTAMPTZ DEFAULT now()
 Credits bijgehouden in `AuthContext` (`src/contexts/AuthContext.tsx`):
 ```typescript
 interface AuthContextType {
-  credits: number | null
-  isPaidUser: boolean          // heeft ooit via Stripe gekocht
-  playlistQuotaUsed: number
-  playlistQuotaRemaining: number
-  quotaResetsAt: string | null
+  user: User | null
+  profile: UserProfile | null
+  credits: number | null       // huidig saldo
+  quota: UserCredits | null    // {credits, playlistQuotaUsed, playlistQuotaRemaining, quotaResetsAt}
+  loading: boolean
   refreshCredits: () => Promise<void>
 }
 ```
+
+**Let op:** `isPaidUser` bestaat **niet** in AuthContext. De `isPremium`-check in API routes haalt `total_credits_purchased` direct op via RPC.
 
 `refreshCredits()` aanroepen na succesvolle aankoop of verbruik om de UI bij te werken.
 

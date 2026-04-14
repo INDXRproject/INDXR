@@ -48,6 +48,7 @@ interface PlaylistManagerProps {
   onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string, playlistUrl?: string) => void;
   isExtracting: boolean;
   videoStatuses?: Record<string, VideoStatus>;
+  freeVideoIds?: Set<string>;
   isAuthenticated: boolean;
   onAuthRequired: () => void;
   onError: (message: string | null) => void;
@@ -61,7 +62,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, elapsedSeconds = 0 }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, elapsedSeconds = 0 }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -571,6 +572,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, i
                                 <Clock className="h-3 w-3" />
                                 {Math.floor(entry.duration / 60)}:{Math.floor(entry.duration % 60).toString().padStart(2, '0')}
                             </span>
+                            {freeVideoIds?.has(entry.id) && <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">Free</span>}
                             {videoStatuses[entry.id] === 'unavailable' && <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Unavailable</span>}
                             {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">Failed</span>}
                             {videoStatuses[entry.id] === 'no_speech' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">No speech detected</span>}

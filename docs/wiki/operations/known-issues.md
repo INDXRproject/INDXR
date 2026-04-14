@@ -107,18 +107,22 @@ Geen externe service die alarmeert bij downtime.
 - [x] AI summary credit-deductie: 1 → 3
 - [x] Stripe PACKAGES object updaten (Try/Basic/Plus/Pro/Power)
 - [x] Welcome credits RPC updaten: 5 → 25 in `claim_welcome_reward`
+- [x] AudioTab: credit cost card verbergen na succesvolle transcriptie
+- [x] BACKEND_API_SECRET validatie: header toegevoegd aan alle 10 Next.js→Python routes + FastAPI `verify_backend_secret` dependency
+- [x] Export gating: anonymous users krijgen alleen TXT; andere formaten tonen inline sign-up prompt
+- [x] Playlist "eerste 3 gratis": backend credit-deductie voor video's 4+ (1 credit/video captions), FREE label in UI
+- [x] WelcomeCreditCard playlist sectie gecorrigeerd: "first 3 videos free per extraction"
 - [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten aanmaken in live mode
 - [ ] Supabase email verificatie re-enablen
 - [ ] `UPSTASH_REDIS_REST_URL` + `_TOKEN` configureren in Vercel
 - [ ] Anoniem rate limit instellen op 10/dag
 - [ ] `no_warnings: True` in `audio_utils.py`
-- [ ] `BACKEND_API_SECRET` in Vercel + Railway
+- [ ] `BACKEND_API_SECRET` env var instellen in Vercel + Railway (code is klaar)
 - [ ] Supabase database backups configureren
 - [ ] `LOG_LEVEL=WARNING` in Railway
 - [ ] Stripe webhook endpoint registreren + `STRIPE_WEBHOOK_SECRET` in Vercel
 - [ ] Anonymous user flows testen via Playwright
 - [ ] 4+ uur video stress test
-- [ ] Playlist "FREE" labels op eerste 3 video's implementeren
 
 ---
 

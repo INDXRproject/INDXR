@@ -1,6 +1,6 @@
 # Beslissing 014: Export Format Gating
 
-**Status:** Geaccepteerd (pending implementatie)
+**Status:** Geaccepteerd — **nog niet geïmplementeerd**
 **Datum:** 2026-04-14
 **Gerelateerde code:** `src/components/TranscriptViewer.tsx` (of equivalent exportcomponent)
 
@@ -46,7 +46,8 @@ Anonieme gebruikers: **10 extractions/dag** per IP (niet 5 zoals eerder geconfig
 
 ## Consequenties
 
-- [ ] Export component: TXT als enige optie voor niet-ingelogde gebruikers
-- [ ] `src/lib/ratelimit.ts`: anoniem limiet aanpassen naar 10/dag
-- [ ] UI: "Log in voor alle exportformaten" melding bij anonieme gebruikers
+**Implementatiestatus (2026-04-14):**
+- [ ] Export component: TXT als enige optie voor niet-ingelogde gebruikers — **niet geïmplementeerd**; `src/components/TranscriptCard.tsx` biedt alle 5 formaten aan iedereen zonder login-check
+- [x] `src/lib/ratelimit.ts`: anoniem limiet is 10/dag per IP — **al correct** (maar noop zonder Upstash config)
+- [ ] UI: "Log in voor alle exportformaten" melding bij anonieme gebruikers — **niet geïmplementeerd**
 - [ ] Toekomstig: heroverweeg RAG-JSON achter paid als de feature live gaat

@@ -1,8 +1,8 @@
 # Beslissing 010: Playlist Pricing — Per-Video, Eerste 3 Gratis, Geen Dubbele Rekening
 
-**Status:** Geaccepteerd (pending implementatie)
+**Status:** Geaccepteerd — **gedeeltelijk geïmplementeerd** (zie Consequenties)
 **Datum:** 2026-04-14
-**Gerelateerde code:** `backend/main.py` (playlist job), `src/app/(dashboard)/dashboard/components/PlaylistTab.tsx`
+**Gerelateerde code:** `backend/main.py` (`run_playlist_job`), `src/components/free-tool/PlaylistTab.tsx`, `src/components/PlaylistManager.tsx`
 
 ---
 
@@ -58,9 +58,11 @@ Als een playlist-video geen captions heeft en AI-transcriptie nodig heeft, betaa
 
 ## Consequenties
 
-**Implementatie vereist:**
-- [ ] Backend: credit-deductie per playlist-video na de eerste 3 vrije video's
-- [ ] Frontend: "FREE" label op eerste 3 video's in playlist UI
-- [ ] Credit-kosten-preview: toon totale kosten vóór extractie start
-- [ ] Logica: verifieer dat AI-transcriptie-video's niet dubbel worden afgetrokken
-- [ ] Anonieme gebruikers: playlist metadata zien maar niet kunnen extraheren — zie ADR-017
+**Implementatiestatus (2026-04-14):**
+- [ ] Backend: credit-deductie per playlist-video na de eerste 3 vrije video's — **niet geïmplementeerd** in `run_playlist_job`
+- [ ] Frontend: "FREE" label op eerste 3 video's in playlist UI — **niet geïmplementeerd**
+- [ ] Credit-kosten-preview: toon totale kosten vóór extractie start — **niet geïmplementeerd**
+- [x] Logica: AI-transcriptie-video's worden niet dubbel afgetrokken — **werkt correct** (captions-pad gratis, Whisper-pad per minuut)
+- [ ] Anonieme gebruikers: playlist metadata zien maar niet kunnen extraheren — **niet geïmplementeerd**
+
+**Wat nu werkelijk gebeurt:** Alle playlist-video's worden verwerkt zonder gratis tier. Caption-extractie kost geen credits; Whisper-transcriptie kost 1 credit/minuut. Er is geen "eerste 3 gratis" logica in de backend.

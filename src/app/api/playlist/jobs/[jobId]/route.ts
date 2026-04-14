@@ -36,7 +36,8 @@ export async function GET(
     const { jobId } = await params;
 
     const response = await fetch(
-      `${PYTHON_BACKEND_URL}/api/playlist/jobs/${jobId}?user_id=${user.id}`
+      `${PYTHON_BACKEND_URL}/api/playlist/jobs/${jobId}?user_id=${user.id}`,
+      { headers: { 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' } }
     );
 
     const data = await response.json();

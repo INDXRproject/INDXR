@@ -139,7 +139,7 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 
 - **Nooit** credits direct aftrekken via INSERT — gebruik altijd `deduct_credits_atomic` RPC
 - **Altijd** refund bij mislukte AI-operatie: `add_credits(user_id, amount, "Refund: ...")`
-- Formule: `math.ceil(duration_seconds / 600.0)`, minimum 1
+- Formule: `math.ceil(duration_seconds / 60.0)`, minimum 1 — **1 credit = 1 minuut**
 - Caption-extractie kost **0 credits**
 
 ### Database
@@ -193,8 +193,7 @@ Als ze verschijnen: `git rm -r --cached <path>`
 ## Kritieke waarschuwingen
 
 ### Stripe live mode
-- **Starter** (€1.99/15 cr) en **Power** (€49.99/850 cr) pakketten zijn **nog niet aangemaakt** in Stripe Dashboard live mode
-- Basic, Plus, Pro zijn wél geconfigureerd
+- **Alle 5 pakketten** moeten aangemaakt worden in live mode: Try €2.49, Basic €5.99, Plus €11.99, Pro €24.99, Power €49.99
 - Webhook endpoint moet geregistreerd zijn: `https://indxr.ai/api/stripe/webhook`
 - `STRIPE_WEBHOOK_SECRET` altijd instellen in productie — zonder verificatie is webhook onveilig
 
@@ -208,9 +207,9 @@ Als ze verschijnen: `git rm -r --cached <path>`
 - Trigger in dat geval een nieuwe extractie
 
 ### BACKEND_API_SECRET
-- Gedeeld secret tussen Next.js (Vercel) en Python (Railway)
-- Moet identiek zijn in beide omgevingen
-- Elke Next.js → Python call verstuurt dit als header; Python valideert het
+- **⚠️ Nog niet geïmplementeerd** — Next.js routes versturen dit header niet; Python valideert het niet
+- Staat op de pre-launch checklist (`known-issues.md`) als TODO
+- Wanneer geïmplementeerd: gedeeld secret tussen Next.js (Vercel) en Python (Railway)
 
 ### Playlist Whisper duplicaten
 - Na Whisper job in playlist: backend maakt eigen transcript-rij aan
@@ -229,12 +228,12 @@ Als ze verschijnen: `git rm -r --cached <path>`
 
 | Endpoint | Methode | Beschrijving |
 |----------|---------|--------------|
-| `/api/extract` | POST | YouTube captions extraheren |
+| `/api/extract/youtube` | POST | YouTube captions extraheren (yt-dlp) |
 | `/api/summarize` | POST | AI samenvatting (DeepSeek) |
 | `/api/transcribe/whisper` | POST | Start transcriptie-job → `{job_id}` direct |
 | `/api/jobs/{job_id}` | GET | Poll transcriptie-job status |
 | `/api/video/metadata/{video_id}` | GET | Video titel + duur |
-| `/api/playlist/info` | GET | Playlist metadata |
+| `/api/playlist/info` | POST | Playlist metadata (YouTube API + yt-dlp fallback) |
 | `/api/playlist/extract` | POST | Start playlist-job → `{job_id, status: "running"}` direct |
 | `/api/playlist/jobs/{job_id}` | GET | Poll playlist-job status |
 | `/health` | GET | `{"status": "healthy"}` |
@@ -246,7 +245,16 @@ Als ze verschijnen: `git rm -r --cached <path>`
 | `/api/admin/add-credits` | POST | Credits toekennen |
 | `/api/admin/suspend-user` | POST | `profiles.suspended` togglen |
 | `/api/admin/delete-user` | POST | User cascade-deleten |
+| `/api/admin/delete-transcript` | POST | Enkel transcript verwijderen |
 | `/api/admin/user-detail` | GET | Profiel + credit history |
+
+### Next.js overige routes
+
+| Endpoint | Methode | Beschrijving |
+|----------|---------|--------------|
+| `/api/extract` | POST | Caption-extractie (client-facing, proxyt naar `/api/extract/youtube`) |
+| `/api/transcribe/preflight` | POST | Auth/rate-check vóór directe upload naar Railway (bypast Vercel 4.5MB limiet) |
+| `/api/check-playlist-availability` | POST | Captions vs. Whisper check per video in batch |
 
 ---
 

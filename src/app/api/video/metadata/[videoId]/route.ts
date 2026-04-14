@@ -11,7 +11,7 @@ export async function GET(
   try {
     const response = await fetch(
       `${PYTHON_BACKEND_URL}/api/video/metadata/${videoId}`,
-      { signal: AbortSignal.timeout(15000) }
+      { signal: AbortSignal.timeout(15000), headers: { 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' } }
     )
 
     if (!response.ok) {

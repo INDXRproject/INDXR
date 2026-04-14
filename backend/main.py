@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Depends, Header
 from fastapi.responses import JSONResponse
 import asyncio
 import json
@@ -65,6 +65,13 @@ logging.basicConfig(
 logger = logging.getLogger("indxr-backend")
 
 app = FastAPI(title="INDXR.AI Backend", version="1.0.0")
+
+_BACKEND_API_SECRET = os.getenv("BACKEND_API_SECRET", "")
+
+async def verify_backend_secret(x_backend_secret: str = Header(default="")):
+    """Reject requests from callers that don't know the shared secret."""
+    if _BACKEND_API_SECRET and x_backend_secret != _BACKEND_API_SECRET:
+        raise HTTPException(status_code=401, detail="Invalid backend secret")
 
 # Start bgutil PO token HTTP server (Rust binary, no Node/Deno required).
 # Guard with a socket probe so only the first uvicorn worker starts it —
@@ -465,7 +472,7 @@ async def health_check():
     }
 
 @app.post("/api/extract/youtube", response_model=ExtractResponse)
-async def extract_youtube_transcript(request: ExtractRequest):
+async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(verify_backend_secret)):
     """Extract transcript from YouTube video using yt-dlp."""
     try:
         video_id = extract_video_id(request.videoIdOrUrl)
@@ -549,7 +556,7 @@ def extract_video_id(url: str) -> Optional[str]:
     return None
 
 @app.post("/api/playlist/info", response_model=PlaylistInfoResponse)
-async def get_playlist_info(request: ExtractRequest):
+async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_backend_secret)):
     """Fetch playlist metadata using YouTube Data API (primary) or yt-dlp (fallback)."""
     
     # 1. Try YouTube Data API (Industry Standard)
@@ -644,7 +651,7 @@ async def get_playlist_info(request: ExtractRequest):
         )
 
 @app.get("/api/video/metadata/{video_id}")
-async def get_video_metadata(video_id: str):
+async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_secret)):
     """Fetch metadata for a single video using YouTube API (primary) or yt-dlp (fallback)."""
     
     # 1. Try YouTube Data API
@@ -952,6 +959,7 @@ async def transcribe_with_whisper(
     title: Optional[str] = Form(None),
     audio_file: Optional[UploadFile] = File(None),
     user_id: Optional[str] = Form(None),  # youtube path only (server-to-server); ignored for upload
+    _: None = Depends(verify_backend_secret),
 ):
     """
     Start a Whisper transcription background job.
@@ -1056,7 +1064,7 @@ async def transcribe_with_whisper(
 
 
 @app.get("/api/jobs/{job_id}")
-async def get_job_status(job_id: str, user_id: str):
+async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_backend_secret)):
     """
     Poll a Whisper transcription job.
     Returns job status and, when complete, the full transcript + metadata.
@@ -1101,7 +1109,7 @@ async def get_job_status(job_id: str, user_id: str):
     })
 
 @app.post("/api/summarize", response_model=SummarizeResponse)
-async def summarize_transcript(request: SummarizeRequest):
+async def summarize_transcript(request: SummarizeRequest, _: None = Depends(verify_backend_secret)):
     """Summarize transcript using DeepSeek V3 chat model."""
     try:
         # 1. Check balance
@@ -1334,11 +1342,28 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
 
                 else:
                     # --- Captions path: extract via yt-dlp and save directly ---
+                    # First 3 videos (idx 0-2) are always free; videos 4+ cost 1 credit each.
+                    is_free = idx < 3
+                    if not is_free:
+                        balance = await asyncio.to_thread(check_user_balance, user_id)
+                        if balance < 1:
+                            video_results[video_id] = {'status': 'error', 'error_type': 'insufficient_credits'}
+                            failed += 1
+                            await update_playlist_job(completed=completed, failed=failed, video_results=video_results)
+                            continue
                     result = await extract_with_ytdlp(video_id, use_proxy=True)
                     if isinstance(result, list) or not result:
                         video_results[video_id] = {'status': 'error', 'error_type': 'no_captions'}
                         failed += 1
                     else:
+                        if not is_free:
+                            await asyncio.to_thread(
+                                deduct_credits,
+                                user_id=user_id,
+                                amount=1,
+                                reason="Playlist caption extraction",
+                                metadata={'job_id': job_id, 'video_id': video_id}
+                            )
                         transcript = result['transcript']
                         title = result.get('title') or video_id
                         char_count = sum(len(x['text']) for x in transcript)
@@ -1363,7 +1388,7 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                             lambda data=insert_data: supabase.table('transcripts').insert(data).execute()
                         )
                         transcript_id = t.data[0]['id']
-                        video_results[video_id] = {'status': 'success', 'transcript_id': transcript_id}
+                        video_results[video_id] = {'status': 'success', 'transcript_id': transcript_id, 'free': is_free}
                         await update_playlist_job(current_video_title=title)
                         completed += 1
 
@@ -1506,7 +1531,7 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
 
 
 @app.post("/api/playlist/extract")
-async def start_playlist_extraction(request: PlaylistExtractRequest):
+async def start_playlist_extraction(request: PlaylistExtractRequest, _: None = Depends(verify_backend_secret)):
     """
     Start a background playlist extraction job.
     Returns immediately with { job_id, status: "running" }.
@@ -1542,7 +1567,7 @@ async def start_playlist_extraction(request: PlaylistExtractRequest):
 
 
 @app.get("/api/playlist/jobs/{job_id}")
-async def get_playlist_job(job_id: str, user_id: str):
+async def get_playlist_job(job_id: str, user_id: str, _: None = Depends(verify_backend_secret)):
     """Return the full playlist_extraction_jobs row for progress polling."""
     supabase = get_supabase_client()
     try:

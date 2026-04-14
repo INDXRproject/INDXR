@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Backend-Secret': process.env.BACKEND_API_SECRET || '',
       },
       body: JSON.stringify(body),
     });

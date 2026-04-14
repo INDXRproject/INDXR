@@ -89,10 +89,10 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
               </h3>
                <ul className="space-y-1 text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <span className="text-success">●</span> Quota: <b>50 Videos</b> / month Free
+                  <span className="text-success">●</span> First <b>3 videos</b> free per extraction
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-warning">●</span> Extra: <b>1 Credit</b> = +10 Videos
+                  <span className="text-warning">●</span> After that: <b>1 Credit</b> per video
                 </li>
               </ul>
            </div>

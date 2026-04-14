@@ -391,7 +391,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       </div>
 
       {/* Credit Cost Preview */}
-      {file && (
+      {file && !transcript && (
         <div className="p-4 rounded-lg border border-border bg-muted">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -423,7 +423,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       )}
 
       {/* Transcribe Button */}
-      {file && (
+      {file && !transcript && (
         <Button
           onClick={handleTranscribe}
           disabled={!canTranscribe}

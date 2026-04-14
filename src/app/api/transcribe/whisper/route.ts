@@ -102,6 +102,7 @@ export async function POST(request: Request) {
 
     const response = await fetch(`${PYTHON_BACKEND_URL}/api/transcribe/whisper`, {
       method: 'POST',
+      headers: { 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' },
       body: backendFormData,
     });
 

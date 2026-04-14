@@ -1,6 +1,6 @@
 # Beslissing 009: Credit Granulariteit — 1 Credit = 1 Minuut
 
-**Status:** Geaccepteerd (pending implementatie)
+**Status:** Geaccepteerd en geïmplementeerd
 **Datum:** 2026-04-14
 **Vervangt:** [006-credit-model.md](006-credit-model.md) (1 credit = 10 minuten)
 **Gerelateerde code:** `backend/credit_manager.py:35-55`, `src/app/api/stripe/checkout/route.ts`
@@ -42,12 +42,12 @@ Tegelijk: alle credit-pakketten krijgen 10× meer credits (maar zijn duurder in 
 
 ## Consequenties
 
-**Implementatie vereist:**
-- [ ] `backend/credit_manager.py`: formule aanpassen naar `/60.0`
-- [ ] `src/app/api/stripe/checkout/route.ts`: PACKAGES object updaten (nieuwe credits + prijzen)
-- [ ] `claim_welcome_reward` RPC: 5 → 25 credits
-- [ ] Frontend UI: creditsaldo en kosten-indicaties bijwerken
-- [ ] Supabase migrations: `claim_welcome_reward` stored procedure updaten
+**Implementatie voltooid:**
+- [x] `backend/credit_manager.py`: formule `/60.0` — geïmplementeerd
+- [x] `src/app/api/stripe/checkout/route.ts`: PACKAGES object bijgewerkt (Try/Basic/Plus/Pro/Power)
+- [x] `claim_welcome_reward` RPC: 25 credits (handmatig bijgewerkt in Supabase)
+- [x] Frontend UI: creditsaldo en kosten-indicaties bijgewerkt
+- [ ] Supabase migrations: migratie voor `claim_welcome_reward` 25-credits nog niet aangemaakt als .sql bestand
 
 **Backward compatibility:** Bestaande gebruikers met het oude credit-saldo hoeven niet geconverteerd te worden — hun credits zijn al opgeslagen als transacties. De nieuwe formule geldt alleen voor nieuwe AI-transcriptie verzoeken.
 

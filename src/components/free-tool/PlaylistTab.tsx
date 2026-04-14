@@ -46,6 +46,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const [error, setError] = useState<{ message: string; isCreditsError?: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [videoStatuses, setVideoStatuses] = useState<Record<string, VideoStatus>>({})
+  const [freeVideoIds, setFreeVideoIds] = useState<Set<string>>(new Set())
   const [progressMessage, setProgressMessage] = useState<string>("")
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [resumeData, setResumeData] = useState<{ jobId: string; completed: number; total: number; title?: string } | null>(null)
@@ -96,16 +97,19 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           return
         }
         const job = await resp.json()
-        const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string }>
+        const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
 
         if (job.status === 'complete' || job.status === 'error') {
           sessionStorage.removeItem('indxr-active-playlist-job')
           // Restore final statuses — PlaylistManager's allDone useEffect will fire and show the banner
           const finalStatuses: Record<string, VideoStatus> = {}
+          const recoveredFreeIds = new Set<string>()
           for (const [vid, res] of Object.entries(vr)) {
             finalStatuses[vid] = mapBackendStatus(res)
+            if (res.free) recoveredFreeIds.add(vid)
           }
           setVideoStatuses(finalStatuses)
+          setFreeVideoIds(recoveredFreeIds)
           if (job.status === 'error') {
             setError({
               message: `Your extraction encountered an error. ${job.completed ?? 0} video${(job.completed ?? 0) !== 1 ? 's' : ''} were saved successfully.`,
@@ -143,9 +147,11 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
             } catch { return [] }
           })()
           const restoredStatuses: Record<string, VideoStatus> = {}
+          const restoredFreeIds = new Set<string>()
           storedVideoIds.forEach(id => { restoredStatuses[id] = 'pending' })
           for (const [vid, res] of Object.entries(vr)) {
             restoredStatuses[vid] = mapBackendStatus(res)
+            if (res.free) restoredFreeIds.add(vid)
           }
           if (job.current_video_index != null && Array.isArray(job.video_ids)) {
             const currentVid = job.video_ids[job.current_video_index]
@@ -153,6 +159,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           }
           if (Object.keys(restoredStatuses).length > 0) {
             setVideoStatuses(restoredStatuses)
+            setFreeVideoIds(restoredFreeIds)
           }
           setResumeData({
             jobId: activeJobId,
@@ -186,12 +193,13 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         if (!pollResp.ok) return  // transient error — keep polling
 
         const job = await pollResp.json()
-        const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string }>
+        const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
 
         // Update per-video statuses from video_results
         const newStatuses: Record<string, VideoStatus> = {}
         for (const [vid, res] of Object.entries(vr)) {
           newStatuses[vid] = mapBackendStatus(res)
+          if (res.free) setFreeVideoIds(prev => { const s = new Set(prev); s.add(vid); return s })
         }
         // Mark the currently-processing video as 'extracting'
         if (job.current_video_index != null && Array.isArray(job.video_ids)) {
@@ -222,10 +230,13 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
           // Final status pass — replace entirely (no merge) so no stale 'pending'/'extracting' entries remain
           const finalOnlyStatuses: Record<string, VideoStatus> = {}
+          const finalFreeIds = new Set<string>()
           for (const [vid, res] of Object.entries(vr)) {
             finalOnlyStatuses[vid] = mapBackendStatus(res)
+            if (res.free) finalFreeIds.add(vid)
           }
           setVideoStatuses(finalOnlyStatuses)
+          setFreeVideoIds(finalFreeIds)
 
           // Refresh library sidebar
           window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
@@ -488,6 +499,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         onExtract={handlePlaylistExtract}
         isExtracting={loading}
         videoStatuses={videoStatuses}
+        freeVideoIds={freeVideoIds}
         isAuthenticated={isAuthenticated}
         onAuthRequired={onAuthRequired}
         onError={(message) => setError(message ? { message } : null)}

@@ -43,8 +43,8 @@ viewed_at     TIMESTAMPTZ -- laatste keer geopend (migratie 20260306)
 updated_at    TIMESTAMPTZ -- laatste wijziging (migratie 20260307)
 created_at    TIMESTAMPTZ DEFAULT now()
 
--- Tiptap velden (migraties 20260302, 20260304)
-tiptap_content JSONB      -- Tiptap editor JSON state (voor rich-text bewerking)
+-- Tiptap/edit veld (migraties 20260302, 20260304)
+edited_content JSONB      -- Tiptap editor JSON state (opgeslagen bewerkte versie)
 ```
 
 RLS: gebruiker ziet alleen eigen transcripts.  
@@ -116,7 +116,7 @@ Tracking van individuele Whisper/AssemblyAI transcriptie jobs.
 ```sql
 id              UUID    PRIMARY KEY
 user_id         UUID    REFERENCES auth.users(id)
-status          TEXT    -- 'pending'|'processing'|'complete'|'failed'
+status          TEXT    -- 'pending'|'downloading'|'transcribing'|'saving'|'complete'|'error'
 video_url       TEXT
 source_type     TEXT    -- 'youtube' | 'upload'
 file_size_bytes INTEGER
@@ -175,7 +175,7 @@ Gebruikt in: `stripe/webhook/route.ts:53`, `credit_manager.py:168`
 ---
 
 ### `claim_welcome_reward(p_user_id)`
-Idempotente welkomst-bonus (5 credits, eenmalig).
+Idempotente welkomst-bonus (25 credits, eenmalig).
 
 Gebruikt in: `src/app/actions/credits.ts`
 

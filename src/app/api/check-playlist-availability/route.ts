@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           // Try to extract captions (this checks availability and caption status)
           const response = await fetch(`${PYTHON_BACKEND_URL}/api/extract/youtube`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' },
             body: JSON.stringify({ videoIdOrUrl: videoId }),
           })
 
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 // Helper to get video metadata from YouTube API
 async function getVideoMetadata(videoId: string): Promise<{ title: string; duration: number; thumbnail: string } | null> {
   try {
-    const response = await fetch(`${PYTHON_BACKEND_URL}/api/video/metadata/${videoId}`)
+    const response = await fetch(`${PYTHON_BACKEND_URL}/api/video/metadata/${videoId}`, { headers: { 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' } })
     if (!response.ok) return null
     
     const data = await response.json()

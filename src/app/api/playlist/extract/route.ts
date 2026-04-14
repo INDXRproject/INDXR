@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     try {
       const response = await fetch(`${PYTHON_BACKEND_URL}/api/playlist/extract`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' },
         body: JSON.stringify({ ...result.data, user_id: user.id }),
       });
 
