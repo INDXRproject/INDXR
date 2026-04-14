@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, ListOrdered, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink } from "lucide-react";
+import { Loader2, ListOrdered, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
@@ -520,7 +520,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
 
           <ScrollArea className="h-[400px]">
             <div className="p-4 grid gap-2">
-              {playlist?.entries?.slice(0, visibleCount).map((entry) => {
+              {playlist?.entries?.slice(0, visibleCount).map((entry, idx) => {
                   const isPrivate = entry.title === "[Private video]" || entry.title === "[Private Video]" || entry.title === "Private video";
                   
                   return (
@@ -559,6 +559,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                           <span className="text-sm text-foreground truncate font-medium">
                             {entry.title}
                           </span>
+                          {!hasExtracted && idx < 3 && !isPrivate && (
+                            <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded shrink-0">Free</span>
+                          )}
                           {videoStatuses[entry.id] === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />}
                           {videoStatuses[entry.id] === 'error' && <XCircle className="h-4 w-4 text-red-500 shrink-0" />}
                           {videoStatuses[entry.id] === 'unavailable' && <XCircle className="h-4 w-4 text-zinc-500 shrink-0" />}
@@ -661,6 +664,12 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
               )}
             </div>
           </ScrollArea>
+          {!hasExtracted && (
+            <div className="px-4 py-2.5 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
+              <Info className="h-3.5 w-3.5 shrink-0" />
+              <span>The first 3 videos are always free. Credits apply from video 4 onwards.</span>
+            </div>
+          )}
         </div>
       )}
     </div>

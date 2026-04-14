@@ -71,6 +71,11 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
   const whisperVideos = localResults.filter(r => r.status === 'needs_whisper')
   const unavailableVideos = localResults.filter(r => r.status === 'unavailable')
 
+  // First 3 extractable videos (excl. unavailable) are always free — matches backend idx < 3 logic
+  const freeVideoIds = new Set(
+    localResults.filter(r => r.status !== 'unavailable').slice(0, 3).map(r => r.videoId)
+  )
+
   const toggleAllWhisper = (useWhisper: boolean) => {
     setLocalResults(prev => prev.map(r => {
       if (r.status === 'unavailable') return r
@@ -180,7 +185,12 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                             <Image src={video.thumbnail} alt={video.title} fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
-                             <p className="text-sm text-foreground truncate font-medium">{video.title}</p>
+                             <div className="flex items-center gap-2">
+                               <p className="text-sm text-foreground truncate font-medium">{video.title}</p>
+                               {freeVideoIds.has(video.videoId) && (
+                                 <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded shrink-0">Free</span>
+                               )}
+                             </div>
                               <p className="text-xs text-amber-600 dark:text-amber-400">
                                 {Math.floor(video.duration / 60)}:{Math.floor(video.duration % 60).toString().padStart(2, '0')} • {video.estimatedCredits} credits
                               </p>
@@ -234,7 +244,12 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                              <Image src={video.thumbnail} alt={video.title} fill className="object-cover" />
                            </div>
                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-foreground truncate font-medium">{video.title}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-foreground truncate font-medium">{video.title}</p>
+                                {freeVideoIds.has(video.videoId) && (
+                                  <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded shrink-0">Free</span>
+                                )}
+                              </div>
                               <p className="text-xs text-green-600 dark:text-green-400">
                                 {Math.floor(video.duration / 60)}:{Math.floor(video.duration % 60).toString().padStart(2, '0')}
                               </p>
