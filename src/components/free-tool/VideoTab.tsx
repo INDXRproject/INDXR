@@ -122,6 +122,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [transcript, setTranscript] = useState<TranscriptItem[] | null>(null)
+  const [showSignupCard, setShowSignupCard] = useState(false)
   const [videoTitle, setVideoTitle] = useState<string>("")
   const [videoUrl, setVideoUrl] = useState<string>("")
   const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean } | null>(null)
@@ -346,6 +347,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     // Proceed with extraction. Default action is normal insert
     setLoading(true)
     setTranscript(null)
+    setShowSignupCard(false)
     setError(null)
     setVideoDuration(null)
     setSaveStatus('idle')
@@ -456,13 +458,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       })
 
       if (data.transcript && data.transcript.length > 0) {
-        toast.success("Transcript extracted & saved", {
-          description: "Added to your library automatically.",
-          action: {
-            label: "View",
-            onClick: () => window.location.href = '/dashboard/library'
-          }
-        })
+        if (!user) {
+          setShowSignupCard(true)
+        }
 
         if (onTranscriptLoaded) {
            // Extract ID helper
@@ -1193,7 +1191,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             )
           )}
 
-          <TranscriptCard transcript={transcript} videoTitle={videoTitle} videoUrl={videoUrl} />
+          <TranscriptCard transcript={transcript} videoTitle={videoTitle} videoUrl={videoUrl} showSignupCard={showSignupCard} />
         </div>
       ) : !loading && !transcript && (
         <div className="p-12 rounded-2xl border border-dashed border-border bg-muted/20 flex flex-col items-center justify-center text-muted-foreground">
