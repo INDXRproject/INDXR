@@ -65,6 +65,7 @@ import {
   generateVtt,
   generateCsv,
   generateMarkdown,
+  decodeEntities,
   TranscriptItem,
 } from "@/utils/formatTranscript";
 
@@ -464,7 +465,7 @@ export function TranscriptViewer({
           JSON.stringify(
             {
               metadata: { title, videoUrl, extractedAt: new Date().toISOString() },
-              transcript,
+              transcript: transcript.map((t) => ({ ...t, text: decodeEntities(t.text) })),
             },
             null,
             2

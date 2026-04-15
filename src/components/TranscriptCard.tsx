@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { decodeEntities } from "@/utils/formatTranscript";
 import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
 import {
@@ -71,7 +72,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
 
   // Helper: Merge captions into flowing paragraphs (400-500 chars each)
   const createParagraphMode = (): string => {
-    const fullText = transcript.map((t) => t.text).join(' ');
+    const fullText = transcript.map((t) => decodeEntities(t.text)).join(' ');
     const paragraphs: string[] = [];
     let currentParagraph = '';
     const words = fullText.split(' ');
@@ -94,7 +95,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   const fullTextWithTimestamps = transcript
     .map((t) => {
       const timestamp = new Date(t.offset * 1000).toISOString().substr(11, 8);
-      return `${timestamp}  ${t.text}`;
+      return `${timestamp}  ${decodeEntities(t.text)}`;
     })
     .join("\n");
 
@@ -146,9 +147,10 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
       const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
       if (gap > 5 && current) {
         paragraphs.push(current.trim());
-        current = item.text;
+        current = decodeEntities(item.text);
       } else {
-        current = current ? `${current} ${item.text}` : item.text;
+        const text = decodeEntities(item.text);
+        current = current ? `${current} ${text}` : text;
       }
     }
     if (current) paragraphs.push(current.trim());
@@ -161,7 +163,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     posthog.capture('export_clicked', { format: 'md-timestamps' });
     const title = videoTitle || "YouTube Video";
     const sections = transcript
-      .map((t) => `## [${formatHHMMSS(t.offset)}]\n${t.text}`)
+      .map((t) => `## [${formatHHMMSS(t.offset)}]\n${decodeEntities(t.text)}`)
       .join('\n\n');
     const content = `# ${title}\n\n${sections}`;
     downloadFile(content, "transcript_timestamps.md", "text/markdown");
@@ -176,7 +178,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
         video_url: videoUrl,
         extracted_at: new Date().toISOString(),
       },
-      transcript,
+      transcript: transcript.map((t) => ({ ...t, text: decodeEntities(t.text) })),
     };
     downloadFile(JSON.stringify(jsonOutput, null, 2), "transcript.json", "application/json");
   };
@@ -186,7 +188,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     posthog.capture('export_clicked', { format: 'csv' });
     const header = "Start,Duration,Text\n";
     const rows = transcript
-      .map((t) => `${t.offset},${t.duration},"${t.text.replace(/"/g, '""')}"`)
+      .map((t) => { const text = decodeEntities(t.text); return `${t.offset},${t.duration},"${text.replace(/"/g, '""')}"` })
       .join("\n");
     downloadFile(header + rows, "transcript.csv", "text/csv");
   };
@@ -201,7 +203,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
           ? transcript[index + 1].offset
           : item.offset + item.duration;
         const endTime = formatSrtTimestamp(endOffset);
-        return `${index + 1}\n${startTime} --> ${endTime}\n${item.text}\n`;
+        return `${index + 1}\n${startTime} --> ${endTime}\n${decodeEntities(item.text)}\n`;
       })
       .join("\n");
     downloadFile(srtContent, "transcript.srt", "text/plain");
@@ -217,7 +219,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
           ? transcript[index + 1].offset
           : item.offset + item.duration;
         const endTime = formatVttTimestamp(endOffset);
-        return `${index + 1}\n${startTime} --> ${endTime}\n${item.text}\n`;
+        return `${index + 1}\n${startTime} --> ${endTime}\n${decodeEntities(item.text)}\n`;
       })
       .join("\n");
     downloadFile(vttContent, "transcript.vtt", "text/vtt");

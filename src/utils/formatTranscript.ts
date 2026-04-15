@@ -4,6 +4,20 @@ export interface TranscriptItem {
   offset: number;
 }
 
+// Decode HTML entities from YouTube caption API
+export const decodeEntities = (text: string): string => {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/ {2,}/g, ' ')
+    .trim();
+};
+
 // Helper: Format timestamp for SRT (HH:MM:SS,mmm)
 const formatSrtTimestamp = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
@@ -32,7 +46,7 @@ const formatHHMMSS = (seconds: number): string => {
 
 // Helper: Create paragraph mode (merge granular captions into natural paragraphs)
 export const createParagraphMode = (transcript: TranscriptItem[]): string => {
-  const fullText = transcript.map((t) => t.text).join(' ');
+  const fullText = transcript.map((t) => decodeEntities(t.text)).join(' ');
   const paragraphs: string[] = [];
   let currentParagraph = '';
   const words = fullText.split(' ');
@@ -59,7 +73,7 @@ export const generateSrt = (transcript: TranscriptItem[]): string => {
       const startTime = formatSrtTimestamp(item.offset);
       const endOffset = index < transcript.length - 1 ? transcript[index + 1].offset : item.offset + item.duration;
       const endTime = formatSrtTimestamp(endOffset);
-      return `${index + 1}\n${startTime} --> ${endTime}\n${item.text}\n`;
+      return `${index + 1}\n${startTime} --> ${endTime}\n${decodeEntities(item.text)}\n`;
     })
     .join("\n");
 };
@@ -70,7 +84,7 @@ export const generateVtt = (transcript: TranscriptItem[]): string => {
       const startTime = formatVttTimestamp(item.offset);
       const endOffset = index < transcript.length - 1 ? transcript[index + 1].offset : item.offset + item.duration;
       const endTime = formatVttTimestamp(endOffset);
-      return `${index + 1}\n${startTime} --> ${endTime}\n${item.text}\n`;
+      return `${index + 1}\n${startTime} --> ${endTime}\n${decodeEntities(item.text)}\n`;
     })
     .join("\n");
 };
@@ -78,7 +92,10 @@ export const generateVtt = (transcript: TranscriptItem[]): string => {
 export const generateCsv = (transcript: TranscriptItem[]): string => {
   const header = "Start,Duration,Text\n";
   const rows = transcript
-    .map((t) => `${t.offset},${t.duration},"${t.text.replace(/"/g, '""')}"`)
+    .map((t) => {
+      const text = decodeEntities(t.text);
+      return `${t.offset},${t.duration},"${text.replace(/"/g, '""')}"`;
+    })
     .join("\n");
   return header + rows;
 };
@@ -88,7 +105,7 @@ export const generateTxt = (transcript: TranscriptItem[], timestamps: boolean): 
     return transcript
       .map((t) => {
         const timestamp = new Date(t.offset * 1000).toISOString().substr(11, 8);
-        return `${timestamp}  ${t.text}`;
+        return `${timestamp}  ${decodeEntities(t.text)}`;
       })
       .join("\n");
   }
@@ -98,7 +115,7 @@ export const generateTxt = (transcript: TranscriptItem[], timestamps: boolean): 
 export const generateMarkdown = (transcript: TranscriptItem[], title: string, withTimestamps: boolean): string => {
   if (withTimestamps) {
     const sections = transcript
-      .map((t) => `## [${formatHHMMSS(t.offset)}]\n${t.text}`)
+      .map((t) => `## [${formatHHMMSS(t.offset)}]\n${decodeEntities(t.text)}`)
       .join('\n\n');
     return `# ${title}\n\n${sections}`;
   }
@@ -110,11 +127,12 @@ export const generateMarkdown = (transcript: TranscriptItem[], title: string, wi
     const item = transcript[i];
     const prev = transcript[i - 1];
     const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
+    const text = decodeEntities(item.text);
     if (gap > 5 && currentParagraph) {
       paragraphs.push(currentParagraph.trim());
-      currentParagraph = item.text;
+      currentParagraph = text;
     } else {
-      currentParagraph = currentParagraph ? `${currentParagraph} ${item.text}` : item.text;
+      currentParagraph = currentParagraph ? `${currentParagraph} ${text}` : text;
     }
   }
   if (currentParagraph) paragraphs.push(currentParagraph.trim());
