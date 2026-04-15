@@ -1,6 +1,6 @@
 # Known Issues & TODOs
 
-Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-14.
+Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-15.
 
 ---
 
@@ -98,6 +98,9 @@ Geen externe service die alarmeert bij downtime.
 - [x] BACKEND_API_SECRET ingesteld in Railway ✓ (401 geverifieerd); **Vercel nog te doen**
 - [x] verify_backend_secret: Bearer-token bypass voor directe audio uploads (browser → Railway)
 - [x] Export gating: anonymous users krijgen alleen TXT; andere formaten tonen inline sign-up prompt
+- [x] Export overhaul: watermarks verwijderd uit alle formats, TXT gesplitst in plain/timestamps, Markdown export toegevoegd (plain + timestamps), SRT branding bug gefixed
+- [x] HTML entities gestript uit alle exports (`&nbsp;` `&amp;` etc. → plain text)
+- [x] Anonieme users: toast vervangen door compacte signup banner boven transcript results
 - [x] Playlist "eerste 3 gratis": backend + frontend correct geïmplementeerd (ADR-010)
 - [x] Playlist retry-pass: credit-aftrek voor idx≥3 na succesvolle opslag
 - [x] Sticky session ID: `job_id[:8]` doorgegeven via `extract_with_ytdlp(session_id=...)` — `indxr1` hardcoding verwijderd

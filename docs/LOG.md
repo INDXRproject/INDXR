@@ -421,3 +421,38 @@ docs/wiki/roadmap/priorities.md
 ---
 [2026-04-15 02:22] feat: export overhaul — watermarks verwijderd, TXT gesplitst in 2 opties, Markdown export toegevoegd (plain + timestamps), SRT branding bug gefixed | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx, src/components/library/TranscriptList.tsx
 [2026-04-15 02:30] docs: Upstash setup gedocumenteerd (indxr-redis Frankfurt, credentials in Vercel), rate limiting bewust uit tijdens testfase, Supabase email verificatie aan | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/operations/deployment.md
+[2026-04-15 02:44] commit: feat: export overhaul — markdown, dual TXT, watermark removal, gating fix
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: .cline/skills/indxr-design/SKILL.md
+.cline/skills/indxr-design/references/component-patterns.md
+.cline/skills/indxr-design/references/copy-guide.md
+.cline/skills/indxr-design/references/design-system.md
+docs/LOG.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
+src/components/TranscriptCard.tsx
+src/components/library/TranscriptList.tsx
+src/components/library/TranscriptViewer.tsx
+src/utils/formatTranscript.ts
+---
+[2026-04-15 05:03] commit: fix: strip HTML entities from exports + remove JSON watermark
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/TranscriptCard.tsx
+src/components/library/TranscriptViewer.tsx
+src/utils/formatTranscript.ts
+---
+[2026-04-15 05:12] commit: feat: replace toast with signup pitch card for anonymous users + update export copy
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/TranscriptCard.tsx
+src/components/free-tool/VideoTab.tsx
+---
+[2026-04-15 05:25] commit: fix: compact signup banner above transcript, updated copy
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/TranscriptCard.tsx
+---
+[2026-04-15 05:35] feat: compact signup banner boven transcript + copy update | gewijzigd: src/components/TranscriptCard.tsx
+[2026-04-15 05:35] docs: wiki known-issues bijgewerkt met export overhaul, HTML entities fix, signup banner
