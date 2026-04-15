@@ -32,8 +32,8 @@ Technische blokkades die in de code opgelost moeten worden vóór launch.
 **`has_ever_purchased` implementeren in Stripe webhook**
 Nu krijgen gebruikers die ooit credits hebben gekocht geen permanente premium rate-limit bypass als hun saldo op 0 staat. De webhook (`/api/stripe/webhook`) moet bij een succesvolle betaling `has_ever_purchased = true` opslaan in de `profiles` tabel. Vervolgens moet de `isPaidUser` boolean in `AuthContext` dit uitlezen. Zonder dit verliezen betalende klanten hun voordelen zodra ze door hun credits heen zijn — slechte klantervaring.
 
-**`BACKEND_API_SECRET` toevoegen aan Vercel**
-Het gedeelde secret tussen Next.js en de Python backend staat al in Railway (geverifieerd: 401 zonder header). Vercel heeft het nog niet → alle Next.js→Railway requests falen in productie. Eén env var toevoegen in Vercel dashboard.
+~~**`BACKEND_API_SECRET` toevoegen aan Vercel**~~
+✓ Opgelost 2026-04-15 — geverifieerd: Railway geeft 401 zonder header, Next.js productie-route reageert correct.
 
 ---
 

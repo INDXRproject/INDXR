@@ -107,7 +107,7 @@ Geen externe service die alarmeert bij downtime.
 - [x] WelcomeCreditCard playlist sectie gecorrigeerd
 - [x] AudioTab: job recovery na page refresh (sessionStorage, resume banner, elapsed timer via `created_at`)
 - [x] `no_warnings`: was al `True` in `audio_utils.py` — geen fix nodig geweest
-- [ ] **BACKEND_API_SECRET toevoegen aan Vercel environment variables**
+- [x] **BACKEND_API_SECRET toevoegen aan Vercel environment variables** ✓ (geverifieerd 2026-04-15: Railway→401 zonder header, Next.js→307 met correcte auth flow)
 - [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten in live mode + webhook registreren
 - [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel
 - [x] Supabase email verificatie re-enabled ✓
