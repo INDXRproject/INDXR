@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, CheckCircle2 } from "lucide-react";
+import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { decodeEntities } from "@/utils/formatTranscript";
 import { Button } from "@/components/ui/button";
@@ -228,7 +228,29 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
 
   return (
     <>
-    <Card className="w-full max-w-4xl mx-auto mt-8 border shadow-sm">
+    {showSignupCard && !user && (
+      <div className="w-full max-w-4xl mx-auto mt-8 rounded-lg border border-green-500/25 bg-green-500/8 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-foreground">✓ Got your transcript.</p>
+          <p className="text-sm font-semibold text-foreground">Sign up free to save it, extract playlists, and transcribe with AI.</p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <a
+            href="/signup"
+            className="rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors whitespace-nowrap"
+          >
+            Sign Up Free
+          </a>
+          <a
+            href="/login"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+          >
+            Log In
+          </a>
+        </div>
+      </div>
+    )}
+    <Card className="w-full max-w-4xl mx-auto mt-3 border shadow-sm">
       <CardHeader className="pb-4 border-b">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -376,38 +398,6 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
       </CardContent>
     </Card>
 
-    {showSignupCard && !user && (
-      <div className="w-full max-w-4xl mx-auto mt-4 rounded-xl border border-green-500/30 bg-green-500/5 p-6">
-        <div className="flex items-start gap-4">
-          <CheckCircle2 className="size-6 text-green-500 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-bold text-foreground text-base mb-1">Your transcript is ready.</p>
-            <p className="text-sm text-muted-foreground mb-2">Create a free account to unlock:</p>
-            <ul className="text-sm text-muted-foreground space-y-1 mb-5">
-              <li>· Save transcripts to your library</li>
-              <li>· Extract entire playlists</li>
-              <li>· Transcribe videos without captions using AI</li>
-              <li>· Upload and transcribe your own audio files</li>
-              <li>· Export to all formats (CSV, SRT, VTT, JSON, Markdown)</li>
-            </ul>
-            <div className="flex gap-3">
-              <a
-                href="/signup"
-                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Sign Up Free
-              </a>
-              <a
-                href="/login"
-                className="rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
-              >
-                Log In
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
     </>
   );
 }
