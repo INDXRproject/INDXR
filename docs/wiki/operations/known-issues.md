@@ -18,14 +18,11 @@ Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-14.
 
 **Code is al klaar** — `PACKAGES` object in `checkout/route.ts` is bijgewerkt.
 
-### Supabase: Email verificatie uitgeschakeld
-**Status:** Uitgeschakeld tijdens development.
-**Fix:** Supabase Dashboard → Auth → Email Templates → re-enable email confirmation.
-
-### Upstash Redis: Rate limiting uitgeschakeld
+### Upstash Redis: Rate limiting bewust uitgeschakeld tijdens testfase
 **Bestand:** `src/lib/ratelimit.ts`
-**Status:** App valt terug op `noopLimiter`. Anoniem limiet moet 10/dag zijn.
-**Fix:** `UPSTASH_REDIS_REST_URL` + `_TOKEN` configureren in Vercel.
+**Status:** Credentials zijn ingesteld in Vercel (`UPSTASH_REDIS_REST_URL` + `_TOKEN`), maar rate limiting is bewust uitgeschakeld — app valt terug op `noopLimiter` zodat testen niet geblokkeerd worden.
+**Setup:** Database `indxr-redis` aangemaakt op eigen Upstash account (Khidr), regio Frankfurt (eu-central-1).
+**Activeren bij launch:** Rate limiting inschakelen in `src/lib/ratelimit.ts` en limieten opnieuw beoordelen vóór go-live.
 
 ---
 
@@ -110,8 +107,8 @@ Geen externe service die alarmeert bij downtime.
 - [ ] **BACKEND_API_SECRET toevoegen aan Vercel environment variables**
 - [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten in live mode + webhook registreren
 - [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel
-- [ ] Supabase email verificatie re-enablen
-- [ ] `UPSTASH_REDIS_REST_URL` + `_TOKEN` configureren in Vercel (activeert rate limiting)
+- [x] Supabase email verificatie re-enabled ✓
+- [x] `UPSTASH_REDIS_REST_URL` + `_TOKEN` geconfigureerd in Vercel ✓ (rate limiting bewust uitgeschakeld tijdens testfase — activeren bij launch)
 - [ ] Supabase database backups configureren
 - [ ] `LOG_LEVEL=WARNING` instellen in Railway
 - [ ] `has_ever_purchased` implementeren in Stripe webhook (zie priorities.md)
@@ -128,5 +125,4 @@ Highlights:
 - Channel extractie (queue-architectuur vereist)
 - Gamification: XP, levels 1–20, credit reward chests
 - RAG-geoptimaliseerde JSON export
-- Markdown export
 - Branding: Scrivr, Vellum, Monkr, Quillr — niet besloten

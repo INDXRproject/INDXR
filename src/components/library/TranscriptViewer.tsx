@@ -64,6 +64,7 @@ import {
   generateSrt,
   generateVtt,
   generateCsv,
+  generateMarkdown,
   TranscriptItem,
 } from "@/utils/formatTranscript";
 
@@ -447,15 +448,17 @@ export function TranscriptViewer({
     document.body.removeChild(a);
   };
 
-  const handleDownload = (format: "txt" | "json" | "srt" | "vtt" | "csv") => {
+  const handleDownload = (format: "txt" | "txt-ts" | "md" | "md-ts" | "json" | "srt" | "vtt" | "csv") => {
     const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
     try {
       if (format === "txt")
-        downloadFile(
-          generateTxt(transcript, title, videoUrl, showTimestamps),
-          `${safe}.txt`,
-          "text/plain"
-        );
+        downloadFile(generateTxt(transcript, false), `${safe}.txt`, "text/plain");
+      else if (format === "txt-ts")
+        downloadFile(generateTxt(transcript, true), `${safe}_timestamps.txt`, "text/plain");
+      else if (format === "md")
+        downloadFile(generateMarkdown(transcript, title, false), `${safe}.md`, "text/markdown");
+      else if (format === "md-ts")
+        downloadFile(generateMarkdown(transcript, title, true), `${safe}_timestamps.md`, "text/markdown");
       else if (format === "json")
         downloadFile(
           JSON.stringify(
@@ -470,23 +473,11 @@ export function TranscriptViewer({
           "application/json"
         );
       else if (format === "csv")
-        downloadFile(
-          generateCsv(transcript, title, videoUrl),
-          `${safe}.csv`,
-          "text/csv"
-        );
+        downloadFile(generateCsv(transcript), `${safe}.csv`, "text/csv");
       else if (format === "srt")
-        downloadFile(
-          generateSrt(transcript, title, videoUrl),
-          `${safe}.srt`,
-          "text/plain"
-        );
+        downloadFile(generateSrt(transcript), `${safe}.srt`, "text/plain");
       else if (format === "vtt")
-        downloadFile(
-          generateVtt(transcript, title, videoUrl),
-          `${safe}.vtt`,
-          "text/vtt"
-        );
+        downloadFile(generateVtt(transcript), `${safe}.vtt`, "text/vtt");
       toast.success(`Downloaded ${format.toUpperCase()}`);
     } catch (e) {
       console.error(e);
@@ -770,7 +761,7 @@ export function TranscriptViewer({
                     <span className="hidden sm:inline">Export</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel>Export As…</DropdownMenuLabel>
                   {hasSavedEdits && (
                     <>
@@ -783,12 +774,19 @@ export function TranscriptViewer({
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <DropdownMenuItem onClick={() => handleDownload("txt")}>Text File (.txt)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownload("json")}>JSON (.json)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownload("csv")}>CSV (.csv)</DropdownMenuItem>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Text</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleDownload("txt")}>TXT — plain text</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownload("txt-ts")}>TXT — with timestamps</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownload("md")}>Markdown</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownload("md-ts")}>Markdown — with timestamps</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleDownload("srt")}>SRT Subtitles</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownload("vtt")}>VTT Subtitles</DropdownMenuItem>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Data</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleDownload("json")}>JSON</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownload("csv")}>CSV</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Subtitles</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleDownload("srt")}>SRT</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownload("vtt")}>VTT</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive font-medium focus:text-destructive focus:bg-destructive/10"

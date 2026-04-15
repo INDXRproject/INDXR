@@ -11,7 +11,7 @@ Railway (Docker)            ←─── FastAPI Python backend
     ▼
 Supabase                    ←─── PostgreSQL + Auth
     
-Upstash Redis               ←─── Rate limiting (optioneel)
+Upstash Redis               ←─── Rate limiting (indxr-redis, Frankfurt, uitgeschakeld in testfase)
 Stripe                      ←─── Payments
 PostHog                     ←─── Analytics
 ```
@@ -44,9 +44,10 @@ STRIPE_SECRET_KEY=sk_live_...             # ⚠️ Server-only
 STRIPE_WEBHOOK_SECRET=whsec_...           # Webhook signature verificatie
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 
-# Rate Limiting (optioneel)
-UPSTASH_REDIS_REST_URL=https://...
-UPSTASH_REDIS_REST_TOKEN=...
+# Rate Limiting — credentials ingesteld, feature bewust uitgeschakeld tijdens testfase
+# Database: indxr-redis, Frankfurt (eu-central-1), eigen Upstash account (Khidr)
+UPSTASH_REDIS_REST_URL=https://...        # ✓ ingesteld
+UPSTASH_REDIS_REST_TOKEN=...              # ✓ ingesteld
 
 # Analytics
 NEXT_PUBLIC_POSTHOG_KEY=phc_...
@@ -132,7 +133,7 @@ Migrations zitten in `supabase/migrations/`. Chronologische volgorde is belangri
 
 ### Productie-checklist Supabase
 
-- [ ] Email verificatie re-enablen (uitgeschakeld tijdens dev)
+- [x] Email verificatie re-enabled ✓
 - [ ] RLS verificatie op alle 6 tabellen
 - [ ] Database backups geconfigureerd
 - [ ] Connection pooling gecheckt bij schaal

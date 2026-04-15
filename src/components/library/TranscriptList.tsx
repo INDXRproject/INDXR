@@ -222,13 +222,11 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
            extension = "json";
         } else if (format === 'csv') {
            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           fileContent = generateCsv(item.transcript as any, item.title as string, videoUrl);
+           fileContent = generateCsv(item.transcript as any);
            extension = "csv";
         } else {
-           // Default to TXT (with timestamps for now for batch, could add option later)
-           // For now, let's export TXT with timestamps as the standard "Text" export
            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           fileContent = generateTxt(item.transcript as any, item.title as string, videoUrl, true);
+           fileContent = generateTxt(item.transcript as any, true);
            extension = "txt";
         }
 

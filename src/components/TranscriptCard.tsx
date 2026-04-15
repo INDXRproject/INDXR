@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, FileText, FileJson, FileType, Film, Video, Download, ChevronDown, Check, LogIn } from "lucide-react";
+import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
@@ -61,39 +61,33 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
   };
 
-  // Helper: Create paragraph mode (merge granular captions into natural paragraphs)
+  // Helper: Format HH:MM:SS (for Markdown headings)
+  const formatHHMMSS = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Helper: Merge captions into flowing paragraphs (400-500 chars each)
   const createParagraphMode = (): string => {
-    // Join all captions into continuous prose
     const fullText = transcript.map((t) => t.text).join(' ');
-    
-    // Split into paragraphs of 400-500 characters
     const paragraphs: string[] = [];
     let currentParagraph = '';
     const words = fullText.split(' ');
-    
     for (const word of words) {
       const testParagraph = currentParagraph ? `${currentParagraph} ${word}` : word;
-      
-      // Create new paragraph if we've reached 400-500 characters
       if (testParagraph.length >= 400 && testParagraph.length <= 500) {
         paragraphs.push(testParagraph);
         currentParagraph = '';
       } else if (testParagraph.length > 500) {
-        // If we exceeded 500, save current and start new with this word
-        if (currentParagraph) {
-          paragraphs.push(currentParagraph);
-        }
+        if (currentParagraph) paragraphs.push(currentParagraph);
         currentParagraph = word;
       } else {
         currentParagraph = testParagraph;
       }
     }
-    
-    // Add remaining text as final paragraph
-    if (currentParagraph) {
-      paragraphs.push(currentParagraph);
-    }
-    
+    if (currentParagraph) paragraphs.push(currentParagraph);
     return paragraphs.join('\n\n');
   };
 
@@ -103,22 +97,6 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
       return `${timestamp}  ${t.text}`;
     })
     .join("\n");
-
-  const getBrandingHeader = (format: 'txt' | 'csv' | 'srt_vtt') => {
-    const title = videoTitle || "YouTube Video";
-    const url = videoUrl || "";
-    
-    if (format === 'txt') {
-      return `# INDXR.AI Free YouTube Transcript\n# ${title}\n# ${url}\n\n`;
-    }
-    if (format === 'csv') {
-      return `# INDXR.AI - ${title}\n# ${url}\n`;
-    }
-    if (format === 'srt_vtt') {
-      return `NOTE INDXR.AI - ${title}\nNOTE ${url}\n\n`;
-    }
-    return "";
-  };
 
   const copyToClipboard = () => {
     const textToCopy = showTimestamps ? fullTextWithTimestamps : createParagraphMode();
@@ -138,13 +116,6 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     document.body.removeChild(link);
   };
 
-  const downloadTxt = () => {
-    posthog.capture('export_clicked', { format: 'txt' })
-    const content = showTimestamps ? fullTextWithTimestamps : createParagraphMode();
-    const finalContent = getBrandingHeader('txt') + content;
-    downloadFile(finalContent, "transcript.txt", "text/plain");
-  };
-
   const requireAuth = (): boolean => {
     if (!user) {
       setShowSignupPrompt(true);
@@ -153,40 +124,76 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     return true;
   };
 
+  const downloadTxtPlain = () => {
+    posthog.capture('export_clicked', { format: 'txt' });
+    downloadFile(createParagraphMode(), "transcript.txt", "text/plain");
+  };
+
+  const downloadTxtWithTimestamps = () => {
+    posthog.capture('export_clicked', { format: 'txt-timestamps' });
+    downloadFile(fullTextWithTimestamps, "transcript_timestamps.txt", "text/plain");
+  };
+
+  const downloadMarkdown = () => {
+    if (!requireAuth()) return;
+    posthog.capture('export_clicked', { format: 'md' });
+    const title = videoTitle || "YouTube Video";
+    const paragraphs: string[] = [];
+    let current = '';
+    for (let i = 0; i < transcript.length; i++) {
+      const item = transcript[i];
+      const prev = transcript[i - 1];
+      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
+      if (gap > 5 && current) {
+        paragraphs.push(current.trim());
+        current = item.text;
+      } else {
+        current = current ? `${current} ${item.text}` : item.text;
+      }
+    }
+    if (current) paragraphs.push(current.trim());
+    const content = `# ${title}\n\n${paragraphs.join('\n\n')}`;
+    downloadFile(content, "transcript.md", "text/markdown");
+  };
+
+  const downloadMarkdownWithTimestamps = () => {
+    if (!requireAuth()) return;
+    posthog.capture('export_clicked', { format: 'md-timestamps' });
+    const title = videoTitle || "YouTube Video";
+    const sections = transcript
+      .map((t) => `## [${formatHHMMSS(t.offset)}]\n${t.text}`)
+      .join('\n\n');
+    const content = `# ${title}\n\n${sections}`;
+    downloadFile(content, "transcript_timestamps.md", "text/markdown");
+  };
+
   const downloadJson = () => {
     if (!requireAuth()) return;
-    posthog.capture('export_clicked', { format: 'json' })
+    posthog.capture('export_clicked', { format: 'json' });
     const jsonOutput = {
       metadata: {
-        source: "INDXR.AI",
         video_title: videoTitle,
         video_url: videoUrl,
         extracted_at: new Date().toISOString(),
       },
-      transcript: transcript
+      transcript,
     };
-    downloadFile(
-      JSON.stringify(jsonOutput, null, 2),
-      "transcript.json",
-      "application/json"
-    );
+    downloadFile(JSON.stringify(jsonOutput, null, 2), "transcript.json", "application/json");
   };
 
   const downloadCsv = () => {
     if (!requireAuth()) return;
-    posthog.capture('export_clicked', { format: 'csv' })
-    const branding = getBrandingHeader('csv');
+    posthog.capture('export_clicked', { format: 'csv' });
     const header = "Start,Duration,Text\n";
     const rows = transcript
       .map((t) => `${t.offset},${t.duration},"${t.text.replace(/"/g, '""')}"`)
       .join("\n");
-    downloadFile(branding + header + rows, "transcript.csv", "text/csv");
+    downloadFile(header + rows, "transcript.csv", "text/csv");
   };
 
   const downloadSrt = () => {
     if (!requireAuth()) return;
-    posthog.capture('export_clicked', { format: 'srt' })
-    const branding = getBrandingHeader('srt_vtt');
+    posthog.capture('export_clicked', { format: 'srt' });
     const srtContent = transcript
       .map((item, index) => {
         const startTime = formatSrtTimestamp(item.offset);
@@ -197,14 +204,13 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
         return `${index + 1}\n${startTime} --> ${endTime}\n${item.text}\n`;
       })
       .join("\n");
-    downloadFile(branding + srtContent, "transcript.srt", "text/plain");
+    downloadFile(srtContent, "transcript.srt", "text/plain");
   };
 
   const downloadVtt = () => {
     if (!requireAuth()) return;
-    posthog.capture('export_clicked', { format: 'vtt' })
-    const branding = getBrandingHeader('srt_vtt');
-    const vttContent = "WEBVTT\n\n" + branding + transcript
+    posthog.capture('export_clicked', { format: 'vtt' });
+    const vttContent = "WEBVTT\n\n" + transcript
       .map((item, index) => {
         const startTime = formatVttTimestamp(item.offset);
         const endOffset = index < transcript.length - 1
@@ -243,25 +249,39 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
                   <ChevronDown className="size-3.5 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Text Formats
+                  Text
                 </DropdownMenuLabel>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadTxt}>
+                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadTxtPlain}>
                   <FileText className="size-4 text-muted-foreground" />
                   <div className="flex-1">
-                    <div className="font-medium">Plain Text</div>
-                    <div className="text-xs text-muted-foreground">Simple .txt file</div>
+                    <div className="font-medium">TXT — plain text</div>
+                    <div className="text-xs text-muted-foreground">No timestamps</div>
                   </div>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadCsv}>
-                  <FileType className="size-4 text-muted-foreground" />
+                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadTxtWithTimestamps}>
+                  <FileText className="size-4 text-muted-foreground" />
                   <div className="flex-1">
-                    <div className="font-medium">CSV</div>
-                    <div className="text-xs text-muted-foreground">Spreadsheet compatible</div>
+                    <div className="font-medium">TXT — with timestamps</div>
+                    <div className="text-xs text-muted-foreground">[HH:MM:SS] per line</div>
                   </div>
                 </DropdownMenuItem>
-                
+                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadMarkdown}>
+                  <FileCode className="size-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <div className="font-medium">Markdown</div>
+                    <div className="text-xs text-muted-foreground">Notion, Obsidian, blog</div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadMarkdownWithTimestamps}>
+                  <FileCode className="size-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <div className="font-medium">Markdown — with timestamps</div>
+                    <div className="text-xs text-muted-foreground">Sections per timestamp</div>
+                  </div>
+                </DropdownMenuItem>
+
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
                   Subtitles
@@ -280,11 +300,18 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
                     <div className="text-xs text-muted-foreground">Web Video Text</div>
                   </div>
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
                   Data
                 </DropdownMenuLabel>
+                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadCsv}>
+                  <FileType className="size-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <div className="font-medium">CSV</div>
+                    <div className="text-xs text-muted-foreground">Spreadsheet compatible</div>
+                  </div>
+                </DropdownMenuItem>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadJson}>
                   <FileJson className="size-4 text-muted-foreground" />
                   <div className="flex-1">
@@ -314,7 +341,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
         <div className="mx-6 mb-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <div className="flex items-center gap-2">
             <LogIn className="size-4 text-primary shrink-0" />
-            <span className="text-foreground"><strong>Sign in for free</strong> to export as CSV, SRT, VTT, or JSON.</span>
+            <span className="text-foreground"><strong>Sign in for free</strong> to export as Markdown, CSV, SRT, VTT, or JSON.</span>
           </div>
           <a href="/login" className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
             Sign in

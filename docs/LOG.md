@@ -372,3 +372,52 @@ docs/LOG.md
 src/components/free-tool/AudioTab.tsx
 ---
 [2026-04-15] taak: Codebase audit + wiki-update — credit-system.md playlist sectie gecorrigeerd (ADR-010 is geïmplementeerd), ai-pipeline.md: AI summary 1→3 credits, Whisper /10→/1 credit/min, audio upload subsectie toegevoegd, proxy sessie-implementatiedetail toegevoegd; known-issues.md: opgeloste bugs gemarkeerd, checklist bijgewerkt; deployment.md: Stripe checklist herschreven met correcte pakketten; nieuw: roadmap/priorities.md (BLOCKERS/PRE-LAUNCH/POST-LAUNCH); backlog.md: BYOK/Sentry/random-session/library-KB verwijderd; INDEX.md bijgewerkt | gewijzigd: docs/wiki/architecture/credit-system.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md, docs/wiki/operations/deployment.md, docs/wiki/roadmap/priorities.md (nieuw), docs/wiki/roadmap/backlog.md, docs/wiki/INDEX.md
+[2026-04-15 01:40] commit: docs: codebase audit + wiki corrections + launch priorities
+
+credit-system.md:
+- Removed stale "⚠️ Intentie vs. werkelijkheid" block about ADR-010
+- Added correct description of implemented first-3-free system,
+  including frontend mirror logic in PlaylistAvailabilitySummary.tsx
+
+ai-pipeline.md:
+- Fixed Whisper cost formula: ⌈duur_min / 10⌉ → 1 credit per minute
+- Fixed AI summary: 1 → 3 credits in 3 places (check, deduct, refund)
+- Added audio upload path subsection (direct browser→Railway upload,
+  Bearer token bypass, sessionStorage recovery + elapsed timer)
+- Added proxy session_id implementation detail
+
+known-issues.md:
+- Marked resolved: sticky session ID, no_warnings, verify_backend_secret
+  Bearer bypass, AudioTab job recovery, playlist ADR-010, retry credit
+- Clarified BACKEND_API_SECRET: Railway ✓, Vercel still TODO
+- Updated pre-launch checklist with all current open items
+- Added has_ever_purchased as open code blocker
+
+deployment.md:
+- Rewrote Stripe checklist: old packages → correct Try/Basic/Plus/Pro/Power
+  with EUR amounts, credits, and deployment instructions
+
+roadmap/priorities.md (new):
+- Structured launch priority list: BLOCKERS (manual + code),
+  PRE-LAUNCH (features, Google setup, testing, SEO), POST-LAUNCH
+
+roadmap/backlog.md:
+- Removed: BYOK (undermines credit model), random session ID (fixed),
+  library KB display (fixed), Sentry (PostHog covers this),
+  iOS PO token + admin dashboard (moved to priorities.md)
+
+INDEX.md:
+- Added priorities.md to roadmap section and quick navigation
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/architecture/credit-system.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/backlog.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-15 02:22] feat: export overhaul — watermarks verwijderd, TXT gesplitst in 2 opties, Markdown export toegevoegd (plain + timestamps), SRT branding bug gefixed | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx, src/components/library/TranscriptList.tsx
+[2026-04-15 02:30] docs: Upstash setup gedocumenteerd (indxr-redis Frankfurt, credentials in Vercel), rate limiting bewust uit tijdens testfase, Supabase email verificatie aan | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/operations/deployment.md
