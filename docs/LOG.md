@@ -1,3 +1,5 @@
+[2026-04-16] fix: HeroImage full-bleed + dark overlay — uit container gehaald (section flex-col), max-w-5xl/mx-auto/rounded-xl verwijderd, bg-black/60 overlay toegevoegd | gewijzigd: src/app/(marketing)/page.tsx, src/components/HeroImage.tsx
+---
 [2026-04-16] fix: proxy per-video rotatie in playlist jobs — video_session_id = f"{job_id[:4]}{idx:04d}" (first pass + retry pass); VTT httpx call was al proxied | gewijzigd: backend/main.py, docs/wiki/operations/known-issues.md
 ---
 [2026-04-13 23:24] commit: test hook
@@ -563,4 +565,16 @@ src/components/content/templates/ToolPageTemplate.tsx
 src/components/content/templates/TutorialTemplate.tsx
 src/components/seo/JsonLd.tsx
 src/lib/authors.ts
+---
+[2026-04-16 22:54] commit: fix: per-video proxy session rotation in playlist jobs
+
+- Each video gets its own sticky exit IP: video_session_id = f'{job_id[:4]}{idx:04d}'
+- Applied to both first pass and retry pass in run_playlist_job()
+- Prevents rate-limited video IDs from blocking other users sharing Railway's IP
+- VTT httpx call was already proxied correctly — no change needed there
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/operations/known-issues.md
 ---
