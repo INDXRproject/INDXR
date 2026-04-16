@@ -21,8 +21,55 @@ De applicatie heeft meerdere `/youtube-*` landing pages, elk gericht op een spec
 
 - FAQ secties per landing page
 - Voorbeelden met echte YouTube transcripten
-- Structured data (Schema.org: SoftwareApplication, HowTo)
+- Structured data (Schema.org: SoftwareApplication, HowTo, Article, FAQPage, Organization)
 - Sitemap automatisch via Next.js
+
+**SEO content pages (gebouwd 2026-04-16):**
+
+| Route | Template | Auteur |
+|-------|----------|--------|
+| `/youtube-transcript-not-available` | ArticleTemplate | indxr-editorial |
+| `/youtube-members-only-transcript` | ArticleTemplate | indxr-editorial |
+| `/youtube-age-restricted-transcript` | ArticleTemplate | indxr-editorial |
+| `/youtube-transcript-markdown` | ToolPageTemplate | sarah-lindqvist |
+| `/youtube-transcript-obsidian` | ToolPageTemplate | sarah-lindqvist |
+| `/youtube-transcript-csv` | ToolPageTemplate | alex-mercer |
+| `/youtube-srt-download` | ToolPageTemplate | indxr-editorial |
+| `/youtube-transcript-json` | ToolPageTemplate | alex-mercer |
+| `/youtube-transcript-for-rag` | ToolPageTemplate | alex-mercer |
+
+**SEO content infrastructure (gebouwd 2026-04-16):**
+
+| Component | Locatie | Doel |
+|---|---|---|
+| `JsonLd` server component | `src/components/seo/JsonLd.tsx` | Rendert `<script type="application/ld+json">` per pagina |
+| Authors config | `src/lib/authors.ts` | Alex Mercer (RAG/dev), Sarah Lindqvist (PKM), INDXR Editorial |
+| `AuthorCard` component | `src/components/content/AuthorCard.tsx` | Toont auteur + publicatiedatums op contentpagina's |
+| `ArticleTemplate` | `src/components/content/templates/` | Layout voor blogs, vergelijkingen, troubleshooting — schema: Article + FAQPage |
+| `ToolPageTemplate` | idem | Layout voor tool-pagina's — schema: SoftwareApplication + FAQPage |
+| `TutorialTemplate` | idem | Layout voor tutorials — schema: Article + HowTo + FAQPage |
+| `HeroImage` component | `src/components/HeroImage.tsx` | Light/dark hero image slot op homepage — swap via Image-to-Image na redesign |
+
+**SEO content pages (gebouwd 2026-04-16, batch 2):**
+
+| Route | Template | Auteur |
+|-------|----------|--------|
+| `/alternative/downsub` | ArticleTemplate | indxr-editorial |
+| `/alternative/notegpt` | ArticleTemplate | indxr-editorial |
+| `/alternative/turboscribe` | ArticleTemplate | indxr-editorial |
+| `/alternative/tactiq` | ArticleTemplate | indxr-editorial |
+| `/alternative/happyscribe` | ArticleTemplate | indxr-editorial |
+| `/youtube-to-text` | ToolPageTemplate | indxr-editorial |
+| `/youtube-playlist-transcript` | ToolPageTemplate | indxr-editorial |
+| `/bulk-youtube-transcript` | ToolPageTemplate | indxr-editorial |
+| `/audio-to-text` | ToolPageTemplate | indxr-editorial |
+| `/youtube-transcript-without-extension` | ArticleTemplate | indxr-editorial |
+| `/how-it-works` | ArticleTemplate | indxr-editorial |
+| `/blog/chunk-youtube-transcripts-for-rag` | TutorialTemplate | alex-mercer |
+
+Zie `docs/wiki/business/seo-content-plan.md` voor de volledige sitemap (32 pagina's, 8 categorieën) en implementatievolgorde.
+
+**Datum-conventie voor contentpagina's:** zie `docs/DEVELOPMENT.md` → Design System → Content dates.
 
 ### SEO Blogposts (gepland)
 

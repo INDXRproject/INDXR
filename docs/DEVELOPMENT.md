@@ -404,3 +404,18 @@ The project currently uses a **neutral utility skin**. All design tokens are def
 - Glassmorphism effects (`backdrop-blur`, `bg-gradient`) have been removed
 
 A full visual redesign is planned post-launch. Until then, use the CSS variables in `globals.css` as the source of truth for colors and spacing.
+
+### Content dates
+
+Content pages use two date fields passed as props to the template components:
+
+- `publishedAt` — set once at initial deploy, never change
+- `updatedAt` — update on every content revision
+
+Display format: `"Published April 16, 2026 · Updated [date]"`
+
+Both map to JSON-LD Article schema fields:
+- `publishedAt` → `datePublished`
+- `updatedAt` → `dateModified`
+
+Format: ISO 8601 string, e.g. `"2026-04-16"`

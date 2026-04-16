@@ -6,17 +6,18 @@ Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-15.
 
 ## Kritieke TODO's (blokkeren live launch)
 
-### Stripe: Account activatie vereist
+### Stripe: Account activatie + nieuwe prijzen vereist
 **Status:** Stripe account nog niet geactiveerd met KVK/bedrijfsinfo. Vereist voor live betalingen.
 **Impact:** Geen live betalingen mogelijk tot activatie compleet is.
 **Fix (aparte sessie):**
 1. Stripe Dashboard → activeer account met KVK en bedrijfsgegevens
 2. Switch naar live mode
-3. Maak 5 producten aan: Try €2.49, Basic €5.99, Plus €11.99, Pro €24.99, Power €49.99 (type: One-off, EUR)
-4. Registreer webhook endpoint: `https://indxr.ai/api/stripe/webhook`
-5. Kopieer `STRIPE_WEBHOOK_SECRET` naar Vercel environment variables
+3. Maak 5 producten aan met **nieuwe prijzen**: Starter €2.99/150cr, Basic €6.99/500cr, Plus €13.99/1200cr, Pro €27.99/2800cr, Power €54.99/6000cr (type: One-off, EUR)
+4. Update `PACKAGES` in `src/app/api/stripe/checkout/route.ts` met nieuwe bedragen en credits (plan-strings 'try'→Starter, 'basic', 'plus', 'pro', 'power' blijven hetzelfde)
+5. Registreer webhook endpoint: `https://indxr.ai/api/stripe/webhook`
+6. Kopieer `STRIPE_WEBHOOK_SECRET` naar Vercel environment variables
 
-**Code is al klaar** — `PACKAGES` object in `checkout/route.ts` is bijgewerkt.
+**⚠️ Let op:** De pricing-pagina toont al de nieuwe prijzen (€6.99/€13.99/€27.99) maar de `PACKAGES` in `checkout/route.ts` bevat nog de oude bedragen. Deze moeten synchroon zijn vóór launch.
 
 ### Upstash Redis: Rate limiting bewust uitgeschakeld tijdens testfase
 **Bestand:** `src/lib/ratelimit.ts`

@@ -1,330 +1,153 @@
-import { Metadata } from "next";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Footer } from "@/components/Footer";
-import { CheckCircle, X, Globe, Layers, Download, Shield } from "lucide-react";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
+import { AUTHORS } from "@/lib/authors"
 
 export const metadata: Metadata = {
-  title: "Tactiq Alternative - No Extension Needed | INDXR.AI",
-  description: "Looking for a Tactiq alternative without installing extensions? INDXR.AI is 100% web-based. Extract YouTube transcripts, process playlists, and export to multiple formats.",
-  openGraph: {
-    title: "Tactiq Alternative | INDXR.AI",
-    description: "Looking for a Tactiq alternative without installing extensions? INDXR.AI is 100% web-based.",
-    type: "website",
-    url: "https://indxr.ai/alternative/tactiq",
-  },
-};
-
-const comparisonFeatures = [
-  {
-    feature: "YouTube transcript extraction",
-    tactiq: true,
-    indxr: true,
-  },
-  {
-    feature: "No browser extension required",
-    tactiq: false,
-    indxr: true,
-  },
-  {
-    feature: "Works on any browser",
-    tactiq: false,
-    indxr: true,
-  },
-  {
-    feature: "Works on mobile devices",
-    tactiq: false,
-    indxr: true,
-  },
-  {
-    feature: "Playlist batch processing",
-    tactiq: false,
-    indxr: true,
-  },
-  {
-    feature: "SRT/VTT subtitle export",
-    tactiq: true,
-    indxr: true,
-  },
-  {
-    feature: "JSON export",
-    tactiq: false,
-    indxr: true,
-  },
-  {
-    feature: "Audio file upload",
-    tactiq: false,
-    indxr: true,
-  },
-  {
-    feature: "Personal transcript library",
-    tactiq: true,
-    indxr: true,
-  },
-  {
-    feature: "AI summarization",
-    tactiq: true,
-    indxr: true,
-  },
-  {
-    feature: "Free tier available",
-    tactiq: true,
-    indxr: true,
-  },
-];
-
-const advantages = [
-  {
-    icon: Globe,
-    title: "No Extension Required",
-    description: "Tactiq requires a Chrome extension that accesses your browsing data. INDXR.AI is 100% web-based. No installation, no browser permissions.",
-  },
-  {
-    icon: Shield,
-    title: "Works Everywhere",
-    description: "Extensions only work on desktop Chrome and Firefox. INDXR.AI works on any device — iPhone, Android, Safari, Edge, or any browser.",
-  },
-  {
-    icon: Layers,
-    title: "Playlist Processing",
-    description: "Extract transcripts from entire YouTube playlists at once. Tactiq processes videos one at a time as you watch them.",
-  },
-  {
-    icon: Download,
-    title: "More Export Formats",
-    description: "Export as TXT, SRT, VTT, CSV, or JSON. Developer-friendly JSON includes timestamps and metadata for programmatic use.",
-  },
-];
-
-const focusDifferences = [
-  {
-    title: "Tactiq's Focus",
-    description: "Tactiq is designed primarily for live meeting transcription (Google Meet, Zoom). YouTube transcription is a secondary feature that requires watching videos in real-time.",
-    points: [
-      "Real-time meeting transcription",
-      "Chrome extension required",
-      "Must watch videos to transcribe",
-      "Focused on collaboration features",
-    ],
-  },
-  {
-    title: "INDXR.AI's Focus",
-    description: "INDXR.AI is built specifically for YouTube transcript extraction. Get transcripts instantly without watching videos. Process playlists in bulk.",
-    points: [
-      "Instant transcript extraction",
-      "No extension needed",
-      "Batch playlist processing",
-      "Focused on content creation",
-    ],
-  },
-];
+  title: "Tactiq Alternative for YouTube — INDXR.AI Extracts & Exports Transcripts | INDXR.AI",
+  description:
+    "Tactiq is built for meeting transcription. INDXR.AI is built for YouTube. Compare features, pricing, and use cases for transcript extraction, export formats, and playlist processing.",
+}
 
 const faqs = [
   {
-    question: "Why choose INDXR.AI over Tactiq for YouTube?",
-    answer: "Tactiq is a meeting transcription tool where YouTube support is secondary. It requires a browser extension and watching videos in real-time. INDXR.AI extracts YouTube transcripts instantly, processes playlists in batch, and works on any device without extensions.",
+    q: "Does Tactiq work for YouTube content?",
+    a: "Tactiq has a YouTube transcript tool but it's limited to one video at a time with basic text output. It doesn't process playlists, doesn't have AI transcription fallback for captionless videos, and doesn't offer export format depth. For occasional YouTube transcript needs alongside a meeting workflow, it's a convenient add-on. For YouTube as a primary use case, INDXR.AI is more capable.",
   },
   {
-    question: "Does INDXR.AI transcribe live meetings like Tactiq?",
-    answer: "No. INDXR.AI is focused on YouTube transcripts and audio file transcription. For live meeting transcription (Google Meet, Zoom), Tactiq remains a better choice. Use both tools for their respective strengths.",
+    q: "Does INDXR.AI work for live meetings like Tactiq does?",
+    a: "No. INDXR.AI processes existing video and audio content — YouTube URLs, playlists, and uploaded files. It doesn't integrate with video conferencing platforms or capture live audio from your browser.",
   },
   {
-    question: "Is INDXR.AI free like Tactiq's free tier?",
-    answer: "Yes. Both offer free tiers. INDXR.AI's free tier includes unlimited transcript extraction from videos with existing captions, plus monthly credits for AI transcription of videos without captions.",
+    q: "Is INDXR.AI cheaper than Tactiq?",
+    a: "For YouTube-only use cases, yes. INDXR.AI's auto-caption extraction is free. AI transcription costs 1 credit per minute — a 1-hour video at Plus pricing costs €0.70. Tactiq's subscription pricing applies regardless of how much you use it.",
   },
   {
-    question: "Can I use INDXR.AI on my phone?",
-    answer: "Yes. Since INDXR.AI is web-based with no extension requirement, it works on any mobile browser. Tactiq's extension-based approach doesn't work on mobile devices.",
+    q: "Can I use both tools together?",
+    a: "Yes — they serve different sources. Tactiq for meetings you attend, INDXR.AI for YouTube content you research or reference. The workflows don't overlap.",
   },
-];
+]
 
 export default function TactiqAlternativePage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "INDXR.AI",
-    "applicationCategory": "UtilitiesApplication",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "EUR",
-    },
-    "description": "Tactiq alternative for YouTube transcripts. No extension required, works on any device.",
-  };
-
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map((faq) => ({
-      "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.answer,
-      },
-    })),
-  };
-
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+    <ArticleTemplate
+      title="INDXR.AI vs Tactiq — YouTube Transcripts vs Meeting Transcripts"
+      metaDescription="Tactiq is built for meeting transcription. INDXR.AI is built for YouTube. Compare features, pricing, and use cases for transcript extraction, export formats, and playlist processing."
+      publishedAt="2026-04-16"
+      updatedAt="2026-04-16"
+      author={AUTHORS["indxr-editorial"]}
+      faqs={faqs}
+      sources={[]}
+    >
+      <p>
+        Tactiq and INDXR.AI both produce transcripts, but they&apos;re designed for different problems. Tactiq
+        — approximately 3.4 million monthly visitors (SimilarWeb, 2026) — is a Chrome extension built
+        around live meeting transcription: Google Meet, Zoom, Microsoft Teams. You run a meeting, Tactiq
+        records what&apos;s said, and you get a transcript when it ends.
+      </p>
 
-      <div className="min-h-screen bg-background">
-        {/* Hero Section */}
-        <section className="py-20 px-4">
-          <div className="container mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Tactiq Alternative
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Need YouTube transcripts without installing a browser extension? INDXR.AI extracts transcripts instantly from any browser, any device. No installation required.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg">
-                <Link href="/dashboard">Try INDXR.AI Free</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/pricing">See Pricing</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
+      <p>
+        INDXR.AI is built around YouTube: extracting transcripts from existing video content, processing
+        playlists in batch, handling videos without captions through AI transcription, and exporting in
+        formats that fit your workflow. The two tools have almost no functional overlap for someone who
+        primarily needs one or the other.
+      </p>
 
-        {/* Comparison Table */}
-        <section className="py-16 px-4 border-t">
-          <div className="container mx-auto max-w-4xl">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              INDXR.AI vs Tactiq
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-4 px-4">Feature</th>
-                    <th className="text-center py-4 px-4">Tactiq</th>
-                    <th className="text-center py-4 px-4 bg-primary/5">INDXR.AI</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparisonFeatures.map((row) => (
-                    <tr key={row.feature} className="border-b">
-                      <td className="py-4 px-4">{row.feature}</td>
-                      <td className="text-center py-4 px-4">
-                        {row.tactiq ? (
-                          <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <X className="h-5 w-5 text-muted-foreground mx-auto" />
-                        )}
-                      </td>
-                      <td className="text-center py-4 px-4 bg-primary/5">
-                        {row.indxr ? (
-                          <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <X className="h-5 w-5 text-muted-foreground mx-auto" />
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+      <h2>What Tactiq Does Well</h2>
 
-        {/* Advantages Section */}
-        <section className="py-16 px-4 border-t bg-muted/30">
-          <div className="container mx-auto max-w-6xl">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Why Choose INDXR.AI for YouTube Transcripts
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {advantages.map((advantage) => (
-                <Card key={advantage.title} className="border">
-                  <CardContent className="p-6">
-                    <advantage.icon className="h-10 w-10 text-primary mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">{advantage.title}</h3>
-                    <p className="text-muted-foreground">{advantage.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
+      <p>
+        Tactiq&apos;s strength is the meeting workflow. The Chrome extension runs silently during a video call,
+        captures what participants say, and delivers a structured transcript with speaker attribution after
+        the meeting ends. For teams that need meeting notes without manual effort, it&apos;s a well-designed
+        solution.
+      </p>
 
-        {/* Focus Differences Section */}
-        <section className="py-16 px-4 border-t">
-          <div className="container mx-auto max-w-4xl">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Different Tools for Different Needs
-            </h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              {focusDifferences.map((item) => (
-                <Card key={item.title} className="border">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
-                    <p className="text-muted-foreground mb-4">{item.description}</p>
-                    <ul className="space-y-2">
-                      {item.points.map((point) => (
-                        <li key={point} className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-primary" />
-                          <span className="text-sm">{point}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
+      <p>
+        Tactiq also has workflow integrations for CRM tools, project management platforms, and note-taking
+        apps — connecting meeting transcripts to where work happens. If your primary use case is recording
+        live conversations rather than extracting from recorded video, Tactiq addresses that directly.
+      </p>
 
-        {/* FAQ Section */}
-        <section className="py-16 px-4 border-t bg-muted/30">
-          <div className="container mx-auto max-w-3xl">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Frequently Asked Questions
-            </h2>
-            <div className="space-y-6">
-              {faqs.map((faq) => (
-                <div key={faq.question} className="border-b pb-6">
-                  <h3 className="text-lg font-semibold mb-2">{faq.question}</h3>
-                  <p className="text-muted-foreground">{faq.answer}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      <h2>Where the Tools Diverge</h2>
 
-        {/* Final CTA Section */}
-        <section className="py-20 px-4 border-t">
-          <div className="container mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold mb-4">
-              Ready to Try Extension-Free Transcription?
-            </h2>
-            <p className="text-muted-foreground mb-8">
-              No install. No permissions. Just transcripts.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg">
-                <Link href="/dashboard">Try INDXR.AI Free</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/youtube-transcript-without-extension">Learn More</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-      </div>
-      <Footer />
-    </>
-  );
+      <p>
+        <strong>YouTube content.</strong> Tactiq has a YouTube transcript tool, but it&apos;s a lightweight
+        addition to a meeting-focused product — one URL at a time, basic text output, no playlist
+        processing, no export format depth. For anyone doing serious work with YouTube content —
+        researchers, content creators, developers, students — it&apos;s not the right tool for that job.
+      </p>
+
+      <p>
+        <strong>Export formats.</strong> Tactiq exports meeting transcripts in a handful of formats
+        oriented around note-taking and CRM integration. There&apos;s no Markdown with YAML frontmatter for
+        Obsidian or Notion users, no structured JSON for developers, no RAG-optimized output for AI
+        pipelines, no resegmented SRT for video editors.
+      </p>
+
+      <p>
+        <strong>Batch processing.</strong> Tactiq processes one meeting at a time. INDXR.AI extracts entire
+        playlists in a single background job — tested up to 19 videos across 13 hours of audio in under 19
+        minutes.
+      </p>
+
+      <p>
+        <strong>Videos without captions.</strong> Tactiq&apos;s YouTube tool depends on existing YouTube
+        captions. If a video has no auto-captions, there&apos;s no fallback. INDXR.AI uses AI transcription for
+        captionless videos — the same pipeline that handles audio uploads from any source.
+      </p>
+
+      <p>
+        <strong>Pricing model.</strong> Tactiq uses a subscription model. INDXR.AI uses pay-per-use
+        credits that never expire. For users with irregular or variable YouTube processing needs, credits
+        are typically cheaper than maintaining a monthly subscription.
+      </p>
+
+      <h2>Feature Comparison</h2>
+
+      <table className="prose-content-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Tactiq</th>
+            <th>INDXR.AI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Live meeting transcription (Meet, Zoom, Teams)</td><td>✅</td><td>❌</td></tr>
+          <tr><td>YouTube transcript (single video)</td><td>✅ Basic</td><td>✅ Full</td></tr>
+          <tr><td>YouTube playlist / bulk extraction</td><td>❌</td><td>✅</td></tr>
+          <tr><td>AI transcription for captionless videos</td><td>❌</td><td>✅</td></tr>
+          <tr><td>Audio file upload</td><td>❌</td><td>✅</td></tr>
+          <tr><td>Markdown export (Obsidian/Notion)</td><td>❌</td><td>✅</td></tr>
+          <tr><td>JSON with metadata wrapper</td><td>❌</td><td>✅</td></tr>
+          <tr><td>RAG-optimized JSON export</td><td>❌</td><td>✅</td></tr>
+          <tr><td>Resegmented SRT / VTT</td><td>❌</td><td>✅</td></tr>
+          <tr><td>CRM / project tool integrations</td><td>✅</td><td>❌</td></tr>
+          <tr><td>Speaker attribution</td><td>✅ (meetings)</td><td>❌</td></tr>
+          <tr><td>Pricing model</td><td>Subscription</td><td>Pay-per-use credits</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Which Tool for Which Job</h2>
+
+      <p>
+        <strong>Use Tactiq if:</strong> Your primary need is transcribing live meetings — Google Meet,
+        Zoom, or Teams — with speaker attribution and integration into your team&apos;s workflow tools.
+      </p>
+
+      <p>
+        <strong>Use INDXR.AI if:</strong> Your primary source is YouTube video content — single videos,
+        playlists, or channels — and you need the transcript in a format beyond basic text: Markdown for a
+        knowledge base, SRT for video editing, JSON for a developer pipeline, or RAG JSON for AI search.
+      </p>
+
+      <p>
+        For users who run a lot of meetings <em>and</em> work heavily with YouTube content, both tools
+        serve different parts of the workflow without overlap. See{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link> for the full pipeline, or{" "}
+        <Link href="/bulk-youtube-transcript">start a playlist extraction</Link> to test the batch
+        processing.
+      </p>
+    </ArticleTemplate>
+  )
 }

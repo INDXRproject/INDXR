@@ -4,17 +4,21 @@
 
 INDXR.AI verkoopt credits als eenmalige aankopen (geen abonnement). Credits verlopen niet.
 
-| Pakket | Prijs | Credits | €/credit | Doelgroep |
-|--------|-------|---------|----------|-----------|
-| **Try** | €2.49 | 200 | €0.01245 | Uitproberen, eerste aankoop — "prijs van een koffie" |
-| **Basic** | €5.99 | 500 | €0.01198 | Incidenteel gebruik, studenten |
-| **Plus** ★ | €11.99 | 1.100 | €0.01090 | Regelmatig gebruik, onderzoekers |
-| **Pro** | €24.99 | 2.600 | €0.00961 | Power users, professionals |
-| **Power** | €49.99 | 5.500 | €0.00909 | Agencies, consultants, kleine teams |
+### Weergave op pricing-pagina (3 primaire tiers + 2 quiet links)
+
+| Pakket | Prijs | Credits | €/credit | UI-behandeling |
+|--------|-------|---------|----------|----------------|
+| **Starter** | €2.99 | 150 | €0.01993 | Quiet tekst-link ("Need fewer?") |
+| **Basic** | €6.99 | 500 | €0.01398 | Primaire kaart |
+| **Plus** ★ | €13.99 | 1.200 | €0.01166 | Primaire kaart, featured |
+| **Pro** | €27.99 | 2.800 | €0.00999 | Primaire kaart |
+| **Power** | €54.99 | 6.000 | €0.00916 | Quiet tekst-link ("Larger volumes?") |
 
 ★ = "Meest populair" badge in UI (center stage pricing)
 
 **Valuta:** EUR. Europese primaire doelgroep; EUR-pricing voelt psychologisch lager aan dan USD.
+
+> ⚠️ **Stripe backend discrepantie:** De `PACKAGES` in `src/app/api/stripe/checkout/route.ts` bevat nog de oude prijzen (Try €2.49/200cr, Basic €5.99/500cr, Plus €11.99/1100cr, Pro €24.99/2600cr, Power €49.99/5500cr). De plan-strings ('try'→Starter, 'basic', 'plus', 'pro', 'power') zijn hetzelfde, maar bedragen en credits moeten bijgewerkt worden vóór launch. Dit staat op de pre-launch checklist.
 
 Zie [ADR-012](../decisions/012-pricing-tiers.md) voor de volledige rationale.
 
@@ -57,11 +61,11 @@ AI samenvatting: 3 credits flat
 
 | Pakket | Playlist-video's | AI-transcriptie | Audio uploads | AI samenvattingen |
 |--------|----------------|----------------|---------------|------------------|
-| Try (200) | 200 video's | 3,3 uur | 3,3 uur | 66 |
+| Starter (150) | 150 video's | 2,5 uur | 2,5 uur | 50 |
 | Basic (500) | 500 video's | 8,3 uur | 8,3 uur | 166 |
-| Plus (1.100) | 1.100 video's | 18,3 uur | 18,3 uur | 366 |
-| Pro (2.600) | 2.600 video's | 43,3 uur | 43,3 uur | 866 |
-| Power (5.500) | 5.500 video's | 91,7 uur | 91,7 uur | 1.833 |
+| Plus (1.200) | 1.200 video's | 20 uur | 20 uur | 400 |
+| Pro (2.800) | 2.800 video's | 46,7 uur | 46,7 uur | 933 |
+| Power (6.000) | 6.000 video's | 100 uur | 100 uur | 2.000 |
 
 ---
 

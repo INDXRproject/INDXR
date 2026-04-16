@@ -3,6 +3,7 @@ import { ArrowRight, Zap, AudioWaveform, ListVideo, Library } from "lucide-react
 import { FeatureCard } from "@/components/FeatureCard"
 import { Footer } from "@/components/Footer"
 import { HeroUIPreview } from "@/components/HeroUIPreview"
+import { HeroImage } from "@/components/HeroImage"
 
 export default function LandingPage() {
   return (
@@ -16,9 +17,7 @@ export default function LandingPage() {
             Every word. Every video. Yours.
           </h1>
           <p className="text-lg sm:text-xl max-w-[720px] mx-auto mb-10 leading-relaxed text-[var(--text-secondary)]">
-            Extract transcripts from any YouTube video, playlist, 
-            or audio file — with AI fallback when captions don't exist or 
-            get blocked. No browser extension. No meeting bot. Just text.
+            Extract YouTube transcripts in seconds — free for videos with captions, AI transcription for everything else. Export in the format your workflow needs. Store everything in a searchable library.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
             <Link href="/youtube-transcript-generator" className="w-full sm:w-auto">
@@ -49,10 +48,11 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-4 text-sm text-[var(--text-muted)]">
-            No account needed for basic use.
+            Free for auto-caption videos. No account required.
           </p>
 
           <HeroUIPreview />
+          <HeroImage />
         </div>
       </section>
 
@@ -60,25 +60,25 @@ export default function LandingPage() {
       <section className="w-full py-16 sm:py-24 flex justify-center border-b border-[var(--border)] bg-[var(--bg-base)]">
         <div className="container px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-            <FeatureCard 
+            <FeatureCard
               icon={Zap}
-              title="Instant extraction"
-              description="YouTube captions retrieved in seconds. No queues, no waiting — paste a URL, get text."
+              title="Paste a URL, get a transcript in seconds"
+              description="Auto-captions extracted instantly — free, no account needed. We tell you upfront whether captions are available and exactly what AI transcription will cost before you confirm."
             />
-            <FeatureCard 
-              icon={AudioWaveform}
-              title="AI fallback, always"
-              description="No captions? YouTube blocking access? Whisper AI transcribes directly from the audio. You never hit a dead end."
-            />
-            <FeatureCard 
+            <FeatureCard
               icon={ListVideo}
-              title="Playlists & audio upload"
-              description="Extract an entire course or playlist at once. Or upload your own audio file — interviews, recordings, voice memos."
+              title="Extract entire playlists in one job"
+              description="Paste a playlist URL. We scan every video for caption availability. First three auto-caption videos free. Select, confirm the total cost, and the job runs on our servers."
             />
-            <FeatureCard 
+            <FeatureCard
+              icon={AudioWaveform}
+              title="No YouTube URL? Upload the file"
+              description="Podcast episode, recorded lecture, interview — drag and drop any audio or video file up to 500MB. Same AI transcription pipeline, same export options."
+            />
+            <FeatureCard
               icon={Library}
-              title="Your personal library"
-              description="Every transcript saved, searchable, and editable. Organised in collections. Export as TXT, JSON, or copy directly."
+              title="Eight formats. One library."
+              description="Every transcript exports as TXT, Markdown with YAML frontmatter, SRT, VTT, CSV, JSON, or RAG-optimized JSON. Saved to your searchable library — re-export in a different format months later."
             />
           </div>
         </div>
@@ -150,12 +150,12 @@ export default function LandingPage() {
       <section className="w-full py-16 sm:py-24 flex justify-center bg-[var(--bg-base)]">
         <div className="container px-4 text-center">
           <h2 className="text-4xl sm:text-5xl font-bold tracking-tighter mb-6 text-[var(--text-primary)]">
-            Start free. No credit card.
+            Start with any YouTube video. It&apos;s free.
           </h2>
           <p className="text-lg sm:text-xl max-w-[640px] mx-auto mb-10 leading-relaxed text-[var(--text-secondary)]">
-            Casual users never need an account. When you're ready
-            for playlists, Whisper AI, and your personal library —
-            from €1.99. Credits never expire.
+            Auto-caption videos are always free. No account required.
+            When you&apos;re ready for playlists, AI transcription, and your
+            personal library — credits never expire.
           </p>
           <Link href="/youtube-transcript-generator" className="inline-block">
             <button className="

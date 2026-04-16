@@ -1,0 +1,34 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '## Recent activity' && tail -15 docs/LOG.md && echo '## Current branch' && git branch --show-current && echo '## Changed since last commit' && git diff --name-only HEAD"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date '+%Y-%m-%d %H:%M')] precompact: context compaction triggered\" >> docs/LOG.md"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat | tr -d '\\001-\\010\\013\\014\\016-\\037'); [ \"$(printf '%s' \"$INPUT\" | jq -r '.stop_hook_active' 2>/dev/null)\" = 'true' ] && exit 0; CHANGED=$(git diff --name-only HEAD 2>/dev/null | grep -vE '^(docs/|tests/)' | head -1); [ -z \"$CHANGED\" ] && exit 0; echo 'Controleer of de wiki bijgewerkt moet worden op basis van de zojuist gemaakte wijzigingen. Bekijk welke bestanden gewijzigd zijn via git diff --name-only HEAD, beoordeel welke wiki-paginas in docs/wiki/ geraakt worden, en update ze indien nodig. Voeg daarna een regel toe aan docs/LOG.md als dat nog niet is gebeurd.'; exit 2"
+          }
+        ]
+      }
+    ]
+  }
+}

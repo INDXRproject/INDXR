@@ -456,3 +456,23 @@ Changed: src/components/TranscriptCard.tsx
 ---
 [2026-04-15 05:35] feat: compact signup banner boven transcript + copy update | gewijzigd: src/components/TranscriptCard.tsx
 [2026-04-15 05:35] docs: wiki known-issues bijgewerkt met export overhaul, HTML entities fix, signup banner
+[2026-04-15 05:35] commit: docs: session log + known-issues updated (export overhaul, HTML entities, signup banner)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+---
+[2026-04-15 19:10] commit: docs: BACKEND_API_SECRET afgevinkt als opgelost (geverifieerd 2026-04-15)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-16] feat: SEO content infrastructure — JsonLd component, authors config, AuthorCard, 3 page templates, hero image slot | gewijzigd: src/components/seo/JsonLd.tsx, src/lib/authors.ts, src/components/content/AuthorCard.tsx, src/components/content/templates/ArticleTemplate.tsx, src/components/content/templates/ToolPageTemplate.tsx, src/components/content/templates/TutorialTemplate.tsx, src/components/HeroImage.tsx, src/app/(marketing)/page.tsx, docs/DEVELOPMENT.md
+[2026-04-16] feat: 3 SEO content pages — /youtube-transcript-not-available, /youtube-members-only-transcript, /youtube-age-restricted-transcript | gewijzigd: src/app/youtube-transcript-not-available/page.tsx, src/app/youtube-members-only-transcript/page.tsx, src/app/youtube-age-restricted-transcript/page.tsx, src/app/globals.css (prose-content styles)
+[2026-04-16 22:03] precompact: context compaction triggered
+[2026-04-16] feat: 6 SEO feature pages — /youtube-transcript-markdown, /youtube-transcript-obsidian, /youtube-transcript-csv, /youtube-srt-download, /youtube-transcript-json, /youtube-transcript-for-rag | gewijzigd: src/app/youtube-transcript-markdown/page.tsx, src/app/youtube-transcript-obsidian/page.tsx, src/app/youtube-transcript-csv/page.tsx, src/app/youtube-srt-download/page.tsx, src/app/youtube-transcript-json/page.tsx, src/app/youtube-transcript-for-rag/page.tsx, src/app/globals.css (prose-content-pre + table styles), src/components/content/templates/ToolPageTemplate.tsx (sources prop)
+[2026-04-16 22:22] precompact: context compaction triggered
+[2026-04-16] feat: 13 SEO content pages — /alternative/downsub, /alternative/notegpt, /alternative/turboscribe, /alternative/tactiq, /alternative/happyscribe, /youtube-to-text, /youtube-playlist-transcript, /bulk-youtube-transcript, /audio-to-text, /youtube-transcript-without-extension, /how-it-works, /blog/chunk-youtube-transcripts-for-rag + prose-content-table CSS class | gewijzigd: src/app/alternative/downsub/page.tsx, src/app/alternative/notegpt/page.tsx, src/app/alternative/turboscribe/page.tsx, src/app/alternative/tactiq/page.tsx, src/app/alternative/happyscribe/page.tsx, src/app/youtube-to-text/page.tsx, src/app/youtube-playlist-transcript/page.tsx, src/app/bulk-youtube-transcript/page.tsx, src/app/audio-to-text/page.tsx, src/app/youtube-transcript-without-extension/page.tsx, src/app/how-it-works/page.tsx, src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx, src/app/globals.css
+
+[2026-04-16] feat: 2 blog pages (/blog/youtube-channel-knowledge-base, /blog/youtube-transcripts-vector-database), landing page copy update, pricing page redesign (3 primary tiers + 2 quiet links, cost table, competitor table), generator page SEO content section, sitemap expanded to 29 routes, deleted /youtube-transcript-downloader | gewijzigd: src/app/blog/youtube-channel-knowledge-base/page.tsx, src/app/blog/youtube-transcripts-vector-database/page.tsx, src/app/(marketing)/page.tsx, src/app/pricing/page.tsx, src/app/youtube-transcript-generator/page.tsx, src/app/sitemap.ts, src/app/youtube-transcript-downloader/ (deleted)

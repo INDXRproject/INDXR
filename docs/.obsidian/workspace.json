@@ -1,0 +1,221 @@
+{
+  "main": {
+    "id": "38ebd191dfe4d119",
+    "type": "split",
+    "children": [
+      {
+        "id": "070c875b33fd474c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "af912fb4e8255d99",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "33fc7c5fe0ac345c",
+    "type": "split",
+    "children": [
+      {
+        "id": "ddea2bed50274c09",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9e1e1004242de92e",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "b197f75ce55d2834",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "7b07bdb8cfe92169",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "7c08372474765223",
+    "type": "split",
+    "children": [
+      {
+        "id": "66e15e8d91b68c32",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "776808286ab2589a",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "wiki/operations/known-issues.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for known-issues"
+            }
+          },
+          {
+            "id": "4a3fa2846991db1b",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "wiki/operations/known-issues.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from known-issues"
+            }
+          },
+          {
+            "id": "7541f62e1ca08724",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "846187cfd5478d25",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "3d229587c31e0711",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "wiki/operations/known-issues.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of known-issues"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "af912fb4e8255d99",
+  "lastOpenFiles": [
+    "wiki/operations/known-issues.md.tmp.1195081.1776372003452",
+    "wiki/business/pricing.md.tmp.1195081.1776371987184",
+    "wiki/business/pricing.md.tmp.1195081.1776371980025",
+    "wiki/business/marketing.md.tmp.1195081.1776371187344",
+    "LOG.md.tmp.1195081.1776371165327",
+    "wiki/business/marketing.md.tmp.1195081.1776370122796",
+    "LOG.md.tmp.1195081.1776370101755",
+    "LOG.md.tmp.1195081.1776369295361",
+    "wiki/business/marketing.md.tmp.1195081.1776368401545",
+    "LOG.md.tmp.1195081.1776368352537",
+    "DEVELOPMENT.md.tmp.1195081.1776368337131",
+    "content/PRICING-PAGE.md",
+    "content/ARTIKEL-youtube-transcript-without-extension.md",
+    "INBOX.md",
+    "content/ARTIKEL-youtube-transcript-obsidian.md",
+    "content/LANDING-PAGE.md",
+    "content/ARTIKEL-youtube-transcript-not-available.md",
+    "content/ARTIKEL-youtube-transcript-markdown.md",
+    "content/ARTIKEL-youtube-transcript-json.md",
+    "content/ARTIKEL-youtube-transcript-generator.md",
+    "content/ARTIKEL-youtube-transcript-for-rag.md",
+    "content/ARTIKEL-youtube-transcript-csv.md",
+    "content/ARTIKEL-youtube-to-text.md",
+    "content/ARTIKEL-youtube-srt-download.md",
+    "content/ARTIKEL-youtube-playlist-transcript.md",
+    "content/ARTIKEL-youtube-members-only-transcript.md",
+    "content/ARTIKEL-youtube-age-restricted-transcript.md",
+    "content/ARTIKEL-how-it-works.md",
+    "content/ARTIKEL-bulk-youtube-transcript.md",
+    "content/ARTIKEL-blog-youtube-transcripts-vector-database.md",
+    "content/ARTIKEL-blog-youtube-channel-knowledge-base.md",
+    "content/ARTIKEL-blog-chunk-youtube-transcripts-for-rag.md",
+    "content/ARTIKEL-audio-to-text.md",
+    "content/ARTIKEL-alternative-turboscribe.md",
+    "content/ARTIKEL-alternative-tactiq.md",
+    "content/ARTIKEL-alternative-notegpt.md"
+  ]
+}
