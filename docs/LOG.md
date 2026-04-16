@@ -1,3 +1,5 @@
+[2026-04-16] fix: proxy per-video rotatie in playlist jobs — video_session_id = f"{job_id[:4]}{idx:04d}" (first pass + retry pass); VTT httpx call was al proxied | gewijzigd: backend/main.py, docs/wiki/operations/known-issues.md
+---
 [2026-04-13 23:24] commit: test hook
 Changed: README.md
 ---
@@ -476,3 +478,89 @@ docs/wiki/roadmap/priorities.md
 [2026-04-16] feat: 13 SEO content pages — /alternative/downsub, /alternative/notegpt, /alternative/turboscribe, /alternative/tactiq, /alternative/happyscribe, /youtube-to-text, /youtube-playlist-transcript, /bulk-youtube-transcript, /audio-to-text, /youtube-transcript-without-extension, /how-it-works, /blog/chunk-youtube-transcripts-for-rag + prose-content-table CSS class | gewijzigd: src/app/alternative/downsub/page.tsx, src/app/alternative/notegpt/page.tsx, src/app/alternative/turboscribe/page.tsx, src/app/alternative/tactiq/page.tsx, src/app/alternative/happyscribe/page.tsx, src/app/youtube-to-text/page.tsx, src/app/youtube-playlist-transcript/page.tsx, src/app/bulk-youtube-transcript/page.tsx, src/app/audio-to-text/page.tsx, src/app/youtube-transcript-without-extension/page.tsx, src/app/how-it-works/page.tsx, src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx, src/app/globals.css
 
 [2026-04-16] feat: 2 blog pages (/blog/youtube-channel-knowledge-base, /blog/youtube-transcripts-vector-database), landing page copy update, pricing page redesign (3 primary tiers + 2 quiet links, cost table, competitor table), generator page SEO content section, sitemap expanded to 29 routes, deleted /youtube-transcript-downloader | gewijzigd: src/app/blog/youtube-channel-knowledge-base/page.tsx, src/app/blog/youtube-transcripts-vector-database/page.tsx, src/app/(marketing)/page.tsx, src/app/pricing/page.tsx, src/app/youtube-transcript-generator/page.tsx, src/app/sitemap.ts, src/app/youtube-transcript-downloader/ (deleted)
+[2026-04-16 22:42] commit: feat: 26 SEO content pages, templates, authors, hero slot, updated sitemap, pricing copy, landing page copy
+Changed: .claude/settings.json
+docs/.obsidian/app.json
+docs/.obsidian/appearance.json
+docs/.obsidian/community-plugins.json
+docs/.obsidian/core-plugins.json
+docs/.obsidian/graph.json
+docs/.obsidian/plugins/dataview/main.js
+docs/.obsidian/plugins/dataview/manifest.json
+docs/.obsidian/plugins/dataview/styles.css
+docs/.obsidian/workspace.json
+docs/ARCHITECTURE.md
+docs/DEVELOPMENT.md
+docs/INBOX.md
+docs/LOG.md
+docs/content/ARCHITECTURE.md
+docs/content/ARTIKEL-alternative-downsub.md
+docs/content/ARTIKEL-alternative-happyscribe.md
+docs/content/ARTIKEL-alternative-notegpt.md
+docs/content/ARTIKEL-alternative-tactiq.md
+docs/content/ARTIKEL-alternative-turboscribe.md
+docs/content/ARTIKEL-audio-to-text.md
+docs/content/ARTIKEL-blog-chunk-youtube-transcripts-for-rag.md
+docs/content/ARTIKEL-blog-youtube-channel-knowledge-base.md
+docs/content/ARTIKEL-blog-youtube-transcripts-vector-database.md
+docs/content/ARTIKEL-bulk-youtube-transcript.md
+docs/content/ARTIKEL-how-it-works.md
+docs/content/ARTIKEL-youtube-age-restricted-transcript.md
+docs/content/ARTIKEL-youtube-members-only-transcript.md
+docs/content/ARTIKEL-youtube-playlist-transcript.md
+docs/content/ARTIKEL-youtube-srt-download.md
+docs/content/ARTIKEL-youtube-to-text.md
+docs/content/ARTIKEL-youtube-transcript-csv.md
+docs/content/ARTIKEL-youtube-transcript-for-rag.md
+docs/content/ARTIKEL-youtube-transcript-generator.md
+docs/content/ARTIKEL-youtube-transcript-json.md
+docs/content/ARTIKEL-youtube-transcript-markdown.md
+docs/content/ARTIKEL-youtube-transcript-not-available.md
+docs/content/ARTIKEL-youtube-transcript-obsidian.md
+docs/content/ARTIKEL-youtube-transcript-without-extension.md
+docs/content/LANDING-PAGE.md
+docs/content/PRICING-PAGE.md
+docs/wiki/business/INDXR-SITEMAP.md
+docs/wiki/business/INDXR-WRITING-FRAMEWORK.md
+docs/wiki/business/marketing.md
+docs/wiki/business/pricing.md
+docs/wiki/operations/known-issues.md
+public/hero-dark.jpg
+public/hero-light.jpg
+src/app/(marketing)/page.tsx
+src/app/alternative/downsub/page.tsx
+src/app/alternative/happyscribe/page.tsx
+src/app/alternative/notegpt/page.tsx
+src/app/alternative/tactiq/page.tsx
+src/app/alternative/turboscribe/page.tsx
+src/app/audio-to-text/page.tsx
+src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx
+src/app/blog/youtube-channel-knowledge-base/page.tsx
+src/app/blog/youtube-transcripts-vector-database/page.tsx
+src/app/bulk-youtube-transcript/page.tsx
+src/app/globals.css
+src/app/how-it-works/page.tsx
+src/app/pricing/page.tsx
+src/app/sitemap.ts
+src/app/youtube-age-restricted-transcript/page.tsx
+src/app/youtube-members-only-transcript/page.tsx
+src/app/youtube-playlist-transcript/page.tsx
+src/app/youtube-srt-download/page.tsx
+src/app/youtube-to-text/page.tsx
+src/app/youtube-transcript-csv/page.tsx
+src/app/youtube-transcript-downloader/page.tsx
+src/app/youtube-transcript-for-rag/page.tsx
+src/app/youtube-transcript-generator/page.tsx
+src/app/youtube-transcript-json/page.tsx
+src/app/youtube-transcript-markdown/page.tsx
+src/app/youtube-transcript-not-available/page.tsx
+src/app/youtube-transcript-obsidian/page.tsx
+src/app/youtube-transcript-without-extension/page.tsx
+src/components/HeroImage.tsx
+src/components/content/AuthorCard.tsx
+src/components/content/templates/ArticleTemplate.tsx
+src/components/content/templates/ToolPageTemplate.tsx
+src/components/content/templates/TutorialTemplate.tsx
+src/components/seo/JsonLd.tsx
+src/lib/authors.ts
+---

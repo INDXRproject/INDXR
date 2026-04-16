@@ -1358,7 +1358,8 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                             failed += 1
                             await update_playlist_job(completed=completed, failed=failed, video_results=video_results)
                             continue
-                    result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=job_id[:8])
+                    video_session_id = f"{job_id[:4]}{idx:04d}"
+                    result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=video_session_id)
                     if isinstance(result, list) or not result:
                         video_results[video_id] = {'status': 'error', 'error_type': 'no_captions'}
                         failed += 1
@@ -1475,9 +1476,10 @@ async def run_playlist_job(job_id: str, payload: dict) -> None:
                             error_type = job_data.get('error_type') or _classify_error_type(err)
                             video_results[vid] = {'status': 'error', 'error_type': error_type}
                     else:
-                        result = await extract_with_ytdlp(vid, use_proxy=True, session_id=job_id[:8])
+                        orig_idx = video_ids.index(vid)
+                        video_session_id = f"{job_id[:4]}{orig_idx:04d}"
+                        result = await extract_with_ytdlp(vid, use_proxy=True, session_id=video_session_id)
                         if isinstance(result, dict) and 'transcript' in result:
-                            orig_idx = video_ids.index(vid)
                             is_free = orig_idx < 3
                             transcript = result['transcript']
                             title = result.get('title') or vid

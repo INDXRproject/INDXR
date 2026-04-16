@@ -105,6 +105,7 @@ Geen externe service die alarmeert bij downtime.
 - [x] Playlist "eerste 3 gratis": backend + frontend correct geïmplementeerd (ADR-010)
 - [x] Playlist retry-pass: credit-aftrek voor idx≥3 na succesvolle opslag
 - [x] Sticky session ID: `job_id[:8]` doorgegeven via `extract_with_ytdlp(session_id=...)` — `indxr1` hardcoding verwijderd
+- [x] Proxy per-video rotatie in playlist jobs: `video_session_id = f"{job_id[:4]}{idx:04d}"` — was `job_id[:8]` voor alle videos (gedeeld exit-IP per job → YouTube rate-limit trof alle users)
 - [x] WelcomeCreditCard playlist sectie gecorrigeerd
 - [x] AudioTab: job recovery na page refresh (sessionStorage, resume banner, elapsed timer via `created_at`)
 - [x] `no_warnings`: was al `True` in `audio_utils.py` — geen fix nodig geweest
