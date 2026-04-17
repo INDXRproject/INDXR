@@ -13,7 +13,7 @@ export default function LandingPage() {
       <section className="w-full min-h-screen flex flex-col items-center justify-center border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)] pt-16">
         <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%),var(--bg-base)] pointer-events-none"></div>
         <HeroImage />
-        <div className="container px-4 text-center relative z-10 flex flex-col items-center pb-48 sm:pb-64 lg:pb-72">
+        <div className="container px-4 text-center relative z-10 flex flex-col items-center pb-32 sm:pb-48 lg:pb-56">
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-[800] tracking-[-0.03em] mb-6 max-w-4xl leading-[1.1] text-[var(--text-primary)]">
             Extract. Export. Index. Every video.
           </h1>
