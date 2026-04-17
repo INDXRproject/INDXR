@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
@@ -76,9 +77,20 @@ function AvatarDropdown() {
 
 export function Header() {
   const { user } = useAuth()
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
+    <header className={`fixed top-0 left-0 right-0 z-50 w-full border-b transition-colors duration-300 ${
+      scrolled
+        ? "border-border bg-white/50 dark:bg-black/50"
+        : "border-transparent bg-transparent"
+    }`}>
       <div className="container flex h-16 items-center px-4 mx-auto">
 
         {/* Logo — left */}
@@ -90,7 +102,7 @@ export function Header() {
         {/* Desktop nav — centered */}
         <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
           <Link href="/youtube-transcript-generator" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
-            Transcript Generator
+            Generator
           </Link>
           <Link href="/pricing" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
             Pricing
@@ -140,7 +152,7 @@ export function Header() {
                 <nav className="flex flex-col gap-4">
                   <SheetClose asChild>
                     <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
-                      Transcript Generator
+                      Generator
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>

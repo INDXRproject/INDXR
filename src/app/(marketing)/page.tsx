@@ -10,15 +10,15 @@ export default function LandingPage() {
     <>
     <div className="flex flex-col items-center">
       {/* Hero Section */}
-      <section className="w-full min-h-screen flex flex-col items-center justify-center border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)]">
+      <section className="w-full min-h-screen flex flex-col items-center justify-center border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)] pt-16">
         <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%),var(--bg-base)] pointer-events-none"></div>
         <HeroImage />
-        <div className="container px-4 text-center relative z-10 flex flex-col items-center pb-32 sm:pb-48 lg:pb-56">
+        <div className="container px-4 text-center relative z-10 flex flex-col items-center pb-48 sm:pb-64 lg:pb-72">
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-[800] tracking-[-0.03em] mb-6 max-w-4xl leading-[1.1] text-[var(--text-primary)]">
-            Every word. Every video. Yours.
+            Extract. Export. Index. Every video.
           </h1>
           <p className="text-lg sm:text-xl max-w-[720px] mx-auto mb-10 leading-relaxed text-[var(--text-secondary)]">
-            Extract YouTube transcripts in seconds — free for videos with captions, AI transcription for everything else. Export in the format your workflow needs. Store everything in a searchable library.
+            YouTube videos, playlists, and audio files — transcribed in seconds. Export as TXT, Markdown, SRT, JSON, or RAG-optimized format. Neatly organized in your library.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
             <Link href="/youtube-transcript-generator" className="w-full sm:w-auto">
@@ -31,15 +31,15 @@ export default function LandingPage() {
                 cursor-pointer
                 h-12 w-full sm:w-auto
               ">
-                Get Free Transcript <ArrowRight className="ml-2 h-4 w-4 inline" />
+                Start Transcribing <ArrowRight className="ml-2 h-4 w-4 inline" />
               </button>
             </Link>
             <Link href="/pricing" className="w-full sm:w-auto">
               <button className="
                 px-8 py-3 rounded-lg font-medium text-base
-                bg-transparent border border-[var(--border)]
+                bg-transparent border border-[var(--text-muted)]
                 text-[var(--text-primary)]
-                hover:border-[var(--text-muted)]
+                hover:border-[var(--text-primary)]
                 transition-all duration-150 ease-out
                 cursor-pointer
                 h-12 w-full sm:w-auto
