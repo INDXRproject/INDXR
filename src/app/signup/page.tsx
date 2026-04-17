@@ -6,7 +6,6 @@ import { PasswordInput } from "@/components/ui/PasswordInput"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
-import { Logo } from "@/components/ui/logo" // Assuming this exists from Sprint 1
 import { useState } from "react"
 import { validatePassword } from "@/utils/validation"
 import { useRouter } from "next/navigation"
@@ -67,9 +66,9 @@ export default function SignupPage() {
         
         {/* Logo + Title */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
-            <Logo className="size-10" />
-            <span className="text-2xl font-semibold tracking-tight">INDXR.AI</span>
+          <Link href="/" className="inline-flex items-center mb-4 hover:opacity-80 transition-opacity">
+            <img src="/logo/indxr-horizontal-black-transparent.png" alt="INDXR.AI" className="dark:hidden h-8 w-auto" style={{ height: '32px', width: 'auto', minWidth: '100px' }} />
+            <img src="/logo/indxr-horizontal-white-transparent.png" alt="INDXR.AI" className="hidden dark:block h-8 w-auto" style={{ height: '32px', width: 'auto', minWidth: '100px' }} />
           </Link>
           <h1 className="text-2xl font-semibold mb-2 text-foreground">Create your account</h1>
           <p className="text-muted-foreground">
