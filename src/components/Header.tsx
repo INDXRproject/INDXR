@@ -93,18 +93,30 @@ export function Header() {
       <div className="container flex h-16 items-center px-4 mx-auto">
 
         {/* Logo — left */}
-        <Link href="/" className="flex items-center shrink-0">
+        <Link href="/" className="flex items-center shrink-0 gap-3">
           <img
-            src="/logo/indxr-horizontal-black-transparent.png"
-            alt="INDXR.AI"
+            src="/logo/indxr-mark-black-transparent.png"
+            alt=""
             className="dark:hidden"
-            style={{ height: '40px', width: 'auto' }}
+            style={{ height: '32px', width: 'auto' }}
           />
           <img
-            src="/logo/indxr-horizontal-white-transparent.png"
+            src="/logo/indxr-mark-white-transparent.png"
+            alt=""
+            className="hidden dark:block"
+            style={{ height: '32px', width: 'auto' }}
+          />
+          <img
+            src="/logo/indxr-wordmark-black-transparent.png"
+            alt="INDXR.AI"
+            className="dark:hidden"
+            style={{ height: '22px', width: 'auto' }}
+          />
+          <img
+            src="/logo/indxr-wordmark-white-transparent.png"
             alt="INDXR.AI"
             className="hidden dark:block"
-            style={{ height: '40px', width: 'auto' }}
+            style={{ height: '22px', width: 'auto' }}
           />
         </Link>
 
