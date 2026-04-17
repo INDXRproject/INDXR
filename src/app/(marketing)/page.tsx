@@ -51,10 +51,15 @@ export default function LandingPage() {
           <p className="mt-4 text-sm text-[var(--text-muted)]">
             Free for auto-caption videos. No account required.
           </p>
-
-          <HeroUIPreview />
         </div>
       </section>
+
+      {/* UI Mockup — below hero image, with breathing room */}
+      <div className="w-full flex justify-center py-16 sm:py-24 bg-[var(--bg-base)]">
+        <div className="container px-4">
+          <HeroUIPreview />
+        </div>
+      </div>
 
       {/* Features Grid */}
       <section className="w-full py-16 sm:py-24 flex justify-center border-b border-[var(--border)] bg-[var(--bg-base)]">

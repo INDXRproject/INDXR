@@ -5,7 +5,7 @@ import { Button } from "./ui/button"
 
 export function HeroUIPreview() {
   return (
-    <div className="w-full max-w-[780px] mx-auto mt-16 sm:mt-24 hidden sm:block">
+    <div className="w-full max-w-[780px] mx-auto hidden sm:block">
       <div 
         className="relative rounded-[14px] border border-border bg-card overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 fill-mode-both"
         style={{
