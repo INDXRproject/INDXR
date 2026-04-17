@@ -18,7 +18,7 @@ export default function LandingPage() {
             Extract. Export. Index. Every video.
           </h1>
           <p className="text-lg sm:text-xl max-w-[720px] mx-auto mb-10 leading-relaxed text-[var(--text-secondary)]">
-            YouTube videos, playlists, and audio files — transcribed in seconds. Export as TXT, Markdown, SRT, JSON, or RAG-optimized format. Neatly organized in your library.
+            YouTube videos, playlists, and audio files — transcribed and processed to suit all your needs. Export as TXT, Markdown, SRT, JSON, or RAG-optimized format. Neatly organized in your library.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
             <Link href="/youtube-transcript-generator" className="w-full sm:w-auto">
