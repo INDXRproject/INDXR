@@ -41,7 +41,7 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
-        <p className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/60 dark:text-white/60 z-10 px-4">
+        <p className="absolute bottom-6 left-0 right-0 text-center text-xs text-black/40 dark:text-white/60 z-10 px-4">
           No account needed — free for captioned videos. Sign up for credits, exports &amp; library access.
         </p>
       </section>

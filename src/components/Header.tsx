@@ -97,14 +97,14 @@ export function Header() {
           <img
             src="/logo/indxr-horizontal-black-transparent.png"
             alt="INDXR.AI"
-            className="dark:hidden h-7 w-auto"
-            style={{ display: 'block', height: '28px', width: 'auto', minWidth: '100px' }}
+            className="dark:hidden"
+            style={{ height: '40px', width: 'auto' }}
           />
           <img
             src="/logo/indxr-horizontal-white-transparent.png"
             alt="INDXR.AI"
-            className="hidden dark:block h-7 w-auto"
-            style={{ height: '28px', width: 'auto', minWidth: '100px' }}
+            className="hidden dark:block"
+            style={{ height: '40px', width: 'auto' }}
           />
         </Link>
 
