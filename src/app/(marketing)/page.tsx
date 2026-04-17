@@ -35,23 +35,15 @@ export default function LandingPage() {
               </button>
             </Link>
             <Link href="/pricing" className="w-full sm:w-auto">
-              <button className="
-                px-8 py-3 rounded-lg font-medium text-base
-                bg-transparent border border-white/60
-                text-white
-                hover:bg-white/10
-                transition-all duration-150 ease-out
-                cursor-pointer
-                h-12 w-full sm:w-auto
-              ">
+              <button className="px-8 py-3 rounded-lg font-medium text-base bg-transparent border border-current text-[var(--text-primary)] dark:text-white dark:border-white/60 hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-150 ease-out cursor-pointer h-12 w-full sm:w-auto">
                 View Pricing
               </button>
             </Link>
           </div>
-          <p className="mt-4 text-sm text-gray-700 dark:text-white/80">
-            No account required — sign up for free credits, exports &amp; library access.
-          </p>
         </div>
+        <p className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/60 dark:text-white/60 z-10 px-4">
+          No account needed — free for captioned videos. Sign up for credits, exports &amp; library access.
+        </p>
       </section>
 
       {/* UI Mockup — below hero image, with breathing room */}
