@@ -9,10 +9,10 @@ export default function LandingPage() {
     <>
     <div className="flex flex-col items-center">
       {/* Hero Section */}
-      <section className="w-full min-h-screen flex flex-col items-center justify-center border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)] pt-16">
+      <section className="w-full min-h-screen flex flex-col items-start border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)] pt-[90px]">
         <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%),var(--bg-base)] pointer-events-none"></div>
         <HeroImage />
-        <div className="container px-4 text-center relative z-10 flex flex-col items-center mt-[10vh]">
+        <div className="container px-4 text-center relative z-10 flex flex-col items-center">
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-[800] tracking-[-0.03em] mb-6 max-w-4xl leading-[1.1] text-[var(--text-primary)]">
             Extract. Export. Index. Every video.
           </h1>
