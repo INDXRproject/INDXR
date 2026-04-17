@@ -98,25 +98,25 @@ export function Header() {
             src="/logo/indxr-mark-black-transparent.png"
             alt=""
             className="dark:hidden"
-            style={{ height: '44px', width: 'auto' }}
+            style={{ height: '38px', width: 'auto' }}
           />
           <img
             src="/logo/indxr-mark-white-transparent.png"
             alt=""
             className="hidden dark:block"
-            style={{ height: '44px', width: 'auto' }}
+            style={{ height: '38px', width: 'auto' }}
           />
           <img
             src="/logo/indxr-wordmark-black-transparent.png"
             alt="INDXR.AI"
             className="dark:hidden"
-            style={{ height: '42px', width: 'auto' }}
+            style={{ height: '44px', width: 'auto' }}
           />
           <img
             src="/logo/indxr-wordmark-white-transparent.png"
             alt="INDXR.AI"
             className="hidden dark:block"
-            style={{ height: '42px', width: 'auto' }}
+            style={{ height: '44px', width: 'auto' }}
           />
         </Link>
 
