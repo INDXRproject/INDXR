@@ -37,9 +37,9 @@ export default function LandingPage() {
             <Link href="/pricing" className="w-full sm:w-auto">
               <button className="
                 px-8 py-3 rounded-lg font-medium text-base
-                bg-transparent border border-[var(--text-muted)]
-                text-[var(--text-primary)]
-                hover:border-[var(--text-primary)]
+                bg-transparent border border-white/60
+                text-white
+                hover:bg-white/10
                 transition-all duration-150 ease-out
                 cursor-pointer
                 h-12 w-full sm:w-auto
@@ -48,8 +48,8 @@ export default function LandingPage() {
               </button>
             </Link>
           </div>
-          <p className="mt-4 text-sm text-[var(--text-muted)]">
-            Free for auto-caption videos. No account required.
+          <p className="mt-4 text-sm text-gray-700 dark:text-white/80">
+            No account required — sign up for free credits, exports &amp; library access.
           </p>
         </div>
       </section>

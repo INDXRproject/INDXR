@@ -102,7 +102,7 @@ export function Header() {
         {/* Desktop nav — centered */}
         <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
           <Link href="/youtube-transcript-generator" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
-            Generator
+            Transcribe
           </Link>
           <Link href="/pricing" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
             Pricing
@@ -152,7 +152,7 @@ export function Header() {
                 <nav className="flex flex-col gap-4">
                   <SheetClose asChild>
                     <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
-                      Generator
+                      Transcribe
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
