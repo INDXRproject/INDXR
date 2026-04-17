@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
-import { Logo } from "@/components/ui/logo"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { CreditBalance } from "@/components/CreditBalance"
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
@@ -94,9 +94,25 @@ export function Header() {
       <div className="container flex h-16 items-center px-4 mx-auto">
 
         {/* Logo — left */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Logo className="size-8 text-[var(--accent)]" />
-          <span className="text-xl font-semibold text-[var(--text-primary)]">INDXR.AI</span>
+        <Link href="/" className="flex items-center shrink-0">
+          <Image
+            src="/logo/indxr-horizontal-black-transparent.png"
+            alt="INDXR.AI"
+            width={0}
+            height={28}
+            style={{ width: "auto" }}
+            className="dark:hidden"
+            priority
+          />
+          <Image
+            src="/logo/indxr-horizontal-white-transparent.png"
+            alt="INDXR.AI"
+            width={0}
+            height={28}
+            style={{ width: "auto" }}
+            className="hidden dark:block"
+            priority
+          />
         </Link>
 
         {/* Desktop nav — centered */}
