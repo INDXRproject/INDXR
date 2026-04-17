@@ -17,7 +17,7 @@ export function HeroImage() {
           src="/hero-light.jpg"
           alt=""
           fill
-          className="object-cover object-[center_30%] dark:hidden"
+          className="object-cover object-[center_20%] lg:object-[center_30%] dark:hidden"
           priority
           onError={() => setLightError(true)}
         />
@@ -27,7 +27,7 @@ export function HeroImage() {
           src="/hero-dark.jpg"
           alt=""
           fill
-          className="object-cover object-[center_30%] hidden dark:block"
+          className="object-cover object-[center_20%] lg:object-[center_30%] hidden dark:block"
           priority
           onError={() => setDarkError(true)}
         />
