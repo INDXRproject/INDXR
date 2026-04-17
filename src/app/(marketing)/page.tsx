@@ -2,7 +2,6 @@ import Link from "next/link"
 import { ArrowRight, Zap, AudioWaveform, ListVideo, Library } from "lucide-react"
 import { FeatureCard } from "@/components/FeatureCard"
 import { Footer } from "@/components/Footer"
-import { HeroUIPreview } from "@/components/HeroUIPreview"
 import { HeroImage } from "@/components/HeroImage"
 
 export default function LandingPage() {
@@ -45,13 +44,6 @@ export default function LandingPage() {
           No account needed — free for captioned videos. Sign up for credits, exports &amp; library access.
         </p>
       </section>
-
-      {/* UI Mockup — below hero image, with breathing room */}
-      <div className="w-full flex justify-center py-16 sm:py-24 bg-[var(--bg-base)]">
-        <div className="container px-4">
-          <HeroUIPreview />
-        </div>
-      </div>
 
       {/* Features Grid */}
       <section className="w-full py-16 sm:py-24 flex justify-center border-b border-[var(--border)] bg-[var(--bg-base)]">
