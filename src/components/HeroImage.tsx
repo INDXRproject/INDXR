@@ -10,15 +10,14 @@ export function HeroImage() {
   if (lightError && darkError) return null
 
   return (
-    <div className="relative w-full mt-10">
-      {/* HERO IMAGE — swap via Image-to-Image after redesign */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* HERO IMAGE — background, blends into bg-base at edges */}
       {!lightError && (
         <Image
           src="/hero-light.jpg"
-          alt="INDXR.AI — YouTube transcript extraction interface"
-          width={1200}
-          height={630}
-          className="w-full h-auto dark:hidden"
+          alt=""
+          fill
+          className="object-cover object-center dark:hidden"
           priority
           onError={() => setLightError(true)}
         />
@@ -26,15 +25,17 @@ export function HeroImage() {
       {!darkError && (
         <Image
           src="/hero-dark.jpg"
-          alt="INDXR.AI — YouTube transcript extraction interface"
-          width={1200}
-          height={630}
-          className="w-full h-auto hidden dark:block"
+          alt=""
+          fill
+          className="object-cover object-center hidden dark:block"
           priority
           onError={() => setDarkError(true)}
         />
       )}
-      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+      {/* Fade top → transparent → fade to bg-base at bottom */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)] via-[var(--bg-base)]/30 to-[var(--bg-base)]" />
+      {/* Soft side fades */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-base)]/70 via-transparent to-[var(--bg-base)]/70" />
     </div>
   )
 }
