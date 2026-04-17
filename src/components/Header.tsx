@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
@@ -95,23 +94,15 @@ export function Header() {
 
         {/* Logo — left */}
         <Link href="/" className="flex items-center shrink-0">
-          <Image
+          <img
             src="/logo/indxr-horizontal-black-transparent.png"
             alt="INDXR.AI"
-            width={0}
-            height={28}
-            style={{ width: "auto" }}
-            className="dark:hidden"
-            priority
+            className="dark:hidden h-7 w-auto"
           />
-          <Image
+          <img
             src="/logo/indxr-horizontal-white-transparent.png"
             alt="INDXR.AI"
-            width={0}
-            height={28}
-            style={{ width: "auto" }}
-            className="hidden dark:block"
-            priority
+            className="hidden dark:block h-7 w-auto"
           />
         </Link>
 
