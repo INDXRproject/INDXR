@@ -9,7 +9,7 @@ export default function LandingPage() {
     <>
     <div className="flex flex-col items-center">
       {/* Hero Section */}
-      <section className="w-full min-h-screen flex flex-col items-center border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)] pt-[80px] sm:pt-[100px] md:pt-[120px] lg:pt-[150px] xl:pt-[170px]">
+      <section className="w-full min-h-screen flex flex-col items-center border-b border-[var(--border)] relative overflow-hidden bg-[var(--bg-base)] pt-[80px] lg:pt-[130px] xl:pt-[150px] 2xl:pt-[180px]">
         <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%),var(--bg-base)] pointer-events-none"></div>
         <HeroImage />
         <div className="container px-4 text-center relative z-10 flex flex-col items-center">
