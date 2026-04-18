@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const exportFormats = [
+  { href: "/youtube-to-text", label: "Plain TXT / Timestamps" },
   { href: "/youtube-transcript-markdown", label: "Markdown transcript" },
   { href: "/youtube-transcript-json", label: "JSON export" },
   { href: "/youtube-transcript-for-rag", label: "RAG-optimized JSON" },

@@ -788,3 +788,23 @@ Changed: src/components/HeroImage.tsx
 ---
 [2026-04-18 01:30] taak: Footer herbouwd (3 kolommen, CSS vars) + "How It Works" nav-link toegevoegd | gewijzigd: src/components/Footer.tsx, src/components/Header.tsx
 ---
+[2026-04-18 01:45] fix: TXT/Timestamps link toegevoegd als eerste item in Footer Export Formats kolom | gewijzigd: src/components/Footer.tsx
+---
+[2026-04-18 17:33] commit: feat: llms.txt, robots.txt, footer rebuild, how-it-works nav link
+Changed: docs/.obsidian/workspace.json
+docs/INBOX.md
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/operations/known-issues.md
+public/apple-touch-icon.png
+public/favicon-96x96.png
+public/favicon.ico
+public/favicon.svg
+public/llms.txt
+public/robots.txt
+public/site.webmanifest
+public/web-app-manifest-192x192.png
+public/web-app-manifest-512x512.png
+src/components/Footer.tsx
+src/components/Header.tsx
+---
