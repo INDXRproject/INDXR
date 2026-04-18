@@ -1,71 +1,69 @@
 import Link from "next/link";
 
-const resources = [
-  { href: "/youtube-transcript-downloader", label: "YouTube Transcript Downloader" },
-  { href: "/youtube-playlist-transcript", label: "Playlist Transcripts" },
-  { href: "/bulk-youtube-transcript", label: "Bulk Download" },
-  { href: "/youtube-srt-download", label: "SRT Download" },
-  { href: "/youtube-transcript-without-extension", label: "No Extension Needed" },
-  { href: "/audio-to-text", label: "Audio to Text" },
+const exportFormats = [
+  { href: "/youtube-transcript-markdown", label: "Markdown transcript" },
+  { href: "/youtube-transcript-json", label: "JSON export" },
+  { href: "/youtube-transcript-for-rag", label: "RAG-optimized JSON" },
+  { href: "/youtube-transcript-csv", label: "CSV export" },
+  { href: "/youtube-srt-download", label: "SRT / VTT download" },
 ];
 
-const company = [
-  { href: "/pricing", label: "Pricing" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/support", label: "Support" },
+const guides = [
+  { href: "/how-it-works", label: "How It Works" },
+  { href: "/youtube-playlist-transcript", label: "Playlist transcripts" },
+  { href: "/audio-to-text", label: "Audio file upload" },
+  { href: "/youtube-transcript-without-extension", label: "Without browser extension" },
+  { href: "/youtube-transcript-not-available", label: "Transcript not available?" },
 ];
+
+const compare = [
+  { href: "/alternative/downsub", label: "INDXR.AI vs DownSub" },
+  { href: "/alternative/notegpt", label: "INDXR.AI vs NoteGPT" },
+  { href: "/alternative/turboscribe", label: "INDXR.AI vs TurboScribe" },
+  { href: "/alternative/tactiq", label: "INDXR.AI vs Tactiq" },
+  { href: "/alternative/happyscribe", label: "INDXR.AI vs HappyScribe" },
+];
+
+function FooterColumn({ title, links }: { title: string; links: { href: string; label: string }[] }) {
+  return (
+    <div>
+      <h3 className="text-xs font-semibold uppercase tracking-widest text-[var(--text-primary)] mb-4">
+        {title}
+      </h3>
+      <ul className="flex flex-col gap-2">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export function Footer() {
   return (
-    <footer className="border-t bg-muted/30">
+    <footer className="border-t border-[var(--border)] bg-[var(--bg-surface)]">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="md:col-span-1">
-            <Link href="/" className="text-xl font-bold">
-              INDXR.AI
-            </Link>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Extract YouTube transcripts instantly. Free, fast, no extension required.
-            </p>
-          </div>
-
-          {/* Resources */}
-          <div className="md:col-span-2">
-            <h3 className="font-semibold mb-4">Resources</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {resources.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h3 className="font-semibold mb-4">Company</h3>
-            <div className="flex flex-col gap-2">
-              {company.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <FooterColumn title="Export Formats" links={exportFormats} />
+          <FooterColumn title="Guides" links={guides} />
+          <FooterColumn title="Compare" links={compare} />
         </div>
 
-        {/* Bottom bar */}
-        <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} INDXR.AI. All rights reserved.</p>
+        <div className="mt-12 pt-6 border-t border-[var(--border)] flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
+          <span>© 2026 INDXR.AI</span>
+          <Link href="/pricing" className="hover:text-[var(--text-primary)] transition-colors">
+            Pricing
+          </Link>
+          <Link href="/how-it-works" className="hover:text-[var(--text-primary)] transition-colors">
+            How It Works
+          </Link>
         </div>
       </div>
     </footer>

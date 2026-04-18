@@ -213,4 +213,11 @@ PROXY_PASSWORD=password_session-{job_id[:8]}_lifetime-10m
 
 Sticky sessions worden via de wachtwoord-suffix opgegeven (`_session-X_lifetime-10m`). Ondersteunde providers: LunaProxy, IPRoyal, BrightData.
 
-**Implementatiedetail:** `extract_with_ytdlp(video_id, use_proxy=True, session_id=job_id[:8])` geeft de session_id door aan `get_proxy_url(session_id)`. Binnen een playlist-job wordt `job_id[:8]` als vaste session_id gebruikt, zodat alle caption-extracties van één job via hetzelfde exit-IP lopen (YouTube CDN is IP-locked). De retry-pass gebruikt dezelfde session_id.
+**Implementatiedetail:** `extract_with_ytdlp(video_id, use_proxy=True, session_id=...)` geeft de session_id door aan `get_proxy_url(session_id)`. De proxy wordt op twee niveaus gebruikt:
+
+1. **yt-dlp metadata call** — proxy via `ydl_opts['proxy']`
+2. **VTT httpx download** — proxy via `httpx.Client(proxy=proxy_url)` (zelfde session_id)
+
+Binnen een playlist-job krijgt elke video een unieke session_id: `f"{job_id[:4]}{idx:04d}"` (bijv. `abcd0000`, `abcd0001`). Dit zorgt voor een ander exit-IP per video, zodat een rate-limited video de rest van de job niet blokkeert. De retry-pass gebruikt `video_ids.index(vid)` als index, waardoor hetzelfde exit-IP als de eerste poging beschikbaar is.
+
+**Gevalideerd 2026-04-16:** 20-video playlist (Introduction to Psychology, Paul Bloom) — 20/20 succesvol, 2:21, nul VTT-fouten.

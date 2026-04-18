@@ -1,5 +1,7 @@
 [2026-04-16] fix: HeroImage full-bleed + dark overlay — uit container gehaald (section flex-col), max-w-5xl/mx-auto/rounded-xl verwijderd, bg-black/60 overlay toegevoegd | gewijzigd: src/app/(marketing)/page.tsx, src/components/HeroImage.tsx
 ---
+[2026-04-16] docs: CAP-04b testresultaat verwerkt — VTT proxy fix bevestigd (20/20 videos, 2:21, nul fouten); ai-pipeline.md proxy-sectie bijgewerkt, known-issues.md beide items afgevinkt | gewijzigd: docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md
+---
 [2026-04-16] fix: proxy per-video rotatie in playlist jobs — video_session_id = f"{job_id[:4]}{idx:04d}" (first pass + retry pass); VTT httpx call was al proxied | gewijzigd: backend/main.py, docs/wiki/operations/known-issues.md
 ---
 [2026-04-13 23:24] commit: test hook
@@ -577,4 +579,212 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
 docs/wiki/operations/known-issues.md
+---
+[2026-04-16 23:02] commit: fix: HeroImage full-bleed + dark overlay
+
+- Moved <HeroImage /> outside container div (was capped by max-w and px-4)
+- Section changed to flex-col so image sits below hero content
+- Removed max-w-5xl, mx-auto, rounded-xl from image wrapper
+- Added bg-black/60 overlay for light-mode readability
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/.obsidian/workspace.json
+docs/INBOX.md
+docs/LOG.md
+src/app/(marketing)/page.tsx
+src/components/HeroImage.tsx
+---
+[2026-04-17 04:24] commit: fix: hero image as blended background behind headline + CTAs
+
+- HeroImage moved to absolute inset-0 behind hero content
+- Uses Next.js fill + object-cover to span full section
+- Gradient fades: top→transparent→bottom (bg-base), soft side fades
+- Text/buttons stay on top via z-10 container
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+src/components/HeroImage.tsx
+---
+[2026-04-17 04:30] commit: fix: HeroUIPreview moved below hero image with whitespace
+
+- Removed HeroUIPreview from hero section (was blocking background image)
+- Placed in own wrapper below hero with py-16/24 breathing room
+- Removed mt-16/24 from HeroUIPreview itself (spacing now from wrapper)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+src/components/HeroUIPreview.tsx
+---
+[2026-04-17 04:46] commit: fix: hero image position, gradient refinement, section height
+
+- object-[center_30%]: shows upper area of image behind text, not laptop
+- Split single gradient into two divs: top fade + bottom-half cover
+  (removes mid-image glow halo from previous via-30% approach)
+- Section padding: py-16/24/32 → py-24/32/40 for more vertical breathing room
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+src/components/HeroImage.tsx
+---
+[2026-04-17 05:05] commit: fix: hero section full viewport height
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 06:17] commit: feat: new hero images + raise headline position
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: public/hero-dark.jpg
+public/hero-light.jpg
+src/app/(marketing)/page.tsx
+---
+[2026-04-17 06:40] commit: feat: transparent navbar + hero copy update + button fixes
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+src/components/Header.tsx
+---
+[2026-04-17 06:52] commit: fix: button visibility, nav label, subtext nudge
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+src/app/globals.css
+src/components/Header.tsx
+---
+[2026-04-17 09:15] commit: fix: update hero subheading copy
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 20:29] commit: feat: logo in navbar + favicon setup
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/layout.tsx
+src/components/Header.tsx
+---
+[2026-04-17 20:52] commit: fix: hero subtext bottom + view pricing light mode visibility
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 20:53] commit: fix: navbar logo + hero subtext + pricing button
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/Header.tsx
+---
+[2026-04-17 20:58] commit: fix: remove old logo text + debug logo visibility
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/Header.tsx
+---
+[2026-04-17 21:02] commit: fix: replace INDXR.AI text logo with img on signup page
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/signup/page.tsx
+---
+[2026-04-17 21:33] commit: feat: add logo assets to git
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: public/logo/indxr-horizontal-black-on-white.png
+public/logo/indxr-horizontal-black-transparent.png
+public/logo/indxr-horizontal-black-transparent.svg
+public/logo/indxr-horizontal-white-on-black.png
+public/logo/indxr-horizontal-white-transparent.png
+public/logo/indxr-horizontal-white-transparent.svg
+public/logo/indxr-mark-black-on-white.png
+public/logo/indxr-mark-black-transparent.png
+public/logo/indxr-mark-black-transparent.svg
+public/logo/indxr-mark-white-on-black.png
+public/logo/indxr-mark-white-transparent.png
+public/logo/indxr-mark-white-transparent.svg
+public/logo/indxr-wordmark-black-on-white.png
+public/logo/indxr-wordmark-black-transparent.png
+public/logo/indxr-wordmark-black-transparent.svg
+public/logo/indxr-wordmark-white-on-black.png
+public/logo/indxr-wordmark-white-transparent.png
+public/logo/indxr-wordmark-white-transparent.svg
+---
+[2026-04-17 21:43] commit: fix: logo dark mode duplicate + size 40px + subtext light mode
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+src/components/Header.tsx
+---
+[2026-04-17 21:50] commit: feat: split navbar logo mark + wordmark with custom spacing
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/Header.tsx
+---
+[2026-04-17 21:58] commit: feat: larger logo + Geist font sitewide
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/globals.css
+src/components/Header.tsx
+---
+[2026-04-17 22:14] commit: test: logo mark 44px wordmark 42px
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/Header.tsx
+---
+[2026-04-17 22:27] commit: test: mark 38px wordmark 44px dominant
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/Header.tsx
+---
+[2026-04-17 22:31] commit: fix: logo mark 40px wordmark 48px
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/Header.tsx
+---
+[2026-04-17 22:41] commit: fix: hero text higher on all screen sizes
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 22:49] commit: fix: hero text position correct — text higher in viewport
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 22:54] commit: fix: hero text position via self-start mt-[15vh]
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 22:58] commit: remove: HeroUIPreview placeholder
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 23:05] commit: fix: remove self-start, center text horizontally
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 23:17] commit: fix: hero text 90px from top
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-17 23:20] commit: fix: hero text centered + pt-150px
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-18 00:33] commit: fix: responsive hero pt per breakpoint
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-18 00:37] commit: fix: hero pt breakpoints lg/xl/2xl
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+---
+[2026-04-18 00:56] commit: fix: object-position responsive small screens
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/HeroImage.tsx
+---
+[2026-04-18 01:10] taak: public/llms.txt en robots.txt aangemaakt | gewijzigd: public/llms.txt, public/robots.txt
+---
+[2026-04-18 01:30] taak: Footer herbouwd (3 kolommen, CSS vars) + "How It Works" nav-link toegevoegd | gewijzigd: src/components/Footer.tsx, src/components/Header.tsx
 ---

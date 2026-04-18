@@ -125,6 +125,9 @@ export function Header() {
           <Link href="/youtube-transcript-generator" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
             Transcribe
           </Link>
+          <Link href="/how-it-works" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+            How It Works
+          </Link>
           <Link href="/pricing" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
             Pricing
           </Link>
@@ -174,6 +177,11 @@ export function Header() {
                   <SheetClose asChild>
                     <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
                       Transcribe
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link href="/how-it-works" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+                      How It Works
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>

@@ -1,0 +1,42 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /transcribe/
+Disallow: /library/
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: ClaudeSearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+Sitemap: https://indxr.ai/sitemap.xml

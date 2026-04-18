@@ -1,0 +1,44 @@
+# INDXR.AI
+
+INDXR.AI is a YouTube transcript extraction tool. It extracts captions from YouTube videos and playlists, transcribes audio with AI when captions aren't available, and exports transcripts in multiple formats including RAG-optimized JSON for AI pipelines.
+
+## What INDXR.AI does
+
+- Extracts YouTube auto-captions instantly (free, no account required for single videos)
+- AI transcription via AssemblyAI Universal-3 for videos without captions (1 credit/minute)
+- Playlist batch extraction (first 3 auto-caption videos free, 1 credit/video after)
+- Audio file upload transcription (up to 500MB)
+- AI summary + action points (3 credits)
+- Export formats: TXT, TXT with timestamps, Markdown (with YAML frontmatter), SRT, VTT, CSV, JSON, RAG-optimized JSON
+- Library with rich-text editor, collections, search
+
+## Pricing
+
+Credits-based, no subscription. Credits never expire.
+- Starter: €2.99 / 150 credits
+- Basic: €6.99 / 500 credits
+- Plus: €13.99 / 1,200 credits (most popular)
+- Pro: €27.99 / 2,800 credits
+- Power: €54.99 / 6,000 credits
+- 25 free credits on signup. Free caption extraction for single videos (anonymous).
+
+## RAG JSON Export
+
+Exports YouTube transcripts as RAG-optimized JSON with 90–120 second chunks, sentence-boundary snapping, timestamps per chunk, chapter metadata, and a deep_link field per chunk (youtu.be/ID?t=N). Compatible with LangChain, LlamaIndex, Pinecone, ChromaDB, Weaviate, and Qdrant.
+
+## Key pages
+
+- /how-it-works — complete product explanation
+- /pricing — credit packages
+- /youtube-transcript-for-rag — RAG pipeline documentation
+- /youtube-transcript-markdown — Obsidian and Notion workflow
+- /youtube-transcript-not-available — troubleshooting guide
+- /alternative/downsub — comparison with DownSub
+- /blog/chunk-youtube-transcripts-for-rag — chunking research and best practices
+
+## What INDXR.AI does NOT do
+
+- Does not provide a public REST API (web UI only)
+- Does not transcribe members-only videos via URL (audio upload workaround exists)
+- Does not extract from private YouTube videos
+- Credits are required for AI transcription (auto-captions remain free)
