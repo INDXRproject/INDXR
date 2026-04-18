@@ -182,7 +182,7 @@ export default function ChunkYouTubeTranscriptsForRAGPage() {
       </p>
 
       <p>
-        <strong>Chroma Research</strong> evaluated chunking strategies across multiple embedding models
+        <strong><a href="https://research.trychroma.com/evaluating-chunking" target="_blank" rel="noopener noreferrer">Chroma Research</a></strong> evaluated chunking strategies across multiple embedding models
         and found that <code>RecursiveCharacterTextSplitter</code> at 400 tokens achieved approximately
         89% recall — competitive with more complex approaches at a fraction of the computational cost.
         This confirms that the token-range target matters more than the sophistication of the splitting
@@ -190,7 +190,7 @@ export default function ChunkYouTubeTranscriptsForRAGPage() {
       </p>
 
       <p>
-        <strong>Microsoft Azure AI Search</strong> recommends starting with 512 tokens and 25% overlap
+        <strong><a href="https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search" target="_blank" rel="noopener noreferrer">Microsoft Azure AI Search</a></strong> recommends starting with 512 tokens and 25% overlap
         as a baseline for most document types. For audio transcripts, where sentences are shorter than
         technical documents, 300–400 tokens (90–120 seconds) often performs comparably.
       </p>
@@ -368,7 +368,9 @@ def chunk_transcript(segments, target_seconds=120, overlap_seconds=18):
         <Link href="/youtube-transcript-for-rag">INDXR.AI&apos;s RAG JSON export</Link> handles all of the
         above — sentence snapping, 15% overlap, deep links per chunk — in one download. For the full
         JSON schema and integration examples, see{" "}
-        <Link href="/youtube-transcript-json">YouTube Transcript JSON</Link>. For credit packages, see{" "}
+        <Link href="/youtube-transcript-json">YouTube Transcript JSON</Link>. For a full technical
+        overview of the extraction pipeline, see{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link>. For credit packages, see{" "}
         <Link href="/pricing">pricing</Link>.
       </p>
     </TutorialTemplate>

@@ -157,8 +157,11 @@ export default function YouTubeToTextPage() {
         All formats export from the same transcript. Extract once, re-export in any format from your
         library at any time. To convert a video now,{" "}
         <Link href="/youtube-transcript-generator">paste any YouTube URL in the generator</Link>. For
-        converting audio files from any source, the <Link href="/audio-to-text">Audio Upload tab</Link>{" "}
-        accepts MP3, MP4, WAV, M4A, OGG, FLAC, and WEBM up to 500MB.
+        a full breakdown of the extraction pipeline, see{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link>. For credit costs, see the{" "}
+        <Link href="/pricing">pricing page</Link>. For audio files from any source, the{" "}
+        <Link href="/audio-to-text">Audio Upload tab</Link> accepts MP3, MP4, WAV, M4A, OGG, FLAC,
+        and WEBM up to 500MB.
       </p>
     </ToolPageTemplate>
   )

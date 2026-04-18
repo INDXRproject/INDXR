@@ -164,9 +164,12 @@ export default function HappyScribeAlternativePage() {
       </p>
 
       <p>
-        For a breakdown of the full credit system, see the <Link href="/pricing">pricing page</Link>. To
-        test the output quality without spending credits,{" "}
-        <Link href="/youtube-transcript-generator">extract any captioned YouTube video free</Link>.
+        For a breakdown of the full credit system, see the <Link href="/pricing">pricing page</Link>.
+        For RAG pipelines and AI knowledge bases, see{" "}
+        <Link href="/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link>. To test
+        the output quality without spending credits,{" "}
+        <Link href="/youtube-transcript-generator">extract any captioned YouTube video free</Link>, or
+        read <Link href="/how-it-works">how INDXR.AI works</Link>.
       </p>
     </ArticleTemplate>
   )

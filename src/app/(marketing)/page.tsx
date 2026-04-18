@@ -159,6 +159,11 @@ export default function LandingPage() {
               Try INDXR free →
             </button>
           </Link>
+          <p className="mt-4 text-sm text-[var(--text-muted)]">
+            <Link href="/how-it-works" className="hover:text-[var(--text-primary)] transition-colors underline underline-offset-2">
+              How it works
+            </Link>
+          </p>
         </div>
       </section>
     </div>

@@ -181,9 +181,11 @@ export default function TurboScribeAlternativePage() {
 
       <p>
         For users who came to TurboScribe specifically for YouTube content, INDXR.AI is the more
-        purpose-built option. <Link href="/youtube-transcript-generator">Try a free extraction</Link> to
-        compare the output quality directly. For audio file uploads, the{" "}
-        <Link href="/audio-to-text">Audio Upload</Link> tab handles the same use case.
+        purpose-built option. For credit costs, see the <Link href="/pricing">pricing page</Link>.{" "}
+        <Link href="/youtube-transcript-generator">Try a free extraction</Link> to compare the output
+        quality directly, or see <Link href="/how-it-works">how INDXR.AI works</Link> for the full
+        pipeline. For audio file uploads, the <Link href="/audio-to-text">Audio Upload</Link> tab
+        handles the same use case.
       </p>
     </ArticleTemplate>
   )

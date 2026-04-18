@@ -38,8 +38,8 @@ const faqs = [
 
 const sources = [
   {
-    label: "AssemblyAI Universal-3 Pro — Model benchmarks",
-    url: "https://www.assemblyai.com/blog/universal-3",
+    label: "AssemblyAI — Universal-3 Pro",
+    url: "https://www.assemblyai.com/models",
   },
 ]
 

@@ -127,7 +127,10 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
 
       <p>
         <strong>Cost:</strong> 1 credit per minute of audio. A 45-minute video: 45 credits,
-        approximately €0.54 at Plus pricing (€0.012/credit).
+        approximately €0.54 at Plus pricing (€0.012/credit) — see the{" "}
+        <Link href="/pricing">pricing page</Link> for all packages. For a full technical overview of
+        how INDXR.AI handles audio transcription, see{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link>.
       </p>
 
       <p>

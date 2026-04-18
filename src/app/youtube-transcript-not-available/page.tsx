@@ -276,7 +276,8 @@ export default function YouTubeTranscriptNotAvailablePage() {
       <p>
         For audio you already have — a recording, a podcast episode, a downloaded video file — the{" "}
         <Link href="/audio-to-text">Audio Upload</Link> tab accepts MP3, MP4, WAV, M4A, OGG, FLAC,
-        and WEBM files up to 500MB. The same AI pipeline applies.
+        and WEBM files up to 500MB. The same AI pipeline applies; for a full technical overview see{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link>.
       </p>
 
       <h2>Specific Scenarios</h2>

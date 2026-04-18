@@ -80,8 +80,8 @@ export default function TactiqAlternativePage() {
       <p>
         <strong>Export formats.</strong> Tactiq exports meeting transcripts in a handful of formats
         oriented around note-taking and CRM integration. There&apos;s no Markdown with YAML frontmatter for
-        Obsidian or Notion users, no structured JSON for developers, no RAG-optimized output for AI
-        pipelines, no resegmented SRT for video editors.
+        Obsidian or Notion users, no structured JSON for developers, no{" "}
+        <Link href="/youtube-transcript-for-rag">RAG-optimized output for AI pipelines</Link>, no resegmented SRT for video editors.
       </p>
 
       <p>
@@ -143,7 +143,8 @@ export default function TactiqAlternativePage() {
 
       <p>
         For users who run a lot of meetings <em>and</em> work heavily with YouTube content, both tools
-        serve different parts of the workflow without overlap. See{" "}
+        serve different parts of the workflow without overlap. For credit costs, see the{" "}
+        <Link href="/pricing">pricing page</Link>. See{" "}
         <Link href="/how-it-works">how INDXR.AI works</Link> for the full pipeline, or{" "}
         <Link href="/bulk-youtube-transcript">start a playlist extraction</Link> to test the batch
         processing.

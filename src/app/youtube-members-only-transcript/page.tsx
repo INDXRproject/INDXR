@@ -108,7 +108,9 @@ export default function YouTubeMembersOnlyTranscriptPage() {
 
       <p>
         Cost: 1 credit per minute of audio, minimum 1 credit. A 30-minute members-only video would
-        cost 30 credits — about €0.35 at Plus pricing.
+        cost 30 credits — about €0.35 at Plus pricing. See the{" "}
+        <Link href="/pricing">pricing page</Link> for all package options, or{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link> for an overview of the full pipeline.
       </p>
 
       <h2>If You&apos;re a Creator With Members-Only Content</h2>

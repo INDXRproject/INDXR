@@ -90,7 +90,9 @@ is that it changes depending on`}</code></pre>
       </p>
 
       <p>
-        Professional subtitle standards (BBC Subtitle Guidelines, Netflix Timed Text Style Guide,
+        Professional subtitle standards (
+        <a href="https://www.bbc.co.uk/accessibility/forproducts/guides/subtitles/" target="_blank" rel="noopener noreferrer">BBC Subtitle Guidelines</a>,{" "}
+        <a href="https://partnerhelp.netflixstudios.com/hc/en-us/articles/215758617" target="_blank" rel="noopener noreferrer">Netflix Timed Text Style Guide</a>,
         EBU Tech 3264) call for blocks of 3–7 seconds, a maximum of two lines, and 42 characters
         per line. These standards exist because human readers need time to read and comprehend text
         before it disappears.
@@ -210,7 +212,8 @@ to understand about this topic`}</code></pre>
       <p>
         For videos where no captions are available at all, see{" "}
         <Link href="/youtube-transcript-not-available">YouTube Transcript Not Available</Link> for a
-        complete troubleshooting guide.
+        complete troubleshooting guide, or <Link href="/how-it-works">how INDXR.AI works</Link> for
+        a full overview of the extraction and resegmentation pipeline.
       </p>
     </ToolPageTemplate>
   )

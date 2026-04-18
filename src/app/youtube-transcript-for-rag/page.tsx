@@ -75,7 +75,7 @@ export default function YouTubeTranscriptForRagPage() {
 
       <p>
         Each segment is 2–5 seconds of speech — roughly 5–15 words, approximately 8–20 tokens. Embedding
-        models work best with chunks of 256–512 tokens (Vectara NAACL 2025, tested across 25 chunking
+        models work best with chunks of 256–512 tokens (<a href="https://arxiv.org/abs/2410.13070" target="_blank" rel="noopener noreferrer">Vectara NAACL 2025</a>, tested across 25 chunking
         configurations and 48 embedding models). Feeding 15-token fragments produces embeddings with almost
         no semantic content. A query about &quot;how embeddings represent meaning&quot; would need to retrieve
         three separate chunks just to reassemble one complete thought.
@@ -97,7 +97,7 @@ export default function YouTubeTranscriptForRagPage() {
 
       <p>
         <strong>Size:</strong> The 256–512 token range is the established sweet spot for dense retrieval.
-        NVIDIA&apos;s 2024 benchmark found 512–1024 tokens performed best for analytical queries; smaller
+        <a href="https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses" target="_blank" rel="noopener noreferrer">NVIDIA&apos;s 2024 benchmark</a> found 512–1024 tokens performed best for analytical queries; smaller
         256–512 token chunks excelled at factoid retrieval. For YouTube specifically, 90–120 seconds of
         spoken English produces approximately 300–400 tokens at an average speaking pace of 150 words per
         minute — squarely in the optimal range.
@@ -359,8 +359,10 @@ print(f"Upserted {len(vectors)} chunks from '{data['video']['title']}'")
 
       <p>
         For the standard JSON format without chunking, see{" "}
-        <Link href="/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For audio file
-        uploads, see <Link href="/audio-to-text">Audio Upload</Link>. For credit packages, see the{" "}
+        <Link href="/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For a full
+        overview of the extraction and export pipeline, see{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link>. For audio file uploads, see{" "}
+        <Link href="/audio-to-text">Audio Upload</Link>. For credit packages, see the{" "}
         <Link href="/pricing">pricing page</Link>.
       </p>
     </ToolPageTemplate>

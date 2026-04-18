@@ -155,7 +155,7 @@ export default function DownSubAlternativePage() {
       <p>
         <strong>Eight export formats from one extraction.</strong> After a single extraction, INDXR.AI lets
         you download the same content as TXT plain, TXT with timestamps, Markdown with YAML frontmatter,
-        SRT, VTT, CSV, JSON, or RAG-optimized JSON.
+        SRT, VTT, CSV, JSON, or <Link href="/youtube-transcript-for-rag">RAG-optimized JSON</Link>.
       </p>
 
       <p>
@@ -236,7 +236,8 @@ export default function DownSubAlternativePage() {
         quality difference in SRT output alone is the reason to switch — and everything else (readable
         transcripts, library, eight formats) comes along for free. See the{" "}
         <Link href="/youtube-srt-download">YouTube SRT Download</Link> page for the full resegmentation
-        details, or <Link href="/youtube-transcript-generator">extract a transcript free</Link> to test the
+        details, <Link href="/how-it-works">how INDXR.AI works</Link> for the full pipeline, or{" "}
+        <Link href="/youtube-transcript-generator">extract a transcript free</Link> to test the
         output quality yourself.
       </p>
     </ArticleTemplate>

@@ -46,8 +46,8 @@ const sources = [
     url: "https://support.google.com/youtube/answer/6373554",
   },
   {
-    label: "Rev.com — AI transcription pricing",
-    url: "https://www.rev.com/services/automatic-transcription",
+    label: "Rev.com transcription services",
+    url: "https://www.rev.com/transcription",
   },
 ]
 

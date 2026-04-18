@@ -34,8 +34,8 @@ const faqs = [
 
 const sources = [
   {
-    label: "AssemblyAI Universal-3 Pro — Model benchmarks",
-    url: "https://www.assemblyai.com/blog/universal-3",
+    label: "AssemblyAI — Universal-3 Pro",
+    url: "https://www.assemblyai.com/models",
   },
 ]
 
@@ -161,7 +161,7 @@ export default function HowItWorksPage() {
         <strong>On SRT and VTT quality:</strong> YouTube&apos;s raw caption timing creates segments every 2–4
         seconds — too short for comfortable reading in a video player or editor. INDXR.AI resegments SRT
         and VTT output into 3–7 second blocks at a maximum of 42 characters per line, following broadcast
-        subtitle standards (BBC Subtitle Guidelines; Netflix Timed Text Style Guide).
+        subtitle standards (<a href="https://www.bbc.co.uk/accessibility/forproducts/guides/subtitles/" target="_blank" rel="noopener noreferrer">BBC Subtitle Guidelines</a>; <a href="https://partnerhelp.netflixstudios.com/hc/en-us/articles/215758617" target="_blank" rel="noopener noreferrer">Netflix Timed Text Style Guide</a>).
       </p>
 
       <p>

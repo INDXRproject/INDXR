@@ -162,7 +162,9 @@ export default function YouTubePlaylistTranscriptPage() {
       <p>
         To start a playlist extraction, paste any YouTube playlist URL in the{" "}
         <Link href="/bulk-youtube-transcript">Bulk YouTube Transcript</Link> tool or use the Playlist tab
-        on the <Link href="/youtube-transcript-generator">transcript generator</Link>.
+        on the <Link href="/youtube-transcript-generator">transcript generator</Link>. For credit costs
+        and package options, see the <Link href="/pricing">pricing page</Link>. For a full overview of
+        the extraction pipeline, see <Link href="/how-it-works">how INDXR.AI works</Link>.
       </p>
     </ToolPageTemplate>
   )

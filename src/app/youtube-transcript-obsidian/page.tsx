@@ -251,7 +251,9 @@ SORT created ASC`}</code></pre>
         For more detail on the Markdown export format, see{" "}
         <Link href="/youtube-transcript-markdown">YouTube Transcript to Markdown</Link>. For
         troubleshooting videos without captions, see{" "}
-        <Link href="/youtube-transcript-not-available">YouTube Transcript Not Available</Link>.
+        <Link href="/youtube-transcript-not-available">YouTube Transcript Not Available</Link>. For
+        credit costs and package options, see the <Link href="/pricing">pricing page</Link>, or{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link> for a full pipeline overview.
       </p>
     </ToolPageTemplate>
   )

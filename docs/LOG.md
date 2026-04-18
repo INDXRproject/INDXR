@@ -1,3 +1,5 @@
+[2026-04-18 19:00] taak: A3a implementatie voltooid — Cat.1: 3 dode bronlinks vervangen (Rev.com, AssemblyAI, ChromaDB); Cat.2: /how-it-works + /pricing + /youtube-transcript-for-rag pillar-links toegevoegd aan 18 paginas; Cat.3: 7 inline referenties geankerd (BBC, Netflix, Vectara, NVIDIA, Chroma Research, Microsoft Azure) | gewijzigd: src/app/youtube-transcript-without-extension/page.tsx, src/app/alternative/downsub/page.tsx, src/app/alternative/notegpt/page.tsx, src/app/alternative/turboscribe/page.tsx, src/app/alternative/tactiq/page.tsx, src/app/alternative/happyscribe/page.tsx, src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx, src/app/(marketing)/page.tsx, + 10 eerder gewijzigde content-paginas
+---
 [2026-04-16] fix: HeroImage full-bleed + dark overlay — uit container gehaald (section flex-col), max-w-5xl/mx-auto/rounded-xl verwijderd, bg-black/60 overlay toegevoegd | gewijzigd: src/app/(marketing)/page.tsx, src/components/HeroImage.tsx
 ---
 [2026-04-16] docs: CAP-04b testresultaat verwerkt — VTT proxy fix bevestigd (20/20 videos, 2:21, nul fouten); ai-pipeline.md proxy-sectie bijgewerkt, known-issues.md beide items afgevinkt | gewijzigd: docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md
@@ -808,3 +810,11 @@ public/web-app-manifest-512x512.png
 src/components/Footer.tsx
 src/components/Header.tsx
 ---
+[2026-04-18 17:42] commit: fix: TXT export in footer
+Changed: docs/LOG.md
+src/components/Footer.tsx
+---
+[2026-04-18 17:45] precompact: context compaction triggered
+---
+[2026-04-18 18:30] audit: A3a SEO/GEO content audit voltooid — 26 paginas geauditeerd | 3 dode links (Rev.com, AssemblyAI blog, ChromaDB docs), 4 bot-blocked (403), /how-it-works pillar-link ontbreekt op 20/24 paginas
+[2026-04-18 18:01] precompact: context compaction triggered

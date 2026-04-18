@@ -285,8 +285,10 @@ SORT duration DESC`}</code></pre>
 
       <p>
         For more on the Obsidian-specific workflow, see{" "}
-        <Link href="/youtube-transcript-obsidian">YouTube Transcript to Obsidian</Link>. For pricing
-        and credit usage, see the <Link href="/pricing">pricing page</Link>.
+        <Link href="/youtube-transcript-obsidian">YouTube Transcript to Obsidian</Link>. For a full
+        overview of the server-side extraction pipeline, see{" "}
+        <Link href="/how-it-works">how INDXR.AI works</Link>. For pricing and credit usage, see the{" "}
+        <Link href="/pricing">pricing page</Link>.
       </p>
     </ToolPageTemplate>
   )

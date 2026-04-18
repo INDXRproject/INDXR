@@ -185,8 +185,9 @@ export default function NoteGptAlternativePage() {
         These tools can also complement each other. Some users use INDXR.AI to extract and export
         transcripts, then feed those transcripts to other AI tools for summarization. INDXR.AI&apos;s AI summary
         feature (DeepSeek V3, 3 credits) is available for users who want both transcript and summary in
-        one place. <Link href="/youtube-transcript-generator">Try a free extraction</Link> to see the
-        output for yourself.
+        one place. For credit costs, see the <Link href="/pricing">pricing page</Link>.{" "}
+        <Link href="/youtube-transcript-generator">Try a free extraction</Link> to see the output for
+        yourself, or read <Link href="/how-it-works">how INDXR.AI works</Link> for a full pipeline overview.
       </p>
     </ArticleTemplate>
   )

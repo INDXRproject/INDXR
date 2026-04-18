@@ -140,7 +140,7 @@ export default function YouTubeTranscriptWithoutExtensionPage() {
       <p>
         <strong>8 export formats</strong> — TXT plain, TXT with timestamps, Markdown with YAML frontmatter
         (for <Link href="/youtube-transcript-markdown">Obsidian/Notion</Link>), SRT, VTT, CSV, JSON, and
-        RAG-optimized JSON.
+        <Link href="/youtube-transcript-for-rag">RAG-optimized JSON</Link>.
       </p>
 
       <p>
@@ -183,7 +183,7 @@ export default function YouTubeTranscriptWithoutExtensionPage() {
       <p>
         To extract your first transcript without installing anything,{" "}
         <Link href="/youtube-transcript-generator">paste any YouTube URL in the generator</Link>. For
-        background on how the server-side pipeline works, see <Link href="/how-it-works">how INDXR.AI works</Link>.
+        background on how the server-side pipeline works, see <Link href="/how-it-works">how INDXR.AI works</Link>. For credit costs, see the <Link href="/pricing">pricing page</Link>.
       </p>
     </ArticleTemplate>
   )

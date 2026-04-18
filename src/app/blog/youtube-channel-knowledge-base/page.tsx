@@ -30,8 +30,8 @@ const faqs = [
 
 const sources = [
   {
-    label: "ChromaDB — Getting Started documentation",
-    url: "https://docs.trychroma.com/getting-started",
+    label: "ChromaDB documentation",
+    url: "https://docs.trychroma.com/docs/overview/introduction",
   },
   {
     label: "OpenAI — text-embedding-3-small model card",
