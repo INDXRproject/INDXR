@@ -1,3 +1,5 @@
+[2026-04-18 20:00] taak: TXT plain export herschreven — timing-gebaseerde paragraafopsplitsing (gap >2s, duur >90s, zinseinde) vervangt character-bucket methode | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx
+---
 [2026-04-18 19:00] taak: A3a implementatie voltooid — Cat.1: 3 dode bronlinks vervangen (Rev.com, AssemblyAI, ChromaDB); Cat.2: /how-it-works + /pricing + /youtube-transcript-for-rag pillar-links toegevoegd aan 18 paginas; Cat.3: 7 inline referenties geankerd (BBC, Netflix, Vectara, NVIDIA, Chroma Research, Microsoft Azure) | gewijzigd: src/app/youtube-transcript-without-extension/page.tsx, src/app/alternative/downsub/page.tsx, src/app/alternative/notegpt/page.tsx, src/app/alternative/turboscribe/page.tsx, src/app/alternative/tactiq/page.tsx, src/app/alternative/happyscribe/page.tsx, src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx, src/app/(marketing)/page.tsx, + 10 eerder gewijzigde content-paginas
 ---
 [2026-04-16] fix: HeroImage full-bleed + dark overlay — uit container gehaald (section flex-col), max-w-5xl/mx-auto/rounded-xl verwijderd, bg-black/60 overlay toegevoegd | gewijzigd: src/app/(marketing)/page.tsx, src/components/HeroImage.tsx
@@ -818,3 +820,28 @@ src/components/Footer.tsx
 ---
 [2026-04-18 18:30] audit: A3a SEO/GEO content audit voltooid — 26 paginas geauditeerd | 3 dode links (Rev.com, AssemblyAI blog, ChromaDB docs), 4 bot-blocked (403), /how-it-works pillar-link ontbreekt op 20/24 paginas
 [2026-04-18 18:01] precompact: context compaction triggered
+[2026-04-18 18:07] commit: fix: A3b SEO/GEO — dead links vervangen, pillar links toegevoegd aan 18 paginas, inline bronnen geanchoreerd
+Changed: docs/LOG.md
+src/app/(marketing)/page.tsx
+src/app/alternative/downsub/page.tsx
+src/app/alternative/happyscribe/page.tsx
+src/app/alternative/notegpt/page.tsx
+src/app/alternative/tactiq/page.tsx
+src/app/alternative/turboscribe/page.tsx
+src/app/audio-to-text/page.tsx
+src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx
+src/app/blog/youtube-channel-knowledge-base/page.tsx
+src/app/how-it-works/page.tsx
+src/app/youtube-age-restricted-transcript/page.tsx
+src/app/youtube-members-only-transcript/page.tsx
+src/app/youtube-playlist-transcript/page.tsx
+src/app/youtube-srt-download/page.tsx
+src/app/youtube-to-text/page.tsx
+src/app/youtube-transcript-csv/page.tsx
+src/app/youtube-transcript-for-rag/page.tsx
+src/app/youtube-transcript-json/page.tsx
+src/app/youtube-transcript-markdown/page.tsx
+src/app/youtube-transcript-not-available/page.tsx
+src/app/youtube-transcript-obsidian/page.tsx
+src/app/youtube-transcript-without-extension/page.tsx
+---

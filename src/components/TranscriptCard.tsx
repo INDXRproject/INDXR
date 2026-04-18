@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { decodeEntities } from "@/utils/formatTranscript";
+import { decodeEntities, createParagraphMode } from "@/utils/formatTranscript";
 import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
 import {
@@ -71,28 +71,6 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Helper: Merge captions into flowing paragraphs (400-500 chars each)
-  const createParagraphMode = (): string => {
-    const fullText = transcript.map((t) => decodeEntities(t.text)).join(' ');
-    const paragraphs: string[] = [];
-    let currentParagraph = '';
-    const words = fullText.split(' ');
-    for (const word of words) {
-      const testParagraph = currentParagraph ? `${currentParagraph} ${word}` : word;
-      if (testParagraph.length >= 400 && testParagraph.length <= 500) {
-        paragraphs.push(testParagraph);
-        currentParagraph = '';
-      } else if (testParagraph.length > 500) {
-        if (currentParagraph) paragraphs.push(currentParagraph);
-        currentParagraph = word;
-      } else {
-        currentParagraph = testParagraph;
-      }
-    }
-    if (currentParagraph) paragraphs.push(currentParagraph);
-    return paragraphs.join('\n\n');
-  };
-
   const fullTextWithTimestamps = transcript
     .map((t) => {
       const timestamp = new Date(t.offset * 1000).toISOString().substr(11, 8);
@@ -101,7 +79,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     .join("\n");
 
   const copyToClipboard = () => {
-    const textToCopy = showTimestamps ? fullTextWithTimestamps : createParagraphMode();
+    const textToCopy = showTimestamps ? fullTextWithTimestamps : createParagraphMode(transcript);
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -128,7 +106,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
 
   const downloadTxtPlain = () => {
     posthog.capture('export_clicked', { format: 'txt' });
-    downloadFile(createParagraphMode(), "transcript.txt", "text/plain");
+    downloadFile(createParagraphMode(transcript), "transcript.txt", "text/plain");
   };
 
   const downloadTxtWithTimestamps = () => {

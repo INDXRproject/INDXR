@@ -45,25 +45,39 @@ const formatHHMMSS = (seconds: number): string => {
 };
 
 // Helper: Create paragraph mode (merge granular captions into natural paragraphs)
+// Breaks on: gap > 2s between segments, accumulated duration > 90s, or sentence-ending punctuation
 export const createParagraphMode = (transcript: TranscriptItem[]): string => {
-  const fullText = transcript.map((t) => decodeEntities(t.text)).join(' ');
   const paragraphs: string[] = [];
-  let currentParagraph = '';
-  const words = fullText.split(' ');
+  let currentSegments: string[] = [];
+  let currentDuration = 0;
+  let prevItem: TranscriptItem | null = null;
 
-  for (const word of words) {
-    const testParagraph = currentParagraph ? `${currentParagraph} ${word}` : word;
-    if (testParagraph.length >= 400 && testParagraph.length <= 500) {
-      paragraphs.push(testParagraph);
-      currentParagraph = '';
-    } else if (testParagraph.length > 500) {
-      if (currentParagraph) paragraphs.push(currentParagraph);
-      currentParagraph = word;
-    } else {
-      currentParagraph = testParagraph;
+  for (const item of transcript) {
+    const text = decodeEntities(item.text).trim();
+    if (!text) continue;
+
+    const gap = prevItem ? item.offset - (prevItem.offset + prevItem.duration) : 0;
+    const prevEndsWithSentence = prevItem ? /[.!?]$/.test(decodeEntities(prevItem.text).trim()) : false;
+
+    const shouldBreak =
+      currentSegments.length > 0 &&
+      (gap > 2 || currentDuration > 90 || prevEndsWithSentence);
+
+    if (shouldBreak) {
+      paragraphs.push(currentSegments.join(' '));
+      currentSegments = [];
+      currentDuration = 0;
     }
+
+    currentSegments.push(text);
+    currentDuration += item.duration;
+    prevItem = item;
   }
-  if (currentParagraph) paragraphs.push(currentParagraph);
+
+  if (currentSegments.length > 0) {
+    paragraphs.push(currentSegments.join(' '));
+  }
+
   return paragraphs.join('\n\n');
 };
 
