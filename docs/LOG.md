@@ -1,3 +1,7 @@
+[2026-04-20] fix: youtube-transcript-not-available — Reason 2 "What to do" rewritten, 2 FAQ entries removed, auto-captions timing FAQ updated to JSX, extensions list item added, FAQ "every video" last sentence updated; ArticleTemplate widened to ReactNode FAQs | gewijzigd: src/app/youtube-transcript-not-available/page.tsx, src/components/content/templates/ArticleTemplate.tsx
+---
+[2026-04-19] feat: youtube-transcript-not-available — reason 8 added (silent intro), Content ID added to reason 7, benchmark data in reason 3, processing time honest, all headings sentence case | gewijzigd: src/app/youtube-transcript-not-available/page.tsx
+---
 [2026-04-19] fix: youtube-to-text comparison blok — "(other tools)" verwijderd, pre scrollable + text-[10px], meer content in beide panelen; FAQ "free" uitgebreid met library-omschrijving | gewijzigd: src/app/youtube-to-text/page.tsx
 ---
 [2026-04-19] feat: youtube-to-text full rewrite — accessibility section, side-by-side comparison, corrected sources, six formats framing | gewijzigd: src/app/youtube-to-text/page.tsx
@@ -856,3 +860,10 @@ Changed: docs/LOG.md
 src/components/TranscriptCard.tsx
 src/utils/formatTranscript.ts
 ---
+[2026-04-19 04:30] commit: feat: youtube-to-text + audio-to-text full rewrites — accessibility section, benchmark data, competitor comparison, bullet exports, Pro pricing column
+Changed: docs/LOG.md
+src/app/audio-to-text/page.tsx
+src/app/youtube-to-text/page.tsx
+src/components/content/templates/ToolPageTemplate.tsx
+---
+[2026-04-19 23:10] precompact: context compaction triggered

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { AuthorCard } from "@/components/content/AuthorCard"
 import type { Author } from "@/lib/authors"
@@ -8,8 +9,8 @@ interface ArticleTemplateProps {
   publishedAt: string
   updatedAt: string
   author: Author
-  children: React.ReactNode
-  faqs: Array<{ q: string; a: string }>
+  children: ReactNode
+  faqs: Array<{ q: string; a: ReactNode }>
   sources: Array<{ label: string; url: string }>
 }
 
@@ -47,7 +48,7 @@ export function ArticleTemplate({
       mainEntity: faqs.map(({ q, a }) => ({
         "@type": "Question",
         name: q,
-        acceptedAnswer: { "@type": "Answer", text: a },
+        acceptedAnswer: { "@type": "Answer", text: typeof a === "string" ? a : "" },
       })),
     },
   ]

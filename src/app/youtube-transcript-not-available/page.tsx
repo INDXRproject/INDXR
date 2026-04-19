@@ -12,15 +12,11 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Does every YouTube video have a transcript?",
-    a: "No. YouTube automatically generates captions for videos in 67 supported languages when speech is detectable and audio quality is sufficient. Videos in unsupported languages, music-only content, videos with poor audio, and videos where the creator has disabled captions have no transcript. For those videos, AI transcription is the only way to get the text.",
+    a: "No. YouTube automatically generates captions for videos in 67 supported languages when speech is detectable and audio quality is sufficient. Videos in unsupported languages, music-only content, videos with poor audio, and videos where the creator has disabled captions have no transcript. For those videos, the main options are downloading the audio and uploading it to a transcription tool, or using AI transcription directly from the URL when the video is publicly accessible. Neither works for private videos or members-only content without first obtaining the audio file.",
   },
   {
     q: "How long does it take for YouTube to generate auto-captions?",
-    a: "Usually a few minutes, but up to 24 hours for longer or complex videos. If a video is older than 24 hours and still has no transcript, auto-captions either failed or were disabled.",
-  },
-  {
-    q: 'Why does the YouTube transcript say "no results found" when I search it?',
-    a: "This is a search-within-transcript issue, not a missing transcript issue. The transcript exists, but the specific words you searched for don't appear in it. Try a different phrase or browse the transcript manually.",
+    a: (<>{"YouTube's"} own <a href="https://support.google.com/youtube/answer/6373554" target="_blank" rel="noopener noreferrer">documentation</a> does not specify exact processing times. In practice, most videos receive auto-captions within a few hours of upload. Creators report that complex audio or longer videos can take longer. If a video is more than a day old and still shows no transcript, auto-captions most likely failed or were disabled by the creator.</>),
   },
   {
     q: "Can I get a transcript from a private YouTube video?",
@@ -29,10 +25,6 @@ const faqs = [
   {
     q: "Can I get a transcript from a YouTube Short?",
     a: "YouTube Shorts support transcripts through the same mechanism as regular videos, but caption availability varies. Short-form content uploaded directly as a Short sometimes bypasses the captioning pipeline. AI transcription works for Shorts as long as there is speech in the video.",
-  },
-  {
-    q: "Why does the transcript button disappear and reappear?",
-    a: 'This is a known intermittent YouTube UI bug. The caption data exists on YouTube\'s servers but the "Show transcript" button fails to render. Refreshing the page or clearing the browser cache resolves it in most cases.',
   },
   {
     q: "Does INDXR.AI work for videos in languages other than English?",
@@ -46,8 +38,16 @@ const faqs = [
 
 const sources = [
   {
-    label: "YouTube Help — Auto-captions: languages and processing times",
+    label: "YouTube Help — Automatic captions",
     url: "https://support.google.com/youtube/answer/6373554",
+  },
+  {
+    label: "YouTube Help — Content ID claims",
+    url: "https://support.google.com/youtube/answer/6013276",
+  },
+  {
+    label: "AssemblyAI benchmarks — Universal-3 Pro",
+    url: "https://www.assemblyai.com/benchmarks",
   },
 ]
 
@@ -57,20 +57,20 @@ export default function YouTubeTranscriptNotAvailablePage() {
       title="YouTube Transcript Not Available? Here's Why — and How to Fix It"
       metaDescription="YouTube transcripts missing or not showing? We cover every reason — from creator settings to unsupported languages — and show you how to get the text anyway, even without captions."
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-04-19"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
     >
       <p>
-        YouTube transcripts are missing for one of seven distinct reasons: auto-caption generation
+        YouTube transcripts are missing for one of eight distinct reasons: auto-caption generation
         failed, the creator disabled captions, the video is too new to have been processed yet, the
-        content is behind an access restriction, the video contains no speech, there&apos;s a temporary
-        YouTube bug, or the language isn&apos;t supported. The good news is that most of these have a fix
-        — and for videos that genuinely have no captions, AI transcription works regardless.
+        content is behind an access restriction, the video contains no speech, the video opens with a
+        long silent or music-only intro, there&apos;s a temporary YouTube bug or Content ID block, or
+        the language isn&apos;t supported. Most of these have a workaround, though not every video can be transcribed. The right approach depends on why the transcript is missing.
       </p>
 
-      <h2>Why YouTube Transcripts Aren&apos;t Available — The Complete List</h2>
+      <h2>Why YouTube transcripts aren&apos;t available — the complete list</h2>
 
       <p>
         Before troubleshooting, it helps to know exactly what you&apos;re dealing with. YouTube generates
@@ -78,7 +78,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
         more often than most people expect.
       </p>
 
-      <h3>Reason 1: The Video Has No Auto-Captions Yet</h3>
+      <h3>Reason 1: The video has no auto-captions yet</h3>
 
       <p>
         If you&apos;re watching a video that was uploaded within the last few hours, the transcript may
@@ -100,7 +100,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
         still has no transcript, the cause is something else.
       </p>
 
-      <h3>Reason 2: The Creator Disabled Captions</h3>
+      <h3>Reason 2: The creator disabled captions</h3>
 
       <p>
         Channel owners can turn off auto-captions entirely for their channel or delete individual
@@ -114,13 +114,15 @@ export default function YouTubeTranscriptNotAvailablePage() {
       </p>
 
       <p>
-        <strong>What to do:</strong> If you need the text from this video, AI transcription is your
-        only option. Tools like{" "}
-        <Link href="/youtube-transcript-generator">INDXR.AI</Link> transcribe directly from the
-        audio, bypassing YouTube&apos;s caption system entirely.
+        <strong>What to do:</strong>{" "}
+        <Link href="/youtube-transcript-generator">INDXR.AI</Link> can attempt AI transcription
+        directly from the URL — this works for most publicly accessible videos. If the URL fails,
+        downloading the audio separately and uploading it via the{" "}
+        <Link href="/audio-to-text">Audio Upload tab</Link> is worth trying. If the video is not
+        publicly downloadable, there may be no reliable workaround.
       </p>
 
-      <h3>Reason 3: Poor Audio Quality or No Speech</h3>
+      <h3>Reason 3: Poor audio quality or no speech</h3>
 
       <p>
         YouTube&apos;s automatic speech recognition needs clean, recognizable speech. Videos that are
@@ -132,13 +134,21 @@ export default function YouTubeTranscriptNotAvailablePage() {
       </p>
 
       <p>
-        <strong>What to do:</strong> AI transcription handles these cases better than YouTube&apos;s
-        built-in system. AssemblyAI&apos;s Universal-3 Pro model — which powers INDXR.AI&apos;s transcription
-        — is trained specifically on noisy, real-world audio and performs reliably at bitrates as low
-        as 8kbps.
+        <strong>What to do:</strong> AI transcription generally performs better on noisy audio than{" "}
+        {"YouTube's"} system. On difficult recordings, AssemblyAI{"'"}s model achieves a 9.97% word
+        error rate versus 24.73% for Amazon Transcribe on the same{" "}
+        <a
+          href="https://www.assemblyai.com/benchmarks"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          benchmark
+        </a>
+        . That said, on audio with extreme noise, heavily overlapping speakers, or no clear speech,
+        no transcription system produces reliable results.
       </p>
 
-      <h3>Reason 4: The Language Isn&apos;t Supported</h3>
+      <h3>Reason 4: The language isn&apos;t supported</h3>
 
       <p>
         YouTube auto-generates captions for 67 languages for long-form videos, but supports only
@@ -148,11 +158,11 @@ export default function YouTubeTranscriptNotAvailablePage() {
 
       <p>
         <strong>What to do:</strong> AI transcription via AssemblyAI supports 99+ languages with
-        automatic detection. Paste the URL into INDXR.AI, and the transcript will be generated in
-        the video&apos;s original language.
+        automatic detection. For most videos in unsupported languages, pasting the URL and enabling
+        AI Transcription will produce a transcript — though accuracy varies significantly by language.
       </p>
 
-      <h3>Reason 5: The Video Is Age-Restricted or Members-Only</h3>
+      <h3>Reason 5: The video is age-restricted or members-only</h3>
 
       <p>
         Age-restricted videos require a signed-in account with age verification. YouTube&apos;s standard
@@ -167,13 +177,15 @@ export default function YouTubeTranscriptNotAvailablePage() {
       </p>
 
       <p>
-        <strong>What to do:</strong> For age-restricted videos, see our guide on{" "}
-        <Link href="/youtube-age-restricted-transcript">YouTube age-restricted transcripts</Link>.
-        For members-only content, see{" "}
-        <Link href="/youtube-members-only-transcript">YouTube members-only transcripts</Link>.
+        <strong>What to do:</strong> For age-restricted videos, see the guide on{" "}
+        <Link href="/youtube-age-restricted-transcript">YouTube age-restricted transcripts</Link> —
+        there is a workaround via audio download. For members-only content, see{" "}
+        <Link href="/youtube-members-only-transcript">YouTube members-only transcripts</Link>. If
+        you are not a member and cannot obtain the audio file, there is no way to transcribe the
+        video.
       </p>
 
-      <h3>Reason 6: The Video Is Private</h3>
+      <h3>Reason 6: The video is private</h3>
 
       <p>
         Private YouTube videos are only accessible to accounts explicitly invited by the owner. No
@@ -187,20 +199,41 @@ export default function YouTubeTranscriptNotAvailablePage() {
         from your file without needing the video to be public.
       </p>
 
-      <h3>Reason 7: A Temporary YouTube Bug or Regional Block</h3>
+      <h3>Reason 7: A temporary YouTube bug, regional block, or Content ID restriction</h3>
 
       <p>
         YouTube occasionally has bugs where the transcript panel disappears even though captions
         exist. Refreshing the page, switching to incognito mode, or trying a different browser
         resolves this in most cases. Regional blocks can also suppress transcripts for videos
-        licensed differently across countries.
+        licensed differently across countries. Content ID matches are a third cause in this category:
+        when a rights holder has claimed a video, YouTube sometimes restricts or removes the caption
+        track as part of the content management action, even if the video itself remains viewable.
       </p>
 
       <p>
-        <strong>What to do:</strong> Try the quick fixes below before assuming captions don&apos;t exist.
+        <strong>What to do:</strong> Try the quick fixes below before assuming captions {"don't"}{" "}
+        exist. For Content ID cases where the video is still viewable, AI transcription works from
+        the audio and is not affected by caption restrictions. If the video is blocked entirely in
+        your region, neither approach works without a VPN or alternative access.
       </p>
 
-      <h2>Quick Fixes to Try First</h2>
+      <h3>Reason 8: The video opens with a long silent or music-only intro</h3>
+
+      <p>
+        YouTube&apos;s captioning system starts processing from the beginning of the audio. If a video
+        opens with an extended period of silence, ambient sound, or music before any speech begins,
+        YouTube&apos;s speech recognition sometimes fails to initialize and produces no captions for the
+        entire video — even if there is clear spoken content later. This is a known limitation of
+        how YouTube&apos;s system handles non-speech audio at the start of a file.
+      </p>
+
+      <p>
+        <strong>What to do:</strong> AI transcription is not affected by this. INDXR.AI processes the
+        full audio regardless of how the video opens, and generates a transcript from any speech
+        present in the file.
+      </p>
+
+      <h2>Quick fixes to try first</h2>
 
       <p>
         If you&apos;re not sure which of the above applies, run through these before doing anything else.
@@ -224,6 +257,14 @@ export default function YouTubeTranscriptNotAvailablePage() {
           and files.
         </li>
         <li>
+          <strong>Check for browser extensions.</strong> Ad blockers and privacy extensions
+          frequently cause {"YouTube's"} transcript panel to disappear or fail to load even when
+          captions exist — the caption data is there, but the button {"doesn't"} render. Opening
+          the video in an incognito window confirms whether an extension is the cause. If the
+          transcript appears in incognito but not your main browser, disable extensions one by one
+          to identify the culprit.
+        </li>
+        <li>
           <strong>Check if the CC button appears.</strong> The closed caption button (CC) in the
           video player and the &quot;Show transcript&quot; option in the description menu are separate systems.
           A video can have CC available but the transcript panel hidden due to a UI bug. If you see
@@ -240,7 +281,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
         </li>
       </ol>
 
-      <h2>When There Simply Are No Captions — And What to Do</h2>
+      <h2>When there simply are no captions — and what to do</h2>
 
       <p>
         If you&apos;ve worked through the above and the transcript still isn&apos;t there, the video likely
@@ -260,17 +301,26 @@ export default function YouTubeTranscriptNotAvailablePage() {
 
       <p>
         Rather than relying on captions YouTube generates (or fails to generate), AI transcription
-        downloads the video&apos;s audio directly and runs it through a speech recognition model. The
-        result is a full transcript even when YouTube shows nothing.
+        downloads the video&apos;s audio directly and runs it through a speech recognition model. In many
+        cases this produces a usable transcript where YouTube shows nothing — whether it works depends
+        on the audio quality, the language, and whether the video is publicly accessible.
       </p>
 
       <p>
         <Link href="/youtube-transcript-generator">INDXR.AI</Link> does this in a few steps: paste
         the video URL, enable AI Transcription, confirm the credit cost (1 credit per minute), and
-        the transcript is ready in approximately 1 minute per 10 minutes of audio. The transcription
-        runs on AssemblyAI Universal-3 Pro, which achieves 94–96% accuracy on clean audio and handles
-        accents, overlapping speech, and background noise significantly better than YouTube&apos;s built-in
-        system.
+        the transcript is typically ready within a few minutes. Processing time scales with video
+        length — most videos under 30 minutes complete in under two minutes. The transcription
+        runs on AssemblyAI{"'"}s model, which{" "}
+        <a
+          href="https://www.assemblyai.com/benchmarks"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          benchmarks
+        </a>{" "}
+        at 94.1% word accuracy on English speech and handles accents, overlapping speech, and
+        background noise significantly better than YouTube&apos;s built-in system.
       </p>
 
       <p>
@@ -280,7 +330,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
         <Link href="/how-it-works">how INDXR.AI works</Link>.
       </p>
 
-      <h2>Specific Scenarios</h2>
+      <h2>Specific scenarios</h2>
 
       <h3>The video is a live stream or a recent stream replay</h3>
 
@@ -296,7 +346,8 @@ export default function YouTubeTranscriptNotAvailablePage() {
       <p>
         YouTube processes long videos more slowly, and the transcript panel can show &quot;no results&quot; for
         videos still in the caption queue. If the video is more than a day old and still shows
-        nothing, assume no captions exist and use AI transcription.
+        nothing, assume no captions exist. AI transcription is an option for publicly accessible
+        videos — paste the URL and enable AI Transcription to try.
       </p>
 
       <h3>The video contains music, sound effects, or no speech</h3>
