@@ -98,8 +98,7 @@ export default function AudioToTextPage() {
       <h2>How the Transcription Works</h2>
 
       <p>
-        Once uploaded, the file is processed through AssemblyAI Universal-3 Pro — the same model used for
-        YouTube AI Transcription. The model handles a wide range of audio conditions:
+        Once uploaded, the file is processed through AssemblyAI Universal-3 Pro — the same model used when INDXR.AI transcribes YouTube videos without captions. The model handles a wide range of audio conditions:
       </p>
 
       <p>

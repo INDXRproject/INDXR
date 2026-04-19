@@ -4,164 +4,265 @@ import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplat
 import { AUTHORS } from "@/lib/authors"
 
 export const metadata: Metadata = {
-  title: "Convert YouTube to Text — Free Transcript Extractor | INDXR.AI",
+  title: "YouTube to text — what you actually get | INDXR.AI",
   description:
-    "Convert any YouTube video to text in seconds. Free for videos with auto-captions. AI transcription for videos without. Download as TXT, Markdown, SRT, JSON, and more.",
+    "Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — six export formats, nine output options.",
 }
 
 const faqs = [
   {
     q: "Is this actually free?",
-    a: "For auto-caption videos: yes, completely. No account needed to extract and download as TXT. Creating a free account unlocks all export formats and gives you 25 credits for testing AI transcription.",
+    a: "For videos with auto-generated captions: yes, completely. No account needed to extract and download as TXT. A free account unlocks all export formats, adds 25 credits for AI transcription testing, and gives access to your personal library — one place for all your transcripts and exports, saved and searchable.",
   },
   {
-    q: "How is this different from just copying YouTube's transcript?",
-    a: "YouTube's 'Show transcript' button only works when captions exist, only displays text on-screen, and can only be copied manually. INDXR.AI works when captions don't exist (AI transcription), exports in eight formats, resegments subtitle timing for professional use, and saves everything to a searchable library for re-export later.",
+    q: "How is this different from copying YouTube's built-in transcript?",
+    a: "YouTube's transcript panel only works when captions exist, only shows text on-screen, and requires manual copying as raw fragments. INDXR.AI groups those same fragments into readable paragraphs, works when captions don't exist via AI transcription, exports in six formats with nine export options, and saves everything to a personal searchable library.",
   },
   {
     q: "Does it work for non-English videos?",
-    a: "Auto-caption extraction works for any language YouTube supports (67 languages). AI Transcription supports 99+ languages with automatic detection — no need to specify the language.",
+    a: "Auto-caption extraction works for all 67 languages YouTube supports. AI transcription covers 99+ languages with automatic detection — no need to specify the language.",
   },
   {
     q: "Can I convert a whole playlist to text at once?",
-    a: "Yes. The Playlist tab accepts any YouTube playlist URL and processes all selected videos in a single job. First three auto-caption videos are free; additional auto-caption videos cost 1 credit each from video four onward.",
+    a: (<>Yes. The <Link href="/youtube-playlist-transcript">Playlist tab</Link> processes all selected videos in one job — first three auto-caption videos free, 1 credit per video from video four onward.</>),
   },
   {
     q: "What about YouTube Shorts?",
-    a: "Yes. Paste the Short's URL the same way as any other video. Shorts follow YouTube's standard caption system — auto-captions available for most, AI transcription available when they're not.",
+    a: "Yes — paste the URL the same way as any other video. Shorts use YouTube's standard caption system.",
   },
   {
     q: "How accurate is AI transcription?",
-    a: "AssemblyAI Universal-3 Pro, which powers INDXR.AI's AI transcription, achieves 94–96%+ accuracy on clean audio. For challenging audio conditions — background noise, accents, overlapping speakers — accuracy varies but consistently outperforms YouTube's auto-captioning system.",
+    a: (<>AssemblyAI, which powers INDXR.AI{"'"}s AI transcription, achieves 95%+ accuracy on clean audio. No model is error-free — results vary on challenging audio. For the full breakdown, see the <Link href="/audio-to-text">audio transcription page</Link>.</>),
+  },
+  {
+    q: "What does the plain TXT output look like?",
+    a: "A text file with flowing paragraphs — no timestamps, no line numbers. Segments are grouped by natural speech pauses, typically 60 to 90 seconds per paragraph. The result reads like a document rather than a raw caption file.",
   },
 ]
 
 export default function YouTubeToTextPage() {
   return (
     <ToolPageTemplate
-      title="Convert YouTube Videos to Text — Free, Instant, No Extension"
-      metaDescription="Convert any YouTube video to text in seconds. Free for videos with auto-captions. AI transcription for videos without. Download as TXT, Markdown, SRT, JSON, and more."
+      title="YouTube to text — what you actually get"
+      metaDescription="Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — six export formats, nine output options."
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-04-19"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
+      sources={[
+        { label: "YouTube Help — Auto-generated captions", url: "https://support.google.com/youtube/answer/6373554" },
+        { label: "AssemblyAI benchmarks", url: "https://www.assemblyai.com/benchmarks" },
+      ]}
     >
       <p>
-        Converting a YouTube video to text takes two steps: paste the URL, download the result. For videos
-        with auto-generated captions — the majority of YouTube content — this is free and happens in
-        seconds. For videos without captions, AI transcription fills the gap.
+        Most tools that extract YouTube captions give you exactly what YouTube gives
+        you: hundreds of two-second fragments, each on its own line, strung together
+        without structure. INDXR.AI takes that same data and groups it into readable
+        paragraphs — the way{" you'd"} actually want to read it.
+      </p>
+
+      {/* Side-by-side comparison */}
+      <div className="flex flex-col md:flex-row gap-4 my-6 text-sm">
+        <div className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-3">
+            Raw caption output
+          </p>
+          <pre className="whitespace-pre-wrap font-mono text-[10px] text-[var(--text-muted)] leading-relaxed overflow-y-auto max-h-48">{`your excellencies delegates ladies
+and gentlemen as you spend the next
+two weeks debating negotiating
+persuading and compromising
+as you surely must its easy
+to forget that ultimately the
+emergency climate comes down
+to a single number the concentration
+of carbon in our atmosphere
+the measure that greatly determines
+global temperature and the changes
+in that one number is the clearest
+way to chart our own story`}</pre>
+        </div>
+        <div className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-3">
+            INDXR.AI plain TXT output
+          </p>
+          <pre className="whitespace-pre-wrap font-mono text-[10px] text-[var(--text-primary)] leading-relaxed overflow-y-auto max-h-48">{`your excellencies delegates ladies and gentlemen as you spend
+the next two weeks debating negotiating persuading and
+compromising as you surely must its easy to forget that
+ultimately the emergency climate comes down to a single number
+the concentration of carbon in our atmosphere the measure that
+greatly determines global temperature
+
+that number bounced wildly between 180 and 300 and so too did
+global temperatures it was a brutal and unpredictable world
+at times our ancestors existed only in tiny numbers but just
+over 10 000 years ago that number suddenly stabilized`}</pre>
+        </div>
+      </div>
+      <p className="text-sm text-[var(--text-muted)] -mt-2 mb-6">
+        Same source video. Left: raw fragments as delivered by YouTube. Right: INDXR.AI groups them into paragraphs based on natural speech pauses.
+      </p>
+
+      <h2>What are auto-generated captions?</h2>
+
+      <p>
+        When you watch a YouTube video and see subtitles appear automatically, those
+        are auto-generated captions. YouTube{"'"}s speech recognition system listens
+        to the audio and converts it to text — no human involvement.
       </p>
 
       <p>
-        The output isn&apos;t a wall of raw text dumped into your clipboard. INDXR.AI produces a clean,
-        formatted transcript that you can export in the format your workflow actually uses.
-      </p>
-
-      <h2>What &quot;Converting to Text&quot; Actually Means</h2>
-
-      <p>When people search for &quot;YouTube to text,&quot; they usually want one of a few things:</p>
-
-      <p>
-        <strong>Copy-paste text for an AI assistant.</strong> Paste the transcript into ChatGPT, Claude,
-        or NotebookLM. INDXR.AI&apos;s plain TXT export strips timestamps and formatting, giving you clean
-        continuous prose ready for any AI tool.
+        Most YouTube videos have them. {"They're"} what tools like INDXR.AI extract
+        when you paste a URL.
       </p>
 
       <p>
-        <strong>A readable document to reference later.</strong> Markdown export with YAML frontmatter
-        works directly in Obsidian and Notion. A lecture becomes a structured note with the video&apos;s
-        metadata attached.
-      </p>
-
-      <p>
-        <strong>Subtitles for a video project.</strong> SRT and VTT export with resegmented timing — 3–7
-        seconds per block at 42 characters per line, not YouTube&apos;s choppy 2–4 second fragments.
-      </p>
-
-      <p>
-        <strong>Structured data for a developer pipeline.</strong> JSON export with a metadata wrapper and{" "}
-        <code>start</code>/<code>end</code> timestamps per segment. Or RAG-optimized JSON for vector
-        database ingestion.
-      </p>
-
-      <p>The conversion from video to text is the same operation. The output format determines what you can do with it.</p>
-
-      <h2>When Auto-Captions Exist</h2>
-
-      <p>
-        For the roughly 80% of YouTube videos with auto-generated captions, conversion is immediate and
-        free. INDXR.AI retrieves the caption data from YouTube and delivers it in whatever format you
-        select.
-      </p>
-
-      <p>
-        Auto-captions have one meaningful limitation: they lack punctuation and capitalization. The text
-        arrives as a continuous stream of lowercase words. For reading, AI input, or quick research, this
-        is usually fine. For anything that will be presented to users — a subtitle file, a published blog
-        post, an Obsidian note you&apos;ll share — the quality difference between auto-captions and AI
-        transcription is noticeable.
-      </p>
-
-      <h2>When Auto-Captions Don&apos;t Exist</h2>
-
-      <p>
-        About 20% of YouTube videos have no auto-generated captions (
+        The catch: auto-captions are imperfect by design. YouTube itself{" "}
         <a
           href="https://support.google.com/youtube/answer/6373554"
           target="_blank"
           rel="noopener noreferrer"
         >
-          YouTube Help
+          warns
+        </a>{" "}
+        that automatic captions may misrepresent spoken content due to
+        mispronunciations, accents, dialects, background noise, slang, overlapping
+        speakers, or fast speech. They arrive without punctuation, without
+        capitalization, and sometimes with outright errors — especially on technical
+        content, names, or anything outside standard spoken language.
+      </p>
+
+      <p>
+        For a quick read or reference, this is usually fine. For notes you want to
+        keep, content you want to publish, or anything {"you'll"} share — the quality
+        gap becomes noticeable, and quickly starts getting in the way.
+      </p>
+
+      <p>
+        Some creators manually upload their own captions, which are typically more
+        accurate and include punctuation — INDXR.AI picks those up automatically. But
+        the majority of videos only have auto-generated captions.
+      </p>
+
+      <p>
+        For deaf and hard-of-hearing people, caption quality {"isn't"} a workflow
+        preference — {"it's"} a question of access. Captions are how many people
+        engage with video content at all. When auto-captions produce errors on
+        technical terms, drop words, or fail on accented speech, a video becomes
+        inaccessible. Accurate transcription matters beyond personal convenience — it
+        determines whether a video can be followed by a significant part of any
+        audience.
+      </p>
+
+      <h2>{"When auto-captions don't exist — or aren't good enough"}</h2>
+
+      <p>
+        Some videos have no auto-generated captions at all. YouTube{" "}
+        <a
+          href="https://support.google.com/youtube/answer/6373554"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          mentions
+        </a>{" "}
+        common reasons: the creator disabled them, the video is in a language YouTube
+        {"doesn't"} support well, or the audio quality was too poor for speech
+        recognition to work.
+      </p>
+
+      <p>
+        For those videos, AI transcription is an alternative. INDXR.AI downloads the
+        audio and processes it through{" "}
+        <a
+          href="https://www.assemblyai.com/benchmarks"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          AssemblyAI
         </a>
-        ). Common reasons: the creator disabled captions, the video is in a language YouTube doesn&apos;t
-        process well, the audio quality was too poor for YouTube&apos;s speech recognition, or the video was
-        uploaded before YouTube&apos;s auto-caption rollout.
+        , one of the most accurate speech-to-text models available. The result is a
+        properly punctuated transcript in 99+ languages. {"It's"} meaningfully more
+        accurate than auto-captions on most content, though no model is error-free —
+        challenging audio conditions, strong accents, or highly technical terminology
+        will still produce some mistakes.
       </p>
 
       <p>
-        For these videos, INDXR.AI uses AI transcription — downloading the audio and processing it through
-        AssemblyAI Universal-3 Pro. The result is a properly punctuated, accurate transcript in 99+
-        languages. Cost: 1 credit per minute of video.
+        Cost: 1 credit per minute of audio. The exact cost for any video is shown
+        before confirming — no surprises. A free account includes 25 credits, enough
+        to test AI transcription on a few videos and decide whether it meets
+        expectations before purchasing any credits.
+      </p>
+
+      <h2>What you can do with the transcript</h2>
+
+      <p>
+        Once a transcript exists — whether from auto-captions or AI transcription —
+        it can be exported in six file formats, with nine export options total.
       </p>
 
       <p>
-        You&apos;ll know before spending any credits. INDXR.AI shows you whether captions are available and the
-        AI transcription cost for that specific video&apos;s duration before you confirm. See{" "}
-        <Link href="/youtube-transcript-not-available">why YouTube transcripts are sometimes unavailable</Link>{" "}
-        for a full guide.
+        Plain text is the simplest output: readable paragraphs, no timestamps, no
+        line numbers. Good for reading through a video, taking personal notes, or
+        using as a starting point for writing. There is also a plain text file with
+        timestamps, where every line is time-coded — useful when the exact moment
+        something was said needs to be referenced or quoted.
       </p>
 
-      <h2>Export Options After Conversion</h2>
+      <p>
+        Beyond plain text, the same extraction produces five other formats.{" "}
+        <Link href="/youtube-transcript-markdown">Markdown</Link> adds the {"video's"}
+        metadata in the header — title, channel, URL, duration — ready to open in any
+        notes app or import into Obsidian or Notion. SRT and VTT are subtitle files
+        for adding captions to a video or publishing it online. CSV exports every
+        segment as a spreadsheet row for analysis or bulk processing. JSON gives
+        developers a structured data format with timestamps and video metadata; the{" "}
+        <Link href="/youtube-transcript-for-rag">RAG-optimized JSON variant</Link> is
+        chunked and formatted for AI pipelines and vector databases — primarily used
+        by developers building searchable archives, chatbots over specific content, or
+        retrieval systems using tools like LangChain or Pinecone.
+      </p>
+
+      <p>Six formats, nine export options:</p>
 
       <table>
         <thead>
           <tr>
             <th>Format</th>
-            <th>Use case</th>
+            <th>{"What it's for"}</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>TXT Plain</td><td>AI tools, copy-paste, quick reading</td></tr>
-          <tr><td>TXT With Timestamps</td><td>Research, noting when things were said</td></tr>
-          <tr><td>Markdown Plain</td><td>Blog posts, newsletters</td></tr>
-          <tr><td>Markdown With Timestamps</td><td>Obsidian, Notion</td></tr>
-          <tr><td>SRT</td><td>Video editors</td></tr>
-          <tr><td>VTT</td><td>Web players, LMS platforms</td></tr>
-          <tr><td>CSV</td><td>Spreadsheet analysis</td></tr>
-          <tr><td>JSON</td><td>Developer integration</td></tr>
-          <tr><td>JSON RAG</td><td>AI pipelines, vector databases</td></tr>
+          <tr><td>TXT plain</td><td>Read through a video like a document, or use as a starting point for your own writing</td></tr>
+          <tr><td>TXT with timestamps</td><td>Find exactly when something was said — useful for referencing or quoting</td></tr>
+          <tr><td>Markdown plain</td><td>{"A text file with the video's metadata in the header — open in any notes app"}</td></tr>
+          <tr><td>Markdown with timestamps</td><td>Same as regular Markdown, but with every line time-coded</td></tr>
+          <tr><td>SRT</td><td>Add subtitles to a video — works in Premiere Pro, DaVinci Resolve, CapCut</td></tr>
+          <tr><td>VTT</td><td>Subtitles for websites and online courses — Canvas, Moodle, Articulate</td></tr>
+          <tr><td>CSV</td><td>Every segment as a spreadsheet row — for analysis or bulk processing</td></tr>
+          <tr><td>JSON</td><td>{"Structured data with timestamps and video metadata — for developers"}</td></tr>
+          <tr><td>JSON RAG</td><td><Link href="/youtube-transcript-for-rag">Chunked and formatted for AI pipelines and vector databases</Link></td></tr>
         </tbody>
       </table>
 
       <p>
-        All formats export from the same transcript. Extract once, re-export in any format from your
-        library at any time. To convert a video now,{" "}
-        <Link href="/youtube-transcript-generator">paste any YouTube URL in the generator</Link>. For
-        a full breakdown of the extraction pipeline, see{" "}
-        <Link href="/how-it-works">how INDXR.AI works</Link>. For credit costs, see the{" "}
-        <Link href="/pricing">pricing page</Link>. For audio files from any source, the{" "}
-        <Link href="/audio-to-text">Audio Upload tab</Link> accepts MP3, MP4, WAV, M4A, OGG, FLAC,
-        and WEBM up to 500MB.
+        All standard exports (TXT, Markdown, SRT, VTT, CSV, JSON) are included with
+        every extraction. RAG JSON is the only exception and is available separately
+        — see the <Link href="/pricing">pricing page</Link> for credit costs.
+      </p>
+
+      <p>
+        For playlists, the{" "}
+        <Link href="/youtube-playlist-transcript">Playlist tab</Link> processes all
+        selected videos in one job. For audio files from any source, the{" "}
+        <Link href="/audio-to-text">Audio Upload tab</Link> works the same way —
+        upload an audio file and process it like a YouTube URL.
+      </p>
+
+      <p>
+        Everything you extract is saved to your library — a personal archive of all
+        your transcripts, searchable and accessible from any device.{" "}
+        <Link href="/signup">Sign up</Link> for a free account to get started: 25
+        credits included, no payment or credit card required.
       </p>
     </ToolPageTemplate>
   )

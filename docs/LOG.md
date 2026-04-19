@@ -1,3 +1,9 @@
+[2026-04-19] fix: youtube-to-text comparison blok — "(other tools)" verwijderd, pre scrollable + text-[10px], meer content in beide panelen; FAQ "free" uitgebreid met library-omschrijving | gewijzigd: src/app/youtube-to-text/page.tsx
+---
+[2026-04-19] feat: youtube-to-text full rewrite — accessibility section, side-by-side comparison, corrected sources, six formats framing | gewijzigd: src/app/youtube-to-text/page.tsx
+---
+[2026-04-18 21:00] taak: youtube-to-text/page.tsx herschreven — nieuwe titel/intro, "What You Get" sectie, tabel use-cases bijgewerkt, 7 FAQs vernieuwd (incl. JSX), sources prop toegevoegd; ToolPageTemplate uitgebreid naar ReactNode FAQ-antwoorden | gewijzigd: src/app/youtube-to-text/page.tsx, src/components/content/templates/ToolPageTemplate.tsx
+---
 [2026-04-18 20:00] taak: TXT plain export herschreven — timing-gebaseerde paragraafopsplitsing (gap >2s, duur >90s, zinseinde) vervangt character-bucket methode | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx
 ---
 [2026-04-18 19:00] taak: A3a implementatie voltooid — Cat.1: 3 dode bronlinks vervangen (Rev.com, AssemblyAI, ChromaDB); Cat.2: /how-it-works + /pricing + /youtube-transcript-for-rag pillar-links toegevoegd aan 18 paginas; Cat.3: 7 inline referenties geankerd (BBC, Netflix, Vectara, NVIDIA, Chroma Research, Microsoft Azure) | gewijzigd: src/app/youtube-transcript-without-extension/page.tsx, src/app/alternative/downsub/page.tsx, src/app/alternative/notegpt/page.tsx, src/app/alternative/turboscribe/page.tsx, src/app/alternative/tactiq/page.tsx, src/app/alternative/happyscribe/page.tsx, src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx, src/app/(marketing)/page.tsx, + 10 eerder gewijzigde content-paginas
@@ -844,4 +850,9 @@ src/app/youtube-transcript-markdown/page.tsx
 src/app/youtube-transcript-not-available/page.tsx
 src/app/youtube-transcript-obsidian/page.tsx
 src/app/youtube-transcript-without-extension/page.tsx
+---
+[2026-04-18 21:13] commit: feat: TXT paragraph mode — timing-aware segment merging
+Changed: docs/LOG.md
+src/components/TranscriptCard.tsx
+src/utils/formatTranscript.ts
 ---
