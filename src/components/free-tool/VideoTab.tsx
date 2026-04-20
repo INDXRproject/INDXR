@@ -557,6 +557,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     }
 
   const handleWhisperError = (errorMessage: string) => {
+    if (errorMessage === 'no_speech_detected') {
+      setError({ message: '', isNoSpeech: true })
+      return
+    }
     setError({ message: errorMessage })
     toast.error(errorMessage)
   }

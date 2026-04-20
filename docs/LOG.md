@@ -1,3 +1,5 @@
+[2026-04-20] fix: no_speech_detected via WhisperFallbackModal path — modal passes raw string to onError; handleWhisperError intercepts it and shows inline card (no toast) | gewijzigd: src/components/free-tool/WhisperFallbackModal.tsx, src/components/free-tool/VideoTab.tsx
+---
 [2026-04-20] fix: WhisperFallbackModal self-fetches duration — modal now fetches /api/video/metadata when estimatedDuration not passed, shows "Calculating..." while loading, forwards duration to endpoint pre-check; copy updated to AssemblyAI | gewijzigd: src/components/free-tool/WhisperFallbackModal.tsx
 ---
 [2026-04-20] fix: whisper credit pre-check + no-speech UX + modal copy — endpoint now checks actual cost (ceil(duration/60)) before job starts; no_speech_detected shows inline card with refund confirmation; modal copy corrected to "1 credit per minute" | gewijzigd: backend/main.py, src/app/api/transcribe/whisper/route.ts, src/components/free-tool/VideoTab.tsx
@@ -884,4 +886,8 @@ docs/LOG.md
 docs/wiki/architecture/ai-pipeline.md
 src/app/api/transcribe/whisper/route.ts
 src/components/free-tool/VideoTab.tsx
+---
+[2026-04-20 14:00] commit: fix: WhisperFallbackModal self-fetches duration + AssemblyAI copy
+Changed: docs/LOG.md
+src/components/free-tool/WhisperFallbackModal.tsx
 ---

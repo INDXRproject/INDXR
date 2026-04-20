@@ -145,6 +145,11 @@ export function WhisperFallbackModal({
       }
 
       if (!finalEvent || finalEvent.type === 'error') {
+        if (finalEvent?.error === 'no_speech_detected') {
+          onError('no_speech_detected')
+          onOpenChange(false)
+          return
+        }
         if (finalEvent?.code === 'insufficient_credits') {
           onError(`Not enough credits. You need ${finalEvent.required_credits} credits but only have ${finalEvent.available_credits}.`)
           onOpenChange(false)
