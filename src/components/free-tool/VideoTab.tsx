@@ -8,7 +8,6 @@ import { TranscriptCard, TranscriptItem } from "@/components/TranscriptCard"
 import { TranscriptMetadata } from "@/types/transcript"
 import { toast } from "sonner"
 import { validateYouTubeUrl, YouTubeUrlType } from "@/utils/youtube"
-import { WhisperFallbackModal } from "@/components/free-tool/WhisperFallbackModal"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
@@ -127,7 +126,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [videoUrl, setVideoUrl] = useState<string>("")
   const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean } | null>(null)
   const [isPlaylistUrl, setIsPlaylistUrl] = useState(false)
-  const [showWhisperModal, setShowWhisperModal] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState("")
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
@@ -309,7 +307,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     }
   }
 
-  // Estimate credits for Whisper (1 credit per 10 min, min 1)
+  // Estimate credits for Whisper (1 credit per minute, min 1)
   // Since we don't know duration before extraction, show a general estimate
   const estimatedCredits = 1 // Minimum, actual will depend on video length
 
@@ -506,13 +504,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       // Check if error is due to no captions available
       if (errorMessage.includes("No captions") || errorMessage.includes("captions")) {
-        // Extract video ID for Whisper fallback
-        if (videoId) {
-          setCurrentVideoId(videoId)
-          setWhisperAutoTriggered(true)
-          setShowWhisperModal(true)
-          return // Don't show error, show modal instead
-        }
+        setError({ message: 'No captions available for this video. Enable "Generate with AI" below to transcribe it with AI.' })
+        return
       }
 
       setError({ message: errorMessage })
@@ -555,15 +548,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       // Clear URL input field after successful transcription
       setUrl("")
     }
-
-  const handleWhisperError = (errorMessage: string) => {
-    if (errorMessage === 'no_speech_detected') {
-      setError({ message: '', isNoSpeech: true })
-      return
-    }
-    setError({ message: errorMessage })
-    toast.error(errorMessage)
-  }
 
   // Execute Whisper extraction after user confirms
   const handleWhisperConfirm = async () => {
@@ -811,8 +795,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           message: "This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload here.",
           isYouTubeRestricted: true
         })
+      } else if (errMsg === 'no_speech_detected') {
+        setError({ message: '', isNoSpeech: true })
       } else {
-        handleWhisperError(errMsg)
+        setError({ message: errMsg })
+        toast.error(errMsg)
       }
     } finally {
       setLoading(false)
@@ -916,7 +903,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 Generate with AI
               </label>
               <p className="text-xs text-muted-foreground">
-                1 credit per 10 min of audio. Auto-captions are free.
+                1 credit per minute of audio. Auto-captions are free.
               </p>
               {useWhisper && credits !== null && (
                 <p className="text-xs text-primary mt-0.5">
@@ -1223,15 +1210,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         </div>
       )}
 
-      {/* Whisper Fallback Modal */}
-      <WhisperFallbackModal
-        open={showWhisperModal}
-        onOpenChange={setShowWhisperModal}
-        videoId={currentVideoId}
-        videoTitle={videoTitle || "YouTube Video"}
-        onSuccess={handleWhisperSuccess}
-        onError={handleWhisperError}
-      />
     </div>
   )
 }
