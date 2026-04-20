@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, Loader2, Sparkles } from "lucide-react"
@@ -29,13 +29,43 @@ export function WhisperFallbackModal({
 }: WhisperFallbackModalProps) {
   const { user, credits, refreshCredits } = useAuth()
   const [isTranscribing, setIsTranscribing] = useState(false)
+  const [fetchedDuration, setFetchedDuration] = useState<number | null>(null)
+  const [isFetchingDuration, setIsFetchingDuration] = useState(false)
 
-  // Calculate credit cost (1 credit = 1 minute)
-  const estimatedCredits = estimatedDuration
-    ? Math.ceil(estimatedDuration / 60)
-    : 1 // Default to 1 credit if duration unknown
+  useEffect(() => {
+    if (!open) return
+    if (estimatedDuration && estimatedDuration > 0) return
+    if (!videoId) return
 
-  const hasEnoughCredits = credits !== null && credits >= estimatedCredits
+    const controller = new AbortController()
+    setIsFetchingDuration(true)
+    setFetchedDuration(null)
+
+    fetch(`/api/video/metadata/${videoId}`, { signal: controller.signal })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.duration && data.duration > 0) {
+          setFetchedDuration(data.duration)
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch video duration:', err)
+        }
+      })
+      .finally(() => setIsFetchingDuration(false))
+
+    return () => controller.abort()
+  }, [open, videoId, estimatedDuration])
+
+  const resolvedDuration = estimatedDuration && estimatedDuration > 0
+    ? estimatedDuration
+    : fetchedDuration ?? null
+  const estimatedCredits = resolvedDuration
+    ? Math.ceil(resolvedDuration / 60)
+    : null
+
+  const hasEnoughCredits = credits !== null && estimatedCredits !== null && credits >= estimatedCredits
 
   const handleTranscribe = async () => {
     if (!user) {
@@ -51,6 +81,12 @@ export function WhisperFallbackModal({
       formData.append('source_type', 'youtube')
       formData.append('video_id', videoId)
       if (videoTitle) formData.append('title', videoTitle)
+      const durationToSend = estimatedDuration && estimatedDuration > 0
+        ? estimatedDuration
+        : fetchedDuration
+      if (durationToSend && durationToSend > 0) {
+        formData.append('duration', String(durationToSend))
+      }
 
       const response = await fetch('/api/transcribe/whisper', {
         method: 'POST',
@@ -162,9 +198,9 @@ export function WhisperFallbackModal({
           {/* Video Info */}
           <div className="p-3 rounded-lg bg-muted/50 border border-border">
             <p className="text-sm font-medium text-foreground truncate">{videoTitle}</p>
-            {estimatedDuration && (
+            {resolvedDuration && (
               <p className="text-xs text-muted-foreground mt-1">
-                ~{Math.round(estimatedDuration / 60)} minutes
+                ~{Math.round(resolvedDuration / 60)} minutes
               </p>
             )}
           </div>
@@ -173,11 +209,17 @@ export function WhisperFallbackModal({
           <div className="p-4 rounded-lg border border-border bg-muted/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">Credit Cost</span>
-              <span className="text-lg font-bold text-foreground">{estimatedCredits} credits</span>
+              <span className="text-lg font-bold text-foreground">
+                {isFetchingDuration || estimatedCredits === null ? (
+                  <span className="text-sm text-muted-foreground">Calculating...</span>
+                ) : (
+                  <>{estimatedCredits} credit{estimatedCredits !== 1 ? 's' : ''}</>
+                )}
+              </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Your balance</span>
-              <span className={credits !== null && credits >= estimatedCredits ? "text-green-600 dark:text-green-500" : "text-amber-600 dark:text-amber-500"}>
+              <span className={credits !== null && estimatedCredits !== null && credits >= estimatedCredits ? "text-green-600 dark:text-green-500" : "text-amber-600 dark:text-amber-500"}>
                 {credits ?? 0} credits
               </span>
             </div>
@@ -203,9 +245,9 @@ export function WhisperFallbackModal({
 
           {/* Info */}
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>• AI transcription uses OpenAI&apos;s Whisper model</p>
+            <p>• AI transcription uses AssemblyAI — 1 credit per minute</p>
             <p>• Credits are only charged after successful transcription</p>
-            <p>• Processing takes 10-30 seconds depending on video length</p>
+            <p>• Processing time varies by video length</p>
           </div>
         </div>
 
@@ -233,7 +275,7 @@ export function WhisperFallbackModal({
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Transcribe ({estimatedCredits} credits)
+                  Transcribe ({estimatedCredits ?? '...'} credit{estimatedCredits !== 1 ? 's' : ''})
                 </>
               )}
             </Button>
