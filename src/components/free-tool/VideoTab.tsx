@@ -125,7 +125,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [showSignupCard, setShowSignupCard] = useState(false)
   const [videoTitle, setVideoTitle] = useState<string>("")
   const [videoUrl, setVideoUrl] = useState<string>("")
-  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean } | null>(null)
+  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean } | null>(null)
   const [isPlaylistUrl, setIsPlaylistUrl] = useState(false)
   const [showWhisperModal, setShowWhisperModal] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState("")
@@ -579,6 +579,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       formData.append('source_type', 'youtube')
       formData.append('video_id', videoId)
       if (pendingWhisperData.title) formData.append('title', pendingWhisperData.title)
+      if (pendingWhisperData.duration > 0) formData.append('duration', String(pendingWhisperData.duration))
 
       const response = await fetch('/api/transcribe/whisper', {
         method: 'POST',
@@ -630,6 +631,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         }
         if (event.code === 'insufficient_credits') {
           setError({ message: `Not enough credits. This video requires ${event.required_credits} credit${event.required_credits !== 1 ? 's' : ''}, you have ${event.available_credits}.`, isCreditsError: true })
+          return
+        }
+        if (event.error === 'no_speech_detected') {
+          setError({ message: '', isNoSpeech: true })
           return
         }
         throw new Error(event.error || 'Transcription failed')
@@ -937,7 +942,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   {pendingWhisperData.duration > 0 ? (
                     <>AI Transcription will cost <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired} credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span>. You have <span className="font-semibold">{credits}</span> credits.</>
                   ) : (
-                    <>AI Transcription will cost approximately <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per 10 min). You have <span className="font-semibold">{credits}</span> credits.</>
+                    <>AI Transcription will cost approximately <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per minute). You have <span className="font-semibold">{credits}</span> credits.</>
                   )}
                 </p>
                 <p className="text-xs text-muted-foreground mb-2">
@@ -1024,6 +1029,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  <div>
                    <p className="text-sm font-medium text-destructive">Members-Only Video</p>
                    <p className="text-sm text-destructive/80 mt-0.5">This video is only available to channel members and cannot be transcribed by INDXR.AI.</p>
+                 </div>
+               </div>
+             ) : error?.isNoSpeech ? (
+               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                 <div>
+                   <p className="text-sm font-medium text-destructive">No speech detected</p>
+                   <p className="text-sm text-destructive/80 mt-0.5">This video appears to contain only music, ambient sound, or silence — AI transcription requires audible speech. Any credits charged for this job have been automatically refunded to your account.</p>
                  </div>
                </div>
              ) : error?.isYouTubeRestricted ? (

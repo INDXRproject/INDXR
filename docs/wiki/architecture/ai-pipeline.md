@@ -37,26 +37,33 @@ Frontend
 ```
 Frontend
   └─ POST /api/transcribe/whisper (Next.js)
+       ├─ Auth + suspension check
+       ├─ Stuurt duration mee als form-veld (indien bekend van metadata-fetch)
        └─ POST {PYTHON_BACKEND_URL}/api/transcribe/whisper
+            ├─ Endpoint pre-check: check_user_balance ≥ ceil(duration/60)
+            │    (valt terug op ≥ 1 als duration niet meegestuurd)
+            │    → 402 bij onvoldoende credits (vóór audio-download)
             └─ Python backend (asynchroon):
                  ├─ yt-dlp: download audio (best quality, no video)
                  ├─ Valideer: MembersOnlyVideoError check
                  ├─ ffmpeg: compress naar 12kbps Opus/OGG
-                 │    (minimale bestandsgrootte voor API upload)
                  ├─ Valideer bestandsgrootte en duur
+                 ├─ Exacte credit-check + deduct_credits_atomic(ceil(duur/60))
                  ├─ POST audio naar AssemblyAI API
-                 ├─ Ontvang job_id van AssemblyAI
-                 └─ Sla job op in Supabase (status: processing)
+                 ├─ Bij leeg transcript (geen spraak): job→error "no_speech_detected",
+                 │    credits automatisch teruggestort via finally-blok
+                 └─ Sla transcript op in Supabase, markeer job complete
 
-Frontend pollt GET /api/jobs/{job_id} elke 2 seconden
-  └─ GET {PYTHON_BACKEND_URL}/api/jobs/{job_id}
-       └─ Controleer AssemblyAI job status
-       └─ Wanneer klaar: normaliseer transcript → sla op in Supabase
-       └─ Return {status: 'completed', transcript}
+Frontend pollt GET /api/jobs/{job_id} elke 3 seconden
+  └─ Bij status "error" + error_message "no_speech_detected":
+       toont inline card "No speech detected" met bevestiging dat credits teruggestort zijn
+  └─ Wanneer klaar: normaliseer transcript → sla op in Supabase
+  └─ Return {status: 'completed', transcript}
 ```
 
 **Tijdsduur:** 1–10 minuten  
-**Kosten:** ⌈duur_seconden / 60⌉ credits (1 credit per minuut, minimum 1)
+**Kosten:** ⌈duur_seconden / 60⌉ credits (1 credit per minuut, minimum 1)  
+**Bij fout (incl. geen spraak):** credits automatisch teruggestort
 
 ---
 

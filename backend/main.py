@@ -965,6 +965,7 @@ async def transcribe_with_whisper(
     title: Optional[str] = Form(None),
     audio_file: Optional[UploadFile] = File(None),
     user_id: Optional[str] = Form(None),  # youtube path only (server-to-server); ignored for upload
+    duration: Optional[float] = Form(None),  # forwarded by Next.js when known upfront
     _: None = Depends(verify_backend_secret),
 ):
     """
@@ -1023,16 +1024,18 @@ async def transcribe_with_whisper(
                 "code": "file_too_large"
             })
 
-    # Basic credit pre-check (balance must be > 0 to start any job)
+    # Credit pre-check: use forwarded duration for accurate cost estimate
+    estimated_cost = calculate_credit_cost(duration) if duration and duration > 0 else 1
     try:
         current_balance = await asyncio.to_thread(check_user_balance, user_id)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Could not check credit balance: {str(e)}"})
 
-    if current_balance < 1:
+    if current_balance < estimated_cost:
         return JSONResponse(status_code=402, content={
             "error": "Insufficient credits",
             "code": "insufficient_credits",
+            "required_credits": estimated_cost,
             "available_credits": current_balance
         })
 

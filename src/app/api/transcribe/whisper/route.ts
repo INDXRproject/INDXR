@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     const sourceType = formData.get('source_type') as string;
     const videoId = formData.get('video_id') as string | null;
     const audioFile = formData.get('audio_file') as File | null;
+    const duration = formData.get('duration') as string | null;
 
     // Validate request
     if (!sourceType || !['youtube', 'upload'].includes(sourceType)) {
@@ -95,7 +96,9 @@ export async function POST(request: Request) {
     if (videoId) {
       backendFormData.append('video_id', videoId);
     }
-    
+    if (duration) {
+      backendFormData.append('duration', duration);
+    }
     if (audioFile) {
       backendFormData.append('audio_file', audioFile);
     }

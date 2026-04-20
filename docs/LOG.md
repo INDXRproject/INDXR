@@ -1,3 +1,7 @@
+[2026-04-20] fix: whisper credit pre-check + no-speech UX + modal copy — endpoint now checks actual cost (ceil(duration/60)) before job starts; no_speech_detected shows inline card with refund confirmation; modal copy corrected to "1 credit per minute" | gewijzigd: backend/main.py, src/app/api/transcribe/whisper/route.ts, src/components/free-tool/VideoTab.tsx
+---
+[2026-04-20] fix: youtube-transcript-not-available — realistic AI transcription claims, members-only limitation, Content ID nuance, 3rd source added | gewijzigd: src/app/youtube-transcript-not-available/page.tsx
+---
 [2026-04-20] fix: youtube-transcript-not-available — Reason 2 "What to do" rewritten, 2 FAQ entries removed, auto-captions timing FAQ updated to JSX, extensions list item added, FAQ "every video" last sentence updated; ArticleTemplate widened to ReactNode FAQs | gewijzigd: src/app/youtube-transcript-not-available/page.tsx, src/components/content/templates/ArticleTemplate.tsx
 ---
 [2026-04-19] feat: youtube-transcript-not-available — reason 8 added (silent intro), Content ID added to reason 7, benchmark data in reason 3, processing time honest, all headings sentence case | gewijzigd: src/app/youtube-transcript-not-available/page.tsx
@@ -867,3 +871,8 @@ src/app/youtube-to-text/page.tsx
 src/components/content/templates/ToolPageTemplate.tsx
 ---
 [2026-04-19 23:10] precompact: context compaction triggered
+[2026-04-20 00:26] commit: fix: youtube-transcript-not-available — realistic AI transcription claims, members-only limitation, Content ID nuance, source added
+Changed: docs/LOG.md
+src/app/youtube-transcript-not-available/page.tsx
+src/components/content/templates/ArticleTemplate.tsx
+---
