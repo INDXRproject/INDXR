@@ -915,3 +915,8 @@ docs/wiki/architecture/ai-pipeline.md
 docs/wiki/decisions/017-proxy-provider-decodo.md
 src/components/free-tool/VideoTab.tsx
 ---
+[2026-04-21 16:21] commit: fix: Decodo username format — user-{USERNAME}-session-{sid}
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+---
