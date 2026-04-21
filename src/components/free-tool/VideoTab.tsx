@@ -504,7 +504,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       // Check if error is due to no captions available
       if (errorMessage.includes("No captions") || errorMessage.includes("captions")) {
-        setError({ message: 'No captions available for this video. Enable "Generate with AI" below to transcribe it with AI.' })
+        setError({ message: 'No captions available for this video. Enable "Generate with AI" above to transcribe it with AI.' })
         return
       }
 

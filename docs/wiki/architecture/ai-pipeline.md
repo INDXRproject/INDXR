@@ -212,13 +212,13 @@ Voor omzeilen van YouTube IP-bans kan een proxy geconfigureerd worden:
 
 ```env
 PROXY_ENABLED=true
-PROXY_HOST=rotating.proxy.io
+PROXY_HOST=gate.decodo.com
 PROXY_PORT=12321
 PROXY_USERNAME=username
-PROXY_PASSWORD=password_session-{job_id[:8]}_lifetime-10m
+PROXY_PASSWORD=password
 ```
 
-Sticky sessions worden via de wachtwoord-suffix opgegeven (`_session-X_lifetime-10m`). Ondersteunde providers: LunaProxy, IPRoyal, BrightData.
+Sticky sessions worden via de **username-suffix** opgegeven: `{PROXY_USERNAME}-{session_id}`. Huidige provider: Decodo residentieel (10GB plan, overgestapt 2026-04-20). Zie [ADR-017](../decisions/017-proxy-provider-decodo.md).
 
 **Implementatiedetail:** `extract_with_ytdlp(video_id, use_proxy=True, session_id=...)` geeft de session_id door aan `get_proxy_url(session_id)`. De proxy wordt op twee niveaus gebruikt:
 

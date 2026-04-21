@@ -219,8 +219,8 @@ def get_proxy_url(session_id: Optional[str] = None) -> Optional[str]:
         logger.warning("PROXY_ENABLED=true but credentials are missing — running without proxy")
         return None
     sid = session_id or secrets.token_hex(4)
-    sticky_password = f"{PROXY_PASSWORD}_session-{sid}_lifetime-10m"
-    return f"http://{PROXY_USERNAME}:{sticky_password}@{PROXY_HOST}:{PROXY_PORT}"
+    sticky_user = f"{PROXY_USERNAME}-{sid}"
+    return f"http://{sticky_user}:{PROXY_PASSWORD}@{PROXY_HOST}:{PROXY_PORT}"
 
 def find_longest_overlap(text1: str, text2: str) -> int:
     """

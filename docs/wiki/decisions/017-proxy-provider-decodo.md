@@ -1,6 +1,6 @@
 # Beslissing 017: Overstap van IPRoyal naar Decodo voor residentiële proxies
 
-**Status:** Gepland — uitvoeren zodra IPRoyal tegoed op is (~1.54 GB / $1.25)
+**Status:** Geïmplementeerd — 2026-04-20, overgestapt naar Decodo residentieel 10GB plan
 **Datum:** 2026-04-14
 **Gerelateerde code:** `backend/main.py` (get_proxy_url), `backend/.env`
 

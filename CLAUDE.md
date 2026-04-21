@@ -166,11 +166,11 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 - Geen WebSockets — zie ADR 008
 - Playlist job state: `sessionStorage` key `indxr-active-playlist-job`
 
-### Proxy (IPRoyal)
+### Proxy (Decodo)
 
-- Sticky sessions via wachtwoord-suffix: `_session-{job_id[:8]}_lifetime-10m`
+- Sticky sessions via **username-suffix**: `{PROXY_USERNAME}-{session_id}`
 - Bij Whisper jobs: `session_id = job_id[:8]` — pinned exit IP noodzakelijk (YouTube CDN is IP-locked)
-- **Let op:** wachtwoord bevat hoofdletter `I` en kleine letter `l` die op elkaar lijken
+- Overgestapt van IPRoyal naar Decodo residentieel op 2026-04-20
 
 ### bgutil-pot
 
