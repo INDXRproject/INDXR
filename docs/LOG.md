@@ -1,3 +1,5 @@
+[2026-04-21] fix: Decodo username format — sticky_user nu f"user-{PROXY_USERNAME}-session-{sid}" | gewijzigd: backend/main.py
+---
 [2026-04-20] feat: proxy overstap IPRoyal → Decodo — get_proxy_url() session ID verplaatst van wachtwoord naar username suffix | gewijzigd: backend/main.py, docs/wiki/decisions/017-proxy-provider-decodo.md
 ---
 [2026-04-20] refactor: remove WhisperFallbackModal (Flow B) — Flow A (inline toggle) is now canonical; caption failure now shows inline error + keeps toggle visible; handleWhisperError inlined; "1 credit per minute" copy fixed | gewijzigd: src/components/free-tool/VideoTab.tsx, src/components/free-tool/WhisperFallbackModal.tsx (deleted)
@@ -904,4 +906,12 @@ src/components/free-tool/WhisperFallbackModal.tsx
 Changed: docs/LOG.md
 src/components/free-tool/VideoTab.tsx
 src/components/free-tool/WhisperFallbackModal.tsx
+---
+[2026-04-21 11:50] commit: feat: proxy switch IPRoyal → Decodo — session ID in username suffix
+Changed: CLAUDE.md
+backend/main.py
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/decisions/017-proxy-provider-decodo.md
+src/components/free-tool/VideoTab.tsx
 ---

@@ -218,7 +218,7 @@ PROXY_USERNAME=username
 PROXY_PASSWORD=password
 ```
 
-Sticky sessions worden via de **username-suffix** opgegeven: `{PROXY_USERNAME}-{session_id}`. Huidige provider: Decodo residentieel (10GB plan, overgestapt 2026-04-20). Zie [ADR-017](../decisions/017-proxy-provider-decodo.md).
+Sticky sessions worden via de **username-suffix** opgegeven: `user-{PROXY_USERNAME}-session-{session_id}`. Huidige provider: Decodo residentieel (10GB plan, overgestapt 2026-04-20). Zie [ADR-017](../decisions/017-proxy-provider-decodo.md).
 
 **Implementatiedetail:** `extract_with_ytdlp(video_id, use_proxy=True, session_id=...)` geeft de session_id door aan `get_proxy_url(session_id)`. De proxy wordt op twee niveaus gebruikt:
 
