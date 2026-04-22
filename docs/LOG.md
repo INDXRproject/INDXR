@@ -1,3 +1,5 @@
+[2026-04-22] docs: ADR-017 bijgewerkt van planningsdocument naar geïmplementeerde werkelijkheid — provider Decodo, username format user-{USERNAME}-session-{sid}, implementation notes toegevoegd, toekomstige acties herschreven naar verleden tijd | gewijzigd: docs/wiki/decisions/017-proxy-provider-decodo.md
+---
 [2026-04-21] fix: Decodo username format — sticky_user nu f"user-{PROXY_USERNAME}-session-{sid}" | gewijzigd: backend/main.py
 ---
 [2026-04-20] feat: proxy overstap IPRoyal → Decodo — get_proxy_url() session ID verplaatst van wachtwoord naar username suffix | gewijzigd: backend/main.py, docs/wiki/decisions/017-proxy-provider-decodo.md
@@ -920,3 +922,7 @@ Changed: backend/main.py
 docs/LOG.md
 docs/wiki/architecture/ai-pipeline.md
 ---
+[2026-04-21 16:36] commit: fix: Decodo proxy — correct username format user-{USERNAME}-session-{sid}
+Changed: docs/LOG.md
+---
+[2026-04-22 18:04] precompact: context compaction triggered

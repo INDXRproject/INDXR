@@ -213,7 +213,7 @@ Voor omzeilen van YouTube IP-bans kan een proxy geconfigureerd worden:
 ```env
 PROXY_ENABLED=true
 PROXY_HOST=gate.decodo.com
-PROXY_PORT=12321
+PROXY_PORT=10001
 PROXY_USERNAME=username
 PROXY_PASSWORD=password
 ```

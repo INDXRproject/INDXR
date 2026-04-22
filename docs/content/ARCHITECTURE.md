@@ -7,7 +7,7 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
 ### Core Pillars
 
 1. **Functionality First**: Clean, usable interface with clear visual hierarchy. Currently using a neutral utility skin; full redesign planned post-launch.
-2. **Reliability**: Robust extraction using industry-standard tools (`yt-dlp`) backed by enterprise-grade proxy rotation (IPRoyal residential proxies) to bypass rate limits.
+2. **Reliability**: Robust extraction using industry-standard tools (`yt-dlp`) backed by enterprise-grade proxy rotation (Decodo residential proxies) to bypass rate limits.
 3. **Simplicity**: A frictionless "Free Tool" that requires no login for basic use, with a natural upsell path to a powerful Dashboard for power users.
 
 ---
@@ -33,7 +33,7 @@ INDXR.AI is a premium tool designed to democratize access to YouTube video trans
 - **Core Logic**:
   - **YouTube Data API v3**: Instant metadata fetching
   - **yt-dlp**: Fallback engine for captions/video access and Whisper audio download
-- **Proxy**: IPRoyal residential proxy (`geo.iproyal.com:12321`) — prevents IP bans and 403s from YouTube CDN
+- **Proxy**: Decodo residential proxy (`gate.decodo.com:10001`) — prevents IP bans and 403s from YouTube CDN
 - **Validation**: Pydantic models
 
 ### 3. Infrastructure & Data
@@ -108,7 +108,7 @@ When a user requests AI transcription, the backend runs `run_whisper_job` as an 
 ```python
 ydl_opts = {
     'format': 'bestaudio/best',
-    'proxy': proxy_url,  # IPRoyal sticky session: password_session-{job_id[:8]}_lifetime-10m (per-job)
+    'proxy': proxy_url,  # Decodo sticky session: user-{PROXY_USERNAME}-session-{job_id[:8]} (per-job)
     'nocheckcertificate': True,
     'plugin_dirs': ['/root/yt-dlp-plugins', '/root/yt-dlp-plugins/bgutil-ytdlp-pot-provider-rs.zip'],
     'js_runtimes': {'node': {}},
@@ -364,11 +364,11 @@ ADMIN_EMAIL                     # Single admin email address — guards /admin r
 ```
 ASSEMBLYAI_API_KEY      # AssemblyAI transcription
 DEEPSEEK_API_KEY        # Summarization
-PROXY_HOST              # IPRoyal (geo.iproyal.com)
-PROXY_PORT              # 12321
-PROXY_USER
-PROXY_PASSWORD          # Sticky session appended: {PROXY_PASSWORD}_session-{job_id[:8]}_lifetime-10m (Whisper jobs)
-                        #   or _session-{secrets.token_hex(4)}_lifetime-10m (one-off caption/metadata requests)
+PROXY_HOST              # Decodo (gate.decodo.com)
+PROXY_PORT              # 10001
+PROXY_USERNAME
+PROXY_PASSWORD          # Sticky session via username prefix: user-{PROXY_USERNAME}-session-{job_id[:8]} (Whisper jobs)
+                        #   or user-{PROXY_USERNAME}-session-{secrets.token_hex(4)} (one-off requests)
 SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_URL
 POSTHOG_API_KEY         # Backend event tracking

@@ -4,15 +4,19 @@
 **Datum:** 2026-04-14
 **Gerelateerde code:** `backend/main.py` (get_proxy_url), `backend/.env`
 
+> **Implementation notes:** Dit ADR is oorspronkelijk geschreven als planningsdocument (2026-04-14).
+> Op 2026-04-21 bijgewerkt om de geïmplementeerde werkelijkheid te reflecteren.
+> Username format gecorrigeerd naar `user-{PROXY_USERNAME}-session-{sid}` in commit `0c57ad0`.
+
 ---
 
 ## Context
 
 INDXR.AI downloadt YouTube audio via yt-dlp op een Railway cloud server. YouTube blokkeert datacenter IPs automatisch — residentiële proxies zijn verplicht. Per job wordt een sticky session gebruikt zodat het YouTube CDN IP-locked audio-segment-URLs accepteert gedurende de volledige download.
 
-Huidige provider: **IPRoyal**
-- Testkosten: ~€6.25/GB (2GB voor €12.50, 3GB voor €18.75)
-- Resterend tegoed: ~1.54 GB / $1.25 — wordt opgemaakt met testen
+Huidige provider: **Decodo** (overgestapt 2026-04-20)
+- Vorige provider: IPRoyal (~€6.25/GB testkosten)
+- Reden voor overstap: ~45% kostenreductie en betere yt-dlp compatibiliteit
 
 ---
 
@@ -38,9 +42,9 @@ Drie onafhankelijke bronnen (eigen research, Perplexity, ChatGPT) komen allemaal
 
 **Sticky sessions:**
 - Standaard 10 minuten, configureerbaar tot 24 uur
-- Session ID in username: `baseusername-JOBID` — identiek patroon aan IPRoyal
+- Session ID in username: `user-{PROXY_USERNAME}-session-{sid}`
 
-**Geen code-wijzigingen nodig** — alleen Railway env vars aanpassen.
+**Code-aanpassing uitgevoerd** — `get_proxy_url()` bijgewerkt + Railway env vars aangepast.
 
 ---
 
@@ -48,28 +52,32 @@ Drie onafhankelijke bronnen (eigen research, Perplexity, ChatGPT) komen allemaal
 
 ### Proxy string formaat (Decodo)
 ```
-http://USERNAME-JOBID:PASSWORD@gate.decodo.com:7000
+http://user-{PROXY_USERNAME}-session-{sid}:{PROXY_PASSWORD}@gate.decodo.com:10001
 ```
 
 Voorbeeld voor job `abc12345`:
 ```
-http://myuser-abc12345:mypassword@gate.decodo.com:7000
+http://user-myuser-session-abc12345:mypassword@gate.decodo.com:10001
 ```
 
 ### Verschil met IPRoyal
 | | IPRoyal | Decodo |
 |---|---|---|
 | Session ID locatie | Wachtwoord suffix | Username suffix |
-| Format | `pass_session-JOBID_lifetime-10m` | `user-JOBID` |
-| Host | `geo.iproyal.com:12321` | `gate.decodo.com:7000` |
+| Format | `pass_session-JOBID_lifetime-10m` | `user-{USERNAME}-session-{JOBID}` |
+| Host | `geo.iproyal.com:12321` | `gate.decodo.com:10001` |
 
-### Vereiste code-aanpassing in `get_proxy_url()` (main.py)
-De huidige implementatie zet session ID in het wachtwoord. Bij Decodo moet dit in de username. Kleine aanpassing nodig in `get_proxy_url()`.
+### Code-aanpassing in `get_proxy_url()` (main.py)
+Session ID is verplaatst van wachtwoord-suffix naar username-prefix (geïmplementeerd 2026-04-20, format gecorrigeerd 2026-04-21 in commit `0c57ad0`):
+```python
+sticky_user = f"user-{PROXY_USERNAME}-session-{sid}"
+return f"http://{sticky_user}:{PROXY_PASSWORD}@{PROXY_HOST}:{PROXY_PORT}"
+```
 
 ### Railway env vars die wijzigen
 ```
 PROXY_HOST=gate.decodo.com
-PROXY_PORT=7000
+PROXY_PORT=10001
 PROXY_USER=<decodo_username>
 PROXY_PASSWORD=<decodo_password>
 ```
@@ -80,19 +88,19 @@ PROXY_PASSWORD=<decodo_password>
 
 1. Verifieer proxy werkt:
 ```bash
-curl -x "http://USERNAME:PASSWORD@gate.decodo.com:7000" https://ip.decodo.com
+curl -x "http://USERNAME:PASSWORD@gate.decodo.com:10001" https://ip.decodo.com
 ```
 
 2. Test sticky session stabiliteit (zelfde IP voor zelfde session ID):
 ```bash
 # Twee keer zelfde session ID — moet zelfde exit IP tonen
-curl -x "http://USERNAME-test001:PASSWORD@gate.decodo.com:7000" https://ip.decodo.com
-curl -x "http://USERNAME-test001:PASSWORD@gate.decodo.com:7000" https://ip.decodo.com
+curl -x "http://user-USERNAME-session-test001:PASSWORD@gate.decodo.com:10001" https://ip.decodo.com
+curl -x "http://user-USERNAME-session-test001:PASSWORD@gate.decodo.com:10001" https://ip.decodo.com
 ```
 
 3. yt-dlp test:
 ```bash
-yt-dlp -v --proxy "http://USERNAME-test001:PASSWORD@gate.decodo.com:7000" "YOUTUBE_URL"
+yt-dlp -v --proxy "http://user-USERNAME-session-test001:PASSWORD@gate.decodo.com:10001" "YOUTUBE_URL"
 ```
 
 4. Acceptatiecriteria: ≥95% success op 10-20 representatieve downloads, geen auth errors, geen session resets binnen job window.
@@ -119,8 +127,5 @@ yt-dlp -v --proxy "http://USERNAME-test001:PASSWORD@gate.decodo.com:7000" "YOUTU
 
 **Risico's:**
 - Sticky sessions zijn best-effort — residentieel IP kan offline gaan mid-job
-- `get_proxy_url()` vereist kleine aanpassing (session ID van wachtwoord naar username)
-- 3-daagse trial beschikbaar voor validatie vóór commitment
-
-**Wanneer uitvoeren:**
-Zodra IPRoyal tegoed op is. Trigger: Railway env vars aanpassen + `get_proxy_url()` updaten + 1-2 GB pilot draaien.
+- Sticky sessions zijn best-effort — residentieel IP kan offline gaan mid-job
+- Session ID is verplaatst van wachtwoord naar username (geïmplementeerd 2026-04-20)

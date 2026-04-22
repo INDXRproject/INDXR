@@ -74,28 +74,26 @@ The Next.js frontend is deployed on Vercel at https://indxr.ai.
 
 ---
 
-## Proxy Configuration (IPRoyal)
+## Proxy Configuration (Decodo)
 
-The backend routes all yt-dlp requests through an IPRoyal residential proxy.
+The backend routes all yt-dlp requests through a Decodo residential proxy (overgestapt van IPRoyal op 2026-04-20).
 
 Credentials are stored in `backend/.env`:
 
 ```
-PROXY_HOST=geo.iproyal.com
-PROXY_PORT=12321
-PROXY_USER=your-proxy-username
+PROXY_HOST=gate.decodo.com
+PROXY_PORT=10001
+PROXY_USERNAME=your-proxy-username
 PROXY_PASSWORD=your-proxy-password
 ```
 
-> **Password confusion warning:** The password contains both a capital `I` (India) and a lowercase `l` (lima). They look nearly identical in most fonts. If the proxy returns `407 Proxy Auth Required`, double-check character-by-character.
-
-**Sticky session**: `get_proxy_url(session_id)` in `main.py` automatically appends `_session-{session_id}_lifetime-10m` to the password. For Whisper jobs, `session_id=job_id[:8]` — this pins all requests within a job to the same IPRoyal exit IP (required because YouTube CDN URLs are IP-locked). For one-off requests, a random `secrets.token_hex(4)` is used.
+**Sticky session**: `get_proxy_url(session_id)` in `main.py` builds the username as `user-{PROXY_USERNAME}-session-{session_id}`. For Whisper jobs, `session_id=job_id[:8]` — this pins all requests within a job to the same exit IP (required because YouTube CDN URLs are IP-locked). For one-off requests, a random `secrets.token_hex(4)` is used.
 
 **Manual proxy test (with sticky session):**
 
 ```bash
 venv/bin/python3 -m yt_dlp \
-  --proxy "http://your-proxy-username:your-proxy-password_session-test0001_lifetime-10m@geo.iproyal.com:12321" \
+  --proxy "http://user-your-proxy-username-session-test0001:your-proxy-password@gate.decodo.com:10001" \
   --extractor-args "youtube:player_client=ios,web_embedded" \
   "https://youtu.be/VIDEO_ID" \
   -f "bestaudio/best" \

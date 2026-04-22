@@ -101,8 +101,8 @@ DEEPSEEK_API_KEY=...
 
 # Proxy (optioneel)
 PROXY_ENABLED=false
-PROXY_HOST=rotating.proxy.io
-PROXY_PORT=12321
+PROXY_HOST=gate.decodo.com
+PROXY_PORT=10001
 PROXY_USERNAME=username
 PROXY_PASSWORD=password
 
