@@ -926,3 +926,17 @@ docs/wiki/architecture/ai-pipeline.md
 Changed: docs/LOG.md
 ---
 [2026-04-22 18:04] precompact: context compaction triggered
+[2026-04-22 18:06] commit: docs: proxy poort gecorrigeerd naar 10001 — alle wiki-documentatie bijgewerkt
+
+ADR-017 bijgewerkt van planningsdocument naar geïmplementeerde staat (Decodo).
+Alle verwijzingen naar IPRoyal/12321/7000 vervangen door Decodo/10001 in
+DEVELOPMENT.md, ARCHITECTURE.md, ai-pipeline.md en deployment.md.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/DEVELOPMENT.md
+docs/LOG.md
+docs/content/ARCHITECTURE.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/decisions/017-proxy-provider-decodo.md
+docs/wiki/operations/deployment.md
+---
