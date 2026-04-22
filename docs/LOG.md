@@ -1,3 +1,7 @@
+[2026-04-22] docs: ADR-015 bijgewerkt — language detection fallback sectie toegevoegd, published_at + lingua consequenties afgevinkt | gewijzigd: docs/wiki/decisions/015-rag-json-export.md
+---
+[2026-04-22] docs: testrapport RAG JSON sessie 1 gedocumenteerd — 3 videos getest (PASS), metadata-gaps vastgelegd + gefixed, sessie 2 edge cases gedefinieerd | gewijzigd: docs/wiki/operations/test-reports.md (nieuw), docs/wiki/INDEX.md
+---
 [2026-04-22] feat: lingua language detection + published_at — lingua-language-detector 2.2.0 toegevoegd, module-level detector (13 talen) gebouwd bij startup, fallback als yt-dlp language=None, language_detected boolean doorgestuurd tot aan TranscriptCard/PostHog; upload_date geconverteerd naar ISO YYYY-MM-DD en hernoemd naar published_at in frontend-keten; publishedAt prop in Clean JSON + RAG JSON metadata | gewijzigd: backend/requirements.txt, backend/main.py, src/app/api/extract/route.ts, src/components/free-tool/VideoTab.tsx, src/components/TranscriptCard.tsx
 ---
 [2026-04-22] feat: channel/language/upload_date doorgegeven via volledige stack — yt-dlp info.uploader/language/upload_date toegevoegd aan extract_with_ytdlp return, ExtractResponse model uitgebreid, Next.js route forwardde nieuwe velden, VideoTab leest en reset ze, TranscriptCard ontvangt channel+language voor JSON/RAG metadata | gewijzigd: backend/main.py, src/app/api/extract/route.ts, src/components/free-tool/VideoTab.tsx
@@ -962,4 +966,13 @@ src/components/free-tool/VideoTab.tsx
 src/contexts/AuthContext.tsx
 src/utils/formatTranscript.ts
 supabase/migrations/20260422_add_rag_settings_to_profiles.sql
+---
+[2026-04-22 21:44] commit: feat: lingua language detection + published_at in RAG JSON metadata
+Changed: backend/main.py
+backend/requirements.txt
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+src/app/api/extract/route.ts
+src/components/TranscriptCard.tsx
+src/components/free-tool/VideoTab.tsx
 ---

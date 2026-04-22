@@ -95,6 +95,13 @@ Voeg een **"RAG-optimized" toggle** toe aan de JSON-export die:
 
 **Gating:** Ingelogde users (gratis én betaald). Anoniem ziet de dropdown entry met lock-icon.
 
+**Language detection fallback (2026-04-22)**
+`language` in de metadata komt van yt-dlp's `info.get('language')` — ingesteld door de uploader in YouTube Studio. Vaak `None` voor video's waarbij de uploader dit niet heeft ingevuld.
+
+Fallback: als yt-dlp `None` geeft, detecteert `lingua-language-detector` de taal automatisch uit de transcript tekst (eerste 500 woorden). Ondersteunde talen: EN, NL, DE, FR, ES, PT, IT, TR, ID, AR, ZH, JA, KO. Detector wordt één keer gebouwd bij Railway startup (module-level), niet per request.
+
+`language_detected: true` in de backend response geeft aan dat de taal via detectie is bepaald. Wordt doorgestuurd tot aan PostHog voor analytics.
+
 ## Consequenties
 
 - [x] Frontend: "RAG JSON ✦" entry in export dropdown
@@ -105,4 +112,6 @@ Voeg een **"RAG-optimized" toggle** toe aan de JSON-export die:
 - [x] Supabase migratie: `profiles.rag_export_confirmed`, `profiles.rag_chunk_size`
 - [x] Developer Exports sectie in Settings
 - [x] Clean JSON (reguliere JSON-export) bijgewerkt: `segments` met `start_time`/`end_time`
+- [x] `published_at` in RAG JSON en Clean JSON metadata (ISO YYYY-MM-DD, via yt-dlp `upload_date`)
+- [x] `lingua-language-detector` fallback als yt-dlp `language=None`
 - [ ] SEO-pagina's aanmaken na implementatie

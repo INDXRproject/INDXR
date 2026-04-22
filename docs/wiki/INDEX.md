@@ -87,6 +87,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [deployment.md](operations/deployment.md) | Vercel + Railway + alle env vars uitgelegd |
 | [monitoring.md](operations/monitoring.md) | PostHog events, logging levels, alerts |
 | [known-issues.md](operations/known-issues.md) | Openstaande TODOs, bekende bugs, workarounds, pre-launch checklist |
+| [test-reports.md](operations/test-reports.md) | Handmatige testrapporten per feature |
 
 ---
 
