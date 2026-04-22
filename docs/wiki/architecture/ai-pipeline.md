@@ -227,6 +227,8 @@ Sticky sessions worden via de **username-suffix** opgegeven: `user-{PROXY_USERNA
 1. **yt-dlp metadata call** — proxy via `ydl_opts['proxy']`
 2. **VTT httpx download** — proxy via `httpx.Client(proxy=proxy_url)` (zelfde session_id)
 
+**Single-video requests** gebruiken `session_id = video_id[-8:]` — deterministisch per video, zodat yt-dlp metadata fetch en httpx VTT download hetzelfde exit-IP gebruiken. Dit voorkomt CDN-fouten waarbij de VTT URL op een ander IP binnenkomt dan waarmee hij was opgehaald.
+
 Binnen een playlist-job krijgt elke video een unieke session_id: `f"{job_id[:4]}{idx:04d}"` (bijv. `abcd0000`, `abcd0001`). Dit zorgt voor een ander exit-IP per video, zodat een rate-limited video de rest van de job niet blokkeert. De retry-pass gebruikt `video_ids.index(vid)` als index, waardoor hetzelfde exit-IP als de eerste poging beschikbaar is.
 
 **Gevalideerd 2026-04-16:** 20-video playlist (Introduction to Psychology, Paul Bloom) — 20/20 succesvol, 2:21, nul VTT-fouten.

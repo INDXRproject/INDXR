@@ -1,3 +1,5 @@
+[2026-04-22] fix: session_id gepind voor single-video proxy calls — video_id[-8:] als deterministische session_id meegegeven aan extract_with_ytdlp zodat yt-dlp metadata fetch en httpx VTT download hetzelfde exit-IP gebruiken | gewijzigd: backend/main.py
+---
 [2026-04-22] docs: ADR-015 bijgewerkt — language detection fallback sectie toegevoegd, published_at + lingua consequenties afgevinkt | gewijzigd: docs/wiki/decisions/015-rag-json-export.md
 ---
 [2026-04-22] docs: testrapport RAG JSON sessie 1 gedocumenteerd — 3 videos getest (PASS), metadata-gaps vastgelegd + gefixed, sessie 2 edge cases gedefinieerd | gewijzigd: docs/wiki/operations/test-reports.md (nieuw), docs/wiki/INDEX.md
@@ -976,3 +978,10 @@ src/app/api/extract/route.ts
 src/components/TranscriptCard.tsx
 src/components/free-tool/VideoTab.tsx
 ---
+[2026-04-22 22:06] commit: docs: test reports + ADR-015 language detection + published_at
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/015-rag-json-export.md
+docs/wiki/operations/test-reports.md
+---
+[2026-04-22 22:12] precompact: context compaction triggered

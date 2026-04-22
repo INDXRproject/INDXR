@@ -524,7 +524,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
     """Extract transcript from YouTube video using yt-dlp."""
     try:
         video_id = extract_video_id(request.videoIdOrUrl)
-        result = await extract_with_ytdlp(video_id, use_proxy=True)
+        session_id = video_id[-8:]
+        result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id)
         
         # result can be a dict (success) or list (empty/failure)
         if isinstance(result, list) or not result:
