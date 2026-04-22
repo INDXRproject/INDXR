@@ -1,3 +1,5 @@
+[2026-04-22] feat: RAG JSON export + Clean JSON + Developer Settings — buildRagChunks utility, TranscriptCard uitgebreid (nieuwe props, Clean JSON metadata, RAG dropdown, bevestigingsmodal, insufficient-credits banner), DeveloperExportsCard (chunk size 30/60/120s), Server Actions voor credit-aftrek en chunk-size opslaan, AuthContext UserProfile uitgebreid, Supabase migratie | gewijzigd: src/components/TranscriptCard.tsx, src/utils/formatTranscript.ts, src/contexts/AuthContext.tsx, src/app/dashboard/settings/page.tsx, src/components/dashboard/settings/DeveloperExportsCard.tsx, src/app/actions/rag-export.ts, src/components/free-tool/VideoTab.tsx, src/components/free-tool/AudioTab.tsx, supabase/migrations/20260422_add_rag_settings_to_profiles.sql
+---
 [2026-04-22] docs: ADR-017 bijgewerkt van planningsdocument naar geïmplementeerde werkelijkheid — provider Decodo, username format user-{USERNAME}-session-{sid}, implementation notes toegevoegd, toekomstige acties herschreven naar verleden tijd | gewijzigd: docs/wiki/decisions/017-proxy-provider-decodo.md
 ---
 [2026-04-21] fix: Decodo username format — sticky_user nu f"user-{PROXY_USERNAME}-session-{sid}" | gewijzigd: backend/main.py
@@ -939,4 +941,7 @@ docs/content/ARCHITECTURE.md
 docs/wiki/architecture/ai-pipeline.md
 docs/wiki/decisions/017-proxy-provider-decodo.md
 docs/wiki/operations/deployment.md
+---
+[2026-04-22 18:07] commit: chore: LOG.md hook entry cleanup
+Changed: docs/LOG.md
 ---

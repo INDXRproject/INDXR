@@ -15,11 +15,13 @@ Beheert door Supabase Auth. Bevat email, provider metadata, created_at, etc.
 Uitbreiding op auth.users met applicatie-specifieke user data.
 
 ```sql
-id           UUID    PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
-username     TEXT    -- display naam
-role         TEXT    -- 'user' | 'admin'
-avatar_color TEXT    -- hex kleur voor avatar placeholder (migratie 20260301)
-suspended    BOOLEAN DEFAULT false (migratie 20260408)
+id                   UUID    PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
+username             TEXT    -- display naam
+role                 TEXT    -- 'user' | 'admin'
+avatar_color         TEXT    -- hex kleur voor avatar placeholder (migratie 20260301)
+suspended            BOOLEAN DEFAULT false (migratie 20260408)
+rag_export_confirmed BOOLEAN DEFAULT false (migratie 20260422) -- "Don't show again" vlag voor RAG export modal
+rag_chunk_size       INTEGER DEFAULT 60 CHECK IN (30,60,120) (migratie 20260422) -- chunk preset voor RAG JSON export
 ```
 
 RLS: gebruiker kan alleen eigen profiel lezen/schrijven.
@@ -196,5 +198,6 @@ Gebruikt in: `src/app/actions/credits.ts`
 | `20260408_backfill_missing_profiles.sql` | 2026-04-08 | Backfill profielen voor bestaande users |
 | `20260408_add_suspended_to_profiles.sql` | 2026-04-08 | `profiles.suspended` boolean |
 | `20260412_playlist_extraction_jobs.sql` | 2026-04-12 | `playlist_extraction_jobs` tabel + RLS |
+| `20260422_add_rag_settings_to_profiles.sql` | 2026-04-22 | `profiles.rag_export_confirmed` + `profiles.rag_chunk_size` |
 | `20260412_job_metrics_and_rename.sql` | 2026-04-12 | Job metrics kolommen + rename |
 | `add_playlist_jobs.sql` | *(oud)* | Vroege playlist jobs tabel (vervangen) |

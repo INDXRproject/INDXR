@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn } from "lucide-react";
+import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { decodeEntities, createParagraphMode } from "@/utils/formatTranscript";
+import { decodeEntities, createParagraphMode, buildRagChunks } from "@/utils/formatTranscript";
+import { deductRagExportCreditsAction } from "@/app/actions/rag-export";
 import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
 import {
@@ -24,6 +25,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 export interface TranscriptItem {
@@ -37,13 +46,50 @@ interface TranscriptCardProps {
   videoTitle?: string;
   videoUrl?: string;
   showSignupCard?: boolean;
+  videoId?: string;
+  durationSeconds?: number;
+  extractionMethod?: string;
+  channel?: string;
+  language?: string;
 }
 
-export function TranscriptCard({ transcript, videoTitle = "YouTube Video", videoUrl = "", showSignupCard = false }: TranscriptCardProps) {
+const RAG_CHUNK_LABELS: Record<number, { label: string; sub: string }> = {
+  30: { label: "Quote", sub: "30s" },
+  60: { label: "Balanced", sub: "60s" },
+  120: { label: "Context", sub: "120s" },
+};
+
+export function TranscriptCard({
+  transcript,
+  videoTitle = "YouTube Video",
+  videoUrl = "",
+  showSignupCard = false,
+  videoId,
+  durationSeconds,
+  extractionMethod,
+  channel,
+  language,
+}: TranscriptCardProps) {
   const [copied, setCopied] = useState(false);
   const [showTimestamps, setShowTimestamps] = useState(true);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
-  const { user } = useAuth();
+  const [showRagModal, setShowRagModal] = useState(false);
+  const [ragModalDontShowAgain, setRagModalDontShowAgain] = useState(false);
+  const [ragExportLoading, setRagExportLoading] = useState(false);
+  const [ragConfirmedThisSession, setRagConfirmedThisSession] = useState(false);
+  const [showInsufficientCreditsForRag, setShowInsufficientCreditsForRag] = useState(false);
+  const { user, profile, credits, refreshCredits } = useAuth();
+
+  const derivedDuration =
+    durationSeconds ??
+    (transcript.length > 0
+      ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
+      : 0);
+
+  const ragCost = Math.max(1, Math.ceil(derivedDuration / 900));
+  const ragDurationMin = Math.ceil(derivedDuration / 60);
+  const chunkSize = (profile?.rag_chunk_size ?? 60) as 30 | 60 | 120;
+  const chunkLabel = RAG_CHUNK_LABELS[chunkSize] ?? RAG_CHUNK_LABELS[60];
 
   // Helper: Format timestamp for SRT (HH:MM:SS,mmm)
   const formatSrtTimestamp = (seconds: number): string => {
@@ -151,15 +197,30 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
   const downloadJson = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'json' });
-    const jsonOutput = {
-      metadata: {
-        video_title: videoTitle,
-        video_url: videoUrl,
-        extracted_at: new Date().toISOString(),
-      },
-      transcript: transcript.map((t) => ({ ...t, text: decodeEntities(t.text) })),
+
+    const metadata: Record<string, unknown> = {
+      video_id: videoId ?? null,
+      title: videoTitle ?? null,
+      duration_seconds: Math.round(derivedDuration),
+      extracted_at: new Date().toISOString(),
     };
-    downloadFile(JSON.stringify(jsonOutput, null, 2), "transcript.json", "application/json");
+    if (channel) metadata.channel = channel;
+    if (language) metadata.language = language;
+    if (extractionMethod) metadata.extraction_method = extractionMethod;
+
+    const segments = transcript.map((t, i) => ({
+      text: decodeEntities(t.text),
+      start_time: t.offset,
+      end_time: i < transcript.length - 1
+        ? transcript[i + 1].offset
+        : t.offset + t.duration,
+    }));
+
+    downloadFile(
+      JSON.stringify({ metadata, segments }, null, 2),
+      "transcript.json",
+      "application/json"
+    );
   };
 
   const downloadCsv = () => {
@@ -204,6 +265,62 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
     downloadFile(vttContent, "transcript.vtt", "text/vtt");
   };
 
+  const triggerRagDownload = () => {
+    const chunks = buildRagChunks(transcript, chunkSize);
+    const metadata: Record<string, unknown> = {
+      video_id: videoId ?? null,
+      title: videoTitle ?? null,
+      duration_seconds: Math.round(derivedDuration),
+      extracted_at: new Date().toISOString(),
+      chunking_config: { chunk_size_seconds: chunkSize, total_chunks: chunks.length },
+    };
+    if (channel) metadata.channel = channel;
+    if (language) metadata.language = language;
+    if (extractionMethod) metadata.extraction_method = extractionMethod;
+
+    downloadFile(
+      JSON.stringify({ metadata, chunks }, null, 2),
+      "transcript_rag.json",
+      "application/json"
+    );
+  };
+
+  const handleRagExportClick = () => {
+    if (!requireAuth()) return;
+
+    if ((credits ?? 0) < ragCost) {
+      setShowInsufficientCreditsForRag(true);
+      return;
+    }
+    setShowInsufficientCreditsForRag(false);
+
+    const alreadyConfirmed = ragConfirmedThisSession || (profile?.rag_export_confirmed ?? false);
+    if (alreadyConfirmed) {
+      executeRagExport(false);
+    } else {
+      setShowRagModal(true);
+    }
+  };
+
+  const executeRagExport = async (confirmExport: boolean) => {
+    setRagExportLoading(true);
+    const result = await deductRagExportCreditsAction(derivedDuration, confirmExport);
+    setRagExportLoading(false);
+
+    if (!result.success) {
+      setShowInsufficientCreditsForRag(true);
+      setShowRagModal(false);
+      return;
+    }
+
+    if (confirmExport) setRagConfirmedThisSession(true);
+    await refreshCredits();
+    setShowRagModal(false);
+
+    posthog.capture('export_clicked', { format: 'rag_json', chunk_size: chunkSize });
+    triggerRagDownload();
+  };
+
   return (
     <>
     {showSignupCard && !user && (
@@ -244,7 +361,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
               {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               {copied ? "Copied" : "Copy"}
             </Button>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="default" size="sm" className="gap-2">
@@ -253,7 +370,7 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
                   <ChevronDown className="size-3.5 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
                   Text
                 </DropdownMenuLabel>
@@ -320,14 +437,42 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
                   <FileJson className="size-4 text-muted-foreground" />
                   <div className="flex-1">
                     <div className="font-medium">JSON</div>
-                    <div className="text-xs text-muted-foreground">Raw data</div>
+                    <div className="text-xs text-muted-foreground">segments with start/end time</div>
                   </div>
                 </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Developer
+                </DropdownMenuLabel>
+                {user ? (
+                  <DropdownMenuItem className="gap-3 cursor-pointer" onClick={handleRagExportClick}>
+                    <FileJson className="size-4 text-primary" />
+                    <div className="flex-1">
+                      <div className="font-medium flex items-center gap-1.5">
+                        RAG JSON
+                        <span className="text-[10px] text-primary font-bold">✦</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">LangChain, LlamaIndex, Pinecone</div>
+                    </div>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem className="gap-3 cursor-pointer opacity-60" onClick={() => setShowSignupPrompt(true)}>
+                    <Lock className="size-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <div className="font-medium flex items-center gap-1.5">
+                        RAG JSON
+                        <span className="text-[10px] text-primary font-bold">✦</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Sign in to export</div>
+                    </div>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
-        
+
         {/* Timestamp Toggle */}
         <div className="flex items-center space-x-2 mt-4 pt-2">
           <Switch
@@ -341,17 +486,28 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
           </Label>
         </div>
       </CardHeader>
+
       {showSignupPrompt && (
-        <div className="mx-6 mb-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+        <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <div className="flex items-center gap-2">
             <LogIn className="size-4 text-primary shrink-0" />
-            <span className="text-foreground"><strong>Sign up or log in</strong> to export for free as CSV, SRT, VTT, JSON, or Markdown.</span>
+            <span className="text-foreground"><strong>Sign up or log in</strong> to export as CSV, SRT, VTT, JSON, or Markdown.</span>
           </div>
           <a href="/login" className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
             Sign in
           </a>
         </div>
       )}
+
+      {showInsufficientCreditsForRag && (
+        <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+          <span className="text-foreground">Not enough credits for RAG export — need {ragCost} credit{ragCost !== 1 ? 's' : ''}.</span>
+          <a href="/dashboard/billing" className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors whitespace-nowrap">
+            Buy credits →
+          </a>
+        </div>
+      )}
+
       <CardContent className="p-0">
         <ScrollArea className="h-[500px] w-full bg-muted/30">
           <div className="p-6">
@@ -376,6 +532,86 @@ export function TranscriptCard({ transcript, videoTitle = "YouTube Video", video
       </CardContent>
     </Card>
 
+    {/* RAG Export Confirmation Modal */}
+    <Dialog open={showRagModal} onOpenChange={(open) => { if (!ragExportLoading) setShowRagModal(open); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            Export as RAG-Optimized JSON
+            <span className="text-xs text-primary font-bold">✦</span>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Confirm credit deduction for RAG JSON export
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 space-y-1.5">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Export cost</span>
+              <span className="font-semibold text-foreground">{ragCost} credit{ragCost !== 1 ? 's' : ''}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {ragDurationMin} min video · 1 credit per 15 min
+            </p>
+            <div className="flex items-center justify-between text-sm pt-1 border-t border-border/50">
+              <span className="text-muted-foreground">Your balance</span>
+              <span className="font-medium text-foreground">{credits ?? 0} credits</span>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 space-y-1">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Chunk size</span>
+              <span className="font-medium text-foreground">{chunkLabel.label} ({chunkLabel.sub})</span>
+            </div>
+            <a
+              href="/dashboard/settings"
+              className="text-xs text-primary hover:underline"
+            >
+              Change in settings →
+            </a>
+          </div>
+
+          <a
+            href="/blog/chunk-youtube-transcripts-for-rag"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            What is RAG JSON? →
+          </a>
+
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={ragModalDontShowAgain}
+              onChange={(e) => setRagModalDontShowAgain(e.target.checked)}
+              className="rounded border-border size-4 accent-primary"
+            />
+            <span className="text-sm text-muted-foreground">Don&apos;t show this again</span>
+          </label>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowRagModal(false)}
+            disabled={ragExportLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => executeRagExport(ragModalDontShowAgain)}
+            disabled={ragExportLoading}
+            className="gap-2"
+          >
+            {ragExportLoading && <Loader2 className="size-4 animate-spin" />}
+            {ragExportLoading ? "Exporting…" : "Export"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }

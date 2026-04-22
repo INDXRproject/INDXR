@@ -16,6 +16,8 @@ export interface UserProfile {
   username: string | null
   role: string | null
   avatar_color: string | null
+  rag_export_confirmed: boolean
+  rag_chunk_size: 30 | 60 | 120
 }
 
 export interface AuthContextType {

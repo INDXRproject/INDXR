@@ -1,8 +1,9 @@
 # Beslissing 015: RAG-Geoptimaliseerde JSON Export
 
-**Status:** Geaccepteerd (pending implementatie)
+**Status:** Geïmplementeerd
 **Datum:** 2026-04-14
-**Gerelateerde code:** Export component (frontend-only transformatie, geen backend API-calls)
+**Geïmplementeerd:** 2026-04-22
+**Gerelateerde code:** `src/components/TranscriptCard.tsx`, `src/utils/formatTranscript.ts`, `src/app/actions/rag-export.ts`, `src/components/dashboard/settings/DeveloperExportsCard.tsx`
 
 ---
 
@@ -65,11 +66,43 @@ Voeg een **"RAG-optimized" toggle** toe aan de JSON-export die:
 
 ---
 
+## Implementatiedetails (2026-04-22)
+
+**Definitief output formaat:**
+```json
+{
+  "metadata": {
+    "video_id": "dQw4w9WgXcQ",
+    "title": "Video Title",
+    "channel": "Channel Name",
+    "duration_seconds": 3600,
+    "extraction_method": "youtube_captions",
+    "language": "en",
+    "extracted_at": "2026-04-22T...",
+    "chunking_config": { "chunk_size_seconds": 60, "total_chunks": 42 }
+  },
+  "chunks": [
+    { "chunk_index": 0, "text": "...", "start_time": 0.0, "end_time": 58.3 }
+  ]
+}
+```
+
+**Chunk-size opties:** 30s (~100 tokens), 60s (~200 tokens, default), 120s (~390 tokens) — instelbaar via Settings → Developer Exports, opgeslagen in `profiles.rag_chunk_size`.
+
+**Pricing:** `Math.max(1, Math.ceil(duration_seconds / 900))` — 1 credit per 15 minuten video.
+
+**UX:** Bevestigingsmodal bij eerste gebruik (Radix Dialog), overgeslagen bij `profiles.rag_export_confirmed = true`. Insufficient-credits banner als saldo tekort is.
+
+**Gating:** Ingelogde users (gratis én betaald). Anoniem ziet de dropdown entry met lock-icon.
+
 ## Consequenties
 
-- [ ] Frontend: toggle "RAG-optimized" toevoegen aan JSON-export
-- [ ] Implementeer chunk-merge algoritme: accumuleer segmenten tot ~30 seconden
-- [ ] Voeg video-metadata toe aan export (video_id, title, duration, extraction_method)
-- [ ] Documenten `extracted_at` timestamp per export
+- [x] Frontend: "RAG JSON ✦" entry in export dropdown
+- [x] Chunk-merge algoritme: `buildRagChunks()` in `formatTranscript.ts`
+- [x] Video-metadata in export (video_id, title, duration, extraction_method, channel, language)
+- [x] `extracted_at` timestamp per export
+- [x] Credit-aftrek via `deduct_credits_atomic` RPC (Server Action)
+- [x] Supabase migratie: `profiles.rag_export_confirmed`, `profiles.rag_chunk_size`
+- [x] Developer Exports sectie in Settings
+- [x] Clean JSON (reguliere JSON-export) bijgewerkt: `segments` met `start_time`/`end_time`
 - [ ] SEO-pagina's aanmaken na implementatie
-- [ ] Overweeg of RAG-export achter paid user status geplaatst wordt (zie ADR-014)

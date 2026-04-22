@@ -126,6 +126,42 @@ export const generateTxt = (transcript: TranscriptItem[], timestamps: boolean): 
   return createParagraphMode(transcript);
 };
 
+export interface RagChunk {
+  chunk_index: number;
+  text: string;
+  start_time: number;
+  end_time: number;
+}
+
+export function buildRagChunks(transcript: TranscriptItem[], chunkSizeSeconds: number): RagChunk[] {
+  const chunks: RagChunk[] = [];
+  let texts: string[] = [];
+  let chunkStart = 0;
+  let chunkEnd = 0;
+
+  for (let i = 0; i < transcript.length; i++) {
+    const item = transcript[i];
+    const itemEnd = i < transcript.length - 1
+      ? transcript[i + 1].offset
+      : item.offset + item.duration;
+
+    if (texts.length === 0) chunkStart = item.offset;
+    texts.push(decodeEntities(item.text));
+    chunkEnd = itemEnd;
+
+    if (itemEnd - chunkStart >= chunkSizeSeconds) {
+      chunks.push({ chunk_index: chunks.length, text: texts.join(' '), start_time: chunkStart, end_time: chunkEnd });
+      texts = [];
+    }
+  }
+
+  if (texts.length > 0) {
+    chunks.push({ chunk_index: chunks.length, text: texts.join(' '), start_time: chunkStart, end_time: chunkEnd });
+  }
+
+  return chunks;
+}
+
 export const generateMarkdown = (transcript: TranscriptItem[], title: string, withTimestamps: boolean): string => {
   if (withTimestamps) {
     const sections = transcript

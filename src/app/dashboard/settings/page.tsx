@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { SecuritySettingsCard } from "@/components/dashboard/settings/SecuritySettingsCard"
+import { DeveloperExportsCard } from "@/components/dashboard/settings/DeveloperExportsCard"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 export default async function SettingsPage() {
@@ -8,6 +9,14 @@ export default async function SettingsPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("rag_chunk_size")
+    .eq("id", user.id)
+    .single()
+
+  const chunkSize = (profile?.rag_chunk_size ?? 60) as 30 | 60 | 120
 
   return (
     <div className="container max-w-2xl py-10 px-4 sm:px-6 mx-auto animate-in fade-in zoom-in-95 duration-500">
@@ -34,6 +43,9 @@ export default async function SettingsPage() {
             <ThemeToggle />
           </div>
         </div>
+
+        {/* Developer Exports */}
+        <DeveloperExportsCard initialChunkSize={chunkSize} />
       </div>
     </div>
   )

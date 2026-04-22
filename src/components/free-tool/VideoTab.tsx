@@ -1195,7 +1195,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             )
           )}
 
-          <TranscriptCard transcript={transcript} videoTitle={videoTitle} videoUrl={videoUrl} showSignupCard={showSignupCard} />
+          <TranscriptCard
+                    transcript={transcript}
+                    videoTitle={videoTitle}
+                    videoUrl={videoUrl}
+                    showSignupCard={showSignupCard}
+                    videoId={currentVideoId || undefined}
+                    durationSeconds={videoDuration ?? undefined}
+                    extractionMethod={lastProcessingMethod ?? undefined}
+                  />
         </div>
       ) : !loading && !transcript && (
         <div className="p-12 rounded-2xl border border-dashed border-border bg-muted/20 flex flex-col items-center justify-center text-muted-foreground">
