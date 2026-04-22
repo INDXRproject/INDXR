@@ -24,7 +24,9 @@ Frontend
                  ├─ yt-dlp: extract captions (VTT format)
                  ├─ VTT overlap-deduplicatie (LCS algoritme)
                  ├─ Normaliseer naar [{text, offset, duration}]
-                 └─ Return {transcript, title, duration, video_url}
+                 ├─ language: yt-dlp info.language → fallback: lingua-language-detector (13 talen, module-level)
+                 ├─ upload_date geconverteerd naar ISO YYYY-MM-DD (→ published_at in frontend)
+                 └─ Return {transcript, title, duration, video_url, channel, language, language_detected, upload_date}
   └─ Next.js slaat op in Supabase (transcripts tabel)
   └─ Return naar frontend
 ```

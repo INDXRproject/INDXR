@@ -1,4 +1,5 @@
 assemblyai
+lingua-language-detector==2.2.0
 yt-dlp-ejs
 annotated-doc==0.0.4
 annotated-types==0.7.0

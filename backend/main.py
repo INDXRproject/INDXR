@@ -16,6 +16,18 @@ import time
 from dotenv import load_dotenv
 import posthog
 from datetime import datetime, timezone
+from lingua import Language, LanguageDetectorBuilder
+
+_lingua_detector = (
+    LanguageDetectorBuilder
+    .from_languages(
+        Language.ENGLISH, Language.DUTCH, Language.GERMAN,
+        Language.FRENCH, Language.SPANISH, Language.PORTUGUESE,
+        Language.ITALIAN, Language.TURKISH, Language.INDONESIAN,
+        Language.ARABIC, Language.CHINESE, Language.JAPANESE, Language.KOREAN,
+    )
+    .build()
+)
 
 # Load environment variables
 load_dotenv()
@@ -144,6 +156,10 @@ class ExtractResponse(BaseModel):
     title: Optional[str] = None
     video_url: Optional[str] = None
     duration: Optional[float] = None
+    channel: Optional[str] = None
+    language: Optional[str] = None
+    language_detected: Optional[bool] = None
+    upload_date: Optional[str] = None
     error: Optional[str] = None
     error_type: Optional[str] = None
 
@@ -451,11 +467,37 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True, session_id: 
                 return []
             
             transcript = parse_vtt_to_transcript(subtitle_data)
+
+            raw_language = info.get('language')
+            language_detected = None
+            if raw_language:
+                language = raw_language
+                language_detected = False
+            else:
+                sample = ' '.join(item['text'] for item in transcript[:80])
+                sample = ' '.join(sample.split()[:500])
+                try:
+                    detected = _lingua_detector.detect_language_of(sample)
+                    if detected:
+                        language = detected.iso_code_639_1.name.lower()
+                        language_detected = True
+                    else:
+                        language = None
+                except Exception:
+                    language = None
+
+            raw_date = info.get('upload_date')
+            iso_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}" if raw_date else None
+
             return {
                 'transcript': transcript,
                 'title': info.get('title'),
                 'video_url': info.get('webpage_url'),
-                'duration': info.get('duration')
+                'duration': info.get('duration'),
+                'channel': info.get('uploader'),
+                'language': language,
+                'language_detected': language_detected,
+                'upload_date': iso_date,
             }
             
     except MembersOnlyVideoError:
@@ -506,7 +548,11 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             transcript=transcript,
             title=result['title'],
             video_url=result['video_url'],
-            duration=result.get('duration')
+            duration=result.get('duration'),
+            channel=result.get('channel'),
+            language=result.get('language'),
+            language_detected=result.get('language_detected'),
+            upload_date=result.get('upload_date'),
         )
         
     except MembersOnlyVideoError:

@@ -131,6 +131,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
   const [whisperMetadata, setWhisperMetadata] = useState<{ duration: number; creditsUsed: number; truncationWarning?: string } | null>(null)
   const [lastProcessingMethod, setLastProcessingMethod] = useState<'youtube_captions' | 'whisper_ai' | null>(null)
+  const [videoChannel, setVideoChannel] = useState<string | null>(null)
+  const [videoLanguage, setVideoLanguage] = useState<string | null>(null)
+  const [videoPublishedAt, setVideoPublishedAt] = useState<string | null>(null)
+  const [languageDetected, setLanguageDetected] = useState<boolean | null>(null)
   const [isReextracting, setIsReextracting] = useState(false)
   const { user, credits, refreshCredits } = useAuth()
 
@@ -348,6 +352,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setShowSignupCard(false)
     setError(null)
     setVideoDuration(null)
+    setVideoChannel(null)
+    setVideoLanguage(null)
+    setVideoPublishedAt(null)
+    setLanguageDetected(null)
     setSaveStatus('idle')
     setWhisperMetadata(null)
 
@@ -436,6 +444,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setVideoTitle(data.title || "")
       setVideoUrl(data.video_url || targetUrl)
       setVideoDuration(data.duration || null)
+      setVideoChannel(data.channel || null)
+      setVideoLanguage(data.language || null)
+      setVideoPublishedAt(data.published_at || null)
+      setLanguageDetected(data.language_detected ?? null)
       setLastProcessingMethod('youtube_captions')
       setWhisperMetadata(null)
 
@@ -1203,6 +1215,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     videoId={currentVideoId || undefined}
                     durationSeconds={videoDuration ?? undefined}
                     extractionMethod={lastProcessingMethod ?? undefined}
+                    channel={videoChannel ?? undefined}
+                    language={videoLanguage ?? undefined}
+                    publishedAt={videoPublishedAt ?? undefined}
+                    languageDetected={languageDetected ?? undefined}
                   />
         </div>
       ) : !loading && !transcript && (

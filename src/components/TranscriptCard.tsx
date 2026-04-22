@@ -51,6 +51,8 @@ interface TranscriptCardProps {
   extractionMethod?: string;
   channel?: string;
   language?: string;
+  publishedAt?: string;
+  languageDetected?: boolean;
 }
 
 const RAG_CHUNK_LABELS: Record<number, { label: string; sub: string }> = {
@@ -69,6 +71,8 @@ export function TranscriptCard({
   extractionMethod,
   channel,
   language,
+  publishedAt,
+  languageDetected,
 }: TranscriptCardProps) {
   const [copied, setCopied] = useState(false);
   const [showTimestamps, setShowTimestamps] = useState(true);
@@ -206,6 +210,7 @@ export function TranscriptCard({
     };
     if (channel) metadata.channel = channel;
     if (language) metadata.language = language;
+    if (publishedAt) metadata.published_at = publishedAt;
     if (extractionMethod) metadata.extraction_method = extractionMethod;
 
     const segments = transcript.map((t, i) => ({
@@ -276,6 +281,7 @@ export function TranscriptCard({
     };
     if (channel) metadata.channel = channel;
     if (language) metadata.language = language;
+    if (publishedAt) metadata.published_at = publishedAt;
     if (extractionMethod) metadata.extraction_method = extractionMethod;
 
     downloadFile(
@@ -317,7 +323,7 @@ export function TranscriptCard({
     await refreshCredits();
     setShowRagModal(false);
 
-    posthog.capture('export_clicked', { format: 'rag_json', chunk_size: chunkSize });
+    posthog.capture('export_clicked', { format: 'rag_json', chunk_size: chunkSize, language, language_detected: languageDetected });
     triggerRagDownload();
   };
 

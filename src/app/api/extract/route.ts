@@ -105,12 +105,16 @@ export async function POST(request: Request) {
         );
       }
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
         transcript: data.transcript,
         title: data.title,
         video_url: data.video_url,
-        duration: data.duration
+        duration: data.duration,
+        channel: data.channel ?? null,
+        language: data.language ?? null,
+        language_detected: data.language_detected ?? null,
+        published_at: data.upload_date ?? null,
       });
     } catch (error) {
       console.error('Python Backend Error:', error);
