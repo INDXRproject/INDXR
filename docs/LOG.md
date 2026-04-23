@@ -1,3 +1,5 @@
+[2026-04-23] fix: RAG overlap strategie + extraction_method label — whisper_ai triggert nu sentence_boundary overlap (conditie uitgebreid); AudioTab + VideoTab geven 'assemblyai' door als extractionMethod prop (interne DB state 'whisper_ai' intact) | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/VideoTab.tsx
+---
 [2026-04-23] docs: ADR-015 implementatiedetails uitgebreid — extraction-method-aware overlap strategie (assemblyai vs youtube_captions), start_time backwards-zoek logica, overlap_strategy toegevoegd aan output schema | gewijzigd: docs/wiki/decisions/015-rag-json-export.md
 ---
 [2026-04-23] feat: RAG JSON upgrade — chunk_id, deep_link, token_count_estimate, flat metadata per chunk, sentence-boundary overlap (AssemblyAI) + segment-boundary overlap (YouTube captions), 90s chunk preset, overlap_strategy in chunking_config | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, src/components/dashboard/settings/DeveloperExportsCard.tsx, src/app/actions/rag-export.ts, src/types/sbd.d.ts, supabase/migrations/20260423_rag_chunk_size_90.sql
@@ -1041,4 +1043,7 @@ src/components/dashboard/settings/DeveloperExportsCard.tsx
 src/types/sbd.d.ts
 src/utils/formatTranscript.ts
 supabase/migrations/20260423_rag_chunk_size_90.sql
+---
+[2026-04-23 20:09] commit: feat: RAG JSON v2 — chunk_id, deep_link, token_count, overlap, 90s preset
+Changed: docs/LOG.md
 ---

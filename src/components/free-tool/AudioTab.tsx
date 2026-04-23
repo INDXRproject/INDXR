@@ -586,7 +586,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               videoTitle={audioMetadata.filename}
               videoUrl=""
               durationSeconds={audioMetadata.duration || undefined}
-              extractionMethod="whisper_ai"
+              extractionMethod="assemblyai"
             />
           </div>
         </>

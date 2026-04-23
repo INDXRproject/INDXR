@@ -1214,7 +1214,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     showSignupCard={showSignupCard}
                     videoId={currentVideoId || undefined}
                     durationSeconds={videoDuration ?? undefined}
-                    extractionMethod={lastProcessingMethod ?? undefined}
+                    extractionMethod={lastProcessingMethod === 'whisper_ai' ? 'assemblyai' : (lastProcessingMethod ?? undefined)}
                     channel={videoChannel ?? undefined}
                     language={videoLanguage ?? undefined}
                     publishedAt={videoPublishedAt ?? undefined}

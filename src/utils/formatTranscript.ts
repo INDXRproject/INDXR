@@ -165,7 +165,7 @@ export function buildRagChunks(
 ): RagChunk[] {
   const { videoId, title, channel, language, extractionMethod } = context ?? {};
   const overlapSeconds = Math.round(chunkSizeSeconds * 0.15);
-  const useSentenceBoundary = extractionMethod === 'assemblyai';
+  const useSentenceBoundary = extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai';
 
   const makeChunkId = (idx: number) =>
     videoId

@@ -273,7 +273,7 @@ export function TranscriptCard({
 
   const triggerRagDownload = () => {
     const chunks = buildRagChunks(transcript, chunkSize, { videoId, title: videoTitle, channel, language, extractionMethod });
-    const overlapStrategy = extractionMethod === 'assemblyai' ? 'sentence_boundary' : 'segment_boundary';
+    const overlapStrategy = (extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai') ? 'sentence_boundary' : 'segment_boundary';
     const metadata: Record<string, unknown> = {
       video_id: videoId ?? null,
       title: videoTitle ?? null,
