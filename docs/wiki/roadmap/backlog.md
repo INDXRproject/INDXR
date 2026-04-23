@@ -34,6 +34,22 @@ Functies en verbeteringen gepland voor na de launch. Geen vaste volgorde — pri
 - [ ] Multi-language Whisper: taaldetectie verbeteren voor 99+ talen via Universal-2
 - [ ] AssemblyAI: automatic retry voor gefaalde playlist-video's
 
+### Feature: Language-aware caption extraction voor niet-Engelse videos
+
+**Prioriteit:** Low
+**Type:** Feature / Tech investigation
+
+**Achtergrond:**
+De huidige caption extractie pakt hardcoded de `'en'` sleutel uit YouTube's caption lijst. Voor niet-Engelse videos bestaat de originele taaltrack wel degelijk — bijv. `'ar-orig'` voor Arabisch — maar de code kijkt er nooit naar.
+
+Diagnostisch bevestigd (2026-04-23): `automatic_captions` bevat `'ar-orig'` voor Arabische video's. De fix vereist een language-aware lookup: gebruik `info.get('language')` om de originele taal te bepalen, zoek dan `'{lang}-orig'` op in `automatic_captions`, en val terug op `'en'` als die track niet bestaat.
+
+**Validatie extern:** Tactiq.io en youtubetotranscript.com geven ook Engelse output voor niet-Engelse videos — dit is een industrie-breed probleem, niet INDXR-specifiek.
+
+**Aanbevolen flow tot deze fix er is:** AssemblyAI transcriptie voor niet-Engelse content.
+
+**Geschatte complexiteit:** Medium — 10-20 regels Python, maar vereist testen op meerdere talen en edge cases (taal niet beschikbaar, alleen vertaling beschikbaar, etc.)
+
 ### Bulk & Channel
 - [ ] Channel extractie: heel YouTube-kanaal transcriberen (vereist queue-architectuur: Redis/BullMQ of Supabase Realtime)
 - [ ] Batch processing: CSV upload van video URLs

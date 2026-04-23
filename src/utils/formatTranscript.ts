@@ -1,3 +1,5 @@
+import sbd from 'sbd';
+
 export interface TranscriptItem {
   text: string;
   duration: number;
@@ -128,16 +130,124 @@ export const generateTxt = (transcript: TranscriptItem[], timestamps: boolean): 
 
 export interface RagChunk {
   chunk_index: number;
+  chunk_id: string;
   text: string;
   start_time: number;
   end_time: number;
+  deep_link?: string;
+  token_count_estimate: number;
+  metadata: {
+    video_id: string | null;
+    title: string | null;
+    channel: string | null;
+    chunk_index: number;
+    total_chunks: number;
+    start_time: number;
+    end_time: number;
+    language: string | null;
+  };
 }
 
-export function buildRagChunks(transcript: TranscriptItem[], chunkSizeSeconds: number): RagChunk[] {
-  const chunks: RagChunk[] = [];
+type RawChunk = Omit<RagChunk, 'metadata'> & {
+  metadata: Omit<RagChunk['metadata'], 'total_chunks'>;
+};
+
+export function buildRagChunks(
+  transcript: TranscriptItem[],
+  chunkSizeSeconds: number,
+  context?: {
+    videoId?: string;
+    title?: string;
+    channel?: string;
+    language?: string;
+    extractionMethod?: string;
+  }
+): RagChunk[] {
+  const { videoId, title, channel, language, extractionMethod } = context ?? {};
+  const overlapSeconds = Math.round(chunkSizeSeconds * 0.15);
+  const useSentenceBoundary = extractionMethod === 'assemblyai';
+
+  const makeChunkId = (idx: number) =>
+    videoId
+      ? `${videoId}_chunk_${idx.toString().padStart(3, '0')}`
+      : `chunk_${idx.toString().padStart(3, '0')}`;
+
+  const makeDeepLink = (startTime: number) =>
+    videoId ? `https://youtu.be/${videoId}?t=${Math.floor(startTime)}` : undefined;
+
+  const rawChunks: RawChunk[] = [];
+
   let texts: string[] = [];
+  let chunkSegments: TranscriptItem[] = [];
   let chunkStart = 0;
-  let chunkEnd = 0;
+  let sentenceOverlapPrefix = '';
+  let sentenceOverlapStartTime: number | null = null;
+
+  const pushChunk = (chunkEnd: number) => {
+    const newText = texts.join(' ');
+    const fullText = sentenceOverlapPrefix ? `${sentenceOverlapPrefix} ${newText}` : newText;
+    if (!fullText.trim()) return;
+
+    const startTime = useSentenceBoundary ? (sentenceOverlapStartTime ?? chunkStart) : chunkStart;
+    const idx = rawChunks.length;
+    const deepLink = makeDeepLink(startTime);
+    const tokenCount = Math.round(fullText.split(/\s+/).filter(Boolean).length * 1.33);
+
+    rawChunks.push({
+      chunk_index: idx,
+      chunk_id: makeChunkId(idx),
+      text: fullText,
+      start_time: startTime,
+      end_time: chunkEnd,
+      ...(deepLink ? { deep_link: deepLink } : {}),
+      token_count_estimate: tokenCount,
+      metadata: {
+        video_id: videoId ?? null,
+        title: title ?? null,
+        channel: channel ?? null,
+        chunk_index: idx,
+        start_time: startTime,
+        end_time: chunkEnd,
+        language: language ?? null,
+      },
+    });
+
+    if (useSentenceBoundary) {
+      const sentences = sbd.sentences(fullText, { newline_boundaries: false });
+      if (sentences.length > 0) {
+        const overlapCount = Math.max(1, Math.ceil(sentences.length * 0.15));
+        sentenceOverlapPrefix = sentences.slice(-overlapCount).join(' ');
+        // Walk backwards through segments to find the offset where overlap text begins
+        let accumulated = 0;
+        sentenceOverlapStartTime = chunkEnd - overlapSeconds; // fallback
+        for (let j = chunkSegments.length - 1; j >= 0; j--) {
+          accumulated += decodeEntities(chunkSegments[j].text).length + 1;
+          if (accumulated >= sentenceOverlapPrefix.length) {
+            sentenceOverlapStartTime = chunkSegments[j].offset;
+            break;
+          }
+        }
+      } else {
+        sentenceOverlapPrefix = '';
+        sentenceOverlapStartTime = null;
+      }
+      texts = [];
+      chunkSegments = [];
+    } else {
+      // Seed next chunk with overlap segments from the tail of this chunk
+      const overlapSegs: TranscriptItem[] = [];
+      for (let j = chunkSegments.length - 1; j >= 0; j--) {
+        if (chunkSegments[j].offset >= chunkEnd - overlapSeconds) {
+          overlapSegs.unshift(chunkSegments[j]);
+        } else {
+          break;
+        }
+      }
+      texts = overlapSegs.map(s => decodeEntities(s.text));
+      chunkSegments = [...overlapSegs];
+      chunkStart = overlapSegs.length > 0 ? overlapSegs[0].offset : chunkEnd;
+    }
+  };
 
   for (let i = 0; i < transcript.length; i++) {
     const item = transcript[i];
@@ -147,19 +257,23 @@ export function buildRagChunks(transcript: TranscriptItem[], chunkSizeSeconds: n
 
     if (texts.length === 0) chunkStart = item.offset;
     texts.push(decodeEntities(item.text));
-    chunkEnd = itemEnd;
+    chunkSegments.push(item);
 
     if (itemEnd - chunkStart >= chunkSizeSeconds) {
-      chunks.push({ chunk_index: chunks.length, text: texts.join(' '), start_time: chunkStart, end_time: chunkEnd });
-      texts = [];
+      pushChunk(itemEnd);
     }
   }
 
   if (texts.length > 0) {
-    chunks.push({ chunk_index: chunks.length, text: texts.join(' '), start_time: chunkStart, end_time: chunkEnd });
+    const last = transcript[transcript.length - 1];
+    pushChunk(last.offset + last.duration);
   }
 
-  return chunks;
+  const total = rawChunks.length;
+  return rawChunks.map(c => ({
+    ...c,
+    metadata: { ...c.metadata, total_chunks: total },
+  }));
 }
 
 export const generateMarkdown = (transcript: TranscriptItem[], title: string, withTimestamps: boolean): string => {

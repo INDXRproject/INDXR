@@ -56,9 +56,10 @@ interface TranscriptCardProps {
 }
 
 const RAG_CHUNK_LABELS: Record<number, { label: string; sub: string }> = {
-  30: { label: "Quote", sub: "30s" },
-  60: { label: "Balanced", sub: "60s" },
-  120: { label: "Context", sub: "120s" },
+  30:  { label: "Quote",    sub: "30s"  },
+  60:  { label: "Balanced", sub: "60s"  },
+  90:  { label: "Precise",  sub: "90s"  },
+  120: { label: "Context",  sub: "120s" },
 };
 
 export function TranscriptCard({
@@ -92,7 +93,7 @@ export function TranscriptCard({
 
   const ragCost = Math.max(1, Math.ceil(derivedDuration / 900));
   const ragDurationMin = Math.ceil(derivedDuration / 60);
-  const chunkSize = (profile?.rag_chunk_size ?? 60) as 30 | 60 | 120;
+  const chunkSize = (profile?.rag_chunk_size ?? 60) as 30 | 60 | 90 | 120;
   const chunkLabel = RAG_CHUNK_LABELS[chunkSize] ?? RAG_CHUNK_LABELS[60];
 
   // Helper: Format timestamp for SRT (HH:MM:SS,mmm)
@@ -271,13 +272,19 @@ export function TranscriptCard({
   };
 
   const triggerRagDownload = () => {
-    const chunks = buildRagChunks(transcript, chunkSize);
+    const chunks = buildRagChunks(transcript, chunkSize, { videoId, title: videoTitle, channel, language, extractionMethod });
+    const overlapStrategy = extractionMethod === 'assemblyai' ? 'sentence_boundary' : 'segment_boundary';
     const metadata: Record<string, unknown> = {
       video_id: videoId ?? null,
       title: videoTitle ?? null,
       duration_seconds: Math.round(derivedDuration),
       extracted_at: new Date().toISOString(),
-      chunking_config: { chunk_size_seconds: chunkSize, total_chunks: chunks.length },
+      chunking_config: {
+        chunk_size_seconds: chunkSize,
+        overlap_seconds: Math.round(chunkSize * 0.15),
+        overlap_strategy: overlapStrategy,
+        total_chunks: chunks.length,
+      },
     };
     if (channel) metadata.channel = channel;
     if (language) metadata.language = language;

@@ -1,3 +1,11 @@
+[2026-04-23] docs: ADR-015 implementatiedetails uitgebreid — extraction-method-aware overlap strategie (assemblyai vs youtube_captions), start_time backwards-zoek logica, overlap_strategy toegevoegd aan output schema | gewijzigd: docs/wiki/decisions/015-rag-json-export.md
+---
+[2026-04-23] feat: RAG JSON upgrade — chunk_id, deep_link, token_count_estimate, flat metadata per chunk, sentence-boundary overlap (AssemblyAI) + segment-boundary overlap (YouTube captions), 90s chunk preset, overlap_strategy in chunking_config | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, src/components/dashboard/settings/DeveloperExportsCard.tsx, src/app/actions/rag-export.ts, src/types/sbd.d.ts, supabase/migrations/20260423_rag_chunk_size_90.sql
+---
+[2026-04-23] docs: ADR-015 herschreven — research-backed rationale (Vectara NAACL 2025, NVIDIA benchmark), definitief schema met chunk_id/deep_link/token_count/flat metadata, competitive gap tabel, upgrade checklist bijgewerkt | gewijzigd: docs/wiki/decisions/015-rag-json-export.md
+---
+[2026-04-23] docs: language-aware caption extraction toegevoegd aan backlog — diagnostisch bevestigd dat ar-orig track beschikbaar is, fix is medium-complexiteit, AssemblyAI aanbevolen in de tussentijd | gewijzigd: docs/wiki/roadmap/backlog.md
+---
 [2026-04-23] revert: subtitleslangs terug naar ['en'] — niet-Engelse captions structureel onbetrouwbaar (YouTube 429 + tlang=en forced); gedocumenteerd als known limitation | gewijzigd: backend/main.py, docs/wiki/operations/known-issues.md, docs/wiki/architecture/ai-pipeline.md
 ---
 [2026-04-23] feat: reset export confirmation — resetRagExportConfirmationAction server action + "Reset" knop in DeveloperExportsCard met inline bevestiging (verdwijnt na 2s) | gewijzigd: src/app/actions/rag-export.ts, src/components/dashboard/settings/DeveloperExportsCard.tsx
@@ -1013,4 +1021,10 @@ docs/wiki/architecture/ai-pipeline.md
 docs/wiki/operations/known-issues.md
 src/app/actions/rag-export.ts
 src/components/dashboard/settings/DeveloperExportsCard.tsx
+---
+[2026-04-23 19:14] commit: revert: subtitleslangs back to en + docs: non-English captions known limitation
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/operations/known-issues.md
 ---

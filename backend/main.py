@@ -438,20 +438,20 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True, session_id: 
                 return []
             
             subtitle_url = vtt_subtitle['url']
-            
+
             import httpx
             import time
-            
+
             max_retries = 3
             subtitle_data = None
             proxy_url = get_proxy_url(session_id=session_id) if use_proxy else None
-            
+
             for attempt in range(max_retries):
                 try:
                     kwargs = {"timeout": 15.0}
                     if proxy_url:
                         kwargs["proxy"] = proxy_url
-                        
+
                     with httpx.Client(**kwargs) as client:
                         resp = client.get(subtitle_url)
                         resp.raise_for_status()

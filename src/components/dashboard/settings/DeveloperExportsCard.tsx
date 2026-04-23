@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { saveRagChunkSizeAction, resetRagExportConfirmationAction } from "@/app/actions/rag-export";
 
 interface ChunkOption {
-  value: 30 | 60 | 120;
+  value: 30 | 60 | 90 | 120;
   label: string;
   sub: string;
   tokens: string;
@@ -14,15 +14,16 @@ interface ChunkOption {
 const CHUNK_OPTIONS: ChunkOption[] = [
   { value: 30,  label: "Quote",    sub: "30s",  tokens: "~100 tokens" },
   { value: 60,  label: "Balanced", sub: "60s",  tokens: "~200 tokens" },
+  { value: 90,  label: "Precise",  sub: "90s",  tokens: "~300 tokens" },
   { value: 120, label: "Context",  sub: "120s", tokens: "~390 tokens" },
 ];
 
 interface DeveloperExportsCardProps {
-  initialChunkSize: 30 | 60 | 120;
+  initialChunkSize: 30 | 60 | 90 | 120;
 }
 
 export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardProps) {
-  const [chunkSize, setChunkSize] = useState<30 | 60 | 120>(initialChunkSize);
+  const [chunkSize, setChunkSize] = useState<30 | 60 | 90 | 120>(initialChunkSize);
   const [saving, setSaving] = useState(false);
   const [savedValue, setSavedValue] = useState<number | null>(null);
   const [resetting, setResetting] = useState(false);
@@ -36,7 +37,7 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
     setTimeout(() => setResetDone(false), 2000);
   };
 
-  const handleChange = async (value: 30 | 60 | 120) => {
+  const handleChange = async (value: 30 | 60 | 90 | 120) => {
     setChunkSize(value);
     setSaving(true);
     setSavedValue(null);

@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
 
-export async function saveRagChunkSizeAction(chunkSize: 30 | 60 | 120) {
+export async function saveRagChunkSizeAction(chunkSize: 30 | 60 | 90 | 120) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
