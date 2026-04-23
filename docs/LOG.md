@@ -1,3 +1,7 @@
+[2026-04-23] docs: sessie 2 testrapport uitgebreid — AssemblyAI→RAG export gevalideerd (PASS, correct Arabisch, extraction_method correct), stresstest 2u49min PASS (84 chunks, geen timeouts) | gewijzigd: docs/wiki/operations/test-reports.md
+---
+[2026-04-23] fix: language locale-code genormaliseerd — raw_language[:2].lower() zodat "en-US" → "en"; docs: RAG JSON sessie 2 testrapport gedocumenteerd (3/4 PASS, 2 bugs), known-issues bijgewerkt | gewijzigd: backend/main.py, docs/wiki/operations/test-reports.md, docs/wiki/operations/known-issues.md
+---
 [2026-04-22] fix: session_id gepind voor single-video proxy calls — video_id[-8:] als deterministische session_id meegegeven aan extract_with_ytdlp zodat yt-dlp metadata fetch en httpx VTT download hetzelfde exit-IP gebruiken | gewijzigd: backend/main.py
 ---
 [2026-04-22] docs: ADR-015 bijgewerkt — language detection fallback sectie toegevoegd, published_at + lingua consequenties afgevinkt | gewijzigd: docs/wiki/decisions/015-rag-json-export.md
@@ -985,3 +989,8 @@ docs/wiki/decisions/015-rag-json-export.md
 docs/wiki/operations/test-reports.md
 ---
 [2026-04-22 22:12] precompact: context compaction triggered
+[2026-04-22 23:03] commit: fix: pin session_id for single-video proxy calls
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+---

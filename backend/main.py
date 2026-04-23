@@ -471,7 +471,7 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True, session_id: 
             raw_language = info.get('language')
             language_detected = None
             if raw_language:
-                language = raw_language
+                language = raw_language[:2].lower()
                 language_detected = False
             else:
                 sample = ' '.join(item['text'] for item in transcript[:80])

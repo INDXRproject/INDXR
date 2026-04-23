@@ -29,6 +29,20 @@ Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-15.
 
 ## Actieve Bugs
 
+### RAG JSON: yt-dlp pakt `tlang=en` vertaling i.p.v. originele captions
+**Gevonden:** 2026-04-23 (Sessie 2 test)
+**Impact:** Arabische (en andere niet-Engelse) video's krijgen Engelse vertaalde tekst in RAG export terwijl `language` metadata de originele taal aangeeft. Misleidend voor RAG pipelines.
+**Fix:** `subtitleslangs` of taalpreferentie in yt-dlp opts forceren. AssemblyAI flow is niet getroffen.
+
+### RAG JSON: Settings chunk size ✓ feedback onzichtbaar
+**Gevonden:** 2026-04-23 (Sessie 2 test)
+**Bestand:** `src/components/dashboard/settings/DeveloperExportsCard.tsx`
+**Impact:** Auto-save werkt maar tester ziet geen bevestiging. Controleer of success state (`savedOption`) correct wordt gerenderd.
+
+### 429 rate limit op niet-Engelse VTT endpoints
+**Gevonden:** 2026-04-23 — `youtu.be/4XkFY9IsACk` (Russisch)
+**Impact:** Video consistent gefaald met 429 op VTT download, ook na session_id proxy fix. Onduidelijk of video-specifiek of structureel voor niet-Engelse captions.
+
 ### Processing time teller loopt niet tijdens verwerking
 Teller toont alleen eindtijd, geen real-time voortgang tijdens polling.
 
@@ -120,6 +134,9 @@ Geen externe service die alarmeert bij downtime.
 - [ ] `has_ever_purchased` implementeren in Stripe webhook (zie priorities.md)
 - [ ] Anonymous user flows testen via Playwright
 - [ ] 4+ uur video stress test
+- [ ] RAG JSON: yt-dlp originele taal forceren i.p.v. `tlang=en` vertaling
+- [ ] RAG JSON: Settings chunk size ✓ feedback zichtbaarheid controleren (`DeveloperExportsCard.tsx`)
+- [ ] RAG JSON: "Reset export confirmation" knop in Developer Exports settings
 
 ---
 
