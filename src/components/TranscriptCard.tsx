@@ -165,6 +165,27 @@ export function TranscriptCard({
     downloadFile(fullTextWithTimestamps, "transcript_timestamps.txt", "text/plain");
   };
 
+  const buildYamlFrontmatter = (): string => {
+    const lines: string[] = ['---'];
+    lines.push(`title: "${(videoTitle || 'YouTube Video').replace(/"/g, '\\"')}"`);
+    if (videoId)        lines.push(`url: "https://www.youtube.com/watch?v=${videoId}"`);
+    if (channel)        lines.push(`channel: "${channel.replace(/"/g, '\\"')}"`);
+    if (publishedAt)    lines.push(`published: "${publishedAt}"`);
+    if (typeof durationSeconds === 'number') lines.push(`duration: ${durationSeconds}`);
+    if (language)       lines.push(`language: "${language}"`);
+    if (extractionMethod) {
+      const src = (extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai')
+        ? 'AI Transcription (AssemblyAI)'
+        : 'Auto-captions (YouTube)';
+      lines.push(`transcript_source: "${src}"`);
+    }
+    lines.push(`created: "${new Date().toISOString().slice(0, 10)}"`);
+    lines.push('type: youtube');
+    lines.push('tags: [youtube, transcript]');
+    lines.push('---');
+    return lines.join('\n');
+  };
+
   const downloadMarkdown = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'md' });
@@ -184,7 +205,7 @@ export function TranscriptCard({
       }
     }
     if (current) paragraphs.push(current.trim());
-    const content = `# ${title}\n\n${paragraphs.join('\n\n')}`;
+    const content = `${buildYamlFrontmatter()}\n\n# ${title}\n\n${paragraphs.join('\n\n')}`;
     downloadFile(content, "transcript.md", "text/markdown");
   };
 
@@ -193,9 +214,16 @@ export function TranscriptCard({
     posthog.capture('export_clicked', { format: 'md-timestamps' });
     const title = videoTitle || "YouTube Video";
     const sections = transcript
-      .map((t) => `## [${formatHHMMSS(t.offset)}]\n${decodeEntities(t.text)}`)
+      .map((t) => {
+        const ts = formatHHMMSS(t.offset);
+        const secs = Math.floor(t.offset);
+        const heading = videoId
+          ? `## [${ts}](https://youtu.be/${videoId}?t=${secs})`
+          : `## [${ts}]`;
+        return `${heading}\n${decodeEntities(t.text)}`;
+      })
       .join('\n\n');
-    const content = `# ${title}\n\n${sections}`;
+    const content = `${buildYamlFrontmatter()}\n\n# ${title}\n\n${sections}`;
     downloadFile(content, "transcript_timestamps.md", "text/markdown");
   };
 

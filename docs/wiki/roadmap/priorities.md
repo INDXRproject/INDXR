@@ -44,8 +44,8 @@ Functies die klaar moeten zijn vóór de eerste gebruikers binnenkomen.
 **RAG JSON export (30-seconden chunks)**
 Kernfeature voor de AI/developer doelgroep. Exporteert een transcript als JSON met 30-seconden segmenten, timestamps en metadata — direct inlaadbaar in LangChain, LlamaIndex, Pinecone. Zie ADR-015 voor de structuur. Zonder dit missen we een groot deel van de waardepropositie voor de betalende doelgroep.
 
-**Markdown export**
-Exporteert transcript met headers per tijdstempel (`## [00:05:30] Topic`). Handig voor content creators en Notion/Obsidian-gebruikers. Relatief eenvoudig te bouwen bovenop de bestaande exportinfrastructuur.
+~~**Markdown export**~~
+✓ Opgelost 2026-04-24 — plain MD (paragraafmodus) én MD-timestamps beide geïmplementeerd. Geüpgraded met YAML frontmatter (title, url, channel, published, duration, language, transcript_source, created, type, tags — ontbrekende velden worden weggelaten) en klikbare deep-link headers (`## [HH:MM:SS](https://youtu.be/{videoId}?t=N)`) in de timestamps-variant.
 
 **iOS PO token fix voor bgutil**
 De bgutil binary (Rust, Linux x86_64) genereert PO tokens voor de YouTube `web_embedded` client. Als YouTube de iOS client blokkeert, valt caption-extractie terug op de web client — waarvoor PO tokens vereist zijn. Momenteel geen fallback. Risico: bij een YouTube-wijziging kunnen alle caption-extracties stilvallen.
