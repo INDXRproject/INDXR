@@ -29,10 +29,8 @@ Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-15.
 
 ## Actieve Bugs
 
-### RAG JSON: yt-dlp pakt `tlang=en` vertaling i.p.v. originele captions
-**Gevonden:** 2026-04-23 (Sessie 2 test)
-**Impact:** Arabische (en andere niet-Engelse) video's krijgen Engelse vertaalde tekst in RAG export terwijl `language` metadata de originele taal aangeeft. Misleidend voor RAG pipelines.
-**Fix:** `subtitleslangs` of taalpreferentie in yt-dlp opts forceren. AssemblyAI flow is niet getroffen.
+### ~~RAG JSON: yt-dlp pakt `tlang=en` vertaling i.p.v. originele captions~~ ✅ Gefixed 2026-04-23
+`subtitleslangs: ['.*orig']` — yt-dlp pakt nu altijd de originele videotaal.
 
 ### RAG JSON: Settings chunk size ✓ feedback onzichtbaar
 **Gevonden:** 2026-04-23 (Sessie 2 test)
@@ -136,7 +134,7 @@ Geen externe service die alarmeert bij downtime.
 - [ ] 4+ uur video stress test
 - [ ] RAG JSON: yt-dlp originele taal forceren i.p.v. `tlang=en` vertaling
 - [ ] RAG JSON: Settings chunk size ✓ feedback zichtbaarheid controleren (`DeveloperExportsCard.tsx`)
-- [ ] RAG JSON: "Reset export confirmation" knop in Developer Exports settings
+- [x] RAG JSON: "Reset export confirmation" knop in Developer Exports settings
 
 ---
 

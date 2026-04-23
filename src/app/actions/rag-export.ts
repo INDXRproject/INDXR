@@ -50,3 +50,17 @@ export async function deductRagExportCreditsAction(
 
   return { success: true, cost, newBalance: result.new_balance }
 }
+
+export async function resetRagExportConfirmationAction() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ rag_export_confirmed: false })
+    .eq('id', user.id)
+
+  if (error) return { error: error.message }
+  return { success: true }
+}

@@ -1,3 +1,7 @@
+[2026-04-23] feat: reset export confirmation — resetRagExportConfirmationAction server action + "Reset" knop in DeveloperExportsCard met inline bevestiging (verdwijnt na 2s) | gewijzigd: src/app/actions/rag-export.ts, src/components/dashboard/settings/DeveloperExportsCard.tsx
+---
+[2026-04-23] fix: subtitleslangs ['en'] → ['.*orig'] — yt-dlp pakt nu altijd de originele videotaal i.p.v. de automatische Engelse vertaling | gewijzigd: backend/main.py
+---
 [2026-04-23] docs: sessie 2 testrapport uitgebreid — AssemblyAI→RAG export gevalideerd (PASS, correct Arabisch, extraction_method correct), stresstest 2u49min PASS (84 chunks, geen timeouts) | gewijzigd: docs/wiki/operations/test-reports.md
 ---
 [2026-04-23] fix: language locale-code genormaliseerd — raw_language[:2].lower() zodat "en-US" → "en"; docs: RAG JSON sessie 2 testrapport gedocumenteerd (3/4 PASS, 2 bugs), known-issues bijgewerkt | gewijzigd: backend/main.py, docs/wiki/operations/test-reports.md, docs/wiki/operations/known-issues.md
@@ -993,4 +997,10 @@ docs/wiki/operations/test-reports.md
 Changed: backend/main.py
 docs/LOG.md
 docs/wiki/architecture/ai-pipeline.md
+---
+[2026-04-23 18:31] commit: fix: yt-dlp orig lang + reset confirmation + locale normalization
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/operations/known-issues.md
+docs/wiki/operations/test-reports.md
 ---

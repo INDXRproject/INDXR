@@ -21,7 +21,7 @@ Frontend
        ├─ Rate limit check (Upstash Redis)
        └─ POST {PYTHON_BACKEND_URL}/api/extract/youtube
             └─ Python backend:
-                 ├─ yt-dlp: extract captions (VTT format)
+                 ├─ yt-dlp: extract captions (VTT format, subtitleslangs=['.*orig'] → altijd originele taal)
                  ├─ VTT overlap-deduplicatie (LCS algoritme)
                  ├─ Normaliseer naar [{text, offset, duration}]
                  ├─ language: yt-dlp info.language → fallback: lingua-language-detector (13 talen, module-level)

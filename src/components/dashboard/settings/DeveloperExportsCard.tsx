@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { saveRagChunkSizeAction } from "@/app/actions/rag-export";
+import { saveRagChunkSizeAction, resetRagExportConfirmationAction } from "@/app/actions/rag-export";
 
 interface ChunkOption {
   value: 30 | 60 | 120;
@@ -25,6 +25,16 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
   const [chunkSize, setChunkSize] = useState<30 | 60 | 120>(initialChunkSize);
   const [saving, setSaving] = useState(false);
   const [savedValue, setSavedValue] = useState<number | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
+
+  const handleReset = async () => {
+    setResetting(true);
+    await resetRagExportConfirmationAction();
+    setResetting(false);
+    setResetDone(true);
+    setTimeout(() => setResetDone(false), 2000);
+  };
 
   const handleChange = async (value: 30 | 60 | 120) => {
     setChunkSize(value);
@@ -90,6 +100,25 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
             Learn about RAG chunking →
           </a>
         </p>
+      </div>
+
+      <div className="border-t border-[var(--border)]/50 pt-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-[var(--text-primary)]">Export confirmation</p>
+          <p className="text-xs text-[var(--text-muted)]">Re-enable the confirmation dialog before each RAG export.</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {resetDone && (
+            <span className="text-xs text-green-500">Confirmation dialog re-enabled.</span>
+          )}
+          <button
+            onClick={handleReset}
+            disabled={resetting}
+            className="text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-primary)] hover:bg-muted/40 transition-colors disabled:opacity-50"
+          >
+            {resetting ? "Resetting…" : "Reset"}
+          </button>
+        </div>
       </div>
     </div>
   );
