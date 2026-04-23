@@ -1028,3 +1028,17 @@ docs/LOG.md
 docs/wiki/architecture/ai-pipeline.md
 docs/wiki/operations/known-issues.md
 ---
+[2026-04-23 20:08] commit: feat: RAG JSON v2 — chunk_id, deep_link, token_count, overlap, 90s preset
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/decisions/015-rag-json-export.md
+docs/wiki/roadmap/backlog.md
+package-lock.json
+package.json
+src/app/actions/rag-export.ts
+src/components/TranscriptCard.tsx
+src/components/dashboard/settings/DeveloperExportsCard.tsx
+src/types/sbd.d.ts
+src/utils/formatTranscript.ts
+supabase/migrations/20260423_rag_chunk_size_90.sql
+---
