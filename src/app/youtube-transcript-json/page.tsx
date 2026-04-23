@@ -4,200 +4,212 @@ import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplat
 import { AUTHORS } from "@/lib/authors"
 
 export const metadata: Metadata = {
-  title: "YouTube Transcript JSON Export — Free Auto-Captions to RAG-Ready Output | INDXR.AI",
+  title: "YouTube Transcript JSON Export — What You Actually Get | INDXR.AI",
   description:
-    "Export YouTube transcripts as structured JSON with metadata wrapper, start/end timestamps, and video context. Free for auto-caption videos. AI transcription and RAG-optimized chunking available.",
+    "Export YouTube transcripts as structured JSON with video metadata, start/end timestamps, and channel info. Free for captioned videos. Real schema, real output, no surprises.",
 }
 
 const faqs = [
   {
-    q: "Is standard JSON export always free?",
-    a: "Yes. Standard JSON export from auto-caption videos has no additional credit cost beyond the base extraction, which is free for captioned videos. You pay credits only for AI Transcription (1 credit/minute) and RAG JSON export (1 credit per 15 minutes). A free account with 25 welcome credits lets you test both.",
+    q: "Is standard JSON always free?",
+    a: "Yes. Caption-based extraction is free, and the standard JSON export adds no credit cost on top. You pay only for AI Transcription (1 credit/min) and RAG JSON (1 credit/15 min).",
   },
   {
-    q: "When does it make sense to pay for AI Transcription over free auto-captions?",
-    a: "Three situations: (1) the video has no auto-captions at all, (2) you need proper punctuation for downstream text processing or user-facing display, or (3) you're building a RAG pipeline where sentence-boundary chunking quality matters. For quick data extraction where you're doing your own text processing anyway, free auto-captions are often fine.",
+    q: "Does this work for audio files I upload myself?",
+    a: "Yes. Upload MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. Standard JSON and RAG JSON are both available after transcription. channel and language will be null since there's no YouTube metadata to fetch.",
   },
   {
-    q: "What's the total cost for a 1-hour video with maximum quality output?",
-    a: "AI Transcription + RAG JSON export: 60 credits + 4 credits = 64 credits. At Plus pricing (€13.99/1,200 credits), that's €0.77. At Basic pricing (€6.99/500 credits), it's €0.89. Credits never expire.",
+    q: "What's the difference between standard JSON and RAG JSON?",
+    a: "Standard JSON gives you 2–5 second segments — the raw caption timing. RAG JSON merges those into configurable chunks (30s–120s) with overlap, per-chunk deep links, token count estimates, and flat metadata. Standard JSON is a data format. RAG JSON is a pipeline-ready input.",
   },
   {
-    q: "Does JSON export work for audio files I upload myself?",
-    a: "Yes. Upload any audio or video file via the Audio Upload tab (MP3, MP4, WAV, M4A, OGG, FLAC, WEBM, up to 500MB). The same JSON export options apply — standard JSON and RAG JSON both available after transcription completes.",
-  },
-  {
-    q: "Can I export as JSONL instead of JSON?",
-    a: "Yes. JSONL (one JSON object per line) is available as an alternative to the standard JSON array. This format is what OpenAI's fine-tuning API and Hugging Face datasets expect for ML pipeline ingestion.",
-  },
-  {
-    q: "What if I want to process multiple videos and get one combined JSON file?",
-    a: "For playlists: extract the playlist, then use the bulk export with merge option to get all transcripts as a single JSON array. Each segment carries video_id and title in the metadata so you can distinguish sources in your downstream pipeline.",
+    q: "Does AI Transcription improve accuracy for English?",
+    a: "Yes. AssemblyAI Universal-3 Pro outperforms YouTube auto-captions for accuracy, particularly with accents, fast speech, and domain-specific vocabulary. The bigger difference is punctuation — AssemblyAI adds it, auto-captions don't.",
   },
 ]
 
 const sources = [
   {
-    label: "youtube-transcript-api — PyPI",
-    url: "https://pypi.org/project/youtube-transcript-api",
+    label: "Vectara NAACL 2025 — Chunking strategy benchmark (25 configs × 48 embedding models)",
+    url: "https://arxiv.org/abs/2410.13070",
   },
   {
-    label: "YouTube Help — Auto-captions languages and processing",
-    url: "https://support.google.com/youtube/answer/6373554",
+    label: "NVIDIA Technical Blog — Finding the Best Chunking Strategy for Accurate AI Responses",
+    url: "https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses",
   },
   {
-    label: "Rev.com transcription services",
-    url: "https://www.rev.com/transcription",
+    label: "AssemblyAI Universal-3 Pro — speech-to-text model",
+    url: "https://www.assemblyai.com/universal-3",
+  },
+  {
+    label: "LangChain YoutubeLoader — document loader docs",
+    url: "https://python.langchain.com/docs/integrations/document_loaders/youtube_transcript",
+  },
+  {
+    label: "Pinecone — Filter with metadata",
+    url: "https://docs.pinecone.io/guides/data/filter-with-metadata",
+  },
+  {
+    label: "ChromaDB — documentation",
+    url: "https://docs.trychroma.com",
   },
 ]
 
 export default function YouTubeTranscriptJsonPage() {
   return (
     <ToolPageTemplate
-      title="YouTube Transcript JSON Export — Structured Data for Developers"
-      metaDescription="Export YouTube transcripts as structured JSON with metadata wrapper, start/end timestamps, and video context. Free for auto-caption videos. AI transcription and RAG-optimized chunking available."
+      title="YouTube Transcript JSON Export — What You Actually Get"
+      metaDescription="Export YouTube transcripts as structured JSON with video metadata, start/end timestamps, and channel info. Free for captioned videos. Real schema, real output, no surprises."
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-04-24"
       author={AUTHORS["alex-mercer"]}
       faqs={faqs}
       sources={sources}
     >
       <p>
-        If you&apos;ve ever worked with YouTube transcript data programmatically, you know the problem: you
-        extract the text, you get an array of 2–5 second fragments with no video title, no channel, no
-        language, no end timestamp, no context. You spend the next hour writing boilerplate to add
-        metadata, calculate end times, merge short segments, and figure out which video these fragments
-        even came from.
+        If you&apos;ve worked with YouTube transcript data programmatically, you know the frustration. The
+        raw output from{" "}
+        <a
+          href="https://pypi.org/project/youtube-transcript-api"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          youtube-transcript-api
+        </a>{" "}
+        — the most-used library for this — looks like this:
+      </p>
+
+      <pre className="prose-content-pre"><code>{`[
+  {"text": "everybody needs to learn to code", "start": 1.91, "duration": 2.1},
+  {"text": "coding is the new literacy", "start": 4.01, "duration": 1.8}
+]`}</code></pre>
+
+      <p>
+        No video title. No channel. No language. No end timestamp. Just fragments. You spend the next
+        hour writing boilerplate to reconstruct what you actually need.
       </p>
 
       <p>
-        INDXR.AI exports YouTube transcripts as structured JSON with a metadata wrapper built in.
-        Auto-caption extraction is free. For better quality — proper punctuation, higher accuracy, cleanly
-        segmented text — AI transcription is available at a per-minute cost. For developers building RAG
-        pipelines or vector databases, a RAG-optimized variant chunks the transcript into embedding-ready
-        segments with deep links and flat metadata per chunk.
+        INDXR.AI exports transcripts as structured JSON with the metadata already in place. Here&apos;s
+        exactly what you get and what it costs — no features described that aren&apos;t actually in the
+        output.
       </p>
 
-      <h2>Option 1: Auto-Captions + Standard JSON — Free</h2>
+      <h2>Standard JSON — Free for Captioned Videos</h2>
 
       <p>
-        For any YouTube video with auto-generated captions, JSON export is free. No account required for a
-        single video; a free account removes the daily rate limit.
+        For any YouTube video with auto-generated captions, the standard JSON export is free.
       </p>
 
-      <p><strong>What you get:</strong></p>
+      <p>
+        Here&apos;s the actual output, taken from a real export of Fireship&apos;s{" "}
+        <em>How to Learn to Code</em> (6.75 min):
+      </p>
 
       <pre className="prose-content-pre"><code>{`{
-  "video": {
-    "video_id": "dQw4w9WgXcQ",
-    "title": "How to Build a RAG Pipeline",
-    "channel": "AI Engineering Weekly",
-    "source_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "duration": 3612,
+  "metadata": {
+    "video_id": "NtfbWkxJTHw",
+    "title": "How to Learn to Code - 8 Hard Truths",
+    "channel": "Fireship",
     "language": "en",
-    "is_auto_generated": true,
-    "transcript_source": "youtube_captions"
+    "published_at": "2022-02-09",
+    "duration_seconds": 405,
+    "extraction_method": "youtube_captions",
+    "extracted_at": "2026-04-23T18:38:07.820Z"
   },
   "segments": [
     {
-      "text": "hello everyone welcome to this tutorial",
-      "start": 0.0,
-      "end": 2.1,
-      "duration": 2.1
+      "text": "everybody needs to learn to code coding is the new literacy",
+      "start_time": 1.91,
+      "end_time": 4.01
     },
     {
-      "text": "today we're going to build a complete rag pipeline",
-      "start": 2.1,
-      "end": 5.4,
-      "duration": 3.3
+      "text": "if you can't code you'll soon become obsolete",
+      "start_time": 4.01,
+      "end_time": 6.32
     }
   ]
 }`}</code></pre>
 
       <p>
-        <strong>The honest limitation:</strong> Auto-generated captions lack punctuation and
-        capitalization. The text arrives as a continuous stream of lowercase words. Notice{" "}
-        <code>&quot;hello everyone welcome to this tutorial&quot;</code> — no capital, no period. For a quick
-        data extraction or a pipeline that processes the text further, this may be fine. For anything that
-        presents the text to users, generates citations, or relies on sentence detection for downstream
-        processing (like RAG chunking), this is a meaningful quality gap.
+        Every segment has <code>start_time</code> and <code>end_time</code> — calculated from the raw
+        caption timing. The metadata wrapper includes the video title, channel, language, and publish
+        date, extracted automatically from YouTube&apos;s data.
       </p>
 
       <p>
-        <code>is_auto_generated: true</code> in the output flags this so your code can handle it
-        differently from higher-quality sources.
+        <strong>The honest limitation with auto-captions:</strong> The text arrives as a stream of
+        lowercase words with no punctuation. Notice{" "}
+        <em>&quot;everybody needs to learn to code coding is the new literacy&quot;</em> — no
+        capitalization, no period. This is a YouTube limitation, not ours. For most data processing
+        purposes it&apos;s workable. For anything that presents text to users or needs sentence
+        boundaries for downstream NLP, it&apos;s a meaningful quality gap.
       </p>
 
       <p>
-        <strong>Cost: Free.</strong> Standard JSON export is included at no credit cost for any transcript
-        extraction.
+        <strong>For non-English videos:</strong> YouTube&apos;s captioning system always returns the
+        English translation via our extraction pipeline, regardless of the video&apos;s original
+        language. If you need the original Arabic, Turkish, Spanish, or Portuguese text, use AI
+        Transcription instead — it transcribes the actual audio in the original language.
       </p>
-
-      <h2>Option 2: AI Transcription + Standard JSON — 1 Credit Per Minute</h2>
 
       <p>
-        When you enable AI Transcription before extracting, INDXR.AI downloads the video audio and runs it
-        through AssemblyAI Universal-3 Pro before exporting as JSON.
+        <strong>Cost: Free.</strong> No credits, no account required for a single video.
       </p>
 
-      <p><strong>What changes:</strong></p>
+      <h2>AI Transcription + Standard JSON — 1 Credit Per Minute</h2>
+
+      <p>
+        When you enable AI Transcription, INDXR.AI downloads the video audio and runs it through{" "}
+        <a
+          href="https://www.assemblyai.com/universal-3"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          AssemblyAI Universal-3 Pro
+        </a>
+        . The output format is identical — same metadata wrapper, same segments array — but the text
+        quality changes substantially.
+      </p>
+
+      <p>Here&apos;s what changes in the segments:</p>
 
       <pre className="prose-content-pre"><code>{`{
-  "video": {
-    ...
-    "is_auto_generated": false,
-    "transcript_source": "assemblyai"
-  },
   "segments": [
     {
-      "text": "Hello everyone, welcome to this tutorial.",
-      "start": 0.0,
-      "end": 2.1,
-      "duration": 2.1
-    },
-    {
-      "text": "Today we're going to build a complete RAG pipeline.",
-      "start": 2.1,
-      "end": 5.4,
-      "duration": 3.3
+      "text": "This is a 3. It's sloppily written and rendered at an extremely low resolution of 28x28 pixels, but your brain has no trouble recognizing it as a 3.",
+      "start_time": 4.434,
+      "end_time": 10.315
     }
   ]
 }`}</code></pre>
 
       <p>
-        The text now has proper capitalization, punctuation, and sentence boundaries. That single
-        difference has downstream effects throughout any pipeline that processes this text:
+        Proper capitalization. Proper punctuation. Sentence boundaries. This is from 3Blue1Brown&apos;s
+        neural networks video — the same content that auto-captions would give you as an unpunctuated
+        lowercase stream.
       </p>
 
-      <ul>
-        <li>
-          <strong>Sentence detection works correctly.</strong> If you split on sentence endings to build
-          summaries or chunks, punctuated text gives you real sentence boundaries. Auto-captions give you
-          arbitrary cuts.
-        </li>
-        <li>
-          <strong>Readability for end users.</strong> If your application presents transcript text to
-          users, punctuated text reads like text. Unpunctuated lowercase reads like a raw log file.
-        </li>
-        <li>
-          <strong>Better RAG quality.</strong> Chunkers that respect sentence boundaries need punctuation
-          to work. Without it, chunks get cut mid-thought.
-        </li>
-        <li>
-          <strong>Works for videos without captions.</strong> Roughly 20% of YouTube videos have no
-          auto-captions (
-          <a
-            href="https://support.google.com/youtube/answer/6373554"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            YouTube Help
-          </a>
-          ). AI Transcription is the only way to get JSON output for those videos.
-        </li>
-      </ul>
+      <p>The difference matters for three specific situations:</p>
 
-      <p><strong>Cost: 1 credit per minute of video, minimum 1 credit.</strong></p>
+      <p>
+        First, AI Transcription works for videos without captions at all. Roughly 20% of YouTube
+        videos have no auto-generated captions. For these, it&apos;s the only option.
+      </p>
+
+      <p>
+        Second, AssemblyAI is more accurate than YouTube auto-captions for English and other supported
+        languages — particularly with accents, fast speech, and technical vocabulary.
+      </p>
+
+      <p>
+        Third, if you&apos;re building a RAG pipeline, punctuated text with sentence boundaries enables
+        sentence-level chunking. Without punctuation, chunkers cut through sentences arbitrarily.
+      </p>
+
+      <p>
+        <strong>Cost: 1 credit per minute, minimum 1 credit.</strong>
+      </p>
 
       <table>
         <thead>
@@ -210,124 +222,154 @@ export default function YouTubeTranscriptJsonPage() {
         </thead>
         <tbody>
           <tr>
-            <td>10 minutes</td>
-            <td>10 credits</td>
+            <td>10 min</td>
+            <td>10</td>
             <td>€0.14</td>
             <td>€0.12</td>
           </tr>
           <tr>
-            <td>30 minutes</td>
-            <td>30 credits</td>
+            <td>30 min</td>
+            <td>30</td>
             <td>€0.42</td>
             <td>€0.35</td>
           </tr>
           <tr>
             <td>1 hour</td>
-            <td>60 credits</td>
+            <td>60</td>
             <td>€0.84</td>
             <td>€0.70</td>
           </tr>
           <tr>
-            <td>3 hours</td>
-            <td>180 credits</td>
-            <td>€2.52</td>
-            <td>€2.10</td>
+            <td>2 hours</td>
+            <td>120</td>
+            <td>€1.68</td>
+            <td>€1.40</td>
           </tr>
         </tbody>
       </table>
 
+      <h2>RAG JSON — For Vector Databases and AI Pipelines</h2>
+
       <p>
-        For a 1-hour video: less than €1 at any tier. For context,{" "}
-        <a href="https://www.rev.com/services/automatic-transcription" target="_blank" rel="noopener noreferrer">
-          Rev.com
-        </a>{" "}
-        charges $0.25 per minute for AI transcription — that&apos;s $15 for a 1-hour video. AssemblyAI&apos;s
-        standalone API is $0.0035/minute — INDXR.AI sits at a comparable per-minute cost while adding the
-        export pipeline, library, and resegmentation on top.
+        If you&apos;re loading transcripts into a vector database or building a
+        retrieval-augmented pipeline, the standard JSON format isn&apos;t what you want. The 2–5
+        second segments are too small for embedding — each fragment contains roughly 8–20 tokens,
+        far below the 200–400 token range where embedding models perform best (
+        <a
+          href="https://arxiv.org/abs/2410.13070"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Vectara NAACL 2025
+        </a>
+        ,{" "}
+        <a
+          href="https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          NVIDIA benchmark
+        </a>
+        ).
       </p>
 
-      <h2>Option 3: AI Transcription + RAG JSON — Best Quality</h2>
-
       <p>
-        For developers building RAG pipelines, vector databases, or semantic search over YouTube content,
-        the RAG JSON export is the right output. It takes the AI-transcribed text and applies chunking,
-        sentence-boundary snapping, overlap, and per-chunk metadata.
+        RAG JSON handles that transformation. It merges segments into configurable chunks (30s / 60s
+        / 90s / 120s), adds sentence-boundary overlap, and attaches per-chunk metadata ready for
+        direct vector database upsert.
       </p>
 
       <p>
-        Instead of 2–5 second raw segments, you get 90–120 second chunks (~300–400 tokens each — the range
-        that produces optimal embedding retrieval quality). Each chunk carries a direct link to that
-        timestamp in the video:
+        Here&apos;s a real chunk from the Andrej Karpathy <em>Let&apos;s build GPT</em> video (1h56m, 90s
+        preset):
       </p>
 
       <pre className="prose-content-pre"><code>{`{
-  "chunks": [
-    {
-      "chunk_id": "dQw4w9WgXcQ_chunk_000",
-      "chunk_index": 0,
-      "text": "Hello everyone, welcome to this tutorial. Today we're going to build a complete RAG pipeline using YouTube transcripts as our data source...",
-      "start_time": 0.0,
-      "end_time": 118.4,
-      "deep_link": "https://youtu.be/dQw4w9WgXcQ?t=0",
-      "token_count_estimate": 312,
-      "metadata": {
-        "video_id": "dQw4w9WgXcQ",
-        "title": "How to Build a RAG Pipeline",
-        "channel": "AI Engineering Weekly",
-        "chunk_index": 0,
-        "total_chunks": 31
-      }
-    }
-  ]
+  "chunk_index": 0,
+  "chunk_id": "kCc8FmEb1nY_chunk_000",
+  "text": "hi everyone so by now you have probably heard of chat GPT it has taken the world and AI Community by storm...",
+  "start_time": 2.51,
+  "end_time": 93.439,
+  "deep_link": "https://youtu.be/kCc8FmEb1nY?t=2",
+  "token_count_estimate": 404,
+  "metadata": {
+    "video_id": "kCc8FmEb1nY",
+    "title": "Let's build GPT: from scratch, in code, spelled out.",
+    "channel": "Andrej Karpathy",
+    "chunk_index": 0,
+    "total_chunks": 89,
+    "start_time": 2.51,
+    "end_time": 93.439,
+    "language": "en"
+  }
 }`}</code></pre>
 
       <p>
-        This output loads directly into LangChain, LlamaIndex, Pinecone, ChromaDB, Weaviate, and Qdrant.
-        The <code>metadata</code> object on each chunk is a flat key-value structure ready for direct
-        vector database upsert.
-      </p>
-
-      <p>
-        <strong>Cost: AI Transcription (1 credit per minute) + RAG export (1 credit per 15 minutes).</strong>
-      </p>
-
-      <p>
-        A 1-hour video at Plus pricing (€0.012/credit): AI Transcription: 60 credits = €0.72. RAG export:
-        4 credits = €0.05. <strong>Total: 64 credits = €0.77.</strong>
-      </p>
-
-      <p>
-        The first 3 RAG exports are free regardless of video length — enough to validate the output in
-        your actual pipeline before spending credits.
-      </p>
-
-      <h2>Compatibility with youtube-transcript-api</h2>
-
-      <p>
-        The{" "}
-        <a href="https://pypi.org/project/youtube-transcript-api" target="_blank" rel="noopener noreferrer">
-          <code>youtube-transcript-api</code>
+        The <code>deep_link</code> field is pre-constructed and points to the exact second the chunk
+        starts. The <code>metadata</code> object is flat — the structure{" "}
+        <a href="https://docs.pinecone.io/guides/data/filter-with-metadata" target="_blank" rel="noopener noreferrer">
+          Pinecone
         </a>{" "}
-        Python library (6,900+ GitHub stars, the de facto standard) uses <code>text</code>,{" "}
-        <code>start</code>, and <code>duration</code> as field names. INDXR.AI&apos;s standard JSON uses the
-        same names, adds <code>end</code> (calculated as <code>start + duration</code>), and wraps
-        everything in a <code>video</code> metadata object. Code that reads{" "}
-        <code>segments[i][&quot;start&quot;]</code> and <code>segments[i][&quot;text&quot;]</code> works
-        without modification.
+        and{" "}
+        <a href="https://docs.trychroma.com" target="_blank" rel="noopener noreferrer">
+          ChromaDB
+        </a>{" "}
+        require for filtering.
       </p>
 
       <p>
-        The important difference: <code>youtube-transcript-api</code> deployed to cloud environments (AWS,
-        GCP, Railway) frequently hits YouTube&apos;s IP blocking. INDXR.AI runs through residential proxies
-        specifically to avoid this, which is why it continues working in production environments where the
-        open-source library fails.
+        <strong>What you should know:</strong> RAG JSON on auto-captions works, but the overlap
+        strategy differs from AssemblyAI. Without punctuation, we can&apos;t detect sentence
+        boundaries, so overlap uses segment-level alignment instead. The result is still useful, but
+        AssemblyAI-sourced transcripts produce cleaner chunks with true sentence boundaries. This is
+        reflected in the <code>overlap_strategy</code> field in the output:{" "}
+        <code>&quot;sentence_boundary&quot;</code> for AssemblyAI,{" "}
+        <code>&quot;segment_boundary&quot;</code> for auto-captions.
       </p>
 
       <p>
-        For the full RAG-optimized export with chunking and metadata, see{" "}
-        <Link href="/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link>. For audio
-        file uploads, see <Link href="/audio-to-text">Audio Upload</Link>. For credit packages, see the{" "}
-        <Link href="/pricing">pricing page</Link>.
+        <strong>Cost: 1 credit per 15 minutes of video, minimum 1 credit.</strong>
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Video length</th>
+            <th>Credits</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>0–15 min</td><td>1 credit</td></tr>
+          <tr><td>16–30 min</td><td>2 credits</td></tr>
+          <tr><td>31–60 min</td><td>4 credits</td></tr>
+          <tr><td>61–120 min</td><td>8 credits</td></tr>
+          <tr><td>2+ hours</td><td>1 credit per 15 min</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The first 3 RAG exports are free. Credits never expire.
+      </p>
+
+      <h2>What You&apos;d Add Yourself</h2>
+
+      <p>
+        The output doesn&apos;t include everything some pipelines want. Specifically:{" "}
+        <code>channel</code> and <code>language</code> are not available for audio uploads (only
+        YouTube video extraction), since those fields come from YouTube&apos;s metadata. If you need
+        formatted timestamps (<code>&quot;00:01:32&quot;</code>) rather than float seconds, construct
+        them from <code>start_time</code>. If you need a YouTube deep link and you already have the
+        video ID, it&apos;s{" "}
+        <code>https://youtu.be/&#123;video_id&#125;?t=&#123;Math.floor(start_time)&#125;</code> —
+        the same formula we use.
+      </p>
+
+      <p>
+        For the full RAG-optimized export with chunking, overlap configuration, and LangChain / Pinecone
+        integration examples, see{" "}
+        <Link href="/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link>. For
+        audio file uploads, see <Link href="/audio-to-text">Audio Upload</Link>. For credit packages,
+        see the <Link href="/pricing">pricing page</Link>.
       </p>
     </ToolPageTemplate>
   )

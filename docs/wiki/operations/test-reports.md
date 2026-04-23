@@ -120,3 +120,56 @@ Joe Rogan Experience #1368 - Edward Snowden (youtu.be/efs3QRr8LWw):
 | Settings chunk size ✓ feedback zichtbaarheid | UX | Open |
 | "Reset export confirmation" knop in settings | Feature | Open |
 | 429 niet-Engelse VTT endpoints — video-specifiek of structureel? | Investigate | Open |
+
+---
+
+## RAG JSON Export — Sessie 3 (v2 upgrade validatie)
+
+**Datum:** 2026-04-23
+**Tester:** Khidr
+**Commits:** 82a7108 (v2 upgrade) + bugfix (sentence_boundary + assemblyai label)
+**Status:** PASS
+
+### Videos getest
+
+| Video | URL | Duur | Chunks | Preset | Extractie | Resultaat |
+|---|---|---|---|---|---|---|
+| Fireship - How to Learn to Code | youtu.be/NtfbWkxJTHw | 405s (6.75 min) | 8 | 60s | captions | ✅ |
+| 3Blue1Brown - But what is a neural network? | youtu.be/aircAruvnKk | 1119s (18.65 min) | 18 | 60s | assemblyai | ✅ |
+| Andrej Karpathy - Let's build GPT | youtu.be/kCc8FmEb1nY | 6980s (1u56min) | 89 | 90s | captions | ✅ |
+
+### v2 velden — validatie
+
+Alle v2 velden aanwezig in alle drie outputs:
+- `chunk_id` (formaat `{video_id}_chunk_{index:03d}`) ✅
+- `deep_link` (`youtu.be/{id}?t={floor(start_time)}`) ✅
+- `token_count_estimate` ✅
+- Flat `metadata` object per chunk ✅
+- `overlap_seconds` in `chunking_config` ✅
+- `overlap_strategy` in `chunking_config` ✅
+- `extraction_method: "assemblyai"` correct voor AI transcriptie ✅
+
+### Overlap — aantoonbaar correct
+
+**Fireship (segment_boundary, 60s):** chunk 0 eindigt op 62.8s, chunk 1 begint op 54.64s — 8.16s overlap op segmentgrens ✅
+
+**3Blue1Brown (sentence_boundary, 60s, AssemblyAI):** chunk 0 eindigt op 67.98s, chunk 1 begint op 57.463s — 10.5s overlap op zinsgrens. Overlap tekst zijn complete zinnen, niet willekeurige segmentgrenzen ✅
+
+**Karpathy (segment_boundary, 90s):** chunk 0 eindigt op 93.4s, chunk 1 begint op 80.56s — 12.84s overlap ✅
+
+### 90s preset — validatie
+
+- Karpathy bij 60s (sessie 1): 143 chunks
+- Karpathy bij 90s (sessie 3): 89 chunks ✅
+- `overlap_seconds: 14` (15% van 90s) ✅
+
+### Bugs gevonden en gefixed
+
+| Bug | Beschrijving | Fix |
+|---|---|---|
+| AssemblyAI triggerde segment_boundary | `extractionMethod === 'assemblyai'` match faalde omdat waarde `'whisper_ai'` was | Conditie uitgebreid: `=== 'assemblyai' \|\| === 'whisper_ai'`; AudioTab prop gecorrigeerd naar `'assemblyai'`; VideoTab transformeert bij doorgeven |
+| extraction_method toonde "whisper_ai" | Verkeerd label in JSON output | AudioTab prop + VideoTab prop transformatie gecorrigeerd; interne DB state `'whisper_ai'` intact |
+
+### Bekende niet-kritieke observatie
+
+`channel: null` en `language: null` voor AssemblyAI transcripts — expected gedrag. Bij AI transcriptie is geen yt-dlp metadata fetch aanwezig, dus deze velden zijn niet beschikbaar.

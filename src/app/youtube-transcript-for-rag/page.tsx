@@ -6,33 +6,60 @@ import { AUTHORS } from "@/lib/authors"
 export const metadata: Metadata = {
   title: "YouTube Transcripts for RAG Pipelines — Chunked JSON Export | INDXR.AI",
   description:
-    "Export YouTube transcripts as RAG-optimized JSON with 90-120 second chunks, sentence boundaries, timestamps, and chapter metadata. Works with LangChain, LlamaIndex, Pinecone, and ChromaDB.",
+    "Export YouTube transcripts as RAG-optimized JSON with configurable chunk sizes, 15% overlap, per-chunk deep links, and flat metadata for Pinecone, ChromaDB, and Weaviate. Real output, tested.",
 }
 
 const faqs = [
   {
-    q: "What embedding model should I use with this output?",
-    a: "The chunks are sized for dense retrieval models in the 300–400 token range. OpenAI's text-embedding-3-small (1536 dimensions, $0.02/1M tokens) is a practical default. Cohere's embed-english-v3.0 and Voyage AI's voyage-3 are strong alternatives. The token_count_estimate field in each chunk uses cl100k_base tokenization — adjust for other tokenizers.",
+    q: "Does this work for playlists?",
+    a: "Yes. Extract a playlist and every video gets its own RAG JSON file.",
   },
   {
-    q: "Does RAG JSON export work for playlists?",
-    a: "Yes. In playlist extraction, enable RAG JSON as a per-video toggle or globally for all videos in the batch. Each video produces a separate JSON file; for bulk processing, download as a ZIP. Each file follows the same schema, so you can process them uniformly.",
+    q: "Does this work for audio I upload myself?",
+    a: "Yes. Upload any audio file via the Audio tab. The output is identical — channel and language will be null since there's no YouTube metadata.",
   },
   {
-    q: "Can I process audio uploads as RAG JSON?",
-    a: "Yes. Upload an audio file (MP3, WAV, M4A, OGG, FLAC, WEBM, up to 500MB), enable AI Transcription, and toggle RAG JSON export. The output schema is identical — the transcript_source field will show assemblyai and is_auto_generated will be false.",
+    q: "Can I change the chunk size after export?",
+    a: "Yes. Set your preferred default in Settings → Developer Exports. You can re-export any saved transcript with a different preset — no re-transcription needed.",
   },
   {
-    q: "How is the token_count_estimate calculated?",
-    a: "Using tiktoken with the cl100k_base encoder — the same tokenizer used by OpenAI's embedding models. The estimate assumes ~1.33 tokens per English word. For non-English content or technical text with many numbers, actual token counts may differ by 10–20%.",
+    q: "What embedding model should I use?",
+    a: "OpenAI text-embedding-3-small is a practical default for the 200–400 token range our chunks produce. Cohere embed-english-v3.0 and Voyage AI voyage-3 are strong alternatives.",
+  },
+]
+
+const sources = [
+  {
+    label: "Vectara NAACL 2025 — Chunking strategy benchmark (25 configs × 48 embedding models)",
+    url: "https://arxiv.org/abs/2410.13070",
   },
   {
-    q: "What's the difference between the standard JSON export and RAG JSON?",
-    a: "Standard JSON exports raw segments (2–5 seconds each, ~10–20 tokens) with minimal metadata — useful for developers who want the raw data. RAG JSON merges those segments into 90–120 second chunks (~300–400 tokens), adds sentence-boundary snapping, 15% overlap, per-chunk deep links, flat metadata objects, and a video-level wrapper. Standard JSON is a data format; RAG JSON is a pipeline-ready input.",
+    label: "NVIDIA Technical Blog — Finding the Best Chunking Strategy for Accurate AI Responses",
+    url: "https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses",
   },
   {
-    q: "Can I adjust the chunk size?",
-    a: "The default is 120-second chunks with 18-second (15%) overlap. If you need different chunk sizes — for example, 30-second chunks for short-form content or 60-second chunks for a denser index — select from the preset options (30s, 60s, 90s, 120s) in the export settings. The 120-second default is the research-backed sweet spot for most RAG workloads.",
+    label: "Chroma Research — Evaluating Chunking Strategies for Retrieval",
+    url: "https://research.trychroma.com/evaluating-chunking",
+  },
+  {
+    label: "Microsoft Azure AI Search — How to chunk documents for vector search",
+    url: "https://learn.microsoft.com/azure/search/vector-search-how-to-chunk-documents",
+  },
+  {
+    label: "LangChain — Document schema concepts",
+    url: "https://python.langchain.com/docs/concepts/documents",
+  },
+  {
+    label: "Pinecone — Upsert data",
+    url: "https://docs.pinecone.io/guides/data/upsert-data",
+  },
+  {
+    label: "Weaviate — documentation",
+    url: "https://weaviate.io/developers/weaviate",
+  },
+  {
+    label: "Qdrant — documentation",
+    url: "https://qdrant.tech/documentation",
   },
 ]
 
@@ -40,160 +67,209 @@ export default function YouTubeTranscriptForRagPage() {
   return (
     <ToolPageTemplate
       title="YouTube Transcripts for RAG Pipelines — Chunked, Metadata-Rich, Ready to Embed"
-      metaDescription="Export YouTube transcripts as RAG-optimized JSON with 90-120 second chunks, sentence boundaries, timestamps, and chapter metadata. Works with LangChain, LlamaIndex, Pinecone, and ChromaDB."
+      metaDescription="Export YouTube transcripts as RAG-optimized JSON with configurable chunk sizes, 15% overlap, per-chunk deep links, and flat metadata for Pinecone, ChromaDB, and Weaviate. Real output, tested."
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-04-24"
       author={AUTHORS["alex-mercer"]}
       faqs={faqs}
+      sources={sources}
     >
       <p>
-        Raw YouTube transcripts are not RAG-ready. YouTube returns transcripts as arrays of 2–5 second
-        segments — fragments so short they contain only a sentence fragment or two. Load these directly
-        into a vector database and your retrieval quality degrades immediately: chunks lack context,
-        semantic boundaries are arbitrary, and there&apos;s no metadata to filter by video, timestamp, or
-        topic. Every developer who has tried to build a YouTube-based RAG system has hit this problem and
-        solved it manually with the same boilerplate pipeline.
+        Raw YouTube transcripts are not RAG-ready. YouTube returns transcripts as 2–5 second segments
+        — fragments of roughly 8–20 tokens each. Embedding models work best with 200–400 tokens of
+        coherent text (
+        <a href="https://arxiv.org/abs/2410.13070" target="_blank" rel="noopener noreferrer">
+          Vectara NAACL 2025
+        </a>
+        ,{" "}
+        <a
+          href="https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          NVIDIA benchmark
+        </a>
+        ,{" "}
+        <a
+          href="https://research.trychroma.com/evaluating-chunking"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Chroma Research
+        </a>
+        ,{" "}
+        <a
+          href="https://learn.microsoft.com/azure/search/vector-search-how-to-chunk-documents"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Microsoft Azure AI Search
+        </a>
+        ). Feed them 15-token fragments and your retrieval quality degrades immediately: queries
+        can&apos;t match context that&apos;s been cut into arbitrary pieces, and there&apos;s no
+        metadata to filter by video, channel, or timestamp.
       </p>
 
       <p>
-        INDXR.AI&apos;s RAG JSON export does that pipeline for you. One export, one file, ready to load into
-        any vector database.
+        Every developer building a YouTube-based RAG pipeline hits this problem and solves it
+        manually: merge segments, pick a chunk size, handle overlap, attach metadata, format for the
+        vector database. INDXR.AI&apos;s RAG JSON export does that in one click.
       </p>
 
-      <h2>Why Raw YouTube Segments Break RAG</h2>
+      <h2>What the Output Actually Looks Like</h2>
 
       <p>
-        The standard YouTube transcript format — what the <code>youtube-transcript-api</code> Python
-        library returns — looks like this:
-      </p>
-
-      <pre className="prose-content-pre"><code>{`[
-  {"text": "so the first thing you need", "start": 0.0, "duration": 2.3},
-  {"text": "to understand about embeddings", "start": 2.3, "duration": 2.1},
-  {"text": "is that they represent meaning", "start": 4.4, "duration": 2.8}
-]`}</code></pre>
-
-      <p>
-        Each segment is 2–5 seconds of speech — roughly 5–15 words, approximately 8–20 tokens. Embedding
-        models work best with chunks of 256–512 tokens (<a href="https://arxiv.org/abs/2410.13070" target="_blank" rel="noopener noreferrer">Vectara NAACL 2025</a>, tested across 25 chunking
-        configurations and 48 embedding models). Feeding 15-token fragments produces embeddings with almost
-        no semantic content. A query about &quot;how embeddings represent meaning&quot; would need to retrieve
-        three separate chunks just to reassemble one complete thought.
-      </p>
-
-      <p>
-        The second problem is missing metadata. These segments have <code>text</code>, <code>start</code>,
-        and <code>duration</code>. They have no video title, no channel, no language, no chapter context,
-        no direct link back to the timestamp in the video. Once you embed these fragments and store them in
-        Pinecone or ChromaDB, you&apos;ve lost all provenance.
-      </p>
-
-      <h2>What &quot;RAG-Ready&quot; Actually Means</h2>
-
-      <p>
-        A chunk is RAG-ready when it meets three criteria: it&apos;s the right size for your embedding model,
-        it preserves semantic boundaries, and it carries enough metadata for downstream use.
-      </p>
-
-      <p>
-        <strong>Size:</strong> The 256–512 token range is the established sweet spot for dense retrieval.
-        <a href="https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses" target="_blank" rel="noopener noreferrer">NVIDIA&apos;s 2024 benchmark</a> found 512–1024 tokens performed best for analytical queries; smaller
-        256–512 token chunks excelled at factoid retrieval. For YouTube specifically, 90–120 seconds of
-        spoken English produces approximately 300–400 tokens at an average speaking pace of 150 words per
-        minute — squarely in the optimal range.
-      </p>
-
-      <p>
-        <strong>Semantic boundaries:</strong> Time-based chunking with sentence-boundary snapping works
-        better than pure fixed-time splits. Rather than cutting exactly at 120 seconds, the chunker adjusts
-        ±5 seconds to land on a sentence end. The Vectara NAACL 2025 study found that chunking strategy
-        had equal or greater influence on retrieval quality than embedding model choice.
-      </p>
-
-      <p>
-        <strong>Metadata:</strong> Every chunk needs enough context to be useful after retrieval. When an
-        LLM retrieves a chunk to answer a question, it needs to cite the source. That means the chunk must
-        carry the video title, channel, timestamp, and ideally a direct link to that moment in the video.
-      </p>
-
-      <h2>The INDXR.AI RAG JSON Schema</h2>
-
-      <p>
-        The RAG JSON export wraps all chunks in a structured document with two top-level sections:
-        video-level metadata and the chunks array.
+        Here&apos;s a real chunk from a 3Blue1Brown neural networks video (19 min, AssemblyAI
+        transcription, 60s preset):
       </p>
 
       <pre className="prose-content-pre"><code>{`{
-  "version": "1.0",
-  "video": {
-    "video_id": "dQw4w9WgXcQ",
-    "title": "How to Build a RAG Pipeline",
-    "channel": "AI Engineering Weekly",
-    "source_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "duration": 3612,
-    "language": "en",
-    "is_auto_generated": false,
-    "transcript_source": "assemblyai"
-  },
-  "chunking_config": {
-    "strategy": "time_based_sentence_snap",
-    "target_duration_seconds": 120,
-    "overlap_seconds": 18,
-    "total_chunks": 31
+  "metadata": {
+    "video_id": "aircAruvnKk",
+    "title": "But what is a neural network? | Deep learning chapter 1",
+    "duration_seconds": 1119,
+    "extraction_method": "assemblyai",
+    "extracted_at": "2026-04-23T18:55:35.850Z",
+    "chunking_config": {
+      "chunk_size_seconds": 60,
+      "overlap_seconds": 9,
+      "overlap_strategy": "sentence_boundary",
+      "total_chunks": 18
+    }
   },
   "chunks": [
     {
-      "chunk_id": "dQw4w9WgXcQ_chunk_000",
       "chunk_index": 0,
-      "text": "Today we're going to walk through building a complete RAG pipeline using YouTube transcripts as the data source. The core challenge is that raw transcripts aren't structured for retrieval — they're structured for reading along with a video.",
-      "start_time": 0.0,
-      "end_time": 118.4,
-      "start_time_formatted": "00:00:00",
-      "end_time_formatted": "00:01:58",
-      "deep_link": "https://youtu.be/dQw4w9WgXcQ?t=0",
-      "token_count_estimate": 312,
-      "chapter_title": "Introduction",
+      "chunk_id": "aircAruvnKk_chunk_000",
+      "text": "This is a 3. It's sloppily written and rendered at an extremely low resolution of 28x28 pixels, but your brain has no trouble recognizing it as a 3. And I want you to take a moment to appreciate how crazy it is that brains can do this so effortlessly...",
+      "start_time": 4.434,
+      "end_time": 67.98,
+      "deep_link": "https://youtu.be/aircAruvnKk?t=4",
+      "token_count_estimate": 251,
       "metadata": {
-        "video_id": "dQw4w9WgXcQ",
-        "title": "How to Build a RAG Pipeline",
-        "channel": "AI Engineering Weekly",
+        "video_id": "aircAruvnKk",
+        "title": "But what is a neural network? | Deep learning chapter 1",
         "chunk_index": 0,
-        "total_chunks": 31,
-        "start_time": 0.0,
-        "end_time": 118.4,
-        "chapter_title": "Introduction",
-        "language": "en"
+        "total_chunks": 18,
+        "start_time": 4.434,
+        "end_time": 67.98,
+        "language": null
       }
     }
   ]
 }`}</code></pre>
 
-      <p>A few fields worth noting:</p>
+      <p>A few things worth noting directly.</p>
 
       <p>
-        <strong><code>deep_link</code></strong> — Pre-constructed <code>youtu.be/ID?t=N</code> URL
-        pointing to the exact second this chunk starts. When your LLM cites a source, it can link directly
-        to the moment in the video rather than just the video page.
+        <strong><code>deep_link</code> is pre-constructed per chunk.</strong> Click it and you land
+        on the exact second the chunk starts in the video. When your LLM cites a source, it can link
+        to the moment, not just the video page.
       </p>
 
       <p>
-        <strong><code>metadata</code></strong> — A flat key-value object on every chunk, structured for
-        direct upsert into Pinecone, ChromaDB, Weaviate, and Qdrant. The flat structure is intentional —
-        vector databases require scalar metadata values, not nested objects.
+        <strong><code>metadata</code> is flat.</strong> Vector databases require scalar key-value
+        pairs — no nested objects. The structure here loads directly into{" "}
+        <a href="https://docs.pinecone.io/guides/data/upsert-data" target="_blank" rel="noopener noreferrer">
+          Pinecone
+        </a>
+        ,{" "}
+        <a href="https://docs.trychroma.com" target="_blank" rel="noopener noreferrer">
+          ChromaDB
+        </a>
+        ,{" "}
+        <a href="https://weaviate.io/developers/weaviate" target="_blank" rel="noopener noreferrer">
+          Weaviate
+        </a>
+        , and{" "}
+        <a href="https://qdrant.tech/documentation" target="_blank" rel="noopener noreferrer">
+          Qdrant
+        </a>{" "}
+        without transformation.
       </p>
 
       <p>
-        <strong><code>overlap_seconds: 18</code></strong> — 15% overlap on 120-second chunks. NVIDIA&apos;s
-        testing found 15% overlap performed best across benchmark queries. The <code>overlap_token_count</code>{" "}
-        field lets you deduplicate if needed.
+        <strong><code>token_count_estimate</code></strong> uses the cl100k_base approximation (~1.33
+        tokens per word). It lets you verify chunks fit your embedding model&apos;s context window
+        without running a tokenizer yourself.
+      </p>
+
+      <p>
+        <strong><code>overlap_strategy</code></strong> tells you how the overlap was computed. For
+        AssemblyAI transcripts with punctuation, we use sentence-boundary detection — the overlap
+        ends on a complete sentence. For auto-caption transcripts without punctuation, we use
+        segment-boundary overlap instead.
+      </p>
+
+      <h2>Chunk Size Options</h2>
+
+      <p>
+        Four presets, configurable in Settings → Developer Exports:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Preset</th>
+            <th>Duration</th>
+            <th>~Tokens</th>
+            <th>Best for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Quote</td>
+            <td>30s</td>
+            <td>~100</td>
+            <td>Short-form content, granular retrieval</td>
+          </tr>
+          <tr>
+            <td>Balanced</td>
+            <td>60s</td>
+            <td>~200</td>
+            <td>Default — works across most use cases</td>
+          </tr>
+          <tr>
+            <td>Precise</td>
+            <td>90s</td>
+            <td>~300</td>
+            <td>Inside the research-backed sweet spot</td>
+          </tr>
+          <tr>
+            <td>Context</td>
+            <td>120s</td>
+            <td>~400</td>
+            <td>Lectures, long-form analysis</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The 60s default balances retrieval granularity with semantic completeness. For lecture
+        content like the Karpathy GPT video (1h56m), 90s produced 89 chunks with ~400 tokens each —
+        the range that performs best for analytical queries according to{" "}
+        <a
+          href="https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          NVIDIA&apos;s 2024 benchmark
+        </a>
+        .
       </p>
 
       <h2>Loading into LangChain</h2>
 
       <p>
-        INDXR.AI&apos;s RAG JSON output maps directly to LangChain&apos;s <code>Document</code> schema. Each chunk
-        becomes one <code>Document</code> with <code>page_content</code> from the <code>text</code> field
-        and <code>metadata</code> from the flat metadata object.
+        Each chunk maps directly to{" "}
+        <a
+          href="https://python.langchain.com/docs/concepts/documents"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          LangChain&apos;s Document schema
+        </a>
+        :
       </p>
 
       <pre className="prose-content-pre"><code>{`import json
@@ -221,39 +297,7 @@ results = vectorstore.similarity_search(
 )
 
 for doc in results:
-    print(f"[{doc.metadata['start_time']}s] {doc.page_content[:200]}")
-    print(f"Source: {doc.metadata.get('deep_link', '')}\n")`}</code></pre>
-
-      <p>
-        The deep link in metadata means your LLM responses can cite specific video timestamps: &quot;According
-        to AI Engineering Weekly (00:00:00 — 00:01:58): [chunk text].&quot;
-      </p>
-
-      <h2>Loading into LlamaIndex</h2>
-
-      <pre className="prose-content-pre"><code>{`from llama_index.core import Document, VectorStoreIndex
-import json
-
-with open("transcript_rag.json") as f:
-    data = json.load(f)
-
-documents = [
-    Document(
-        text=chunk["text"],
-        metadata={
-            **chunk["metadata"],
-            "deep_link": chunk["deep_link"],
-            "start_time_formatted": chunk["start_time_formatted"]
-        }
-    )
-    for chunk in data["chunks"]
-]
-
-index = VectorStoreIndex.from_documents(documents)
-query_engine = index.as_query_engine()
-
-response = query_engine.query("Explain the chunking strategy used")
-print(response)`}</code></pre>
+    print(f"[{doc.metadata['start_time']}s] {doc.page_content[:200]}")`}</code></pre>
 
       <h2>Loading into Pinecone</h2>
 
@@ -282,88 +326,67 @@ for chunk in data["chunks"]:
     })
 
 for i in range(0, len(vectors), 100):
-    index.upsert(vectors=vectors[i:i+100])
-
-print(f"Upserted {len(vectors)} chunks from '{data['video']['title']}'")
-`}</code></pre>
-
-      <p>Filter queries by video or channel after ingestion:</p>
-
-      <pre className="prose-content-pre"><code>{`results = index.query(
-    vector=query_embedding,
-    top_k=5,
-    filter={"channel": "AI Engineering Weekly"}
-)`}</code></pre>
+    index.upsert(vectors=vectors[i:i+100])`}</code></pre>
 
       <h2>Auto-Captions vs. AI Transcription for RAG</h2>
 
-      <p>This distinction matters more for RAG than for any other use case.</p>
+      <p>The difference matters more for RAG than for any other use case.</p>
 
       <p>
-        Auto-generated captions have two problems that hurt RAG quality specifically. First, they lack
-        punctuation — text arrives as a stream of lowercase words without sentence boundaries. The chunker
-        uses sentence endpoints to snap boundaries; without them, chunk edges are arbitrary mid-sentence
-        cuts. Second, auto-captions have lower accuracy (60–95% depending on audio quality, compared to
-        94–96%+ for AssemblyAI on clean speech). Errors in the source text propagate into your embeddings.
+        Auto-captions lack punctuation. Text arrives as lowercase words without sentence boundaries.
+        When the chunker tries to detect where sentences end for overlap computation, it can&apos;t —
+        so it falls back to segment-boundary overlap instead. The chunks still work, but the overlap
+        is less semantically clean.
       </p>
 
       <p>
-        For RAG pipelines where retrieval quality matters, use AI Transcription as your source. Enable the
-        AI Transcription toggle before extracting, confirm the credit cost, and the resulting transcript
-        has proper punctuation, accurate text, and meaningful sentence boundaries.
+        Auto-captions are also less accurate than AssemblyAI, particularly for accents, domain
+        vocabulary, and fast speech. Errors propagate into your embeddings.
       </p>
 
       <p>
-        INDXR.AI shows a warning when you enable RAG JSON export on an auto-caption transcript. You can
-        proceed — it will work — but the chunk quality will be lower than an AssemblyAI-sourced transcript.
+        For RAG pipelines where retrieval quality matters, use AI Transcription. The resulting chunks
+        have proper sentence boundaries, accurate text, and sentence-level overlap. For a 19-minute
+        video, AI Transcription costs 19 credits — roughly €0.23 at Basic pricing.
       </p>
 
-      <h2>Pricing for RAG JSON Export</h2>
+      <p>
+        One specific case where auto-captions are fine: if your downstream pipeline does its own text
+        cleaning and doesn&apos;t rely on sentence boundaries for chunking decisions.
+      </p>
+
+      <h2>Pricing</h2>
 
       <p>
-        RAG JSON export costs 1 credit per 15 minutes of video content (rounded up), minimum 1 credit:
+        RAG JSON export: 1 credit per 15 minutes of video, minimum 1.
       </p>
 
       <table>
         <thead>
           <tr>
             <th>Video length</th>
-            <th>RAG export cost</th>
+            <th>Credits</th>
           </tr>
         </thead>
         <tbody>
           <tr><td>0–15 min</td><td>1 credit</td></tr>
           <tr><td>16–30 min</td><td>2 credits</td></tr>
           <tr><td>31–60 min</td><td>4 credits</td></tr>
-          <tr><td>61–120 min</td><td>8 credits</td></tr>
-          <tr><td>121+ min</td><td>1 credit per 15 min</td></tr>
+          <tr><td>1h56min (Karpathy GPT)</td><td>8 credits</td></tr>
+          <tr><td>2h49min (Joe Rogan Snowden)</td><td>12 credits</td></tr>
         </tbody>
       </table>
 
-      <p>
-        The first 3 RAG JSON exports are free, regardless of video length — enough to validate the format
-        in your actual pipeline before spending credits.
-      </p>
+      <p>First 3 exports free. Credits never expire.</p>
 
       <p>
-        If you&apos;re combining AI Transcription with RAG export, the costs are separate: AI Transcription at
-        1 credit per minute, RAG export at 1 credit per 15 minutes. A 60-minute video without captions: 60
-        credits (AI Transcription) + 4 credits (RAG export) = 64 credits total.
-      </p>
-
-      <p>
-        You can also apply RAG export to transcripts already in your library. If you transcribed a video
-        six months ago, open it from the library and export as RAG JSON — the export uses the stored
-        transcript data and charges only the RAG export cost, not re-transcription.
-      </p>
-
-      <p>
-        For the standard JSON format without chunking, see{" "}
-        <Link href="/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For a full
-        overview of the extraction and export pipeline, see{" "}
-        <Link href="/how-it-works">how INDXR.AI works</Link>. For audio file uploads, see{" "}
-        <Link href="/audio-to-text">Audio Upload</Link>. For credit packages, see the{" "}
-        <Link href="/pricing">pricing page</Link>.
+        For the standard (non-chunked) JSON format, see{" "}
+        <Link href="/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For a deep dive
+        into chunk size research and overlap strategy, see{" "}
+        <Link href="/blog/chunk-youtube-transcripts-for-rag">
+          How to Chunk YouTube Transcripts for RAG
+        </Link>
+        . For credit packages, see the <Link href="/pricing">pricing page</Link>.
       </p>
     </ToolPageTemplate>
   )
