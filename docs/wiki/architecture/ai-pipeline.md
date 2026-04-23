@@ -21,7 +21,7 @@ Frontend
        ├─ Rate limit check (Upstash Redis)
        └─ POST {PYTHON_BACKEND_URL}/api/extract/youtube
             └─ Python backend:
-                 ├─ yt-dlp: extract captions (VTT format, subtitleslangs=['.*orig'] → altijd originele taal)
+                 ├─ yt-dlp: extract captions (VTT format, subtitleslangs=['en'] — zie bekende beperking hieronder)
                  ├─ VTT overlap-deduplicatie (LCS algoritme)
                  ├─ Normaliseer naar [{text, offset, duration}]
                  ├─ language: yt-dlp info.language → fallback: lingua-language-detector (13 talen, module-level)
@@ -33,6 +33,8 @@ Frontend
 
 **Tijdsduur:** 1–5 seconden  
 **Kosten:** 0 credits
+
+> **Bekende beperking:** Caption extractie is betrouwbaar voor Engelstalige video's. Voor niet-Engelse video's geeft YouTube's timedtext API consistent 429 errors, en forceert het `tlang=en` in de VTT URL ongeacht de `subtitleslangs` instelling. **AssemblyAI transcriptie is de enige betrouwbare route voor niet-Engelse content.** Zie `known-issues.md` voor details.
 
 ### Fallback path (geen captions → audio transcriptie)
 

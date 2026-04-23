@@ -397,7 +397,7 @@ async def extract_with_ytdlp(video_id: str, use_proxy: bool = True, session_id: 
         'skip_download': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
-        'subtitleslangs': ['.*orig'],
+        'subtitleslangs': ['en'],
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,

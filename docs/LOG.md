@@ -1,3 +1,5 @@
+[2026-04-23] revert: subtitleslangs terug naar ['en'] — niet-Engelse captions structureel onbetrouwbaar (YouTube 429 + tlang=en forced); gedocumenteerd als known limitation | gewijzigd: backend/main.py, docs/wiki/operations/known-issues.md, docs/wiki/architecture/ai-pipeline.md
+---
 [2026-04-23] feat: reset export confirmation — resetRagExportConfirmationAction server action + "Reset" knop in DeveloperExportsCard met inline bevestiging (verdwijnt na 2s) | gewijzigd: src/app/actions/rag-export.ts, src/components/dashboard/settings/DeveloperExportsCard.tsx
 ---
 [2026-04-23] fix: subtitleslangs ['en'] → ['.*orig'] — yt-dlp pakt nu altijd de originele videotaal i.p.v. de automatische Engelse vertaling | gewijzigd: backend/main.py
@@ -1003,4 +1005,12 @@ Changed: backend/main.py
 docs/LOG.md
 docs/wiki/operations/known-issues.md
 docs/wiki/operations/test-reports.md
+---
+[2026-04-23 18:48] commit: fix: subtitleslangs orig + reset export confirmation
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/operations/known-issues.md
+src/app/actions/rag-export.ts
+src/components/dashboard/settings/DeveloperExportsCard.tsx
 ---

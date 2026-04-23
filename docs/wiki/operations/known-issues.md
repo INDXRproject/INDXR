@@ -27,19 +27,32 @@ Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-15.
 
 ---
 
-## Actieve Bugs
+## Known Limitation: Niet-Engelse captions onbetrouwbaar
 
-### ~~RAG JSON: yt-dlp pakt `tlang=en` vertaling i.p.v. originele captions~~ ✅ Gefixed 2026-04-23
-`subtitleslangs: ['.*orig']` — yt-dlp pakt nu altijd de originele videotaal.
+**Vastgesteld:** 2026-04-23  
+**Impact:** Structureel
+
+YouTube's timedtext API geeft consistent 429 errors bij het downloaden van niet-Engelse auto-captions (getest: Arabisch, Nederlands, Russisch). Dit is een bekend en onopgelost issue in yt-dlp zelf — niet fixbaar via subtitleslangs, sleep, of retries. Daarnaast forceert YouTube `tlang=en` in de VTT URL ongeacht de subtitleslangs instelling, waardoor de originele taal niet via captions beschikbaar is.
+
+**Wat dit betekent voor gebruikers:**
+- Engelstalige videos: werkt volledig via captions ✅
+- Niet-Engelse videos via captions: onbetrouwbaar — 429 errors of Engelse vertaling ipv originele taal ❌
+- Niet-Engelse videos via AI transcriptie (AssemblyAI): werkt correct, geeft originele taal terug ✅
+
+**Aanbevolen flow voor niet-Engelse content:**
+AssemblyAI transcriptie is de enige betrouwbare route voor niet-Engelse videos. Dit moet duidelijk gecommuniceerd worden in de UI en marketing — caption extractie is primair voor Engelstalige content.
+
+**Marketing implicatie:**
+Dit is geen bug die gefixt wordt — het is een YouTube infrastructuur beperking. Eerlijke communicatie: INDXR ondersteunt niet-Engelse content via AI transcriptie, niet via captions.
+
+---
+
+## Actieve Bugs
 
 ### RAG JSON: Settings chunk size ✓ feedback onzichtbaar
 **Gevonden:** 2026-04-23 (Sessie 2 test)
 **Bestand:** `src/components/dashboard/settings/DeveloperExportsCard.tsx`
 **Impact:** Auto-save werkt maar tester ziet geen bevestiging. Controleer of success state (`savedOption`) correct wordt gerenderd.
-
-### 429 rate limit op niet-Engelse VTT endpoints
-**Gevonden:** 2026-04-23 — `youtu.be/4XkFY9IsACk` (Russisch)
-**Impact:** Video consistent gefaald met 429 op VTT download, ook na session_id proxy fix. Onduidelijk of video-specifiek of structureel voor niet-Engelse captions.
 
 ### Processing time teller loopt niet tijdens verwerking
 Teller toont alleen eindtijd, geen real-time voortgang tijdens polling.
