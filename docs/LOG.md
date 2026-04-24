@@ -1,3 +1,5 @@
+[2026-04-24] fix: MD-timestamps export — paragraafgroepering (gap>5s) ipv per-segment headers, deep link per paragraaf op timestamp eerste segment | gewijzigd: src/components/TranscriptCard.tsx
+---
 [2026-04-24] feat: Markdown export upgrades — YAML frontmatter (title, url, channel, published, duration, language, transcript_source, created, type, tags) + klikbare timestamp deep links (youtu.be/?t=N) in MD-timestamps variant | gewijzigd: src/components/TranscriptCard.tsx
 ---
 [2026-04-24] content: /youtube-transcript-non-english — AssemblyAI Universal-2 supported languages bronlink + inline links toegevoegd | gewijzigd: src/app/youtube-transcript-non-english/page.tsx
@@ -1073,4 +1075,9 @@ src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx
 src/app/youtube-transcript-for-rag/page.tsx
 src/app/youtube-transcript-json/page.tsx
 src/app/youtube-transcript-non-english/page.tsx
+---
+[2026-04-24 01:48] commit: feat: Markdown export — YAML frontmatter + klikbare timestamp deep links
+Changed: docs/LOG.md
+docs/wiki/roadmap/priorities.md
+src/components/TranscriptCard.tsx
 ---

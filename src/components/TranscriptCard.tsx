@@ -213,17 +213,35 @@ export function TranscriptCard({
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'md-timestamps' });
     const title = videoTitle || "YouTube Video";
-    const sections = transcript
-      .map((t) => {
-        const ts = formatHHMMSS(t.offset);
-        const secs = Math.floor(t.offset);
+    const sections: string[] = [];
+    let currentText = '';
+    let currentOffset = 0;
+    for (let i = 0; i < transcript.length; i++) {
+      const item = transcript[i];
+      const prev = transcript[i - 1];
+      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
+      if (gap > 5 && currentText) {
+        const ts = formatHHMMSS(currentOffset);
         const heading = videoId
-          ? `## [${ts}](https://youtu.be/${videoId}?t=${secs})`
+          ? `## [${ts}](https://youtu.be/${videoId}?t=${Math.floor(currentOffset)})`
           : `## [${ts}]`;
-        return `${heading}\n${decodeEntities(t.text)}`;
-      })
-      .join('\n\n');
-    const content = `${buildYamlFrontmatter()}\n\n# ${title}\n\n${sections}`;
+        sections.push(`${heading}\n${currentText.trim()}`);
+        currentText = decodeEntities(item.text);
+        currentOffset = item.offset;
+      } else {
+        const text = decodeEntities(item.text);
+        if (!currentText) currentOffset = item.offset;
+        currentText = currentText ? `${currentText} ${text}` : text;
+      }
+    }
+    if (currentText) {
+      const ts = formatHHMMSS(currentOffset);
+      const heading = videoId
+        ? `## [${ts}](https://youtu.be/${videoId}?t=${Math.floor(currentOffset)})`
+        : `## [${ts}]`;
+      sections.push(`${heading}\n${currentText.trim()}`);
+    }
+    const content = `${buildYamlFrontmatter()}\n\n# ${title}\n\n${sections.join('\n\n')}`;
     downloadFile(content, "transcript_timestamps.md", "text/markdown");
   };
 
