@@ -1,3 +1,5 @@
+[2026-04-24] refactor: fictieve auteurs verwijderd — alex-mercer en sarah-lindqvist uit authors.ts verwijderd, alle 8 content-pagina's bijgewerkt naar indxr-editorial, marketing.md gesynchroniseerd | gewijzigd: src/lib/authors.ts, 8× src/app/**/page.tsx, docs/wiki/business/marketing.md
+---
 [2026-04-24] content: /youtube-transcript-markdown + /youtube-transcript-obsidian herschreven — real Huberman output, correct YAML schema (url/published/transcript_source/created als datum), klikbare deep link timestamps, Dataview queries bijgewerkt | gewijzigd: src/app/youtube-transcript-markdown/page.tsx, src/app/youtube-transcript-obsidian/page.tsx
 ---
 [2026-04-24] docs: Markdown export sessie 4 testrapport — Huberman 137min PASS, YAML frontmatter + deep links + paragraafgroepering gevalideerd, 3 bugs gedocumenteerd | gewijzigd: docs/wiki/operations/test-reports.md
@@ -1092,4 +1094,9 @@ src/components/TranscriptCard.tsx
 [2026-04-24 09:57] commit: docs: Markdown export sessie 4 testresultaten gedocumenteerd
 Changed: docs/LOG.md
 docs/wiki/operations/test-reports.md
+---
+[2026-04-24 20:24] commit: content: Markdown + Obsidian artikelen herschreven — correct schema, deep links, real output
+Changed: docs/LOG.md
+src/app/youtube-transcript-markdown/page.tsx
+src/app/youtube-transcript-obsidian/page.tsx
 ---

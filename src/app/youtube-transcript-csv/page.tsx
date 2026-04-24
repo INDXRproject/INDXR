@@ -46,7 +46,7 @@ export default function YouTubeTranscriptCsvPage() {
       metaDescription="Export YouTube transcripts as CSV with segment index, start and end timestamps, text, and word count. UTF-8 BOM for Excel compatibility. Works for single videos and playlists."
       publishedAt="2026-04-16"
       updatedAt="2026-04-16"
-      author={AUTHORS["alex-mercer"]}
+      author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
     >

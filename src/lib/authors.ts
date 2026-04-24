@@ -7,20 +7,6 @@ export interface Author {
 }
 
 export const AUTHORS: Record<string, Author> = {
-  "alex-mercer": {
-    name: "Alex Mercer",
-    slug: "alex-mercer",
-    avatar: "/authors/alex-mercer.jpg",
-    bio: "Developer writing about RAG pipelines, AI tooling, and transcript processing workflows.",
-    role: "AI & Developer Content",
-  },
-  "sarah-lindqvist": {
-    name: "Sarah Lindqvist",
-    slug: "sarah-lindqvist",
-    avatar: "/authors/sarah-lindqvist.jpg",
-    bio: "PKM practitioner covering Obsidian, Notion, and research workflows.",
-    role: "PKM & Research Content",
-  },
   "indxr-editorial": {
     name: "INDXR.AI Editorial",
     slug: "indxr-editorial",

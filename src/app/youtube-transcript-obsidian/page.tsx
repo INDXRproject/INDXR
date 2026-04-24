@@ -66,7 +66,7 @@ export default function YouTubeTranscriptObsidianPage() {
       metaDescription="YTranscript and Obsidian Web Clipper break when YouTube updates its UI. INDXR.AI exports transcripts as Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp links — server-side, no plugin required."
       publishedAt="2026-04-16"
       updatedAt="2026-04-24"
-      author={AUTHORS["sarah-lindqvist"]}
+      author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
     >

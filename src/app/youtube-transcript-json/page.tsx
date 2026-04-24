@@ -62,7 +62,7 @@ export default function YouTubeTranscriptJsonPage() {
       metaDescription="Export YouTube transcripts as structured JSON with video metadata, start/end timestamps, and channel info. Free for captioned videos. Real schema, real output, no surprises."
       publishedAt="2026-04-16"
       updatedAt="2026-04-24"
-      author={AUTHORS["alex-mercer"]}
+      author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
     >

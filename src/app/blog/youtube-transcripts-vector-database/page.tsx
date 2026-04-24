@@ -77,7 +77,7 @@ export default function YouTubeTranscriptsVectorDatabasePage() {
       metaDescription="Step-by-step guide to building a semantic search system over YouTube video content. Extract transcripts, generate embeddings, store in Pinecone or ChromaDB, and query with natural language."
       publishedAt="2026-04-16"
       updatedAt="2026-04-16"
-      author={AUTHORS["alex-mercer"]}
+      author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
       steps={steps}

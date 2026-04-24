@@ -31,19 +31,19 @@ De applicatie heeft meerdere `/youtube-*` landing pages, elk gericht op een spec
 | `/youtube-transcript-not-available` | ArticleTemplate | indxr-editorial |
 | `/youtube-members-only-transcript` | ArticleTemplate | indxr-editorial |
 | `/youtube-age-restricted-transcript` | ArticleTemplate | indxr-editorial |
-| `/youtube-transcript-markdown` | ToolPageTemplate | sarah-lindqvist |
-| `/youtube-transcript-obsidian` | ToolPageTemplate | sarah-lindqvist |
-| `/youtube-transcript-csv` | ToolPageTemplate | alex-mercer |
+| `/youtube-transcript-markdown` | ToolPageTemplate | indxr-editorial |
+| `/youtube-transcript-obsidian` | ToolPageTemplate | indxr-editorial |
+| `/youtube-transcript-csv` | ToolPageTemplate | indxr-editorial |
 | `/youtube-srt-download` | ToolPageTemplate | indxr-editorial |
-| `/youtube-transcript-json` | ToolPageTemplate | alex-mercer |
-| `/youtube-transcript-for-rag` | ToolPageTemplate | alex-mercer |
+| `/youtube-transcript-json` | ToolPageTemplate | indxr-editorial |
+| `/youtube-transcript-for-rag` | ToolPageTemplate | indxr-editorial |
 
 **SEO content infrastructure (gebouwd 2026-04-16):**
 
 | Component | Locatie | Doel |
 |---|---|---|
 | `JsonLd` server component | `src/components/seo/JsonLd.tsx` | Rendert `<script type="application/ld+json">` per pagina |
-| Authors config | `src/lib/authors.ts` | Alex Mercer (RAG/dev), Sarah Lindqvist (PKM), INDXR Editorial |
+| Authors config | `src/lib/authors.ts` | Één auteur: INDXR Editorial (alex-mercer en sarah-lindqvist verwijderd 2026-04-24) |
 | `AuthorCard` component | `src/components/content/AuthorCard.tsx` | Toont auteur + publicatiedatums op contentpagina's |
 | `ArticleTemplate` | `src/components/content/templates/` | Layout voor blogs, vergelijkingen, troubleshooting — schema: Article + FAQPage |
 | `ToolPageTemplate` | idem | Layout voor tool-pagina's — schema: SoftwareApplication + FAQPage |

@@ -70,7 +70,7 @@ export default function YouTubeTranscriptForRagPage() {
       metaDescription="Export YouTube transcripts as RAG-optimized JSON with configurable chunk sizes, 15% overlap, per-chunk deep links, and flat metadata for Pinecone, ChromaDB, and Weaviate. Real output, tested."
       publishedAt="2026-04-16"
       updatedAt="2026-04-24"
-      author={AUTHORS["alex-mercer"]}
+      author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
     >

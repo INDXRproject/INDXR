@@ -54,7 +54,7 @@ export default function YouTubeTranscriptMarkdownPage() {
       metaDescription="Export YouTube transcripts as clean Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp deep links. Works when Obsidian plugins break. No extension required."
       publishedAt="2026-04-16"
       updatedAt="2026-04-24"
-      author={AUTHORS["sarah-lindqvist"]}
+      author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
     >

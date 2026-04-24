@@ -97,7 +97,7 @@ export default function ChunkYouTubeTranscriptsForRAGPage() {
       metaDescription="The chunk size you pick matters more than your embedding model. Research-backed guide covering optimal sizes, overlap, sentence-boundary snapping, and why 30 seconds is wrong."
       publishedAt="2026-04-16"
       updatedAt="2026-04-24"
-      author={AUTHORS["alex-mercer"]}
+      author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
       steps={steps}

@@ -46,7 +46,7 @@ export default function YouTubeTranscriptNonEnglishPage() {
       metaDescription="Extracting YouTube transcripts in Arabic, Spanish, Portuguese, Indonesian, or Turkish? Here's what caption extraction gives you and when AI transcription is the right choice."
       publishedAt="2026-04-24"
       updatedAt="2026-04-24"
-      author={AUTHORS["alex-mercer"]}
+      author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
     >
