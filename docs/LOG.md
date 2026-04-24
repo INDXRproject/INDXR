@@ -1,3 +1,5 @@
+[2026-04-24] content: /youtube-transcript-markdown + /youtube-transcript-obsidian herschreven — real Huberman output, correct YAML schema (url/published/transcript_source/created als datum), klikbare deep link timestamps, Dataview queries bijgewerkt | gewijzigd: src/app/youtube-transcript-markdown/page.tsx, src/app/youtube-transcript-obsidian/page.tsx
+---
 [2026-04-24] docs: Markdown export sessie 4 testrapport — Huberman 137min PASS, YAML frontmatter + deep links + paragraafgroepering gevalideerd, 3 bugs gedocumenteerd | gewijzigd: docs/wiki/operations/test-reports.md
 ---
 [2026-04-24] fix: MD-timestamps export — paragraafgroepering (gap>5s) ipv per-segment headers, deep link per paragraaf op timestamp eerste segment | gewijzigd: src/components/TranscriptCard.tsx
@@ -1086,4 +1088,8 @@ src/components/TranscriptCard.tsx
 [2026-04-24 07:15] commit: fix: Markdown timestamps paragraafgroepering + deep links
 Changed: docs/LOG.md
 src/components/TranscriptCard.tsx
+---
+[2026-04-24 09:57] commit: docs: Markdown export sessie 4 testresultaten gedocumenteerd
+Changed: docs/LOG.md
+docs/wiki/operations/test-reports.md
 ---

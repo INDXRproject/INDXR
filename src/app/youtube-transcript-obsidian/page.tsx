@@ -6,235 +6,255 @@ import { AUTHORS } from "@/lib/authors"
 export const metadata: Metadata = {
   title: "YouTube Transcript to Obsidian — Works When Plugins Break | INDXR.AI",
   description:
-    "Obsidian plugins for YouTube transcripts break when YouTube updates its UI. INDXR.AI exports clean Markdown with YAML frontmatter and Dataview-compatible properties — reliable, no plugin required.",
+    "YTranscript and Obsidian Web Clipper break when YouTube updates its UI. INDXR.AI exports transcripts as Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp links — server-side, no plugin required.",
 }
 
 const faqs = [
   {
-    q: "Does the YAML frontmatter work with Obsidian Properties (the GUI panel)?",
-    a: "Yes. Obsidian's Properties panel reads standard YAML frontmatter directly. All fields from INDXR.AI's export appear in the Properties panel automatically. The duration field appears as a number property; created as a date property; tags as a multi-value text property.",
+    q: "Does the YAML frontmatter work with Obsidian Properties?",
+    a: "Yes. Obsidian's Properties panel reads standard YAML frontmatter. duration appears as a number; created as a date; tags as a multi-select; url as a text field you can click. All fields appear automatically when you open the note.",
   },
   {
-    q: "Can I customize the frontmatter fields INDXR.AI exports?",
-    a: "Not currently via the export UI — the template is standardized. You can add fields manually after importing, or use Obsidian's Templater plugin to post-process the note and add custom properties. Custom frontmatter templates are on the product roadmap.",
+    q: "Why don't channel and language appear in some exports?",
+    a: "Those fields come from YouTube's video metadata, available during caption extraction. AI Transcription and audio uploads don't have that metadata, so the fields are omitted. The transcript_source field tells you which method was used.",
   },
   {
-    q: "Why does the Obsidian Web Clipper stop working for YouTube?",
-    a: "The Web Clipper extracts transcripts by targeting specific HTML elements in YouTube's page. YouTube updates its frontend periodically, changing or removing those elements. The transcript panel also has to be manually opened before clipping, or the selector returns empty. INDXR.AI retrieves transcripts server-side via YouTube's internal API, which is not affected by frontend UI changes.",
+    q: "Can I customize the frontmatter?",
+    a: "Not via the export UI — the template is standardized. You can add fields manually after importing, or use Obsidian's Templater plugin to post-process notes with custom properties.",
   },
   {
-    q: "Does this work for YouTube videos without auto-captions?",
-    a: "Yes. Enable AI Transcription in INDXR.AI before extracting. The resulting Markdown is higher quality than auto-caption exports — proper punctuation means transcript text reads naturally in your notes. Cost: 1 credit per minute of video.",
+    q: "Does this work for videos without captions?",
+    a: "Yes. Enable AI Transcription before extracting. AssemblyAI Universal-3 Pro produces properly punctuated, capitalized text — significantly more readable than auto-captions in your notes. Cost: 1 credit per minute.",
   },
   {
-    q: 'What folder structure do you recommend for video notes in Obsidian?',
-    a: 'A simple approach that scales: Clippings/Videos/ for all video transcripts. If you process many videos, add subfolders by channel or topic — Clippings/Videos/Harvard/, Clippings/Videos/Research/. Dataview can query across all of these with a simple FROM "Clippings/Videos" clause.',
+    q: "What folder structure works best?",
+    a: "Clippings/Videos/ for all video transcripts is a simple starting point that scales. Add subfolders by channel or topic as you accumulate more: Clippings/Videos/Huberman/, Clippings/Videos/Research/. Dataview queries across all subfolders with FROM \"Clippings/Videos\".",
+  },
+  {
+    q: "Is this faster than the Web Clipper when it works?",
+    a: "The Web Clipper is one click when it works. INDXR.AI requires pasting a URL, waiting a few seconds for extraction, clicking Export, and dragging a file into your vault — four steps instead of one. The trade-off is reliability. If you've spent time debugging broken templates already, the extra step becomes acceptable quickly.",
   },
 ]
 
 const sources = [
   {
-    label: "Obsidian Forum — YouTube transcript plugin discussion",
+    label: "Obsidian Dataview — Documentation",
+    url: "https://blacksmithgu.github.io/obsidian-dataview/",
+  },
+  {
+    label: "Obsidian Forum — YouTube transcript plugin discussion (thread 111550)",
     url: "https://forum.obsidian.md/t/111550",
   },
   {
-    label: "Obsidian Dataview — Documentation",
-    url: "https://blacksmithgu.github.io/obsidian-dataview",
+    label: "youtube-transcript-api — PyPI (includes section on IP blocking)",
+    url: "https://pypi.org/project/youtube-transcript-api/",
   },
   {
-    label: "youtube-transcript-api — PyPI",
-    url: "https://pypi.org/project/youtube-transcript-api",
+    label: "yt-dlp — GitHub",
+    url: "https://github.com/yt-dlp/yt-dlp",
+  },
+  {
+    label: "Obsidian Templater plugin — GitHub",
+    url: "https://github.com/SilentVoid13/Templater",
   },
 ]
 
 export default function YouTubeTranscriptObsidianPage() {
   return (
     <ToolPageTemplate
-      title="Import YouTube Transcripts into Obsidian — A Reliable Workflow for 2026"
-      metaDescription="Obsidian plugins for YouTube transcripts break when YouTube updates its UI. INDXR.AI exports clean Markdown with YAML frontmatter and Dataview-compatible properties — reliable, no plugin required."
+      title="YouTube Transcript to Obsidian — Works When Plugins Break"
+      metaDescription="YTranscript and Obsidian Web Clipper break when YouTube updates its UI. INDXR.AI exports transcripts as Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp links — server-side, no plugin required."
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-04-24"
       author={AUTHORS["sarah-lindqvist"]}
       faqs={faqs}
       sources={sources}
     >
       <p>
-        Every Obsidian user who has built a YouTube transcript workflow has hit the same problem at
-        some point: the plugin stopped working. The Obsidian Web Clipper&apos;s transcript selector broke
-        twice in early 2026 when YouTube updated its interface (
-        <a href="https://forum.obsidian.md/t/111550" target="_blank" rel="noopener noreferrer">
-          Obsidian Forum, thread 111550
-        </a>
-        ). The YTranscript plugin requires exact URL formats and generates no frontmatter. Most
-        browser-based solutions depend on reading YouTube&apos;s page HTML — which changes without
-        warning.
+        Every Obsidian user who has built a YouTube transcript workflow has hit the same wall at
+        some point: the plugin stopped working. The Obsidian Web Clipper&apos;s transcript selector
+        broke twice in early 2026 when YouTube updated its interface. The YTranscript plugin is
+        more stable but rejects short youtu.be links and URLs with tracking parameters, outputs raw
+        text with no frontmatter, and can&apos;t handle videos without captions at all.
       </p>
 
       <p>
-        INDXR.AI extracts transcripts server-side and exports them as Markdown files with YAML
-        frontmatter ready for your vault. The workflow is slightly longer than a one-click
-        extension, but it works consistently regardless of what YouTube does to its frontend.
+        The underlying problem is structural: every plugin-based approach depends on reading
+        YouTube&apos;s page in your browser, and YouTube changes that page without warning. INDXR.AI
+        extracts transcripts server-side and exports them as .md files with YAML frontmatter ready
+        for your vault. The workflow has one extra step compared to a browser extension — paste the
+        URL, download the file, drop it in your vault — but it doesn&apos;t break.
       </p>
 
-      <h2>What the Markdown Export Looks Like in Your Vault</h2>
+      <h2>What the Note Looks Like</h2>
 
       <p>
-        Every INDXR.AI Markdown export includes a YAML frontmatter block with fields chosen for
-        Obsidian compatibility:
+        Here&apos;s a real export from Harvard University&apos;s Justice lecture series — a video with
+        auto-captions:
       </p>
 
       <pre className="prose-content-pre"><code>{`---
 title: "Justice: What's the Right Thing to Do? — Episode 1"
-source: "https://www.youtube.com/watch?v=kBdfcR-8hEY"
+url: "https://www.youtube.com/watch?v=kBdfcR-8hEY"
 channel: "Harvard University"
+published: "2009-09-04"
 duration: 3421
 language: "en"
+transcript_source: "Auto-captions (YouTube)"
+created: "2026-04-24"
 type: youtube
-created: "2026-04-16T10:15:00Z"
-tags: [youtube, transcript, philosophy, justice]
+tags: [youtube, transcript]
 ---
 
-## Transcript
+# Justice: What's the Right Thing to Do? — Episode 1
 
-[00:00:00] Suppose the brakes on your trolley fail...
+## [00:00:00](https://youtu.be/kBdfcR-8hEY?t=0)
+Suppose the brakes on your trolley fail and the trolley is
+hurtling down the track toward five workers...
 
-[00:02:14] This is the question we'll be examining throughout this course...`}</code></pre>
+## [00:02:14](https://youtu.be/kBdfcR-8hEY?t=134)
+This is the question we'll be examining throughout this course.
+What's the right thing to do?`}</code></pre>
 
       <p>
-        The <code>duration</code> field is stored in seconds as a number — queryable, sortable,
-        filterable. The <code>type: youtube</code> field lets you distinguish video notes from
-        articles, books, or other content types in your vault. The <code>source</code> field is a
-        direct link to the video — paste it into Obsidian and it opens in your browser.
+        Each <code>## [HH:MM:SS]</code> header is a real clickable link. In Obsidian, clicking it
+        opens that exact moment in the video in your browser. The YAML frontmatter appears in
+        Obsidian&apos;s Properties panel automatically — no configuration needed.
       </p>
 
       <p>
-        Both plain Markdown (continuous text, ideal for reading and AI input) and Markdown with
-        timestamps (each segment prefixed with <code>[HH:MM:SS]</code>) are available. For Obsidian
-        notes, the timestamps variant is usually more useful — you can jump to the exact moment in
-        the video when reviewing your notes.
+        One important thing to know: <code>channel</code>, <code>published</code>, and{" "}
+        <code>language</code> are only included when extracting via YouTube captions, because those
+        fields come from YouTube&apos;s video metadata. If you use AI Transcription on a video without
+        captions, or transcribe an audio file, those fields won&apos;t appear. The{" "}
+        <code>transcript_source</code> field tells you which method was used.
       </p>
 
       <h2>Dataview Queries That Work Immediately</h2>
 
       <p>
-        All YAML frontmatter fields are automatically indexed by{" "}
+        All frontmatter fields are automatically indexed by{" "}
         <a
-          href="https://blacksmithgu.github.io/obsidian-dataview"
+          href="https://blacksmithgu.github.io/obsidian-dataview/"
           target="_blank"
           rel="noopener noreferrer"
         >
           Dataview
-        </a>
-        . No configuration required — drop the file into your vault and every field is queryable.
+        </a>{" "}
+        — drop the file in your vault and every field is queryable without any setup.
       </p>
 
-      <p><strong>List all video notes sorted by date:</strong></p>
+      <p>List all video notes, most recent first:</p>
 
-      <pre className="prose-content-pre"><code>{`TABLE title, channel, duration
+      <pre className="prose-content-pre"><code>{`TABLE title, channel, round(duration / 60) AS "Minutes"
 FROM "Clippings/Videos"
 WHERE type = "youtube"
 SORT created DESC`}</code></pre>
 
-      <p><strong>Find all videos from a specific channel:</strong></p>
+      <p>All lectures from a specific channel, in order:</p>
 
-      <pre className="prose-content-pre"><code>{`LIST
+      <pre className="prose-content-pre"><code>{`TABLE title, url, round(duration / 60) AS "Minutes"
 FROM "Clippings/Videos"
-WHERE channel = "Harvard University"`}</code></pre>
+WHERE channel = "Harvard University"
+SORT created ASC`}</code></pre>
 
-      <p><strong>Filter by length — videos over 45 minutes:</strong></p>
+      <p>Long videos not yet processed:</p>
 
       <pre className="prose-content-pre"><code>{`TABLE title, channel, round(duration / 60) AS "Minutes"
 FROM "Clippings/Videos"
-WHERE duration > 2700
-SORT duration DESC`}</code></pre>
-
-      <p><strong>Unprocessed videos — recently imported, not yet tagged:</strong></p>
-
-      <pre className="prose-content-pre"><code>{`TABLE title, created
-FROM "Clippings/Videos"
-WHERE type = "youtube" AND !contains(tags, "processed")
+WHERE type = "youtube" AND duration > 2700 AND !contains(tags, "processed")
 SORT created DESC`}</code></pre>
 
-      <h2>The Step-by-Step Workflow</h2>
+      <p>
+        The <code>duration</code> field is stored in seconds as a number, so{" "}
+        <code>round(duration / 60)</code> gives you minutes. The <code>url</code> field is the full
+        YouTube URL — link it in Obsidian and it opens in your browser.
+      </p>
+
+      <h2>The Workflow</h2>
 
       <p>
-        <strong>Step 1: Extract the transcript.</strong> Paste the YouTube URL into INDXR.AI. For
-        videos with auto-captions, extraction is free and takes seconds. For videos without
-        captions, enable AI Transcription (1 credit per minute) — the resulting transcript has
-        proper punctuation, which matters for readability in your vault.
+        <strong>Step 1 — Extract.</strong> Paste the YouTube URL into INDXR.AI. For videos with
+        auto-captions, extraction is free. For videos without captions, enable AI Transcription (1
+        credit per minute) — the resulting transcript has proper punctuation, which makes notes
+        significantly more readable.
       </p>
 
       <p>
-        <strong>Step 2: Export as Markdown.</strong> Click Export and choose &quot;Markdown — With
-        Timestamps&quot; for notes you&apos;ll actively review, or &quot;Markdown — Plain&quot; for videos
-        you&apos;ll process into summaries or feed to AI tools. The <code>.md</code> file downloads
-        immediately.
+        <strong>Step 2 — Export.</strong> Click Export → Markdown → With Timestamps. The .md file
+        downloads immediately.
       </p>
 
       <p>
-        <strong>Step 3: Move to your vault.</strong> Drag the file into your Obsidian vault folder.
-        A dedicated folder like <code>Clippings/Videos/</code> or <code>Resources/YouTube/</code>{" "}
-        keeps video notes organized separately from your own writing.
+        <strong>Step 3 — Move to your vault.</strong> Drag the file into{" "}
+        <code>Clippings/Videos/</code> or wherever you keep reference material. Obsidian indexes
+        the frontmatter immediately.
       </p>
 
       <p>
-        <strong>Step 4: Open in Obsidian.</strong> The note opens with the YAML frontmatter visible
-        in the Properties panel (Obsidian 1.0+) or as raw YAML in source mode. Add your own tags,
-        link to related notes, start writing in the body below the transcript.
+        <strong>Step 4 — Navigate.</strong> Open the note. Click any{" "}
+        <code>## [HH:MM:SS]</code> timestamp to jump to that moment in the video. Use Dataview to
+        query across all your video notes.
       </p>
 
       <p>
-        <strong>Optional — generate an AI summary first.</strong> Before exporting, you can use
-        INDXR.AI&apos;s AI Summary feature (3 credits) to get a summary and action points. Export both
-        the summary and the full transcript as separate Markdown files, or include both in the same
-        note.
+        <strong>Optional:</strong> before exporting, use INDXR.AI&apos;s AI Summary (3 credits) to
+        generate a summary and key points. Export the summary and the full transcript as separate
+        files, or paste the summary at the top of the note as your own writing.
       </p>
 
-      <h2>Why the Plugin Approach Keeps Failing</h2>
+      <h2>Why Plugins Keep Breaking</h2>
+
+      <p>The failure pattern is the same across all browser-based tools.</p>
 
       <p>
-        Understanding why extensions and plugins break helps clarify why a server-side approach is
-        more reliable long-term.
-      </p>
-
-      <p>
-        <strong>DOM-based tools break when YouTube redesigns its UI.</strong> The Web Clipper uses
-        selectors like <code>.segment-text</code> inside specific panel elements. YouTube changed
-        how its transcript panel renders in February 2026, breaking these selectors. The community
-        published workaround templates — and then YouTube changed the structure again. This is not a
-        one-time event; it&apos;s a recurring pattern.
+        <strong>DOM-based tools fail when YouTube redesigns its UI.</strong> The Obsidian Web
+        Clipper uses CSS selectors to target the transcript panel — selectors like{" "}
+        <code>.segment-text</code> inside specific container elements. YouTube updated how its
+        transcript panel renders in February 2026, breaking every existing template. The Obsidian
+        community published fixes, then YouTube changed the structure again a few weeks later (
+        <a
+          href="https://forum.obsidian.md/t/111550"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Obsidian Forum thread 111550
+        </a>
+        ). This is not a one-time event. YouTube has no obligation to maintain a stable frontend for
+        third-party scrapers.
       </p>
 
       <p>
         <strong>API-based tools get blocked in cloud environments.</strong> The{" "}
-        <code>youtube-transcript-api</code> Python library (the backend for several tools) is
-        blocked when called from cloud server IP ranges — AWS, GCP, Railway, Vercel. YouTube
-        actively rate-limits these requests. The library&apos;s GitHub README includes a dedicated
-        section on working around IP bans (
+        <code>youtube-transcript-api</code> Python library — the backend for several extraction
+        tools — is actively blocked when called from cloud server IP ranges (AWS, GCP, Railway,
+        Vercel). YouTube rate-limits these requests and returns authentication errors. The library&apos;s{" "}
         <a
-          href="https://pypi.org/project/youtube-transcript-api"
+          href="https://pypi.org/project/youtube-transcript-api/"
           target="_blank"
           rel="noopener noreferrer"
         >
-          PyPI
-        </a>
-        ).
+          PyPI README
+        </a>{" "}
+        includes a dedicated section on working around IP bans.
       </p>
 
       <p>
-        INDXR.AI uses yt-dlp through residential proxy infrastructure. yt-dlp communicates with
-        YouTube&apos;s internal endpoints rather than scraping visible HTML, and the residential proxy
-        avoids IP-range blocking. This combination is what makes it reliable across YouTube&apos;s
-        periodic updates.
+        INDXR.AI uses{" "}
+        <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener noreferrer">
+          yt-dlp
+        </a>{" "}
+        through residential proxy infrastructure. yt-dlp communicates with YouTube&apos;s internal API
+        endpoints rather than scraping visible HTML, and residential proxies avoid IP-range
+        blocking. This is why it continues to work when other tools don&apos;t.
       </p>
 
-      <h2>For Playlist and Course Notes</h2>
+      <h2>For Courses and Playlists</h2>
 
       <p>
-        INDXR.AI&apos;s playlist extraction lets you process an entire course — 19 videos, 13 hours, 783
-        minutes — as a single job, with all transcripts exported as individual Markdown files in one
-        ZIP download. Drop the entire ZIP into your Obsidian vault and every lecture becomes a
-        structured, queryable note with proper frontmatter.
+        INDXR.AI processes entire playlists as a single job. A full course — 19 lectures, 13 hours
+        — downloads as a ZIP of individual .md files, each with its own frontmatter. Drop the ZIP
+        into your vault and every lecture is a structured, queryable note.
       </p>
 
       <p>
@@ -242,18 +262,20 @@ SORT created DESC`}</code></pre>
         order writes itself:
       </p>
 
-      <pre className="prose-content-pre"><code>{`TABLE title, round(duration / 60) AS "Minutes"
+      <pre className="prose-content-pre"><code>{`TABLE title, url, round(duration / 60) AS "Minutes"
 FROM "Clippings/Videos"
 WHERE channel = "Harvard University"
 SORT created ASC`}</code></pre>
 
       <p>
-        For more detail on the Markdown export format, see{" "}
-        <Link href="/youtube-transcript-markdown">YouTube Transcript to Markdown</Link>. For
-        troubleshooting videos without captions, see{" "}
-        <Link href="/youtube-transcript-not-available">YouTube Transcript Not Available</Link>. For
-        credit costs and package options, see the <Link href="/pricing">pricing page</Link>, or{" "}
-        <Link href="/how-it-works">how INDXR.AI works</Link> for a full pipeline overview.
+        For more detail on the Markdown export format and YAML frontmatter schema, see{" "}
+        <Link href="/youtube-transcript-markdown">YouTube Transcript to Markdown</Link>. For credit
+        costs and package options, see the <Link href="/pricing">pricing page</Link>.{" "}
+        <Link href="/youtube-transcript-generator">
+          Export a YouTube transcript for Obsidian
+        </Link>{" "}
+        — free for captioned videos, Markdown with YAML frontmatter and clickable timestamps
+        included.
       </p>
     </ToolPageTemplate>
   )
