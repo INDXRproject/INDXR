@@ -1116,3 +1116,9 @@ src/app/youtube-transcript-non-english/page.tsx
 src/app/youtube-transcript-obsidian/page.tsx
 src/lib/authors.ts
 ---
+[2026-04-25 00:24] commit: feat: CSV export upgrade — 6 kolommen, BOM, metadata headers, beide exportpaden
+Changed: docs/LOG.md
+src/components/TranscriptCard.tsx
+src/components/library/TranscriptViewer.tsx
+src/utils/formatTranscript.ts
+---
