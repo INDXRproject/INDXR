@@ -193,6 +193,7 @@ interface TranscriptViewerProps {
   aiSummary: JSONContent | null;
   viewedAt: string | null;
   mode: "original" | "edited";
+  processingMethod?: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -261,6 +262,7 @@ export function TranscriptViewer({
   aiSummary,
   viewedAt,
   mode,
+  processingMethod,
 }: TranscriptViewerProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -476,9 +478,9 @@ export function TranscriptViewer({
       else if (format === "csv")
         downloadFile(generateCsv(transcript, { title, videoId, channel: channelTitle }), `${safe}.csv`, "text/csv;charset=utf-8");
       else if (format === "srt")
-        downloadFile(generateSrt(transcript), `${safe}.srt`, "text/plain");
+        downloadFile(generateSrt(transcript, { extractionMethod: processingMethod ?? undefined }), `${safe}.srt`, "text/plain");
       else if (format === "vtt")
-        downloadFile(generateVtt(transcript), `${safe}.vtt`, "text/vtt");
+        downloadFile(generateVtt(transcript, { title, extractionMethod: processingMethod ?? undefined }), `${safe}.vtt`, "text/vtt");
       toast.success(`Downloaded ${format.toUpperCase()}`);
     } catch (e) {
       console.error(e);

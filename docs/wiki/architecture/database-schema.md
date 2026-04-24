@@ -45,6 +45,8 @@ viewed_at     TIMESTAMPTZ -- laatste keer geopend (migratie 20260306)
 updated_at    TIMESTAMPTZ -- laatste wijziging (migratie 20260307)
 created_at    TIMESTAMPTZ DEFAULT now()
 
+processing_method TEXT     -- 'youtube_captions' | 'whisper_ai' — hoe het transcript is gegenereerd
+
 -- Tiptap/edit veld (migraties 20260302, 20260304)
 edited_content JSONB      -- Tiptap editor JSON state (opgeslagen bewerkte versie)
 ```

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { decodeEntities, createParagraphMode, buildRagChunks } from "@/utils/formatTranscript";
+import { decodeEntities, createParagraphMode, buildRagChunks, generateSrt, generateVtt } from "@/utils/formatTranscript";
 import { deductRagExportCreditsAction } from "@/app/actions/rag-export";
 import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
@@ -315,33 +315,13 @@ export function TranscriptCard({
   const downloadSrt = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'srt' });
-    const srtContent = transcript
-      .map((item, index) => {
-        const startTime = formatSrtTimestamp(item.offset);
-        const endOffset = index < transcript.length - 1
-          ? transcript[index + 1].offset
-          : item.offset + item.duration;
-        const endTime = formatSrtTimestamp(endOffset);
-        return `${index + 1}\n${startTime} --> ${endTime}\n${decodeEntities(item.text)}\n`;
-      })
-      .join("\n");
-    downloadFile(srtContent, "transcript.srt", "text/plain");
+    downloadFile(generateSrt(transcript, { extractionMethod }), "transcript.srt", "text/plain");
   };
 
   const downloadVtt = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'vtt' });
-    const vttContent = "WEBVTT\n\n" + transcript
-      .map((item, index) => {
-        const startTime = formatVttTimestamp(item.offset);
-        const endOffset = index < transcript.length - 1
-          ? transcript[index + 1].offset
-          : item.offset + item.duration;
-        const endTime = formatVttTimestamp(endOffset);
-        return `${index + 1}\n${startTime} --> ${endTime}\n${decodeEntities(item.text)}\n`;
-      })
-      .join("\n");
-    downloadFile(vttContent, "transcript.vtt", "text/vtt");
+    downloadFile(generateVtt(transcript, { title: videoTitle, language, extractionMethod }), "transcript.vtt", "text/vtt");
   };
 
   const triggerRagDownload = () => {

@@ -1,3 +1,5 @@
+[2026-04-25] feat: SRT/VTT professionele subtitle upgrade — resegmentatie (AI: 3-7s op zinsgrenzen, auto-captions: 3s tijdsgebaseerd), 42-char line wrap, VTT NOTE header; processing_method doorgegeven via TranscriptViewer → library krijgt sentence-aware blokken voor AssemblyAI transcripts | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx, src/app/dashboard/library/[id]/page.tsx, docs/wiki/architecture/database-schema.md
+---
 [2026-04-25] content: /youtube-transcript-csv — playlist CSV secties verwijderd (merged CSV bestaat niet); playlist sectie vervangen door één zin over ZIP download | gewijzigd: src/app/youtube-transcript-csv/page.tsx
 ---
 [2026-04-24] feat: CSV export upgrade — BOM + metadata comment-rijen + 6 kolommen (segment_index, start_time, end_time, duration, word_count, text) in beide exportpaden; generateCsv() accepteert optionele meta voor library exports | gewijzigd: src/components/TranscriptCard.tsx, src/utils/formatTranscript.ts, src/components/library/TranscriptViewer.tsx
@@ -1126,4 +1128,8 @@ src/utils/formatTranscript.ts
 ---
 [2026-04-25 00:38] commit: feat: CSV export upgrade — 6 kolommen, BOM, metadata headers, beide exportpaden
 Changed: docs/LOG.md
+---
+[2026-04-25 00:48] commit: fix: CSV artikel — playlist merged CSV claims verwijderd
+Changed: docs/LOG.md
+src/app/youtube-transcript-csv/page.tsx
 ---

@@ -83,26 +83,120 @@ export const createParagraphMode = (transcript: TranscriptItem[]): string => {
   return paragraphs.join('\n\n');
 };
 
-export const generateSrt = (transcript: TranscriptItem[]): string => {
-  return transcript
-    .map((item, index) => {
-      const startTime = formatSrtTimestamp(item.offset);
-      const endOffset = index < transcript.length - 1 ? transcript[index + 1].offset : item.offset + item.duration;
-      const endTime = formatSrtTimestamp(endOffset);
-      return `${index + 1}\n${startTime} --> ${endTime}\n${decodeEntities(item.text)}\n`;
+export interface SubtitleBlock {
+  startTime: number;
+  endTime: number;
+  text: string;
+}
+
+export function resegmentTranscript(
+  transcript: TranscriptItem[],
+  extractionMethod?: string
+): SubtitleBlock[] {
+  if (transcript.length === 0) return [];
+
+  const isAi = extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai';
+  const blocks: SubtitleBlock[] = [];
+  let segTexts: string[] = [];
+  let blockStart = transcript[0].offset;
+  let blockDuration = 0;
+
+  const flush = (endTime: number) => {
+    if (segTexts.length === 0) return;
+    blocks.push({ startTime: blockStart, endTime, text: segTexts.join(' ') });
+    segTexts = [];
+    blockDuration = 0;
+  };
+
+  for (let i = 0; i < transcript.length; i++) {
+    const item = transcript[i];
+    const text = decodeEntities(item.text).trim();
+    if (!text) continue;
+
+    const isFirst = segTexts.length === 0;
+    if (isFirst) blockStart = item.offset;
+
+    segTexts.push(text);
+    blockDuration += item.duration;
+
+    const nextOffset = i < transcript.length - 1
+      ? transcript[i + 1].offset
+      : item.offset + item.duration;
+
+    if (isAi) {
+      const endsOnSentence = /[.?!]$/.test(text);
+      if (blockDuration >= 7) {
+        flush(nextOffset);
+      } else if (blockDuration >= 4 && endsOnSentence) {
+        flush(nextOffset);
+      } else if (blockDuration >= 3 && endsOnSentence && i === transcript.length - 1) {
+        flush(nextOffset);
+      }
+    } else {
+      if (blockDuration >= 3) {
+        flush(nextOffset);
+      }
+    }
+  }
+
+  // flush any remaining segments
+  if (segTexts.length > 0) {
+    const last = transcript[transcript.length - 1];
+    flush(last.offset + last.duration);
+  }
+
+  return blocks;
+}
+
+export function wrapSubtitleText(text: string, maxChars = 42): string {
+  if (text.length <= maxChars) return text;
+  const words = text.split(' ');
+  let line1 = '';
+  let i = 0;
+  while (i < words.length) {
+    const candidate = line1 ? `${line1} ${words[i]}` : words[i];
+    if (candidate.length > maxChars) break;
+    line1 = candidate;
+    i++;
+  }
+  if (i === 0) return text; // single word longer than maxChars — don't break
+  const line2 = words.slice(i).join(' ');
+  return line2 ? `${line1}\n${line2}` : line1;
+}
+
+export const generateSrt = (
+  transcript: TranscriptItem[],
+  meta?: { extractionMethod?: string }
+): string => {
+  const blocks = resegmentTranscript(transcript, meta?.extractionMethod);
+  return blocks
+    .map((block, index) => {
+      const startTime = formatSrtTimestamp(block.startTime);
+      const endTime = formatSrtTimestamp(block.endTime);
+      return `${index + 1}\n${startTime} --> ${endTime}\n${wrapSubtitleText(block.text)}\n`;
     })
     .join("\n");
 };
 
-export const generateVtt = (transcript: TranscriptItem[]): string => {
-  return "WEBVTT\n\n" + transcript
-    .map((item, index) => {
-      const startTime = formatVttTimestamp(item.offset);
-      const endOffset = index < transcript.length - 1 ? transcript[index + 1].offset : item.offset + item.duration;
-      const endTime = formatVttTimestamp(endOffset);
-      return `${index + 1}\n${startTime} --> ${endTime}\n${decodeEntities(item.text)}\n`;
+export const generateVtt = (
+  transcript: TranscriptItem[],
+  meta?: { title?: string; language?: string; extractionMethod?: string }
+): string => {
+  const noteLines: string[] = [];
+  if (meta?.title) noteLines.push(`title: ${meta.title}`);
+  if (meta?.language) noteLines.push(`language: ${meta.language}`);
+  const noteBlock = noteLines.length > 0 ? `NOTE\n${noteLines.join('\n')}\n\n` : '';
+
+  const blocks = resegmentTranscript(transcript, meta?.extractionMethod);
+  const cues = blocks
+    .map((block, index) => {
+      const startTime = formatVttTimestamp(block.startTime);
+      const endTime = formatVttTimestamp(block.endTime);
+      return `${index + 1}\n${startTime} --> ${endTime}\n${wrapSubtitleText(block.text)}\n`;
     })
     .join("\n");
+
+  return `WEBVTT\n\n${noteBlock}${cues}`;
 };
 
 export const generateCsv = (

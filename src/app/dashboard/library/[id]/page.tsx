@@ -111,6 +111,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           aiSummary={transcript.ai_summary ?? null}
           viewedAt={transcript.viewed_at}
           mode={activeTab as "original" | "edited"}
+          processingMethod={transcript.processing_method}
         />
       ) : (activeTab === "summary" || activeTab === "summary_edited") && transcript.ai_summary ? (
         <div className="pb-12 bg-background w-full relative z-10 w-full mt-2">
