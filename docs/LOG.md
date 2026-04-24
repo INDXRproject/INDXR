@@ -1,3 +1,5 @@
+[2026-04-25] content: /youtube-transcript-csv — playlist CSV secties verwijderd (merged CSV bestaat niet); playlist sectie vervangen door één zin over ZIP download | gewijzigd: src/app/youtube-transcript-csv/page.tsx
+---
 [2026-04-24] feat: CSV export upgrade — BOM + metadata comment-rijen + 6 kolommen (segment_index, start_time, end_time, duration, word_count, text) in beide exportpaden; generateCsv() accepteert optionele meta voor library exports | gewijzigd: src/components/TranscriptCard.tsx, src/utils/formatTranscript.ts, src/components/library/TranscriptViewer.tsx
 ---
 [2026-04-24] refactor: fictieve auteurs verwijderd — alex-mercer en sarah-lindqvist uit authors.ts verwijderd, alle 8 content-pagina's bijgewerkt naar indxr-editorial, marketing.md gesynchroniseerd | gewijzigd: src/lib/authors.ts, 8× src/app/**/page.tsx, docs/wiki/business/marketing.md
@@ -1121,4 +1123,7 @@ Changed: docs/LOG.md
 src/components/TranscriptCard.tsx
 src/components/library/TranscriptViewer.tsx
 src/utils/formatTranscript.ts
+---
+[2026-04-25 00:38] commit: feat: CSV export upgrade — 6 kolommen, BOM, metadata headers, beide exportpaden
+Changed: docs/LOG.md
 ---

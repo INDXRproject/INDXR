@@ -6,7 +6,7 @@ import { AUTHORS } from "@/lib/authors"
 export const metadata: Metadata = {
   title: "Download YouTube Transcript as CSV — Spreadsheet-Ready for Research | INDXR.AI",
   description:
-    "Export YouTube transcripts as CSV with segment index, start and end timestamps, text, and word count. UTF-8 BOM for Excel compatibility. Works for single videos and playlists.",
+    "Export YouTube transcripts as CSV with segment index, start and end timestamps, text, and word count. UTF-8 BOM for Excel compatibility.",
 }
 
 const faqs = [
@@ -20,15 +20,11 @@ const faqs = [
   },
   {
     q: "Does the CSV include the full video metadata?",
-    a: "Not as columns in the main data — only segment_index, start_time, end_time, duration, text, and word_count per segment (plus video_id and video_title for playlists). For video-level metadata (channel, total duration, language, source URL), export as JSON instead — the JSON format includes a full video metadata wrapper.",
+    a: "Not as columns in the main data — only segment_index, start_time, end_time, duration, text, and word_count per segment. For video-level metadata (channel, total duration, language, source URL), export as JSON instead — the JSON format includes a full video metadata wrapper.",
   },
   {
     q: "Does it work for videos in non-Latin scripts?",
     a: "Yes. The UTF-8 BOM encoding handles Arabic, Chinese, Japanese, Korean, Hebrew, and other non-Latin scripts correctly. Excel opens these files without character encoding issues.",
-  },
-  {
-    q: "Can I export a playlist as a single merged CSV?",
-    a: 'Yes. After playlist extraction, the bulk export options include both "one file per video (ZIP)" and "merged single CSV." The merged CSV includes video_id and video_title columns so you can identify and filter by source video.',
   },
 ]
 
@@ -43,7 +39,7 @@ export default function YouTubeTranscriptCsvPage() {
   return (
     <ToolPageTemplate
       title="Download YouTube Transcripts as CSV — Spreadsheet-Ready Data"
-      metaDescription="Export YouTube transcripts as CSV with segment index, start and end timestamps, text, and word count. UTF-8 BOM for Excel compatibility. Works for single videos and playlists."
+      metaDescription="Export YouTube transcripts as CSV with segment index, start and end timestamps, text, and word count. UTF-8 BOM for Excel compatibility."
       publishedAt="2026-04-16"
       updatedAt="2026-04-16"
       author={AUTHORS["indxr-editorial"]}
@@ -59,9 +55,7 @@ export default function YouTubeTranscriptCsvPage() {
 
       <p>
         INDXR.AI exports YouTube transcripts as properly-structured CSV files with segment index,
-        start time, end time, text, and word count per segment. For playlist exports,{" "}
-        <code>video_id</code> and <code>video_title</code> columns are added so you can work with
-        multiple videos in a single file.
+        start time, end time, text, and word count per segment.
       </p>
 
       <h2>What the CSV Contains</h2>
@@ -109,30 +103,6 @@ export default function YouTubeTranscriptCsvPage() {
             <td><code>word_count</code></td>
             <td>Integer</td>
             <td>Number of words in this segment</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <p>For playlist exports, two additional columns prepend the above:</p>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Column</th>
-            <th>Type</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>video_id</code></td>
-            <td>String</td>
-            <td>YouTube video ID (e.g., dQw4w9WgXcQ)</td>
-          </tr>
-          <tr>
-            <td><code>video_title</code></td>
-            <td>String</td>
-            <td>Title of the video this segment belongs to</td>
           </tr>
         </tbody>
       </table>
@@ -185,11 +155,10 @@ df <- read_csv("transcript.csv", locale = locale(encoding = "UTF-8"))`}</code></
       </p>
 
       <p>
-        <strong>Corpus analysis across multiple videos.</strong> Extract a playlist and download the
-        combined CSV with <code>video_id</code> and <code>video_title</code> columns. Filter by
-        video in Excel, Python, or R to compare vocabulary, speaking pace (words per minute derived
-        from <code>word_count / duration</code>), or topic distribution across a speaker&apos;s output
-        over time.
+        <strong>Corpus analysis across multiple videos.</strong> Extract a playlist and download each
+        video as a separate CSV. Combine them in Python or R to compare vocabulary, speaking pace
+        (words per minute derived from <code>word_count / duration</code>), or topic distribution
+        across a speaker&apos;s output over time.
       </p>
 
       <p>
@@ -221,13 +190,9 @@ df <- read_csv("transcript.csv", locale = locale(encoding = "UTF-8"))`}</code></
         AI transcription produces meaningfully better input data.
       </p>
 
-      <h2>Playlist CSV Export</h2>
-
       <p>
-        For playlist extractions, you can download all video CSVs as a ZIP (one file per video) or
-        as a single merged CSV with <code>video_id</code> and <code>video_title</code> columns. The
-        merged option is useful for cross-video analysis — a single DataFrame in pandas covering an
-        entire lecture series or research corpus, with video identity preserved in each row.
+        For playlist extractions, each video exports as a separate CSV file. Download all files as a
+        ZIP from the playlist results page.
       </p>
 
       <p>
