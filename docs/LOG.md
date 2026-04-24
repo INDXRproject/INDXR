@@ -1,3 +1,7 @@
+[2026-04-25] feat: RAG export history + Developer tab in library — rag_exports schrijven bij credit deductie, buildRagJson() utility, "Developer ✦" tabblad met history tabel + gratis herexport, "RAG ✦" badge in transcript-lijst, transcriptId doorgegeven via VideoTab | gewijzigd: src/utils/formatTranscript.ts, src/app/actions/rag-export.ts, src/components/TranscriptCard.tsx, src/components/free-tool/VideoTab.tsx, src/components/library/TranscriptList.tsx, src/app/dashboard/library/[id]/page.tsx, src/components/library/RagExportView.tsx, docs/wiki/decisions/015-rag-json-export.md
+---
+[2026-04-25] content: /youtube-srt-download — resegmentatiestrategie alinea toegevoegd (AI vs auto-captions verschil uitgelegd) | gewijzigd: src/app/youtube-srt-download/page.tsx
+---
 [2026-04-25] feat: SRT/VTT professionele subtitle upgrade — resegmentatie (AI: 3-7s op zinsgrenzen, auto-captions: 3s tijdsgebaseerd), 42-char line wrap, VTT NOTE header; processing_method doorgegeven via TranscriptViewer → library krijgt sentence-aware blokken voor AssemblyAI transcripts | gewijzigd: src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx, src/app/dashboard/library/[id]/page.tsx, docs/wiki/architecture/database-schema.md
 ---
 [2026-04-25] content: /youtube-transcript-csv — playlist CSV secties verwijderd (merged CSV bestaat niet); playlist sectie vervangen door één zin over ZIP download | gewijzigd: src/app/youtube-transcript-csv/page.tsx
@@ -1133,3 +1137,12 @@ Changed: docs/LOG.md
 Changed: docs/LOG.md
 src/app/youtube-transcript-csv/page.tsx
 ---
+[2026-04-25 01:10] commit: feat: SRT/VTT resegmentatie + 42 chars wrapping + VTT header + processing_method in library
+Changed: docs/LOG.md
+docs/wiki/architecture/database-schema.md
+src/app/dashboard/library/[id]/page.tsx
+src/components/TranscriptCard.tsx
+src/components/library/TranscriptViewer.tsx
+src/utils/formatTranscript.ts
+---
+[2026-04-25 01:37] precompact: context compaction triggered

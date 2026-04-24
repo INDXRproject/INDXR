@@ -413,3 +413,56 @@ export const generateMarkdown = (transcript: TranscriptItem[], title: string, wi
   if (currentParagraph) paragraphs.push(currentParagraph.trim());
   return `# ${title}\n\n${paragraphs.join('\n\n')}`;
 };
+
+export interface RagJsonContext {
+  videoId?: string | null;
+  title?: string | null;
+  channel?: string | null;
+  language?: string | null;
+  publishedAt?: string | null;
+  durationSeconds?: number | null;
+  extractionMethod?: string | null;
+  chunkSize?: number;
+}
+
+export function buildRagJson(transcript: TranscriptItem[], context: RagJsonContext = {}): string {
+  const {
+    videoId, title, channel, language, publishedAt,
+    durationSeconds, extractionMethod, chunkSize = 60,
+  } = context;
+
+  const isAi = extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai';
+  const overlapStrategy = isAi ? 'sentence_boundary' : 'segment_boundary';
+  const chunks = buildRagChunks(transcript, chunkSize, {
+    videoId: videoId ?? undefined,
+    title: title ?? undefined,
+    channel: channel ?? undefined,
+    language: language ?? undefined,
+    extractionMethod: extractionMethod ?? undefined,
+  });
+
+  const derivedDuration = durationSeconds != null ? durationSeconds : (
+    transcript.length > 0
+      ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
+      : 0
+  );
+
+  const metadata: Record<string, unknown> = {
+    video_id: videoId ?? null,
+    title: title ?? null,
+    duration_seconds: Math.round(derivedDuration),
+    extracted_at: new Date().toISOString(),
+    chunking_config: {
+      chunk_size_seconds: chunkSize,
+      overlap_seconds: Math.round(chunkSize * 0.15),
+      overlap_strategy: overlapStrategy,
+      total_chunks: chunks.length,
+    },
+  };
+  if (channel) metadata.channel = channel;
+  if (language) metadata.language = language;
+  if (publishedAt) metadata.published_at = publishedAt;
+  if (extractionMethod) metadata.extraction_method = extractionMethod;
+
+  return JSON.stringify({ metadata, chunks }, null, 2);
+}

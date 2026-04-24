@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { decodeEntities, createParagraphMode, buildRagChunks, generateSrt, generateVtt } from "@/utils/formatTranscript";
+import { decodeEntities, createParagraphMode, buildRagJson, generateSrt, generateVtt } from "@/utils/formatTranscript";
 import { deductRagExportCreditsAction } from "@/app/actions/rag-export";
 import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
@@ -53,6 +53,7 @@ interface TranscriptCardProps {
   language?: string;
   publishedAt?: string;
   languageDetected?: boolean;
+  transcriptId?: string;
 }
 
 const RAG_CHUNK_LABELS: Record<number, { label: string; sub: string }> = {
@@ -74,6 +75,7 @@ export function TranscriptCard({
   language,
   publishedAt,
   languageDetected,
+  transcriptId,
 }: TranscriptCardProps) {
   const [copied, setCopied] = useState(false);
   const [showTimestamps, setShowTimestamps] = useState(true);
@@ -325,27 +327,8 @@ export function TranscriptCard({
   };
 
   const triggerRagDownload = () => {
-    const chunks = buildRagChunks(transcript, chunkSize, { videoId, title: videoTitle, channel, language, extractionMethod });
-    const overlapStrategy = (extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai') ? 'sentence_boundary' : 'segment_boundary';
-    const metadata: Record<string, unknown> = {
-      video_id: videoId ?? null,
-      title: videoTitle ?? null,
-      duration_seconds: Math.round(derivedDuration),
-      extracted_at: new Date().toISOString(),
-      chunking_config: {
-        chunk_size_seconds: chunkSize,
-        overlap_seconds: Math.round(chunkSize * 0.15),
-        overlap_strategy: overlapStrategy,
-        total_chunks: chunks.length,
-      },
-    };
-    if (channel) metadata.channel = channel;
-    if (language) metadata.language = language;
-    if (publishedAt) metadata.published_at = publishedAt;
-    if (extractionMethod) metadata.extraction_method = extractionMethod;
-
     downloadFile(
-      JSON.stringify({ metadata, chunks }, null, 2),
+      buildRagJson(transcript, { videoId, title: videoTitle, channel, language, publishedAt, durationSeconds: derivedDuration, extractionMethod, chunkSize }),
       "transcript_rag.json",
       "application/json"
     );
@@ -370,7 +353,7 @@ export function TranscriptCard({
 
   const executeRagExport = async (confirmExport: boolean) => {
     setRagExportLoading(true);
-    const result = await deductRagExportCreditsAction(derivedDuration, confirmExport);
+    const result = await deductRagExportCreditsAction(derivedDuration, confirmExport, transcriptId, chunkSize);
     setRagExportLoading(false);
 
     if (!result.success) {

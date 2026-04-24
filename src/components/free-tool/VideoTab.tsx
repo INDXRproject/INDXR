@@ -1219,6 +1219,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     language={videoLanguage ?? undefined}
                     publishedAt={videoPublishedAt ?? undefined}
                     languageDetected={languageDetected ?? undefined}
+                    transcriptId={existingTranscriptId ?? undefined}
                   />
         </div>
       ) : !loading && !transcript && (

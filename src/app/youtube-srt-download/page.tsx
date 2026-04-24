@@ -118,6 +118,16 @@ to understand about this topic`}</code></pre>
       </p>
 
       <p>
+        The resegmentation strategy depends on the transcript source. For AI Transcription
+        (AssemblyAI), segments are merged until a sentence boundary is detected — a block closes on
+        a period, question mark, or exclamation point, producing semantically complete subtitle units
+        of 3–7 seconds. For auto-captions, which have no punctuation, a time-based merge is used
+        instead: segments accumulate until the block reaches 3 seconds. Both approaches are a
+        significant improvement over raw 2-second YouTube segments, but AI Transcription produces
+        cleaner sentence-aligned blocks.
+      </p>
+
+      <p>
         <strong>VTT output</strong> follows the same resegmentation and adds a header comment with
         the video title and language — useful for LMS platforms (Canvas, Moodle, Articulate 360)
         that use the header to associate subtitle files with source content.

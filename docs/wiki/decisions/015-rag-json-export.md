@@ -207,5 +207,12 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 - [x] `overlap_strategy` in `chunking_config` (`sentence_boundary` / `segment_boundary`)
 - [x] 90s chunk preset
 - [x] Supabase migratie: CHECK constraint uitbreiden naar `(30, 60, 90, 120)` — `supabase/migrations/20260423_rag_chunk_size_90.sql` (handmatig uitvoeren)
+- [x] `rag_exports JSONB DEFAULT '[]'` kolom aan `transcripts` toegevoegd — slaat export history op per transcript
+- [x] "Developer ✦" tabblad in library — export history + gratis herexport met elke preset
+- [x] "RAG ✦" badge in transcript-lijst als `rag_exports` niet leeg is
+- [x] `buildRagJson()` utility in `formatTranscript.ts` — gedeeld tussen TranscriptCard en RagExportView
+
+**Chunk size scoping:** `profiles.rag_chunk_size` (Settings → Developer Exports) is de *default* voor de eerste export vanuit de transcribe-pagina (TranscriptCard). In de library-flow (Developer tab) kiest de gebruiker per transcript zijn eigen preset — de settings-waarde heeft daar geen effect.
+
 - [ ] Filler word removal ([Music], [Applause], "um", "uh") — backlog
 - [ ] SEO-pagina's aanmaken na implementatie

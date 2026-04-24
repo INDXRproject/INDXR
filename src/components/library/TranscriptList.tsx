@@ -72,6 +72,7 @@ export interface Transcript {
   // New fields
   edited_content?: object | null;
   ai_summary?: object | null;
+  rag_exports?: object[] | null;
   collection_id?: string | null;
   playlist_id?: string | null;
   viewed_at?: string | null;
@@ -100,6 +101,9 @@ function buildMetaLine(t: Transcript): string {
 
   // AI Summary
   if (t.ai_summary) parts.push('AI Summary');
+
+  // RAG export history
+  if (t.rag_exports && t.rag_exports.length > 0) parts.push('RAG ✦');
 
   return parts.join(' · ');
 }

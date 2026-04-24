@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { TranscriptViewer } from "@/components/library/TranscriptViewer";
 import { AiSummaryView } from "@/components/library/AiSummaryView";
+import { RagExportView } from "@/components/library/RagExportView";
 
 interface PageProps {
   params: Promise<{
@@ -15,7 +16,7 @@ interface PageProps {
 export default async function TranscriptPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
-  const validTabs = ["original", "edited", "summary", "summary_edited"];
+  const validTabs = ["original", "edited", "summary", "summary_edited", "developer"];
   const activeTab = validTabs.includes(resolvedSearchParams.tab as string) 
     ? (resolvedSearchParams.tab as string) 
     : "original";
@@ -67,6 +68,19 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             )}
           >
             Edited
+          </Link>
+        )}
+        {transcript.rag_exports && Array.isArray(transcript.rag_exports) && transcript.rag_exports.length > 0 && (
+          <Link
+            href={`/dashboard/library/${id}?tab=developer`}
+            className={cn(
+              "pb-3 border-b-2 px-2 transition-colors",
+              activeTab === "developer"
+                ? "border-[var(--accent)] font-medium text-foreground"
+                : "border-transparent text-[var(--text-muted)] hover:text-foreground"
+            )}
+          >
+            Developer <span className="text-primary text-[10px] font-bold align-super">✦</span>
           </Link>
         )}
         {transcript.ai_summary && (
@@ -121,6 +135,15 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             mode={activeTab === "summary" ? "original" : "edited"}
           />
         </div>
+      ) : activeTab === "developer" ? (
+        <RagExportView
+          transcriptId={transcript.id}
+          transcript={transcript.transcript}
+          videoId={transcript.video_id}
+          title={transcript.title ?? "Untitled"}
+          processingMethod={transcript.processing_method}
+          ragExports={transcript.rag_exports ?? []}
+        />
       ) : null}
     </div>
   );

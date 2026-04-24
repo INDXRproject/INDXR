@@ -46,6 +46,7 @@ updated_at    TIMESTAMPTZ -- laatste wijziging (migratie 20260307)
 created_at    TIMESTAMPTZ DEFAULT now()
 
 processing_method TEXT     -- 'youtube_captions' | 'whisper_ai' — hoe het transcript is gegenereerd
+rag_exports       JSONB DEFAULT '[]' -- array van {chunk_size, exported_at, credits_spent} per RAG JSON export
 
 -- Tiptap/edit veld (migraties 20260302, 20260304)
 edited_content JSONB      -- Tiptap editor JSON state (opgeslagen bewerkte versie)
