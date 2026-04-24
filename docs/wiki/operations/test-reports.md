@@ -173,3 +173,41 @@ Alle v2 velden aanwezig in alle drie outputs:
 ### Bekende niet-kritieke observatie
 
 `channel: null` en `language: null` voor AssemblyAI transcripts — expected gedrag. Bij AI transcriptie is geen yt-dlp metadata fetch aanwezig, dus deze velden zijn niet beschikbaar.
+
+---
+
+## Markdown Export — Upgrade Test (Sessie 4)
+
+**Datum:** 2026-04-24
+**Tester:** Khidr
+**Commits:** 28d2c7d (fix: Markdown timestamps paragraafgroepering + deep links)
+**Status:** PASS
+
+### Videos getest
+
+| Video | URL | Duur | Extractie | Variant | Resultaat |
+|---|---|---|---|---|---|
+| Huberman Lab - Dopamine | youtu.be/QmOF0crdyRU | 8191s (137 min) | AssemblyAI | Clean MD + Timestamps MD | ✅ PASS |
+
+### Validatie
+
+**YAML frontmatter:**
+- `title`, `url`, `duration: 8191`, `transcript_source: "AI Transcription (AssemblyAI)"`, `created: "2026-04-24"`, `type: youtube`, `tags` ✅
+- `channel` en `language` afwezig bij AssemblyAI — expected (geen YouTube metadata beschikbaar) ✅
+
+**Clean MD:**
+- Paragraafgroepering correct — lange coherente blokken ✅
+- Leesbaar als Obsidian note ✅
+
+**Timestamps MD:**
+- Klikbare deep links per paragraaf: `## [HH:MM:SS](https://youtu.be/QmOF0crdyRU?t=N)` ✅
+- Paragraafgroepering correct — één header per paragraaf, niet per segment ✅
+- Werkt correct op grote schaal (137 min, groot transcript) ✅
+
+### Bugs gefixed in deze sessie
+
+| Bug | Beschrijving | Fix |
+|---|---|---|
+| YAML frontmatter ontbrak | Code was correct maar niet gepusht — productie draaide nog op oude versie | Gepusht na diagnose |
+| Timestamp granulariteit te fijn | Elke 2-5s caption segment kreeg eigen ## header | Paragraafgroepering (gap > 5s) ook toegepast in timestamps variant |
+| Deep links ontbraken | Zelfde oorzaak als frontmatter — oud deployment | Opgelost na push |

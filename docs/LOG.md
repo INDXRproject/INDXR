@@ -1,3 +1,5 @@
+[2026-04-24] docs: Markdown export sessie 4 testrapport — Huberman 137min PASS, YAML frontmatter + deep links + paragraafgroepering gevalideerd, 3 bugs gedocumenteerd | gewijzigd: docs/wiki/operations/test-reports.md
+---
 [2026-04-24] fix: MD-timestamps export — paragraafgroepering (gap>5s) ipv per-segment headers, deep link per paragraaf op timestamp eerste segment | gewijzigd: src/components/TranscriptCard.tsx
 ---
 [2026-04-24] feat: Markdown export upgrades — YAML frontmatter (title, url, channel, published, duration, language, transcript_source, created, type, tags) + klikbare timestamp deep links (youtu.be/?t=N) in MD-timestamps variant | gewijzigd: src/components/TranscriptCard.tsx
@@ -1079,5 +1081,9 @@ src/app/youtube-transcript-non-english/page.tsx
 [2026-04-24 01:48] commit: feat: Markdown export — YAML frontmatter + klikbare timestamp deep links
 Changed: docs/LOG.md
 docs/wiki/roadmap/priorities.md
+src/components/TranscriptCard.tsx
+---
+[2026-04-24 07:15] commit: fix: Markdown timestamps paragraafgroepering + deep links
+Changed: docs/LOG.md
 src/components/TranscriptCard.tsx
 ---
