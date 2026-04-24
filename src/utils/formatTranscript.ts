@@ -105,15 +105,32 @@ export const generateVtt = (transcript: TranscriptItem[]): string => {
     .join("\n");
 };
 
-export const generateCsv = (transcript: TranscriptItem[]): string => {
-  const header = "Start,Duration,Text\n";
-  const rows = transcript
-    .map((t) => {
-      const text = decodeEntities(t.text);
-      return `${t.offset},${t.duration},"${text.replace(/"/g, '""')}"`;
-    })
-    .join("\n");
-  return header + rows;
+export const generateCsv = (
+  transcript: TranscriptItem[],
+  meta?: { title?: string; videoId?: string; channel?: string }
+): string => {
+  const BOM = '﻿';
+
+  const metaLines: string[] = [];
+  if (meta?.title)   metaLines.push(`# title: ${meta.title}`);
+  if (meta?.videoId) metaLines.push(`# url: https://www.youtube.com/watch?v=${meta.videoId}`);
+  if (meta?.channel) metaLines.push(`# channel: ${meta.channel}`);
+  metaLines.push(`# extracted: ${new Date().toISOString().slice(0, 10)}`);
+  const metadataRows = metaLines.join('\n') + '\n';
+
+  const header = 'segment_index,start_time,end_time,duration,word_count,text\n';
+
+  const rows = transcript.map((t, i) => {
+    const text = decodeEntities(t.text);
+    const endTime = i < transcript.length - 1
+      ? transcript[i + 1].offset
+      : t.offset + t.duration;
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const escapedText = `"${text.replace(/"/g, '""')}"`;
+    return `${i},${t.offset},${endTime},${t.duration},${wordCount},${escapedText}`;
+  }).join('\n');
+
+  return BOM + metadataRows + header + rows;
 };
 
 export const generateTxt = (transcript: TranscriptItem[], timestamps: boolean): string => {

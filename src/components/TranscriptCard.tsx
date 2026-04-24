@@ -278,11 +278,38 @@ export function TranscriptCard({
   const downloadCsv = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'csv' });
-    const header = "Start,Duration,Text\n";
-    const rows = transcript
-      .map((t) => { const text = decodeEntities(t.text); return `${t.offset},${t.duration},"${text.replace(/"/g, '""')}"` })
-      .join("\n");
-    downloadFile(header + rows, "transcript.csv", "text/csv");
+
+    const BOM = '﻿';
+
+    const metaLines: string[] = [];
+    if (videoTitle)         metaLines.push(`# title: ${videoTitle}`);
+    if (videoId)            metaLines.push(`# url: https://www.youtube.com/watch?v=${videoId}`);
+    if (channel)            metaLines.push(`# channel: ${channel}`);
+    if (publishedAt)        metaLines.push(`# published: ${publishedAt}`);
+    if (typeof durationSeconds === 'number') metaLines.push(`# duration_seconds: ${durationSeconds}`);
+    if (language)           metaLines.push(`# language: ${language}`);
+    if (extractionMethod) {
+      const src = (extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai')
+        ? 'AI Transcription (AssemblyAI)'
+        : 'Auto-captions (YouTube)';
+      metaLines.push(`# transcript_source: ${src}`);
+    }
+    metaLines.push(`# extracted: ${new Date().toISOString().slice(0, 10)}`);
+    const metadataRows = metaLines.length > 0 ? metaLines.join('\n') + '\n' : '';
+
+    const header = 'segment_index,start_time,end_time,duration,word_count,text\n';
+
+    const rows = transcript.map((t, i) => {
+      const text = decodeEntities(t.text);
+      const endTime = i < transcript.length - 1
+        ? transcript[i + 1].offset
+        : t.offset + t.duration;
+      const wordCount = text.split(/\s+/).filter(Boolean).length;
+      const escapedText = `"${text.replace(/"/g, '""')}"`;
+      return `${i},${t.offset},${endTime},${t.duration},${wordCount},${escapedText}`;
+    }).join('\n');
+
+    downloadFile(BOM + metadataRows + header + rows, 'transcript.csv', 'text/csv;charset=utf-8');
   };
 
   const downloadSrt = () => {

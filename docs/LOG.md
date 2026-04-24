@@ -1,3 +1,5 @@
+[2026-04-24] feat: CSV export upgrade — BOM + metadata comment-rijen + 6 kolommen (segment_index, start_time, end_time, duration, word_count, text) in beide exportpaden; generateCsv() accepteert optionele meta voor library exports | gewijzigd: src/components/TranscriptCard.tsx, src/utils/formatTranscript.ts, src/components/library/TranscriptViewer.tsx
+---
 [2026-04-24] refactor: fictieve auteurs verwijderd — alex-mercer en sarah-lindqvist uit authors.ts verwijderd, alle 8 content-pagina's bijgewerkt naar indxr-editorial, marketing.md gesynchroniseerd | gewijzigd: src/lib/authors.ts, 8× src/app/**/page.tsx, docs/wiki/business/marketing.md
 ---
 [2026-04-24] content: /youtube-transcript-markdown + /youtube-transcript-obsidian herschreven — real Huberman output, correct YAML schema (url/published/transcript_source/created als datum), klikbare deep link timestamps, Dataview queries bijgewerkt | gewijzigd: src/app/youtube-transcript-markdown/page.tsx, src/app/youtube-transcript-obsidian/page.tsx
@@ -1099,4 +1101,18 @@ docs/wiki/operations/test-reports.md
 Changed: docs/LOG.md
 src/app/youtube-transcript-markdown/page.tsx
 src/app/youtube-transcript-obsidian/page.tsx
+---
+[2026-04-24 22:11] commit: fix: vervang fictieve auteurs door indxr-editorial op alle contentpagina's
+Changed: docs/LOG.md
+docs/wiki/business/marketing.md
+src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx
+src/app/blog/youtube-channel-knowledge-base/page.tsx
+src/app/blog/youtube-transcripts-vector-database/page.tsx
+src/app/youtube-transcript-csv/page.tsx
+src/app/youtube-transcript-for-rag/page.tsx
+src/app/youtube-transcript-json/page.tsx
+src/app/youtube-transcript-markdown/page.tsx
+src/app/youtube-transcript-non-english/page.tsx
+src/app/youtube-transcript-obsidian/page.tsx
+src/lib/authors.ts
 ---

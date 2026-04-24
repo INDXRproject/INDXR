@@ -474,7 +474,7 @@ export function TranscriptViewer({
           "application/json"
         );
       else if (format === "csv")
-        downloadFile(generateCsv(transcript), `${safe}.csv`, "text/csv");
+        downloadFile(generateCsv(transcript, { title, videoId, channel: channelTitle }), `${safe}.csv`, "text/csv;charset=utf-8");
       else if (format === "srt")
         downloadFile(generateSrt(transcript), `${safe}.srt`, "text/plain");
       else if (format === "vtt")
