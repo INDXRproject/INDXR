@@ -327,7 +327,6 @@ export function TranscriptViewer({
   const [showRagModal, setShowRagModal] = useState(false);
   const [ragSelectedChunkSize, setRagSelectedChunkSize] = useState<30 | 60 | 90 | 120>(60);
   const [ragExportLoading, setRagExportLoading] = useState(false);
-  const [ragDontShowAgain, setRagDontShowAgain] = useState(false);
   const [ragInsufficientCredits, setRagInsufficientCredits] = useState(false);
 
   const derivedDuration =
@@ -552,7 +551,7 @@ export function TranscriptViewer({
     setRagInsufficientCredits(false);
     const result = await deductRagExportCreditsAction(
       derivedDuration,
-      ragDontShowAgain,
+      true,
       id,
       ragSelectedChunkSize,
     );
@@ -1192,15 +1191,6 @@ export function TranscriptViewer({
                   {ragCost} credit{ragCost !== 1 ? "s" : ""}
                 </span>
               </p>
-              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={ragDontShowAgain}
-                  onChange={(e) => setRagDontShowAgain(e.target.checked)}
-                  className="accent-primary"
-                />
-                Don&apos;t show this again
-              </label>
               {ragInsufficientCredits && (
                 <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
                   <AlertCircle className="h-4 w-4 shrink-0" />

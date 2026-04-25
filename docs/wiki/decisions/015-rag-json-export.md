@@ -145,7 +145,7 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 
 **Pricing:** `Math.max(1, Math.ceil(duration_seconds / 900))` — 1 credit per 15 minuten video.
 
-**UX:** Bevestigingsmodal bij eerste gebruik (Radix Dialog), overgeslagen bij `profiles.rag_export_confirmed = true`. Insufficient-credits banner als saldo tekort is. Reset confirmation knop in Developer Exports settings.
+**UX:** Bevestigingsmodal altijd tonen (Radix Dialog) — bevat chunk selector (4 opties), prijs, en een "Wat is RAG JSON?" link. `profiles.rag_export_confirmed` en de reset-knop zijn verwijderd. Insufficient-credits banner als saldo tekort is.
 
 **Gating:** Ingelogde users (gratis én betaald). Anoniem ziet de dropdown entry met lock-icon.
 
@@ -195,8 +195,8 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 - [x] Video-metadata in export (video_id, title, duration, extraction_method, channel, language, published_at)
 - [x] `extracted_at` timestamp per export
 - [x] Credit-aftrek via `deduct_credits_atomic` RPC (Server Action)
-- [x] Supabase migratie: `profiles.rag_export_confirmed`, `profiles.rag_chunk_size`
-- [x] Developer Exports sectie in Settings met reset confirmation knop
+- [x] Supabase migratie: `profiles.rag_chunk_size` (`rag_export_confirmed` is verwijderd — modal altijd tonen)
+- [x] Developer Exports sectie in Settings (chunk size selector; reset-knop verwijderd)
 - [x] Clean JSON bijgewerkt: `segments` met `start_time`/`end_time`
 - [x] `lingua-language-detector` fallback
 - [x] `chunk_id` per chunk
@@ -211,9 +211,11 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 - [x] "Developer ✦" tabblad in library — export history + gratis herexport met elke preset
 - [x] "RAG ✦" badge in transcript-lijst als `rag_exports` niet leeg is
 - [x] `buildRagJson()` utility in `formatTranscript.ts` — gedeeld tussen TranscriptCard en RagExportView
-- [x] "RAG JSON ✦" in library export dropdown (`TranscriptViewer`) — gratis herexport met laatste chunk_size als `rag_exports` aanwezig; grayed-out met Radix tooltip als nog niet geëxporteerd
+- [x] "RAG JSON ✦" in library export dropdown (`TranscriptViewer`) — opent altijd Dialog; State A (eerste export) met chunk selector + kredietkosten; State B (herexport) gratis clientside download
+- [x] Chunk selector in TranscriptCard modal — 4-knops grid, init op `profiles.rag_chunk_size`; vervangt read-only label + settings-link
+- [x] AssemblyAI transcripties slaan nu ook `channel_title` en `language` op — channel via `extract_youtube_audio` (yt-dlp uploader), taal via lingua detector op transcript tekst
 
-**Chunk size scoping:** `profiles.rag_chunk_size` (Settings → Developer Exports) is de *default* voor de eerste export vanuit de transcribe-pagina (TranscriptCard). In de library-flow (Developer tab) kiest de gebruiker per transcript zijn eigen preset — de settings-waarde heeft daar geen effect.
+**Chunk size scoping:** `profiles.rag_chunk_size` (Settings → Developer Exports) is de *default* voor de eerste export vanuit de transcribe-pagina (TranscriptCard) en de library dialog. De gebruiker kan per export een andere preset kiezen.
 
 - [ ] Filler word removal ([Music], [Applause], "um", "uh") — backlog
 - [ ] SEO-pagina's aanmaken na implementatie

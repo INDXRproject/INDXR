@@ -39,7 +39,11 @@ type WhisperErrorEvent = {
   available_credits?: number
 }
 
-type WhisperFinalEvent = WhisperCompleteEvent | WhisperErrorEvent
+type WhisperNetworkDisconnectedEvent = {
+  type: 'network_disconnected'
+}
+
+type WhisperFinalEvent = WhisperCompleteEvent | WhisperErrorEvent | WhisperNetworkDisconnectedEvent
 
 /**
  * Polls GET /api/jobs/{jobId} every 3 seconds until the job reaches
@@ -52,6 +56,10 @@ async function pollWhisperJob(
 ): Promise<WhisperFinalEvent> {
   const POLL_INTERVAL_MS = 3000
   const MAX_POLLS = 200 // 10 minutes max
+  const NETWORK_RETRY_MS = 5000
+  const MAX_CONSECUTIVE_ERRORS = 3
+
+  let consecutiveErrors = 0
 
   for (let i = 0; i < MAX_POLLS; i++) {
     await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
@@ -73,8 +81,14 @@ async function pollWhisperJob(
         return { type: 'error', error: 'Failed to check job status' }
       }
       job = await resp.json()
+      consecutiveErrors = 0
     } catch {
-      return { type: 'error', error: 'Network error while checking job status' }
+      consecutiveErrors++
+      if (consecutiveErrors <= MAX_CONSECUTIVE_ERRORS) {
+        await new Promise<void>(resolve => setTimeout(resolve, NETWORK_RETRY_MS))
+        continue
+      }
+      return { type: 'network_disconnected' }
     }
 
     if (job.status === 'pending' || job.status === 'downloading' ||
@@ -146,6 +160,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     title: string
     creditsRequired: number
   } | null>(null)
+
+  // Whisper network disconnect banner state (fetch exceptions > 3 consecutive)
+  const [whisperNetworkDisconnected, setWhisperNetworkDisconnected] = useState(false)
 
   // Whisper toggle state
   const [useWhisper, setUseWhisper] = useState(false)
@@ -568,6 +585,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setShowWhisperConfirm(false)
     setLoading(true)
     setError(null)
+    setWhisperNetworkDisconnected(false)
     setWhisperStatus('idle')
     setSaveStatus('idle')
     setWhisperMetadata(null)
@@ -623,6 +641,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       intervalRef.current = null
       setIsStreaming(false)
       setFinalElapsed(elapsedRef.current)
+
+      if (event.type === 'network_disconnected') {
+        setWhisperNetworkDisconnected(true)
+        return
+      }
 
       if (event.type === 'error') {
         if (event.error === 'members_only') {
@@ -722,6 +745,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setLoading(true)
     setIsReextracting(true)
     setError(null)
+    setWhisperNetworkDisconnected(false)
     setTranscript(null)
     setWhisperStatus('idle')
 
@@ -773,6 +797,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       intervalRef.current = null
       setIsStreaming(false)
       setFinalElapsed(elapsedRef.current)
+
+      if (event.type === 'network_disconnected') {
+        setWhisperNetworkDisconnected(true)
+        return
+      }
 
       if (event.type === 'error') {
         if (event.error === 'members_only') {
@@ -1026,7 +1055,19 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         {/* Normal error text */}
         {!existingTranscriptId && !showDuplicateChoices && !showWhisperConfirm && (
           <div className="flex justify-between items-start px-1">
-             {error?.isMembersOnly ? (
+             {whisperNetworkDisconnected ? (
+               <div className="p-3 rounded-lg bg-muted/60 border border-border flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                 <div>
+                   <p className="text-sm text-foreground/80">
+                     Your transcript is still being processed. Check your Library in a few minutes — it will appear there when ready.
+                   </p>
+                   <Link href="/dashboard/library" className="text-xs text-primary hover:underline mt-1 inline-block">
+                     Go to Library →
+                   </Link>
+                 </div>
+               </div>
+             ) : error?.isMembersOnly ? (
                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2 w-full">
                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                  <div>

@@ -76,7 +76,7 @@ def get_audio_duration(file_path: str) -> float:
         raise Exception(f"Could not determine audio duration: {str(e)}")
 
 
-def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Optional[str] = None) -> tuple[str, str]:
+def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Optional[str] = None) -> tuple[str, str, Optional[str]]:
     """
     Extract audio from YouTube video using yt-dlp.
 
@@ -140,6 +140,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
     max_attempts = 3
     last_error = None
     video_title = video_id  # fallback in case info is unavailable
+    channel = None
     for attempt in range(1, max_attempts + 1):
         try:
             # Clean up any partial files from a previous attempt
@@ -150,6 +151,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
                 video_title = info.get('title') or video_id if info else video_id
+                channel = info.get('uploader') if info else None
 
             # Find the downloaded file (could be .webm, .m4a, .opus, etc.)
             raw_files = [f for f in glob.glob(f"{base_output_path}.*") if not f.endswith('.ogg')]
@@ -181,7 +183,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
             final_size = os.path.getsize(final_output_path) / 1024 / 1024
             logger.info(f"Audio conversion done: {raw_size:.2f}MB -> {final_size:.2f}MB ogg")
 
-            return final_output_path, video_title
+            return final_output_path, video_title, channel
 
         except Exception as e:
             last_error = e

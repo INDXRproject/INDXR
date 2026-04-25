@@ -81,9 +81,7 @@ export function TranscriptCard({
   const [showTimestamps, setShowTimestamps] = useState(true);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [showRagModal, setShowRagModal] = useState(false);
-  const [ragModalDontShowAgain, setRagModalDontShowAgain] = useState(false);
   const [ragExportLoading, setRagExportLoading] = useState(false);
-  const [ragConfirmedThisSession, setRagConfirmedThisSession] = useState(false);
   const [showInsufficientCreditsForRag, setShowInsufficientCreditsForRag] = useState(false);
   const { user, profile, credits, refreshCredits } = useAuth();
 
@@ -95,8 +93,9 @@ export function TranscriptCard({
 
   const ragCost = Math.max(1, Math.ceil(derivedDuration / 900));
   const ragDurationMin = Math.ceil(derivedDuration / 60);
-  const chunkSize = (profile?.rag_chunk_size ?? 60) as 30 | 60 | 90 | 120;
-  const chunkLabel = RAG_CHUNK_LABELS[chunkSize] ?? RAG_CHUNK_LABELS[60];
+  const [ragSelectedChunkSize, setRagSelectedChunkSize] = useState<30 | 60 | 90 | 120>(
+    (profile?.rag_chunk_size ?? 60) as 30 | 60 | 90 | 120
+  );
 
   // Helper: Format timestamp for SRT (HH:MM:SS,mmm)
   const formatSrtTimestamp = (seconds: number): string => {
@@ -149,6 +148,9 @@ export function TranscriptCard({
     document.body.removeChild(link);
   };
 
+  const safeTitle = () =>
+    videoTitle?.replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30) || 'transcript';
+
   const requireAuth = (): boolean => {
     if (!user) {
       setShowSignupPrompt(true);
@@ -159,12 +161,12 @@ export function TranscriptCard({
 
   const downloadTxtPlain = () => {
     posthog.capture('export_clicked', { format: 'txt' });
-    downloadFile(createParagraphMode(transcript), "transcript.txt", "text/plain");
+    downloadFile(createParagraphMode(transcript), `${safeTitle()}.txt`, "text/plain");
   };
 
   const downloadTxtWithTimestamps = () => {
     posthog.capture('export_clicked', { format: 'txt-timestamps' });
-    downloadFile(fullTextWithTimestamps, "transcript_timestamps.txt", "text/plain");
+    downloadFile(fullTextWithTimestamps, `${safeTitle()}_timestamps.txt`, "text/plain");
   };
 
   const buildYamlFrontmatter = (): string => {
@@ -208,7 +210,7 @@ export function TranscriptCard({
     }
     if (current) paragraphs.push(current.trim());
     const content = `${buildYamlFrontmatter()}\n\n# ${title}\n\n${paragraphs.join('\n\n')}`;
-    downloadFile(content, "transcript.md", "text/markdown");
+    downloadFile(content, `${safeTitle()}.md`, "text/markdown");
   };
 
   const downloadMarkdownWithTimestamps = () => {
@@ -244,7 +246,7 @@ export function TranscriptCard({
       sections.push(`${heading}\n${currentText.trim()}`);
     }
     const content = `${buildYamlFrontmatter()}\n\n# ${title}\n\n${sections.join('\n\n')}`;
-    downloadFile(content, "transcript_timestamps.md", "text/markdown");
+    downloadFile(content, `${safeTitle()}_timestamps.md`, "text/markdown");
   };
 
   const downloadJson = () => {
@@ -272,7 +274,7 @@ export function TranscriptCard({
 
     downloadFile(
       JSON.stringify({ metadata, segments }, null, 2),
-      "transcript.json",
+      `${safeTitle()}.json`,
       "application/json"
     );
   };
@@ -311,25 +313,25 @@ export function TranscriptCard({
       return `${i},${t.offset},${endTime},${t.duration},${wordCount},${escapedText}`;
     }).join('\n');
 
-    downloadFile(BOM + metadataRows + header + rows, 'transcript.csv', 'text/csv;charset=utf-8');
+    downloadFile(BOM + metadataRows + header + rows, `${safeTitle()}.csv`, 'text/csv;charset=utf-8');
   };
 
   const downloadSrt = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'srt' });
-    downloadFile(generateSrt(transcript, { extractionMethod }), "transcript.srt", "text/plain");
+    downloadFile(generateSrt(transcript, { extractionMethod }), `${safeTitle()}.srt`, "text/plain");
   };
 
   const downloadVtt = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'vtt' });
-    downloadFile(generateVtt(transcript, { title: videoTitle, language, extractionMethod }), "transcript.vtt", "text/vtt");
+    downloadFile(generateVtt(transcript, { title: videoTitle, language, extractionMethod }), `${safeTitle()}.vtt`, "text/vtt");
   };
 
   const triggerRagDownload = () => {
     downloadFile(
-      buildRagJson(transcript, { videoId, title: videoTitle, channel, language, publishedAt, durationSeconds: derivedDuration, extractionMethod, chunkSize }),
-      "transcript_rag.json",
+      buildRagJson(transcript, { videoId, title: videoTitle, channel, language, publishedAt, durationSeconds: derivedDuration, extractionMethod, chunkSize: ragSelectedChunkSize }),
+      `${safeTitle()}_rag_${ragSelectedChunkSize}s.json`,
       "application/json"
     );
   };
@@ -342,18 +344,12 @@ export function TranscriptCard({
       return;
     }
     setShowInsufficientCreditsForRag(false);
-
-    const alreadyConfirmed = ragConfirmedThisSession || (profile?.rag_export_confirmed ?? false);
-    if (alreadyConfirmed) {
-      executeRagExport(false);
-    } else {
-      setShowRagModal(true);
-    }
+    setShowRagModal(true);
   };
 
-  const executeRagExport = async (confirmExport: boolean) => {
+  const executeRagExport = async () => {
     setRagExportLoading(true);
-    const result = await deductRagExportCreditsAction(derivedDuration, confirmExport, transcriptId, chunkSize);
+    const result = await deductRagExportCreditsAction(derivedDuration, true, transcriptId, ragSelectedChunkSize);
     setRagExportLoading(false);
 
     if (!result.success) {
@@ -362,11 +358,10 @@ export function TranscriptCard({
       return;
     }
 
-    if (confirmExport) setRagConfirmedThisSession(true);
     await refreshCredits();
     setShowRagModal(false);
 
-    posthog.capture('export_clicked', { format: 'rag_json', chunk_size: chunkSize, language, language_detected: languageDetected });
+    posthog.capture('export_clicked', { format: 'rag_json', chunk_size: ragSelectedChunkSize, language, language_detected: languageDetected });
     triggerRagDownload();
   };
 
@@ -609,17 +604,29 @@ export function TranscriptCard({
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Chunk size</span>
-              <span className="font-medium text-foreground">{chunkLabel.label} ({chunkLabel.sub})</span>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Chunk size</p>
+            <div className="grid grid-cols-4 gap-2">
+              {(Object.entries(RAG_CHUNK_LABELS) as [string, { label: string; sub: string }][]).map(([val, { label, sub }]) => {
+                const v = Number(val) as 30 | 60 | 90 | 120;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setRagSelectedChunkSize(v)}
+                    className={cn(
+                      "flex flex-col items-center rounded-lg border px-3 py-2 text-sm transition-colors",
+                      ragSelectedChunkSize === v
+                        ? "border-primary/50 bg-primary/5 text-foreground"
+                        : "border-border hover:bg-muted/40 text-muted-foreground"
+                    )}
+                  >
+                    <span className="font-medium">{label}</span>
+                    <span className="text-xs opacity-70">{sub}</span>
+                  </button>
+                );
+              })}
             </div>
-            <a
-              href="/dashboard/settings"
-              className="text-xs text-primary hover:underline"
-            >
-              Change in settings →
-            </a>
           </div>
 
           <a
@@ -630,16 +637,6 @@ export function TranscriptCard({
           >
             What is RAG JSON? →
           </a>
-
-          <label className="flex items-center gap-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={ragModalDontShowAgain}
-              onChange={(e) => setRagModalDontShowAgain(e.target.checked)}
-              className="rounded border-border size-4 accent-primary"
-            />
-            <span className="text-sm text-muted-foreground">Don&apos;t show this again</span>
-          </label>
         </div>
 
         <DialogFooter className="gap-2">
@@ -651,7 +648,7 @@ export function TranscriptCard({
             Cancel
           </Button>
           <Button
-            onClick={() => executeRagExport(ragModalDontShowAgain)}
+            onClick={() => executeRagExport()}
             disabled={ragExportLoading}
             className="gap-2"
           >

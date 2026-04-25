@@ -1,3 +1,11 @@
+[2026-04-25] refactor: chunk selector in TranscriptCard RAG modal — ragSelectedChunkSize state (init op profile.rag_chunk_size), 4-knops grid selector vervangt read-only label + settings-link, alreadyConfirmed shortcut verwijderd (modal altijd tonen) | gewijzigd: src/components/TranscriptCard.tsx
+---
+[2026-04-25] refactor: "Don't show again" verwijderd uit TranscriptCard en TranscriptViewer RAG modals — confirmExport altijd true, ragModalDontShowAgain/ragDontShowAgain state + checkbox verwijderd | gewijzigd: src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx
+---
+[2026-04-25] refactor: reset-knop verwijderd uit DeveloperExportsCard + resetRagExportConfirmationAction verwijderd — "Export confirmation" sectie volledig weggehaald | gewijzigd: src/components/dashboard/settings/DeveloperExportsCard.tsx, src/app/actions/rag-export.ts
+---
+[2026-04-25] feat: channel en language opslaan bij AssemblyAI transcripties — extract_youtube_audio geeft nu ook channel (uploader) terug, lingua detector detecteert taal na whisper, INSERT bevat channel_title + language | gewijzigd: backend/audio_utils.py, backend/main.py
+---
 [2026-04-25] feat: RAG JSON export vanuit library dropdown — "RAG JSON ✦" opent altijd Dialog; State A (eerste export) met chunk selector, kredietkosten, "don't show again" + server action; State B (herexport) gratis clientside download; profiles.rag_chunk_size als default via parallel Supabase query in page.tsx | gewijzigd: src/components/library/TranscriptViewer.tsx, src/app/dashboard/library/[id]/page.tsx
 ---
 [2026-04-25] fix: download bestandsnamen — alle exports gebruiken gesaniteerde video titel (max 30 chars) i.p.v. generiek "transcript"; RAG JSON bevat ook chunk preset (bijv. karpathy_rag_60s.json) | gewijzigd: src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx, src/components/library/RagExportView.tsx
@@ -1173,3 +1181,9 @@ docs/wiki/decisions/015-rag-json-export.md
 src/app/dashboard/library/[id]/page.tsx
 src/components/library/TranscriptViewer.tsx
 ---
+[2026-04-25 19:09] commit: feat: library RAG JSON export — eerste export met credits-modal + herexport met chunk selector
+Changed: docs/LOG.md
+src/app/dashboard/library/[id]/page.tsx
+src/components/library/TranscriptViewer.tsx
+---
+[2026-04-25 19:24] precompact: context compaction triggered

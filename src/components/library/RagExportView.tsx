@@ -63,6 +63,7 @@ export function RagExportView({
   const [selectedChunkSize, setSelectedChunkSize] = useState<30 | 60 | 90 | 120>(lastChunkSize);
 
   const handleDownload = (chunkSize: number) => {
+    const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30) || 'transcript';
     const json = buildRagJson(transcript, {
       videoId,
       title,
@@ -73,7 +74,7 @@ export function RagExportView({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "transcript_rag.json";
+    a.download = `${safeTitle}_rag_${chunkSize}s.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
