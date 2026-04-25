@@ -349,7 +349,7 @@ export function TranscriptCard({
 
   const executeRagExport = async () => {
     setRagExportLoading(true);
-    const result = await deductRagExportCreditsAction(derivedDuration, true, transcriptId, ragSelectedChunkSize);
+    const result = await deductRagExportCreditsAction(derivedDuration, transcriptId, ragSelectedChunkSize);
     setRagExportLoading(false);
 
     if (!result.success) {

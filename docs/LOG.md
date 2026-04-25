@@ -1,3 +1,7 @@
+[2026-04-25] fix: transcript_id race condition — WhisperCompleteEvent + pollWhisperJob geven transcript_id terug; handleWhisperSuccess gebruikt transcript_id direct; Pad B gebruikt event.transcript_id; setExistingTranscriptMethod 'whisper_ai'→'assemblyai' op Pad B | gewijzigd: src/components/free-tool/VideoTab.tsx
+---
+[2026-04-25] refactor: rag-export.ts dode code verwijderd — confirmExport param + rag_export_confirmed UPDATE verwijderd; downloadRagJsonFromLibraryAction verwijderd (geen importers); call sites bijgewerkt | gewijzigd: src/app/actions/rag-export.ts, src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx
+---
 [2026-04-25] fix: refresh() verwijderd uit rag-export.ts — revalidatePath alleen is de correcte Next.js aanpak; refresh import + aanroep verwijderd | gewijzigd: src/app/actions/rag-export.ts
 ---
 [2026-04-25] fix: processing_method mismatch VideoTab — 'whisper_ai' → 'assemblyai' op 4 plaatsen; existingTranscriptId vond nooit AssemblyAI rij waardoor rag_exports nooit werd geschreven | gewijzigd: src/components/free-tool/VideoTab.tsx
@@ -1243,4 +1247,9 @@ docs/wiki/decisions/015-rag-json-export.md
 src/app/dashboard/library/[id]/page.tsx
 src/components/free-tool/VideoTab.tsx
 src/components/library/TranscriptViewer.tsx
+---
+[2026-04-25 22:16] commit: fix: verwijder refresh() en force-dynamic — revalidatePath alleen is correct
+Changed: docs/LOG.md
+docs/wiki/decisions/015-rag-json-export.md
+src/app/dashboard/library/[id]/page.tsx
 ---

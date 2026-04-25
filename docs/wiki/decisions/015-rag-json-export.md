@@ -145,7 +145,7 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 
 **Pricing:** `Math.max(1, Math.ceil(duration_seconds / 900))` — 1 credit per 15 minuten video.
 
-**UX:** Bevestigingsmodal altijd tonen (Radix Dialog) — bevat chunk selector (4 opties), prijs, en een "Wat is RAG JSON?" link. `profiles.rag_export_confirmed` en de reset-knop zijn verwijderd. Insufficient-credits banner als saldo tekort is.
+**UX:** Bevestigingsmodal altijd tonen (Radix Dialog) — bevat chunk selector (4 opties), prijs, en een "Wat is RAG JSON?" link. `profiles.rag_export_confirmed`, de reset-knop, en de `confirmExport` parameter in `deductRagExportCreditsAction` zijn verwijderd. Insufficient-credits banner als saldo tekort is.
 
 **Gating:** Ingelogde users (gratis én betaald). Anoniem ziet de dropdown entry met lock-icon.
 
@@ -155,7 +155,9 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 
 **Library export pad:** `TranscriptViewer` accepteert `channel` (als `channelTitle`) en `language` props — `page.tsx` geeft ze door uit `transcript.channel` / `transcript.language`. Beide worden doorgegeven aan `buildRagJson` zodat library RAG exports dezelfde metadata bevatten als transcribe-pagina exports.
 
-**`processing_method` waarde:** backend slaat `'assemblyai'` op (niet `'whisper_ai'`). `VideoTab.tsx` gebruikt `'assemblyai'` bij DB lookups voor `existingTranscriptId` — cruciaal voor `rag_exports` write en `revalidatePath` correctheid.
+**`processing_method` waarde:** backend slaat `'assemblyai'` op (niet `'whisper_ai'`). `VideoTab.tsx` gebruikt `'assemblyai'` bij DB lookups en in `setExistingTranscriptMethod` — cruciaal voor `rag_exports` write en `revalidatePath` correctheid.
+
+**Race condition fix — `existingTranscriptId`:** `pollWhisperJob` geeft `transcript_id` terug in `WhisperCompleteEvent` (rechtstreeks uit de job completion response). `handleWhisperSuccess` en het directe Whisper-pad roepen `setExistingTranscriptId(transcript_id)` aan zonder aparte Supabase query — elimineert de race condition waarbij de RAG export knop klikbaar was voordat `existingTranscriptId` gezet was.
 
 **Cache invalidatie na export:** `revalidatePath(\`/dashboard/library/${transcriptId}\`)` in `deductRagExportCreditsAction` — Next.js-gedocumenteerde methode voor cache-invalidatie vanuit een Server Action. Zorgt dat de library pagina verse data laadt na navigatie.
 

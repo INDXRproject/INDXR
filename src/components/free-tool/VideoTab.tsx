@@ -26,6 +26,7 @@ type WhisperStatus = 'idle' | 'pending' | 'downloading' | 'transcribing' | 'savi
 type WhisperCompleteEvent = {
   type: 'complete'
   transcript: TranscriptItem[]
+  transcript_id?: string
   duration: number
   credits_used: number
   truncation_warning?: string
@@ -67,6 +68,7 @@ async function pollWhisperJob(
     let job: {
       status: string
       transcript?: TranscriptItem[]
+      transcript_id?: string
       duration?: number
       credits_used?: number
       error_message?: string
@@ -98,6 +100,7 @@ async function pollWhisperJob(
       return {
         type: 'complete',
         transcript: job.transcript!,
+        transcript_id: job.transcript_id,
         duration: job.duration!,
         credits_used: job.credits_used!,
         truncation_warning: job.error_message?.startsWith('Transcript may be incomplete') ? job.error_message : undefined,
@@ -549,7 +552,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
 
 
-  const handleWhisperSuccess = async (transcript: TranscriptItem[], metadata: { videoId: string; title: string; duration: number; creditsUsed: number; source: string; truncationWarning?: string }) => {
+  const handleWhisperSuccess = async (transcript: TranscriptItem[], metadata: { videoId: string; title: string; duration: number; creditsUsed: number; source: string; truncationWarning?: string; transcriptId?: string }) => {
     setTranscript(transcript)
     setVideoTitle(metadata.title || "")
     setVideoUrl(`https://www.youtube.com/watch?v=${metadata.videoId}`)
@@ -564,15 +567,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     // Just refresh the sidebar and fetch the saved row ID for UI state.
     window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
 
-    const { data: saved } = await supabase
-      .from('transcripts')
-      .select('id')
-      .eq('video_id', metadata.videoId)
-      .eq('processing_method', 'assemblyai')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    if (saved) setExistingTranscriptId(saved.id)
+    if (metadata.transcriptId) setExistingTranscriptId(metadata.transcriptId)
 
     setSaveStatus('saved')
 
@@ -675,7 +670,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setCurrentVideoId(videoId)
 
       sessionSavedKeys.current.add(`${videoId}:whisper_ai`)
-      setExistingTranscriptMethod('whisper_ai')
+      setExistingTranscriptMethod('assemblyai')
 
       posthog.capture('transcript_extracted', {
         type: 'video',
@@ -697,15 +692,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         // Just refresh the sidebar and fetch the saved row ID for UI state.
         window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
 
-        const { data: saved } = await supabase
-          .from('transcripts')
-          .select('id')
-          .eq('video_id', videoId)
-          .eq('processing_method', 'whisper_ai')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-        if (saved) setExistingTranscriptId(saved.id)
+        if (event.transcript_id) setExistingTranscriptId(event.transcript_id)
 
         setSaveStatus('saved')
         refreshCredits()
@@ -826,6 +813,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         creditsUsed: event.credits_used || 1,
         source: 'youtube',
         truncationWarning: event.truncation_warning,
+        transcriptId: event.transcript_id,
       })
 
       refreshCredits()

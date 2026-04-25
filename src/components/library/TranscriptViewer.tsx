@@ -555,7 +555,6 @@ export function TranscriptViewer({
     setRagInsufficientCredits(false);
     const result = await deductRagExportCreditsAction(
       derivedDuration,
-      true,
       id,
       ragSelectedChunkSize,
     );
