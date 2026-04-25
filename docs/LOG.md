@@ -1,3 +1,5 @@
+[2026-04-25] feat: "RAG JSON ✦" in library export dropdown — gratis herexport met laatste chunk_size als rag_exports aanwezig; grayed-out met Radix tooltip als nog niet geëxporteerd | gewijzigd: src/components/library/TranscriptViewer.tsx, src/app/dashboard/library/[id]/page.tsx
+---
 [2026-04-25] feat: RAG export history + Developer tab in library — rag_exports schrijven bij credit deductie, buildRagJson() utility, "Developer ✦" tabblad met history tabel + gratis herexport, "RAG ✦" badge in transcript-lijst, transcriptId doorgegeven via VideoTab | gewijzigd: src/utils/formatTranscript.ts, src/app/actions/rag-export.ts, src/components/TranscriptCard.tsx, src/components/free-tool/VideoTab.tsx, src/components/library/TranscriptList.tsx, src/app/dashboard/library/[id]/page.tsx, src/components/library/RagExportView.tsx, docs/wiki/decisions/015-rag-json-export.md
 ---
 [2026-04-25] content: /youtube-srt-download — resegmentatiestrategie alinea toegevoegd (AI vs auto-captions verschil uitgelegd) | gewijzigd: src/app/youtube-srt-download/page.tsx
@@ -1146,3 +1148,16 @@ src/components/library/TranscriptViewer.tsx
 src/utils/formatTranscript.ts
 ---
 [2026-04-25 01:37] precompact: context compaction triggered
+[2026-04-25 01:41] commit: feat: RAG JSON export history + Developer tab in library + buildRagJson utility
+Changed: docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/decisions/015-rag-json-export.md
+src/app/actions/rag-export.ts
+src/app/dashboard/library/[id]/page.tsx
+src/app/youtube-srt-download/page.tsx
+src/components/TranscriptCard.tsx
+src/components/free-tool/VideoTab.tsx
+src/components/library/RagExportView.tsx
+src/components/library/TranscriptList.tsx
+src/utils/formatTranscript.ts
+---

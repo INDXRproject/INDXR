@@ -211,6 +211,7 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 - [x] "Developer ✦" tabblad in library — export history + gratis herexport met elke preset
 - [x] "RAG ✦" badge in transcript-lijst als `rag_exports` niet leeg is
 - [x] `buildRagJson()` utility in `formatTranscript.ts` — gedeeld tussen TranscriptCard en RagExportView
+- [x] "RAG JSON ✦" in library export dropdown (`TranscriptViewer`) — gratis herexport met laatste chunk_size als `rag_exports` aanwezig; grayed-out met Radix tooltip als nog niet geëxporteerd
 
 **Chunk size scoping:** `profiles.rag_chunk_size` (Settings → Developer Exports) is de *default* voor de eerste export vanuit de transcribe-pagina (TranscriptCard). In de library-flow (Developer tab) kiest de gebruiker per transcript zijn eigen preset — de settings-waarde heeft daar geen effect.
 

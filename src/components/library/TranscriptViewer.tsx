@@ -66,8 +66,15 @@ import {
   generateCsv,
   generateMarkdown,
   decodeEntities,
+  buildRagJson,
   TranscriptItem,
 } from "@/utils/formatTranscript";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // ─── Search Extension (Prosemirror Decorations) ──────────────────────────────
 
@@ -194,6 +201,7 @@ interface TranscriptViewerProps {
   viewedAt: string | null;
   mode: "original" | "edited";
   processingMethod?: string | null;
+  ragExports?: Array<{ chunk_size: number; exported_at: string; credits_spent: number }> | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -263,6 +271,7 @@ export function TranscriptViewer({
   viewedAt,
   mode,
   processingMethod,
+  ragExports,
 }: TranscriptViewerProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -485,6 +494,26 @@ export function TranscriptViewer({
     } catch (e) {
       console.error(e);
       toast.error(`Failed to download ${format.toUpperCase()}`);
+    }
+  };
+
+  const handleRagDownload = () => {
+    if (!ragExports?.length) return;
+    const lastExport = ragExports[ragExports.length - 1];
+    const chunkSize = lastExport.chunk_size;
+    const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+    try {
+      const json = buildRagJson(transcript, {
+        videoId,
+        title,
+        extractionMethod: processingMethod ?? undefined,
+        chunkSize,
+      });
+      downloadFile(json, `${safe}_rag.json`, "application/json");
+      toast.success("Downloaded RAG JSON");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to download RAG JSON");
     }
   };
 
@@ -790,6 +819,28 @@ export function TranscriptViewer({
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Subtitles</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => handleDownload("srt")}>SRT</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDownload("vtt")}>VTT</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Developer</DropdownMenuLabel>
+                  {ragExports && ragExports.length > 0 ? (
+                    <DropdownMenuItem onClick={handleRagDownload}>
+                      RAG JSON{" "}
+                      <span className="text-primary text-[10px] font-bold align-super ml-0.5">✦</span>
+                    </DropdownMenuItem>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-muted-foreground/40">
+                            RAG JSON{" "}
+                            <span className="text-primary/30 text-[10px] font-bold align-super ml-0.5">✦</span>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-[220px] text-xs">
+                          Export RAG JSON from the transcript page first to unlock free re-downloads.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive font-medium focus:text-destructive focus:bg-destructive/10"
