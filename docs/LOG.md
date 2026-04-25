@@ -1,3 +1,7 @@
+[2026-04-25] fix: processing_method mismatch VideoTab — 'whisper_ai' → 'assemblyai' op 4 plaatsen; existingTranscriptId vond nooit AssemblyAI rij waardoor rag_exports nooit werd geschreven | gewijzigd: src/components/free-tool/VideoTab.tsx
+---
+[2026-04-25] fix: channel + language in RAG JSON export library — TranscriptViewer accepteert nu language prop; page.tsx geeft channel + language door; buildRagJson bevat nu channel/language voor library-pad | gewijzigd: src/components/library/TranscriptViewer.tsx, src/app/dashboard/library/[id]/page.tsx, backend/audio_utils.py (uploader-or-channel fallback)
+---
 [2026-04-25] fix: library pagina force-dynamic — export const dynamic = 'force-dynamic' toegevoegd zodat rag_exports altijd vers zijn bij navigatie | gewijzigd: src/app/dashboard/library/[id]/page.tsx
 ---
 [2026-04-25] fix: handleRagFirstExport UI-flits — setShowRagModal(false) vóór setLocalRagExports; refreshCredits fire-and-forget (geen await) | gewijzigd: src/components/library/TranscriptViewer.tsx
@@ -1224,3 +1228,9 @@ src/app/dashboard/transcribe/page.tsx
 src/components/free-tool/VideoTab.tsx
 src/types/transcript.ts
 ---
+[2026-04-25 21:12] commit: fix: library force-dynamic + RAG modal volgorde fix
+Changed: docs/LOG.md
+src/app/dashboard/library/[id]/page.tsx
+src/components/library/TranscriptViewer.tsx
+---
+[2026-04-25 21:34] precompact: context compaction triggered

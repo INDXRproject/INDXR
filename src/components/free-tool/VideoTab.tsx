@@ -258,7 +258,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
         if (sessionHasCaptions || sessionHasWhisper) {
           // In-session hit: find the transcript ID from DB for the link
-          const method = sessionHasCaptions ? 'youtube_captions' : 'whisper_ai';
+          const method = sessionHasCaptions ? 'youtube_captions' : 'assemblyai';
           const { data } = await supabase
             .from('transcripts')
             .select('id')
@@ -290,17 +290,17 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           return;
         }
 
-        // DB check: whisper_ai
+        // DB check: assemblyai
         const { data: whisperRow } = await supabase
           .from('transcripts')
           .select('id')
           .eq('video_id', videoId)
-          .eq('processing_method', 'whisper_ai')
+          .eq('processing_method', 'assemblyai')
           .limit(1)
           .maybeSingle();
 
         setExistingTranscriptId(whisperRow?.id ?? null);
-        setExistingTranscriptMethod(whisperRow ? 'whisper_ai' : null);
+        setExistingTranscriptMethod(whisperRow ? 'assemblyai' : null);
         setShowDuplicateChoices(false);
       }
       setIsCheckingDuplicate(false)
@@ -558,7 +558,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setWhisperAutoTriggered(true) // Mark that Whisper was auto-triggered
     // Track whisper save in session so a second click is instantly flagged as duplicate
     sessionSavedKeys.current.add(`${metadata.videoId}:whisper_ai`);
-    setExistingTranscriptMethod('whisper_ai');
+    setExistingTranscriptMethod('assemblyai');
 
     // Backend already saved the transcript — skip onTranscriptLoaded() to avoid duplicate insert.
     // Just refresh the sidebar and fetch the saved row ID for UI state.
@@ -568,7 +568,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       .from('transcripts')
       .select('id')
       .eq('video_id', metadata.videoId)
-      .eq('processing_method', 'whisper_ai')
+      .eq('processing_method', 'assemblyai')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()

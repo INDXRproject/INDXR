@@ -149,7 +149,13 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 
 **Gating:** Ingelogde users (gratis én betaald). Anoniem ziet de dropdown entry met lock-icon.
 
-**Language detection fallback:** `language` komt van yt-dlp's `info.get('language')`. Fallback: `lingua-language-detector` detecteert taal uit eerste 500 woorden (13 talen). `language_detected: true` in backend response als via detectie bepaald.
+**Channel extractie:** `audio_utils.py` gebruikt `info.get('uploader') or info.get('channel')` — fallback nodig omdat yt-dlp per video type wisselend gebruikt.
+
+**Language detectie (AssemblyAI pad):** lingua-language-detector op eerste 20 segmenten na transcriptie. `language` in DB wordt gezet als niet-None.
+
+**Library export pad:** `TranscriptViewer` accepteert `channel` (als `channelTitle`) en `language` props — `page.tsx` geeft ze door uit `transcript.channel` / `transcript.language`. Beide worden doorgegeven aan `buildRagJson` zodat library RAG exports dezelfde metadata bevatten als transcribe-pagina exports.
+
+**`processing_method` waarde:** backend slaat `'assemblyai'` op (niet `'whisper_ai'`). `VideoTab.tsx` gebruikt `'assemblyai'` bij DB lookups voor `existingTranscriptId` — cruciaal voor `rag_exports` write en `revalidatePath` correctheid.
 
 **Niet-Engelse content:** YouTube auto-captions geven altijd Engelse vertaling terug ongeacht de video-taal — YouTube CDN beperking, niet fixbaar. Voor niet-Engelse content is AssemblyAI transcriptie de enige betrouwbare route.
 

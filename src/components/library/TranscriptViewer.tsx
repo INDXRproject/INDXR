@@ -206,6 +206,7 @@ interface TranscriptViewerProps {
   videoUrl: string;
   videoId: string;
   channelTitle?: string;
+  language?: string | null;
   thumbnailUrl?: string;
   editedContent: JSONContent | null;
   aiSummary: JSONContent | null;
@@ -279,6 +280,7 @@ export function TranscriptViewer({
   videoUrl,
   videoId,
   channelTitle,
+  language,
   editedContent,
   aiSummary,
   viewedAt,
@@ -531,6 +533,8 @@ export function TranscriptViewer({
     const json = buildRagJson(transcript, {
       videoId,
       title,
+      channel: channelTitle ?? undefined,
+      language: language ?? undefined,
       extractionMethod: processingMethod ?? undefined,
       chunkSize,
     });
