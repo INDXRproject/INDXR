@@ -1285,3 +1285,10 @@ src/app/actions/rag-export.ts
 src/components/TranscriptCard.tsx
 src/components/free-tool/VideoTab.tsx
 ---
+[2026-04-26 00:37] commit: fix: lastSuccessTimestampRef in handleWhisperSuccess + debug logs verwijderd
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+src/components/TranscriptCard.tsx
+src/components/free-tool/VideoTab.tsx
+---
