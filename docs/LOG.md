@@ -1,3 +1,5 @@
+[2026-04-26] fix: lastSuccessTimestampRef in handleWhisperSuccess — ontbrekende toewijzing toegevoegd vóór setUrl(""); voorkomt dat cooldown-check mislukt bij upsell pad; debug logs verwijderd | gewijzigd: src/components/free-tool/VideoTab.tsx, src/components/TranscriptCard.tsx
+---
 [2026-04-26] fix: videoId fallback in deductRagExportCreditsAction — als transcriptId undefined is, query server-side op video_id + processing_method='assemblyai' om transcript te resolven; TranscriptCard geeft videoId mee | gewijzigd: src/app/actions/rag-export.ts, src/components/TranscriptCard.tsx
 ---
 [2026-04-25] fix: existingTranscriptId ref-guard — existingTranscriptIdRef.current gespiegeld naast state op alle 7 setExistingTranscriptId call sites; TranscriptCard transcriptId prop leest state ?? ref zodat RAG export altijd correcte id krijgt vóór render | gewijzigd: src/components/free-tool/VideoTab.tsx, src/components/TranscriptCard.tsx
@@ -1274,6 +1276,12 @@ Changed: src/components/free-tool/VideoTab.tsx
 ---
 [2026-04-25 23:47] commit: fix: useRef guard voor existingTranscriptId race condition
 Changed: docs/LOG.md
+src/components/TranscriptCard.tsx
+src/components/free-tool/VideoTab.tsx
+---
+[2026-04-26 00:17] commit: fix: videoId fallback in server action — resolveert transcript via video_id als transcriptId undefined is
+Changed: docs/LOG.md
+src/app/actions/rag-export.ts
 src/components/TranscriptCard.tsx
 src/components/free-tool/VideoTab.tsx
 ---

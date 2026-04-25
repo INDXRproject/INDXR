@@ -578,6 +578,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setSaveStatus('saved')
 
       // Clear URL input field after successful transcription
+      lastSuccessTimestampRef.current = { videoId: metadata.videoId, time: Date.now() }
       setUrl("")
     }
 
@@ -1244,7 +1245,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             )
           )}
 
-          {(() => { console.log('[RENDER DEBUG] existingTranscriptId:', existingTranscriptId, 'ref:', existingTranscriptIdRef.current); return null; })()}
           <TranscriptCard
                     transcript={transcript}
                     videoTitle={videoTitle}
