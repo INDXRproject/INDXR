@@ -16,6 +16,8 @@ export interface TranscriptMetadata {
   filename?: string
   thumbnailUrl?: string
   collectionId?: string
+  channel?: string | null
+  language?: string | null
 
   // Duplicate handling
   duplicateId?: string

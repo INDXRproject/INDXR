@@ -101,9 +101,7 @@ export default function TranscribePage() {
         error = result.error
       } else {
         // Normal Insert
-        const result = await supabase
-          .from('transcripts')
-          .insert({
+        const insertPayload: Record<string, unknown> = {
             user_id: user.id,
             source_type: metadata.source,
             title: metadata.title,
@@ -115,8 +113,13 @@ export default function TranscribePage() {
             filename: metadata.filename,
             credits_used: metadata.creditsUsed,
             processing_method: metadata.processingMethod || 'youtube_captions',
-            collection_id: metadata.collectionId
-          })
+            collection_id: metadata.collectionId,
+          }
+          if (metadata.channel) insertPayload.channel = metadata.channel
+          if (metadata.language) insertPayload.language = metadata.language
+          const result = await supabase
+          .from('transcripts')
+          .insert(insertPayload)
           
         error = result.error
       }

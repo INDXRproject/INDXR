@@ -70,6 +70,8 @@ export async function deductRagExportCreditsAction(
       })
       .eq('id', transcriptId)
       .eq('user_id', user.id)
+
+    revalidatePath(`/dashboard/library/${transcriptId}`)
   }
 
   return { success: true, cost, newBalance: result.new_balance }

@@ -1,3 +1,7 @@
+[2026-04-25] feat: channel + language opslaan in transcripts — AssemblyAI: extract_youtube_audio channel + lingua detector taal → INSERT; captions: channel/language via TranscriptMetadata → VideoTab → transcribe/page.tsx INSERT | gewijzigd: backend/main.py, src/types/transcript.ts, src/components/free-tool/VideoTab.tsx, src/app/dashboard/transcribe/page.tsx
+---
+[2026-04-25] feat: revalidatePath na RAG export — deductRagExportCreditsAction roept revalidatePath(/dashboard/library/{id}) aan na succesvolle rag_exports write | gewijzigd: src/app/actions/rag-export.ts
+---
 [2026-04-25] fix: AssemblyAI INSERT — channel_title en language verwijderd; kolommen bestaan niet in transcripts tabel; extract_youtube_audio retourneert nog steeds 3-tuple maar channel wordt genegeerd | gewijzigd: backend/main.py
 ---
 [2026-04-25] refactor: chunk selector in TranscriptCard RAG modal — ragSelectedChunkSize state (init op profile.rag_chunk_size), 4-knops grid selector vervangt read-only label + settings-link, alreadyConfirmed shortcut verwijderd (modal altijd tonen) | gewijzigd: src/components/TranscriptCard.tsx
@@ -1200,4 +1204,9 @@ src/components/dashboard/settings/DeveloperExportsCard.tsx
 src/components/free-tool/VideoTab.tsx
 src/components/library/RagExportView.tsx
 src/components/library/TranscriptViewer.tsx
+---
+[2026-04-25 19:53] commit: fix: AssemblyAI INSERT — channel_title/language kolommen bestaan niet, verwijderd uit INSERT
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/decisions/015-rag-json-export.md
 ---

@@ -501,7 +501,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
              videoId: videoId2,
              videoUrl: data.video_url || targetUrl,
              duration: data.duration || 0,
-             processingMethod: 'youtube_captions'
+             processingMethod: 'youtube_captions',
+             channel: data.channel ?? null,
+             language: data.language ?? null,
            })
 
            if (videoId2) {

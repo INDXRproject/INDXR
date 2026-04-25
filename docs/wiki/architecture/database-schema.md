@@ -20,8 +20,8 @@ username             TEXT    -- display naam
 role                 TEXT    -- 'user' | 'admin'
 avatar_color         TEXT    -- hex kleur voor avatar placeholder (migratie 20260301)
 suspended            BOOLEAN DEFAULT false (migratie 20260408)
-rag_export_confirmed BOOLEAN DEFAULT false (migratie 20260422) -- "Don't show again" vlag voor RAG export modal
-rag_chunk_size       INTEGER DEFAULT 60 CHECK IN (30,60,120) (migratie 20260422) -- chunk preset voor RAG JSON export
+rag_export_confirmed BOOLEAN DEFAULT false (migratie 20260422) -- vervallen, niet meer gebruikt (modal altijd tonen)
+rag_chunk_size       INTEGER DEFAULT 60 CHECK IN (30,60,90,120) (migratie 20260422/20260423) -- chunk preset voor RAG JSON export
 ```
 
 RLS: gebruiker kan alleen eigen profiel lezen/schrijven.
@@ -46,6 +46,8 @@ updated_at    TIMESTAMPTZ -- laatste wijziging (migratie 20260307)
 created_at    TIMESTAMPTZ DEFAULT now()
 
 processing_method TEXT     -- 'youtube_captions' | 'whisper_ai' — hoe het transcript is gegenereerd
+channel           TEXT     -- YouTube kanaal naam (uploader) — opgeslagen bij captions en AssemblyAI jobs
+language          TEXT     -- taalcode (bijv. 'en', 'nl') — yt-dlp of lingua detector
 rag_exports       JSONB DEFAULT '[]' -- array van {chunk_size, exported_at, credits_spent} per RAG JSON export
 
 -- Tiptap/edit veld (migraties 20260302, 20260304)
