@@ -19,7 +19,8 @@ import {
   ChevronDown,
   Loader2,
   X,
-  Save
+  Save,
+  AlertCircle,
 } from "lucide-react";
 import posthog from "posthog-js";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -52,6 +53,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import Link from "next/link";
 import { toast } from "sonner";
@@ -69,12 +78,7 @@ import {
   buildRagJson,
   TranscriptItem,
 } from "@/utils/formatTranscript";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { deductRagExportCreditsAction } from "@/app/actions/rag-export";
 
 // ─── Search Extension (Prosemirror Decorations) ──────────────────────────────
 
@@ -188,6 +192,13 @@ const SearchExtension = Extension.create<SearchOptions>({
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+const RAG_CHUNK_OPTIONS = [
+  { value: 30  as const, label: "Quote",    sub: "30s" },
+  { value: 60  as const, label: "Balanced", sub: "60s" },
+  { value: 90  as const, label: "Precise",  sub: "90s" },
+  { value: 120 as const, label: "Context",  sub: "120s" },
+];
+
 interface TranscriptViewerProps {
   id: string;
   transcript: TranscriptItem[];
@@ -202,6 +213,8 @@ interface TranscriptViewerProps {
   mode: "original" | "edited";
   processingMethod?: string | null;
   ragExports?: Array<{ chunk_size: number; exported_at: string; credits_spent: number }> | null;
+  userChunkSize?: number;
+  duration?: number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -272,6 +285,8 @@ export function TranscriptViewer({
   mode,
   processingMethod,
   ragExports,
+  userChunkSize,
+  duration,
 }: TranscriptViewerProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -306,6 +321,21 @@ export function TranscriptViewer({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMatchesCount, setSearchMatchesCount] = useState(0);
   const [currentMatchIdx, setCurrentMatchIdx] = useState(0);
+
+  // RAG export modal state
+  const [localRagExports, setLocalRagExports] = useState<Array<{ chunk_size: number; exported_at: string; credits_spent: number }>>(ragExports ?? []);
+  const [showRagModal, setShowRagModal] = useState(false);
+  const [ragSelectedChunkSize, setRagSelectedChunkSize] = useState<30 | 60 | 90 | 120>(60);
+  const [ragExportLoading, setRagExportLoading] = useState(false);
+  const [ragDontShowAgain, setRagDontShowAgain] = useState(false);
+  const [ragInsufficientCredits, setRagInsufficientCredits] = useState(false);
+
+  const derivedDuration =
+    duration ??
+    (transcript.length > 0
+      ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
+      : 0);
+  const ragCost = Math.max(1, Math.ceil(derivedDuration / 900));
 
   // Mark as viewed on mount if not already viewed
   useEffect(() => {
@@ -461,7 +491,7 @@ export function TranscriptViewer({
   };
 
   const handleDownload = (format: "txt" | "txt-ts" | "md" | "md-ts" | "json" | "srt" | "vtt" | "csv") => {
-    const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+    const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase().slice(0, 30);
     try {
       if (format === "txt")
         downloadFile(generateTxt(transcript, false), `${safe}.txt`, "text/plain");
@@ -497,24 +527,52 @@ export function TranscriptViewer({
     }
   };
 
-  const handleRagDownload = () => {
-    if (!ragExports?.length) return;
-    const lastExport = ragExports[ragExports.length - 1];
-    const chunkSize = lastExport.chunk_size;
-    const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-    try {
-      const json = buildRagJson(transcript, {
-        videoId,
-        title,
-        extractionMethod: processingMethod ?? undefined,
-        chunkSize,
-      });
-      downloadFile(json, `${safe}_rag.json`, "application/json");
-      toast.success("Downloaded RAG JSON");
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to download RAG JSON");
+  const triggerRagFileDownload = (chunkSize: number) => {
+    const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase().slice(0, 30);
+    const json = buildRagJson(transcript, {
+      videoId,
+      title,
+      extractionMethod: processingMethod ?? undefined,
+      chunkSize,
+    });
+    downloadFile(json, `${safe}_rag_${chunkSize}s.json`, "application/json");
+  };
+
+  const handleRagMenuClick = () => {
+    const defaultChunk = localRagExports.length > 0
+      ? (localRagExports[localRagExports.length - 1].chunk_size as 30 | 60 | 90 | 120)
+      : ((userChunkSize ?? 60) as 30 | 60 | 90 | 120);
+    setRagSelectedChunkSize(defaultChunk);
+    setRagInsufficientCredits(false);
+    setShowRagModal(true);
+  };
+
+  const handleRagFirstExport = async () => {
+    setRagExportLoading(true);
+    setRagInsufficientCredits(false);
+    const result = await deductRagExportCreditsAction(
+      derivedDuration,
+      ragDontShowAgain,
+      id,
+      ragSelectedChunkSize,
+    );
+    setRagExportLoading(false);
+    if (!result.success) {
+      setRagInsufficientCredits(true);
+      return;
     }
+    triggerRagFileDownload(ragSelectedChunkSize);
+    setLocalRagExports(prev => [
+      ...prev,
+      { chunk_size: ragSelectedChunkSize, exported_at: new Date().toISOString(), credits_spent: result.cost },
+    ]);
+    await refreshCredits();
+    setShowRagModal(false);
+  };
+
+  const handleRagReexport = () => {
+    triggerRagFileDownload(ragSelectedChunkSize);
+    setShowRagModal(false);
   };
 
   /** Convert a Tiptap JSONContent node tree → plain text */
@@ -821,26 +879,10 @@ export function TranscriptViewer({
                   <DropdownMenuItem onClick={() => handleDownload("vtt")}>VTT</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Developer</DropdownMenuLabel>
-                  {ragExports && ragExports.length > 0 ? (
-                    <DropdownMenuItem onClick={handleRagDownload}>
-                      RAG JSON{" "}
-                      <span className="text-primary text-[10px] font-bold align-super ml-0.5">✦</span>
-                    </DropdownMenuItem>
-                  ) : (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-muted-foreground/40">
-                            RAG JSON{" "}
-                            <span className="text-primary/30 text-[10px] font-bold align-super ml-0.5">✦</span>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-[220px] text-xs">
-                          Export RAG JSON from the transcript page first to unlock free re-downloads.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
+                  <DropdownMenuItem onClick={handleRagMenuClick}>
+                    RAG JSON{" "}
+                    <span className="text-primary text-[10px] font-bold align-super ml-0.5">✦</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive font-medium focus:text-destructive focus:bg-destructive/10"
@@ -1072,7 +1114,7 @@ export function TranscriptViewer({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
             >
@@ -1082,6 +1124,102 @@ export function TranscriptViewer({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── RAG EXPORT MODAL ── */}
+      <Dialog open={showRagModal} onOpenChange={setShowRagModal}>
+        <DialogContent className="max-w-md">
+          {localRagExports.length > 0 ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Download RAG JSON</DialogTitle>
+                <DialogDescription>
+                  Choose a chunk size. Re-downloads are always free.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-4 gap-2">
+                {RAG_CHUNK_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setRagSelectedChunkSize(opt.value)}
+                    className={cn(
+                      "flex flex-col items-center rounded-lg border px-3 py-2 text-sm transition-colors",
+                      ragSelectedChunkSize === opt.value
+                        ? "border-primary/50 bg-primary/5 text-foreground"
+                        : "border-border hover:bg-muted/40 text-muted-foreground"
+                    )}
+                  >
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="text-xs opacity-70">{opt.sub}</span>
+                  </button>
+                ))}
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setShowRagModal(false)}>Cancel</Button>
+                <Button onClick={handleRagReexport} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Export RAG JSON</DialogTitle>
+                <DialogDescription>
+                  Exported as chunked JSON, ready for Pinecone, ChromaDB, and Weaviate. After this first export, all four chunk presets are free to re-download.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-4 gap-2">
+                {RAG_CHUNK_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setRagSelectedChunkSize(opt.value)}
+                    className={cn(
+                      "flex flex-col items-center rounded-lg border px-3 py-2 text-sm transition-colors",
+                      ragSelectedChunkSize === opt.value
+                        ? "border-primary/50 bg-primary/5 text-foreground"
+                        : "border-border hover:bg-muted/40 text-muted-foreground"
+                    )}
+                  >
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="text-xs opacity-70">{opt.sub}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Cost:{" "}
+                <span className="font-semibold text-foreground">
+                  {ragCost} credit{ragCost !== 1 ? "s" : ""}
+                </span>
+              </p>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={ragDontShowAgain}
+                  onChange={(e) => setRagDontShowAgain(e.target.checked)}
+                  className="accent-primary"
+                />
+                Don&apos;t show this again
+              </label>
+              {ragInsufficientCredits && (
+                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  Not enough credits. Purchase more to continue.
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setShowRagModal(false)}>Cancel</Button>
+                <Button onClick={handleRagFirstExport} disabled={ragExportLoading} className="gap-2">
+                  {ragExportLoading
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <Download className="h-4 w-4" />}
+                  Export for {ragCost} credit{ragCost !== 1 ? "s" : ""}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

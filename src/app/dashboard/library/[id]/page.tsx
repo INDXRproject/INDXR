@@ -31,12 +31,10 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
     redirect("/login");
   }
 
-  const { data: transcript, error } = await supabase
-    .from("transcripts")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
+  const [{ data: transcript, error }, { data: profileData }] = await Promise.all([
+    supabase.from("transcripts").select("*").eq("id", id).eq("user_id", user.id).single(),
+    supabase.from("profiles").select("rag_chunk_size").eq("id", user.id).single(),
+  ]);
 
   if (error || !transcript) {
     if (error) console.error("Error fetching transcript:", error);
@@ -127,6 +125,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           mode={activeTab as "original" | "edited"}
           processingMethod={transcript.processing_method}
           ragExports={transcript.rag_exports ?? []}
+          userChunkSize={profileData?.rag_chunk_size ?? 60}
+          duration={transcript.duration ?? undefined}
         />
       ) : (activeTab === "summary" || activeTab === "summary_edited") && transcript.ai_summary ? (
         <div className="pb-12 bg-background w-full relative z-10 w-full mt-2">

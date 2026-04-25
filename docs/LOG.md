@@ -1,3 +1,9 @@
+[2026-04-25] feat: RAG JSON export vanuit library dropdown — "RAG JSON ✦" opent altijd Dialog; State A (eerste export) met chunk selector, kredietkosten, "don't show again" + server action; State B (herexport) gratis clientside download; profiles.rag_chunk_size als default via parallel Supabase query in page.tsx | gewijzigd: src/components/library/TranscriptViewer.tsx, src/app/dashboard/library/[id]/page.tsx
+---
+[2026-04-25] fix: download bestandsnamen — alle exports gebruiken gesaniteerde video titel (max 30 chars) i.p.v. generiek "transcript"; RAG JSON bevat ook chunk preset (bijv. karpathy_rag_60s.json) | gewijzigd: src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx, src/components/library/RagExportView.tsx
+---
+[2026-04-25] fix: Whisper polling — fetch exceptions niet langer directe fout; ≤3 opeenvolgende network errors → hervatten na 5s, >3 → neutrale "still processing" banner met Library link (geen rode error state) | gewijzigd: src/components/free-tool/VideoTab.tsx
+---
 [2026-04-25] feat: "RAG JSON ✦" in library export dropdown — gratis herexport met laatste chunk_size als rag_exports aanwezig; grayed-out met Radix tooltip als nog niet geëxporteerd | gewijzigd: src/components/library/TranscriptViewer.tsx, src/app/dashboard/library/[id]/page.tsx
 ---
 [2026-04-25] feat: RAG export history + Developer tab in library — rag_exports schrijven bij credit deductie, buildRagJson() utility, "Developer ✦" tabblad met history tabel + gratis herexport, "RAG ✦" badge in transcript-lijst, transcriptId doorgegeven via VideoTab | gewijzigd: src/utils/formatTranscript.ts, src/app/actions/rag-export.ts, src/components/TranscriptCard.tsx, src/components/free-tool/VideoTab.tsx, src/components/library/TranscriptList.tsx, src/app/dashboard/library/[id]/page.tsx, src/components/library/RagExportView.tsx, docs/wiki/decisions/015-rag-json-export.md
@@ -1160,4 +1166,10 @@ src/components/free-tool/VideoTab.tsx
 src/components/library/RagExportView.tsx
 src/components/library/TranscriptList.tsx
 src/utils/formatTranscript.ts
+---
+[2026-04-25 05:03] commit: feat: RAG JSON in library export dropdown + Developer tab + polling error fix
+Changed: docs/LOG.md
+docs/wiki/decisions/015-rag-json-export.md
+src/app/dashboard/library/[id]/page.tsx
+src/components/library/TranscriptViewer.tsx
 ---
