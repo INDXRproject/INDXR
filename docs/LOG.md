@@ -1,3 +1,7 @@
+[2026-04-25] fix: library pagina force-dynamic — export const dynamic = 'force-dynamic' toegevoegd zodat rag_exports altijd vers zijn bij navigatie | gewijzigd: src/app/dashboard/library/[id]/page.tsx
+---
+[2026-04-25] fix: handleRagFirstExport UI-flits — setShowRagModal(false) vóór setLocalRagExports; refreshCredits fire-and-forget (geen await) | gewijzigd: src/components/library/TranscriptViewer.tsx
+---
 [2026-04-25] feat: channel + language opslaan in transcripts — AssemblyAI: extract_youtube_audio channel + lingua detector taal → INSERT; captions: channel/language via TranscriptMetadata → VideoTab → transcribe/page.tsx INSERT | gewijzigd: backend/main.py, src/types/transcript.ts, src/components/free-tool/VideoTab.tsx, src/app/dashboard/transcribe/page.tsx
 ---
 [2026-04-25] feat: revalidatePath na RAG export — deductRagExportCreditsAction roept revalidatePath(/dashboard/library/{id}) aan na succesvolle rag_exports write | gewijzigd: src/app/actions/rag-export.ts
@@ -1209,4 +1213,14 @@ src/components/library/TranscriptViewer.tsx
 Changed: backend/main.py
 docs/LOG.md
 docs/wiki/decisions/015-rag-json-export.md
+---
+[2026-04-25 20:47] commit: fix: revalidatePath na RAG export + channel/language opslaan in transcripts (AssemblyAI + captions)
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/decisions/015-rag-json-export.md
+src/app/actions/rag-export.ts
+src/app/dashboard/transcribe/page.tsx
+src/components/free-tool/VideoTab.tsx
+src/types/transcript.ts
 ---

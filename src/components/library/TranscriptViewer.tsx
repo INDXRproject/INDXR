@@ -561,12 +561,12 @@ export function TranscriptViewer({
       return;
     }
     triggerRagFileDownload(ragSelectedChunkSize);
+    setShowRagModal(false);
     setLocalRagExports(prev => [
       ...prev,
       { chunk_size: ragSelectedChunkSize, exported_at: new Date().toISOString(), credits_spent: result.cost },
     ]);
-    await refreshCredits();
-    setShowRagModal(false);
+    refreshCredits();
   };
 
   const handleRagReexport = () => {
