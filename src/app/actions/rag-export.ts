@@ -23,6 +23,7 @@ export async function deductRagExportCreditsAction(
   durationSeconds: number,
   transcriptId?: string,
   chunkSize?: number,
+  videoId?: string,
 ): Promise<{ success: true; cost: number; newBalance: number } | { success: false; error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -42,11 +43,25 @@ export async function deductRagExportCreditsAction(
   const result = data as { success: boolean; new_balance: number; error?: string }
   if (!result.success) return { success: false, error: result.error ?? 'Insufficient credits' }
 
-  if (transcriptId) {
+  let resolvedTranscriptId = transcriptId
+  if (!resolvedTranscriptId && videoId) {
+    const { data: transcriptRow } = await supabase
+      .from('transcripts')
+      .select('id')
+      .eq('video_id', videoId)
+      .eq('user_id', user.id)
+      .eq('processing_method', 'assemblyai')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    resolvedTranscriptId = transcriptRow?.id
+  }
+
+  if (resolvedTranscriptId) {
     const { data: row } = await supabase
       .from('transcripts')
       .select('rag_exports')
-      .eq('id', transcriptId)
+      .eq('id', resolvedTranscriptId)
       .eq('user_id', user.id)
       .single()
 
@@ -59,10 +74,10 @@ export async function deductRagExportCreditsAction(
           { chunk_size: chunkSize ?? 60, exported_at: new Date().toISOString(), credits_spent: cost },
         ],
       })
-      .eq('id', transcriptId)
+      .eq('id', resolvedTranscriptId)
       .eq('user_id', user.id)
 
-    revalidatePath(`/dashboard/library/${transcriptId}`)
+    revalidatePath(`/dashboard/library/${resolvedTranscriptId}`)
   }
 
   return { success: true, cost, newBalance: result.new_balance }

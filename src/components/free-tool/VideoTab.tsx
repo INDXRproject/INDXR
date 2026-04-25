@@ -1244,6 +1244,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             )
           )}
 
+          {(() => { console.log('[RENDER DEBUG] existingTranscriptId:', existingTranscriptId, 'ref:', existingTranscriptIdRef.current); return null; })()}
           <TranscriptCard
                     transcript={transcript}
                     videoTitle={videoTitle}
