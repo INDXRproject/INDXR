@@ -157,6 +157,8 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 
 **`processing_method` waarde:** backend slaat `'assemblyai'` op (niet `'whisper_ai'`). `VideoTab.tsx` gebruikt `'assemblyai'` bij DB lookups voor `existingTranscriptId` — cruciaal voor `rag_exports` write en `revalidatePath` correctheid.
 
+**Cache invalidatie na export:** `revalidatePath(\`/dashboard/library/${transcriptId}\`)` in `deductRagExportCreditsAction` — Next.js-gedocumenteerde methode voor cache-invalidatie vanuit een Server Action. Zorgt dat de library pagina verse data laadt na navigatie.
+
 **Niet-Engelse content:** YouTube auto-captions geven altijd Engelse vertaling terug ongeacht de video-taal — YouTube CDN beperking, niet fixbaar. Voor niet-Engelse content is AssemblyAI transcriptie de enige betrouwbare route.
 
 ---

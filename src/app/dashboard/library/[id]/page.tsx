@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic';
-
 import { createClient } from "@/utils/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";

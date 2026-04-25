@@ -1,3 +1,5 @@
+[2026-04-25] fix: refresh() verwijderd uit rag-export.ts — revalidatePath alleen is de correcte Next.js aanpak; refresh import + aanroep verwijderd | gewijzigd: src/app/actions/rag-export.ts
+---
 [2026-04-25] fix: processing_method mismatch VideoTab — 'whisper_ai' → 'assemblyai' op 4 plaatsen; existingTranscriptId vond nooit AssemblyAI rij waardoor rag_exports nooit werd geschreven | gewijzigd: src/components/free-tool/VideoTab.tsx
 ---
 [2026-04-25] fix: channel + language in RAG JSON export library — TranscriptViewer accepteert nu language prop; page.tsx geeft channel + language door; buildRagJson bevat nu channel/language voor library-pad | gewijzigd: src/components/library/TranscriptViewer.tsx, src/app/dashboard/library/[id]/page.tsx, backend/audio_utils.py (uploader-or-channel fallback)
@@ -1234,3 +1236,11 @@ src/app/dashboard/library/[id]/page.tsx
 src/components/library/TranscriptViewer.tsx
 ---
 [2026-04-25 21:34] precompact: context compaction triggered
+[2026-04-25 21:39] commit: fix: processing_method mismatch whisper_ai→assemblyai + channel/language in library RAG export
+Changed: backend/audio_utils.py
+docs/LOG.md
+docs/wiki/decisions/015-rag-json-export.md
+src/app/dashboard/library/[id]/page.tsx
+src/components/free-tool/VideoTab.tsx
+src/components/library/TranscriptViewer.tsx
+---
