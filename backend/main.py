@@ -777,8 +777,6 @@ async def run_whisper_job(
     try:
         audio_path: Optional[str] = None
         video_title = title or video_id or 'Untitled'  # default; overridden by yt-dlp for youtube path
-        channel: Optional[str] = None
-        language: Optional[str] = None
 
         # --- Step 1: Get audio ---
         if source_type == "youtube":
@@ -790,7 +788,7 @@ async def run_whisper_job(
                     logger.info(f"[job {job_id}] Proxy ENABLED for video {video_id}")
                 else:
                     logger.warning(f"[job {job_id}] Proxy DISABLED — PROXY_ENABLED={PROXY_ENABLED}")
-                audio_path, video_title, channel = await asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url)
+                audio_path, video_title, _ = await asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url)
                 temp_files.append(audio_path)
             except MembersOnlyVideoError:
                 await update_job(status="error", error_message="members_only")
@@ -946,30 +944,18 @@ async def run_whisper_job(
             'credits_used': credit_cost
         })
 
-        # Detect language from transcript text using lingua
-        sample_text = ' '.join(item['text'] for item in transcript[:20])
-        if sample_text.strip():
-            detected_lang = _lingua_detector.detect_language_of(sample_text)
-            if detected_lang:
-                language = detected_lang.iso_code_639_1.name.lower()
-
         character_count = sum(len(item.get('text', '')) for item in transcript)
         video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
-        insert_data: dict = {
-            'user_id': user_id,
-            'video_id': video_id,
-            'title': video_title,
-            'transcript': transcript,
-            'duration': int(duration),
-            'processing_method': 'assemblyai',
-            'character_count': character_count,
-        }
-        if channel:
-            insert_data['channel_title'] = channel
-        if language:
-            insert_data['language'] = language
         transcript_insert = await asyncio.to_thread(
-            lambda: supabase.table('transcripts').insert(insert_data).execute()
+            lambda: supabase.table('transcripts').insert({
+                'user_id': user_id,
+                'video_id': video_id,
+                'title': video_title,
+                'transcript': transcript,
+                'duration': int(duration),
+                'processing_method': 'assemblyai',
+                'character_count': character_count,
+            }).execute()
         )
         transcript_id = transcript_insert.data[0]['id']
 

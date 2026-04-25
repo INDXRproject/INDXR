@@ -1,3 +1,5 @@
+[2026-04-25] fix: AssemblyAI INSERT — channel_title en language verwijderd; kolommen bestaan niet in transcripts tabel; extract_youtube_audio retourneert nog steeds 3-tuple maar channel wordt genegeerd | gewijzigd: backend/main.py
+---
 [2026-04-25] refactor: chunk selector in TranscriptCard RAG modal — ragSelectedChunkSize state (init op profile.rag_chunk_size), 4-knops grid selector vervangt read-only label + settings-link, alreadyConfirmed shortcut verwijderd (modal altijd tonen) | gewijzigd: src/components/TranscriptCard.tsx
 ---
 [2026-04-25] refactor: "Don't show again" verwijderd uit TranscriptCard en TranscriptViewer RAG modals — confirmExport altijd true, ragModalDontShowAgain/ragDontShowAgain state + checkbox verwijderd | gewijzigd: src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx
@@ -1187,3 +1189,15 @@ src/app/dashboard/library/[id]/page.tsx
 src/components/library/TranscriptViewer.tsx
 ---
 [2026-04-25 19:24] precompact: context compaction triggered
+[2026-04-25 19:34] commit: feat: RAG modal chunk selector + remove don't-show-again + channel/language fix in AssemblyAI
+Changed: backend/audio_utils.py
+backend/main.py
+docs/LOG.md
+docs/wiki/decisions/015-rag-json-export.md
+src/app/actions/rag-export.ts
+src/components/TranscriptCard.tsx
+src/components/dashboard/settings/DeveloperExportsCard.tsx
+src/components/free-tool/VideoTab.tsx
+src/components/library/RagExportView.tsx
+src/components/library/TranscriptViewer.tsx
+---

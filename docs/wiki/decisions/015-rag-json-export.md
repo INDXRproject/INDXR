@@ -213,7 +213,7 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 - [x] `buildRagJson()` utility in `formatTranscript.ts` — gedeeld tussen TranscriptCard en RagExportView
 - [x] "RAG JSON ✦" in library export dropdown (`TranscriptViewer`) — opent altijd Dialog; State A (eerste export) met chunk selector + kredietkosten; State B (herexport) gratis clientside download
 - [x] Chunk selector in TranscriptCard modal — 4-knops grid, init op `profiles.rag_chunk_size`; vervangt read-only label + settings-link
-- [x] AssemblyAI transcripties slaan nu ook `channel_title` en `language` op — channel via `extract_youtube_audio` (yt-dlp uploader), taal via lingua detector op transcript tekst
+- [ ] AssemblyAI transcripties: `channel` en `language` worden **niet** opgeslagen in `transcripts` — kolommen bestaan niet in de tabel; `extract_youtube_audio` haalt channel wel op maar het wordt genegeerd
 
 **Chunk size scoping:** `profiles.rag_chunk_size` (Settings → Developer Exports) is de *default* voor de eerste export vanuit de transcribe-pagina (TranscriptCard) en de library dialog. De gebruiker kan per export een andere preset kiezen.
 
