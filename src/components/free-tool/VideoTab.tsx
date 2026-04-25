@@ -568,6 +568,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
 
     if (metadata.transcriptId) setExistingTranscriptId(metadata.transcriptId)
+    console.log('[RAG DEBUG] existingTranscriptId set to:', metadata.transcriptId)
 
     setSaveStatus('saved')
 

@@ -348,6 +348,7 @@ export function TranscriptCard({
   };
 
   const executeRagExport = async () => {
+    console.log('[RAG DEBUG] transcriptId prop:', transcriptId)
     setRagExportLoading(true);
     const result = await deductRagExportCreditsAction(derivedDuration, transcriptId, ragSelectedChunkSize);
     setRagExportLoading(false);
