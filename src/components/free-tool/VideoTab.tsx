@@ -212,6 +212,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   }, [isReextracting]);
 
   const [existingTranscriptId, setExistingTranscriptId] = useState<string | null>(null)
+  const existingTranscriptIdRef = useRef<string | null>(null)
   const [existingTranscriptMethod, setExistingTranscriptMethod] = useState<string | null>(null)
   const [showDuplicateChoices, setShowDuplicateChoices] = useState(false)
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false)
@@ -226,6 +227,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     const timer = setTimeout(async () => {
       if (!url) {
         setExistingTranscriptId(null);
+        existingTranscriptIdRef.current = null;
         setExistingTranscriptMethod(null);
         setShowDuplicateChoices(false);
         setIsCheckingDuplicate(false);
@@ -247,6 +249,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         const recent = lastSuccessTimestampRef.current
         if (recent && recent.videoId === videoId && Date.now() - recent.time < 10000) {
           setExistingTranscriptId(null)
+          existingTranscriptIdRef.current = null
           setExistingTranscriptMethod(null)
           setShowDuplicateChoices(false)
           setIsCheckingDuplicate(false)
@@ -270,6 +273,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             .limit(1)
             .maybeSingle();
           setExistingTranscriptId(data?.id ?? null);
+          existingTranscriptIdRef.current = data?.id ?? null;
           setExistingTranscriptMethod(method);
           setShowDuplicateChoices(false);
           setIsCheckingDuplicate(false);
@@ -287,6 +291,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
         if (captionsRow) {
           setExistingTranscriptId(captionsRow.id);
+          existingTranscriptIdRef.current = captionsRow.id;
           setExistingTranscriptMethod('youtube_captions');
           setShowDuplicateChoices(false);
           setIsCheckingDuplicate(false);
@@ -303,6 +308,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           .maybeSingle();
 
         setExistingTranscriptId(whisperRow?.id ?? null);
+        existingTranscriptIdRef.current = whisperRow?.id ?? null;
         setExistingTranscriptMethod(whisperRow ? 'assemblyai' : null);
         setShowDuplicateChoices(false);
       }
@@ -518,7 +524,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                .order('created_at', { ascending: false })
                .limit(1)
                .maybeSingle();
-             if (saved) setExistingTranscriptId(saved.id);
+             if (saved) { setExistingTranscriptId(saved.id); existingTranscriptIdRef.current = saved.id; }
            }
         }
 
@@ -567,8 +573,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     // Just refresh the sidebar and fetch the saved row ID for UI state.
     window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
 
-    if (metadata.transcriptId) setExistingTranscriptId(metadata.transcriptId)
-    console.log('[RAG DEBUG] existingTranscriptId set to:', metadata.transcriptId)
+    if (metadata.transcriptId) { setExistingTranscriptId(metadata.transcriptId); existingTranscriptIdRef.current = metadata.transcriptId; }
 
     setSaveStatus('saved')
 
@@ -693,8 +698,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         // Just refresh the sidebar and fetch the saved row ID for UI state.
         window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
 
-        if (event.transcript_id) setExistingTranscriptId(event.transcript_id)
-        console.log('[RAG DEBUG PAD B] existingTranscriptId set to:', event.transcript_id)
+        if (event.transcript_id) { setExistingTranscriptId(event.transcript_id); existingTranscriptIdRef.current = event.transcript_id; }
 
         setSaveStatus('saved')
         refreshCredits()
@@ -1252,7 +1256,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     language={videoLanguage ?? undefined}
                     publishedAt={videoPublishedAt ?? undefined}
                     languageDetected={languageDetected ?? undefined}
-                    transcriptId={existingTranscriptId ?? undefined}
+                    transcriptId={existingTranscriptId ?? existingTranscriptIdRef.current ?? undefined}
                   />
         </div>
       ) : !loading && !transcript && (

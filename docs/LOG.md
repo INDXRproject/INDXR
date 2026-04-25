@@ -1,3 +1,5 @@
+[2026-04-25] fix: existingTranscriptId ref-guard — existingTranscriptIdRef.current gespiegeld naast state op alle 7 setExistingTranscriptId call sites; TranscriptCard transcriptId prop leest state ?? ref zodat RAG export altijd correcte id krijgt vóór render | gewijzigd: src/components/free-tool/VideoTab.tsx, src/components/TranscriptCard.tsx
+---
 [2026-04-25] fix: transcript_id race condition — WhisperCompleteEvent + pollWhisperJob geven transcript_id terug; handleWhisperSuccess gebruikt transcript_id direct; Pad B gebruikt event.transcript_id; setExistingTranscriptMethod 'whisper_ai'→'assemblyai' op Pad B | gewijzigd: src/components/free-tool/VideoTab.tsx
 ---
 [2026-04-25] refactor: rag-export.ts dode code verwijderd — confirmExport param + rag_export_confirmed UPDATE verwijderd; downloadRagJsonFromLibraryAction verwijderd (geen importers); call sites bijgewerkt | gewijzigd: src/app/actions/rag-export.ts, src/components/TranscriptCard.tsx, src/components/library/TranscriptViewer.tsx
@@ -1252,4 +1254,19 @@ src/components/library/TranscriptViewer.tsx
 Changed: docs/LOG.md
 docs/wiki/decisions/015-rag-json-export.md
 src/app/dashboard/library/[id]/page.tsx
+---
+[2026-04-25 22:39] commit: fix: transcript_id race condition + dode code opruimen
+Changed: docs/LOG.md
+docs/wiki/decisions/015-rag-json-export.md
+src/app/actions/rag-export.ts
+src/components/TranscriptCard.tsx
+src/components/free-tool/VideoTab.tsx
+src/components/library/TranscriptViewer.tsx
+---
+[2026-04-25 23:14] commit: debug: RAG transcriptId logging
+Changed: src/components/TranscriptCard.tsx
+src/components/free-tool/VideoTab.tsx
+---
+[2026-04-25 23:28] commit: debug: PAD B transcriptId logging
+Changed: src/components/free-tool/VideoTab.tsx
 ---
