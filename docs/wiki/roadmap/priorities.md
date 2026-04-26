@@ -32,9 +32,10 @@ Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Sm
     Sentry.setUser() gezet via useEffect; dialog via createForm() → appendToDom() → open().
     Geverifieerd: test-report binnengekomen in Sentry Inbox.
 
-- [~] **1.3 — Smart polling backoff** — wacht op verificatie door Khidr
+- [x] **1.3 — Smart polling backoff** ✅ 2026-04-27
     `getPollingInterval()` in `src/lib/pollingBackoff.ts`: 1s (0–30s) → 5s (30–300s) → 15s (300s+).
     VideoTab + AudioTab: elapsed-based interval in for-loop. PlaylistTab: setInterval → recursive setTimeout.
+    Geverifieerd op 8-min AssemblyAI job — polls bouwden op van ~1s naar ~5s.
 
 - [ ] **1.4 — Caption cache in Redis** (4u)
     Doel: 30–60% reductie in yt-dlp calls voor herhaalde video's, bescherming tegen bot-detection, kostenbesparing op AssemblyAI.

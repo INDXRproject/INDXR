@@ -1,3 +1,5 @@
+[2026-04-27] docs: taak 1.3 smart polling backoff [x] done — geverifieerd op 8-min AssemblyAI job | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LOG.md
+---
 [2026-04-27] feat: smart polling backoff geïmplementeerd (taak 1.3) — getPollingInterval() in src/lib/pollingBackoff.ts (1s/5s/15s op 0-30s/30-300s/300s+); VideoTab pollWhisperJob + AudioTab runPollLoop op elapsed-based interval; PlaylistTab setInterval→recursive setTimeout | gewijzigd: src/lib/pollingBackoff.ts, src/components/free-tool/VideoTab.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx
 ---
 [2026-04-27] docs: taak 1.2 Sentry User Feedback gemarkeerd als [x] done — geverifieerd door Khidr | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LOG.md
@@ -1404,4 +1406,19 @@ src/app/api/sentry-test/route.ts
 src/app/dashboard/account/page.tsx
 src/app/sentry-test/page.tsx
 src/components/dashboard/settings/SentryFeedbackCard.tsx
+---
+[2026-04-27 00:34] commit: feat(polling): smart backoff — 1s→5s→15s op elapsed tijd (taak 1.3)
+
+- getPollingInterval(elapsedSeconds) in src/lib/pollingBackoff.ts
+- VideoTab pollWhisperJob: verwijdert vaste POLL_INTERVAL_MS, gebruikt elapsed-based interval
+- AudioTab runPollLoop: zelfde aanpak
+- PlaylistTab: setInterval vervangen door recursive setTimeout met backoff
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/roadmap/priorities.md
+src/components/free-tool/AudioTab.tsx
+src/components/free-tool/PlaylistTab.tsx
+src/components/free-tool/VideoTab.tsx
+src/lib/pollingBackoff.ts
 ---
