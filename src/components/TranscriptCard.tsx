@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { decodeEntities, createParagraphMode, buildRagJson, generateSrt, generateVtt } from "@/utils/formatTranscript";
+import { decodeEntities, createParagraphMode, buildRagJson, generateSrt, generateVtt, generateCsv, generateMarkdown, generateTxt } from "@/utils/formatTranscript";
 import { deductRagExportCreditsAction } from "@/app/actions/rag-export";
 import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
@@ -66,7 +66,6 @@ const RAG_CHUNK_LABELS: Record<number, { label: string; sub: string }> = {
 export function TranscriptCard({
   transcript,
   videoTitle = "YouTube Video",
-  videoUrl = "",
   showSignupCard = false,
   videoId,
   durationSeconds,
@@ -97,41 +96,8 @@ export function TranscriptCard({
     (profile?.rag_chunk_size ?? 60) as 30 | 60 | 90 | 120
   );
 
-  // Helper: Format timestamp for SRT (HH:MM:SS,mmm)
-  const formatSrtTimestamp = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 1000);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${ms.toString().padStart(3, '0')}`;
-  };
-
-  // Helper: Format timestamp for VTT (HH:MM:SS.mmm)
-  const formatVttTimestamp = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 1000);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
-  };
-
-  // Helper: Format HH:MM:SS (for Markdown headings)
-  const formatHHMMSS = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const fullTextWithTimestamps = transcript
-    .map((t) => {
-      const timestamp = new Date(t.offset * 1000).toISOString().substr(11, 8);
-      return `${timestamp}  ${decodeEntities(t.text)}`;
-    })
-    .join("\n");
-
   const copyToClipboard = () => {
-    const textToCopy = showTimestamps ? fullTextWithTimestamps : createParagraphMode(transcript);
+    const textToCopy = showTimestamps ? generateTxt(transcript, true) : createParagraphMode(transcript);
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -166,87 +132,27 @@ export function TranscriptCard({
 
   const downloadTxtWithTimestamps = () => {
     posthog.capture('export_clicked', { format: 'txt-timestamps' });
-    downloadFile(fullTextWithTimestamps, `${safeTitle()}_timestamps.txt`, "text/plain");
+    downloadFile(generateTxt(transcript, true), `${safeTitle()}_timestamps.txt`, "text/plain");
   };
 
-  const buildYamlFrontmatter = (): string => {
-    const lines: string[] = ['---'];
-    lines.push(`title: "${(videoTitle || 'YouTube Video').replace(/"/g, '\\"')}"`);
-    if (videoId)        lines.push(`url: "https://www.youtube.com/watch?v=${videoId}"`);
-    if (channel)        lines.push(`channel: "${channel.replace(/"/g, '\\"')}"`);
-    if (publishedAt)    lines.push(`published: "${publishedAt}"`);
-    if (typeof durationSeconds === 'number') lines.push(`duration: ${durationSeconds}`);
-    if (language)       lines.push(`language: "${language}"`);
-    if (extractionMethod) {
-      const src = (extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai')
-        ? 'AI Transcription (AssemblyAI)'
-        : 'Auto-captions (YouTube)';
-      lines.push(`transcript_source: "${src}"`);
-    }
-    lines.push(`created: "${new Date().toISOString().slice(0, 10)}"`);
-    lines.push('type: youtube');
-    lines.push('tags: [youtube, transcript]');
-    lines.push('---');
-    return lines.join('\n');
-  };
+  const mdContext = { videoId, channel, language, publishedAt, durationSeconds, extractionMethod, includeYamlFrontmatter: true as const };
 
   const downloadMarkdown = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'md' });
-    const title = videoTitle || "YouTube Video";
-    const paragraphs: string[] = [];
-    let current = '';
-    for (let i = 0; i < transcript.length; i++) {
-      const item = transcript[i];
-      const prev = transcript[i - 1];
-      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
-      if (gap > 5 && current) {
-        paragraphs.push(current.trim());
-        current = decodeEntities(item.text);
-      } else {
-        const text = decodeEntities(item.text);
-        current = current ? `${current} ${text}` : text;
-      }
-    }
-    if (current) paragraphs.push(current.trim());
-    const content = `${buildYamlFrontmatter()}\n\n# ${title}\n\n${paragraphs.join('\n\n')}`;
-    downloadFile(content, `${safeTitle()}.md`, "text/markdown");
+    downloadFile(
+      generateMarkdown(transcript, videoTitle || "YouTube Video", false, mdContext),
+      `${safeTitle()}.md`, "text/markdown"
+    );
   };
 
   const downloadMarkdownWithTimestamps = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'md-timestamps' });
-    const title = videoTitle || "YouTube Video";
-    const sections: string[] = [];
-    let currentText = '';
-    let currentOffset = 0;
-    for (let i = 0; i < transcript.length; i++) {
-      const item = transcript[i];
-      const prev = transcript[i - 1];
-      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
-      if (gap > 5 && currentText) {
-        const ts = formatHHMMSS(currentOffset);
-        const heading = videoId
-          ? `## [${ts}](https://youtu.be/${videoId}?t=${Math.floor(currentOffset)})`
-          : `## [${ts}]`;
-        sections.push(`${heading}\n${currentText.trim()}`);
-        currentText = decodeEntities(item.text);
-        currentOffset = item.offset;
-      } else {
-        const text = decodeEntities(item.text);
-        if (!currentText) currentOffset = item.offset;
-        currentText = currentText ? `${currentText} ${text}` : text;
-      }
-    }
-    if (currentText) {
-      const ts = formatHHMMSS(currentOffset);
-      const heading = videoId
-        ? `## [${ts}](https://youtu.be/${videoId}?t=${Math.floor(currentOffset)})`
-        : `## [${ts}]`;
-      sections.push(`${heading}\n${currentText.trim()}`);
-    }
-    const content = `${buildYamlFrontmatter()}\n\n# ${title}\n\n${sections.join('\n\n')}`;
-    downloadFile(content, `${safeTitle()}_timestamps.md`, "text/markdown");
+    downloadFile(
+      generateMarkdown(transcript, videoTitle || "YouTube Video", true, mdContext),
+      `${safeTitle()}_timestamps.md`, "text/markdown"
+    );
   };
 
   const downloadJson = () => {
@@ -282,38 +188,10 @@ export function TranscriptCard({
   const downloadCsv = () => {
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'csv' });
-
-    const BOM = '﻿';
-
-    const metaLines: string[] = [];
-    if (videoTitle)         metaLines.push(`# title: ${videoTitle}`);
-    if (videoId)            metaLines.push(`# url: https://www.youtube.com/watch?v=${videoId}`);
-    if (channel)            metaLines.push(`# channel: ${channel}`);
-    if (publishedAt)        metaLines.push(`# published: ${publishedAt}`);
-    if (typeof durationSeconds === 'number') metaLines.push(`# duration_seconds: ${durationSeconds}`);
-    if (language)           metaLines.push(`# language: ${language}`);
-    if (extractionMethod) {
-      const src = (extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai')
-        ? 'AI Transcription (AssemblyAI)'
-        : 'Auto-captions (YouTube)';
-      metaLines.push(`# transcript_source: ${src}`);
-    }
-    metaLines.push(`# extracted: ${new Date().toISOString().slice(0, 10)}`);
-    const metadataRows = metaLines.length > 0 ? metaLines.join('\n') + '\n' : '';
-
-    const header = 'segment_index,start_time,end_time,duration,word_count,text\n';
-
-    const rows = transcript.map((t, i) => {
-      const text = decodeEntities(t.text);
-      const endTime = i < transcript.length - 1
-        ? transcript[i + 1].offset
-        : t.offset + t.duration;
-      const wordCount = text.split(/\s+/).filter(Boolean).length;
-      const escapedText = `"${text.replace(/"/g, '""')}"`;
-      return `${i},${t.offset},${endTime},${t.duration},${wordCount},${escapedText}`;
-    }).join('\n');
-
-    downloadFile(BOM + metadataRows + header + rows, `${safeTitle()}.csv`, 'text/csv;charset=utf-8');
+    downloadFile(
+      generateCsv(transcript, { title: videoTitle, videoId, channel, publishedAt, durationSeconds, language, extractionMethod }),
+      `${safeTitle()}.csv`, 'text/csv;charset=utf-8'
+    );
   };
 
   const downloadSrt = () => {

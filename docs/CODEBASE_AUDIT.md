@@ -1,3 +1,7 @@
+> ⚠️ VEROUDERD — Vervangen door [docs/AUDIT_REPORT_2026-04-26.md](AUDIT_REPORT_2026-04-26.md)
+> Gegenereerd op 2026-04-14, vóór de RAG JSON, channel/language,
+> en TranscriptCard refactors van april 2026.
+
 # Codebase Audit — INDXR.AI V2
 
 Gegenereerd: 2026-04-14. Gebaseerd op directe lezing van alle bronbestanden.

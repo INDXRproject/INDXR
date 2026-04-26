@@ -54,6 +54,13 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [015-rag-json-export.md](decisions/015-rag-json-export.md) | RAG-geoptimaliseerde JSON export (30s chunks + metadata) |
 | [016-opus-249-audio-format.md](decisions/016-opus-249-audio-format.md) | yt-dlp format selector: Opus 249 voor lagere proxy-kosten |
 | [017-proxy-provider-decodo.md](decisions/017-proxy-provider-decodo.md) | Overstap IPRoyal → Decodo zodra tegoed op is |
+| [018-export-consolidation.md](decisions/018-export-consolidation.md) | Export-logica: centraliseren in formatTranscript vs inline houden in TranscriptCard |
+| [019-arq-job-queue.md](decisions/019-arq-job-queue.md) | ARQ via Upstash Redis voor durable job queue |
+| [020-cloudflare-r2-storage.md](decisions/020-cloudflare-r2-storage.md) | Cloudflare R2 voor audio en transcript storage |
+| [021-master-transcripts-cache.md](decisions/021-master-transcripts-cache.md) | master_transcripts cache (metadata in Supabase, content in R2) |
+| [022-realtime-plus-polling-fallback.md](decisions/022-realtime-plus-polling-fallback.md) | Realtime + smart polling fallback (supersedet ADR-008) |
+| [023-observability-stack.md](decisions/023-observability-stack.md) | Sentry + PostHog + BetterStack + Crisp + Axiom observability stack |
+| [024-anti-abuse-welcome-credits.md](decisions/024-anti-abuse-welcome-credits.md) | Vier-laagse anti-abuse op welcome credits |
 
 ---
 

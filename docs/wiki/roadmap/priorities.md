@@ -1,115 +1,213 @@
-# Launch Priorities
+# Launch Priorities (Plan van Aanpak)
 
-Bijgewerkt: 2026-04-15. Zie ook `operations/known-issues.md` voor de volledige pre-launch checklist.
+Bijgewerkt: 2026-04-26. Single source of truth voor pre-launch volgorde, na strategische sessie met Claude Desktop.
 
----
+Deze lijst is het Plan van Aanpak (PVA) tot launch. Volgorde is geoptimaliseerd voor solo-developer, met afhankelijkheden in acht genomen. Status-markers per item: `[ ]` todo, `[~]` in progress, `[x]` done, `[!]` blocked.
 
-## BLOCKERS — handmatig door user
-
-Dingen die niet in code zitten maar in externe dashboards gedaan moeten worden. Zonder deze punten kan de app niet live.
-
-**Stripe activeren en inrichten**
-Stripe-account activeren met KVK en bedrijfsgegevens. Daarna in live mode 5 producten aanmaken (Try €2.49/200cr, Basic €5.99/500cr, Plus €11.99/1100cr, Pro €24.99/2600cr, Power €49.99/5500cr). Webhook endpoint registreren op `https://indxr.ai/api/stripe/webhook` en de `STRIPE_WEBHOOK_SECRET` toevoegen aan Vercel. Zonder dit werken betalingen niet.
-
-**Supabase email verificatie aanzetten**
-Uitgeschakeld tijdens development. In Supabase Dashboard → Auth → Email Templates → email confirmation inschakelen. Zonder dit kunnen gebruikers accounts aanmaken met andermans e-mailadres.
-
-**Upstash Redis instellen in Vercel**
-`UPSTASH_REDIS_REST_URL` en `UPSTASH_REDIS_REST_TOKEN` toevoegen aan Vercel environment variables. Pas dan activeert rate limiting voor anonieme gebruikers (10 extracties per dag). Nu valt de app terug op een no-op limiter — iedereen kan onbeperkt extracteren zonder account.
-
-**Supabase database backups configureren**
-Nog niet ingesteld. Bij dataverlies geen hersteloptie. Supabase Dashboard → Database → Backups.
-
-**LOG_LEVEL=WARNING instellen in Railway**
-Staat nu op `INFO`. Dat betekent dat elke request en elke poll-cyclus gelogd wordt in productie — Railway logs worden onleesbaar en storage loopt vol. Zetten op `WARNING` zodat alleen echte fouten verschijnen.
+Voor de strategische "waarom" achter de architectuur-keuzes in Fase 1, zie ADR-019 t/m ADR-024.
 
 ---
 
-## BLOCKERS — code
+## Fase 1 — Pre-launch blockers
 
-Technische blokkades die in de code opgelost moeten worden vóór launch.
+Geschatte totale doorlooptijd: 13–17 werkdagen.
 
-**`has_ever_purchased` implementeren in Stripe webhook**
-Nu krijgen gebruikers die ooit credits hebben gekocht geen permanente premium rate-limit bypass als hun saldo op 0 staat. De webhook (`/api/stripe/webhook`) moet bij een succesvolle betaling `has_ever_purchased = true` opslaan in de `profiles` tabel. Vervolgens moet de `isPaidUser` boolean in `AuthContext` dit uitlezen. Zonder dit verliezen betalende klanten hun voordelen zodra ze door hun credits heen zijn — slechte klantervaring.
+### Zachte landing — geïsoleerde quick wins (eerst)
 
-~~**`BACKEND_API_SECRET` toevoegen aan Vercel**~~
-✓ Opgelost 2026-04-15 — geverifieerd: Railway geeft 401 zonder header, Next.js productie-route reageert correct.
+Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Smart polling, caption cache en User Feedback widget zijn los staand zonder onderlinge afhankelijkheden.
+
+- [x] **1.1 — Sentry frontend + backend** (2u) ✅ 2026-04-26
+    Doel: error tracking actief vóór alle andere Fase 1 werk.
+    Stack: `@sentry/nextjs` (frontend), `sentry-sdk[fastapi]` (backend), `tracesSampleRate: 0.1`, source map upload geconfigureerd.
+    Zie [ADR-023](../decisions/023-observability-stack.md).
+    **Geïnstalleerd:** `@sentry/nextjs@^10.50.0`, `sentry-sdk[fastapi]==2.58.0`
+    **Instrumentation:** `instrumentation.ts` + `instrumentation-client.ts` nieuw aangemaakt (geen bestaand bestand gevonden).
+    **Gotcha's:** Geen — Next.js 16.1.4 + @sentry/nextjs@10 zonder problemen.
+
+- [ ] **1.2 — Sentry User Feedback widget** (1u)
+    Doel: gebruikers kunnen bug-reports indienen direct vanuit de app, gekoppeld aan Sentry-context.
+    Plek: footer of account-settings, "Report a problem" knop.
+    Afhankelijk van: 1.1.
+
+- [ ] **1.3 — Smart polling backoff** (1u)
+    Doel: 5–10x reductie in polling-requests zonder UX-impact. Logica: 1s in eerste 30s → 5s tot 5 min → 15s daarna.
+    Locatie: bestaande polling-logic voor playlist en whisper jobs.
+    Belangrijk: dit blijft definitief onderdeel van de architectuur als fallback voor users achter firewalls die WebSockets blokkeren — niet tijdelijk.
+    Zie [ADR-022](../decisions/022-realtime-plus-polling-fallback.md).
+
+- [ ] **1.4 — Caption cache in Redis** (4u)
+    Doel: 30–60% reductie in yt-dlp calls voor herhaalde video's, bescherming tegen bot-detection, kostenbesparing op AssemblyAI.
+    Sleutel: `caption:{video_id}:{lang}`, TTL 30 dagen, op bestaande Upstash Redis.
+    PostHog-events: `cache_hit`, `cache_miss`.
+
+### Architectuur-fundament
+
+Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp cascade hangt aan queue (cascade-stappen worden queue-jobs). Graceful shutdown logisch ná queue. R2 logisch vóór master_transcripts (transcripts worden in R2 opgeslagen).
+
+- [ ] **1.5 — ARQ via Upstash Redis + per-video decompositie + idempotency keys** (3 dagen)
+    Doel: durable job queue die Railway container-restarts overleeft. 500-video playlist wordt 500 onafhankelijke jobs (één gefaalde video sloopt niet de hele batch).
+    Stack: ARQ als aparte Railway worker-service naast bestaande FastAPI API-service.
+    Idempotency: tabel `idempotency_keys` met TTL 24u op POST-endpoints.
+    Zie [ADR-019](../decisions/019-arq-job-queue.md).
+
+- [ ] **1.6 — yt-dlp fallback-cascade met bgutil PO token + alternatieve clients** (2–3 dagen)
+    Doel: stabiliteit tegen YouTube bot-detection updates. Cascade-volgorde:
+    1. youtube-transcript-api (caption-only, gratis)
+    2. yt-dlp `--write-subs` met `tv,ios` client (geen PO token nodig)
+    3. yt-dlp met PO token via bgutil-pot (web client)
+    4. yt-dlp audio download → AssemblyAI
+    5. Markeer `needs_manual_review`, ga door met playlist
+    Bestaande bgutil-pot Rust binary blijft (zie ADR-007); iOS PO token fallback wordt onderdeel van deze cascade.
+    Afhankelijk van: 1.5 (cascade-stappen worden queue-jobs).
+
+- [ ] **1.7 — Graceful shutdown handling (SIGTERM)** (1 dag)
+    Doel: in-flight jobs persisteren bij Railway restart in plaats van verdwijnen.
+    Implementatie: SIGTERM-handler die job-state naar Supabase persisteert, heartbeat checker die `interrupted` jobs oppakt, ARQ `ack_late=True`.
+    Afhankelijk van: 1.5.
+
+- [ ] **1.8 — Cloudflare R2 buckets opzetten** (1 dag)
+    Doel: audio-bestanden ontkoppelen van Railway (lagere egress, container-restart-safe, voorbereiding op latere VPS-migratie).
+    Buckets: `indxr-audio` (TTL 24u, auto-delete na transcriptie), `indxr-transcripts` (persistent).
+    Library: `boto3` (S3-compatible).
+    Zie [ADR-020](../decisions/020-cloudflare-r2-storage.md).
+
+- [ ] **1.9 — `master_transcripts` schema + write-logic** (1 dag)
+    Doel: cache-fundament. Elke nieuwe transcriptie vult de cache (alleen publieke YouTube-videos).
+    Tabel-velden: `video_id`, `language`, `transcription_model` (bv. `youtube_captions`, `assemblyai_universal_3`, `assemblyai_universal_4`), `r2_key` (verwijzing naar JSON in R2-bucket), `quality_score`, `duration_seconds`, `created_at`, `is_public`.
+    Write-only in deze fase (read-logic in 1.11).
+    Afhankelijk van: 1.8.
+    Zie [ADR-021](../decisions/021-master-transcripts-cache.md).
+
+### Realtime + cache activatie
+
+- [ ] **1.10 — Supabase Realtime als primaire methode + smart polling als fallback** (2–3 dagen)
+    Doel: instant UX-updates op job-state changes, met polling als robuuste fallback voor users achter firewalls.
+    Implementatie: Realtime-subscription op `playlist_extraction_jobs` en `transcription_jobs` tabellen, filter per job-id, auto-disconnect na 5 min idle. Bij WebSocket-failure: switch naar smart polling.
+    Afhankelijk van: 1.5 (queue moet stabiel zijn voor reliable state-updates), 1.7 (graceful shutdown), 1.3 (smart polling als fallback).
+    Zie [ADR-022](../decisions/022-realtime-plus-polling-fallback.md) (supersedet ADR-008).
+
+- [ ] **1.11 — `master_transcripts` cache read-logic** (1 dag)
+    Doel: cache-hits leveren bij herhaalde transcripties. Flow: bij nieuwe aanvraag → check cache op `(video_id, language, transcription_model)` → hit: kopieer naar `user_transcripts`, trek credits af, klaar → miss: normale flow, vul cache na succes.
+    Belangrijk: gebruikers betalen ALTIJD voor AI-transcriptie, ook bij cache-hit. Dit is bewuste keuze (zie ADR-021): de cache verlaagt onze kosten en versnelt de levering, niet de prijs voor de gebruiker.
+    Afhankelijk van: 1.9.
+
+### Launch-noodzaak
+
+- [ ] **1.12 — Anti-abuse op welcome credits** (1–2 dagen)
+    Doel: voorkom credit-farming bij launch.
+    Componenten: email-verificatie API (Kickbox of Clearout), Cloudflare Turnstile op signup, device fingerprint hash, disposable email blocklist (github.com/disposable/disposable). Welcome credits worden pas toegekend NA verificatie.
+    Zie [ADR-024](../decisions/024-anti-abuse-welcome-credits.md).
+
+- [ ] **1.13 — Stripe live-mode activatie + Radar config** (4u)
+    Doel: live betalingen + fraud-bescherming.
+    Componenten:
+    - Stripe account activeren met KVK/bedrijfsinfo
+    - 5 producten in live mode (Try €2.49/200cr, Basic €5.99/500cr, Plus €11.99/1100cr, Pro €24.99/2600cr, Power €49.99/5500cr)
+    - `PACKAGES` in `src/app/api/stripe/checkout/route.ts` synchroniseren met live-prijzen
+    - Webhook endpoint registreren op `https://indxr.ai/api/stripe/webhook`
+    - `STRIPE_WEBHOOK_SECRET` toevoegen aan Vercel
+    - Radar-rules: blok > 1 charge/IP/uur, request 3DS bij risk_score > 65, blok highest risk_level, eerste-charge cap
+    - `has_ever_purchased` implementeren in webhook → `profiles.has_ever_purchased = true`, `isPaidUser` boolean in `AuthContext` uitlezen.
+
+- [ ] **1.14 — BetterStack uptime + healthchecks.io heartbeats** (1u)
+    Doel: outage-detection en publieke status-page.
+    Monitors: frontend, backend health, DB connectivity, transcription worker.
+    Heartbeats: ARQ queue, Stripe webhook handler, daily backup.
+    Zie [ADR-023](../decisions/023-observability-stack.md).
+
+- [ ] **1.15 — Crisp chat widget** (2u)
+    Doel: support-channel voor troubleshooting en bug-reports (gescheiden van Sentry User Feedback dat voor errors is).
+    Embed in Next.js layout, custom fields voor authenticated users (credits, plan-tier, recent jobs).
+    Zie [ADR-023](../decisions/023-observability-stack.md).
+
+- [ ] **1.16 — Contact form voor suggesties/feedback** (3u)
+    Doel: simpel inkomstenkanaal voor feature requests zonder betaalde tools (Canny later evalueren als volume rechtvaardigt).
+    Implementatie: form op `/contact` of in account-settings, schrijft naar nieuwe Supabase-tabel `feedback_submissions`, email-notificatie naar Khidr.
+
+- [ ] **1.17 — Minimaal admin-dashboard met PostHog deeplinks gefixed** (1 dag)
+    Doel: launch-essentials voor user management. Volledige admin-dashboard volgt in Fase 2.
+    Componenten: user search + view, suspend/unsuspend, manual credits add/remove, laatste 50 transactions, recent failed jobs met Sentry deeplinks, **bestaande PostHog deeplinks per user fixen** (werken nu niet), processing times en error rates per tijdvenster (zie known-issues).
+
+- [ ] **1.18 — GDPR-basis** (1 dag)
+    Doel: EU-compliance voor launch.
+    Componenten: privacy policy met sub-processors lijst, ToS, cookie consent (PostHog cookieless mode of Klaro), data export API, data delete flow.
+    Templates: iubenda of GDPR.eu als basis.
+
+- [ ] **1.19 — Bekende UI-bugs en infrastructuur-fixes** (~2u)
+    - AssemblyAI completion message: charged credits weergeven (bekende UI-bug)
+    - VTT httpx timeout van 30s naar 60s
+    - `LOG_LEVEL=WARNING` instellen in Railway (nu `INFO` — logs lopen vol)
+    - Supabase database backups configureren in Supabase Dashboard
+    - Upstash Redis rate limiting activeren in `src/lib/ratelimit.ts` (nu no-op tijdens testfase)
+    - Supabase email-verificatie aanzetten (uitgeschakeld tijdens dev)
+
+- [ ] **1.20 — Lichte cosmetische polish over alle UI** (1–2 dagen)
+    Doel: launch-ready visuele kwaliteit zonder volledige redesign.
+    Scope: typografie consistent, spacing systematiseren, één primaire kleur duidelijk vastgelegd, geen toasts (regel was al), inline error/success states polishen.
+    GEEN volledige redesign — die komt in Fase 3 wanneer product-market-fit signalen er zijn.
+    Plek in volgorde: laatste van Fase 1 zodat alle UI-componenten al bestaan.
+
+### Pre-launch — buiten code (parallel uit te voeren)
+
+- [ ] Google Search Console: domein verifiëren, sitemap indienen
+- [ ] Google Analytics 4: opzetten naast PostHog (zie ADR-023 — alleen voor Google Ads attributie)
+- [ ] Google Ads account aanmaken + eerste campagne voorbereiden (US markt, longtail keywords rondom YouTube transcripts en AI/RAG)
+
+### Pre-launch — testen
+
+- [ ] **4+ uur video stress test** — Whisper-transcriptie op video > 4 uur. Test of Railway-restart-mitigatie (1.7) werkt zoals verwacht.
+- [ ] **Anonymous user flow Playwright tests** — anonieme gebruiker → free tool → gated feature → signup prompt → registratie. Voorkomt foutmeldingen waar signup-prompt hoort.
+
+### Pre-launch — SEO content
+
+- [ ] Longform: "How to use YouTube transcripts for RAG and vector databases" — gericht op AI/developer doelgroep, linkt naar RAG JSON export.
+- [ ] Longform: "YouTube transcript JSON format — complete guide" — informationeel, hoog zoekvolume.
+
+### Pre-launch — bestaande features afronden
+
+- [ ] **iOS PO token fix voor bgutil** — wordt opgelost als onderdeel van 1.6 (yt-dlp cascade).
+- [ ] **Opus 249 audio format valideren en deployen** — kwaliteitstest op 50 diverse video's, dan format selector aanpassen. Zie ADR-016. ~63% reductie in proxy-bandbreedte.
+- [ ] **Website copy volledig herschrijven** — landing page, pricing, FAQ, onboarding, error messages. Plaats: vóór 1.20 (polish heeft definitieve copy nodig).
+- [ ] **RAG JSON: Settings chunk size ✓ feedback zichtbaarheid** — zie known-issues. Kleine fix in `DeveloperExportsCard.tsx`.
+- [ ] **RAG JSON export (30-seconden chunks)** — kernfeature voor AI/developer doelgroep, zie ADR-015.
 
 ---
 
-## PRE-LAUNCH — features
+## Fase 2 — Eerste 30 dagen na launch (data-gestuurd)
 
-Functies die klaar moeten zijn vóór de eerste gebruikers binnenkomen.
+Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het signaal geeft.
 
-**RAG JSON export (30-seconden chunks)**
-Kernfeature voor de AI/developer doelgroep. Exporteert een transcript als JSON met 30-seconden segmenten, timestamps en metadata — direct inlaadbaar in LangChain, LlamaIndex, Pinecone. Zie ADR-015 voor de structuur. Zonder dit missen we een groot deel van de waardepropositie voor de betalende doelgroep.
-
-~~**Markdown export**~~
-✓ Opgelost 2026-04-24 — plain MD (paragraafmodus) én MD-timestamps beide geïmplementeerd. Geüpgraded met YAML frontmatter (title, url, channel, published, duration, language, transcript_source, created, type, tags — ontbrekende velden worden weggelaten) en klikbare deep-link headers (`## [HH:MM:SS](https://youtu.be/{videoId}?t=N)`) in de timestamps-variant.
-
-**iOS PO token fix voor bgutil**
-De bgutil binary (Rust, Linux x86_64) genereert PO tokens voor de YouTube `web_embedded` client. Als YouTube de iOS client blokkeert, valt caption-extractie terug op de web client — waarvoor PO tokens vereist zijn. Momenteel geen fallback. Risico: bij een YouTube-wijziging kunnen alle caption-extracties stilvallen.
-
-**Opus 249 audio format valideren en deployen**
-Nu selecteert yt-dlp Opus 251 (~128–160 kbps, ~1.0 MB/min). Opus 249 (~50 kbps, ~0.37 MB/min) is 63% kleiner. Bij proxy-kosten per MB scheelt dit significant. Vereist: transcriptie-kwaliteitstest op 50 diverse video's, dan één regel wijzigen in de yt-dlp format selector. Zie ADR-016.
-
-**Website copy volledig herschrijven**
-Landing page, pricing pagina, FAQ, onboarding flow en error messages zijn geschreven als placeholder-tekst. Vóór launch moeten dit overtuigende, klantgerichte teksten zijn die de waardepropositie uitleggen en bezwaren wegnemen.
-
-**Visuele redesign**
-De huidige UI is functioneel maar niet gelikt genoeg voor een betaald product. Dit is de allerlaatste stap — alle features en copy moeten eerst stabiel zijn voordat het ontwerp definitief wordt.
-
-**Admin dashboard uitbreiden**
-Processing times per tijdvenster en error rates toevoegen. Nu zijn fouten alleen zichtbaar in Railway logs — geen overzicht van trends of probleemgebieden.
+- [ ] **2.1 — Circuit breakers via PyBreaker** rond yt-dlp, AssemblyAI, DeepSeek
+    Trigger: eerste cascading failure in Sentry.
+- [ ] **2.2 — Connection pooling correct gezet** (Transaction Pooler poort 6543, asyncpg `statement_cache_size=0`)
+    Trigger: connection warnings of preventief bij DB-config tuning.
+- [ ] **2.3 — Multi-provider transcription fallback** ontwerpen
+    Trigger: eerste AssemblyAI outage > 30 min.
+- [ ] **2.4 — Backup-proxy provider** geconfigureerd
+    Trigger: Decodo incident of preventief in week 2.
+- [ ] **2.5 — Retry caps + Sentry alerts op error spikes + dagelijkse cost-report** (AssemblyAI, DeepSeek, Decodo)
+    Trigger: eerste runaway-cost incident of preventief.
+- [ ] **2.6 — Volledige admin-dashboard opzet en implementatie**
+    Componenten: business KPI dashboard (MRR, signups, credits sold, fail rate, marges), detailed user view, cost tracking, feature flags / kill switches, feedback en feature request management, deeplinks naar Sentry/Stripe/PostHog/Crisp per user.
+    Trigger: na week 2, wanneer alle data-bronnen bekend zijn.
+- [ ] **2.7 — Feature request systeem evalueren**
+    Contact-form (1.16) volume rechtvaardigt iets formelers? Alternatieven voor Canny onderzoeken (Canny te duur na 100 users → €79/mnd).
 
 ---
 
-## PRE-LAUNCH — Google setup
+## Fase 3 — Schaalbaarheidsfase (3–12 maanden post-launch)
 
-Eenmalige handelingen in Google-producten.
-
-- **Google Search Console**: domein verifiëren, sitemap indienen. Noodzakelijk om te weten of Google de site indexeert.
-- **Google Analytics**: instellen voor traffic-analyse. Nodig voor advertentie-conversie tracking.
-- **Google Ads account**: aanmaken en eerste campagne voorbereiden (US markt, longtail keywords rondom YouTube transcripts en AI).
-
----
-
-## PRE-LAUNCH — testen
-
-Moet gedaan worden vóór launch, maar zijn geen code-wijzigingen.
-
-**4+ uur video stress test**
-Een video van meer dan 4 uur transcriberen via Whisper. Railway background tasks hebben een tijdslimiet die we nog niet getest hebben. Bij een Railway restart mid-job sterft de taak zonder auto-recovery. Dit testen onthult of we een keepalive of timeout-strategie nodig hebben.
-
-**Anonymous user flow volledig testen**
-Een anonieme gebruiker moet: de free tool zien, een gratis extractie doen, bij gated features een sign-up prompt krijgen (niet een foutmelding), en soepel kunnen registreren. Playwright-tests schrijven die deze volledige flow dekken.
-
----
-
-## PRE-LAUNCH — SEO content
-
-Content die voor launch klaar moet zijn zodat Google het kan indexeren.
-
-- Longform artikel: "How to use YouTube transcripts for RAG and vector databases" — gericht op de AI/developer doelgroep, linkt naar de JSON export feature.
-- Longform artikel: "YouTube transcript JSON format — complete guide" — informationeel, hoog zoekvolume.
-
----
-
-## POST-LAUNCH
-
-Gepland voor na de eerste lancering. Volgorde op basis van impact.
-
-**Gamification systeem**
-XP-systeem op basis van betaalde acties, levels 1–20, credit reward chests op milestone-levels. Schema al ontworpen, implementatie uitgesteld tot na visueel redesign.
-
-**Referral program**
-5 credits voor de referrer, 5 credits voor de nieuwe gebruiker. Vereist abuse-preventie (één referral per e-mailadres, geen zelf-referrals).
-
-**Channel extractie**
-Heel YouTube-kanaal transcriberen in één klik. Vereist queue-architectuur (Redis/BullMQ of Supabase Realtime) vanwege de omvang. Te groot voor de huidige sequentiële playlist-engine.
-
-**Notion / Zapier / Obsidian integraties**
-Export direct vanuit de library naar externe tools. Notion en Zapier hebben de grootste doelgroep. Vereist OAuth per integratie.
-
-**Volledige credit transaction history**
-Nu zichtbaar: laatste 20 transacties. Verhogen naar onbeperkt of hogere limiet. Integreren in admin dashboard.
+- [ ] **3.1 — Volledige visuele redesign** met Claude Design (vervangt 1.20 cosmetische polish)
+- [ ] **3.2 — API en yt-dlp/worker echt splitsen als services**
+    Trigger: 100+ DAU.
+- [ ] **3.3 — VPS-migratie van Python werklasten naar Hetzner**
+    Trigger: Railway-bill > €80–100/maand.
+- [ ] **3.4 — Self-hosted observability evalueren**
+    Trigger: 25k+ gebruikers.
+- [ ] **3.5 — bgutil PO token-server multi-region**
+    Trigger: latency-issues internationaal.
+- [ ] **3.6 — Channel extractie** (heel YouTube-kanaal in één klik) — vereist queue-architectuur die in Fase 1 is gelegd.
+- [ ] **3.7 — Notion / Zapier / Obsidian integraties** — OAuth per integratie.
+- [ ] **3.8 — Gamification systeem** (XP, levels, reward chests) — schema bestaat, implementatie deferred tot na redesign.
+- [ ] **3.9 — Referral program** (5+5 credits met abuse-preventie).
+- [ ] **3.10 — Volledige credit transaction history** (nu max 20 rijen) — onbeperkt of hogere limiet, integreren in admin dashboard.

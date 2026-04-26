@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { useState, useEffect, useRef } from "react"
 import { Search, Loader2, AlertCircle, Sparkles, Mic } from "lucide-react"
 import { TranscriptCard, TranscriptItem } from "@/components/TranscriptCard"
-import { TranscriptMetadata } from "@/types/transcript"
+import { TranscriptMetadata, PROCESSING_METHODS } from "@/types/transcript"
 import { toast } from "sonner"
 import { validateYouTubeUrl, YouTubeUrlType } from "@/utils/youtube"
 import Link from "next/link"
@@ -153,7 +153,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
   const [whisperMetadata, setWhisperMetadata] = useState<{ duration: number; creditsUsed: number; truncationWarning?: string } | null>(null)
-  const [lastProcessingMethod, setLastProcessingMethod] = useState<'youtube_captions' | 'whisper_ai' | null>(null)
+  const [lastProcessingMethod, setLastProcessingMethod] = useState<'youtube_captions' | 'whisper_ai' | 'assemblyai' | null>(null)
   const [videoChannel, setVideoChannel] = useState<string | null>(null)
   const [videoLanguage, setVideoLanguage] = useState<string | null>(null)
   const [videoPublishedAt, setVideoPublishedAt] = useState<string | null>(null)
@@ -342,10 +342,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setError(null)
     }
   }
-
-  // Estimate credits for Whisper (1 credit per minute, min 1)
-  // Since we don't know duration before extraction, show a general estimate
-  const estimatedCredits = 1 // Minimum, actual will depend on video length
 
   const handleExtract = async (videoIdOrUrl?: string) => {
     const targetUrl = videoIdOrUrl || url
@@ -692,7 +688,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       posthog.capture('transcript_extracted', {
         type: 'video',
         credits_used: event.credits_used || 1,
-        processing_method: 'whisper_ai',
+        processing_method: PROCESSING_METHODS.ASSEMBLYAI,
         user_selected_whisper: true
       })
 
@@ -820,7 +816,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       posthog.capture('transcript_extracted', {
         type: 'video',
         credits_used: event.credits_used || 1,
-        processing_method: 'whisper_ai'
+        processing_method: PROCESSING_METHODS.ASSEMBLYAI,
       })
 
       await handleWhisperSuccess(event.transcript, {

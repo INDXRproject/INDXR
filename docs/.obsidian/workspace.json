@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "INBOX.md",
+                "file": "wiki/decisions/019-arq-job-queue.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "INBOX"
+              "title": "019-arq-job-queue"
             }
           }
         ]
@@ -185,6 +185,17 @@
   },
   "active": "af912fb4e8255d99",
   "lastOpenFiles": [
+    "LOG.md.tmp.6428.1777238587241",
+    "wiki/roadmap/priorities.md.tmp.6428.1777238580220",
+    "wiki/operations/known-issues.md.tmp.6428.1777238570681",
+    "wiki/roadmap/priorities.md",
+    "wiki/decisions/024-anti-abuse-welcome-credits.md",
+    "wiki/decisions/023-observability-stack.md",
+    "wiki/decisions/022-realtime-plus-polling-fallback.md",
+    "wiki/decisions/021-master-transcripts-cache.md",
+    "wiki/decisions/020-cloudflare-r2-storage.md",
+    "wiki/decisions/019-arq-job-queue.md",
+    "INBOX.md",
     "LOG.md.tmp.1195081.1776374227105",
     "wiki/operations/known-issues.md.tmp.1195081.1776374222171",
     "wiki/architecture/ai-pipeline.md.tmp.1195081.1776374214678",
@@ -193,12 +204,8 @@
     "wiki/operations/known-issues.md.tmp.1195081.1776372710965",
     "INBOX.md.tmp.1195081.1776372575712",
     "wiki/operations/known-issues.md.tmp.1195081.1776372003452",
-    "wiki/business/pricing.md.tmp.1195081.1776371987184",
-    "wiki/business/pricing.md.tmp.1195081.1776371980025",
-    "wiki/business/marketing.md.tmp.1195081.1776371187344",
     "content/PRICING-PAGE.md",
     "content/ARTIKEL-youtube-transcript-without-extension.md",
-    "INBOX.md",
     "content/ARTIKEL-youtube-transcript-obsidian.md",
     "content/LANDING-PAGE.md",
     "content/ARTIKEL-youtube-transcript-not-available.md",
@@ -213,13 +220,6 @@
     "content/ARTIKEL-youtube-members-only-transcript.md",
     "content/ARTIKEL-youtube-age-restricted-transcript.md",
     "content/ARTIKEL-how-it-works.md",
-    "content/ARTIKEL-bulk-youtube-transcript.md",
-    "content/ARTIKEL-blog-youtube-transcripts-vector-database.md",
-    "content/ARTIKEL-blog-youtube-channel-knowledge-base.md",
-    "content/ARTIKEL-blog-chunk-youtube-transcripts-for-rag.md",
-    "content/ARTIKEL-audio-to-text.md",
-    "content/ARTIKEL-alternative-turboscribe.md",
-    "content/ARTIKEL-alternative-tactiq.md",
-    "content/ARTIKEL-alternative-notegpt.md"
+    "content/ARTIKEL-bulk-youtube-transcript.md"
   ]
 }

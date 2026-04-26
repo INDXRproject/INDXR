@@ -8,8 +8,8 @@ export interface TranscriptMetadata {
   
   // Credits tracking
   creditsUsed?: number
-  processingMethod?: 'youtube_captions' | 'whisper_ai'
-  
+  processingMethod?: 'youtube_captions' | 'whisper_ai' | 'assemblyai'
+
   // Source-specific (optional)
   videoId?: string
   videoUrl?: string
@@ -25,3 +25,9 @@ export interface TranscriptMetadata {
   // Internal flag: true when reconciling a placeholder record (always writes all fields back)
   isPlaceholder?: boolean
 }
+
+export const PROCESSING_METHODS = {
+  CAPTIONS: 'youtube_captions',
+  ASSEMBLYAI: 'assemblyai',
+  WHISPER_LEGACY: 'whisper_ai', // historische DB-waarden vóór 2026-04-26
+} as const;

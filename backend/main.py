@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Depends, Header
 from fastapi.responses import JSONResponse
 import asyncio
-import json
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict
@@ -75,6 +74,17 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("indxr-backend")
+
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.httpx import HttpxIntegration
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN_BACKEND"),
+    traces_sample_rate=0.1,
+    integrations=[FastApiIntegration(), HttpxIntegration()],
+    environment=os.getenv("RAILWAY_ENVIRONMENT", "development"),
+)
 
 app = FastAPI(title="INDXR.AI Backend", version="1.0.0")
 
@@ -591,22 +601,7 @@ def extract_playlist_id(url: str) -> Optional[str]:
     match = re.search(r'[?&]list=([^&]+)', url)
     return match.group(1) if match else None
 
-def extract_video_id(url: str) -> Optional[str]:
-    """Extract video ID from YouTube URL."""
-    # Handle various formats: ?v=ID, youtu.be/ID, embed/ID
-    if len(url) == 11 and ' ' not in url: # Direct ID
-        return url
-        
-    patterns = [
-        r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
-        r'(?:embed\/|v\/|youtu.be\/)([0-9A-Za-z_-]{11})',
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
-    return None
+
 
 @app.post("/api/playlist/info", response_model=PlaylistInfoResponse)
 async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_backend_secret)):
@@ -954,7 +949,6 @@ async def run_whisper_job(
                 language = detected_lang.iso_code_639_1.name.lower()
 
         character_count = sum(len(item.get('text', '')) for item in transcript)
-        video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
         insert_data: dict = {
             'user_id': user_id,
             'video_id': video_id,
@@ -1674,6 +1668,11 @@ async def get_playlist_job(job_id: str, user_id: str, _: None = Depends(verify_b
         raise HTTPException(status_code=403, detail="Access denied")
 
     return JSONResponse(job)
+
+
+@app.get("/sentry-test")
+async def sentry_test():
+    raise Exception("Sentry backend test — intentional error")
 
 
 if __name__ == "__main__":

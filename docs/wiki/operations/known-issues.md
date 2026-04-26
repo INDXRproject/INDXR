@@ -49,6 +49,12 @@ Dit is geen bug die gefixt wordt — het is een YouTube infrastructuur beperking
 
 ## Actieve Bugs
 
+### ~~Admin: Whisper transcript count telt nieuwere transcripts niet mee~~ ✅ Opgelost 2026-04-26
+**Opgelost:** `.in("processing_method", [PROCESSING_METHODS.WHISPER_LEGACY, PROCESSING_METHODS.ASSEMBLYAI])` in `src/app/admin/page.tsx`.
+
+### ~~`processing_method` inconsistentie in DB: frontend schrijft 'whisper_ai', backend schrijft 'assemblyai'~~ ✅ Opgelost 2026-04-26
+**Opgelost:** PostHog analytics-events in VideoTab.tsx omgezet naar `PROCESSING_METHODS.ASSEMBLYAI`. `src/types/transcript.ts` uitgebreid met `'assemblyai'` in union type en `PROCESSING_METHODS` const toegevoegd.
+
 ### RAG JSON: Settings chunk size ✓ feedback onzichtbaar
 **Gevonden:** 2026-04-23 (Sessie 2 test)
 **Bestand:** `src/components/dashboard/settings/DeveloperExportsCard.tsx`
@@ -64,6 +70,18 @@ Teller toont alleen eindtijd, geen real-time voortgang tijdens polling.
 ---
 
 ## Niet-kritieke TODO's
+
+### ~~assemblyai SDK niet gepind in requirements.txt~~ ✅ Opgelost 2026-04-26
+**Opgelost:** `assemblyai==0.63.0` in `backend/requirements.txt`.
+
+### ~~extract_video_id dubbel gedefinieerd in backend/main.py~~ ✅ Opgelost 2026-04-26
+**Opgelost:** Tweede definitie (regel 594) verwijderd; eerste definitie (regel 212, return type `str`) behouden.
+
+### ~~6 ongebruikte component-bestanden in src/~~ ✅ Opgelost 2026-04-26
+**Opgelost:** Alle 6 verwijderd via `git rm`.
+
+### ~~Export-logica duplicatie (CSV, Markdown, TXT)~~ ✅ Opgelost 2026-04-26
+**Opgelost:** ADR-018 Optie A geïmplementeerd — `formatTranscript.ts` is nu single source of truth. Zie [ADR-018](../decisions/018-export-consolidation.md).
 
 ### BYOK Model Selector
 **Bestand:** `backend/main.py:1173` — toekomstige feature.
@@ -105,8 +123,6 @@ Uitzondering: bot_detection en timeout worden na 30s eenmalig herprobeerd.
 ### Railway restart kills background tasks
 Job-rijen blijven in Supabase maar achtergrondtaak sterft. Geen auto-recovery.
 
-### Geen Sentry / error tracking
-Alleen zichtbaar in Railway logs.
 
 ### Geen uptime monitoring
 Geen externe service die alarmeert bij downtime.

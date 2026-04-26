@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/utils/supabase/admin"
+import { PROCESSING_METHODS } from "@/types/transcript"
 import {
   Table,
   TableBody,
@@ -73,11 +74,11 @@ export default async function AdminOverviewPage() {
       .from("credit_transactions")
       .select("user_id, metadata")
       .eq("type", "credit"),
-    // Whisper transcript count — stored value is 'whisper_ai'
+    // Whisper transcript count — beide waarden: 'whisper_ai' (legacy frontend) en 'assemblyai' (backend)
     admin
       .from("transcripts")
       .select("*", { count: "exact", head: true })
-      .eq("processing_method", "whisper_ai"),
+      .in("processing_method", [PROCESSING_METHODS.WHISPER_LEGACY, PROCESSING_METHODS.ASSEMBLYAI]),
     // All transcript user_ids for top users calc
     admin.from("transcripts").select("user_id, credits_used, created_at"),
   ])

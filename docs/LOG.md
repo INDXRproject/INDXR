@@ -1,3 +1,11 @@
+[2026-04-26] feat: Sentry frontend + backend geïmplementeerd (taak 1.1) — @sentry/nextjs@10.50.0 + sentry-sdk[fastapi]==2.58.0; sentry.{client,server,edge}.config.ts aangemaakt; instrumentation.ts + instrumentation-client.ts aangemaakt; next.config.ts gewrapped met withSentryConfig; sentry init in backend/main.py vóór FastAPI(); /sentry-test endpoint + /sentry-test pagina toegevoegd | gewijzigd: next.config.ts, sentry.client.config.ts, sentry.server.config.ts, sentry.edge.config.ts, instrumentation.ts, instrumentation-client.ts, src/app/sentry-test/page.tsx, backend/main.py, backend/requirements.txt, package.json, docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md
+---
+[2026-04-26] fix+refactor: audit-bevindingen geïmplementeerd — processing_method type uitgebreid met 'assemblyai' + PROCESSING_METHODS const; admin Whisper-query gefixed (.in); PostHog analytics whisper_ai→assemblyai; ADR-018 Optie A: formatTranscript.ts is nu single source of truth voor CSV/Markdown/TXT, inline logica TranscriptCard.tsx verwijderd; 6 dode component-bestanden verwijderd; backend/main.py: import json + duplicate extract_video_id + dead video_url assignment; 6 npm packages verwijderd + @tiptap/core/@tiptap/pm als directe deps; assemblyai==0.63.0 gepind | gewijzigd: src/types/transcript.ts, src/components/free-tool/VideoTab.tsx, src/app/admin/page.tsx, src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, backend/main.py, backend/requirements.txt, package.json, docs/AUDIT_REPORT_2026-04-26.md, docs/wiki/decisions/018-export-consolidation.md, docs/wiki/operations/known-issues.md
+---
+[2026-04-26] audit: AUDIT_REPORT_2026-04-26.md aangemaakt — knip + vulture + ruff + depcheck; bevindingen doorgeschreven naar known-issues.md (admin Whisper count bug, processing_method inconsistentie, assemblyai unpinned, 6 dode bestanden, export-duplicatie); ADR-018 aangemaakt; CODEBASE_AUDIT.md gemarkeerd als verouderd | gewijzigd: docs/AUDIT_REPORT_2026-04-26.md, docs/CODEBASE_AUDIT.md, docs/wiki/operations/known-issues.md, docs/wiki/decisions/018-export-consolidation.md, docs/wiki/INDEX.md, docs/LOG.md
+---
+[2026-04-26] docs: wiki bijgewerkt na sessie — processing_method 'whisper_ai'→'assemblyai' in database-schema.md; RAG JSON backlog-item verwijderd uit known-issues.md; channel/language propagatie toegevoegd aan ai-pipeline.md | gewijzigd: docs/wiki/architecture/database-schema.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md
+---
 [2026-04-26] feat: channel + language in AssemblyAI job completion response — GET /api/jobs haalt channel/language op via transcript_id query; WhisperCompleteEvent + job type uitgebreid; handleWhisperSuccess + Pad B roepen setVideoChannel/setVideoLanguage aan | gewijzigd: backend/main.py, src/components/free-tool/VideoTab.tsx
 ---
 [2026-04-26] fix: lastSuccessTimestampRef in handleWhisperSuccess — ontbrekende toewijzing toegevoegd vóór setUrl(""); voorkomt dat cooldown-check mislukt bij upsell pad; debug logs verwijderd | gewijzigd: src/components/free-tool/VideoTab.tsx, src/components/TranscriptCard.tsx
@@ -1296,4 +1304,16 @@ src/components/free-tool/VideoTab.tsx
 ---
 [2026-04-26 00:38] commit: fix: lastSuccessTimestampRef in handleWhisperSuccess + debug logs verwijderd
 Changed: docs/LOG.md
+---
+[2026-04-26 03:49] commit: feat: channel/language in AssemblyAI job completion response + VideoTab state
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/decisions/015-rag-json-export.md
+src/components/free-tool/VideoTab.tsx
+---
+[2026-04-26 03:51] precompact: context compaction triggered
+[2026-04-26 03:59] commit: docs: wiki update — processing_method fix, RAG parking lot cleared, ai-pipeline channel/language
+Changed: docs/wiki/architecture/ai-pipeline.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/operations/known-issues.md
 ---

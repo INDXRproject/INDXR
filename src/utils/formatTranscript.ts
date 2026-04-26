@@ -89,7 +89,7 @@ export interface SubtitleBlock {
   text: string;
 }
 
-export function resegmentTranscript(
+function resegmentTranscript(
   transcript: TranscriptItem[],
   extractionMethod?: string
 ): SubtitleBlock[] {
@@ -148,7 +148,7 @@ export function resegmentTranscript(
   return blocks;
 }
 
-export function wrapSubtitleText(text: string, maxChars = 42): string {
+function wrapSubtitleText(text: string, maxChars = 42): string {
   if (text.length <= maxChars) return text;
   const words = text.split(' ');
   let line1 = '';
@@ -201,7 +201,15 @@ export const generateVtt = (
 
 export const generateCsv = (
   transcript: TranscriptItem[],
-  meta?: { title?: string; videoId?: string; channel?: string }
+  meta?: {
+    title?: string;
+    videoId?: string;
+    channel?: string;
+    publishedAt?: string;
+    durationSeconds?: number;
+    language?: string;
+    extractionMethod?: string;
+  }
 ): string => {
   const BOM = '﻿';
 
@@ -209,6 +217,15 @@ export const generateCsv = (
   if (meta?.title)   metaLines.push(`# title: ${meta.title}`);
   if (meta?.videoId) metaLines.push(`# url: https://www.youtube.com/watch?v=${meta.videoId}`);
   if (meta?.channel) metaLines.push(`# channel: ${meta.channel}`);
+  if (meta?.publishedAt) metaLines.push(`# published: ${meta.publishedAt}`);
+  if (typeof meta?.durationSeconds === 'number') metaLines.push(`# duration_seconds: ${meta.durationSeconds}`);
+  if (meta?.language) metaLines.push(`# language: ${meta.language}`);
+  if (meta?.extractionMethod) {
+    const src = (meta.extractionMethod === 'assemblyai' || meta.extractionMethod === 'whisper_ai')
+      ? 'AI Transcription (AssemblyAI)'
+      : 'Auto-captions (YouTube)';
+    metaLines.push(`# transcript_source: ${src}`);
+  }
   metaLines.push(`# extracted: ${new Date().toISOString().slice(0, 10)}`);
   const metadataRows = metaLines.join('\n') + '\n';
 
@@ -263,7 +280,7 @@ type RawChunk = Omit<RagChunk, 'metadata'> & {
   metadata: Omit<RagChunk['metadata'], 'total_chunks'>;
 };
 
-export function buildRagChunks(
+function buildRagChunks(
   transcript: TranscriptItem[],
   chunkSizeSeconds: number,
   context?: {
@@ -387,12 +404,52 @@ export function buildRagChunks(
   }));
 }
 
-export const generateMarkdown = (transcript: TranscriptItem[], title: string, withTimestamps: boolean): string => {
+export const generateMarkdown = (
+  transcript: TranscriptItem[],
+  title: string,
+  withTimestamps: boolean,
+  context?: {
+    videoId?: string;
+    channel?: string;
+    language?: string;
+    publishedAt?: string;
+    durationSeconds?: number;
+    extractionMethod?: string;
+    includeYamlFrontmatter?: boolean;
+  }
+): string => {
+  const frontmatter = context?.includeYamlFrontmatter ? buildYamlFrontmatter(title, context) : '';
+
   if (withTimestamps) {
-    const sections = transcript
-      .map((t) => `## [${formatHHMMSS(t.offset)}]\n${decodeEntities(t.text)}`)
-      .join('\n\n');
-    return `# ${title}\n\n${sections}`;
+    const sections: string[] = [];
+    let currentText = '';
+    let currentOffset = 0;
+    for (let i = 0; i < transcript.length; i++) {
+      const item = transcript[i];
+      const prev = transcript[i - 1];
+      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
+      if (gap > 5 && currentText) {
+        const ts = formatHHMMSS(currentOffset);
+        const heading = context?.videoId
+          ? `## [${ts}](https://youtu.be/${context.videoId}?t=${Math.floor(currentOffset)})`
+          : `## [${ts}]`;
+        sections.push(`${heading}\n${currentText.trim()}`);
+        currentText = decodeEntities(item.text);
+        currentOffset = item.offset;
+      } else {
+        const text = decodeEntities(item.text);
+        if (!currentText) currentOffset = item.offset;
+        currentText = currentText ? `${currentText} ${text}` : text;
+      }
+    }
+    if (currentText) {
+      const ts = formatHHMMSS(currentOffset);
+      const heading = context?.videoId
+        ? `## [${ts}](https://youtu.be/${context.videoId}?t=${Math.floor(currentOffset)})`
+        : `## [${ts}]`;
+      sections.push(`${heading}\n${currentText.trim()}`);
+    }
+    return `${frontmatter}# ${title}\n\n${sections.join('\n\n')}`;
   }
 
   // Merge segments into paragraphs; break on gaps > 5 seconds
@@ -411,7 +468,38 @@ export const generateMarkdown = (transcript: TranscriptItem[], title: string, wi
     }
   }
   if (currentParagraph) paragraphs.push(currentParagraph.trim());
-  return `# ${title}\n\n${paragraphs.join('\n\n')}`;
+  return `${frontmatter}# ${title}\n\n${paragraphs.join('\n\n')}`;
+};
+
+function buildYamlFrontmatter(
+  title: string,
+  context?: {
+    videoId?: string;
+    channel?: string;
+    language?: string;
+    publishedAt?: string;
+    durationSeconds?: number;
+    extractionMethod?: string;
+  }
+): string {
+  const lines: string[] = ['---'];
+  lines.push(`title: "${(title || 'YouTube Video').replace(/"/g, '\\"')}"`);
+  if (context?.videoId)   lines.push(`url: "https://www.youtube.com/watch?v=${context.videoId}"`);
+  if (context?.channel)   lines.push(`channel: "${context.channel.replace(/"/g, '\\"')}"`);
+  if (context?.publishedAt) lines.push(`published: "${context.publishedAt}"`);
+  if (typeof context?.durationSeconds === 'number') lines.push(`duration: ${context.durationSeconds}`);
+  if (context?.language)  lines.push(`language: "${context.language}"`);
+  if (context?.extractionMethod) {
+    const src = (context.extractionMethod === 'assemblyai' || context.extractionMethod === 'whisper_ai')
+      ? 'AI Transcription (AssemblyAI)'
+      : 'Auto-captions (YouTube)';
+    lines.push(`transcript_source: "${src}"`);
+  }
+  lines.push(`created: "${new Date().toISOString().slice(0, 10)}"`);
+  lines.push('type: youtube');
+  lines.push('tags: [youtube, transcript]');
+  lines.push('---');
+  return lines.join('\n') + '\n\n';
 };
 
 export interface RagJsonContext {

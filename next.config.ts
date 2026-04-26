@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
@@ -19,10 +20,16 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '30mb',  // Support large audio files in server actions
+      bodySizeLimit: '30mb',
     },
-    proxyClientMaxBodySize: '30mb',  // Support large file uploads in API routes
+    proxyClientMaxBodySize: '30mb',
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "indxrai",
+  project: "indxr-frontend",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  disableLogger: true,
+});
