@@ -16,7 +16,7 @@ Geschatte totale doorlooptijd: 13–17 werkdagen.
 
 Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Smart polling, caption cache en User Feedback widget zijn los staand zonder onderlinge afhankelijkheden.
 
-- [x] **1.1 — Sentry frontend + backend** (2u) ✅ 2026-04-26
+- [~] **1.1 — Sentry frontend + backend** (2u) — wacht op verificatie door Khidr
     Doel: error tracking actief vóór alle andere Fase 1 werk.
     Stack: `@sentry/nextjs` (frontend), `sentry-sdk[fastapi]` (backend), `tracesSampleRate: 0.1`, source map upload geconfigureerd.
     Zie [ADR-023](../decisions/023-observability-stack.md).

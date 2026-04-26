@@ -1,3 +1,5 @@
+[2026-04-26] fix: sentry-test pagina: hardcoded localhost:8000 vervangen door /api/sentry-test proxy (PYTHON_BACKEND_URL server-side) | gewijzigd: src/app/sentry-test/page.tsx, src/app/api/sentry-test/route.ts, docs/wiki/roadmap/priorities.md
+---
 [2026-04-26] feat: Sentry frontend + backend geïmplementeerd (taak 1.1) — @sentry/nextjs@10.50.0 + sentry-sdk[fastapi]==2.58.0; sentry.{client,server,edge}.config.ts aangemaakt; instrumentation.ts + instrumentation-client.ts aangemaakt; next.config.ts gewrapped met withSentryConfig; sentry init in backend/main.py vóór FastAPI(); /sentry-test endpoint + /sentry-test pagina toegevoegd | gewijzigd: next.config.ts, sentry.client.config.ts, sentry.server.config.ts, sentry.edge.config.ts, instrumentation.ts, instrumentation-client.ts, src/app/sentry-test/page.tsx, backend/main.py, backend/requirements.txt, package.json, docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md
 ---
 [2026-04-26] fix+refactor: audit-bevindingen geïmplementeerd — processing_method type uitgebreid met 'assemblyai' + PROCESSING_METHODS const; admin Whisper-query gefixed (.in); PostHog analytics whisper_ai→assemblyai; ADR-018 Optie A: formatTranscript.ts is nu single source of truth voor CSV/Markdown/TXT, inline logica TranscriptCard.tsx verwijderd; 6 dode component-bestanden verwijderd; backend/main.py: import json + duplicate extract_video_id + dead video_url assignment; 6 npm packages verwijderd + @tiptap/core/@tiptap/pm als directe deps; assemblyai==0.63.0 gepind | gewijzigd: src/types/transcript.ts, src/components/free-tool/VideoTab.tsx, src/app/admin/page.tsx, src/utils/formatTranscript.ts, src/components/TranscriptCard.tsx, backend/main.py, backend/requirements.txt, package.json, docs/AUDIT_REPORT_2026-04-26.md, docs/wiki/decisions/018-export-consolidation.md, docs/wiki/operations/known-issues.md
@@ -1316,4 +1318,43 @@ src/components/free-tool/VideoTab.tsx
 Changed: docs/wiki/architecture/ai-pipeline.md
 docs/wiki/architecture/database-schema.md
 docs/wiki/operations/known-issues.md
+---
+[2026-04-26 23:25] commit: feat(observability): add Sentry frontend + backend (taak 1.1)
+Changed: backend/main.py
+backend/requirements.txt
+docs/.obsidian/workspace.json
+docs/AUDIT_REPORT_2026-04-26.md
+docs/CODEBASE_AUDIT.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/018-export-consolidation.md
+docs/wiki/decisions/019-arq-job-queue.md
+docs/wiki/decisions/020-cloudflare-r2-storage.md
+docs/wiki/decisions/021-master-transcripts-cache.md
+docs/wiki/decisions/022-realtime-plus-polling-fallback.md
+docs/wiki/decisions/023-observability-stack.md
+docs/wiki/decisions/024-anti-abuse-welcome-credits.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+instrumentation-client.ts
+instrumentation.ts
+knip.json
+next.config.ts
+package-lock.json
+package.json
+sentry.client.config.ts
+sentry.edge.config.ts
+sentry.server.config.ts
+src/app/admin/page.tsx
+src/app/sentry-test/page.tsx
+src/components/ConditionalHeader.tsx
+src/components/HeroUIPreview.tsx
+src/components/PlaylistAvailabilityModal.tsx
+src/components/TranscriptCard.tsx
+src/components/free-tool/VideoTab.tsx
+src/components/library/CollectionPanel.tsx
+src/components/library/LibraryTranscriptCard.tsx
+src/components/library/StorageMeter.tsx
+src/types/transcript.ts
+src/utils/formatTranscript.ts
 ---

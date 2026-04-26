@@ -18,9 +18,7 @@ export default function SentryTestPage() {
         </button>
         <button
           onClick={async () => {
-            const res = await fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/sentry-test`
-            );
+            const res = await fetch("/api/sentry-test");
             const data = await res.json();
             alert(JSON.stringify(data));
           }}
