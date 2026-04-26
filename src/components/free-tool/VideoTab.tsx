@@ -27,6 +27,8 @@ type WhisperCompleteEvent = {
   type: 'complete'
   transcript: TranscriptItem[]
   transcript_id?: string
+  channel?: string | null
+  language?: string | null
   duration: number
   credits_used: number
   truncation_warning?: string
@@ -69,6 +71,8 @@ async function pollWhisperJob(
       status: string
       transcript?: TranscriptItem[]
       transcript_id?: string
+      channel?: string | null
+      language?: string | null
       duration?: number
       credits_used?: number
       error_message?: string
@@ -101,6 +105,8 @@ async function pollWhisperJob(
         type: 'complete',
         transcript: job.transcript!,
         transcript_id: job.transcript_id,
+        channel: job.channel,
+        language: job.language,
         duration: job.duration!,
         credits_used: job.credits_used!,
         truncation_warning: job.error_message?.startsWith('Transcript may be incomplete') ? job.error_message : undefined,
@@ -558,12 +564,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
 
 
-  const handleWhisperSuccess = async (transcript: TranscriptItem[], metadata: { videoId: string; title: string; duration: number; creditsUsed: number; source: string; truncationWarning?: string; transcriptId?: string }) => {
+  const handleWhisperSuccess = async (transcript: TranscriptItem[], metadata: { videoId: string; title: string; duration: number; creditsUsed: number; source: string; truncationWarning?: string; transcriptId?: string; channelName?: string | null; language?: string | null }) => {
     setTranscript(transcript)
     setVideoTitle(metadata.title || "")
     setVideoUrl(`https://www.youtube.com/watch?v=${metadata.videoId}`)
     setWhisperMetadata({ duration: metadata.duration, creditsUsed: metadata.creditsUsed, truncationWarning: metadata.truncationWarning })
     setLastProcessingMethod('whisper_ai')
+    setVideoChannel(metadata.channelName ?? null)
+    setVideoLanguage(metadata.language ?? null)
     setWhisperAutoTriggered(true) // Mark that Whisper was auto-triggered
     // Track whisper save in session so a second click is instantly flagged as duplicate
     sessionSavedKeys.current.add(`${metadata.videoId}:whisper_ai`);
@@ -673,6 +681,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setVideoUrl(`https://www.youtube.com/watch?v=${videoId}`)
       setVideoDuration(event.duration || null)
       setLastProcessingMethod('whisper_ai')
+      setVideoChannel(event.channel ?? null)
+      setVideoLanguage(event.language ?? null)
       setWhisperMetadata({ duration: event.duration, creditsUsed: event.credits_used || 1, truncationWarning: event.truncation_warning })
       setCurrentVideoId(videoId)
 
@@ -821,6 +831,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         source: 'youtube',
         truncationWarning: event.truncation_warning,
         transcriptId: event.transcript_id,
+        channelName: event.channel,
+        language: event.language,
       })
 
       refreshCredits()

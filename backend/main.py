@@ -1155,12 +1155,17 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
 
     # Fetch transcript data when job is complete
     transcript = None
+    channel = None
+    language = None
     if job.get('transcript_id'):
         try:
             t_result = await asyncio.to_thread(
-                lambda: supabase.table('transcripts').select('transcript').eq('id', job['transcript_id']).single().execute()
+                lambda: supabase.table('transcripts').select('transcript,channel,language').eq('id', job['transcript_id']).single().execute()
             )
-            transcript = t_result.data.get('transcript') if t_result.data else None
+            if t_result.data:
+                transcript = t_result.data.get('transcript')
+                channel = t_result.data.get('channel')
+                language = t_result.data.get('language')
         except Exception:
             pass
 
@@ -1170,6 +1175,8 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         "created_at": job.get('created_at'),
         "transcript": transcript,
         "transcript_id": job.get('transcript_id'),
+        "channel": channel,
+        "language": language,
         "duration": job.get('duration_seconds'),
         "credits_used": job.get('credits_cost'),
         "processing_time_seconds": job.get('processing_time_seconds'),

@@ -153,6 +153,8 @@ De overlap implementatie verschilt op basis van `extraction_method`:
 
 **Language detectie (AssemblyAI pad):** lingua-language-detector op eerste 20 segmenten na transcriptie. `language` in DB wordt gezet als niet-None.
 
+**AssemblyAI channel/language in frontend:** `GET /api/jobs/{job_id}` haalt `channel` en `language` op via JOIN-query op `transcript_id` (`transcripts` tabel). `WhisperCompleteEvent` bevat deze velden; `handleWhisperSuccess` en Pad B roepen `setVideoChannel`/`setVideoLanguage` aan zodat `TranscriptCard.buildRagJson` de metadata correct meekrijgt.
+
 **Library export pad:** `TranscriptViewer` accepteert `channel` (als `channelTitle`) en `language` props — `page.tsx` geeft ze door uit `transcript.channel` / `transcript.language`. Beide worden doorgegeven aan `buildRagJson` zodat library RAG exports dezelfde metadata bevatten als transcribe-pagina exports.
 
 **`processing_method` waarde:** backend slaat `'assemblyai'` op (niet `'whisper_ai'`). `VideoTab.tsx` gebruikt `'assemblyai'` bij DB lookups en in `setExistingTranscriptMethod` — cruciaal voor `rag_exports` write en `revalidatePath` correctheid.

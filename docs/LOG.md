@@ -1,3 +1,5 @@
+[2026-04-26] feat: channel + language in AssemblyAI job completion response — GET /api/jobs haalt channel/language op via transcript_id query; WhisperCompleteEvent + job type uitgebreid; handleWhisperSuccess + Pad B roepen setVideoChannel/setVideoLanguage aan | gewijzigd: backend/main.py, src/components/free-tool/VideoTab.tsx
+---
 [2026-04-26] fix: lastSuccessTimestampRef in handleWhisperSuccess — ontbrekende toewijzing toegevoegd vóór setUrl(""); voorkomt dat cooldown-check mislukt bij upsell pad; debug logs verwijderd | gewijzigd: src/components/free-tool/VideoTab.tsx, src/components/TranscriptCard.tsx
 ---
 [2026-04-26] fix: videoId fallback in deductRagExportCreditsAction — als transcriptId undefined is, query server-side op video_id + processing_method='assemblyai' om transcript te resolven; TranscriptCard geeft videoId mee | gewijzigd: src/app/actions/rag-export.ts, src/components/TranscriptCard.tsx
@@ -1291,4 +1293,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 src/components/TranscriptCard.tsx
 src/components/free-tool/VideoTab.tsx
+---
+[2026-04-26 00:38] commit: fix: lastSuccessTimestampRef in handleWhisperSuccess + debug logs verwijderd
+Changed: docs/LOG.md
 ---
