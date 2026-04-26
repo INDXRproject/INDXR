@@ -8,5 +8,10 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
   integrations: [
     Sentry.replayIntegration(),
+    Sentry.feedbackIntegration({
+      autoInject: false,
+      showBranding: false,
+      colorScheme: "system",
+    }),
   ],
 });

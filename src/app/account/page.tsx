@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import * as Sentry from "@sentry/nextjs"
 
 export default function AccountPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -24,6 +25,7 @@ export default function AccountPage() {
       }
       setUser(session.user)
       setLoading(false)
+      Sentry.setUser({ id: session.user.id, email: session.user.email })
     })
   }, [router, supabase.auth])
 
@@ -102,6 +104,30 @@ export default function AccountPage() {
           <CardContent>
             <Button variant="outline" disabled className="opacity-50">
               Change Password (Coming Soon)
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Report a problem */}
+        <Card className="bg-zinc-950/50 border-zinc-800/50 text-white">
+          <CardHeader>
+            <CardTitle>Report a Problem</CardTitle>
+            <CardDescription className="text-zinc-400">
+              Encountered a bug or unexpected behavior? Let us know.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const feedback = Sentry.getFeedback()
+                if (!feedback) return
+                const form = await feedback.createForm()
+                form.appendToDom()
+                form.open()
+              }}
+            >
+              Report a problem
             </Button>
           </CardContent>
         </Card>
