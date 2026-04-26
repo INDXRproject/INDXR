@@ -41,13 +41,15 @@ Backend tracking: `backend/main.py:33-40` (`track_event()` functie)
 Geconfigureerd via `LOG_LEVEL` env var in Railway (standaard: `INFO`).
 
 ```python
-# backend/main.py:62-65
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("indxr-backend")
+logger.setLevel(logging.INFO)  # expliciet noodzakelijk — zie waarschuwing hieronder
 ```
+
+> **Waarschuwing: `basicConfig()` is een no-op onder uvicorn.** Python's `logging.basicConfig()` doet niets als de root logger al handlers heeft — en uvicorn configureert de root logger vóór applicatiecode laadt. Uvicorn zet de root logger op WARNING, waardoor `logger.info()` calls van de `indxr-backend` logger stil worden gefilterd (ze propageren naar root, maar root filtert ze weg). De `logger.setLevel(logging.INFO)` op de named logger bypast dit: het level wordt gecontroleerd op de logger zelf, vóór propagatie. Verwijder deze regel niet.
 
 | Niveau | Gebruik |
 |--------|---------|

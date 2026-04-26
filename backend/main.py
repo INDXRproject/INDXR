@@ -90,6 +90,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("indxr-backend")
+logger.setLevel(logging.INFO)
 
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
