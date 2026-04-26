@@ -1670,11 +1670,6 @@ async def get_playlist_job(job_id: str, user_id: str, _: None = Depends(verify_b
     return JSONResponse(job)
 
 
-@app.get("/sentry-test")
-async def sentry_test():
-    raise Exception("Sentry backend test — intentional error")
-
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

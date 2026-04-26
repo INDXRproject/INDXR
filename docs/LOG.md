@@ -1,3 +1,5 @@
+[2026-04-27] feat: Sentry User Feedback verplaatst naar /dashboard/account — SentryFeedbackCard client component in dashboard/settings/; dode /account pagina verwijderd; sentry-test routes (frontend + backend) opgeruimd | gewijzigd: src/components/dashboard/settings/SentryFeedbackCard.tsx, src/app/dashboard/account/page.tsx, backend/main.py, src/app/account/page.tsx (verwijderd), src/app/sentry-test/ (verwijderd), src/app/api/sentry-test/ (verwijderd)
+---
 [2026-04-26] fix: sentry-test pagina: hardcoded localhost:8000 vervangen door /api/sentry-test proxy (PYTHON_BACKEND_URL server-side) | gewijzigd: src/app/sentry-test/page.tsx, src/app/api/sentry-test/route.ts, docs/wiki/roadmap/priorities.md
 ---
 [2026-04-26] feat: Sentry frontend + backend geïmplementeerd (taak 1.1) — @sentry/nextjs@10.50.0 + sentry-sdk[fastapi]==2.58.0; sentry.{client,server,edge}.config.ts aangemaakt; instrumentation.ts + instrumentation-client.ts aangemaakt; next.config.ts gewrapped met withSentryConfig; sentry init in backend/main.py vóór FastAPI(); /sentry-test endpoint + /sentry-test pagina toegevoegd | gewijzigd: next.config.ts, sentry.client.config.ts, sentry.server.config.ts, sentry.edge.config.ts, instrumentation.ts, instrumentation-client.ts, src/app/sentry-test/page.tsx, backend/main.py, backend/requirements.txt, package.json, docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md
@@ -1364,4 +1366,21 @@ docs/LOG.md
 docs/wiki/roadmap/priorities.md
 src/app/api/sentry-test/route.ts
 src/app/sentry-test/page.tsx
+---
+[2026-04-27 00:08] commit: docs: markeer taak 1.1 Sentry als [x] done — geverifieerd door Khidr
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-27 00:13] commit: feat(observability): Sentry User Feedback widget op account-settings (taak 1.2)
+
+- feedbackIntegration({ autoInject: false }) toegevoegd aan sentry.client.config.ts
+- Sentry.setUser() in account/page.tsx zodra sessie geladen is
+- "Report a problem" card toegevoegd aan /account
+- Dialog via createForm() → appendToDom() → open() (correcte @sentry/nextjs v10 API)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: sentry.client.config.ts
+src/app/account/page.tsx
 ---

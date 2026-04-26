@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { ProfileSettingsCard } from "@/components/dashboard/settings/ProfileSettingsCard"
 import { TransactionHistoryCard } from "@/components/dashboard/settings/TransactionHistoryCard"
+import { SentryFeedbackCard } from "@/components/dashboard/settings/SentryFeedbackCard"
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -42,6 +43,7 @@ export default async function AccountPage() {
       <div className="space-y-8">
         <ProfileSettingsCard user={user} profile={profile} />
         <TransactionHistoryCard transactions={transactions || []} credits={credits} />
+        <SentryFeedbackCard userId={user.id} email={user.email} />
       </div>
     </div>
   )
