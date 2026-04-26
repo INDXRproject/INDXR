@@ -1,3 +1,5 @@
+[2026-04-27] feat: caption cache in Redis geïmplementeerd (taak 1.4) — upstash-redis==1.7.0; get_caption_redis() lazy init; cache key caption:{video_id}:en, TTL 30 dagen; PostHog events caption_cache_hit/miss/write_error; graceful degradatie als env vars afwezig | gewijzigd: backend/main.py, backend/requirements.txt, docs/wiki/roadmap/priorities.md
+---
 [2026-04-27] docs: taak 1.3 smart polling backoff [x] done — geverifieerd op 8-min AssemblyAI job | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LOG.md
 ---
 [2026-04-27] feat: smart polling backoff geïmplementeerd (taak 1.3) — getPollingInterval() in src/lib/pollingBackoff.ts (1s/5s/15s op 0-30s/30-300s/300s+); VideoTab pollWhisperJob + AudioTab runPollLoop op elapsed-based interval; PlaylistTab setInterval→recursive setTimeout | gewijzigd: src/lib/pollingBackoff.ts, src/components/free-tool/VideoTab.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx
@@ -1421,4 +1423,10 @@ src/components/free-tool/AudioTab.tsx
 src/components/free-tool/PlaylistTab.tsx
 src/components/free-tool/VideoTab.tsx
 src/lib/pollingBackoff.ts
+---
+[2026-04-27 00:44] commit: docs: markeer taak 1.3 smart polling backoff als [x] done — geverifieerd door Khidr
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/roadmap/priorities.md
 ---

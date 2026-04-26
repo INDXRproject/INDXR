@@ -8,6 +8,7 @@ import re
 import uuid
 import secrets
 import logging
+import json
 import yt_dlp
 import os
 import tempfile
@@ -16,6 +17,7 @@ from dotenv import load_dotenv
 import posthog
 from datetime import datetime, timezone
 from lingua import Language, LanguageDetectorBuilder
+from upstash_redis.asyncio import Redis as UpstashRedis
 
 _lingua_detector = (
     LanguageDetectorBuilder
@@ -49,6 +51,20 @@ def track_event(distinct_id: str, event: str, properties: Optional[Dict] = None)
         posthog.capture(distinct_id=distinct_id, event=event, properties=properties or {})
     except Exception as e:
         logging.getLogger("indxr-backend").warning(f"PostHog tracking failed: {e}")
+
+# Caption Redis cache — lazy init, gracefully skipped if env vars absent
+_caption_redis: Optional[UpstashRedis] = None
+
+def get_caption_redis() -> Optional[UpstashRedis]:
+    global _caption_redis
+    if _caption_redis is None:
+        url = os.getenv("UPSTASH_REDIS_REST_URL")
+        token = os.getenv("UPSTASH_REDIS_REST_TOKEN")
+        if url and token:
+            _caption_redis = UpstashRedis(url=url, token=token)
+    return _caption_redis
+
+_CAPTION_CACHE_TTL = 60 * 60 * 24 * 30  # 30 days
 
 # Import Whisper modules
 from audio_utils import (
@@ -534,9 +550,45 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
     """Extract transcript from YouTube video using yt-dlp."""
     try:
         video_id = extract_video_id(request.videoIdOrUrl)
+        cache_key = f"caption:{video_id}:en"
+        redis = get_caption_redis()
+
+        # ── Cache read ────────────────────────────────────────────────────────
+        if redis:
+            try:
+                cached_raw = await redis.get(cache_key)
+                if cached_raw:
+                    result = json.loads(cached_raw)
+                    track_event("backend", "caption_cache_hit", {"video_id": video_id, "lang": "en"})
+                    logger.info(f"Caption cache HIT: {video_id}")
+                    transcript = [
+                        TranscriptItem(
+                            text=item['text'],
+                            offset=item['offset'],
+                            duration=item['duration']
+                        )
+                        for item in result['transcript']
+                    ]
+                    return ExtractResponse(
+                        success=True,
+                        transcript=transcript,
+                        title=result['title'],
+                        video_url=result['video_url'],
+                        duration=result.get('duration'),
+                        channel=result.get('channel'),
+                        language=result.get('language'),
+                        language_detected=result.get('language_detected'),
+                        upload_date=result.get('upload_date'),
+                    )
+            except Exception as cache_read_err:
+                logger.warning(f"Caption cache read error: {cache_read_err}")
+
+        track_event("backend", "caption_cache_miss", {"video_id": video_id, "lang": "en"})
+
+        # ── yt-dlp extraction ────────────────────────────────────────────────
         session_id = video_id[-8:]
         result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id)
-        
+
         # result can be a dict (success) or list (empty/failure)
         if isinstance(result, list) or not result:
             logger.warning(f"No captions found for {video_id}")
@@ -544,7 +596,7 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 success=False,
                 error="No captions found for this video"
             )
-            
+
         transcript = [
             TranscriptItem(
                 text=item['text'],
@@ -553,7 +605,16 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             )
             for item in result['transcript']
         ]
-        
+
+        # ── Cache write (best-effort) ─────────────────────────────────────────
+        if redis and result.get('transcript'):
+            try:
+                await redis.set(cache_key, json.dumps(result), ex=_CAPTION_CACHE_TTL)
+                logger.info(f"Caption cache SET: {video_id}")
+            except Exception as cache_write_err:
+                track_event("backend", "caption_cache_write_error", {"error": str(cache_write_err)})
+                logger.warning(f"Caption cache write error: {cache_write_err}")
+
         return ExtractResponse(
             success=True,
             transcript=transcript,
@@ -565,7 +626,7 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             language_detected=result.get('language_detected'),
             upload_date=result.get('upload_date'),
         )
-        
+
     except MembersOnlyVideoError:
         return JSONResponse(
             status_code=403,
