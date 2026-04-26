@@ -13,6 +13,7 @@ import { createClient } from "@/utils/supabase/client"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/useAuth"
+import { getPollingInterval } from "@/lib/pollingBackoff"
 import posthog from "posthog-js"
 
 interface VideoTabProps {
@@ -57,15 +58,16 @@ async function pollWhisperJob(
   jobId: string,
   onStatus: (status: 'pending' | 'downloading' | 'transcribing' | 'saving') => void
 ): Promise<WhisperFinalEvent> {
-  const POLL_INTERVAL_MS = 3000
-  const MAX_POLLS = 200 // 10 minutes max
+  const MAX_POLLS = 200
   const NETWORK_RETRY_MS = 5000
   const MAX_CONSECUTIVE_ERRORS = 3
 
   let consecutiveErrors = 0
+  const startTime = Date.now()
 
   for (let i = 0; i < MAX_POLLS; i++) {
-    await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+    const elapsed = (Date.now() - startTime) / 1000
+    await new Promise<void>(resolve => setTimeout(resolve, getPollingInterval(elapsed)))
 
     let job: {
       status: string

@@ -11,6 +11,7 @@ import Link from "next/link"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "@/utils/supabase/client"
+import { getPollingInterval } from "@/lib/pollingBackoff"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
 
@@ -213,11 +214,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const runPollLoop = async (jobId: string, filename: string, startElapsed = 0) => {
     setElapsedSeconds(startElapsed)
     intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
-    const POLL_INTERVAL_MS = 3000
     const MAX_POLLS = 200
+    const startTime = Date.now()
     try {
       for (let i = 0; i < MAX_POLLS; i++) {
-        await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+        const elapsed = (Date.now() - startTime) / 1000
+        await new Promise<void>(resolve => setTimeout(resolve, getPollingInterval(elapsed)))
 
         let job: {
           status: string

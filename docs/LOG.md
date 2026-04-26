@@ -1,3 +1,7 @@
+[2026-04-27] feat: smart polling backoff geïmplementeerd (taak 1.3) — getPollingInterval() in src/lib/pollingBackoff.ts (1s/5s/15s op 0-30s/30-300s/300s+); VideoTab pollWhisperJob + AudioTab runPollLoop op elapsed-based interval; PlaylistTab setInterval→recursive setTimeout | gewijzigd: src/lib/pollingBackoff.ts, src/components/free-tool/VideoTab.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx
+---
+[2026-04-27] docs: taak 1.2 Sentry User Feedback gemarkeerd als [x] done — geverifieerd door Khidr | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LOG.md
+---
 [2026-04-27] feat: Sentry User Feedback verplaatst naar /dashboard/account — SentryFeedbackCard client component in dashboard/settings/; dode /account pagina verwijderd; sentry-test routes (frontend + backend) opgeruimd | gewijzigd: src/components/dashboard/settings/SentryFeedbackCard.tsx, src/app/dashboard/account/page.tsx, backend/main.py, src/app/account/page.tsx (verwijderd), src/app/sentry-test/ (verwijderd), src/app/api/sentry-test/ (verwijderd)
 ---
 [2026-04-26] fix: sentry-test pagina: hardcoded localhost:8000 vervangen door /api/sentry-test proxy (PYTHON_BACKEND_URL server-side) | gewijzigd: src/app/sentry-test/page.tsx, src/app/api/sentry-test/route.ts, docs/wiki/roadmap/priorities.md
@@ -1383,4 +1387,21 @@ docs/wiki/roadmap/priorities.md
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: sentry.client.config.ts
 src/app/account/page.tsx
+---
+[2026-04-27 00:22] commit: feat(observability): verplaats Sentry feedback naar /dashboard/account + opruimen
+
+- SentryFeedbackCard client component aangemaakt (settings/)
+- Sentry.setUser() + Report a problem knop in /dashboard/account
+- Dode /account pagina (reliek) verwijderd
+- Sentry-test routes verwijderd: /sentry-test, /api/sentry-test, backend /sentry-test
+- feedbackIntegration({ autoInject: false }) al in sentry.client.config.ts
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+src/app/account/page.tsx
+src/app/api/sentry-test/route.ts
+src/app/dashboard/account/page.tsx
+src/app/sentry-test/page.tsx
+src/components/dashboard/settings/SentryFeedbackCard.tsx
 ---

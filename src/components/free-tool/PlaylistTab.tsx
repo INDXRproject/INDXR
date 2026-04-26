@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { createClient } from "@/utils/supabase/client"
+import { getPollingInterval } from "@/lib/pollingBackoff"
 
 export interface PlaylistStats {
   playlistTitle?: string
@@ -53,7 +54,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
   const playlistJobIdRef = useRef<string | null>(null)
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pollStartTimeRef = useRef<number>(0)
   const { credits, refreshCredits } = useAuth()
 
   // Notify parent of extraction state changes
@@ -62,7 +64,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   // Clean up poll interval on unmount
   useEffect(() => {
     return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+      if (pollIntervalRef.current) clearTimeout(pollIntervalRef.current)
     }
   }, [])
 
@@ -186,11 +188,18 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     fallbackUrl?: string,
     fallbackTotal?: number,
   ) {
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-    pollIntervalRef.current = setInterval(async () => {
+    if (pollIntervalRef.current) clearTimeout(pollIntervalRef.current)
+    pollStartTimeRef.current = Date.now()
+
+    const schedulePoll = () => {
+      const elapsed = (Date.now() - pollStartTimeRef.current) / 1000
+      pollIntervalRef.current = setTimeout(doPoll, getPollingInterval(elapsed))
+    }
+
+    const doPoll = async () => {
       try {
         const pollResp = await fetch(`/api/playlist/jobs/${jobId}`)
-        if (!pollResp.ok) return  // transient error — keep polling
+        if (!pollResp.ok) { schedulePoll(); return }  // transient error — keep polling
 
         const job = await pollResp.json()
         const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
@@ -222,7 +231,6 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
         // Terminal states
         if (job.status === 'complete' || job.status === 'error') {
-          clearInterval(pollIntervalRef.current!)
           pollIntervalRef.current = null
           playlistJobIdRef.current = null
           setProgressMessage("")
@@ -275,12 +283,17 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
               intervalRef.current = null
             }
           }, 0)
+          return // terminal — do not reschedule
         }
+
+        schedulePoll()
       } catch (pollErr) {
         console.error('Playlist poll error:', pollErr)
-        // Non-fatal — keep polling
+        schedulePoll() // Non-fatal — keep polling
       }
-    }, 3000)
+    }
+
+    schedulePoll()
   }
 
   // Resume a running job after page reload or tab switch
@@ -418,7 +431,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       setLoading(false)
       setProgressMessage("")
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
-      if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null }
+      if (pollIntervalRef.current) { clearTimeout(pollIntervalRef.current); pollIntervalRef.current = null }
     }
   }
 

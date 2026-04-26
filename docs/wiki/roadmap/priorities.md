@@ -27,16 +27,14 @@ Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Sm
     **Instrumentation:** `instrumentation.ts` + `instrumentation-client.ts` nieuw aangemaakt (geen bestaand bestand gevonden).
     **Gotcha's:** Geen — Next.js 16.1.4 + @sentry/nextjs@10 zonder problemen.
 
-- [ ] **1.2 — Sentry User Feedback widget** (1u)
-    Doel: gebruikers kunnen bug-reports indienen direct vanuit de app, gekoppeld aan Sentry-context.
-    Plek: footer of account-settings, "Report a problem" knop.
-    Afhankelijk van: 1.1.
+- [x] **1.2 — Sentry User Feedback widget** ✅ 2026-04-27
+    Plek: `/dashboard/account` — "Report a Problem" card onderaan (SentryFeedbackCard client component).
+    Sentry.setUser() gezet via useEffect; dialog via createForm() → appendToDom() → open().
+    Geverifieerd: test-report binnengekomen in Sentry Inbox.
 
-- [ ] **1.3 — Smart polling backoff** (1u)
-    Doel: 5–10x reductie in polling-requests zonder UX-impact. Logica: 1s in eerste 30s → 5s tot 5 min → 15s daarna.
-    Locatie: bestaande polling-logic voor playlist en whisper jobs.
-    Belangrijk: dit blijft definitief onderdeel van de architectuur als fallback voor users achter firewalls die WebSockets blokkeren — niet tijdelijk.
-    Zie [ADR-022](../decisions/022-realtime-plus-polling-fallback.md).
+- [~] **1.3 — Smart polling backoff** — wacht op verificatie door Khidr
+    `getPollingInterval()` in `src/lib/pollingBackoff.ts`: 1s (0–30s) → 5s (30–300s) → 15s (300s+).
+    VideoTab + AudioTab: elapsed-based interval in for-loop. PlaylistTab: setInterval → recursive setTimeout.
 
 - [ ] **1.4 — Caption cache in Redis** (4u)
     Doel: 30–60% reductie in yt-dlp calls voor herhaalde video's, bescherming tegen bot-detection, kostenbesparing op AssemblyAI.
