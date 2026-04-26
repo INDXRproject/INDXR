@@ -45,7 +45,7 @@ viewed_at     TIMESTAMPTZ -- laatste keer geopend (migratie 20260306)
 updated_at    TIMESTAMPTZ -- laatste wijziging (migratie 20260307)
 created_at    TIMESTAMPTZ DEFAULT now()
 
-processing_method TEXT     -- 'youtube_captions' | 'whisper_ai' — hoe het transcript is gegenereerd
+processing_method TEXT     -- 'youtube_captions' | 'assemblyai' — hoe het transcript is gegenereerd
 channel           TEXT     -- YouTube kanaal naam (uploader) — opgeslagen bij captions en AssemblyAI jobs
 language          TEXT     -- taalcode (bijv. 'en', 'nl') — yt-dlp of lingua detector
 rag_exports       JSONB DEFAULT '[]' -- array van {chunk_size, exported_at, credits_spent} per RAG JSON export

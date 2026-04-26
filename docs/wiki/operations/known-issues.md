@@ -158,5 +158,4 @@ Zie `wiki/roadmap/backlog.md`.
 Highlights:
 - Channel extractie (queue-architectuur vereist)
 - Gamification: XP, levels 1–20, credit reward chests
-- RAG-geoptimaliseerde JSON export
 - Branding: Scrivr, Vellum, Monkr, Quillr — niet besloten

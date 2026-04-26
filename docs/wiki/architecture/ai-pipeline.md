@@ -61,7 +61,10 @@ Frontend
 Frontend pollt GET /api/jobs/{job_id} elke 3 seconden
   └─ Bij status "error" + error_message "no_speech_detected":
        toont inline card "No speech detected" met bevestiging dat credits teruggestort zijn
-  └─ Wanneer klaar: normaliseer transcript → sla op in Supabase
+  └─ Wanneer klaar: job response bevat ook transcript_id, channel, language
+       (backend haalt channel + language op via JOIN op transcripts tabel bij job completion)
+  └─ Frontend slaat transcript_id op in existingTranscriptIdRef (synchronous ref) + state
+  └─ videoChannel en videoLanguage worden gezet zodat RAG JSON export correcte metadata bevat
   └─ Return {status: 'completed', transcript}
 ```
 
