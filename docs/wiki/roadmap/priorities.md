@@ -16,7 +16,10 @@ Geschatte totale doorlooptijd: 13–17 werkdagen.
 
 Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Smart polling, caption cache en User Feedback widget zijn los staand zonder onderlinge afhankelijkheden.
 
-- [~] **1.1 — Sentry frontend + backend** (2u) — wacht op verificatie door Khidr
+- [x] **1.1 — Sentry frontend + backend** ✅ 2026-04-27
+    **Geïnstalleerd:** `@sentry/nextjs@^10.50.0`, `sentry-sdk[fastapi]==2.58.0`
+    **Geverifieerd:** "Sentry backend test — intentional error" zichtbaar in INDXR-BACKEND project; frontend error zichtbaar in INDXR-FRONTEND project.
+    **Instrumentation:** `instrumentation.ts` + `instrumentation-client.ts` nieuw aangemaakt (Next.js 16 App Router patroon). Geen gotcha's.
     Doel: error tracking actief vóór alle andere Fase 1 werk.
     Stack: `@sentry/nextjs` (frontend), `sentry-sdk[fastapi]` (backend), `tracesSampleRate: 0.1`, source map upload geconfigureerd.
     Zie [ADR-023](../decisions/023-observability-stack.md).

@@ -1358,3 +1358,10 @@ src/components/library/StorageMeter.tsx
 src/types/transcript.ts
 src/utils/formatTranscript.ts
 ---
+[2026-04-27 00:01] commit: fix(sentry-test): proxy via /api/sentry-test instead of hardcoded localhost
+Changed: docs/.obsidian/workspace.json
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
+src/app/api/sentry-test/route.ts
+src/app/sentry-test/page.tsx
+---
