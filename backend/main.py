@@ -1,7 +1,10 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Depends, Header
 from fastapi.responses import JSONResponse
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
+from arq import create_pool
+from arq.connections import RedisSettings as ArqRedisSettings
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 import re
@@ -103,7 +106,21 @@ sentry_sdk.init(
     environment=os.getenv("RAILWAY_ENVIRONMENT", "development"),
 )
 
-app = FastAPI(title="INDXR.AI Backend", version="1.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    redis_url = os.getenv("UPSTASH_REDIS_URL")
+    if redis_url:
+        app.state.arq_pool = await create_pool(ArqRedisSettings.from_dsn(redis_url))
+        logger.info("ARQ pool initialized")
+    else:
+        app.state.arq_pool = None
+        logger.warning("UPSTASH_REDIS_URL not set — YouTube Whisper falls back to asyncio.create_task")
+    yield
+    if getattr(app.state, 'arq_pool', None):
+        await app.state.arq_pool.aclose()
+        logger.info("ARQ pool closed")
+
+app = FastAPI(title="INDXR.AI Backend", version="1.0.0", lifespan=lifespan)
 
 _BACKEND_API_SECRET = os.getenv("BACKEND_API_SECRET", "")
 
@@ -1175,15 +1192,28 @@ async def transcribe_with_whisper(
         'file_format': file_format,
     }).execute()
 
-    asyncio.create_task(run_whisper_job(
-        job_id=job_id,
-        user_id=user_id,
-        source_type=source_type,
-        video_id=video_id,
-        audio_content=audio_content,
-        audio_filename=audio_filename,
-        title=title,
-    ))
+    if source_type == "youtube":
+        arq_pool = request.app.state.arq_pool
+        if arq_pool:
+            await arq_pool.enqueue_job(
+                'run_whisper_job',
+                job_id=job_id,
+                user_id=user_id,
+                video_id=video_id,
+                title=title,
+            )
+        else:
+            # Fallback: UPSTASH_REDIS_URL not configured (local dev without Redis)
+            asyncio.create_task(run_whisper_job(
+                job_id=job_id, user_id=user_id, source_type="youtube",
+                video_id=video_id, audio_content=None, audio_filename=None, title=title,
+            ))
+    else:
+        # Upload path: bytes in memory, not queue-serializable — stays on asyncio.create_task
+        asyncio.create_task(run_whisper_job(
+            job_id=job_id, user_id=user_id, source_type=source_type,
+            video_id=video_id, audio_content=audio_content, audio_filename=audio_filename, title=title,
+        ))
 
     logger.info(f"Whisper job created: {job_id} (user={user_id}, source={source_type}, video={video_id})")
     return JSONResponse({"job_id": job_id, "status": "pending"})

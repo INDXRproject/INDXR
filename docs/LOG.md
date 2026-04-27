@@ -1,4 +1,6 @@
-[2026-04-27] feat: taak 1.5 fase 1 [~] — ARQ infra opgezet; arq==0.28.0 + redis==5.3.1 + hiredis==3.3.1 in requirements.txt; backend/worker.py (stub noop_task + WorkerSettings); Fase 0 TCP verificatie geslaagd; wacht op Railway worker-service verificatie | gewijzigd: backend/requirements.txt, backend/worker.py
+[2026-04-27] feat: taak 1.5 fase 2 [~] — YouTube Whisper→ARQ; run_whisper_job in worker.py; lifespan arq_pool in main.py; upload-pad asyncio; ack_late=False (Fase 4 upgrade); VPN+DSN-quote gotcha's gedocumenteerd | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/operations/known-issues.md, docs/wiki/operations/deployment.md
+---
+[2026-04-27] feat: taak 1.5 fase 1 ✅ — ARQ infra opgezet; arq==0.28.0 + redis==5.3.1 + hiredis==3.3.1 in requirements.txt; backend/worker.py (stub noop_task + WorkerSettings); Fase 0 TCP verificatie geslaagd | gewijzigd: backend/requirements.txt, backend/worker.py
 ---
 [2026-04-27] fix: taak 1.4 [x] done — tijdelijke diagnostische logs verwijderd; logger.setLevel(INFO) permanent (uvicorn basicConfig gotcha); cross-user cache HIT op DZ6mNMS0HQ0 geverifieerd | gewijzigd: backend/main.py, docs/wiki/roadmap/priorities.md
 ---
@@ -1482,5 +1484,17 @@ en logger.setLevel(INFO) blijven.
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-27 04:00] commit: feat(queue): ARQ infrastructure setup (taak 1.5 fase 1)
+Changed: backend/requirements.txt
+backend/worker.py
+docs/.obsidian/workspace.json
+docs/INBOX.md
+docs/LOG.md
+docs/wiki/architecture/overview.md
+docs/wiki/decisions/019-arq-job-queue.md
+docs/wiki/decisions/021-master-transcripts-cache.md
+docs/wiki/operations/deployment.md
 docs/wiki/roadmap/priorities.md
 ---

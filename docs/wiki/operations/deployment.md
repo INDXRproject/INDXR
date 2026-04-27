@@ -104,6 +104,8 @@ git add requirements.txt && git commit -m "update: add <package>"
 3. **Start Command:** `python -m arq worker.WorkerSettings`
 4. Kopieer alle env vars van API-service + voeg toe: `UPSTASH_REDIS_URL` (TCP, zie onder)
 
+> **Gotcha: aanhalingstekens in Railway env-var waarde.** Plak de waarde als pure string, zonder aanhalingstekens — `rediss://default:TOKEN@HOST.upstash.io:6380`, **niet** `'rediss://...'`. Aanhalingstekens worden letterlijk meegenomen en resulteren in een `invalid DSN scheme` RuntimeError bij ARQ startup.
+
 ### Environment Variables (Railway API-service)
 
 ```bash

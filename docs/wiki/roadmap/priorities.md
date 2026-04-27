@@ -52,7 +52,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Stack: ARQ als aparte Railway worker-service naast bestaande FastAPI API-service.
     Idempotency: tabel `idempotency_keys` met TTL 24u op POST-endpoints.
     Zie [ADR-019](../decisions/019-arq-job-queue.md).
-    Fasenplan: Fase 0 (TCP verificatie) ✅ | Fase 1 (infra) [~] | Fase 2–5 volgt.
+    Fasenplan: Fase 0 ✅ | Fase 1 ✅ | Fase 2 (Whisper→ARQ) [~] | Fase 3–5 volgt.
     Scope-beslissing: audio-upload pad blijft op asyncio.create_task (bytes in memory, korte flow); YouTube-extracties via ARQ. Zie ADR-019.
 
 - [ ] **1.6 — yt-dlp fallback-cascade met bgutil PO token + alternatieve clients** (2–3 dagen)

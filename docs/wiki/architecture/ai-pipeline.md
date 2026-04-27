@@ -47,7 +47,11 @@ Frontend
             ├─ Endpoint pre-check: check_user_balance ≥ ceil(duration/60)
             │    (valt terug op ≥ 1 als duration niet meegestuurd)
             │    → 402 bij onvoldoende credits (vóór audio-download)
-            └─ Python backend (asynchroon):
+            └─ Python backend — splitst op source_type:
+
+  source_type='youtube' → ARQ worker (Fase 2 — zie ADR-019):
+       └─ enqueue_job('run_whisper_job', job_id, user_id, video_id)
+            └─ ARQ worker (backend/worker.py) verwerkt asynchroon:
                  ├─ yt-dlp: download audio (best quality, no video)
                  ├─ Valideer: MembersOnlyVideoError check
                  ├─ ffmpeg: compress naar 12kbps Opus/OGG
@@ -57,6 +61,9 @@ Frontend
                  ├─ Bij leeg transcript (geen spraak): job→error "no_speech_detected",
                  │    credits automatisch teruggestort via finally-blok
                  └─ Sla transcript op in Supabase, markeer job complete
+
+  source_type='upload' → asyncio.create_task (bytes in memory, niet queue-serializable):
+       └─ Identiek aan YouTube-flow hierboven, maar audio-bytes komen uit request-body
 
 Frontend pollt GET /api/jobs/{job_id} elke 3 seconden
   └─ Bij status "error" + error_message "no_speech_detected":

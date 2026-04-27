@@ -110,6 +110,9 @@ Gewenst gedrag voor lokale dev. In productie altijd `STRIPE_WEBHOOK_SECRET` inst
 ### IPRoyal wachtwoord `I`/`l` verwarring
 Hoofdletter `I` en kleine letter `l` zijn visueel identiek. Bij 407: controleer karakter-voor-karakter.
 
+### VPN blokkeert Upstash Redis TCP
+Proton VPN (en mogelijk andere commerciële VPN's) blokkeren TCP-poort 6379/6380 naar Upstash. REST/HTTPS via poort 443 werkt wel (caption cache). Symptoom: TLS handshake faalt direct — `errno=104` of `Connection reset by peer`. Workaround voor lokaal testen: VPN uit. Productie (Railway) is niet geraakt.
+
 ---
 
 ## Bekende Beperkingen
