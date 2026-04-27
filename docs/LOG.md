@@ -1,3 +1,5 @@
+[2026-04-27] feat: taak 1.5 fase 1 [~] — ARQ infra opgezet; arq==0.28.0 + redis==5.3.1 + hiredis==3.3.1 in requirements.txt; backend/worker.py (stub noop_task + WorkerSettings); Fase 0 TCP verificatie geslaagd; wacht op Railway worker-service verificatie | gewijzigd: backend/requirements.txt, backend/worker.py
+---
 [2026-04-27] fix: taak 1.4 [x] done — tijdelijke diagnostische logs verwijderd; logger.setLevel(INFO) permanent (uvicorn basicConfig gotcha); cross-user cache HIT op DZ6mNMS0HQ0 geverifieerd | gewijzigd: backend/main.py, docs/wiki/roadmap/priorities.md
 ---
 [2026-04-27] feat: caption cache in Redis geïmplementeerd (taak 1.4) — upstash-redis==1.7.0; get_caption_redis() lazy init; cache key caption:{video_id}:en, TTL 30 dagen; PostHog events caption_cache_hit/miss/write_error; graceful degradatie als env vars afwezig | gewijzigd: backend/main.py, backend/requirements.txt, docs/wiki/roadmap/priorities.md
@@ -1469,4 +1471,16 @@ Wiki monitoring.md bijgewerkt met uitleg om herhaling te voorkomen.
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py
 docs/wiki/operations/monitoring.md
+---
+[2026-04-27 02:43] commit: chore(cache): verwijder tijdelijke diagnostische logs — taak 1.4 [x] done
+
+Cross-user cache HIT geverifieerd via tweede account: DZ6mNMS0HQ0
+in <200ms, geen yt-dlp call. Diagnostische logs (redis client, env URL
+set, about to SET key) verwijderd. Permanente logs (HIT/SET/write error)
+en logger.setLevel(INFO) blijven.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
 ---

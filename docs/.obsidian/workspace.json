@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "wiki/decisions/019-arq-job-queue.md",
+                "file": "INBOX.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "019-arq-job-queue"
+              "title": "INBOX"
             }
           }
         ]
@@ -185,25 +185,25 @@
   },
   "active": "af912fb4e8255d99",
   "lastOpenFiles": [
-    "LOG.md.tmp.6428.1777240791031",
-    "wiki/roadmap/priorities.md.tmp.6428.1777240772412",
-    "LOG.md.tmp.6428.1777238587241",
-    "wiki/roadmap/priorities.md.tmp.6428.1777238580220",
-    "wiki/operations/known-issues.md.tmp.6428.1777238570681",
+    "wiki/architecture/overview.md.tmp.6428.1777255175972",
+    "wiki/operations/deployment.md.tmp.6428.1777255166714",
+    "wiki/decisions/019-arq-job-queue.md.tmp.6428.1777255094483",
+    "LOG.md.tmp.6428.1777255079174",
+    "wiki/roadmap/priorities.md.tmp.6428.1777255070018",
+    "wiki/decisions/019-arq-job-queue.md",
+    "LOG.md.tmp.6428.1777250597023",
+    "wiki/roadmap/priorities.md.tmp.6428.1777250591890",
+    "wiki/operations/monitoring.md.tmp.6428.1777247413892",
+    "LOG.md.tmp.6428.1777243784281",
+    "wiki/roadmap/priorities.md.tmp.6428.1777243775330",
+    "LOG.md.tmp.6428.1777243460504",
     "wiki/roadmap/priorities.md",
     "wiki/decisions/024-anti-abuse-welcome-credits.md",
     "wiki/decisions/023-observability-stack.md",
     "wiki/decisions/022-realtime-plus-polling-fallback.md",
     "wiki/decisions/021-master-transcripts-cache.md",
     "wiki/decisions/020-cloudflare-r2-storage.md",
-    "wiki/decisions/019-arq-job-queue.md",
     "INBOX.md",
-    "LOG.md.tmp.1195081.1776374227105",
-    "wiki/operations/known-issues.md.tmp.1195081.1776374222171",
-    "wiki/architecture/ai-pipeline.md.tmp.1195081.1776374214678",
-    "LOG.md.tmp.1195081.1776373079365",
-    "LOG.md.tmp.1195081.1776372718297",
-    "wiki/operations/known-issues.md.tmp.1195081.1776372710965",
     "content/PRICING-PAGE.md",
     "content/ARTIKEL-youtube-transcript-without-extension.md",
     "content/ARTIKEL-youtube-transcript-obsidian.md",

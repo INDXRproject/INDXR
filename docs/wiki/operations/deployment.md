@@ -64,9 +64,16 @@ NEXT_PUBLIC_ENABLE_OAUTH=true
 
 ## Backend (Railway)
 
-**Auto-deploy:** Push naar `master` → Railway rebuildt Docker image en deployt.  
-**Dockerfile:** `backend/Dockerfile`  
-**Gezondheidscheck:** `GET /health` → `{"status": "healthy"}`
+Railway draait twee aparte services op hetzelfde Docker image:
+
+| Service | Start Command | Rol |
+|---|---|---|
+| **API** (bestaand) | `uvicorn main:app --host 0.0.0.0 --port 8000` | HTTP endpoints |
+| **Worker** (nieuw, Fase 1.5) | `python -m arq worker.WorkerSettings` | ARQ job verwerking |
+
+**Auto-deploy:** Push naar `master` → Railway rebuildt Docker image en deployt beide services.  
+**Dockerfile:** `backend/Dockerfile` (gedeeld door API en worker)  
+**Gezondheidscheck:** `GET /health` → `{"status": "healthy"}` (alleen API-service)
 
 ### Docker Build
 
@@ -77,6 +84,8 @@ RUN apt-get install: ffmpeg, wget, nodejs, npm
 # Kopieert bgutil-ytdlp-pot-provider-rs.zip
 # pip install -r requirements.txt
 CMD: uvicorn main:app --host 0.0.0.0 --port 8000
+# Worker-service overschrijft CMD via Railway "Start Command" instelling:
+# python -m arq worker.WorkerSettings
 ```
 
 **Python packages updaten:**
@@ -85,10 +94,17 @@ cd backend
 venv/bin/pip install <package>
 venv/bin/pip freeze > requirements.txt
 git add requirements.txt && git commit -m "update: add <package>"
-# git push master → Railway rebuild
+# git push master → Railway rebuild (beide services)
 ```
 
-### Environment Variables (Railway)
+### Worker-service aanmaken (eenmalig)
+
+1. Railway Dashboard → project → **New Service** → GitHub Repo → dezelfde repo
+2. **Root Directory:** `backend`
+3. **Start Command:** `python -m arq worker.WorkerSettings`
+4. Kopieer alle env vars van API-service + voeg toe: `UPSTASH_REDIS_URL` (TCP, zie onder)
+
+### Environment Variables (Railway API-service)
 
 ```bash
 # Supabase (Service Role Key voor RPC calls)
@@ -114,7 +130,29 @@ POSTHOG_API_KEY=phc_...
 
 # Logging
 LOG_LEVEL=INFO    # DEBUG | INFO | WARNING | ERROR
+
+# Redis (caption cache — REST)
+UPSTASH_REDIS_REST_URL=https://...upstash.io
+UPSTASH_REDIS_REST_TOKEN=...
 ```
+
+### Environment Variables (Railway worker-service)
+
+Identiek aan API-service, plus:
+
+```bash
+# ARQ queue verbinding (TCP — verschilt van REST URL boven)
+UPSTASH_REDIS_URL=rediss://default:TOKEN@HOST.upstash.io:6380
+
+# Zelfde vars als API-service:
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+ASSEMBLYAI_API_KEY=...
+PROXY_ENABLED=...  # + PROXY_HOST/PORT/USERNAME/PASSWORD
+```
+
+> `UPSTASH_REDIS_URL` (TCP) is ook nodig op de API-service zodra Fase 2 actief is
+> (API enqueued dan jobs via dezelfde pool).
 
 ---
 

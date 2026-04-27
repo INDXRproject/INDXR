@@ -47,11 +47,13 @@ Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Sm
 
 Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp cascade hangt aan queue (cascade-stappen worden queue-jobs). Graceful shutdown logisch ná queue. R2 logisch vóór master_transcripts (transcripts worden in R2 opgeslagen).
 
-- [ ] **1.5 — ARQ via Upstash Redis + per-video decompositie + idempotency keys** (3 dagen)
+- [~] **1.5 — ARQ via Upstash Redis + per-video decompositie + idempotency keys** (3 dagen)
     Doel: durable job queue die Railway container-restarts overleeft. 500-video playlist wordt 500 onafhankelijke jobs (één gefaalde video sloopt niet de hele batch).
     Stack: ARQ als aparte Railway worker-service naast bestaande FastAPI API-service.
     Idempotency: tabel `idempotency_keys` met TTL 24u op POST-endpoints.
     Zie [ADR-019](../decisions/019-arq-job-queue.md).
+    Fasenplan: Fase 0 (TCP verificatie) ✅ | Fase 1 (infra) [~] | Fase 2–5 volgt.
+    Scope-beslissing: audio-upload pad blijft op asyncio.create_task (bytes in memory, korte flow); YouTube-extracties via ARQ. Zie ADR-019.
 
 - [ ] **1.6 — yt-dlp fallback-cascade met bgutil PO token + alternatieve clients** (2–3 dagen)
     Doel: stabiliteit tegen YouTube bot-detection updates. Cascade-volgorde:

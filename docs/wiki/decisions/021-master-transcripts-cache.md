@@ -66,18 +66,25 @@ Drie redenen:
 
 De waarde voor de user zit in **snelheid** (sub-seconde levering vs minuten voor verse AssemblyAI-call) en **stabiliteit** (werkt ook als YouTube yt-dlp tijdelijk blokkeert) — niet in prijs.
 
-### Waarom transcription_model in de key
+### Waarom transcription_model in de key — en hoe lookup werkt
 
-AssemblyAI brengt nieuwe modellen uit (Universal-2, Universal-3, Universal-4 in toekomst) met betere kwaliteit. Een user die betaalt voor "laatste model" mag geen oude cache-versie krijgen.
-
-Concreet: cache-key is `(video_id, language, transcription_model)` waarbij `transcription_model` waarden heeft als:
+AssemblyAI brengt nieuwe modellen uit (Universal-2, Universal-3, Universal-4 in toekomst) met betere kwaliteit. Cache-entries worden per `(video_id, language, transcription_model)` opgeslagen waarbij `transcription_model` waarden heeft als:
 
 - `youtube_captions` (caption-extractie via yt-dlp, geen AssemblyAI)
 - `assemblyai_universal_2`
 - `assemblyai_universal_3`
 - `assemblyai_universal_4` (toekomstig)
 
-Bij upgrade naar nieuwer model: oude cache blijft beschikbaar voor users die expliciet "snelste/goedkoopste" kiezen, nieuwe model bouwt nieuwe cache-laag op.
+**Cache-lookup is transparant voor de user.** Backend kiest automatisch de hoogst-beschikbare kwaliteit binnen de gekozen tier (caption vs AI) — de gebruiker hoeft nooit handmatig "welke versie wil je" te kiezen.
+
+Concreet:
+
+- User kiest **"YouTube captions"** → backend zoekt `transcription_model = 'youtube_captions'` voor `(video_id, language)`. Hit → leveren. Miss → yt-dlp draaien, cachen, leveren.
+- User kiest **"Generate with AI"** → backend zoekt de **hoogst-genummerde AssemblyAI-versie** in cache voor `(video_id, language)` (assemblyai_universal_4 > universal_3 > universal_2). Hit → die versie leveren. Miss → AssemblyAI draaien op nieuwste model, cachen onder dat model, leveren.
+
+**Geen UX-prompt over modelversies.** De user merkt niets van het cache-mechanisme — alleen dat het soms snel is (cache-hit) of normaal duurt (cache-miss). De model-versie is een implementatie-detail, niet een keuze.
+
+Bij upgrade naar een nieuwer model: oude entries blijven in de cache liggen (geen forced invalidation). Nieuwe extracties produceren entries onder het nieuwe model. Als een user een nieuwe AI-extractie aanvraagt na een model-upgrade krijgt hij automatisch het nieuwste model — niet de oude cache-versie. Oude entries blijven nuttig als migratie-pad of als cost-fallback voor users die expliciet "goedkopere oude versie" zouden mogen kiezen (toekomstige feature, niet nu).
 
 ### Privacy-grens: alleen publieke videos
 
@@ -136,9 +143,32 @@ Aanvraag binnen voor (video_id, language, model='assemblyai_universal_3'):
    d. Trek credits af, return naar user
 ```
 
----
+## Verhouding tot frontend duplicate-check (VideoTab)
 
-## Consequenties
+INDXR.AI heeft al een **per-user duplicate-check** in `src/components/free-tool/VideoTab.tsx`: voordat een extractie naar Python wordt gestuurd, queryt de frontend Supabase `transcripts` op `(user_id, video_id, processing_method)`. Bij hit toont hij de "extract anyway?" UI in plaats van direct te extracteren.
+
+Dit is een **UX-laag** (voorkomt onbedoelde dubbele credits-uitgave) en blijft volledig intact bij invoering van master_transcripts.
+
+**Verschil tussen de twee lagen:**
+
+| Laag | Scope | Doel | Wanneer triggert |
+|------|-------|------|------------------|
+| Frontend duplicate-check | Per-user | UX: "weet je het zeker?" | User A extract video X die al in User A's library staat |
+| master_transcripts | Cross-user | Kostenbesparing + snelheid | User B extract video X die User A ooit transcribeerde |
+
+**Flow bij invoering van master_transcripts:**
+
+1. User klikt Extract → frontend duplicate-check draait
+2. Geen hit op user-eigen library → request gaat naar Python backend
+3. Python backend doet master_transcripts lookup (cross-user)
+4. Hit → kopieer naar `transcripts` (user-tabel), trek credits af, lever direct
+5. Miss → normale extractie-flow → resultaat opslaan in master_transcripts + transcripts
+
+Bij user-eigen library hit (stap 2): user klikt "extract anyway" → vanaf dat punt is het gewoon stap 3-5. master_transcripts werkt onafhankelijk van de frontend-keuze.
+
+De user merkt nooit iets van master_transcripts — geen UI-prompt, geen "er bestaat al een versie" melding. Alleen: sommige extracties zijn snel (cache-hit) en sommige normaal (cache-miss), maar dat is niet zichtbaar als feature.
+
+---
 
 **Voordelen:**
 - Significante kostenbesparing op herhaalde populaire videos

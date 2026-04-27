@@ -109,7 +109,8 @@ Browser (React/Next.js)
 | Analytics | PostHog | Product analytics, zelf te hosten |
 | Testing | Playwright | E2E tests (29 specs) |
 | Frontend hosting | Vercel | Next.js native, auto-deploy |
-| Backend hosting | Railway | Docker support, geen timeout |
+| Backend hosting | Railway (2 services) | API-service + ARQ worker-service → zie [ADR-019](../decisions/019-arq-job-queue.md) |
+| Job queue | ARQ via Upstash Redis (TCP) | Durable jobs die Railway-restarts overleven |
 
 ---
 

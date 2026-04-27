@@ -62,12 +62,24 @@ Bij retries (Stripe webhook retry, frontend network retry, queue redrive) moet d
 
 ---
 
+## Scope
+
+**In scope (via ARQ):**
+- YouTube Whisper-jobs (`source_type='youtube'`) → worker downloadt audio zelf via yt-dlp
+- Playlist-extractie-jobs (captions + Whisper per video)
+
+**Out of scope (blijft asyncio.create_task):**
+- Audio upload-jobs (`source_type='upload'`) — audio-bytes zitten al in memory van het API-process, flow is kort (~2–5 min), Railway-restart-risico is laag. Bytes zijn niet serializable voor een queue zonder tussentijdse opslag. Besloten op 2026-04-27.
+
+---
+
 ## Architectuur
 
 ```
 FastAPI API service (Railway, bestaand)
     ├─ POST /api/playlist/extract → enqueue 1 job per video → return job_id
-    ├─ POST /api/transcribe/whisper → enqueue 1 transcription job → return job_id
+    ├─ POST /api/transcribe/whisper (youtube) → enqueue 1 transcription job → return job_id
+    ├─ POST /api/transcribe/whisper (upload) → asyncio.create_task (bytes in memory, out of scope)
     └─ GET /api/playlist/jobs/{id} → lees state uit Supabase
 
 ARQ Worker service (Railway, nieuwe container)
