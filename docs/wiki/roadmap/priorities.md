@@ -37,10 +37,11 @@ Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Sm
     VideoTab + AudioTab: elapsed-based interval in for-loop. PlaylistTab: setInterval → recursive setTimeout.
     Geverifieerd op 8-min AssemblyAI job — polls bouwden op van ~1s naar ~5s.
 
-- [~] **1.4 — Caption cache in Redis** — wacht op verificatie door Khidr
+- [x] **1.4 — Caption cache in Redis** — geverifieerd door Khidr
     Doel: 30–60% reductie in yt-dlp calls voor herhaalde video's, bescherming tegen bot-detection, kostenbesparing op AssemblyAI.
     Sleutel: `caption:{video_id}:{lang}`, TTL 30 dagen, op bestaande Upstash Redis.
     PostHog-events: `cache_hit`, `cache_miss`.
+    Cross-user cache geverifieerd via tweede account — HIT op DZ6mNMS0HQ0 in <200ms, geen yt-dlp call.
 
 ### Architectuur-fundament
 

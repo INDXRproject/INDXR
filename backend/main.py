@@ -553,8 +553,6 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
         video_id = extract_video_id(request.videoIdOrUrl)
         cache_key = f"caption:{video_id}:en"
         redis = get_caption_redis()
-        logger.info(f"Caption cache: redis client = {redis is not None}")
-        logger.info(f"Caption cache: env URL set = {bool(os.getenv('UPSTASH_REDIS_REST_URL'))}")
 
         # ── Cache read ────────────────────────────────────────────────────────
         if redis:
@@ -612,7 +610,6 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
         # ── Cache write (best-effort) ─────────────────────────────────────────
         if redis and result.get('transcript'):
             try:
-                logger.info(f"Caption cache: about to SET key {cache_key}")
                 await redis.set(cache_key, json.dumps(result), ex=_CAPTION_CACHE_TTL)
                 logger.info(f"Caption cache SET: {video_id}")
             except Exception as cache_write_err:

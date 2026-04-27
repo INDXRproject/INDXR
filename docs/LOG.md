@@ -1,3 +1,5 @@
+[2026-04-27] fix: taak 1.4 [x] done — tijdelijke diagnostische logs verwijderd; logger.setLevel(INFO) permanent (uvicorn basicConfig gotcha); cross-user cache HIT op DZ6mNMS0HQ0 geverifieerd | gewijzigd: backend/main.py, docs/wiki/roadmap/priorities.md
+---
 [2026-04-27] feat: caption cache in Redis geïmplementeerd (taak 1.4) — upstash-redis==1.7.0; get_caption_redis() lazy init; cache key caption:{video_id}:en, TTL 30 dagen; PostHog events caption_cache_hit/miss/write_error; graceful degradatie als env vars afwezig | gewijzigd: backend/main.py, backend/requirements.txt, docs/wiki/roadmap/priorities.md
 ---
 [2026-04-27] docs: taak 1.3 smart polling backoff [x] done — geverifieerd op 8-min AssemblyAI job | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LOG.md
@@ -1429,4 +1431,42 @@ src/lib/pollingBackoff.ts
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-04-27 00:49] commit: feat(cache): caption cache in Upstash Redis (taak 1.4)
+
+- upstash-redis==1.7.0 toegevoegd aan requirements.txt
+- get_caption_redis() lazy init — graceful degradatie als env vars afwezig
+- Cache key: caption:{video_id}:en, TTL 30 dagen
+- Cache read vóór yt-dlp call; write ná succesvolle extractie (best-effort)
+- PostHog events: caption_cache_hit, caption_cache_miss, caption_cache_write_error
+- Errors (MembersOnly, no captions) worden niet gecached
+
+⚠️  Vereist UPSTASH_REDIS_REST_URL + _TOKEN in Railway env vars
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/requirements.txt
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-27 01:40] commit: debug(cache): tijdelijke diagnostische logging voor taak 1.4 verificatie
+
+- Log redis client initialisatie status + env var aanwezigheid
+- Log cache_key vóór SET
+- Log exception type expliciet bij cache write error
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+---
+[2026-04-27 01:50] commit: fix(logging): logger.setLevel(INFO) op named logger — basicConfig is no-op onder uvicorn
+
+logging.basicConfig() wordt genegeerd als uvicorn de root logger al heeft
+geconfigureerd. Uvicorn zet root op WARNING, waardoor indxr-backend INFO
+calls silent worden gefilterd. Expliciet setLevel op de named logger bypast dit.
+
+Wiki monitoring.md bijgewerkt met uitleg om herhaling te voorkomen.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/wiki/operations/monitoring.md
 ---
