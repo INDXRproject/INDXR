@@ -2,16 +2,16 @@
 
 ## Overzicht
 
-De playlist-engine extraheert transcripten voor meerdere YouTube-video's in één batch-operatie. De architectuur is volledig backend-gedreven: de Python backend beheert de job lifecycle, de frontend pollt de status.
+De playlist-engine extraheert transcripten voor meerdere YouTube-video's in één batch-operatie. De architectuur is volledig backend-gedreven: de Python backend beheert de job lifecycle via een ARQ-queue, de frontend pollt de status.
 
-Dit is Phase R in de roadmap ("Backend Playlist Orchestration").
+Zie [ADR-025](../decisions/025-per-video-decompositie.md) voor de architectuurkeuze (per-video decompositie) en [ADR-019](../decisions/019-arq-job-queue.md) voor de queue-implementatie (ARQ via Upstash Redis).
 
 ---
 
 ## Job Lifecycle
 
 ```
-Status flow: pending → running → completed / failed (partial)
+Status flow: running → complete / error (partial completion via video_results JSONB)
 ```
 
 ```
@@ -23,71 +23,110 @@ Status flow: pending → running → completed / failed (partial)
         ├─ Maakt playlist_extraction_jobs rij aan in Supabase
         │    {id, user_id, status: 'running', playlist_url, total_videos,
         │     video_ids, use_whisper_ids, collection_id}
-        ├─ Start background task: asyncio.create_task(run_playlist_job(...))
+        ├─ Enqueued eerste video-job via ARQ:
+        │    enqueue_job('process_playlist_video', playlist_id, 0,
+        │                _job_id=f"{playlist_id}:0")
         └─ Return {job_id} onmiddellijk
 
 5. Frontend pollt GET /api/playlist/jobs/{job_id} elke 2 seconden
-   └─ Next.js pollt Python: GET /api/playlist/jobs/{job_id}
-        └─ Python leest uit Supabase:
-             {status, completed, failed, total_videos,
-              current_video_index, current_video_title, video_results}
-        └─ Return progress naar frontend
+   └─ Leest rechtstreeks uit Supabase:
+        {status, completed, failed, total_videos, video_results}
 
-6. Wanneer job klaar: status = 'completed'
+6. Wanneer alle videos verwerkt: status = 'complete' (gezet door RPC)
    └─ video_results JSONB bevat per video_id:
         {status: 'success', transcript_id} of
-        {status: 'error', error_type: 'members_only'|'no_captions'|...}
+        {status: 'error', error_type: 'members_only'|'bot_detection'|...}
 ```
 
 ---
 
-## Background Job Implementatie
+## Per-video Chain Architectuur
 
-`run_playlist_job()` in `backend/main.py:1249`:
+### Orchestratie (Fase 3)
 
-```python
-async def run_playlist_job(job_id: str, payload: dict) -> None:
-    for idx, video_id in enumerate(video_ids):
-        # Update voortgang in Supabase
-        await update_playlist_job(current_video_index=idx, ...)
-        
-        if video_id in use_whisper_set:
-            # Whisper path: audio-transcriptie via AssemblyAI
-            whisper_job_id = str(uuid.uuid4())
-            # Maak transcription_jobs rij aan
-            # Wacht op run_whisper_job() (blocking within async)
-        else:
-            # Captions path: yt-dlp captions extractie
-            result = await extract_with_ytdlp(video_id, use_proxy=True)
-        
-        # Sla transcript op in Supabase
-        # Update video_results JSONB
-        # completed/failed tellers bijhouden
-    
-    # Job klaar
-    await update_playlist_job(status='completed', completed_at=...)
+Elke video in de playlist wordt als een aparte ARQ-job verwerkt. De jobs vormen een zelf-orchestrerende keten:
+
+```
+process_playlist_video(playlist_id, video_index=0)
+    → verwerkt video 0
+    → update via update_playlist_video_progress RPC
+    → enqueue process_playlist_video(playlist_id, 1, _job_id="{id}:1")
+
+process_playlist_video(playlist_id, video_index=1)
+    → verwerkt video 1
+    → update via RPC
+    → enqueue process_playlist_video(playlist_id, 2, _job_id="{id}:2")
+
+... (sequentieel)
+
+process_playlist_video(playlist_id, video_index=N-1)  ← laatste video
+    → verwerkt video N-1
+    → update via RPC (RPC zet status='complete' als completed+failed >= total)
+    → als bot_detection/timeout failures: enqueue process_playlist_retries (30s delay)
+    → anders: keten klaar
 ```
 
-**Belangrijk:** De videos worden sequentieel verwerkt (niet parallel). Dit is bewuste keuze om YouTube rate-limits te respecteren.
+**Sequentialiteit:** video's worden één voor één verwerkt. Dit respecteert YouTube rate-limits. De queue beheert orchestratie en recovery, niet parallellisme.
+
+**Deterministische `_job_id`:** `"{playlist_id}:{video_index}"` — garandeert dat dezelfde video niet twee keer tegelijk in de queue staat. Dubbele enqueues worden door ARQ stilzwijgend genegeerd.
+
+**`keep_result=0`** op `process_playlist_video` en `process_playlist_retries`: voorkomt de 1-uur ARQ uniqueness-lock na completion. Alle state leeft in Supabase, niet in Redis.
+
+### Idempotency
+
+Als een video-job al `status='success'` heeft in `video_results` (bijv. door een dubbele enqueue), wordt de verwerking overgeslagen en gaat de chain door naar de volgende video.
+
+### Retry-pass
+
+Na de laatste video wordt gecontroleerd of er `bot_detection` of `timeout` fouten zijn. Als ja, wordt `process_playlist_retries` met 30 seconden vertraging geënqueued. Die task pakt de gefaalde video's sequentieel op en overschrijft hun result in Supabase via dezelfde RPC (idempotent).
+
+---
+
+## Video Verwerking (per video)
+
+```python
+# worker.py: process_playlist_video
+1. Lees playlist state uit Supabase
+2. Idempotency check (al 'success'? → skip)
+3. Verwerk video:
+   a. Captions pad (yt-dlp):
+      - Eerste 3 videos (idx 0-2): gratis (geen credit-check, geen aftrek)
+      - Video 4+: check balance ≥ 1, deduct 1 credit na succesvolle opslag
+      - extract_with_ytdlp() → parse VTT → INSERT transcripts
+   b. Whisper pad (AssemblyAI):
+      - do_assemblyai_transcription() (youtube_utils + assemblyai_client)
+      - Credits aftrekken op basis van audio-duur (ceil(seconds/60), min 1)
+4. update_playlist_video_progress RPC (atomic JSONB update + completion check)
+5. Enqueue volgende video of retry-pass
+```
+
+---
+
+## Gedeelde Helpers
+
+| Module | Rol |
+|--------|-----|
+| `backend/youtube_utils.py` | `get_proxy_url`, VTT-parsing, `extract_with_ytdlp` (caption-pad) |
+| `backend/transcription_pipeline.py` | `do_assemblyai_transcription` (AssemblyAI-pad, gedeeld met standalone Whisper jobs) |
+| `backend/worker.py` | ARQ-tasks: `process_playlist_video`, `process_playlist_retries`, `_process_caption_video` |
 
 ---
 
 ## Database Schema
 
-`playlist_extraction_jobs` tabel (uit `supabase/migrations/20260412_playlist_extraction_jobs.sql`):
+`playlist_extraction_jobs` tabel:
 
 ```sql
 id                    UUID    PRIMARY KEY DEFAULT gen_random_uuid()
 user_id               UUID    REFERENCES auth.users(id) ON DELETE CASCADE
-status                TEXT    DEFAULT 'running'  -- 'running'|'completed'|'failed'
+status                TEXT    DEFAULT 'running'  -- 'running'|'complete'|'error'
 playlist_url          TEXT
 playlist_title        TEXT
 total_videos          INTEGER DEFAULT 0
 completed             INTEGER DEFAULT 0
 failed                INTEGER DEFAULT 0
-current_video_index   INTEGER DEFAULT 0
-current_video_title   TEXT    -- welke video wordt nu verwerkt
-video_ids             JSONB   DEFAULT '[]'   -- array van video IDs
+last_progress_at      TIMESTAMPTZ             -- bijgewerkt bij elke video-update
+video_ids             JSONB   DEFAULT '[]'   -- array van video IDs (volgorde bepaalt index)
 video_results         JSONB   DEFAULT '{}'   -- {video_id: {status, transcript_id|error_type}}
 use_whisper_ids       JSONB   DEFAULT '[]'   -- subset van video_ids die Whisper gebruiken
 collection_id         UUID    -- optioneel: groepeer in collection
@@ -96,43 +135,49 @@ created_at            TIMESTAMPTZ DEFAULT NOW()
 completed_at          TIMESTAMPTZ
 ```
 
-RLS: `"Users see own jobs"` — gebruikers zien alleen hun eigen jobs.
+RLS: gebruikers zien alleen eigen jobs.
+
+### RPC: `update_playlist_video_progress`
+
+Atomische update per video (zie `supabase/migrations/20260428_playlist_per_video_chain.sql` + fix `20260428_playlist_progress_rpc_status_fix.sql`):
+
+```sql
+SELECT update_playlist_video_progress(
+  p_playlist_id  UUID,
+  p_video_id     TEXT,
+  p_status       TEXT,        -- 'success' of 'error'
+  p_transcript_id UUID,       -- bij success
+  p_error_type   TEXT         -- bij error
+) RETURNS jsonb
+-- {playlist_complete: bool, completed: int, failed: int, total: int}
+```
+
+Idempotent: dubbele aanroep met identieke args verhoogt counters niet. Triggert auto-completion (`status='complete'`) wanneer `completed + failed >= total_videos`.
 
 ---
 
 ## Browser Recovery
 
 Als de gebruiker tijdens een job de pagina refresht of sluit:
-1. De job blijft draaien op de Python backend (Railway process)
+1. De job-keten draait door op de ARQ worker (Railway)
 2. Bij heropen: frontend haalt `job_id` op uit `sessionStorage`
 3. Frontend hervat polling op `GET /api/playlist/jobs/{job_id}`
-4. Voortgang is volledig herstelbaar uit Supabase
-
-Dit is de sleutelreden voor polling i.p.v. SSE/WebSockets — zie [008](../decisions/008-polling-vs-websockets.md).
+4. Voortgang is volledig herstelbaar uit Supabase (`video_results` JSONB)
 
 ---
 
 ## Collections Integratie
 
-Playlist-video's kunnen gegroepeerd worden in een **collection** (map in de bibliotheek):
+Playlist-video's kunnen gegroepeerd worden in een **collection**:
 
-- Bij aanmaak job: `collection_id` meegestuurd
-- Backend koppelt elke succesvol transcript aan de collection: `UPDATE transcripts SET collection_id = ? WHERE id = ?`
-- Collections schema: `supabase/migrations/20260305_collections.sql`
-
-```sql
-collections:
-  id UUID, user_id UUID, name TEXT, created_at TIMESTAMPTZ
-
-transcripts.collection_id → collections.id (ON DELETE SET NULL)
-```
+- Bij aanmaak job: `collection_id` opgeslagen in `playlist_extraction_jobs`
+- Per video-job: `collection_id` doorgegeven aan `do_assemblyai_transcription` of `_process_caption_video`
+- Backend koppelt transcript direct bij INSERT: `INSERT transcripts SET collection_id = ?`
 
 ---
 
 ## Quota Systeem
 
 Naast credits heeft de playlist-engine een aparte **playlist quota**:
-- `playlist_quota_used` / `playlist_quota_remaining` / `quota_resets_at`
-- Bijgehouden via `get_user_credits` RPC (retourneert ook quota info)
-- Bedoeld om abuse te voorkomen (bijv. iemand die 1000 videos tegelijk queued)
-- Exacte limiet en resetperiode: geconfigureerd in de `get_user_credits` RPC (niet in frontend code)
+- Bijgehouden via `get_user_credits` RPC
+- Exacte limiet en resetperiode: geconfigureerd in de RPC (niet in frontend code)

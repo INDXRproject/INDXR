@@ -61,6 +61,8 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [022-realtime-plus-polling-fallback.md](decisions/022-realtime-plus-polling-fallback.md) | Realtime + smart polling fallback (supersedet ADR-008) |
 | [023-observability-stack.md](decisions/023-observability-stack.md) | Sentry + PostHog + BetterStack + Crisp + Axiom observability stack |
 | [024-anti-abuse-welcome-credits.md](decisions/024-anti-abuse-welcome-credits.md) | Vier-laagse anti-abuse op welcome credits |
+| [025-per-video-decompositie.md](decisions/025-per-video-decompositie.md) | Per-video chain architectuur voor playlist-extractie (library-onafhankelijk) |
+| [026-arq-maintenance-mode-acceptatie.md](decisions/026-arq-maintenance-mode-acceptatie.md) | ARQ maintenance-mode geaccepteerd — post-launch heroverweging gepland |
 
 ---
 

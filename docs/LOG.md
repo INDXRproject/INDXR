@@ -1,4 +1,12 @@
-[2026-04-27] feat: taak 1.5 fase 2 [~] — YouTube Whisper→ARQ; run_whisper_job in worker.py; lifespan arq_pool in main.py; upload-pad asyncio; ack_late=False (Fase 4 upgrade); VPN+DSN-quote gotcha's gedocumenteerd | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/operations/known-issues.md, docs/wiki/operations/deployment.md
+[2026-04-28] feat: taak 1.5 fase 3b.2 [~] — per-video chain refactor; youtube_utils.py + transcription_pipeline.py nieuw; worker.py: run_whisper_job → do_assemblyai_transcription wrapper + process_playlist_video + process_playlist_retries ARQ tasks; main.py: run_whisper_job + run_playlist_job + VTT helpers verwijderd; /api/playlist/extract → ARQ enqueue(_job_id="{playlist_id}:0"); upload-pad refactored naar do_assemblyai_transcription | gewijzigd: backend/youtube_utils.py, backend/transcription_pipeline.py, backend/worker.py, backend/main.py
+---
+[2026-04-28] fix: taak 1.5 fase 3b.1 ✅ — RPC-fix migratie applied via Supabase MCP; status 'completed'→'complete' in update_playlist_video_progress; geverifieerd: 1-video test-playlist bereikt status='complete' na success-call; test-rij opgeruimd | gewijzigd: supabase/migrations/20260428_playlist_progress_rpc_status_fix.sql
+---
+[2026-04-28] feat: taak 1.5 fase 3a ✅ — Supabase-laag voor per-video chain; last_progress_at kolom + partial index + update_playlist_video_progress RPC (idempotent, auto-completion); handmatig testscript aangemaakt; database-schema.md bijgewerkt | gewijzigd: supabase/migrations/20260428_playlist_per_video_chain.sql, supabase/migrations/20260428_playlist_per_video_chain__manual_test.sql, docs/wiki/architecture/database-schema.md
+---
+[2026-04-28] docs: ARQ research verwerkt — ADR-019 herzien (maintenance-mode, per-video architectuur, post-launch heroverweging); ADR-025 nieuw (per-video decompositie); ADR-026 nieuw (ARQ maintenance-mode acceptatie); priorities.md fase 3 fasenplan bijgewerkt + taak 3.11 toegevoegd | gewijzigd: docs/wiki/decisions/019-arq-job-queue.md, docs/wiki/decisions/025-per-video-decompositie.md, docs/wiki/decisions/026-arq-maintenance-mode-acceptatie.md, docs/wiki/roadmap/priorities.md, docs/wiki/INDEX.md
+---
+[2026-04-27] verificatie: taak 1.5 fase 2 ✅ — YouTube Whisper via worker bewezen (job 2c11e87d, 26.54s, bao5kiMmXoU, 2cr); upload-pad asyncio bewezen (job fea97ef1, 9.2s); 3 deploy-issues opgelost (UPSTASH_REDIS_URL op API, 8 env vars op worker, PROXY_PASSWORD mismatch); wiki bijgewerkt | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/decisions/019-arq-job-queue.md, docs/wiki/operations/deployment.md, docs/wiki/operations/known-issues.md
 ---
 [2026-04-27] feat: taak 1.5 fase 1 ✅ — ARQ infra opgezet; arq==0.28.0 + redis==5.3.1 + hiredis==3.3.1 in requirements.txt; backend/worker.py (stub noop_task + WorkerSettings); Fase 0 TCP verificatie geslaagd | gewijzigd: backend/requirements.txt, backend/worker.py
 ---
@@ -1498,3 +1506,14 @@ docs/wiki/decisions/021-master-transcripts-cache.md
 docs/wiki/operations/deployment.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-04-27 04:30] commit: feat(queue): Whisper YouTube → ARQ migration (taak 1.5 fase 2)
+Changed: backend/main.py
+backend/worker.py
+docs/.obsidian/workspace.json
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-28 09:10] precompact: context compaction triggered

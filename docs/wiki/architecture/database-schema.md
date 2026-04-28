@@ -111,6 +111,7 @@ collection_id         UUID
 processing_time_seconds INTEGER
 created_at            TIMESTAMPTZ DEFAULT NOW()
 completed_at          TIMESTAMPTZ
+last_progress_at      TIMESTAMPTZ            -- laatste video-update (migratie 20260428); NULL voor legacy jobs
 ```
 
 RLS: gebruiker ziet alleen eigen jobs.
@@ -174,6 +175,27 @@ Gebruikt in: `credit_manager.py:119`, `backend/main.py` (summarization)
 
 ---
 
+### `update_playlist_video_progress(p_playlist_id, p_video_id, p_status, p_transcript_id?, p_error_type?)`
+Atomische per-video update voor de playlist chain pattern (ADR-025). Schrijft video-resultaat naar `video_results` JSONB, verhoogt de juiste counter (`completed` of `failed`), zet `last_progress_at = NOW()`, en markeert de playlist als `complete` zodra `completed + failed >= total_videos`.
+
+**Idempotent:** dubbele aanroep met identieke `p_video_id` + `p_status` verhoogt counters niet opnieuw.
+
+**Returns:**
+```json
+{
+  "playlist_complete": false,
+  "completed": 1,
+  "failed": 0,
+  "total": 5
+}
+```
+
+`p_status`: `'success'` of `'error'`. Bij success: `p_transcript_id` verplicht. Bij error: `p_error_type` verplicht.
+
+Migratie: `20260428_playlist_per_video_chain.sql`. Zie ADR-025.
+
+---
+
 ### `add_credits(p_user_id, p_amount, p_reason, p_metadata?)`
 Voegt credits toe (aankoop, refund, admin).
 
@@ -205,4 +227,6 @@ Gebruikt in: `src/app/actions/credits.ts`
 | `20260412_playlist_extraction_jobs.sql` | 2026-04-12 | `playlist_extraction_jobs` tabel + RLS |
 | `20260422_add_rag_settings_to_profiles.sql` | 2026-04-22 | `profiles.rag_export_confirmed` + `profiles.rag_chunk_size` |
 | `20260412_job_metrics_and_rename.sql` | 2026-04-12 | Job metrics kolommen + rename |
+| `20260423_rag_chunk_size_90.sql` | 2026-04-23 | `rag_chunk_size` CHECK constraint uitgebreid met waarde 90 |
+| `20260428_playlist_per_video_chain.sql` | 2026-04-28 | `playlist_extraction_jobs.last_progress_at` + partial index + `update_playlist_video_progress` RPC |
 | `add_playlist_jobs.sql` | *(oud)* | Vroege playlist jobs tabel (vervangen) |

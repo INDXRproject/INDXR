@@ -52,8 +52,11 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Stack: ARQ als aparte Railway worker-service naast bestaande FastAPI API-service.
     Idempotency: tabel `idempotency_keys` met TTL 24u op POST-endpoints.
     Zie [ADR-019](../decisions/019-arq-job-queue.md).
-    Fasenplan: Fase 0 ✅ | Fase 1 ✅ | Fase 2 (Whisper→ARQ) [~] | Fase 3–5 volgt.
+    Fasenplan: Fase 0 ✅ | Fase 1 ✅ | Fase 2 (Whisper→ARQ) ✅ 2026-04-27 | Fase 3a ✅ (Supabase-laag + RPC) | Fase 3b.1 ✅ (RPC status-fix) | Fase 3b.2 [~] (per-video chain code) | Fase 3b.3 [ ] (deploy + verificatie 5-video test) | Fase 4 [ ] (ack_late=True + idempotency keys) | Fase 5 TBD.
+    **Fase 2 verificatie 2026-04-27:** YouTube Whisper bewezen via worker (job 2c11e87d, 26.54s end-to-end, bao5kiMmXoU). Upload-pad blijft asyncio in API-process bewezen (job fea97ef1, 9.2s). Drie deployment-issues tijdens verificatie opgelost: UPSTASH_REDIS_URL ontbrak op API-service, 8 env vars ontbraken op worker, PROXY_PASSWORD mismatch. Code zelf werkte correct.
+    **ARQ library-keuze 2026-04-28:** Tijdens voorbereiding Fase 3 ontdekt dat ARQ in maintenance-only mode zit. Na grondige research besluit Khidr ARQ te houden tot post-launch heroverweging — zie ADR-026. Per-video architectuur (Fase 3) is library-onafhankelijk en wordt gebouwd op ARQ. Latere migratie naar Taskiq/streaq/Procrastinate is geschat 1-2 dagen werk omdat alle state in Supabase leeft (zie ADR-019 sectie Migratie-pad).
     Scope-beslissing: audio-upload pad blijft op asyncio.create_task (bytes in memory, korte flow); YouTube-extracties via ARQ. Zie ADR-019.
+    **Fase 3b.2 geïmplementeerd 2026-04-28:** youtube_utils.py + transcription_pipeline.py nieuw; worker.py uitgebreid met process_playlist_video + process_playlist_retries; main.py: run_whisper_job + run_playlist_job verwijderd; /api/playlist/extract → ARQ enqueue. Verificatie (Fase 3b.3) volgt in aparte sessie met 5-video playlist deploy op Railway.
 
 - [ ] **1.6 — yt-dlp fallback-cascade met bgutil PO token + alternatieve clients** (2–3 dagen)
     Doel: stabiliteit tegen YouTube bot-detection updates. Cascade-volgorde:
@@ -216,3 +219,6 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
 - [ ] **3.8 — Gamification systeem** (XP, levels, reward chests) — schema bestaat, implementatie deferred tot na redesign.
 - [ ] **3.9 — Referral program** (5+5 credits met abuse-preventie).
 - [ ] **3.10 — Volledige credit transaction history** (nu max 20 rijen) — onbeperkt of hogere limiet, integreren in admin dashboard.
+- [ ] **3.11 — Queue library heroverweging post-launch**
+    Trigger: eerste van (a) zes maanden post-launch, (b) ARQ-specifieke bug die ons blokkeert, (c) productie-incident dat library-feature vereist die ARQ niet biedt.
+    Kandidaten op dat moment evalueren met productie-data: Taskiq, streaq, Procrastinate. Migratie-werk geschat 1-2 dagen omdat alle state in Supabase leeft. Zie ADR-026.

@@ -110,6 +110,9 @@ Gewenst gedrag voor lokale dev. In productie altijd `STRIPE_WEBHOOK_SECRET` inst
 ### IPRoyal wachtwoord `I`/`l` verwarring
 Hoofdletter `I` en kleine letter `l` zijn visueel identiek. Bij 407: controleer karakter-voor-karakter.
 
+### Worker env vars: kopieer van API-service, niet uit hoofd
+**Incident 2026-04-27:** PROXY_PASSWORD op worker-service was incorrect overgetypt — gaf 407 proxy auth errors bij YouTube audio download. Fix: kopieer waarden karakter-voor-karakter vanuit de API-service env vars, nooit handmatig invoeren. Bij elke nieuwe worker-deploy of nieuwe env var: vergelijk de volledige env var lijst met de API-service.
+
 ### VPN blokkeert Upstash Redis TCP
 Proton VPN (en mogelijk andere commerciële VPN's) blokkeren TCP-poort 6379/6380 naar Upstash. REST/HTTPS via poort 443 werkt wel (caption cache). Symptoom: TLS handshake faalt direct — `errno=104` of `Connection reset by peer`. Workaround voor lokaal testen: VPN uit. Productie (Railway) is niet geraakt.
 
@@ -117,14 +120,32 @@ Proton VPN (en mogelijk andere commerciële VPN's) blokkeren TCP-poort 6379/6380
 
 ## Bekende Beperkingen
 
+### update_playlist_video_progress RPC heeft geen user_id check
+**Vastgesteld:** 2026-04-28
+**Bestand:** `supabase/migrations/20260428_playlist_per_video_chain.sql`
+**Impact:** Beperkt tot huidige architectuur veilig
+
+De RPC controleert niet of `auth.uid() = playlist_extraction_jobs.user_id` voordat hij een rij update. In de huidige architectuur is dit acceptabel omdat de Python backend `service_role` gebruikt (die toch alle rechten heeft) en de frontend deze RPC niet direct aanroept.
+
+**Wanneer fixen:** als de frontend ooit Realtime-subscriptions met schrijfrechten krijgt, of als deze RPC ooit vanuit `authenticated` rol direct aangeroepen wordt. Voeg dan toe aan het begin van de functie:
+
+```sql
+IF v_job.user_id != auth.uid() AND auth.role() != 'service_role' THEN
+  RAISE EXCEPTION 'Unauthorized';
+END IF;
+```
+
+---
+
 ### Geen duplicate transcript detectie
 Geen `video_id + user_id` uniciteit check — credits verbruikt bij elke extractie.
 
 ### Geen automatic retry voor gefaalde playlist videos
 Uitzondering: bot_detection en timeout worden na 30s eenmalig herprobeerd.
 
-### Railway restart kills background tasks
-Job-rijen blijven in Supabase maar achtergrondtaak sterft. Geen auto-recovery.
+### Railway restart kills in-flight jobs (gedeeltelijk opgelost)
+**YouTube Whisper-jobs (ARQ):** job-rijen blijven in Supabase maar de taak wordt niet herstart bij worker-crash (`ack_late=False`). Row blijft hangen op laatste status (`downloading` of `transcribing`). Auto-recovery komt in Fase 4 (idempotency keys + `ack_late=True`).
+**Upload-jobs en playlist-jobs:** draaien nog op `asyncio.create_task` in API-process — sterven bij Railway restart zonder recovery. Playlist-jobs worden gemigreerd naar ARQ in Fase 3.
 
 
 ### Geen uptime monitoring

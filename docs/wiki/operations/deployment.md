@@ -106,55 +106,57 @@ git add requirements.txt && git commit -m "update: add <package>"
 
 > **Gotcha: aanhalingstekens in Railway env-var waarde.** Plak de waarde als pure string, zonder aanhalingstekens — `rediss://default:TOKEN@HOST.upstash.io:6380`, **niet** `'rediss://...'`. Aanhalingstekens worden letterlijk meegenomen en resulteren in een `invalid DSN scheme` RuntimeError bij ARQ startup.
 
-### Environment Variables (Railway API-service)
+### Environment Variables (Railway — beide services)
+
+De volgende 12 env vars moeten op **zowel de API-service als de worker-service** staan. Bij introductie van een nieuwe backend env var: bepaal altijd of de worker hem ook nodig heeft en voeg hem op beide services toe.
 
 ```bash
-# Supabase (Service Role Key voor RPC calls)
+# Supabase (Service Role — bypass RLS voor RPC calls)
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
-# YouTube / Audio
+# Transcriptie
 ASSEMBLYAI_API_KEY=...
-DEEPSEEK_API_KEY=...
 
-# Proxy (optioneel)
-PROXY_ENABLED=false
+# Proxy (Decodo residentieel)
+PROXY_ENABLED=true
 PROXY_HOST=gate.decodo.com
 PROXY_PORT=10001
 PROXY_USERNAME=username
-PROXY_PASSWORD=password
+PROXY_PASSWORD=password          # ⚠️ Karakter-voor-karakter kopiëren — zie Workarounds
 
-# Auth
-BACKEND_API_SECRET=your-secret-key    # Zelfde als in Vercel
-
-# Analytics
+# Analytics + Monitoring
 POSTHOG_API_KEY=phc_...
+SENTRY_DSN_BACKEND=https://...@sentry.io/...
 
 # Logging
-LOG_LEVEL=INFO    # DEBUG | INFO | WARNING | ERROR
+LOG_LEVEL=INFO                   # DEBUG | INFO | WARNING | ERROR
 
-# Redis (caption cache — REST)
-UPSTASH_REDIS_REST_URL=https://...upstash.io
-UPSTASH_REDIS_REST_TOKEN=...
+# ARQ queue verbinding (TCP — verschilt van REST URL hieronder)
+UPSTASH_REDIS_URL=rediss://default:TOKEN@HOST.upstash.io:6380
 ```
 
-### Environment Variables (Railway worker-service)
-
-Identiek aan API-service, plus:
+### Environment Variables (Railway — alleen API-service)
 
 ```bash
-# ARQ queue verbinding (TCP — verschilt van REST URL boven)
-UPSTASH_REDIS_URL=rediss://default:TOKEN@HOST.upstash.io:6380
+# AI samenvatting
+DEEPSEEK_API_KEY=...
 
-# Zelfde vars als API-service:
-SUPABASE_URL=...
-SUPABASE_SERVICE_ROLE_KEY=...
-ASSEMBLYAI_API_KEY=...
-PROXY_ENABLED=...  # + PROXY_HOST/PORT/USERNAME/PASSWORD
+# Auth (gedeeld secret Next.js ↔ Python)
+BACKEND_API_SECRET=your-secret-key
+
+# Redis caption cache + rate limiting (REST/HTTPS)
+UPSTASH_REDIS_REST_URL=https://...upstash.io
+UPSTASH_REDIS_REST_TOKEN=...
+
+# YouTube Data API (playlist metadata)
+YOUTUBE_API_KEY=...
+
+# bgutil PO token runtime
+DENO_PATH=/root/.deno/bin
 ```
 
-> `UPSTASH_REDIS_URL` (TCP) is ook nodig op de API-service zodra Fase 2 actief is
-> (API enqueued dan jobs via dezelfde pool).
+> `SUPABASE_ANON_KEY` hoort **niet** op Railway — alleen op Vercel (Next.js client-side RLS). De worker gebruikt uitsluitend de service role key.
 
 ---
 
