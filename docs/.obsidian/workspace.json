@@ -185,17 +185,18 @@
   },
   "active": "af912fb4e8255d99",
   "lastOpenFiles": [
+    "LOG.md.tmp.454453.1777363191450",
+    "wiki/roadmap/priorities.md.tmp.454453.1777363179201",
+    "wiki/operations/error-taxonomy.md",
+    "wiki/operations/error-taxonomy.md.tmp.454453.1777363164618",
+    "wiki/operations/test-reports.md.tmp.454453.1777363099470",
+    "LOG.md.tmp.454453.1777362468259",
+    "wiki/roadmap/priorities.md.tmp.454453.1777362451954",
+    "wiki/roadmap/priorities.md.tmp.454453.1777362443957",
+    "wiki/operations/test-reports.md.tmp.454453.1777362432699",
+    "LOG.md.tmp.454453.1777361354126",
     "wiki/roadmap/priorities.md.tmp.454453.1777359752552",
     "wiki/roadmap/priorities.md.tmp.454453.1777359744209",
-    "wiki/architecture/playlist-engine.md.tmp.454453.1777359731455",
-    "LOG.md.tmp.454453.1777359619086",
-    "LOG.md.tmp.454453.1777357709136",
-    "wiki/architecture/database-schema.md.tmp.6428.1777356474430",
-    "wiki/operations/known-issues.md.tmp.6428.1777354737829",
-    "LOG.md.tmp.6428.1777354262495",
-    "wiki/architecture/database-schema.md.tmp.6428.1777354256968",
-    "wiki/architecture/database-schema.md.tmp.6428.1777354251434",
-    "wiki/architecture/database-schema.md.tmp.6428.1777354241609",
     "wiki/decisions/026-arq-maintenance-mode-acceptatie.md",
     "wiki/decisions/025-per-video-decompositie.md",
     "wiki/decisions/019-arq-job-queue.md",
@@ -219,7 +220,6 @@
     "content/ARTIKEL-youtube-to-text.md",
     "content/ARTIKEL-youtube-srt-download.md",
     "content/ARTIKEL-youtube-playlist-transcript.md",
-    "content/ARTIKEL-youtube-members-only-transcript.md",
-    "content/ARTIKEL-youtube-age-restricted-transcript.md"
+    "content/ARTIKEL-youtube-members-only-transcript.md"
   ]
 }

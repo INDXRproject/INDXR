@@ -1,6 +1,10 @@
+[2026-04-28] docs: taak 1.5b — error-taxonomy.md aangemaakt met 9 error_types (bot_detection, youtube_restricted, age_restricted, members_only, timeout, extraction_error, no_captions, no_speech, insufficient_credits); retry-pass bot_detection ineffectiviteit gedocumenteerd (verified Fase 3b.3 logs); priorities.md bijgewerkt | gewijzigd: docs/wiki/operations/error-taxonomy.md, docs/wiki/roadmap/priorities.md, docs/wiki/operations/test-reports.md
+---
+[2026-04-28] feat: taak 1.5 fase 3b.3 ✅ — productie verificatie 22-video playlist (Joe Rogan); 18/22 succesvol in 295s; 45cr afgetrokken (30cr Whisper + 15cr captions); 4 failures YouTube-kant (2× bot_detection, 1× youtube_restricted, 1× extraction_error); architecture chain volledig gevalideerd | testrapport: docs/wiki/operations/test-reports.md
+---
 [2026-04-28] fix: taak 1.5 fase 3b.3 — AttributeError fix in /api/playlist/extract: variabele-naam-clash 'request' (Pydantic body vs FastAPI Request); http_request: Request toegevoegd als tweede parameter; http_request.app.state.arq_pool | gewijzigd: backend/main.py
 ---
-[2026-04-28] feat: taak 1.5 fase 3b.2 [~] — per-video chain refactor; youtube_utils.py + transcription_pipeline.py nieuw; worker.py: run_whisper_job → do_assemblyai_transcription wrapper + process_playlist_video + process_playlist_retries ARQ tasks; main.py: run_whisper_job + run_playlist_job + VTT helpers verwijderd; /api/playlist/extract → ARQ enqueue(_job_id="{playlist_id}:0"); upload-pad refactored naar do_assemblyai_transcription | gewijzigd: backend/youtube_utils.py, backend/transcription_pipeline.py, backend/worker.py, backend/main.py
+[2026-04-28] feat: taak 1.5 fase 3b.2 ✅ — per-video chain refactor; youtube_utils.py + transcription_pipeline.py nieuw; worker.py: run_whisper_job → do_assemblyai_transcription wrapper + process_playlist_video + process_playlist_retries ARQ tasks; main.py: run_whisper_job + run_playlist_job + VTT helpers verwijderd; /api/playlist/extract → ARQ enqueue(_job_id="{playlist_id}:0"); upload-pad refactored naar do_assemblyai_transcription | gewijzigd: backend/youtube_utils.py, backend/transcription_pipeline.py, backend/worker.py, backend/main.py
 ---
 [2026-04-28] fix: taak 1.5 fase 3b.1 ✅ — RPC-fix migratie applied via Supabase MCP; status 'completed'→'complete' in update_playlist_video_progress; geverifieerd: 1-video test-playlist bereikt status='complete' na success-call; test-rij opgeruimd | gewijzigd: supabase/migrations/20260428_playlist_progress_rpc_status_fix.sql
 ---
@@ -1539,4 +1543,8 @@ docs/wiki/roadmap/priorities.md
 supabase/migrations/20260428_playlist_per_video_chain.sql
 supabase/migrations/20260428_playlist_per_video_chain__manual_test.sql
 supabase/migrations/20260428_playlist_progress_rpc_status_fix.sql
+---
+[2026-04-28 09:30] commit: fix: variable name clash in /api/playlist/extract (Fase 3b.3)
+Changed: backend/main.py
+docs/LOG.md
 ---
