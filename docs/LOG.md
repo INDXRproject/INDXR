@@ -1,3 +1,5 @@
+[2026-04-28] docs: data-collection-wishlist.md — PostHog event wishlist voor cascade-pad tracking, master cache hit/miss attribution, cost-tracking per extractie | gewijzigd: docs/wiki/operations/data-collection-wishlist.md
+---
 [2026-04-28] fix: basicConfig force=True — uvicorn overschrijft root logger vóór app start waardoor named loggers zonder setLevel op WARNING bleven; force=True zorgt dat alle loggers INFO erven van root | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/operations/known-issues.md
 ---
 [2026-04-28] feat: cascade stap 1 logging + ADR-012 pricing-evolutie — extract_via_youtube_transcript_api() per-exception INFO logging (RequestBlocked/IpBlocked/TranscriptsDisabled/NoTranscriptFound/VideoUnavailable/VideoUnplayable) + [YT-API] attempting prefix; ADR-012 pricing-evolutie sectie toegevoegd (premium-positionering + early-adopter strategie); priorities.md: stap 1 logging-notitie + 1.13 pre-uitvoering ADR-012 verwijzing | gewijzigd: backend/youtube_utils.py, docs/wiki/decisions/012-pricing-tiers.md, docs/wiki/roadmap/priorities.md
@@ -1707,4 +1709,21 @@ Changed: backend/youtube_utils.py
 docs/LOG.md
 docs/wiki/decisions/012-pricing-tiers.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-04-28 17:56] commit: fix: basicConfig force=True — uvicorn root logger override
+
+logging.basicConfig() is een silent no-op als de root logger al handlers
+heeft. Uvicorn registreert eigen handlers vóór app start, waardoor named
+loggers zonder expliciete setLevel() van uvicorn root (WARNING) erfden
+in plaats van onze geconfigureerde INFO root.
+
+force=True toegevoegd in main.py en worker.py zodat alle named loggers
+(indxr-youtube-utils, indxr-backend, etc.) correct INFO erven van root.
+known-issues.md bijgewerkt met root cause + fix.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/operations/known-issues.md
 ---
