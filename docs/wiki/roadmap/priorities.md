@@ -69,6 +69,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     1. [x] youtube-transcript-api (caption-only, gratis) ✅ 2026-04-28
        `extract_via_youtube_transcript_api()` in youtube_utils.py; geïntegreerd in main.py + worker.py
        Metadata-aanvulling via YouTube Data API `videos.list` na stap 1 succes ✅ 2026-04-28 (ADR-028)
+       Logging volledig diagnose-vriendelijk ✅ 2026-04-28 — per-exception INFO in `extract_via_youtube_transcript_api()`; `[YT-API] attempting {video_id}` bij elke poging
     2. yt-dlp `--write-subs` met `ios,web_embedded` client (huidige config, bestaand als stap 2)
     3. yt-dlp met `tv`,`android` clients (client-rotatie — vervangt bgutil, zie ADR-027)
     4. yt-dlp audio download → AssemblyAI
@@ -118,9 +119,10 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
 
 - [ ] **1.13 — Stripe live-mode activatie + Radar config** (4u)
     Doel: live betalingen + fraud-bescherming.
+    ⚠️ Vóór uitvoering: zie [ADR-012 sectie "Pricing-evolutie"](../decisions/012-pricing-tiers.md) — nieuwe prijspunten vaststellen en early-adopter strategie bepalen vóór producten aanmaken in Stripe.
     Componenten:
     - Stripe account activeren met KVK/bedrijfsinfo
-    - 5 producten in live mode (Try €2.49/200cr, Basic €5.99/500cr, Plus €11.99/1100cr, Pro €24.99/2600cr, Power €49.99/5500cr)
+    - 5 producten in live mode (Try €2.49/200cr, Basic €5.99/500cr, Plus €11.99/1100cr, Pro €24.99/2600cr, Power €49.99/5500cr) — prijzen herzien vóór aanmaken (zie ADR-012)
     - `PACKAGES` in `src/app/api/stripe/checkout/route.ts` synchroniseren met live-prijzen
     - Webhook endpoint registreren op `https://indxr.ai/api/stripe/webhook`
     - `STRIPE_WEBHOOK_SECRET` toevoegen aan Vercel

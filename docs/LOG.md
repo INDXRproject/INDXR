@@ -1,3 +1,5 @@
+[2026-04-28] feat: cascade stap 1 logging + ADR-012 pricing-evolutie — extract_via_youtube_transcript_api() per-exception INFO logging (RequestBlocked/IpBlocked/TranscriptsDisabled/NoTranscriptFound/VideoUnavailable/VideoUnplayable) + [YT-API] attempting prefix; ADR-012 pricing-evolutie sectie toegevoegd (premium-positionering + early-adopter strategie); priorities.md: stap 1 logging-notitie + 1.13 pre-uitvoering ADR-012 verwijzing | gewijzigd: backend/youtube_utils.py, docs/wiki/decisions/012-pricing-tiers.md, docs/wiki/roadmap/priorities.md
+---
 [2026-04-28] fix: caption-cache hardening + flush-script — CACHED_CAPTION_REQUIRED_KEYS frozenset in main.py; malformed entries geëvict bij eerste read (redis.delete + cache-miss fall-through); backend/scripts/flush_caption_cache.py (--dry-run, --yes flags); backend/.gitignore: scripts/ → specifieke exclusie zodat flush-script getrackt wordt; known-issues.md bijgewerkt | gewijzigd: backend/main.py, backend/scripts/flush_caption_cache.py, backend/.gitignore, docs/wiki/operations/known-issues.md
 ---
 [2026-04-28] fix: KeyError 'title' bij cascade stap 1 succes (ADR-028) — YouTube Data API videos.list als metadata-bron na stap 1; get_video_details() uitgebreid met channel + upload_date; metadata-fetch failure → stap 1 weggooien + cascade naar stap 2; [YT-DATA-API quota exceeded] log-prefix; worker.py: YouTubeClient import + _yt_client singleton + zelfde metadata-patroon in _process_caption_video(); ADR-028 aangemaakt; 6 wiki-pagina's bijgewerkt (INDEX, priorities, known-issues, ai-pipeline, ADR-021, ADR-028) | gewijzigd: backend/youtube_client.py, backend/main.py, backend/worker.py, docs/wiki/decisions/028-youtube-data-api-metadata.md, docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/decisions/021-master-transcripts-cache.md
@@ -1673,4 +1675,19 @@ docs/wiki/decisions/021-master-transcripts-cache.md
 docs/wiki/decisions/028-youtube-data-api-metadata.md
 docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-04-28 16:09] commit: fix: caption-cache hardening + flush-script voor malformed entries
+
+CACHED_CAPTION_REQUIRED_KEYS frozenset in main.py; cache-read valideert
+alle required keys na json.loads — bij missing keys: redis.delete() +
+behandelen als cache-miss (geen crash, geen herhaalbare failure).
+flush_caption_cache.py: SCAN caption:* + DEL met --dry-run / --yes flags.
+backend/.gitignore: scripts/ verfijnd zodat het script getrackt wordt.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/.gitignore
+backend/main.py
+backend/scripts/flush_caption_cache.py
+docs/LOG.md
+docs/wiki/operations/known-issues.md
 ---

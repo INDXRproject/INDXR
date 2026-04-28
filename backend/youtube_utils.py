@@ -161,6 +161,7 @@ async def extract_via_youtube_transcript_api(
     failure (rate-limit, blocked, no captions, etc.). Never raises — None signals
     the cascade to fall through to the next step.
     """
+    logger.info(f"[YT-API] attempting {video_id}")
     try:
         from youtube_transcript_api import (
             YouTubeTranscriptApi,
@@ -191,11 +192,26 @@ async def extract_via_youtube_transcript_api(
             "model": "youtube_transcript_api",
         }
 
-    except (RequestBlocked, IpBlocked, TranscriptsDisabled, NoTranscriptFound,
-            VideoUnavailable, VideoUnplayable):
+    except RequestBlocked:
+        logger.info(f"[YT-API] {video_id}: RequestBlocked (proxy IP geblokkeerd)")
+        return None
+    except IpBlocked:
+        logger.info(f"[YT-API] {video_id}: IpBlocked")
+        return None
+    except TranscriptsDisabled:
+        logger.info(f"[YT-API] {video_id}: TranscriptsDisabled (geen captions ingeschakeld)")
+        return None
+    except NoTranscriptFound:
+        logger.info(f"[YT-API] {video_id}: NoTranscriptFound (geen Engelse captions)")
+        return None
+    except VideoUnavailable:
+        logger.info(f"[YT-API] {video_id}: VideoUnavailable")
+        return None
+    except VideoUnplayable:
+        logger.info(f"[YT-API] {video_id}: VideoUnplayable")
         return None
     except Exception as e:
-        logger.warning(f"[YT-API] {video_id}: {type(e).__name__}: {e}")
+        logger.warning(f"[YT-API] {video_id}: unexpected {type(e).__name__}: {e}")
         return None
 
 

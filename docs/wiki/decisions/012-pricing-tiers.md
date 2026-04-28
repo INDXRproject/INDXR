@@ -81,3 +81,19 @@ Maandelijkse infrastructuurkosten: Railway ($5) + Vercel ($20) + Supabase ($25) 
 **Openstaande vragen:**
 - Bestaande testgebruikers met 5 credits onder het oude model: zie ADR-009 voor de migratiestrategie.
 - Starter en Power uit het oude model waren nooit aangemaakt in live Stripe — geen actie nodig voor die.
+
+---
+
+## Pricing-evolutie en early-adopter strategie
+
+*(Toegevoegd 2026-04-28)*
+
+Door de architectuur-investeringen na vaststelling van de huidige prijzen — cascade voor extractie-stabiliteit, `master_transcripts` cache als moat, Cloudflare R2 storage, betere observability (Sentry, PostHog, BetterStack) — is het product significant in waarde gestegen. De huidige prijspunten (Try €2.49 / Basic €5.99 / Plus €11.99 / Pro €24.99 / Power €49.99) positioneren INDXR.AI als prijsvechter. Dit reflecteert niet het werkelijke product-niveau.
+
+**Strategische intentie:** prijzen verhogen vóór launch zodat INDXR.AI vanaf dag één een premium-positionering hanteert. Doel: prijzen daarna langdurig stabiel houden (jaren), wat eerlijker is naar later-instromende consumenten dan periodieke verhogingen na lanceringen.
+
+**Early-adopter eerlijkheid (ihsan-gedreven):** Een beta/early-bird fase overwegen waarin de definitieve prijzen met ~10% korting (of vergelijkbare early-adopter benefit) gelden voor een afgebakende periode of de eerste N betalende gebruikers. Dit beloont vroege believers zonder de basisprijsstructuur te ondermijnen.
+
+**Niet nu:** Concrete nieuwe prijspunten worden vastgesteld vlak vóór taak 1.13 (Stripe live-mode activatie). Reden: verdere productiviteit in tussenliggende sprints — cascade afmaken, `master_transcripts` read-logic (1.11), Realtime (1.10) — kan de onderbouwing voor een premium-niveau verder versterken. Beslissing nemen op basis van het complete productpakket, niet gefragmenteerd.
+
+**Gerelateerde taak:** 1.13 in `priorities.md` — bij uitvoering: nieuwe prijzen vaststellen en indien gekozen het early-adopter mechanisme ontwerpen.
