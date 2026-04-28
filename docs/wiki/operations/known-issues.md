@@ -4,18 +4,25 @@ Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-28.
 
 ---
 
-## ~~Logger inheritance: INFO logs verdwijnen onder uvicorn~~ ✅ Opgelost 2026-04-28
+## ~~Logger inheritance: INFO logs verdwijnen onder uvicorn~~ ✅ Opgelost 2026-04-28 (definitief 2026-04-28)
 
-**Root cause:** `logging.basicConfig()` is een silent no-op als de root logger
-al handlers heeft. Uvicorn registreert eigen handlers vóór onze app start.
-Named loggers zonder expliciete `setLevel` erfden daardoor van de uvicorn root
-(WARNING), niet van onze geconfigureerde INFO root.
+**Root cause (definitief):** Root logger stond op level 30 (WARNING) ondanks
+`basicConfig(level=INFO, force=True)`. Bewezen via `/api/debug/loggers` endpoint:
+`{"root": {"level": 30, "effective_level": 30, ...}}`. Sentry SDK overschrijft
+de root logger configuratie ná onze `basicConfig` call — de `import sentry_sdk` +
+`sentry_sdk.init()` staan direct onder onze logging setup en resetten root naar
+WARNING. `force=True` alleen is niet voldoende.
 
-**Fix:** `force=True` toegevoegd aan `basicConfig` in `main.py` en `worker.py`.
-Ref: https://docs.python.org/3/library/logging.html#logging.basicConfig
+**Fix (compleet):** `logging.getLogger().setLevel(logging.INFO)` toegevoegd ná
+`sentry_sdk.init()` in `main.py` én `worker.py`. Dit overschrijft wat Sentry
+instelt en garandeert dat root op INFO blijft, ongeacht import-volgorde.
 
 **Symptoom:** `[YT-API]`-logregels uit `youtube_utils.py` verschenen niet in
-Railway logs ondanks succesvolle extracties.
+Railway logs ondanks succesvolle extracties (cascade stap 1 werkte wél —
+bewezen via debug-endpoint: `{"result_type":"dict","has_transcript":true}`).
+
+**Eerdere gedeeltelijke fix:** `force=True` toegevoegd aan `basicConfig` — loste
+uvicorn handler-conflict op maar niet het Sentry-override probleem.
 
 ---
 

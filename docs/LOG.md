@@ -1,3 +1,5 @@
+[2026-04-28] fix: root logger Sentry-override — definitieve fix voor verdwijnende INFO logs; root logger stond op WARNING (level 30) ondanks basicConfig force=True omdat Sentry SDK root reset ná onze config; opgelost via logging.getLogger().setLevel(INFO) ná sentry_sdk.init(); debug-endpoints verwijderd; known-issues.md bijgewerkt met volledige root cause | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/operations/known-issues.md
+---
 [2026-04-28] docs: data-collection-wishlist.md — PostHog event wishlist voor cascade-pad tracking, master cache hit/miss attribution, cost-tracking per extractie | gewijzigd: docs/wiki/operations/data-collection-wishlist.md
 ---
 [2026-04-28] fix: basicConfig force=True — uvicorn overschrijft root logger vóór app start waardoor named loggers zonder setLevel op WARNING bleven; force=True zorgt dat alle loggers INFO erven van root | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/operations/known-issues.md
@@ -1727,3 +1729,25 @@ backend/worker.py
 docs/LOG.md
 docs/wiki/operations/known-issues.md
 ---
+[2026-04-28 18:00] commit: docs: data-collection wishlist voor PostHog events + cost-tracking
+
+Nieuwe wiki-pagina met wishlist voor toekomstige data-verzameling:
+cascade-pad tracking per extractie (welke stap slaagde + latency),
+master cache hit/miss attribution (moat-groei zichtbaar maken), en
+cost-tracking per extractie (input voor taak 2.5 cost-report).
+
+Geen ADR, geen taak — vindbaar bij implementatie van taak 2.5 en 2.6.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/data-collection-wishlist.md
+---
+[2026-04-28 23:03] commit: DEBUG: temporary diagnostic endpoints
+
+/api/debug/loggers — runtime logger state (level, handlers, propagate)
+/api/debug/trace-cascade-step1/{video_id} — force-triggers extract_via_youtube_transcript_api with logger + print tracing
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+---
+[2026-04-28 23:16] precompact: context compaction triggered

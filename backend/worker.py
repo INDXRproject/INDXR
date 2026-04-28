@@ -45,6 +45,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("indxr-worker")
 logger.setLevel(logging.INFO)
+# Force root logger to INFO — zelfde Sentry-override probleem als main.py.
+logging.getLogger().setLevel(logging.INFO)
 
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN_BACKEND"),
