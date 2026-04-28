@@ -58,7 +58,12 @@ def _track(distinct_id: str, event: str, properties: Optional[dict] = None) -> N
         logger.warning(f"PostHog tracking failed: {e}")
 
 
-def _classify_download_error(error_msg: str) -> str:
+def _classify_download_error(
+    error_msg: str,
+    *,
+    video_id: Optional[str] = None,
+    job_id: Optional[str] = None,
+) -> str:
     """Map a download error string to a canonical error_type slug."""
     lower = error_msg.lower()
     if any(kw in lower for kw in MEMBERS_ONLY_KEYWORDS):
@@ -71,6 +76,10 @@ def _classify_download_error(error_msg: str) -> str:
         return 'timeout'
     if '152' in error_msg or 'unavailable' in lower:
         return 'youtube_restricted'
+    logger.warning(
+        f"[extraction_error:unclassified] raw={error_msg!r} "
+        f"video_id={video_id} job_id={job_id}"
+    )
     return 'extraction_error'
 
 
@@ -143,7 +152,7 @@ async def do_assemblyai_transcription(
                 if any(kw in error_msg.lower() for kw in MEMBERS_ONLY_KEYWORDS):
                     await _update_job(status="error", error_message="members_only")
                     return {"success": False, "error_type": "members_only", "credit_cost": 0}
-                error_type = _classify_download_error(error_msg)
+                error_type = _classify_download_error(error_msg, video_id=video_id, job_id=job_id)
                 _track(user_id, 'whisper_failed', {
                     'video_id': video_id, 'source_type': 'youtube',
                     'error_type': error_type, 'error_message': error_msg,

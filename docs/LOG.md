@@ -1,3 +1,5 @@
+[2026-04-28] feat: taak 1.5b ✅ — raw yt-dlp logging bij extraction_error geïmplementeerd; _classify_download_error() uitgebreid met video_id + job_id params + WARNING log op catch-all; 3 call sites bijgewerkt (transcription_pipeline.py:155, worker.py:255+389); bgutil startup logging debug→info/warning in main.py; worker bgutil health check bij startup (socket probe 127.0.0.1:4416) via WorkerSettings.on_startup; priorities.md + error-taxonomy.md bijgewerkt | gewijzigd: backend/transcription_pipeline.py, backend/worker.py, backend/main.py, docs/wiki/roadmap/priorities.md, docs/wiki/operations/error-taxonomy.md
+---
 [2026-04-28] docs: taak 1.5b — error-taxonomy.md aangemaakt met 9 error_types (bot_detection, youtube_restricted, age_restricted, members_only, timeout, extraction_error, no_captions, no_speech, insufficient_credits); retry-pass bot_detection ineffectiviteit gedocumenteerd (verified Fase 3b.3 logs); priorities.md bijgewerkt | gewijzigd: docs/wiki/operations/error-taxonomy.md, docs/wiki/roadmap/priorities.md, docs/wiki/operations/test-reports.md
 ---
 [2026-04-28] feat: taak 1.5 fase 3b.3 ✅ — productie verificatie 22-video playlist (Joe Rogan); 18/22 succesvol in 295s; 45cr afgetrokken (30cr Whisper + 15cr captions); 4 failures YouTube-kant (2× bot_detection, 1× youtube_restricted, 1× extraction_error); architecture chain volledig gevalideerd | testrapport: docs/wiki/operations/test-reports.md
@@ -1547,4 +1549,15 @@ supabase/migrations/20260428_playlist_progress_rpc_status_fix.sql
 [2026-04-28 09:30] commit: fix: variable name clash in /api/playlist/extract (Fase 3b.3)
 Changed: backend/main.py
 docs/LOG.md
+---
+[2026-04-28 10:20] commit: docs: Fase 3b.3 testrapport + error taxonomy (taak 1.5b)
+Changed: docs/.obsidian/workspace.json
+docs/LOG.md
+docs/wiki/operations/error-taxonomy.md
+docs/wiki/operations/test-reports.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-28 10:26] commit: chore: ignore Obsidian UI state files
+Changed: .gitignore
+docs/.obsidian/workspace.json
 ---

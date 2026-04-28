@@ -142,15 +142,16 @@ def _start_bgutil_server() -> None:
             ['/usr/local/bin/bgutil-pot', '--version'],
             capture_output=True, text=True, timeout=5
         )
-        logger.debug(f"bgutil-pot version: {result.stdout.strip()} {result.stderr.strip()}")
+        logger.info(f"bgutil-pot version: {result.stdout.strip()} {result.stderr.strip()}")
     except Exception as e:
-        logger.debug(f"bgutil-pot binary check failed: {e}")
+        logger.warning(f"bgutil-pot binary check failed — PO-token server will not start: {e}")
         return
     _subprocess.Popen(
         ['/usr/local/bin/bgutil-pot', 'server', '--host', '127.0.0.1', '--port', '4416'],
         stdout=_subprocess.DEVNULL,
         stderr=_subprocess.DEVNULL,
     )
+    logger.info("bgutil-pot server started on 127.0.0.1:4416")
 _start_bgutil_server()
 
 # CORS configuration for Next.js frontend

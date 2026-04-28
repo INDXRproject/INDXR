@@ -83,13 +83,13 @@ Eén plek voor alle `error_type` slugs die voorkomen in `transcription_jobs`, `p
 ### `extraction_error`
 
 - **Categorie:** Hybride (classificatie deels onzeker)
-- **Technische definitie:** Catch-all in `_classify_download_error()` — elke yt-dlp exception die niet matcht op de specifieke keywords (`transcription_pipeline.py:74`). Ook: fallback in `_call_progress_rpc` als `error_type` None is (`worker.py:166`: `error_type or 'extraction_error'`).
+- **Technische definitie:** Catch-all in `_classify_download_error()` — elke yt-dlp exception die niet matcht op de specifieke keywords (`transcription_pipeline.py:83`). Ook: fallback in `_call_progress_rpc` als `error_type` None is (`worker.py:166`: `error_type or 'extraction_error'`).
 - **Voorbeeld error message:** Alles wat niet specifiek geclassificeerd wordt — parse errors, onverwachte yt-dlp output, netwerkfouten zonder bekende signature.
 - **Frequency observed:** 1× in Fase 3b.3 productietest (video `si6aHp0U6wg`)
 - **User-facing message NL:** "Extractie mislukt. Probeer het later opnieuw of gebruik AI-transcriptie."
 - **User-facing message EN:** "Extraction failed. Try again later or use AI transcription."
-- **Mitigatie nu:** Geen automatische retry (niet retry-eligible in `_enqueue_next`).
-- **Mitigatie gepland:** Taak 1.6 cascade geeft aanvullende extractie-paden. Betere classificatie vereist: elk concreet geval in productie analyseren om specifieke keywords toe te voegen aan `_classify_download_error`. **Open actie:** logging verbeteren om raw yt-dlp output te bewaren bij `extraction_error` zodat classificatie verfijnd kan worden.
+- **Mitigatie nu:** Geen automatische retry (niet retry-eligible in `_enqueue_next`). Raw error string wordt gelogd op WARNING met video_id en job_id — zie Railway logs op `[extraction_error:unclassified]`.
+- **Mitigatie gepland:** Taak 1.6 cascade geeft aanvullende extractie-paden. Betere classificatie: productie-logs analyseren op `[extraction_error:unclassified]` om specifieke keywords toe te voegen aan `_classify_download_error`.
 
 ---
 

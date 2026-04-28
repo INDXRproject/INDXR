@@ -59,10 +59,10 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     **Fase 3b.2 geïmplementeerd 2026-04-28:** youtube_utils.py + transcription_pipeline.py nieuw; worker.py uitgebreid met process_playlist_video + process_playlist_retries; main.py: run_whisper_job + run_playlist_job verwijderd; /api/playlist/extract → ARQ enqueue.
     **Fase 3b.3 geverifieerd 2026-04-28:** 22-video playlist (Joe Rogan, 3 Whisper + 19 captions) in productie getest. 18/22 succesvol in 295s. 45cr afgetrokken. 4 failures allemaal YouTube-kant (2× bot_detection, 1× youtube_restricted, 1× extraction_error). Architecture chain volledig gevalideerd. Zie test-reports.md voor volledig rapport.
 
-- [~] **1.5b — Error taxonomie documentatie** (~1u, deels gedaan)
+- [x] **1.5b — Error taxonomie documentatie** ✅ 2026-04-28
     Doel: één plek voor alle error_types met categorie, user-facing message, en mitigatie. Input voor taak 1.6 (cascade-prioritering), 1.10 (user-friendly messages), 1.19 (UI bugs).
     Zie [wiki/operations/error-taxonomy.md](../operations/error-taxonomy.md).
-    Status: initiële versie aangemaakt 2026-04-28 met alle 9 error_types uit Fase 3b.3 productietest. Groeit organisch tijdens verdere testing. Open actie: logging verbeteren om raw yt-dlp output te bewaren bij `extraction_error`.
+    Status: afgerond. 9 error_types gedocumenteerd. Raw yt-dlp logging bij `extraction_error` geïmplementeerd (`_classify_download_error()` logt nu raw error + video_id + job_id op WARNING). bgutil startup logging verbeterd in `main.py` + worker health check bij startup toegevoegd.
 
 - [ ] **1.6 — yt-dlp fallback-cascade met bgutil PO token + alternatieve clients** (2–3 dagen)
     Doel: stabiliteit tegen YouTube bot-detection updates. Cascade-volgorde:
