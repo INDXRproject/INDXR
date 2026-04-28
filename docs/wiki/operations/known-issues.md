@@ -1,6 +1,21 @@
 # Known Issues & TODOs
 
-Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-15.
+Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-28.
+
+---
+
+## ~~Logger inheritance: INFO logs verdwijnen onder uvicorn~~ ✅ Opgelost 2026-04-28
+
+**Root cause:** `logging.basicConfig()` is een silent no-op als de root logger
+al handlers heeft. Uvicorn registreert eigen handlers vóór onze app start.
+Named loggers zonder expliciete `setLevel` erfden daardoor van de uvicorn root
+(WARNING), niet van onze geconfigureerde INFO root.
+
+**Fix:** `force=True` toegevoegd aan `basicConfig` in `main.py` en `worker.py`.
+Ref: https://docs.python.org/3/library/logging.html#logging.basicConfig
+
+**Symptoom:** `[YT-API]`-logregels uit `youtube_utils.py` verschenen niet in
+Railway logs ondanks succesvolle extracties.
 
 ---
 

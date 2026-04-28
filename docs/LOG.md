@@ -1,3 +1,5 @@
+[2026-04-28] fix: basicConfig force=True — uvicorn overschrijft root logger vóór app start waardoor named loggers zonder setLevel op WARNING bleven; force=True zorgt dat alle loggers INFO erven van root | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/operations/known-issues.md
+---
 [2026-04-28] feat: cascade stap 1 logging + ADR-012 pricing-evolutie — extract_via_youtube_transcript_api() per-exception INFO logging (RequestBlocked/IpBlocked/TranscriptsDisabled/NoTranscriptFound/VideoUnavailable/VideoUnplayable) + [YT-API] attempting prefix; ADR-012 pricing-evolutie sectie toegevoegd (premium-positionering + early-adopter strategie); priorities.md: stap 1 logging-notitie + 1.13 pre-uitvoering ADR-012 verwijzing | gewijzigd: backend/youtube_utils.py, docs/wiki/decisions/012-pricing-tiers.md, docs/wiki/roadmap/priorities.md
 ---
 [2026-04-28] fix: caption-cache hardening + flush-script — CACHED_CAPTION_REQUIRED_KEYS frozenset in main.py; malformed entries geëvict bij eerste read (redis.delete + cache-miss fall-through); backend/scripts/flush_caption_cache.py (--dry-run, --yes flags); backend/.gitignore: scripts/ → specifieke exclusie zodat flush-script getrackt wordt; known-issues.md bijgewerkt | gewijzigd: backend/main.py, backend/scripts/flush_caption_cache.py, backend/.gitignore, docs/wiki/operations/known-issues.md
@@ -1690,4 +1692,19 @@ backend/main.py
 backend/scripts/flush_caption_cache.py
 docs/LOG.md
 docs/wiki/operations/known-issues.md
+---
+[2026-04-28 17:24] commit: feat: cascade stap 1 per-exception logging + ADR-012 pricing-evolutie
+
+extract_via_youtube_transcript_api(): [YT-API] attempting prefix +
+individuele except-blokken per type (RequestBlocked, IpBlocked,
+TranscriptsDisabled, NoTranscriptFound, VideoUnavailable, VideoUnplayable)
+elk met logger.info. Geen logica-wijzigingen.
+ADR-012: nieuwe sectie pricing-evolutie en early-adopter strategie.
+priorities.md: logging-notitie stap 1 + pre-uitvoering verwijzing 1.13.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/youtube_utils.py
+docs/LOG.md
+docs/wiki/decisions/012-pricing-tiers.md
+docs/wiki/roadmap/priorities.md
 ---
