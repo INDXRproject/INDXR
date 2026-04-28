@@ -55,3 +55,9 @@ tests/playwright-report/
 tests/results/
 tests/__pycache__/
 test-results/
+
+# Obsidian UI state (not project content)
+docs/.obsidian/workspace.json
+docs/.obsidian/workspace-mobile.json
+docs/.obsidian/cache
+docs/.obsidian/.gitignore
