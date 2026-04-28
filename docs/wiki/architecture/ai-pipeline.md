@@ -174,6 +174,31 @@ De backend gebruikt een **Longest Common Substring (LCS)** algoritme met sliding
 
 ---
 
+## yt-dlp Client Strategie
+
+yt-dlp ondersteunt meerdere YouTube "player clients" die elk anders worden behandeld door YouTube's CDN en bot-protection. De huidige configuratie in `audio_utils.extract_youtube_audio()`:
+
+```python
+'extractor_args': {
+    'youtube': {
+        'player_client': ['ios', 'web_embedded'],
+    },
+},
+```
+
+| Client | PO Token vereist | Proxy-compatibel | Status |
+|--------|-----------------|------------------|--------|
+| `ios` | Nee | Ja | Primair — bypasses PO tokens |
+| `web_embedded` | Ja (via bgutil) | Ja | Fallback — bgutil verwijderd (ADR-027) |
+| `tv` | Nee | Ja | Kandidaat cascade-stap 3 (taak 1.6) |
+| `android` | Deels | Beperkt | Kandidaat cascade-stap 3 (taak 1.6) |
+
+**Waarom geen bgutil PO tokens:** bgutil-pot was geconfigureerd op de API-container, maar yt-dlp draait op de worker-container (aparte Railway service). De split-architectuur (ADR-025) maakte bgutil onbereikbaar precies waar het nodig was. Verwijderd via ADR-027. De iOS client werkte al maanden zonder PO tokens in productie.
+
+**Taak 1.6** introduceert een volledige cascade: `youtube-transcript-api` → yt-dlp ios/web_embedded → yt-dlp tv/android → AssemblyAI → `needs_manual_review`.
+
+---
+
 ## AssemblyAI Modellen
 
 INDXR.AI gebruikt de volgende modellen voor AI-transcriptie:

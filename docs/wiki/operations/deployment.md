@@ -80,8 +80,6 @@ Railway draait twee aparte services op hetzelfde Docker image:
 ```dockerfile
 FROM python:3.12-slim
 RUN apt-get install: ffmpeg, wget, nodejs, npm
-# Kopieert bgutil-pot binary naar /usr/local/bin/
-# Kopieert bgutil-ytdlp-pot-provider-rs.zip
 # pip install -r requirements.txt
 CMD: uvicorn main:app --host 0.0.0.0 --port 8000
 # Worker-service overschrijft CMD via Railway "Start Command" instelling:
@@ -152,8 +150,6 @@ UPSTASH_REDIS_REST_TOKEN=...
 # YouTube Data API (playlist metadata)
 YOUTUBE_API_KEY=...
 
-# bgutil PO token runtime
-DENO_PATH=/root/.deno/bin
 ```
 
 > `SUPABASE_ANON_KEY` hoort **niet** op Railway — alleen op Vercel (Next.js client-side RLS). De worker gebruikt uitsluitend de service role key.
@@ -226,7 +222,7 @@ venv/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 Kopieer `.env.example` naar `.env.local` (frontend) en `backend/.env` (backend).
 
 **Upstash optioneel:** Als `UPSTASH_REDIS_REST_URL` leeg is, werkt rate limiting als no-op.  
-**bgutil-pot:** Linux x86_64 binary — werkt niet op macOS. Meeste extractions werken zonder het op lokaal (YouTube captions zonder PO token).
+**bgutil-pot:** Verwijderd (ADR-027). yt-dlp iOS client bypasses PO tokens — geen externe binary vereist.
 
 ---
 

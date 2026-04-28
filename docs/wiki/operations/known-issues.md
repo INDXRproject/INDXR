@@ -63,9 +63,8 @@ Dit is geen bug die gefixt wordt — het is een YouTube infrastructuur beperking
 ### Processing time teller loopt niet tijdens verwerking
 Teller toont alleen eindtijd, geen real-time voortgang tijdens polling.
 
-### iOS PO token ontbreekt voor bgutil
-**Status:** Tech debt — zie priorities.md (PRE-LAUNCH).
-**Fix:** iOS PO token ondersteuning in bgutil-pot toevoegen als fallback.
+### ~~iOS PO token ontbreekt voor bgutil~~ ✅ Opgelost 2026-04-28
+bgutil-pot volledig verwijderd via ADR-027. iOS client bypasses PO tokens — niet meer relevant.
 
 ---
 
@@ -98,8 +97,8 @@ Alle user flows nog niet volledig gedocumenteerd.
 
 ## Bekende Workarounds
 
-### bgutil-pot werkt niet op macOS
-Linux x86_64 binary. Workaround: test in Linux Docker container.
+### ~~bgutil-pot werkt niet op macOS~~ ✅ Opgelost 2026-04-28
+bgutil-pot verwijderd (ADR-027). Geen binary meer in de codebase.
 
 ### Stripe Webhook: Signature verificatie overgeslagen lokaal
 Gewenst gedrag voor lokale dev. In productie altijd `STRIPE_WEBHOOK_SECRET` instellen.

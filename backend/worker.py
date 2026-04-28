@@ -399,25 +399,7 @@ async def noop_task(ctx: dict) -> str:
     return "ok"
 
 
-async def _startup(ctx: dict) -> None:
-    import socket
-
-    def _check() -> bool:
-        try:
-            with socket.create_connection(('127.0.0.1', 4416), timeout=2.0):
-                return True
-        except Exception:
-            return False
-
-    reachable = await asyncio.to_thread(_check)
-    if reachable:
-        logger.info("bgutil-pot health check: reachable on 127.0.0.1:4416")
-    else:
-        logger.warning("bgutil-pot health check: NOT reachable on 127.0.0.1:4416 — PO-token fallback unavailable")
-
-
 class WorkerSettings:
-    on_startup = _startup
     functions = [
         noop_task,
         run_whisper_job,

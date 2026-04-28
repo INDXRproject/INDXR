@@ -5,14 +5,6 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y ffmpeg wget nodejs npm && rm -rf /var/lib/apt/lists/*
 
-# Bundle bgutil-pot Rust binary (pre-downloaded to avoid Railway wget failures)
-COPY bin/bgutil-pot-linux-x86_64 /usr/local/bin/bgutil-pot
-RUN chmod +x /usr/local/bin/bgutil-pot
-
-# Bundle bgutil plugin zip (pre-downloaded to avoid Railway wget failures)
-RUN mkdir -p /root/yt-dlp-plugins
-COPY bin/bgutil-ytdlp-pot-provider-rs.zip /root/yt-dlp-plugins/
-
 # Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

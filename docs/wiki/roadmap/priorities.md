@@ -64,14 +64,14 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Zie [wiki/operations/error-taxonomy.md](../operations/error-taxonomy.md).
     Status: afgerond. 9 error_types gedocumenteerd. Raw yt-dlp logging bij `extraction_error` geïmplementeerd (`_classify_download_error()` logt nu raw error + video_id + job_id op WARNING). bgutil startup logging verbeterd in `main.py` + worker health check bij startup toegevoegd.
 
-- [ ] **1.6 — yt-dlp fallback-cascade met bgutil PO token + alternatieve clients** (2–3 dagen)
+- [ ] **1.6 — yt-dlp fallback-cascade met client-rotatie** (2–3 dagen)
     Doel: stabiliteit tegen YouTube bot-detection updates. Cascade-volgorde:
     1. youtube-transcript-api (caption-only, gratis)
-    2. yt-dlp `--write-subs` met `tv,ios` client (geen PO token nodig)
-    3. yt-dlp met PO token via bgutil-pot (web client)
+    2. yt-dlp `--write-subs` met `ios,web_embedded` client (huidige config)
+    3. yt-dlp met `tv`,`android` clients (client-rotatie — vervangt bgutil, zie ADR-027)
     4. yt-dlp audio download → AssemblyAI
     5. Markeer `needs_manual_review`, ga door met playlist
-    Bestaande bgutil-pot Rust binary blijft (zie ADR-007); iOS PO token fallback wordt onderdeel van deze cascade.
+    bgutil-pot verwijderd (ADR-027). Cascade-stap 3 is client-rotatie binnen yt-dlp zelf.
     Afhankelijk van: 1.5 (cascade-stappen worden queue-jobs).
 
 - [ ] **1.7 — Graceful shutdown handling (SIGTERM)** (1 dag)
@@ -179,7 +179,6 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
 
 ### Pre-launch — bestaande features afronden
 
-- [ ] **iOS PO token fix voor bgutil** — wordt opgelost als onderdeel van 1.6 (yt-dlp cascade).
 - [ ] **Opus 249 audio format valideren en deployen** — kwaliteitstest op 50 diverse video's, dan format selector aanpassen. Zie ADR-016. ~63% reductie in proxy-bandbreedte.
 - [ ] **Website copy volledig herschrijven** — landing page, pricing, FAQ, onboarding, error messages. Plaats: vóór 1.20 (polish heeft definitieve copy nodig).
 - [ ] **RAG JSON: Settings chunk size ✓ feedback zichtbaarheid** — zie known-issues. Kleine fix in `DeveloperExportsCard.tsx`.
@@ -218,9 +217,7 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
     Trigger: Railway-bill > €80–100/maand.
 - [ ] **3.4 — Self-hosted observability evalueren**
     Trigger: 25k+ gebruikers.
-- [ ] **3.5 — bgutil PO token-server multi-region**
-    Trigger: latency-issues internationaal.
-- [ ] **3.6 — Channel extractie** (heel YouTube-kanaal in één klik) — vereist queue-architectuur die in Fase 1 is gelegd.
+- [ ] **3.5 — Channel extractie** (heel YouTube-kanaal in één klik) — vereist queue-architectuur die in Fase 1 is gelegd.
 - [ ] **3.7 — Notion / Zapier / Obsidian integraties** — OAuth per integratie.
 - [ ] **3.8 — Gamification systeem** (XP, levels, reward chests) — schema bestaat, implementatie deferred tot na redesign.
 - [ ] **3.9 — Referral program** (5+5 credits met abuse-preventie).

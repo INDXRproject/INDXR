@@ -1,3 +1,5 @@
+[2026-04-28] refactor: Optie C — bgutil-pot + Deno volledig verwijderd (ADR-027); main.py: DENO_PATH blok + _start_bgutil_server() verwijderd; audio_utils.py: plugin_dirs + youtubepot-bgutilhttp uit ydl_opts; worker.py: _startup() bgutil health check verwijderd; youtube_utils.py + main.py: enabled_runtimes ['node','deno']→['node']; Dockerfile: bgutil COPY/chmod/mkdir/zip regels verwijderd; backend/bin/ verwijderd; ADR-027 aangemaakt + ADR-007 superseded; cascade taak 1.6 stap 3 = client-rotatie ipv PO-tokens; 7 wiki-pagina's bijgewerkt | gewijzigd: backend/main.py, backend/audio_utils.py, backend/worker.py, backend/youtube_utils.py, backend/Dockerfile, docs/wiki/decisions/027-bgutil-deprioritization.md, docs/wiki/decisions/007-bgutil-pot.md, docs/wiki/INDEX.md, docs/wiki/architecture/overview.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/deployment.md, docs/wiki/operations/known-issues.md, docs/wiki/roadmap/priorities.md
+---
 [2026-04-28] feat: taak 1.5b ✅ — raw yt-dlp logging bij extraction_error geïmplementeerd; _classify_download_error() uitgebreid met video_id + job_id params + WARNING log op catch-all; 3 call sites bijgewerkt (transcription_pipeline.py:155, worker.py:255+389); bgutil startup logging debug→info/warning in main.py; worker bgutil health check bij startup (socket probe 127.0.0.1:4416) via WorkerSettings.on_startup; priorities.md + error-taxonomy.md bijgewerkt | gewijzigd: backend/transcription_pipeline.py, backend/worker.py, backend/main.py, docs/wiki/roadmap/priorities.md, docs/wiki/operations/error-taxonomy.md
 ---
 [2026-04-28] docs: taak 1.5b — error-taxonomy.md aangemaakt met 9 error_types (bot_detection, youtube_restricted, age_restricted, members_only, timeout, extraction_error, no_captions, no_speech, insufficient_credits); retry-pass bot_detection ineffectiviteit gedocumenteerd (verified Fase 3b.3 logs); priorities.md bijgewerkt | gewijzigd: docs/wiki/operations/error-taxonomy.md, docs/wiki/roadmap/priorities.md, docs/wiki/operations/test-reports.md
@@ -1560,4 +1562,21 @@ docs/wiki/roadmap/priorities.md
 [2026-04-28 10:26] commit: chore: ignore Obsidian UI state files
 Changed: .gitignore
 docs/.obsidian/workspace.json
+---
+[2026-04-28 11:20] commit: feat: taak 1.5b ✅ — raw yt-dlp logging + bgutil verificatie
+
+- _classify_download_error(): optionele video_id + job_id params;
+  WARNING log op catch-all extraction_error met raw error string
+- 3 call sites bijgewerkt met context (transcription_pipeline + worker)
+- main.py: bgutil startup logging debug→info/warning; INFO na Popen start
+- worker.py: _startup() via WorkerSettings.on_startup — socket probe op
+  127.0.0.1:4416 bij worker-start, logt of bgutil bereikbaar is of niet
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/transcription_pipeline.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/operations/error-taxonomy.md
+docs/wiki/roadmap/priorities.md
 ---

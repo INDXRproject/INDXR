@@ -174,7 +174,7 @@ async def extract_with_ytdlp(
         'extract_flat': False,
         'socket_timeout': 10,
         'retries': 3,
-        'enabled_runtimes': ['node', 'deno'],
+        'enabled_runtimes': ['node'],
         'remote_components': ['ejs:github'],
     }
     if use_proxy:

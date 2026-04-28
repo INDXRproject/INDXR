@@ -101,12 +101,8 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
     # NOT go through the proxy — causing 403. We mirror the exact CLI command
     # that works and run ffmpeg separately after the download.
     #
-    # extractor_args forces the iOS player client (m4a formats).
-    # Reason: YouTube's GVS PO Token experiment (active on many videos) requires
-    # a JS runtime (node/deno/bun) to compute a Player Orchestration token.
-    # Without one, the default Android client formats get a 403 at CDN level.
-    # The iOS client bypasses PO token requirements entirely and works reliably
-    # with HTTP proxies without strict IP-bound CDN validation.
+    # player_client: ios bypasses YouTube PO token requirements and works
+    # reliably with HTTP proxies. web_embedded is the fallback. See ADR-027.
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': f"{base_output_path}.%(ext)s",
@@ -115,14 +111,10 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         'verbose': False,
         'socket_timeout': 120,
         'nocheckcertificate': True,
-        'plugin_dirs': ['/root/yt-dlp-plugins', '/root/yt-dlp-plugins/bgutil-ytdlp-pot-provider-rs.zip'],
-        'js_runtimes': {'node': {}},  # Use Node.js for n-challenge solving (Deno not installed)
+        'js_runtimes': {'node': {}},
         'extractor_args': {
             'youtube': {
                 'player_client': ['ios', 'web_embedded'],
-            },
-            'youtubepot-bgutilhttp': {
-                'base_url': ['http://127.0.0.1:4416'],
             },
         },
     }

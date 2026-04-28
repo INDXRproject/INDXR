@@ -27,11 +27,6 @@ from transcription_pipeline import do_assemblyai_transcription
 # Load environment variables
 load_dotenv()
 
-# Add deno to PATH so yt-dlp can find it for JS challenge solving
-_deno_path = os.getenv("DENO_PATH", "")
-if _deno_path and _deno_path not in os.environ.get("PATH", ""):
-    os.environ["PATH"] = _deno_path + ":" + os.environ.get("PATH", "")
-
 # Initialize PostHog
 posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
 posthog.host = "https://app.posthog.com"
@@ -125,34 +120,6 @@ async def verify_backend_secret(request: Request, x_backend_secret: str = Header
         return  # JWT-authenticated upload — validated in endpoint body
     if _BACKEND_API_SECRET and x_backend_secret != _BACKEND_API_SECRET:
         raise HTTPException(status_code=401, detail="Invalid backend secret")
-
-# Start bgutil PO token HTTP server (Rust binary, no Node/Deno required).
-# Guard with a socket probe so only the first uvicorn worker starts it —
-# subsequent workers will see the port already bound and skip.
-import subprocess as _subprocess
-import socket as _socket
-def _start_bgutil_server() -> None:
-    try:
-        with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as _s:
-            _s.bind(('127.0.0.1', 4416))
-    except OSError:
-        return  # Another worker already owns the port
-    try:
-        result = _subprocess.run(
-            ['/usr/local/bin/bgutil-pot', '--version'],
-            capture_output=True, text=True, timeout=5
-        )
-        logger.info(f"bgutil-pot version: {result.stdout.strip()} {result.stderr.strip()}")
-    except Exception as e:
-        logger.warning(f"bgutil-pot binary check failed — PO-token server will not start: {e}")
-        return
-    _subprocess.Popen(
-        ['/usr/local/bin/bgutil-pot', 'server', '--host', '127.0.0.1', '--port', '4416'],
-        stdout=_subprocess.DEVNULL,
-        stderr=_subprocess.DEVNULL,
-    )
-    logger.info("bgutil-pot server started on 127.0.0.1:4416")
-_start_bgutil_server()
 
 # CORS configuration for Next.js frontend
 app.add_middleware(
@@ -419,7 +386,7 @@ async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_ba
         'retries': 3,  # Retry 3 times
         'ignoreerrors': True,  # Skip bad/private videos without failing
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'enabled_runtimes': ['node', 'deno'],  # Enable node.js/deno for n challenge solving
+        'enabled_runtimes': ['node'],  # Enable node.js for n challenge solving
         'remote_components': ['ejs:github'],  # Download challenge solver script
     }
     

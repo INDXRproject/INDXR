@@ -26,7 +26,6 @@ Browser (React/Next.js)
                                     - ffmpeg (audio compressie)
                                     - AssemblyAI (transcriptie fallback)
                                     - DeepSeek V3 (samenvatting)
-                                    - bgutil-pot (YouTube PO tokens)
 ```
 
 ---

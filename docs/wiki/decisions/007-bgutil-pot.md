@@ -1,6 +1,8 @@
 # Beslissing 007: bgutil-pot Rust Binary voor YouTube PO Tokens
 
-**Status:** Geaccepteerd  
+> **Superseded by [ADR-027](027-bgutil-deprioritization.md) — 2026-04-28.** bgutil-pot verwijderd uit de codebase. Zie ADR-027 voor de reden en de architectuurles.
+
+**Status:** Geaccepteerd (gesuperseded)  
 **Datum:** 2025-03 (geïntroduceerd als fix voor YouTube 403 errors)  
 **Gerelateerde code:** `backend/main.py:69-94`, `backend/bin/bgutil-pot-linux-x86_64`, `backend/Dockerfile`
 
