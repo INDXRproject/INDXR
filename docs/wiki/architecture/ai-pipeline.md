@@ -20,16 +20,23 @@ Frontend
        ├─ Suspension check
        ├─ Rate limit check (Upstash Redis)
        └─ POST {PYTHON_BACKEND_URL}/api/extract/youtube
-            └─ Python backend:
-                 ├─ yt-dlp: extract captions (VTT format, subtitleslangs=['en'] — zie bekende beperking hieronder)
-                 ├─ VTT overlap-deduplicatie (LCS algoritme)
-                 ├─ Normaliseer naar [{text, offset, duration}]
-                 ├─ language: yt-dlp info.language → fallback: lingua-language-detector (13 talen, module-level)
-                 ├─ upload_date geconverteerd naar ISO YYYY-MM-DD (→ published_at in frontend)
-                 └─ Return {transcript, title, duration, video_url, channel, language, language_detected, upload_date}
+            └─ Python backend — cascade:
+                 ├─ Stap 1: youtube-transcript-api (licht, geen yt-dlp)
+                 │    ├─ Succes → YouTube Data API videos.list voor metadata (title, channel, duration, upload_date)
+                 │    │    ├─ Metadata OK → lever stap 1 transcript + metadata
+                 │    │    └─ Metadata mislukt (quota/netwerk) → gooi stap 1 weg, door naar stap 2
+                 │    └─ Mislukking → door naar stap 2
+                 └─ Stap 2: yt-dlp (bevat metadata van nature)
+                      ├─ VTT overlap-deduplicatie (LCS algoritme)
+                      ├─ Normaliseer naar [{text, offset, duration}]
+                      ├─ language: yt-dlp info.language → fallback: lingua-language-detector (13 talen, module-level)
+                      ├─ upload_date geconverteerd naar ISO YYYY-MM-DD (→ published_at in frontend)
+                      └─ Return {transcript, title, duration, video_url, channel, language, language_detected, upload_date}
   └─ Next.js slaat op in Supabase (transcripts tabel)
   └─ Return naar frontend
 ```
+
+Zie [ADR-028](../decisions/028-youtube-data-api-metadata.md) voor de keuze van YouTube Data API als metadata-bron voor cascade stap 1, en het fallback-gedrag bij quota-uitputting.
 
 **Tijdsduur:** 1–5 seconden  
 **Kosten:** 0 credits

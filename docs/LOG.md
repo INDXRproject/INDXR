@@ -1,3 +1,5 @@
+[2026-04-28] fix: KeyError 'title' bij cascade stap 1 succes (ADR-028) — YouTube Data API videos.list als metadata-bron na stap 1; get_video_details() uitgebreid met channel + upload_date; metadata-fetch failure → stap 1 weggooien + cascade naar stap 2; [YT-DATA-API quota exceeded] log-prefix; worker.py: YouTubeClient import + _yt_client singleton + zelfde metadata-patroon in _process_caption_video(); ADR-028 aangemaakt; 6 wiki-pagina's bijgewerkt (INDEX, priorities, known-issues, ai-pipeline, ADR-021, ADR-028) | gewijzigd: backend/youtube_client.py, backend/main.py, backend/worker.py, docs/wiki/decisions/028-youtube-data-api-metadata.md, docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/decisions/021-master-transcripts-cache.md
+---
 [2026-04-28] feat: taak 1.8 ✅ + 1.9 ✅ + cascade stap 1 (taak 1.6[~]) — R2 storage helper (backend/storage.py, boto3==1.42.97); master_transcripts schema (supabase/migrations/20260428_master_transcripts_cache.sql) + write helper (backend/master_cache.py: master_transcripts_write, CAPTION_REFRESH_DAYS=90, MODEL_QUALITY_RANK, CURRENT_PRODUCTION_AI_MODEL); youtube-transcript-api==1.2.4 cascade stap 1 (extract_via_youtube_transcript_api in youtube_utils.py, [YT-API] log prefix); cascade geïntegreerd in main.py /api/extract/youtube + worker.py _process_caption_video(); master cache write fire-and-forget via asyncio.create_task na elke succesvolle caption-extractie. Handmatig door Khidr: R2 buckets aanmaken + API tokens + Railway env vars (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY) + Supabase migratie uitvoeren | gewijzigd: backend/storage.py, backend/master_cache.py, backend/youtube_utils.py, backend/worker.py, backend/main.py, backend/requirements.txt, supabase/migrations/20260428_master_transcripts_cache.sql, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/database-schema.md, docs/wiki/operations/deployment.md, docs/wiki/decisions/021-master-transcripts-cache.md
 ---
 [2026-04-28] refactor: Optie C — bgutil-pot + Deno volledig verwijderd (ADR-027); main.py: DENO_PATH blok + _start_bgutil_server() verwijderd; audio_utils.py: plugin_dirs + youtubepot-bgutilhttp uit ydl_opts; worker.py: _startup() bgutil health check verwijderd; youtube_utils.py + main.py: enabled_runtimes ['node','deno']→['node']; Dockerfile: bgutil COPY/chmod/mkdir/zip regels verwijderd; backend/bin/ verwijderd; ADR-027 aangemaakt + ADR-007 superseded; cascade taak 1.6 stap 3 = client-rotatie ipv PO-tokens; 7 wiki-pagina's bijgewerkt | gewijzigd: backend/main.py, backend/audio_utils.py, backend/worker.py, backend/youtube_utils.py, backend/Dockerfile, docs/wiki/decisions/027-bgutil-deprioritization.md, docs/wiki/decisions/007-bgutil-pot.md, docs/wiki/INDEX.md, docs/wiki/architecture/overview.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/deployment.md, docs/wiki/operations/known-issues.md, docs/wiki/roadmap/priorities.md
@@ -1615,4 +1617,38 @@ docs/wiki/decisions/027-bgutil-deprioritization.md
 docs/wiki/operations/deployment.md
 docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-04-28 13:35] commit: feat: taak 1.8 + 1.9 + cascade stap 1 — R2 storage, master_transcripts cache, youtube-transcript-api
+
+Taak 1.8: backend/storage.py — boto3 wrapper voor Cloudflare R2 met graceful degradatie
+als env vars ontbreken (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY).
+
+Taak 1.9: supabase/migrations/20260428_master_transcripts_cache.sql + backend/master_cache.py.
+Schema: video_id, language, transcription_model, r2_key, source_method, model_quality_rank,
+character_count, word_count, fetched_from_provider_at, deprecated_at. Service-role only (RLS,
+geen policies). master_transcripts_write() is best-effort fire-and-forget, nooit blocking.
+Constanten: CAPTION_REFRESH_DAYS=90, MODEL_QUALITY_RANK, CURRENT_PRODUCTION_AI_MODEL.
+
+Cascade stap 1 (taak 1.6): youtube-transcript-api==1.2.4 als eerste stap vóór yt-dlp.
+extract_via_youtube_transcript_api() in youtube_utils.py — [YT-API] log prefix.
+Geïntegreerd in main.py /api/extract/youtube (na Redis-miss) + worker.py _process_caption_video().
+Na elke succesvolle extractie: asyncio.create_task(master_transcripts_write()) — non-blocking.
+
+Handmatig door Khidr na push: Cloudflare R2 buckets aanmaken (indxr-audio + indxr-transcripts),
+API tokens per bucket, lifecycle rule 24u op indxr-audio, Railway env vars zetten op beide
+services, Supabase migratie uitvoeren via MCP.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/master_cache.py
+backend/requirements.txt
+backend/storage.py
+backend/worker.py
+backend/youtube_utils.py
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/decisions/021-master-transcripts-cache.md
+docs/wiki/operations/deployment.md
+docs/wiki/roadmap/priorities.md
+supabase/migrations/20260428_master_transcripts_cache.sql
 ---

@@ -68,6 +68,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Doel: stabiliteit tegen YouTube bot-detection updates. Cascade-volgorde:
     1. [x] youtube-transcript-api (caption-only, gratis) ✅ 2026-04-28
        `extract_via_youtube_transcript_api()` in youtube_utils.py; geïntegreerd in main.py + worker.py
+       Metadata-aanvulling via YouTube Data API `videos.list` na stap 1 succes ✅ 2026-04-28 (ADR-028)
     2. yt-dlp `--write-subs` met `ios,web_embedded` client (huidige config, bestaand als stap 2)
     3. yt-dlp met `tv`,`android` clients (client-rotatie — vervangt bgutil, zie ADR-027)
     4. yt-dlp audio download → AssemblyAI
@@ -228,3 +229,6 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
 - [ ] **3.11 — Queue library heroverweging post-launch**
     Trigger: eerste van (a) zes maanden post-launch, (b) ARQ-specifieke bug die ons blokkeert, (c) productie-incident dat library-feature vereist die ARQ niet biedt.
     Kandidaten op dat moment evalueren met productie-data: Taskiq, streaq, Procrastinate. Migratie-werk geschat 1-2 dagen omdat alle state in Supabase leeft. Zie ADR-026.
+- [ ] **3.12 — YouTube Data API: quota-verhoging aanvragen + single-video batching evalueren**
+    Trigger: >5.000 `videos.list` units/dag (zichtbaar in Google Cloud Console).
+    Acties: (a) quota-verhoging aanvragen bij Google (gratis, 1–6 weken doorlooptijd); (b) evalueren of single-video calls geclusterd kunnen worden. Noot: playlist-flow batcheert al (1 call per 50 video IDs, bestaande implementatie in `get_playlist_items()`). Zie ADR-028.

@@ -31,9 +31,12 @@ from transcription_pipeline import (
     do_assemblyai_transcription,
 )
 from master_cache import master_transcripts_write
+from youtube_client import YouTubeClient
 from youtube_utils import extract_via_youtube_transcript_api, extract_with_ytdlp
 
 load_dotenv()
+
+_yt_client = YouTubeClient()
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO),
@@ -116,6 +119,23 @@ async def _process_caption_video(
     # Cascade step 1: youtube-transcript-api (faster, no yt-dlp overhead)
     extract_result = await extract_via_youtube_transcript_api(video_id, session_id=proxy_session)
     caption_model = "youtube_transcript_api"
+
+    # ── Cascade step 1 metadata enrichment via YouTube Data API ──────────────
+    if extract_result is not None:
+        try:
+            meta = await asyncio.to_thread(_yt_client.get_video_details, video_id)
+            extract_result['title'] = meta['title']
+            extract_result['video_url'] = f"https://www.youtube.com/watch?v={video_id}"
+            extract_result['duration'] = meta.get('duration')
+            extract_result['channel'] = meta.get('channel')
+            extract_result['upload_date'] = meta.get('upload_date')
+        except Exception as meta_err:
+            err_str = str(meta_err)
+            if 'quotaExceeded' in err_str or ('403' in err_str and 'quota' in err_str.lower()):
+                logger.warning(f"[YT-DATA-API quota exceeded] {video_id}: {meta_err}")
+            else:
+                logger.warning(f"[YT-DATA-API metadata fetch failed] {video_id}: {meta_err}")
+            extract_result = None  # discard step 1, fall through to step 2
 
     # Cascade step 2: yt-dlp fallback
     if extract_result is None:

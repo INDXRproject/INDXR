@@ -136,7 +136,9 @@ class YouTubeClient:
                 "success": True,
                 "title": item["snippet"]["title"],
                 "duration": self.parse_duration(item["contentDetails"]["duration"]),
-                "thumbnail": item["snippet"]["thumbnails"].get("high", {}).get("url")
+                "thumbnail": item["snippet"]["thumbnails"].get("high", {}).get("url"),
+                "channel": item["snippet"]["channelTitle"],
+                "upload_date": item["snippet"]["publishedAt"][:10],
             }
             
         except Exception as e:

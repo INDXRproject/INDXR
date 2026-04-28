@@ -36,6 +36,7 @@ De oplossing is een centrale cache: een `master_transcripts` tabel die unieke tr
 - Aparte cache-entries per `(video_id, language, transcription_model)` — een AssemblyAI Universal-3 transcript en een Universal-4 transcript van dezelfde video zijn aparte entries.
 - Cache-hit flow: kopieer naar `transcripts` (user-tabel, bestaand), trek credits af zoals normaal, lever direct.
 - **Gebruikers betalen ALTIJD voor AI-transcriptie**, ook bij cache-hit.
+- Metadata (`duration_seconds`, taal) voor `master_transcripts`-entries die via cascade **stap 1** (youtube-transcript-api) zijn aangemaakt, komen uit de YouTube Data API `videos.list` call (zie [ADR-028](028-youtube-data-api-metadata.md)). Bij stap 2 (yt-dlp) levert yt-dlp de metadata direct mee.
 
 ---
 

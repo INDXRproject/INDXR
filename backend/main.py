@@ -273,6 +273,23 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
         result = await extract_via_youtube_transcript_api(video_id, session_id=session_id)
         caption_model = "youtube_transcript_api"
 
+        # ── Cascade step 1 metadata enrichment via YouTube Data API ──────────
+        if result is not None:
+            try:
+                meta = await asyncio.to_thread(youtube_client.get_video_details, video_id)
+                result['title'] = meta['title']
+                result['video_url'] = f"https://www.youtube.com/watch?v={video_id}"
+                result['duration'] = meta.get('duration')
+                result['channel'] = meta.get('channel')
+                result['upload_date'] = meta.get('upload_date')
+            except Exception as meta_err:
+                err_str = str(meta_err)
+                if 'quotaExceeded' in err_str or ('403' in err_str and 'quota' in err_str.lower()):
+                    logger.warning(f"[YT-DATA-API quota exceeded] {video_id}: {meta_err}")
+                else:
+                    logger.warning(f"[YT-DATA-API metadata fetch failed] {video_id}: {meta_err}")
+                result = None  # discard step 1, fall through to step 2
+
         # ── Cascade step 2: yt-dlp fallback ─────────────────────────────────
         if result is None:
             result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id)

@@ -68,6 +68,23 @@ bgutil-pot volledig verwijderd via ADR-027. iOS client bypasses PO tokens — ni
 
 ---
 
+## YouTube Data API quota-uitputting
+
+**Vastgesteld:** 2026-04-28  
+**Impact:** Tijdelijk — stap 1 valt terug op stap 2 (yt-dlp)
+
+Na cascade stap 1 succes (youtube-transcript-api) haalt de backend metadata op via YouTube Data API `videos.list` (1 quota-unit per call). Default quota: 10.000 units/dag per Google Cloud project.
+
+**Fallback-gedrag bij quota-uitputting:**
+- Python logt `WARNING [YT-DATA-API quota exceeded] {video_id}: ...` of `[YT-DATA-API metadata fetch failed]` in Railway logs
+- Cascade stap 1 wordt volledig weggegooid
+- Stap 2 (yt-dlp) draait alsnog — stap 2 bevat metadata van nature
+- Gebruiker merkt niets, extractie is alleen iets langzamer
+
+**Monitoring-tip:** Zoek op `[YT-DATA-API quota exceeded]` in Railway logs of Sentry. Bij structurele uitputting (>5k extracties/dag): quota-verhoging aanvragen bij Google (gratis, doorlooptijd 1–6 weken). Zie ook taak 3.12 in priorities.md en [ADR-028](../decisions/028-youtube-data-api-metadata.md).
+
+---
+
 ## Niet-kritieke TODO's
 
 ### ~~assemblyai SDK niet gepind in requirements.txt~~ ✅ Opgelost 2026-04-26
