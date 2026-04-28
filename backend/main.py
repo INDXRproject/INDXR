@@ -920,6 +920,67 @@ async def get_playlist_job(job_id: str, user_id: str, _: None = Depends(verify_b
     return JSONResponse(job)
 
 
+# ---------------------------------------------------------------------------
+# DEBUG endpoints — TEMPORARY, remove after diagnosis
+# ---------------------------------------------------------------------------
+
+@app.get("/api/debug/loggers")
+async def debug_loggers():
+    """Inspect actual runtime logger configuration."""
+    import logging
+
+    def describe_logger(name):
+        lg = logging.getLogger(name)
+        return {
+            "level": lg.level,
+            "effective_level": lg.getEffectiveLevel(),
+            "handlers": [str(h) for h in lg.handlers],
+            "propagate": lg.propagate,
+            "parent": str(lg.parent) if lg.parent else None,
+        }
+
+    return {
+        "root": describe_logger(""),
+        "indxr-backend": describe_logger("indxr-backend"),
+        "indxr-youtube-utils": describe_logger("indxr-youtube-utils"),
+        "indxr-worker": describe_logger("indxr-worker"),
+        "uvicorn": describe_logger("uvicorn"),
+        "uvicorn.error": describe_logger("uvicorn.error"),
+    }
+
+
+@app.get("/api/debug/trace-cascade-step1/{video_id}")
+async def debug_trace_cascade(video_id: str):
+    """Force-trigger cascade step 1 with explicit logging at every level."""
+    import logging
+    import sys
+
+    yt_logger = logging.getLogger("indxr-youtube-utils")
+    yt_logger.info(f"[DEBUG-TRACE] info via indxr-youtube-utils for {video_id}")
+    yt_logger.warning(f"[DEBUG-TRACE] warning via indxr-youtube-utils for {video_id}")
+
+    backend_logger = logging.getLogger("indxr-backend")
+    backend_logger.info(f"[DEBUG-TRACE] info via indxr-backend for {video_id}")
+
+    from youtube_utils import extract_via_youtube_transcript_api
+
+    print(f"[DEBUG-TRACE-PRINT] About to call extract_via for {video_id}", flush=True)
+    sys.stdout.flush()
+
+    try:
+        result = await extract_via_youtube_transcript_api(video_id)
+        print(f"[DEBUG-TRACE-PRINT] Returned: {type(result).__name__}", flush=True)
+        return {
+            "result_type": type(result).__name__,
+            "has_transcript": result is not None and "transcript" in result if result else False,
+            "language": result.get("language") if result else None,
+            "model": result.get("model") if result else None,
+        }
+    except Exception as e:
+        print(f"[DEBUG-TRACE-PRINT] Exception: {type(e).__name__}: {e}", flush=True)
+        return {"error": f"{type(e).__name__}: {e}"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
