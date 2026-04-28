@@ -64,10 +64,11 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Zie [wiki/operations/error-taxonomy.md](../operations/error-taxonomy.md).
     Status: afgerond. 9 error_types gedocumenteerd. Raw yt-dlp logging bij `extraction_error` geïmplementeerd (`_classify_download_error()` logt nu raw error + video_id + job_id op WARNING). bgutil startup logging verbeterd in `main.py` + worker health check bij startup toegevoegd.
 
-- [ ] **1.6 — yt-dlp fallback-cascade met client-rotatie** (2–3 dagen)
+- [~] **1.6 — yt-dlp fallback-cascade met client-rotatie** (2–3 dagen)
     Doel: stabiliteit tegen YouTube bot-detection updates. Cascade-volgorde:
-    1. youtube-transcript-api (caption-only, gratis)
-    2. yt-dlp `--write-subs` met `ios,web_embedded` client (huidige config)
+    1. [x] youtube-transcript-api (caption-only, gratis) ✅ 2026-04-28
+       `extract_via_youtube_transcript_api()` in youtube_utils.py; geïntegreerd in main.py + worker.py
+    2. yt-dlp `--write-subs` met `ios,web_embedded` client (huidige config, bestaand als stap 2)
     3. yt-dlp met `tv`,`android` clients (client-rotatie — vervangt bgutil, zie ADR-027)
     4. yt-dlp audio download → AssemblyAI
     5. Markeer `needs_manual_review`, ga door met playlist
@@ -79,16 +80,18 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Implementatie: SIGTERM-handler die job-state naar Supabase persisteert, heartbeat checker die `interrupted` jobs oppakt, ARQ `ack_late=True`.
     Afhankelijk van: 1.5.
 
-- [ ] **1.8 — Cloudflare R2 buckets opzetten** (1 dag)
-    Doel: audio-bestanden ontkoppelen van Railway (lagere egress, container-restart-safe, voorbereiding op latere VPS-migratie).
+- [x] **1.8 — Cloudflare R2 storage helper** ✅ 2026-04-28
+    `backend/storage.py`: boto3 wrapper (`r2_client`, `r2_write_json`, `r2_read_json`, `r2_generate_presigned_url`). Graceful degradatie bij ontbrekende env vars.
+    **Handmatig nog te doen door Khidr:** Cloudflare R2 buckets aanmaken (`indxr-audio` + `indxr-transcripts`), API tokens per bucket, lifecycle rule 24u op `indxr-audio`, Railway env vars zetten (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`).
     Buckets: `indxr-audio` (TTL 24u, auto-delete na transcriptie), `indxr-transcripts` (persistent).
-    Library: `boto3` (S3-compatible).
+    Library: `boto3==1.42.97`.
     Zie [ADR-020](../decisions/020-cloudflare-r2-storage.md).
 
-- [ ] **1.9 — `master_transcripts` schema + write-logic** (1 dag)
-    Doel: cache-fundament. Elke nieuwe transcriptie vult de cache (alleen publieke YouTube-videos).
-    Tabel-velden: `video_id`, `language`, `transcription_model` (bv. `youtube_captions`, `assemblyai_universal_3`, `assemblyai_universal_4`), `r2_key` (verwijzing naar JSON in R2-bucket), `quality_score`, `duration_seconds`, `created_at`, `is_public`.
-    Write-only in deze fase (read-logic in 1.11).
+- [x] **1.9 — `master_transcripts` schema + write-logic** ✅ 2026-04-28
+    Migratie: `20260428_master_transcripts_cache.sql` (tabel + index + RLS).
+    `backend/master_cache.py`: `master_transcripts_write()` + constanten `CAPTION_REFRESH_DAYS=90`, `MODEL_QUALITY_RANK`, `CURRENT_PRODUCTION_AI_MODEL`.
+    Write-only: cascade stap 1 + 2 schrijven na elke succesvolle caption-extractie. Read-logic (cache-hits) volgt in 1.11.
+    **Handmatig nog te doen door Khidr:** Supabase migratie uitvoeren via MCP of SQL Editor.
     Afhankelijk van: 1.8.
     Zie [ADR-021](../decisions/021-master-transcripts-cache.md).
 

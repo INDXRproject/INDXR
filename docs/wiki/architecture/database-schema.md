@@ -139,6 +139,33 @@ RLS: gebruiker ziet alleen eigen jobs.
 
 ---
 
+### `master_transcripts`
+Cross-user persistente transcript cache. Metadata in Supabase, JSON-content in Cloudflare R2. Service-role only (geen user-facing RLS policies). Zie ADR-020 en ADR-021.
+
+```sql
+id                       UUID        PRIMARY KEY DEFAULT gen_random_uuid()
+video_id                 TEXT        NOT NULL
+language                 TEXT        NOT NULL          -- taalcode ('en', 'nl', ...)
+transcription_model      TEXT        NOT NULL          -- 'youtube_transcript_api' | 'youtube_captions' | 'assemblyai_universal_3' | ...
+r2_key                   TEXT        NOT NULL          -- R2 object key: 'transcripts/{video_id}__{lang}__{model}.json'
+source_method            TEXT        NOT NULL DEFAULT 'caption_extraction'  -- 'caption_extraction' | 'audio_transcription'
+model_quality_rank       INTEGER                       -- handmatig beheerde ranking (zie master_cache.py:MODEL_QUALITY_RANK)
+quality_score            FLOAT                         -- NULL voor caption-extracties
+duration_seconds         INTEGER
+character_count          INTEGER
+word_count               INTEGER
+fetched_from_provider_at TIMESTAMPTZ DEFAULT NOW()    -- wanneer transcript opgehaald bij YouTube/AssemblyAI
+deprecated_at            TIMESTAMPTZ                   -- NULL = actief; gezet bij model-upgrade of privacy-verwijdering
+created_at               TIMESTAMPTZ DEFAULT NOW()
+UNIQUE (video_id, language, transcription_model)
+```
+
+RLS: ingeschakeld, geen policies — alleen `SUPABASE_SERVICE_ROLE_KEY` (Python backend) heeft toegang.  
+Index: `idx_master_transcripts_lookup` op `(video_id, language, transcription_model) WHERE deprecated_at IS NULL`.  
+Migratie: `20260428_master_transcripts_cache.sql`.
+
+---
+
 ## RPC Functies
 
 ### `get_user_credits(p_user_id UUID)`
@@ -229,4 +256,5 @@ Gebruikt in: `src/app/actions/credits.ts`
 | `20260412_job_metrics_and_rename.sql` | 2026-04-12 | Job metrics kolommen + rename |
 | `20260423_rag_chunk_size_90.sql` | 2026-04-23 | `rag_chunk_size` CHECK constraint uitgebreid met waarde 90 |
 | `20260428_playlist_per_video_chain.sql` | 2026-04-28 | `playlist_extraction_jobs.last_progress_at` + partial index + `update_playlist_video_progress` RPC |
+| `20260428_master_transcripts_cache.sql` | 2026-04-28 | `master_transcripts` tabel + index + RLS (cross-user transcript cache) |
 | `add_playlist_jobs.sql` | *(oud)* | Vroege playlist jobs tabel (vervangen) |

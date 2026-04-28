@@ -2,6 +2,7 @@
 YouTube caption extraction utilities.
 Shared between main.py (FastAPI API process) and worker.py (ARQ worker process).
 """
+import asyncio
 import logging
 import os
 import re
@@ -147,6 +148,55 @@ def parse_vtt_to_transcript(subtitle_data: str) -> List[dict]:
             seen_texts.add(text)
 
     return final_transcript
+
+
+async def extract_via_youtube_transcript_api(
+    video_id: str,
+    session_id: Optional[str] = None,
+) -> Optional[dict]:
+    """
+    Attempt caption extraction via youtube-transcript-api (cascade step 1).
+
+    Returns dict with 'transcript', 'language', 'model' on success, or None on any
+    failure (rate-limit, blocked, no captions, etc.). Never raises — None signals
+    the cascade to fall through to the next step.
+    """
+    try:
+        from youtube_transcript_api import (
+            YouTubeTranscriptApi,
+            IpBlocked,
+            NoTranscriptFound,
+            RequestBlocked,
+            TranscriptsDisabled,
+            VideoUnavailable,
+            VideoUnplayable,
+        )
+        from youtube_transcript_api.proxies import GenericProxyConfig
+
+        proxy_url = get_proxy_url(session_id or secrets.token_hex(4))
+        proxy_config = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url) if proxy_url else None
+
+        ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
+        fetched = await asyncio.to_thread(ytt_api.fetch, video_id, languages=["en"])
+
+        transcript = [
+            {"text": snippet.text, "offset": snippet.start, "duration": snippet.duration}
+            for snippet in fetched
+        ]
+
+        logger.info(f"[YT-API] success for {video_id} lang={fetched.language_code}")
+        return {
+            "transcript": transcript,
+            "language": fetched.language_code,
+            "model": "youtube_transcript_api",
+        }
+
+    except (RequestBlocked, IpBlocked, TranscriptsDisabled, NoTranscriptFound,
+            VideoUnavailable, VideoUnplayable):
+        return None
+    except Exception as e:
+        logger.warning(f"[YT-API] {video_id}: {type(e).__name__}: {e}")
+        return None
 
 
 async def extract_with_ytdlp(

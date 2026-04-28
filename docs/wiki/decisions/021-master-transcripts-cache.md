@@ -183,7 +183,50 @@ De user merkt nooit iets van master_transcripts — geen UI-prompt, geen "er bes
 - Privacy-bewustheid: nooit private video-content in master cache (codepath moet `is_public` strikt checken)
 
 **Implementatie-volgorde:**
-- **Fase 1.9** (priorities.md): schema + write-only logic — de cache vult zich tijdens testing en vroege launch zonder gebruikers te raken
+- **Fase 1.9** (priorities.md): schema + write-only logic — de cache vult zich tijdens testing en vroege launch zonder gebruikers te raken ✅ 2026-04-28
 - **Fase 1.11** (priorities.md): read-logic activeren — cache-hits beginnen geleverd te worden zodra er voldoende entries zijn
 
 Deze splitsing zorgt dat we eerst data verzamelen en dan pas serveren, in plaats van vanaf dag één een lege cache te hebben.
+
+---
+
+## Schema-uitbreidingen 2026-04-28
+
+Het definitief geïmplementeerde schema wijkt op een aantal punten af van de originele schets in ADR-021. Zie `supabase/migrations/20260428_master_transcripts_cache.sql` voor de exacte SQL.
+
+### Kolommen toegevoegd
+
+| Kolom | Type | Reden |
+|-------|------|-------|
+| `source_method` | TEXT DEFAULT 'caption_extraction' | Onderscheid per request-type: `'caption_extraction'` (yt-dlp / youtube-transcript-api) vs. `'audio_transcription'` (AssemblyAI). Maakt toekomstige cache-lookup per use-case mogelijk. |
+| `model_quality_rank` | INTEGER | Handmatig beheerde ranking zodat cache-lookup (taak 1.11) kan vergelijken of een gecachete versie goed genoeg is. Zie `MODEL_QUALITY_RANK` dict in `backend/master_cache.py`. |
+| `character_count` | INTEGER | Snelle metadata beschikbaar zonder R2-fetch. Berekend in `master_transcripts_write()`. |
+| `word_count` | INTEGER | Idem — nuttiger dan character_count voor kosten-schatting per transcript. |
+| `fetched_from_provider_at` | TIMESTAMPTZ | Wanneer het transcript opgehaald werd bij YouTube of AssemblyAI. Basis voor `CAPTION_REFRESH_DAYS = 90` expiry-logica in taak 1.11. |
+| `deprecated_at` | TIMESTAMPTZ | NULL = actief entry. Gezet bij model-upgrade of privacy-verwijdering. Vervangt de `WHERE is_public = true` filter uit de originele ADR. |
+
+### Kolommen verwijderd
+
+| Kolom | Reden |
+|-------|-------|
+| `is_public` | Master cache is per definitie voor YouTube-publieke content. Audio uploads (user-specifiek) gaan nooit in master cache. De filter is dus impliciet — de kolom voegt geen informatiewaarde toe. De partial index filtert nu op `WHERE deprecated_at IS NULL`. |
+
+### Module-level constanten in `backend/master_cache.py`
+
+```python
+CAPTION_REFRESH_DAYS = 90
+# Gebruikt bij taak 1.11 cache-lookup: caption-entries ouder dan 90 dagen
+# worden behandeld als miss (YouTube ASR wordt periodiek verbeterd).
+
+MODEL_QUALITY_RANK = {
+    "youtube_transcript_api": 30,
+    "youtube_captions": 30,
+    "assemblyai_universal_2": 50,
+    "assemblyai_universal_3": 70,
+}
+# Bij upgrade naar nieuw model: voeg entry toe met hogere rank (bijv. 90 voor universal_4).
+# Cache-lookup vergelijkt rank van cached entry met rank van CURRENT_PRODUCTION_AI_MODEL.
+
+CURRENT_PRODUCTION_AI_MODEL = "assemblyai_universal_3"
+# Wijzig hier bij productie-upgrade — één plek, geen andere code-wijzigingen nodig.
+```

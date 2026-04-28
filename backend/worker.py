@@ -30,7 +30,8 @@ from transcription_pipeline import (
     _classify_download_error,
     do_assemblyai_transcription,
 )
-from youtube_utils import extract_with_ytdlp
+from master_cache import master_transcripts_write
+from youtube_utils import extract_via_youtube_transcript_api, extract_with_ytdlp
 
 load_dotenv()
 
@@ -112,7 +113,15 @@ async def _process_caption_video(
         if balance < 1:
             return False, None, 'insufficient_credits'
 
-    extract_result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=proxy_session)
+    # Cascade step 1: youtube-transcript-api (faster, no yt-dlp overhead)
+    extract_result = await extract_via_youtube_transcript_api(video_id, session_id=proxy_session)
+    caption_model = "youtube_transcript_api"
+
+    # Cascade step 2: yt-dlp fallback
+    if extract_result is None:
+        extract_result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=proxy_session)
+        caption_model = "youtube_captions"
+
     if not isinstance(extract_result, dict) or 'transcript' not in extract_result:
         return False, None, 'no_captions'
 
@@ -139,6 +148,17 @@ async def _process_caption_video(
         lambda data=insert_data: supabase.table('transcripts').insert(data).execute()
     )
     transcript_id = t.data[0]['id']
+
+    # Best-effort master cache write (fire-and-forget, never blocks user flow)
+    lang = extract_result.get('language') or 'en'
+    asyncio.create_task(master_transcripts_write(
+        video_id=video_id,
+        language=lang,
+        model=caption_model,
+        transcript_data=transcript,
+        duration_seconds=duration,
+        source_method='caption_extraction',
+    ))
 
     if not is_free:
         await asyncio.to_thread(

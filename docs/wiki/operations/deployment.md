@@ -106,7 +106,7 @@ git add requirements.txt && git commit -m "update: add <package>"
 
 ### Environment Variables (Railway — beide services)
 
-De volgende 12 env vars moeten op **zowel de API-service als de worker-service** staan. Bij introductie van een nieuwe backend env var: bepaal altijd of de worker hem ook nodig heeft en voeg hem op beide services toe.
+De volgende env vars moeten op **zowel de API-service als de worker-service** staan. Bij introductie van een nieuwe backend env var: bepaal altijd of de worker hem ook nodig heeft en voeg hem op beide services toe.
 
 ```bash
 # Supabase (Service Role — bypass RLS voor RPC calls)
@@ -132,6 +132,12 @@ LOG_LEVEL=INFO                   # DEBUG | INFO | WARNING | ERROR
 
 # ARQ queue verbinding (TCP — verschilt van REST URL hieronder)
 UPSTASH_REDIS_URL=rediss://default:TOKEN@HOST.upstash.io:6380
+
+# Cloudflare R2 object storage (master_transcripts cache + toekomstige audio-upload flow)
+# Account ID staat bovenaan Cloudflare R2 overview. API tokens per bucket aanmaken.
+R2_ACCOUNT_ID=...
+R2_ACCESS_KEY_ID=...             # Access Key ID van indxr-transcripts token
+R2_SECRET_ACCESS_KEY=...         # Secret Access Key van indxr-transcripts token
 ```
 
 ### Environment Variables (Railway — alleen API-service)

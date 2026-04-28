@@ -21,7 +21,8 @@ from datetime import datetime, timezone
 from upstash_redis.asyncio import Redis as UpstashRedis
 
 import yt_dlp
-from youtube_utils import get_proxy_url, extract_with_ytdlp
+from master_cache import master_transcripts_write
+from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp
 from transcription_pipeline import do_assemblyai_transcription
 
 # Load environment variables
@@ -267,9 +268,15 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
 
         track_event("backend", "caption_cache_miss", {"video_id": video_id, "lang": "en"})
 
-        # ── yt-dlp extraction ────────────────────────────────────────────────
+        # ── Cascade step 1: youtube-transcript-api ───────────────────────────
         session_id = video_id[-8:]
-        result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id)
+        result = await extract_via_youtube_transcript_api(video_id, session_id=session_id)
+        caption_model = "youtube_transcript_api"
+
+        # ── Cascade step 2: yt-dlp fallback ─────────────────────────────────
+        if result is None:
+            result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id)
+            caption_model = "youtube_captions"
 
         # result can be a dict (success) or list (empty/failure)
         if isinstance(result, list) or not result:
@@ -296,6 +303,19 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             except Exception as cache_write_err:
                 track_event("backend", "caption_cache_write_error", {"error": str(cache_write_err)})
                 logger.warning(f"Caption cache write error: {type(cache_write_err).__name__}: {cache_write_err}")
+
+        # ── Master cache write (fire-and-forget) ─────────────────────────────
+        if result.get('transcript'):
+            lang = result.get('language') or 'en'
+            duration_sec = result.get('duration') or 0
+            asyncio.create_task(master_transcripts_write(
+                video_id=video_id,
+                language=lang,
+                model=caption_model,
+                transcript_data=result['transcript'],
+                duration_seconds=int(duration_sec),
+                source_method='caption_extraction',
+            ))
 
         return ExtractResponse(
             success=True,

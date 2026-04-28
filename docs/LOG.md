@@ -1,3 +1,5 @@
+[2026-04-28] feat: taak 1.8 ✅ + 1.9 ✅ + cascade stap 1 (taak 1.6[~]) — R2 storage helper (backend/storage.py, boto3==1.42.97); master_transcripts schema (supabase/migrations/20260428_master_transcripts_cache.sql) + write helper (backend/master_cache.py: master_transcripts_write, CAPTION_REFRESH_DAYS=90, MODEL_QUALITY_RANK, CURRENT_PRODUCTION_AI_MODEL); youtube-transcript-api==1.2.4 cascade stap 1 (extract_via_youtube_transcript_api in youtube_utils.py, [YT-API] log prefix); cascade geïntegreerd in main.py /api/extract/youtube + worker.py _process_caption_video(); master cache write fire-and-forget via asyncio.create_task na elke succesvolle caption-extractie. Handmatig door Khidr: R2 buckets aanmaken + API tokens + Railway env vars (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY) + Supabase migratie uitvoeren | gewijzigd: backend/storage.py, backend/master_cache.py, backend/youtube_utils.py, backend/worker.py, backend/main.py, backend/requirements.txt, supabase/migrations/20260428_master_transcripts_cache.sql, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/database-schema.md, docs/wiki/operations/deployment.md, docs/wiki/decisions/021-master-transcripts-cache.md
+---
 [2026-04-28] refactor: Optie C — bgutil-pot + Deno volledig verwijderd (ADR-027); main.py: DENO_PATH blok + _start_bgutil_server() verwijderd; audio_utils.py: plugin_dirs + youtubepot-bgutilhttp uit ydl_opts; worker.py: _startup() bgutil health check verwijderd; youtube_utils.py + main.py: enabled_runtimes ['node','deno']→['node']; Dockerfile: bgutil COPY/chmod/mkdir/zip regels verwijderd; backend/bin/ verwijderd; ADR-027 aangemaakt + ADR-007 superseded; cascade taak 1.6 stap 3 = client-rotatie ipv PO-tokens; 7 wiki-pagina's bijgewerkt | gewijzigd: backend/main.py, backend/audio_utils.py, backend/worker.py, backend/youtube_utils.py, backend/Dockerfile, docs/wiki/decisions/027-bgutil-deprioritization.md, docs/wiki/decisions/007-bgutil-pot.md, docs/wiki/INDEX.md, docs/wiki/architecture/overview.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/deployment.md, docs/wiki/operations/known-issues.md, docs/wiki/roadmap/priorities.md
 ---
 [2026-04-28] feat: taak 1.5b ✅ — raw yt-dlp logging bij extraction_error geïmplementeerd; _classify_download_error() uitgebreid met video_id + job_id params + WARNING log op catch-all; 3 call sites bijgewerkt (transcription_pipeline.py:155, worker.py:255+389); bgutil startup logging debug→info/warning in main.py; worker bgutil health check bij startup (socket probe 127.0.0.1:4416) via WorkerSettings.on_startup; priorities.md + error-taxonomy.md bijgewerkt | gewijzigd: backend/transcription_pipeline.py, backend/worker.py, backend/main.py, docs/wiki/roadmap/priorities.md, docs/wiki/operations/error-taxonomy.md
@@ -1578,5 +1580,39 @@ backend/transcription_pipeline.py
 backend/worker.py
 docs/LOG.md
 docs/wiki/operations/error-taxonomy.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-28 11:46] commit: refactor: bgutil-pot + Deno volledig verwijderd — Optie C (ADR-027)
+
+bgutil-pot was geconfigureerd op de API-container maar yt-dlp draait
+op de worker-container (split via ADR-025). Nooit werkend in productie.
+iOS client bypasses PO tokens — bgutil was onnodig.
+
+Code:
+- main.py: _start_bgutil_server() + DENO_PATH blok verwijderd
+- audio_utils.py: plugin_dirs + youtubepot-bgutilhttp uit ydl_opts
+- worker.py: _startup() bgutil health check verwijderd
+- youtube_utils.py + main.py: enabled_runtimes ['node','deno']→['node']
+- Dockerfile: bgutil COPY/chmod/mkdir/zip regels verwijderd
+- backend/bin/: binary + zip verwijderd (directory weg)
+
+Docs: ADR-027 aangemaakt, ADR-007 superseded, 7 wiki-pagina's bijgewerkt
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/Dockerfile
+backend/audio_utils.py
+backend/bin/bgutil-pot-linux-x86_64
+backend/bin/bgutil-ytdlp-pot-provider-rs.zip
+backend/main.py
+backend/worker.py
+backend/youtube_utils.py
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/architecture/overview.md
+docs/wiki/decisions/007-bgutil-pot.md
+docs/wiki/decisions/027-bgutil-deprioritization.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
 ---
