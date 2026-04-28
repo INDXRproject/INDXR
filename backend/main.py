@@ -56,6 +56,15 @@ def get_caption_redis() -> Optional[UpstashRedis]:
 
 _CAPTION_CACHE_TTL = 60 * 60 * 24 * 30  # 30 days
 
+# Required keys for a valid caption-cache entry. Cache-read code validates
+# all keys are present before use. On missing keys: entry is evicted and
+# treated as a cache-miss. Update this set when adding new fields to
+# ExtractResponse that are written to the cache.
+CACHED_CAPTION_REQUIRED_KEYS = frozenset({
+    "title", "video_url", "duration", "channel",
+    "language", "transcript",
+})
+
 # Import Whisper modules
 from audio_utils import (
     get_audio_duration,
@@ -242,6 +251,11 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 cached_raw = await redis.get(cache_key)
                 if cached_raw:
                     result = json.loads(cached_raw)
+                    missing = CACHED_CAPTION_REQUIRED_KEYS - set(result.keys())
+                    if missing:
+                        logger.info(f"Caption cache entry malformed (missing: {missing}) — evicting and treating as miss: {video_id}")
+                        await redis.delete(cache_key)
+                        raise KeyError(f"malformed cache entry, missing: {missing}")
                     track_event("backend", "caption_cache_hit", {"video_id": video_id, "lang": "en"})
                     logger.info(f"Caption cache HIT: {video_id}")
                     transcript = [

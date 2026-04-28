@@ -68,6 +68,19 @@ bgutil-pot volledig verwijderd via ADR-027. iOS client bypasses PO tokens — ni
 
 ---
 
+## ~~Caption cache 'title' KeyError — malformed entries na cascade stap 1~~ ✅ Opgelost 2026-04-28
+
+**Vastgesteld:** 2026-04-28  
+**Opgelost:** 2026-04-28
+
+Cache-entries weggeschreven tussen commit ff09186 en b260391 misten `title` en `video_url` (cascade stap 1 deed toen nog geen metadata-aanvulling). De cache-read code gebruikte directe bracket-access → `KeyError: 'title'` → fall-through naar yt-dlp → bot-detection.
+
+**Fix:** Twee maatregelen:
+1. **Defense-in-depth hardening** in `main.py`: na `json.loads` wordt gevalideerd op `CACHED_CAPTION_REQUIRED_KEYS`. Bij missing keys: entry wordt geëvict (`redis.delete(cache_key)`) en behandeld als cache-miss. Alle missing keys worden in één `INFO` log-regel gerapporteerd.
+2. **Eenmalige flush** van alle `caption:*` keys via `backend/scripts/flush_caption_cache.py`. Gebruik: `venv/bin/python3 scripts/flush_caption_cache.py --dry-run` (preview), dan zonder `--dry-run` of met `--yes` voor directe delete.
+
+---
+
 ## YouTube Data API quota-uitputting
 
 **Vastgesteld:** 2026-04-28  

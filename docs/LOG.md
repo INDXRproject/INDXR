@@ -1,3 +1,5 @@
+[2026-04-28] fix: caption-cache hardening + flush-script — CACHED_CAPTION_REQUIRED_KEYS frozenset in main.py; malformed entries geëvict bij eerste read (redis.delete + cache-miss fall-through); backend/scripts/flush_caption_cache.py (--dry-run, --yes flags); backend/.gitignore: scripts/ → specifieke exclusie zodat flush-script getrackt wordt; known-issues.md bijgewerkt | gewijzigd: backend/main.py, backend/scripts/flush_caption_cache.py, backend/.gitignore, docs/wiki/operations/known-issues.md
+---
 [2026-04-28] fix: KeyError 'title' bij cascade stap 1 succes (ADR-028) — YouTube Data API videos.list als metadata-bron na stap 1; get_video_details() uitgebreid met channel + upload_date; metadata-fetch failure → stap 1 weggooien + cascade naar stap 2; [YT-DATA-API quota exceeded] log-prefix; worker.py: YouTubeClient import + _yt_client singleton + zelfde metadata-patroon in _process_caption_video(); ADR-028 aangemaakt; 6 wiki-pagina's bijgewerkt (INDEX, priorities, known-issues, ai-pipeline, ADR-021, ADR-028) | gewijzigd: backend/youtube_client.py, backend/main.py, backend/worker.py, docs/wiki/decisions/028-youtube-data-api-metadata.md, docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/decisions/021-master-transcripts-cache.md
 ---
 [2026-04-28] feat: taak 1.8 ✅ + 1.9 ✅ + cascade stap 1 (taak 1.6[~]) — R2 storage helper (backend/storage.py, boto3==1.42.97); master_transcripts schema (supabase/migrations/20260428_master_transcripts_cache.sql) + write helper (backend/master_cache.py: master_transcripts_write, CAPTION_REFRESH_DAYS=90, MODEL_QUALITY_RANK, CURRENT_PRODUCTION_AI_MODEL); youtube-transcript-api==1.2.4 cascade stap 1 (extract_via_youtube_transcript_api in youtube_utils.py, [YT-API] log prefix); cascade geïntegreerd in main.py /api/extract/youtube + worker.py _process_caption_video(); master cache write fire-and-forget via asyncio.create_task na elke succesvolle caption-extractie. Handmatig door Khidr: R2 buckets aanmaken + API tokens + Railway env vars (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY) + Supabase migratie uitvoeren | gewijzigd: backend/storage.py, backend/master_cache.py, backend/youtube_utils.py, backend/worker.py, backend/main.py, backend/requirements.txt, supabase/migrations/20260428_master_transcripts_cache.sql, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/database-schema.md, docs/wiki/operations/deployment.md, docs/wiki/decisions/021-master-transcripts-cache.md
@@ -1651,4 +1653,24 @@ docs/wiki/decisions/021-master-transcripts-cache.md
 docs/wiki/operations/deployment.md
 docs/wiki/roadmap/priorities.md
 supabase/migrations/20260428_master_transcripts_cache.sql
+---
+[2026-04-28 14:46] commit: fix: KeyError 'title' cascade stap 1 + ADR-028 — YouTube Data API metadata-aanvulling
+
+youtube_client.get_video_details() uitgebreid met channel + upload_date.
+Na stap 1 succes: videos.list aanroepen; bij failure → stap 1 weggooien,
+cascade naar stap 2 (yt-dlp). [YT-DATA-API quota exceeded] log-prefix.
+worker.py: _yt_client singleton + zelfde patroon in _process_caption_video().
+ADR-028 aangemaakt met ToS-citatie + URL. 6 wiki-pagina's bijgewerkt.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+backend/youtube_client.py
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/decisions/021-master-transcripts-cache.md
+docs/wiki/decisions/028-youtube-data-api-metadata.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
 ---

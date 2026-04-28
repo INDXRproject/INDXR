@@ -16,4 +16,5 @@ backend/backend.log
 backend/add-credits.js
 backend/check-credits.js
 backend/check-profiles.js
-scripts/
+scripts/*.py
+!scripts/flush_caption_cache.py
