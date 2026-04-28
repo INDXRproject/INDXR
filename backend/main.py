@@ -834,7 +834,7 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
         return SummarizeResponse(success=False, error=str(e))
 
 @app.post("/api/playlist/extract")
-async def start_playlist_extraction(request: PlaylistExtractRequest, _: None = Depends(verify_backend_secret)):
+async def start_playlist_extraction(request: PlaylistExtractRequest, http_request: Request, _: None = Depends(verify_backend_secret)):
     """
     Start a background playlist extraction job.
     Returns immediately with { job_id, status: "running" }.
@@ -864,7 +864,7 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, _: None = D
         logger.error(f"Failed to create playlist_extraction_jobs row: {e}")
         return JSONResponse(status_code=500, content={"error": "Failed to create job"})
 
-    arq_pool = request.app.state.arq_pool
+    arq_pool = http_request.app.state.arq_pool
     if arq_pool:
         await arq_pool.enqueue_job(
             'process_playlist_video',

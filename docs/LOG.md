@@ -1,3 +1,5 @@
+[2026-04-28] fix: taak 1.5 fase 3b.3 — AttributeError fix in /api/playlist/extract: variabele-naam-clash 'request' (Pydantic body vs FastAPI Request); http_request: Request toegevoegd als tweede parameter; http_request.app.state.arq_pool | gewijzigd: backend/main.py
+---
 [2026-04-28] feat: taak 1.5 fase 3b.2 [~] — per-video chain refactor; youtube_utils.py + transcription_pipeline.py nieuw; worker.py: run_whisper_job → do_assemblyai_transcription wrapper + process_playlist_video + process_playlist_retries ARQ tasks; main.py: run_whisper_job + run_playlist_job + VTT helpers verwijderd; /api/playlist/extract → ARQ enqueue(_job_id="{playlist_id}:0"); upload-pad refactored naar do_assemblyai_transcription | gewijzigd: backend/youtube_utils.py, backend/transcription_pipeline.py, backend/worker.py, backend/main.py
 ---
 [2026-04-28] fix: taak 1.5 fase 3b.1 ✅ — RPC-fix migratie applied via Supabase MCP; status 'completed'→'complete' in update_playlist_video_progress; geverifieerd: 1-video test-playlist bereikt status='complete' na success-call; test-rij opgeruimd | gewijzigd: supabase/migrations/20260428_playlist_progress_rpc_status_fix.sql
@@ -1517,3 +1519,24 @@ docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
 ---
 [2026-04-28 09:10] precompact: context compaction triggered
+[2026-04-28 09:15] commit: feat: per-video playlist chain architecture (Fase 3a + 3b.1 + 3b.2)
+Changed: backend/main.py
+backend/transcription_pipeline.py
+backend/worker.py
+backend/youtube_utils.py
+docs/.obsidian/workspace.json
+docs/INBOX.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/playlist-engine.md
+docs/wiki/decisions/019-arq-job-queue.md
+docs/wiki/decisions/025-per-video-decompositie.md
+docs/wiki/decisions/026-arq-maintenance-mode-acceptatie.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+supabase/migrations/20260428_playlist_per_video_chain.sql
+supabase/migrations/20260428_playlist_per_video_chain__manual_test.sql
+supabase/migrations/20260428_playlist_progress_rpc_status_fix.sql
+---
