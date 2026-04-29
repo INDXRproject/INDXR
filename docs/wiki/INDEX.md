@@ -65,6 +65,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [026-arq-maintenance-mode-acceptatie.md](decisions/026-arq-maintenance-mode-acceptatie.md) | ARQ maintenance-mode geaccepteerd — post-launch heroverweging gepland |
 | [027-bgutil-deprioritization.md](decisions/027-bgutil-deprioritization.md) | bgutil-pot verwijderd — yt-dlp client-rotatie vervangt PO-token aanpak (supersedet ADR-007) |
 | [028-youtube-data-api-metadata.md](decisions/028-youtube-data-api-metadata.md) | YouTube Data API videos.list voor metadata-aanvulling cascade stap 1; yt-dlp fallback bij quota-uitputting |
+| [029-caption-vs-ai-transcription-products.md](decisions/029-caption-vs-ai-transcription-products.md) | Caption extraction en AI transcription als aparte producten — cascade stap 4+5 vervalt; AI transcription is user-gestuurd betaald product |
 
 ---
 
@@ -108,6 +109,14 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 |---------|-----------|
 | [priorities.md](roadmap/priorities.md) | Gestructureerde prioriteitenlijst: BLOCKERS / PRE-LAUNCH / POST-LAUNCH |
 | [backlog.md](roadmap/backlog.md) | Post-launch features, marketing, stabiliteit, gamification |
+
+---
+
+## Design (`design/`)
+
+| Bestand | Onderwerp |
+|---------|-----------|
+| [audit-frontend.md](design/audit-frontend.md) | Volledige frontend-inventarisatie: sitemap (47 routes), layouts, componenten, styling, dark mode, responsive, iconografie, forms, inconsistenties, vragen voor redesign |
 
 ---
 

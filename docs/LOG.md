@@ -1,3 +1,5 @@
+[2026-04-29] docs: cascade afsluiten + ADR-029 — caption extraction vs AI transcription als aparte producten; taak 1.6 ✅; taak 1.19b toegevoegd; ai-pipeline cascade-eind-sectie; error-taxonomy AI-suggestie kolom | gewijzigd: docs/wiki/decisions/029-caption-vs-ai-transcription-products.md, docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/error-taxonomy.md
+---
 [2026-04-29] test: cascade stap 1+2+3 orchestratie sessie 2 — vier scenario's getest (stap 1 succes ×2, MembersOnly fail-fast zonder stap 3, no_captions zonder stap 3); scheidings-logica geverifieerd in productie | gewijzigd: docs/wiki/operations/test-reports.md
 ---
 [2026-04-29] feat: cascade stap 3 (tv/android client-rotatie) + stap 2 productiebewijs — extract_with_ytdlp clients-parameter + [YT-DLP-ROT] prefix, stap 2/3 try/except orchestratie in main.py + worker.py, MODEL_QUALITY_RANK youtube_captions_rotated=15, test-reports stap 1+2 sessie 1 toegevoegd, ADR-027 status bijgewerkt | gewijzigd: backend/youtube_utils.py, backend/main.py, backend/worker.py, backend/master_cache.py, docs/wiki/operations/test-reports.md, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/decisions/027-bgutil-deprioritization.md
@@ -1813,4 +1815,14 @@ docs/wiki/architecture/ai-pipeline.md
 docs/wiki/decisions/027-bgutil-deprioritization.md
 docs/wiki/operations/test-reports.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-04-29 21:43] commit: test: cascade stap 1+2+3 orchestratie sessie 2 — productiebewijs
+
+Vier scenario's geverifieerd: stap 1 succes ×2, MembersOnly fail-fast
+(stap 3 correct overgeslagen), no_captions fail-fast (stap 3 correct
+overgeslagen). Scheidings-logica bewezen via negative-test.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/test-reports.md
 ---

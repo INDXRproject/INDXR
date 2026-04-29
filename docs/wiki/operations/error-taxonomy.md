@@ -134,14 +134,14 @@ Eén plek voor alle `error_type` slugs die voorkomen in `transcription_jobs`, `p
 
 ## Overzicht tabel
 
-| Error type | Categorie | Retry-eligible | Frequency Fase 3b.3 | Taak |
-|------------|-----------|----------------|----------------------|------|
-| `bot_detection` | Hybride | ✅ (maar ineffectief) | 2× | 1.6 |
-| `youtube_restricted` | External | ❌ | 1× | — |
-| `age_restricted` | External | ❌ | 0× | — |
-| `members_only` | External | ❌ | 0× | — |
-| `timeout` | Hybride | ✅ (effectief) | 0× | 1.6, 1.19 |
-| `extraction_error` | Hybride | ❌ | 1× | 1.6 (betere classificatie) |
-| `no_captions` | External | ❌ | 0× | 1.6 (auto Whisper fallback) |
-| `no_speech` | External | ❌ | 0× | — |
-| `insufficient_credits` | User | ❌ | 0× | — |
+| Error type | Categorie | Retry-eligible | Frequency Fase 3b.3 | AI-suggestie? | Taak |
+|------------|-----------|----------------|----------------------|---------------|------|
+| `bot_detection` | Hybride | ✅ (maar ineffectief) | 2× | JA — alternatief pad | 1.6 |
+| `youtube_restricted` | External | ❌ | 1× | NEE | — |
+| `age_restricted` | External | ❌ | 0× | NEE | — |
+| `members_only` | External | ❌ | 0× | NEE | — |
+| `timeout` | Hybride | ✅ (effectief) | 0× | n.v.t. (retry) | 1.6, 1.19 |
+| `extraction_error` | Hybride | ❌ | 1× | JA | 1.6 |
+| `no_captions` | External | ❌ | 0× | JA — met no_speech refund disclaimer | 1.19b |
+| `no_speech` | External | ❌ | 0× | NEE (al binnen AI flow) | — |
+| `insufficient_credits` | User | ❌ | 0× | NEE | — |

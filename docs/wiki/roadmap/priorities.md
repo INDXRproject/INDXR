@@ -64,20 +64,21 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Zie [wiki/operations/error-taxonomy.md](../operations/error-taxonomy.md).
     Status: afgerond. 9 error_types gedocumenteerd. Raw yt-dlp logging bij `extraction_error` geïmplementeerd (`_classify_download_error()` logt nu raw error + video_id + job_id op WARNING). bgutil startup logging verbeterd in `main.py` + worker health check bij startup toegevoegd.
 
-- [~] **1.6 — yt-dlp fallback-cascade met client-rotatie** (2–3 dagen)
-    Doel: stabiliteit tegen YouTube bot-detection updates. Cascade-volgorde:
-    1. [x] youtube-transcript-api (caption-only, gratis) ✅ 2026-04-28
+- [x] **1.6 — yt-dlp fallback-cascade met client-rotatie** ✅ 2026-04-29
+    Cascade-stappen 1–3 (caption extractie, gratis product) volledig geïmplementeerd en in productie geverifieerd:
+    1. ✅ youtube-transcript-api (2026-04-28)
        `extract_via_youtube_transcript_api()` in youtube_utils.py; geïntegreerd in main.py + worker.py
        Metadata-aanvulling via YouTube Data API `videos.list` na stap 1 succes ✅ 2026-04-28 (ADR-028)
-       Logging volledig diagnose-vriendelijk ✅ 2026-04-28 — per-exception INFO in `extract_via_youtube_transcript_api()`; `[YT-API] attempting {video_id}` bij elke poging
-    2. ✅ yt-dlp `--write-subs` met `ios,web_embedded` client — geformaliseerd als stap 2 met [YT-DLP] logging + model_quality_rank=20 in master_transcripts ✅ 2026-04-29
+       Logging volledig diagnose-vriendelijk ✅ 2026-04-28 — per-exception INFO; `[YT-API] attempting {video_id}` bij elke poging
+    2. ✅ yt-dlp `ios,web_embedded` client — geformaliseerd als stap 2 met [YT-DLP] logging + model_quality_rank=20 ✅ 2026-04-29
        Geverifieerd in productie 2026-04-29 — vier scenario's bewezen (cache-hit, stap 1 succes, stap 1→2 cascade overgang, MembersOnly fail-fast)
-    3. ✅ yt-dlp met `tv`,`android` clients (client-rotatie — vervangt bgutil, zie ADR-027) — geïmplementeerd 2026-04-29
+    3. ✅ yt-dlp `tv,android` client-rotatie (vervangt bgutil, zie ADR-027) — geïmplementeerd 2026-04-29
        [YT-DLP-ROT] log-prefix, model_quality_rank=15, triggered alleen bij stap 2 extraction error (niet bij no_captions/MembersOnly)
-    4. yt-dlp audio download → AssemblyAI
-    5. Markeer `needs_manual_review`, ga door met playlist
-    bgutil-pot verwijderd (ADR-027). Cascade-stap 3 is client-rotatie binnen yt-dlp zelf.
-    Afhankelijk van: 1.5 (cascade-stappen worden queue-jobs).
+
+    De oorspronkelijk geplande "stap 4 (audio→AssemblyAI)" en "stap 5 (needs_manual_review)" zijn herzien
+    als architectuur-keuze: AssemblyAI is een apart product (betaalde AI transcription, user-gestuurd) en
+    geen cascade-stap binnen het gratis caption-product. needs_manual_review wordt vervangen door duidelijke
+    error_type-gebaseerde messaging in taak 1.19b. Zie ADR-029.
 
 - [ ] **1.7 — Graceful shutdown handling (SIGTERM)** (1 dag)
     Doel: in-flight jobs persisteren bij Railway restart in plaats van verdwijnen.
@@ -162,6 +163,24 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     - Supabase database backups configureren in Supabase Dashboard
     - Upstash Redis rate limiting activeren in `src/lib/ratelimit.ts` (nu no-op tijdens testfase)
     - Supabase email-verificatie aanzetten (uitgeschakeld tijdens dev)
+
+- [ ] **1.19b — Error messaging audit + AI-suggestie differentiatie** (1 dag)
+    Doel: alle user-facing error messages uitwerken op basis van error-taxonomy.md, en
+    AI-transcription suggestie alleen tonen waar het zinvol en eerlijk is.
+    Componenten:
+    - Voor elk error_type uit error-taxonomy.md: user-facing message v2 (helderder, eerlijker dan v1)
+      + bepaal of AI-suggestie passend is
+    - Backend: zorg dat error_type consistent wordt teruggegeven in response van
+      /api/extract/youtube voor alle eindstaten
+    - Frontend: AI-suggestie alleen tonen op basis van whitelist:
+        - JA: no_captions (met "if no speech, full refund" disclaimer)
+        - JA: bot_detection (met "wait or use AI" twee opties)
+        - JA: extraction_error
+        - NEE: members_only, age_restricted, youtube_restricted, no_speech
+    - error-taxonomy.md uitbreiden met kolom "AI-suggestie passend?"
+    Afhankelijk van: 1.5b (error taxonomy), 1.6 (cascade afgerond) ✅
+    Plek in volgorde: vóór 1.20 (polish), zodat error-states correct zijn vóór cosmetische polish.
+    Zie ADR-029 voor de conceptuele basis.
 
 - [ ] **1.20 — Lichte cosmetische polish over alle UI** (1–2 dagen)
     Doel: launch-ready visuele kwaliteit zonder volledige redesign.

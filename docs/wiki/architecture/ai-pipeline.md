@@ -47,6 +47,19 @@ Frontend
   └─ Return naar frontend
 ```
 
+**Bij cascade-eind zonder succes**
+
+Cascade Product 1 (caption extraction) eindigt met een `error_type`.
+AI transcription is een apart Product 2 dat de user expliciet kiest via de "Generate with AI" knop in de UI.
+
+Frontend toont AI-suggestie alleen bij `error_type`s waar het zinvol is:
+- `no_captions` — JA (met disclaimer over no_speech refund)
+- `bot_detection` — JA (twee opties: wachten of AI)
+- `extraction_error` — JA
+- `members_only` / `age_restricted` / `youtube_restricted` — NEE (yt-dlp kan video sowieso niet bereiken voor audio-download)
+
+Zie [ADR-029](../decisions/029-caption-vs-ai-transcription-products.md) voor de architectuur-beslissing en `error-taxonomy.md` voor volledige classificatie.
+
 Zie [ADR-028](../decisions/028-youtube-data-api-metadata.md) voor de keuze van YouTube Data API als metadata-bron voor cascade stap 1, en het fallback-gedrag bij quota-uitputting.
 
 **Tijdsduur:** 1–5 seconden  
