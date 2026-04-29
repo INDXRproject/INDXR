@@ -1,3 +1,5 @@
+[2026-04-30 05:00] design: foundation V1.0 — OKLCH token systeem, IBM Plex fonts, data-theme ThemeProvider, alle 32 shadcn componenten gemigreerd, feature components + pagina's gemigreerd, support-pagina dark-only fixed, test-tokens pagina | gewijzigd: src/app/styles/tokens.css, src/app/globals.css, src/app/layout.tsx, tailwind.config.ts, src/components/ui/*, src/components/*, src/app/**
+---
 [2026-04-29] docs: cascade afsluiten + ADR-029 — caption extraction vs AI transcription als aparte producten; taak 1.6 ✅; taak 1.19b toegevoegd; ai-pipeline cascade-eind-sectie; error-taxonomy AI-suggestie kolom | gewijzigd: docs/wiki/decisions/029-caption-vs-ai-transcription-products.md, docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/error-taxonomy.md
 ---
 [2026-04-29] test: cascade stap 1+2+3 orchestratie sessie 2 — vier scenario's getest (stap 1 succes ×2, MembersOnly fail-fast zonder stap 3, no_captions zonder stap 3); scheidings-logica geverifieerd in productie | gewijzigd: docs/wiki/operations/test-reports.md
@@ -1825,4 +1827,161 @@ overgeslagen). Scheidings-logica bewezen via negative-test.
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/operations/test-reports.md
+---
+[2026-04-29 22:06] commit: docs: cascade afsluiten + ADR-029 + taak 1.19b
+
+ADR-029: caption extraction (gratis, stap 1-3) en AI transcription
+(betaald, user-gestuurd) zijn aparte producten. Stap 4+5 uit de
+originele roadmap vervallen als automatische cascade-stappen.
+
+Taak 1.6 gesloten ✅. Taak 1.19b toegevoegd: error messaging audit
++ AI-suggestie differentiatie per error_type. error-taxonomy.md
+uitgebreid met "AI-suggestie?" kolom. ai-pipeline.md: sectie
+"cascade-eind zonder succes" toegevoegd.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/decisions/029-caption-vs-ai-transcription-products.md
+docs/wiki/operations/error-taxonomy.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-29 23:55] commit: design: foundation — OKLCH tokens, IBM Plex fonts, data-theme ThemeProvider
+
+- New src/app/styles/tokens.css: full OKLCH color scale (light + dark),
+  typography, radius, shadow, motion tokens via @theme inline
+- globals.css: imports tokens.css, removes old hex/Shadcn vars, updates
+  base layer (focus-visible, reduced-motion, font-feature-settings)
+  Updates prose-content + ts-link utilities to new token names
+- layout.tsx: Geist → IBM Plex Sans (variable) + IBM Plex Mono (static);
+  ThemeProvider attribute="class" → attribute="data-theme"
+- tailwind.config.ts: strips deprecated fontFamily + borderRadius extensions
+
+Colors are broken until Commit 2 migrates shadcn components to new tokens.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/globals.css
+src/app/layout.tsx
+src/app/styles/tokens.css
+tailwind.config.ts
+---
+[2026-04-29 23:55] precompact: context compaction triggered
+[2026-04-30 00:05] commit: design: shadcn UI component token migratie naar OKLCH systeem
+
+Alle 32 componenten in src/components/ui/ gemigreerd van Shadcn-tokens
+(bg-card, text-muted-foreground, bg-primary, etc.) en oude custom vars
+(var(--color-error), var(--bg-elevated), etc.) naar het nieuwe semantische
+OKLCH token systeem. Sidebar aliases toegevoegd aan tokens.css.
+Build geverifieerd.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/dashboard/layout.tsx
+src/app/styles/tokens.css
+src/components/ui/PasswordInput.tsx
+src/components/ui/alert-dialog.tsx
+src/components/ui/alert.tsx
+src/components/ui/avatar.tsx
+src/components/ui/badge.tsx
+src/components/ui/button.tsx
+src/components/ui/card.tsx
+src/components/ui/checkbox.tsx
+src/components/ui/command.tsx
+src/components/ui/credit-balance.tsx
+src/components/ui/dialog.tsx
+src/components/ui/dropdown-menu.tsx
+src/components/ui/empty-state.tsx
+src/components/ui/form.tsx
+src/components/ui/input.tsx
+src/components/ui/loading-skeleton.tsx
+src/components/ui/pricing-card.tsx
+src/components/ui/progress.tsx
+src/components/ui/scroll-area.tsx
+src/components/ui/select.tsx
+src/components/ui/sheet.tsx
+src/components/ui/sidebar.tsx
+src/components/ui/skeleton.tsx
+src/components/ui/slider.tsx
+src/components/ui/sonner.tsx
+src/components/ui/switch.tsx
+src/components/ui/table.tsx
+src/components/ui/tabs.tsx
+src/components/ui/theme-toggle.tsx
+src/components/ui/tooltip.tsx
+---
+[2026-04-30 00:09] commit: design: feature components + pagina's naar OKLCH token systeem
+
+Alle feature-componenten (Header, UserAvatar, AuthModal, Footer, etc.)
+en pagina's gemigreerd van hardcoded zinc/white/red/green/yellow klassen
+en oude CSS vars naar het nieuwe semantische OKLCH token systeem.
+Support-pagina fixed (was dark-only). Build geverifieerd.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/(marketing)/page.tsx
+src/app/account/credits/page.tsx
+src/app/admin/credits/page.tsx
+src/app/admin/layout.tsx
+src/app/admin/page.tsx
+src/app/admin/paid-users/page.tsx
+src/app/admin/transcripts/TranscriptDeleteButton.tsx
+src/app/admin/transcripts/[id]/page.tsx
+src/app/admin/transcripts/page.tsx
+src/app/admin/users/UsersTable.tsx
+src/app/admin/users/page.tsx
+src/app/dashboard/account/page.tsx
+src/app/dashboard/billing/cancel/page.tsx
+src/app/dashboard/billing/page.tsx
+src/app/dashboard/billing/success/page.tsx
+src/app/dashboard/library/[id]/page.tsx
+src/app/dashboard/library/page.tsx
+src/app/dashboard/page.tsx
+src/app/dashboard/settings/page.tsx
+src/app/dashboard/transcribe/page.tsx
+src/app/faq/page.tsx
+src/app/forgot-password/page.tsx
+src/app/login/page.tsx
+src/app/onboarding/page.tsx
+src/app/pricing/page.tsx
+src/app/signup/page.tsx
+src/app/support/page.tsx
+src/app/suspended/page.tsx
+src/app/youtube-to-text/page.tsx
+src/app/youtube-transcript-generator/page.tsx
+src/components/AuthModal.tsx
+src/components/CreditBalance.tsx
+src/components/FeatureCard.tsx
+src/components/Footer.tsx
+src/components/Header.tsx
+src/components/HeroImage.tsx
+src/components/PlaylistAvailabilitySummary.tsx
+src/components/PlaylistManager.tsx
+src/components/SaveErrorModal.tsx
+src/components/TranscriptCard.tsx
+src/components/UserAvatar.tsx
+src/components/app-sidebar.tsx
+src/components/content/AuthorCard.tsx
+src/components/content/templates/ArticleTemplate.tsx
+src/components/content/templates/ToolPageTemplate.tsx
+src/components/content/templates/TutorialTemplate.tsx
+src/components/dashboard/WelcomeCreditCard.tsx
+src/components/dashboard/settings/DeveloperExportsCard.tsx
+src/components/dashboard/settings/ProfileSettingsCard.tsx
+src/components/dashboard/settings/SecuritySettingsCard.tsx
+src/components/dashboard/settings/TransactionHistoryCard.tsx
+src/components/free-tool/AudioTab.tsx
+src/components/free-tool/PlaylistTab.tsx
+src/components/free-tool/VideoTab.tsx
+src/components/library/AiSummaryView.tsx
+src/components/library/RagExportView.tsx
+src/components/library/TranscriptList.tsx
+src/components/library/TranscriptViewer.tsx
+---
+[2026-04-30 00:10] commit: design: test-tokens pagina + token cleanup verificatie
+
+Nieuwe /test-tokens route met kleur-swatches, typografie-schaal,
+radius/shadow demos, button variants en semantische state voorbeelden.
+Grep-verificatie: 0 resterende oude token-namen in src/.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/test-tokens/page.tsx
 ---
