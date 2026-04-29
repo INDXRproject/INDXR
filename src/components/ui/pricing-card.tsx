@@ -27,74 +27,61 @@ export function PricingCard({
   ctaLabel = "Buy Now",
   onSelect
 }: PricingCardProps) {
-  // Calculate minutes (1 credit = 1 min)
   const minutes = credits;
-
-  // Parse price for calculations (remove € and convert to number)
   const priceNum = parseFloat(price.replace('€', ''));
   const perMinute = (priceNum / minutes).toFixed(3);
-
-  // Calculate cost for a 1-hour video (60 credits)
   const hourCredits = 60;
   const hourCost = ((priceNum / credits) * hourCredits).toFixed(2);
 
   return (
     <Card className={cn(
-      "relative p-6 transition-all duration-300 flex flex-col h-full bg-card border",
+      "relative p-6 transition-all duration-300 flex flex-col h-full",
       featured
-        ? "border-primary shadow-sm scale-[1.02] z-10"
-        : "hover:border-primary/50 hover:shadow-sm hover:-translate-y-1"
+        ? "border-accent shadow-sm scale-[1.02] z-10"
+        : "hover:border-accent/50 hover:shadow-sm hover:-translate-y-1"
     )}>
 
-      {/* Label badge */}
       {label && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <Badge className={cn(
             "font-semibold px-3 py-0.5 text-xs",
             featured
-              ? "bg-primary text-primary-foreground hover:bg-primary"
-              : "bg-muted text-muted-foreground hover:bg-muted"
+              ? "bg-accent text-fg-on-accent hover:bg-accent"
+              : "bg-surface-elevated text-fg-muted hover:bg-surface-elevated"
           )}>
             {label}
           </Badge>
         </div>
       )}
 
-      {/* Package name */}
       <h3 className="text-xl font-semibold mb-2">{name}</h3>
 
-      {/* Price */}
       <div className="mb-3 flex items-baseline">
         <span className="text-4xl font-bold tracking-tight">{price}</span>
-        <span className="text-muted-foreground ml-2 text-sm">EUR</span>
+        <span className="text-fg-muted ml-2 text-sm">EUR</span>
       </div>
 
-      {/* Credits and minutes */}
       <div className="mb-1">
-        <p className="text-base text-primary font-medium">
+        <p className="text-base text-accent font-medium">
           {credits} credits
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-fg-muted">
           {minutes} minutes of video
         </p>
       </div>
 
-      {/* Per-minute cost */}
-      <p className="text-xs text-muted-foreground mb-3">
+      <p className="text-xs text-fg-muted mb-3">
         €{perMinute}/min
       </p>
 
-      {/* Example cost */}
-      <p className="text-xs text-muted-foreground/80 mb-4 italic">
+      <p className="text-xs text-fg-muted/80 mb-4 italic">
         A 1-hour video costs {hourCredits} credits (€{hourCost})
       </p>
 
-      {/* Description */}
-      <p className="text-sm text-muted-foreground mb-6">
+      <p className="text-sm text-fg-muted mb-6">
         {description}
       </p>
 
-      {/* CTA Button */}
       <div className="mt-auto">
         <Button
           className="w-full mb-6 font-semibold"
@@ -105,14 +92,13 @@ export function PricingCard({
           {ctaLabel}
         </Button>
 
-        {/* Feature list */}
         <div className="space-y-3">
           {features.map((feature, i) => (
             <div key={i} className="flex items-start gap-2">
-              <div className="mt-0.5 rounded-full bg-success/10 p-1">
+              <div className="mt-0.5 rounded-full bg-success-subtle p-1">
                 <Check className="size-3 text-success shrink-0" />
               </div>
-              <span className="text-xs text-muted-foreground leading-tight">{feature}</span>
+              <span className="text-xs text-fg-muted leading-tight">{feature}</span>
             </div>
           ))}
         </div>

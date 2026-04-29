@@ -9,19 +9,19 @@ interface CreditBalanceProps {
 
 export function CreditBalance({ credits, className }: CreditBalanceProps) {
   return (
-    <Link 
+    <Link
       href="/pricing"
       className={cn(
         "flex items-center gap-2",
         "px-3 py-1.5 rounded-full",
-        "bg-info/10 border border-info/20",      // Sky blue tint
-        "transition-colors hover:bg-info/15",    // Subtle hover
+        "bg-accent-subtle border border-accent-ring",
+        "transition-colors hover:bg-accent-subtle/80",
         "cursor-pointer",
         className
       )}
     >
-      <Sparkles className="size-4 text-info" />
-      <span className="text-sm font-medium text-info">
+      <Sparkles className="size-4 text-accent" />
+      <span className="text-sm font-medium text-accent">
         {credits} credits
       </span>
     </Link>

@@ -5,20 +5,20 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all duration-150 ease-out outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all duration-150 ease-out outline-none focus-visible:border-accent focus-visible:ring-[3px] focus-visible:ring-accent-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-error/20 dark:aria-invalid:ring-error/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] active:scale-[0.97]",
+        default: "bg-accent text-fg-on-accent hover:bg-accent-hover active:scale-[0.97]",
         destructive:
-          "bg-[var(--color-error)] text-white hover:bg-[var(--color-error)]/90 focus-visible:ring-[var(--color-error)]/20 dark:bg-[var(--color-error)]/60 dark:focus-visible:ring-[var(--color-error)]/40",
+          "bg-error text-fg-on-accent hover:bg-error/90 focus-visible:ring-error/20 dark:bg-error/60 dark:focus-visible:ring-error/40",
         outline:
-          "border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--accent)] hover:text-white hover:border-transparent dark:border-[var(--border)] dark:bg-[var(--bg-elevated)]/30",
+          "border border-border text-fg-subtle hover:bg-accent hover:text-fg-on-accent hover:border-transparent dark:border-border dark:bg-surface-elevated/30",
         secondary:
-          "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border)] hover:bg-[var(--bg-elevated)]/80",
+          "bg-surface-elevated text-fg border border-border hover:bg-surface-elevated/80",
         ghost:
-          "text-[var(--text-secondary)] hover:bg-[var(--accent)] hover:text-white",
-        link: "text-[var(--accent)] underline-offset-4 hover:underline",
+          "text-fg-subtle hover:bg-accent hover:text-fg-on-accent",
+        link: "text-accent underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

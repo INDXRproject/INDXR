@@ -32,10 +32,10 @@ export default async function DashboardLayout({
     <SidebarProvider>
       <AppSidebar />
       <main className="w-full">
-        <div className="p-4 border-b bg-background flex items-center gap-4">
+        <div className="p-4 border-b bg-bg flex items-center gap-4">
           <SidebarTrigger />
         </div>
-        <div className="p-4 md:p-8 bg-background min-h-[calc(100vh-65px)]">
+        <div className="p-4 md:p-8 bg-bg min-h-[calc(100vh-65px)]">
           {children}
         </div>
       </main>

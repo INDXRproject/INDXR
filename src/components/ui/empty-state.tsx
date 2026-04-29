@@ -11,31 +11,27 @@ interface EmptyStateProps {
   };
 }
 
-export function EmptyState({ 
-  icon: Icon = FileText, 
-  title, 
-  description, 
-  action 
+export function EmptyState({
+  icon: Icon = FileText,
+  title,
+  description,
+  action
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-xl border border-dashed border-zinc-800 bg-zinc-900/30">
-      
-      {/* Icon */}
-      <div className="mb-6 p-6 rounded-full bg-zinc-900 border border-zinc-800">
-        <Icon className="size-12 text-zinc-500" />
+    <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-xl border border-dashed border-border bg-surface-sunken">
+
+      <div className="mb-6 p-6 rounded-full bg-surface border border-border">
+        <Icon className="size-12 text-fg-muted" />
       </div>
-      
-      {/* Title */}
-      <h3 className="text-2xl font-semibold mb-2 text-white">
+
+      <h3 className="text-2xl font-semibold mb-2 text-fg">
         {title}
       </h3>
-      
-      {/* Description */}
-      <p className="text-zinc-400 max-w-md mb-6">
+
+      <p className="text-fg-muted max-w-md mb-6">
         {description}
       </p>
-      
-      {/* Action button (optional) */}
+
       {action && (
         <Button onClick={action.onClick} size="lg">
           {action.label}
