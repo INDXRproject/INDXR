@@ -1985,3 +1985,15 @@ Grep-verificatie: 0 resterende oude token-namen in src/.
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: src/app/test-tokens/page.tsx
 ---
+[2026-04-30 00:10] commit: docs: wiki maintenance — design system V1.0 gedocumenteerd
+
+INDEX.md bijgewerkt met design sectie (principles, system.md, tokens.css).
+LOG.md entry toegevoegd voor foundation V1.0 implementatie.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+---
+[2026-04-30 01:11] commit: fix: null-safe library search filter
+Changed: src/app/dashboard/library/page.tsx
+---
