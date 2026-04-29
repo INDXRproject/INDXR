@@ -94,7 +94,7 @@ function LibraryContent() {
       list = list.filter(
         t =>
           (t.title?.toLowerCase() ?? "").includes(q) ||
-          t.video_id.toLowerCase().includes(q)
+          (t.video_id?.toLowerCase() ?? "").includes(q)
       );
     }
     return list;
