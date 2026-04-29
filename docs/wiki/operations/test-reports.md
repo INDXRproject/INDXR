@@ -4,6 +4,33 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## Cascade stap 1+2+3 orchestratie — Sessie 2
+
+**Datum:** 2026-04-29 19:36–19:37  
+**Tester:** Khidr  
+**Commit:** f17b4c1 (feat: cascade stap 3 + stap 2 productiebewijs)  
+**Status:** PASS
+
+### Scenario's getest
+
+| Scenario | Video | Resultaat |
+|----------|-------|-----------|
+| Stap 1 succes (Huberman 1) | K4Ze-Sp6aUE | ✅ `[YT-API] success` in 3.8s, master cache 225KB/40981 woorden |
+| Stap 1 succes (Huberman 2) | DkS1pkKpILY | ✅ `[YT-API] success` in 2.8s, master cache 125KB/22141 woorden |
+| Stap 1→2 → MembersOnly fail-fast (Kings & Generals) | zleyKAEz-Qs | ✅ `[YT-API] VideoUnplayable` → `[YT-DLP] MembersOnly` → 403; stap 3 NIET aangeroepen (correct — structureel) |
+| Stap 1→2 → no_captions, geen stap 3 (music-only) | LolBuzO8RWw | ✅ `[YT-API] TranscriptsDisabled` → `[YT-DLP] no_captions` → "No captions found" + AI-suggestie; stap 3 NIET aangeroepen (correct — andere client lost ontbrekende captions niet op) |
+
+### Conclusie
+
+Cascade-orchestratie scheidings-logica volledig geverifieerd in productie:
+- MembersOnlyVideoError → re-raise zonder stap 3 ✓
+- return {} (no_captions) → terminal "No captions found" zonder stap 3 ✓
+- Stap 3 wordt alleen getriggerd bij stap 2 Exception (bot_detection/timeout) — organische verificatie volgt vanzelf bij eerste productie-bot_detection.
+
+`[YT-DLP-ROT]` log-prefix zichtbaarheid: nog niet bewezen in productie (geen stap 2 exception getriggerd in deze testronde). Code-pad is wel geverifieerd via negative-test (stap 3 niet aangeroepen waar dat ook niet zou moeten).
+
+---
+
 ## Cascade stap 1+2 + cache-hit — Sessie 1
 
 **Datum:** 2026-04-29 17:43–17:46  
