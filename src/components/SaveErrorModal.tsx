@@ -31,28 +31,28 @@ export function SaveErrorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-zinc-950 border-red-900/50">
+      <DialogContent className="sm:max-w-md border-error/30">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-red-500/10 rounded-lg">
-              <AlertCircle className="h-6 w-6 text-red-500" />
+            <div className="p-2 bg-error-subtle rounded-lg">
+              <AlertCircle className="h-6 w-6 text-error" />
             </div>
-            <DialogTitle className="text-white text-lg">Failed to Save Transcript</DialogTitle>
+            <DialogTitle className="text-fg text-lg">Failed to Save Transcript</DialogTitle>
           </div>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className="text-fg-muted">
             Your transcript was generated successfully, but we couldn&apos;t save it to your library.
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
-          <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-            <p className="text-sm text-red-300 font-mono wrap-break-word">
+          <div className="p-4 rounded-lg bg-error-subtle border border-error/20">
+            <p className="text-sm text-error-fg font-mono wrap-break-word">
               {errorMessage}
             </p>
           </div>
-          
-          <p className="text-xs text-zinc-500 mt-4">
-            Don&apos;t worry - your transcript is still available on this page. 
+
+          <p className="text-xs text-fg-muted mt-4">
+            Don&apos;t worry - your transcript is still available on this page.
             Click retry to save it to your library without re-transcribing.
           </p>
         </div>
@@ -68,7 +68,8 @@ export function SaveErrorModal({
           </Button>
           <Button
             onClick={handleRetry}
-            className="flex-1 bg-red-600 hover:bg-red-700"
+            variant="destructive"
+            className="flex-1"
           >
             Retry Save
           </Button>

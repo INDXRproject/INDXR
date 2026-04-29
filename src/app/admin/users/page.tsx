@@ -83,25 +83,25 @@ export default async function AdminUsersPage({
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Users</h1>
-          <p className="text-muted-foreground text-sm">All registered users</p>
+          <p className="text-fg-muted text-sm">All registered users</p>
         </div>
         <form className="flex gap-2">
           <input
             name="search"
             defaultValue={search}
             placeholder="Search email or ID…"
-            className="border rounded-md px-3 py-1.5 text-sm bg-background w-64"
+            className="border rounded-md px-3 py-1.5 text-sm bg-bg w-64"
           />
           <button
             type="submit"
-            className="px-3 py-1.5 text-sm border rounded-md bg-background hover:bg-muted"
+            className="px-3 py-1.5 text-sm border rounded-md bg-bg hover:bg-surface-elevated"
           >
             Search
           </button>
           {search && (
             <a
               href="/admin/users"
-              className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+              className="px-3 py-1.5 text-sm text-fg-muted hover:text-fg"
             >
               Clear
             </a>
@@ -111,7 +111,7 @@ export default async function AdminUsersPage({
 
       <UsersTable users={users} />
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex items-center justify-between text-sm text-fg-muted">
         <span>
           Page {page} · {filtered.length} users shown
         </span>
@@ -119,7 +119,7 @@ export default async function AdminUsersPage({
           {hasPrev && (
             <a
               href={`/admin/users?page=${page - 1}${search ? `&search=${search}` : ""}`}
-              className="px-3 py-1 border rounded hover:bg-muted"
+              className="px-3 py-1 border rounded hover:bg-surface-elevated"
             >
               ← Prev
             </a>
@@ -127,7 +127,7 @@ export default async function AdminUsersPage({
           {hasNext && (
             <a
               href={`/admin/users?page=${page + 1}${search ? `&search=${search}` : ""}`}
-              className="px-3 py-1 border rounded hover:bg-muted"
+              className="px-3 py-1 border rounded hover:bg-surface-elevated"
             >
               Next →
             </a>

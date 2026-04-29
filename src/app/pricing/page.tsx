@@ -51,24 +51,24 @@ export default function PricingPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-[var(--bg-base)]">
+    <div className="min-h-screen bg-[var(--bg)]">
       <div className="container py-24 px-4 sm:px-6 lg:px-8 mx-auto">
 
         {/* Header */}
         <div className="text-center mb-12 max-w-3xl mx-auto space-y-4">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--text-primary)]">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--fg)]">
             Pay once. Use when you need it.
           </h1>
-          <p className="text-xl text-[var(--text-muted)] max-w-2xl mx-auto">
+          <p className="text-xl text-[var(--fg-muted)] max-w-2xl mx-auto">
             Auto-caption extraction is always free. Credits apply only when you use AI transcription, playlist processing beyond the first three videos, AI summaries, or RAG JSON export.
           </p>
         </div>
 
         {/* Callout badges */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-            <Clock className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Credits never expire — use them at your own pace</span>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-primary/20">
+            <Clock className="h-4 w-4 text-accent" />
+            <span className="text-sm font-medium text-accent">Credits never expire — use them at your own pace</span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20">
             <Gift className="h-4 w-4 text-success" />
@@ -77,9 +77,9 @@ export default function PricingPage() {
         </div>
 
         {/* Always free callout */}
-        <div className="max-w-2xl mx-auto mb-10 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] text-center">
-          <p className="text-sm text-[var(--text-secondary)]">
-            <strong className="text-[var(--text-primary)]">Always free:</strong> single video auto-caption extraction (unlimited for registered users), all export formats, 25 welcome credits on signup.
+        <div className="max-w-2xl mx-auto mb-10 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-center">
+          <p className="text-sm text-[var(--fg-subtle)]">
+            <strong className="text-[var(--fg)]">Always free:</strong> single video auto-caption extraction (unlimited for registered users), all export formats, 25 welcome credits on signup.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export default function PricingPage() {
         </div>
 
         {/* Quiet tiers */}
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-[var(--text-muted)]">
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-[var(--fg-muted)]">
           <span>
             Need fewer?{" "}
             <button
@@ -159,18 +159,18 @@ export default function PricingPage() {
 
         {/* Cost table */}
         <div className="mt-16 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6 text-center">What does it actually cost?</h2>
+          <h2 className="text-2xl font-bold text-[var(--fg)] mb-6 text-center">What does it actually cost?</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-[var(--border)]">
-                  <th className="text-left py-3 pr-4 font-semibold text-[var(--text-primary)]">Task</th>
-                  <th className="text-right py-3 px-4 font-semibold text-[var(--text-primary)]">Credits</th>
-                  <th className="text-right py-3 px-4 font-semibold text-[var(--text-primary)]">Basic</th>
-                  <th className="text-right py-3 pl-4 font-semibold text-[var(--text-primary)]">Plus</th>
+                  <th className="text-left py-3 pr-4 font-semibold text-[var(--fg)]">Task</th>
+                  <th className="text-right py-3 px-4 font-semibold text-[var(--fg)]">Credits</th>
+                  <th className="text-right py-3 px-4 font-semibold text-[var(--fg)]">Basic</th>
+                  <th className="text-right py-3 pl-4 font-semibold text-[var(--fg)]">Plus</th>
                 </tr>
               </thead>
-              <tbody className="text-[var(--text-secondary)]">
+              <tbody className="text-[var(--fg-subtle)]">
                 {[
                   ["Single video, auto-captions", "0", "Free", "Free"],
                   ["AI Transcription, 30 min", "30", "€0.42", "€0.36"],
@@ -194,17 +194,17 @@ export default function PricingPage() {
 
         {/* Competitor comparison */}
         <div className="mt-12 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6 text-center">How we compare</h2>
+          <h2 className="text-2xl font-bold text-[var(--fg)] mb-6 text-center">How we compare</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-[var(--border)]">
-                  <th className="text-left py-3 pr-4 font-semibold text-[var(--text-primary)]">Tool</th>
-                  <th className="text-right py-3 px-4 font-semibold text-[var(--text-primary)]">AI Transcription / min</th>
-                  <th className="text-right py-3 pl-4 font-semibold text-[var(--text-primary)]">Model</th>
+                  <th className="text-left py-3 pr-4 font-semibold text-[var(--fg)]">Tool</th>
+                  <th className="text-right py-3 px-4 font-semibold text-[var(--fg)]">AI Transcription / min</th>
+                  <th className="text-right py-3 pl-4 font-semibold text-[var(--fg)]">Model</th>
                 </tr>
               </thead>
-              <tbody className="text-[var(--text-secondary)]">
+              <tbody className="text-[var(--fg-subtle)]">
                 {[
                   ["Rev.com", "~$0.25/min ($15/hr)", "Pay-per-use"],
                   ["HappyScribe", "~€0.20/min (€12/hr)", "Per-minute"],
@@ -213,7 +213,7 @@ export default function PricingPage() {
                   ["INDXR.AI Basic", "€0.014/min", "Credits, no expiry"],
                   ["INDXR.AI Plus", "€0.012/min", "Credits, no expiry"],
                 ].map(([tool, price, model], i) => (
-                  <tr key={tool} className={`border-b border-[var(--border)] last:border-0 ${i >= 4 ? "font-medium text-[var(--text-primary)]" : ""}`}>
+                  <tr key={tool} className={`border-b border-[var(--border)] last:border-0 ${i >= 4 ? "font-medium text-[var(--fg)]" : ""}`}>
                     <td className="py-3 pr-4">{tool}</td>
                     <td className="text-right py-3 px-4 tabular-nums">{price}</td>
                     <td className="text-right py-3 pl-4">{model}</td>
@@ -222,7 +222,7 @@ export default function PricingPage() {
               </tbody>
             </table>
           </div>
-          <p className="mt-4 text-sm text-[var(--text-muted)]">
+          <p className="mt-4 text-sm text-[var(--fg-muted)]">
             INDXR.AI&apos;s AI transcription costs are comparable to the cheapest subscription tools — without requiring a monthly commitment. Auto-caption extraction, which covers the majority of YouTube videos, is always free.
           </p>
         </div>
@@ -234,11 +234,11 @@ export default function PricingPage() {
             { icon: Clock, heading: "Credits never expire", body: "Buy in April, use in October. Or next year. They'll be there." },
             { icon: Gift, heading: "25 free credits on signup", body: "No credit card required. Enough for a 25-minute AI transcription or 8 AI summaries." },
           ].map(({ icon: Icon, heading, body }) => (
-            <div key={heading} className="p-5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] flex gap-4">
-              <Icon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <div key={heading} className="p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex gap-4">
+              <Icon className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-sm text-[var(--text-primary)] mb-1">{heading}</p>
-                <p className="text-sm text-[var(--text-muted)]">{body}</p>
+                <p className="font-semibold text-sm text-[var(--fg)] mb-1">{heading}</p>
+                <p className="text-sm text-[var(--fg-muted)]">{body}</p>
               </div>
             </div>
           ))}
@@ -246,7 +246,7 @@ export default function PricingPage() {
 
         {/* FAQ section */}
         <div className="mt-24 max-w-3xl mx-auto border-t pt-16 border-[var(--border)]">
-          <h2 className="text-3xl font-bold text-center mb-12 text-[var(--text-primary)]">
+          <h2 className="text-3xl font-bold text-center mb-12 text-[var(--fg)]">
             Frequently Asked Questions
           </h2>
           <div className="grid gap-6">
@@ -281,8 +281,8 @@ export default function PricingPage() {
               },
             ].map(({ q, a }) => (
               <div key={q} className="space-y-2">
-                <h3 className="font-semibold text-lg text-[var(--text-primary)]">{q}</h3>
-                <p className="text-[var(--text-muted)]">{a}</p>
+                <h3 className="font-semibold text-lg text-[var(--fg)]">{q}</h3>
+                <p className="text-[var(--fg-muted)]">{a}</p>
               </div>
             ))}
           </div>

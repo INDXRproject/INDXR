@@ -10,9 +10,9 @@ export function TranscriptDeleteButton({ transcriptId }: { transcriptId: string 
   if (error) {
     return (
       <span className="flex items-center gap-1">
-        <span className="text-xs text-destructive">{error}</span>
+        <span className="text-xs text-error">{error}</span>
         <button
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs text-fg-muted hover:text-fg"
           onClick={() => setError(null)}
         >
           ×
@@ -25,7 +25,7 @@ export function TranscriptDeleteButton({ transcriptId }: { transcriptId: string 
     return (
       <span className="flex items-center gap-1">
         <button
-          className="text-xs text-destructive hover:underline"
+          className="text-xs text-error hover:underline"
           disabled={loading}
           onClick={async () => {
             setLoading(true)
@@ -48,7 +48,7 @@ export function TranscriptDeleteButton({ transcriptId }: { transcriptId: string 
           {loading ? "…" : "Confirm"}
         </button>
         <button
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs text-fg-muted hover:text-fg"
           onClick={() => setConfirming(false)}
         >
           Cancel
@@ -59,7 +59,7 @@ export function TranscriptDeleteButton({ transcriptId }: { transcriptId: string 
 
   return (
     <button
-      className="text-xs text-muted-foreground hover:text-destructive"
+      className="text-xs text-fg-muted hover:text-error"
       onClick={() => setConfirming(true)}
     >
       Delete

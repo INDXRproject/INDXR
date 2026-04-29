@@ -69,28 +69,28 @@ export default function FreeToolPage() {
   return (
     <>
     <div className="container max-w-4xl py-24 px-4 mx-auto text-center">
-      <h1 className="text-4xl font-bold text-foreground mb-6">Free YouTube Transcript Generator</h1>
-      <p className="text-muted-foreground mb-10 text-lg max-w-2xl mx-auto">
+      <h1 className="text-4xl font-bold text-fg mb-6">Free YouTube Transcript Generator</h1>
+      <p className="text-fg-muted mb-10 text-lg max-w-2xl mx-auto">
         Extract YouTube transcripts instantly. Free for videos with captions. AI transcription for videos without. Export as TXT, Markdown, SRT, VTT, CSV, JSON, or RAG-ready. No extension needed.
       </p>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8 mb-12">
-        <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-muted/30 h-auto rounded-xl">
+        <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-surface-elevated/30 h-auto rounded-xl">
           <TabsTrigger
             value="video"
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
           >
             <Video className="h-4 w-4" /> Single Video
           </TabsTrigger>
           <TabsTrigger
             value="playlist"
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
           >
             <ListMusic className="h-4 w-4" /> Playlist
           </TabsTrigger>
           <TabsTrigger
             value="audio"
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-white data-[state=active]:shadow-sm transition-all duration-200 text-[var(--text-muted)] font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
           >
             <Mic className="h-4 w-4" /> Audio Upload
           </TabsTrigger>
@@ -129,7 +129,7 @@ export default function FreeToolPage() {
 
     {/* Below-tool content: SEO article */}
     <div className="container max-w-3xl px-4 mx-auto pb-24 text-left">
-      <div className="prose-content text-[var(--text-secondary)] leading-relaxed">
+      <div className="prose-content text-[var(--fg-subtle)] leading-relaxed">
 
         <p>
           Paste any YouTube URL. If the video has auto-generated captions, the transcript appears in

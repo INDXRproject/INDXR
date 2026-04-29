@@ -44,16 +44,16 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
   const displayedTransactions = showAll ? transactions : transactions.slice(0, 10)
 
   return (
-    <Card className="bg-card/50 border-border">
+    <Card className="bg-surface/50 border-border">
       <CardHeader>
-        <CardTitle className="text-foreground">Billing & Credits</CardTitle>
-        <CardDescription className="text-muted-foreground">Your current balance and transaction history</CardDescription>
+        <CardTitle className="text-fg">Billing & Credits</CardTitle>
+        <CardDescription className="text-fg-muted">Your current balance and transaction history</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Credits Display */}
-        <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Current Balance</span>
-            <span className="text-2xl font-semibold text-foreground">{credits} credits</span>
+        <div className="mb-6 p-4 bg-surface-elevated/50 rounded-lg border border-border flex items-center justify-between">
+            <span className="text-sm text-fg-muted">Current Balance</span>
+            <span className="text-2xl font-semibold text-fg">{credits} credits</span>
         </div>
 
         {/* Responsive Table Container */}
@@ -61,29 +61,29 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-border hover:bg-muted/50 bg-muted/30">
-                <TableHead className="text-muted-foreground w-[120px]">Date</TableHead>
-                <TableHead className="text-muted-foreground">Activity</TableHead>
-                <TableHead className="text-muted-foreground text-right w-[100px]">Amount</TableHead>
+              <TableRow className="border-border hover:bg-surface-elevated/50 bg-surface-elevated/30">
+                <TableHead className="text-fg-muted w-[120px]">Date</TableHead>
+                <TableHead className="text-fg-muted">Activity</TableHead>
+                <TableHead className="text-fg-muted text-right w-[100px]">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayedTransactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={3} className="h-24 text-center text-fg-muted">
                     No transactions found.
                   </TableCell>
                 </TableRow>
               ) : (
                 displayedTransactions.map((tx) => (
-                  <TableRow key={tx.id} className="border-border hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium text-foreground whitespace-nowrap">
+                  <TableRow key={tx.id} className="border-border hover:bg-surface-elevated/50 transition-colors">
+                    <TableCell className="font-medium text-fg whitespace-nowrap">
                       {timeAgo(tx.created_at)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground min-w-[150px]">{tx.reason}</TableCell>
+                    <TableCell className="text-fg-muted min-w-[150px]">{tx.reason}</TableCell>
                     <TableCell className="text-right">
                       <span className={`flex items-center justify-end gap-1 font-mono ${
-                        tx.type === 'credit' ? 'text-green-500' : 'text-muted-foreground'
+                        tx.type === 'credit' ? 'text-success' : 'text-fg-muted'
                       }`}>
                         {tx.type === 'credit' ? '+' : '-'}
                         {tx.amount}
@@ -96,11 +96,11 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
           </Table>
           </div>
           {transactions.length > 10 && (
-            <div className="p-4 border-t border-border bg-muted/10 flex justify-center">
+            <div className="p-4 border-t border-border bg-surface-elevated/10 flex justify-center">
               <Button 
                 variant="ghost" 
                 onClick={() => setShowAll(!showAll)}
-                className="text-muted-foreground hover:text-foreground w-full"
+                className="text-fg-muted hover:text-fg w-full"
               >
                 {showAll ? "Show less" : `View all transactions (${transactions.length})`}
               </Button>

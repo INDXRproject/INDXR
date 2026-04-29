@@ -53,10 +53,10 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
   }
 
   return (
-    <Card className="bg-primary/10 border-primary/30 mb-8">
+    <Card className="bg-accent/10 border-primary/30 mb-8">
       <CardHeader>
         <div className="flex items-center gap-2">
-           <Gift className="h-6 w-6 text-primary" />
+           <Gift className="h-6 w-6 text-accent" />
            <CardTitle className="text-xl">Get Started with Free Credits</CardTitle>
         </div>
         <CardDescription>
@@ -69,15 +69,15 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
            {/* Single Video */}
            <div className="space-y-2">
               <h3 className="font-semibold flex items-center gap-2">
-                <span className="bg-primary/20 text-primary p-1 rounded">📺</span> Single Video
+                <span className="bg-accent/20 text-accent p-1 rounded">📺</span> Single Video
               </h3>
-              <ul className="space-y-1 text-muted-foreground">
+              <ul className="space-y-1 text-fg-muted">
                 <li className="flex items-center gap-2">
                   <span className="text-success">●</span> Captions: <b>Always Free</b>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-warning">●</span> AI Whisper: <b>1 Credit</b> / min
-                  <span className="text-xs text-muted-foreground block ml-6 leading-tight">(Fallback if no captions available)</span>
+                  <span className="text-xs text-fg-muted block ml-6 leading-tight">(Fallback if no captions available)</span>
                 </li>
               </ul>
            </div>
@@ -85,9 +85,9 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
            {/* Playlist */}
            <div className="space-y-2">
               <h3 className="font-semibold flex items-center gap-2">
-                <span className="bg-primary/20 text-primary p-1 rounded">📑</span> Playlists
+                <span className="bg-accent/20 text-accent p-1 rounded">📑</span> Playlists
               </h3>
-               <ul className="space-y-1 text-muted-foreground">
+               <ul className="space-y-1 text-fg-muted">
                 <li className="flex items-center gap-2">
                   <span className="text-success">●</span> First <b>3 videos</b> free per extraction
                 </li>
@@ -100,11 +100,11 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
            {/* Audio */}
            <div className="space-y-2">
               <h3 className="font-semibold flex items-center gap-2">
-                <span className="bg-primary/20 text-primary p-1 rounded">🎙️</span> Audio Upload
+                <span className="bg-accent/20 text-accent p-1 rounded">🎙️</span> Audio Upload
               </h3>
-               <ul className="space-y-1 text-muted-foreground">
+               <ul className="space-y-1 text-fg-muted">
                 <li className="flex items-center gap-2">
-                  <span className="text-muted-foreground">●</span> Powered by AI Transcription
+                  <span className="text-fg-muted">●</span> Powered by AI Transcription
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-warning">●</span> Rate: <b>1 Credit</b> / min

@@ -73,23 +73,23 @@ export function TutorialTemplate({
     <>
       <JsonLd schemas={schemas} />
       <article className="max-w-3xl mx-auto px-4 py-12">
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--text-primary)] mb-4">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fg)] mb-4">
           {title}
         </h1>
         <AuthorCard author={author} publishedAt={publishedAt} updatedAt={updatedAt} />
-        <div className="mt-8 prose-content text-[var(--text-secondary)] leading-relaxed">
+        <div className="mt-8 prose-content text-[var(--fg-subtle)] leading-relaxed">
           {children}
         </div>
         {faqs.length > 0 && (
           <section className="mt-12 border-t border-[var(--border)] pt-10">
-            <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-6">
+            <h2 className="text-xl font-semibold text-[var(--fg)] mb-6">
               Frequently Asked Questions
             </h2>
             <dl className="space-y-6">
               {faqs.map(({ q, a }, i) => (
                 <div key={i}>
-                  <dt className="font-medium text-[var(--text-primary)] mb-1">{q}</dt>
-                  <dd className="text-[var(--text-secondary)] text-sm leading-relaxed">{a}</dd>
+                  <dt className="font-medium text-[var(--fg)] mb-1">{q}</dt>
+                  <dd className="text-[var(--fg-subtle)] text-sm leading-relaxed">{a}</dd>
                 </div>
               ))}
             </dl>
@@ -97,7 +97,7 @@ export function TutorialTemplate({
         )}
         {sources.length > 0 && (
           <section className="mt-10 border-t border-[var(--border)] pt-8">
-            <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-[var(--fg-muted)] uppercase tracking-wide mb-3">
               Sources
             </h2>
             <ul className="space-y-1">

@@ -14,8 +14,8 @@ const PER_PAGE = 50
 
 function MetricCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border bg-card p-4 space-y-1">
-      <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
+    <div className="rounded-lg border bg-surface p-4 space-y-1">
+      <p className="text-xs text-fg-muted uppercase tracking-wide">{label}</p>
       <p className="text-2xl font-bold">{value}</p>
     </div>
   )
@@ -73,7 +73,7 @@ export default async function AdminCreditsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Credits</h1>
-        <p className="text-muted-foreground text-sm">All credit transactions</p>
+        <p className="text-fg-muted text-sm">All credit transactions</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -85,11 +85,11 @@ export default async function AdminCreditsPage({
 
       <form className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Type</label>
+          <label className="text-xs text-fg-muted">Type</label>
           <select
             name="type"
             defaultValue={typeFilter}
-            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+            className="border rounded-md px-3 py-1.5 text-sm bg-bg"
           >
             <option value="">All</option>
             <option value="credit">Credit (purchases)</option>
@@ -97,32 +97,32 @@ export default async function AdminCreditsPage({
           </select>
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">From</label>
+          <label className="text-xs text-fg-muted">From</label>
           <input
             type="date"
             name="from"
             defaultValue={from}
-            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+            className="border rounded-md px-3 py-1.5 text-sm bg-bg"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">To</label>
+          <label className="text-xs text-fg-muted">To</label>
           <input
             type="date"
             name="to"
             defaultValue={to}
-            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+            className="border rounded-md px-3 py-1.5 text-sm bg-bg"
           />
         </div>
         <button
           type="submit"
-          className="px-3 py-1.5 text-sm border rounded-md bg-background hover:bg-muted"
+          className="px-3 py-1.5 text-sm border rounded-md bg-bg hover:bg-surface-elevated"
         >
           Filter
         </button>
         <a
           href="/admin/credits"
-          className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="px-3 py-1.5 text-sm text-fg-muted hover:text-fg"
         >
           Reset
         </a>
@@ -149,14 +149,14 @@ export default async function AdminCreditsPage({
           <TableBody>
             {!transactions?.length && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-fg-muted py-8">
                   No transactions found
                 </TableCell>
               </TableRow>
             )}
             {transactions?.map((tx) => (
               <TableRow key={tx.id}>
-                <TableCell className="text-xs max-w-[180px] truncate text-muted-foreground">
+                <TableCell className="text-xs max-w-[180px] truncate text-fg-muted">
                   {emailMap[tx.user_id] ?? tx.user_id.slice(0, 8) + "…"}
                 </TableCell>
                 <TableCell>
@@ -169,7 +169,7 @@ export default async function AdminCreditsPage({
                 </TableCell>
                 <TableCell
                   className={`text-xs font-mono font-semibold ${
-                    tx.type === "credit" ? "text-green-600" : "text-red-500"
+                    tx.type === "credit" ? "text-success-fg" : "text-error"
                   }`}
                 >
                   {tx.type === "credit" ? "+" : "-"}
@@ -178,12 +178,12 @@ export default async function AdminCreditsPage({
                 <TableCell className="text-xs max-w-[200px] truncate">
                   {tx.reason}
                 </TableCell>
-                <TableCell className="text-xs max-w-[200px] truncate text-muted-foreground">
+                <TableCell className="text-xs max-w-[200px] truncate text-fg-muted">
                   {tx.metadata && Object.keys(tx.metadata).length > 0
                     ? JSON.stringify(tx.metadata).slice(0, 60)
                     : "—"}
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
+                <TableCell className="text-xs text-fg-muted">
                   {new Date(tx.created_at).toLocaleString()}
                 </TableCell>
               </TableRow>
@@ -192,7 +192,7 @@ export default async function AdminCreditsPage({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex items-center justify-between text-sm text-fg-muted">
         <span>
           Page {page} of {totalPages} · {count ?? 0} total
         </span>
@@ -200,7 +200,7 @@ export default async function AdminCreditsPage({
           {page > 1 && (
             <a
               href={`/admin/credits?page=${page - 1}${typeFilter ? `&type=${typeFilter}` : ""}${from ? `&from=${from}` : ""}${to ? `&to=${to}` : ""}`}
-              className="px-3 py-1 border rounded hover:bg-muted"
+              className="px-3 py-1 border rounded hover:bg-surface-elevated"
             >
               ← Prev
             </a>
@@ -208,7 +208,7 @@ export default async function AdminCreditsPage({
           {page < totalPages && (
             <a
               href={`/admin/credits?page=${page + 1}${typeFilter ? `&type=${typeFilter}` : ""}${from ? `&from=${from}` : ""}${to ? `&to=${to}` : ""}`}
-              className="px-3 py-1 border rounded hover:bg-muted"
+              className="px-3 py-1 border rounded hover:bg-surface-elevated"
             >
               Next →
             </a>

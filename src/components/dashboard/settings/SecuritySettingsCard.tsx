@@ -48,35 +48,35 @@ export function SecuritySettingsCard() {
   }
 
   return (
-    <Card className="bg-[var(--bg-surface)] border-[var(--border)]">
+    <Card className="bg-[var(--surface)] border-[var(--border)]">
       <CardHeader>
-        <CardTitle className="text-[var(--text-primary)]">Security</CardTitle>
-        <CardDescription className="text-[var(--text-secondary)]">Update your password to keep your account secure</CardDescription>
+        <CardTitle className="text-[var(--fg)]">Security</CardTitle>
+        <CardDescription className="text-[var(--fg-subtle)]">Update your password to keep your account secure</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleUpdatePassword} className="space-y-4">
             <div className="grid gap-2">
-                <Label className="text-[var(--text-primary)]">New Password</Label>
+                <Label className="text-[var(--fg)]">New Password</Label>
                 <PasswordInput 
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="!bg-[var(--bg-elevated)] !border-[var(--border)] !text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                    className="!bg-[var(--surface-elevated)] !border-[var(--border)] !text-[var(--fg)] placeholder:text-[var(--fg-muted)]"
                     placeholder="•••••••"
                 />
             </div>
             <div className="grid gap-2">
-                <Label className="text-[var(--text-primary)]">Confirm New Password</Label>
+                <Label className="text-[var(--fg)]">Confirm New Password</Label>
                 <PasswordInput 
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="!bg-[var(--bg-elevated)] !border-[var(--border)] !text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                    className="!bg-[var(--surface-elevated)] !border-[var(--border)] !text-[var(--fg)] placeholder:text-[var(--fg-muted)]"
                     placeholder="•••••••"
                 />
             </div>
             <Button 
               type="submit" 
               disabled={isSubmitting || !newPassword} 
-              className="w-full bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
+              className="w-full bg-[var(--accent)] text-fg hover:bg-[var(--accent-hover)] active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
             >
                 {isSubmitting ? "Updating..." : "Update Password"}
             </Button>

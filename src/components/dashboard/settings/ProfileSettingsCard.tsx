@@ -76,42 +76,42 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
   }
 
   return (
-    <Card className="bg-card/50 border-border">
+    <Card className="bg-surface/50 border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-            <CardTitle className="text-foreground">Profile & Identity</CardTitle>
+            <CardTitle className="text-fg">Profile & Identity</CardTitle>
             {isVerified ? (
-                <Badge variant="outline" className="border-green-500/50 text-green-500 bg-green-500/10 gap-1">
+                <Badge variant="outline" className="border-green-500/50 text-success bg-success-subtle gap-1">
                     <CheckCircle2 className="h-3 w-3" /> Verified
                 </Badge>
             ) : (
-                <Badge variant="outline" className="border-yellow-500/50 text-yellow-500 bg-yellow-500/10 gap-1">
+                <Badge variant="outline" className="border-warning/50 text-warning bg-warning-subtle gap-1">
                     <AlertCircle className="h-3 w-3" /> Unverified
                 </Badge>
             )}
         </div>
-        <CardDescription className="text-muted-foreground">Manage your public profile and account details</CardDescription>
+        <CardDescription className="text-fg-muted">Manage your public profile and account details</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Email Section */}
         <div className="space-y-2">
-            <Label className="text-muted-foreground">Email Address</Label>
+            <Label className="text-fg-muted">Email Address</Label>
             <div className="flex items-center gap-2">
-                <Input value={user.email || ""} disabled className="bg-card border-border text-muted-foreground" />
+                <Input value={user.email || ""} disabled className="bg-surface border-border text-fg-muted" />
                 {!isVerified && (
                      <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={handleResendVerification} 
                         disabled={isResending}
-                        className="border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 whitespace-nowrap"
+                        className="border-warning/30 text-warning hover:bg-warning-subtle hover:text-warning whitespace-nowrap"
                      >
                         {isResending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Resend Link"}
                      </Button>
                 )}
             </div>
             {!isVerified && (
-                <p className="text-xs text-yellow-500/80">
+                <p className="text-xs text-warning/80">
                     Your email is unverified. Please check your inbox to fully activate your account features.
                 </p>
             )}
@@ -120,21 +120,21 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
         {/* Edit Form */}
         <form onSubmit={handleUpdateProfile} className="space-y-4 pt-4 border-t border-border/50">
             <div className="grid gap-2">
-                <Label className="text-foreground">Username</Label>
+                <Label className="text-fg">Username</Label>
                 <Input 
                     value={username} 
                     onChange={(e) => setUsername(e.target.value)} 
                     disabled={!isEditing}
                     placeholder="e.g. creative_genius"
-                    className="!bg-card !border-border !text-foreground placeholder:text-muted-foreground focus:ring-purple-500/20"
+                    className="!bg-surface !border-border !text-fg placeholder:text-fg-muted focus:ring-purple-500/20"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-fg-muted">
                     3-20 chars, letters, numbers, underscores, or hyphens only.
                 </p>
             </div>
             
             <div className="grid gap-2">
-                <Label className="text-foreground">Avatar Color</Label>
+                <Label className="text-fg">Avatar Color</Label>
                 <div className="flex gap-2">
                     {AVATAR_COLORS.map(color => (
                         <button
@@ -152,12 +152,12 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
             </div>
             
             <div className="grid gap-2">
-                <Label className="text-foreground">Main Usage</Label>
+                <Label className="text-fg">Main Usage</Label>
                 {isEditing ? (
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-border bg-card px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
+                    className="flex h-9 w-full rounded-md border border-border bg-surface px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-fg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-ring disabled:cursor-not-allowed disabled:opacity-50 text-fg"
                   >
                     <option value="" disabled>Select your role</option>
                     <option value="student">Student</option>
@@ -172,7 +172,7 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                   <Input 
                     value={role ? role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Not set"} 
                     disabled 
-                    className="bg-card border-border text-foreground"
+                    className="bg-surface border-border text-fg"
                   />
                 )}
             </div>
@@ -188,14 +188,14 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                             setRole(profile?.role || "")
                             setAvatarColor(profile?.avatar_color || AVATAR_COLORS[4])
                         }}
-                        className="text-muted-foreground hover:text-foreground hover:bg-card"
+                        className="text-fg-muted hover:text-fg hover:bg-surface"
                     >
                         Cancel
                     </Button>
                     <Button 
                       type="submit" 
                       disabled={isSubmitting} 
-                      className="bg-[var(--accent)] text-[var(--bg-base)] hover:bg-[var(--accent-hover)] active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
+                      className="bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
                     >
                         {isSubmitting ? "Saving..." : "Save Changes"}
                     </Button>
@@ -205,7 +205,7 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                     type="button" 
                     variant="outline" 
                     onClick={() => setIsEditing(true)} 
-                    className="w-full border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--accent)] hover:text-[var(--bg-base)] transition-all duration-150 ease-out"
+                    className="w-full border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] hover:bg-[var(--accent)] hover:text-[var(--bg)] transition-all duration-150 ease-out"
                  >
                     Edit Profile
                  </Button>

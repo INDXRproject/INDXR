@@ -13,10 +13,10 @@ const PER_PAGE = 50
 
 function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-lg border bg-card p-4 space-y-1">
-      <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
+    <div className="rounded-lg border bg-surface p-4 space-y-1">
+      <p className="text-xs text-fg-muted uppercase tracking-wide">{label}</p>
       <p className="text-2xl font-bold">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+      {sub && <p className="text-xs text-fg-muted">{sub}</p>}
     </div>
   )
 }
@@ -43,7 +43,7 @@ export default async function AdminPaidUsersPage({
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Paid Users</h1>
-        <p className="text-muted-foreground">No purchase data found.</p>
+        <p className="text-fg-muted">No purchase data found.</p>
       </div>
     )
   }
@@ -122,7 +122,7 @@ export default async function AdminPaidUsersPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Paid Users</h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-fg-muted text-sm">
           Users who have made at least one Stripe purchase
         </p>
       </div>
@@ -161,7 +161,7 @@ export default async function AdminPaidUsersPage({
               <TableRow>
                 <TableCell
                   colSpan={9}
-                  className="text-center text-muted-foreground py-8"
+                  className="text-center text-fg-muted py-8"
                 >
                   No paying users yet
                 </TableCell>
@@ -175,13 +175,13 @@ export default async function AdminPaidUsersPage({
 
               return (
                 <TableRow key={userId}>
-                  <TableCell className="text-xs text-muted-foreground w-8">
+                  <TableCell className="text-xs text-fg-muted w-8">
                     {rank}
                   </TableCell>
                   <TableCell className="text-xs max-w-[200px] truncate">
                     {email}
                   </TableCell>
-                  <TableCell className="text-xs font-mono font-semibold text-green-600">
+                  <TableCell className="text-xs font-mono font-semibold text-success-fg">
                     €{stats.totalPaid.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-xs font-mono">
@@ -193,17 +193,17 @@ export default async function AdminPaidUsersPage({
                   <TableCell className="text-xs font-mono">
                     {stats.purchases}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-fg-muted">
                     {new Date(stats.firstPurchase).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-fg-muted">
                     {new Date(stats.lastPurchase).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/admin/users?search=${encodeURIComponent(email)}`}
-                        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                        className="text-xs text-fg-muted hover:text-fg underline underline-offset-2"
                       >
                         View
                       </Link>
@@ -212,7 +212,7 @@ export default async function AdminPaidUsersPage({
                           href={`https://app.posthog.com/project/${posthogProjectId}/persons/${userId}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-muted-foreground hover:text-foreground"
+                          className="text-xs text-fg-muted hover:text-fg"
                         >
                           PostHog →
                         </a>
@@ -226,7 +226,7 @@ export default async function AdminPaidUsersPage({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex items-center justify-between text-sm text-fg-muted">
         <span>
           Page {page} of {totalPages} · {totalPayingUsers} paying users
         </span>
@@ -234,7 +234,7 @@ export default async function AdminPaidUsersPage({
           {page > 1 && (
             <a
               href={`/admin/paid-users?page=${page - 1}`}
-              className="px-3 py-1 border rounded hover:bg-muted"
+              className="px-3 py-1 border rounded hover:bg-surface-elevated"
             >
               ← Prev
             </a>
@@ -242,7 +242,7 @@ export default async function AdminPaidUsersPage({
           {page < totalPages && (
             <a
               href={`/admin/paid-users?page=${page + 1}`}
-              className="px-3 py-1 border rounded hover:bg-muted"
+              className="px-3 py-1 border rounded hover:bg-surface-elevated"
             >
               Next →
             </a>

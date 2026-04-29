@@ -54,14 +54,14 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+    <div className="flex items-center justify-center min-h-screen bg-bg px-4">
        <div className="w-full max-w-4xl grid md:grid-cols-2 gap-8 items-center">
 
           {/* Left Side: Checklist */}
           <div className="space-y-6 hidden md:block">
             <div>
               <h1 className="text-4xl font-bold mb-2">Welcome to Indxr.AI</h1>
-              <p className="text-muted-foreground text-lg">You&apos;re just a few steps away from unlocking video insights.</p>
+              <p className="text-fg-muted text-lg">You&apos;re just a few steps away from unlocking video insights.</p>
             </div>
 
             <div className="space-y-4">
@@ -69,25 +69,25 @@ export default function OnboardingPage() {
                 <CheckCircle2 className="h-6 w-6 text-success mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-lg">Create Account</h3>
-                  <p className="text-muted-foreground text-sm">Secure your spot and verify your identity.</p>
+                  <p className="text-fg-muted text-sm">Secure your spot and verify your identity.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                 <div className="h-6 w-6 rounded-full border-2 border-primary flex items-center justify-center mt-0.5 text-xs font-bold bg-primary/20 text-primary">
+                 <div className="h-6 w-6 rounded-full border-2 border-primary flex items-center justify-center mt-0.5 text-xs font-bold bg-accent/20 text-accent">
                    2
                  </div>
                 <div>
                   <h3 className="font-semibold text-lg">Complete Profile</h3>
-                  <p className="text-muted-foreground text-sm">Tell us a bit about yourself to personalize your experience.</p>
+                  <p className="text-fg-muted text-sm">Tell us a bit about yourself to personalize your experience.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <Circle className="h-6 w-6 text-muted-foreground mt-0.5" />
+                <Circle className="h-6 w-6 text-fg-muted mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-lg text-muted-foreground">First Extraction</h3>
-                  <p className="text-muted-foreground text-sm">Transcribe your first YouTube video into structured data.</p>
+                  <h3 className="font-semibold text-lg text-fg-muted">First Extraction</h3>
+                  <p className="text-fg-muted text-sm">Transcribe your first YouTube video into structured data.</p>
                 </div>
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function OnboardingPage() {
                     required
                     placeholder="e.g. creative_genius"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-fg-muted">
                     3-20 chars, letters, numbers, underscores, or hyphens only.
                   </p>
                 </div>

@@ -64,7 +64,7 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
     editorProps: {
       attributes: {
         class: cn(
-          "prose prose-sm max-w-none focus:outline-none min-h-[200px] text-foreground/90 leading-relaxed prose-li:marker:text-amber-500",
+          "prose prose-sm max-w-none focus:outline-none min-h-[200px] text-fg/90 leading-relaxed prose-li:marker:text-amber-500",
           (!isEditing && !isEditingTab) && "read-only-mode"
         )
       }
@@ -126,9 +126,9 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
 
   return (
     <div className="max-w-4xl mx-auto px-6 lg:px-12 py-12 w-full" id="ai-summary">
-      <div className="rounded-xl border border-border bg-card p-8 space-y-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-surface p-8 space-y-6 shadow-sm">
         <div className="flex items-center justify-between border-b border-border pb-4">
-          <div className="flex items-center gap-2 text-xl font-bold text-foreground">
+          <div className="flex items-center gap-2 text-xl font-bold text-fg">
             <Sparkles className="h-6 w-6 text-amber-500" />
             AI Summary
           </div>
@@ -171,7 +171,7 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
                 <Button variant="ghost" size="sm" onClick={() => {
                   editor?.commands.setContent(summary.html || defaultHtml);
                   setIsEditing(false);
-                }} className="h-8 gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
+                }} className="h-8 gap-1.5 px-3 text-xs text-fg-muted hover:text-fg hover:bg-surface-elevated">
                   <X className="h-3.5 w-3.5" />
                   Cancel
                 </Button>
@@ -186,7 +186,7 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
         </div>
 
         {isEditing && (
-          <div className="flex items-center gap-2 p-2 rounded-lg border border-border flex-wrap mb-4 bg-muted/30">
+          <div className="flex items-center gap-2 p-2 rounded-lg border border-border flex-wrap mb-4 bg-surface-elevated/30">
             <Button
               variant="ghost" size="sm"
               className={cn("h-8 w-8 p-0", editor?.isActive("bold") && "bg-accent text-accent-foreground")}
@@ -230,11 +230,11 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
 
         <div className={cn(
           "space-y-8",
-          isEditing && "rounded-xl border border-border bg-card p-5 min-h-[400px]"
+          isEditing && "rounded-xl border border-border bg-surface p-5 min-h-[400px]"
         )}>
           <EditorContent editor={editor} />
           {!isEditing && summary.edited && (
-            <div className="text-xs text-muted-foreground italic text-right mt-8 pt-4 border-t border-border/50">
+            <div className="text-xs text-fg-muted italic text-right mt-8 pt-4 border-t border-border/50">
               Edited manually
             </div>
           )}

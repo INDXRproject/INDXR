@@ -880,15 +880,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       <div className="flex flex-col gap-4 max-w-xl mx-auto mb-12">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <div className="absolute left-3 top-3.5 text-muted-foreground">
+            <div className="absolute left-3 top-3.5 text-fg-muted">
               <Search className="h-5 w-5" />
             </div>
             <Input
               placeholder="https://www.youtube.com/watch?v=..."
               className={cn(
-                "pl-10 h-12 bg-background border-input text-foreground transition-all duration-200",
+                "pl-10 h-12 bg-bg border-border text-fg transition-all duration-200",
                 "focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary",
-                error && "border-destructive focus-visible:ring-destructive"
+                error && "border-error focus-visible:ring-destructive"
               )}
               value={url}
               onChange={(e) => handleUrlChange(e.target.value)}
@@ -923,13 +923,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 setUseWhisper(next)
               }}
               className={cn(
-                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                useWhisper ? "bg-primary" : "bg-input"
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring focus-visible:ring-offset-2 focus-visible:",
+                useWhisper ? "bg-accent" : "bg-input"
               )}
             >
               <span
                 className={cn(
-                  "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                  "pointer-events-none block h-4 w-4 rounded-full bg-bg shadow-lg ring-0 transition-transform",
                   useWhisper ? "translate-x-4" : "translate-x-0"
                 )}
               />
@@ -938,7 +938,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               <label
                 className={cn(
                   "text-sm font-medium cursor-pointer flex items-center gap-1.5",
-                  useWhisper ? "text-primary" : "text-foreground"
+                  useWhisper ? "text-accent" : "text-fg"
                 )}
                 onClick={() => {
                   const next = !useWhisper
@@ -950,11 +950,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 <Sparkles className="h-3.5 w-3.5" />
                 Generate with AI
               </label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-fg-muted">
                 1 credit per minute of audio. Auto-captions are free.
               </p>
               {useWhisper && credits !== null && (
-                <p className="text-xs text-primary mt-0.5">
+                <p className="text-xs text-accent mt-0.5">
                   You have {credits} credit{credits !== 1 ? 's' : ''} available
                 </p>
               )}
@@ -964,27 +964,27 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
         {/* Whisper Confirmation Step */}
         {showWhisperConfirm && pendingWhisperData && (
-          <div className="px-4 py-4 bg-primary/5 border border-primary/20 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="px-4 py-4 bg-accent/5 border border-primary/20 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
+              <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground mb-1">
+                <p className="font-medium text-fg mb-1">
                   {pendingWhisperData.duration > 0 ? (
                     <>This video is {Math.ceil(pendingWhisperData.duration / 60)} minutes.</>
                   ) : (
                     <>Video duration unknown.</>
                   )}
                 </p>
-                <p className="text-sm text-muted-foreground mb-1">
+                <p className="text-sm text-fg-muted mb-1">
                   {pendingWhisperData.duration > 0 ? (
-                    <>AI Transcription will cost <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired} credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span>. You have <span className="font-semibold">{credits}</span> credits.</>
+                    <>AI Transcription will cost <span className="font-semibold text-accent">{pendingWhisperData.creditsRequired} credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span>. You have <span className="font-semibold">{credits}</span> credits.</>
                   ) : (
-                    <>AI Transcription will cost approximately <span className="font-semibold text-primary">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per minute). You have <span className="font-semibold">{credits}</span> credits.</>
+                    <>AI Transcription will cost approximately <span className="font-semibold text-accent">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per minute). You have <span className="font-semibold">{credits}</span> credits.</>
                   )}
                 </p>
-                <p className="text-xs text-muted-foreground mb-2">
+                <p className="text-xs text-fg-muted mb-2">
                   Estimated processing time: {pendingWhisperData.duration > 0 ? getWhisperProcessingEstimate(pendingWhisperData.duration) : "varies by length"}
                 </p>
                 <div className="flex items-center gap-2">
@@ -1015,27 +1015,27 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         {/* Duplicate pause-and-confirm prompt */}
         {existingTranscriptId && showDuplicateChoices && (
           <div className="px-1 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-500">
+            <div className="flex items-center gap-1.5 text-sm text-warning-fg dark:text-amber-500">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span className="font-medium">You already have this transcript in your library. Extract again?</span>
             </div>
             <div className="flex items-center gap-2 pl-5">
               <Link
                 href={`/dashboard/library/${existingTranscriptId}`}
-                className="text-sm font-medium text-primary hover:underline"
+                className="text-sm font-medium text-accent hover:underline"
               >
                 View in Library
               </Link>
-              <span className="text-muted-foreground/40 text-xs">·</span>
+              <span className="text-fg-muted/40 text-xs">·</span>
               <button
-                className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                className="text-sm text-fg-muted hover:text-fg hover:underline transition-colors"
                 onClick={() => handleExtract()}
               >
                 Extract anyway
               </button>
-              <span className="text-muted-foreground/40 text-xs">·</span>
+              <span className="text-fg-muted/40 text-xs">·</span>
               <button
-                className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                className="text-sm text-fg-muted hover:text-fg hover:underline transition-colors"
                 onClick={() => setShowDuplicateChoices(false)}
               >
                 Cancel
@@ -1046,7 +1046,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
         {/* Soft info banner: shown when duplicate exists but prompt is not active */}
         {existingTranscriptId && !showDuplicateChoices && (
-          <div className="px-1 -mt-1 flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-500 animate-in fade-in">
+          <div className="px-1 -mt-1 flex items-center gap-1.5 text-sm text-warning-fg dark:text-amber-500 animate-in fade-in">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>
               {existingTranscriptMethod === 'whisper_ai' || existingTranscriptMethod === 'assemblyai'
@@ -1063,36 +1063,36 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         {!existingTranscriptId && !showDuplicateChoices && !showWhisperConfirm && (
           <div className="flex justify-between items-start px-1">
              {whisperNetworkDisconnected ? (
-               <div className="p-3 rounded-lg bg-muted/60 border border-border flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+               <div className="p-3 rounded-lg bg-surface-elevated/60 border border-border flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-fg-muted mt-0.5 shrink-0" />
                  <div>
-                   <p className="text-sm text-foreground/80">
+                   <p className="text-sm text-fg/80">
                      Your transcript is still being processed. Check your Library in a few minutes — it will appear there when ready.
                    </p>
-                   <Link href="/dashboard/library" className="text-xs text-primary hover:underline mt-1 inline-block">
+                   <Link href="/dashboard/library" className="text-xs text-accent hover:underline mt-1 inline-block">
                      Go to Library →
                    </Link>
                  </div>
                </div>
              ) : error?.isMembersOnly ? (
-               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
                  <div>
-                   <p className="text-sm font-medium text-destructive">Members-Only Video</p>
-                   <p className="text-sm text-destructive/80 mt-0.5">This video is only available to channel members and cannot be transcribed by INDXR.AI.</p>
+                   <p className="text-sm font-medium text-error">Members-Only Video</p>
+                   <p className="text-sm text-error/80 mt-0.5">This video is only available to channel members and cannot be transcribed by INDXR.AI.</p>
                  </div>
                </div>
              ) : error?.isNoSpeech ? (
-               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
                  <div>
-                   <p className="text-sm font-medium text-destructive">No speech detected</p>
-                   <p className="text-sm text-destructive/80 mt-0.5">This video appears to contain only music, ambient sound, or silence — AI transcription requires audible speech. Any credits charged for this job have been automatically refunded to your account.</p>
+                   <p className="text-sm font-medium text-error">No speech detected</p>
+                   <p className="text-sm text-error/80 mt-0.5">This video appears to contain only music, ambient sound, or silence — AI transcription requires audible speech. Any credits charged for this job have been automatically refunded to your account.</p>
                  </div>
                </div>
              ) : error?.isYouTubeRestricted ? (
                <div className="flex flex-col gap-2 w-full">
-                 <p className="text-sm text-destructive">
+                 <p className="text-sm text-error">
                    {error.message}
                  </p>
                  {onSwitchToAudio && (
@@ -1109,7 +1109,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                </div>
              ) : error?.isCreditsError ? (
                <div className="flex flex-col gap-2 w-full">
-                 <p className="text-sm text-destructive">
+                 <p className="text-sm text-error">
                    {error.message}
                  </p>
                  <Link href="/pricing" className="self-start">
@@ -1123,7 +1123,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  </Link>
                </div>
              ) : loading && whisperStatus !== 'idle' ? (
-               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+               <div className="flex items-center gap-1.5 text-sm text-fg-muted">
                  <Loader2 className="h-3 w-3 animate-spin" />
                  <span>
                    {whisperStatus === 'pending' ? 'Starting transcription...'
@@ -1132,13 +1132,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    : 'Saving transcript...'}
                  </span>
                  {isStreaming && (
-                   <span className="ml-1 font-mono text-xs text-muted-foreground/70">
+                   <span className="ml-1 font-mono text-xs text-fg-muted/70">
                      Processing: {formatElapsed(elapsedSeconds)}
                    </span>
                  )}
                </div>
              ) : (
-               <p className={cn("text-sm text-muted-foreground", error && "text-destructive")}>
+               <p className={cn("text-sm text-fg-muted", error && "text-error")}>
                  {error ? error.message : "Paste any YouTube video URL to extract captions"}
                </p>
              )}
@@ -1148,21 +1148,21 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       {/* Playlist Detection Banner */}
       {isPlaylistUrl && (
-        <div className="mb-8 p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between text-left animate-in slide-in-from-top-2 duration-300">
+        <div className="mb-8 p-4 bg-accent/10 border border-primary/20 rounded-xl flex items-center justify-between text-left animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/20 rounded-lg text-primary">
+            <div className="p-2 bg-accent/20 rounded-lg text-accent">
               <AlertCircle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-foreground font-medium">Playlist detected</p>
-              <p className="text-sm text-muted-foreground">Would you like to switch to the Playlist tab to extract multiple videos?</p>
+              <p className="text-fg font-medium">Playlist detected</p>
+              <p className="text-sm text-fg-muted">Would you like to switch to the Playlist tab to extract multiple videos?</p>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleGuardedTabSwitch(onPlaylistDetected)}
-            className="bg-background hover:bg-muted"
+            className="bg-bg hover:bg-surface-elevated"
           >
             Switch to Playlist
           </Button>
@@ -1187,12 +1187,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
              return (
                <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between text-left gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                  <div>
-                   <span className="text-sm text-amber-600 dark:text-amber-500 font-medium block">Not happy with the auto-captions?</span>
-                   <span className="text-xs text-muted-foreground mt-1 block">
+                   <span className="text-sm text-warning-fg dark:text-amber-500 font-medium block">Not happy with the auto-captions?</span>
+                   <span className="text-xs text-fg-muted mt-1 block">
                      {hasEnoughCredits ? (
                        `You have ${credits} credits remaining`
                      ) : (
-                       <Link href="/dashboard/credits" className="text-amber-600 hover:text-amber-700 hover:underline">
+                       <Link href="/dashboard/credits" className="text-warning-fg hover:text-amber-700 hover:underline">
                          Not enough credits — top up
                        </Link>
                      )}
@@ -1202,7 +1202,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    variant="ghost"
                    size="sm"
                    onClick={handleWhisperUpsell}
-                   className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-500/20 h-9 font-semibold whitespace-nowrap"
+                   className="text-xs text-warning-fg dark:text-amber-500 hover:text-amber-700 dark:hover:text-warning hover:bg-amber-500/20 h-9 font-semibold whitespace-nowrap"
                    disabled={loading || isReextracting || !hasEnoughCredits}
                  >
                    {isReextracting ? (
@@ -1218,11 +1218,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           {/* Success / Truncation Warning Banner for Whisper Transcription */}
           {saveStatus === 'saved' && whisperMetadata && (
             whisperMetadata.truncationWarning ? (
-              <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="mb-4 p-4 bg-warning-subtle border border-warning/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex-1">
-                  <p className="text-yellow-700 dark:text-yellow-400 font-semibold mb-1">⚠️ Transcript saved with a warning</p>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-1">{whisperMetadata.truncationWarning}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-warning-fg dark:text-warning font-semibold mb-1">⚠️ Transcript saved with a warning</p>
+                  <p className="text-sm text-warning-fg dark:text-warning mb-1">{whisperMetadata.truncationWarning}</p>
+                  <p className="text-xs text-fg-muted">
                     Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {whisperMetadata.creditsUsed} min
                     {finalElapsed !== null && (
                       <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
@@ -1230,16 +1230,16 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   </p>
                 </div>
                 <Link href="/dashboard/library">
-                  <Button variant="outline" size="sm" className="ml-4 border-yellow-500/40 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/10">
+                  <Button variant="outline" size="sm" className="ml-4 border-warning/40 text-warning-fg dark:text-warning hover:bg-warning-subtle">
                     View in Library
                   </Button>
                 </Link>
               </div>
             ) : (
-              <div className="mb-4 p-4 bg-green-500/15 border border-green-500/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="mb-4 p-4 bg-success-subtle border border-success/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex-1">
-                  <p className="text-green-600 dark:text-green-400 font-semibold mb-1">Transcript ready! AI transcription completed successfully.</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-success-fg dark:text-success font-semibold mb-1">Transcript ready! AI transcription completed successfully.</p>
+                  <p className="text-xs text-fg-muted">
                     Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {whisperMetadata.creditsUsed} min
                     {finalElapsed !== null && (
                       <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
@@ -1247,7 +1247,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   </p>
                 </div>
                 <Link href="/dashboard/library">
-                  <Button variant="outline" size="sm" className="ml-4 border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-500/10">
+                  <Button variant="outline" size="sm" className="ml-4 border-success/40 text-success-fg dark:text-success hover:bg-success-subtle">
                     View in Library
                   </Button>
                 </Link>
@@ -1271,14 +1271,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   />
         </div>
       ) : !loading && !transcript && (
-        <div className="p-12 rounded-2xl border border-dashed border-border bg-muted/20 flex flex-col items-center justify-center text-muted-foreground">
+        <div className="p-12 rounded-2xl border border-dashed border-border bg-surface-elevated/20 flex flex-col items-center justify-center text-fg-muted">
           <p>Transcript results will appear here</p>
         </div>
       )}
 
       {/* No Captions Warning */}
       {transcript !== null && transcript.length === 0 && !loading && (
-        <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-600 dark:text-yellow-400 text-sm">
+        <div className="mb-8 p-4 bg-warning-subtle border border-warning/20 rounded-lg text-warning-fg dark:text-warning text-sm">
           No captions available for this video
         </div>
       )}

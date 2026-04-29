@@ -253,10 +253,10 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
 
   if (transcripts.length === 0) {
     return (
-      <div className="text-center py-20 border border-dashed border-border rounded-xl bg-muted/20">
-        <Eye className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-muted-foreground">Library is empty</h3>
-        <p className="text-sm text-muted-foreground mt-2">
+      <div className="text-center py-20 border border-dashed border-border rounded-xl bg-surface-elevated/20">
+        <Eye className="h-10 w-10 text-fg-muted mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-fg-muted">Library is empty</h3>
+        <p className="text-sm text-fg-muted mt-2">
           Transcripts you extract will appear here
         </p>
         <Link href="/dashboard/transcribe">
@@ -271,8 +271,8 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       {/* Floating Action Bar */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 fade-in">
-           <div className="bg-card border border-border shadow-xl rounded-full px-6 py-3 flex items-center gap-4">
-              <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
+           <div className="bg-surface border border-border shadow-xl rounded-full px-6 py-3 flex items-center gap-4">
+              <span className="text-sm font-medium text-fg">{selectedIds.size} selected</span>
               
               <div className="h-6 w-px bg-border/50" />
               
@@ -300,7 +300,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleBatchDelete}>
+              <Button size="sm" variant="ghost" className="text-error hover:text-error hover:bg-error/10" onClick={handleBatchDelete}>
                  <Trash2 className="h-4 w-4" />
               </Button>
               
@@ -314,7 +314,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       {viewMode === 'list' ? (
         <div className="rounded-xl border border-border overflow-hidden">
           <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-muted-foreground">
+            <thead className="bg-surface-elevated/50 text-fg-muted">
               <tr>
                 <th className="p-4 w-[40px]">
                   <Checkbox 
@@ -330,7 +330,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
             </thead>
             <tbody className="divide-y divide-border">
               {transcripts.map((t) => (
-                <tr key={t.id} draggable onDragStart={(e) => handleDragStart(e, t.id)} className={`group hover:bg-muted/30 transition-colors cursor-grab active:cursor-grabbing ${selectedIds.has(t.id) ? 'bg-muted/40' : ''}`}>
+                <tr key={t.id} draggable onDragStart={(e) => handleDragStart(e, t.id)} className={`group hover:bg-surface-elevated/30 transition-colors cursor-grab active:cursor-grabbing ${selectedIds.has(t.id) ? 'bg-surface-elevated/40' : ''}`}>
                   <td className="p-4">
                      <Checkbox 
                        checked={selectedIds.has(t.id)}
@@ -350,20 +350,20 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                                 if (e.key === "Enter") e.currentTarget.blur();
                                 if (e.key === "Escape") { setEditingId(null); }
                               }}
-                              className="font-medium text-foreground w-full bg-transparent border-b border-border outline-none text-sm leading-none py-0.5"
+                              className="font-medium text-fg w-full bg-transparent border-b border-border outline-none text-sm leading-none py-0.5"
                             />
                           ) : (
                             <div className="flex items-center gap-1">
                               <Link
                                 href={`/dashboard/library/${t.id}`}
-                                className="font-medium text-foreground line-clamp-1 hover:text-primary transition-colors"
+                                className="font-medium text-fg line-clamp-1 hover:text-accent transition-colors"
                                 onDoubleClick={e => { e.preventDefault(); handleRenameStart(t); }}
                               >
                                 {t.title || `Video ${t.video_id}`}
                               </Link>
                               <button
                                 onClick={() => handleRenameStart(t)}
-                                className="opacity-0 group-hover/title:opacity-100 transition-opacity text-muted-foreground hover:text-foreground h-4 w-4 flex items-center justify-center shrink-0"
+                                className="opacity-0 group-hover/title:opacity-100 transition-opacity text-fg-muted hover:text-fg h-4 w-4 flex items-center justify-center shrink-0"
                                 title="Rename"
                               >
                                 <Pencil className="h-2.5 w-2.5" />
@@ -378,7 +378,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                                   <TooltipTrigger asChild>
                                       <Badge
                                       variant="secondary"
-                                      className="h-4 px-1 text-[10px] font-bold bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[var(--color-success-border)] cursor-pointer hover:bg-[var(--color-success-subtle)]/80 transition-colors"
+                                      className="h-4 px-1 text-[10px] font-bold bg-[var(--success-subtle)] text-[var(--success)] border-[var(--color-success-border)] cursor-pointer hover:bg-[var(--success-subtle)]/80 transition-colors"
                                       onClick={(e) => handleMarkAsRead(t.id, e)}
                                     >
                                       NEW
@@ -388,15 +388,15 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                                 </Tooltip>
                               )}
                             </TooltipProvider>
-                            <span className="text-xs text-muted-foreground">{buildMetaLine(t)}</span>
+                            <span className="text-xs text-fg-muted">{buildMetaLine(t)}</span>
                           </div>
                       </div>
                     </div>
                   </td>
-                  <td className="p-4 text-muted-foreground hidden md:table-cell">
+                  <td className="p-4 text-fg-muted hidden md:table-cell">
                      {t.duration ? formatDuration(t.duration) : '-'}
                   </td>
-                  <td className="p-4 text-muted-foreground hidden sm:table-cell">
+                  <td className="p-4 text-fg-muted hidden sm:table-cell">
                     {getRelativeTime(
                       t.updated_at && new Date(t.updated_at) > new Date(t.created_at)
                         ? t.updated_at
@@ -409,12 +409,12 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 text-muted-foreground hover:bg-[var(--accent)] hover:text-white transition-all duration-150"
+                                className="h-8 w-8 text-fg-muted hover:bg-[var(--accent)] hover:text-fg transition-all duration-150"
                             >
                                 <Eye className="h-4 w-4" />
                             </Button>
                          </Link>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-[var(--accent)] hover:text-white transition-all duration-150" asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-[var(--accent)] hover:text-fg transition-all duration-150" asChild>
                            <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
                                <ExternalLink className="h-4 w-4" />
                            </a>
@@ -422,7 +422,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-[var(--color-error)] hover:bg-destructive/10"
+                            className="h-8 w-8 text-fg-muted hover:text-[var(--error)] hover:bg-error/10"
                             onClick={() => onDelete(t.id)}
                           >
                           <Trash2 className="h-4 w-4" />
@@ -437,7 +437,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {transcripts.map((t) => (
-            <Card key={t.id} draggable onDragStart={(e) => handleDragStart(e, t.id)} className={`bg-muted/20 border-border hover:border-border/80 transition-all group cursor-grab active:cursor-grabbing ${selectedIds.has(t.id) ? 'ring-2 ring-primary border-transparent' : ''} relative`}>
+            <Card key={t.id} draggable onDragStart={(e) => handleDragStart(e, t.id)} className={`bg-surface-elevated/20 border-border hover:border-border/80 transition-all group cursor-grab active:cursor-grabbing ${selectedIds.has(t.id) ? 'ring-2 ring-primary border-transparent' : ''} relative`}>
                 <div 
                    className="absolute top-3 left-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity data-[checked=true]:opacity-100" 
                    data-checked={selectedIds.has(t.id)}
@@ -445,25 +445,25 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                    <Checkbox 
                      checked={selectedIds.has(t.id)}
                      onCheckedChange={() => toggleSelect(t.id)}
-                     className="bg-background/80 border-foreground/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                     className="bg-bg/80 border-foreground/20 data-[state=checked]:bg-accent data-[state=checked]:border-primary"
                    />
                 </div>
 
                 {t.thumbnail_url && (
-                <div className="aspect-video w-full overflow-hidden rounded-t-xl bg-background relative">
+                <div className="aspect-video w-full overflow-hidden rounded-t-xl bg-bg relative">
                      {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                         src={t.thumbnail_url} 
                         alt={t.title} 
                         className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                     />
-                    <div className="absolute bottom-2 right-2 bg-background/80 px-1.5 py-0.5 rounded text-[10px] font-mono text-foreground">
+                    <div className="absolute bottom-2 right-2 bg-bg/80 px-1.5 py-0.5 rounded text-[10px] font-mono text-fg">
                         {t.duration ? formatDuration(t.duration) : '00:00'}
                     </div>
                 </div>
                 )}
                 <CardHeader className="p-4 pb-2">
-                   <CardTitle className="text-base font-medium line-clamp-1 text-foreground flex items-center gap-1.5" title={t.title}>
+                   <CardTitle className="text-base font-medium line-clamp-1 text-fg flex items-center gap-1.5" title={t.title}>
                      <Link href={`/dashboard/library/${t.id}`} className="hover:underline flex-1 truncate">
                        {t.title || `Video ${t.video_id}`}
                      </Link>
@@ -473,7 +473,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                            <TooltipTrigger asChild>
                              <Badge
                                variant="secondary"
-                               className="h-4 px-1 text-[10px] font-bold bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[var(--color-success-border)] shrink-0 cursor-pointer hover:bg-[var(--color-success-subtle)]/80 transition-colors"
+                               className="h-4 px-1 text-[10px] font-bold bg-[var(--success-subtle)] text-[var(--success)] border-[var(--color-success-border)] shrink-0 cursor-pointer hover:bg-[var(--success-subtle)]/80 transition-colors"
                                onClick={(e) => handleMarkAsRead(t.id, e)}
                              >
                                NEW
@@ -484,22 +484,22 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                        )}
                      </TooltipProvider>
                    </CardTitle>
-                 <CardDescription className="text-xs text-muted-foreground mt-1">
+                 <CardDescription className="text-xs text-fg-muted mt-1">
                    {buildMetaLine(t)}
                  </CardDescription>
               </CardHeader>
-              <CardFooter className="p-4 pt-2 flex justify-end gap-2 border-t border-border/10 bg-muted/10">
+              <CardFooter className="p-4 pt-2 flex justify-end gap-2 border-t border-border/10 bg-surface-elevated/10">
                 <Link href={`/dashboard/library/${t.id}`} className="flex-1">
                     <Button 
                         variant="ghost"
                         size="sm"
-                        className="h-8 text-xs bg-muted/20 hover:bg-[var(--accent)] hover:text-white text-foreground w-full"
+                        className="h-8 text-xs bg-surface-elevated/20 hover:bg-[var(--accent)] hover:text-fg text-fg w-full"
                     >
                         <Eye className="h-3 w-3 mr-1" />
                         View
                     </Button>
                 </Link>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-[var(--accent)] hover:text-white transition-all duration-150" asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-[var(--accent)] hover:text-fg transition-all duration-150" asChild>
                     <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-3 w-3" />
                     </a>
@@ -507,7 +507,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                 <Button 
                     variant="ghost" 
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-[var(--color-error)] hover:bg-destructive/10"
+                    className="h-8 w-8 text-fg-muted hover:text-[var(--error)] hover:bg-error/10"
                     onClick={() => onDelete(t.id)}
                 >
                     <Trash2 className="h-3 w-3" />

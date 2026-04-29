@@ -65,7 +65,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+    <div className="flex items-center justify-center min-h-screen bg-bg px-4">
       <Card className="w-full max-w-sm border shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
@@ -90,7 +90,7 @@ export default function LoginPage() {
             <div className="grid gap-2">
               <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="ml-auto inline-block text-sm underline text-muted-foreground hover:text-foreground">
+                <Link href="/forgot-password" className="ml-auto inline-block text-sm underline text-fg-muted hover:text-fg">
                   Forgot your password?
                 </Link>
               </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
             </div>
             
             {error && (
-              <div className="text-red-500 text-sm font-medium bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <div className="text-error text-sm font-medium bg-error-subtle border border-error/20 rounded-lg p-3">
                 {error}
               </div>
             )}
@@ -120,7 +120,7 @@ export default function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                <span className="bg-surface px-2 text-fg-muted">Or continue with</span>
               </div>
             </div>
 
@@ -144,15 +144,15 @@ export default function LoginPage() {
                 <Apple className="mr-2 h-4 w-4" /> Apple
               </Button>
             </div>
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-xs text-center text-fg-muted">
               OAuth providers coming soon
             </p>
 
         </CardContent>
         <CardFooter>
-          <div className="mt-4 text-center text-sm text-muted-foreground w-full">
+          <div className="mt-4 text-center text-sm text-fg-muted w-full">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline text-foreground hover:text-primary">
+            <Link href="/signup" className="underline text-fg hover:text-accent">
               Sign up
             </Link>
           </div>

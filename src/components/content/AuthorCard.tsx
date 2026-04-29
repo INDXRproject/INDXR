@@ -44,8 +44,8 @@ export function AuthorCard({ author, publishedAt, updatedAt }: AuthorCardProps) 
         )}
       </div>
       <div>
-        <div className="text-sm font-medium text-[var(--text-primary)]">{author.name}</div>
-        <div className="text-xs text-[var(--text-muted)]">
+        <div className="text-sm font-medium text-[var(--fg)]">{author.name}</div>
+        <div className="text-xs text-[var(--fg-muted)]">
           Published {formatDate(publishedAt)} · Updated {formatDate(updatedAt)}
         </div>
       </div>

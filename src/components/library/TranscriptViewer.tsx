@@ -154,7 +154,7 @@ const SearchExtension = Extension.create<SearchOptions>({
                       pos + idx + lowerSearch.length,
                       {
                         class: "search-highlight",
-                        style: `background-color:var(--color-warning);border-radius:2px;${
+                        style: `background-color:var(--warning);border-radius:2px;${
                           isCurrent ? "outline:2px solid var(--color-warning-border);" : ""
                         }`,
                       }
@@ -382,7 +382,7 @@ export function TranscriptViewer({
     editorProps: {
       attributes: {
         class: cn(
-          "prose prose-sm max-w-none focus:outline-none min-h-[300px] text-foreground/90 leading-relaxed",
+          "prose prose-sm max-w-none focus:outline-none min-h-[300px] text-fg/90 leading-relaxed",
           (!isEditedMode && !isEditingOriginal) && "read-only-mode" 
         )
       },
@@ -711,11 +711,11 @@ export function TranscriptViewer({
 
   return (
     <>
-      <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden bg-background">
+      <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden bg-bg">
         {/* ── VIDEO SIDEBAR ── */}
         <div
           className={cn(
-            "border-r bg-muted/10 shrink-0 transition-all duration-300 ease-in-out flex flex-col",
+            "border-r bg-surface-elevated/10 shrink-0 transition-all duration-300 ease-in-out flex flex-col",
             showVideo
               ? "w-full lg:w-[400px] xl:w-[480px]"
               : "w-0 border-r-0 overflow-hidden"
@@ -733,7 +733,7 @@ export function TranscriptViewer({
                 <VideoOff className="h-4 w-4" />
               </Button>
             </div>
-            <div className="aspect-video w-full bg-muted shrink-0">
+            <div className="aspect-video w-full bg-surface-elevated shrink-0">
               {showVideo && (
                 <iframe
                   src={getEmbedUrl(videoUrl)}
@@ -746,7 +746,7 @@ export function TranscriptViewer({
             <ScrollArea className="flex-1">
               <div className="p-4">
                 {channelTitle && (
-                  <p className="text-sm text-muted-foreground">{channelTitle}</p>
+                  <p className="text-sm text-fg-muted">{channelTitle}</p>
                 )}
               </div>
             </ScrollArea>
@@ -754,9 +754,9 @@ export function TranscriptViewer({
         </div>
 
         {/* ── MAIN EDITOR ── */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-bg">
           {/* Top action bar */}
-          <div className="h-14 border-b flex items-center justify-between px-6 shrink-0 bg-background z-10">
+          <div className="h-14 border-b flex items-center justify-between px-6 shrink-0 bg-bg z-10">
             <div className="flex items-center gap-3">
               {!showVideo && (
                 <div className="flex items-center gap-2">
@@ -769,7 +769,7 @@ export function TranscriptViewer({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowVideo(true)}
-                    className="gap-2 h-8 hover:bg-[var(--accent)] hover:text-white transition-all duration-150"
+                    className="gap-2 h-8 hover:bg-[var(--accent)] hover:text-fg transition-all duration-150"
                   >
                     <Video className="h-4 w-4" />
                     <span className="hidden sm:inline">Show Video</span>
@@ -793,10 +793,10 @@ export function TranscriptViewer({
               {isOriginalMode && (
                 summarySuccess ? (
                   <div className="flex items-center gap-2 mr-2">
-                    <span className="text-xs font-medium text-green-500 mr-1 hidden sm:inline">Summary ready!</span>
+                    <span className="text-xs font-medium text-success mr-1 hidden sm:inline">Summary ready!</span>
                     <Button
                       size="sm"
-                      className="h-8 text-xs px-3 bg-[var(--color-warning)] text-white hover:bg-[var(--color-warning-hover)] border border-[var(--color-warning-border)]"
+                      className="h-8 text-xs px-3 bg-[var(--warning)] text-fg hover:bg-[var(--color-warning-hover)] border border-[var(--color-warning-border)]"
                       onClick={() => {
                         router.replace(`?tab=summary`);
                       }}
@@ -808,7 +808,7 @@ export function TranscriptViewer({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 gap-1.5 px-3 text-xs font-medium hover:bg-[var(--accent)] hover:text-white mr-2 transition-all duration-150 border border-border"
+                    className="h-8 gap-1.5 px-3 text-xs font-medium hover:bg-[var(--accent)] hover:text-fg mr-2 transition-all duration-150 border border-border"
                     disabled={isSummarizing || !user}
                     onClick={() => {
                       if (!user) {
@@ -820,7 +820,7 @@ export function TranscriptViewer({
                           <div className="flex flex-col gap-1">
                             <span className="font-semibold text-sm">Not enough credits</span>
                             <span className="text-xs">You need 3 credits to generate a summary.</span>
-                            <Link href="/pricing" className="text-primary hover:underline text-xs mt-1">
+                            <Link href="/pricing" className="text-accent hover:underline text-xs mt-1">
                               Buy Credits →
                             </Link>
                           </div>
@@ -848,7 +848,7 @@ export function TranscriptViewer({
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 gap-2 hover:bg-[var(--accent)] hover:text-white transition-all duration-150">
+                  <Button variant="outline" size="sm" className="h-8 gap-2 hover:bg-[var(--accent)] hover:text-fg transition-all duration-150">
                     <Download className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Export</span>
                   </Button>
@@ -866,28 +866,28 @@ export function TranscriptViewer({
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Text</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => handleDownload("txt")}>TXT — plain text</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDownload("txt-ts")}>TXT — with timestamps</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDownload("md")}>Markdown</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDownload("md-ts")}>Markdown — with timestamps</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Data</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Data</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => handleDownload("json")}>JSON</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDownload("csv")}>CSV</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Subtitles</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Subtitles</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => handleDownload("srt")}>SRT</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDownload("vtt")}>VTT</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Developer</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
                   <DropdownMenuItem onClick={handleRagMenuClick}>
                     RAG JSON{" "}
-                    <span className="text-primary text-[10px] font-bold align-super ml-0.5">✦</span>
+                    <span className="text-accent text-[10px] font-bold align-super ml-0.5">✦</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="text-destructive font-medium focus:text-destructive focus:bg-destructive/10"
+                    className="text-error font-medium focus:text-error focus:bg-error/10"
                     onClick={() => setShowDeleteDialog(true)}
                     disabled={isDeleting}
                   >
@@ -960,11 +960,11 @@ export function TranscriptViewer({
                         if (e.key === "Enter" || e.key === "Escape")
                           e.currentTarget.blur();
                       }}
-                      className="flex-1 text-2xl font-bold bg-transparent border-b-2 border-primary outline-none text-foreground"
+                      className="flex-1 text-2xl font-bold bg-transparent border-b-2 border-primary outline-none text-fg"
                     />
                   ) : (
                     <h1
-                      className="flex-1 text-2xl font-bold text-foreground cursor-pointer hover:text-foreground/80 transition-colors"
+                      className="flex-1 text-2xl font-bold text-fg cursor-pointer hover:text-fg/80 transition-colors"
                       onClick={() => setIsEditingTitle(true)}
                       title="Click to edit title"
                     >
@@ -978,17 +978,17 @@ export function TranscriptViewer({
                 {/* Search bar */}
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-fg-muted" />
                     <Input
                       placeholder="Search in transcript…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 h-9 bg-background border-input text-foreground"
+                      className="pl-9 h-9 bg-bg border-border text-fg"
                     />
                     {searchQuery && (
                       <button
                         onClick={() => setSearchQuery("")}
-                        className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                        className="absolute right-2 top-2 text-fg-muted hover:text-fg"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -996,7 +996,7 @@ export function TranscriptViewer({
                   </div>
                   {searchMatchesCount > 0 && (
                     <>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      <span className="text-xs text-fg-muted whitespace-nowrap">
                         {currentMatchIdx + 1} / {searchMatchesCount}
                       </span>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateMatch("prev")}>
@@ -1008,13 +1008,13 @@ export function TranscriptViewer({
                     </>
                   )}
                   {searchQuery && searchMatchesCount === 0 && (
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">No results</span>
+                    <span className="text-xs text-fg-muted whitespace-nowrap">No results</span>
                   )}
                 </div>
 
                 {/* Toolbar */}
                 {(isEditedMode || isEditingOriginal) && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg border border-border flex-wrap mb-4 bg-muted/30">
+                  <div className="flex items-center gap-2 p-2 rounded-lg border border-border flex-wrap mb-4 bg-surface-elevated/30">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1069,7 +1069,7 @@ export function TranscriptViewer({
                 {/* Editor */}
                 <div
                   className={cn(
-                    "rounded-xl border border-border bg-card p-5 min-h-[400px]",
+                    "rounded-xl border border-border bg-surface p-5 min-h-[400px]",
                     !showTimestamps && "hide-timestamps"
                   )}
                 >
@@ -1096,7 +1096,7 @@ export function TranscriptViewer({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleSummarizeConfirm}
-              className="bg-[var(--color-warning)] hover:bg-[var(--color-warning)]/90 text-white gap-2"
+              className="bg-[var(--warning)] hover:bg-[var(--warning)]/90 text-fg gap-2"
             >
               <Sparkles className="h-4 w-4" />
               Generate Summary
@@ -1118,7 +1118,7 @@ export function TranscriptViewer({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
+              className="bg-error text-error-foreground hover:bg-error/90 gap-2"
             >
               <Trash2 className="h-4 w-4" />
               Delete Permanently
@@ -1146,8 +1146,8 @@ export function TranscriptViewer({
                     className={cn(
                       "flex flex-col items-center rounded-lg border px-3 py-2 text-sm transition-colors",
                       ragSelectedChunkSize === opt.value
-                        ? "border-primary/50 bg-primary/5 text-foreground"
-                        : "border-border hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary/50 bg-accent/5 text-fg"
+                        : "border-border hover:bg-surface-elevated/40 text-fg-muted"
                     )}
                   >
                     <span className="font-medium">{opt.label}</span>
@@ -1179,8 +1179,8 @@ export function TranscriptViewer({
                     className={cn(
                       "flex flex-col items-center rounded-lg border px-3 py-2 text-sm transition-colors",
                       ragSelectedChunkSize === opt.value
-                        ? "border-primary/50 bg-primary/5 text-foreground"
-                        : "border-border hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary/50 bg-accent/5 text-fg"
+                        : "border-border hover:bg-surface-elevated/40 text-fg-muted"
                     )}
                   >
                     <span className="font-medium">{opt.label}</span>
@@ -1188,14 +1188,14 @@ export function TranscriptViewer({
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-fg-muted">
                 Cost:{" "}
-                <span className="font-semibold text-foreground">
+                <span className="font-semibold text-fg">
                   {ragCost} credit{ragCost !== 1 ? "s" : ""}
                 </span>
               </p>
               {ragInsufficientCredits && (
-                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
+                <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   Not enough credits. Purchase more to continue.
                 </div>

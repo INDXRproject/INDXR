@@ -30,7 +30,7 @@ export default async function AdminTranscriptViewPage({
       <div className="flex items-center gap-3">
         <Link
           href="/admin/transcripts"
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className="text-sm text-fg-muted hover:text-fg"
         >
           ← Transcripts
         </Link>
@@ -38,24 +38,24 @@ export default async function AdminTranscriptViewPage({
 
       <div>
         <h1 className="text-xl font-bold">{transcript.title ?? "Untitled"}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{email}</p>
+        <p className="text-sm text-fg-muted mt-1">{email}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div className="rounded-md border p-3">
-          <p className="text-xs text-muted-foreground">Method</p>
+          <p className="text-xs text-fg-muted">Method</p>
           <p className="font-medium mt-0.5">{transcript.processing_method ?? "—"}</p>
         </div>
         <div className="rounded-md border p-3">
-          <p className="text-xs text-muted-foreground">Source</p>
+          <p className="text-xs text-fg-muted">Source</p>
           <p className="font-medium mt-0.5">{transcript.source_type ?? "—"}</p>
         </div>
         <div className="rounded-md border p-3">
-          <p className="text-xs text-muted-foreground">Credits Used</p>
+          <p className="text-xs text-fg-muted">Credits Used</p>
           <p className="font-medium mt-0.5">{transcript.credits_used ?? "—"}</p>
         </div>
         <div className="rounded-md border p-3">
-          <p className="text-xs text-muted-foreground">Date</p>
+          <p className="text-xs text-fg-muted">Date</p>
           <p className="font-medium mt-0.5">
             {new Date(transcript.created_at).toLocaleDateString()}
           </p>
@@ -64,12 +64,12 @@ export default async function AdminTranscriptViewPage({
 
       {transcript.video_id && (
         <div className="text-sm">
-          <span className="text-muted-foreground">YouTube: </span>
+          <span className="text-fg-muted">YouTube: </span>
           <a
             href={`https://youtube.com/watch?v=${transcript.video_id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary underline underline-offset-2"
+            className="text-accent underline underline-offset-2"
           >
             {transcript.video_id}
           </a>
@@ -78,17 +78,17 @@ export default async function AdminTranscriptViewPage({
 
       {content ? (
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wide">
             Transcript Content
           </h2>
-          <div className="rounded-md border bg-muted/30 p-4 text-sm whitespace-pre-wrap max-h-[600px] overflow-y-auto font-mono leading-relaxed">
+          <div className="rounded-md border bg-surface-elevated/30 p-4 text-sm whitespace-pre-wrap max-h-[600px] overflow-y-auto font-mono leading-relaxed">
             {typeof content === "string"
               ? content
               : JSON.stringify(content, null, 2)}
           </div>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">No transcript content stored.</p>
+        <p className="text-sm text-fg-muted">No transcript content stored.</p>
       )}
     </div>
   )

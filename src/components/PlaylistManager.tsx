@@ -325,12 +325,12 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
     <div className="space-y-6">
       <div className="flex gap-2 max-w-xl mx-auto">
         <div className="relative flex-1">
-          <div className="absolute left-3 top-2.5 text-zinc-500">
+          <div className="absolute left-3 top-2.5 text-fg-muted">
             <ListOrdered className="h-5 w-5" />
           </div>
           <Input
             placeholder="Paste YouTube Playlist URL..."
-            className="pl-10 h-12 bg-background border-input text-foreground"
+            className="pl-10 h-12 bg-bg border-border text-fg"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchPlaylistInfo()}
@@ -346,23 +346,23 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
           {loading ? "Fetching..." : "Fetch Playlist"}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground text-center -mt-4">
+      <p className="text-xs text-fg-muted text-center -mt-4">
         Auto-captions are free for the first 3 videos. From video 4: 1 credit per video (with auto-captions). Videos using AI Transcription cost 1 credit per minute instead — no per-video charge.
       </p>
 
       {/* Progress / Completion Bar */}
       {(isExtracting || isCompleted) && (
-        <div className={`bg-zinc-900/50 border ${isCompleted ? 'border-green-500/20 bg-green-500/5' : 'border-zinc-800'} rounded-xl p-6 animate-in fade-in slide-in-from-top-2 transition-all`}>
+        <div className={`bg-surface-sunken border ${isCompleted ? 'border-success/20 bg-success-subtle' : 'border-border'} rounded-xl p-6 animate-in fade-in slide-in-from-top-2 transition-all`}>
             {isCompleted ? (
                 // Final Summary View
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-green-500/10 rounded-full text-green-500">
+                        <div className="p-2 bg-success-subtle rounded-full text-success">
                              <CheckCircle2 className="h-6 w-6" />
                         </div>
                         <div>
-                             <h3 className="text-lg font-bold text-foreground">Extraction Complete!</h3>
-                             <p className="text-muted-foreground text-sm">
+                             <h3 className="text-lg font-bold text-fg">Extraction Complete!</h3>
+                             <p className="text-fg-muted text-sm">
                                  {(() => {
                                    const succeeded = Object.values(videoStatuses).filter(s => s === 'success').length;
                                    const total = Object.keys(videoStatuses).length;
@@ -394,9 +394,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       ];
                       if (groups.length === 0) return null;
                       return (
-                        <div className="flex flex-col gap-1.5 p-3 bg-muted/50 border border-border rounded-lg">
+                        <div className="flex flex-col gap-1.5 p-3 bg-surface-elevated/50 border border-border rounded-lg">
                           {groups.map((msg, i) => (
-                            <p key={i} className="text-sm text-muted-foreground leading-snug">{msg}</p>
+                            <p key={i} className="text-sm text-fg-muted leading-snug">{msg}</p>
                           ))}
                         </div>
                       );
@@ -406,12 +406,12 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         <Button
                             onClick={handleReset}
                             variant="outline"
-                            className="bg-background border-border hover:bg-muted text-foreground"
+                            className="bg-bg border-border hover:bg-surface-elevated text-fg"
                         >
                             Start New Extraction
                         </Button>
                         <Button
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                            className="bg-accent hover:bg-accent/90 text-fg-on-accent"
                             onClick={() => window.location.href = '/dashboard/library'} // Simple redirect
                         >
                             View in Library
@@ -422,17 +422,17 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                 // In Progress View
                 <>
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium flex items-center gap-2 text-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span className="text-sm font-medium flex items-center gap-2 text-fg">
+                            <Loader2 className="h-4 w-4 animate-spin text-accent" />
                             Extracting Playlist...
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-fg-muted">
                             {Object.values(videoStatuses).filter(s => s === 'success').length} / {Object.keys(videoStatuses).length} completed · {formatElapsed(elapsedSeconds)}
                         </span>
                     </div>
-                    <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-surface-elevated rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-primary transition-all duration-500 ease-out"
+                            className="h-full bg-accent transition-all duration-500 ease-out"
                             style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted' || s === 'age_restricted' || s === 'bot_detection' || s === 'timeout' || s === 'members_only').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
                         />
                     </div>
@@ -458,31 +458,31 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       )}
 
       {playlist && !showAvailabilityModal && (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="p-6 border-b border-border bg-muted/30 flex items-center justify-between">
+        <div className="bg-surface border border-border rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="p-6 border-b border-border bg-surface-elevated/30 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <div className="p-2 bg-accent/10 rounded-lg text-accent">
                 <ListMusic className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground truncate max-w-[300px] md:max-w-md">
+                <h3 className="text-lg font-semibold text-fg truncate max-w-[300px] md:max-w-md">
                   {playlist.title}
                 </h3>
                 <div className="flex items-center gap-3">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-fg-muted">
                     {selectedIds.size} of {availableCount} available videos selected
                   </p>
                   <div className="flex gap-2">
                     <button 
                       onClick={selectAll}
-                      className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                      className="text-xs text-accent hover:text-accent/80 font-medium transition-colors"
                     >
                       Select All
                     </button>
-                    <span className="text-zinc-700">|</span>
+                    <span className="text-fg-subtle">|</span>
                     <button 
                       onClick={deselectAll}
-                      className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
+                      className="text-xs text-fg-muted hover:text-fg font-medium transition-colors"
                     >
                       Deselect All
                     </button>
@@ -515,7 +515,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
           </div>
 
           {missingCount > 0 && (
-            <div className="px-6 py-2 bg-amber-500/10 border-b border-border flex items-center gap-2 text-amber-600 dark:text-amber-500 text-xs font-medium">
+            <div className="px-6 py-2 bg-amber-500/10 border-b border-border flex items-center gap-2 text-warning-fg dark:text-amber-500 text-xs font-medium">
               <AlertCircle className="h-3.5 w-3.5" />
               <span>{missingCount} videos unavailable (private, members-only, or deleted). Showing {availableCount} available videos.</span>
             </div>
@@ -532,10 +532,10 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       className={cn(
                         "flex items-center gap-4 p-3 rounded-xl transition-all border",
                         isPrivate 
-                          ? "opacity-50 cursor-not-allowed border-transparent bg-muted/20" 
+                          ? "opacity-50 cursor-not-allowed border-transparent bg-surface-elevated/20" 
                           : selectedIds.has(entry.id)
-                            ? "bg-primary/5 border-primary/20 ring-1 ring-primary/20 cursor-pointer"
-                            : "bg-transparent border-transparent hover:bg-muted/50 cursor-pointer"
+                            ? "bg-accent/5 border-primary/20 ring-1 ring-primary/20 cursor-pointer"
+                            : "bg-transparent border-transparent hover:bg-surface-elevated/50 cursor-pointer"
                       )}
                       onClick={() => !isPrivate && toggleSelection(entry.id)}
                     >
@@ -543,7 +543,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         checked={selectedIds.has(entry.id)}
                         onCheckedChange={() => !isPrivate && toggleSelection(entry.id)}
                         disabled={isPrivate}
-                        className="border-input"
+                        className="border-border"
                         onClick={(e) => e.stopPropagation()}
                       />
                       {entry.thumbnail && (
@@ -559,34 +559,34 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm text-foreground truncate font-medium">
+                          <span className="text-sm text-fg truncate font-medium">
                             {entry.title}
                           </span>
                           {!hasExtracted && idx < 3 && !isPrivate && (
-                            <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded shrink-0">Free</span>
+                            <span className="text-[10px] uppercase font-bold text-success bg-success-subtle px-1.5 py-0.5 rounded shrink-0">Free</span>
                           )}
-                          {videoStatuses[entry.id] === 'success' && <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />}
-                          {videoStatuses[entry.id] === 'error' && <XCircle className="h-4 w-4 text-red-500 shrink-0" />}
-                          {videoStatuses[entry.id] === 'unavailable' && <XCircle className="h-4 w-4 text-zinc-500 shrink-0" />}
+                          {videoStatuses[entry.id] === 'success' && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
+                          {videoStatuses[entry.id] === 'error' && <XCircle className="h-4 w-4 text-error shrink-0" />}
+                          {videoStatuses[entry.id] === 'unavailable' && <XCircle className="h-4 w-4 text-fg-muted shrink-0" />}
                           {(videoStatuses[entry.id] === 'youtube_restricted' || videoStatuses[entry.id] === 'bot_detection' || videoStatuses[entry.id] === 'timeout') && <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />}
-                          {(videoStatuses[entry.id] === 'age_restricted' || videoStatuses[entry.id] === 'members_only') && <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
-                          {videoStatuses[entry.id] === 'extracting' && <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />}
+                          {(videoStatuses[entry.id] === 'age_restricted' || videoStatuses[entry.id] === 'members_only') && <XCircle className="h-4 w-4 text-error-fg shrink-0" />}
+                          {videoStatuses[entry.id] === 'extracting' && <Loader2 className="h-3 w-3 animate-spin text-accent shrink-0" />}
                         </div>
                         {entry.duration && (
                           <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
+                            <span className="text-xs text-fg-muted font-mono flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
                                 {Math.floor(entry.duration / 60)}:{Math.floor(entry.duration % 60).toString().padStart(2, '0')}
                             </span>
-                            {freeVideoIds?.has(entry.id) && <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">Free</span>}
-                            {videoStatuses[entry.id] === 'unavailable' && <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Unavailable</span>}
-                            {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">Failed</span>}
+                            {freeVideoIds?.has(entry.id) && <span className="text-[10px] uppercase font-bold text-success bg-success-subtle px-1.5 py-0.5 rounded">Free</span>}
+                            {videoStatuses[entry.id] === 'unavailable' && <span className="text-[10px] uppercase font-bold text-fg-muted bg-surface-elevated px-1.5 py-0.5 rounded">Unavailable</span>}
+                            {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-error bg-error/10 px-1.5 py-0.5 rounded">Failed</span>}
                             {videoStatuses[entry.id] === 'no_speech' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">No speech detected</span>}
                             {videoStatuses[entry.id] === 'youtube_restricted' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Unavailable</span>}
                             {videoStatuses[entry.id] === 'bot_detection' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Temporarily blocked</span>}
                             {videoStatuses[entry.id] === 'timeout' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Connection timeout</span>}
-                            {videoStatuses[entry.id] === 'age_restricted' && <span className="text-[10px] uppercase font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Age-restricted</span>}
-                            {videoStatuses[entry.id] === 'members_only' && <span className="text-[10px] uppercase font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Members only</span>}
+                            {videoStatuses[entry.id] === 'age_restricted' && <span className="text-[10px] uppercase font-bold text-error-fg bg-error-subtle px-1.5 py-0.5 rounded">Age-restricted</span>}
+                            {videoStatuses[entry.id] === 'members_only' && <span className="text-[10px] uppercase font-bold text-error-fg bg-error-subtle px-1.5 py-0.5 rounded">Members only</span>}
                              
                              {/* Duplicate Badges */}
                              {!hasExtracted && existingDuplicates[entry.id] && (() => {
@@ -633,7 +633,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         {/* YouTube Restricted Expanded Message */}
                         {videoStatuses[entry.id] === 'youtube_restricted' && (
                           <div className="mt-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-                            <p className="text-xs text-amber-600 dark:text-amber-500 mb-2">
+                            <p className="text-xs text-warning-fg dark:text-amber-500 mb-2">
                               This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload via our Audio Upload tab.
                             </p>
                             {onSwitchToAudio && (
@@ -642,7 +642,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                                   e.stopPropagation();
                                   onSwitchToAudio();
                                 }}
-                                className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+                                className="inline-flex items-center gap-1.5 text-xs font-medium text-warning-fg dark:text-amber-500 hover:text-amber-700 dark:hover:text-warning transition-colors"
                               >
                                 <Mic className="h-3 w-3" />
                                 Try Audio Upload →
@@ -658,7 +658,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
               {availableCount > visibleCount && (
                 <Button 
                   variant="ghost" 
-                  className="w-full mt-2 h-12 text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border border-dashed"
+                  className="w-full mt-2 h-12 text-fg-muted hover:text-fg hover:bg-surface-elevated/50 border border-border border-dashed"
                   onClick={loadMore}
                 >
                   <ChevronDown className="h-4 w-4 mr-2" />
@@ -668,7 +668,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
             </div>
           </ScrollArea>
           {!hasExtracted && (
-            <div className="px-4 py-2.5 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="px-4 py-2.5 border-t border-border flex items-center gap-2 text-xs text-fg-muted">
               <Info className="h-3.5 w-3.5 shrink-0" />
               <span>The first 3 videos are always free. Credits apply from video 4 onwards.</span>
             </div>

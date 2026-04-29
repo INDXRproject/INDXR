@@ -33,11 +33,11 @@ export function HeroImage() {
         />
       )}
       {/* Top fade: strong blend into bg-base */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)] via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg)] via-transparent to-transparent" />
       {/* Bottom fade: covers lower half completely */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent from-50% to-[var(--bg-base)]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent from-50% to-[var(--bg)]" />
       {/* Soft side fades */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-base)]/70 via-transparent to-[var(--bg-base)]/70" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg)]/70 via-transparent to-[var(--bg)]/70" />
     </div>
   )
 }

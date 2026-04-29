@@ -184,14 +184,14 @@ export default function FAQPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-bg">
         {/* Hero Section */}
         <section className="py-20 px-4 border-b">
           <div className="container mx-auto max-w-4xl text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Frequently Asked Questions
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-fg-muted max-w-2xl mx-auto">
               Everything you need to know about extracting YouTube transcripts,
               downloading subtitles, and using AI transcription.
             </p>
@@ -210,11 +210,11 @@ export default function FAQPage() {
                   {category.faqs.map((faq, index) => (
                     <details
                       key={index}
-                      className="group border rounded-lg bg-card"
+                      className="group border rounded-lg bg-surface"
                     >
-                      <summary className="flex cursor-pointer items-center justify-between p-4 font-medium hover:bg-muted/50 rounded-lg transition-colors">
+                      <summary className="flex cursor-pointer items-center justify-between p-4 font-medium hover:bg-surface-elevated/50 rounded-lg transition-colors">
                         <span className="pr-4">{faq.question}</span>
-                        <span className="flex-shrink-0 text-muted-foreground group-open:rotate-180 transition-transform">
+                        <span className="flex-shrink-0 text-fg-muted group-open:rotate-180 transition-transform">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="20"
@@ -230,10 +230,10 @@ export default function FAQPage() {
                           </svg>
                         </span>
                       </summary>
-                      <div className="px-4 pb-4 pt-2 text-muted-foreground leading-relaxed">
+                      <div className="px-4 pb-4 pt-2 text-fg-muted leading-relaxed">
                         <p
                           dangerouslySetInnerHTML={{ __html: faq.answer }}
-                          className="[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary/80"
+                          className="[&_a]:text-accent [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-accent/80"
                         />
                       </div>
                     </details>
@@ -243,9 +243,9 @@ export default function FAQPage() {
             ))}
 
             {/* CTA Section */}
-            <div className="mt-16 text-center p-8 rounded-lg bg-muted/30 border">
+            <div className="mt-16 text-center p-8 rounded-lg bg-surface-elevated/30 border">
               <h2 className="text-2xl font-bold mb-3">Still have questions?</h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-fg-muted mb-6">
                 Contact our support team or try the transcript extractor for
                 free.
               </p>

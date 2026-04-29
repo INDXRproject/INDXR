@@ -15,11 +15,11 @@ export function CreditBalance() {
   return (
     <Link
       href="/pricing"
-      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors border border-border"
+      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-elevated/80 transition-colors border border-border"
     >
-      <Coins className="h-4 w-4 text-yellow-500" />
-      <span className="text-sm font-medium text-foreground">{credits}</span>
-      <span className="text-xs text-muted-foreground">credits</span>
+      <Coins className="h-4 w-4 text-warning" />
+      <span className="text-sm font-medium text-fg">{credits}</span>
+      <span className="text-xs text-fg-muted">credits</span>
     </Link>
   )
 }

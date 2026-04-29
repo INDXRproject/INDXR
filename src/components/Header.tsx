@@ -35,7 +35,7 @@ function AvatarDropdown() {
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-full h-9 w-9 p-0 hover:ring-2 hover:ring-white/20 transition-all border-none bg-transparent"
+          className="rounded-full h-9 w-9 p-0 hover:ring-2 hover:ring-border transition-all border-none bg-transparent"
         >
           <UserAvatar className="h-9 w-9 text-sm" />
           <span className="sr-only">User menu</span>
@@ -64,7 +64,7 @@ function AvatarDropdown() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}
-          className="flex items-center gap-2 cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-950/30"
+          className="flex items-center gap-2 cursor-pointer text-error focus:text-error focus:bg-error-subtle"
         >
           <LogOut className="h-4 w-4" />
           Sign Out
@@ -87,7 +87,7 @@ export function Header() {
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 w-full border-b transition-colors duration-300 ${
       scrolled
-        ? "border-border bg-white/50 dark:bg-black/50"
+        ? "border-border bg-bg/80 backdrop-blur-sm"
         : "border-transparent bg-transparent"
     }`}>
       <div className="container flex h-16 items-center px-4 mx-auto">
@@ -122,16 +122,16 @@ export function Header() {
 
         {/* Desktop nav — centered */}
         <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
-          <Link href="/youtube-transcript-generator" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+          <Link href="/youtube-transcript-generator" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             Transcribe
           </Link>
-          <Link href="/how-it-works" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+          <Link href="/how-it-works" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             How It Works
           </Link>
-          <Link href="/pricing" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+          <Link href="/pricing" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             Pricing
           </Link>
-          <Link href="/faq" className="text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+          <Link href="/faq" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             FAQ
           </Link>
         </nav>
@@ -175,22 +175,22 @@ export function Header() {
                 )}
                 <nav className="flex flex-col gap-4">
                   <SheetClose asChild>
-                    <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+                    <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
                       Transcribe
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/how-it-works" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+                    <Link href="/how-it-works" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
                       How It Works
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/pricing" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+                    <Link href="/pricing" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
                       Pricing
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/faq" className="text-lg font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]">
+                    <Link href="/faq" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
                       FAQ
                     </Link>
                   </SheetClose>
@@ -242,7 +242,7 @@ function MobileSignOutButton() {
   return (
     <Button
       variant="ghost"
-      className="w-full text-red-500 hover:text-red-400 hover:bg-red-950/20"
+      className="w-full text-error hover:text-error-fg hover:bg-error-subtle"
       onClick={handleSignOut}
     >
       <LogOut className="mr-2 h-4 w-4" />

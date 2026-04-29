@@ -61,8 +61,8 @@ function StatusBanner({
     <div
       className={`flex items-center justify-between px-4 py-2.5 rounded-md text-sm mb-4 border ${
         status.type === "success"
-          ? "bg-green-50 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-800"
-          : "bg-red-50 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-800"
+          ? "bg-success-subtle text-success-fg border-success/20"
+          : "bg-error-subtle text-error-fg border-error/20"
       }`}
     >
       <span>{status.message}</span>
@@ -132,7 +132,7 @@ function AddCreditsModal({
         <DialogHeader>
           <DialogTitle>Add Credits</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">{user.email}</p>
+        <p className="text-sm text-fg-muted">{user.email}</p>
         <div className="space-y-4">
           <div className="space-y-1">
             <Label>Amount</Label>
@@ -208,7 +208,7 @@ function DeleteModal({
         </DialogHeader>
         <div className="space-y-2">
           <p className="text-sm font-medium">{user.email}</p>
-          <p className="text-sm text-destructive">
+          <p className="text-sm text-error">
             This permanently deletes all user data including transcripts,
             credits, and their account. This action cannot be undone.
           </p>
@@ -259,23 +259,23 @@ function UserDetail({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="py-3 px-6 space-y-4 bg-muted/30 border-t">
+    <div className="py-3 px-6 space-y-4 bg-surface-elevated/30 border-t">
       <div className="grid md:grid-cols-2 gap-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">
             Transcripts ({transcripts?.length ?? 0})
           </p>
           {transcripts?.length === 0 ? (
-            <p className="text-xs text-muted-foreground">None</p>
+            <p className="text-xs text-fg-muted">None</p>
           ) : (
             <div className="space-y-1 max-h-36 overflow-y-auto">
               {transcripts?.map((t) => (
                 <div key={t.id} className="text-xs flex gap-3">
-                  <span className="text-muted-foreground shrink-0">
+                  <span className="text-fg-muted shrink-0">
                     {new Date(t.created_at).toLocaleDateString()}
                   </span>
                   <span className="truncate">{t.title ?? "Untitled"}</span>
-                  <span className="text-muted-foreground shrink-0">
+                  <span className="text-fg-muted shrink-0">
                     {t.processing_method ?? "—"}
                   </span>
                 </div>
@@ -284,27 +284,27 @@ function UserDetail({ userId }: { userId: string }) {
           )}
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">
             Credit History ({transactions?.length ?? 0})
           </p>
           {transactions?.length === 0 ? (
-            <p className="text-xs text-muted-foreground">None</p>
+            <p className="text-xs text-fg-muted">None</p>
           ) : (
             <div className="space-y-1 max-h-36 overflow-y-auto">
               {transactions?.map((tx) => (
                 <div key={tx.id} className="text-xs flex gap-3">
-                  <span className="text-muted-foreground shrink-0">
+                  <span className="text-fg-muted shrink-0">
                     {new Date(tx.created_at).toLocaleDateString()}
                   </span>
                   <span
                     className={`font-mono shrink-0 ${
-                      tx.type === "credit" ? "text-green-600" : "text-red-500"
+                      tx.type === "credit" ? "text-success-fg" : "text-error"
                     }`}
                   >
                     {tx.type === "credit" ? "+" : "-"}
                     {tx.amount}
                   </span>
-                  <span className="truncate text-muted-foreground">
+                  <span className="truncate text-fg-muted">
                     {tx.reason}
                   </span>
                 </div>
@@ -369,10 +369,10 @@ function UserRowItem({
         <TableCell className="text-xs">{user.role ?? "—"}</TableCell>
         <TableCell className="text-xs font-mono">{user.balance}</TableCell>
         <TableCell className="text-xs font-mono">{user.purchased}</TableCell>
-        <TableCell className="text-xs text-muted-foreground">
+        <TableCell className="text-xs text-fg-muted">
           {new Date(user.joined).toLocaleDateString()}
         </TableCell>
-        <TableCell className="text-xs text-muted-foreground">
+        <TableCell className="text-xs text-fg-muted">
           {user.lastActive
             ? new Date(user.lastActive).toLocaleDateString()
             : "—"}
@@ -415,7 +415,7 @@ function UserRowItem({
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 text-xs text-destructive hover:text-destructive"
+              className="h-7 text-xs text-error hover:text-error"
               onClick={() => setDeleteOpen(true)}
             >
               Delete
@@ -424,7 +424,7 @@ function UserRowItem({
               href={`https://app.posthog.com/project/${process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID}/persons/${user.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-foreground px-1"
+              className="text-xs text-fg-muted hover:text-fg px-1"
             >
               PostHog →
             </a>
@@ -494,7 +494,7 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
               <TableRow>
                 <TableCell
                   colSpan={9}
-                  className="text-center text-muted-foreground py-8"
+                  className="text-center text-fg-muted py-8"
                 >
                   No users found
                 </TableCell>

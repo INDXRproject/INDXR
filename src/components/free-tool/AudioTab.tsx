@@ -124,7 +124,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       <div className="mt-8">
         <div className="p-8 rounded-lg border border-amber-500/50 bg-amber-500/10 text-center">
           <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">Authentication Required</h3>
+          <h3 className="text-lg font-semibold text-fg mb-2">Authentication Required</h3>
           <p className="text-sm text-amber-200 mb-4">
             Please <Link href="/login" className="underline font-semibold">sign in</Link> to use audio transcription.
           </p>
@@ -339,7 +339,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             <div>
               <p className="font-semibold">Not enough credits</p>
               <p className="text-sm">You need {data.required_credits} credits but only have {data.available_credits}.</p>
-              <Link href="/pricing" className="text-primary underline text-sm">
+              <Link href="/pricing" className="text-accent underline text-sm">
                 Buy Credits →
               </Link>
             </div>
@@ -380,14 +380,14 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     <div className="mt-8 space-y-6">
       {/* Resume Banner — shown when a running job is detected on mount */}
       {resumeData && !isTranscribing && (
-        <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+        <div className="p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
+            <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Transcription in progress</p>
-              <p className="text-xs text-muted-foreground">{resumeData.filename} is still being processed</p>
+              <p className="text-sm font-semibold text-fg">Transcription in progress</p>
+              <p className="text-xs text-fg-muted">{resumeData.filename} is still being processed</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -398,7 +398,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               size="sm"
               variant="ghost"
               onClick={() => { sessionStorage.removeItem(AUDIO_JOB_KEY); setResumeData(null) }}
-              className="h-8 text-xs text-muted-foreground"
+              className="h-8 text-xs text-fg-muted"
             >
               Dismiss
             </Button>
@@ -415,10 +415,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         className={`
           p-12 rounded-2xl border-2 border-dashed transition-all cursor-pointer
           ${isDragging
-            ? 'border-primary bg-primary/10 scale-105'
+            ? 'border-primary bg-accent/10 scale-105'
             : file
-              ? 'border-green-500/50 bg-green-500/5'
-              : 'border-border bg-muted/10 hover:bg-muted/20 hover:border-border'
+              ? 'border-green-500/50 bg-success-subtle'
+              : 'border-border bg-surface-elevated/10 hover:bg-surface-elevated/20 hover:border-border'
           }
           ${isUploading ? 'opacity-50 cursor-wait' : ''}
         `}
@@ -435,19 +435,19 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         <div className="flex flex-col items-center justify-center text-center">
           {isUploading ? (
             <>
-              <div className="p-4 bg-primary/10 rounded-full mb-4">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <div className="p-4 bg-accent/10 rounded-full mb-4">
+                <Loader2 className="h-8 w-8 text-accent animate-spin" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">Processing file...</h3>
-              <p className="text-muted-foreground">Reading audio duration</p>
+              <h3 className="text-xl font-semibold text-fg mb-2">Processing file...</h3>
+              <p className="text-fg-muted">Reading audio duration</p>
             </>
           ) : file ? (
             <>
-              <div className="p-4 bg-green-500/10 rounded-full mb-4">
-                <FileAudio className="h-8 w-8 text-green-500" />
+              <div className="p-4 bg-success-subtle rounded-full mb-4">
+                <FileAudio className="h-8 w-8 text-success" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">{file.name}</h3>
-              <div className="flex gap-4 text-sm text-muted-foreground mb-4">
+              <h3 className="text-xl font-semibold text-fg mb-2">{file.name}</h3>
+              <div className="flex gap-4 text-sm text-fg-muted mb-4">
                 <span>{formatFileSize(file.size)}</span>
                 <span>•</span>
                 <span>{formatDuration(audioDuration)}</span>
@@ -459,7 +459,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                   e.stopPropagation()
                   handleRemoveFile()
                 }}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-fg-muted hover:text-fg"
               >
                 <X className="h-4 w-4 mr-2" />
                 Remove file
@@ -467,31 +467,31 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             </>
           ) : (
             <>
-              <div className="p-4 bg-muted rounded-full mb-4 group-hover:scale-110 transition-transform">
-                <UploadCloud className="h-8 w-8 text-muted-foreground" />
+              <div className="p-4 bg-surface-elevated rounded-full mb-4 group-hover:scale-110 transition-transform">
+                <UploadCloud className="h-8 w-8 text-fg-muted" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">Upload Audio File</h3>
-              <p className="text-muted-foreground mb-2">Drag and drop your audio file here, or click to browse</p>
-              <p className="text-sm text-muted-foreground">Supported: MP3, MP4, WAV, M4A, OGG, FLAC, WEBM (max 500MB)</p>
+              <h3 className="text-xl font-semibold text-fg mb-2">Upload Audio File</h3>
+              <p className="text-fg-muted mb-2">Drag and drop your audio file here, or click to browse</p>
+              <p className="text-sm text-fg-muted">Supported: MP3, MP4, WAV, M4A, OGG, FLAC, WEBM (max 500MB)</p>
             </>
           )}
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-fg-muted">
         1 credit per minute of audio. Minimum 1 credit.
       </p>
 
       {/* Credit Cost Preview */}
       {file && !transcript && (
-        <div className="p-4 rounded-lg border border-border bg-muted">
+        <div className="p-4 rounded-lg border border-border bg-surface-elevated">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="font-semibold text-foreground mb-1">Credit Cost</h4>
-              <p className="text-sm text-muted-foreground">
-                This will use <span className="font-semibold text-foreground">{estimatedCredits} credits</span> ({formatDuration(audioDuration)})
+              <h4 className="font-semibold text-fg mb-1">Credit Cost</h4>
+              <p className="text-sm text-fg-muted">
+                This will use <span className="font-semibold text-fg">{estimatedCredits} credits</span> ({formatDuration(audioDuration)})
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-fg-muted mt-1">
                 Your balance: {credits ?? 0} credits
               </p>
             </div>
@@ -553,12 +553,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         <>
           {/* Persistent Save Status Message */}
           {saveStatus === 'saved' && (
-            <div className="mb-4 p-4 rounded-lg border border-green-500/50 bg-green-500/10 flex items-center justify-between animate-in slide-in-from-top-2">
+            <div className="mb-4 p-4 rounded-lg border border-green-500/50 bg-success-subtle flex items-center justify-between animate-in slide-in-from-top-2">
               <div className="flex items-center gap-3">
                 <div className="h-2 w-2 bg-green-500 rounded-full" />
                 <div>
-                  <p className="text-sm font-medium text-green-400">Transcript saved to library</p>
-                  <p className="text-xs text-green-300/70">
+                  <p className="text-sm font-medium text-success">Transcript saved to library</p>
+                  <p className="text-xs text-success/70">
                     Used {audioMetadata.creditsUsed} credits • {audioMetadata.creditsUsed} min
                     {audioMetadata.processingTimeSecs > 0 && (
                       <> • Completed in {Math.floor(audioMetadata.processingTimeSecs / 60)}:{String(audioMetadata.processingTimeSecs % 60).padStart(2, '0')}</>
@@ -568,13 +568,13 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Link href="/dashboard/library">
-                  <Button variant="outline" size="sm" className="text-green-400 border-green-500/50 hover:bg-green-500/10">
+                  <Button variant="outline" size="sm" className="text-success border-green-500/50 hover:bg-success-subtle">
                     View in Library
                   </Button>
                 </Link>
                 <button
                   onClick={() => setSaveStatus('idle')}
-                  className="p-1 hover:bg-green-500/20 rounded transition-colors text-green-400"
+                  className="p-1 hover:bg-success-subtle rounded transition-colors text-success"
                 >
                   <X className="h-4 w-4" />
                 </button>

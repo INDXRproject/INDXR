@@ -84,12 +84,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] bg-[var(--bg-surface)] border-[var(--border)]">
+      <DialogContent className="sm:max-w-[400px] bg-[var(--surface)] border-[var(--border)]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[var(--text-primary)]">
+          <DialogTitle className="text-2xl font-bold text-[var(--fg)]">
             {mode === "login" ? "Log In" : "Sign Up"}
           </DialogTitle>
-          <DialogDescription className="text-[var(--text-secondary)]">
+          <DialogDescription className="text-[var(--fg-subtle)]">
             {mode === "login" 
               ? "Enter your credentials to access your account"
               : "Create an account to start extracting transcripts"
@@ -98,7 +98,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="modal-email" className="text-[var(--text-secondary)]">
+            <Label htmlFor="modal-email" className="text-[var(--fg-subtle)]">
               Email Address
             </Label>
             <Input
@@ -107,20 +107,20 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-primary)]"
+              className="bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--fg)]"
               required
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="modal-password" className="text-[var(--text-secondary)]">
+            <Label htmlFor="modal-password" className="text-[var(--fg-subtle)]">
               Password
             </Label>
             <PasswordInput
               id="modal-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-primary)]"
+              className="bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--fg)]"
               required
             />
             
@@ -129,31 +129,31 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               <div className="space-y-1 mt-2">
                 <div className="flex items-center gap-2 text-xs">
                   {passwordValidation.requirements.minLength ? (
-                    <Check className="h-3 w-3 text-[var(--color-success)]" />
+                    <Check className="h-3 w-3 text-[var(--success)]" />
                   ) : (
-                    <X className="h-3 w-3 text-[var(--text-muted)]" />
+                    <X className="h-3 w-3 text-[var(--fg-muted)]" />
                   )}
-                  <span className={passwordValidation.requirements.minLength ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}>
+                  <span className={passwordValidation.requirements.minLength ? "text-[var(--success)]" : "text-[var(--fg-muted)]"}>
                     At least 8 characters
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   {passwordValidation.requirements.hasUppercase ? (
-                    <Check className="h-3 w-3 text-[var(--color-success)]" />
+                    <Check className="h-3 w-3 text-[var(--success)]" />
                   ) : (
-                    <X className="h-3 w-3 text-[var(--text-muted)]" />
+                    <X className="h-3 w-3 text-[var(--fg-muted)]" />
                   )}
-                  <span className={passwordValidation.requirements.hasUppercase ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}>
+                  <span className={passwordValidation.requirements.hasUppercase ? "text-[var(--success)]" : "text-[var(--fg-muted)]"}>
                     At least 1 uppercase letter
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   {passwordValidation.requirements.hasNumber ? (
-                    <Check className="h-3 w-3 text-[var(--color-success)]" />
+                    <Check className="h-3 w-3 text-[var(--success)]" />
                   ) : (
-                    <X className="h-3 w-3 text-[var(--text-muted)]" />
+                    <X className="h-3 w-3 text-[var(--fg-muted)]" />
                   )}
-                  <span className={passwordValidation.requirements.hasNumber ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}>
+                  <span className={passwordValidation.requirements.hasNumber ? "text-[var(--success)]" : "text-[var(--fg-muted)]"}>
                     At least 1 number
                   </span>
                 </div>
@@ -178,7 +178,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               <span className="w-full border-t border-[var(--border)]" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[var(--bg-surface)] px-2 text-[var(--text-muted)]">Or continue with</span>
+              <span className="bg-[var(--surface)] px-2 text-[var(--fg-muted)]">Or continue with</span>
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             <Button 
               type="button"
               variant="outline" 
-              className="bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-muted)] opacity-50 cursor-not-allowed" 
+              className="bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--fg-muted)] opacity-50 cursor-not-allowed" 
               disabled
             >
               <Chrome className="mr-2 h-4 w-4" /> Google
@@ -195,26 +195,26 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             <Button 
               type="button"
               variant="outline" 
-              className="bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-muted)] opacity-50 cursor-not-allowed" 
+              className="bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--fg-muted)] opacity-50 cursor-not-allowed" 
               disabled
             >
               <Apple className="mr-2 h-4 w-4" /> Apple
             </Button>
           </div>
 
-          <p className="text-xs text-center text-[var(--text-muted)]">
+          <p className="text-xs text-center text-[var(--fg-muted)]">
             OAuth providers coming soon
           </p>
 
           {/* Mode Toggle */}
-          <div className="text-center text-sm text-[var(--text-secondary)] pt-2">
+          <div className="text-center text-sm text-[var(--fg-subtle)] pt-2">
             {mode === "login" ? (
               <>
                 Don't have an account?{" "}
                 <button
                   type="button"
                   onClick={toggleMode}
-                  className="underline text-[var(--text-primary)] hover:text-[var(--text-secondary)]"
+                  className="underline text-[var(--fg)] hover:text-[var(--fg-subtle)]"
                 >
                   Sign up
                 </button>
@@ -225,7 +225,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 <button
                   type="button"
                   onClick={toggleMode}
-                  className="underline text-[var(--text-primary)] hover:text-[var(--text-secondary)]"
+                  className="underline text-[var(--fg)] hover:text-[var(--fg-subtle)]"
                 >
                   Log in
                 </button>

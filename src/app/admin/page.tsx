@@ -19,12 +19,12 @@ function MetricCard({
   sub?: string
 }) {
   return (
-    <div className="rounded-lg border bg-card p-4 space-y-1">
-      <p className="text-xs text-muted-foreground uppercase tracking-wide">
+    <div className="rounded-lg border bg-surface p-4 space-y-1">
+      <p className="text-xs text-fg-muted uppercase tracking-wide">
         {label}
       </p>
       <p className="text-2xl font-bold">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+      {sub && <p className="text-xs text-fg-muted">{sub}</p>}
     </div>
   )
 }
@@ -151,7 +151,7 @@ export default async function AdminOverviewPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Overview</h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-fg-muted text-sm">
           Platform metrics and recent activity
         </p>
       </div>
@@ -222,7 +222,7 @@ export default async function AdminOverviewPage() {
                 <TableRow>
                   <TableCell
                     colSpan={4}
-                    className="text-center text-muted-foreground py-8"
+                    className="text-center text-fg-muted py-8"
                   >
                     No transcripts yet
                   </TableCell>
@@ -230,18 +230,18 @@ export default async function AdminOverviewPage() {
               )}
               {recentTranscripts?.map((t) => (
                 <TableRow key={t.id}>
-                  <TableCell className="text-xs text-muted-foreground max-w-[180px] truncate">
+                  <TableCell className="text-xs text-fg-muted max-w-[180px] truncate">
                     {emailMap[t.user_id] ?? t.user_id.slice(0, 8) + "…"}
                   </TableCell>
                   <TableCell className="max-w-[260px] truncate">
                     {t.title ?? "Untitled"}
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                    <span className="text-xs bg-surface-elevated px-1.5 py-0.5 rounded">
                       {t.processing_method ?? "—"}
                     </span>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-fg-muted">
                     {new Date(t.created_at).toLocaleString()}
                   </TableCell>
                 </TableRow>
@@ -271,7 +271,7 @@ export default async function AdminOverviewPage() {
                   const stats = userTranscriptMap[userId]
                   return (
                     <TableRow key={userId}>
-                      <TableCell className="text-xs text-muted-foreground w-8">
+                      <TableCell className="text-xs text-fg-muted w-8">
                         {i + 1}
                       </TableCell>
                       <TableCell className="text-xs max-w-[220px] truncate">
@@ -283,7 +283,7 @@ export default async function AdminOverviewPage() {
                       <TableCell className="text-xs font-mono">
                         {stats.creditsUsed}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-xs text-fg-muted">
                         {new Date(stats.lastActive).toLocaleDateString()}
                       </TableCell>
                     </TableRow>

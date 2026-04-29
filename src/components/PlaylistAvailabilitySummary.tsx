@@ -122,21 +122,21 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500 my-6 shadow-lg">
-      <div className="p-6 border-b border-border bg-muted/30 flex justify-between items-center">
+    <div className="bg-surface border border-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500 my-6 shadow-lg">
+      <div className="p-6 border-b border-border bg-surface-elevated/30 flex justify-between items-center">
         <div>
-           <h3 className="text-lg font-semibold text-foreground mb-1">Availability Breakdown</h3>
-           <p className="text-sm text-muted-foreground">Review extraction details before proceeding</p>
+           <h3 className="text-lg font-semibold text-fg mb-1">Availability Breakdown</h3>
+           <p className="text-sm text-fg-muted">Review extraction details before proceeding</p>
         </div>
         
         {/* Global Whisper Toggle */}
         <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">Use AI Transcription for all</span>
+            <span className="text-xs text-fg-muted font-medium">Use AI Transcription for all</span>
             <div 
               onClick={() => toggleAllWhisper(currentSummary.hasCaptions > 0)}
-              className={`w-10 h-5 rounded-full p-0.5 cursor-pointer transition-colors ${currentSummary.hasCaptions === 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+              className={`w-10 h-5 rounded-full p-0.5 cursor-pointer transition-colors ${currentSummary.hasCaptions === 0 ? 'bg-accent' : 'bg-surface-elevated-foreground/30'}`}
             >
-              <div className={`w-4 h-4 rounded-full bg-background shadow-sm transition-transform ${currentSummary.hasCaptions === 0 ? 'translate-x-5' : 'translate-x-0'}`} />
+              <div className={`w-4 h-4 rounded-full bg-bg shadow-sm transition-transform ${currentSummary.hasCaptions === 0 ? 'translate-x-5' : 'translate-x-0'}`} />
             </div>
         </div>
       </div>
@@ -145,33 +145,33 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Has Captions */}
-          <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+          <div className="p-4 rounded-xl bg-success-subtle border border-success/20">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <span className="font-semibold text-green-600 dark:text-green-400">Free</span>
+              <CheckCircle2 className="h-5 w-5 text-success" />
+              <span className="font-semibold text-success-fg dark:text-success">Free</span>
             </div>
-            <div className="text-3xl font-bold text-foreground mb-1">{currentSummary.hasCaptions}</div>
-            <div className="text-sm text-muted-foreground">videos with auto-captions</div>
+            <div className="text-3xl font-bold text-fg mb-1">{currentSummary.hasCaptions}</div>
+            <div className="text-sm text-fg-muted">videos with auto-captions</div>
           </div>
 
           {/* Needs Whisper */}
           <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-5 w-5 text-amber-500" />
-              <span className="font-semibold text-amber-600 dark:text-amber-400">AI Transcription</span>
+              <span className="font-semibold text-warning-fg dark:text-warning">AI Transcription</span>
             </div>
-            <div className="text-3xl font-bold text-foreground mb-1">{currentSummary.needsWhisper}</div>
-            <div className="text-sm text-muted-foreground">{currentSummary.totalCredits} credits required</div>
+            <div className="text-3xl font-bold text-fg mb-1">{currentSummary.needsWhisper}</div>
+            <div className="text-sm text-fg-muted">{currentSummary.totalCredits} credits required</div>
           </div>
 
           {/* Unavailable */}
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+          <div className="p-4 rounded-xl bg-error-subtle border border-error/20">
             <div className="flex items-center gap-2 mb-2">
-              <XCircle className="h-5 w-5 text-red-500" />
-              <span className="font-semibold text-red-600 dark:text-red-400">Unavailable</span>
+              <XCircle className="h-5 w-5 text-error" />
+              <span className="font-semibold text-error-fg dark:text-error-fg">Unavailable</span>
             </div>
-            <div className="text-3xl font-bold text-foreground mb-1">{currentSummary.unavailable}</div>
-            <div className="text-sm text-muted-foreground">videos will be skipped</div>
+            <div className="text-3xl font-bold text-fg mb-1">{currentSummary.unavailable}</div>
+            <div className="text-sm text-fg-muted">videos will be skipped</div>
           </div>
         </div>
 
@@ -182,24 +182,24 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                 <div className="border border-amber-500/20 rounded-xl overflow-hidden bg-amber-500/5">
                   <div className="px-4 py-3 border-b border-amber-500/10 flex items-center gap-2 text-sm">
                       <AlertCircle className="h-4 w-4 text-amber-500" />
-                      <span className="font-medium text-amber-600 dark:text-amber-400">
+                      <span className="font-medium text-warning-fg dark:text-warning">
                         {currentSummary.needsWhisper} videos using AI Transcription ({currentSummary.totalCredits} credits)
                       </span>
                   </div>
                   <div className="max-h-60 overflow-y-auto p-2 space-y-1">
                       {whisperVideos.map((video) => (
-                        <div key={video.videoId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
+                        <div key={video.videoId} className="flex items-center gap-3 p-2 rounded-lg bg-surface-elevated/20 hover:bg-surface-elevated/30 transition-colors">
                           <div className="relative h-10 w-16 rounded overflow-hidden shrink-0 border border-border">
                             <Image src={video.thumbnail} alt={video.title} fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
                              <div className="flex items-center gap-2">
-                               <p className="text-sm text-foreground truncate font-medium">{video.title}</p>
+                               <p className="text-sm text-fg truncate font-medium">{video.title}</p>
                                {freeVideoIds.has(video.videoId) && (
-                                 <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded shrink-0">Free</span>
+                                 <span className="text-[10px] uppercase font-bold text-success bg-success-subtle px-1.5 py-0.5 rounded shrink-0">Free</span>
                                )}
                              </div>
-                              <p className="text-xs text-amber-600 dark:text-amber-400">
+                              <p className="text-xs text-warning-fg dark:text-warning">
                                 {Math.floor(video.duration / 60)}:{Math.floor(video.duration % 60).toString().padStart(2, '0')} • {video.estimatedCredits} credits
                               </p>
                               {(() => {
@@ -226,7 +226,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                              variant="ghost"
                              size="sm"
                              onClick={() => toggleSingleWhisper(video.videoId, false)}
-                             className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-500/20"
+                             className="text-xs text-warning-fg dark:text-warning hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-500/20"
                            >
                               Switch to Free
                            </Button>
@@ -238,29 +238,29 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
 
              {/* Has Captions List */}
              {currentSummary.hasCaptions > 0 && (
-                <div className="border border-green-500/20 rounded-xl overflow-hidden bg-green-500/5">
+                <div className="border border-success/20 rounded-xl overflow-hidden bg-success-subtle">
                   <div className="px-4 py-3 border-b border-green-500/10 flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span className="font-medium text-green-600 dark:text-green-400">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      <span className="font-medium text-success-fg dark:text-success">
                         {currentSummary.hasCaptions} videos using Free Auto-captions{captionCredits > 0 ? ` (${captionCredits} credits)` : ''}
                       </span>
                   </div>
                   <div className="max-h-60 overflow-y-auto p-2 space-y-1">
                       {captionVideos.map((video) => (
-                        <div key={video.videoId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
+                        <div key={video.videoId} className="flex items-center gap-3 p-2 rounded-lg bg-surface-elevated/20 hover:bg-surface-elevated/30 transition-colors">
                            <div className="relative h-10 w-16 rounded overflow-hidden shrink-0 border border-border">
                              <Image src={video.thumbnail} alt={video.title} fill className="object-cover" />
                            </div>
                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="text-sm text-foreground truncate font-medium">{video.title}</p>
+                                <p className="text-sm text-fg truncate font-medium">{video.title}</p>
                                 {freeVideoIds.has(video.videoId) && (
-                                  <span className="text-[10px] uppercase font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded shrink-0">Free</span>
+                                  <span className="text-[10px] uppercase font-bold text-success bg-success-subtle px-1.5 py-0.5 rounded shrink-0">Free</span>
                                 )}
                               </div>
-                              <p className="text-xs text-green-600 dark:text-green-400">
+                              <p className="text-xs text-success-fg dark:text-success">
                                 {Math.floor(video.duration / 60)}:{Math.floor(video.duration % 60).toString().padStart(2, '0')}
-                                {(extractableIndex.get(video.videoId) ?? 0) >= 3 && <span className="ml-1 text-amber-600 dark:text-amber-400">• 1 credit</span>}
+                                {(extractableIndex.get(video.videoId) ?? 0) >= 3 && <span className="ml-1 text-warning-fg dark:text-warning">• 1 credit</span>}
                               </p>
                               {(() => {
                                 const entries = existingDuplicates[video.videoId] || [];
@@ -286,7 +286,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                              variant="ghost"
                              size="sm"
                              onClick={() => toggleSingleWhisper(video.videoId, true)}
-                             className="text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-500/20"
+                             className="text-xs text-success-fg dark:text-success hover:text-success-fg dark:hover:text-success hover:bg-success-subtle"
                            >
                               Use AI Transcription
                            </Button>
@@ -298,27 +298,27 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
 
             {/* Unavailable List (Expandable) */}
             {currentSummary.unavailable > 0 && (
-                <div className="border border-red-500/20 rounded-xl overflow-hidden bg-red-500/5">
+                <div className="border border-error/20 rounded-xl overflow-hidden bg-error-subtle">
                   <button
                     onClick={() => setExpandedSection(expandedSection === 'unavailable' ? null : 'unavailable')}
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-red-500/10 transition-colors cursor-pointer"
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-error-subtle transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
-                        <XCircle className="h-4 w-4 text-red-500" />
-                        <span className="font-medium text-red-600 dark:text-red-400">
+                        <XCircle className="h-4 w-4 text-error" />
+                        <span className="font-medium text-error-fg dark:text-error-fg">
                             {currentSummary.unavailable} unavailable videos (skipped)
                         </span>
                     </div>
-                    {expandedSection === 'unavailable' ? <ChevronUp className="h-4 w-4 text-red-500"/> : <ChevronDown className="h-4 w-4 text-red-500"/>}
+                    {expandedSection === 'unavailable' ? <ChevronUp className="h-4 w-4 text-error"/> : <ChevronDown className="h-4 w-4 text-error"/>}
                   </button>
                   
                   {expandedSection === 'unavailable' && (
                     <div className="max-h-48 overflow-y-auto p-2 space-y-1 border-t border-red-500/10">
                       {unavailableVideos.map((video) => (
-                        <div key={video.videoId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20">
+                        <div key={video.videoId} className="flex items-center gap-3 p-2 rounded-lg bg-surface-elevated/20">
                           <div className="flex-1 min-w-0">
-                             <p className="text-sm text-foreground truncate">{video.title}</p>
-                             <p className="text-xs text-red-500 flex items-center gap-1">
+                             <p className="text-sm text-fg truncate">{video.title}</p>
+                             <p className="text-xs text-error flex items-center gap-1">
                                <XCircle className="h-3 w-3" />
                                {getErrorTypeLabel(video.errorType)}: {video.reason}
                              </p>
@@ -332,24 +332,24 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
         </div>
 
          {/* Action Bar */}
-        <div className="bg-muted/30 rounded-xl p-5 border border-border flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="bg-surface-elevated/30 rounded-xl p-5 border border-border flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="space-y-1 w-full md:w-auto">
                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm">Your Balance:</span>
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-md border border-border">
-                      <Coins className="h-3.5 w-3.5 text-yellow-500" />
-                      <span className={hasEnoughCredits ? "text-green-600 dark:text-green-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
+                  <span className="text-fg-muted text-sm">Your Balance:</span>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-bg rounded-md border border-border">
+                      <Coins className="h-3.5 w-3.5 text-warning" />
+                      <span className={hasEnoughCredits ? "text-success-fg dark:text-success font-bold" : "text-warning-fg dark:text-warning font-bold"}>
                           {userCredits ?? 0}
                       </span>
                   </div>
                </div>
                {hasEnoughCredits ? (
-                   <p className="text-xs text-muted-foreground">
-                       After extraction: <span className="text-foreground font-medium">{remainingCredits} credits</span>
+                   <p className="text-xs text-fg-muted">
+                       After extraction: <span className="text-fg font-medium">{remainingCredits} credits</span>
                    </p>
                ) : (
                    <div className="flex items-center gap-2">
-                       <p className="text-xs text-red-500 font-medium">Insufficient credits</p>
+                       <p className="text-xs text-error font-medium">Insufficient credits</p>
                        <Link href="/pricing">
                            <Button variant="outline" size="sm" className="h-6 text-xs px-2">
                                Buy Credits →
@@ -361,7 +361,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
 
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 {containsDuplicates && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium self-center">
+                    <p className="text-xs text-warning-fg dark:text-warning font-medium self-center">
                         {localResults.filter(r => r.isDuplicate && r.status !== 'unavailable').length} video(s) already in your library — existing transcripts will be skipped.
                     </p>
                 )}

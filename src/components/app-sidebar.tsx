@@ -325,7 +325,7 @@ export function AppSidebar() {
           <div className="px-3 py-2 border-b border-[var(--border)]/50">
             <button
               onClick={handleToggleCollapse}
-              className="h-8 w-8 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
+              className="h-8 w-8 flex items-center justify-center rounded text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)] transition-colors cursor-pointer"
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {collapsed ? (
@@ -352,7 +352,7 @@ export function AppSidebar() {
                             "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                             isActive 
                               ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
-                              : "text-[var(--text-secondary)] [&_svg]:text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                              : "text-[var(--fg-subtle)] [&_svg]:text-[var(--fg-muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--fg)]",
                             collapsed && "justify-center"
                           )}
                           title={collapsed ? item.title : undefined}
@@ -385,7 +385,7 @@ export function AppSidebar() {
                           "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                           pathname === "/dashboard/library" || pathname?.startsWith("/dashboard/library/")
                             ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
-                            : "text-[var(--text-secondary)] [&_svg]:text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                            : "text-[var(--fg-subtle)] [&_svg]:text-[var(--fg-muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--fg)]",
                           collapsed && "justify-center"
                         )}
                         title={collapsed ? "Library" : undefined}
@@ -397,7 +397,7 @@ export function AppSidebar() {
                     {!collapsed && (
                       <button
                         onClick={(e) => { e.preventDefault(); setLibraryOpen(o => !o) }}
-                        className="h-6 w-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors shrink-0 mr-1 cursor-pointer"
+                        className="h-6 w-6 flex items-center justify-center rounded text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)] transition-colors shrink-0 mr-1 cursor-pointer"
                         aria-label={libraryOpen ? "Collapse library" : "Expand library"}
                       >
                         <ChevronRight
@@ -432,7 +432,7 @@ export function AppSidebar() {
                             "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors cursor-pointer",
                             isLibraryPage && !selectedId
                               ? "bg-[var(--accent-subtle)] text-[var(--accent)] font-medium"
-                              : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/50",
+                              : "text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--accent)]/50",
                             dragOverId === "all" && dropHighlight
                           )}
                         >
@@ -456,7 +456,7 @@ export function AppSidebar() {
                                   "group/col flex items-center gap-1 px-2 py-1.5 rounded-md text-xs transition-colors",
                                   isSelected
                                     ? "bg-[var(--accent-subtle)] text-[var(--accent)] font-medium"
-                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/50",
+                                    : "text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--accent)]/50",
                                   isDragging && dropHighlight
                                 )}
                                 onDragOver={(e) => handleDragOver(e, col.id)}
@@ -481,19 +481,19 @@ export function AppSidebar() {
                                           if (e.key === "Enter") { e.currentTarget.blur() }
                                           if (e.key === "Escape") { setEditingId(null) }
                                         }}
-                                        className="w-full bg-transparent border-b border-[var(--border)] outline-none text-xs text-[var(--text-primary)]"
+                                        className="w-full bg-transparent border-b border-[var(--border)] outline-none text-xs text-[var(--fg)]"
                                         maxLength={150}
                                       />
                                       {editingName.length > 120 && (
-                                        <span className={`text-[10px] ${editingName.length >= 150 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                        <span className={`text-[10px] ${editingName.length >= 150 ? 'text-error' : 'text-fg-muted'}`}>
                                           {editingName.length}/150
                                         </span>
                                       )}
                                     </div>
-                                    <button onClick={handleRenameSave} className="h-4 w-4 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0">
+                                    <button onClick={handleRenameSave} className="h-4 w-4 flex items-center justify-center text-[var(--fg-muted)] hover:text-[var(--fg)] cursor-pointer shrink-0">
                                       <Check className="h-2.5 w-2.5" />
                                     </button>
-                                    <button onClick={() => setEditingId(null)} className="h-4 w-4 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0">
+                                    <button onClick={() => setEditingId(null)} className="h-4 w-4 flex items-center justify-center text-[var(--fg-muted)] hover:text-[var(--fg)] cursor-pointer shrink-0">
                                       <X className="h-2.5 w-2.5" />
                                     </button>
                                   </>
@@ -510,14 +510,14 @@ export function AppSidebar() {
                                     {/* Action icons — only visible on hover */}
                                     <button
                                       onClick={(e) => { e.stopPropagation(); handleRenameStart(col) }}
-                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0 cursor-pointer"
+                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-[var(--fg-muted)] hover:text-[var(--fg)] shrink-0 cursor-pointer"
                                       title="Rename"
                                     >
                                       <Pencil className="h-2.5 w-2.5" />
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(isConfirmDelete ? null : col.id); setEditingId(null) }}
-                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0 cursor-pointer"
+                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-[var(--fg-muted)] hover:text-[var(--fg)] shrink-0 cursor-pointer"
                                       title="Delete collection"
                                     >
                                       <Trash2 className="h-2.5 w-2.5" />
@@ -528,22 +528,22 @@ export function AppSidebar() {
 
                               {/* Inline delete confirmation */}
                               {isConfirmDelete && (
-                                <div className="mx-2 mb-1 p-2 rounded-md bg-destructive/10 border border-destructive/20 text-xs">
-                                  <p className="text-[var(--text-primary)] mb-2 leading-snug">
+                                <div className="mx-2 mb-1 p-2 rounded-md bg-error/10 border border-error/20 text-xs">
+                                  <p className="text-[var(--fg)] mb-2 leading-snug">
                                     Delete <span className="font-medium">&ldquo;{col.name}&rdquo;</span>?{" "}
-                                    <span className="text-[var(--text-muted)]">Transcripts will be moved to All Transcripts.</span>
+                                    <span className="text-[var(--fg-muted)]">Transcripts will be moved to All Transcripts.</span>
                                   </p>
                                   <div className="flex gap-1.5">
                                     <button
                                       onClick={() => setConfirmDeleteId(null)}
-                                      className="flex-1 py-1 rounded text-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/50 transition-colors cursor-pointer"
+                                      className="flex-1 py-1 rounded text-center text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--bg-surface-elevated)]/50 transition-colors cursor-pointer"
                                     >
                                       Cancel
                                     </button>
                                     <button
                                       onClick={() => handleDeleteConfirm(col.id)}
                                       disabled={isDeleting}
-                                      className="flex-1 py-1 rounded text-center bg-destructive text-destructive-foreground hover:bg-destructive/80 transition-colors cursor-pointer disabled:opacity-50"
+                                      className="flex-1 py-1 rounded text-center bg-error text-error-foreground hover:bg-error/80 transition-colors cursor-pointer disabled:opacity-50"
                                     >
                                       {isDeleting ? "…" : "Delete"}
                                     </button>
@@ -580,7 +580,7 @@ export function AppSidebar() {
                         ) : (
                           <button
                             onClick={() => setCreating(true)}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/50 transition-colors cursor-pointer"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--accent)]/50 transition-colors cursor-pointer"
                           >
                             <Plus className="h-3 w-3" />
                             <span>New Collection</span>
@@ -603,15 +603,15 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="px-3 pb-3 space-y-2 border-t border-[var(--border)]/50 pt-4 mt-2">
               <div className="flex justify-between items-end">
-                <span className="text-xs text-[var(--text-muted)]">Storage</span>
-                <span className="text-[10px] text-[var(--text-muted)]">{usedMB > 0.1 ? usedMB.toFixed(1) + ' MB' : usedKB.toFixed(0) + ' KB'} / {MAX_MB} MB</span>
+                <span className="text-xs text-[var(--fg-muted)]">Storage</span>
+                <span className="text-[10px] text-[var(--fg-muted)]">{usedMB > 0.1 ? usedMB.toFixed(1) + ' MB' : usedKB.toFixed(0) + ' KB'} / {MAX_MB} MB</span>
               </div>
               <Progress 
                 value={storagePercentage} 
-                className={cn("h-1.5", storagePercentage > 80 && "bg-destructive/20")}
+                className={cn("h-1.5", storagePercentage > 80 && "bg-error/20")}
                 style={{ "--accent": "var(--accent)" } as React.CSSProperties}
               />
-              <p className="text-[10px] text-[var(--text-muted)]">
+              <p className="text-[10px] text-[var(--fg-muted)]">
                 {transcripts.length} transcript{transcripts.length !== 1 ? "s" : ""} saved
               </p>
             </div>
@@ -620,8 +620,8 @@ export function AppSidebar() {
           {/* Nav guard — inline confirmation card when user tries to leave during active extraction */}
           {pendingNavHref && (
             <div className="mx-3 mb-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-in fade-in slide-in-from-bottom-2">
-              <p className="text-xs font-semibold text-foreground mb-1">Are you sure you want to leave?</p>
-              <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
+              <p className="text-xs font-semibold text-fg mb-1">Are you sure you want to leave?</p>
+              <p className="text-[11px] text-fg-muted mb-3 leading-snug">
                 Your extraction will continue in the background, but leaving may cause unexpected behavior. We recommend staying on this page until extraction is complete.
               </p>
               <div className="flex gap-2">
@@ -635,7 +635,7 @@ export function AppSidebar() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 text-xs flex-1 text-muted-foreground"
+                  className="h-7 text-xs flex-1 text-fg-muted"
                   onClick={() => {
                     router.push(pendingNavHref)
                     setPendingNavHref(null)
@@ -659,7 +659,7 @@ export function AppSidebar() {
                         "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                         isActive 
                           ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
-                          : "text-[var(--text-secondary)] [&_svg]:text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                          : "text-[var(--fg-subtle)] [&_svg]:text-[var(--fg-muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--fg)]",
                         collapsed && "justify-center"
                       )}
                       title={collapsed ? item.title : undefined}
@@ -676,7 +676,7 @@ export function AppSidebar() {
                 onClick={handleSignOut}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 w-full cursor-pointer",
-                  "text-[var(--text-secondary)] [&_svg]:text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                  "text-[var(--fg-subtle)] [&_svg]:text-[var(--fg-muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--fg)]",
                   collapsed && "justify-center"
                 )}
                 title={collapsed ? "Sign Out" : undefined}

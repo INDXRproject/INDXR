@@ -20,7 +20,7 @@ export default function CreditsPage() {
   if (loading) {
     return (
       <div className="container max-w-4xl py-24 px-4 mx-auto">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-fg-muted">Loading...</p>
       </div>
     )
   }
@@ -32,36 +32,36 @@ export default function CreditsPage() {
   return (
     <div className="container max-w-4xl py-24 px-4 mx-auto">
       <div className="mb-10">
-        <h1 className="text-4xl font-bold text-foreground mb-2">Credits & Billing</h1>
-        <p className="text-muted-foreground">Manage your credits and view usage</p>
+        <h1 className="text-4xl font-bold text-fg mb-2">Credits & Billing</h1>
+        <p className="text-fg-muted">Manage your credits and view usage</p>
       </div>
 
       {/* Current Balance */}
-      <Card className="bg-card/50 border-border/50 text-foreground mb-6">
+      <Card className="bg-surface/50 border-border/50 text-fg mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Coins className="h-5 w-5 text-yellow-500" />
+            <Coins className="h-5 w-5 text-warning" />
             Current Balance
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-5xl font-bold text-foreground mb-2">
-            {credits ?? 0} <span className="text-2xl text-muted-foreground">credits</span>
+          <div className="text-5xl font-bold text-fg mb-2">
+            {credits ?? 0} <span className="text-2xl text-fg-muted">credits</span>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-fg-muted">
             Playlist quota: {quota?.playlistQuotaRemaining ?? 50}/50 free videos this month
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-fg-muted">
             Resets: {quota?.quotaResetsAt ? new Date(quota.quotaResetsAt).toLocaleDateString() : 'N/A'}
           </p>
         </CardContent>
       </Card>
 
       {/* How Credits Work */}
-      <Card className="bg-card/50 border-border/50 text-foreground mb-6">
+      <Card className="bg-surface/50 border-border/50 text-fg mb-6">
         <CardHeader>
           <CardTitle>How Credits Work</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-fg-muted">
             Pay only for what you use
           </CardDescription>
         </CardHeader>
@@ -71,14 +71,14 @@ export default function CreditsPage() {
               <Zap className="h-5 w-5 text-purple-500" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-foreground mb-1">Whisper AI Transcription</h4>
-              <p className="text-sm text-muted-foreground mb-2">
+              <h4 className="font-semibold text-fg mb-1">Whisper AI Transcription</h4>
+              <p className="text-sm text-fg-muted mb-2">
                 For videos without auto-captions, we use AI to transcribe the audio.
               </p>
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-sm font-medium text-fg">
                 1 credit = 10 minutes of audio
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-fg-muted">
                 Example: 56-minute video = 6 credits
               </p>
             </div>
@@ -89,32 +89,32 @@ export default function CreditsPage() {
               <ListVideo className="h-5 w-5 text-blue-500" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-foreground mb-1">Playlist Extraction</h4>
-              <p className="text-sm text-muted-foreground mb-2">
+              <h4 className="font-semibold text-fg mb-1">Playlist Extraction</h4>
+              <p className="text-sm text-fg-muted mb-2">
                 Extract transcripts from entire YouTube playlists.
               </p>
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-sm font-medium text-fg">
                 50 videos/month FREE, then 1 credit per 10 videos
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-fg-muted">
                 Example: 80-video playlist = 3 credits (first 50 free, next 30 = 3 credits)
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-4">
-            <div className="p-2 rounded-lg bg-green-500/10">
-              <Mic className="h-5 w-5 text-green-500" />
+            <div className="p-2 rounded-lg bg-success-subtle">
+              <Mic className="h-5 w-5 text-success" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-foreground mb-1">Custom Audio Upload</h4>
-              <p className="text-sm text-muted-foreground mb-2">
+              <h4 className="font-semibold text-fg mb-1">Custom Audio Upload</h4>
+              <p className="text-sm text-fg-muted mb-2">
                 Upload your own audio files for transcription.
               </p>
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-sm font-medium text-fg">
                 1 credit = 10 minutes of audio
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-fg-muted">
                 Same pricing as Whisper AI
               </p>
             </div>
@@ -123,36 +123,36 @@ export default function CreditsPage() {
       </Card>
 
       {/* Credit Packages */}
-      <Card className="bg-card/50 border-border/50 text-foreground mb-6">
+      <Card className="bg-surface/50 border-border/50 text-fg mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
             Buy Credits
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-fg-muted">
             Choose a package that fits your needs
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
             {/* Starter Package */}
-            <div className="p-4 rounded-lg border border-border bg-muted/50">
+            <div className="p-4 rounded-lg border border-border bg-surface-elevated/50">
               <div className="text-center mb-4">
-                <h3 className="text-lg font-bold text-foreground mb-1">Starter</h3>
-                <div className="text-3xl font-bold text-foreground">100</div>
-                <div className="text-sm text-muted-foreground">credits</div>
+                <h3 className="text-lg font-bold text-fg mb-1">Starter</h3>
+                <div className="text-3xl font-bold text-fg">100</div>
+                <div className="text-sm text-fg-muted">credits</div>
               </div>
               <div className="text-center mb-4">
-                <div className="text-2xl font-bold text-foreground">€9.99</div>
-                <div className="text-xs text-muted-foreground">€0.10 per credit</div>
+                <div className="text-2xl font-bold text-fg">€9.99</div>
+                <div className="text-xs text-fg-muted">€0.10 per credit</div>
               </div>
               <ul className="space-y-2 mb-4 text-sm">
-                <li className="flex items-center text-foreground">
-                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                <li className="flex items-center text-fg">
+                  <Check className="h-4 w-4 mr-2 text-success" />
                   ~16 hours of Whisper AI
                 </li>
-                <li className="flex items-center text-foreground">
-                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                <li className="flex items-center text-fg">
+                  <Check className="h-4 w-4 mr-2 text-success" />
                   1000 playlist videos
                 </li>
               </ul>
@@ -162,26 +162,26 @@ export default function CreditsPage() {
             </div>
 
             {/* Pro Package */}
-            <div className="p-4 rounded-lg border-2 border-primary bg-primary/5 relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-foreground text-xs font-bold px-3 py-1 rounded-full">
+            <div className="p-4 rounded-lg border-2 border-primary bg-accent/5 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-fg text-xs font-bold px-3 py-1 rounded-full">
                 BEST VALUE
               </div>
               <div className="text-center mb-4">
-                <h3 className="text-lg font-bold text-foreground mb-1">Pro</h3>
-                <div className="text-3xl font-bold text-foreground">500</div>
-                <div className="text-sm text-muted-foreground">credits</div>
+                <h3 className="text-lg font-bold text-fg mb-1">Pro</h3>
+                <div className="text-3xl font-bold text-fg">500</div>
+                <div className="text-sm text-fg-muted">credits</div>
               </div>
               <div className="text-center mb-4">
-                <div className="text-2xl font-bold text-foreground">€39.99</div>
-                <div className="text-xs text-muted-foreground">€0.08 per credit</div>
+                <div className="text-2xl font-bold text-fg">€39.99</div>
+                <div className="text-xs text-fg-muted">€0.08 per credit</div>
               </div>
               <ul className="space-y-2 mb-4 text-sm">
-                <li className="flex items-center text-foreground">
-                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                <li className="flex items-center text-fg">
+                  <Check className="h-4 w-4 mr-2 text-success" />
                   ~83 hours of Whisper AI
                 </li>
-                <li className="flex items-center text-foreground">
-                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                <li className="flex items-center text-fg">
+                  <Check className="h-4 w-4 mr-2 text-success" />
                   5000 playlist videos
                 </li>
               </ul>
@@ -191,23 +191,23 @@ export default function CreditsPage() {
             </div>
 
             {/* Enterprise Package */}
-            <div className="p-4 rounded-lg border border-border bg-muted/50">
+            <div className="p-4 rounded-lg border border-border bg-surface-elevated/50">
               <div className="text-center mb-4">
-                <h3 className="text-lg font-bold text-foreground mb-1">Enterprise</h3>
-                <div className="text-3xl font-bold text-foreground">2000</div>
-                <div className="text-sm text-muted-foreground">credits</div>
+                <h3 className="text-lg font-bold text-fg mb-1">Enterprise</h3>
+                <div className="text-3xl font-bold text-fg">2000</div>
+                <div className="text-sm text-fg-muted">credits</div>
               </div>
               <div className="text-center mb-4">
-                <div className="text-2xl font-bold text-foreground">€139.99</div>
-                <div className="text-xs text-muted-foreground">€0.07 per credit</div>
+                <div className="text-2xl font-bold text-fg">€139.99</div>
+                <div className="text-xs text-fg-muted">€0.07 per credit</div>
               </div>
               <ul className="space-y-2 mb-4 text-sm">
-                <li className="flex items-center text-foreground">
-                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                <li className="flex items-center text-fg">
+                  <Check className="h-4 w-4 mr-2 text-success" />
                   ~333 hours of Whisper AI
                 </li>
-                <li className="flex items-center text-foreground">
-                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                <li className="flex items-center text-fg">
+                  <Check className="h-4 w-4 mr-2 text-success" />
                   20,000 playlist videos
                 </li>
               </ul>
@@ -217,9 +217,9 @@ export default function CreditsPage() {
             </div>
           </div>
 
-          <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
-            <h4 className="font-semibold text-foreground mb-2">Payment Methods (Coming Soon)</h4>
-            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+          <div className="mt-6 p-4 rounded-lg bg-surface-elevated/50 border border-border">
+            <h4 className="font-semibold text-fg mb-2">Payment Methods (Coming Soon)</h4>
+            <div className="flex flex-wrap gap-3 text-sm text-fg-muted">
               <span>💳 Credit Card</span>
               <span>•</span>
               <span>🍎 Apple Pay</span>
@@ -235,15 +235,15 @@ export default function CreditsPage() {
       </Card>
 
       {/* Transaction History Placeholder */}
-      <Card className="bg-card/50 border-border/50 text-foreground">
+      <Card className="bg-surface/50 border-border/50 text-fg">
         <CardHeader>
           <CardTitle>Transaction History</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-fg-muted">
             View your credit purchases and usage
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-fg-muted">
             <p>No transactions yet</p>
             <p className="text-sm mt-2">Your credit purchases and usage will appear here</p>
           </div>

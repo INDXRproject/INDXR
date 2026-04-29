@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+    <div className="flex items-center justify-center min-h-screen bg-bg px-4">
       <Card className="w-full max-w-sm border shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Reset Password</CardTitle>
@@ -56,8 +56,8 @@ export default function ForgotPasswordPage() {
               <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
                 <Mail className="h-6 w-6 text-success" />
               </div>
-              <p className="text-center text-sm text-muted-foreground">
-                We have sent a password reset link to <span className="font-semibold text-foreground">{email}</span>.
+              <p className="text-center text-sm text-fg-muted">
+                We have sent a password reset link to <span className="font-semibold text-fg">{email}</span>.
               </p>
               <Button
                 variant="outline"
@@ -89,7 +89,7 @@ export default function ForgotPasswordPage() {
         <CardFooter className="flex justify-center border-t pt-4">
           <Link
             href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
+            className="text-sm text-fg-muted hover:text-fg flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Login
           </Link>

@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">Overview</h1>
+        <h1 className="text-3xl font-bold text-fg">Overview</h1>
         <Link href="/dashboard/transcribe">
             <Button>
                 <Plus className="mr-2 h-4 w-4" /> New Transcription
@@ -38,34 +38,34 @@ export default async function DashboardPage() {
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-card border-border">
+        <Card className="bg-surface border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Transcripts</CardTitle>
+            <CardTitle className="text-sm font-medium text-fg-muted">Total Transcripts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{transcriptCount}</div>
-            <p className="text-xs text-muted-foreground">Saved in your library</p>
+            <div className="text-2xl font-bold text-fg">{transcriptCount}</div>
+            <p className="text-xs text-fg-muted">Saved in your library</p>
           </CardContent>
         </Card>
-         <Card className="bg-card border-border">
+         <Card className="bg-surface border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Minutes</CardTitle>
+            <CardTitle className="text-sm font-medium text-fg-muted">Total Minutes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{totalMinutes}m</div>
-            <p className="text-xs text-muted-foreground">Video content processed</p>
+            <div className="text-2xl font-bold text-fg">{totalMinutes}m</div>
+            <p className="text-xs text-fg-muted">Video content processed</p>
           </CardContent>
         </Card>
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 bg-card border-border">
+        <Card className="col-span-4 bg-surface border-border">
           <CardHeader>
-            <CardTitle className="text-foreground">Recent Activity</CardTitle>
+            <CardTitle className="text-fg">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
              {/* We could fetch recent logs here later */}
-            <div className="text-muted-foreground text-sm">Check the Library for your recent transcripts.</div>
+            <div className="text-fg-muted text-sm">Check the Library for your recent transcripts.</div>
           </CardContent>
         </Card>
       </div>

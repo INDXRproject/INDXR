@@ -61,7 +61,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-bg">
       <Card className="w-full max-w-md p-8 border shadow-sm">
         
         {/* Logo + Title */}
@@ -70,8 +70,8 @@ export default function SignupPage() {
             <img src="/logo/indxr-horizontal-black-transparent.png" alt="INDXR.AI" className="dark:hidden h-8 w-auto" style={{ height: '32px', width: 'auto', minWidth: '100px' }} />
             <img src="/logo/indxr-horizontal-white-transparent.png" alt="INDXR.AI" className="hidden dark:block h-8 w-auto" style={{ height: '32px', width: 'auto', minWidth: '100px' }} />
           </Link>
-          <h1 className="text-2xl font-semibold mb-2 text-foreground">Create your account</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-semibold mb-2 text-fg">Create your account</h1>
+          <p className="text-fg-muted">
             Start extracting transcripts in seconds
           </p>
         </div>
@@ -113,7 +113,7 @@ export default function SignupPage() {
             <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-            <span className="px-2 bg-background text-muted-foreground">
+            <span className="px-2 bg-bg text-fg-muted">
                 Or continue with email
             </span>
             </div>
@@ -130,7 +130,7 @@ export default function SignupPage() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-11 bg-background"
+                className="h-11 bg-bg"
                 required
             />
             </div>
@@ -143,11 +143,11 @@ export default function SignupPage() {
                 placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-11 bg-background"
+                className="h-11 bg-bg"
                 required
                 minLength={8}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-fg-muted">
                 Must be at least 8 characters
             </p>
             </div>
@@ -166,22 +166,22 @@ export default function SignupPage() {
             {isSubmitting ? "Creating account..." : "Create account"}
             </Button>
             
-            <p className="text-xs text-center text-muted-foreground mt-4">
+            <p className="text-xs text-center text-fg-muted mt-4">
             By signing up, you agree to our{" "}
-            <Link href="/terms" className="text-primary hover:underline">
+            <Link href="/terms" className="text-accent hover:underline">
                 Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-primary hover:underline">
+            <Link href="/privacy" className="text-accent hover:underline">
                 Privacy Policy
             </Link>
             </p>
         </form>
         
         {/* Log in link */}
-        <p className="text-center text-sm text-muted-foreground mt-6">
+        <p className="text-center text-sm text-fg-muted mt-6">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:text-primary/90 font-medium hover:underline transition-all">
+            <Link href="/login" className="text-accent hover:text-accent/90 font-medium hover:underline transition-all">
             Log in
             </Link>
         </p>

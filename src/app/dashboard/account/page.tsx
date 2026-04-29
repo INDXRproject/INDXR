@@ -36,8 +36,8 @@ export default async function AccountPage() {
   return (
     <div className="container max-w-4xl py-10 px-4 sm:px-6 mx-auto animate-in fade-in zoom-in-95 duration-500">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Account</h1>
-        <p className="text-muted-foreground">Manage your profile and view your transaction history.</p>
+        <h1 className="text-3xl font-bold text-fg mb-2">Account</h1>
+        <p className="text-fg-muted">Manage your profile and view your transaction history.</p>
       </div>
 
       <div className="space-y-8">

@@ -439,17 +439,17 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
       {/* Resume Banner — shown when a running job is detected on mount */}
       {resumeData && !loading && (
-        <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+        <div className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
+            <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">You have an extraction in progress</p>
+              <p className="text-sm font-semibold text-fg">You have an extraction in progress</p>
               {resumeData.title && (
-                <p className="text-xs text-muted-foreground">Playlist: {resumeData.title}</p>
+                <p className="text-xs text-fg-muted">Playlist: {resumeData.title}</p>
               )}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-fg-muted">
                 {resumeData.completed} of {resumeData.total} video{resumeData.total !== 1 ? 's' : ''} processed so far
               </p>
             </div>
@@ -465,7 +465,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
                 sessionStorage.removeItem('indxr-active-playlist-job')
                 setResumeData(null)
               }}
-              className="h-8 text-xs text-muted-foreground"
+              className="h-8 text-xs text-fg-muted"
             >
               Dismiss
             </Button>
@@ -475,13 +475,13 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
       {/* Error Display */}
       {error && (
-        <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between text-left animate-in shake duration-300">
+        <div className="mb-8 p-4 bg-error-subtle border border-error/20 rounded-xl flex items-center justify-between text-left animate-in shake duration-300">
           <div className="flex items-center gap-3 flex-1">
-            <div className="p-2 bg-red-500/20 rounded-lg text-red-500 shrink-0">
+            <div className="p-2 bg-error-subtle rounded-lg text-error shrink-0">
               <AlertCircle className="h-5 w-5" />
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-destructive text-sm font-medium">{error.message}</p>
+              <p className="text-error text-sm font-medium">{error.message}</p>
               {error.isCreditsError && (
                 <Link href="/pricing">
                   <Button variant="outline" size="sm" className="h-7 text-xs">
@@ -493,7 +493,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           </div>
           <button
             onClick={() => setError(null)}
-            className="p-1 hover:bg-destructive/20 rounded-lg transition-colors text-destructive shrink-0"
+            className="p-1 hover:bg-error/20 rounded-lg transition-colors text-error shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
@@ -502,9 +502,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
       {/* Progress Message */}
       {progressMessage && (
-        <div className="mb-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+        <div className="mb-4 p-3 bg-surface-sunken border border-border rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
             <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-foreground font-medium">{progressMessage}</span>
+            <span className="text-sm text-fg font-medium">{progressMessage}</span>
         </div>
       )}
 

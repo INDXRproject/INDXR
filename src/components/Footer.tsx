@@ -28,7 +28,7 @@ const compare = [
 function FooterColumn({ title, links }: { title: string; links: { href: string; label: string }[] }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-[var(--text-primary)] mb-4">
+      <h3 className="text-xs font-semibold uppercase tracking-widest text-[var(--fg)] mb-4">
         {title}
       </h3>
       <ul className="flex flex-col gap-2">
@@ -36,7 +36,7 @@ function FooterColumn({ title, links }: { title: string; links: { href: string; 
           <li key={link.href}>
             <Link
               href={link.href}
-              className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              className="text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
             >
               {link.label}
             </Link>
@@ -49,7 +49,7 @@ function FooterColumn({ title, links }: { title: string; links: { href: string; 
 
 export function Footer() {
   return (
-    <footer className="border-t border-[var(--border)] bg-[var(--bg-surface)]">
+    <footer className="border-t border-[var(--border)] bg-[var(--surface)]">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <FooterColumn title="Export Formats" links={exportFormats} />
@@ -57,12 +57,12 @@ export function Footer() {
           <FooterColumn title="Compare" links={compare} />
         </div>
 
-        <div className="mt-12 pt-6 border-t border-[var(--border)] flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
+        <div className="mt-12 pt-6 border-t border-[var(--border)] flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[var(--fg-muted)]">
           <span>© 2026 INDXR.AI</span>
-          <Link href="/pricing" className="hover:text-[var(--text-primary)] transition-colors">
+          <Link href="/pricing" className="hover:text-[var(--fg)] transition-colors">
             Pricing
           </Link>
-          <Link href="/how-it-works" className="hover:text-[var(--text-primary)] transition-colors">
+          <Link href="/how-it-works" className="hover:text-[var(--fg)] transition-colors">
             How It Works
           </Link>
         </div>

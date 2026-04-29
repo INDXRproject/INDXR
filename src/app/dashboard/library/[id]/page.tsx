@@ -42,15 +42,15 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
   }
 
   return (
-    <div className="flex flex-col bg-background min-h-screen overflow-x-hidden p-6 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col bg-bg min-h-screen overflow-x-hidden p-6 max-w-7xl mx-auto w-full">
       <div className="mb-6 flex space-x-4 border-b border-border text-sm">
         <Link
           href={`/dashboard/library/${id}?tab=original`}
           className={cn(
             "pb-3 border-b-2 px-2 transition-colors",
             activeTab === "original"
-              ? "border-[var(--accent)] font-medium text-foreground"
-              : "border-transparent text-[var(--text-muted)] hover:text-foreground"
+              ? "border-[var(--accent)] font-medium text-fg"
+              : "border-transparent text-[var(--fg-muted)] hover:text-fg"
           )}
         >
           Original
@@ -61,8 +61,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             className={cn(
               "pb-3 border-b-2 px-2 transition-colors",
               activeTab === "edited"
-                ? "border-[var(--accent)] font-medium text-foreground"
-                : "border-transparent text-[var(--text-muted)] hover:text-foreground"
+                ? "border-[var(--accent)] font-medium text-fg"
+                : "border-transparent text-[var(--fg-muted)] hover:text-fg"
             )}
           >
             Edited
@@ -74,11 +74,11 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             className={cn(
               "pb-3 border-b-2 px-2 transition-colors",
               activeTab === "developer"
-                ? "border-[var(--accent)] font-medium text-foreground"
-                : "border-transparent text-[var(--text-muted)] hover:text-foreground"
+                ? "border-[var(--accent)] font-medium text-fg"
+                : "border-transparent text-[var(--fg-muted)] hover:text-fg"
             )}
           >
-            Developer <span className="text-primary text-[10px] font-bold align-super">✦</span>
+            Developer <span className="text-accent text-[10px] font-bold align-super">✦</span>
           </Link>
         )}
         {transcript.ai_summary && (
@@ -88,8 +88,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
               className={cn(
                 "pb-3 border-b-2 px-2 transition-colors",
                 activeTab === "summary"
-                  ? "border-[var(--accent)] font-medium text-foreground"
-                  : "border-transparent text-[var(--text-muted)] hover:text-foreground"
+                  ? "border-[var(--accent)] font-medium text-fg"
+                  : "border-transparent text-[var(--fg-muted)] hover:text-fg"
               )}
             >
               AI Summary
@@ -100,8 +100,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
                 className={cn(
                   "pb-3 border-b-2 px-2 transition-colors",
                   activeTab === "summary_edited"
-                    ? "border-[var(--accent)] font-medium text-foreground"
-                    : "border-transparent text-[var(--text-muted)] hover:text-foreground"
+                    ? "border-[var(--accent)] font-medium text-fg"
+                    : "border-transparent text-[var(--fg-muted)] hover:text-fg"
                 )}
               >
                 Edited Summary
@@ -131,7 +131,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           duration={transcript.duration ?? undefined}
         />
       ) : (activeTab === "summary" || activeTab === "summary_edited") && transcript.ai_summary ? (
-        <div className="pb-12 bg-background w-full relative z-10 w-full mt-2">
+        <div className="pb-12 bg-bg w-full relative z-10 w-full mt-2">
           <AiSummaryView 
             id={transcript.id} 
             initialSummary={transcript.ai_summary} 

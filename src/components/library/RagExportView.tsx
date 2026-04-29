@@ -85,10 +85,10 @@ export function RagExportView({
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-8">
       {/* Export history */}
       <div>
-        <h2 className="text-sm font-semibold text-foreground mb-3">Export History</h2>
+        <h2 className="text-sm font-semibold text-fg mb-3">Export History</h2>
         <div className="rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-muted-foreground">
+            <thead className="bg-surface-elevated/50 text-fg-muted">
               <tr>
                 <th className="px-4 py-2.5 text-left font-medium">Preset</th>
                 <th className="px-4 py-2.5 text-left font-medium">Date</th>
@@ -98,14 +98,14 @@ export function RagExportView({
             </thead>
             <tbody className="divide-y divide-border">
               {ragExports.map((exp, i) => (
-                <tr key={i} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3 font-medium text-foreground">
+                <tr key={i} className="hover:bg-surface-elevated/20 transition-colors">
+                  <td className="px-4 py-3 font-medium text-fg">
                     {CHUNK_LABELS[exp.chunk_size] ?? `${exp.chunk_size}s`}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
+                  <td className="px-4 py-3 text-fg-muted">
                     {getRelativeTime(exp.exported_at)}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
+                  <td className="px-4 py-3 text-fg-muted">
                     {exp.credits_spent} credit{exp.credits_spent !== 1 ? "s" : ""}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -127,10 +127,10 @@ export function RagExportView({
       </div>
 
       {/* New export */}
-      <div className="rounded-xl border border-border bg-[var(--bg-surface)] p-6 space-y-4">
+      <div className="rounded-xl border border-border bg-[var(--surface)] p-6 space-y-4">
         <div>
-          <h2 className="text-sm font-semibold text-foreground mb-0.5">Export New Preset</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="text-sm font-semibold text-fg mb-0.5">Export New Preset</h2>
+          <p className="text-xs text-fg-muted">
             Free — you&apos;ve already paid for this transcript.
           </p>
         </div>
@@ -141,8 +141,8 @@ export function RagExportView({
               key={option.value}
               className={`flex items-center justify-between gap-4 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
                 selectedChunkSize === option.value
-                  ? "border-primary/50 bg-primary/5"
-                  : "border-border hover:bg-muted/40"
+                  ? "border-primary/50 bg-accent/5"
+                  : "border-border hover:bg-surface-elevated/40"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -155,11 +155,11 @@ export function RagExportView({
                   className="accent-primary size-4"
                 />
                 <div>
-                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <div className="flex items-center gap-2 text-sm font-medium text-fg">
                     {option.label}
-                    <span className="text-xs text-muted-foreground font-normal">({option.sub})</span>
+                    <span className="text-xs text-fg-muted font-normal">({option.sub})</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">{option.tokens}</div>
+                  <div className="text-xs text-fg-muted">{option.tokens}</div>
                 </div>
               </div>
             </label>

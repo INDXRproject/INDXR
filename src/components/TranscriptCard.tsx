@@ -246,21 +246,21 @@ export function TranscriptCard({
   return (
     <>
     {showSignupCard && !user && (
-      <div className="w-full max-w-4xl mx-auto mt-8 rounded-lg border border-green-500/25 bg-green-500/8 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+      <div className="w-full max-w-4xl mx-auto mt-8 rounded-lg border border-success/25 bg-success-subtle px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground">✓ Got your transcript.</p>
-          <p className="text-sm font-semibold text-foreground">Sign up free to save it, extract playlists, and transcribe with AI.</p>
+          <p className="text-sm text-fg">✓ Got your transcript.</p>
+          <p className="text-sm font-semibold text-fg">Sign up free to save it, extract playlists, and transcribe with AI.</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <a
             href="/signup"
-            className="rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors whitespace-nowrap"
+            className="rounded-md bg-accent px-4 py-1.5 text-sm font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors whitespace-nowrap"
           >
             Sign Up Free
           </a>
           <a
             href="/login"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+            className="text-sm font-medium text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
           >
             Log In
           </a>
@@ -293,100 +293,100 @@ export function TranscriptCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                <DropdownMenuLabel className="text-xs text-fg-muted">
                   Text
                 </DropdownMenuLabel>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadTxtPlain}>
-                  <FileText className="size-4 text-muted-foreground" />
+                  <FileText className="size-4 text-fg-muted" />
                   <div className="flex-1">
                     <div className="font-medium">TXT — plain text</div>
-                    <div className="text-xs text-muted-foreground">No timestamps</div>
+                    <div className="text-xs text-fg-muted">No timestamps</div>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadTxtWithTimestamps}>
-                  <FileText className="size-4 text-muted-foreground" />
+                  <FileText className="size-4 text-fg-muted" />
                   <div className="flex-1">
                     <div className="font-medium">TXT — with timestamps</div>
-                    <div className="text-xs text-muted-foreground">[HH:MM:SS] per line</div>
+                    <div className="text-xs text-fg-muted">[HH:MM:SS] per line</div>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadMarkdown}>
-                  <FileCode className="size-4 text-muted-foreground" />
+                  <FileCode className="size-4 text-fg-muted" />
                   <div className="flex-1">
                     <div className="font-medium">Markdown</div>
-                    <div className="text-xs text-muted-foreground">Notion, Obsidian, blog</div>
+                    <div className="text-xs text-fg-muted">Notion, Obsidian, blog</div>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadMarkdownWithTimestamps}>
-                  <FileCode className="size-4 text-muted-foreground" />
+                  <FileCode className="size-4 text-fg-muted" />
                   <div className="flex-1">
                     <div className="font-medium">Markdown — with timestamps</div>
-                    <div className="text-xs text-muted-foreground">Sections per timestamp</div>
+                    <div className="text-xs text-fg-muted">Sections per timestamp</div>
                   </div>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                <DropdownMenuLabel className="text-xs text-fg-muted">
                   Subtitles
                 </DropdownMenuLabel>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadSrt}>
-                  <Film className="size-4 text-muted-foreground" />
+                  <Film className="size-4 text-fg-muted" />
                   <div className="flex-1">
                     <div className="font-medium">SRT</div>
-                    <div className="text-xs text-muted-foreground">SubRip Subtitle</div>
+                    <div className="text-xs text-fg-muted">SubRip Subtitle</div>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadVtt}>
-                  <Video className="size-4 text-muted-foreground" />
+                  <Video className="size-4 text-fg-muted" />
                   <div className="flex-1">
                     <div className="font-medium">VTT</div>
-                    <div className="text-xs text-muted-foreground">Web Video Text</div>
+                    <div className="text-xs text-fg-muted">Web Video Text</div>
                   </div>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                <DropdownMenuLabel className="text-xs text-fg-muted">
                   Data
                 </DropdownMenuLabel>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadCsv}>
-                  <FileType className="size-4 text-muted-foreground" />
+                  <FileType className="size-4 text-fg-muted" />
                   <div className="flex-1">
                     <div className="font-medium">CSV</div>
-                    <div className="text-xs text-muted-foreground">Spreadsheet compatible</div>
+                    <div className="text-xs text-fg-muted">Spreadsheet compatible</div>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadJson}>
-                  <FileJson className="size-4 text-muted-foreground" />
+                  <FileJson className="size-4 text-fg-muted" />
                   <div className="flex-1">
                     <div className="font-medium">JSON</div>
-                    <div className="text-xs text-muted-foreground">segments with start/end time</div>
+                    <div className="text-xs text-fg-muted">segments with start/end time</div>
                   </div>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                <DropdownMenuLabel className="text-xs text-fg-muted">
                   Developer
                 </DropdownMenuLabel>
                 {user ? (
                   <DropdownMenuItem className="gap-3 cursor-pointer" onClick={handleRagExportClick}>
-                    <FileJson className="size-4 text-primary" />
+                    <FileJson className="size-4 text-accent" />
                     <div className="flex-1">
                       <div className="font-medium flex items-center gap-1.5">
                         RAG JSON
-                        <span className="text-[10px] text-primary font-bold">✦</span>
+                        <span className="text-[10px] text-accent font-bold">✦</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">LangChain, LlamaIndex, Pinecone</div>
+                      <div className="text-xs text-fg-muted">LangChain, LlamaIndex, Pinecone</div>
                     </div>
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem className="gap-3 cursor-pointer opacity-60" onClick={() => setShowSignupPrompt(true)}>
-                    <Lock className="size-4 text-muted-foreground" />
+                    <Lock className="size-4 text-fg-muted" />
                     <div className="flex-1">
                       <div className="font-medium flex items-center gap-1.5">
                         RAG JSON
-                        <span className="text-[10px] text-primary font-bold">✦</span>
+                        <span className="text-[10px] text-accent font-bold">✦</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">Sign in to export</div>
+                      <div className="text-xs text-fg-muted">Sign in to export</div>
                     </div>
                   </DropdownMenuItem>
                 )}
@@ -404,45 +404,45 @@ export function TranscriptCard({
           />
           <Label htmlFor="reader-mode" className="cursor-pointer flex flex-col">
             <span className="font-medium text-sm">Reader Mode</span>
-            <span className="text-[10px] text-muted-foreground font-normal">Hide timestamps for easier reading</span>
+            <span className="text-[10px] text-fg-muted font-normal">Hide timestamps for easier reading</span>
           </Label>
         </div>
       </CardHeader>
 
       {showSignupPrompt && (
-        <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+        <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-accent/5 px-4 py-3 text-sm">
           <div className="flex items-center gap-2">
-            <LogIn className="size-4 text-primary shrink-0" />
-            <span className="text-foreground"><strong>Sign up or log in</strong> to export as CSV, SRT, VTT, JSON, or Markdown.</span>
+            <LogIn className="size-4 text-accent shrink-0" />
+            <span className="text-fg"><strong>Sign up or log in</strong> to export as CSV, SRT, VTT, JSON, or Markdown.</span>
           </div>
-          <a href="/login" className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+          <a href="/login" className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors">
             Sign in
           </a>
         </div>
       )}
 
       {showInsufficientCreditsForRag && (
-        <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
-          <span className="text-foreground">Not enough credits for RAG export — need {ragCost} credit{ragCost !== 1 ? 's' : ''}.</span>
-          <a href="/dashboard/billing" className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors whitespace-nowrap">
+        <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-error/30 bg-error/5 px-4 py-3 text-sm">
+          <span className="text-fg">Not enough credits for RAG export — need {ragCost} credit{ragCost !== 1 ? 's' : ''}.</span>
+          <a href="/dashboard/billing" className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors whitespace-nowrap">
             Buy credits →
           </a>
         </div>
       )}
 
       <CardContent className="p-0">
-        <ScrollArea className="h-[500px] w-full bg-muted/30">
+        <ScrollArea className="h-[500px] w-full bg-surface-elevated/30">
           <div className="p-6">
              <div className="space-y-4 max-w-none">
                  {transcript.map((item, index) => (
-                    <div key={index} className="group hover:bg-muted/50 p-2 -mx-2 rounded transition-colors duration-200">
+                    <div key={index} className="group hover:bg-surface-elevated/50 p-2 -mx-2 rounded transition-colors duration-200">
                         <div className={showTimestamps ? "flex gap-4" : "block"}>
                             {showTimestamps && (
-                                <span className="text-xs font-mono text-muted-foreground/70 shrink-0 pt-1 select-none">
+                                <span className="text-xs font-mono text-fg-muted/70 shrink-0 pt-1 select-none">
                                     {new Date(item.offset * 1000).toISOString().substr(11, 8)}
                                 </span>
                             )}
-                            <p className={cn("text-foreground leading-relaxed", showTimestamps ? "text-sm" : "text-base")}>
+                            <p className={cn("text-fg leading-relaxed", showTimestamps ? "text-sm" : "text-base")}>
                                 {item.text}
                             </p>
                         </div>
@@ -460,7 +460,7 @@ export function TranscriptCard({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Export as RAG-Optimized JSON
-            <span className="text-xs text-primary font-bold">✦</span>
+            <span className="text-xs text-accent font-bold">✦</span>
           </DialogTitle>
           <DialogDescription className="sr-only">
             Confirm credit deduction for RAG JSON export
@@ -468,22 +468,22 @@ export function TranscriptCard({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 space-y-1.5">
+          <div className="rounded-lg border border-border bg-surface-elevated/30 px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Export cost</span>
-              <span className="font-semibold text-foreground">{ragCost} credit{ragCost !== 1 ? 's' : ''}</span>
+              <span className="text-fg-muted">Export cost</span>
+              <span className="font-semibold text-fg">{ragCost} credit{ragCost !== 1 ? 's' : ''}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-fg-muted">
               {ragDurationMin} min video · 1 credit per 15 min
             </p>
             <div className="flex items-center justify-between text-sm pt-1 border-t border-border/50">
-              <span className="text-muted-foreground">Your balance</span>
-              <span className="font-medium text-foreground">{credits ?? 0} credits</span>
+              <span className="text-fg-muted">Your balance</span>
+              <span className="font-medium text-fg">{credits ?? 0} credits</span>
             </div>
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Chunk size</p>
+            <p className="text-sm text-fg-muted">Chunk size</p>
             <div className="grid grid-cols-4 gap-2">
               {(Object.entries(RAG_CHUNK_LABELS) as [string, { label: string; sub: string }][]).map(([val, { label, sub }]) => {
                 const v = Number(val) as 30 | 60 | 90 | 120;
@@ -495,8 +495,8 @@ export function TranscriptCard({
                     className={cn(
                       "flex flex-col items-center rounded-lg border px-3 py-2 text-sm transition-colors",
                       ragSelectedChunkSize === v
-                        ? "border-primary/50 bg-primary/5 text-foreground"
-                        : "border-border hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary/50 bg-accent/5 text-fg"
+                        : "border-border hover:bg-surface-elevated/40 text-fg-muted"
                     )}
                   >
                     <span className="font-medium">{label}</span>
@@ -511,7 +511,7 @@ export function TranscriptCard({
             href="/blog/chunk-youtube-transcripts-for-rag"
             target="_blank"
             rel="noopener noreferrer"
-            className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="block text-xs text-fg-muted hover:text-fg transition-colors"
           >
             What is RAG JSON? →
           </a>

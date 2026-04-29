@@ -63,11 +63,11 @@ export default function YouTubeToTextPage() {
 
       {/* Side-by-side comparison */}
       <div className="flex flex-col md:flex-row gap-4 my-6 text-sm">
-        <div className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-3">
+        <div className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--fg-muted)] mb-3">
             Raw caption output
           </p>
-          <pre className="whitespace-pre-wrap font-mono text-[10px] text-[var(--text-muted)] leading-relaxed overflow-y-auto max-h-48">{`your excellencies delegates ladies
+          <pre className="whitespace-pre-wrap font-mono text-[10px] text-[var(--fg-muted)] leading-relaxed overflow-y-auto max-h-48">{`your excellencies delegates ladies
 and gentlemen as you spend the next
 two weeks debating negotiating
 persuading and compromising
@@ -81,11 +81,11 @@ global temperature and the changes
 in that one number is the clearest
 way to chart our own story`}</pre>
         </div>
-        <div className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-3">
+        <div className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--fg-muted)] mb-3">
             INDXR.AI plain TXT output
           </p>
-          <pre className="whitespace-pre-wrap font-mono text-[10px] text-[var(--text-primary)] leading-relaxed overflow-y-auto max-h-48">{`your excellencies delegates ladies and gentlemen as you spend
+          <pre className="whitespace-pre-wrap font-mono text-[10px] text-[var(--fg)] leading-relaxed overflow-y-auto max-h-48">{`your excellencies delegates ladies and gentlemen as you spend
 the next two weeks debating negotiating persuading and
 compromising as you surely must its easy to forget that
 ultimately the emergency climate comes down to a single number
@@ -98,7 +98,7 @@ at times our ancestors existed only in tiny numbers but just
 over 10 000 years ago that number suddenly stabilized`}</pre>
         </div>
       </div>
-      <p className="text-sm text-[var(--text-muted)] -mt-2 mb-6">
+      <p className="text-sm text-[var(--fg-muted)] -mt-2 mb-6">
         Same source video. Left: raw fragments as delivered by YouTube. Right: INDXR.AI groups them into paragraphs based on natural speech pauses.
       </p>
 

@@ -64,16 +64,16 @@ export default async function AdminTranscriptsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Transcripts</h1>
-        <p className="text-muted-foreground text-sm">All transcripts across all users</p>
+        <p className="text-fg-muted text-sm">All transcripts across all users</p>
       </div>
 
       <form className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Method</label>
+          <label className="text-xs text-fg-muted">Method</label>
           <select
             name="method"
             defaultValue={methodFilter}
-            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+            className="border rounded-md px-3 py-1.5 text-sm bg-bg"
           >
             <option value="">All methods</option>
             <option value="whisper">Whisper</option>
@@ -82,32 +82,32 @@ export default async function AdminTranscriptsPage({
           </select>
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">From</label>
+          <label className="text-xs text-fg-muted">From</label>
           <input
             type="date"
             name="from"
             defaultValue={from}
-            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+            className="border rounded-md px-3 py-1.5 text-sm bg-bg"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">To</label>
+          <label className="text-xs text-fg-muted">To</label>
           <input
             type="date"
             name="to"
             defaultValue={to}
-            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+            className="border rounded-md px-3 py-1.5 text-sm bg-bg"
           />
         </div>
         <button
           type="submit"
-          className="px-3 py-1.5 text-sm border rounded-md bg-background hover:bg-muted"
+          className="px-3 py-1.5 text-sm border rounded-md bg-bg hover:bg-surface-elevated"
         >
           Filter
         </button>
         <a
           href="/admin/transcripts"
-          className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="px-3 py-1.5 text-sm text-fg-muted hover:text-fg"
         >
           Reset
         </a>
@@ -131,7 +131,7 @@ export default async function AdminTranscriptsPage({
               <TableRow>
                 <TableCell
                   colSpan={7}
-                  className="text-center text-muted-foreground py-8"
+                  className="text-center text-fg-muted py-8"
                 >
                   No transcripts found
                 </TableCell>
@@ -139,31 +139,31 @@ export default async function AdminTranscriptsPage({
             )}
             {transcripts?.map((t) => (
               <TableRow key={t.id}>
-                <TableCell className="text-xs max-w-[180px] truncate text-muted-foreground">
+                <TableCell className="text-xs max-w-[180px] truncate text-fg-muted">
                   {emailMap[t.user_id] ?? t.user_id.slice(0, 8) + "…"}
                 </TableCell>
                 <TableCell className="max-w-[260px] truncate text-sm">
                   {t.title ?? "Untitled"}
                 </TableCell>
                 <TableCell>
-                  <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                  <span className="text-xs bg-surface-elevated px-1.5 py-0.5 rounded">
                     {t.processing_method ?? "—"}
                   </span>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
+                <TableCell className="text-xs text-fg-muted">
                   {t.source_type ?? "—"}
                 </TableCell>
                 <TableCell className="text-xs font-mono">
                   {t.credits_used ?? "—"}
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
+                <TableCell className="text-xs text-fg-muted">
                   {new Date(t.created_at).toLocaleString()}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <a
                       href={`/admin/transcripts/${t.id}`}
-                      className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                      className="text-xs text-fg-muted hover:text-fg underline underline-offset-2"
                     >
                       View
                     </a>
@@ -176,7 +176,7 @@ export default async function AdminTranscriptsPage({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex items-center justify-between text-sm text-fg-muted">
         <span>
           Page {page} of {totalPages} · {count ?? 0} total
         </span>
@@ -184,7 +184,7 @@ export default async function AdminTranscriptsPage({
           {page > 1 && (
             <a
               href={paginationHref(page - 1)}
-              className="px-3 py-1 border rounded hover:bg-muted"
+              className="px-3 py-1 border rounded hover:bg-surface-elevated"
             >
               ← Prev
             </a>
@@ -192,7 +192,7 @@ export default async function AdminTranscriptsPage({
           {page < totalPages && (
             <a
               href={paginationHref(page + 1)}
-              className="px-3 py-1 border rounded hover:bg-muted"
+              className="px-3 py-1 border rounded hover:bg-surface-elevated"
             >
               Next →
             </a>
