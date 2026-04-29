@@ -26,12 +26,17 @@ Frontend
                  │    │    ├─ Metadata OK → lever stap 1 transcript + metadata
                  │    │    └─ Metadata mislukt (quota/netwerk) → gooi stap 1 weg, door naar stap 2
                  │    └─ Mislukking → door naar stap 2
-                 └─ Stap 2: yt-dlp (bevat metadata van nature)
+                 └─ Stap 2: yt-dlp (bevat metadata van nature) — log-prefix [YT-DLP]
+                      ├─ [YT-DLP] attempting {video_id}
                       ├─ VTT overlap-deduplicatie (LCS algoritme)
                       ├─ Normaliseer naar [{text, offset, duration}]
                       ├─ language: yt-dlp info.language → fallback: lingua-language-detector (13 talen, module-level)
                       ├─ upload_date geconverteerd naar ISO YYYY-MM-DD (→ published_at in frontend)
+                      ├─ [YT-DLP] success for {video_id} lang={lang} — of no_captions/MembersOnly/fout
                       └─ Return {transcript, title, duration, video_url, channel, language, language_detected, upload_date}
+  └─ Na stap 1 of stap 2 succes: master_transcripts_write (fire-and-forget)
+       ├─ Stap 1: model="youtube_transcript_api", model_quality_rank=30
+       └─ Stap 2: model="youtube_captions", model_quality_rank=20
   └─ Next.js slaat op in Supabase (transcripts tabel)
   └─ Return naar frontend
 ```

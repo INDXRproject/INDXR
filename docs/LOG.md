@@ -1,3 +1,7 @@
+[2026-04-29] feat: cascade stap 2 formaliseren — [YT-DLP] log-prefix in extract_with_ytdlp (attempting/success/no_captions/MembersOnly/error), MODEL_QUALITY_RANK youtube_captions 30→20, ai-pipeline.md cascade-sectie uitgebreid, priorities stap 2 ✅ | gewijzigd: backend/youtube_utils.py, backend/master_cache.py, docs/wiki/architecture/ai-pipeline.md, docs/wiki/roadmap/priorities.md
+---
+[2026-04-28] docs: frontend design audit — volledige inventarisatie (47 routes, 4 layouts, alle componenten, Tiptap subsectie, CSS var-systeem, dark mode status, hardcoded kleuren, icon library, form patterns, inconsistenties, 12 vragen voor redesign) | gewijzigd: docs/wiki/design/audit-frontend.md, docs/wiki/INDEX.md
+---
 [2026-04-28] fix: root logger Sentry-override — definitieve fix voor verdwijnende INFO logs; root logger stond op WARNING (level 30) ondanks basicConfig force=True omdat Sentry SDK root reset ná onze config; opgelost via logging.getLogger().setLevel(INFO) ná sentry_sdk.init(); debug-endpoints verwijderd; known-issues.md bijgewerkt met volledige root cause | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/operations/known-issues.md
 ---
 [2026-04-28] docs: data-collection-wishlist.md — PostHog event wishlist voor cascade-pad tracking, master cache hit/miss attribution, cost-tracking per extractie | gewijzigd: docs/wiki/operations/data-collection-wishlist.md
@@ -1751,3 +1755,17 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py
 ---
 [2026-04-28 23:16] precompact: context compaction triggered
+[2026-04-28 23:21] commit: fix: root logger Sentry-override — definitieve logging fix
+
+Root cause bewezen via /api/debug/loggers: root logger level 30 (WARNING)
+ondanks basicConfig force=True. Sentry SDK reset root ná onze basicConfig call.
+
+Fix: logging.getLogger().setLevel(INFO) toegevoegd ná sentry_sdk.init() in
+main.py en worker.py. Debug-endpoints verwijderd — diagnose voltooid.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/operations/known-issues.md
+---

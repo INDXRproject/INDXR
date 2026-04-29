@@ -20,7 +20,7 @@ CAPTION_REFRESH_DAYS = 90
 
 MODEL_QUALITY_RANK = {
     "youtube_transcript_api": 30,
-    "youtube_captions": 30,
+    "youtube_captions": 20,
     "assemblyai_universal_2": 50,
     "assemblyai_universal_3": 70,
 }

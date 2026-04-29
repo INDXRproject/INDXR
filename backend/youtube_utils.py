@@ -230,6 +230,7 @@ async def extract_with_ytdlp(
     Note: contains blocking I/O (yt_dlp, httpx). Declare callers as async
     and call with `await`; the event loop is blocked during the sync portions.
     """
+    logger.info(f"[YT-DLP] attempting {video_id}")
     ydl_opts = {
         'skip_download': True,
         'writesubtitles': True,
@@ -262,10 +263,12 @@ async def extract_with_ytdlp(
                 subtitles = info['automatic_captions']['en']
 
             if not subtitles:
+                logger.info(f"[YT-DLP] {video_id}: no_captions (no English subtitles)")
                 return {}
 
             vtt_subtitle = next((s for s in subtitles if s.get('ext') == 'vtt'), None)
             if not vtt_subtitle:
+                logger.info(f"[YT-DLP] {video_id}: no_captions (no VTT format)")
                 return {}
 
             subtitle_url = vtt_subtitle['url']
@@ -283,12 +286,13 @@ async def extract_with_ytdlp(
                         subtitle_data = resp.text
                         break
                 except Exception as e:
-                    logger.warning(f"VTT download attempt {attempt + 1} failed: {e}")
+                    logger.warning(f"[YT-DLP] {video_id}: VTT download attempt {attempt + 1} failed: {e}")
                     if attempt == 2:
                         raise Exception(f"Failed to download subtitles after 3 attempts: {e}")
                     time.sleep(1)
 
             if not subtitle_data:
+                logger.info(f"[YT-DLP] {video_id}: no_captions (VTT download empty)")
                 return {}
 
             transcript = parse_vtt_to_transcript(subtitle_data)
@@ -313,6 +317,7 @@ async def extract_with_ytdlp(
             raw_date = info.get('upload_date')
             iso_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}" if raw_date else None
 
+            logger.info(f"[YT-DLP] success for {video_id} lang={language}")
             return {
                 'transcript': transcript,
                 'title': info.get('title'),
@@ -325,11 +330,12 @@ async def extract_with_ytdlp(
             }
 
     except MembersOnlyVideoError:
+        logger.info(f"[YT-DLP] {video_id}: MembersOnly")
         raise
     except Exception as e:
         error_str = str(e).lower()
         if any(kw in error_str for kw in MEMBERS_ONLY_KEYWORDS):
-            logger.warning(f"Members-only video detected during caption extraction: {video_id}")
+            logger.warning(f"[YT-DLP] {video_id}: MembersOnly (keyword detected)")
             raise MembersOnlyVideoError("This video is only available to channel members.")
-        logger.error(f"yt-dlp caption extraction error: {type(e).__name__}: {e}")
+        logger.error(f"[YT-DLP] {video_id}: {type(e).__name__}: {e}")
         raise
