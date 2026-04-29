@@ -71,7 +71,9 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
        Metadata-aanvulling via YouTube Data API `videos.list` na stap 1 succes ✅ 2026-04-28 (ADR-028)
        Logging volledig diagnose-vriendelijk ✅ 2026-04-28 — per-exception INFO in `extract_via_youtube_transcript_api()`; `[YT-API] attempting {video_id}` bij elke poging
     2. ✅ yt-dlp `--write-subs` met `ios,web_embedded` client — geformaliseerd als stap 2 met [YT-DLP] logging + model_quality_rank=20 in master_transcripts ✅ 2026-04-29
-    3. yt-dlp met `tv`,`android` clients (client-rotatie — vervangt bgutil, zie ADR-027)
+       Geverifieerd in productie 2026-04-29 — vier scenario's bewezen (cache-hit, stap 1 succes, stap 1→2 cascade overgang, MembersOnly fail-fast)
+    3. ✅ yt-dlp met `tv`,`android` clients (client-rotatie — vervangt bgutil, zie ADR-027) — geïmplementeerd 2026-04-29
+       [YT-DLP-ROT] log-prefix, model_quality_rank=15, triggered alleen bij stap 2 extraction error (niet bij no_captions/MembersOnly)
     4. yt-dlp audio download → AssemblyAI
     5. Markeer `needs_manual_review`, ga door met playlist
     bgutil-pot verwijderd (ADR-027). Cascade-stap 3 is client-rotatie binnen yt-dlp zelf.

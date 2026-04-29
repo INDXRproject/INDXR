@@ -4,6 +4,28 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## Cascade stap 1+2 + cache-hit — Sessie 1
+
+**Datum:** 2026-04-29 17:43–17:46  
+**Tester:** Khidr  
+**Commit:** 55324cd (feat: cascade stap 2 formaliseren + quality rank fix)  
+**Status:** PASS
+
+### Scenario's getest
+
+| Scenario | Video | Resultaat |
+|----------|-------|-----------|
+| Cache HIT | xZ4I2aE8zQA | ✅ Redis HIT 26s na eerste extractie — geen YT-API/YT-DLP calls in logs |
+| Stap 1 succes | IAnhFUUCq6c | ✅ `[YT-API] success` + master cache write (227KB transcript, 42836 woorden) |
+| Stap 1→2 cascade + MembersOnly | djKFARxiH8A (Kings & Generals) | ✅ `[YT-API] VideoUnplayable` → `[YT-DLP] attempting` → `[YT-DLP] MembersOnly (keyword detected)` → 403 Forbidden |
+| [YT-DLP] log-zichtbaarheid | alle bovenstaande | ✅ alle `[YT-DLP]` prefixes correct zichtbaar in Railway logs |
+
+### Conclusie
+
+Cascade-orchestratie, log-prefixen, error-classificatie en master cache write werken correct in productie. Stap 1→2 overgang bewezen via VideoUnplayable → MembersOnly pad. Redis cache-hit bevestigd binnen één sessie.
+
+---
+
 ## RAG JSON Export — Sessie 1
 
 **Datum:** 2026-04-22  

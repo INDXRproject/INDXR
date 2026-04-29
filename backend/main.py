@@ -309,10 +309,18 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                     logger.warning(f"[YT-DATA-API metadata fetch failed] {video_id}: {meta_err}")
                 result = None  # discard step 1, fall through to step 2
 
-        # ── Cascade step 2: yt-dlp fallback ─────────────────────────────────
+        # ── Cascade step 2: yt-dlp (ios/web_embedded) ───────────────────────
         if result is None:
-            result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id)
-            caption_model = "youtube_captions"
+            try:
+                result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id)
+                caption_model = "youtube_captions"
+            except MembersOnlyVideoError:
+                raise  # structural — step 3 cannot help
+            except Exception as step2_err:
+                # ── Cascade step 3: yt-dlp (tv/android client rotation) ──────
+                logger.info(f"[CASCADE] {video_id}: step 2 failed ({type(step2_err).__name__}), trying step 3 (tv/android)")
+                result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id, clients=['tv', 'android'])
+                caption_model = "youtube_captions_rotated"
 
         # result can be a dict (success) or list (empty/failure)
         if isinstance(result, list) or not result:

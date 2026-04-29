@@ -44,7 +44,7 @@ bgutil-pot volledig verwijderen uit de codebase, Docker image, en runtime.
 - Dockerfile COPY- en mkdir-regels voor bgutil
 - `DENO_PATH` env var (gerelateerde dode infra — Deno was nooit geïnstalleerd in het Docker image)
 
-**Cascade-stap 3** (uit ADR-007/taak 1.6 planning) wordt opnieuw gedefinieerd als yt-dlp client-rotatie (`tv`, `android`) in plaats van PO-token generatie via bgutil.
+**Cascade-stap 3** (uit ADR-007/taak 1.6 planning) wordt opnieuw gedefinieerd als yt-dlp client-rotatie (`tv`, `android`) in plaats van PO-token generatie via bgutil. Geïmplementeerd 2026-04-29: `extract_with_ytdlp(..., clients=['tv', 'android'])`, log-prefix `[YT-DLP-ROT]`, triggered alleen bij stap 2 extraction error.
 
 ---
 

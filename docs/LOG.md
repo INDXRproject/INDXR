@@ -1,3 +1,5 @@
+[2026-04-29] feat: cascade stap 3 (tv/android client-rotatie) + stap 2 productiebewijs — extract_with_ytdlp clients-parameter + [YT-DLP-ROT] prefix, stap 2/3 try/except orchestratie in main.py + worker.py, MODEL_QUALITY_RANK youtube_captions_rotated=15, test-reports stap 1+2 sessie 1 toegevoegd, ADR-027 status bijgewerkt | gewijzigd: backend/youtube_utils.py, backend/main.py, backend/worker.py, backend/master_cache.py, docs/wiki/operations/test-reports.md, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/decisions/027-bgutil-deprioritization.md
+---
 [2026-04-29] feat: cascade stap 2 formaliseren — [YT-DLP] log-prefix in extract_with_ytdlp (attempting/success/no_captions/MembersOnly/error), MODEL_QUALITY_RANK youtube_captions 30→20, ai-pipeline.md cascade-sectie uitgebreid, priorities stap 2 ✅ | gewijzigd: backend/youtube_utils.py, backend/master_cache.py, docs/wiki/architecture/ai-pipeline.md, docs/wiki/roadmap/priorities.md
 ---
 [2026-04-28] docs: frontend design audit — volledige inventarisatie (47 routes, 4 layouts, alle componenten, Tiptap subsectie, CSS var-systeem, dark mode status, hardcoded kleuren, icon library, form patterns, inconsistenties, 12 vragen voor redesign) | gewijzigd: docs/wiki/design/audit-frontend.md, docs/wiki/INDEX.md
@@ -1768,4 +1770,21 @@ Changed: backend/main.py
 backend/worker.py
 docs/LOG.md
 docs/wiki/operations/known-issues.md
+---
+[2026-04-29 16:30] commit: feat: cascade stap 2 formaliseren + quality rank fix
+
+[YT-DLP] logging toegevoegd aan extract_with_ytdlp: attempting/success,
+no_captions voor alle 3 silent return-paths, MembersOnly (beide varianten),
+en prefix op VTT retry warnings + generic error. Consistent met [YT-API] patroon.
+
+MODEL_QUALITY_RANK youtube_captions 30 → 20: yt-dlp captions zijn iets
+minder schoon dan youtube-transcript-api output. Master cache write was al
+aanwezig voor stap 2 in main.py + worker.py — geen wijzigingen nodig daar.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/master_cache.py
+backend/youtube_utils.py
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/roadmap/priorities.md
 ---
