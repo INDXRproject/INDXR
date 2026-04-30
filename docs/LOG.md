@@ -1,3 +1,5 @@
+[2026-04-30] feat: fase 4 B3 — main.py: PlaylistExtractRequest.video_metadata, /extract INSERT, stale-detectie GET /api/jobs + GET /api/playlist/jobs | gewijzigd: backend/main.py
+---
 [2026-04-30] feat: fase 4 B2 — worker.py idempotency + heartbeat + uuid5 + caption RPC credit-deductie | gewijzigd: backend/worker.py
 ---
 [2026-04-30] feat: fase 4 B1 — transcription_pipeline.py heartbeat + credit-idempotency: _heartbeat_loop + _run_with_heartbeat helpers, heartbeat_fn parameter op do_assemblyai_transcription, stap 1 (download) + stap 6 (AssemblyAI) omhuld, credit_cost altijd berekend (ook deduct=False), credits_deducted best-effort write na deductie | gewijzigd: backend/transcription_pipeline.py
@@ -2087,5 +2089,36 @@ supabase/migrations/20260430_fase4_update_playlist_progress_rpc.sql
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/transcription_pipeline.py
+docs/LOG.md
+---
+[2026-04-30 08:30] commit: feat: fase 4 B2 — worker.py idempotency + heartbeat + uuid5 + RPC credit-deductie
+
+run_whisper_job:
+- Leest credits_deducted uit transcription_jobs vóór pipeline-call
+- Fail-safe default: bij Supabase read-fout → already_deducted=True + WARNING
+  (liever één gratis transcriptie dan dubbele aftrek bij ack_late-retry)
+- Heartbeat-closure _hb schrijft last_heartbeat_at op transcription_jobs elke 60s
+
+process_playlist_video + process_playlist_retries (Whisper-tak):
+- uuid5(WHISPER_NS, "{playlist_id}:{video_id}") geeft deterministisch whisper_job_id
+- Upsert transcription_jobs met ignore_duplicates=True (idempotent bij replay)
+- Zelfde fail-safe idempotency-check als run_whisper_job
+- Heartbeat-closure schrijft naar playlist_extraction_jobs (stale-detectie voor poll-endpoint)
+- Geeft job_id, deduct_credits_on_success, heartbeat_fn door aan pipeline
+
+_process_caption_video:
+- heartbeat_fn parameter; yt-dlp cascade (stap 2 + 3) via _run_with_heartbeat
+- deduct_credits call verwijderd — deductie zit nu atomisch in de RPC (M3)
+- Return-type uitgebreid naar 4-tuple: (success, transcript_id, error_type, credit_amount)
+- credit_amount = 0 if is_free else 1
+
+_call_progress_rpc:
+- amount: int = 0 parameter toegevoegd → p_amount in RPC-params
+- Alle callers geven rpc_credit_amount door
+
+Imports: uuid, datetime/timezone, _run_with_heartbeat toegevoegd; deduct_credits verwijderd.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/worker.py
 docs/LOG.md
 ---

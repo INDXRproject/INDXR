@@ -33,6 +33,12 @@ posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
 posthog.host = "https://app.posthog.com"
 
 
+# Fase 4 stale-detectie: running jobs zonder heartbeat-update > 3 min worden 'interrupted'.
+# Enkel van toepassing als last_heartbeat_at IS NOT NULL (legacy jobs vóór Fase 4 deploy
+# hebben NULL heartbeat — die worden met rust gelaten om false-positives te voorkomen).
+HEARTBEAT_STALE_SECS = 180
+
+
 def track_event(distinct_id: str, event: str, properties: Optional[Dict] = None):
     """Fire and forget PostHog event tracking. Never blocks main flow."""
     if not posthog.api_key:
@@ -194,6 +200,7 @@ class PlaylistExtractRequest(BaseModel):
     use_whisper_ids: List[str] = []
     playlist_title: Optional[str] = None
     playlist_url: Optional[str] = None
+    video_metadata: Optional[dict] = {}  # {video_id: {title, duration, thumbnail}}
 
 class WhisperRequest(BaseModel):
     user_id: str
@@ -703,6 +710,22 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
     if job['user_id'] != user_id:
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # Stale-detectie: alleen als heartbeat aanwezig (NULL = legacy job vóór Fase 4).
+    if job['status'] == 'running' and job.get('last_heartbeat_at'):
+        hb = datetime.fromisoformat(job['last_heartbeat_at'].replace('Z', '+00:00'))
+        age = (datetime.now(timezone.utc) - hb).total_seconds()
+        if age > HEARTBEAT_STALE_SECS:
+            try:
+                await asyncio.to_thread(
+                    lambda: supabase.table('transcription_jobs')
+                        .update({'status': 'interrupted'})
+                        .eq('id', job_id).execute()
+                )
+                job['status'] = 'interrupted'
+                logger.warning(f"[stale] transcription_jobs {job_id} marked interrupted (heartbeat {age:.0f}s old)")
+            except Exception as e:
+                logger.error(f"[stale] Failed to mark {job_id} as interrupted: {e}")
+
     # Fetch transcript data when job is complete
     transcript = None
     channel = None
@@ -891,6 +914,7 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
                 'video_ids': request.video_ids,
                 'use_whisper_ids': request.use_whisper_ids,
                 'collection_id': request.collection_id,
+                'video_metadata': request.video_metadata or {},
             }).execute()
         )
     except Exception as e:
@@ -929,6 +953,22 @@ async def get_playlist_job(job_id: str, user_id: str, _: None = Depends(verify_b
         raise HTTPException(status_code=404, detail="Job not found")
     if job['user_id'] != user_id:
         raise HTTPException(status_code=403, detail="Access denied")
+
+    # Stale-detectie: alleen als heartbeat aanwezig (NULL = legacy job vóór Fase 4).
+    if job['status'] == 'running' and job.get('last_heartbeat_at'):
+        hb = datetime.fromisoformat(job['last_heartbeat_at'].replace('Z', '+00:00'))
+        age = (datetime.now(timezone.utc) - hb).total_seconds()
+        if age > HEARTBEAT_STALE_SECS:
+            try:
+                await asyncio.to_thread(
+                    lambda: supabase.table('playlist_extraction_jobs')
+                        .update({'status': 'interrupted'})
+                        .eq('id', job_id).execute()
+                )
+                job['status'] = 'interrupted'
+                logger.warning(f"[stale] playlist_extraction_jobs {job_id} marked interrupted (heartbeat {age:.0f}s old)")
+            except Exception as e:
+                logger.error(f"[stale] Failed to mark {job_id} as interrupted: {e}")
 
     return JSONResponse(job)
 
