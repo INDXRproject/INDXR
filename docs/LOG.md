@@ -1,3 +1,9 @@
+[2026-04-30] docs: wiki-onderhoud-richtlijn toegevoegd aan INDEX.md — broncode-verificatie protocol, code-change→wiki mapping tabel, bekende valkuilen (ack_late, idempotency_keys, status='complete') | gewijzigd: docs/wiki/INDEX.md
+---
+[2026-04-30] docs: wiki-audit correcties — ADR-019 (idempotency_keys nooit aangemaakt, completed_count→completed), ADR-025 (run_playlist_job→process_playlist_video, RPC-naam fix, ack_late verwijderd), database-schema.md (transcription_jobs 8 ontbrekende kolommen, Fase 4 kolommen, saved_videos tabel, legacy-tabel sectie), playlist-engine.md (RPC 5→7 arg), credit-system.md (run_playlist_job referentie gefixed) | gewijzigd: docs/wiki/decisions/019-arq-job-queue.md, docs/wiki/decisions/025-per-video-decompositie.md, docs/wiki/architecture/database-schema.md, docs/wiki/architecture/playlist-engine.md, docs/wiki/architecture/credit-system.md
+---
+[2026-04-30] docs: ADR-030 Fase 4 crash-recovery leerervaring — wat gepland was, wat ontdekt werd (ack_late bestaat niet), wat wél gebouwd is (M1 credits_deducted, M2 heartbeat, B1 heartbeat-loop, B2 stale-detectie, M3 atomische RPC credits, uuid5 job-IDs), openstaande gaps (crashed retry-pass onzichtbaar, geen auto-refund, idempotency_keys nooit aangemaakt) | gewijzigd: docs/wiki/decisions/030-fase4-crash-recovery-leerervaring.md, docs/wiki/INDEX.md
+---
 [2026-04-30] docs: Fase 4 ack_late realiteit gedocumenteerd — ADR-019 herschreven, priorities.md taak 1.5+1.7 bijgewerkt, backlog job-continuation entry, known-issues refund-bevinding | gewijzigd: docs/wiki/decisions/019-arq-job-queue.md, docs/wiki/roadmap/priorities.md, docs/wiki/roadmap/backlog.md, docs/wiki/operations/known-issues.md
 ---
 [2026-04-30] feat: WorkerSettings job_timeout=7200; ack_late niet beschikbaar in arq 0.28.0 — gedocumenteerd in code | gewijzigd: backend/worker.py
@@ -2211,3 +2217,60 @@ Changed: backend/worker.py
 docs/LOG.md
 ---
 [2026-04-30 08:59] precompact: context compaction triggered
+[2026-04-30 09:03] commit: docs: Fase 4 eerlijke documentatie — ack_late bestaat niet, crash-recovery paden in backlog
+
+ADR-019 herschreven: ack_late-sectie vervangen door eerlijke analyse van wat Fase 4 wél
+en niet heeft opgeleverd. Drie paden naar echte crash-recovery gedocumenteerd (watchdog,
+Resume-knop, library-swap). priorities.md taak 1.7 bijgewerkt van [todo] naar [~] met
+accurate scope. Backlog: nieuw "Job continuation na crash" item onder Stabiliteit.
+known-issues: Railway restart sectie bijgewerkt met refund-bevinding en tijdelijke workaround.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/decisions/019-arq-job-queue.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/backlog.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-04-30 17:34] precompact: context compaction triggered
+[2026-04-30 17:37] commit: docs: ADR-030 Fase 4 crash-recovery leerervaring + wiki-onderhoud-richtlijn
+
+Nieuwe ADR-030: volledige documentatie van de Fase 4 leerervaring —
+ack_late bestaat niet in ARQ 0.28.0, wat wél gebouwd is (credits_deducted,
+heartbeat, atomische RPC credit-deductie, uuid5 job-IDs), openstaande gaps
+(crashed retry-pass onzichtbaar, geen auto-refund, idempotency_keys nooit
+aangemaakt in productie).
+
+INDEX.md: ADR-030 toegevoegd aan beslissingentabel + wiki-onderhoud-richtlijn
+(broncode-verificatie protocol, code-change→wiki mapping, bekende valkuilen).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/wiki/INDEX.md
+docs/wiki/decisions/030-fase4-crash-recovery-leerervaring.md
+---
+[2026-04-30 17:37] commit: docs: wiki-audit correcties — broncode is de waarheid
+
+ADR-019: idempotency_keys als nooit geïmplementeerd gemarkeerd, completed_count
+→ completed/failed, ack_late referentie vervangen door ADR-030 verwijzing.
+
+ADR-025: run_playlist_job → process_playlist_video/process_playlist_retries,
+update_playlist_video_result → update_playlist_video_progress RPC, ack_late
+claim verwijderd, video_results type gecorrigeerd ({} niet []).
+
+database-schema.md: transcription_jobs 8 ontbrekende kolommen toegevoegd,
+BIGINT fix, 'interrupted' status, Fase 4 kolommen (credits_deducted,
+last_heartbeat_at, video_metadata), saved_videos tabel, legacy-tabellen sectie,
+migration chronologie compleet.
+
+playlist-engine.md: update_playlist_video_progress RPC 5→7 args (p_amount,
+p_reason voor Fase 4 atomische credit-deductie).
+
+credit-system.md: run_playlist_job referentie → process_playlist_video.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/wiki/architecture/credit-system.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/playlist-engine.md
+docs/wiki/decisions/019-arq-job-queue.md
+docs/wiki/decisions/025-per-video-decompositie.md
+---
