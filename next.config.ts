@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      { source: '/faq', destination: '/docs/faq', permanent: true },
+      { source: '/account/credits', destination: '/dashboard/account', permanent: true },
+      { source: '/how-it-works', destination: '/', permanent: true },
+    ]
+  },
   images: {
     remotePatterns: [
       {
