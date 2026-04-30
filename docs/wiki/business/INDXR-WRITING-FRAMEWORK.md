@@ -137,11 +137,11 @@ Voorbeeld: `YouTube transcripts missing or disabled? We explain every reason and
 | Van pagina | Linkt verplicht naar |
 |---|---|
 | `/youtube-transcript-not-available` | `/youtube-transcript-generator`, `/audio-to-text`, `/youtube-members-only-transcript`, `/youtube-age-restricted-transcript` |
-| `/youtube-transcript-markdown` | `/youtube-transcript-obsidian`, `/pricing`, `/how-it-works` |
+| `/youtube-transcript-markdown` | `/youtube-transcript-obsidian`, `/pricing`, `/docs/getting-started` |
 | `/youtube-transcript-for-rag` | `/youtube-transcript-json`, `/blog/chunk-youtube-transcripts-for-rag`, `/pricing` |
-| `/alternative/*` | `/pricing`, `/how-it-works`, relevante feature-pagina |
+| `/alternative/*` | `/pricing`, `/docs/getting-started`, relevante feature-pagina |
 | Blog-tutorials | Bijbehorende feature-pagina + `/pricing` |
-| Tool-pagina's | `/pricing`, `/faq`, gerelateerde feature-pagina |
+| Tool-pagina's | `/pricing`, `/docs/faq`, gerelateerde feature-pagina |
 
 ---
 

@@ -2,8 +2,12 @@
 
 **Doel:** Pure inventarisatie als voorbereiding voor volledige redesign met Claude Design (Anthropic Labs).  
 **Methode:** Handmatig alle layouts, pagina's, componenten, styling-bestanden en lib-files doorgelezen.  
-**Datum:** 2026-04-28  
+**Datum audit:** 2026-04-28  
 **Geen aanbevelingen, geen code-wijzigingen.**
+
+> **⚠️ Post-refactor update (2026-04-30):** Grondverf Sessie 2 heeft de routestructuur gewijzigd.  
+> Zie `docs/wiki/architecture/sitemap.md` voor de actuele sitemap.  
+> Routes hieronder gemarkeerd met ~~doorhaling~~ zijn geredirect of vervangen.
 
 ---
 
@@ -21,16 +25,16 @@ Totaal: **47 routes** (11 client, 36 server), 4 layouts, 21 API routes.
 | `/forgot-password` | CLIENT | — | E-mailinvoer → bevestigingsview na verzenden |
 | `/onboarding` | CLIENT | Ingelogd | 2-kolom stepper: checklist links (verborgen op mobile), Card-form rechts |
 | `/pricing` | SERVER | — | Statische prijstabel; verwijst naar billing |
-| `/faq` | SERVER | — | Native `<details>` HTML accordion |
-| `/how-it-works` | SERVER | — | ArticleTemplate pagina |
-| `/support` | SERVER | — | Statische pagina; **dark-only hardcoded kleuren** |
-| `/suspended` | SERVER | Auth | Emoji + tekstboodschap, minimaal |
+| ~~`/faq`~~ | SERVER | — | ~~Native `<details>` HTML accordion~~ → **301 redirect naar `/docs/faq`** |
+| ~~`/how-it-works`~~ | SERVER | — | ~~ArticleTemplate pagina~~ → **301 redirect naar `/`** |
+| `/support` | CLIENT | — | Twee-kaarten layout (hulp / suggestie) + contactformulier *(refactored 2026-04-30)* |
+| `/suspended` | SERVER | — | "Account paused" — neutrale copy, geen emoji *(refactored 2026-04-30)* |
 
 ### 1.2 Dashboard
 
 | Route | Type | Auth | Beschrijving |
 |-------|------|------|--------------|
-| `/dashboard` | SERVER | Ingelogd | 2 stat-kaarten (Total Transcripts, Total Minutes); placeholder "Recent Activity" |
+| `/dashboard` | SERVER | Ingelogd | **Home** — 5 secties: credits, transcribe CTA, messages preview, recente transcripts, stats *(refactored 2026-04-30; was: 2 stat-kaarten)* |
 | `/dashboard/transcribe` | CLIENT | Ingelogd | Tabs (Video/Playlist/Audio); WelcomeCreditCard (conditioneel); SaveErrorModal; auto-save |
 | `/dashboard/library` | CLIENT | Ingelogd | Suspense-grens; zoek + grid/list-toggle; TranscriptList |
 | `/dashboard/library/[id]` | SERVER | Ingelogd | Tab-navigatie via URL-params; TranscriptViewer / AiSummaryView / RagExportView |
@@ -39,6 +43,16 @@ Totaal: **47 routes** (11 client, 36 server), 4 layouts, 21 API routes.
 | `/dashboard/billing/cancel` | CLIENT | Ingelogd | Annuleringsmelding; **hardcoded zinc**: `bg-zinc-100 text-zinc-900 border-zinc-700` |
 | `/dashboard/account` | SERVER | Ingelogd | ProfileSettingsCard; TransactionHistoryCard; SentryFeedbackCard |
 | `/dashboard/settings` | SERVER | Ingelogd | ProfileSettingsCard; SecuritySettingsCard; DeveloperExportsCard |
+| `/dashboard/messages` | CLIENT | Ingelogd | **Nieuw (2026-04-30)** — twee-kolom list/detail; mock data; TODO backend |
+
+### 1.2b Docs (nieuw — 2026-04-30)
+
+| Route | Type | Auth | Beschrijving |
+|-------|------|------|--------------|
+| `/docs` | SERVER | — | Umbrella landing met sectie-overzicht |
+| `/docs/getting-started` | SERVER | — | Welkomstpagina — KHIDR: instructional content |
+| `/docs/faq` | SERVER | — | FAQ content (absorbeert `/faq` via 301) |
+| `/docs/account` | SERVER | — | Credits en billing uitleg (placeholder) |
 
 ### 1.3 Account (buiten dashboard-layout)
 

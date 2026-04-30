@@ -1,3 +1,5 @@
+[2026-04-30] feat: grondverf sessie 2 — sitemap, DocsShell, header, sidebar, messages, support, welcome, suspended, footer, MobileTabBar | gewijzigd: next.config.ts, src/lib/docs-config.ts, src/components/docs/DocsShell.tsx, src/components/docs/DocsSidebar.tsx, src/app/docs/page.tsx, src/app/docs/getting-started/page.tsx, src/app/docs/faq/page.tsx, src/app/docs/account/page.tsx, src/components/content/templates/ArticleTemplate.tsx, src/components/content/templates/ToolPageTemplate.tsx, src/components/content/templates/TutorialTemplate.tsx, src/components/Header.tsx, src/components/app-sidebar.tsx, src/components/dashboard/MobileTabBar.tsx, src/app/dashboard/layout.tsx, src/app/dashboard/page.tsx, src/app/dashboard/messages/page.tsx, src/app/dashboard/messages/MessagesClient.tsx, src/app/support/page.tsx, src/app/onboarding/page.tsx, src/app/suspended/page.tsx, src/components/Footer.tsx, src/app/dashboard/transcribe/page.tsx, docs/wiki/architecture/sitemap.md, docs/wiki/INDEX.md
+---
 [2026-04-30] docs: wiki-onderhoud-richtlijn toegevoegd aan INDEX.md — broncode-verificatie protocol, code-change→wiki mapping tabel, bekende valkuilen (ack_late, idempotency_keys, status='complete') | gewijzigd: docs/wiki/INDEX.md
 ---
 [2026-04-30] docs: wiki-audit correcties — ADR-019 (idempotency_keys nooit aangemaakt, completed_count→completed), ADR-025 (run_playlist_job→process_playlist_video, RPC-naam fix, ack_late verwijderd), database-schema.md (transcription_jobs 8 ontbrekende kolommen, Fase 4 kolommen, saved_videos tabel, legacy-tabel sectie), playlist-engine.md (RPC 5→7 arg), credit-system.md (run_playlist_job referentie gefixed) | gewijzigd: docs/wiki/decisions/019-arq-job-queue.md, docs/wiki/decisions/025-per-video-decompositie.md, docs/wiki/architecture/database-schema.md, docs/wiki/architecture/playlist-engine.md, docs/wiki/architecture/credit-system.md
@@ -2273,4 +2275,124 @@ docs/wiki/architecture/database-schema.md
 docs/wiki/architecture/playlist-engine.md
 docs/wiki/decisions/019-arq-job-queue.md
 docs/wiki/decisions/025-per-video-decompositie.md
+---
+[2026-04-30 17:38] commit: docs: LOG.md — drie Fase 4 documentatie-taken gelogd
+
+ADR-030 aanmaak, wiki-audit correcties (vijf bestanden), en
+wiki-onderhoud-richtlijn toevoeging aan INDEX.md.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+---
+[2026-04-30 17:57] commit: feat: batch A+B — redirects + docs config
+
+301 redirects: /faq → /docs/faq, /account/credits → /dashboard/account,
+/how-it-works → /. New src/lib/docs-config.ts with full SEO article
+mapping across 7 sections (Getting started, Transcribe, Export,
+Workflows, Compare, Account, FAQ) + findPageInDocs helper.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: next.config.ts
+src/lib/docs-config.ts
+---
+[2026-04-30 18:00] commit: feat: batch C — DocsShell + /docs pages + template updates
+
+New components: DocsSidebar (collapsible sections, active highlight,
+search placeholder) + DocsShell (sidebar + breadcrumb layout).
+New routes: /docs, /docs/getting-started, /docs/faq, /docs/account.
+ArticleTemplate, ToolPageTemplate, TutorialTemplate now wrapped in
+DocsShell — all 30+ SEO articles gain docs sidebar automatically.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/docs/account/page.tsx
+src/app/docs/faq/page.tsx
+src/app/docs/getting-started/page.tsx
+src/app/docs/page.tsx
+src/components/content/templates/ArticleTemplate.tsx
+src/components/content/templates/ToolPageTemplate.tsx
+src/components/content/templates/TutorialTemplate.tsx
+src/components/docs/DocsShell.tsx
+src/components/docs/DocsSidebar.tsx
+---
+[2026-04-30 18:01] commit: feat: batch D — marketing header update
+
+Nav: remove Transcribe/How-It-Works/FAQ links. Add Pricing + Docs +
+"Try it free" button (accent styled, links to /youtube-transcript-generator).
+Right side: rename Sign Up → Start free, Log In → Log in.
+Mobile sheet: same restructure.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/Header.tsx
+---
+[2026-04-30 18:03] commit: feat: batch E — dashboard sidebar update
+
+Nav items: Overview→Home (Home icon), Transcribe (AudioLines icon),
+Messages (Inbox icon) replacing Credits. Library icon BookOpen→Library.
+Credits coin display (CircleDollarSign placeholder) persistent above
+footer nav, shows live balance from useAuth. Footer: Account + Settings.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/app-sidebar.tsx
+---
+[2026-04-30 18:04] commit: feat: batch F — mobile tab bar + layout padding
+
+New MobileTabBar: 4 tabs (Home/Transcribe/Library/Messages) with active
+state, amber accent border-top, Messages unread badge support. Renders
+only on <md via md:hidden. Dashboard layout adds safe-area-aware bottom
+padding to prevent content hiding behind tab bar.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/dashboard/layout.tsx
+src/components/dashboard/MobileTabBar.tsx
+---
+[2026-04-30 18:05] commit: feat: batch G — dashboard Home redesign (5 sections)
+
+Label: Overview → Home. Sections: credits balance + Buy more,
+Transcribe CTA, last messages preview (mock data, TODO backend hookup),
+recent transcripts (3, live from Supabase), library stats (count +
+collections). Uses get_credit_balance RPC for live credit count.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/dashboard/page.tsx
+---
+[2026-04-30 18:07] commit: feat: batch H — Messages page (/dashboard/messages)
+
+Two-column desktop layout (list left, detail right), single-column
+mobile with back nav. 5 mock messages (Khidr sender). Actions:
+mark-read on click, archive per message, mark-all-read. Unread badge
+in header. TODO comments for backend API hookup.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/dashboard/messages/MessagesClient.tsx
+src/app/dashboard/messages/page.tsx
+---
+[2026-04-30 18:08] precompact: context compaction triggered
+[2026-04-30 18:10] commit: feat: batch I+J+K — support, onboarding, suspended pages
+
+Support: two-card entry (help / suggestion) + contact form with
+category state, confirmation linking to Messages inbox. TODO for
+POST /api/support backend.
+
+Onboarding: updated welcome copy, 25 credits mention, step-by-step
+checklist on left panel. KHIDR placeholder for first-run wizard.
+
+Suspended: rewritten as neutral "Account paused" — no emoji, no
+punitive language, KHIDR placeholder for contact details.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/onboarding/page.tsx
+src/app/support/page.tsx
+src/app/suspended/page.tsx
+---
+[2026-04-30 18:12] commit: feat: batch L — footer + docs interlinking
+
+Footer: renamed "Guides" → "Learn" column, added /docs,
+/docs/getting-started, /docs/faq, /support links. Removed /how-it-works.
+Bottom bar: replaced "How It Works" with "Docs" + "Support" links.
+
+Transcribe page: added "Learn more →" link to /docs in page subtitle.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/dashboard/transcribe/page.tsx
+src/components/Footer.tsx
 ---

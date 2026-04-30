@@ -1,7 +1,13 @@
 # INDXR.AI — Master Sitemap & Content Plan
 
-*Versie 1.0 — 2026-04-15*
+*Versie 1.0 — 2026-04-15*  
 *Synthese van: SEO-onderzoek, SERP-analyse, competitor gaps, GEO/AI-SEO principes, strategische beslissingen uit sessie*
+
+> **⚠️ Post-refactor update (2026-04-30):**  
+> - `/faq` → 301 permanent redirect naar `/docs/faq`  
+> - `/how-it-works` → 301 permanent redirect naar `/`  
+> - Nieuwe routes: `/docs/*`, `/dashboard/messages`  
+> Zie `docs/wiki/architecture/sitemap.md` voor de actuele routestructuur.
 
 ---
 

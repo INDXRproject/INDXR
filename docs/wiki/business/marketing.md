@@ -64,7 +64,7 @@ De applicatie heeft meerdere `/youtube-*` landing pages, elk gericht op een spec
 | `/bulk-youtube-transcript` | ToolPageTemplate | indxr-editorial |
 | `/audio-to-text` | ToolPageTemplate | indxr-editorial |
 | `/youtube-transcript-without-extension` | ArticleTemplate | indxr-editorial |
-| `/how-it-works` | ArticleTemplate | indxr-editorial |
+| ~~`/how-it-works`~~ | ~~ArticleTemplate~~ | — | **301 → `/`** (geredirect 2026-04-30) |
 | `/blog/chunk-youtube-transcripts-for-rag` | TutorialTemplate | alex-mercer |
 
 Zie `docs/wiki/business/seo-content-plan.md` voor de volledige sitemap (32 pagina's, 8 categorieën) en implementatievolgorde.

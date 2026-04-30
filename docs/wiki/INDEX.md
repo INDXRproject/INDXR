@@ -74,6 +74,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 
 | Bestand | Onderwerp |
 |---------|-----------|
+| [sitemap.md](architecture/sitemap.md) | **Routestructuur, navigatie, redirects — post-refactor bron van waarheid** |
 | [overview.md](architecture/overview.md) | High-level architectuur met request flows en tech stack |
 | [credit-system.md](architecture/credit-system.md) | Volledige credit flow: koop → deductie → refund |
 | [ai-pipeline.md](architecture/ai-pipeline.md) | YouTube → captions → AssemblyAI → DeepSeek; model info |
@@ -121,6 +122,14 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [principles-v0.1-final.md](design/principles-v0.1-final.md) | Ihsan design principles V0.1 — Honest Materiality, Coherence, Geen Israf, Zuhd |
 | [system.md](design/system.md) | Design system V1.0 — OKLCH kleurenschaal, typografie, spacing, radii, shadows, motion tokens |
 | [tokens.css](../../../src/app/styles/tokens.css) | Design token single source of truth — OKLCH color tokens, IBM Plex fonts, radii, shadows, motion |
+
+---
+
+## Recente structurele wijzigingen
+
+| Datum | Wijziging |
+|-------|-----------|
+| 2026-04-30 | Sitemap-refactor (Grondverf Sessie 2): `/faq` → `/docs/faq` (301), `/how-it-works` → `/` (301), `/account/credits` → `/dashboard/account` (301), label "Overview" → "Home", header versimpeld (Pricing + Docs + Try it free), Messages route toegevoegd (`/dashboard/messages`), DocsShell geïntroduceerd, MobileTabBar toegevoegd, `src/lib/docs-config.ts` als sidebar-config |
 
 ---
 
