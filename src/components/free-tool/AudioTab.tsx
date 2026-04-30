@@ -75,6 +75,14 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     })()
   }, [])
 
+  // beforeunload guard while transcription is active (upload + processing)
+  useEffect(() => {
+    if (!isTranscribing) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isTranscribing])
+
   // Get actual audio duration from file
   const getAudioDuration = async (file: File): Promise<number> => {
     return new Promise((resolve, reject) => {

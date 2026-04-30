@@ -72,7 +72,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   // Show the browser's native leave-page warning while a job is running
   useEffect(() => {
     if (!loading) return
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [loading])
@@ -337,7 +337,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       const avgCostPerVideo = totalWhisperCredits / whisperVideoCount;
       const videosToDeselect = Math.ceil(shortfall / avgCostPerVideo);
       setError({
-        message: `Not enough credits. You need ${totalWhisperCredits} credits for ${whisperVideoCount} Whisper video${whisperVideoCount !== 1 ? 's' : ''} but only have ${credits}. Deselect at least ${videosToDeselect} Whisper video${videosToDeselect !== 1 ? 's' : ''} or top up to proceed.`,
+        message: `Not enough credits. You need ${totalWhisperCredits} credits for ${whisperVideoCount} video${whisperVideoCount !== 1 ? 's' : ''} requiring AI transcription, but only have ${credits}. Deselect at least ${videosToDeselect} AI-transcribed video${videosToDeselect !== 1 ? 's' : ''} or top up to proceed.`,
         isCreditsError: true
       });
       setProgressMessage("");

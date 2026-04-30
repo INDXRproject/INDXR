@@ -625,7 +625,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                              {/* Show Whisper Needed badge if checked */}
                              {availabilityResults?.find(r => r.videoId === entry.id)?.status === 'needs_whisper' && (
                                <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                 <AlertCircle className="h-3 w-3" /> Whisper
+                                 <AlertCircle className="h-3 w-3" /> AI
                                </span>
                              )}
                           </div>

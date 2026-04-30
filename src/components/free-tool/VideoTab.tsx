@@ -24,6 +24,8 @@ interface VideoTabProps {
 
 type WhisperStatus = 'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'
 
+const VIDEO_JOB_KEY = 'indxr-active-video-job'
+
 type WhisperCompleteEvent = {
   type: 'complete'
   transcript: TranscriptItem[]
@@ -175,6 +177,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   // Whisper network disconnect banner state (fetch exceptions > 3 consecutive)
   const [whisperNetworkDisconnected, setWhisperNetworkDisconnected] = useState(false)
 
+  // Session resume state — populated on mount when a Whisper job is still running
+  const [videoResumeData, setVideoResumeData] = useState<{
+    jobId: string; videoId: string; title: string; duration: number; startTime: number; status: WhisperStatus
+  } | null>(null)
+
   // Whisper toggle state
   const [useWhisper, setUseWhisper] = useState(false)
   // Track if Whisper was triggered automatically (no captions available)
@@ -218,6 +225,35 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isReextracting]);
+
+  // On mount: check for a running Whisper job from a previous page session
+  useEffect(() => {
+    const raw = sessionStorage.getItem(VIDEO_JOB_KEY)
+    if (!raw) return
+    let parsed: { jobId: string; videoId: string; title: string; duration: number; startTime: number; status: string }
+    try { parsed = JSON.parse(raw) } catch { sessionStorage.removeItem(VIDEO_JOB_KEY); return }
+    ;(async () => {
+      try {
+        const resp = await fetch(`/api/jobs/${parsed.jobId}`)
+        if (!resp.ok) { sessionStorage.removeItem(VIDEO_JOB_KEY); return }
+        const job = await resp.json()
+        if (job.status === 'complete' || job.status === 'error' || job.status === 'interrupted') {
+          sessionStorage.removeItem(VIDEO_JOB_KEY)
+        } else if (['pending', 'downloading', 'transcribing', 'saving'].includes(job.status)) {
+          setVideoResumeData({
+            jobId: parsed.jobId,
+            videoId: parsed.videoId,
+            title: parsed.title,
+            duration: parsed.duration,
+            startTime: parsed.startTime,
+            status: job.status as WhisperStatus,
+          })
+        } else {
+          sessionStorage.removeItem(VIDEO_JOB_KEY)
+        }
+      } catch { sessionStorage.removeItem(VIDEO_JOB_KEY) }
+    })()
+  }, [])
 
   const [existingTranscriptId, setExistingTranscriptId] = useState<string | null>(null)
   const existingTranscriptIdRef = useRef<string | null>(null)
@@ -650,6 +686,16 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         throw new Error('Failed to start transcription job')
       }
 
+      // Persist job for page reload recovery
+      sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
+        jobId: jobData.job_id,
+        videoId,
+        title: pendingWhisperData.title,
+        duration: pendingWhisperData.duration,
+        startTime: Date.now(),
+        status: 'pending',
+      }))
+
       // Clear any previous interval and reset timer state before starting new job
       if (intervalRef.current !== null) {
         clearInterval(intervalRef.current)
@@ -667,6 +713,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         setElapsedSeconds(s => s + 1)
       }, 1000)
 
+      let keepJobInSession = false
       const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
 
       clearInterval(intervalRef.current)
@@ -676,8 +723,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       if (event.type === 'network_disconnected') {
         setWhisperNetworkDisconnected(true)
+        keepJobInSession = true
         return
       }
+      if (!keepJobInSession) sessionStorage.removeItem(VIDEO_JOB_KEY)
 
       if (event.type === 'error') {
         if (event.error === 'members_only') {
@@ -800,6 +849,16 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         throw new Error('Failed to start transcription job')
       }
 
+      // Persist job for page reload recovery
+      sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
+        jobId: jobData.job_id,
+        videoId: currentVideoId,
+        title: videoTitle,
+        duration: videoDuration ?? 0,
+        startTime: Date.now(),
+        status: 'pending',
+      }))
+
       // Clear any previous interval and reset timer state before starting new job
       if (intervalRef.current !== null) {
         clearInterval(intervalRef.current)
@@ -817,6 +876,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         setElapsedSeconds(s => s + 1)
       }, 1000)
 
+      let keepJobInSessionUpsell = false
       const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
 
       clearInterval(intervalRef.current)
@@ -826,8 +886,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       if (event.type === 'network_disconnected') {
         setWhisperNetworkDisconnected(true)
+        keepJobInSessionUpsell = true
         return
       }
+      if (!keepJobInSessionUpsell) sessionStorage.removeItem(VIDEO_JOB_KEY)
 
       if (event.type === 'error') {
         if (event.error === 'members_only') {
@@ -880,6 +942,71 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   }
 
 
+  const handleVideoResume = () => {
+    if (!videoResumeData) return
+    const { jobId, videoId, title, duration, startTime, status } = videoResumeData
+    setVideoResumeData(null)
+
+    const elapsedAtResume = Math.floor((Date.now() - startTime) / 1000)
+    if (intervalRef.current !== null) clearInterval(intervalRef.current)
+    elapsedRef.current = elapsedAtResume
+    setElapsedSeconds(elapsedAtResume)
+    setFinalElapsed(null)
+    currentJobIdRef.current = jobId
+    setIsStreaming(true)
+    setWhisperStatus(status)
+    setLoading(true)
+    intervalRef.current = setInterval(() => {
+      elapsedRef.current += 1
+      setElapsedSeconds(s => s + 1)
+    }, 1000)
+
+    pollWhisperJob(jobId, (s) => setWhisperStatus(s)).then(event => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      setIsStreaming(false)
+      setFinalElapsed(elapsedRef.current)
+
+      if (event.type === 'network_disconnected') {
+        setWhisperNetworkDisconnected(true)
+        // Re-write for next reload so user can resume again
+        sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({ jobId, videoId, title, duration, startTime, status: 'transcribing' }))
+        setLoading(false)
+        setWhisperStatus('idle')
+        return
+      }
+      sessionStorage.removeItem(VIDEO_JOB_KEY)
+
+      if (event.type === 'error') {
+        setError({ message: event.error || 'Transcription failed' })
+        setLoading(false)
+        setWhisperStatus('idle')
+        return
+      }
+
+      // success
+      setTranscript(event.transcript)
+      if (title) setVideoTitle(title)
+      setVideoUrl(`https://www.youtube.com/watch?v=${videoId}`)
+      setVideoDuration(event.duration || null)
+      setLastProcessingMethod('whisper_ai')
+      setVideoChannel(event.channel ?? null)
+      setVideoLanguage(event.language ?? null)
+      setWhisperMetadata({ duration: event.duration, creditsUsed: event.credits_used || 1, truncationWarning: event.truncation_warning })
+      if (event.transcript_id) { setExistingTranscriptId(event.transcript_id); existingTranscriptIdRef.current = event.transcript_id }
+      window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+      setSaveStatus('saved')
+      refreshCredits()
+      setLoading(false)
+      setWhisperStatus('idle')
+    }).catch(() => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      setIsStreaming(false)
+      setWhisperStatus('idle')
+      sessionStorage.removeItem(VIDEO_JOB_KEY)
+      setLoading(false)
+    })
+  }
+
   const handleGuardedTabSwitch = (callback: (() => void) | undefined) => {
     if (!callback) return
     if (isStreaming) {
@@ -899,6 +1026,36 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
   return (
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
+      {/* Video Job Resume Banner — shown when a running Whisper job is detected on mount */}
+      {videoResumeData && !isStreaming && (
+        <div className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-fg">AI transcription in progress</p>
+              <p className="text-xs text-fg-muted">
+                {videoResumeData.title ? `"${videoResumeData.title}"` : 'A video'} is still being transcribed
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" onClick={handleVideoResume} className="h-8 text-xs">
+              Resume
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => { sessionStorage.removeItem(VIDEO_JOB_KEY); setVideoResumeData(null) }}
+              className="h-8 text-xs text-fg-muted"
+            >
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 max-w-xl mx-auto mb-12">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
