@@ -588,5 +588,15 @@ class WorkerSettings:
         os.getenv("UPSTASH_REDIS_URL") or "redis://localhost:6379"
     )
     keep_result = 3600  # default for run_whisper_job / noop_task
-    # ack_late=False (default): no automatic retry on worker crash.
-    # Upgrade to ack_late=True in Fase 4 after idempotency keys prevent double credit deduction.
+    # job_timeout: verhoogd van default 300s naar 7200s (2 uur).
+    # Reden: Whisper-jobs voor lange video's (bijv. 4-uur lecture) duren ~30 min;
+    # playlist-jobs met 100+ videos duren meerdere uren.
+    # Default 300s zou deze jobs halverwege killen.
+    job_timeout = 7200
+    # NOTE — ack_late bestaat NIET in arq 0.28.0 (ook niet in eerdere versies).
+    # Het is een Celery-concept; arq heeft geen equivalente parameter.
+    # Jobs worden in arq altijd geacknowledged bij pickup (geen retry bij worker-crash).
+    # De idempotency-vlaggen (credits_deducted, v_already_done) zijn live maar beschermen
+    # alleen bij handmatige herstart, niet bij automatische retry.
+    # Oplossing voor echte crash-recovery vereist een custom retry-mechanisme of
+    # een arq-fork — dit is buiten scope voor Fase 4.

@@ -1,3 +1,5 @@
+[2026-04-30] feat: WorkerSettings job_timeout=7200; ack_late niet beschikbaar in arq 0.28.0 — gedocumenteerd in code | gewijzigd: backend/worker.py
+---
 [2026-04-30] docs: credit-system.md + database-schema.md gecorrigeerd — user_credits tabel gedocumenteerd als canonieke balance, credit_transactions als audit-log, Fase 4 RPC credit-deductie sectie toegevoegd | gewijzigd: docs/wiki/architecture/credit-system.md, docs/wiki/architecture/database-schema.md
 ---
 [2026-04-30] fix: HEARTBEAT_STALE_SECS 180→300 (5 missed heartbeats geeft marge voor event-loop blips) | gewijzigd: backend/main.py
@@ -2161,4 +2163,27 @@ detectie-tijd onacceptabel lang te maken.
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
+---
+[2026-04-30 08:47] commit: docs: corrigeer credit-system.md + database-schema.md (Fase 4)
+
+credit-system.md:
+- Database Schema sectie: user_credits tabel (canonieke balance) gedocumenteerd;
+  credit_transactions gecorrigeerd van "Credits = SUM(amount)" naar audit-log rol
+- Atomic Deduction: stap 2 gecorrigeerd van "SUM(amount)" naar "user_credits.credits";
+  stap 3 verduidelijkt: beide mutaties (UPDATE user_credits + INSERT credit_transactions)
+  in één transactie
+- Nieuwe sectie: "Playlist Caption Deductie via RPC (Fase 4)" — uitleg van atomische
+  deductie via update_playlist_video_progress, idempotency via v_already_done,
+  verschil Whisper-pad (credits_deducted vlag) vs caption-pad (RPC)
+
+database-schema.md:
+- user_credits tabel toegevoegd (tussen credit_transactions en playlist_extraction_jobs)
+- credit_transactions header gecorrigeerd: "Credits = SUM(amount)" verwijderd, audit-log
+  rol verduidelijkt, type kolom toegevoegd
+- update_playlist_video_progress RPC: Fase 4 parameters (p_amount, p_reason) gedocumenteerd
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/architecture/credit-system.md
+docs/wiki/architecture/database-schema.md
 ---
