@@ -4,6 +4,40 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## Error messaging audit + AI-suggestie differentiatie — Sessie 1
+
+**Datum:** 2026-04-30 04:35–04:39
+**Tester:** Khidr
+**Commit:** 518666e (taak 1.19b)
+**Status:** PASS
+
+### Scenario's getest
+
+| Scenario | Video | error_type | Resultaat |
+|----------|-------|------------|-----------|
+| Members-only fail-fast (geen AI) | cyzrkZT2y2E (Kings & Generals) | `members_only` | ✅ `[YT-API] VideoUnplayable` → `[YT-DLP] MembersOnly` → 403; foutbox "Members-Only Video", AI-toggle correct verborgen |
+| No-captions (WEL AI-suggestie) | LolBuzO8RWw (My Mechanics, ambient music) | `no_captions` | ✅ `[YT-API] TranscriptsDisabled` → `[YT-DLP] no_captions` → 200 met success=false; foutbox v2 "No captions available" + 1 credit/min disclaimer + refund disclosure; AI-toggle wel zichtbaar |
+| No-speech refund flow (bonus) | LolBuzO8RWw + Generate with AI | `no_speech` | ✅ Hele AI-pijplijn end-to-end: yt-dlp 30.89MB → ffmpeg 3.38MB ogg → AssemblyAI upload+poll → no_speech detectie → automatische refund van 42 credits (2670→2628→2670); foutbox "No speech detected" met refund-bevestiging |
+
+### Conclusie
+
+ADR-029 architectuur volledig in productie geverifieerd:
+- AI-suggestie wordt correct **niet** getoond bij structurele faalmodi (members_only) waarbij audio sowieso niet beschikbaar is
+- AI-suggestie wordt correct **wel** getoond bij `no_captions` met eerlijke disclaimer over kosten en automatische refund
+- Bestaande no_speech refund-flow werkt zoals gedocumenteerd: credits worden afgetrokken bij start AssemblyAI en automatisch teruggestort bij detectie geen spraak
+- Light mode rendering bevestigd (screenshot 3)
+- Whisper end-to-end pipeline (download→ffmpeg→AssemblyAI→detectie→refund) duurde 140 seconden voor 41-min video
+
+### Validatie-keten compleet
+
+Met deze sessie is taak 1.19b einde-tot-einde gevalideerd:
+- Backend retourneert error_type consistent voor alle eindstaten
+- Frontend toont AI-toggle alleen op whitelist
+- v2 messages renderen correct in beide thema's (dark + light)
+- Refund-mechanisme bij no_speech is intact gebleven
+
+---
+
 ## Cascade stap 1+2+3 orchestratie — Sessie 2
 
 **Datum:** 2026-04-29 19:36–19:37  
