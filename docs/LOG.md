@@ -1,3 +1,5 @@
+[2026-04-30] docs: credit-system.md + database-schema.md gecorrigeerd — user_credits tabel gedocumenteerd als canonieke balance, credit_transactions als audit-log, Fase 4 RPC credit-deductie sectie toegevoegd | gewijzigd: docs/wiki/architecture/credit-system.md, docs/wiki/architecture/database-schema.md
+---
 [2026-04-30] fix: HEARTBEAT_STALE_SECS 180→300 (5 missed heartbeats geeft marge voor event-loop blips) | gewijzigd: backend/main.py
 ---
 [2026-04-30] feat: fase 4 B3 — main.py: PlaylistExtractRequest.video_metadata, /extract INSERT, stale-detectie GET /api/jobs + GET /api/playlist/jobs | gewijzigd: backend/main.py
@@ -2145,6 +2147,16 @@ GET /api/jobs/{job_id} + GET /api/playlist/jobs/{job_id} — stale-detectie:
   alleen relevant zijn als de gebruiker ze ziet (en de frontend altijd pollt).
 
 HEARTBEAT_STALE_SECS = 180 als module-constante bovenaan.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+---
+[2026-04-30 08:45] commit: fix: HEARTBEAT_STALE_SECS 180 → 300 (5 missed heartbeats)
+
+3 missed heartbeats (180s) geeft te weinig marge bij incidentele event-loop
+blips of Supabase write-haperingen. 5 missed (300s) is veiliger zonder de
+detectie-tijd onacceptabel lang te maken.
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py

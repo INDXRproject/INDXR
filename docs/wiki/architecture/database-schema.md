@@ -74,13 +74,27 @@ Index: `idx_collections_user_id`.
 
 ---
 
+### `user_credits`
+Canonieke credit-balance per gebruiker. Wordt atomisch geüpdated door `deduct_credits_atomic`, `add_credits` en `update_playlist_video_progress` RPC's.
+
+```sql
+user_id    UUID    PRIMARY KEY REFERENCES auth.users(id)
+credits    INTEGER NOT NULL DEFAULT 0
+updated_at TIMESTAMPTZ DEFAULT now()
+```
+
+RLS: gebruiker ziet alleen eigen rij.
+
+---
+
 ### `credit_transactions`
-Audit log van alle credit-mutaties. Credits = `SUM(amount)` over alle rijen.
+Audit-log van alle credit-mutaties. `user_credits.credits` is de canonieke balance; deze tabel dient uitsluitend als auditspoor.
 
 ```sql
 id         UUID    PRIMARY KEY DEFAULT gen_random_uuid()
 user_id    UUID    REFERENCES auth.users(id)
 amount     INTEGER NOT NULL  -- positief = toevoeging, negatief = aftrek
+type       TEXT    NOT NULL DEFAULT 'debit'  -- 'debit' | 'credit'
 reason     TEXT    NOT NULL  -- "Purchased 50 Credits", "AI Summarization", "Welcome Reward", etc.
 metadata   JSONB   -- {stripe_session_id, amount_paid, currency, transcript_id, ...}
 created_at TIMESTAMPTZ DEFAULT now()
@@ -202,10 +216,12 @@ Gebruikt in: `credit_manager.py:119`, `backend/main.py` (summarization)
 
 ---
 
-### `update_playlist_video_progress(p_playlist_id, p_video_id, p_status, p_transcript_id?, p_error_type?)`
+### `update_playlist_video_progress(p_playlist_id, p_video_id, p_status, p_transcript_id?, p_error_type?, p_amount?, p_reason?)`
 Atomische per-video update voor de playlist chain pattern (ADR-025). Schrijft video-resultaat naar `video_results` JSONB, verhoogt de juiste counter (`completed` of `failed`), zet `last_progress_at = NOW()`, en markeert de playlist als `complete` zodra `completed + failed >= total_videos`.
 
-**Idempotent:** dubbele aanroep met identieke `p_video_id` + `p_status` verhoogt counters niet opnieuw.
+**Fase 4:** Voert ook credit-deductie atomisch uit via `p_amount` (default `0`) en `p_reason`. Alleen bij `p_status='success'` en `NOT v_already_done`: UPDATE `user_credits` + INSERT `credit_transactions` in dezelfde transactie. Idempotent via `v_already_done`-check.
+
+**Idempotent:** dubbele aanroep met identieke `p_video_id` + `p_status` verhoogt counters en trekt geen credits nogmaals af.
 
 **Returns:**
 ```json
@@ -219,7 +235,7 @@ Atomische per-video update voor de playlist chain pattern (ADR-025). Schrijft vi
 
 `p_status`: `'success'` of `'error'`. Bij success: `p_transcript_id` verplicht. Bij error: `p_error_type` verplicht.
 
-Migratie: `20260428_playlist_per_video_chain.sql`. Zie ADR-025.
+Migraties: `20260428_playlist_per_video_chain.sql` (oorspronkelijk), `20260430_fase4_update_playlist_progress_rpc.sql` (Fase 4 uitbreiding). Zie ADR-025.
 
 ---
 

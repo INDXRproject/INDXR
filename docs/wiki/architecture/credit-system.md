@@ -162,12 +162,26 @@ De frontend (`PlaylistAvailabilitySummary.tsx`) spiegelt deze logica:
 ## Atomic Deduction (PostgreSQL)
 
 De `deduct_credits_atomic` RPC:
-1. Lock de credit-rijen van de gebruiker (`SELECT ... FOR UPDATE`)
-2. Controleer of `SUM(amount) >= p_amount`
-3. Ja → INSERT in `credit_transactions`, return `{success: true, previous_balance, new_balance}`
+1. Lock de `user_credits`-rij van de gebruiker (`SELECT ... FOR UPDATE`)
+2. Controleer of `user_credits.credits >= p_amount`
+3. Ja → decrement `user_credits.credits` + INSERT in `credit_transactions` (beide in dezelfde transactie), return `{success: true, previous_balance, new_balance}`
 4. Nee → return `{success: false, error: "Insufficient credits"}`
 
 Dit is atomisch — parallelle requests kunnen credits niet dubbel verbruiken.
+
+---
+
+## Playlist Caption Deductie via RPC (Fase 4)
+
+Sinds Fase 4 wordt credit-aftrek voor playlist caption-videos atomisch uitgevoerd in de `update_playlist_video_progress` RPC, in dezelfde transactie als de `video_results` JSONB-update. Dit voorkomt dubbele aftrek bij worker-restarts (`ack_late`-equivalent).
+
+De RPC accepteert `p_amount` (default `0` voor gratis video's) en `p_reason`. Bij `p_status='success'` en `NOT v_already_done`:
+- `UPDATE user_credits SET credits = credits - p_amount`
+- `INSERT INTO credit_transactions (...)`
+
+Beide in dezelfde transactie. **Idempotent** via de `v_already_done`-check op `video_results` JSONB: als de video al met dezelfde status geregistreerd is, worden credits niet opnieuw afgetrokken.
+
+Whisper-pad gebruikt nog steeds `deduct_credits_atomic`, met idempotency via de `credits_deducted` vlag op `transcription_jobs` (M1, Fase 4).
 
 ---
 
@@ -193,17 +207,25 @@ Zie [ADR-013](../decisions/013-welcome-credits-freemium.md).
 
 ## Database Schema (credits)
 
-**`credit_transactions` tabel:**
+**`user_credits` tabel (balance):**
+```sql
+user_id    UUID        PRIMARY KEY REFERENCES auth.users(id)
+credits    INTEGER     NOT NULL DEFAULT 0
+updated_at TIMESTAMPTZ DEFAULT now()
+```
+
+**`credit_transactions` tabel (audit-log):**
 ```sql
 id          UUID        PRIMARY KEY DEFAULT gen_random_uuid()
 user_id     UUID        REFERENCES auth.users(id)
 amount      INTEGER     NOT NULL  -- positief = toevoeging, negatief = aftrek
+type        TEXT        NOT NULL DEFAULT 'debit'  -- 'debit' | 'credit'
 reason      TEXT        NOT NULL  -- "Purchased 200 Credits", "AI Summarization", etc.
 metadata    JSONB       -- {stripe_session_id, amount_paid, transcript_id, etc.}
 created_at  TIMESTAMPTZ DEFAULT now()
 ```
 
-**Credits = `SUM(amount)`** over alle transacties voor een user.
+**Werking:** `user_credits.credits` is de canonieke balance. `credit_transactions` is de audit-log van alle mutaties. Beide worden atomisch bijgewerkt door RPC's (`deduct_credits_atomic`, `add_credits`, en sinds Fase 4 ook `update_playlist_video_progress` voor playlist-caption-deductie).
 
 **Beschikbare RPC's:**
 - `get_user_credits(p_user_id)` → `{credits, playlist_quota_used, playlist_quota_remaining, quota_resets_at}`
