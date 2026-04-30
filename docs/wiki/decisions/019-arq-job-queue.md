@@ -96,34 +96,50 @@ Bij retries (Stripe webhook retry, frontend network retry, queue redrive) moet d
 
 ---
 
-## ack_late: per fase uitgesteld
+## Automatische crash-recovery: wat we hebben, wat ontbreekt
 
-ARQ ondersteunt twee retry-modi:
+### Fase 2 verificatie ✅ 2026-04-27
 
-- **`ack_late=False`** (ARQ default): job wordt uit de queue verwijderd zodra een worker hem oppikt. Crasht de worker midden in de job, dan is de job verloren — zelfde gedrag als `asyncio.create_task` voorheen.
-- **`ack_late=True`**: job blijft in de queue tot succesvolle completion. Bij worker-crash wordt de job automatisch opnieuw opgepikt door een andere/herstartende worker. Dit is de échte durabiliteit waarvoor ARQ bedoeld is.
-
-**Beslissing: Fase 2 en 3 gebruiken `ack_late=False`. Pas Fase 4 (idempotency keys) zet `ack_late=True` aan.**
-
-Reden: zonder idempotency veroorzaakt automatic retry een tweede `deduct_credits_atomic` call op dezelfde job, dus dubbele credit-aftrek. Eerst idempotency keys, dan retry-durabiliteit.
-
-**Implicatie voor Fase 2 verificatie:**
-
-Het oorspronkelijke verificatie-criterium "YouTube Whisper-job overleeft Railway worker-restart" is **niet van toepassing** in Fase 2. De juiste verificatie is:
-
-- "YouTube Whisper-job draait via worker-service in plaats van API-process"
-- Worker-logs tonen `→ run_whisper_job(...)` en `← run_whisper_job ●`
-- API-logs tonen `ARQ pool initialized` bij startup
-- Upload-pad (asyncio) blijft functioneel
-
-Echte restart-durabiliteit komt pas online na Fase 4 wanneer `ack_late=True` veilig is.
-
-**Fase 2 verificatie ✅ 2026-04-27** — alle vier criteria bewezen:
 - API-log: `ARQ pool initialized` na redeploy met `UPSTASH_REDIS_URL`
 - Worker-log: `→ run_whisper_job(job_id='2c11e87d-...')` pickup en `← run_whisper_job ● (26.54s)` exit (video bao5kiMmXoU, 2 credits, 17 segmenten)
 - API-log: géén `[job ...] Downloading` regels — verwerking volledig in worker-process
 - Upload-pad: job fea97ef1 verwerkt in API-process (`indxr-backend` logger label), worker idle tijdens upload-job
-- `ack_late=False` blijft van kracht. Restart-durabiliteit niet getest — bewust, komt Fase 4.
+
+### ack_late bestaat niet in ARQ
+
+`ack_late` is een **Celery-concept** zonder equivalent in arq 0.28.0 (geverifieerd via broncodeanalyse april 2026; ook niet aanwezig in oudere versies). ARQ acknowledget altijd bij pickup — zodra een worker een job oppikt, verdwijnt die uit de queue. Bij worker-crash is de job verloren.
+
+Dit betekent dat het originele plan voor Fase 4 ("zet `ack_late=True` aan") structureel niet uitvoerbaar is zonder library-swap.
+
+### Wat Fase 4 wél heeft opgeleverd (april 2026)
+
+Fase 4 heeft GEEN automatische crash-recovery, maar wel vier lagen die samen de schade beperken:
+
+| Laag | Wat het doet | Bestand |
+|------|-------------|---------|
+| **Heartbeat** | Worker schrijft `last_heartbeat_at` elke 60s | `transcription_pipeline.py`, `worker.py` |
+| **Stale-detectie** | Poll-endpoint markeert job `interrupted` na 300s zonder heartbeat | `main.py` (HEARTBEAT_STALE_SECS=300) |
+| **Atomic credit-deductie** | Credit-aftrek zit in dezelfde DB-transactie als de voortgangsupdate — geen race-window | `update_playlist_video_progress` RPC (M3) |
+| **Idempotency-vlaggen** | `credits_deducted` op `transcription_jobs`; `v_already_done` via `video_results` JSONB | M1, M3 migraties |
+
+**Wat dit betekent in de praktijk:**
+- Een crash wordt binnen 5 minuten zichtbaar in de frontend (status `interrupted`)
+- Credits zijn nooit dubbel afgetrokken, ook niet bij handmatige herstart
+- Bij handmatige herstart werkt de idempotency-bescherming correct
+- Maar: er is géén automatische herstart — de gebruiker of operator moet handmatig handelen
+
+### Drie paden naar echte automatische crash-recovery
+
+**(a) Custom watchdog cron job (aanbevolen, laagste risico)**
+Een ARQ cron job (`@cron(...)` in WorkerSettings) die elke ~2 minuten `interrupted` jobs uit Supabase ophaalt en opnieuw enqueued met hetzelfde deterministische `_job_id`. ARQ blokkeert duplicate enqueue van actieve jobs; de idempotency-vlaggen voorkomen dubbele credit-aftrek. Dit is volledig library-onafhankelijk en bouwt op de infrastructuur die Fase 4 al heeft gelegd.
+
+**(b) Library-swap naar Taskiq of Procrastinate**
+Taskiq heeft een open graceful-shutdown bug (issue #447, april 2026 — controleer status bij heroverweging). Procrastinate heeft visibility timeout ingebouwd. Migratie-werk: ~1–2 dagen, alle state blijft in Supabase. Zie ADR-026 voor vergelijking.
+
+**(c) Frontend "Resume" knop voor user-driven retry**
+Gebruiker ziet `interrupted` status en kan job hervatten via UI. Lagere prioriteit dan watchdog, maar goede aanvulling als vangnet voor jobs die watchdog mist.
+
+**Aanbeveling:** Optie (a) + (c) gecombineerd. (a) handelt automatisch af; (c) geeft de gebruiker controle als fallback. Niet nu — parkeren tot na launch. Zie backlog.md.
 
 ---
 
@@ -147,7 +163,7 @@ ARQ Worker service (Railway, nieuwe container)
     │       4. Als video_index < total_videos - 1:
     │              enqueue process_playlist_video(_job_id="{playlist_id}:{video_index+1}")
     │          Anders: mark playlist als completed
-    ├─ ack_late=False (Fase 2–3); True na Fase 4
+    ├─ ack_late bestaat niet in arq — jobs worden altijd bij pickup verwijderd uit de queue
     └─ Updates state in playlist_extraction_jobs / transcription_jobs
        (Realtime publiceert postgres_changes → frontend UI updates — zie ADR-022)
 ```
@@ -188,7 +204,8 @@ Cleanup via cron of Supabase pg_cron: `DELETE FROM idempotency_keys WHERE expire
 ## Consequenties
 
 **Voordelen:**
-- Container-restart-safe: jobs overleven Railway-incidents en deploys (na Fase 4 met `ack_late=True`)
+- Crashes worden binnen 5 min zichtbaar (heartbeat + stale-detectie, Fase 4)
+- Credit-idempotency: geen dubbele aftrek bij handmatige herstart (Fase 4)
 - Per-video granulariteit: gefaalde video sloopt niet de batch
 - Schaalbaar door extra worker-replicas toevoegen wanneer load groeit
 - Voorbereiding op VPS-migratie (Redis triviaal te self-hosten op Hetzner)

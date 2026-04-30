@@ -1,3 +1,5 @@
+[2026-04-30] docs: Fase 4 ack_late realiteit gedocumenteerd — ADR-019 herschreven, priorities.md taak 1.5+1.7 bijgewerkt, backlog job-continuation entry, known-issues refund-bevinding | gewijzigd: docs/wiki/decisions/019-arq-job-queue.md, docs/wiki/roadmap/priorities.md, docs/wiki/roadmap/backlog.md, docs/wiki/operations/known-issues.md
+---
 [2026-04-30] feat: WorkerSettings job_timeout=7200; ack_late niet beschikbaar in arq 0.28.0 — gedocumenteerd in code | gewijzigd: backend/worker.py
 ---
 [2026-04-30] docs: credit-system.md + database-schema.md gecorrigeerd — user_credits tabel gedocumenteerd als canonieke balance, credit_transactions als audit-log, Fase 4 RPC credit-deductie sectie toegevoegd | gewijzigd: docs/wiki/architecture/credit-system.md, docs/wiki/architecture/database-schema.md
@@ -2187,3 +2189,25 @@ Changed: docs/LOG.md
 docs/wiki/architecture/credit-system.md
 docs/wiki/architecture/database-schema.md
 ---
+[2026-04-30 08:47] commit: feat: WorkerSettings job_timeout=7200 + ack_late bevinding gedocumenteerd
+
+job_timeout = 7200 (2 uur):
+- ARQ default is 300s — te kort voor lange Whisper-jobs (4-uur video ≈ 30 min)
+  en playlist-jobs met 100+ videos.
+- job_timeout IS ondersteund in arq 0.28.0 (Worker.__init__ parameter, default 300).
+
+ack_late — NIET geïmplementeerd, reden gedocumenteerd in code:
+- ack_late bestaat niet in arq 0.28.0, ook niet in eerdere versies.
+  Het is een Celery-concept zonder equivalent in arq.
+- Jobs worden in arq altijd geacknowledged bij pickup; bij worker-crash
+  verdwijnt de job uit de queue zonder automatische retry.
+- De idempotency-vlaggen (credits_deducted, v_already_done) zijn live
+  en beschermen bij handmatige herstart, maar niet bij crash.
+- Echte crash-recovery vereist een custom retry-mechanisme buiten arq scope.
+- requirements.txt blijft op arq==0.28.0 (geen upgrade zonder expliciete opdracht).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/worker.py
+docs/LOG.md
+---
+[2026-04-30 08:59] precompact: context compaction triggered

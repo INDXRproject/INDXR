@@ -65,6 +65,13 @@ Diagnostisch bevestigd (2026-04-23): `automatic_captions` bevat `'ar-orig'` voor
 
 - [ ] Uptime monitoring (UptimeRobot of BetterUptime)
 - [ ] Multi-region deployment (Railway)
+- [ ] **Job continuation na crash — watchdog + Resume-knop + refund**
+    Trigger: eerste productie-incident waarbij gebruikers gefrustreerd raken over `interrupted` jobs zonder refund of herstart-optie.
+    Opties (zie ADR-019 voor afweging):
+    - **Watchdog cron job** in worker: elke N minuten een query op `interrupted` jobs, re-enqueue als de user nog geen nieuw transcript heeft. Eenvoudigste pad, no library change.
+    - **Frontend Resume-knop**: user-driven retry vanuit de poll-UI bij `interrupted` status. Geeft gebruiker controle zonder automatische logica.
+    - **Library-swap** naar Taskiq / streaq / Procrastinate: native ack-na-voltooiing. Geschat 1–2 dagen omdat state in Supabase leeft, niet in de queue.
+    Refund-mechanisme: automatisch credits terugboeken bij `interrupted`-status als job niet herstart kan worden. Tot dan: handmatige refund via admin-dashboard.
 
 ---
 

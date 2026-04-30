@@ -194,9 +194,10 @@ Geen `video_id + user_id` uniciteit check — credits verbruikt bij elke extract
 ### Geen automatic retry voor gefaalde playlist videos
 Uitzondering: bot_detection en timeout worden na 30s eenmalig herprobeerd.
 
-### Railway restart kills in-flight jobs (gedeeltelijk opgelost)
-**YouTube Whisper-jobs (ARQ):** job-rijen blijven in Supabase maar de taak wordt niet herstart bij worker-crash (`ack_late=False`). Row blijft hangen op laatste status (`downloading` of `transcribing`). Auto-recovery komt in Fase 4 (idempotency keys + `ack_late=True`).
-**Upload-jobs en playlist-jobs:** draaien nog op `asyncio.create_task` in API-process — sterven bij Railway restart zonder recovery. Playlist-jobs worden gemigreerd naar ARQ in Fase 3.
+### Railway restart kills in-flight jobs (gedeeltelijk opgelost door Fase 4)
+**Fase 4 opgeleverd (2026-04-30):** heartbeat (`last_heartbeat_at` elke 60s), stale-detectie in poll-endpoints (300s threshold → status `interrupted`), idempotency-vlaggen (`credits_deducted` op `transcription_jobs`, `v_already_done` in RPC) zodat handmatige herstart geen dubbele credit-aftrek geeft.
+**Nog niet opgelost:** ARQ `ack_late=True` bestaat niet in arq 0.28.0 (Celery-concept). Bij worker-crash verdwijnt een in-flight job uit de Redis queue — hij wordt niet automatisch herstart. De `interrupted`-status is nu zichtbaar voor de gebruiker, maar er is geen auto-recovery en **refund wordt niet automatisch gegeven**: de gebruiker betaalt voor jobs die niet succesvol voltooien wegens worker-crash.
+**Tijdelijke workaround:** handmatige refund via admin-dashboard tot watchdog/Resume-feature gebouwd is. Zie backlog voor de drie implementatie-paden (watchdog cron, Resume-knop, library-swap) en ADR-019 voor uitleg waarom `ack_late` niet bestaat.
 
 
 ### Geen uptime monitoring

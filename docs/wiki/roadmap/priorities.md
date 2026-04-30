@@ -52,7 +52,8 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Stack: ARQ als aparte Railway worker-service naast bestaande FastAPI API-service.
     Idempotency: tabel `idempotency_keys` met TTL 24u op POST-endpoints.
     Zie [ADR-019](../decisions/019-arq-job-queue.md).
-    Fasenplan: Fase 0 ✅ | Fase 1 ✅ | Fase 2 (Whisper→ARQ) ✅ 2026-04-27 | Fase 3a ✅ (Supabase-laag + RPC) | Fase 3b.1 ✅ (RPC status-fix) | Fase 3b.2 ✅ (per-video chain code) | Fase 3b.3 ✅ (deploy + verificatie 22-video productietest) | Fase 4 [ ] (ack_late=True + idempotency keys) | Fase 5 TBD.
+    Fasenplan: Fase 0 ✅ | Fase 1 ✅ | Fase 2 (Whisper→ARQ) ✅ 2026-04-27 | Fase 3a ✅ (Supabase-laag + RPC) | Fase 3b.1 ✅ (RPC status-fix) | Fase 3b.2 ✅ (per-video chain code) | Fase 3b.3 ✅ (deploy + verificatie 22-video productietest) | Fase 4 ✅ (heartbeat + stale-detectie + atomic credit-deductie + idempotency-vlaggen) | Fase 5 TBD.
+    **Fase 4 opgeleverd 2026-04-30:** heartbeat (`last_heartbeat_at` elke 60s in `transcription_jobs` en `playlist_extraction_jobs`), stale-detectie in poll-endpoints (300s threshold → status `interrupted`), atomische credit-deductie via `update_playlist_video_progress` RPC (M3 migratie, `v_already_done` idempotency), `credits_deducted` vlag op `transcription_jobs` (M1), uuid5 deterministische Whisper job-IDs in playlist-keten. `ack_late=True` is **niet** geïmplementeerd — bestaat niet in arq 0.28.0 (Celery-concept). Automatische crash-recovery vereist een custom watchdog cron job (zie backlog) of library-swap. Zie ADR-019 voor volledige uitleg.
     **Fase 2 verificatie 2026-04-27:** YouTube Whisper bewezen via worker (job 2c11e87d, 26.54s end-to-end, bao5kiMmXoU). Upload-pad blijft asyncio in API-process bewezen (job fea97ef1, 9.2s). Drie deployment-issues tijdens verificatie opgelost: UPSTASH_REDIS_URL ontbrak op API-service, 8 env vars ontbraken op worker, PROXY_PASSWORD mismatch. Code zelf werkte correct.
     **ARQ library-keuze 2026-04-28:** Tijdens voorbereiding Fase 3 ontdekt dat ARQ in maintenance-only mode zit. Na grondige research besluit Khidr ARQ te houden tot post-launch heroverweging — zie ADR-026. Per-video architectuur (Fase 3) is library-onafhankelijk en wordt gebouwd op ARQ. Latere migratie naar Taskiq/streaq/Procrastinate is geschat 1-2 dagen werk omdat alle state in Supabase leeft (zie ADR-019 sectie Migratie-pad).
     Scope-beslissing: audio-upload pad blijft op asyncio.create_task (bytes in memory, korte flow); YouTube-extracties via ARQ. Zie ADR-019.
@@ -80,9 +81,10 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     geen cascade-stap binnen het gratis caption-product. needs_manual_review wordt vervangen door duidelijke
     error_type-gebaseerde messaging in taak 1.19b. Zie ADR-029.
 
-- [ ] **1.7 — Graceful shutdown handling (SIGTERM)** (1 dag)
+- [~] **1.7 — Graceful shutdown / crash-recovery** (gedeeltelijk — zie noot)
     Doel: in-flight jobs persisteren bij Railway restart in plaats van verdwijnen.
-    Implementatie: SIGTERM-handler die job-state naar Supabase persisteert, heartbeat checker die `interrupted` jobs oppakt, ARQ `ack_late=True`.
+    **Wat Fase 4 opgeleverd heeft (2026-04-30):** heartbeat (`last_heartbeat_at` elke 60s), stale-detectie in poll-endpoints (300s threshold → status `interrupted`), idempotency-vlaggen (`credits_deducted`, `v_already_done`) zodat handmatige herstart geen dubbele kosten geeft.
+    **Wat er nog ontbreekt:** ARQ `ack_late=True` **bestaat niet** in arq 0.28.0 — het is een Celery-concept zonder equivalent. Bij worker-crash wordt een job niet automatisch herstart; de job verdwijnt uit de queue. `interrupted`-status is zichtbaar voor de gebruiker maar er is geen auto-recovery en nog geen refund-automatisering. Zie [ADR-019](../decisions/019-arq-job-queue.md) voor de drie paden naar echte crash-recovery (custom watchdog cron, library-swap, Resume-knop). Verdere implementatie staat in backlog.
     Afhankelijk van: 1.5.
 
 - [x] **1.8 — Cloudflare R2 storage helper** ✅ 2026-04-28
