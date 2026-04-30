@@ -122,17 +122,16 @@ export function Header() {
 
         {/* Desktop nav — centered */}
         <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
-          <Link href="/youtube-transcript-generator" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
-            Transcribe
-          </Link>
-          <Link href="/how-it-works" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
-            How It Works
-          </Link>
           <Link href="/pricing" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             Pricing
           </Link>
-          <Link href="/faq" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
-            FAQ
+          <Link href="/docs" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+            Docs
+          </Link>
+          <Link href="/youtube-transcript-generator">
+            <Button size="sm" className="bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]">
+              Try it free
+            </Button>
           </Link>
         </nav>
 
@@ -147,10 +146,10 @@ export function Header() {
           ) : (
             <>
               <Link href="/login">
-                <Button variant="ghost" size="sm">Log In</Button>
+                <Button variant="ghost" size="sm">Log in</Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm">Sign Up</Button>
+                <Button size="sm">Start free</Button>
               </Link>
             </>
           )}
@@ -175,23 +174,18 @@ export function Header() {
                 )}
                 <nav className="flex flex-col gap-4">
                   <SheetClose asChild>
-                    <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
-                      Transcribe
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link href="/how-it-works" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
-                      How It Works
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
                     <Link href="/pricing" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
                       Pricing
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/faq" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
-                      FAQ
+                    <Link href="/docs" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+                      Docs
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--accent)]">
+                      Try it free
                     </Link>
                   </SheetClose>
                 </nav>
@@ -211,12 +205,12 @@ export function Header() {
                     <>
                       <SheetClose asChild>
                         <Link href="/login" className="w-full">
-                          <Button variant="outline" className="w-full">Log In</Button>
+                          <Button variant="outline" className="w-full">Log in</Button>
                         </Link>
                       </SheetClose>
                       <SheetClose asChild>
                         <Link href="/signup" className="w-full">
-                          <Button className="w-full">Sign Up</Button>
+                          <Button className="w-full">Start free</Button>
                         </Link>
                       </SheetClose>
                     </>
