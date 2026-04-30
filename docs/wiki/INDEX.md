@@ -66,6 +66,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [027-bgutil-deprioritization.md](decisions/027-bgutil-deprioritization.md) | bgutil-pot verwijderd — yt-dlp client-rotatie vervangt PO-token aanpak (supersedet ADR-007) |
 | [028-youtube-data-api-metadata.md](decisions/028-youtube-data-api-metadata.md) | YouTube Data API videos.list voor metadata-aanvulling cascade stap 1; yt-dlp fallback bij quota-uitputting |
 | [029-caption-vs-ai-transcription-products.md](decisions/029-caption-vs-ai-transcription-products.md) | Caption extraction en AI transcription als aparte producten — cascade stap 4+5 vervalt; AI transcription is user-gestuurd betaald product |
+| [030-fase4-crash-recovery-leerervaring.md](decisions/030-fase4-crash-recovery-leerervaring.md) | Fase 4 crash-recovery leerervaring — ack_late bestaat niet, wat we wél bouwden, watchdog-recept bewezen |
 
 ---
 
@@ -132,3 +133,39 @@ Na elke taak update ik:
 - `operations/deployment.md` bij nieuwe env vars
 - `roadmap/backlog.md` bij nieuwe post-launch ideeën of afgeronde items
 - `INDEX.md` bij elke nieuwe pagina
+
+---
+
+## Wiki-onderhoud: broncode is de waarheid
+
+**Broncode + productie-DB zijn de single source of truth. Wiki is een afgeleide.**
+
+Bij discrepantie tussen wiki en code: code wint, wiki wordt bijgewerkt.
+
+### Verplichte checks bij wiki-onderhoud
+
+- **RPC-signatures:** verifieer tegen `pg_proc` in Supabase (`pg_get_function_arguments(p.oid)`) — niet tegen een eerdere wiki-versie.
+- **Tabel-kolommen:** verifieer tegen `information_schema.columns` of productie-migraties — niet aannemen dat de wiki klopt.
+- **Status-waarden:** verifieer tegen de migratie-SQL die de status zet (bijv. `status='complete'` niet `'completed'`).
+- **Functienamen in backend:** verifieer dat gerefereerde functies nog bestaan (`grep -n "def <naam>"` in de betreffende .py).
+
+### Verplichte wiki-update bij code-wijziging
+
+Wijzigingen aan de volgende onderdelen vereisen een wiki-update **in dezelfde commit** als de code-wijziging:
+
+| Code-wijziging | Wiki-document |
+|---|---|
+| Nieuwe/gewijzigde RPC | `architecture/database-schema.md` + relevant ADR |
+| Nieuw tabel-kolom (migratie) | `architecture/database-schema.md` |
+| Gewijzigde credit-flow | `architecture/credit-system.md` |
+| Gewijzigde playlist-flow | `architecture/playlist-engine.md` |
+| Nieuwe ARQ-taak of WorkerSettings | `decisions/019-arq-job-queue.md` |
+| Nieuw poll-endpoint of stale-detectie | `architecture/playlist-engine.md` + `database-schema.md` |
+
+### Bekende valkuilen (geleerd in Fase 4, april 2026)
+
+- `idempotency_keys` tabel is beschreven in ADR-019 maar **nooit aangemaakt** in productie.
+- `run_playlist_job` bestaat niet meer (verwijderd in Fase 3b.2, 2026-04-28).
+- `ack_late` bestaat niet in arq 0.28.0 — referenties ernaar als toekomstige feature zijn misleidend.
+- Playlist-status is `'complete'` (niet `'completed'`) — gefixd in migratie `20260428_playlist_progress_rpc_status_fix.sql`.
+- `playlist_extraction_jobs.completed` is de kolomnaam (niet `completed_count`).
