@@ -9,12 +9,14 @@ const exportFormats = [
   { href: "/youtube-srt-download", label: "SRT / VTT download" },
 ];
 
-const guides = [
-  { href: "/how-it-works", label: "How It Works" },
+const learn = [
+  { href: "/docs", label: "Documentation" },
+  { href: "/docs/getting-started", label: "Getting started" },
+  { href: "/docs/faq", label: "FAQ" },
   { href: "/youtube-playlist-transcript", label: "Playlist transcripts" },
   { href: "/audio-to-text", label: "Audio file upload" },
-  { href: "/youtube-transcript-without-extension", label: "Without browser extension" },
   { href: "/youtube-transcript-not-available", label: "Transcript not available?" },
+  { href: "/support", label: "Support" },
 ];
 
 const compare = [
@@ -53,7 +55,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <FooterColumn title="Export Formats" links={exportFormats} />
-          <FooterColumn title="Guides" links={guides} />
+          <FooterColumn title="Learn" links={learn} />
           <FooterColumn title="Compare" links={compare} />
         </div>
 
@@ -62,8 +64,11 @@ export function Footer() {
           <Link href="/pricing" className="hover:text-[var(--fg)] transition-colors">
             Pricing
           </Link>
-          <Link href="/how-it-works" className="hover:text-[var(--fg)] transition-colors">
-            How It Works
+          <Link href="/docs" className="hover:text-[var(--fg)] transition-colors">
+            Docs
+          </Link>
+          <Link href="/support" className="hover:text-[var(--fg)] transition-colors">
+            Support
           </Link>
         </div>
       </div>

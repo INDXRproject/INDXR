@@ -376,7 +376,7 @@ export default function TranscribePage() {
        <WelcomeCreditCard claimed={isRewardClaimed} />
        <div>
          <h1 className="text-3xl font-bold text-[var(--fg)] mb-2">Transcribe</h1>
-         <p className="text-[var(--fg-muted)]">Extract captions from videos, playlists, or audio files.</p>
+         <p className="text-[var(--fg-muted)]">Extract captions from videos, playlists, or audio files. <a href="/docs" className="text-[var(--accent)] hover:underline">Learn more →</a></p>
        </div>
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
