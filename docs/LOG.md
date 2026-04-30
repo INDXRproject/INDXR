@@ -1,3 +1,5 @@
+[2026-04-30] feat: fase 4 B1 — transcription_pipeline.py heartbeat + credit-idempotency: _heartbeat_loop + _run_with_heartbeat helpers, heartbeat_fn parameter op do_assemblyai_transcription, stap 1 (download) + stap 6 (AssemblyAI) omhuld, credit_cost altijd berekend (ook deduct=False), credits_deducted best-effort write na deductie | gewijzigd: backend/transcription_pipeline.py
+---
 [2026-04-30] db: fase 4 migraties M1–M4 toegepast — transcription_jobs (credits_deducted + last_heartbeat_at), playlist_extraction_jobs (last_heartbeat_at + video_metadata), update_playlist_video_progress RPC uitgebreid met atomische credit-deductie (p_amount/p_reason, v_already_done idempotency), saved_videos tabel + RLS + index | gewijzigd: supabase/migrations/20260430_fase4_*.sql
 ---
 [2026-04-30] test: taak 1.19b productiebewijs sessie 1 — members_only fail-fast (geen AI-toggle), no_captions met AI-suggestie v2 + refund disclaimer, no_speech end-to-end refund flow 140s/41min/42cr; ADR-029 volledig geverifieerd | gewijzigd: docs/wiki/operations/test-reports.md
@@ -2053,3 +2055,19 @@ Changed: docs/LOG.md
 docs/wiki/operations/test-reports.md
 ---
 [2026-04-30 07:57] precompact: context compaction triggered
+[2026-04-30 08:07] commit: db: fase 4 migraties M1–M4 — idempotency + heartbeat + saved_videos
+
+M1: transcription_jobs — credits_deducted (idempotency vlag voor ack_late) + last_heartbeat_at
+M2: playlist_extraction_jobs — last_heartbeat_at + video_metadata JSONB
+M3: update_playlist_video_progress RPC — p_amount + p_reason parameters; atomische
+    credit-deductie (UPDATE user_credits + INSERT credit_transactions) beschermd door
+    v_already_done; oude 5-arg overload gedropped
+M4: saved_videos tabel — RLS (eigen rijen), idx_saved_videos_user_id, ON DELETE CASCADE
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+supabase/migrations/20260430_fase4_playlist_extraction_jobs.sql
+supabase/migrations/20260430_fase4_saved_videos.sql
+supabase/migrations/20260430_fase4_transcription_jobs.sql
+supabase/migrations/20260430_fase4_update_playlist_progress_rpc.sql
+---

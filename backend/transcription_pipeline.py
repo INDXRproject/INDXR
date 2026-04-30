@@ -49,6 +49,34 @@ posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
 posthog.host = "https://app.posthog.com"
 
 
+async def _heartbeat_loop(heartbeat_fn, interval: int = 60) -> None:
+    """Roept heartbeat_fn elke `interval` seconden aan totdat de task gecanceld wordt."""
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            await heartbeat_fn()
+        except Exception:
+            pass  # nooit crashen door heartbeat-fout
+
+
+async def _run_with_heartbeat(awaitable, heartbeat_fn):
+    """
+    Voert `awaitable` uit terwijl `heartbeat_fn` elke 60s op de achtergrond tikt.
+    Als heartbeat_fn None is, wordt awaitable direct uitgevoerd (geen overhead).
+    """
+    if heartbeat_fn is None:
+        return await awaitable
+    task = asyncio.create_task(_heartbeat_loop(heartbeat_fn))
+    try:
+        return await awaitable
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
 def _track(distinct_id: str, event: str, properties: Optional[dict] = None) -> None:
     if not posthog.api_key:
         return
@@ -93,6 +121,7 @@ async def do_assemblyai_transcription(
     collection_id: Optional[str] = None,
     deduct_credits_on_success: bool = True,
     proxy_session_id: Optional[str] = None,
+    heartbeat_fn=None,
 ) -> dict:
     """
     Full AssemblyAI transcription pipeline.
@@ -140,8 +169,9 @@ async def do_assemblyai_transcription(
             else:
                 logger.warning(f"[pipeline] Proxy DISABLED for {video_id}")
             try:
-                audio_path, video_title, channel = await asyncio.to_thread(
-                    extract_youtube_audio, video_id, proxy_url=proxy_url
+                audio_path, video_title, channel = await _run_with_heartbeat(
+                    asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url),
+                    heartbeat_fn,
                 )
                 temp_files.append(audio_path)
             except MembersOnlyVideoError:
@@ -175,8 +205,8 @@ async def do_assemblyai_transcription(
             return {"success": False, "error_type": "duration_error", "error_message": msg, "credit_cost": 0}
 
         # ── Step 4: Credit check + deduction ─────────────────────────────────
+        credit_cost = calculate_credit_cost(duration)
         if deduct_credits_on_success:
-            credit_cost = calculate_credit_cost(duration)
             try:
                 balance = await asyncio.to_thread(check_user_balance, user_id)
             except Exception as e:
@@ -210,6 +240,16 @@ async def do_assemblyai_transcription(
                 'amount': credit_cost, 'reason': 'whisper',
                 'balance_after': deduction_result.get('new_balance'),
             })
+            # Persist flag best-effort: bij worker-restart slaat B2 de deductie over.
+            if job_id:
+                try:
+                    await asyncio.to_thread(
+                        lambda: supabase.table('transcription_jobs')
+                            .update({'credits_deducted': True})
+                            .eq('id', job_id).execute()
+                    )
+                except Exception:
+                    pass
 
         # ── Step 5: Compress if >25 MB ────────────────────────────────────────
         if validation['size_mb'] > 25:
@@ -232,7 +272,10 @@ async def do_assemblyai_transcription(
             'duration_seconds': duration,
         })
         assemblyai_start = time.time()
-        whisper_result = await asyncio.to_thread(transcribe_with_assemblyai, str(audio_path))
+        whisper_result = await _run_with_heartbeat(
+            asyncio.to_thread(transcribe_with_assemblyai, str(audio_path)),
+            heartbeat_fn,
+        )
 
         if not whisper_result['success']:
             _track(user_id, 'whisper_failed', {
