@@ -1,3 +1,5 @@
+[2026-04-30] feat: taak 1.19b — error messaging audit + AI-suggestie differentiatie — backend no_captions error_type fix, VideoTab structured error routing (error_type preserved, throw verwijderd), Whisper toggle blacklist voor age_restricted/members_only/youtube_restricted, bot_detection + no_captions render blocks v2, PlaylistTab mapBackendStatus no_captions + no_speech fix, failedOther filter (2×), PlaylistManager VideoStatus type + badge + progress bar + allDone check, error-taxonomy.md v2 messages alle 9 error_types | gewijzigd: backend/main.py, src/components/free-tool/VideoTab.tsx, src/components/free-tool/PlaylistTab.tsx, src/components/PlaylistManager.tsx, docs/wiki/operations/error-taxonomy.md
+---
 [2026-04-30 05:00] design: foundation V1.0 — OKLCH token systeem, IBM Plex fonts, data-theme ThemeProvider, alle 32 shadcn componenten gemigreerd, feature components + pagina's gemigreerd, support-pagina dark-only fixed, test-tokens pagina | gewijzigd: src/app/styles/tokens.css, src/app/globals.css, src/app/layout.tsx, tailwind.config.ts, src/components/ui/*, src/components/*, src/app/**
 ---
 [2026-04-29] docs: cascade afsluiten + ADR-029 — caption extraction vs AI transcription als aparte producten; taak 1.6 ✅; taak 1.19b toegevoegd; ai-pipeline cascade-eind-sectie; error-taxonomy AI-suggestie kolom | gewijzigd: docs/wiki/decisions/029-caption-vs-ai-transcription-products.md, docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/error-taxonomy.md
@@ -1997,3 +1999,21 @@ docs/wiki/INDEX.md
 [2026-04-30 01:11] commit: fix: null-safe library search filter
 Changed: src/app/dashboard/library/page.tsx
 ---
+[2026-04-30 01:13] commit: docs: design wiki bestanden + LOG.md update
+
+audit-frontend.md, principles-v0.1-final.md, system.md en research-batch
+bestanden gecommit. LOG.md bijgewerkt met foundation V1.0 entry.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/design/audit-frontend.md
+docs/wiki/design/principles-v0.1-final.md
+docs/wiki/design/research/README.md
+docs/wiki/design/research/batch-1-foundation.md
+docs/wiki/design/research/batch-2-architecture.md
+docs/wiki/design/research/batch-3a-ia-naming.md
+docs/wiki/design/research/batch-3b-ux-aesthetic.md
+docs/wiki/design/system.md
+docs/wiki/design/working-sessions/README.md
+---
+[2026-04-30 01:45] precompact: context compaction triggered

@@ -38,7 +38,8 @@ function mapBackendStatus(res: { status: string; error_type?: string }): VideoSt
     case 'age_restricted':     return 'age_restricted'
     case 'members_only':       return 'members_only'
     case 'youtube_restricted': return 'youtube_restricted'
-    case 'no_speech_detected': return 'no_speech'
+    case 'no_captions':        return 'no_captions'
+    case 'no_speech':          return 'no_speech'
     default:                   return 'error'
   }
 }
@@ -129,7 +130,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
             failedMembersOnly:   errVids.filter(r => r.error_type === 'members_only').length,
             failedOther:         errVids.filter(r =>
               r.status === 'error' &&
-              !['bot_detection', 'timeout', 'age_restricted', 'members_only'].includes(r.error_type ?? '')
+              !['bot_detection', 'timeout', 'age_restricted', 'members_only', 'no_captions'].includes(r.error_type ?? '')
             ).length,
             processingTimeSecs: job.processing_time_seconds ?? 0,
           })
@@ -266,7 +267,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
             failedMembersOnly:   errVids.filter(r => r.error_type === 'members_only').length,
             failedOther:         errVids.filter(r =>
               r.status === 'error' &&
-              !['bot_detection', 'timeout', 'age_restricted', 'members_only'].includes(r.error_type ?? '')
+              !['bot_detection', 'timeout', 'age_restricted', 'members_only', 'no_captions'].includes(r.error_type ?? '')
             ).length,
             processingTimeSecs: job.processing_time_seconds
               ?? Math.floor((Date.now() - startTimeRef.current) / 1000),

@@ -42,7 +42,7 @@ interface AvailabilitySummary {
   totalCredits: number
 }
 
-export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech' | 'youtube_restricted' | 'age_restricted' | 'bot_detection' | 'timeout' | 'members_only'
+export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech' | 'youtube_restricted' | 'age_restricted' | 'bot_detection' | 'timeout' | 'members_only' | 'no_captions'
 
 interface PlaylistManagerProps {
   onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string, playlistUrl?: string) => void;
@@ -88,7 +88,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       const allDone = Object.values(videoStatuses).every(s =>
         s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' ||
         s === 'youtube_restricted' || s === 'age_restricted' || s === 'bot_detection' ||
-        s === 'timeout' || s === 'members_only'
+        s === 'timeout' || s === 'members_only' || s === 'no_captions'
       )
       if (allDone) {
          setIsCompleted(true)
@@ -433,7 +433,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                     <div className="h-2 bg-surface-elevated rounded-full overflow-hidden">
                         <div
                             className="h-full bg-accent transition-all duration-500 ease-out"
-                            style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted' || s === 'age_restricted' || s === 'bot_detection' || s === 'timeout' || s === 'members_only').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
+                            style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted' || s === 'age_restricted' || s === 'bot_detection' || s === 'timeout' || s === 'members_only' || s === 'no_captions').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
                         />
                     </div>
                 </>
@@ -587,7 +587,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                             {videoStatuses[entry.id] === 'timeout' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Connection timeout</span>}
                             {videoStatuses[entry.id] === 'age_restricted' && <span className="text-[10px] uppercase font-bold text-error-fg bg-error-subtle px-1.5 py-0.5 rounded">Age-restricted</span>}
                             {videoStatuses[entry.id] === 'members_only' && <span className="text-[10px] uppercase font-bold text-error-fg bg-error-subtle px-1.5 py-0.5 rounded">Members only</span>}
-                             
+                            {videoStatuses[entry.id] === 'no_captions' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">No captions</span>}
+
                              {/* Duplicate Badges */}
                              {!hasExtracted && existingDuplicates[entry.id] && (() => {
                                const entries = existingDuplicates[entry.id];

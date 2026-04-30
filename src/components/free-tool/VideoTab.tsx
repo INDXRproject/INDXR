@@ -149,7 +149,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [showSignupCard, setShowSignupCard] = useState(false)
   const [videoTitle, setVideoTitle] = useState<string>("")
   const [videoUrl, setVideoUrl] = useState<string>("")
-  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean } | null>(null)
+  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean, errorType?: string } | null>(null)
   const [isPlaylistUrl, setIsPlaylistUrl] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState("")
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -463,11 +463,33 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const data = await response.json()
 
       if (!response.ok || data.success === false) {
-        if (data.error === 'members_only') {
-          setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+        const errType: string | null = data.error_type || null
+        if (errType === 'members_only' || data.error === 'members_only') {
+          setError({ message: "This video is members-only. Only channel members can access it.", isMembersOnly: true, errorType: 'members_only' })
           return
         }
-        throw new Error(data.error || 'Failed to extract transcript')
+        if (errType === 'no_captions' || (data.error || '').toLowerCase().includes('no captions')) {
+          setError({ message: "No captions found for this video.", errorType: 'no_captions' })
+          return
+        }
+        if (errType === 'bot_detection') {
+          setError({ message: "YouTube temporarily blocked our request.", errorType: 'bot_detection' })
+          return
+        }
+        if (errType === 'age_restricted') {
+          setError({ message: "This video is age-restricted. YouTube requires a signed-in account — AI transcription cannot help here.", errorType: 'age_restricted' })
+          return
+        }
+        if (errType === 'youtube_restricted') {
+          setError({ message: "This video is unavailable — it may be removed, geo-blocked, or restricted on YouTube.", isYouTubeRestricted: true, errorType: 'youtube_restricted' })
+          return
+        }
+        if (errType === 'extraction_error') {
+          setError({ message: "Extraction failed. Try again in a moment.", errorType: 'extraction_error' })
+          return
+        }
+        setError({ message: data.error || 'Failed to extract transcript', errorType: errType ?? undefined })
+        return
       }
 
       setTranscript(data.transcript)
@@ -910,7 +932,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         </div>
 
         {/* Whisper Toggle - only for logged-in users, hidden if Whisper was auto-triggered */}
-        {user && !whisperAutoTriggered && !loading && !showWhisperConfirm && (
+        {user && !whisperAutoTriggered && !loading && !showWhisperConfirm &&
+         !error?.isMembersOnly && !error?.isNoSpeech && !error?.isCreditsError &&
+         !(error?.errorType && ['members_only', 'age_restricted', 'youtube_restricted', 'no_speech', 'insufficient_credits'].includes(error.errorType)) && (
           <div className="flex items-start gap-3 px-1">
             <button
               type="button"
@@ -1106,6 +1130,22 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                      Open Audio Upload →
                    </Button>
                  )}
+               </div>
+             ) : error?.errorType === 'bot_detection' ? (
+               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
+                 <div>
+                   <p className="text-sm font-medium text-error">Temporarily blocked by YouTube</p>
+                   <p className="text-sm text-error/80 mt-0.5">YouTube temporarily blocked our request. Wait a few minutes and try again, or enable &quot;Generate with AI&quot; above — it accesses YouTube differently and often works immediately.</p>
+                 </div>
+               </div>
+             ) : error?.errorType === 'no_captions' ? (
+               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
+                 <div>
+                   <p className="text-sm font-medium text-error">No captions available</p>
+                   <p className="text-sm text-error/80 mt-0.5">No captions found for this video. Enable &quot;Generate with AI&quot; above to transcribe it with AI — 1 credit per minute of audio. If no speech is detected, your credits are automatically refunded.</p>
+                 </div>
                </div>
              ) : error?.isCreditsError ? (
                <div className="flex flex-col gap-2 w-full">

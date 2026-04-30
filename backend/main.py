@@ -327,7 +327,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             logger.warning(f"No captions found for {video_id}")
             return ExtractResponse(
                 success=False,
-                error="No captions found for this video"
+                error="No captions found for this video",
+                error_type="no_captions"
             )
 
         transcript = [
