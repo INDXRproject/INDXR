@@ -33,10 +33,12 @@ posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
 posthog.host = "https://app.posthog.com"
 
 
-# Fase 4 stale-detectie: running jobs zonder heartbeat-update > 3 min worden 'interrupted'.
+# Fase 4 stale-detectie: running jobs zonder heartbeat-update > 5 min worden 'interrupted'.
 # Enkel van toepassing als last_heartbeat_at IS NOT NULL (legacy jobs vóór Fase 4 deploy
 # hebben NULL heartbeat — die worden met rust gelaten om false-positives te voorkomen).
-HEARTBEAT_STALE_SECS = 180
+# 300s = 5 missed heartbeats (interval 60s) — geeft marge voor incidentele event-loop blips
+# of Supabase write-haperingen zonder false-positives.
+HEARTBEAT_STALE_SECS = 300
 
 
 def track_event(distinct_id: str, event: str, properties: Optional[Dict] = None):

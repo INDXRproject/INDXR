@@ -1,3 +1,5 @@
+[2026-04-30] fix: HEARTBEAT_STALE_SECS 180→300 (5 missed heartbeats geeft marge voor event-loop blips) | gewijzigd: backend/main.py
+---
 [2026-04-30] feat: fase 4 B3 — main.py: PlaylistExtractRequest.video_metadata, /extract INSERT, stale-detectie GET /api/jobs + GET /api/playlist/jobs | gewijzigd: backend/main.py
 ---
 [2026-04-30] feat: fase 4 B2 — worker.py idempotency + heartbeat + uuid5 + caption RPC credit-deductie | gewijzigd: backend/worker.py
@@ -2120,5 +2122,31 @@ Imports: uuid, datetime/timezone, _run_with_heartbeat toegevoegd; deduct_credits
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/worker.py
+docs/LOG.md
+---
+[2026-04-30 08:35] commit: feat: fase 4 B3 — main.py: video_metadata + stale-detectie poll-endpoints
+
+PlaylistExtractRequest:
+- video_metadata: Optional[dict] = {} — structuur {video_id: {title, duration, thumbnail}}
+  Wordt bij aanmaak weggeschreven naar playlist_extraction_jobs.video_metadata (M2-kolom).
+  Wrap-up UI gebruikt dit om gefaalde videos bij naam te tonen (F2).
+
+/api/playlist/extract:
+- 'video_metadata': request.video_metadata or {} toegevoegd aan INSERT
+
+GET /api/jobs/{job_id} + GET /api/playlist/jobs/{job_id} — stale-detectie:
+- Als status='running' EN last_heartbeat_at IS NOT NULL EN age > HEARTBEAT_STALE_SECS (180s):
+  UPDATE status='interrupted', return geüpdatete staat aan frontend
+- NULL heartbeat → check overgeslagen. Reden: legacy running jobs vóór Fase 4 deploy hebben
+  geen heartbeat-writer gehad; we weten niet of ze echt gestopt zijn. False-positive
+  (running → interrupted terwijl worker nog draait) is erger dan false-negative.
+- Side-effect in poll-GET is opzettelijk: geen aparte cron/background-service.
+  Implicatie: unpolled jobs blijven op 'running' — acceptabel omdat gestoorde jobs
+  alleen relevant zijn als de gebruiker ze ziet (en de frontend altijd pollt).
+
+HEARTBEAT_STALE_SECS = 180 als module-constante bovenaan.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
 docs/LOG.md
 ---
