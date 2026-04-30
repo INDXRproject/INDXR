@@ -54,51 +54,54 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-bg px-4">
+    <div className="flex items-center justify-center min-h-screen bg-[var(--bg)] px-4">
        <div className="w-full max-w-4xl grid md:grid-cols-2 gap-8 items-center">
 
-          {/* Left Side: Checklist */}
+          {/* Left side: Welcome message */}
           <div className="space-y-6 hidden md:block">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Welcome to Indxr.AI</h1>
-              <p className="text-fg-muted text-lg">You&apos;re just a few steps away from unlocking video insights.</p>
+              <h1 className="text-4xl font-semibold text-[var(--fg)] mb-3">Welcome to INDXR</h1>
+              {/* KHIDR: first-run wizard content komt hier */}
+              <p className="text-[var(--fg-subtle)] text-lg leading-relaxed">
+                Your account is ready. We&apos;ve added 25 welcome credits to get you started.
+              </p>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-6 w-6 text-success mt-0.5" />
+                <CheckCircle2 className="h-6 w-6 text-[var(--success)] mt-0.5 shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-lg">Create Account</h3>
-                  <p className="text-fg-muted text-sm">Secure your spot and verify your identity.</p>
+                  <h3 className="font-medium text-[var(--fg)]">Account created</h3>
+                  <p className="text-sm text-[var(--fg-muted)]">You&apos;re signed in and your 25 welcome credits are in your account.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                 <div className="h-6 w-6 rounded-full border-2 border-primary flex items-center justify-center mt-0.5 text-xs font-bold bg-accent/20 text-accent">
-                   2
-                 </div>
+                <div className="h-6 w-6 rounded-full border-2 border-[var(--accent)] flex items-center justify-center mt-0.5 text-xs font-bold text-[var(--accent)] shrink-0">
+                  2
+                </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Complete Profile</h3>
-                  <p className="text-fg-muted text-sm">Tell us a bit about yourself to personalize your experience.</p>
+                  <h3 className="font-medium text-[var(--fg)]">Complete your profile</h3>
+                  <p className="text-sm text-[var(--fg-muted)]">A quick setup so we know how to help you best.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <Circle className="h-6 w-6 text-fg-muted mt-0.5" />
+                <Circle className="h-6 w-6 text-[var(--fg-muted)] mt-0.5 shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-lg text-fg-muted">First Extraction</h3>
-                  <p className="text-fg-muted text-sm">Transcribe your first YouTube video into structured data.</p>
+                  <h3 className="font-medium text-[var(--fg-muted)]">Transcribe your first video</h3>
+                  <p className="text-sm text-[var(--fg-muted)]">Paste any YouTube URL — caption extraction is always free.</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Side: Form */}
-          <Card className="border shadow-sm">
+          {/* Right side: Form */}
+          <Card className="border border-[var(--border)] shadow-sm bg-[var(--surface)]">
             <CardHeader>
-              <CardTitle>Complete Your Profile</CardTitle>
-              <CardDescription>
-                Set up your workspace identity
+              <CardTitle className="text-[var(--fg)]">Welcome to INDXR</CardTitle>
+              <CardDescription className="text-[var(--fg-muted)]">
+                25 welcome credits are in your account — let&apos;s set up your profile.
               </CardDescription>
             </CardHeader>
             <CardContent>
