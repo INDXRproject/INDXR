@@ -4,10 +4,11 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import {
-  LayoutDashboard, BookOpen, FileText, Coins, Settings, User, LogOut,
+  Home, Library, AudioLines, Inbox, BookOpen, Settings, User, LogOut,
   ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, CircleDollarSign,
 } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 
 import {
   Sidebar,
@@ -44,9 +45,9 @@ interface SimplifiedTranscript {
 }
 
 const topNavItems = [
-  { title: "Overview",   url: "/dashboard",           icon: LayoutDashboard },
-  { title: "Transcribe", url: "/dashboard/transcribe", icon: FileText },
-  { title: "Credits",    url: "/dashboard/billing",    icon: Coins },
+  { title: "Home",      url: "/dashboard",            icon: Home      },
+  { title: "Transcribe", url: "/dashboard/transcribe", icon: AudioLines },
+  { title: "Messages",  url: "/dashboard/messages",   icon: Inbox     },
 ]
 
 const footerItems = [
@@ -58,6 +59,7 @@ export function AppSidebar() {
   const router   = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  const { credits } = useAuth()
 
   // ── Collections state ──────────────────────────────────────────────────────
   const [collections, setCollections]         = useState<Collection[]>([])
@@ -390,7 +392,7 @@ export function AppSidebar() {
                         )}
                         title={collapsed ? "Library" : undefined}
                       >
-                        <BookOpen className="h-4 w-4" />
+                        <Library className="h-4 w-4" />
                         <span className={cn(collapsed && "hidden")}>Library</span>
                       </Link>
                     </SidebarMenuButton>
@@ -646,6 +648,27 @@ export function AppSidebar() {
               </div>
             </div>
           )}
+
+          {/* Credits coin — persistent display above footer nav */}
+          <div className={cn(
+            "px-3 py-2 border-t border-[var(--border)]/50",
+          )}>
+            <Link
+              href="/dashboard/billing"
+              className={cn(
+                "flex items-center gap-2 text-sm text-[var(--fg-subtle)] hover:text-[var(--fg)] transition-colors rounded-lg px-2 py-1.5 hover:bg-[var(--surface-elevated)]",
+                collapsed && "justify-center px-0"
+              )}
+              title={collapsed ? `${credits ?? 0} credits` : undefined}
+            >
+              {/* TODO: vervang door custom hexagon SVG van logo motief */}
+              <CircleDollarSign className="h-4 w-4 text-[var(--accent)] shrink-0" />
+              <span className={cn("text-xs", collapsed && "hidden")}>
+                <span className="font-medium text-[var(--fg)]">{credits ?? 0}</span>
+                <span className="text-[var(--fg-muted)] ml-1">credits</span>
+              </span>
+            </Link>
+          </div>
 
           <SidebarMenu>
             {footerItems.map(item => {
