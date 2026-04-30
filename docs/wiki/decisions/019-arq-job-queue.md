@@ -2,7 +2,7 @@
 
 **Status:** Geaccepteerd
 **Datum:** 2026-04-26 (herzien 2026-04-28)
-**Gerelateerde code:** `backend/main.py` (huidige `asyncio.create_task` orchestratie wordt vervangen), nieuwe `backend/worker.py` (ARQ worker), nieuwe `idempotency_keys` migratie
+**Gerelateerde code:** `backend/main.py`, `backend/worker.py` (ARQ worker), `supabase/migrations/20260430_fase4_*.sql`; Fase 3: `process_playlist_video` + `process_playlist_retries` in worker.py
 
 ---
 
@@ -37,7 +37,7 @@ Bij playlists die tientallen minuten lopen is dit statistisch een incident-bron 
 
 **Per-video decompositie via zelf-orchestrerende chain:** een playlist-job wordt N onafhankelijke video-jobs. Eén gefaalde video → één retry, niet de hele playlist opnieuw. Supabase `playlist_extraction_jobs` is single source of truth. Zie ADR-025 voor de volledige architectuurbeschrijving.
 
-**Idempotency keys** op POST-endpoints (nieuwe Supabase-tabel `idempotency_keys` met `key`, `user_id`, `request_hash`, `cached_response`, TTL 24u) voorkomen duplicate submissions bij retries.
+**Idempotency keys** op POST-endpoints waren gepland als Supabase-tabel `idempotency_keys` maar zijn **nooit geïmplementeerd** — niet aanwezig in de productie-DB (geverifieerd 2026-04-30). De huidige bescherming beperkt zich tot `deduct_credits_atomic` (row-level locking) en de `credits_deducted` vlag op `transcription_jobs` (Fase 4).
 
 ---
 
@@ -159,7 +159,7 @@ ARQ Worker service (Railway, nieuwe container)
     ├─ process_playlist_video(playlist_id, video_index):
     │       1. Lees playlist state uit Supabase (videos[], video_index)
     │       2. Verwerk video (yt-dlp cascade → captions of Whisper)
-    │       3. Atomic update via Supabase RPC (video_result, increment completed_count)
+    │       3. Atomic update via Supabase RPC (video_result, increment completed/failed counters)
     │       4. Als video_index < total_videos - 1:
     │              enqueue process_playlist_video(_job_id="{playlist_id}:{video_index+1}")
     │          Anders: mark playlist als completed
@@ -182,7 +182,9 @@ ARQ ondersteunt de `_job_id` parameter die enqueue-uniqueness garandeert totdat 
 
 ---
 
-## Schema: idempotency_keys tabel
+## Schema: idempotency_keys tabel (⚠️ Nooit geïmplementeerd)
+
+**Status: Gepland, nooit aangemaakt.** De `idempotency_keys` tabel is beschreven als onderdeel van Fase 4 maar is nooit gemigreerd naar de productie-DB (geverifieerd 2026-04-30 via `information_schema.tables`). De geplande schema was:
 
 ```sql
 CREATE TABLE idempotency_keys (
@@ -193,11 +195,9 @@ CREATE TABLE idempotency_keys (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours')
 );
-
-CREATE INDEX idx_idempotency_keys_expires ON idempotency_keys (expires_at);
 ```
 
-Cleanup via cron of Supabase pg_cron: `DELETE FROM idempotency_keys WHERE expires_at < NOW()`.
+Huidige bescherming tegen duplicate submissions: `deduct_credits_atomic` RPC (row-level locking voorkomt race conditions) + `credits_deducted` boolean op `transcription_jobs` (Fase 4, voorkomt dubbele aftrek bij worker-restart). POST-endpoint-level idempotency staat op de backlog.
 
 ---
 
@@ -219,7 +219,7 @@ Cleanup via cron of Supabase pg_cron: `DELETE FROM idempotency_keys WHERE expire
 
 ## Migratie-pad weg van ARQ
 
-Library-keuze is een transport-mechanisme. Alle job-state leeft in Supabase tabellen (`playlist_extraction_jobs`, `transcription_jobs`, `idempotency_keys`), niet in Redis. Redis is alleen het transport-mechanisme voor de queue.
+Library-keuze is een transport-mechanisme. Alle job-state leeft in Supabase tabellen (`playlist_extraction_jobs`, `transcription_jobs`), niet in Redis. Redis is alleen het transport-mechanisme voor de queue.
 
 Bij latere keuze voor Taskiq, streaq, Procrastinate of een ander systeem:
 - Architectuur blijft intact (per-video chain, deterministic job IDs, Supabase als state)
@@ -242,7 +242,7 @@ Per-video decompositie maakt het mogelijk om gefaalde videos uit een afgeronde p
 Library-keuze wordt geherevaleerd na launch wanneer we productie-data hebben. Relevante datapunten:
 
 - Hoe vaak Railway restarts in-flight jobs raken (Railway incident log)
-- Hoe vaak `ack_late=True` nodig is gebleken (ARQ retry-metrics)
+- Hoe vaak crash-recovery nodig is gebleken (ack_late bestaat niet in arq — zie ADR-030)
 - Of er ARQ-specifieke bugs optreden die ons blokkeren
 - Hoe Taskiq en streaq zich ontwikkelen (open issues, release cadence)
 

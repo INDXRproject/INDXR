@@ -110,22 +110,24 @@ Tracking van async playlist-extractie jobs.
 ```sql
 id                    UUID    PRIMARY KEY DEFAULT gen_random_uuid()
 user_id               UUID    REFERENCES auth.users(id) ON DELETE CASCADE
-status                TEXT    DEFAULT 'running'  -- 'running'|'completed'|'failed'
+status                TEXT    DEFAULT 'running'  -- 'running'|'complete'|'interrupted'
 playlist_url          TEXT
 playlist_title        TEXT
 total_videos          INTEGER DEFAULT 0
 completed             INTEGER DEFAULT 0
 failed                INTEGER DEFAULT 0
-current_video_index   INTEGER DEFAULT 0
-current_video_title   TEXT
+current_video_index   INTEGER DEFAULT 0    -- legacy kolom (pre-ARQ era), niet meer geschreven
+current_video_title   TEXT                 -- legacy kolom (pre-ARQ era), niet meer geschreven
 video_ids             JSONB   DEFAULT '[]'   -- ["videoId1", "videoId2", ...]
 video_results         JSONB   DEFAULT '{}'   -- {"videoId1": {status, transcript_id|error_type}}
 use_whisper_ids       JSONB   DEFAULT '[]'   -- video IDs die Whisper gebruiken
 collection_id         UUID
+video_metadata        JSONB   DEFAULT '{}'   -- optionele video-metadata van frontend (migratie 20260430)
 processing_time_seconds INTEGER
 created_at            TIMESTAMPTZ DEFAULT NOW()
 completed_at          TIMESTAMPTZ
 last_progress_at      TIMESTAMPTZ            -- laatste video-update (migratie 20260428); NULL voor legacy jobs
+last_heartbeat_at     TIMESTAMPTZ            -- Fase 4: worker-heartbeat elke 60s (migratie 20260430)
 ```
 
 RLS: gebruiker ziet alleen eigen jobs.
@@ -136,20 +138,50 @@ RLS: gebruiker ziet alleen eigen jobs.
 Tracking van individuele Whisper/AssemblyAI transcriptie jobs.
 
 ```sql
-id              UUID    PRIMARY KEY
-user_id         UUID    REFERENCES auth.users(id)
-status          TEXT    -- 'pending'|'downloading'|'transcribing'|'saving'|'complete'|'error'
-video_url       TEXT
-source_type     TEXT    -- 'youtube' | 'upload'
-file_size_bytes INTEGER
-file_format     TEXT    -- 'youtube' | 'mp3' | 'ogg' | etc.
-transcript_id   UUID    -- REFERENCES transcripts(id) wanneer klaar
-error_message   TEXT
-error_type      TEXT    -- canonical error slug (members_only, timeout, etc.)
-created_at      TIMESTAMPTZ DEFAULT now()
+id                      UUID    PRIMARY KEY DEFAULT gen_random_uuid()
+user_id                 UUID    NOT NULL REFERENCES auth.users(id)
+status                  TEXT    NOT NULL DEFAULT 'pending'  -- 'pending'|'downloading'|'transcribing'|'saving'|'complete'|'error'|'interrupted'
+video_url               TEXT
+source_type             TEXT    DEFAULT 'youtube'  -- 'youtube' | 'upload'
+file_size_bytes         BIGINT  DEFAULT 0
+file_format             TEXT    DEFAULT 'unknown'  -- 'youtube' | 'mp3' | 'ogg' | etc.
+duration_seconds        INTEGER
+credits_cost            INTEGER
+transcript_id           UUID    -- REFERENCES transcripts(id) wanneer klaar
+error_message           TEXT
+error_type              TEXT    -- canonical error slug (members_only, timeout, etc.)
+created_at              TIMESTAMPTZ DEFAULT now()
+updated_at              TIMESTAMPTZ DEFAULT now()
+started_at              TIMESTAMPTZ
+completed_at            TIMESTAMPTZ
+processing_time_seconds INTEGER
+credits_deducted        BOOLEAN DEFAULT false  -- Fase 4: idempotency-vlag voor worker-restart (migratie 20260430)
+last_heartbeat_at       TIMESTAMPTZ            -- Fase 4: worker-heartbeat elke 60s (migratie 20260430)
 ```
 
 RLS: gebruiker ziet alleen eigen jobs.
+
+---
+
+### `saved_videos`
+Opgeslagen video-referenties per gebruiker (niet afhankelijk van extractie). Fase 4 migratie.
+
+```sql
+id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid()
+user_id              UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
+video_id             TEXT        NOT NULL  -- YouTube video ID
+title                TEXT
+duration_seconds     INTEGER
+channel              TEXT
+thumbnail_url        TEXT
+source               TEXT        DEFAULT 'manual'  -- 'manual' | 'playlist'
+source_playlist_name TEXT
+created_at           TIMESTAMPTZ DEFAULT NOW()
+```
+
+RLS: `CREATE POLICY "Users can CRUD own saved_videos" ON saved_videos FOR ALL USING (auth.uid() = user_id)`.
+Index: `idx_saved_videos_user_id` op `(user_id)`.
+Migratie: `20260430_fase4_saved_videos.sql`.
 
 ---
 
@@ -271,6 +303,20 @@ Gebruikt in: `src/app/actions/credits.ts`
 | `20260422_add_rag_settings_to_profiles.sql` | 2026-04-22 | `profiles.rag_export_confirmed` + `profiles.rag_chunk_size` |
 | `20260412_job_metrics_and_rename.sql` | 2026-04-12 | Job metrics kolommen + rename |
 | `20260423_rag_chunk_size_90.sql` | 2026-04-23 | `rag_chunk_size` CHECK constraint uitgebreid met waarde 90 |
-| `20260428_playlist_per_video_chain.sql` | 2026-04-28 | `playlist_extraction_jobs.last_progress_at` + partial index + `update_playlist_video_progress` RPC |
+| `20260428_playlist_per_video_chain.sql` | 2026-04-28 | `playlist_extraction_jobs.last_progress_at` + partial index + `update_playlist_video_progress` RPC (5-arg) |
+| `20260428_playlist_progress_rpc_status_fix.sql` | 2026-04-28 | Fix: `status='completed'` → `status='complete'` in RPC |
 | `20260428_master_transcripts_cache.sql` | 2026-04-28 | `master_transcripts` tabel + index + RLS (cross-user transcript cache) |
-| `add_playlist_jobs.sql` | *(oud)* | Vroege playlist jobs tabel (vervangen) |
+| `20260430_fase4_transcription_jobs.sql` | 2026-04-30 | Fase 4: `transcription_jobs.credits_deducted` + `last_heartbeat_at` |
+| `20260430_fase4_playlist_extraction_jobs.sql` | 2026-04-30 | Fase 4: `playlist_extraction_jobs.last_heartbeat_at` + `video_metadata` |
+| `20260430_fase4_update_playlist_progress_rpc.sql` | 2026-04-30 | Fase 4: RPC uitgebreid naar 7-arg (+ `p_amount`, `p_reason` voor atomische credit-deductie) |
+| `20260430_fase4_saved_videos.sql` | 2026-04-30 | Fase 4: `saved_videos` tabel + RLS |
+| `add_playlist_jobs.sql` | *(oud)* | Vroege `playlist_jobs` tabel (legacy, vervangen door `playlist_extraction_jobs`) |
+
+---
+
+## Legacy en Undocumented Tabellen
+
+De volgende tabellen bestaan in de productie-DB maar zijn niet actief in de huidige codebase:
+
+- **`playlist_jobs`** — vroege tracking-tabel voor playlist-jobs vóór de ARQ-refactor (Fase 3, 2026-04-28). Kolommen wijken af van `playlist_extraction_jobs`. Niet meer geschreven door de backend. Kandidaat voor cleanup post-launch.
+- **`usage_logs`** — bevat `user_id`, `ip_address`, `video_id`, `extraction_type`, `success`, `credits_used`. Mogelijk aangemaakt door een vroege implementatie of Supabase-preset. Niet beschreven in ADR's; niet geschreven door huidige backend-code.

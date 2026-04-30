@@ -143,16 +143,20 @@ Atomische update per video (zie `supabase/migrations/20260428_playlist_per_video
 
 ```sql
 SELECT update_playlist_video_progress(
-  p_playlist_id  UUID,
-  p_video_id     TEXT,
-  p_status       TEXT,        -- 'success' of 'error'
-  p_transcript_id UUID,       -- bij success
-  p_error_type   TEXT         -- bij error
+  p_playlist_id   UUID,
+  p_video_id      TEXT,
+  p_status        TEXT,           -- 'success' of 'error'
+  p_transcript_id UUID    DEFAULT NULL,  -- bij success
+  p_error_type    TEXT    DEFAULT NULL,  -- bij error
+  p_amount        INTEGER DEFAULT 0,     -- Fase 4: credits te deduceren (0 = gratis)
+  p_reason        TEXT    DEFAULT 'Playlist caption extraction'  -- Fase 4: audit-tekst
 ) RETURNS jsonb
 -- {playlist_complete: bool, completed: int, failed: int, total: int}
 ```
 
-Idempotent: dubbele aanroep met identieke args verhoogt counters niet. Triggert auto-completion (`status='complete'`) wanneer `completed + failed >= total_videos`.
+**Fase 4 uitbreiding (migratie `20260430_fase4_update_playlist_progress_rpc.sql`):** credit-deductie zit nu atomisch in dezelfde DB-transactie als de `video_results` update. Alleen bij `p_status='success'` en `NOT v_already_done` en `p_amount > 0`.
+
+Idempotent: dubbele aanroep met identieke `p_video_id` + `p_status` verhoogt counters niet en trekt credits niet opnieuw af. Triggert auto-completion (`status='complete'`) wanneer `completed + failed >= total_videos`.
 
 ---
 

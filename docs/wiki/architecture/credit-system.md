@@ -128,7 +128,7 @@ Zie [ADR-012](../decisions/012-pricing-tiers.md) voor de rationale achter deze t
 
 ### Verbruik (Playlist)
 
-Geïmplementeerd conform ADR-010. Zie `backend/main.py` → `run_playlist_job()`.
+Geïmplementeerd conform ADR-010. Zie `backend/worker.py` → `process_playlist_video()` en `process_playlist_retries()`. (`run_playlist_job` verwijderd in Fase 3b.2, 2026-04-28.)
 
 ```
 1. Eerste 3 video's (idx < 3), captions: 0 credits (gratis)

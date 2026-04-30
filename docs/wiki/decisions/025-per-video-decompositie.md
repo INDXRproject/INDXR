@@ -2,13 +2,13 @@
 
 **Status:** Geaccepteerd
 **Datum:** 2026-04-28
-**Gerelateerde code:** `backend/main.py` (`run_playlist_job`), `backend/worker.py`, `playlist_extraction_jobs` tabel
+**Gerelateerde code:** `backend/worker.py` (`process_playlist_video`, `process_playlist_retries`), `backend/main.py` (`/api/playlist/extract`), `playlist_extraction_jobs` tabel
 
 ---
 
 ## Context
 
-De huidige `run_playlist_job` in `backend/main.py` is één monolithische Python-lus die alle video's in een playlist sequentieel verwerkt binnen één asyncio-taak (of straks één ARQ-job). Typische playlist-grootte is 8–40 video's; uitzonderlijk tot ~100.
+De vroegere `run_playlist_job` in `backend/main.py` was één monolithische Python-lus die alle video's in een playlist sequentieel verwerkt binnen één asyncio-taak. Dit is de historische context voor de architectuurkeuze; `run_playlist_job` is verwijderd in Fase 3b.2 (2026-04-28). Typische playlist-grootte is 8–40 video's; uitzonderlijk tot ~100.
 
 Dit heeft drie concrete problemen:
 
@@ -27,7 +27,7 @@ Dit probleem is library-onafhankelijk. Het doet zich voor of we ARQ, Taskiq, Pro
 `Supabase.playlist_extraction_jobs` is single source of truth voor alle playlist-state. Elke video-job leest zijn input uit Supabase, verwerkt één video, schrijft het resultaat atomair terug via een Supabase RPC, en enqueued de volgende video-job — totdat de keten klaar is.
 
 De keten wordt opgestart door `POST /api/playlist/extract`:
-1. Maakt een `playlist_extraction_jobs` rij aan in Supabase met `status='running'`, `total_videos=N`, `completed_count=0`, `video_results=[]`
+1. Maakt een `playlist_extraction_jobs` rij aan in Supabase met `status='running'`, `total_videos=N`, `completed=0`, `video_results={}`  (kolom heet `completed`, niet `completed_count`; default is leeg object `{}`, niet array)
 2. Enqueued de eerste video-job met deterministisch `_job_id = f"{playlist_id}:0"`
 3. Retourneert `job_id` direct aan de frontend
 
@@ -46,13 +46,15 @@ process_playlist_video(playlist_id, video_index):
     1. SELECT * FROM playlist_extraction_jobs WHERE id = playlist_id
     2. video_url = job.videos[video_index]
     3. Verwerk video (yt-dlp cascade → captions of Whisper)
-    4. RPC: update_playlist_video_result(playlist_id, video_index, result)
-       (atomic: JSONB append + increment completed_count)
+    4. RPC: update_playlist_video_progress(playlist_id, video_id, status, ...)
+       (atomic: JSONB update video_results + increment completed/failed counters)
+       (RPC zet status='complete' automatisch als completed + failed >= total_videos)
     5. IF video_index < total_videos - 1:
            enqueue process_playlist_video(playlist_id, video_index + 1)
               _job_id = "{playlist_id}:{video_index + 1}"
        ELSE:
-           UPDATE playlist_extraction_jobs SET status='completed'
+           RPC heeft al status='complete' gezet
+           indien bot_detection/timeout failures: enqueue process_playlist_retries(_defer_by=30s)
 ```
 
 **Sequentialiteit:** video's worden één voor één verwerkt (niet parallel). Dit respecteert YouTube rate-limits en is conform de huidige aanpak. De queue beheert orchestratie en recovery, niet parallellisme.
@@ -67,7 +69,7 @@ Max 1 video verloren bij een worker-crash of Railway-restart. De overige N-1 vid
 
 ### Restart-safe
 
-Bij een Railway SIGTERM midden in video 12: video 12 moet opnieuw (na Fase 4 met `ack_late=True` automatisch; in Fase 2–3 handmatig hervat via re-enqueue). Video's 0–11 zijn safe in Supabase. Na restart gaat de keten verder bij video 12.
+Bij een Railway SIGTERM midden in video 12: video 12 moet opnieuw. Video's 0–11 zijn safe in Supabase. `ack_late=True` bestaat niet in arq (zie ADR-019 en ADR-030) — automatische herstart vereist een custom watchdog cron job (zie backlog). Na handmatige herstart gaat de keten verder bij video 12 dankzij de idempotency-check op `video_results.status`.
 
 ### Library-onafhankelijk
 
