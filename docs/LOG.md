@@ -1,3 +1,5 @@
+[2026-04-30] db: fase 4 migraties M1–M4 toegepast — transcription_jobs (credits_deducted + last_heartbeat_at), playlist_extraction_jobs (last_heartbeat_at + video_metadata), update_playlist_video_progress RPC uitgebreid met atomische credit-deductie (p_amount/p_reason, v_already_done idempotency), saved_videos tabel + RLS + index | gewijzigd: supabase/migrations/20260430_fase4_*.sql
+---
 [2026-04-30] test: taak 1.19b productiebewijs sessie 1 — members_only fail-fast (geen AI-toggle), no_captions met AI-suggestie v2 + refund disclaimer, no_speech end-to-end refund flow 140s/41min/42cr; ADR-029 volledig geverifieerd | gewijzigd: docs/wiki/operations/test-reports.md
 ---
 [2026-04-30] feat: taak 1.19b — error messaging audit + AI-suggestie differentiatie — backend no_captions error_type fix, VideoTab structured error routing (error_type preserved, throw verwijderd), Whisper toggle blacklist voor age_restricted/members_only/youtube_restricted, bot_detection + no_captions render blocks v2, PlaylistTab mapBackendStatus no_captions + no_speech fix, failedOther filter (2×), PlaylistManager VideoStatus type + badge + progress bar + allDone check, error-taxonomy.md v2 messages alle 9 error_types | gewijzigd: backend/main.py, src/components/free-tool/VideoTab.tsx, src/components/free-tool/PlaylistTab.tsx, src/components/PlaylistManager.tsx, docs/wiki/operations/error-taxonomy.md
@@ -2039,3 +2041,15 @@ src/components/PlaylistManager.tsx
 src/components/free-tool/PlaylistTab.tsx
 src/components/free-tool/VideoTab.tsx
 ---
+[2026-04-30 06:45] commit: test: taak 1.19b productiebewijs sessie 1 — drie scenario's geverifieerd
+
+members_only fail-fast (geen AI-toggle), no_captions met v2 foutbox +
+AI-suggestie + refund disclaimer, no_speech end-to-end flow
+(yt-dlp→ffmpeg→AssemblyAI→refund 2670→2628→2670, 140s/41min).
+ADR-029 volledig in productie geverifieerd.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/test-reports.md
+---
+[2026-04-30 07:57] precompact: context compaction triggered
