@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { UploadCloud, FileAudio, X, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import { useAuth } from "@/hooks/useAuth"
 import { toast } from "sonner"
 import { TranscriptCard, TranscriptItem } from "@/components/TranscriptCard"
@@ -38,6 +39,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [whisperStatus, setWhisperStatus] = useState<'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'>('idle')
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [resumeData, setResumeData] = useState<{ jobId: string; filename: string; initialStatus: string; elapsedAtResume: number } | null>(null)
+  const [uploadPhase, setUploadPhase] = useState<'idle' | 'uploading' | 'processing'>('idle')
+  const [uploadProgress, setUploadProgress] = useState<{ loaded: number; total: number } | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -115,6 +118,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     }
     // Fallback to file size estimate if duration not available
     return `estimating...`
+  }
+
+  const formatBytes = (bytes: number): string => {
+    const mb = bytes / (1024 * 1024)
+    return mb >= 1 ? `${mb.toFixed(1)} MB` : `${(bytes / 1024).toFixed(0)} KB`
   }
 
   // Skeleton loading state
@@ -288,6 +296,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
       setIsTranscribing(false)
       setWhisperStatus('idle')
+      setUploadPhase('idle')
+      setUploadProgress(null)
     }
   }
 
@@ -328,25 +338,52 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       }
 
       // Step 3: POST file directly to Railway (bypasses Vercel 4.5MB body limit)
+      // Using XHR instead of fetch() to get upload progress events
       const formData = new FormData()
       formData.append('source_type', 'upload')
       formData.append('audio_file', file)
 
       const backendUrl = process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL || 'http://localhost:8000'
-      const response = await fetch(`${backendUrl}/api/transcribe/whisper`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
-        body: formData,
+
+      setUploadPhase('uploading')
+      const { status: httpStatus, data } = await new Promise<{
+        status: number
+        data: Record<string, unknown>
+      }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', `${backendUrl}/api/transcribe/whisper`)
+        xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`)
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress({ loaded: e.loaded, total: e.total })
+          }
+        }
+
+        xhr.upload.addEventListener('loadend', () => {
+          setUploadPhase('processing')
+          setUploadProgress(null)
+        })
+
+        xhr.onload = () => {
+          try {
+            resolve({ status: xhr.status, data: JSON.parse(xhr.responseText) as Record<string, unknown> })
+          } catch {
+            reject(new Error('Invalid response from server'))
+          }
+        }
+
+        xhr.onerror = () => reject(new Error('Upload failed. Please check your connection.'))
+        xhr.ontimeout = () => reject(new Error('Upload timed out. Please try again.'))
+        xhr.send(formData)
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        if (response.status === 402) {
+      if (httpStatus !== 200 && httpStatus !== 201) {
+        if (httpStatus === 402) {
           toast.error(
             <div>
               <p className="font-semibold">Not enough credits</p>
-              <p className="text-sm">You need {data.required_credits} credits but only have {data.available_credits}.</p>
+              <p className="text-sm">You need {data.required_credits as number} credits but only have {data.available_credits as number}.</p>
               <Link href="/pricing" className="text-accent underline text-sm">
                 Buy Credits →
               </Link>
@@ -354,11 +391,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           )
           return
         }
-        toast.error(data.user_friendly_message || data.error || 'Transcription failed')
+        toast.error((data.user_friendly_message as string) || (data.error as string) || 'Transcription failed')
         return
       }
 
-      const { job_id } = data
+      const job_id = data.job_id as string | undefined
       if (!job_id) {
         toast.error('Failed to start transcription job')
         return
@@ -372,9 +409,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
     } catch (error) {
       console.error('Transcription error:', error)
-      toast.error('Something went wrong. Please try again.')
+      toast.error(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
       setIsTranscribing(false)
       setWhisperStatus('idle')
+      setUploadPhase('idle')
+      setUploadProgress(null)
     }
   }
 
@@ -522,38 +561,62 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         </div>
       )}
 
-      {/* Transcribe Button */}
+      {/* Transcribe Button / Upload Progress / Processing Status */}
       {(file || isTranscribing) && !transcript && (
-        <Button
-          onClick={handleTranscribe}
-          disabled={!canTranscribe}
-          className="w-full"
-          size="lg"
-        >
-          {isTranscribing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {whisperStatus === 'pending' ? 'Uploading...'
-                : whisperStatus === 'downloading' ? 'Processing audio...'
-                : whisperStatus === 'transcribing' ? 'Transcribing with AI...'
-                : whisperStatus === 'saving' ? 'Saving...'
-                : 'Processing...'}
-              {elapsedSeconds > 0 && (
-                <span className="ml-2 font-mono text-xs opacity-70">{formatElapsed(elapsedSeconds)}</span>
-              )}
-            </>
-          ) : (
-            <>
-              Transcribe ({estimatedCredits} credits)
-            </>
+        <>
+          {/* Upload progress bar — shown while file bytes are being sent */}
+          {uploadPhase === 'uploading' && (
+            <div className="space-y-2">
+              <Progress
+                value={uploadProgress ? Math.round((uploadProgress.loaded / uploadProgress.total) * 100) : 0}
+                className="h-2"
+              />
+              <div className="flex justify-between text-xs text-fg-muted">
+                <span>
+                  {uploadProgress
+                    ? `Uploading ${formatBytes(uploadProgress.loaded)} / ${formatBytes(uploadProgress.total)}`
+                    : 'Preparing upload...'}
+                </span>
+                <span className="font-mono">
+                  {uploadProgress ? `${Math.round((uploadProgress.loaded / uploadProgress.total) * 100)}%` : ''}
+                </span>
+              </div>
+              <p className="text-xs text-amber-500 text-center">Don&apos;t close this tab while uploading</p>
+            </div>
           )}
-        </Button>
-      )}
 
-      {isTranscribing && whisperStatus === 'pending' && (
-        <p className="text-xs text-amber-500 text-center">
-          Do not close this page while uploading.
-        </p>
+          {/* Processing state — shown after upload completes, while AI transcribes */}
+          {uploadPhase === 'processing' && (
+            <div className="space-y-2 text-center py-1">
+              <div className="flex items-center justify-center gap-2 text-sm text-fg-muted">
+                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                <span>
+                  {whisperStatus === 'transcribing' ? 'Transcribing with AI...'
+                    : whisperStatus === 'saving' ? 'Saving transcript...'
+                    : 'Processing audio...'}
+                </span>
+                {elapsedSeconds > 0 && (
+                  <span className="font-mono text-xs opacity-70">{formatElapsed(elapsedSeconds)}</span>
+                )}
+              </div>
+              <p className="text-xs text-fg-muted/70">
+                AI is transcribing — you can leave this page; we&apos;ll keep working in the background
+              </p>
+            </div>
+          )}
+
+          {/* Transcribe button — shown only when idle */}
+          {uploadPhase === 'idle' && (
+            <Button
+              onClick={handleTranscribe}
+              disabled={!canTranscribe}
+              className="w-full"
+              size="lg"
+            >
+              Transcribe ({estimatedCredits} credits)
+            </Button>
+          )}
+        </>
       )}
 
       {/* Transcript Display with TranscriptCard */}
