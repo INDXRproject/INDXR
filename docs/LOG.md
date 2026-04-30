@@ -1,3 +1,5 @@
+[2026-04-30] feat: fase 4 B2 — worker.py idempotency + heartbeat + uuid5 + caption RPC credit-deductie | gewijzigd: backend/worker.py
+---
 [2026-04-30] feat: fase 4 B1 — transcription_pipeline.py heartbeat + credit-idempotency: _heartbeat_loop + _run_with_heartbeat helpers, heartbeat_fn parameter op do_assemblyai_transcription, stap 1 (download) + stap 6 (AssemblyAI) omhuld, credit_cost altijd berekend (ook deduct=False), credits_deducted best-effort write na deductie | gewijzigd: backend/transcription_pipeline.py
 ---
 [2026-04-30] db: fase 4 migraties M1–M4 toegepast — transcription_jobs (credits_deducted + last_heartbeat_at), playlist_extraction_jobs (last_heartbeat_at + video_metadata), update_playlist_video_progress RPC uitgebreid met atomische credit-deductie (p_amount/p_reason, v_already_done idempotency), saved_videos tabel + RLS + index | gewijzigd: supabase/migrations/20260430_fase4_*.sql
@@ -2070,4 +2072,20 @@ supabase/migrations/20260430_fase4_playlist_extraction_jobs.sql
 supabase/migrations/20260430_fase4_saved_videos.sql
 supabase/migrations/20260430_fase4_transcription_jobs.sql
 supabase/migrations/20260430_fase4_update_playlist_progress_rpc.sql
+---
+[2026-04-30 08:24] commit: feat: fase 4 B1 — heartbeat + credit-idempotency in transcription_pipeline
+
+- _heartbeat_loop: tikt elke 60s via asyncio.create_task, swallowed exceptions
+- _run_with_heartbeat: wrapper die heartbeat-task start + cancelt; no-op als heartbeat_fn=None
+- do_assemblyai_transcription: heartbeat_fn=None parameter toegevoegd
+- Stap 1 (yt-dlp download) omhuld met _run_with_heartbeat
+- Stap 4: credit_cost = calculate_credit_cost(duration) buiten if-block; altijd
+  beschikbaar in return-waarden ook als deduct_credits_on_success=False
+- Stap 4: credits_deducted=True best-effort wegschrijven naar transcription_jobs
+  direct na succesvolle deductie — B2 (worker) leest dit bij ack_late-restart
+- Stap 6 (AssemblyAI-call) omhuld met _run_with_heartbeat
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/transcription_pipeline.py
+docs/LOG.md
 ---
