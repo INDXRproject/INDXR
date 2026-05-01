@@ -661,11 +661,10 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
       Verwijdert arq Redis-keys (Exp 3b, ADR-030) en enqueued opnieuw.
       Increment watchdog_attempts naar 1 en reset status naar 'pending'.
 
-    Pass 2 — Auto-refund (watchdog_attempts>=1, ouder dan 24u):
-      Als de re-enqueue OOK crashte (job is na 24u nog steeds interrupted, geen transcript),
-      trek credits terug en markeer als 'error'.
-      Alleen voor transcription_jobs — playlist-credits zijn per-video atomisch via RPC
-      en kennen geen eenvoudig refund-bedrag.
+    Pass 2 — Auto-refund (watchdog_attempts>=1, heartbeat stale):
+      Als de re-enqueue OOK crashte (heartbeat stale, nog geen transcript),
+      trek credits terug binnen ~10 min en markeer als 'error'.
+      Alleen transcription_jobs — playlist-credits zijn per-video atomisch via RPC.
 
     ADR-030 Gap 1 (gecrashte retry-pass na playlist=complete): niet afgehandeld hier.
     De playlist krijgt status='complete' VOOR de retry-pass draait — de watchdog
@@ -781,11 +780,12 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     except Exception as e:
         logger.error(f"[WATCHDOG] playlist_extraction_jobs re-enqueue query failed: {e}")
 
-    # ── Pass 2: auto-refund transcription_jobs ouder dan 24u ─────────────
-    # Dekt het scenario dat ook de re-enqueue crashte: job is na 24u nog 'interrupted',
-    # credits_deducted=True maar geen transcript → credits terugboeken + status='error'.
-    # Alleen transcription_jobs — playlist-credits zijn per-video atomisch in de RPC
-    # en kennen geen eenvoudig totaalbedrag voor refund.
+    # ── Pass 2: auto-refund — heartbeat stale na re-enqueue ──────────────
+    # Selecteert transcription_jobs met watchdog_attempts>=1 en heartbeat stale.
+    # Scenario: Pass 1 re-enqueued, maar ook de tweede poging crashte — job staat
+    # nog 'interrupted' en heeft >5 min geen heartbeat meer gekregen.
+    # Refund binnen ~10 min na mislukte re-enqueue (geen 24u-wacht).
+    # Alleen transcription_jobs — playlist-credits zijn per-video atomisch in de RPC.
     try:
         result = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
@@ -794,7 +794,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 .eq('credits_deducted', True)
                 .is_('transcript_id', 'null')
                 .gte('watchdog_attempts', 1)
-                .lt('created_at', cutoff_24h)
+                .lt('last_heartbeat_at', stale_before)
                 .execute()
         )
         for job in (result.data or []):

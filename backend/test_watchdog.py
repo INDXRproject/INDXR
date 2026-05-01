@@ -203,18 +203,17 @@ async def test_playlist_finds_correct_video_index():
 
 
 @pytest.mark.anyio
-async def test_auto_refund_triggered_for_old_failed_job():
-    """Job ouder dan 24u met attempts>=1 en geen transcript → credits teruggeboekt."""
+async def test_pass2_refund_when_heartbeat_stale():
+    """Pass 2: job met attempts=1 en stale heartbeat → refund binnen ~10 min (geen 24u-pad)."""
     job = _make_transcription_job(
-        job_id="job-old",
-        user_id="user-999",
-        credits_cost=7,
+        job_id="job-stale",
+        user_id="user-888",
+        credits_cost=5,
         watchdog_attempts=1,
     )
     redis = AsyncMock()
     redis.enqueue_job = AsyncMock()
-    # Pass 1: leeg (attempts=0 filter matcht niet op dit job)
-    # Pass 2 (auto-refund): geeft de old job terug
+    # Pass 1: leeg (attempts=0 filter matcht niet), Pass 2: job met stale heartbeat → refund
     supabase = _supabase_mock(transcription_data=[], refund_data=[job])
 
     with patch("worker.get_supabase_client", return_value=supabase), \
@@ -224,8 +223,27 @@ async def test_auto_refund_triggered_for_old_failed_job():
         await watchdog_interrupted_jobs({"redis": redis})
 
     mock_add_credits.assert_called_once_with(
-        "user-999", 7, f"Refund: watchdog crash-recovery (job {job['id']})"
+        "user-888", 5, f"Refund: watchdog crash-recovery (job {job['id']})"
     )
+    redis.enqueue_job.assert_not_awaited()
+
+
+@pytest.mark.anyio
+async def test_pass2_no_refund_when_heartbeat_fresh():
+    """Pass 2: job met attempts=1 maar heartbeat < 5 min geleden → Supabase filtert uit → geen refund."""
+    # Heartbeat-filter lt('last_heartbeat_at', stale_before) sluit frisse heartbeat uit.
+    # Mock geeft lege resultset terug — simuleer dat DB-filter werkt.
+    redis = AsyncMock()
+    redis.enqueue_job = AsyncMock()
+    supabase = _supabase_mock(transcription_data=[], refund_data=[])  # filter sluit job uit
+
+    with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.add_credits") as mock_add_credits:
+
+        from worker import watchdog_interrupted_jobs
+        await watchdog_interrupted_jobs({"redis": redis})
+
+    mock_add_credits.assert_not_called()
     redis.enqueue_job.assert_not_awaited()
 
 

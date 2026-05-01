@@ -192,17 +192,20 @@ De retry-pass (`process_playlist_retries`, `_job_id="{playlist_id}:retries"`) wo
 
 **Acceptabel als known limitation:** de retry-pass is best-effort (één poging, 30s delay). Bij crash: de gebruiker kan een nieuwe playlist-job starten voor de gefaalde video's.
 
-### Gap 2: Automatische refund ontbreekt
+### Gap 2: Automatische refund — Opgelost ✅ 2026-05-02
 
-Gebruikers betalen voor Whisper-jobs die crashen midden in transcriptie:
-- Credits zijn afgetrokken (Step 4 in de pipeline, vóór AssemblyAI-call)
-- `credits_deducted=True` is gezet
-- Worker crasht bij Step 6 (AssemblyAI transcriptie)
-- `finally`-block in `do_assemblyai_transcription` vuurт NIET bij SIGKILL
+**Opgelost via watchdog Pass 2 (heartbeat-gebaseerd, geen 24u-pad):**
+Watchdog Pass 2 selecteert jobs met `watchdog_attempts >= 1` en stale heartbeat (> 5 min).
+Scenario: Pass 1 re-enqueued → ook de tweede poging crashte → Pass 2 boekt credits terug
+en zet status → `error` met `error_type = 'watchdog_permanent_failure'`.
+Refund-window: ~10 minuten na mislukte re-enqueue (watchdog draait elke 2 min).
 
-De `interrupted`-status is zichtbaar voor de gebruiker maar er is geen auto-refund. Handmatige refund via admin-dashboard is de tijdelijke workaround.
+**Revenue-implicatie (by design):** als Pass 1 re-enqueued én de tweede run slaagt, staat
+`credits_deducted=True` al — de worker trekt geen credits meer af. De gebruiker krijgt de
+transcriptie gratis. Dit is bewuste keuze: "liever gratis dan dubbel afgetrokken."
 
-**Let op bij watchdog-implementatie:** als watchdog refundt én re-enqueued, en de re-run slaagt, dan krijgt de gebruiker een gratis transcriptie (omdat `credits_deducted=True` blijft staan en de tweede run `deduct_credits_on_success=False` gebruikt). Dit is by design ("liever gratis dan dubbel") maar moet gedocumenteerd zijn als revenue-implicatie.
+**UX:** bij detectie van `watchdog_permanent_failure` op mount tonen de drie tabs een
+dismissable inline notice ("credits zijn teruggestort") in plaats van een Resume-banner.
 
 ### Gap 3: `idempotency_keys` tabel nooit aangemaakt
 

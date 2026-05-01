@@ -2741,3 +2741,18 @@ src/components/free-tool/PlaylistTab.tsx
 src/components/free-tool/VideoTab.tsx
 src/hooks/useJobStatus.ts
 ---
+[2026-05-01 19:27] commit: docs: wiki + LOG bijgewerkt na taak 1.7 + 1.10 + 1.11
+
+priorities.md: 1.7 [x] watchdog live, 1.10 [x] Realtime hook, 1.11 [x] cache read.
+known-issues: Railway restart sectie bijgewerkt — watchdog live, resterende gap gedocumenteerd.
+backlog: language-aware caption cache-implicatie toegevoegd.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/backlog.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-05-02 00:18] precompact: context compaction triggered
+---
+[2026-05-02 01:45] fix: watchdog Pass 2 refund binnen ~10 min, schrap 24u-pad | gewijzigd: backend/worker.py, backend/test_watchdog.py, src/components/free-tool/VideoTab.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx, docs/wiki/decisions/030-fase4-crash-recovery-leerervaring.md, docs/wiki/operations/error-taxonomy.md

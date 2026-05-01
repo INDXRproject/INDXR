@@ -75,6 +75,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
   // Whisper network disconnect banner state (fetch exceptions > 3 consecutive)
   const [whisperNetworkDisconnected, setWhisperNetworkDisconnected] = useState(false)
+  // Shown when mount-check detects a watchdog_permanent_failure — credits already refunded
+  const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
 
   // Session resume state — populated on mount when a Whisper job is still running
   const [videoResumeData, setVideoResumeData] = useState<{
@@ -307,7 +309,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           return
         }
         const job = await resp.json()
-        if (job.status === 'complete' || job.status === 'error' || job.status === 'interrupted') {
+        if (job.status === 'error' && job.error_type === 'watchdog_permanent_failure') {
+          sessionStorage.removeItem(VIDEO_JOB_KEY)
+          setWatchdogRefundNotice(true)
+        } else if (job.status === 'complete' || job.status === 'error' || job.status === 'interrupted') {
           sessionStorage.removeItem(VIDEO_JOB_KEY)
         } else if (['pending', 'downloading', 'transcribing', 'saving'].includes(job.status)) {
           setVideoResumeData({
@@ -897,6 +902,27 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
   return (
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
+      {/* Watchdog permanent failure notice — credits already refunded */}
+      {watchdogRefundNotice && (
+        <div
+          aria-live="polite"
+          className="mb-6 p-4 bg-surface border border-border rounded-xl flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-4 w-4 text-fg-muted shrink-0 mt-0.5" />
+            <p className="text-sm text-fg-muted">
+              We konden deze video niet verwerken na meerdere pogingen. Je credits zijn teruggestort.
+            </p>
+          </div>
+          <button
+            aria-label="Sluiten"
+            onClick={() => setWatchdogRefundNotice(false)}
+            className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* Video Job Resume Banner — shown when a running Whisper job is detected on mount */}
       {videoResumeData && !isStreaming && (
         <div

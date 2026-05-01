@@ -41,6 +41,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activeFilenameRef = useRef<string>('Audio Upload')
+  const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
 
   // Active job tracked via Realtime + polling
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
@@ -115,7 +116,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           return
         }
         const job = await resp.json()
-        if (job.status === 'complete' || job.status === 'error') {
+        if (job.status === 'error' && job.error_type === 'watchdog_permanent_failure') {
+          sessionStorage.removeItem(AUDIO_JOB_KEY)
+          setWatchdogRefundNotice(true)
+        } else if (job.status === 'complete' || job.status === 'error') {
           sessionStorage.removeItem(AUDIO_JOB_KEY)
         } else if (['pending', 'downloading', 'transcribing', 'saving'].includes(job.status)) {
           const elapsedAtResume = job.created_at
@@ -426,6 +430,27 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   return (
     <div className="mt-8 space-y-6">
+      {/* Watchdog permanent failure notice — credits already refunded */}
+      {watchdogRefundNotice && (
+        <div
+          aria-live="polite"
+          className="p-4 bg-surface border border-border rounded-xl flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-4 w-4 text-fg-muted shrink-0 mt-0.5" />
+            <p className="text-sm text-fg-muted">
+              We konden dit bestand niet verwerken na meerdere pogingen. Je credits zijn teruggestort.
+            </p>
+          </div>
+          <button
+            aria-label="Sluiten"
+            onClick={() => setWatchdogRefundNotice(false)}
+            className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* Resume Banner — shown when a running job is detected on mount */}
       {resumeData && !isTranscribing && (
         <div

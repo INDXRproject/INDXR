@@ -145,6 +145,19 @@ Eén plek voor alle `error_type` slugs die voorkomen in `transcription_jobs`, `p
 
 ---
 
+### `watchdog_permanent_failure`
+
+- **Categorie:** Hybride
+- **Technische definitie:** Gezet door `watchdog_interrupted_jobs` Pass 2 in `worker.py`. Trigger: `watchdog_attempts >= 1` én `last_heartbeat_at < NOW()-5min` (stale heartbeat). Betekent: de watchdog heeft de job al één keer geprobeerd te herstarten (Pass 1), maar ook de tweede poging is gecrasht of vastgelopen.
+- **Worker-actie:** `add_credits(user_id, credits_cost, "Refund: watchdog crash-recovery")` + `status='error'` + `error_type='watchdog_permanent_failure'`.
+- **Frequency observed:** Nog niet gezien in productie (watchdog live vanaf 2026-05-02).
+- **User-facing message NL:** "We konden deze video niet verwerken na meerdere pogingen. Je credits zijn teruggestort."
+- **User-facing message EN:** "We were unable to process this video after multiple attempts. Your credits have been refunded."
+- **Mitigatie nu:** Credits worden automatisch teruggestort via Pass 2 (~10 min na mislukte re-enqueue). Frontend toont een inline dismissable notice bij detectie op mount (geen Resume-banner).
+- **Mitigatie gepland:** Geen — dit is het end-state van de recovery-chain. Gebruiker kan een nieuwe job starten na de refund.
+
+---
+
 ## Overzicht tabel
 
 | Error type | Categorie | Retry-eligible | Frequency Fase 3b.3 | AI-suggestie? | Taak |
@@ -159,3 +172,4 @@ Eén plek voor alle `error_type` slugs die voorkomen in `transcription_jobs`, `p
 | `no_captions` | External | ❌ | 0× | JA — met no_speech refund disclaimer | 1.19b |
 | `no_speech` | External | ❌ | 0× | NEE (al binnen AI flow) | — |
 | `insufficient_credits` | User | ❌ | 0× | NEE | — |
+| `watchdog_permanent_failure` | Hybride | ❌ (end-state) | 0× (nieuw) | NEE | ADR-030 |

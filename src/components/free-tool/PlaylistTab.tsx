@@ -63,6 +63,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   // Active playlist job being tracked
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const fallbackMetaRef = useRef<{ title?: string; url?: string; total?: number }>({})
+  const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
 
   const _handlePlaylistUpdate = (job: JobStatusRow) => {
     const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
@@ -185,6 +186,12 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         }
         const job = await resp.json()
         const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
+
+        if (job.status === 'error' && job.error_type === 'watchdog_permanent_failure') {
+          sessionStorage.removeItem('indxr-active-playlist-job')
+          setWatchdogRefundNotice(true)
+          return
+        }
 
         if (job.status === 'complete' || job.status === 'error') {
           sessionStorage.removeItem('indxr-active-playlist-job')
@@ -439,6 +446,27 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
   return (
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
+      {/* Watchdog permanent failure notice — credits already refunded */}
+      {watchdogRefundNotice && (
+        <div
+          aria-live="polite"
+          className="mb-6 p-4 bg-surface border border-border rounded-xl flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-4 w-4 text-fg-muted shrink-0 mt-0.5" />
+            <p className="text-sm text-fg-muted">
+              We konden deze playlist niet verwerken na meerdere pogingen. Je credits zijn teruggestort.
+            </p>
+          </div>
+          <button
+            aria-label="Sluiten"
+            onClick={() => setWatchdogRefundNotice(false)}
+            className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* Resume Banner — shown when a running job is detected on mount */}
       {resumeData && !loading && (
         <div
