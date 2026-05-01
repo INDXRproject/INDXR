@@ -67,6 +67,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [028-youtube-data-api-metadata.md](decisions/028-youtube-data-api-metadata.md) | YouTube Data API videos.list voor metadata-aanvulling cascade stap 1; yt-dlp fallback bij quota-uitputting |
 | [029-caption-vs-ai-transcription-products.md](decisions/029-caption-vs-ai-transcription-products.md) | Caption extraction en AI transcription als aparte producten — cascade stap 4+5 vervalt; AI transcription is user-gestuurd betaald product |
 | [030-fase4-crash-recovery-leerervaring.md](decisions/030-fase4-crash-recovery-leerervaring.md) | Fase 4 crash-recovery leerervaring — ack_late bestaat niet, wat we wél bouwden, watchdog-recept bewezen |
+| [031-yt-dlp-audio-retry-strategy.md](decisions/031-yt-dlp-audio-retry-strategy.md) | yt-dlp audio retry-strategie met session-rotatie — partial-write fix voor lange downloads via residentiële proxies |
 
 ---
 

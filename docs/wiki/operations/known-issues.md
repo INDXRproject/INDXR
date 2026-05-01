@@ -164,6 +164,10 @@ Hoofdletter `I` en kleine letter `l` zijn visueel identiek. Bij 407: controleer 
 ### Worker env vars: kopieer van API-service, niet uit hoofd
 **Incident 2026-04-27:** PROXY_PASSWORD op worker-service was incorrect overgetypt — gaf 407 proxy auth errors bij YouTube audio download. Fix: kopieer waarden karakter-voor-karakter vanuit de API-service env vars, nooit handmatig invoeren. Bij elke nieuwe worker-deploy of nieuwe env var: vergelijk de volledige env var lijst met de API-service.
 
+### ~~Lange audio downloads (>60 min) kunnen falen met partial-write~~ ✅ Opgelost 2026-05-01 (ADR-031)
+**Symptoom was:** `ERROR: [download] Got error: N bytes read, M more expected` — Decodo residentieel IP ging offline halverwege ~150MB download. Error matchte niet op retry-keywords → faal na 1 poging.  
+**Fix:** `'bytes read'`/`'more expected'` keywords toegevoegd aan retry-condition. Per retry: vers Decodo session-ID (`{base}-r{n}`) → nieuw exit-IP. Max 3 attempts, exponential backoff. Zie ADR-031.
+
 ### VPN blokkeert Upstash Redis TCP
 Proton VPN (en mogelijk andere commerciële VPN's) blokkeren TCP-poort 6379/6380 naar Upstash. REST/HTTPS via poort 443 werkt wel (caption cache). Symptoom: TLS handshake faalt direct — `errno=104` of `Connection reset by peer`. Workaround voor lokaal testen: VPN uit. Productie (Railway) is niet geraakt.
 

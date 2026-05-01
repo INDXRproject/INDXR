@@ -1,3 +1,9 @@
+[2026-05-01 06:00] fix: yt-dlp partial-write retry — keyword match + session-rotatie per attempt (ADR-031) | gewijzigd: backend/audio_utils.py, backend/transcription_pipeline.py
+---
+[2026-05-01 06:05] test: unit-tests audio retry — 11 tests groen (partial_write trigger, proxy-rotatie, backward-compat, members-only guard) | gewijzigd: backend/test_audio_retry.py (nieuw)
+---
+[2026-05-01 06:10] docs: ADR-031 + error-taxonomy partial_write + ai-pipeline fallback path + known-issues fix + INDEX | gewijzigd: docs/wiki/decisions/031-yt-dlp-audio-retry-strategy.md (nieuw), docs/wiki/operations/error-taxonomy.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md, docs/wiki/INDEX.md
+---
 [2026-05-01 02:30] feat: spoor 1 — wegklik-bescherming (beforeunload) + VideoTab Whisper-resume via sessionStorage | gewijzigd: src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx, src/components/free-tool/VideoTab.tsx
 ---
 [2026-05-01 02:35] feat: spoor 2 — upload progress UI in AudioTab — XHR, Progress bar, uploadPhase drietrap | gewijzigd: src/components/free-tool/AudioTab.tsx
@@ -2583,4 +2589,9 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 src/components/free-tool/AudioTab.tsx
 src/components/free-tool/PlaylistTab.tsx
+---
+[2026-05-01 16:10] commit: docs: LOG.md bijgewerkt na resume-banner commit (PlaylistTab + AudioTab)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
 ---

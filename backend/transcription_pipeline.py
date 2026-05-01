@@ -102,6 +102,10 @@ def _classify_download_error(
         return 'bot_detection'
     if any(kw in lower for kw in ('timed out', 'timeout', 'read timed out', '504', 'gateway timeout')):
         return 'timeout'
+    if any(kw in lower for kw in ('bytes read', 'more expected', 'incomplete read')):
+        # HTTP content-length mismatch after all retry attempts — residential proxy
+        # dropped mid-download. See ADR-031.
+        return 'partial_write'
     if '152' in error_msg or 'unavailable' in lower:
         return 'youtube_restricted'
     logger.warning(
@@ -166,11 +170,25 @@ async def do_assemblyai_transcription(
             proxy_url = get_proxy_url(session_id=proxy_session_id)
             if proxy_url:
                 logger.info(f"[pipeline] Proxy ENABLED for {video_id}")
+                # Build per-attempt proxy URLs with rotated session IDs so that
+                # each retry uses a fresh Decodo residential exit IP. When the
+                # previous IP went offline mid-download (partial_write error),
+                # retrying with the same IP always fails. See ADR-031.
+                if proxy_session_id:
+                    proxy_urls = [
+                        get_proxy_url(session_id=f"{proxy_session_id}-r{i}")
+                        for i in range(1, 4)
+                    ]
+                else:
+                    # No pinned session — each get_proxy_url() call generates a
+                    # random sid, so rotation happens automatically.
+                    proxy_urls = [get_proxy_url() for _ in range(3)]
             else:
                 logger.warning(f"[pipeline] Proxy DISABLED for {video_id}")
+                proxy_urls = None
             try:
                 audio_path, video_title, channel = await _run_with_heartbeat(
-                    asyncio.to_thread(extract_youtube_audio, video_id, proxy_url=proxy_url),
+                    asyncio.to_thread(extract_youtube_audio, video_id, proxy_urls=proxy_urls),
                     heartbeat_fn,
                 )
                 temp_files.append(audio_path)

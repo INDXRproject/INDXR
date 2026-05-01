@@ -84,6 +84,11 @@ Frontend
        └─ enqueue_job('run_whisper_job', job_id, user_id, video_id)
             └─ ARQ worker (backend/worker.py) verwerkt asynchroon:
                  ├─ yt-dlp: download audio (best quality, no video)
+                 │    └─ extract_youtube_audio() retry-loop (ADR-031):
+                 │         ├─ Attempt 1: proxy session {sid}-r1
+                 │         ├─ Bij partial_write/timeout/connection → attempt 2: proxy session {sid}-r2 (ander exit-IP)
+                 │         ├─ Bij opnieuw falen → attempt 3: proxy session {sid}-r3
+                 │         └─ Na 3 failures: raise → job→error "partial_write" of "timeout"
                  ├─ Valideer: MembersOnlyVideoError check
                  ├─ ffmpeg: compress naar 12kbps Opus/OGG
                  ├─ Valideer bestandsgrootte en duur

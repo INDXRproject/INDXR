@@ -76,20 +76,30 @@ def get_audio_duration(file_path: str) -> float:
         raise Exception(f"Could not determine audio duration: {str(e)}")
 
 
-def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Optional[str] = None) -> tuple[str, str, Optional[str]]:
+def extract_youtube_audio(
+    video_id: str,
+    output_dir: str = "/tmp",
+    proxy_url: Optional[str] = None,
+    proxy_urls: Optional[list] = None,
+) -> tuple[str, str, Optional[str]]:
     """
     Extract audio from YouTube video using yt-dlp.
 
     Args:
         video_id: YouTube video ID
         output_dir: Directory to save audio file
-        proxy_url: Optional proxy URL (e.g. http://user:pass@host:port)
+        proxy_url: Optional fixed proxy URL for all attempts (backward-compat)
+        proxy_urls: Optional list of proxy URLs, one per attempt. When provided,
+                    each retry uses a fresh Decodo session-ID (different exit IP),
+                    which is required when the previous residential IP went offline
+                    mid-download. Takes precedence over proxy_url per attempt.
 
     Returns:
-        Tuple of (audio_path, video_title)
+        Tuple of (audio_path, video_title, channel)
 
     Raises:
-        Exception: If download fails
+        MembersOnlyVideoError: If video is members-only
+        Exception: If download fails after all attempts
     """
     import glob
     base_output_path = os.path.join(output_dir, f"yt_audio_{video_id}")
@@ -103,13 +113,19 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
     #
     # player_client: ios bypasses YouTube PO token requirements and works
     # reliably with HTTP proxies. web_embedded is the fallback. See ADR-027.
-    ydl_opts = {
+    #
+    # retries=3 (not the default 10): on a dead residential proxy, 10 internal
+    # retries waste ~5 minutes before our outer retry fires with a fresh exit IP.
+    # 3 is sufficient for transient single-packet loss. See ADR-031.
+    base_ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': f"{base_output_path}.%(ext)s",
         'quiet': True,
         'no_warnings': True,
         'verbose': False,
         'socket_timeout': 120,
+        'retries': 3,
+        'extractor_retries': 3,
         'nocheckcertificate': True,
         'js_runtimes': {'node': {}},
         'extractor_args': {
@@ -119,26 +135,37 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
         },
     }
 
-    if proxy_url:
-        ydl_opts['proxy'] = proxy_url
-        masked = proxy_url.split('@')[-1] if '@' in proxy_url else proxy_url
-        logger.info(f"YouTube audio download: using proxy @{masked}")
-    else:
-        logger.warning("YouTube audio download: NO proxy configured — this may cause 403 errors from YouTube")
-
-    logger.info(f"Starting yt-dlp audio download for video_id={video_id}")
-    logger.info(f"YT-DLP OPTIONS: {str(ydl_opts)}")
-
     max_attempts = 3
     last_error = None
-    video_title = video_id  # fallback in case info is unavailable
+    video_title = video_id
     channel = None
+
     for attempt in range(1, max_attempts + 1):
+        # Rotate proxy session on each attempt: proxy_urls[attempt-1] takes
+        # precedence; fall back to the fixed proxy_url for backward-compat.
+        if proxy_urls and len(proxy_urls) >= attempt:
+            attempt_proxy = proxy_urls[attempt - 1]
+        else:
+            attempt_proxy = proxy_url
+
+        ydl_opts = dict(base_ydl_opts)
+        if attempt_proxy:
+            ydl_opts['proxy'] = attempt_proxy
+            masked = attempt_proxy.split('@')[-1] if '@' in attempt_proxy else attempt_proxy
+        else:
+            masked = 'none'
+
+        logger.info(f"[YT-DLP-AUDIO attempt={attempt}/{max_attempts} video={video_id} proxy=@{masked}]")
+
         try:
-            # Clean up any partial files from a previous attempt
+            # Clean up any partial files from a previous attempt so yt-dlp
+            # starts fresh (no continuedl resume with a dead IP).
             for stale in glob.glob(f"{base_output_path}.*"):
                 if not stale.endswith('.ogg'):
-                    os.remove(stale)
+                    try:
+                        os.remove(stale)
+                    except OSError:
+                        pass
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
@@ -152,7 +179,7 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
 
             raw_path = raw_files[0]
             raw_size = os.path.getsize(raw_path) / 1024 / 1024
-            logger.info(f"yt-dlp downloaded: {raw_path} ({raw_size:.2f}MB)")
+            logger.info(f"[YT-DLP-AUDIO] downloaded: {raw_path} ({raw_size:.2f}MB)")
 
             # Convert to mono Opus/OGG using ffmpeg (12kbps handles up to ~5 hours within 25MB)
             ffmpeg_cmd = [
@@ -170,30 +197,45 @@ def extract_youtube_audio(video_id: str, output_dir: str = "/tmp", proxy_url: Op
             if result.returncode != 0:
                 raise Exception(f"ffmpeg failed: {result.stderr[-500:]}")
 
-            os.remove(raw_path)  # Clean up raw download
+            os.remove(raw_path)
 
             final_size = os.path.getsize(final_output_path) / 1024 / 1024
-            logger.info(f"Audio conversion done: {raw_size:.2f}MB -> {final_size:.2f}MB ogg")
+            logger.info(f"[YT-DLP-AUDIO] conversion done: {raw_size:.2f}MB → {final_size:.2f}MB ogg")
 
             return final_output_path, video_title, channel
 
         except Exception as e:
             last_error = e
             error_str = str(e).lower()
+
             if any(kw in error_str for kw in MEMBERS_ONLY_KEYWORDS):
-                logger.warning(f"Members-only video detected during audio extraction: {video_id}")
+                logger.warning(f"[YT-DLP-AUDIO] members-only detected: {video_id}")
                 raise MembersOnlyVideoError("This video is only available to channel members and cannot be transcribed.")
-            is_timeout = any(kw in error_str for kw in ('timed out', 'timeout', 'read timeout', 'connectionpool'))
-            is_ssl_error = any(kw in error_str for kw in ('ssl', 'unexpected_eof', 'eof', 'connectionreset', 'remotedisconnected'))
-            if (is_timeout or is_ssl_error) and attempt < max_attempts:
-                delay = 2 ** attempt  # 2s, 4s, 8s
-                reason = "SSL/connection error" if is_ssl_error else "timeout"
-                logger.warning(f"yt-dlp download {reason} (attempt {attempt}/{max_attempts}), retrying in {delay}s...")
+
+            # Classify the failure reason to decide whether to retry
+            is_partial_write = any(kw in error_str for kw in (
+                'bytes read', 'more expected', 'incomplete read', 'content-length',
+            ))
+            is_timeout = any(kw in error_str for kw in (
+                'timed out', 'timeout', 'read timeout', 'connectionpool',
+            ))
+            is_connection = any(kw in error_str for kw in (
+                'ssl', 'unexpected_eof', 'eof', 'connectionreset',
+                'remotedisconnected', 'broken pipe', 'connection reset',
+            ))
+
+            if (is_partial_write or is_timeout or is_connection) and attempt < max_attempts:
+                delay = 2 ** attempt  # 2s, 4s
+                reason = 'partial_write' if is_partial_write else ('timeout' if is_timeout else 'connection')
+                logger.warning(
+                    f"[YT-DLP-AUDIO retry={attempt}/{max_attempts} reason={reason} video={video_id}] "
+                    f"retrying in {delay}s with fresh proxy session"
+                )
                 time.sleep(delay)
             else:
                 break
 
-    logger.error(f"YouTube audio extraction failed after {attempt} attempt(s): {last_error}")
+    logger.error(f"[YT-DLP-AUDIO final_fail attempts={attempt} video={video_id}] {last_error}")
     raise Exception(f"Failed to extract audio from YouTube: {str(last_error)}")
 
 

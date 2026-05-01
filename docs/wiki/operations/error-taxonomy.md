@@ -80,6 +80,19 @@ Eén plek voor alle `error_type` slugs die voorkomen in `transcription_jobs`, `p
 
 ---
 
+### `partial_write`
+
+- **Categorie:** Hybride
+- **Technische definitie:** `_classify_download_error()` matcht op `'bytes read'`, `'more expected'`, `'incomplete read'` in de error string. Gerapporteerd door yt-dlp's `RetryManager` in `http.py` nadat alle interne retries zijn uitgeput: HTTP response had een Content-Length header maar de verbinding viel weg vóór alle bytes ontvangen waren.
+- **Voorbeeld error message:** `"ERROR: [download] Got error: 8386313 bytes read, 2025336 more expected"`
+- **Oorzaak:** Decodo residentieel exit-IP ging offline halverwege een lange audio-download (~150MB, >60 min video). YouTube CDN-URLs zijn IP-locked — range-request resume via hetzelfde dode IP faalt altijd.
+- **User-facing message NL:** "Verbinding onderbroken tijdens download. We proberen het automatisch opnieuw."
+- **User-facing message EN:** "Download interrupted. Retrying automatically."
+- **Mitigatie (geïmplementeerd ADR-031):** `extract_youtube_audio` triggert nu retry op dit error-type. Per retry wordt een vers Decodo session-ID gebruikt (`{base}-r{n}`) → nieuw exit-IP → fresh download start. Max 3 attempts, exponential backoff (2s, 4s).
+- **Bereikt dit `_classify_download_error`:** Alleen als alle 3 retry-attempts falen. In dat geval wordt `partial_write` gelogged als definitief faaltype.
+
+---
+
 ### `extraction_error`
 
 - **Categorie:** Hybride (classificatie deels onzeker)
@@ -141,6 +154,7 @@ Eén plek voor alle `error_type` slugs die voorkomen in `transcription_jobs`, `p
 | `age_restricted` | External | ❌ | 0× | NEE | — |
 | `members_only` | External | ❌ | 0× | NEE | — |
 | `timeout` | Hybride | ✅ (effectief) | 0× | n.v.t. (retry) | 1.6, 1.19 |
+| `partial_write` | Hybride | ✅ (effectief, ADR-031) | n.v.t. productie | n.v.t. (retry) | ADR-031 |
 | `extraction_error` | Hybride | ❌ | 1× | JA | 1.6 |
 | `no_captions` | External | ❌ | 0× | JA — met no_speech refund disclaimer | 1.19b |
 | `no_speech` | External | ❌ | 0× | NEE (al binnen AI flow) | — |
