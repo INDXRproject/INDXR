@@ -13,14 +13,9 @@ import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "@/utils/supabase/client"
 import { getPollingInterval } from "@/lib/pollingBackoff"
+import { TranscriptionProgress } from "@/components/transcription/TranscriptionProgress"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
-
-function formatElapsed(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
 
 interface AudioTabProps {
   onTranscriptLoaded?: (transcript: TranscriptItem[], metadata: TranscriptMetadata) => void
@@ -587,19 +582,13 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
           {/* Processing state — shown after upload completes, while AI transcribes */}
           {uploadPhase === 'processing' && (
-            <div className="space-y-2 text-center py-1">
-              <div className="flex items-center justify-center gap-2 text-sm text-fg-muted">
-                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
-                <span>
-                  {whisperStatus === 'transcribing' ? 'Transcribing with AI...'
-                    : whisperStatus === 'saving' ? 'Saving transcript...'
-                    : 'Processing audio...'}
-                </span>
-                {elapsedSeconds > 0 && (
-                  <span className="font-mono text-xs opacity-70">{formatElapsed(elapsedSeconds)}</span>
-                )}
-              </div>
-              <p className="text-xs text-fg-muted/70">
+            <div className="space-y-3 py-1">
+              <TranscriptionProgress
+                status={whisperStatus === 'idle' ? 'pending' : whisperStatus}
+                elapsedSeconds={elapsedSeconds}
+                audioDurationSeconds={audioDuration}
+              />
+              <p className="text-xs text-fg-muted/70 text-center">
                 AI is transcribing — you can leave this page; we&apos;ll keep working in the background
               </p>
             </div>

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/useAuth"
 import { getPollingInterval } from "@/lib/pollingBackoff"
 import posthog from "posthog-js"
+import { TranscriptionProgress } from "@/components/transcription/TranscriptionProgress"
 
 interface VideoTabProps {
   onPlaylistDetected?: () => void
@@ -1320,20 +1321,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  </Link>
                </div>
              ) : loading && whisperStatus !== 'idle' ? (
-               <div className="flex items-center gap-1.5 text-sm text-fg-muted">
-                 <Loader2 className="h-3 w-3 animate-spin" />
-                 <span>
-                   {whisperStatus === 'pending' ? 'Starting transcription...'
-                   : whisperStatus === 'downloading' ? 'Downloading audio from YouTube...'
-                   : whisperStatus === 'transcribing' ? 'Transcribing with AI...'
-                   : 'Saving transcript...'}
-                 </span>
-                 {isStreaming && (
-                   <span className="ml-1 font-mono text-xs text-fg-muted/70">
-                     Processing: {formatElapsed(elapsedSeconds)}
-                   </span>
-                 )}
-               </div>
+               <TranscriptionProgress
+                 status={whisperStatus}
+                 elapsedSeconds={elapsedSeconds}
+                 audioDurationSeconds={videoDuration}
+                 className="mt-2"
+               />
              ) : (
                <p className={cn("text-sm text-fg-muted", error && "text-error")}>
                  {error ? error.message : "Paste any YouTube video URL to extract captions"}
