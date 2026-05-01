@@ -48,6 +48,8 @@ Diagnostisch bevestigd (2026-04-23): `automatic_captions` bevat `'ar-orig'` voor
 
 **Aanbevolen flow tot deze fix er is:** AssemblyAI transcriptie voor niet-Engelse content.
 
+**Cache-implicatie (2026-05-01):** `master_transcripts_read()` gebruikt standaard `language='en'` voor caption lookups. Niet-Engelse videos missen daardoor de warm cache en vallen door naar de yt-dlp cascade — dit is gedocumenteerd in `backend/master_cache.py` en `backend/main.py`. Bij implementatie van language-aware lookup moet ook de cache-read worden uitgebreid met de juiste language-parameter.
+
 **Geschatte complexiteit:** Medium — 10-20 regels Python, maar vereist testen op meerdere talen en edge cases (taal niet beschikbaar, alleen vertaling beschikbaar, etc.)
 
 ### Bulk & Channel

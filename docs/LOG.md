@@ -1,3 +1,17 @@
+[2026-05-01 19:30] feat: Supabase Realtime + polling fallback (taak 1.10) — useJobStatus hook, VideoTab/AudioTab/PlaylistTab gerefactored; pollWhisperJob/runPollLoop/startPollInterval verwijderd | gewijzigd: src/hooks/useJobStatus.ts (nieuw), src/components/free-tool/VideoTab.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx
+---
+[2026-05-01 19:25] feat: master_transcripts cache read in /api/extract/youtube (taak 1.11) | gewijzigd: backend/main.py
+---
+[2026-05-01 19:20] feat: master_transcripts cache read in worker.py — _process_caption_video + run_whisper_job (taak 1.11) | gewijzigd: backend/worker.py
+---
+[2026-05-01 19:15] feat: master_transcripts_read() + unit-tests (taak 1.11) | gewijzigd: backend/master_cache.py, backend/test_master_cache.py (nieuw)
+---
+[2026-05-01 19:10] feat: watchdog ARQ cron + unit-tests (taak 1.7) | gewijzigd: backend/worker.py, backend/test_watchdog.py (nieuw)
+---
+[2026-05-01 19:05] db: migration watchdog_attempts kolom (taak 1.7) | gewijzigd: supabase/migrations/20260501_watchdog_attempts.sql (nieuw)
+---
+[2026-05-01 19:35] docs: wiki bijgewerkt (taak 1.7 + 1.10 + 1.11) — priorities.md [x], known-issues Railway restart, backlog language-aware caption cache-implicatie | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md, docs/wiki/roadmap/backlog.md
+---
 [2026-05-01 06:00] fix: yt-dlp partial-write retry — keyword match + session-rotatie per attempt (ADR-031) | gewijzigd: backend/audio_utils.py, backend/transcription_pipeline.py
 ---
 [2026-05-01 06:05] test: unit-tests audio retry — 11 tests groen (partial_write trigger, proxy-rotatie, backward-compat, members-only guard) | gewijzigd: backend/test_audio_retry.py (nieuw)
@@ -2594,4 +2608,136 @@ src/components/free-tool/PlaylistTab.tsx
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
+---
+[2026-05-01 18:06] precompact: context compaction triggered
+[2026-05-01 18:09] commit: fix: yt-dlp partial-write retry + session-rotatie per attempt (ADR-031)
+
+Root cause: 'bytes read, N more expected' matchte niet op retry-keywords
+→ else: break na 1 poging. Plus: retry hergebruikte zelfde dode proxy-IP.
+
+Fix A — keyword: 'bytes read'/'more expected' triggert nu outer retry-loop.
+Fix B — session-rotatie: transcription_pipeline bouwt proxy_urls lijst met
+  {base_sid}-r{1..3} zodat elke attempt een vers Decodo exit-IP gebruikt.
+Fix C — retries=3 in ydl_opts: sneller falen op dood proxy-IP zodat outer
+  retry eerder vuurt (was default 10, ~5 minuten verspilling).
+
+Nieuw: partial_write error-type in _classify_download_error.
+Backward-compat: proxy_url= callers werken ongewijzigd.
+
+Geverifieerd: 11 unit tests groen — trigger, proxy-rotatie,
+backward-compat, members-only guard, keyword matching.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/audio_utils.py
+backend/test_audio_retry.py
+backend/transcription_pipeline.py
+docs/INVESTIGATION-yt-dlp-partial-write.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/decisions/031-yt-dlp-audio-retry-strategy.md
+docs/wiki/operations/error-taxonomy.md
+docs/wiki/operations/known-issues.md
+---
+[2026-05-01 18:09] commit: chore: verwijder INVESTIGATION-doc na merge ADR-031
+
+Tijdelijk onderzoeksdocument — bevindingen zijn opgenomen in ADR-031
+en error-taxonomy. Na merge verwijderd per spec.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/INVESTIGATION-yt-dlp-partial-write.md
+---
+[2026-05-01 19:09] commit: db: migration watchdog_attempts kolom op beide job-tabellen
+
+Voegt watchdog_attempts INTEGER DEFAULT 0 toe aan transcription_jobs
+en playlist_extraction_jobs. Gebruikt door watchdog_interrupted_jobs()
+in worker.py om max-1-re-enqueue en auto-refund te bewaken.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: supabase/migrations/20260501_watchdog_attempts.sql
+---
+[2026-05-01 19:09] commit: feat: watchdog ARQ cron voor crash-recovery van interrupted jobs (taak 1.7)
+
+watchdog_interrupted_jobs() draait elke 2 minuten als ARQ cron.
+
+Pass 1 — re-enqueue (attempts=0):
+  Selecteert transcription_jobs/playlist_extraction_jobs met status=interrupted,
+  credits_deducted=True, geen transcript, aangemaakt <24u geleden, heartbeat stale.
+  Verwijdert arq Redis-keys (ADR-030 Exp 3b) en enqueued opnieuw met dezelfde
+  _job_id zodat idempotency-vlaggen dubbele credit-aftrek voorkomen.
+  Reset status naar pending/running + watchdog_attempts=1.
+
+Pass 2 — auto-refund (attempts>=1, ouder dan 24u):
+  Als ook de re-enqueue crashte: credits terugboeken via add_credits(),
+  status naar error + error_type=watchdog_permanent_failure.
+  Alleen transcription_jobs (playlist-credits zijn per-video atomisch in RPC).
+
+WorkerSettings: cron_jobs toegevoegd + watchdog opgenomen in functions.
+7 unit tests: re-enqueue, idempotentie, Gap 1, playlist video_index, auto-refund.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/test_watchdog.py
+backend/worker.py
+---
+[2026-05-01 19:10] commit: feat: master_transcripts_read() — cache read-logic (taak 1.11)
+
+master_cache.py uitgebreid met master_transcripts_read(video_id, source_method, language).
+
+Caption-pad: filtert op source_method='caption_extraction', deprecated_at IS NULL,
+fetched_from_provider_at > NOW() - 90d. language='en' als default bij callers —
+non-EN content mist de cache en valt door naar yt-dlp cascade (backlog item).
+
+AI-pad: filtert op source_method='audio_transcription', model_quality_rank >=
+CURRENT_PRODUCTION_AI_MODEL rank. Geen language-filter — AssemblyAI detecteert
+de taal en de caller kent die niet vooraf.
+
+Bij cache-hit: fetcht transcript JSON van R2 via r2_read_json, retourneert dict
+met transcript, duration_seconds, language, transcription_model.
+Bij R2-miss op bestaande DB-rij: logt warning, behandelt als miss.
+Nooit raises — alle fouten zijn cache-misses.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/master_cache.py
+---
+[2026-05-01 19:11] commit: feat: master_transcripts cache read in /api/extract/youtube (taak 1.11)
+
+Warm-path check na Redis-miss, vóór yt-dlp cascade stap 1.
+language='en' default — non-EN content valt door naar cascade (backlog).
+Bij cache-hit: metadata via YouTube Data API (1 quota-unit), Redis backfill,
+ExtractResponse teruggeven zonder yt-dlp round-trip.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+---
+[2026-05-01 19:12] commit: feat: master_transcripts cache read in worker.py (taak 1.11)
+
+_process_caption_video: cache check vóór yt-dlp cascade.
+Bij hit: transcript uit R2 direct in transcripts-tabel, skip yt-dlp.
+language='en' default — non-EN content valt door naar cascade (backlog).
+
+run_whisper_job: cache check vóór audio-download + AssemblyAI.
+Bij hit: transcript uit R2, deduct_credits(), job→complete, return.
+Geen language-filter (AssemblyAI detecteert taal, onbekend vooraf).
+Gebruiker betaalt altijd bij cache-hit (ADR-021).
+
+7 unit tests: hit, miss, R2-miss, AI, low-rank, Supabase-exc, R2-exc.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/test_master_cache.py
+backend/worker.py
+---
+[2026-05-01 19:12] precompact: context compaction triggered
+[2026-05-01 19:26] commit: feat: Supabase Realtime + polling fallback via useJobStatus hook (taak 1.10)
+
+RLS verified: transcription_jobs USING (auth.uid() = user_id) blocks cross-user events.
+New hook src/hooks/useJobStatus.ts: postgres_changes subscription (primary) + backoff
+polling loop (fallback/data source). Both paths share handlers; done-guard prevents
+double-firing. VideoTab, AudioTab, PlaylistTab refactored to use hook — pollWhisperJob,
+runPollLoop, startPollInterval removed.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/free-tool/AudioTab.tsx
+src/components/free-tool/PlaylistTab.tsx
+src/components/free-tool/VideoTab.tsx
+src/hooks/useJobStatus.ts
 ---

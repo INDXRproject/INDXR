@@ -198,10 +198,10 @@ Geen `video_id + user_id` uniciteit check — credits verbruikt bij elke extract
 ### Geen automatic retry voor gefaalde playlist videos
 Uitzondering: bot_detection en timeout worden na 30s eenmalig herprobeerd.
 
-### Railway restart kills in-flight jobs (gedeeltelijk opgelost door Fase 4)
+### Railway restart kills in-flight jobs (goeddeels opgelost)
 **Fase 4 opgeleverd (2026-04-30):** heartbeat (`last_heartbeat_at` elke 60s), stale-detectie in poll-endpoints (300s threshold → status `interrupted`), idempotency-vlaggen (`credits_deducted` op `transcription_jobs`, `v_already_done` in RPC) zodat handmatige herstart geen dubbele credit-aftrek geeft.
-**Nog niet opgelost:** ARQ `ack_late=True` bestaat niet in arq 0.28.0 (Celery-concept). Bij worker-crash verdwijnt een in-flight job uit de Redis queue — hij wordt niet automatisch herstart. De `interrupted`-status is nu zichtbaar voor de gebruiker, maar er is geen auto-recovery en **refund wordt niet automatisch gegeven**: de gebruiker betaalt voor jobs die niet succesvol voltooien wegens worker-crash.
-**Tijdelijke workaround:** handmatige refund via admin-dashboard tot watchdog/Resume-feature gebouwd is. Zie backlog voor de drie implementatie-paden (watchdog cron, Resume-knop, library-swap) en ADR-019 voor uitleg waarom `ack_late` niet bestaat.
+**Watchdog cron live (2026-05-01):** `watchdog_interrupted_jobs` draait elke 2 minuten. Pass 1: re-enqueue jobs met `watchdog_attempts=0` die >5 min gestagneerd zijn (max 1 automatische herstart). Pass 2: auto-refund voor jobs ouder dan 24u die na herstart nog steeds geen transcript hebben — credits worden teruggeboekt en status → `error`. Migratie: `20260501_watchdog_attempts.sql`.
+**Resterende gap:** ARQ `ack_late=True` bestaat niet in arq 0.28.0. De watchdog lost Gap 2 (crash na credit-deductie) op via één automatische herstart; bij definitief falen volgt auto-refund. Gap 1 (retry-pass crash na volledige playlist) is inherent niet zichtbaar voor de watchdog (status is dan al `complete`). Zie ADR-030 sectie Gap 1.
 
 
 ### Geen uptime monitoring

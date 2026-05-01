@@ -81,11 +81,11 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     geen cascade-stap binnen het gratis caption-product. needs_manual_review wordt vervangen door duidelijke
     error_type-gebaseerde messaging in taak 1.19b. Zie ADR-029.
 
-- [~] **1.7 — Graceful shutdown / crash-recovery** (gedeeltelijk — zie noot)
+- [x] **1.7 — Graceful shutdown / crash-recovery** ✅ 2026-05-01
     Doel: in-flight jobs persisteren bij Railway restart in plaats van verdwijnen.
     **Wat Fase 4 opgeleverd heeft (2026-04-30):** heartbeat (`last_heartbeat_at` elke 60s), stale-detectie in poll-endpoints (300s threshold → status `interrupted`), idempotency-vlaggen (`credits_deducted`, `v_already_done`) zodat handmatige herstart geen dubbele kosten geeft.
-    **Wat er nog ontbreekt:** ARQ `ack_late=True` **bestaat niet** in arq 0.28.0 — het is een Celery-concept zonder equivalent. Bij worker-crash wordt een job niet automatisch herstart; de job verdwijnt uit de queue. `interrupted`-status is zichtbaar voor de gebruiker maar er is geen auto-recovery en nog geen refund-automatisering. Zie [ADR-019](../decisions/019-arq-job-queue.md) voor de drie paden naar echte crash-recovery (custom watchdog cron, library-swap, Resume-knop). Verdere implementatie staat in backlog.
-    Afhankelijk van: 1.5.
+    **Watchdog ARQ cron (2026-05-01):** `watchdog_interrupted_jobs` cron elke 2 minuten. Pass 1: re-enqueue `interrupted` jobs met `watchdog_attempts=0`, credits deducted, geen transcript, heartbeat stale >5min. Pass 2: auto-refund voor jobs ouder dan 24u met `watchdog_attempts>=1` en nog geen transcript. Migratie: `20260501_watchdog_attempts.sql`.
+    Zie [ADR-019](../decisions/019-arq-job-queue.md) en [ADR-030](../decisions/030-fase4-crash-recovery-leerervaring.md).
 
 - [x] **1.8 — Cloudflare R2 storage helper** ✅ 2026-04-28
     `backend/storage.py`: boto3 wrapper (`r2_client`, `r2_write_json`, `r2_read_json`, `r2_generate_presigned_url`). Graceful degradatie bij ontbrekende env vars.
@@ -104,16 +104,16 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
 
 ### Realtime + cache activatie
 
-- [ ] **1.10 — Supabase Realtime als primaire methode + smart polling als fallback** (2–3 dagen)
+- [x] **1.10 — Supabase Realtime als primaire methode + smart polling als fallback** ✅ 2026-05-01
     Doel: instant UX-updates op job-state changes, met polling als robuuste fallback voor users achter firewalls.
-    Implementatie: Realtime-subscription op `playlist_extraction_jobs` en `transcription_jobs` tabellen, filter per job-id, auto-disconnect na 5 min idle. Bij WebSocket-failure: switch naar smart polling.
-    Afhankelijk van: 1.5 (queue moet stabiel zijn voor reliable state-updates), 1.7 (graceful shutdown), 1.3 (smart polling als fallback).
-    Zie [ADR-022](../decisions/022-realtime-plus-polling-fallback.md) (supersedet ADR-008).
+    **Geïmplementeerd:** `src/hooks/useJobStatus.ts` — gedeelde hook met `postgres_changes` Realtime-subscription (gefilterd op `id=eq.{jobId}`) + backoff polling loop als fallback/data source. VideoTab, AudioTab, PlaylistTab gerefactored: `pollWhisperJob`, `runPollLoop`, `startPollInterval` vervangen door hook. RLS geverifieerd: `transcription_jobs` `USING (auth.uid() = user_id)` blokkeert cross-user Realtime events.
+    Zie [ADR-022](../decisions/022-realtime-plus-polling-fallback.md).
 
-- [ ] **1.11 — `master_transcripts` cache read-logic** (1 dag)
+- [x] **1.11 — `master_transcripts` cache read-logic** ✅ 2026-05-01
     Doel: cache-hits leveren bij herhaalde transcripties. Flow: bij nieuwe aanvraag → check cache op `(video_id, language, transcription_model)` → hit: kopieer naar `user_transcripts`, trek credits af, klaar → miss: normale flow, vul cache na succes.
-    Belangrijk: gebruikers betalen ALTIJD voor AI-transcriptie, ook bij cache-hit. Dit is bewuste keuze (zie ADR-021): de cache verlaagt onze kosten en versnelt de levering, niet de prijs voor de gebruiker.
-    Afhankelijk van: 1.9.
+    **Geïmplementeerd:** `master_transcripts_read()` in `backend/master_cache.py`. Geïntegreerd in `/api/extract/youtube` (main.py, na Redis miss), `_process_caption_video` (worker.py) en `run_whisper_job` (worker.py). Caption-entries verlopen na 90 dagen; AI-entries gefilterd op `model_quality_rank`. Standaard `language='en'` voor caption-lookup — non-EN valt door naar yt-dlp cascade (backlog).
+    Gebruikers betalen ALTIJD voor AI-transcriptie, ook bij cache-hit (zie ADR-021).
+    Zie [ADR-021](../decisions/021-master-transcripts-cache.md).
 
 ### Launch-noodzaak
 
