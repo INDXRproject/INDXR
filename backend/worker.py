@@ -23,9 +23,12 @@ from arq.connections import RedisSettings
 from dotenv import load_dotenv
 
 from audio_utils import MembersOnlyVideoError
+import math
+
 from credit_manager import (
     add_credits,
     check_user_balance,
+    deduct_credits,
     get_supabase_client,
 )
 from transcription_pipeline import (
@@ -33,7 +36,7 @@ from transcription_pipeline import (
     _run_with_heartbeat,
     do_assemblyai_transcription,
 )
-from master_cache import master_transcripts_write
+from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_client import YouTubeClient
 from youtube_utils import extract_via_youtube_transcript_api, extract_with_ytdlp
 
@@ -111,6 +114,50 @@ async def run_whisper_job(
         )
         already_deducted = True
 
+    # ── master_transcripts cache check (AI warm path) ────────────────────
+    # Geen language-filter — AssemblyAI detecteert de taal; we kennen die niet vooraf.
+    # Alleen hit als cached model_quality_rank >= CURRENT_PRODUCTION_AI_MODEL rank.
+    # Bij hit: sla yt-dlp download + AssemblyAI volledig over. Gebruiker betaalt altijd
+    # (ADR-021 "cache financiert de infrastructuur, niet de prijs").
+    mc = await master_transcripts_read(video_id, source_method="audio_transcription")
+    if mc is not None:
+        logger.info(f"[CACHE HIT] AI transcription job_id={job_id} video={video_id} model={mc['transcription_model']}")
+        duration_sec = mc.get("duration_seconds") or 0
+        credit_cost = max(1, math.ceil(duration_sec / 60.0))
+        insert_data_ai: dict = {
+            "user_id": user_id,
+            "source_type": "youtube",
+            "title": title or video_id,
+            "transcript": mc["transcript"],
+            "duration": duration_sec,
+            "video_id": video_id,
+            "video_url": f"https://www.youtube.com/watch?v={video_id}",
+            "language": mc.get("language", "en"),
+            "processing_method": "assemblyai",
+        }
+        t = await asyncio.to_thread(
+            lambda d=insert_data_ai: supabase.table("transcripts").insert(d).execute()
+        )
+        transcript_id = t.data[0]["id"]
+        if not already_deducted:
+            await asyncio.to_thread(
+                lambda: deduct_credits(
+                    user_id, credit_cost,
+                    f"AI Transcription (cache hit): {video_id}",
+                    metadata={"video_id": video_id, "job_id": job_id},
+                )
+            )
+        await asyncio.to_thread(
+            lambda: supabase.table("transcription_jobs").update({
+                "status": "complete",
+                "transcript_id": transcript_id,
+                "credits_cost": credit_cost,
+                "credits_deducted": True,
+            }).eq("id", job_id).execute()
+        )
+        logger.info(f"← run_whisper_job ● cache-hit (transcript_id={transcript_id}, {credit_cost}cr)")
+        return
+
     async def _hb() -> None:
         await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
@@ -155,6 +202,35 @@ async def _process_caption_video(
         balance = await asyncio.to_thread(check_user_balance, user_id)
         if balance < 1:
             return False, None, 'insufficient_credits', 0
+
+    # ── master_transcripts cache check (warm path) ────────────────────────
+    # language='en' default — non-EN videos missen de cache en vallen door naar
+    # de yt-dlp cascade. Language-aware lookup staat in backlog:
+    # docs/wiki/roadmap/backlog.md → "Language-aware caption extraction".
+    mc = await master_transcripts_read(video_id, source_method="caption_extraction", language="en")
+    if mc is not None:
+        logger.info(f"[CACHE HIT] caption playlist {playlist_id} video={video_id}")
+        char_count = sum(len(s["text"]) for s in mc["transcript"])
+        duration = mc.get("duration_seconds") or 0
+        insert_data: dict = {
+            "user_id": user_id,
+            "source_type": "youtube",
+            "title": video_id,  # metadata niet beschikbaar bij playlist cache-hit
+            "transcript": mc["transcript"],
+            "duration": duration,
+            "character_count": char_count,
+            "video_id": video_id,
+            "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",
+            "processing_method": "youtube_captions",
+        }
+        if collection_id:
+            insert_data["collection_id"] = collection_id
+        t = await asyncio.to_thread(
+            lambda d=insert_data: supabase.table("transcripts").insert(d).execute()
+        )
+        transcript_id = t.data[0]["id"]
+        credit_amount = 0 if is_free else 1
+        return True, transcript_id, None, credit_amount
 
     # Cascade step 1: youtube-transcript-api (faster, no yt-dlp overhead)
     extract_result = await extract_via_youtube_transcript_api(video_id, session_id=proxy_session)
