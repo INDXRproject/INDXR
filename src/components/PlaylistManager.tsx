@@ -403,6 +403,64 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       );
                     })()}
 
+                    {/* Stats row: free + failed breakdown */}
+                    {(() => {
+                      const freeCount = freeVideoIds?.size ?? 0
+                      const noCaptionsIds = Object.entries(videoStatuses).filter(([, s]) => s === 'no_captions').map(([id]) => id)
+                      const noSpeechIds = Object.entries(videoStatuses).filter(([, s]) => s === 'no_speech').map(([id]) => id)
+                      const failedVideoIds = [...noCaptionsIds, ...noSpeechIds]
+                      const failedEntries = playlist?.entries.filter(e => failedVideoIds.includes(e.id)) ?? []
+                      if (freeCount === 0 && failedEntries.length === 0) return null
+                      return (
+                        <div className="space-y-3">
+                          {/* Credit / free summary */}
+                          {freeCount > 0 && (
+                            <div className="flex items-center gap-2 text-xs text-fg-muted">
+                              <span className="text-[10px] uppercase font-bold text-success bg-success-subtle px-1.5 py-0.5 rounded">{freeCount} free</span>
+                              <span>{freeCount} video{freeCount !== 1 ? 's' : ''} extracted without using credits</span>
+                            </div>
+                          )}
+                          {/* Failed videos needing audio upload */}
+                          {failedEntries.length > 0 && (
+                            <div className="p-3 bg-surface-elevated/50 border border-border rounded-lg space-y-2">
+                              <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
+                                {failedEntries.length} video{failedEntries.length !== 1 ? 's' : ''} need audio upload
+                              </p>
+                              <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+                                {failedEntries.map(e => (
+                                  <div key={e.id} className="flex items-center gap-2">
+                                    {e.thumbnail && (
+                                      <Image
+                                        src={e.thumbnail}
+                                        alt=""
+                                        width={40}
+                                        height={22}
+                                        className="rounded shrink-0 object-cover"
+                                        unoptimized
+                                      />
+                                    )}
+                                    <span className="text-xs text-fg-muted truncate">{e.title}</span>
+                                    <span className="shrink-0 text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                      {videoStatuses[e.id] === 'no_speech' ? 'No speech' : 'No captions'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled
+                                className="w-full mt-1 h-7 text-xs opacity-50 cursor-not-allowed"
+                                title="Coming soon"
+                              >
+                                Save failed videos for later
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+
                     <div className="flex items-center gap-3 mt-2">
                         <Button
                             onClick={handleReset}
