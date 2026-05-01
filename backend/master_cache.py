@@ -1,13 +1,14 @@
 """
-master_transcripts cache write helper.
-Writes transcript metadata to Supabase and JSON content to Cloudflare R2.
-All writes are best-effort: failures are logged but never propagate to callers.
+master_transcripts cache read/write helpers.
+Reads and writes transcript metadata to Supabase and JSON content to Cloudflare R2.
+All operations are best-effort: failures are logged but never propagate to callers.
 """
 import asyncio
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from storage import r2_write_json
+from storage import r2_read_json, r2_write_json
 
 logger = logging.getLogger("indxr-master-cache")
 
@@ -105,3 +106,86 @@ async def master_transcripts_write(
 
     except Exception as e:
         logger.warning(f"master_cache write failed ({video_id}): {type(e).__name__}: {e}")
+
+
+async def master_transcripts_read(
+    video_id: str,
+    source_method: str,
+    language: Optional[str] = None,
+) -> Optional[dict]:
+    """
+    Check the master_transcripts cache. Returns a dict on hit, None on miss or error.
+    Never raises — all failures are treated as a cache miss.
+
+    source_method='caption_extraction':
+      Entries expire after CAPTION_REFRESH_DAYS (YouTube ASR improves over time).
+      language='en' by default at call sites — non-English videos will miss and fall
+      through to the yt-dlp cascade. Language-aware lookup is tracked in backlog:
+      docs/wiki/roadmap/backlog.md → "Language-aware caption extraction".
+
+    source_method='audio_transcription':
+      No time-based expiry — AI transcripts are deterministic given the same model.
+      Only hits if cached model_quality_rank >= current production model rank.
+      language=None (default) — AssemblyAI detects the language; we don't know it
+      upfront, so we skip the language filter and deliver the first matching entry.
+
+    Return dict keys: transcript (list), duration_seconds (int|None),
+                      language (str|None), transcription_model (str).
+    """
+    try:
+        from credit_manager import get_supabase_client
+        supabase = get_supabase_client()
+
+        query = (
+            supabase.table("master_transcripts")
+            .select("r2_key,duration_seconds,language,transcription_model")
+            .eq("video_id", video_id)
+            .eq("source_method", source_method)
+            .is_("deprecated_at", "null")
+            .order("model_quality_rank", desc=True)
+            .limit(1)
+        )
+
+        if language is not None:
+            query = query.eq("language", language)
+
+        if source_method == "caption_extraction":
+            cutoff = (
+                datetime.now(timezone.utc) - timedelta(days=CAPTION_REFRESH_DAYS)
+            ).isoformat()
+            query = query.gt("fetched_from_provider_at", cutoff)
+        else:
+            min_rank = MODEL_QUALITY_RANK.get(CURRENT_PRODUCTION_AI_MODEL, 0)
+            query = query.gte("model_quality_rank", min_rank)
+
+        result = await asyncio.to_thread(query.execute)
+        if not result.data:
+            return None
+
+        row = result.data[0]
+        r2_data = await asyncio.to_thread(
+            r2_read_json, "indxr-transcripts", row["r2_key"]
+        )
+        if r2_data is None:
+            logger.warning(
+                f"master_cache: R2 key exists in DB but missing in R2 "
+                f"({row['r2_key']}) — treating as miss"
+            )
+            return None
+
+        logger.info(
+            f"master_cache read OK: {video_id} source={source_method} "
+            f"lang={row.get('language')} model={row.get('transcription_model')}"
+        )
+        return {
+            "transcript": r2_data,
+            "duration_seconds": row.get("duration_seconds"),
+            "language": row.get("language"),
+            "transcription_model": row.get("transcription_model"),
+        }
+
+    except Exception as e:
+        logger.warning(
+            f"master_transcripts_read error ({video_id}): {type(e).__name__}: {e}"
+        )
+        return None
