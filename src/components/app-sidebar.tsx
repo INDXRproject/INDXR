@@ -30,6 +30,7 @@ import { UserAvatar } from "@/components/UserAvatar"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { ActiveJobsIndicator } from "@/components/dashboard/ActiveJobsIndicator"
 
 interface Collection {
   id: string
@@ -648,6 +649,11 @@ export function AppSidebar() {
               </div>
             </div>
           )}
+
+          {/* Active jobs indicator — shown when sessionStorage has running jobs */}
+          <div className={cn("px-3 py-1", collapsed && "px-2")}>
+            <ActiveJobsIndicator collapsed={collapsed} />
+          </div>
 
           {/* Credits coin — persistent display above footer nav */}
           <div className={cn(
