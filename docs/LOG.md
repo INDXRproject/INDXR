@@ -1,3 +1,15 @@
+[2026-05-01 02:30] feat: spoor 1 — wegklik-bescherming (beforeunload) + VideoTab Whisper-resume via sessionStorage | gewijzigd: src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx, src/components/free-tool/VideoTab.tsx
+---
+[2026-05-01 02:35] feat: spoor 2 — upload progress UI in AudioTab — XHR, Progress bar, uploadPhase drietrap | gewijzigd: src/components/free-tool/AudioTab.tsx
+---
+[2026-05-01 02:45] feat: spoor 3a — TranscriptionProgress 4-stap stepper + ETA calc | gewijzigd: src/lib/eta.ts (nieuw), src/components/transcription/TranscriptionProgress.tsx (nieuw), src/components/free-tool/AudioTab.tsx, src/components/free-tool/VideoTab.tsx
+---
+[2026-05-01 02:55] feat: spoor 3b — per-video AI-transcriptie feedback in playlist (heartbeat dot + elapsed timer) | gewijzigd: src/components/free-tool/PlaylistTab.tsx, src/components/PlaylistManager.tsx
+---
+[2026-05-01 03:05] feat: spoor 4 — partial completion wrap-up: free count badge, failed video lijst met thumbnails, disabled "Save failed"-knop | gewijzigd: src/components/PlaylistManager.tsx
+---
+[2026-05-01 03:15] feat: spoor 5 — persistent active jobs indicator boven credits coin in sidebar | gewijzigd: src/components/dashboard/ActiveJobsIndicator.tsx (nieuw), src/components/app-sidebar.tsx
+---
 [2026-04-30] feat: grondverf sessie 2 — sitemap, DocsShell, header, sidebar, messages, support, welcome, suspended, footer, MobileTabBar | gewijzigd: next.config.ts, src/lib/docs-config.ts, src/components/docs/DocsShell.tsx, src/components/docs/DocsSidebar.tsx, src/app/docs/page.tsx, src/app/docs/getting-started/page.tsx, src/app/docs/faq/page.tsx, src/app/docs/account/page.tsx, src/components/content/templates/ArticleTemplate.tsx, src/components/content/templates/ToolPageTemplate.tsx, src/components/content/templates/TutorialTemplate.tsx, src/components/Header.tsx, src/components/app-sidebar.tsx, src/components/dashboard/MobileTabBar.tsx, src/app/dashboard/layout.tsx, src/app/dashboard/page.tsx, src/app/dashboard/messages/page.tsx, src/app/dashboard/messages/MessagesClient.tsx, src/app/support/page.tsx, src/app/onboarding/page.tsx, src/app/suspended/page.tsx, src/components/Footer.tsx, src/app/dashboard/transcribe/page.tsx, docs/wiki/architecture/sitemap.md, docs/wiki/INDEX.md
 ---
 [2026-04-30] docs: wiki-onderhoud-richtlijn toegevoegd aan INDEX.md — broncode-verificatie protocol, code-change→wiki mapping tabel, bekende valkuilen (ack_late, idempotency_keys, status='complete') | gewijzigd: docs/wiki/INDEX.md
@@ -2395,4 +2407,121 @@ Transcribe page: added "Learn more →" link to /docs in page subtitle.
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: src/app/dashboard/transcribe/page.tsx
 src/components/Footer.tsx
+---
+[2026-04-30 18:15] commit: docs: batch M — wiki audit + sitemap.md + INDEX update
+
+New: docs/wiki/architecture/sitemap.md — post-refactor source of
+truth for all routes, navigation, redirects, and scope boundaries.
+
+Updated: INDEX.md — sitemap.md added to Architecture table, new
+"Recente structurele wijzigingen" section documenting the 2026-04-30
+refactor (redirects, label changes, new routes, new components).
+
+Audit corrections:
+- audit-frontend.md: /faq and /how-it-works marked as redirected,
+  /dashboard updated to "Home" description, /dashboard/messages and
+  /docs/* sections added
+- INDXR-SITEMAP.md: post-refactor warning header added
+- marketing.md: /how-it-works marked as 301 redirect
+- INDXR-WRITING-FRAMEWORK.md: /how-it-works → /docs/getting-started,
+  /faq → /docs/faq in interlinking tables
+
+LOG.md: grondverf sessie 2 entry appended.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/sitemap.md
+docs/wiki/business/INDXR-SITEMAP.md
+docs/wiki/business/INDXR-WRITING-FRAMEWORK.md
+docs/wiki/business/marketing.md
+docs/wiki/design/audit-frontend.md
+---
+[2026-05-01 01:54] commit: feat: wegklik-bescherming dichten + Whisper session resume (Spoor 1)
+
+AudioTab: beforeunload handler toegevoegd terwijl isTranscribing === true
+(met e.returnValue='' voor cross-browser support). Ontbrak volledig.
+
+PlaylistTab: e.returnValue='' toegevoegd aan bestaande beforeunload handler
+voor consistente cross-browser werking.
+
+VideoTab: sessionStorage resume voor Whisper polling — schrijft {jobId,
+videoId, title, duration, startTime} bij job-start, leest op mount en
+toont resume-banner als job nog loopt. handleVideoResume() herstelt
+polling + timer. Network-disconnect bewaart sessie voor volgende reload.
+Beide Whisper-paden (confirm + upsell) gedekt.
+
+Naamgeving: "Whisper" → "AI" in PlaylistManager badge,
+"Whisper video" → "video requiring AI transcription" in PlaylistTab
+foutmelding.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/PlaylistManager.tsx
+src/components/free-tool/AudioTab.tsx
+src/components/free-tool/PlaylistTab.tsx
+src/components/free-tool/VideoTab.tsx
+---
+[2026-05-01 01:55] precompact: context compaction triggered
+[2026-05-01 01:58] commit: feat: spoor 2 — upload progress UI in AudioTab
+
+Replaced fetch() with XMLHttpRequest to get byte-level upload events.
+uploadPhase ('idle' | 'uploading' | 'processing') drives three distinct UI
+states: Shadcn Progress bar with formatBytes label during upload, spinner
+with elapsed timer during server processing, plain button at rest.
+Phase resets in both catch and runPollLoop finally blocks.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/free-tool/AudioTab.tsx
+---
+[2026-05-01 02:00] commit: feat: spoor 3a — TranscriptionProgress 4-step stepper + ETA
+
+New src/lib/eta.ts: calcEta() and formatElapsed() using TRANSCRIPTION_RATIO=0.1.
+New src/components/transcription/TranscriptionProgress.tsx: step list with
+done/active/pending states, elapsed counter, and ETA label in one reusable component.
+AudioTab uses it in the 'processing' upload phase; VideoTab replaces its inline
+status span with the same component, passing videoDuration for ETA calculation.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/free-tool/AudioTab.tsx
+src/components/free-tool/VideoTab.tsx
+src/components/transcription/TranscriptionProgress.tsx
+src/lib/eta.ts
+---
+[2026-05-01 02:03] commit: feat: spoor 3b — per-video AI transcription feedback in playlist
+
+PlaylistTab tracks whisperVideoIds (Set) and persists to sessionStorage
+(whisperIds key), restores on resume. Passed to PlaylistManager as new prop.
+
+PlaylistManager: when a video is 'extracting' AND in whisperVideoIds, renders
+a pulsing heartbeat dot + "Transcribing with AI" label instead of the generic
+spinner; shows elapsed timer (font-mono) next to the video duration.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/PlaylistManager.tsx
+src/components/free-tool/PlaylistTab.tsx
+---
+[2026-05-01 02:04] commit: feat: spoor 4 — partial completion wrap-up in playlist banner
+
+Completion banner now shows:
+- Free video count badge with explanatory label
+- Failed video list (no_captions + no_speech) with thumbnails, title, and
+  failure type badge; scrollable when >4 entries
+- Disabled "Save failed videos for later" button (placeholder, coming soon)
+
+All derived from existing videoStatuses + playlist.entries — no new props needed.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/PlaylistManager.tsx
+---
+[2026-05-01 02:06] commit: feat: spoor 5 — persistent active jobs indicator in sidebar
+
+New ActiveJobsIndicator component reads sessionStorage for all three job
+keys (audio, video, playlist), verifies each is still running against
+existing job endpoints, and renders a pulsing accent dot with count above
+the credits coin in the sidebar. Checks every 30s and cleans up stale
+sessionStorage entries automatically. Hidden when no jobs are active.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/app-sidebar.tsx
+src/components/dashboard/ActiveJobsIndicator.tsx
 ---
