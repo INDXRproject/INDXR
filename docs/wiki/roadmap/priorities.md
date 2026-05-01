@@ -84,7 +84,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
 - [x] **1.7 — Graceful shutdown / crash-recovery** ✅ 2026-05-01
     Doel: in-flight jobs persisteren bij Railway restart in plaats van verdwijnen.
     **Wat Fase 4 opgeleverd heeft (2026-04-30):** heartbeat (`last_heartbeat_at` elke 60s), stale-detectie in poll-endpoints (300s threshold → status `interrupted`), idempotency-vlaggen (`credits_deducted`, `v_already_done`) zodat handmatige herstart geen dubbele kosten geeft.
-    **Watchdog ARQ cron (2026-05-01):** `watchdog_interrupted_jobs` cron elke 2 minuten. Pass 1: re-enqueue `interrupted` jobs met `watchdog_attempts=0`, credits deducted, geen transcript, heartbeat stale >5min. Pass 2: auto-refund voor jobs ouder dan 24u met `watchdog_attempts>=1` en nog geen transcript. Migratie: `20260501_watchdog_attempts.sql`.
+    **Watchdog ARQ cron (2026-05-01):** `watchdog_interrupted_jobs` cron elke 2 minuten. Pass 1: re-enqueue `interrupted` jobs met `watchdog_attempts=0`, credits deducted, geen transcript, heartbeat stale >5min. Pass 2: auto-refund voor jobs met `watchdog_attempts>=1` en heartbeat stale >5min (~10 min na mislukte re-enqueue, geen 24u-pad). Migratie: `20260501_watchdog_attempts.sql` — live op productie 2026-05-02.
     Zie [ADR-019](../decisions/019-arq-job-queue.md) en [ADR-030](../decisions/030-fase4-crash-recovery-leerervaring.md).
 
 - [x] **1.8 — Cloudflare R2 storage helper** ✅ 2026-04-28

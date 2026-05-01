@@ -2756,3 +2756,26 @@ docs/wiki/roadmap/priorities.md
 [2026-05-02 00:18] precompact: context compaction triggered
 ---
 [2026-05-02 01:45] fix: watchdog Pass 2 refund binnen ~10 min, schrap 24u-pad | gewijzigd: backend/worker.py, backend/test_watchdog.py, src/components/free-tool/VideoTab.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx, docs/wiki/decisions/030-fase4-crash-recovery-leerervaring.md, docs/wiki/operations/error-taxonomy.md
+[2026-05-02 00:21] commit: fix: watchdog refund binnen ~10 min + schrap 24u-pad (ADR-030 Gap 2)
+---
+[2026-05-02 02:00] supabase (productie): migratie watchdog_attempts gedraaid — watchdog_attempts INTEGER DEFAULT 0 toegevoegd aan transcription_jobs + playlist_extraction_jobs | buiten Git
+---
+[2026-05-02 02:00] supabase (productie): Realtime publicatie — transcription_jobs + playlist_extraction_jobs toegevoegd aan supabase_realtime publication; REPLICA IDENTITY FULL gezet op beide tabellen | buiten Git
+---
+[2026-05-02 02:00] docs: priorities.md 1.7 Pass 2-beschrijving gecorrigeerd (24u-pad → heartbeat stale ~10 min)
+
+Pass 2 triggert nu op stale heartbeat (>5 min) in plaats van job-age >24u.
+Frontend detecteert watchdog_permanent_failure op mount en toont inline
+dismissable notice (geen Resume-banner). Tests bijgewerkt (2 nieuwe).
+error-taxonomy.md: watchdog_permanent_failure toegevoegd.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/test_watchdog.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/decisions/030-fase4-crash-recovery-leerervaring.md
+docs/wiki/operations/error-taxonomy.md
+src/components/free-tool/AudioTab.tsx
+src/components/free-tool/PlaylistTab.tsx
+src/components/free-tool/VideoTab.tsx
+---
