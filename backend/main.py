@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from upstash_redis.asyncio import Redis as UpstashRedis
 
 import yt_dlp
-from master_cache import master_transcripts_write
+from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp
 from transcription_pipeline import do_assemblyai_transcription
 
@@ -295,6 +295,51 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 logger.warning(f"Caption cache read error: {cache_read_err}")
 
         track_event("backend", "caption_cache_miss", {"video_id": video_id, "lang": "en"})
+
+        # ── master_transcripts cache check (warm path) ───────────────────────
+        # Checkt de cross-user master cache vóór yt-dlp cascade.
+        # language='en' als default — non-English videos missen de cache en vallen
+        # door naar de cascade. Language-aware lookup staat in backlog:
+        # docs/wiki/roadmap/backlog.md → "Language-aware caption extraction".
+        mc = await master_transcripts_read(video_id, source_method="caption_extraction", language="en")
+        if mc is not None:
+            logger.info(f"master_transcripts HIT (caption): {video_id}")
+            track_event("backend", "master_cache_hit", {"video_id": video_id, "source": "caption"})
+            mc_transcript = [
+                TranscriptItem(text=s["text"], offset=s["offset"], duration=s["duration"])
+                for s in mc["transcript"]
+            ]
+            # Metadata via YouTube Data API — lichtgewicht (1 quota-unit), ~200ms.
+            # Bij quota-uitputting: fallback op video_id als title.
+            mc_meta: dict = {}
+            try:
+                mc_meta = await asyncio.to_thread(youtube_client.get_video_details, video_id)
+            except Exception:
+                pass
+            # Backfill Redis-cache zodat de volgende request de hot-path raakt.
+            if redis:
+                try:
+                    backfill = {
+                        "transcript": mc["transcript"],
+                        "title": mc_meta.get("title", video_id),
+                        "video_url": f"https://www.youtube.com/watch?v={video_id}",
+                        "duration": mc.get("duration_seconds"),
+                        "language": mc.get("language"),
+                        "language_detected": mc.get("language"),
+                    }
+                    await redis.set(cache_key, json.dumps(backfill), ex=_CAPTION_CACHE_TTL)
+                except Exception:
+                    pass
+            return ExtractResponse(
+                success=True,
+                transcript=mc_transcript,
+                title=mc_meta.get("title", video_id),
+                video_url=f"https://www.youtube.com/watch?v={video_id}",
+                duration=mc_meta.get("duration") or mc.get("duration_seconds"),
+                channel=mc_meta.get("channel"),
+                language=mc.get("language"),
+                language_detected=mc.get("language"),
+            )
 
         # ── Cascade step 1: youtube-transcript-api ───────────────────────────
         session_id = video_id[-8:]
