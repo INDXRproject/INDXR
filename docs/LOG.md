@@ -2564,3 +2564,23 @@ src/components/free-tool/VideoTab.tsx
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 ---
+[2026-05-01 16:10] commit: feat: resume-banner uitgebreid naar PlaylistTab en AudioTab
+
+Exact hetzelfde patroon als VideoTab (commit f241882):
+- resumeBarActive state + autoResumeRef + auto-countdown useEffect (5s)
+- Geen Dismiss-knop; alleen Resume met scaleX 0→1 progressbalk
+- aria-live="polite" op banner container
+- Fout-afhandeling: 401/403/404 verwijdert key; 5xx/netwerk-exception
+  toont banner optimistisch (Resume re-pollt status zelf)
+- clearTimeout bij klik op Resume en bij unmount
+
+Geverifieerd (Playwright, productie-build, page.route mock):
+- VideoTab: ✅ banner, countdown, klik-cancel, geen Dismiss
+- AudioTab: ✅ banner, countdown, klik-cancel, geen Dismiss
+- PlaylistTab: ✅ banner, countdown, klik-cancel, geen Dismiss
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+src/components/free-tool/AudioTab.tsx
+src/components/free-tool/PlaylistTab.tsx
+---
