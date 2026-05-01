@@ -2537,3 +2537,21 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 ---
 [2026-05-01 03:18] precompact: context compaction triggered
+[2026-05-01 03:24] commit: fix+feat: video resume-banner bug fix + UX herontwerp + indicator verplaatst
+
+Stap 3 — fix: catch-block behoudt sessionStorage key bij netwerk-exceptie
+(bijv. Vercel→Railway cold-start). Verwijdert key alleen bij 401/403/404.
+
+Stap 4 — feat: Resume-banner herontworpen. Geen Dismiss-knop. Auto-resume
+na 5 seconden met CSS progressbalk op de knop (scaleX 0→1, linear).
+aria-live="polite" op banner-container; clearTimeout bij klik + unmount.
+
+Stap 5 — refactor: ActiveJobsIndicator verplaatst van sidebar naar
+transcribe-pagina boven de tab-rij.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+src/app/dashboard/transcribe/page.tsx
+src/components/app-sidebar.tsx
+src/components/free-tool/VideoTab.tsx
+---
