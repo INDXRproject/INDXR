@@ -182,6 +182,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [videoResumeData, setVideoResumeData] = useState<{
     jobId: string; videoId: string; title: string; duration: number; startTime: number; status: WhisperStatus
   } | null>(null)
+  const [resumeBarActive, setResumeBarActive] = useState(false)
 
   // Whisper toggle state
   const [useWhisper, setUseWhisper] = useState(false)
@@ -204,6 +205,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const useWhisperRef = useRef(false)
   // Cooldown: tracks the last successful extraction to suppress immediate duplicate warnings
   const lastSuccessTimestampRef = useRef<{ videoId: string; time: number } | null>(null)
+  const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Navigation guard while SSE stream is open
   useEffect(() => {
@@ -227,6 +229,23 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isReextracting]);
 
+  // Auto-resume countdown: when banner appears, resume automatically after 5 s
+  useEffect(() => {
+    if (!videoResumeData || isStreaming) {
+      setResumeBarActive(false)
+      return
+    }
+    setResumeBarActive(false)
+    // One rAF tick so the transition fires from width 0
+    const raf = requestAnimationFrame(() => setResumeBarActive(true))
+    autoResumeRef.current = setTimeout(handleVideoResume, 5000)
+    return () => {
+      cancelAnimationFrame(raf)
+      if (autoResumeRef.current) clearTimeout(autoResumeRef.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoResumeData, isStreaming])
+
   // On mount: check for a running Whisper job from a previous page session
   useEffect(() => {
     const raw = sessionStorage.getItem(VIDEO_JOB_KEY)
@@ -236,7 +255,25 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     ;(async () => {
       try {
         const resp = await fetch(`/api/jobs/${parsed.jobId}`)
-        if (!resp.ok) { sessionStorage.removeItem(VIDEO_JOB_KEY); return }
+        if (!resp.ok) {
+          // 4xx/5xx from the API — job doesn't exist, access denied, or auth failed.
+          // Only remove the key for definitive rejections (401, 403, 404).
+          // 5xx could be transient; keep the key so the banner still shows.
+          if (resp.status === 401 || resp.status === 403 || resp.status === 404) {
+            sessionStorage.removeItem(VIDEO_JOB_KEY)
+          } else {
+            // Transient server error — show banner anyway; Resume will re-verify
+            setVideoResumeData({
+              jobId: parsed.jobId,
+              videoId: parsed.videoId,
+              title: parsed.title,
+              duration: parsed.duration,
+              startTime: parsed.startTime,
+              status: (parsed.status as WhisperStatus) || 'pending',
+            })
+          }
+          return
+        }
         const job = await resp.json()
         if (job.status === 'complete' || job.status === 'error' || job.status === 'interrupted') {
           sessionStorage.removeItem(VIDEO_JOB_KEY)
@@ -252,7 +289,18 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         } else {
           sessionStorage.removeItem(VIDEO_JOB_KEY)
         }
-      } catch { sessionStorage.removeItem(VIDEO_JOB_KEY) }
+      } catch {
+        // Network exception (offline, Railway cold-start, Vercel timeout).
+        // Keep the key and show the banner — Resume will re-poll when online.
+        setVideoResumeData({
+          jobId: parsed.jobId,
+          videoId: parsed.videoId,
+          title: parsed.title,
+          duration: parsed.duration,
+          startTime: parsed.startTime,
+          status: (parsed.status as WhisperStatus) || 'pending',
+        })
+      }
     })()
   }, [])
 
@@ -1029,7 +1077,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
       {/* Video Job Resume Banner — shown when a running Whisper job is detected on mount */}
       {videoResumeData && !isStreaming && (
-        <div className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+        <div
+          aria-live="polite"
+          className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2"
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -1041,19 +1092,25 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" onClick={handleVideoResume} className="h-8 text-xs">
-              Resume
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => { sessionStorage.removeItem(VIDEO_JOB_KEY); setVideoResumeData(null) }}
-              className="h-8 text-xs text-fg-muted"
-            >
-              Dismiss
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            aria-label="Resume transcription (activates automatically in 5 seconds)"
+            onClick={() => {
+              if (autoResumeRef.current) clearTimeout(autoResumeRef.current)
+              handleVideoResume()
+            }}
+            className="relative h-8 text-xs overflow-hidden shrink-0"
+          >
+            <span
+              className="absolute inset-0 bg-white/20 origin-left"
+              style={{
+                transform: resumeBarActive ? 'scaleX(1)' : 'scaleX(0)',
+                transition: resumeBarActive ? 'transform 5000ms linear' : 'none',
+                transformOrigin: 'left',
+              }}
+            />
+            <span className="relative">Resume</span>
+          </Button>
         </div>
       )}
 

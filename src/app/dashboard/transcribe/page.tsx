@@ -12,6 +12,7 @@ import { TranscriptMetadata } from "@/types/transcript"
 import { SaveErrorModal } from "@/components/SaveErrorModal"
 
 import { WelcomeCreditCard } from "@/components/dashboard/WelcomeCreditCard"
+import { ActiveJobsIndicator } from "@/components/dashboard/ActiveJobsIndicator"
 import { useEffect } from "react"
 
 export default function TranscribePage() {
@@ -378,6 +379,8 @@ export default function TranscribePage() {
          <h1 className="text-3xl font-bold text-[var(--fg)] mb-2">Transcribe</h1>
          <p className="text-[var(--fg-muted)]">Extract captions from videos, playlists, or audio files. <a href="/docs" className="text-[var(--accent)] hover:underline">Learn more →</a></p>
        </div>
+
+       <ActiveJobsIndicator />
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
         <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-[var(--surface-elevated)] h-auto rounded-xl">

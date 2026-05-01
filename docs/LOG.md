@@ -10,6 +10,12 @@
 ---
 [2026-05-01 03:15] feat: spoor 5 — persistent active jobs indicator boven credits coin in sidebar | gewijzigd: src/components/dashboard/ActiveJobsIndicator.tsx (nieuw), src/components/app-sidebar.tsx
 ---
+[2026-05-01 04:10] fix: video resume banner — catch behoudt sessionStorage key bij netwerk-exceptie; verwijdert alleen bij 401/403/404 | gewijzigd: src/components/free-tool/VideoTab.tsx
+---
+[2026-05-01 04:20] feat: resume-UX herontwerp — auto-resume na 5s met CSS progressbalk op knop; Dismiss verwijderd; aria-live | gewijzigd: src/components/free-tool/VideoTab.tsx
+---
+[2026-05-01 04:30] refactor: ActiveJobsIndicator verplaatst van sidebar naar transcribe-pagina boven tab-rij | gewijzigd: src/components/app-sidebar.tsx, src/app/dashboard/transcribe/page.tsx
+---
 [2026-04-30] feat: grondverf sessie 2 — sitemap, DocsShell, header, sidebar, messages, support, welcome, suspended, footer, MobileTabBar | gewijzigd: next.config.ts, src/lib/docs-config.ts, src/components/docs/DocsShell.tsx, src/components/docs/DocsSidebar.tsx, src/app/docs/page.tsx, src/app/docs/getting-started/page.tsx, src/app/docs/faq/page.tsx, src/app/docs/account/page.tsx, src/components/content/templates/ArticleTemplate.tsx, src/components/content/templates/ToolPageTemplate.tsx, src/components/content/templates/TutorialTemplate.tsx, src/components/Header.tsx, src/components/app-sidebar.tsx, src/components/dashboard/MobileTabBar.tsx, src/app/dashboard/layout.tsx, src/app/dashboard/page.tsx, src/app/dashboard/messages/page.tsx, src/app/dashboard/messages/MessagesClient.tsx, src/app/support/page.tsx, src/app/onboarding/page.tsx, src/app/suspended/page.tsx, src/components/Footer.tsx, src/app/dashboard/transcribe/page.tsx, docs/wiki/architecture/sitemap.md, docs/wiki/INDEX.md
 ---
 [2026-04-30] docs: wiki-onderhoud-richtlijn toegevoegd aan INDEX.md — broncode-verificatie protocol, code-change→wiki mapping tabel, bekende valkuilen (ack_late, idempotency_keys, status='complete') | gewijzigd: docs/wiki/INDEX.md
@@ -2525,3 +2531,9 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: src/components/app-sidebar.tsx
 src/components/dashboard/ActiveJobsIndicator.tsx
 ---
+[2026-05-01 02:07] commit: docs: LOG.md bijgewerkt met 6 spoor-entries (progress-UX upgrade)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+---
+[2026-05-01 03:18] precompact: context compaction triggered
