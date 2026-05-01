@@ -16,6 +16,10 @@
 ---
 [2026-05-01 04:30] refactor: ActiveJobsIndicator verplaatst van sidebar naar transcribe-pagina boven tab-rij | gewijzigd: src/components/app-sidebar.tsx, src/app/dashboard/transcribe/page.tsx
 ---
+[2026-05-01 05:10] feat: PlaylistTab resume-banner — auto-fill 5s countdown, geen Dismiss, aria-live, fout-afhandeling identiek aan VideoTab | gewijzigd: src/components/free-tool/PlaylistTab.tsx
+---
+[2026-05-01 05:10] feat: AudioTab resume-banner — auto-fill 5s countdown, geen Dismiss, aria-live, fout-afhandeling identiek aan VideoTab | gewijzigd: src/components/free-tool/AudioTab.tsx
+---
 [2026-04-30] feat: grondverf sessie 2 — sitemap, DocsShell, header, sidebar, messages, support, welcome, suspended, footer, MobileTabBar | gewijzigd: next.config.ts, src/lib/docs-config.ts, src/components/docs/DocsShell.tsx, src/components/docs/DocsSidebar.tsx, src/app/docs/page.tsx, src/app/docs/getting-started/page.tsx, src/app/docs/faq/page.tsx, src/app/docs/account/page.tsx, src/components/content/templates/ArticleTemplate.tsx, src/components/content/templates/ToolPageTemplate.tsx, src/components/content/templates/TutorialTemplate.tsx, src/components/Header.tsx, src/components/app-sidebar.tsx, src/components/dashboard/MobileTabBar.tsx, src/app/dashboard/layout.tsx, src/app/dashboard/page.tsx, src/app/dashboard/messages/page.tsx, src/app/dashboard/messages/MessagesClient.tsx, src/app/support/page.tsx, src/app/onboarding/page.tsx, src/app/suspended/page.tsx, src/components/Footer.tsx, src/app/dashboard/transcribe/page.tsx, docs/wiki/architecture/sitemap.md, docs/wiki/INDEX.md
 ---
 [2026-04-30] docs: wiki-onderhoud-richtlijn toegevoegd aan INDEX.md — broncode-verificatie protocol, code-change→wiki mapping tabel, bekende valkuilen (ack_late, idempotency_keys, status='complete') | gewijzigd: docs/wiki/INDEX.md
@@ -2554,4 +2558,9 @@ Changed: docs/LOG.md
 src/app/dashboard/transcribe/page.tsx
 src/components/app-sidebar.tsx
 src/components/free-tool/VideoTab.tsx
+---
+[2026-05-01 03:25] commit: docs: LOG.md bijgewerkt na fix+feat commit (stap 3+4+5)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
 ---

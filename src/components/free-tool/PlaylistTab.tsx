@@ -53,10 +53,12 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const [progressMessage, setProgressMessage] = useState<string>("")
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [resumeData, setResumeData] = useState<{ jobId: string; completed: number; total: number; title?: string } | null>(null)
+  const [resumeBarActive, setResumeBarActive] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
   const playlistJobIdRef = useRef<string | null>(null)
   const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pollStartTimeRef = useRef<number>(0)
   const { credits, refreshCredits } = useAuth()
 
@@ -97,7 +99,19 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       try {
         const resp = await fetch(`/api/playlist/jobs/${activeJobId}`)
         if (!resp.ok) {
-          sessionStorage.removeItem('indxr-active-playlist-job')
+          if (resp.status === 401 || resp.status === 403 || resp.status === 404) {
+            sessionStorage.removeItem('indxr-active-playlist-job')
+          } else {
+            // Transient error — show banner optimistically; Resume will re-poll
+            let title: string | undefined
+            let total = 0
+            try {
+              const p = JSON.parse(raw)
+              title = typeof p === 'object' ? (p?.playlistTitle ?? undefined) : undefined
+              total = Array.isArray(p?.videoIds) ? p.videoIds.length : 0
+            } catch { /* ignore */ }
+            setResumeData({ jobId: activeJobId, completed: 0, total, title })
+          }
           return
         }
         const job = await resp.json()
@@ -183,12 +197,36 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           sessionStorage.removeItem('indxr-active-playlist-job')
         }
       } catch {
-        sessionStorage.removeItem('indxr-active-playlist-job')
+        // Network exception — keep key, show banner optimistically; Resume will re-poll
+        let title: string | undefined
+        let total = 0
+        try {
+          const p = JSON.parse(raw)
+          title = typeof p === 'object' ? (p?.playlistTitle ?? undefined) : undefined
+          total = Array.isArray(p?.videoIds) ? p.videoIds.length : 0
+        } catch { /* ignore */ }
+        setResumeData({ jobId: activeJobId, completed: 0, total, title })
       }
     })()
     // onPlaylistComplete and refreshCredits are stable in practice; captured once at mount is fine
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Auto-resume countdown: when resume banner appears, resume automatically after 5 s
+  useEffect(() => {
+    if (!resumeData || loading) {
+      setResumeBarActive(false)
+      return
+    }
+    setResumeBarActive(false)
+    const raf = requestAnimationFrame(() => setResumeBarActive(true))
+    autoResumeRef.current = setTimeout(handleResume, 5000)
+    return () => {
+      cancelAnimationFrame(raf)
+      if (autoResumeRef.current) clearTimeout(autoResumeRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeData, loading])
 
   // Shared polling setup — used by handlePlaylistExtract (new jobs) and handleResume (recovered jobs)
   function startPollInterval(
@@ -450,37 +488,41 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
       {/* Resume Banner — shown when a running job is detected on mount */}
       {resumeData && !loading && (
-        <div className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+        <div
+          aria-live="polite"
+          className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2"
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-fg">You have an extraction in progress</p>
-              {resumeData.title && (
-                <p className="text-xs text-fg-muted">Playlist: {resumeData.title}</p>
-              )}
+              <p className="text-sm font-semibold text-fg">Playlist extraction in progress</p>
               <p className="text-xs text-fg-muted">
-                {resumeData.completed} of {resumeData.total} video{resumeData.total !== 1 ? 's' : ''} processed so far
+                {resumeData.title ? `"${resumeData.title}"` : 'A playlist'} is still being processed
+                {resumeData.total > 0 ? ` (${resumeData.completed} / ${resumeData.total} videos done)` : ''}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" onClick={handleResume} className="h-8 text-xs">
-              View Progress
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                sessionStorage.removeItem('indxr-active-playlist-job')
-                setResumeData(null)
+          <Button
+            size="sm"
+            aria-label="Resume extraction (activates automatically in 5 seconds)"
+            onClick={() => {
+              if (autoResumeRef.current) clearTimeout(autoResumeRef.current)
+              handleResume()
+            }}
+            className="relative h-8 text-xs overflow-hidden shrink-0"
+          >
+            <span
+              className="absolute inset-0 bg-white/20 origin-left"
+              style={{
+                transform: resumeBarActive ? 'scaleX(1)' : 'scaleX(0)',
+                transition: resumeBarActive ? 'transform 5000ms linear' : 'none',
+                transformOrigin: 'left',
               }}
-              className="h-8 text-xs text-fg-muted"
-            >
-              Dismiss
-            </Button>
-          </div>
+            />
+            <span className="relative">Resume</span>
+          </Button>
         </div>
       )}
 

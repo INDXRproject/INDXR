@@ -34,9 +34,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [whisperStatus, setWhisperStatus] = useState<'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'>('idle')
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [resumeData, setResumeData] = useState<{ jobId: string; filename: string; initialStatus: string; elapsedAtResume: number } | null>(null)
+  const [resumeBarActive, setResumeBarActive] = useState(false)
   const [uploadPhase, setUploadPhase] = useState<'idle' | 'uploading' | 'processing'>('idle')
   const [uploadProgress, setUploadProgress] = useState<{ loaded: number; total: number } | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // On mount: check for a running audio job from a previous page session
@@ -55,7 +57,15 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     ;(async () => {
       try {
         const resp = await fetch(`/api/jobs/${jobId}`)
-        if (!resp.ok) { sessionStorage.removeItem(AUDIO_JOB_KEY); return }
+        if (!resp.ok) {
+          if (resp.status === 401 || resp.status === 403 || resp.status === 404) {
+            sessionStorage.removeItem(AUDIO_JOB_KEY)
+          } else {
+            // Transient error — show banner optimistically; Resume will re-poll
+            setResumeData({ jobId, filename, initialStatus: 'transcribing', elapsedAtResume: 0 })
+          }
+          return
+        }
         const job = await resp.json()
         if (job.status === 'complete' || job.status === 'error') {
           sessionStorage.removeItem(AUDIO_JOB_KEY)
@@ -68,7 +78,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           sessionStorage.removeItem(AUDIO_JOB_KEY)
         }
       } catch {
-        sessionStorage.removeItem(AUDIO_JOB_KEY)
+        // Network exception — keep key, show banner optimistically; Resume will re-poll
+        setResumeData({ jobId, filename, initialStatus: 'transcribing', elapsedAtResume: 0 })
       }
     })()
   }, [])
@@ -80,6 +91,22 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [isTranscribing])
+
+  // Auto-resume countdown: when resume banner appears, resume automatically after 5 s
+  useEffect(() => {
+    if (!resumeData || isTranscribing) {
+      setResumeBarActive(false)
+      return
+    }
+    setResumeBarActive(false)
+    const raf = requestAnimationFrame(() => setResumeBarActive(true))
+    autoResumeRef.current = setTimeout(handleResume, 5000)
+    return () => {
+      cancelAnimationFrame(raf)
+      if (autoResumeRef.current) clearTimeout(autoResumeRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeData, isTranscribing])
 
   // Get actual audio duration from file
   const getAudioDuration = async (file: File): Promise<number> => {
@@ -422,29 +449,40 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     <div className="mt-8 space-y-6">
       {/* Resume Banner — shown when a running job is detected on mount */}
       {resumeData && !isTranscribing && (
-        <div className="p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+        <div
+          aria-live="polite"
+          className="p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2"
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-fg">Transcription in progress</p>
-              <p className="text-xs text-fg-muted">{resumeData.filename} is still being processed</p>
+              <p className="text-sm font-semibold text-fg">Audio transcription in progress</p>
+              <p className="text-xs text-fg-muted">
+                &ldquo;{resumeData.filename}&rdquo; is still being transcribed
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" onClick={handleResume} className="h-8 text-xs">
-              Resume
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => { sessionStorage.removeItem(AUDIO_JOB_KEY); setResumeData(null) }}
-              className="h-8 text-xs text-fg-muted"
-            >
-              Dismiss
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            aria-label="Resume transcription (activates automatically in 5 seconds)"
+            onClick={() => {
+              if (autoResumeRef.current) clearTimeout(autoResumeRef.current)
+              handleResume()
+            }}
+            className="relative h-8 text-xs overflow-hidden shrink-0"
+          >
+            <span
+              className="absolute inset-0 bg-white/20 origin-left"
+              style={{
+                transform: resumeBarActive ? 'scaleX(1)' : 'scaleX(0)',
+                transition: resumeBarActive ? 'transform 5000ms linear' : 'none',
+                transformOrigin: 'left',
+              }}
+            />
+            <span className="relative">Resume</span>
+          </Button>
         </div>
       )}
 
