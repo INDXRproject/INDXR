@@ -13,17 +13,18 @@ import asyncio
 import logging
 import os
 import uuid as _uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import posthog
 import sentry_sdk
-from arq import func as arq_func
+from arq import cron, func as arq_func
 from arq.connections import RedisSettings
 from dotenv import load_dotenv
 
 from audio_utils import MembersOnlyVideoError
 from credit_manager import (
+    add_credits,
     check_user_balance,
     get_supabase_client,
 )
@@ -572,6 +573,184 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     logger.info(f"{log_prefix} Retry pass complete")
 
 
+async def watchdog_interrupted_jobs(ctx: dict) -> None:
+    """
+    ARQ cron: crash-recovery voor interrupted Whisper- en playlist-jobs.
+    Draait elke 2 minuten.
+
+    Pass 1 — Re-enqueue (watchdog_attempts=0):
+      Selecteert transcription_jobs/playlist_extraction_jobs met:
+        status='interrupted', credits_deducted=True, geen transcript,
+        watchdog_attempts=0, aangemaakt binnen de afgelopen 24u, heartbeat stale.
+      Verwijdert arq Redis-keys (Exp 3b, ADR-030) en enqueued opnieuw.
+      Increment watchdog_attempts naar 1 en reset status naar 'pending'.
+
+    Pass 2 — Auto-refund (watchdog_attempts>=1, ouder dan 24u):
+      Als de re-enqueue OOK crashte (job is na 24u nog steeds interrupted, geen transcript),
+      trek credits terug en markeer als 'error'.
+      Alleen voor transcription_jobs — playlist-credits zijn per-video atomisch via RPC
+      en kennen geen eenvoudig refund-bedrag.
+
+    ADR-030 Gap 1 (gecrashte retry-pass na playlist=complete): niet afgehandeld hier.
+    De playlist krijgt status='complete' VOOR de retry-pass draait — de watchdog
+    selecteert alleen status='interrupted', dus Gap 1 is onzichtbaar voor de watchdog.
+    """
+    supabase = get_supabase_client()
+    redis = ctx['redis']
+    now = datetime.now(timezone.utc)
+    stale_before = (now - timedelta(minutes=5)).isoformat()
+    cutoff_24h = (now - timedelta(hours=24)).isoformat()
+
+    # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
+    try:
+        result = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .select('id,user_id,video_id,title')
+                .eq('status', 'interrupted')
+                .eq('credits_deducted', True)
+                .is_('transcript_id', 'null')
+                .eq('watchdog_attempts', 0)
+                .lt('last_heartbeat_at', stale_before)
+                .gt('created_at', cutoff_24h)
+                .execute()
+        )
+        for job in (result.data or []):
+            job_id = job['id']
+            try:
+                await redis.delete(f'arq:job:{job_id}', f'arq:in-progress:{job_id}')
+                await asyncio.to_thread(
+                    lambda j=job: supabase.table('transcription_jobs').update({
+                        'status': 'pending',
+                        'watchdog_attempts': 1,
+                        'last_heartbeat_at': None,
+                    }).eq('id', j['id']).execute()
+                )
+                await redis.enqueue_job(
+                    'run_whisper_job',
+                    job_id=job_id,
+                    user_id=job['user_id'],
+                    video_id=job['video_id'],
+                    title=job.get('title'),
+                    _job_id=job_id,
+                )
+                logger.info(
+                    f"[WATCHDOG re-enqueue] job_id={job_id} video_id={job['video_id']} "
+                    f"user_id={job['user_id']} attempt=2"
+                )
+            except Exception as e:
+                logger.error(f"[WATCHDOG] re-enqueue failed for {job_id}: {e}")
+    except Exception as e:
+        logger.error(f"[WATCHDOG] transcription_jobs re-enqueue query failed: {e}")
+
+    # ── Pass 1b: playlist_extraction_jobs re-enqueue ──────────────────────
+    try:
+        result = await asyncio.to_thread(
+            lambda: supabase.table('playlist_extraction_jobs')
+                .select('id,user_id,video_ids,video_results,completed,failed,total_videos')
+                .eq('status', 'interrupted')
+                .eq('watchdog_attempts', 0)
+                .lt('last_heartbeat_at', stale_before)
+                .gt('created_at', cutoff_24h)
+                .execute()
+        )
+        for job in (result.data or []):
+            playlist_id = job['id']
+            try:
+                video_ids = job.get('video_ids') or []
+                video_results = job.get('video_results') or {}
+                completed = job.get('completed', 0)
+                failed = job.get('failed', 0)
+                total = job.get('total_videos', len(video_ids))
+
+                # ADR-030 Gap 1: alle videos verwerkt → retry-pass crashte.
+                # playlist.status is dan al 'complete' vóór de retry-pass draait,
+                # dus dit pad wordt nooit bereikt via de 'interrupted' filter.
+                # Toch als defensieve check:
+                if completed + failed >= total > 0:
+                    logger.info(
+                        f"[WATCHDOG] playlist {playlist_id}: Gap 1 (retry-pass crash) — skip"
+                    )
+                    continue
+
+                # Eerste video zonder resultaat is de te hervatten video_index.
+                video_index = next(
+                    (idx for idx, vid in enumerate(video_ids) if vid not in video_results),
+                    None,
+                )
+                if video_index is None:
+                    logger.info(f"[WATCHDOG] playlist {playlist_id}: geen openstaande video gevonden — skip")
+                    continue
+
+                _job_id = f"{playlist_id}:{video_index}"
+                await redis.delete(f'arq:job:{_job_id}', f'arq:in-progress:{_job_id}')
+                await asyncio.to_thread(
+                    lambda: supabase.table('playlist_extraction_jobs').update({
+                        'status': 'running',
+                        'watchdog_attempts': 1,
+                        'last_heartbeat_at': None,
+                    }).eq('id', playlist_id).execute()
+                )
+                await redis.enqueue_job(
+                    'process_playlist_video',
+                    playlist_id,
+                    video_index,
+                    _job_id=_job_id,
+                )
+                logger.info(
+                    f"[WATCHDOG re-enqueue] playlist {playlist_id} video_index={video_index} "
+                    f"user_id={job['user_id']} attempt=2"
+                )
+            except Exception as e:
+                logger.error(f"[WATCHDOG] playlist re-enqueue failed for {playlist_id}: {e}")
+    except Exception as e:
+        logger.error(f"[WATCHDOG] playlist_extraction_jobs re-enqueue query failed: {e}")
+
+    # ── Pass 2: auto-refund transcription_jobs ouder dan 24u ─────────────
+    # Dekt het scenario dat ook de re-enqueue crashte: job is na 24u nog 'interrupted',
+    # credits_deducted=True maar geen transcript → credits terugboeken + status='error'.
+    # Alleen transcription_jobs — playlist-credits zijn per-video atomisch in de RPC
+    # en kennen geen eenvoudig totaalbedrag voor refund.
+    try:
+        result = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .select('id,user_id,credits_cost')
+                .eq('status', 'interrupted')
+                .eq('credits_deducted', True)
+                .is_('transcript_id', 'null')
+                .gte('watchdog_attempts', 1)
+                .lt('created_at', cutoff_24h)
+                .execute()
+        )
+        for job in (result.data or []):
+            job_id = job['id']
+            refund_amount = job.get('credits_cost') or 0
+            try:
+                await asyncio.to_thread(
+                    lambda j=job: supabase.table('transcription_jobs').update({
+                        'status': 'error',
+                        'error_type': 'watchdog_permanent_failure',
+                        'error_message': 'Automatisch teruggestort na mislukte crash-recovery.',
+                    }).eq('id', j['id']).execute()
+                )
+                if refund_amount > 0:
+                    await asyncio.to_thread(
+                        lambda uid=job['user_id'], amt=refund_amount, jid=job_id:
+                            add_credits(uid, amt, f"Refund: watchdog crash-recovery (job {jid})")
+                    )
+                    logger.info(
+                        f"[WATCHDOG refund] job_id={job_id} user_id={job['user_id']} "
+                        f"refund={refund_amount}cr"
+                    )
+                else:
+                    logger.info(
+                        f"[WATCHDOG refund] job_id={job_id}: credits_cost=0 of onbekend — geen aftrek"
+                    )
+            except Exception as e:
+                logger.error(f"[WATCHDOG] auto-refund failed for {job_id}: {e}")
+    except Exception as e:
+        logger.error(f"[WATCHDOG] auto-refund query failed: {e}")
+
+
 async def noop_task(ctx: dict) -> str:
     """Fase 1 stub — verifies the worker picks up jobs from the queue."""
     return "ok"
@@ -583,6 +762,11 @@ class WorkerSettings:
         run_whisper_job,
         arq_func(process_playlist_video, keep_result=0),
         arq_func(process_playlist_retries, keep_result=0),
+        watchdog_interrupted_jobs,
+    ]
+    cron_jobs = [
+        # Elke 2 minuten: detecteer crashed jobs en start crash-recovery.
+        cron(watchdog_interrupted_jobs, minute=set(range(0, 60, 2))),
     ]
     redis_settings = RedisSettings.from_dsn(
         os.getenv("UPSTASH_REDIS_URL") or "redis://localhost:6379"
@@ -598,5 +782,5 @@ class WorkerSettings:
     # Jobs worden in arq altijd geacknowledged bij pickup (geen retry bij worker-crash).
     # De idempotency-vlaggen (credits_deducted, v_already_done) zijn live maar beschermen
     # alleen bij handmatige herstart, niet bij automatische retry.
-    # Oplossing voor echte crash-recovery vereist een custom retry-mechanisme of
-    # een arq-fork — dit is buiten scope voor Fase 4.
+    # Crash-recovery verloopt via watchdog_interrupted_jobs (zie boven).
+
