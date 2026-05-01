@@ -6,8 +6,8 @@ import { AlertCircle, Loader2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
+import { useJobStatus, JobStatusRow } from "@/hooks/useJobStatus"
 import { createClient } from "@/utils/supabase/client"
-import { getPollingInterval } from "@/lib/pollingBackoff"
 
 export interface PlaylistStats {
   playlistTitle?: string
@@ -57,20 +57,89 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
   const playlistJobIdRef = useRef<string | null>(null)
-  const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pollStartTimeRef = useRef<number>(0)
   const { credits, refreshCredits } = useAuth()
+
+  // Active playlist job being tracked
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const fallbackMetaRef = useRef<{ title?: string; url?: string; total?: number }>({})
+
+  const _handlePlaylistUpdate = (job: JobStatusRow) => {
+    const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
+    const newStatuses: Record<string, VideoStatus> = {}
+    for (const [vid, res] of Object.entries(vr)) {
+      newStatuses[vid] = mapBackendStatus(res)
+      if (res.free) setFreeVideoIds(prev => { const s = new Set(prev); s.add(vid); return s })
+    }
+    if (job.current_video_index != null && Array.isArray(job.video_ids)) {
+      const currentVid = job.video_ids[job.current_video_index]
+      if (currentVid && !vr[currentVid]) newStatuses[currentVid] = 'extracting'
+    }
+    setVideoStatuses(prev => ({ ...prev, ...newStatuses }))
+    if (job.current_video_title && job.total_videos) {
+      const title = job.current_video_title as string
+      setProgressMessage(
+        title.startsWith('Loading video')
+          ? title
+          : `Extracting video ${(job.current_video_index ?? 0) + 1} of ${job.total_videos}: ${title}`
+      )
+    }
+  }
+
+  const _handlePlaylistComplete = (job: JobStatusRow) => {
+    playlistJobIdRef.current = null
+    setProgressMessage("")
+    sessionStorage.removeItem('indxr-active-playlist-job')
+
+    const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
+    const finalStatuses: Record<string, VideoStatus> = {}
+    const finalFreeIds = new Set<string>()
+    for (const [vid, res] of Object.entries(vr)) {
+      finalStatuses[vid] = mapBackendStatus(res)
+      if (res.free) finalFreeIds.add(vid)
+    }
+    setVideoStatuses(finalStatuses)
+    setFreeVideoIds(finalFreeIds)
+
+    window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+
+    if (job.status === 'error') {
+      setError({ message: 'Something went wrong during extraction. Any successfully extracted transcripts have been saved to your library.' })
+    }
+
+    const errVids = Object.values(vr)
+    const meta = fallbackMetaRef.current
+    onPlaylistComplete?.({
+      playlistTitle: job.playlist_title ?? meta.title,
+      playlistUrl: job.playlist_url ?? meta.url,
+      totalSelected: job.total_videos ?? meta.total ?? 0,
+      totalSucceeded: job.completed ?? 0,
+      failedBotDetection: errVids.filter(r => r.error_type === 'bot_detection').length,
+      failedTimeout: errVids.filter(r => r.error_type === 'timeout').length,
+      failedAgeRestricted: errVids.filter(r => r.error_type === 'age_restricted').length,
+      failedMembersOnly: errVids.filter(r => r.error_type === 'members_only').length,
+      failedOther: errVids.filter(r => r.status === 'error' && !['bot_detection', 'timeout', 'age_restricted', 'members_only', 'no_captions'].includes(r.error_type ?? '')).length,
+      processingTimeSecs: job.processing_time_seconds ?? Math.floor((Date.now() - startTimeRef.current) / 1000),
+    })
+
+    refreshCredits()
+    setTimeout(() => {
+      setLoading(false)
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    }, 0)
+    setActiveJobId(null)
+  }
+
+  useJobStatus({
+    jobId: activeJobId,
+    jobType: 'playlist',
+    onUpdate: _handlePlaylistUpdate,
+    onComplete: _handlePlaylistComplete,
+    onError: _handlePlaylistComplete,
+  })
 
   // Notify parent of extraction state changes
   useEffect(() => { onExtractingChange?.(loading) }, [loading, onExtractingChange])
-
-  // Clean up poll interval on unmount
-  useEffect(() => {
-    return () => {
-      if (pollIntervalRef.current) clearTimeout(pollIntervalRef.current)
-    }
-  }, [])
 
   // Show the browser's native leave-page warning while a job is running
   useEffect(() => {
@@ -228,121 +297,6 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeData, loading])
 
-  // Shared polling setup — used by handlePlaylistExtract (new jobs) and handleResume (recovered jobs)
-  function startPollInterval(
-    jobId: string,
-    fallbackTitle?: string,
-    fallbackUrl?: string,
-    fallbackTotal?: number,
-  ) {
-    if (pollIntervalRef.current) clearTimeout(pollIntervalRef.current)
-    pollStartTimeRef.current = Date.now()
-
-    const schedulePoll = () => {
-      const elapsed = (Date.now() - pollStartTimeRef.current) / 1000
-      pollIntervalRef.current = setTimeout(doPoll, getPollingInterval(elapsed))
-    }
-
-    const doPoll = async () => {
-      try {
-        const pollResp = await fetch(`/api/playlist/jobs/${jobId}`)
-        if (!pollResp.ok) { schedulePoll(); return }  // transient error — keep polling
-
-        const job = await pollResp.json()
-        const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
-
-        // Update per-video statuses from video_results
-        const newStatuses: Record<string, VideoStatus> = {}
-        for (const [vid, res] of Object.entries(vr)) {
-          newStatuses[vid] = mapBackendStatus(res)
-          if (res.free) setFreeVideoIds(prev => { const s = new Set(prev); s.add(vid); return s })
-        }
-        // Mark the currently-processing video as 'extracting'
-        if (job.current_video_index != null && Array.isArray(job.video_ids)) {
-          const currentVid = job.video_ids[job.current_video_index]
-          if (currentVid && !vr[currentVid]) newStatuses[currentVid] = 'extracting'
-        }
-        setVideoStatuses(prev => ({ ...prev, ...newStatuses }))
-
-        // Update progress message.
-        // If the backend hasn't resolved the title yet (still "Loading video X of N..."),
-        // show that string directly to avoid "Extracting video 3 of 6: Loading video 3 of 6..."
-        if (job.current_video_title && job.total_videos) {
-          const title = job.current_video_title as string
-          setProgressMessage(
-            title.startsWith('Loading video')
-              ? title
-              : `Extracting video ${(job.current_video_index ?? 0) + 1} of ${job.total_videos}: ${title}`
-          )
-        }
-
-        // Terminal states
-        if (job.status === 'complete' || job.status === 'error') {
-          pollIntervalRef.current = null
-          playlistJobIdRef.current = null
-          setProgressMessage("")
-          sessionStorage.removeItem('indxr-active-playlist-job')
-
-          // Final status pass — replace entirely (no merge) so no stale 'pending'/'extracting' entries remain
-          const finalOnlyStatuses: Record<string, VideoStatus> = {}
-          const finalFreeIds = new Set<string>()
-          for (const [vid, res] of Object.entries(vr)) {
-            finalOnlyStatuses[vid] = mapBackendStatus(res)
-            if (res.free) finalFreeIds.add(vid)
-          }
-          setVideoStatuses(finalOnlyStatuses)
-          setFreeVideoIds(finalFreeIds)
-
-          // Refresh library sidebar
-          window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
-
-          if (job.status === 'error') {
-            setError({ message: 'Something went wrong during extraction. Any successfully extracted transcripts have been saved to your library.' })
-          }
-
-          // Derive PlaylistStats from job row and call completion callback
-          const errVids = Object.values(vr)
-          onPlaylistComplete?.({
-            playlistTitle: job.playlist_title ?? fallbackTitle,
-            playlistUrl:   job.playlist_url  ?? fallbackUrl,
-            totalSelected: job.total_videos ?? fallbackTotal ?? 0,
-            totalSucceeded: job.completed ?? 0,
-            failedBotDetection:  errVids.filter(r => r.error_type === 'bot_detection').length,
-            failedTimeout:       errVids.filter(r => r.error_type === 'timeout').length,
-            failedAgeRestricted: errVids.filter(r => r.error_type === 'age_restricted').length,
-            failedMembersOnly:   errVids.filter(r => r.error_type === 'members_only').length,
-            failedOther:         errVids.filter(r =>
-              r.status === 'error' &&
-              !['bot_detection', 'timeout', 'age_restricted', 'members_only', 'no_captions'].includes(r.error_type ?? '')
-            ).length,
-            processingTimeSecs: job.processing_time_seconds
-              ?? Math.floor((Date.now() - startTimeRef.current) / 1000),
-          })
-
-          refreshCredits()
-          // Delay setLoading so React processes the final videoStatuses update first,
-          // ensuring the allDone useEffect in PlaylistManager sees isExtracting=false
-          // only after all statuses are terminal — preventing the banner race condition.
-          setTimeout(() => {
-            setLoading(false)
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current)
-              intervalRef.current = null
-            }
-          }, 0)
-          return // terminal — do not reschedule
-        }
-
-        schedulePoll()
-      } catch (pollErr) {
-        console.error('Playlist poll error:', pollErr)
-        schedulePoll() // Non-fatal — keep polling
-      }
-    }
-
-    schedulePoll()
-  }
-
   // Resume a running job after page reload or tab switch
   const handleResume = () => {
     if (!resumeData) return
@@ -351,7 +305,6 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     playlistJobIdRef.current = jobId
     setLoading(true)
 
-    // Restore the real job start time so the elapsed timer reflects actual job age
     let storedStartTime = Date.now()
     try {
       const raw = sessionStorage.getItem('indxr-active-playlist-job')
@@ -363,7 +316,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     startTimeRef.current = storedStartTime
     setElapsedSeconds(Math.floor((Date.now() - storedStartTime) / 1000))
     intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
-    startPollInterval(jobId)
+    setActiveJobId(jobId)
   }
 
   const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string) => {
@@ -472,7 +425,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       }))
       setProgressMessage(`Starting extraction of ${extractableIds.length} video${extractableIds.length !== 1 ? 's' : ''}...`)
 
-      startPollInterval(job_id, playlistTitle, playlistUrl, extractableIds.length)
+      fallbackMetaRef.current = { title: playlistTitle, url: playlistUrl, total: extractableIds.length }
+      setActiveJobId(job_id)
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to extract playlist"
@@ -480,7 +434,6 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       setLoading(false)
       setProgressMessage("")
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
-      if (pollIntervalRef.current) { clearTimeout(pollIntervalRef.current); pollIntervalRef.current = null }
     }
   }
 

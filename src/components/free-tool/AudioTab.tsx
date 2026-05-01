@@ -5,6 +5,7 @@ import { UploadCloud, FileAudio, X, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { useAuth } from "@/hooks/useAuth"
+import { useJobStatus } from "@/hooks/useJobStatus"
 import { toast } from "sonner"
 import { TranscriptCard, TranscriptItem } from "@/components/TranscriptCard"
 import { TranscriptMetadata } from "@/types/transcript"
@@ -12,7 +13,6 @@ import Link from "next/link"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "@/utils/supabase/client"
-import { getPollingInterval } from "@/lib/pollingBackoff"
 import { TranscriptionProgress } from "@/components/transcription/TranscriptionProgress"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
@@ -40,6 +40,54 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const activeFilenameRef = useRef<string>('Audio Upload')
+
+  // Active job tracked via Realtime + polling
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
+
+  useJobStatus({
+    jobId: activeJobId,
+    jobType: 'transcription',
+    onUpdate: (job) => {
+      const s = job.status as typeof whisperStatus
+      if (s === 'pending' || s === 'downloading' || s === 'transcribing' || s === 'saving') {
+        setWhisperStatus(s)
+      }
+    },
+    onComplete: (job) => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      sessionStorage.removeItem(AUDIO_JOB_KEY)
+      setTranscript(job.transcript as TranscriptItem[])
+      setAudioMetadata({
+        filename: activeFilenameRef.current,
+        duration: job.duration ?? 0,
+        creditsUsed: job.credits_used ?? 1,
+        processingTimeSecs: job.processing_time_seconds ?? 0,
+      })
+      refreshCredits()
+      window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+      setSaveStatus('saved')
+      setIsTranscribing(false)
+      setWhisperStatus('idle')
+      setUploadPhase('idle')
+      setUploadProgress(null)
+      setActiveJobId(null)
+    },
+    onError: (job) => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      sessionStorage.removeItem(AUDIO_JOB_KEY)
+      if (job.error_message === 'Insufficient credits') {
+        toast.error('Not enough credits to transcribe this file.')
+      } else if (job.status !== 'network_error') {
+        toast.error(job.error_message || 'Transcription failed')
+      }
+      setIsTranscribing(false)
+      setWhisperStatus('idle')
+      setUploadPhase('idle')
+      setUploadProgress(null)
+      setActiveJobId(null)
+    },
+  })
 
   // On mount: check for a running audio job from a previous page session
   useEffect(() => {
@@ -248,81 +296,6 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     }
   }
 
-  // Core polling loop — shared by handleTranscribe (new jobs) and handleResume (recovered jobs)
-  const runPollLoop = async (jobId: string, filename: string, startElapsed = 0) => {
-    setElapsedSeconds(startElapsed)
-    intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
-    const MAX_POLLS = 200
-    const startTime = Date.now()
-    try {
-      for (let i = 0; i < MAX_POLLS; i++) {
-        const elapsed = (Date.now() - startTime) / 1000
-        await new Promise<void>(resolve => setTimeout(resolve, getPollingInterval(elapsed)))
-
-        let job: {
-          status: string
-          transcript?: TranscriptItem[]
-          duration?: number
-          credits_used?: number
-          processing_time_seconds?: number
-          error_message?: string
-          required_credits?: number
-          available_credits?: number
-        }
-
-        try {
-          const resp = await fetch(`/api/jobs/${jobId}`)
-          if (!resp.ok) {
-            toast.error('Failed to check job status')
-            return
-          }
-          job = await resp.json()
-        } catch {
-          toast.error('Network error while checking job status')
-          return
-        }
-
-        if (
-          job.status === 'pending' ||
-          job.status === 'downloading' ||
-          job.status === 'transcribing' ||
-          job.status === 'saving'
-        ) {
-          setWhisperStatus(job.status as 'pending' | 'downloading' | 'transcribing' | 'saving')
-        } else if (job.status === 'complete') {
-          sessionStorage.removeItem(AUDIO_JOB_KEY)
-          setTranscript(job.transcript!)
-          setAudioMetadata({
-            filename,
-            duration: job.duration!,
-            creditsUsed: job.credits_used!,
-            processingTimeSecs: job.processing_time_seconds ?? 0,
-          })
-          await refreshCredits()
-          window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
-          setSaveStatus('saved')
-          return
-        } else if (job.status === 'error') {
-          sessionStorage.removeItem(AUDIO_JOB_KEY)
-          if (job.error_message === 'Insufficient credits') {
-            toast.error('Not enough credits to transcribe this file.')
-          } else {
-            toast.error(job.error_message || 'Transcription failed')
-          }
-          return
-        }
-      }
-      sessionStorage.removeItem(AUDIO_JOB_KEY)
-      toast.error('Transcription timed out. Please try again.')
-    } finally {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
-      setIsTranscribing(false)
-      setWhisperStatus('idle')
-      setUploadPhase('idle')
-      setUploadProgress(null)
-    }
-  }
-
   const handleResume = () => {
     if (!resumeData) return
     const { jobId, filename, initialStatus, elapsedAtResume } = resumeData
@@ -333,7 +306,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     setResumeData(null)
     setIsTranscribing(true)
     setWhisperStatus(status)
-    runPollLoop(jobId, filename, elapsedAtResume)
+    setElapsedSeconds(elapsedAtResume)
+    intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+    activeFilenameRef.current = filename
+    setActiveJobId(jobId)
   }
 
   const handleTranscribe = async () => {
@@ -427,8 +403,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       sessionStorage.setItem(AUDIO_JOB_KEY, JSON.stringify({ jobId: job_id, filename: file.name }))
       setResumeData(null)
 
-      await runPollLoop(job_id, file.name)
-
+      setElapsedSeconds(0)
+      intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+      activeFilenameRef.current = file.name
+      setActiveJobId(job_id)
+      // Completion handled by useJobStatus onComplete/onError callbacks
     } catch (error) {
       console.error('Transcription error:', error)
       toast.error(error instanceof Error ? error.message : 'Something went wrong. Please try again.')

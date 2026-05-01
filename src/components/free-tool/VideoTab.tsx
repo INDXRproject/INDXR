@@ -13,7 +13,7 @@ import { createClient } from "@/utils/supabase/client"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/useAuth"
-import { getPollingInterval } from "@/lib/pollingBackoff"
+import { useJobStatus, JobStatusRow } from "@/hooks/useJobStatus"
 import posthog from "posthog-js"
 import { TranscriptionProgress } from "@/components/transcription/TranscriptionProgress"
 
@@ -27,108 +27,6 @@ type WhisperStatus = 'idle' | 'pending' | 'downloading' | 'transcribing' | 'savi
 
 const VIDEO_JOB_KEY = 'indxr-active-video-job'
 
-type WhisperCompleteEvent = {
-  type: 'complete'
-  transcript: TranscriptItem[]
-  transcript_id?: string
-  channel?: string | null
-  language?: string | null
-  duration: number
-  credits_used: number
-  truncation_warning?: string
-}
-
-type WhisperErrorEvent = {
-  type: 'error'
-  error: string
-  code?: string
-  required_credits?: number
-  available_credits?: number
-}
-
-type WhisperNetworkDisconnectedEvent = {
-  type: 'network_disconnected'
-}
-
-type WhisperFinalEvent = WhisperCompleteEvent | WhisperErrorEvent | WhisperNetworkDisconnectedEvent
-
-/**
- * Polls GET /api/jobs/{jobId} every 3 seconds until the job reaches
- * a terminal state (complete or error). Calls onStatus for each
- * in-progress status update.
- */
-async function pollWhisperJob(
-  jobId: string,
-  onStatus: (status: 'pending' | 'downloading' | 'transcribing' | 'saving') => void
-): Promise<WhisperFinalEvent> {
-  const MAX_POLLS = 200
-  const NETWORK_RETRY_MS = 5000
-  const MAX_CONSECUTIVE_ERRORS = 3
-
-  let consecutiveErrors = 0
-  const startTime = Date.now()
-
-  for (let i = 0; i < MAX_POLLS; i++) {
-    const elapsed = (Date.now() - startTime) / 1000
-    await new Promise<void>(resolve => setTimeout(resolve, getPollingInterval(elapsed)))
-
-    let job: {
-      status: string
-      transcript?: TranscriptItem[]
-      transcript_id?: string
-      channel?: string | null
-      language?: string | null
-      duration?: number
-      credits_used?: number
-      error_message?: string
-      error_code?: string
-      required_credits?: number
-      available_credits?: number
-      truncation_warning?: string
-    }
-    try {
-      const resp = await fetch(`/api/jobs/${jobId}`)
-      if (!resp.ok) {
-        return { type: 'error', error: 'Failed to check job status' }
-      }
-      job = await resp.json()
-      consecutiveErrors = 0
-    } catch {
-      consecutiveErrors++
-      if (consecutiveErrors <= MAX_CONSECUTIVE_ERRORS) {
-        await new Promise<void>(resolve => setTimeout(resolve, NETWORK_RETRY_MS))
-        continue
-      }
-      return { type: 'network_disconnected' }
-    }
-
-    if (job.status === 'pending' || job.status === 'downloading' ||
-        job.status === 'transcribing' || job.status === 'saving') {
-      onStatus(job.status as 'pending' | 'downloading' | 'transcribing' | 'saving')
-    } else if (job.status === 'complete') {
-      return {
-        type: 'complete',
-        transcript: job.transcript!,
-        transcript_id: job.transcript_id,
-        channel: job.channel,
-        language: job.language,
-        duration: job.duration!,
-        credits_used: job.credits_used!,
-        truncation_warning: job.error_message?.startsWith('Transcript may be incomplete') ? job.error_message : undefined,
-      }
-    } else if (job.status === 'error') {
-      return {
-        type: 'error',
-        error: job.error_message || 'Transcription failed',
-        code: job.error_code,
-        required_credits: job.required_credits,
-        available_credits: job.available_credits,
-      }
-    }
-  }
-
-  return { type: 'error', error: 'Transcription timed out', code: 'timeout' }
-}
 
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60)
@@ -206,6 +104,140 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   // Cooldown: tracks the last successful extraction to suppress immediate duplicate warnings
   const lastSuccessTimestampRef = useRef<{ videoId: string; time: number } | null>(null)
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Active Whisper job being tracked (Realtime + polling)
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const activeJobContextRef = useRef<{ videoId: string; title: string; context: 'confirm' | 'upsell' | 'resume' } | null>(null)
+
+  const _handleWhisperComplete = (job: JobStatusRow) => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    setIsStreaming(false)
+    setFinalElapsed(elapsedRef.current)
+
+    const ctx = activeJobContextRef.current
+    const transcript = job.transcript as TranscriptItem[] | undefined
+    if (!transcript || transcript.length === 0) {
+      setLoading(false)
+      setWhisperStatus('idle')
+      setShowDuplicateChoices(false)
+      setPendingWhisperData(null)
+      activeJobContextRef.current = null
+      setActiveJobId(null)
+      return
+    }
+
+    sessionStorage.removeItem(VIDEO_JOB_KEY)
+
+    const videoId = ctx?.videoId ?? currentVideoId
+    const title = ctx?.title ?? videoTitle
+    const truncationWarning = typeof job.error_message === 'string' && job.error_message.startsWith('Transcript may be incomplete')
+      ? job.error_message
+      : undefined
+
+    setTranscript(transcript)
+    setVideoTitle(title || "")
+    setVideoUrl(`https://www.youtube.com/watch?v=${videoId}`)
+    setVideoDuration(job.duration || null)
+    setLastProcessingMethod('whisper_ai')
+    setVideoChannel(job.channel ?? null)
+    setVideoLanguage(job.language ?? null)
+    setWhisperMetadata({ duration: job.duration ?? 0, creditsUsed: job.credits_used || 1, truncationWarning })
+    setCurrentVideoId(videoId)
+    sessionSavedKeys.current.add(`${videoId}:whisper_ai`)
+    setExistingTranscriptMethod('assemblyai')
+    if (ctx?.context === 'upsell') setWhisperAutoTriggered(true)
+    if (job.transcript_id) { setExistingTranscriptId(job.transcript_id); existingTranscriptIdRef.current = job.transcript_id }
+
+    posthog.capture('transcript_extracted', {
+      type: 'video',
+      credits_used: job.credits_used || 1,
+      processing_method: PROCESSING_METHODS.ASSEMBLYAI,
+      ...(ctx?.context === 'confirm' ? { user_selected_whisper: true } : {}),
+    })
+
+    toast.success("Transcript extracted & saved with AI", {
+      description: "Added to your library automatically.",
+      action: { label: "View", onClick: () => window.location.href = '/dashboard/library' }
+    })
+    window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+    setSaveStatus('saved')
+    refreshCredits()
+
+    if (ctx?.context !== 'upsell') {
+      setUrl("")
+      setUseWhisper(false)
+      useWhisperRef.current = false
+    }
+    lastSuccessTimestampRef.current = { videoId, time: Date.now() }
+
+    setLoading(false)
+    setWhisperStatus('idle')
+    setShowDuplicateChoices(false)
+    setPendingWhisperData(null)
+    activeJobContextRef.current = null
+    setActiveJobId(null)
+  }
+
+  const _handleWhisperError = (job: JobStatusRow) => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    setIsStreaming(false)
+    setFinalElapsed(elapsedRef.current)
+
+    if (job.status === 'network_error') {
+      setWhisperNetworkDisconnected(true)
+      const ctx = activeJobContextRef.current
+      if (ctx) {
+        sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
+          jobId: currentJobIdRef.current,
+          videoId: ctx.videoId,
+          title: ctx.title,
+          duration: 0,
+          startTime: Date.now() - elapsedRef.current * 1000,
+          status: 'transcribing',
+        }))
+      }
+    } else {
+      sessionStorage.removeItem(VIDEO_JOB_KEY)
+      const errorMsg = job.error_message || 'Transcription failed'
+      if (errorMsg === 'members_only' || job.error_type === 'members_only') {
+        setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+      } else if (job.error_code === 'insufficient_credits') {
+        setError({ message: `Not enough credits. This video requires ${job.required_credits} credit${job.required_credits !== 1 ? 's' : ''}, you have ${job.available_credits}.`, isCreditsError: true })
+      } else if (errorMsg === 'no_speech_detected' || job.error_type === 'no_speech') {
+        setError({ message: '', isNoSpeech: true })
+      } else {
+        const isYouTubeRestricted = errorMsg.includes('152') || errorMsg.toLowerCase().includes('unavailable')
+        setError({
+          message: isYouTubeRestricted
+            ? "This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload here."
+            : errorMsg,
+          isYouTubeRestricted,
+        })
+        if (!isYouTubeRestricted) toast.error(errorMsg)
+      }
+    }
+
+    setLoading(false)
+    setWhisperStatus('idle')
+    setIsReextracting(false)
+    setShowDuplicateChoices(false)
+    setPendingWhisperData(null)
+    activeJobContextRef.current = null
+    setActiveJobId(null)
+  }
+
+  useJobStatus({
+    jobId: activeJobId,
+    jobType: 'transcription',
+    onUpdate: (job) => {
+      const s = job.status as WhisperStatus
+      if (s === 'pending' || s === 'downloading' || s === 'transcribing' || s === 'saving') {
+        setWhisperStatus(s)
+      }
+    },
+    onComplete: _handleWhisperComplete,
+    onError: _handleWhisperError,
+  })
 
   // Navigation guard while SSE stream is open
   useEffect(() => {
@@ -669,32 +701,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
 
 
-  const handleWhisperSuccess = async (transcript: TranscriptItem[], metadata: { videoId: string; title: string; duration: number; creditsUsed: number; source: string; truncationWarning?: string; transcriptId?: string; channelName?: string | null; language?: string | null }) => {
-    setTranscript(transcript)
-    setVideoTitle(metadata.title || "")
-    setVideoUrl(`https://www.youtube.com/watch?v=${metadata.videoId}`)
-    setWhisperMetadata({ duration: metadata.duration, creditsUsed: metadata.creditsUsed, truncationWarning: metadata.truncationWarning })
-    setLastProcessingMethod('whisper_ai')
-    setVideoChannel(metadata.channelName ?? null)
-    setVideoLanguage(metadata.language ?? null)
-    setWhisperAutoTriggered(true) // Mark that Whisper was auto-triggered
-    // Track whisper save in session so a second click is instantly flagged as duplicate
-    sessionSavedKeys.current.add(`${metadata.videoId}:whisper_ai`);
-    setExistingTranscriptMethod('assemblyai');
-
-    // Backend already saved the transcript — skip onTranscriptLoaded() to avoid duplicate insert.
-    // Just refresh the sidebar and fetch the saved row ID for UI state.
-    window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
-
-    if (metadata.transcriptId) { setExistingTranscriptId(metadata.transcriptId); existingTranscriptIdRef.current = metadata.transcriptId; }
-
-    setSaveStatus('saved')
-
-      // Clear URL input field after successful transcription
-      lastSuccessTimestampRef.current = { videoId: metadata.videoId, time: Date.now() }
-      setUrl("")
-    }
-
   // Execute Whisper extraction after user confirms
   const handleWhisperConfirm = async () => {
     if (!pendingWhisperData) return
@@ -725,117 +731,36 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         const errorData = await response.json()
         if (errorData.error === 'members_only') {
           setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+          setLoading(false)
+          setWhisperStatus('idle')
+          setShowDuplicateChoices(false)
+          setPendingWhisperData(null)
           return
         }
         throw new Error(errorData.error || 'Failed to extract transcript with AI transcription')
       }
 
       const jobData = await response.json()
-      if (!jobData.job_id) {
-        throw new Error('Failed to start transcription job')
-      }
+      if (!jobData.job_id) throw new Error('Failed to start transcription job')
 
-      // Persist job for page reload recovery
       sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
-        jobId: jobData.job_id,
-        videoId,
-        title: pendingWhisperData.title,
-        duration: pendingWhisperData.duration,
-        startTime: Date.now(),
-        status: 'pending',
+        jobId: jobData.job_id, videoId,
+        title: pendingWhisperData.title, duration: pendingWhisperData.duration,
+        startTime: Date.now(), status: 'pending',
       }))
 
-      // Clear any previous interval and reset timer state before starting new job
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
+      if (intervalRef.current !== null) { clearInterval(intervalRef.current); intervalRef.current = null }
       elapsedRef.current = 0
       setElapsedSeconds(0)
       setFinalElapsed(null)
       currentJobIdRef.current = jobData.job_id
-
       setIsStreaming(true)
       setWhisperStatus('pending')
-      intervalRef.current = setInterval(() => {
-        elapsedRef.current += 1
-        setElapsedSeconds(s => s + 1)
-      }, 1000)
+      intervalRef.current = setInterval(() => { elapsedRef.current += 1; setElapsedSeconds(s => s + 1) }, 1000)
 
-      let keepJobInSession = false
-      const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
-
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-      setIsStreaming(false)
-      setFinalElapsed(elapsedRef.current)
-
-      if (event.type === 'network_disconnected') {
-        setWhisperNetworkDisconnected(true)
-        keepJobInSession = true
-        return
-      }
-      if (!keepJobInSession) sessionStorage.removeItem(VIDEO_JOB_KEY)
-
-      if (event.type === 'error') {
-        if (event.error === 'members_only') {
-          setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
-          return
-        }
-        if (event.code === 'insufficient_credits') {
-          setError({ message: `Not enough credits. This video requires ${event.required_credits} credit${event.required_credits !== 1 ? 's' : ''}, you have ${event.available_credits}.`, isCreditsError: true })
-          return
-        }
-        if (event.error === 'no_speech_detected') {
-          setError({ message: '', isNoSpeech: true })
-          return
-        }
-        throw new Error(event.error || 'Transcription failed')
-      }
-
-      // event.type === 'complete'
-      setTranscript(event.transcript)
-      setVideoTitle(pendingWhisperData.title || "")
-      setVideoUrl(`https://www.youtube.com/watch?v=${videoId}`)
-      setVideoDuration(event.duration || null)
-      setLastProcessingMethod('whisper_ai')
-      setVideoChannel(event.channel ?? null)
-      setVideoLanguage(event.language ?? null)
-      setWhisperMetadata({ duration: event.duration, creditsUsed: event.credits_used || 1, truncationWarning: event.truncation_warning })
-      setCurrentVideoId(videoId)
-
-      sessionSavedKeys.current.add(`${videoId}:whisper_ai`)
-      setExistingTranscriptMethod('assemblyai')
-
-      posthog.capture('transcript_extracted', {
-        type: 'video',
-        credits_used: event.credits_used || 1,
-        processing_method: PROCESSING_METHODS.ASSEMBLYAI,
-        user_selected_whisper: true
-      })
-
-      if (event.transcript && event.transcript.length > 0) {
-        toast.success("Transcript extracted & saved with AI", {
-          description: "Added to your library automatically.",
-          action: {
-            label: "View",
-            onClick: () => window.location.href = '/dashboard/library'
-          }
-        })
-
-        // Backend already saved the transcript — skip onTranscriptLoaded() to avoid duplicate insert.
-        // Just refresh the sidebar and fetch the saved row ID for UI state.
-        window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
-
-        if (event.transcript_id) { setExistingTranscriptId(event.transcript_id); existingTranscriptIdRef.current = event.transcript_id; }
-
-        setSaveStatus('saved')
-        refreshCredits()
-        setUrl("")
-        setUseWhisper(false)
-        useWhisperRef.current = false
-        lastSuccessTimestampRef.current = { videoId, time: Date.now() }
-      }
+      activeJobContextRef.current = { videoId, title: pendingWhisperData.title, context: 'confirm' }
+      setActiveJobId(jobData.job_id)
+      // Completion and error are handled by _handleWhisperComplete / _handleWhisperError
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : 'Whisper extraction failed'
       const isYouTubeRestricted = errMsg.includes('152') || errMsg.toLowerCase().includes('unavailable')
@@ -845,10 +770,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           : errMsg,
         isYouTubeRestricted
       })
-      if (!isYouTubeRestricted) {
-        toast.error(errMsg)
-      }
-    } finally {
+      if (!isYouTubeRestricted) toast.error(errMsg)
       setLoading(false)
       setWhisperStatus('idle')
       setIsStreaming(false)
@@ -879,110 +801,54 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       formData.append('video_id', currentVideoId)
       if (videoTitle) formData.append('title', videoTitle)
 
-      const response = await fetch('/api/transcribe/whisper', {
-        method: 'POST',
-        body: formData,
-      })
+      const response = await fetch('/api/transcribe/whisper', { method: 'POST', body: formData })
 
       if (!response.ok) {
         const errorData = await response.json()
         if (errorData.error === 'members_only') {
           setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
+          setLoading(false)
+          setWhisperStatus('idle')
+          setIsStreaming(false)
+          setIsReextracting(false)
           return
         }
         throw new Error(errorData.error || 'Failed to extract transcript with AI transcription')
       }
 
       const jobData = await response.json()
-      if (!jobData.job_id) {
-        throw new Error('Failed to start transcription job')
-      }
+      if (!jobData.job_id) throw new Error('Failed to start transcription job')
 
-      // Persist job for page reload recovery
       sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
-        jobId: jobData.job_id,
-        videoId: currentVideoId,
-        title: videoTitle,
-        duration: videoDuration ?? 0,
-        startTime: Date.now(),
-        status: 'pending',
+        jobId: jobData.job_id, videoId: currentVideoId,
+        title: videoTitle, duration: videoDuration ?? 0,
+        startTime: Date.now(), status: 'pending',
       }))
 
-      // Clear any previous interval and reset timer state before starting new job
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
+      if (intervalRef.current !== null) { clearInterval(intervalRef.current); intervalRef.current = null }
       elapsedRef.current = 0
       setElapsedSeconds(0)
       setFinalElapsed(null)
       currentJobIdRef.current = jobData.job_id
-
       setIsStreaming(true)
       setWhisperStatus('pending')
-      intervalRef.current = setInterval(() => {
-        elapsedRef.current += 1
-        setElapsedSeconds(s => s + 1)
-      }, 1000)
+      intervalRef.current = setInterval(() => { elapsedRef.current += 1; setElapsedSeconds(s => s + 1) }, 1000)
 
-      let keepJobInSessionUpsell = false
-      const event = await pollWhisperJob(jobData.job_id, (status) => setWhisperStatus(status))
-
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-      setIsStreaming(false)
-      setFinalElapsed(elapsedRef.current)
-
-      if (event.type === 'network_disconnected') {
-        setWhisperNetworkDisconnected(true)
-        keepJobInSessionUpsell = true
-        return
-      }
-      if (!keepJobInSessionUpsell) sessionStorage.removeItem(VIDEO_JOB_KEY)
-
-      if (event.type === 'error') {
-        if (event.error === 'members_only') {
-          setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
-          return
-        }
-        throw new Error(event.error || 'Transcription failed')
-      }
-
-      posthog.capture('transcript_extracted', {
-        type: 'video',
-        credits_used: event.credits_used || 1,
-        processing_method: PROCESSING_METHODS.ASSEMBLYAI,
-      })
-
-      await handleWhisperSuccess(event.transcript, {
-        videoId: currentVideoId,
-        title: videoTitle,
-        duration: event.duration,
-        creditsUsed: event.credits_used || 1,
-        source: 'youtube',
-        truncationWarning: event.truncation_warning,
-        transcriptId: event.transcript_id,
-        channelName: event.channel,
-        language: event.language,
-      })
-
-      refreshCredits()
+      activeJobContextRef.current = { videoId: currentVideoId, title: videoTitle, context: 'upsell' }
+      setActiveJobId(jobData.job_id)
+      // Completion and error are handled by _handleWhisperComplete / _handleWhisperError
     } catch (err: unknown) {
       console.error('[WHISPER UPSELL] ERROR caught:', err)
       const errMsg = err instanceof Error ? err.message : 'Whisper extraction failed'
       const isYouTubeRestricted = errMsg.includes('152') || errMsg.toLowerCase().includes('unavailable')
       if (isYouTubeRestricted) {
-        setError({
-          message: "This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload here.",
-          isYouTubeRestricted: true
-        })
+        setError({ message: "This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload here.", isYouTubeRestricted: true })
       } else if (errMsg === 'no_speech_detected') {
         setError({ message: '', isNoSpeech: true })
       } else {
         setError({ message: errMsg })
         toast.error(errMsg)
       }
-    } finally {
       setLoading(false)
       setWhisperStatus('idle')
       setIsStreaming(false)
@@ -993,11 +859,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
   const handleVideoResume = () => {
     if (!videoResumeData) return
-    const { jobId, videoId, title, duration, startTime, status } = videoResumeData
+    const { jobId, videoId, title, startTime, status } = videoResumeData
     setVideoResumeData(null)
 
     const elapsedAtResume = Math.floor((Date.now() - startTime) / 1000)
-    if (intervalRef.current !== null) clearInterval(intervalRef.current)
+    if (intervalRef.current !== null) { clearInterval(intervalRef.current); intervalRef.current = null }
     elapsedRef.current = elapsedAtResume
     setElapsedSeconds(elapsedAtResume)
     setFinalElapsed(null)
@@ -1005,55 +871,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setIsStreaming(true)
     setWhisperStatus(status)
     setLoading(true)
-    intervalRef.current = setInterval(() => {
-      elapsedRef.current += 1
-      setElapsedSeconds(s => s + 1)
-    }, 1000)
+    intervalRef.current = setInterval(() => { elapsedRef.current += 1; setElapsedSeconds(s => s + 1) }, 1000)
 
-    pollWhisperJob(jobId, (s) => setWhisperStatus(s)).then(event => {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
-      setIsStreaming(false)
-      setFinalElapsed(elapsedRef.current)
-
-      if (event.type === 'network_disconnected') {
-        setWhisperNetworkDisconnected(true)
-        // Re-write for next reload so user can resume again
-        sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({ jobId, videoId, title, duration, startTime, status: 'transcribing' }))
-        setLoading(false)
-        setWhisperStatus('idle')
-        return
-      }
-      sessionStorage.removeItem(VIDEO_JOB_KEY)
-
-      if (event.type === 'error') {
-        setError({ message: event.error || 'Transcription failed' })
-        setLoading(false)
-        setWhisperStatus('idle')
-        return
-      }
-
-      // success
-      setTranscript(event.transcript)
-      if (title) setVideoTitle(title)
-      setVideoUrl(`https://www.youtube.com/watch?v=${videoId}`)
-      setVideoDuration(event.duration || null)
-      setLastProcessingMethod('whisper_ai')
-      setVideoChannel(event.channel ?? null)
-      setVideoLanguage(event.language ?? null)
-      setWhisperMetadata({ duration: event.duration, creditsUsed: event.credits_used || 1, truncationWarning: event.truncation_warning })
-      if (event.transcript_id) { setExistingTranscriptId(event.transcript_id); existingTranscriptIdRef.current = event.transcript_id }
-      window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
-      setSaveStatus('saved')
-      refreshCredits()
-      setLoading(false)
-      setWhisperStatus('idle')
-    }).catch(() => {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
-      setIsStreaming(false)
-      setWhisperStatus('idle')
-      sessionStorage.removeItem(VIDEO_JOB_KEY)
-      setLoading(false)
-    })
+    activeJobContextRef.current = { videoId, title, context: 'resume' }
+    setActiveJobId(jobId)
+    // Completion and error are handled by _handleWhisperComplete / _handleWhisperError
   }
 
   const handleGuardedTabSwitch = (callback: (() => void) | undefined) => {
