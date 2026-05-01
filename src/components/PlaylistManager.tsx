@@ -49,6 +49,7 @@ interface PlaylistManagerProps {
   isExtracting: boolean;
   videoStatuses?: Record<string, VideoStatus>;
   freeVideoIds?: Set<string>;
+  whisperVideoIds?: Set<string>;
   isAuthenticated: boolean;
   onAuthRequired: () => void;
   onError: (message: string | null) => void;
@@ -62,7 +63,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, elapsedSeconds = 0 }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, elapsedSeconds = 0 }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -570,7 +571,19 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                           {videoStatuses[entry.id] === 'unavailable' && <XCircle className="h-4 w-4 text-fg-muted shrink-0" />}
                           {(videoStatuses[entry.id] === 'youtube_restricted' || videoStatuses[entry.id] === 'bot_detection' || videoStatuses[entry.id] === 'timeout') && <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />}
                           {(videoStatuses[entry.id] === 'age_restricted' || videoStatuses[entry.id] === 'members_only') && <XCircle className="h-4 w-4 text-error-fg shrink-0" />}
-                          {videoStatuses[entry.id] === 'extracting' && <Loader2 className="h-3 w-3 animate-spin text-accent shrink-0" />}
+                          {videoStatuses[entry.id] === 'extracting' && (
+                            whisperVideoIds?.has(entry.id) ? (
+                              <span className="flex items-center gap-1 text-[10px] font-semibold text-accent shrink-0">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
+                                </span>
+                                Transcribing with AI
+                              </span>
+                            ) : (
+                              <Loader2 className="h-3 w-3 animate-spin text-accent shrink-0" />
+                            )
+                          )}
                         </div>
                         {entry.duration && (
                           <div className="flex items-center gap-3">
@@ -578,6 +591,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                                 <Clock className="h-3 w-3" />
                                 {Math.floor(entry.duration / 60)}:{Math.floor(entry.duration % 60).toString().padStart(2, '0')}
                             </span>
+                            {videoStatuses[entry.id] === 'extracting' && whisperVideoIds?.has(entry.id) && elapsedSeconds > 0 && (
+                              <span className="text-[10px] font-mono text-accent/80">{formatElapsed(elapsedSeconds)}</span>
+                            )}
                             {freeVideoIds?.has(entry.id) && <span className="text-[10px] uppercase font-bold text-success bg-success-subtle px-1.5 py-0.5 rounded">Free</span>}
                             {videoStatuses[entry.id] === 'unavailable' && <span className="text-[10px] uppercase font-bold text-fg-muted bg-surface-elevated px-1.5 py-0.5 rounded">Unavailable</span>}
                             {videoStatuses[entry.id] === 'error' && <span className="text-[10px] uppercase font-bold text-error bg-error/10 px-1.5 py-0.5 rounded">Failed</span>}

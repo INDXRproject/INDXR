@@ -49,6 +49,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const [loading, setLoading] = useState(false)
   const [videoStatuses, setVideoStatuses] = useState<Record<string, VideoStatus>>({})
   const [freeVideoIds, setFreeVideoIds] = useState<Set<string>>(new Set())
+  const [whisperVideoIds, setWhisperVideoIds] = useState<Set<string>>(new Set())
   const [progressMessage, setProgressMessage] = useState<string>("")
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [resumeData, setResumeData] = useState<{ jobId: string; completed: number; total: number; title?: string } | null>(null)
@@ -149,6 +150,13 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
               return Array.isArray(parsed?.videoIds) ? parsed.videoIds : []
             } catch { return [] }
           })()
+          // Restore whisper video IDs from sessionStorage
+          try {
+            const parsed = JSON.parse(raw)
+            if (Array.isArray(parsed?.whisperIds)) {
+              setWhisperVideoIds(new Set<string>(parsed.whisperIds))
+            }
+          } catch { /* ignore */ }
           const restoredStatuses: Record<string, VideoStatus> = {}
           const restoredFreeIds = new Set<string>()
           storedVideoIds.forEach(id => { restoredStatuses[id] = 'pending' })
@@ -388,6 +396,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       const useWhisperIds = (availabilityData ?? [])
         .filter((v: any) => videoIds.includes(v.videoId) && v.status === 'needs_whisper')
         .map((v: any) => v.videoId)
+      setWhisperVideoIds(new Set<string>(useWhisperIds))
 
       // Exclude duplicates — backend always INSERTs; videos already in the library are skipped.
       // Their existing "Already in library" badge in PlaylistManager continues to display as-is.
@@ -421,6 +430,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         startTime: Date.now(),
         playlistTitle: playlistTitle ?? null,
         videoIds: extractableIds,
+        whisperIds: useWhisperIds,
       }))
       setProgressMessage(`Starting extraction of ${extractableIds.length} video${extractableIds.length !== 1 ? 's' : ''}...`)
 
@@ -514,6 +524,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         isExtracting={loading}
         videoStatuses={videoStatuses}
         freeVideoIds={freeVideoIds}
+        whisperVideoIds={whisperVideoIds}
         isAuthenticated={isAuthenticated}
         onAuthRequired={onAuthRequired}
         onError={(message) => setError(message ? { message } : null)}
