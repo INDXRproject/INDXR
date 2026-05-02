@@ -1,3 +1,7 @@
+[2026-05-02 19:00] fix: Sentry.flush(2000) toegevoegd na elke captureException in 5 API routes — serverless transport kreeg geen tijd om envelope te versturen vóór process kill | gewijzigd: src/app/api/extract/route.ts, src/app/api/stripe/webhook/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/transcribe/preflight/route.ts, src/app/api/playlist/info/route.ts
+---
+[2026-05-02 18:00] docs: Sentry frontend diagnose — root cause gevonden: testmethode onjuist (Zod-validatie bereikt outer catch nooit), sentry-config structureel correct, verificatiestap gedocumenteerd in known-issues.md | gewijzigd: docs/wiki/operations/known-issues.md
+---
 [2026-05-02 17:00] docs: Sentry audit test-reports + known-issues — verificatieresultaten (worker ✅ / frontend ❌), onderzoek frontend-capture hypotheses, get_video_metadata flow, open issue NEXT_PUBLIC_SENTRY_DSN | gewijzigd: docs/wiki/operations/test-reports.md, docs/wiki/operations/known-issues.md
 ---
 [2026-05-02 16:30] fix: remove Sentry force-error tests — alle 3 verwijderd na verificatie | gewijzigd: backend/worker.py, backend/main.py, src/app/api/extract/route.ts
@@ -3043,4 +3047,41 @@ Changed: backend/main.py
 backend/worker.py
 docs/LOG.md
 src/app/api/extract/route.ts
+---
+[2026-05-02 15:37] commit: docs: Sentry audit — test-reports + known-issues bijgewerkt
+
+test-reports.md: sessie-entry Sentry observability audit 2026-05-02
+- worker watchdog Pass 1a: ✅ 2 events + email alert, tags correct
+- frontend api/extract: ❌ event niet ontvangen ondanks 503-respons
+- main.py get_video_metadata: niet getriggerd; flow gedocumenteerd
+  (VideoTab.tsx:525 → /api/video/metadata/[videoId] → Python GET)
+- Onderzoek 1: primaire hypothese NEXT_PUBLIC_SENTRY_DSN ontbreekt op Vercel
+- Onderzoek 2: get_video_metadata trigger = Single Video → extractie → metadatafetch
+
+known-issues.md: open issue "Frontend Sentry capture niet bevestigd"
+- Verificatiestap + fix beschreven
+- Notitie: /api/video/metadata/[videoId]/route.ts nog niet geïnstrumenteerd
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+docs/wiki/operations/test-reports.md
+---
+[2026-05-02 21:55] commit: debug: Sentry serverless diagnostic logging
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/api/extract/route.ts
+---
+[2026-05-02 22:11] commit: fix: Sentry.flush() before return in API routes — wait for serverless transport
+
+Vercel serverless functions kill the process after NextResponse.json() returns,
+before the async Sentry transport can send the HTTP envelope. Added
+await Sentry.flush(2000) after every captureException call in all 5 routes.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/app/api/ai/summarize/route.ts
+src/app/api/extract/route.ts
+src/app/api/playlist/info/route.ts
+src/app/api/stripe/webhook/route.ts
+src/app/api/transcribe/preflight/route.ts
 ---
