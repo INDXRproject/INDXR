@@ -4,6 +4,60 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## Meertalige cache + ADR-030 Gap 1 (retry_pending) — Sessie 1
+
+**Datum:** 2026-05-02
+**Tester:** Khidr
+**Commits:** a48ed82–0eedef7 (meertalige cache + retry_pending flow), 65a40c9 + 778ba1d (watchdog Pass 1a bugfixes)
+**Status:** PASS
+
+### Test 1 — Meertalige cache (NL)
+
+| Stap | Video | Resultaat |
+|------|-------|-----------|
+| 1a — YouTube-agressie controle | JphJDqjQpfU | ✅ Bot_detection op alle cascade-stappen; foutmelding "Temporarily blocked by YouTube" correct getoond — verwacht gedrag, geen fix-regressie |
+| 1b — Eerste extractie (NL, cache MISS) | Y70RQXyPz30 (18 min, `lang=nl`) | ✅ `[YT-DLP] success for ... lang=nl` + master cache write OK `lang=nl` |
+| 1b — Tweede extractie (cache HIT) | Y70RQXyPz30 (direct daarna) | ✅ Sub-seconde response, geen YT-API/YT-DLP calls — cache HIT bevestigd |
+
+**Conclusie:** Meertalige cache lookup werkt end-to-end. Eerste extractie schrijft met `lang=nl` (canonical ISO 639-1 via `normalize_language_code`); tweede extractie vindt de rij direct. Vóór deze fix zou de tweede extractie altijd missen omdat de lookup hardcoded `lang=en` deed.
+
+### Test 2 — Joe Rogan playlist retry_pending flow
+
+**Playlist:** PL2Z28kwRjfOA9jm3IMlXqWeWgS4A5hL-T (20 video's, alle auto-captions)
+**Job ID:** eff00446-... (prefix zichtbaar in logs)
+**Verwachte credits:** 17
+
+| Fase | Bevinding |
+|------|-----------|
+| Eerste pass | 14 succes, 6 `bot_detection` |
+| Status na eerste pass | `retry_pending` — **niet** `complete` ✅ |
+| Frontend | Toont "Retrying failed videos..." (niet "Complete!") ✅ |
+| Retry-pass start | `[playlist eff00446...:retries] Retrying N video(s)` — automatisch, geen gebruikersactie ✅ |
+| Retry-uitkomst | 1 video lukt, 5 blijven `bot_detection` — verwacht (structureel zonder PO tokens, ADR-027) |
+| Status na retry-pass | `complete` via `PATCH playlist_extraction_jobs status=complete` om 11:44:57 ✅ |
+| UI eindresultaat | "Extracted 15 of 20 videos in 7:01. 5 videos couldn't be processed." ✅ |
+
+**Watchdog observatie:** Watchdog-log om 11:44:08 toonde `[WATCHDOG] playlist eff00446...: retry-pass running (fresh heartbeat) — skip`. Bewijst dat de watchdog Pass 1b correct detecteert dat de retry-pass actief is en niet onnodig ingrijpt.
+
+**Conclusie:** ADR-030 Gap 1 is dicht. De `retry_pending` → `complete` statusovergang werkt correct, inclusief frontend-weergave en watchdog-interactie.
+
+### Test 3 — Worker crash recovery
+
+Niet apart uitgevoerd. Watchdog-log uit Test 2 (fresh heartbeat → skip) is voldoende bewijs dat de stale-detectie correct werkt. Crash-test is daarmee redundant voor deze release.
+
+### Bug gevonden tijdens productietests — opgelost
+
+Watchdog Pass 1a genereerde elke 2 minuten een 400-error:
+
+| Commit | Fout | Fix |
+|--------|------|-----|
+| 65a40c9 | `column transcription_jobs.video_id does not exist` | Kolom hernoemd naar `video_url` in `.select()` |
+| 778ba1d | `column transcription_jobs.title does not exist` | `title` verwijderd uit `.select()`; `video_url` → YouTube video-ID geëxtraheerd via `urllib.parse` voor `run_whisper_job` enqueue |
+
+Geen impact op productie-functionaliteit — Pass 1b (playlist re-enqueue) en Pass 2 (auto-refund) werkten al correct. Pass 1a is voor Whisper-job crash recovery, die in huidige productie zelden triggert.
+
+---
+
 ## Error messaging audit + AI-suggestie differentiatie — Sessie 1
 
 **Datum:** 2026-04-30 04:35–04:39

@@ -1,3 +1,5 @@
+[2026-05-02 05:30] docs: test-reports.md productie-tests 2026-05-02 toegevoegd — meertalige cache + retry_pending flow + watchdog Pass 1a bugfixes | gewijzigd: docs/wiki/operations/test-reports.md
+---
 [2026-05-02 05:10] fix: watchdog Pass 1a title kolom-fix — title uit select verwijderd (kolom bestaat niet), video_url → video_id extraheren via urllib.parse voor run_whisper_job enqueue | gewijzigd: backend/worker.py, backend/test_watchdog.py
 ---
 [2026-05-02 05:00] fix: watchdog Pass 1a kolom-fix video_id → video_url | gewijzigd: backend/worker.py, backend/test_watchdog.py
@@ -2952,6 +2954,17 @@ Changed: docs/LOG.md
 
 Pass 1a selecteerde een niet-bestaande kolom video_id; de juiste kolomnaam is video_url.
 Productie-logs toonden elke 2 min: "column transcription_jobs.video_id does not exist".
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/test_watchdog.py
+backend/worker.py
+docs/LOG.md
+---
+[2026-05-02 14:02] commit: fix: watchdog Pass 1a title kolom-fix + video_url → video_id extractie
+
+`title` bestaat niet als kolom op transcription_jobs — verwijderd uit .select().
+`run_whisper_job` verwacht `video_id` (YouTube-ID), niet `video_url` (volledige URL).
+Watchdog extraheert nu video_id via urllib.parse.parse_qs voor de enqueue-call.
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/test_watchdog.py
