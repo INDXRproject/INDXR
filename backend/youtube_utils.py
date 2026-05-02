@@ -15,6 +15,7 @@ import yt_dlp
 from lingua import Language, LanguageDetectorBuilder
 
 from audio_utils import MembersOnlyVideoError, MEMBERS_ONLY_KEYWORDS
+from language_utils import normalize_language_code
 
 logger = logging.getLogger("indxr-youtube-utils")
 
@@ -308,7 +309,7 @@ async def extract_with_ytdlp(
             language: Optional[str] = None
             language_detected: Optional[bool] = None
             if raw_language:
-                language = raw_language[:2].lower()
+                language = normalize_language_code(raw_language)
                 language_detected = False
             else:
                 sample = ' '.join(item['text'] for item in transcript[:80])
@@ -316,7 +317,7 @@ async def extract_with_ytdlp(
                 try:
                     detected = _lingua_detector.detect_language_of(sample)
                     if detected:
-                        language = detected.iso_code_639_1.name.lower()
+                        language = normalize_language_code(detected.iso_code_639_1.name.lower())
                         language_detected = True
                 except Exception:
                     pass
