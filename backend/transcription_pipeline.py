@@ -31,6 +31,7 @@ from credit_manager import (
     get_supabase_client,
 )
 from youtube_utils import get_proxy_url
+from language_utils import normalize_language_code
 
 logger = logging.getLogger("indxr-pipeline")
 
@@ -336,7 +337,7 @@ async def do_assemblyai_transcription(
             try:
                 detected = _lingua_detector.detect_language_of(sample_text)
                 if detected:
-                    language = detected.iso_code_639_1.name.lower()
+                    language = normalize_language_code(detected.iso_code_639_1.name.lower())
             except Exception:
                 pass
 
