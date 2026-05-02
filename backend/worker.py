@@ -576,6 +576,28 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     use_whisper_ids: set = set(job.get('use_whisper_ids') or [])
     video_results: dict = job.get('video_results') or {}
 
+    # Heartbeat at start — watchdog detects stale 'retry_pending' jobs (ADR-030 Gap 1 fix).
+    # This keeps the heartbeat fresh so watchdog won't re-enqueue a running retry-pass.
+    try:
+        await asyncio.to_thread(
+            lambda: supabase.table('playlist_extraction_jobs')
+                .update({'last_heartbeat_at': datetime.now(timezone.utc).isoformat()})
+                .eq('id', playlist_id).execute()
+        )
+    except Exception as hb_err:
+        logger.warning(f"{log_prefix} Start heartbeat failed: {hb_err}")
+
+    async def _set_complete() -> None:
+        try:
+            await asyncio.to_thread(
+                lambda: supabase.table('playlist_extraction_jobs').update({
+                    'status': 'complete',
+                    'completed_at': datetime.now(timezone.utc).isoformat(),
+                }).eq('id', playlist_id).execute()
+            )
+        except Exception as e:
+            logger.error(f"{log_prefix} Failed to set status=complete: {e}")
+
     retry_video_ids = [
         v for v, r in video_results.items()
         if r.get('status') == 'error' and r.get('error_type') in ('bot_detection', 'timeout')
@@ -583,6 +605,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
 
     if not retry_video_ids:
         logger.info(f"{log_prefix} No eligible videos to retry")
+        await _set_complete()
         return
 
     logger.info(f"{log_prefix} Retrying {len(retry_video_ids)} video(s)")
@@ -670,6 +693,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
                                   amount=rpc_credit_amount)
 
     logger.info(f"{log_prefix} Retry pass complete")
+    await _set_complete()
 
 
 async def watchdog_interrupted_jobs(ctx: dict) -> None:
