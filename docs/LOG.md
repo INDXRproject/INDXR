@@ -1,3 +1,5 @@
+[2026-05-02 05:00] fix: watchdog Pass 1a kolom-fix video_id → video_url | gewijzigd: backend/worker.py, backend/test_watchdog.py
+---
 [2026-05-02 04:45] supabase (productie): migratie 20260502_playlist_retry_pending_status.sql gedraaid — RPC update_playlist_video_progress nu retry_pending-aware (v_has_retryable + should_retry veld)
 ---
 [2026-05-02 04:45] supabase (productie): TRUNCATE master_transcripts CASCADE — clean slate voor canonical ISO 639-1 taalcodes; count geverifieerd = 0 (R2 bucket indxr-transcripts door Khidr geleegd)
@@ -2941,3 +2943,6 @@ docs/wiki/operations/error-taxonomy.md
 docs/wiki/roadmap/backlog.md
 ---
 [2026-05-02 04:27] precompact: context compaction triggered
+[2026-05-02 04:52] commit: docs: supabase migratie + truncate productie-acties gelogd
+Changed: docs/LOG.md
+---

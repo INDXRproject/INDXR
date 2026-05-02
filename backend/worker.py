@@ -728,7 +728,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         result = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,user_id,video_id,title')
+                .select('id,user_id,video_url,title')
                 .eq('status', 'interrupted')
                 .eq('credits_deducted', True)
                 .is_('transcript_id', 'null')
@@ -752,12 +752,12 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                     'run_whisper_job',
                     job_id=job_id,
                     user_id=job['user_id'],
-                    video_id=job['video_id'],
+                    video_url=job['video_url'],
                     title=job.get('title'),
                     _job_id=job_id,
                 )
                 logger.info(
-                    f"[WATCHDOG re-enqueue] job_id={job_id} video_id={job['video_id']} "
+                    f"[WATCHDOG re-enqueue] job_id={job_id} video_url={job['video_url']} "
                     f"user_id={job['user_id']} attempt=2"
                 )
             except Exception as e:

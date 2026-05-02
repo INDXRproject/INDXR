@@ -17,7 +17,7 @@ pytestmark = pytest.mark.anyio
 def _make_transcription_job(
     job_id="job-aaa",
     user_id="user-111",
-    video_id="dQw4w9WgXcQ",
+    video_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     credits_cost=5,
     watchdog_attempts=0,
     transcript_id=None,
@@ -25,7 +25,7 @@ def _make_transcription_job(
     return {
         "id": job_id,
         "user_id": user_id,
-        "video_id": video_id,
+        "video_url": video_url,
         "title": "Test video",
         "credits_cost": credits_cost,
         "watchdog_attempts": watchdog_attempts,
