@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error'
       Sentry.captureException(error, { tags: { route: 'api/stripe/webhook', step: 'signature_verification' } })
+      await Sentry.flush(2000);
       console.error('Webhook signature verification failed:', msg)
       return new NextResponse(`Webhook Error: ${msg}`, { status: 400 })
     }
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
         tags: { route: 'api/stripe/webhook', step: 'add_credits_rpc', user_id: userId ?? 'unknown' },
         extra: { stripe_session_id: session.id, credits, error },
       })
+      await Sentry.flush(2000);
       console.error('Failed to add credits:', error)
       return new NextResponse('Database Error', { status: 500 })
     }

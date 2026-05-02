@@ -62,6 +62,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     Sentry.captureException(error, { tags: { route: 'api/transcribe/preflight' } });
+    await Sentry.flush(2000);
     console.error('Preflight error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

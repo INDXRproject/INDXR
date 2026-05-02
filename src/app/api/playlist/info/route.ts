@@ -70,6 +70,7 @@ export async function POST(request: Request) {
       return NextResponse.json(data);
     } catch (error) {
       Sentry.captureException(error, { tags: { route: 'api/playlist/info', step: 'python_backend_call' } });
+      await Sentry.flush(2000);
       console.error('Python Backend Error:', error);
       return NextResponse.json(
         {
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     Sentry.captureException(error, { tags: { route: 'api/playlist/info', step: 'request_parse' } });
+    await Sentry.flush(2000);
     return NextResponse.json(
       { error: 'Invalid request body' },
       { status: 400 }
