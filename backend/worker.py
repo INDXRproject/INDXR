@@ -39,6 +39,7 @@ from transcription_pipeline import (
 from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_client import YouTubeClient
 from youtube_utils import extract_via_youtube_transcript_api, extract_with_ytdlp
+from language_utils import normalize_language_code
 
 # Namespace voor deterministische Whisper job-IDs in de playlist-keten.
 # uuid5(WHISPER_NS, "{playlist_id}:{video_id}") geeft stabiele ID over worker-restarts.
@@ -203,55 +204,77 @@ async def _process_caption_video(
         if balance < 1:
             return False, None, 'insufficient_credits', 0
 
+    # ── Language pre-fetch for master cache lookup ────────────────────────
+    # get_video_details is called anyway for cascade metadata enrichment below.
+    # Hoisting it here lets us do a language-aware master cache lookup and
+    # reuse the result for cascade enrichment (zero extra quota units).
+    # On failure: normalised_lang=None → skip master cache → proceed to cascade.
+    normalised_lang: Optional[str] = None
+    pre_meta: dict = {}
+    try:
+        pre_meta = await asyncio.to_thread(_yt_client.get_video_details, video_id)
+        normalised_lang = normalize_language_code(pre_meta.get('language'))
+    except Exception as pre_meta_err:
+        err_str = str(pre_meta_err)
+        if 'quotaExceeded' in err_str or ('403' in err_str and 'quota' in err_str.lower()):
+            logger.warning(f"[YT-DATA-API quota exceeded] pre-fetch {video_id}: {pre_meta_err}")
+        else:
+            logger.warning(f"[YT-DATA-API pre-fetch failed] {video_id}: {pre_meta_err}")
+
     # ── master_transcripts cache check (warm path) ────────────────────────
-    # language='en' default — non-EN videos missen de cache en vallen door naar
-    # de yt-dlp cascade. Language-aware lookup staat in backlog:
-    # docs/wiki/roadmap/backlog.md → "Language-aware caption extraction".
-    mc = await master_transcripts_read(video_id, source_method="caption_extraction", language="en")
-    if mc is not None:
-        logger.info(f"[CACHE HIT] caption playlist {playlist_id} video={video_id}")
-        char_count = sum(len(s["text"]) for s in mc["transcript"])
-        duration = mc.get("duration_seconds") or 0
-        insert_data: dict = {
-            "user_id": user_id,
-            "source_type": "youtube",
-            "title": video_id,  # metadata niet beschikbaar bij playlist cache-hit
-            "transcript": mc["transcript"],
-            "duration": duration,
-            "character_count": char_count,
-            "video_id": video_id,
-            "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",
-            "processing_method": "youtube_captions",
-        }
-        if collection_id:
-            insert_data["collection_id"] = collection_id
-        t = await asyncio.to_thread(
-            lambda d=insert_data: supabase.table("transcripts").insert(d).execute()
-        )
-        transcript_id = t.data[0]["id"]
-        credit_amount = 0 if is_free else 1
-        return True, transcript_id, None, credit_amount
+    if normalised_lang is not None:
+        mc = await master_transcripts_read(video_id, source_method="caption_extraction", language=normalised_lang)
+        if mc is not None:
+            logger.info(f"[CACHE HIT] caption playlist {playlist_id} video={video_id} lang={normalised_lang}")
+            char_count = sum(len(s["text"]) for s in mc["transcript"])
+            duration = mc.get("duration_seconds") or 0
+            insert_data: dict = {
+                "user_id": user_id,
+                "source_type": "youtube",
+                "title": pre_meta.get("title", video_id),
+                "transcript": mc["transcript"],
+                "duration": duration,
+                "character_count": char_count,
+                "video_id": video_id,
+                "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",
+                "processing_method": "youtube_captions",
+            }
+            if collection_id:
+                insert_data["collection_id"] = collection_id
+            t = await asyncio.to_thread(
+                lambda d=insert_data: supabase.table("transcripts").insert(d).execute()
+            )
+            transcript_id = t.data[0]["id"]
+            credit_amount = 0 if is_free else 1
+            return True, transcript_id, None, credit_amount
 
     # Cascade step 1: youtube-transcript-api (faster, no yt-dlp overhead)
     extract_result = await extract_via_youtube_transcript_api(video_id, session_id=proxy_session)
     caption_model = "youtube_transcript_api"
 
-    # ── Cascade step 1 metadata enrichment via YouTube Data API ──────────────
+    # ── Cascade step 1 metadata enrichment (reuse pre_meta if available) ──
     if extract_result is not None:
-        try:
-            meta = await asyncio.to_thread(_yt_client.get_video_details, video_id)
-            extract_result['title'] = meta['title']
+        if pre_meta:
+            extract_result['title'] = pre_meta.get('title', video_id)
             extract_result['video_url'] = f"https://www.youtube.com/watch?v={video_id}"
-            extract_result['duration'] = meta.get('duration')
-            extract_result['channel'] = meta.get('channel')
-            extract_result['upload_date'] = meta.get('upload_date')
-        except Exception as meta_err:
-            err_str = str(meta_err)
-            if 'quotaExceeded' in err_str or ('403' in err_str and 'quota' in err_str.lower()):
-                logger.warning(f"[YT-DATA-API quota exceeded] {video_id}: {meta_err}")
-            else:
-                logger.warning(f"[YT-DATA-API metadata fetch failed] {video_id}: {meta_err}")
-            extract_result = None  # discard step 1, fall through to step 2
+            extract_result['duration'] = pre_meta.get('duration')
+            extract_result['channel'] = pre_meta.get('channel')
+            extract_result['upload_date'] = pre_meta.get('upload_date')
+        else:
+            try:
+                meta = await asyncio.to_thread(_yt_client.get_video_details, video_id)
+                extract_result['title'] = meta['title']
+                extract_result['video_url'] = f"https://www.youtube.com/watch?v={video_id}"
+                extract_result['duration'] = meta.get('duration')
+                extract_result['channel'] = meta.get('channel')
+                extract_result['upload_date'] = meta.get('upload_date')
+            except Exception as meta_err:
+                err_str = str(meta_err)
+                if 'quotaExceeded' in err_str or ('403' in err_str and 'quota' in err_str.lower()):
+                    logger.warning(f"[YT-DATA-API quota exceeded] {video_id}: {meta_err}")
+                else:
+                    logger.warning(f"[YT-DATA-API metadata fetch failed] {video_id}: {meta_err}")
+                extract_result = None  # discard step 1, fall through to step 2
 
     # ── Cascade step 2: yt-dlp (ios/web_embedded) ────────────────────────
     if extract_result is None:
@@ -300,7 +323,7 @@ async def _process_caption_video(
     transcript_id = t.data[0]['id']
 
     # Best-effort master cache write (fire-and-forget, never blocks user flow)
-    lang = extract_result.get('language') or 'en'
+    lang = normalize_language_code(extract_result.get('language')) or 'en'
     asyncio.create_task(master_transcripts_write(
         video_id=video_id,
         language=lang,
