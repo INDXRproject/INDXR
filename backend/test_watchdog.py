@@ -33,6 +33,10 @@ def _make_transcription_job(
     }
 
 
+STALE_HEARTBEAT = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+FRESH_HEARTBEAT = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+
+
 def _make_playlist_job(
     playlist_id="pl-bbb",
     user_id="user-222",
@@ -41,6 +45,8 @@ def _make_playlist_job(
     completed=0,
     failed=0,
     watchdog_attempts=0,
+    status="interrupted",
+    last_heartbeat_at=None,
 ):
     video_ids = video_ids or ["v1", "v2", "v3"]
     video_results = video_results or {}
@@ -53,6 +59,8 @@ def _make_playlist_job(
         "failed": failed,
         "total_videos": len(video_ids),
         "watchdog_attempts": watchdog_attempts,
+        "status": status,
+        "last_heartbeat_at": last_heartbeat_at or STALE_HEARTBEAT,
     }
 
 
@@ -64,6 +72,7 @@ def _supabase_mock(transcription_data=None, playlist_data=None, refund_data=None
         chain = MagicMock()
         chain.select.return_value = chain
         chain.eq.return_value = chain
+        chain.in_.return_value = chain
         chain.is_.return_value = chain
         chain.lt.return_value = chain
         chain.gt.return_value = chain
@@ -155,14 +164,15 @@ async def test_job_with_transcript_id_not_reenqueued():
 
 
 @pytest.mark.anyio
-async def test_playlist_gap1_skipped():
-    """Playlist waarbij completed+failed==total (retry-pass crash) → skip, log Gap 1."""
+async def test_playlist_interrupted_all_done_skipped():
+    """Playlist status='interrupted' maar completed+failed==total → defensieve skip."""
     job = _make_playlist_job(
         video_ids=["v1", "v2"],
         video_results={"v1": {"status": "success"}, "v2": {"status": "error"}},
         completed=1,
         failed=1,
         watchdog_attempts=0,
+        status="interrupted",
     )
     redis = AsyncMock()
     redis.enqueue_job = AsyncMock()
