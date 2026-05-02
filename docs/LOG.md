@@ -1,3 +1,7 @@
+[2026-05-02 04:45] supabase (productie): migratie 20260502_playlist_retry_pending_status.sql gedraaid — RPC update_playlist_video_progress nu retry_pending-aware (v_has_retryable + should_retry veld)
+---
+[2026-05-02 04:45] supabase (productie): TRUNCATE master_transcripts CASCADE — clean slate voor canonical ISO 639-1 taalcodes; count geverifieerd = 0 (R2 bucket indxr-transcripts door Khidr geleegd)
+---
 [2026-05-02 00:00] fix: language-aware master cache lookups — normalize_language_code + YouTube Data API pre-fetch vóór cache-read in caption paths (main.py + worker.py) + transcription_pipeline.py lingua normalisatie | gewijzigd: backend/language_utils.py (nieuw), backend/test_language_utils.py (nieuw), backend/requirements.txt, backend/youtube_utils.py, backend/youtube_client.py, backend/main.py, backend/worker.py, backend/transcription_pipeline.py
 ---
 [2026-05-02 00:05] fix: ADR-030 Gap 1 — retry_pending status + watchdog detectie + frontend mount-check | gewijzigd: supabase/migrations/20260502_playlist_retry_pending_status.sql (nieuw), backend/worker.py, src/components/free-tool/PlaylistTab.tsx, backend/test_watchdog.py, backend/test_playlist_retry_pending.py (nieuw)
@@ -2917,3 +2921,23 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/test_playlist_retry_pending.py
 backend/test_watchdog.py
 ---
+[2026-05-02 04:15] commit: docs: wiki + LOG — language-aware cache fix + ADR-030 Gap 1 opgelost
+
+- ADR-021: language-aware cache lookup sectie toegevoegd
+- ADR-030: Gap 1 gemarkeerd opgelost ✅ met samenvatting
+- ADR-032: nieuw — retry_pending status architectuur
+- INDEX.md: ADR-032 rij toegevoegd
+- backlog.md: language-aware caption sectie afgevinkt + beperking gedocumenteerd
+- error-taxonomy.md: job-status waarden tabel toegevoegd (retry_pending)
+- LOG.md: 3 entries voor 2026-05-02 commits
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/021-master-transcripts-cache.md
+docs/wiki/decisions/030-fase4-crash-recovery-leerervaring.md
+docs/wiki/decisions/032-retry-pending-status.md
+docs/wiki/operations/error-taxonomy.md
+docs/wiki/roadmap/backlog.md
+---
+[2026-05-02 04:27] precompact: context compaction triggered
