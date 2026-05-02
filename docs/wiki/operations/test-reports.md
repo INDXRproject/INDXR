@@ -4,6 +4,61 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## Sentry observability audit — Sessie 1
+
+**Datum:** 2026-05-02  
+**Tester:** Khidr  
+**Commits:** d44e2af (capture_exception + force-error tests), zie LOG.md voor cleanup commit  
+**Status:** GEDEELTELIJK — backend ✅, frontend ❌ niet bevestigd
+
+### Scope
+
+Audit van error-swallowing patronen. In de hele codebase werd nergens `sentry_sdk.capture_exception()` / `captureException()` aangeroepen — structurele bugs (SQL-failures, watchdog crashes, financiële errors) waren onzichtbaar in Sentry.
+
+**Wijzigingen aangebracht:**
+- 25 `capture_exception` calls in backend (worker.py, main.py, transcription_pipeline.py, youtube_utils.py)
+- 8 `captureException` calls in frontend (5 Next.js API routes)
+- `import sentry_sdk` in transcription_pipeline.py + youtube_utils.py
+- `sentry_sdk.add_breadcrumb` in youtube_utils.py cascade (geen dubbele capture bij re-raise)
+- monitoring.md bijgewerkt met volledige Sentry-documentatie
+
+### Verificatieresultaten force-error tests
+
+| Test | Pad | Resultaat | Detail |
+|------|-----|-----------|--------|
+| Worker watchdog Pass 1a | `watchdog_interrupted_jobs` cron | ✅ PASS | 2 events in Sentry indxr-backend (INDXR-BACKEND-14 + 15); email alert ontvangen; tags correct: `transaction=cron:watchdog_interrupted_jobs`, `arq_task_id`, `environment=production` |
+| Frontend api/extract | `src/app/api/extract/route.ts` inner catch | ❌ NIET bevestigd | Khidr triggerde force-error (YouTube URL → Extract → 503 "Unable to connect to extraction service"); event NIET zichtbaar in Sentry indxr-frontend |
+| main.py get_video_metadata | `GET /api/video/metadata/{video_id}` | ❌ NIET getriggerd | Endpoint niet bereikt tijdens sessie; zie Onderzoek 2 hieronder |
+
+### Onderzoek 1 — Frontend Sentry capture niet aangekomen
+
+**Observatie:** De 503-response ("Unable to connect to extraction service") werd wél ontvangen. Dit bewijst dat de `throw` de inner `catch` bereikte en `Sentry.captureException(error, {...})` wél aangeroepen werd. Het probleem zit in de Sentry-initialisatie, niet in de capture-call.
+
+**Diagnose:**
+
+`sentry.server.config.ts` gebruikt `process.env.NEXT_PUBLIC_SENTRY_DSN` als DSN. Zonder deze var is `Sentry.init()` een no-op — events worden nooit verstuurd.
+
+| Hypothese | Status |
+|-----------|--------|
+| **`NEXT_PUBLIC_SENTRY_DSN` niet ingesteld op Vercel** | Meest waarschijnlijk — kan niet vanuit code geverifieerd worden; check Vercel Dashboard → Settings → Environment Variables |
+| `instrumentation.ts` niet opgepikt | Minder waarschijnlijk — `withSentryConfig` injecteert Sentry ook via webpack; Next.js 15+ maakt `instrumentationHook` flag overbodig |
+| `beforeSend` filter | Geen — `sentry.server.config.ts` bevat geen `beforeSend` of `enabled` conditie |
+
+**Actie om te verifiëren:** Open Vercel Dashboard → Project indxr-frontend → Settings → Environment Variables. Controleer of `NEXT_PUBLIC_SENTRY_DSN` aanwezig is en overeenkomt met de DSN in het Sentry-project `indxr-frontend`. Zie [known-issues.md](known-issues.md) voor open issue.
+
+### Onderzoek 2 — get_video_metadata flow
+
+**`GET /api/video/metadata/{video_id}` wordt aangeroepen door:**
+- `VideoTab.tsx:525` → `fetch('/api/video/metadata/${videoId}')`
+- → Next.js route `src/app/api/video/metadata/[videoId]/route.ts`
+- → Python `GET /api/video/metadata/{video_id}`
+
+**Trigger:** Single Video tab → video extraheren → na succesvolle extractie haalt VideoTab apart metadatalaat op. Volgende keer deze endpoint testen: extract een video in de Single Video tab en wacht tot de metadata zichtbaar is.
+
+**Opmerking:** `src/app/api/video/metadata/[videoId]/route.ts` heeft nog geen `captureException` — alleen een `catch {}` zonder binding. Aparte taak om ook deze route te instrumenteren.
+
+---
+
 ## Meertalige cache + ADR-030 Gap 1 (retry_pending) — Sessie 1
 
 **Datum:** 2026-05-02

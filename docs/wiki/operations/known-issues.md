@@ -120,6 +120,39 @@ Na cascade stap 1 succes (youtube-transcript-api) haalt de backend metadata op v
 
 ---
 
+## Frontend Sentry capture in productie niet bevestigd
+
+**Vastgesteld:** 2026-05-02  
+**Status:** OPEN  
+**Impact:** Sentry events van Next.js API routes (Vercel) worden mogelijk niet verzonden
+
+### Symptoom
+
+Force-error in `src/app/api/extract/route.ts` inner catch bereikt de catch-block aantoonbaar (gebruiker ontvangt 503), maar het event verschijnt niet in Sentry project `indxr-frontend`. Backend Sentry (Railway) werkt correct — watchdog Pass 1a events kwamen aan met juiste tags.
+
+### Meest waarschijnlijke oorzaak
+
+**`NEXT_PUBLIC_SENTRY_DSN` niet ingesteld op Vercel.** Zonder DSN is `Sentry.init()` een no-op.
+
+**Verificatie:** Vercel Dashboard → Project → Settings → Environment Variables → zoek op `NEXT_PUBLIC_SENTRY_DSN`. Vergelijk de waarde met de DSN in Sentry project `indxr-frontend` (Settings → Client Keys).
+
+### Overige hypotheses (minder waarschijnlijk)
+
+- `instrumentation.ts` niet opgepikt: onwaarschijnlijk, `withSentryConfig` webpack-injectie dekt dit
+- `beforeSend` filter: niet aanwezig in `sentry.server.config.ts`
+- Wrong project: `next.config.ts` wijst naar project `indxr-frontend` bij org `indxrai` — controleer of dit project bestaat
+
+### Fix
+
+Als `NEXT_PUBLIC_SENTRY_DSN` ontbreekt: voeg toe in Vercel Dashboard (alle environments). Haal de DSN op uit Sentry → indxr-frontend → Settings → Client Keys → DSN.
+
+### Gerelateerd
+
+- `src/app/api/video/metadata/[videoId]/route.ts` heeft nog geen `captureException` — aparte taak
+- Test-flow voor `get_video_metadata`: Single Video tab → video extraheren → metadatafetch na extractie
+
+---
+
 ## Niet-kritieke TODO's
 
 ### ~~assemblyai SDK niet gepind in requirements.txt~~ ✅ Opgelost 2026-04-26

@@ -3030,3 +3030,17 @@ src/app/api/playlist/info/route.ts
 src/app/api/stripe/webhook/route.ts
 src/app/api/transcribe/preflight/route.ts
 ---
+[2026-05-02 15:37] commit: fix: remove Sentry force-error tests
+
+Alle drie tijdelijke force-errors verwijderd na verificatie:
+- backend/worker.py Pass 1a: ✅ bevestigd (INDXR-BACKEND-14+15 in Sentry)
+- backend/main.py get_video_metadata: verwijderd (niet getriggerd)
+- src/app/api/extract/route.ts: verwijderd (frontend Sentry capture
+  niet bevestigd — zie known-issues.md voor open issue NEXT_PUBLIC_SENTRY_DSN)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+docs/LOG.md
+src/app/api/extract/route.ts
+---
