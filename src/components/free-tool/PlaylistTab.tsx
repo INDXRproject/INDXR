@@ -77,7 +77,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       if (currentVid && !vr[currentVid]) newStatuses[currentVid] = 'extracting'
     }
     setVideoStatuses(prev => ({ ...prev, ...newStatuses }))
-    if (job.current_video_title && job.total_videos) {
+    if (job.status === 'retry_pending') {
+      setProgressMessage("Retrying failed videos...")
+    } else if (job.current_video_title && job.total_videos) {
       const title = job.current_video_title as string
       setProgressMessage(
         title.startsWith('Loading video')
@@ -268,6 +270,32 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
             total: job.total_videos ?? 0,
             title: job.playlist_title ?? undefined,
           })
+        } else if (job.status === 'retry_pending') {
+          // Retry-pass is in progress — auto-resume without a banner.
+          // No user action needed; the retry-pass runs automatically.
+          // Restore first-pass video statuses so the UI shows what succeeded/failed so far.
+          const restoredStatuses: Record<string, VideoStatus> = {}
+          const restoredFreeIds = new Set<string>()
+          for (const [vid, res] of Object.entries(vr)) {
+            restoredStatuses[vid] = mapBackendStatus(res)
+            if (res.free) restoredFreeIds.add(vid)
+          }
+          if (Object.keys(restoredStatuses).length > 0) {
+            setVideoStatuses(restoredStatuses)
+            setFreeVideoIds(restoredFreeIds)
+          }
+          setProgressMessage("Retrying failed videos...")
+          playlistJobIdRef.current = activeJobId
+          let storedStartTime = Date.now()
+          try {
+            const p = JSON.parse(raw)
+            if (p?.startTime) storedStartTime = p.startTime
+          } catch { /* ignore */ }
+          startTimeRef.current = storedStartTime
+          setElapsedSeconds(Math.floor((Date.now() - storedStartTime) / 1000))
+          intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+          setLoading(true)
+          setActiveJobId(activeJobId)
         } else {
           // Pending or unknown state — clean up
           sessionStorage.removeItem('indxr-active-playlist-job')
