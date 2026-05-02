@@ -12,6 +12,7 @@ Upload-pad blijft op asyncio.create_task in main.py — bytes zijn niet queue-se
 import asyncio
 import logging
 import os
+import urllib.parse
 import uuid as _uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -728,7 +729,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         result = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,user_id,video_url,title')
+                .select('id,user_id,video_url')
                 .eq('status', 'interrupted')
                 .eq('credits_deducted', True)
                 .is_('transcript_id', 'null')
@@ -739,6 +740,10 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
         )
         for job in (result.data or []):
             job_id = job['id']
+            video_url = job.get('video_url') or ''
+            # Extract YouTube video ID from stored URL (e.g. https://youtube.com/watch?v=ID)
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(video_url).query)
+            video_id_from_url = (_qs.get('v') or [video_url])[0]
             try:
                 await redis.delete(f'arq:job:{job_id}', f'arq:in-progress:{job_id}')
                 await asyncio.to_thread(
@@ -752,12 +757,11 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                     'run_whisper_job',
                     job_id=job_id,
                     user_id=job['user_id'],
-                    video_url=job['video_url'],
-                    title=job.get('title'),
+                    video_id=video_id_from_url,
                     _job_id=job_id,
                 )
                 logger.info(
-                    f"[WATCHDOG re-enqueue] job_id={job_id} video_url={job['video_url']} "
+                    f"[WATCHDOG re-enqueue] job_id={job_id} video_url={video_url} "
                     f"user_id={job['user_id']} attempt=2"
                 )
             except Exception as e:

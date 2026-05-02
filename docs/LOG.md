@@ -1,3 +1,5 @@
+[2026-05-02 05:10] fix: watchdog Pass 1a title kolom-fix — title uit select verwijderd (kolom bestaat niet), video_url → video_id extraheren via urllib.parse voor run_whisper_job enqueue | gewijzigd: backend/worker.py, backend/test_watchdog.py
+---
 [2026-05-02 05:00] fix: watchdog Pass 1a kolom-fix video_id → video_url | gewijzigd: backend/worker.py, backend/test_watchdog.py
 ---
 [2026-05-02 04:45] supabase (productie): migratie 20260502_playlist_retry_pending_status.sql gedraaid — RPC update_playlist_video_progress nu retry_pending-aware (v_has_retryable + should_retry veld)
@@ -2945,4 +2947,14 @@ docs/wiki/roadmap/backlog.md
 [2026-05-02 04:27] precompact: context compaction triggered
 [2026-05-02 04:52] commit: docs: supabase migratie + truncate productie-acties gelogd
 Changed: docs/LOG.md
+---
+[2026-05-02 13:51] commit: fix: watchdog Pass 1a kolom-fix video_id → video_url in transcription_jobs query
+
+Pass 1a selecteerde een niet-bestaande kolom video_id; de juiste kolomnaam is video_url.
+Productie-logs toonden elke 2 min: "column transcription_jobs.video_id does not exist".
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/test_watchdog.py
+backend/worker.py
+docs/LOG.md
 ---

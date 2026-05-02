@@ -128,6 +128,11 @@ async def test_transcription_job_reenqueued():
     redis.enqueue_job.assert_awaited_once()
     call_kwargs = redis.enqueue_job.call_args
     assert call_kwargs.kwargs.get("job_id") == job["id"] or call_kwargs.args[1] == job["id"]
+    # video_id moet YouTube-ID zijn (geëxtraheerd uit video_url), niet de volledige URL
+    assert call_kwargs.kwargs.get("video_id") == "dQw4w9WgXcQ"
+    # title en video_url horen niet in de enqueue-call — die kolommen bestaan niet in transcription_jobs
+    assert "title" not in call_kwargs.kwargs
+    assert "video_url" not in call_kwargs.kwargs
     mock_add_credits.assert_not_called()  # refund alleen voor attempts>=1 + old jobs
 
 
