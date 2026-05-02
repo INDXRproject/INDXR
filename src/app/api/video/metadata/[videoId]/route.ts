@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
+
+export const runtime = 'nodejs';
 
 const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000'
 
@@ -20,7 +23,9 @@ export async function GET(
 
     const data = await response.json()
     return NextResponse.json(data)
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, { tags: { route: 'api/video/metadata', video_id: videoId } });
+    await Sentry.flush(2000);
     return NextResponse.json({ error: 'Metadata fetch failed' }, { status: 500 })
   }
 }

@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/utils/supabase/server';
 
 export const maxDuration = 60;
+export const runtime = 'nodejs';
 
 const requestSchema = z.object({
   url: z.string().optional(),

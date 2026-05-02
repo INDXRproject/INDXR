@@ -5,6 +5,7 @@ import { checkRateLimit } from '@/lib/ratelimit';
 import { createClient } from '@/utils/supabase/server';
 
 export const maxDuration = 60;
+export const runtime = 'nodejs';
 
 const requestSchema = z.object({
   videoIdOrUrl: z.string().min(1, 'URL or Video ID is required'),

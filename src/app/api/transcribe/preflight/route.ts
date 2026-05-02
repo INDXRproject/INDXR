@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { checkRateLimit } from '@/lib/ratelimit';
 
 export const maxDuration = 10;
+export const runtime = 'nodejs';
 
 /**
  * Preflight endpoint for direct audio uploads.

@@ -5,6 +5,8 @@ import { stripe } from '@/lib/stripe'
 import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 
+export const runtime = 'nodejs';
+
 export async function POST(req: Request) {
   console.log('Webhook endpoint hit')
   const body = await req.text()
