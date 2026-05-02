@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import * as Sentry from '@sentry/nextjs';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { createClient } from '@/utils/supabase/server';
 
@@ -76,6 +77,8 @@ export async function POST(request: Request) {
 
     // Call Python backend for extraction
     try {
+      // SENTRY TEST — REMOVE AFTER VERIFICATION
+      throw new Error('sentry test from api/extract frontend route');
       const response = await fetch(`${PYTHON_BACKEND_URL}/api/extract/youtube`, {
         method: 'POST',
         headers: {
@@ -117,18 +120,20 @@ export async function POST(request: Request) {
         published_at: data.upload_date ?? null,
       });
     } catch (error) {
+      Sentry.captureException(error, { tags: { route: 'api/extract', step: 'python_backend_call' } });
       console.error('Python Backend Error:', error);
-      
+
       // Backend connection error
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Unable to connect to extraction service. Please try again later.' 
+          error: 'Unable to connect to extraction service. Please try again later.'
         },
         { status: 503 }
       );
     }
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, { tags: { route: 'api/extract', step: 'request_parse' } });
     return NextResponse.json(
       { error: 'Invalid request body' },
       { status: 400 }

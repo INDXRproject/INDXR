@@ -359,6 +359,11 @@ async def _call_progress_rpc(supabase, playlist_id: str, video_id: str, success:
         )
     except Exception as e:
         logger.error(f"[playlist {playlist_id}] RPC update failed for {video_id}: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "call_progress_rpc")
+            scope.set_tag("playlist_job_id", playlist_id)
+            scope.set_tag("video_id", video_id)
+        sentry_sdk.capture_exception(e)
 
 
 async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) -> None:
@@ -386,6 +391,11 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
         )
     except Exception as e:
         logger.error(f"{log_prefix} Failed to fetch job: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "process_playlist_video")
+            scope.set_tag("playlist_job_id", playlist_id)
+            scope.set_tag("video_index", str(video_index))
+        sentry_sdk.capture_exception(e)
         return
 
     job = row.data
@@ -490,6 +500,15 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     except Exception as e:
         rpc_error_type = _classify_download_error(str(e), video_id=video_id, job_id=f"{playlist_id}:{video_index}")
         logger.warning(f"{log_prefix} {video_id} failed ({rpc_error_type}): {e}")
+        # bot_detection/timeout/members_only/no_captions zijn verwachte operationele uitkomsten, geen bugs.
+        if rpc_error_type not in ('bot_detection', 'timeout', 'members_only', 'no_captions'):
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("task_name", "process_playlist_video")
+                scope.set_tag("playlist_job_id", playlist_id)
+                scope.set_tag("video_id", video_id)
+                scope.set_tag("error_type", rpc_error_type)
+                scope.set_tag("user_id", user_id)
+            sentry_sdk.capture_exception(e)
 
     await _call_progress_rpc(supabase, playlist_id, video_id, rpc_success, rpc_transcript_id, rpc_error_type,
                               amount=rpc_credit_amount)
@@ -522,6 +541,11 @@ async def _enqueue_next(
             )
         except Exception as e:
             logger.error(f"[playlist {playlist_id}:{video_index}] Failed to enqueue next video ({next_index}): {e}")
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("task_name", "enqueue_next")
+                scope.set_tag("playlist_job_id", playlist_id)
+                scope.set_tag("video_index", str(video_index))
+            sentry_sdk.capture_exception(e)
     else:
         # Last video — check for retry-eligible failures
         retry_eligible = [
@@ -539,6 +563,10 @@ async def _enqueue_next(
                 logger.info(f"[playlist {playlist_id}] Enqueued retry pass for {len(retry_eligible)} video(s)")
             except Exception as e:
                 logger.error(f"[playlist {playlist_id}] Failed to enqueue retry pass: {e}")
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("task_name", "enqueue_retry_pass")
+                    scope.set_tag("playlist_job_id", playlist_id)
+                sentry_sdk.capture_exception(e)
         else:
             logger.info(f"[playlist {playlist_id}] Chain complete — no retry-eligible failures")
 
@@ -564,6 +592,10 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
         )
     except Exception as e:
         logger.error(f"{log_prefix} Failed to fetch job: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "process_playlist_retries")
+            scope.set_tag("playlist_job_id", playlist_id)
+        sentry_sdk.capture_exception(e)
         return
 
     job = row.data
@@ -598,6 +630,10 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
             )
         except Exception as e:
             logger.error(f"{log_prefix} Failed to set status=complete: {e}")
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("task_name", "process_playlist_retries")
+                scope.set_tag("playlist_job_id", playlist_id)
+            sentry_sdk.capture_exception(e)
 
     retry_video_ids = [
         v for v, r in video_results.items()
@@ -689,6 +725,15 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
         except Exception as e:
             rpc_error_type = _classify_download_error(str(e), video_id=video_id, job_id=f"{playlist_id}:retries")
             logger.warning(f"{log_prefix} {video_id} retry failed ({rpc_error_type}): {e}")
+            # bot_detection/timeout/members_only/no_captions zijn verwachte operationele uitkomsten, geen bugs.
+            if rpc_error_type not in ('bot_detection', 'timeout', 'members_only', 'no_captions'):
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("task_name", "process_playlist_retries")
+                    scope.set_tag("playlist_job_id", playlist_id)
+                    scope.set_tag("video_id", video_id)
+                    scope.set_tag("error_type", rpc_error_type)
+                    scope.set_tag("user_id", user_id)
+                sentry_sdk.capture_exception(e)
 
         await _call_progress_rpc(supabase, playlist_id, video_id, rpc_success, rpc_transcript_id, rpc_error_type,
                                   amount=rpc_credit_amount)
@@ -727,6 +772,8 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
 
     # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
     try:
+        # SENTRY TEST — REMOVE AFTER VERIFICATION
+        raise Exception("sentry test from worker watchdog Pass 1a")
         result = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
                 .select('id,user_id,video_url')
@@ -766,8 +813,17 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 )
             except Exception as e:
                 logger.error(f"[WATCHDOG] re-enqueue failed for {job_id}: {e}")
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                    scope.set_tag("pass", "1a")
+                    scope.set_tag("job_id", job_id)
+                sentry_sdk.capture_exception(e)
     except Exception as e:
         logger.error(f"[WATCHDOG] transcription_jobs re-enqueue query failed: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "1a")
+        sentry_sdk.capture_exception(e)
 
     # ── Pass 1b: playlist_extraction_jobs re-enqueue ──────────────────────
     # Handles two cases:
@@ -860,8 +916,17 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 )
             except Exception as e:
                 logger.error(f"[WATCHDOG] playlist re-enqueue failed for {playlist_id}: {e}")
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                    scope.set_tag("pass", "1b")
+                    scope.set_tag("job_id", playlist_id)
+                sentry_sdk.capture_exception(e)
     except Exception as e:
         logger.error(f"[WATCHDOG] playlist_extraction_jobs re-enqueue query failed: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "1b")
+        sentry_sdk.capture_exception(e)
 
     # ── Pass 2: auto-refund — heartbeat stale na re-enqueue ──────────────
     # Selecteert transcription_jobs met watchdog_attempts>=1 en heartbeat stale.
@@ -906,8 +971,19 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                     )
             except Exception as e:
                 logger.error(f"[WATCHDOG] auto-refund failed for {job_id}: {e}")
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                    scope.set_tag("pass", "2")
+                    scope.set_tag("job_id", job_id)
+                    scope.set_tag("user_id", job.get("user_id", "unknown"))
+                    scope.set_extra("refund_amount", refund_amount)
+                sentry_sdk.capture_exception(e)
     except Exception as e:
         logger.error(f"[WATCHDOG] auto-refund query failed: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "2")
+        sentry_sdk.capture_exception(e)
 
 
 async def noop_task(ctx: dict) -> str:

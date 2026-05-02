@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import posthog
+import sentry_sdk
 from lingua import Language, LanguageDetectorBuilder
 
 from audio_utils import (
@@ -202,6 +203,16 @@ async def do_assemblyai_transcription(
                     await _update_job(status="error", error_message="members_only")
                     return {"success": False, "error_type": "members_only", "credit_cost": 0}
                 error_type = _classify_download_error(error_msg, video_id=video_id, job_id=job_id)
+                # bot_detection/timeout/members_only zijn verwachte operationele uitkomsten, geen bugs.
+                if error_type not in ('bot_detection', 'timeout', 'members_only', 'no_captions'):
+                    with sentry_sdk.push_scope() as scope:
+                        scope.set_tag("pipeline", "do_assemblyai_transcription")
+                        scope.set_tag("step", "audio_download")
+                        scope.set_tag("job_id", job_id or "unknown")
+                        scope.set_tag("video_id", video_id or "upload")
+                        scope.set_tag("error_type", error_type)
+                        scope.set_tag("user_id", user_id)
+                    sentry_sdk.capture_exception(e)
                 _track(user_id, 'whisper_failed', {
                     'video_id': video_id, 'source_type': 'youtube',
                     'error_type': error_type, 'error_message': error_msg,
@@ -397,6 +408,13 @@ async def do_assemblyai_transcription(
             await _update_job(status="error", error_message=f"Internal error: {e}")
         except Exception:
             pass
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("pipeline", "do_assemblyai_transcription")
+            scope.set_tag("job_id", job_id or "unknown")
+            scope.set_tag("user_id", user_id)
+            scope.set_tag("video_id", video_id or "upload")
+            scope.set_extra("credit_cost", credit_cost)
+        sentry_sdk.capture_exception(e)
         return {
             "success": False,
             "error_type": "internal_error",
@@ -413,6 +431,13 @@ async def do_assemblyai_transcription(
                 logger.info(f"[pipeline] Refunded {credit_cost}cr to {user_id} (job={job_id})")
             except Exception as e:
                 logger.error(f"[pipeline] Failed to refund {credit_cost}cr: {e}")
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("pipeline", "do_assemblyai_transcription")
+                    scope.set_tag("step", "credit_refund")
+                    scope.set_tag("job_id", job_id or "unknown")
+                    scope.set_tag("user_id", user_id)
+                    scope.set_extra("credit_cost", credit_cost)
+                sentry_sdk.capture_exception(e)
         for f in temp_files:
             try:
                 if os.path.exists(f):

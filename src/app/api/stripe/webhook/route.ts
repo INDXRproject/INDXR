@@ -1,5 +1,6 @@
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import { stripe } from '@/lib/stripe'
 import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
       )
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error'
+      Sentry.captureException(error, { tags: { route: 'api/stripe/webhook', step: 'signature_verification' } })
       console.error('Webhook signature verification failed:', msg)
       return new NextResponse(`Webhook Error: ${msg}`, { status: 400 })
     }
@@ -62,6 +64,10 @@ export async function POST(req: Request) {
     })
 
     if (error) {
+      Sentry.captureException(new Error(`Stripe webhook: failed to add credits: ${error.message}`), {
+        tags: { route: 'api/stripe/webhook', step: 'add_credits_rpc', user_id: userId ?? 'unknown' },
+        extra: { stripe_session_id: session.id, credits, error },
+      })
       console.error('Failed to add credits:', error)
       return new NextResponse('Database Error', { status: 500 })
     }

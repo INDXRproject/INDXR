@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/utils/supabase/server';
 
 export const maxDuration = 60;
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
+    Sentry.captureException(error, { tags: { route: 'api/ai/summarize' } });
     console.error('Summarize API Route Error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error while connecting to summarization service.' },

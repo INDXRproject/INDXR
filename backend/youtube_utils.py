@@ -11,6 +11,7 @@ import time
 from typing import List, Optional
 
 import httpx
+import sentry_sdk
 import yt_dlp
 from lingua import Language, LanguageDetectorBuilder
 
@@ -346,4 +347,12 @@ async def extract_with_ytdlp(
             logger.warning(f"{log_prefix} {video_id}: MembersOnly (keyword detected)")
             raise MembersOnlyVideoError("This video is only available to channel members.")
         logger.error(f"{log_prefix} {video_id}: {type(e).__name__}: {e}")
+        # Breadcrumb zodat de caller's Sentry event ziet welke cascade-stap faalde.
+        # Geen capture_exception hier — de caller vangt de re-raise en capturet daar.
+        sentry_sdk.add_breadcrumb(
+            category="yt-dlp",
+            message=f"extract_with_ytdlp failed for {video_id}: {type(e).__name__}: {e}",
+            data={"video_id": video_id},
+            level="error",
+        )
         raise

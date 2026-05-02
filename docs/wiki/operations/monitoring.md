@@ -75,7 +75,72 @@ logger.setLevel(logging.INFO)  # expliciet noodzakelijk — zie waarschuwing hie
 
 - `console.log` voor webhook events in `stripe/webhook/route.ts`
 - `console.error` voor Supabase errors in `AuthContext.tsx`
-- Geen centrale frontend logging service (geen Sentry o.i.d. geconfigureerd)
+- Sentry is geconfigureerd — zie sectie hieronder
+
+---
+
+## Sentry Error Tracking
+
+Actief op backend (Railway) én frontend (Vercel).
+
+### Backend
+
+| File | Init | DSN env var |
+|------|------|-------------|
+| `backend/main.py` | Ja — `FastApiIntegration`, `HttpxIntegration` | `SENTRY_DSN_BACKEND` |
+| `backend/worker.py` | Ja | `SENTRY_DSN_BACKEND` |
+
+**Capture pattern:**
+```python
+with sentry_sdk.push_scope() as scope:
+    scope.set_tag("task_name", "...")
+    scope.set_tag("job_id", job_id)
+sentry_sdk.capture_exception(e)
+```
+
+`push_scope()` zorgt dat tags niet lekken naar concurrent async jobs.
+
+**Context-enrichment tags:**
+
+| Tag | Waar gebruikt |
+|-----|--------------|
+| `task_name` | Alle worker tasks + pipeline |
+| `pass` | Watchdog passes (1a / 1b / 2) |
+| `job_id` / `playlist_job_id` | Job-identiteit |
+| `video_id` | Per-video operaties |
+| `user_id` | Credit- / auth-operaties |
+| `endpoint` | main.py route handlers |
+| `cascade_step` | yt-dlp cascade (step2_yt-dlp) |
+| `error_type` | Geclassificeerd via `_classify_download_error` |
+
+**Bewust NIET gecaptured** (comment in code toegevoegd):
+- PostHog fire-and-forget failures (`track_event` warnings)
+- `bot_detection`, `timeout`, `members_only`, `no_captions` extractie-uitkomsten — operationeel, geen bug
+- YouTube Data API quota-fallthrough naar yt-dlp — by design
+- Cache misses in `master_transcripts_read`
+
+### Frontend
+
+Geconfigureerd via:
+- `instrumentation.ts` — routing naar server/edge configs
+- `sentry.client.config.ts` / `sentry.server.config.ts` / `sentry.edge.config.ts`
+- `next.config.ts` — `withSentryConfig` plugin
+
+**Capture pattern:**
+```typescript
+import * as Sentry from '@sentry/nextjs';
+Sentry.captureException(error, { tags: { route: 'api/...', step: '...' } });
+```
+
+**Geïnstrumenteerde API routes:**
+
+| Route | Stappen |
+|-------|---------|
+| `api/extract` | `python_backend_call`, `request_parse` |
+| `api/stripe/webhook` | `signature_verification`, `add_credits_rpc` (FINANCIEEL) |
+| `api/ai/summarize` | `route` tag |
+| `api/transcribe/preflight` | `route` tag |
+| `api/playlist/info` | `python_backend_call`, `request_parse` |
 
 ---
 
@@ -91,9 +156,6 @@ curl https://indxr-production.up.railway.app/health
 
 ## Wat nog ontbreekt
 
-- **Error tracking (Sentry):** Niet geconfigureerd. Applicatiefouten zijn alleen zichtbaar in Railway logs.
-- **Uptime monitoring:** Geen externe uptime monitor (bijv. UptimeRobot, BetterUptime).
-- **Alerting:** Geen proactieve alerts bij Railway downtime of hoog error-percentage.
+- **Uptime monitoring:** Geen externe uptime monitor (bijv. healthchecks.io, BetterStack) — taak 1.14.
+- **Sentry alerting rules:** Sentry is geconfigureerd maar nog geen alert-regels ingesteld voor watchdog-errors of financiële failures.
 - **Database monitoring:** Supabase Dashboard heeft basis query-statistieken; geen aangepaste dashboards.
-
-Dit is acceptabel voor early-stage maar moet aangepakt worden voor schaal.

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/utils/supabase/server';
 
 export const maxDuration = 60;
@@ -68,16 +69,18 @@ export async function POST(request: Request) {
 
       return NextResponse.json(data);
     } catch (error) {
+      Sentry.captureException(error, { tags: { route: 'api/playlist/info', step: 'python_backend_call' } });
       console.error('Python Backend Error:', error);
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Unable to connect to extraction service.' 
+          error: 'Unable to connect to extraction service.'
         },
         { status: 503 }
       );
     }
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, { tags: { route: 'api/playlist/info', step: 'request_parse' } });
     return NextResponse.json(
       { error: 'Invalid request body' },
       { status: 400 }

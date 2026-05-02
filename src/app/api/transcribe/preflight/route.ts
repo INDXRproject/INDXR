@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/utils/supabase/server';
 import { checkRateLimit } from '@/lib/ratelimit';
 
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    Sentry.captureException(error, { tags: { route: 'api/transcribe/preflight' } });
     console.error('Preflight error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

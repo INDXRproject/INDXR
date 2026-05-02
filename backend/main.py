@@ -469,6 +469,14 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
         else:
             error_type = 'extraction_error'
         logger.error(f"Extraction terminal error [{error_type}]: {type(e).__name__}: {e}")
+        # Capture alleen onverwachte extractie-errors; age_restricted/bot_detection/timeout/youtube_restricted
+        # zijn operationele uitkomsten, geen bugs.
+        if error_type == 'extraction_error':
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("endpoint", "extract_youtube_transcript")
+                scope.set_tag("video_id", video_id)
+                scope.set_tag("error_type", error_type)
+            sentry_sdk.capture_exception(e)
         return ExtractResponse(
             success=False,
             error=error_msg,
@@ -577,6 +585,10 @@ async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_ba
             
     except Exception as e:
         logger.error(f"Playlist info error: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("endpoint", "get_playlist_info")
+            scope.set_tag("cascade_step", "step2_yt-dlp")
+        sentry_sdk.capture_exception(e)
         return PlaylistInfoResponse(
             success=False,
             error="Failed to fetch playlist information"
@@ -596,6 +608,8 @@ async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_sec
             # Fallthrough
             
     # 2. Fallback: yt-dlp
+    # SENTRY TEST — REMOVE AFTER VERIFICATION
+    raise Exception("sentry test from main.py get_video_metadata")
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -621,6 +635,11 @@ async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_sec
 
     except Exception as e:
         logger.error(f"Video metadata error for {video_id}: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("endpoint", "get_video_metadata")
+            scope.set_tag("video_id", video_id)
+            scope.set_tag("cascade_step", "step2_yt-dlp")
+        sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=404, detail=f"Failed to fetch video metadata: {str(e)}")
 
 @app.post("/api/transcribe/whisper")
@@ -663,6 +682,10 @@ async def transcribe_with_whisper(
             user_id = user_response.user.id
         except Exception as e:
             logger.error(f"JWT verification failed: {e}")
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("endpoint", "transcribe_with_whisper")
+                scope.set_tag("auth_step", "jwt_verification")
+            sentry_sdk.capture_exception(e)
             return JSONResponse(status_code=401, content={"error": "Authentication failed", "code": "unauthorized"})
         try:
             profile_resp = await asyncio.to_thread(
@@ -836,6 +859,11 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
         try:
             current_balance = check_user_balance(request.user_id)
         except Exception as e:
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("endpoint", "summarize_transcript")
+                scope.set_tag("step", "credit_balance_check")
+                scope.set_tag("user_id", request.user_id)
+            sentry_sdk.capture_exception(e)
             return SummarizeResponse(success=False, error=f"Could not check credit balance: {str(e)}")
             
         if current_balance < 3:
@@ -952,10 +980,21 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
         except Exception as e:
             logger.error(f"DeepSeek call exception: {type(e).__name__}: {e}")
             add_credits(request.user_id, 3, f"AI Summarization Refund ({type(e).__name__})")
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("endpoint", "summarize_transcript")
+                scope.set_tag("step", "deepseek_api_call")
+                scope.set_tag("user_id", request.user_id)
+                scope.set_tag("transcript_id", request.transcript_id)
+            sentry_sdk.capture_exception(e)
             return SummarizeResponse(success=False, error="Failed to generate summary")
             
     except Exception as e:
         logger.error(f"Summarize endpoint error: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("endpoint", "summarize_transcript")
+            scope.set_tag("step", "outer_catch")
+            scope.set_tag("user_id", request.user_id)
+        sentry_sdk.capture_exception(e)
         return SummarizeResponse(success=False, error=str(e))
 
 @app.post("/api/playlist/extract")
@@ -988,6 +1027,10 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
         )
     except Exception as e:
         logger.error(f"Failed to create playlist_extraction_jobs row: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("endpoint", "start_playlist_extraction")
+            scope.set_tag("user_id", request.user_id)
+        sentry_sdk.capture_exception(e)
         return JSONResponse(status_code=500, content={"error": "Failed to create job"})
 
     arq_pool = http_request.app.state.arq_pool

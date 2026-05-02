@@ -1,3 +1,5 @@
+[2026-05-02 16:00] fix: Sentry observability audit — capture_exception toegevoegd aan watchdog passes 1a/1b/2 + structurele catches in worker.py, main.py, transcription_pipeline.py, youtube_utils.py; captureException in 5 Next.js API routes; monitoring.md bijgewerkt | gewijzigd: backend/worker.py, backend/main.py, backend/transcription_pipeline.py, backend/youtube_utils.py, src/app/api/extract/route.ts, src/app/api/stripe/webhook/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/transcribe/preflight/route.ts, src/app/api/playlist/info/route.ts, docs/wiki/operations/monitoring.md
+---
 [2026-05-02 05:30] docs: test-reports.md productie-tests 2026-05-02 toegevoegd — meertalige cache + retry_pending flow + watchdog Pass 1a bugfixes | gewijzigd: docs/wiki/operations/test-reports.md
 ---
 [2026-05-02 05:10] fix: watchdog Pass 1a title kolom-fix — title uit select verwijderd (kolom bestaat niet), video_url → video_id extraheren via urllib.parse voor run_whisper_job enqueue | gewijzigd: backend/worker.py, backend/test_watchdog.py
@@ -2970,4 +2972,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/test_watchdog.py
 backend/worker.py
 docs/LOG.md
+---
+[2026-05-02 14:11] commit: docs: test-reports.md productie-tests 2026-05-02 toegevoegd
+
+Sessie-entry voor meertalige cache (NL cache hit bewezen), retry_pending flow
+(Joe Rogan 20-video playlist, Gap 1 gesloten), en watchdog Pass 1a bugfix context.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/test-reports.md
 ---
