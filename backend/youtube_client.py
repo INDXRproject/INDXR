@@ -132,13 +132,17 @@ class YouTubeClient:
                 raise Exception("Video not found")
                 
             item = items[0]
+            snippet = item["snippet"]
             return {
                 "success": True,
-                "title": item["snippet"]["title"],
+                "title": snippet["title"],
                 "duration": self.parse_duration(item["contentDetails"]["duration"]),
-                "thumbnail": item["snippet"]["thumbnails"].get("high", {}).get("url"),
-                "channel": item["snippet"]["channelTitle"],
-                "upload_date": item["snippet"]["publishedAt"][:10],
+                "thumbnail": snippet["thumbnails"].get("high", {}).get("url"),
+                "channel": snippet["channelTitle"],
+                "upload_date": snippet["publishedAt"][:10],
+                # defaultAudioLanguage is the primary audio language; fall back to
+                # defaultLanguage (title/description language) when absent.
+                "language": snippet.get("defaultAudioLanguage") or snippet.get("defaultLanguage"),
             }
             
         except Exception as e:
