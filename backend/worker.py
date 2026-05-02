@@ -713,9 +713,10 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
       trek credits terug binnen ~10 min en markeer als 'error'.
       Alleen transcription_jobs — playlist-credits zijn per-video atomisch via RPC.
 
-    ADR-030 Gap 1 (gecrashte retry-pass na playlist=complete): niet afgehandeld hier.
-    De playlist krijgt status='complete' VOOR de retry-pass draait — de watchdog
-    selecteert alleen status='interrupted', dus Gap 1 is onzichtbaar voor de watchdog.
+    ADR-030 Gap 1 (gecrashte retry-pass): opgelost via status='retry_pending'.
+    De RPC zet status='retry_pending' (in plaats van 'complete') wanneer retryable
+    failures bestaan. Pass 1b detecteert stale 'retry_pending' + heartbeat en
+    re-enqueued process_playlist_retries.
     """
     supabase = get_supabase_client()
     redis = ctx['redis']
@@ -765,33 +766,64 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
         logger.error(f"[WATCHDOG] transcription_jobs re-enqueue query failed: {e}")
 
     # ── Pass 1b: playlist_extraction_jobs re-enqueue ──────────────────────
+    # Handles two cases:
+    #   'interrupted'   — mid-chain crash; re-enqueue next video in the chain
+    #   'retry_pending' — ADR-030 Gap 1; retry-pass stale → re-enqueue retry-pass
+    # Both statuses use the same query (same columns needed) then branch on status.
     try:
         result = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-                .select('id,user_id,video_ids,video_results,completed,failed,total_videos')
-                .eq('status', 'interrupted')
+                .select('id,user_id,video_ids,video_results,completed,failed,total_videos,status,last_heartbeat_at')
+                .in_('status', ['interrupted', 'retry_pending'])
                 .eq('watchdog_attempts', 0)
-                .lt('last_heartbeat_at', stale_before)
                 .gt('created_at', cutoff_24h)
                 .execute()
         )
         for job in (result.data or []):
             playlist_id = job['id']
+            job_status = job['status']
             try:
+                # ── Gap 1: crashed retry-pass (status='retry_pending') ────────
+                if job_status == 'retry_pending':
+                    heartbeat = job.get('last_heartbeat_at')
+                    stale = (
+                        not heartbeat or
+                        datetime.fromisoformat(heartbeat) < datetime.fromisoformat(stale_before)
+                    )
+                    if not stale:
+                        # Retry-pass is still running; heartbeat is fresh.
+                        logger.info(f"[WATCHDOG] playlist {playlist_id}: retry-pass running (fresh heartbeat) — skip")
+                        continue
+                    _job_id = f"{playlist_id}:retries"
+                    await redis.delete(f'arq:job:{_job_id}', f'arq:in-progress:{_job_id}')
+                    await asyncio.to_thread(
+                        lambda pid=playlist_id: supabase.table('playlist_extraction_jobs').update({
+                            'watchdog_attempts': 1,
+                            'last_heartbeat_at': None,
+                        }).eq('id', pid).execute()
+                    )
+                    await redis.enqueue_job('process_playlist_retries', playlist_id, _job_id=_job_id)
+                    logger.info(f"[WATCHDOG re-enqueue] retry-pass {playlist_id} user_id={job['user_id']}")
+                    continue
+
+                # ── Interrupted mid-chain video ───────────────────────────────
+                # Stale-check is in the query (.lt('last_heartbeat_at', stale_before)) but
+                # 'retry_pending' rows skip that filter above. Apply it explicitly here.
+                heartbeat = job.get('last_heartbeat_at')
+                if heartbeat and datetime.fromisoformat(heartbeat) >= datetime.fromisoformat(stale_before):
+                    logger.info(f"[WATCHDOG] playlist {playlist_id}: interrupted but heartbeat fresh — skip")
+                    continue
+
                 video_ids = job.get('video_ids') or []
                 video_results = job.get('video_results') or {}
                 completed = job.get('completed', 0)
                 failed = job.get('failed', 0)
                 total = job.get('total_videos', len(video_ids))
 
-                # ADR-030 Gap 1: alle videos verwerkt → retry-pass crashte.
-                # playlist.status is dan al 'complete' vóór de retry-pass draait,
-                # dus dit pad wordt nooit bereikt via de 'interrupted' filter.
-                # Toch als defensieve check:
                 if completed + failed >= total > 0:
-                    logger.info(
-                        f"[WATCHDOG] playlist {playlist_id}: Gap 1 (retry-pass crash) — skip"
-                    )
+                    # All videos done but status='interrupted' — defensive; should not happen
+                    # now that retry_pending covers the Gap 1 case. Skip to avoid confusion.
+                    logger.info(f"[WATCHDOG] playlist {playlist_id}: all videos done, status=interrupted — skip")
                     continue
 
                 # Eerste video zonder resultaat is de te hervatten video_index.
@@ -806,11 +838,11 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 _job_id = f"{playlist_id}:{video_index}"
                 await redis.delete(f'arq:job:{_job_id}', f'arq:in-progress:{_job_id}')
                 await asyncio.to_thread(
-                    lambda: supabase.table('playlist_extraction_jobs').update({
+                    lambda pid=playlist_id: supabase.table('playlist_extraction_jobs').update({
                         'status': 'running',
                         'watchdog_attempts': 1,
                         'last_heartbeat_at': None,
-                    }).eq('id', playlist_id).execute()
+                    }).eq('id', pid).execute()
                 )
                 await redis.enqueue_job(
                     'process_playlist_video',
