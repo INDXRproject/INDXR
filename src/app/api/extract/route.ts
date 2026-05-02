@@ -14,6 +14,12 @@ const requestSchema = z.object({
 const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
 
 export async function POST(request: Request) {
+  console.log('[SENTRY-DIAG] runtime check:', {
+    dsn_set: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
+    dsn_prefix: process.env.NEXT_PUBLIC_SENTRY_DSN?.substring(0, 40),
+    sentry_loaded: typeof Sentry !== 'undefined',
+    capture_fn: typeof Sentry?.captureException,
+  });
   try {
     // 0. Get User (if logged in)
     const supabase = await createClient();
@@ -131,7 +137,9 @@ export async function POST(request: Request) {
       );
     }
   } catch (error) {
-    Sentry.captureException(error, { tags: { route: 'api/extract', step: 'request_parse' } });
+    console.log('[SENTRY-DIAG] captureException about to be called', { error_msg: String(error) });
+    const sentryId = Sentry.captureException(error, { tags: { route: 'api/extract', step: 'request_parse' } });
+    console.log('[SENTRY-DIAG] captureException returned:', sentryId);
     return NextResponse.json(
       { error: 'Invalid request body' },
       { status: 400 }
