@@ -1,3 +1,5 @@
+[2026-05-02 21:00] fix: Sentry edge runtime mismatch opgelost — export const runtime = 'nodejs' op 6 API routes; api/video/metadata geïnstrumenteerd; instrumentation.ts diag-logs verwijderd; known-issues resolved, monitoring.md + test-reports bijgewerkt | gewijzigd: instrumentation.ts, src/app/api/extract/route.ts, src/app/api/stripe/webhook/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/transcribe/preflight/route.ts, src/app/api/playlist/info/route.ts, src/app/api/video/metadata/[videoId]/route.ts, docs/wiki/operations/known-issues.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/test-reports.md, docs/LOG.md
+---
 [2026-05-02 19:00] fix: Sentry.flush(2000) toegevoegd na elke captureException in 5 API routes — serverless transport kreeg geen tijd om envelope te versturen vóór process kill | gewijzigd: src/app/api/extract/route.ts, src/app/api/stripe/webhook/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/transcribe/preflight/route.ts, src/app/api/playlist/info/route.ts
 ---
 [2026-05-02 18:00] docs: Sentry frontend diagnose — root cause gevonden: testmethode onjuist (Zod-validatie bereikt outer catch nooit), sentry-config structureel correct, verificatiestap gedocumenteerd in known-issues.md | gewijzigd: docs/wiki/operations/known-issues.md
@@ -3084,4 +3086,42 @@ src/app/api/extract/route.ts
 src/app/api/playlist/info/route.ts
 src/app/api/stripe/webhook/route.ts
 src/app/api/transcribe/preflight/route.ts
+---
+[2026-05-02 22:14] commit: docs: LOG entry voor Sentry.flush fix
+Changed: docs/LOG.md
+---
+[2026-05-02 22:26] commit: debug: enable Sentry SDK debug logging on server config
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: sentry.server.config.ts
+---
+[2026-05-02 22:37] commit: debug: verify instrumentation register() execution + remove unused Sentry debug flag
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: instrumentation.ts
+sentry.server.config.ts
+---
+[2026-05-02 22:51] commit: fix: force nodejs runtime on API routes + instrument video/metadata
+
+Root cause: Next.js 16 on Vercel defaulted all API routes to edge runtime.
+instrumentation.ts only loaded sentry.server.config for nodejs runtime, so
+Sentry.init() never ran for these routes. captureException returned an event
+ID but no HTTP envelope was sent to Sentry.
+
+Fix: export const runtime = 'nodejs' on all 6 affected routes:
+api/extract, api/stripe/webhook, api/ai/summarize,
+api/transcribe/preflight, api/playlist/info, api/video/metadata/[videoId]
+
+Also: add Sentry captureException + flush to api/video/metadata catch block
+(previously unhandled, error was silently swallowed).
+Cleanup: remove diagnostic console.logs from instrumentation.ts.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: instrumentation.ts
+src/app/api/ai/summarize/route.ts
+src/app/api/extract/route.ts
+src/app/api/playlist/info/route.ts
+src/app/api/stripe/webhook/route.ts
+src/app/api/transcribe/preflight/route.ts
+src/app/api/video/metadata/[videoId]/route.ts
 ---

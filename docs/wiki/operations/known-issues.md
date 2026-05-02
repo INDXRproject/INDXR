@@ -120,36 +120,39 @@ Na cascade stap 1 succes (youtube-transcript-api) haalt de backend metadata op v
 
 ---
 
-## Frontend Sentry capture in productie niet bevestigd
+## ~~Frontend Sentry capture in productie niet bevestigd~~ ✅ Opgelost 2026-05-02
 
 **Vastgesteld:** 2026-05-02  
-**Status:** OPEN  
-**Impact:** Sentry events van Next.js API routes (Vercel) worden mogelijk niet verzonden
+**Opgelost:** 2026-05-02 (commit a47a15c)  
+**Root cause:** Edge runtime mismatch — zie hieronder
 
-### Symptoom
+### Root cause (definitief)
 
-Force-error in `src/app/api/extract/route.ts` inner catch bereikt de catch-block aantoonbaar (gebruiker ontvangt 503), maar het event verschijnt niet in Sentry project `indxr-frontend`. Backend Sentry (Railway) werkt correct — watchdog Pass 1a events kwamen aan met juiste tags.
+Next.js 16 op Vercel defaultt API routes naar **edge runtime** als geen `export const runtime` gedeclareerd is. `instrumentation.ts` laadt `sentry.server.config` exclusief voor de `nodejs` runtime-branch. Daardoor werd `Sentry.init()` nooit uitgevoerd in de context van de API routes. `captureException` retourneerde wel een event ID (Sentry SDK aanwezig via client bundle), maar geen HTTP envelope werd verstuurd naar Sentry.
 
-### Meest waarschijnlijke oorzaak
+Bewijs: `[INDXR-INSTRUMENTATION] register() called, runtime: edge` in Vercel function logs na het toevoegen van diagnostische console.logs in `instrumentation.ts`.
 
-**`NEXT_PUBLIC_SENTRY_DSN` niet ingesteld op Vercel.** Zonder DSN is `Sentry.init()` een no-op.
+### Diagnose-keten (chronologisch)
 
-**Verificatie:** Vercel Dashboard → Project → Settings → Environment Variables → zoek op `NEXT_PUBLIC_SENTRY_DSN`. Vergelijk de waarde met de DSN in Sentry project `indxr-frontend` (Settings → Client Keys).
+1. DSN was leeg op Vercel → ingevuld, redeploy → events kwamen nog steeds niet aan
+2. `Sentry.flush(2000)` toegevoegd aan alle routes — geen effect (init liep niet)
+3. `debug: true` in server config → geen `[Sentry]` output; root cause: `disableLogger: true` in `withSentryConfig` tree-shakt de Sentry logger uit de bundle — debug flag is daardoor effectief nutteloos
+4. Eigen `[INDXR-INSTRUMENTATION]` console.logs in `instrumentation.ts` → `runtime: edge` bevestigd in Vercel logs
 
-### Overige hypotheses (minder waarschijnlijk)
+### Fix (commit a47a15c)
 
-- `instrumentation.ts` niet opgepikt: onwaarschijnlijk, `withSentryConfig` webpack-injectie dekt dit
-- `beforeSend` filter: niet aanwezig in `sentry.server.config.ts`
-- Wrong project: `next.config.ts` wijst naar project `indxr-frontend` bij org `indxrai` — controleer of dit project bestaat
+`export const runtime = 'nodejs'` gedeclareerd op alle 6 betrokken routes:
+`api/extract`, `api/stripe/webhook`, `api/ai/summarize`, `api/transcribe/preflight`, `api/playlist/info`, `api/video/metadata/[videoId]`
 
-### Fix
+`api/video/metadata` ook geïnstrumenteerd: Sentry import + `captureException` + `flush` (was eerder `catch {}` zonder error-binding).
 
-Als `NEXT_PUBLIC_SENTRY_DSN` ontbreekt: voeg toe in Vercel Dashboard (alle environments). Haal de DSN op uit Sentry → indxr-frontend → Settings → Client Keys → DSN.
+### Permanente noot voor nieuwe routes
 
-### Gerelateerd
-
-- `src/app/api/video/metadata/[videoId]/route.ts` heeft nog geen `captureException` — aparte taak
-- Test-flow voor `get_video_metadata`: Single Video tab → video extraheren → metadatafetch na extractie
+Elke Next.js API route die `captureException` gebruikt **moet** declareren:
+```ts
+export const runtime = 'nodejs';
+```
+Zonder deze declaratie draait de route op edge runtime en wordt `Sentry.init()` nooit aangeroepen — zie `monitoring.md` sectie "Sentry runtime vereisten".
 
 ---
 

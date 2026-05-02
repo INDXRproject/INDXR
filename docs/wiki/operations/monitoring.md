@@ -141,6 +141,30 @@ Sentry.captureException(error, { tags: { route: 'api/...', step: '...' } });
 | `api/ai/summarize` | `route` tag |
 | `api/transcribe/preflight` | `route` tag |
 | `api/playlist/info` | `python_backend_call`, `request_parse` |
+| `api/video/metadata/[videoId]` | `route`, `video_id` tag |
+
+### Sentry runtime vereisten — KRITIEK
+
+Next.js 16 op Vercel defaultt API routes naar **edge runtime** als geen runtime gedeclareerd is. `instrumentation.ts` laadt `sentry.server.config` **alleen** voor de `nodejs` runtime-branch. Elke route die `captureException` aanroept, **moet** expliciet declareren:
+
+```ts
+export const runtime = 'nodejs';
+```
+
+Zonder deze declaratie: `Sentry.init()` runt nooit voor die route → `captureException` retourneert een event ID maar verstuurt geen envelope → events verdwijnen stilletjes.
+
+**Extra vereiste in serverless context:** voeg `await Sentry.flush(2000)` toe ná elke `captureException`-call, vóór de `return`. Vercel kan het process killen nadat de response verzonden is, voordat de async transport de envelope heeft doorgestuurd.
+
+Standaard patroon voor elke nieuwe geïnstrumenteerde route:
+```ts
+export const runtime = 'nodejs';
+// ...
+} catch (error) {
+  Sentry.captureException(error, { tags: { route: 'api/...', step: '...' } });
+  await Sentry.flush(2000);
+  return NextResponse.json({ error: '...' }, { status: 500 });
+}
+```
 
 ---
 
