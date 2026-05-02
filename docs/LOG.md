@@ -1,3 +1,7 @@
+[2026-05-02 17:00] docs: Sentry audit test-reports + known-issues — verificatieresultaten (worker ✅ / frontend ❌), onderzoek frontend-capture hypotheses, get_video_metadata flow, open issue NEXT_PUBLIC_SENTRY_DSN | gewijzigd: docs/wiki/operations/test-reports.md, docs/wiki/operations/known-issues.md
+---
+[2026-05-02 16:30] fix: remove Sentry force-error tests — alle 3 verwijderd na verificatie | gewijzigd: backend/worker.py, backend/main.py, src/app/api/extract/route.ts
+---
 [2026-05-02 16:00] fix: Sentry observability audit — capture_exception toegevoegd aan watchdog passes 1a/1b/2 + structurele catches in worker.py, main.py, transcription_pipeline.py, youtube_utils.py; captureException in 5 Next.js API routes; monitoring.md bijgewerkt | gewijzigd: backend/worker.py, backend/main.py, backend/transcription_pipeline.py, backend/youtube_utils.py, src/app/api/extract/route.ts, src/app/api/stripe/webhook/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/transcribe/preflight/route.ts, src/app/api/playlist/info/route.ts, docs/wiki/operations/monitoring.md
 ---
 [2026-05-02 05:30] docs: test-reports.md productie-tests 2026-05-02 toegevoegd — meertalige cache + retry_pending flow + watchdog Pass 1a bugfixes | gewijzigd: docs/wiki/operations/test-reports.md
@@ -2981,4 +2985,48 @@ Sessie-entry voor meertalige cache (NL cache hit bewezen), retry_pending flow
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/operations/test-reports.md
+---
+[2026-05-02 15:03] commit: fix: Sentry observability audit — capture_exception + context-enrichment
+
+Vult de volledige observability gap: nergens in de codebase werd
+sentry_sdk.capture_exception() aangeroepen, waardoor structurele bugs
+(SQL-failures, crashes in de watchdog, financial errors) nooit in Sentry
+verschenen.
+
+Backend:
+- worker.py: watchdog passes 1a/1b/2 — alle 6 catch-blokken gecaptured
+  met push_scope tags (task_name, pass, job_id, user_id, refund_amount)
+- worker.py: process_playlist_video, process_playlist_retries, enqueue_next,
+  _call_progress_rpc — structurele catches + gefilterde caption catches
+  (bot_detection/timeout/members_only/no_captions worden bewust niet gecaptured)
+- main.py: 8 endpoint catches — extract, playlist_info, video_metadata, JWT,
+  credit_balance, DeepSeek API, summarize outer, playlist job creation
+- transcription_pipeline.py: import sentry_sdk + top-level catch, refund
+  failure, audio download (gefilterd)
+- youtube_utils.py: import sentry_sdk + add_breadcrumb in cascade (geen
+  capture_exception — re-raise naar caller voorkomt duplicaten)
+
+Frontend:
+- 5 API routes: api/extract, api/stripe/webhook, api/ai/summarize,
+  api/transcribe/preflight, api/playlist/info — Sentry import +
+  captureException in alle catch-blokken
+
+Inclusief tijdelijke force-error tests (worker.py Pass 1a, main.py
+get_video_metadata, api/extract) — verwijder na verificatie in Sentry.
+
+monitoring.md: Sentry-sectie toegevoegd met capture-pattern, tags-overzicht,
+en lijst van bewust niet-gecapturde uitzonderingen.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/transcription_pipeline.py
+backend/worker.py
+backend/youtube_utils.py
+docs/LOG.md
+docs/wiki/operations/monitoring.md
+src/app/api/ai/summarize/route.ts
+src/app/api/extract/route.ts
+src/app/api/playlist/info/route.ts
+src/app/api/stripe/webhook/route.ts
+src/app/api/transcribe/preflight/route.ts
 ---

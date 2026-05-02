@@ -772,8 +772,6 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
 
     # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
     try:
-        # SENTRY TEST — REMOVE AFTER VERIFICATION
-        raise Exception("sentry test from worker watchdog Pass 1a")
         result = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
                 .select('id,user_id,video_url')

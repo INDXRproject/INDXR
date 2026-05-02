@@ -77,8 +77,6 @@ export async function POST(request: Request) {
 
     // Call Python backend for extraction
     try {
-      // SENTRY TEST — REMOVE AFTER VERIFICATION
-      throw new Error('sentry test from api/extract frontend route');
       const response = await fetch(`${PYTHON_BACKEND_URL}/api/extract/youtube`, {
         method: 'POST',
         headers: {

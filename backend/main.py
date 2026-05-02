@@ -608,8 +608,6 @@ async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_sec
             # Fallthrough
             
     # 2. Fallback: yt-dlp
-    # SENTRY TEST — REMOVE AFTER VERIFICATION
-    raise Exception("sentry test from main.py get_video_metadata")
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
