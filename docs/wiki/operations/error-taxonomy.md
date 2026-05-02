@@ -158,6 +158,20 @@ Eén plek voor alle `error_type` slugs die voorkomen in `transcription_jobs`, `p
 
 ---
 
+## Job-status waarden (geen error_types)
+
+De volgende waarden zijn `playlist_extraction_jobs.status` waarden, geen `error_type` slugs.
+
+| Status | Betekenis |
+|--------|-----------|
+| `running` | Job verwerkt video's actief (heartbeat elke 60s) |
+| `retry_pending` | Alle video's verwerkt; retry-pass staat klaar of loopt (ADR-032). Heartbeat stale → watchdog re-enqueued retry-pass. |
+| `complete` | Job definitief klaar — geen verdere actie nodig |
+| `interrupted` | Stale heartbeat tijdens normale verwerking — watchdog herstelt via Pass 1b |
+| `error` | Watchdog kon niet herstellen na 2 pogingen (`watchdog_permanent_failure`) |
+
+---
+
 ## Overzicht tabel
 
 | Error type | Categorie | Retry-eligible | Frequency Fase 3b.3 | AI-suggestie? | Taak |

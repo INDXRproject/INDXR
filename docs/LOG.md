@@ -1,3 +1,9 @@
+[2026-05-02 00:00] fix: language-aware master cache lookups — normalize_language_code + YouTube Data API pre-fetch vóór cache-read in caption paths (main.py + worker.py) + transcription_pipeline.py lingua normalisatie | gewijzigd: backend/language_utils.py (nieuw), backend/test_language_utils.py (nieuw), backend/requirements.txt, backend/youtube_utils.py, backend/youtube_client.py, backend/main.py, backend/worker.py, backend/transcription_pipeline.py
+---
+[2026-05-02 00:05] fix: ADR-030 Gap 1 — retry_pending status + watchdog detectie + frontend mount-check | gewijzigd: supabase/migrations/20260502_playlist_retry_pending_status.sql (nieuw), backend/worker.py, src/components/free-tool/PlaylistTab.tsx, backend/test_watchdog.py, backend/test_playlist_retry_pending.py (nieuw)
+---
+[2026-05-02 00:10] docs: ADR-032 + ADR-021 language-aware sectie + ADR-030 Gap 1 opgelost + INDEX + backlog + error-taxonomy | gewijzigd: docs/wiki/decisions/032-retry-pending-status.md (nieuw), docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/decisions/030-fase4-crash-recovery-leerervaring.md, docs/wiki/INDEX.md, docs/wiki/roadmap/backlog.md, docs/wiki/operations/error-taxonomy.md
+---
 [2026-05-01 19:30] feat: Supabase Realtime + polling fallback (taak 1.10) — useJobStatus hook, VideoTab/AudioTab/PlaylistTab gerefactored; pollWhisperJob/runPollLoop/startPollInterval verwijderd | gewijzigd: src/hooks/useJobStatus.ts (nieuw), src/components/free-tool/VideoTab.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/PlaylistTab.tsx
 ---
 [2026-05-01 19:25] feat: master_transcripts cache read in /api/extract/youtube (taak 1.11) | gewijzigd: backend/main.py
@@ -2778,4 +2784,136 @@ docs/wiki/operations/error-taxonomy.md
 src/components/free-tool/AudioTab.tsx
 src/components/free-tool/PlaylistTab.tsx
 src/components/free-tool/VideoTab.tsx
+---
+[2026-05-02 00:24] commit: docs: supabase migratie + realtime publicatie gelogd; priorities.md 1.7 gecorrigeerd
+
+watchdog_attempts migratie gedraaid op productie (2026-05-02).
+Realtime publicatie + REPLICA IDENTITY FULL gezet op beide job-tabellen.
+priorities.md: Pass 2-beschrijving corrigeert '24u-pad' naar 'heartbeat stale ~10 min'.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-05-02 04:01] commit: feat: language_utils.normalize_language_code + langcodes dependency
+
+Centralises all language code normalisation (yt-dlp, YouTube Data API,
+AssemblyAI lingua detection) through a single helper that always returns
+ISO 639-1 lowercase two-letter codes (en, nl, ar, ...) or None.
+
+Prerequisite for language-aware master cache lookups (Fix 1).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/language_utils.py
+backend/requirements.txt
+backend/test_language_utils.py
+---
+[2026-05-02 04:01] commit: fix: normalise yt-dlp language via normalize_language_code in youtube_utils
+
+Replaces raw [:2].lower() with the canonical normalizer for both yt-dlp
+info.language and lingua-detected language paths.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/youtube_utils.py
+---
+[2026-05-02 04:02] commit: feat: add language field to youtube_client.get_video_details
+
+Returns snippet.defaultAudioLanguage (or defaultLanguage fallback) from
+the YouTube Data API snippet. Already-fetched part — zero extra quota units.
+Used by language-aware master cache lookups in main.py and worker.py.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/youtube_client.py
+---
+[2026-05-02 04:04] commit: fix: language-aware master cache lookup in /api/extract/youtube (caption path)
+
+- Hoists get_video_details call to before master cache read; result is
+  reused for cascade metadata enrichment (zero extra quota units, ADR-028)
+- Redis cache key drops ':en' suffix — language lives in stored value
+- master_transcripts_read now uses normalised language from YouTube Data API
+- Falls back to cascade on quota exhaustion or unknown language (no regression)
+- Normalises language via normalize_language_code before master cache write
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+---
+[2026-05-02 04:05] commit: fix: language-aware master cache lookup in _process_caption_video (playlist path)
+
+- Hoists get_video_details before master cache read; result reused for
+  cascade enrichment (same quota behaviour as main.py fix)
+- master_transcripts_read now uses normalised language from YouTube Data API
+- Cache write normalises language via normalize_language_code
+- Also includes language in cache-hit transcript title (was hardcoded video_id)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/worker.py
+---
+[2026-05-02 04:05] commit: fix: normalise lingua-detected language in transcription_pipeline.py
+
+Wraps lingua's iso_code_639_1.name.lower() through normalize_language_code()
+before writing to transcripts.language (Whisper + Audio Upload paths).
+Already canonical format — this makes the pipeline consistent and future-proof.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/transcription_pipeline.py
+---
+[2026-05-02 04:06] commit: feat: RPC sets retry_pending status when retryable failures exist (ADR-030 Gap 1)
+
+update_playlist_video_progress now sets status='retry_pending' (instead of
+'complete') when completion reveals bot_detection or timeout failures.
+Returns should_retry in payload so worker can decide without re-reading.
+process_playlist_retries will set status='complete' when done.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: supabase/migrations/20260502_playlist_retry_pending_status.sql
+---
+[2026-05-02 04:06] commit: feat: process_playlist_retries sets status=complete on finish (ADR-030 Gap 1)
+
+- Updates heartbeat at start so watchdog can detect a stale retry-pass
+- Sets status='complete' + completed_at at end of retry pass (success or
+  all-failed) — previously the RPC set this on last video, now it's here
+- Handles early-return case (no eligible videos) with same status update
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/worker.py
+---
+[2026-05-02 04:07] commit: fix: watchdog Pass 1b detects crashed retry-pass via retry_pending status
+
+ADR-030 Gap 1 fix:
+- Query now includes 'retry_pending' alongside 'interrupted' for Pass 1b
+- 'retry_pending' + stale heartbeat → re-enqueue process_playlist_retries
+- 'retry_pending' + fresh heartbeat → skip (retry-pass still running)
+- 'interrupted' handling unchanged; stale-check applied explicitly since
+  retry_pending rows bypass the SQL filter
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/worker.py
+---
+[2026-05-02 04:08] commit: feat: PlaylistTab handles retry_pending status (ADR-030 Gap 1 frontend)
+
+- _handlePlaylistUpdate shows "Retrying failed videos..." when status=retry_pending
+- Mount-check: retry_pending auto-resumes without a Resume banner (no user
+  action needed — retry-pass runs automatically in the background)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: src/components/free-tool/PlaylistTab.tsx
+---
+[2026-05-02 04:11] commit: test: update test_watchdog + add test_playlist_retry_pending
+
+test_watchdog.py:
+- Add status + last_heartbeat_at fields to _make_playlist_job
+- Add .in_() to chain mock (query now uses .in_() for Pass 1b)
+- Rename test_playlist_gap1_skipped → test_playlist_interrupted_all_done_skipped
+
+test_playlist_retry_pending.py (new):
+- retry_pending + stale heartbeat → re-enqueue process_playlist_retries
+- retry_pending + None heartbeat → re-enqueue
+- retry_pending + fresh heartbeat → skip
+- no eligible videos → _set_complete called (smoke test)
+
+All 43 backend tests green.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/test_playlist_retry_pending.py
+backend/test_watchdog.py
 ---

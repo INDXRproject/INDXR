@@ -231,3 +231,36 @@ MODEL_QUALITY_RANK = {
 CURRENT_PRODUCTION_AI_MODEL = "assemblyai_universal_3"
 # Wijzig hier bij productie-upgrade — één plek, geen andere code-wijzigingen nodig.
 ```
+
+---
+
+## Language-aware cache lookup — 2026-05-02
+
+**Probleem (vóór fix):** `master_transcripts_read()` werd aangeroepen met hardcoded `language='en'` in twee call sites (main.py `/api/extract/youtube` en worker.py `_process_caption_video`). Niet-Engelse content miste de cache altijd en viel terug op de yt-dlp cascade — zelfs als een gecachete Nederlandse of Arabische versie beschikbaar was.
+
+**Oplossing:** Language-aware cache lookup via YouTube Data API pre-fetch.
+
+### Lookup-flow (caption path)
+
+```
+1. youtube_client.get_video_details(video_id)
+   → snippet.defaultAudioLanguage of snippet.defaultLanguage
+   → normalize_language_code(raw_lang) → 'nl', 'ar', 'en', ...
+   
+2. Als normalised_lang is None (YouTube API failed of geen taal):
+   → skip master cache lookup, ga direct naar cascade
+   
+3. master_transcripts_read(video_id, language=normalised_lang)
+   → HIT: lever transcript direct, geen yt-dlp call
+   → MISS: cascade (yt-dlp)
+
+4. Na cascade: normalize_language_code(result.get('language')) vóór master_transcripts_write
+```
+
+**Quota:** De YouTube Data API call was al aanwezig in beide HIT- en MISS-paden (voor metadata-enrichment). Door hem te hoisten naar vóór de cache-lookup is er geen netto toename in quota-gebruik.
+
+**Canonical taalformaat:** ISO 639-1 lowercase twee-letter (`en`, `nl`, `ar`, `de`, ...). Normalisatie via `backend/language_utils.py::normalize_language_code()` — alle inkomende codes (yt-dlp info.language, YouTube Data API snippet, lingua lingua-detectie) gaan door deze functie. Manual overrides voor edge cases als `ar-orig → ar`.
+
+**AI-pad (Whisper/AssemblyAI):** De pre-transcriptie cache-read gebruikte al `language=None` (correct — taal is onbekend vóór transcriptie). Na transcriptie wordt de lingua-gedetecteerde taal nu door `normalize_language_code()` gehaald vóór schrijven naar `transcripts.language`. Whisper schrijft niet naar `master_transcripts`.
+
+**Pre-launch cache flush:** Vóór launch: `TRUNCATE master_transcripts CASCADE;` in Supabase + R2 bucket leegmaken voor clean-slate met correct genormaliseerde taalcodes.

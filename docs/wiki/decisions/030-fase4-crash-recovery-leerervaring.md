@@ -182,15 +182,16 @@ Komt in de frontendsprints (F1-F4). Geblokkeerd op ontwerp — "interrupted"-sta
 
 ## Welke gaps blijven
 
-### Gap 1: Gecrasht retry-pass is onzichtbaar
+### ~~Gap 1: Gecrasht retry-pass is onzichtbaar~~ — Opgelost ✅ 2026-05-02
 
-De retry-pass (`process_playlist_retries`, `_job_id="{playlist_id}:retries"`) wordt alleen geënqueued nadat alle N originele videos verwerkt zijn. Op dat moment zet de RPC de playlist op `status='complete'`. Als de retry-pass daarna crasht:
+**Oplossing:** `retry_pending` status — zie [ADR-032](032-retry-pending-status.md).
 
-- `playlist_extraction_jobs.status` is al `'complete'` — watchdog zoekt op `'running'`/`'interrupted'`, ziet niets
-- Sommige `bot_detection`-video's blijven gefaald — gebruiker ziet `failed: 3` in de UI
-- De retry-pass krijgt geen tweede kans via de watchdog
+De RPC zet nu `status='retry_pending'` (in plaats van `'complete'`) wanneer retryable failures bestaan bij playlist-completion. De retry-pass zet `status='complete'` bij voltooiing. De watchdog detecteert `retry_pending` + stale heartbeat (>5 min) en re-enqueued `process_playlist_retries`.
 
-**Acceptabel als known limitation:** de retry-pass is best-effort (één poging, 30s delay). Bij crash: de gebruiker kan een nieuwe playlist-job starten voor de gefaalde video's.
+- **RPC:** `update_playlist_video_progress` → `status='retry_pending'` als `EXISTS (error_type IN ('bot_detection','timeout'))` bij `v_is_complete`
+- **Worker:** `process_playlist_retries` → heartbeat bij start + `status='complete'` bij einde
+- **Watchdog:** Pass 1b uitgebreid met `status='retry_pending'` naast `'interrupted'`
+- **Frontend:** `PlaylistTab` toont "Retrying failed videos..." voor `retry_pending`; mount-check auto-resumet zonder banner
 
 ### Gap 2: Automatische refund — Opgelost ✅ 2026-05-02
 

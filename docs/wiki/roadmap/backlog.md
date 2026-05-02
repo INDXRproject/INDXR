@@ -34,23 +34,11 @@ Functies en verbeteringen gepland voor na de launch. Geen vaste volgorde — pri
 - [ ] Multi-language Whisper: taaldetectie verbeteren voor 99+ talen via Universal-2
 - [ ] AssemblyAI: automatic retry voor gefaalde playlist-video's
 
-### Feature: Language-aware caption extraction voor niet-Engelse videos
+### ~~Feature: Language-aware caption extraction voor niet-Engelse videos~~ ✅ Opgelost 2026-05-02
 
-**Prioriteit:** Low
-**Type:** Feature / Tech investigation
+**Cache-lookup:** `master_transcripts_read()` gebruikt nu de taal uit YouTube Data API `snippet.defaultAudioLanguage`. Normalisatie via `backend/language_utils.py::normalize_language_code()`. Zie ADR-021 (Language-aware cache lookup sectie).
 
-**Achtergrond:**
-De huidige caption extractie pakt hardcoded de `'en'` sleutel uit YouTube's caption lijst. Voor niet-Engelse videos bestaat de originele taaltrack wel degelijk — bijv. `'ar-orig'` voor Arabisch — maar de code kijkt er nooit naar.
-
-Diagnostisch bevestigd (2026-04-23): `automatic_captions` bevat `'ar-orig'` voor Arabische video's. De fix vereist een language-aware lookup: gebruik `info.get('language')` om de originele taal te bepalen, zoek dan `'{lang}-orig'` op in `automatic_captions`, en val terug op `'en'` als die track niet bestaat.
-
-**Validatie extern:** Tactiq.io en youtubetotranscript.com geven ook Engelse output voor niet-Engelse videos — dit is een industrie-breed probleem, niet INDXR-specifiek.
-
-**Aanbevolen flow tot deze fix er is:** AssemblyAI transcriptie voor niet-Engelse content.
-
-**Cache-implicatie (2026-05-01):** `master_transcripts_read()` gebruikt standaard `language='en'` voor caption lookups. Niet-Engelse videos missen daardoor de warm cache en vallen door naar de yt-dlp cascade — dit is gedocumenteerd in `backend/master_cache.py` en `backend/main.py`. Bij implementatie van language-aware lookup moet ook de cache-read worden uitgebreid met de juiste language-parameter.
-
-**Geschatte complexiteit:** Medium — 10-20 regels Python, maar vereist testen op meerdere talen en edge cases (taal niet beschikbaar, alleen vertaling beschikbaar, etc.)
+**Resterende beperking (ongewijzigd):** YouTube's timedtext API geeft 429-errors voor niet-Engelse auto-captions. Dit is een YouTube-infrastructuur beperking, niet fixbaar via de cache-fix. Niet-Engelse content via AssemblyAI werkt correct.
 
 ### Bulk & Channel
 - [ ] Channel extractie: heel YouTube-kanaal transcriberen (vereist queue-architectuur: Redis/BullMQ of Supabase Realtime)
