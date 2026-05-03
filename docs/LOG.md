@@ -3144,3 +3144,19 @@ docs/wiki/operations/known-issues.md
 docs/wiki/operations/monitoring.md
 docs/wiki/operations/test-reports.md
 ---
+[2026-05-03 16:30] commit: docs: Sentry frontend server-side capture is bekende Vercel beperking, niet opgelost
+
+known-issues.md: corrigeer "✅ Opgelost" naar "🔶 Bekende beperking". De runtime=nodejs
+fix (a47a15c) liet Sentry.init() wél lopen maar events arriveren nog steeds niet.
+Structureel probleem gedocumenteerd in Sentry GitHub issue #17604 (closed-not-planned).
+Workaround: Vercel function logs voor server-side debugging.
+
+test-reports.md: Sessie 3 entry met definitieve conclusie; Sessie 2 herzien.
+monitoring.md: runtime-sectie bijgewerkt — best-practice blijft staan, beperking erkend.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+docs/wiki/operations/monitoring.md
+docs/wiki/operations/test-reports.md
+---
