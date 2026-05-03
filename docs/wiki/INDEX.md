@@ -69,6 +69,13 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [030-fase4-crash-recovery-leerervaring.md](decisions/030-fase4-crash-recovery-leerervaring.md) | Fase 4 crash-recovery leerervaring — ack_late bestaat niet, wat we wél bouwden, watchdog-recept bewezen |
 | [031-yt-dlp-audio-retry-strategy.md](decisions/031-yt-dlp-audio-retry-strategy.md) | yt-dlp audio retry-strategie met session-rotatie — partial-write fix voor lange downloads via residentiële proxies |
 | [032-retry-pending-status.md](decisions/032-retry-pending-status.md) | retry_pending status voor playlist crash recovery — ADR-030 Gap 1 opgelost |
+| [033-three-layer-site-architecture.md](decisions/033-three-layer-site-architecture.md) | Drie-lagen site-architectuur: marketing / content / app-subdomain |
+| [034-app-subdomain.md](decisions/034-app-subdomain.md) | App-subdomain `app.indxr.ai` voor dashboard en admin |
+| [035-articles-single-umbrella.md](decisions/035-articles-single-umbrella.md) | SEO-content verhuist naar `/articles/[slug]` — één umbrella |
+| [036-auth-on-marketing-domain.md](decisions/036-auth-on-marketing-domain.md) | Auth flows blijven op marketing domain (Linear/Vercel pattern) |
+| [037-no-comparison-pages.md](decisions/037-no-comparison-pages.md) | Geen comparison pages pre-launch — `/alternative/*` wordt verwijderd |
+| [038-no-audience-hubs.md](decisions/038-no-audience-hubs.md) | Geen audience hubs pre-launch — post-launch op basis van PostHog-data |
+| [039-llms-txt-low-priority.md](decisions/039-llms-txt-low-priority.md) | llms.txt low-priority — geen bewezen AI-citation lever (mei 2026) |
 
 ---
 
@@ -122,13 +129,6 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | Bestand | Onderwerp |
 |---------|-----------|
 | [principles.md](strategy/principles.md) | Strategische principes achter site-architectuur en content-strategie — het "waarom" |
-| [decisions/001-three-layer-architecture.md](strategy/decisions/001-three-layer-architecture.md) | Drie-lagen architectuur (marketing / content / app) |
-| [decisions/002-app-subdomain.md](strategy/decisions/002-app-subdomain.md) | App-subdomain (`app.indxr.ai`) |
-| [decisions/003-no-audience-hubs.md](strategy/decisions/003-no-audience-hubs.md) | Geen audience hubs pre-launch |
-| [decisions/004-no-comparison-pages.md](strategy/decisions/004-no-comparison-pages.md) | Geen comparison pages pre-launch — `/alternative/*` verwijderd |
-| [decisions/005-articles-single-umbrella.md](strategy/decisions/005-articles-single-umbrella.md) | Articles als één umbrella (`/articles/*`) |
-| [decisions/006-auth-on-marketing-domain.md](strategy/decisions/006-auth-on-marketing-domain.md) | Auth flows op marketing domain (niet op app-subdomain) |
-| [decisions/007-llms-txt-low-priority.md](strategy/decisions/007-llms-txt-low-priority.md) | llms.txt low-priority — geen bewezen AI-citation lever |
 
 ---
 

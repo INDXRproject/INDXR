@@ -1,82 +1,67 @@
 # Marketing & Groei
 
-> **Architectuur-update 2026-05-03:** URL-structuur is herzien. SEO-content (`/youtube-*` routes) verhuist naar `/articles/[slug]` (Werksessie B). Comparison pages (`/alternative/*`) worden verwijderd. Zie `docs/wiki/architecture/sitemap.md` voor actuele routestructuur en `docs/wiki/strategy/principles.md` voor de rationale.
+> **Structuur-update 2026-05-03:** URL-architectuur is herzien. SEO-content verhuist van top-level routes naar `/articles/[slug]` (Werksessie B). Comparison pages (`/alternative/*`) worden verwijderd. Zie [ADR-033](../decisions/033-three-layer-site-architecture.md) t/m [ADR-039](../decisions/039-llms-txt-low-priority.md) voor de rationale. Dit document beschrijft de SEO-strategie en marketing-principes — niet de URL-structuur (zie `docs/wiki/architecture/sitemap.md`).
 
-## SEO (Phase I — gepland Q2 2025)
+---
 
-### URL Structuur
+## SEO-strategie
 
-De applicatie heeft meerdere `/youtube-*` landing pages, elk gericht op een specifiek zoekterm-cluster:
+### Aanpak
 
-| Route | Target zoekterm |
-|-------|----------------|
-| `/youtube-transcript-extractor` | "youtube transcript extractor" |
-| `/youtube-to-text` | "youtube to text" |
-| `/youtube-captions-download` | "youtube captions download" |
-| `/youtube-transcript-json-api` | "youtube transcript json api" / "youtube transcript for rag" *(gepland)* |
-| `/youtube-transcript-for-ai` | "youtube transcript for chatgpt" / "youtube transcript for llm" *(gepland)* |
-| *(andere routes in src/app/)* | Long-tail varianten |
+INDXR.AI richt zich op problem-aware zoekintentie: mensen die een specifiek YouTube-transcript-probleem hebben en een oplossing zoeken. De content-strategie focust op:
 
-**Strategie:** Elke pagina heeft unieke content, meta-tags, en structured data. De free-tool component werkt op deze pagina's zonder login (rate-limited op IP: 10 extractions/dag).
+- **Long-tail keywords** per specifiek probleem of format (`youtube transcript to markdown`, `bulk youtube transcript`, `youtube members-only transcript`)
+- **Problem-first framing**: pagina's beginnen met het probleem dat de gebruiker ervaart, niet met product-features
+- **Structured data**: `SoftwareApplication`, `FAQPage`, `Article`, `HowTo` schemas op alle content-pagina's
 
-### Content SEO
-
-- FAQ secties per landing page
-- Voorbeelden met echte YouTube transcripten
-- Structured data (Schema.org: SoftwareApplication, HowTo, Article, FAQPage, Organization)
-- Sitemap automatisch via Next.js
-
-**SEO content pages (gebouwd 2026-04-16):**
-
-| Route | Template | Auteur |
-|-------|----------|--------|
-| `/youtube-transcript-not-available` | ArticleTemplate | indxr-editorial |
-| `/youtube-members-only-transcript` | ArticleTemplate | indxr-editorial |
-| `/youtube-age-restricted-transcript` | ArticleTemplate | indxr-editorial |
-| `/youtube-transcript-markdown` | ToolPageTemplate | indxr-editorial |
-| `/youtube-transcript-obsidian` | ToolPageTemplate | indxr-editorial |
-| `/youtube-transcript-csv` | ToolPageTemplate | indxr-editorial |
-| `/youtube-srt-download` | ToolPageTemplate | indxr-editorial |
-| `/youtube-transcript-json` | ToolPageTemplate | indxr-editorial |
-| `/youtube-transcript-for-rag` | ToolPageTemplate | indxr-editorial |
-
-**SEO content infrastructure (gebouwd 2026-04-16):**
+### Content-infrastructuur (gebouwd)
 
 | Component | Locatie | Doel |
-|---|---|---|
-| `JsonLd` server component | `src/components/seo/JsonLd.tsx` | Rendert `<script type="application/ld+json">` per pagina |
-| Authors config | `src/lib/authors.ts` | Één auteur: INDXR Editorial (alex-mercer en sarah-lindqvist verwijderd 2026-04-24) |
-| `AuthorCard` component | `src/components/content/AuthorCard.tsx` | Toont auteur + publicatiedatums op contentpagina's |
-| `ArticleTemplate` | `src/components/content/templates/` | Layout voor blogs, vergelijkingen, troubleshooting — schema: Article + FAQPage |
-| `ToolPageTemplate` | idem | Layout voor tool-pagina's — schema: SoftwareApplication + FAQPage |
-| `TutorialTemplate` | idem | Layout voor tutorials — schema: Article + HowTo + FAQPage |
-| `HeroImage` component | `src/components/HeroImage.tsx` | Light/dark hero image slot op homepage — swap via Image-to-Image na redesign |
+|-----------|---------|------|
+| `JsonLd` server component | `src/components/seo/JsonLd.tsx` | Injecteert JSON-LD schemas in `<head>` |
+| `AuthorCard` | `src/components/content/AuthorCard.tsx` | Byline + publicatiedatums op alle contentpagina's |
+| `ArticleTemplate` | `src/components/content/templates/` | Blog, vergelijkingen, troubleshooting — schema: Article + FAQPage |
+| `ToolPageTemplate` | idem | Tool-landingspagina's — schema: SoftwareApplication + FAQPage |
+| `TutorialTemplate` | idem | Stap-voor-stap tutorials — schema: Article + HowTo + FAQPage |
+| Authors config | `src/lib/authors.ts` | Één auteur: INDXR Editorial |
 
-**SEO content pages (gebouwd 2026-04-16, batch 2):**
+### Huidige content-pagina's
 
-| Route | Template | Auteur |
-|-------|----------|--------|
-| `/alternative/downsub` | ArticleTemplate | indxr-editorial |
-| `/alternative/notegpt` | ArticleTemplate | indxr-editorial |
-| `/alternative/turboscribe` | ArticleTemplate | indxr-editorial |
-| `/alternative/tactiq` | ArticleTemplate | indxr-editorial |
-| `/alternative/happyscribe` | ArticleTemplate | indxr-editorial |
-| `/youtube-to-text` | ToolPageTemplate | indxr-editorial |
-| `/youtube-playlist-transcript` | ToolPageTemplate | indxr-editorial |
-| `/bulk-youtube-transcript` | ToolPageTemplate | indxr-editorial |
-| `/audio-to-text` | ToolPageTemplate | indxr-editorial |
-| `/youtube-transcript-without-extension` | ArticleTemplate | indxr-editorial |
-| ~~`/how-it-works`~~ | ~~ArticleTemplate~~ | — | **301 → `/`** (geredirect 2026-04-30) |
-| `/blog/chunk-youtube-transcripts-for-rag` | TutorialTemplate | alex-mercer |
+**Transcriptie-troubleshooting (top-level, worden `/articles/*` in Werksessie B):**
 
-Zie `docs/wiki/business/seo-content-plan.md` voor de volledige sitemap (32 pagina's, 8 categorieën) en implementatievolgorde.
+| Route | Template |
+|-------|----------|
+| `/youtube-transcript-not-available` | ToolPageTemplate |
+| `/youtube-members-only-transcript` | ArticleTemplate |
+| `/youtube-age-restricted-transcript` | ArticleTemplate |
+| `/youtube-transcript-non-english` | ToolPageTemplate |
+| `/youtube-transcript-without-extension` | ArticleTemplate |
 
-**Datum-conventie voor contentpagina's:** zie `docs/DEVELOPMENT.md` → Design System → Content dates.
+**Format + workflow (top-level, worden `/articles/*` in Werksessie B):**
 
-### SEO Blogposts (gepland)
+| Route | Template |
+|-------|----------|
+| `/youtube-to-text` | ToolPageTemplate |
+| `/youtube-transcript-markdown` | ToolPageTemplate |
+| `/youtube-transcript-obsidian` | ToolPageTemplate |
+| `/youtube-transcript-csv` | ToolPageTemplate |
+| `/youtube-srt-download` | ToolPageTemplate |
+| `/youtube-transcript-json` | ToolPageTemplate |
+| `/youtube-transcript-for-rag` | ToolPageTemplate |
+| `/youtube-playlist-transcript` | ToolPageTemplate |
+| `/bulk-youtube-transcript` | ToolPageTemplate |
+| `/audio-to-text` | ToolPageTemplate |
 
-- "How to Build a YouTube Knowledge Base with INDXR.AI + LangChain" *(aan te maken na RAG-export implementatie — zie [ADR-015](../decisions/015-rag-json-export.md))*
-- "YouTube Transcript JSON Format for Vector Databases — Complete Guide" *(idem)*
+**Blog-artikelen (onder `/blog/*`, worden `/articles/*` in Werksessie B):**
+
+| Route | Template |
+|-------|----------|
+| `/blog/chunk-youtube-transcripts-for-rag` | ArticleTemplate |
+| `/blog/youtube-channel-knowledge-base` | ArticleTemplate |
+| `/blog/youtube-transcripts-vector-database` | ArticleTemplate |
+
+**Comparison pages — worden VERWIJDERD (zie [ADR-037](../decisions/037-no-comparison-pages.md)):**  
+`/alternative/downsub`, `/alternative/notegpt`, `/alternative/turboscribe`, `/alternative/tactiq`, `/alternative/happyscribe`
 
 ---
 
@@ -86,8 +71,8 @@ Zie `docs/wiki/business/seo-content-plan.md` voor de volledige sitemap (32 pagin
 
 ```
 Anonieme bezoeker (SEO / social / referral)
-  → Gebruikt free tool (captions extractie, 10/dag)
-  → Ziet playlist-preview met volledige metadata + credit-kostenberekening
+  → Gebruikt free tool (caption-extractie, gratis)
+  → Ziet playlist-preview met metadata + credit-kostenberekening
   → Ziet "3 gratis video's" label + "Maak gratis account + 25 credits" CTA
   → Registreert
   → Gebruikt 25 welcome credits (kleine playlist of AI-transcriptie)
@@ -96,8 +81,8 @@ Anonieme bezoeker (SEO / social / referral)
 
 ### Conversion prompt voorbeeld (21-video playlist, anoniem)
 
-> "3 video's gratis. 18 resterende = 18 credits.
-> Maak nu een gratis account en krijg 25 credits — genoeg voor deze volledige playlist.
+> "3 video's gratis. 18 resterende = 18 credits.  
+> Maak nu een gratis account en krijg 25 credits — genoeg voor deze volledige playlist.  
 > [Gratis account aanmaken]"
 
 **Aanpak:** Toon alles (metadata, titels, duur, credit-kosten, welke video's AI-transcriptie nodig hebben) maar blokkeer de extractie-knop voor anonieme gebruikers. Maximum FOMO — de gebruiker ziet exact wat ze zouden krijgen.
@@ -113,12 +98,12 @@ Gevalideerde messaging-angles voor de pricing-pagina en website:
 | Angle | Copy | Waarom het werkt |
 |-------|------|-----------------|
 | Tijdsbesparing | "Extract een 50-video playlist in 60 seconden. Handmatig? Dat is 3+ uur kopiëren." | Kwantificeert de waardepropositie |
-| Per-unit framing | "Elk transcript kost minder dan €0.02." | Klein-eenheid framing verhoogt betalingsbereidheid (Gourville-onderzoek: +73%) |
+| Per-unit framing | "Elk transcript kost minder dan €0.02." | Klein-eenheid framing verhoogt betalingsbereidheid |
 | Loss framing | "Stop met uren verspillen aan transcripten één voor één kopiëren." | Verliesaversie werkt sterker dan gain framing |
 | Anchoring | "Een VA zou €50+ rekenen voor hetzelfde werk." | Prijsankering tegen dure alternatieven |
-| No-subscription | "Koop credits eenmalig. Gebruik wanneer je wil. Ze verlopen nooit." | Adresseert klacht #1 (subscription fatigue) |
+| No-subscription | "Koop credits eenmalig. Gebruik wanneer je wil. Ze verlopen nooit." | Adresseert subscription fatigue |
 | Nauwkeurigheid | "YouTube auto-captions: 60% nauwkeurig. Onze AI-transcriptie: 99%." | Differentieert AI-transcriptie van gratis caption-extractie |
-| No-extension | "Werkt in elke browser. Geen Chrome-extensie nodig. Plak een URL, krijg een transcript." | Adresseert klacht #4 (extension dependency) |
+| No-extension | "Werkt in elke browser. Geen Chrome-extensie nodig. Plak een URL, krijg een transcript." | Adresseert extension-dependency klacht |
 
 ---
 
@@ -126,11 +111,10 @@ Gevalideerde messaging-angles voor de pricing-pagina en website:
 
 ### Waarom geen directe "heel kanaal transcriberen" functie?
 
-INDXR.AI ondersteunt momenteel geen directe kanaalextractie (één klik → heel YouTube-kanaal). Dit is een architectuurbeslissing:
+INDXR.AI ondersteunt geen directe kanaalextractie (één klik → heel YouTube-kanaal). Dit is een architectuurbeslissing:
 
 - Sommige kanalen hebben 2.000+ video's
-- Batch-verwerking op die schaal vereist een queue-systeem (Redis/BullMQ of Supabase Realtime) en prioriteitsmanagement
-- De huidige polling-architectuur (ADR-008) is niet ontworpen voor jobs van meerdere uren
+- Batch-verwerking op die schaal vereist een queue-systeem en prioriteitsmanagement
 - Geteste maximum voor playlists: ~100 video's per job
 
 **Workaround voor gebruikers (te communiceren als FAQ en SEO-content):**
@@ -138,18 +122,16 @@ INDXR.AI ondersteunt momenteel geen directe kanaalextractie (één klik → heel
 
 **SEO-kansen:**
 - FAQ-pagina: "Can INDXR.AI transcribe a whole YouTube channel?"
-- Blog: "How to Transcribe a YouTube Channel — Step-by-Step Workaround"
+- Article: "How to Transcribe a YouTube Channel — Step-by-Step Workaround"
 - Intern link naar playlist-feature
 
-**Wanneer directe kanaalextractie implementeren:**
-- Na implementatie van async job queue
-- Prioriteit: post-launch (zie `wiki/roadmap/backlog.md`)
+**Wanneer directe kanaalextractie implementeren:** post-launch, na evaluatie van ARQ job queue capaciteit (zie backlog).
 
 ---
 
 ## Analytics Setup
 
-**PostHog** voor product analytics (niet Google Analytics):
+**PostHog** voor product analytics:
 
 Frontend events (automatisch):
 - Paginaweergaven, navigatie
@@ -161,15 +143,16 @@ Backend events (handmatig getracked):
 - `credits_deducted` — per verbruik
 - `summarization_completed` — per samenvatting
 
-**Post-launch:** Google Analytics / Search Console instellen voor SEO-monitoring. Google Ads campagne voor US-markt, longtail keywords (zie roadmap backlog).
+**Post-launch:** Google Search Console instellen voor SEO-monitoring.
 
 ---
 
 ## Toekomstige Groeikanalen
 
+- **Audience hubs** — `/for/researchers`, `/for/educators` etc. (post-launch, op basis van PostHog-data — zie [ADR-038](../decisions/038-no-audience-hubs.md))
 - **Notion/Obsidian integraties** — export direct naar knowledge management tools
 - **Zapier integratie** — automatisering voor power users
-- **Referral program** — 5 credits referrer + 5 credits referee (abuse-preventie nog niet uitgewerkt)
+- **Referral program** — 5 credits referrer + 5 credits referee
 - **Channel extractie** — directe kanaal-transcriptie (vereist queue-architectuur)
 - **Google Ads (US)** — longtail keyword campagne post-launch
 
@@ -184,6 +167,6 @@ Backend events (handmatig getracked):
 | Supabase | Gratis tier → Pro bij schaal |
 | Upstash Redis | Pay-per-use (laag) |
 | AssemblyAI | $0.21/uur audio ($0.0035/min) |
-| DeepSeek API | Per token (erg laag, ~€0.001/samenvatting) |
-| IPRoyal proxy | ~$2.50/GB (schaalprijs) |
+| DeepSeek API | Per token (~€0.001/samenvatting) |
+| Decodo proxy | Residentieel, sticky sessions — zie [ADR-017](../decisions/017-proxy-provider-decodo.md) |
 | Stripe | 1.4% + €0.25 per transactie (EU) |

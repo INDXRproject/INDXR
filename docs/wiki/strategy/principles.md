@@ -115,4 +115,4 @@ Onderzoek (mei 2026) toont aan dat llms.txt geen bewezen AI-citation lever is. D
 
 ---
 
-*Zie `docs/wiki/strategy/decisions/` voor formele ADR's per beslissing.*
+*Zie `docs/wiki/decisions/` voor formele ADR's per beslissing: 033 (drie-lagen), 034 (app-subdomain), 035 (articles umbrella), 036 (auth op marketing domain), 037 (geen comparison pages), 038 (geen audience hubs), 039 (llms.txt).*

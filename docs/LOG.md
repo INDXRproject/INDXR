@@ -1,3 +1,5 @@
+[2026-05-03 22:00] wiki: Werksessie A2 — ADR cleanup (S001-S007 hernoemd naar 033-039, verhuisd naar wiki/decisions/, Dutch format); marketing.md herschreven (verouderde URL-tabellen weg, nieuwe structuur, Decodo i.p.v. IPRoyal); /support gecorrigeerd CLIENT in sitemap.md; /pricing metadata-issue gedocumenteerd in INBOX.md | gewijzigd: docs/wiki/decisions/033-039*.md (nieuw), docs/wiki/strategy/decisions/ (verwijderd), docs/wiki/strategy/principles.md, docs/wiki/INDEX.md, docs/wiki/business/marketing.md, docs/wiki/architecture/sitemap.md, docs/INBOX.md
+---
 [2026-05-03 21:00] cleanup + wiki: Werksessie A — drie-lagen architectuur vastgesteld; dev artifacts verwijderd (test-tokens, youtube-transcript-downloader); redirect-ghosts opgeschoond (faq/page.tsx, how-it-works/page.tsx, account/credits/page.tsx); console.logs verwijderd (webhook, app-sidebar, TranscriptViewer, AuthContext); metadataBase toegevoegd aan root layout; llms.txt prijzen gesynchroniseerd; sitemap.ts gefixed (faq+how-it-works verwijderd, docs/* toegevoegd, youtube-transcript-non-english toegevoegd); sitemap.md volledig herschreven (drie-lagen); strategy wiki aangemaakt (principles.md + 7 ADR's); INDEX.md bijgewerkt | gewijzigd: src/app/api/stripe/webhook/route.ts, src/components/app-sidebar.tsx, src/components/library/TranscriptViewer.tsx, src/contexts/AuthContext.tsx, src/app/layout.tsx, public/llms.txt, src/app/sitemap.ts, docs/wiki/architecture/sitemap.md, docs/wiki/business/INDXR-SITEMAP.md, docs/wiki/business/marketing.md, docs/wiki/strategy/principles.md, docs/wiki/strategy/decisions/*.md, docs/wiki/INDEX.md
 ---
 [2026-05-03 17:00] audit: sitemap + pagina-structuur audit voor research fase | nieuw bestand: docs/wiki/architecture/sitemap-audit-2026-05.md
@@ -3177,4 +3179,51 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/architecture/sitemap-audit-2026-05.md
+---
+[2026-05-03 22:33] commit: cleanup + docs: Werksessie A — drie-lagen architectuur + site cleanup
+
+Code cleanup:
+- Verwijder dev artifact: src/app/test-tokens/
+- Verwijder empty stub: src/app/youtube-transcript-downloader/ (al leeg)
+- Verwijder redirect-ghost page.tsx files (faq, how-it-works, account/credits)
+- Verwijder console.log debug statements (webhook, app-sidebar, TranscriptViewer, AuthContext)
+
+Fixes:
+- metadataBase toegevoegd aan root layout (fixt canonical URLs en OG images)
+- llms.txt: prijzen gesynchroniseerd met live Stripe PACKAGES (was: €6.99/13.99/27.99, nu: €5.99/11.99/24.99)
+- llms.txt: /how-it-works vervangen door /docs/getting-started
+- sitemap.ts: /faq en /how-it-works verwijderd (zijn 301-redirects); /docs/* en /youtube-transcript-non-english toegevoegd
+
+Wiki:
+- sitemap.md volledig herschreven: drie-lagen architectuur (marketing / docs+articles / app-subdomain)
+- docs/wiki/strategy/ aangemaakt: principles.md + 7 ADR's (architectuur-beslissingen 2026-05-03)
+- INDXR-SITEMAP.md: gemarkeerd als vervangen met verwijzing naar nieuwe docs
+- marketing.md: architectuur-update note toegevoegd
+- INDEX.md: strategy sectie toegevoegd, recente wijzigingen bijgewerkt
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/sitemap.md
+docs/wiki/business/INDXR-SITEMAP.md
+docs/wiki/business/marketing.md
+docs/wiki/strategy/decisions/001-three-layer-architecture.md
+docs/wiki/strategy/decisions/002-app-subdomain.md
+docs/wiki/strategy/decisions/003-no-audience-hubs.md
+docs/wiki/strategy/decisions/004-no-comparison-pages.md
+docs/wiki/strategy/decisions/005-articles-single-umbrella.md
+docs/wiki/strategy/decisions/006-auth-on-marketing-domain.md
+docs/wiki/strategy/decisions/007-llms-txt-low-priority.md
+docs/wiki/strategy/principles.md
+public/llms.txt
+src/app/account/credits/page.tsx
+src/app/api/stripe/webhook/route.ts
+src/app/faq/page.tsx
+src/app/how-it-works/page.tsx
+src/app/layout.tsx
+src/app/sitemap.ts
+src/app/test-tokens/page.tsx
+src/components/app-sidebar.tsx
+src/components/library/TranscriptViewer.tsx
+src/contexts/AuthContext.tsx
 ---

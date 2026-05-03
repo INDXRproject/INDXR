@@ -28,7 +28,7 @@ De INDXR.AI site is ingedeeld in drie lagen met duidelijke URL-grenzen en verant
 |-------|------|------|--------------|
 | `/` | SERVER | — | Homepage: hero, FeatureCards, PersonaCards, testimonials, CTA, Footer |
 | `/pricing` | CLIENT | — | Kredietpakketten; verwijst naar /dashboard/billing |
-| `/support` | SERVER | — | Contactformulier (form submit nog niet geïmplementeerd) |
+| `/support` | CLIENT | — | Contactformulier (form submit nog niet geïmplementeerd) |
 | `/about` | — | — | **GEPLAND** — nog niet gebouwd |
 | `/privacy` | — | — | **GEPLAND** — nog niet gebouwd |
 | `/terms` | — | — | **GEPLAND** — nog niet gebouwd |
