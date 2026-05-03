@@ -3,11 +3,19 @@
 *Versie 1.0 — 2026-04-15*  
 *Synthese van: SEO-onderzoek, SERP-analyse, competitor gaps, GEO/AI-SEO principes, strategische beslissingen uit sessie*
 
-> **⚠️ Post-refactor update (2026-04-30):**  
-> - `/faq` → 301 permanent redirect naar `/docs/faq`  
-> - `/how-it-works` → 301 permanent redirect naar `/`  
-> - Nieuwe routes: `/docs/*`, `/dashboard/messages`  
-> Zie `docs/wiki/architecture/sitemap.md` voor de actuele routestructuur.
+> **⚠️ VERVANGEN — 2026-05-03**  
+> Dit document reflecteert de pre-architectuur sitemap (versie april 2026).  
+> De nieuwe drie-lagen architectuur is vastgesteld op 2026-05-03. Zie:
+> - **Routestructuur:** `docs/wiki/architecture/sitemap.md`
+> - **Strategische rationale:** `docs/wiki/strategy/principles.md`
+> - **ADR's:** `docs/wiki/strategy/decisions/`
+>
+> Specifieke wijzigingen ten opzichte van dit plan:
+> - `/alternative/*` (5 routes) worden VERWIJDERD (geen comparison pages pre-launch)
+> - SEO-pagina's verhuizen naar `/articles/[slug]` (Werksessie B)
+> - `/dashboard/*` en `/admin/*` verhuizen naar `app.indxr.ai` (Werksessie C)
+> - `/faq` → 301 redirect naar `/docs/faq`
+> - `/how-it-works` → 301 redirect naar `/`
 
 ---
 

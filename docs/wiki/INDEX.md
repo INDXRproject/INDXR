@@ -117,6 +117,21 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 
 ---
 
+## Strategie (`strategy/`)
+
+| Bestand | Onderwerp |
+|---------|-----------|
+| [principles.md](strategy/principles.md) | Strategische principes achter site-architectuur en content-strategie — het "waarom" |
+| [decisions/001-three-layer-architecture.md](strategy/decisions/001-three-layer-architecture.md) | Drie-lagen architectuur (marketing / content / app) |
+| [decisions/002-app-subdomain.md](strategy/decisions/002-app-subdomain.md) | App-subdomain (`app.indxr.ai`) |
+| [decisions/003-no-audience-hubs.md](strategy/decisions/003-no-audience-hubs.md) | Geen audience hubs pre-launch |
+| [decisions/004-no-comparison-pages.md](strategy/decisions/004-no-comparison-pages.md) | Geen comparison pages pre-launch — `/alternative/*` verwijderd |
+| [decisions/005-articles-single-umbrella.md](strategy/decisions/005-articles-single-umbrella.md) | Articles als één umbrella (`/articles/*`) |
+| [decisions/006-auth-on-marketing-domain.md](strategy/decisions/006-auth-on-marketing-domain.md) | Auth flows op marketing domain (niet op app-subdomain) |
+| [decisions/007-llms-txt-low-priority.md](strategy/decisions/007-llms-txt-low-priority.md) | llms.txt low-priority — geen bewezen AI-citation lever |
+
+---
+
 ## Design (`design/`)
 
 | Bestand | Onderwerp |
@@ -132,6 +147,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-05-03 | Werksessie A: drie-lagen architectuur vastgesteld, cleanup (test-tokens, redirect-ghosts, console.logs), metadataBase, llms.txt gesynchroniseerd, sitemap.ts gefixed, sitemap.md herschreven, strategy wiki aangemaakt |
 | 2026-05-03 | Sitemap audit voltooid voor strategische research fase — [sitemap-audit-2026-05.md](architecture/sitemap-audit-2026-05.md) |
 | 2026-04-30 | Sitemap-refactor (Grondverf Sessie 2): `/faq` → `/docs/faq` (301), `/how-it-works` → `/` (301), `/account/credits` → `/dashboard/account` (301), label "Overview" → "Home", header versimpeld (Pricing + Docs + Try it free), Messages route toegevoegd (`/dashboard/messages`), DocsShell geïntroduceerd, MobileTabBar toegevoegd, `src/lib/docs-config.ts` als sidebar-config |
 

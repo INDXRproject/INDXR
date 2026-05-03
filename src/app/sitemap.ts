@@ -6,8 +6,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages = [
     { route: "", priority: 1.0 },
     { route: "/pricing", priority: 0.8 },
-    { route: "/faq", priority: 0.6 },
     { route: "/support", priority: 0.6 },
+    { route: "/docs", priority: 0.7 },
+    { route: "/docs/getting-started", priority: 0.7 },
+    { route: "/docs/faq", priority: 0.6 },
+    { route: "/docs/account", priority: 0.5 },
     { route: "/login", priority: 0.5 },
     { route: "/signup", priority: 0.5 },
   ];
@@ -18,8 +21,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { route: "/youtube-playlist-transcript", priority: 0.7 },
     { route: "/bulk-youtube-transcript", priority: 0.7 },
     { route: "/audio-to-text", priority: 0.7 },
-    { route: "/how-it-works", priority: 0.7 },
     { route: "/youtube-transcript-without-extension", priority: 0.7 },
+    { route: "/youtube-transcript-non-english", priority: 0.7 },
   ];
 
   const featurePages = [

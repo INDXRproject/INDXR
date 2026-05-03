@@ -1,3 +1,5 @@
+[2026-05-03 21:00] cleanup + wiki: Werksessie A — drie-lagen architectuur vastgesteld; dev artifacts verwijderd (test-tokens, youtube-transcript-downloader); redirect-ghosts opgeschoond (faq/page.tsx, how-it-works/page.tsx, account/credits/page.tsx); console.logs verwijderd (webhook, app-sidebar, TranscriptViewer, AuthContext); metadataBase toegevoegd aan root layout; llms.txt prijzen gesynchroniseerd; sitemap.ts gefixed (faq+how-it-works verwijderd, docs/* toegevoegd, youtube-transcript-non-english toegevoegd); sitemap.md volledig herschreven (drie-lagen); strategy wiki aangemaakt (principles.md + 7 ADR's); INDEX.md bijgewerkt | gewijzigd: src/app/api/stripe/webhook/route.ts, src/components/app-sidebar.tsx, src/components/library/TranscriptViewer.tsx, src/contexts/AuthContext.tsx, src/app/layout.tsx, public/llms.txt, src/app/sitemap.ts, docs/wiki/architecture/sitemap.md, docs/wiki/business/INDXR-SITEMAP.md, docs/wiki/business/marketing.md, docs/wiki/strategy/principles.md, docs/wiki/strategy/decisions/*.md, docs/wiki/INDEX.md
+---
 [2026-05-03 17:00] audit: sitemap + pagina-structuur audit voor research fase | nieuw bestand: docs/wiki/architecture/sitemap-audit-2026-05.md
 ---
 [2026-05-03 10:00] docs: Sentry frontend server-side capture gecorrigeerd naar bekende beperking — known-issues "Opgelost" teruggedraaid naar "Bekende beperking", monitoring.md en test-reports bijgewerkt met definitieve conclusie (Sentry issue #17604) | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/test-reports.md, docs/LOG.md
@@ -3164,4 +3166,15 @@ docs/wiki/operations/test-reports.md
 ---
 [2026-05-03 16:55] commit: docs: LOG entry voor commit 4befded
 Changed: docs/LOG.md
+---
+[2026-05-03 18:19] commit: docs: sitemap + pagina-structuur audit voor research/design/implementatie fase
+
+Volledig codebase-gefundeerde audit van alle routes, componenten, metadata,
+auth-states, placeholders, en inconsistenties. Input voor 3 vervolgfases:
+strategische research, Claude Design visuele afwerking, Claude Code implementatie.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/sitemap-audit-2026-05.md
 ---

@@ -351,7 +351,6 @@ export function TranscriptViewer({
         if (error) {
           console.error("View status update failed:", error);
         } else {
-          console.log("View status update success:", data);
           // Notify library page so the NEW badge disappears immediately on back-navigation
           window.dispatchEvent(new CustomEvent('transcripts-updated'));
         }

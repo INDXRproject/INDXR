@@ -1,5 +1,7 @@
 # Marketing & Groei
 
+> **Architectuur-update 2026-05-03:** URL-structuur is herzien. SEO-content (`/youtube-*` routes) verhuist naar `/articles/[slug]` (Werksessie B). Comparison pages (`/alternative/*`) worden verwijderd. Zie `docs/wiki/architecture/sitemap.md` voor actuele routestructuur en `docs/wiki/strategy/principles.md` voor de rationale.
+
 ## SEO (Phase I — gepland Q2 2025)
 
 ### URL Structuur

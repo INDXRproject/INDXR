@@ -8,7 +8,6 @@ import { createClient } from '@/utils/supabase/server'
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
-  console.log('Webhook endpoint hit')
   const body = await req.text()
   const signature = (await headers()).get('Stripe-Signature') as string
 
@@ -43,7 +42,6 @@ export async function POST(req: Request) {
   const session = event.data.object as Stripe.Checkout.Session
 
   if (event.type === 'checkout.session.completed') {
-    console.log('Processing checkout.session.completed event')
     const supabase = await createClient()
     
     const userId = session.metadata?.userId
@@ -76,8 +74,6 @@ export async function POST(req: Request) {
       return new NextResponse('Database Error', { status: 500 })
     }
     
-    console.log(`Successfully added ${credits} credits to user ${userId}`)
-
     // Track in PostHog (Server-side)
     const { PostHog } = require('posthog-node')
     const client = new PostHog(

@@ -15,11 +15,11 @@ INDXR.AI is a YouTube transcript extraction tool. It extracts captions from YouT
 ## Pricing
 
 Credits-based, no subscription. Credits never expire.
-- Starter: €2.99 / 150 credits
-- Basic: €6.99 / 500 credits
-- Plus: €13.99 / 1,200 credits (most popular)
-- Pro: €27.99 / 2,800 credits
-- Power: €54.99 / 6,000 credits
+- Try: €2.49 / 150 credits
+- Basic: €5.99 / 500 credits
+- Plus: €11.99 / 1,200 credits (most popular)
+- Pro: €24.99 / 2,800 credits
+- Power: €49.99 / 6,000 credits
 - 25 free credits on signup. Free caption extraction for single videos (anonymous).
 
 ## RAG JSON Export
@@ -28,7 +28,7 @@ Exports YouTube transcripts as RAG-optimized JSON with 90–120 second chunks, s
 
 ## Key pages
 
-- /how-it-works — complete product explanation
+- /docs/getting-started — product explanation and onboarding
 - /pricing — credit packages
 - /youtube-transcript-for-rag — RAG pipeline documentation
 - /youtube-transcript-markdown — Obsidian and Notion workflow

@@ -120,8 +120,6 @@ export function AuthProvider({
 
     // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.id)
-      
       const newUser = session?.user ?? null
       // Only update state if it actually changed to avoid re-renders
       setUser(prev => prev?.id === newUser?.id ? prev : newUser)

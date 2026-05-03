@@ -286,8 +286,6 @@ export function AppSidebar() {
       return
     }
 
-    console.log("Attempting to move transcript:", { transcriptId, targetId })
-
     const { data, error } = await supabase
       .from("transcripts").update({ collection_id: targetId }).eq("id", transcriptId).select()
     
@@ -302,8 +300,6 @@ export function AppSidebar() {
       return 
     }
 
-    console.log("Supabase move success response:", data)
-    
     // Update local transcripts array
     setTranscripts(prev => prev.map(t => t.id === transcriptId ? { ...t, collection_id: targetId } : t))
     
