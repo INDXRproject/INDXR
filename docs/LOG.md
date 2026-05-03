@@ -1,3 +1,5 @@
+[2026-05-03 17:00] audit: sitemap + pagina-structuur audit voor research fase | nieuw bestand: docs/wiki/architecture/sitemap-audit-2026-05.md
+---
 [2026-05-03 10:00] docs: Sentry frontend server-side capture gecorrigeerd naar bekende beperking — known-issues "Opgelost" teruggedraaid naar "Bekende beperking", monitoring.md en test-reports bijgewerkt met definitieve conclusie (Sentry issue #17604) | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/test-reports.md, docs/LOG.md
 ---
 [2026-05-02 21:00] fix: Sentry edge runtime mismatch opgelost — export const runtime = 'nodejs' op 6 API routes; api/video/metadata geïnstrumenteerd; instrumentation.ts diag-logs verwijderd; known-issues resolved, monitoring.md + test-reports bijgewerkt | gewijzigd: instrumentation.ts, src/app/api/extract/route.ts, src/app/api/stripe/webhook/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/transcribe/preflight/route.ts, src/app/api/playlist/info/route.ts, src/app/api/video/metadata/[videoId]/route.ts, docs/wiki/operations/known-issues.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/test-reports.md, docs/LOG.md
@@ -3159,4 +3161,7 @@ Changed: docs/LOG.md
 docs/wiki/operations/known-issues.md
 docs/wiki/operations/monitoring.md
 docs/wiki/operations/test-reports.md
+---
+[2026-05-03 16:55] commit: docs: LOG entry voor commit 4befded
+Changed: docs/LOG.md
 ---

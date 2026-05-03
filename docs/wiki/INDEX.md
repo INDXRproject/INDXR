@@ -77,6 +77,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | Bestand | Onderwerp |
 |---------|-----------|
 | [sitemap.md](architecture/sitemap.md) | **Routestructuur, navigatie, redirects — post-refactor bron van waarheid** |
+| [sitemap-audit-2026-05.md](architecture/sitemap-audit-2026-05.md) | Volledige sitemap audit (2026-05): routes, componenten, metadata, inconsistenties — input voor research/design/implementatie |
 | [overview.md](architecture/overview.md) | High-level architectuur met request flows en tech stack |
 | [credit-system.md](architecture/credit-system.md) | Volledige credit flow: koop → deductie → refund |
 | [ai-pipeline.md](architecture/ai-pipeline.md) | YouTube → captions → AssemblyAI → DeepSeek; model info |
@@ -131,6 +132,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-05-03 | Sitemap audit voltooid voor strategische research fase — [sitemap-audit-2026-05.md](architecture/sitemap-audit-2026-05.md) |
 | 2026-04-30 | Sitemap-refactor (Grondverf Sessie 2): `/faq` → `/docs/faq` (301), `/how-it-works` → `/` (301), `/account/credits` → `/dashboard/account` (301), label "Overview" → "Home", header versimpeld (Pricing + Docs + Try it free), Messages route toegevoegd (`/dashboard/messages`), DocsShell geïntroduceerd, MobileTabBar toegevoegd, `src/lib/docs-config.ts` als sidebar-config |
 
 ---
