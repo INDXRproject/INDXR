@@ -31,7 +31,7 @@ export default function GettingStartedPage() {
 
           <h2>Quick start</h2>
           <ol>
-            <li>Paste a YouTube URL into the <a href="/youtube-transcript-generator">free tool</a> or the <a href="/dashboard/transcribe">Transcribe page</a> in your dashboard.</li>
+            <li>Paste a YouTube URL into the <a href="/transcribe">free tool</a> or the <a href="/dashboard/transcribe">Transcribe page</a> in your dashboard.</li>
             <li>INDXR extracts the transcript — usually within a few seconds.</li>
             <li>Choose your export format and download or copy the result.</li>
           </ol>

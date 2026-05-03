@@ -1,7 +1,7 @@
 # Sitemap — INDXR.AI V2
 
 **Bron van waarheid voor routestructuur, navigatie, en redirects.**  
-**Bijgewerkt:** 2026-05-03 (Werksessie A — drie-lagen architectuur vastgesteld)
+**Bijgewerkt:** 2026-05-03 (Werksessie B — drie-lagen architectuur geïmplementeerd)
 
 ---
 
@@ -24,14 +24,14 @@ De INDXR.AI site is ingedeeld in drie lagen met duidelijke URL-grenzen en verant
 
 ### Marketing
 
-| Route | Type | Auth | Beschrijving |
-|-------|------|------|--------------|
-| `/` | SERVER | — | Homepage: hero, FeatureCards, PersonaCards, testimonials, CTA, Footer |
-| `/pricing` | CLIENT | — | Kredietpakketten; verwijst naar /dashboard/billing |
-| `/support` | CLIENT | — | Contactformulier (form submit nog niet geïmplementeerd) |
-| `/about` | — | — | **GEPLAND** — nog niet gebouwd |
-| `/privacy` | — | — | **GEPLAND** — nog niet gebouwd |
-| `/terms` | — | — | **GEPLAND** — nog niet gebouwd |
+| Route | Type | Auth | Status | Beschrijving |
+|-------|------|------|--------|--------------|
+| `/` | SERVER | — | Live | Homepage: hero, FeatureCards, PersonaCards, testimonials, CTA, Footer |
+| `/pricing` | CLIENT | — | Live | Kredietpakketten; verwijst naar /dashboard/billing |
+| `/about` | SERVER | — | Live (scaffold) | Organisatie JSON-LD; content placeholder |
+| `/contact` | CLIENT | — | Live | Contactformulier (vervangt /support via 301) |
+| `/privacy` | SERVER | — | Live (scaffold) | 7 GDPR-secties; content placeholder |
+| `/terms` | SERVER | — | Live (scaffold) | 7 secties; content placeholder |
 
 ### Auth flows (blijven op marketing domain)
 
@@ -48,7 +48,7 @@ De INDXR.AI site is ingedeeld in drie lagen met duidelijke URL-grenzen en verant
 
 | Route | Type | Auth | Beschrijving |
 |-------|------|------|--------------|
-| `/youtube-transcript-generator` | CLIENT | Optioneel | Gratis extractietool; eigen layout.tsx met metadata-override |
+| `/transcribe` | CLIENT | Optioneel | Gratis extractietool; eigen layout.tsx met metadata-override (was `/youtube-transcript-generator`, 301 redirect actief) |
 
 ---
 
@@ -64,83 +64,52 @@ Alle doc-routes renderen via `DocsShell` — sidebar via `src/lib/docs-config.ts
 | `/docs/getting-started` | SERVER | Live (content placeholder) | Onboarding en eerste stappen |
 | `/docs/faq` | SERVER | Live | Veelgestelde vragen (absorbeert `/faq` via 301) |
 | `/docs/account` | SERVER | Live | Credits en billing uitleg |
-| `/docs/credits` | — | Gepland | Credits systeem uitleg |
-| `/docs/accuracy` | — | Gepland | Transcriptie-nauwkeurigheid (hub + sub-pages) |
-| `/docs/export-formats` | — | Gepland | Export-formaten hub + 6 sub-pages |
-| `/docs/api` | — | Gepland (placeholder) | API-documentatie toekomstig |
-| `/docs/limits` | — | Gepland | Rate limits, bestandslimieten |
-| `/docs/privacy-handling` | — | Gepland | Hoe data verwerkt wordt |
-| `/docs/languages` | — | Gepland | Ondersteunde talen |
-
-### Subfolders
-
-| Route | Status | Beschrijving |
-|-------|--------|--------------|
-| `/docs/how-to/[slug]` | Gepland | How-to handleidingen |
-| `/docs/troubleshooting/[slug]` | Gepland | Probleemoplossing per issue |
+| `/docs/credits` | SERVER | Live (scaffold) | Credits systeem uitleg |
+| `/docs/accuracy` | SERVER | Live (scaffold) | Transcriptie-nauwkeurigheid hub |
+| `/docs/accuracy/auto-captions` | SERVER | Live (scaffold) | Auto-captions nauwkeurigheid |
+| `/docs/accuracy/ai-transcription` | SERVER | Live (scaffold) | AI transcriptie nauwkeurigheid |
+| `/docs/export-formats` | SERVER | Live (scaffold) | Export-formaten hub |
+| `/docs/export-formats/txt` | SERVER | Live (scaffold) | TXT export uitleg |
+| `/docs/export-formats/markdown` | SERVER | Live (scaffold) | Markdown export uitleg |
+| `/docs/export-formats/csv` | SERVER | Live (scaffold) | CSV export uitleg |
+| `/docs/export-formats/srt` | SERVER | Live (scaffold) | SRT export uitleg |
+| `/docs/export-formats/vtt` | SERVER | Live (scaffold) | VTT export uitleg |
+| `/docs/export-formats/json` | SERVER | Live (scaffold) | JSON/RAG export uitleg |
+| `/docs/limits` | SERVER | Live (scaffold) | Rate limits, bestandslimieten |
+| `/docs/languages` | SERVER | Live (scaffold) | Ondersteunde talen (67 YT + 99+ AssemblyAI) |
+| `/docs/privacy-handling` | SERVER | Live (scaffold) | Hoe data verwerkt wordt |
+| `/docs/how-to` | SERVER | Live (scaffold) | How-to handleidingen hub |
+| `/docs/troubleshooting` | SERVER | Live (scaffold) | Probleemoplossing hub |
 
 ---
 
 ## Laag 2B — Articles (`indxr.ai/articles/*`)
 
-> **Huidige situatie (2026-05-03):** de 18 SEO-pagina's staan nog op top-level (`/youtube-transcript-not-available`, etc.) en 3 blog-artikelen onder `/blog/*`. Verhuizing naar `/articles/[slug]` is gepland voor Werksessie B.
+> **Status (2026-05-03, Werksessie B):** alle 18 SEO-pagina's verhuisd naar `/articles/[slug]`. Top-level routes + `/blog/*` verwijderd; 301 redirects actief.
 
-### Gepland na Werksessie B
+### Actieve routes
 
 | Route | Status | Beschrijving |
 |-------|--------|--------------|
-| `/articles` | Gepland | Index van alle articles |
-| `/articles/[slug]` | Gepland | Individuele article (huidige SEO-pagina's verhuizen hier) |
-
-### Huidige tijdelijke locaties (worden `/articles/*` na Werksessie B)
-
-**Transcriptie (8 routes, top-level):**
-
-| Route | Template |
-|-------|----------|
-| `/youtube-transcript-not-available` | ToolPageTemplate |
-| `/youtube-age-restricted-transcript` | ArticleTemplate |
-| `/youtube-members-only-transcript` | ArticleTemplate |
-| `/youtube-transcript-non-english` | ToolPageTemplate |
-| `/bulk-youtube-transcript` | ToolPageTemplate |
-| `/youtube-playlist-transcript` | ToolPageTemplate |
-| `/audio-to-text` | ToolPageTemplate |
-| `/youtube-transcript-without-extension` | ToolPageTemplate |
-
-**Export (6 routes, top-level):**
-
-| Route | Template |
-|-------|----------|
-| `/youtube-to-text` | ToolPageTemplate |
-| `/youtube-transcript-markdown` | ToolPageTemplate |
-| `/youtube-transcript-csv` | ToolPageTemplate |
-| `/youtube-srt-download` | ToolPageTemplate |
-| `/youtube-transcript-json` | ToolPageTemplate |
-| `/youtube-transcript-for-rag` | ToolPageTemplate |
-
-**Workflows (1 route, top-level):**
-
-| Route | Template |
-|-------|----------|
-| `/youtube-transcript-obsidian` | ToolPageTemplate |
-
-**Blog-artikelen (3 routes, onder `/blog/*`):**
-
-| Route | Template |
-|-------|----------|
-| `/blog/chunk-youtube-transcripts-for-rag` | ArticleTemplate |
-| `/blog/youtube-channel-knowledge-base` | ArticleTemplate |
-| `/blog/youtube-transcripts-vector-database` | ArticleTemplate |
-
-**Vergelijkingspagina's (5 routes onder `/alternative/*`) — worden VERWIJDERD:**
-
-| Route | Status |
-|-------|--------|
-| `/alternative/downsub` | Live — te verwijderen |
-| `/alternative/notegpt` | Live — te verwijderen |
-| `/alternative/turboscribe` | Live — te verwijderen |
-| `/alternative/tactiq` | Live — te verwijderen |
-| `/alternative/happyscribe` | Live — te verwijderen |
+| `/articles` | Live | Index van alle articles (gecategoriseerd) |
+| `/articles/youtube-transcript-not-available` | Live | Troubleshooting: captions unavailable |
+| `/articles/youtube-age-restricted-transcript` | Live | Troubleshooting: age-gated video |
+| `/articles/youtube-members-only-transcript` | Live | Troubleshooting: members-only video |
+| `/articles/youtube-transcript-non-english` | Live | Troubleshooting: niet-Engelstalige video |
+| `/articles/youtube-transcript-without-extension` | Live | Troubleshooting: geen browser extension |
+| `/articles/bulk-youtube-transcript` | Live | Workflow: bulk extractie |
+| `/articles/youtube-playlist-transcript` | Live | Workflow: playlist extractie |
+| `/articles/audio-to-text` | Live | Workflow: audio naar tekst |
+| `/articles/youtube-transcript-obsidian` | Live | Workflow: Obsidian integratie |
+| `/articles/youtube-to-text` | Live | Export: plain TXT |
+| `/articles/youtube-transcript-markdown` | Live | Export: Markdown |
+| `/articles/youtube-transcript-csv` | Live | Export: CSV |
+| `/articles/youtube-srt-download` | Live | Export: SRT |
+| `/articles/youtube-transcript-json` | Live | Export: JSON/RAG |
+| `/articles/youtube-transcript-for-rag` | Live | Export: RAG workflows |
+| `/articles/chunk-youtube-transcripts-for-rag` | Live | Deep dive: chunking voor RAG |
+| `/articles/youtube-channel-knowledge-base` | Live | Deep dive: channel knowledge base |
+| `/articles/youtube-transcripts-vector-database` | Live | Deep dive: vector database |
 
 ---
 
@@ -184,7 +153,7 @@ Auth-guard: `dashboard/layout.tsx` — redirect `/login` als geen user; redirect
 [INDXR logo]   Pricing   Docs   [Try it free ↗]      Log in    Start free
 ```
 
-- "Try it free" → `/youtube-transcript-generator`
+- "Try it free" → `/transcribe`
 - "Docs" → `/docs`
 - "Log in" → `/login`
 - "Start free" → `/signup`
@@ -208,6 +177,16 @@ Auth-guard: `dashboard/layout.tsx` — redirect `/login` als geen user; redirect
   Home   |   Transcribe   |   Library   |   Messages [badge]
 ```
 
+### Footer (Werksessie B)
+
+```
+  Kolommen: Product | Export Formats | Learn | Legal
+  Export Formats: /articles/* links
+  Learn: /docs, /articles, /pricing
+  Legal: /privacy, /terms, /contact
+  Bottom strip: /about, /privacy, /terms, /contact
+```
+
 ---
 
 ## Redirects
@@ -217,8 +196,28 @@ Auth-guard: `dashboard/layout.tsx` — redirect `/login` als geen user; redirect
 | `/faq` | `/docs/faq` | 301 permanent |
 | `/account/credits` | `/dashboard/account` | 301 permanent |
 | `/how-it-works` | `/` | 301 permanent |
+| `/youtube-transcript-generator` | `/transcribe` | 301 permanent |
+| `/support` | `/contact` | 301 permanent |
+| `/youtube-transcript-not-available` | `/articles/youtube-transcript-not-available` | 301 permanent |
+| `/youtube-age-restricted-transcript` | `/articles/youtube-age-restricted-transcript` | 301 permanent |
+| `/youtube-members-only-transcript` | `/articles/youtube-members-only-transcript` | 301 permanent |
+| `/youtube-transcript-non-english` | `/articles/youtube-transcript-non-english` | 301 permanent |
+| `/youtube-transcript-without-extension` | `/articles/youtube-transcript-without-extension` | 301 permanent |
+| `/bulk-youtube-transcript` | `/articles/bulk-youtube-transcript` | 301 permanent |
+| `/youtube-playlist-transcript` | `/articles/youtube-playlist-transcript` | 301 permanent |
+| `/audio-to-text` | `/articles/audio-to-text` | 301 permanent |
+| `/youtube-transcript-obsidian` | `/articles/youtube-transcript-obsidian` | 301 permanent |
+| `/youtube-to-text` | `/articles/youtube-to-text` | 301 permanent |
+| `/youtube-transcript-markdown` | `/articles/youtube-transcript-markdown` | 301 permanent |
+| `/youtube-transcript-csv` | `/articles/youtube-transcript-csv` | 301 permanent |
+| `/youtube-srt-download` | `/articles/youtube-srt-download` | 301 permanent |
+| `/youtube-transcript-json` | `/articles/youtube-transcript-json` | 301 permanent |
+| `/youtube-transcript-for-rag` | `/articles/youtube-transcript-for-rag` | 301 permanent |
+| `/blog/chunk-youtube-transcripts-for-rag` | `/articles/chunk-youtube-transcripts-for-rag` | 301 permanent |
+| `/blog/youtube-channel-knowledge-base` | `/articles/youtube-channel-knowledge-base` | 301 permanent |
+| `/blog/youtube-transcripts-vector-database` | `/articles/youtube-transcripts-vector-database` | 301 permanent |
 
-Gedefinieerd in `next.config.ts` → `async redirects()`.
+Gedefinieerd in `next.config.ts` → `async redirects()`. Totaal: 23 regels.
 
 ---
 
@@ -249,16 +248,17 @@ Gedefinieerd in `next.config.ts` → `async redirects()`.
 | `public/robots.txt` | `/robots.txt` | Live |
 | `public/llms.txt` | `/llms.txt` | Live (prijzen gesynchroniseerd 2026-05-03) |
 | `public/site.webmanifest` | `/site.webmanifest` | Live |
-| `src/app/sitemap.ts` | `/sitemap.xml` | Live (bijgewerkt 2026-05-03) |
+| `src/app/sitemap.ts` | `/sitemap.xml` | Live (bijgewerkt 2026-05-03, Werksessie B) |
 
 ---
 
 ## Scope-grenzen
 
-- **`/alternative/*`** wordt VERWIJDERD per beslissing 2026-05-03 (geen comparison pages pre-launch)
-- **Auth flows** blijven op marketing domain (`indxr.ai/login` etc.) — niet naar `app.indxr.ai` (Linear/Vercel pattern)
-- **Subdomain split** (`app.indxr.ai`) is Werksessie C — niet nu
-- **`/blog`** heeft geen index-pagina — 404 bij directe navigatie (known issue)
-- **`/alternative`** heeft geen index-pagina — 404 bij directe navigatie (known issue, wordt opgelost bij verwijdering)
+- **`/alternative/*`** VERWIJDERD (Werksessie B, 2026-05-03) — ADR-037
+- **`/blog/*`** VERWIJDERD (Werksessie B, 2026-05-03) — verhuisd naar `/articles/*`
+- **`/support`** HERNOEMD naar `/contact` (Werksessie B, 2026-05-03)
+- **`/youtube-transcript-generator`** HERNOEMD naar `/transcribe` (Werksessie B, 2026-05-03)
+- **Auth flows** blijven op marketing domain (`indxr.ai/login` etc.) — niet naar `app.indxr.ai` (ADR-036)
+- **Subdomain split** (`app.indxr.ai`) is Werksessie C — niet nu (ADR-034)
 - **Changelog** — niet pre-launch bouwen (beslissing 2026-04-30)
-- **llms.txt** — low-priority, geen AI-citation lever (onderzoek 2026-05-03); behouden maar niet uitbreiden
+- **llms.txt** — low-priority, geen AI-citation lever (onderzoek 2026-05-03, ADR-039); behouden maar niet uitbreiden

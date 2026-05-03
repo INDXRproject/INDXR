@@ -1,3 +1,5 @@
+[2026-05-03 23:30] refactor: Werksessie B — drie-lagen architectuur geïmplementeerd: /alternative/* (5 pages) verwijderd; /youtube-transcript-generator → /transcribe (301); /support → /contact (301); 18 top-level SEO-articles + 3 /blog/* verhuisd naar /articles/* (18× 301); /about + /privacy + /terms scaffolds aangemaakt; 17 nieuwe /docs/* scaffold-pages (credits, accuracy, export-formats, limits, languages, privacy-handling, how-to, troubleshooting + subs); DocsShell verwijderd uit ArticleTemplate/ToolPageTemplate/TutorialTemplate; docs-config.ts herschreven (alleen /docs/*); Header/Footer/homepage bijgewerkt (/transcribe links); sitemap.ts volledig herschreven (marketing 9 + docs 21 + articles 19 routes); next.config.ts 23 redirects; sitemap.md bijgewerkt naar post-Werksessie B staat | gewijzigd: next.config.ts, src/app/sitemap.ts, src/components/Header.tsx, src/components/Footer.tsx, src/app/(marketing)/page.tsx, src/lib/docs-config.ts, src/components/content/templates/ArticleTemplate.tsx, src/components/content/templates/ToolPageTemplate.tsx, src/components/content/templates/TutorialTemplate.tsx, src/app/transcribe/*, src/app/contact/*, src/app/about/*, src/app/privacy/*, src/app/terms/*, src/app/articles/*, src/app/docs/*, docs/wiki/architecture/sitemap.md, docs/wiki/INDEX.md
+---
 [2026-05-03 22:00] wiki: Werksessie A2 — ADR cleanup (S001-S007 hernoemd naar 033-039, verhuisd naar wiki/decisions/, Dutch format); marketing.md herschreven (verouderde URL-tabellen weg, nieuwe structuur, Decodo i.p.v. IPRoyal); /support gecorrigeerd CLIENT in sitemap.md; /pricing metadata-issue gedocumenteerd in INBOX.md | gewijzigd: docs/wiki/decisions/033-039*.md (nieuw), docs/wiki/strategy/decisions/ (verwijderd), docs/wiki/strategy/principles.md, docs/wiki/INDEX.md, docs/wiki/business/marketing.md, docs/wiki/architecture/sitemap.md, docs/INBOX.md
 ---
 [2026-05-03 21:00] cleanup + wiki: Werksessie A — drie-lagen architectuur vastgesteld; dev artifacts verwijderd (test-tokens, youtube-transcript-downloader); redirect-ghosts opgeschoond (faq/page.tsx, how-it-works/page.tsx, account/credits/page.tsx); console.logs verwijderd (webhook, app-sidebar, TranscriptViewer, AuthContext); metadataBase toegevoegd aan root layout; llms.txt prijzen gesynchroniseerd; sitemap.ts gefixed (faq+how-it-works verwijderd, docs/* toegevoegd, youtube-transcript-non-english toegevoegd); sitemap.md volledig herschreven (drie-lagen); strategy wiki aangemaakt (principles.md + 7 ADR's); INDEX.md bijgewerkt | gewijzigd: src/app/api/stripe/webhook/route.ts, src/components/app-sidebar.tsx, src/components/library/TranscriptViewer.tsx, src/contexts/AuthContext.tsx, src/app/layout.tsx, public/llms.txt, src/app/sitemap.ts, docs/wiki/architecture/sitemap.md, docs/wiki/business/INDXR-SITEMAP.md, docs/wiki/business/marketing.md, docs/wiki/strategy/principles.md, docs/wiki/strategy/decisions/*.md, docs/wiki/INDEX.md
@@ -3227,3 +3229,56 @@ src/components/app-sidebar.tsx
 src/components/library/TranscriptViewer.tsx
 src/contexts/AuthContext.tsx
 ---
+[2026-05-03 23:01] commit: wiki: Werksessie A2 — ADR cleanup, marketing.md herschreven, sitemap fixes
+
+ADR cleanup (Taak 1):
+- Strategy ADRs S001-S007 hernoemd naar 033-039 en verhuisd naar
+  docs/wiki/decisions/ — zelfde folder als alle bestaande ADRs
+- Format geconverteerd naar bestaande conventie: "# Beslissing NNN:" (Dutch),
+  Status/Datum/Gerelateerde code fields, ## Context / ## Beslissing /
+  ## Rationale / ## Consequenties secties
+- docs/wiki/strategy/decisions/ map verwijderd
+- Alle references bijgewerkt (INDEX.md, principles.md)
+
+Reden voor merge in bestaande decisions/ map: consistentie boven over aparte
+mappen per domein. ADRs zijn al genummerd sequentieel; een tweede reeks in een
+aparte map zou de INDEX-tabel splitsen en navigatie compliceren.
+
+marketing.md herschreven (Taak 2):
+- Verouderde URL-tabellen verwijderd (routes die niet bestaan of verwijderd worden)
+- /alternative/* entries verwijderd (worden verwijderd per ADR-037)
+- Toekomstige structuur (/articles/*) correct weerspiegeld
+- IPRoyal → Decodo proxy gecorrigeerd
+- Waardevolle secties behouden: conversie funnel, copy anchors, channel FAQ, analytics
+
+Server/Client fixes (Taak 3):
+- /support gecorrigeerd van SERVER naar CLIENT in sitemap.md (code is leidend)
+- Alle andere dashboard/admin/marketing routes geverifieerd — geen verdere mismatches
+
+INBOX:
+- /pricing metadata-issue gedocumenteerd: CLIENT component kan geen metadata
+  export hebben → erft root layout fallback, geen eigen OG-tags of JSON-LD
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/INBOX.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/sitemap.md
+docs/wiki/business/marketing.md
+docs/wiki/decisions/033-three-layer-site-architecture.md
+docs/wiki/decisions/034-app-subdomain.md
+docs/wiki/decisions/035-articles-single-umbrella.md
+docs/wiki/decisions/036-auth-on-marketing-domain.md
+docs/wiki/decisions/037-no-comparison-pages.md
+docs/wiki/decisions/038-no-audience-hubs.md
+docs/wiki/decisions/039-llms-txt-low-priority.md
+docs/wiki/strategy/decisions/001-three-layer-architecture.md
+docs/wiki/strategy/decisions/002-app-subdomain.md
+docs/wiki/strategy/decisions/003-no-audience-hubs.md
+docs/wiki/strategy/decisions/004-no-comparison-pages.md
+docs/wiki/strategy/decisions/005-articles-single-umbrella.md
+docs/wiki/strategy/decisions/006-auth-on-marketing-domain.md
+docs/wiki/strategy/decisions/007-llms-txt-low-priority.md
+docs/wiki/strategy/principles.md
+---
+[2026-05-03 23:12] precompact: context compaction triggered

@@ -147,6 +147,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-05-03 | Werksessie B: drie-lagen architectuur geïmplementeerd — 5 comparison pages verwijderd, /youtube-transcript-generator → /transcribe, /support → /contact, 18 SEO-articles → /articles/*, /blog/* verwijderd, legal pages (about/privacy/terms) en 17 /docs/* scaffold-pages aangemaakt, DocsShell ontkoppeld van templates, Footer herschreven, sitemap.ts volledig herschreven (23 redirects) |
 | 2026-05-03 | Werksessie A: drie-lagen architectuur vastgesteld, cleanup (test-tokens, redirect-ghosts, console.logs), metadataBase, llms.txt gesynchroniseerd, sitemap.ts gefixed, sitemap.md herschreven, strategy wiki aangemaakt |
 | 2026-05-03 | Sitemap audit voltooid voor strategische research fase — [sitemap-audit-2026-05.md](architecture/sitemap-audit-2026-05.md) |
 | 2026-04-30 | Sitemap-refactor (Grondverf Sessie 2): `/faq` → `/docs/faq` (301), `/how-it-works` → `/` (301), `/account/credits` → `/dashboard/account` (301), label "Overview" → "Home", header versimpeld (Pricing + Docs + Try it free), Messages route toegevoegd (`/dashboard/messages`), DocsShell geïntroduceerd, MobileTabBar toegevoegd, `src/lib/docs-config.ts` als sidebar-config |

@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { AuthorCard } from "@/components/content/AuthorCard"
 import type { Author } from "@/lib/authors"
-import { DocsShell } from "@/components/docs/DocsShell"
 
 interface ToolPageTemplateProps {
   title: string
@@ -56,7 +55,7 @@ export function ToolPageTemplate({
   return (
     <>
       <JsonLd schemas={schemas} />
-      <DocsShell>
+      <div className="container mx-auto px-6 py-8 max-w-3xl">
       <article className="max-w-3xl py-12">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fg)] mb-4">
           {title}
@@ -102,7 +101,7 @@ export function ToolPageTemplate({
           </section>
         )}
       </article>
-      </DocsShell>
+      </div>
     </>
   )
 }

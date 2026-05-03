@@ -20,7 +20,7 @@ export default function LandingPage() {
             YouTube videos, playlists, and audio files — transcribed and processed to suit all your needs. Export as TXT, Markdown, SRT, JSON, or RAG-optimized format. Neatly organized in your library.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
-            <Link href="/youtube-transcript-generator" className="w-full sm:w-auto">
+            <Link href="/transcribe" className="w-full sm:w-auto">
               <button className="
                 px-8 py-3 rounded-lg font-semibold text-base
                 bg-[var(--accent)] text-fg
@@ -146,7 +146,7 @@ export default function LandingPage() {
             When you&apos;re ready for playlists, AI transcription, and your
             personal library — credits never expire.
           </p>
-          <Link href="/youtube-transcript-generator" className="inline-block">
+          <Link href="/transcribe" className="inline-block">
             <button className="
               px-8 py-3 rounded-lg font-semibold text-base
               bg-[var(--accent)] text-fg

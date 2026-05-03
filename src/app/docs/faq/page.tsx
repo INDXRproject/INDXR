@@ -178,12 +178,12 @@ export default function DocsFaqPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button asChild>
-                <Link href="/youtube-transcript-generator">
+                <Link href="/transcribe">
                   Try it free <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/support">Contact Support</Link>
+                <Link href="/contact">Contact Support</Link>
               </Button>
             </div>
           </div>

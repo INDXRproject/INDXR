@@ -23,58 +23,57 @@ export const docsConfig: DocsConfig = {
       ],
     },
     {
-      label: "Transcribe",
-      pages: [
-        { href: "/youtube-transcript-not-available", label: "Transcript availability" },
-        { href: "/youtube-age-restricted-transcript", label: "Age-restricted videos" },
-        { href: "/youtube-members-only-transcript", label: "Members-only videos" },
-        { href: "/youtube-transcript-non-english", label: "Non-English transcripts" },
-        { href: "/bulk-youtube-transcript", label: "Bulk / playlist transcripts" },
-        { href: "/youtube-playlist-transcript", label: "Playlist guide" },
-        { href: "/audio-to-text", label: "Audio file transcription" },
-        { href: "/youtube-transcript-without-extension", label: "Without browser extension" },
-      ],
-    },
-    {
-      label: "Export",
-      pages: [
-        { href: "/youtube-to-text", label: "Plain text (TXT)" },
-        { href: "/youtube-transcript-markdown", label: "Markdown" },
-        { href: "/youtube-transcript-csv", label: "CSV" },
-        { href: "/youtube-srt-download", label: "SRT / VTT subtitles" },
-        { href: "/youtube-transcript-json", label: "JSON" },
-        { href: "/youtube-transcript-for-rag", label: "RAG-optimized JSON" },
-      ],
-    },
-    {
-      label: "Workflows",
-      pages: [
-        { href: "/youtube-transcript-obsidian", label: "Obsidian workflow" },
-        { href: "/blog/chunk-youtube-transcripts-for-rag", label: "Chunking for RAG" },
-        { href: "/blog/youtube-channel-knowledge-base", label: "YouTube knowledge base" },
-        { href: "/blog/youtube-transcripts-vector-database", label: "Vector database workflows" },
-      ],
-    },
-    {
-      label: "Compare",
-      pages: [
-        { href: "/alternative/downsub", label: "INDXR vs DownSub" },
-        { href: "/alternative/notegpt", label: "INDXR vs NoteGPT" },
-        { href: "/alternative/turboscribe", label: "INDXR vs TurboScribe" },
-        { href: "/alternative/tactiq", label: "INDXR vs Tactiq" },
-        { href: "/alternative/happyscribe", label: "INDXR vs HappyScribe" },
-      ],
-    },
-    {
       label: "Account",
       pages: [
         { href: "/docs/account", label: "Credits and billing" },
+        { href: "/docs/credits", label: "How credits work" },
+        { href: "/docs/limits", label: "Usage limits" },
       ],
     },
     {
-      label: "FAQ",
+      label: "Accuracy",
       pages: [
-        { href: "/docs/faq", label: "Frequently asked questions" },
+        { href: "/docs/accuracy", label: "Accuracy overview" },
+        { href: "/docs/accuracy/auto-captions", label: "Auto-captions" },
+        { href: "/docs/accuracy/ai-transcription", label: "AI transcription" },
+      ],
+    },
+    {
+      label: "Export formats",
+      pages: [
+        { href: "/docs/export-formats", label: "All formats overview" },
+        { href: "/docs/export-formats/txt", label: "Plain text (TXT)" },
+        { href: "/docs/export-formats/markdown", label: "Markdown" },
+        { href: "/docs/export-formats/csv", label: "CSV" },
+        { href: "/docs/export-formats/srt", label: "SRT subtitles" },
+        { href: "/docs/export-formats/vtt", label: "VTT subtitles" },
+        { href: "/docs/export-formats/json", label: "JSON / RAG JSON" },
+      ],
+    },
+    {
+      label: "Languages & privacy",
+      pages: [
+        { href: "/docs/languages", label: "Supported languages" },
+        { href: "/docs/privacy-handling", label: "How we handle your data" },
+      ],
+    },
+    {
+      label: "How-to guides",
+      pages: [
+        { href: "/docs/how-to", label: "All how-to guides" },
+      ],
+    },
+    {
+      label: "Troubleshooting",
+      pages: [
+        { href: "/docs/troubleshooting", label: "All troubleshooting" },
+      ],
+    },
+    {
+      label: "Reference",
+      pages: [
+        { href: "/docs/faq", label: "FAQ" },
+        { href: "/docs/api", label: "API (coming soon)" },
       ],
     },
   ],

@@ -128,7 +128,7 @@ export function Header() {
           <Link href="/docs" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             Docs
           </Link>
-          <Link href="/youtube-transcript-generator">
+          <Link href="/transcribe">
             <Button size="sm" className="bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]">
               Try it free
             </Button>
@@ -184,7 +184,7 @@ export function Header() {
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/youtube-transcript-generator" className="text-lg font-medium text-[var(--accent)]">
+                    <Link href="/transcribe" className="text-lg font-medium text-[var(--accent)]">
                       Try it free
                     </Link>
                   </SheetClose>
