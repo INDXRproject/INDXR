@@ -4,36 +4,37 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## Sentry frontend — Sessie 3 (3 mei): definitieve conclusie
+
+**Datum:** 2026-05-03  
+**Tester:** Khidr + Claude  
+**Status:** BEKENDE BEPERKING — niet opgelost, geen fix beschikbaar
+
+Server-side `captureException` in Next.js API routes op Vercel werkt structureel niet. Na uitputtende diagnose-keten (zie Sessie 2) en research (Sentry GitHub issue #17604, #15885, closed-not-planned) is dit bevestigd als een bekend, onopgelost probleem in de Next.js + Vercel + Sentry stack. Reproduceerbaar met een verse `create-next-app` + Sentry wizard.
+
+**Wat wél werkt:** Backend Python op Railway (INDXR-BACKEND events geverifieerd), client-side browser Sentry (sessions, 98% Crash Free Sessions).  
+**Workaround:** Vercel function logs voor server-side debugging.  
+**Code-staat:** `captureException` + `flush` + `runtime = 'nodejs'` blijven in alle routes — kost niets, werkt zodra Sentry/Vercel het ooit oplost.
+
+Zie [known-issues.md](known-issues.md) voor volledige documentatie.
+
+---
+
 ## Sentry frontend fix — Sessie 2 (diagnose-keten)
 
 **Datum:** 2026-05-02  
 **Tester:** Khidr + Claude  
 **Commits:** 366f246 (flush), e2019df (debug flag), 0a6c637 (instrumentation diag), a47a15c (nodejs runtime fix)  
-**Status:** OPGELOST — root cause gevonden en gefixed
+**Status:** HERZIEN 2026-05-03 — fix bleek geen effect te hebben; zie Sessie 3
 
 ### Bewijsketen
 
 1. **DSN was leeg** op Vercel → ingevuld, redeploy. Events kwamen nog steeds niet aan.
 2. **Testmethode was fout**: `{totally:'invalid'}` is geldige JSON → Zod-validatie faalt op regel 70 → direct 400 return zonder `captureException`. Outer catch nooit bereikt.
-3. **`Sentry.flush(2000)`** toegevoegd aan alle 5 routes — vereist in serverless om te voorkomen dat het process killt vóór de transport-envelope verstuurd is.
+3. **`Sentry.flush(2000)`** toegevoegd aan alle 5 routes — geen effect (init liep niet).
 4. **`debug: true`** in `sentry.server.config.ts` → geen `[Sentry]` logs. Root cause: `disableLogger: true` in `withSentryConfig` tree-shakt de Sentry logger uit de bundle — `debug: true` is daardoor waardeloos als diagnostisch middel.
 5. **`[INDXR-INSTRUMENTATION]` logs** toegevoegd aan `instrumentation.ts` → Vercel function logs toonden: `register() called, runtime: edge`.
-6. **Root cause bevestigd**: Next.js 16 op Vercel defaultt API routes naar edge runtime als geen `export const runtime` gedeclareerd is. `instrumentation.ts` laadt `sentry.server.config` alleen voor `nodejs` runtime — daardoor werd `Sentry.init()` nooit uitgevoerd voor de routes. `captureException` retourneerde wel een event ID (SDK was geladen via client-side bundle), maar er ging geen HTTP envelope naar Sentry.
-
-### Fix
-
-`export const runtime = 'nodejs'` toegevoegd aan alle 6 API routes die Sentry nodig hebben:
-- `api/extract`, `api/stripe/webhook`, `api/ai/summarize`, `api/transcribe/preflight`, `api/playlist/info`, `api/video/metadata/[videoId]`
-
-`api/video/metadata` ook geïnstrumenteerd: Sentry import + `captureException` + `flush` in catch (was eerder `catch {}` zonder error-binding).
-
-### Verificatie na fix
-
-Trigger de outer catch met echt malformed JSON:
-```js
-fetch('/api/extract', {method:'POST', body:'not-valid-json', headers:{'Content-Type':'application/json'}})
-```
-Verwacht: event verschijnt in Sentry `indxr-frontend` project binnen enkele seconden.
+6. **`export const runtime = 'nodejs'`** gedeclareerd op alle 6 routes (commit a47a15c) — `Sentry.init()` runt nu wél, maar events arriveren nog steeds niet. Structureel Vercel/Sentry probleem.
 
 ---
 

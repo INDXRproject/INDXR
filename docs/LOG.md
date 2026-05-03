@@ -1,3 +1,5 @@
+[2026-05-03 10:00] docs: Sentry frontend server-side capture gecorrigeerd naar bekende beperking — known-issues "Opgelost" teruggedraaid naar "Bekende beperking", monitoring.md en test-reports bijgewerkt met definitieve conclusie (Sentry issue #17604) | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/test-reports.md, docs/LOG.md
+---
 [2026-05-02 21:00] fix: Sentry edge runtime mismatch opgelost — export const runtime = 'nodejs' op 6 API routes; api/video/metadata geïnstrumenteerd; instrumentation.ts diag-logs verwijderd; known-issues resolved, monitoring.md + test-reports bijgewerkt | gewijzigd: instrumentation.ts, src/app/api/extract/route.ts, src/app/api/stripe/webhook/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/transcribe/preflight/route.ts, src/app/api/playlist/info/route.ts, src/app/api/video/metadata/[videoId]/route.ts, docs/wiki/operations/known-issues.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/test-reports.md, docs/LOG.md
 ---
 [2026-05-02 19:00] fix: Sentry.flush(2000) toegevoegd na elke captureException in 5 API routes — serverless transport kreeg geen tijd om envelope te versturen vóór process kill | gewijzigd: src/app/api/extract/route.ts, src/app/api/stripe/webhook/route.ts, src/app/api/ai/summarize/route.ts, src/app/api/transcribe/preflight/route.ts, src/app/api/playlist/info/route.ts
@@ -3124,4 +3126,21 @@ src/app/api/playlist/info/route.ts
 src/app/api/stripe/webhook/route.ts
 src/app/api/transcribe/preflight/route.ts
 src/app/api/video/metadata/[videoId]/route.ts
+---
+[2026-05-02 22:53] commit: docs: Sentry edge runtime root cause — known-issues resolved + monitoring + test-reports
+
+- known-issues.md: mark "Frontend Sentry capture niet bevestigd" as resolved.
+  Corrects the earlier (wrong) diagnosis (DSN-empty was real but not the root
+  cause). Documents full diagnosis chain and permanent rule for new routes.
+- monitoring.md: add "Sentry runtime vereisten" section — every route that
+  calls captureException must declare export const runtime = 'nodejs', plus
+  await Sentry.flush(2000) before return.
+- test-reports.md: add Sessie 2 entry with the full evidence chain.
+- LOG.md: updated.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+docs/wiki/operations/monitoring.md
+docs/wiki/operations/test-reports.md
 ---

@@ -120,39 +120,48 @@ Na cascade stap 1 succes (youtube-transcript-api) haalt de backend metadata op v
 
 ---
 
-## ~~Frontend Sentry capture in productie niet bevestigd~~ ✅ Opgelost 2026-05-02
+## Frontend Sentry server-side capture werkt niet op Vercel 🔶 Bekende beperking — niet opgelost
 
 **Vastgesteld:** 2026-05-02  
-**Opgelost:** 2026-05-02 (commit a47a15c)  
-**Root cause:** Edge runtime mismatch — zie hieronder
+**Herzien:** 2026-05-03  
+**Status:** Bekende beperking in Next.js + Vercel + Sentry stack — geen fix beschikbaar  
+**Impact:** Server-side Vercel API route errors zijn blinde vlek in Sentry; geen launch-blocker
 
-### Root cause (definitief)
+### Symptoom
 
-Next.js 16 op Vercel defaultt API routes naar **edge runtime** als geen `export const runtime` gedeclareerd is. `instrumentation.ts` laadt `sentry.server.config` exclusief voor de `nodejs` runtime-branch. Daardoor werd `Sentry.init()` nooit uitgevoerd in de context van de API routes. `captureException` retourneerde wel een event ID (Sentry SDK aanwezig via client bundle), maar geen HTTP envelope werd verstuurd naar Sentry.
+`Sentry.captureException()` in Next.js API routes op Vercel retourneert een event ID maar er arriveert geen event in Sentry `indxr-frontend`. Client-side Sentry (browser) werkt wel (sessions, replays, 98% Crash Free Sessions). Backend Python op Railway werkt ook (INDXR-BACKEND-14, 15 geverifieerd 2026-05-02).
 
-Bewijs: `[INDXR-INSTRUMENTATION] register() called, runtime: edge` in Vercel function logs na het toevoegen van diagnostische console.logs in `instrumentation.ts`.
+### Root cause
 
-### Diagnose-keten (chronologisch)
+Bekend probleem in de Next.js + Vercel + Sentry stack, gedocumenteerd in Sentry GitHub issue #17604 (closed-as-not-planned, label "Stale") en #15885. Reproduceerbaar met een verse `create-next-app` + Sentry wizard. De Vercel Marketplace Sentry-integratie biedt geen fix — alleen env-var setup en source map uploads.
 
-1. DSN was leeg op Vercel → ingevuld, redeploy → events kwamen nog steeds niet aan
-2. `Sentry.flush(2000)` toegevoegd aan alle routes — geen effect (init liep niet)
-3. `debug: true` in server config → geen `[Sentry]` output; root cause: `disableLogger: true` in `withSentryConfig` tree-shakt de Sentry logger uit de bundle — debug flag is daardoor effectief nutteloos
-4. Eigen `[INDXR-INSTRUMENTATION]` console.logs in `instrumentation.ts` → `runtime: edge` bevestigd in Vercel logs
+De diagnose-keten die tot deze conclusie leidde (2026-05-02/03):
+1. DSN leeg op Vercel → ingevuld, redeploy — geen effect
+2. `Sentry.flush(2000)` toegevoegd — geen effect
+3. `debug: true` → geen `[Sentry]` output; bleek door `disableLogger: true` in `withSentryConfig` (tree-shakt de logger uit de bundle)
+4. `[INDXR-INSTRUMENTATION]` console.logs → `runtime: edge` in Vercel logs
+5. `export const runtime = 'nodejs'` gedeclareerd op alle 6 routes (commit a47a15c) — geen effect
+6. Sentry issue #17604 gevonden: structureel probleem, closed-not-planned
 
-### Fix (commit a47a15c)
+### Workaround
 
-`export const runtime = 'nodejs'` gedeclareerd op alle 6 betrokken routes:
-`api/extract`, `api/stripe/webhook`, `api/ai/summarize`, `api/transcribe/preflight`, `api/playlist/info`, `api/video/metadata/[videoId]`
+**Vercel function logs** zijn de primaire tool voor server-side debugging van API route errors. Vercel Dashboard → Functions → selecteer route → logs. Alle `console.error` calls in de routes zijn intact.
 
-`api/video/metadata` ook geïnstrumenteerd: Sentry import + `captureException` + `flush` (was eerder `catch {}` zonder error-binding).
+### Huidige staat van de code
 
-### Permanente noot voor nieuwe routes
+`captureException` + `Sentry.flush(2000)` + `export const runtime = 'nodejs'` blijven in alle routes staan. Kost niets, werkt zodra Sentry/Vercel het probleem ooit oplost.
 
-Elke Next.js API route die `captureException` gebruikt **moet** declareren:
-```ts
-export const runtime = 'nodejs';
-```
-Zonder deze declaratie draait de route op edge runtime en wordt `Sentry.init()` nooit aangeroepen — zie `monitoring.md` sectie "Sentry runtime vereisten".
+Geïnstrumenteerde routes:
+- `api/extract` — `python_backend_call`, `request_parse`
+- `api/stripe/webhook` — `signature_verification`, `add_credits_rpc`
+- `api/ai/summarize` — `route` tag
+- `api/transcribe/preflight` — `route` tag
+- `api/playlist/info` — `python_backend_call`, `request_parse`
+- `api/video/metadata/[videoId]` — `route`, `video_id` tag
+
+### Toekomst
+
+Bij een Sentry SDK major update of Vercel infrastructure change: opnieuw testen met de malformed-JSON fetch test. Lange-termijn alternatief voor volledige server-side observability: VPS/Railway migratie voor de Next.js frontend (buiten Vercel serverless).
 
 ---
 

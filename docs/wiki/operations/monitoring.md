@@ -143,28 +143,15 @@ Sentry.captureException(error, { tags: { route: 'api/...', step: '...' } });
 | `api/playlist/info` | `python_backend_call`, `request_parse` |
 | `api/video/metadata/[videoId]` | `route`, `video_id` tag |
 
-### Sentry runtime vereisten — KRITIEK
+### Sentry runtime vereisten
 
-Next.js 16 op Vercel defaultt API routes naar **edge runtime** als geen runtime gedeclareerd is. `instrumentation.ts` laadt `sentry.server.config` **alleen** voor de `nodejs` runtime-branch. Elke route die `captureException` aanroept, **moet** expliciet declareren:
+`export const runtime = 'nodejs'` is gedeclareerd op alle geïnstrumenteerde routes. Zonder deze declaratie defaultt Next.js 16 op Vercel naar edge runtime en runt `Sentry.init()` nooit.
 
-```ts
-export const runtime = 'nodejs';
-```
+`await Sentry.flush(2000)` staat na elke `captureException` call — vereist omdat Vercel het serverless process kan killen voordat de async transport de envelope verstuurt.
 
-Zonder deze declaratie: `Sentry.init()` runt nooit voor die route → `captureException` retourneert een event ID maar verstuurt geen envelope → events verdwijnen stilletjes.
+**Huidige beperking:** Server-side `captureException` werkt structureel niet op Vercel, ook met `runtime = 'nodejs'` en `flush`. Bekend probleem (Sentry issue #17604, closed-not-planned). Zie [known-issues.md](known-issues.md) voor volledige analyse. De code blijft staan — werkt zodra Sentry/Vercel het oplost.
 
-**Extra vereiste in serverless context:** voeg `await Sentry.flush(2000)` toe ná elke `captureException`-call, vóór de `return`. Vercel kan het process killen nadat de response verzonden is, voordat de async transport de envelope heeft doorgestuurd.
-
-Standaard patroon voor elke nieuwe geïnstrumenteerde route:
-```ts
-export const runtime = 'nodejs';
-// ...
-} catch (error) {
-  Sentry.captureException(error, { tags: { route: 'api/...', step: '...' } });
-  await Sentry.flush(2000);
-  return NextResponse.json({ error: '...' }, { status: 500 });
-}
-```
+**Workaround voor server-side debugging:** Vercel function logs (Dashboard → Functions → selecteer route).
 
 ---
 
