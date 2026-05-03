@@ -76,6 +76,11 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [037-no-comparison-pages.md](decisions/037-no-comparison-pages.md) | Geen comparison pages pre-launch — `/alternative/*` wordt verwijderd |
 | [038-no-audience-hubs.md](decisions/038-no-audience-hubs.md) | Geen audience hubs pre-launch — post-launch op basis van PostHog-data |
 | [039-llms-txt-low-priority.md](decisions/039-llms-txt-low-priority.md) | llms.txt low-priority — geen bewezen AI-citation lever (mei 2026) |
+| [040-audience-aware-article-pattern.md](decisions/040-audience-aware-article-pattern.md) | Article pattern: mix van single-audience en multi-audience per artikel |
+| [041-system-default-color-scheme.md](decisions/041-system-default-color-scheme.md) | Light + dark mode beide first-class, system default — geen forced dark |
+| [042-about-page-organization-schema.md](decisions/042-about-page-organization-schema.md) | /about gebruikt Organization schema, geen Person schema — founder anoniem |
+| [043-author-byline-indxr-editorial.md](decisions/043-author-byline-indxr-editorial.md) | Author byline: "INDXR Editorial" als enige author op alle articles |
+| [044-user-feedback-channels.md](decisions/044-user-feedback-channels.md) | Drie aparte feedback channels: Messages, Support, Testimonials (post-launch unlock) |
 
 ---
 

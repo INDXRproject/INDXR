@@ -1,3 +1,5 @@
+[2026-05-03 23:59] fix + adrs: Werksessie B-Fix — self-review nieuwe scaffolds (geen issues gevonden, build groen); 5 nieuwe ADR's geschreven: 040 (audience-aware article pattern mix), 041 (system default color scheme), 042 (about page Organization schema), 043 (author byline INDXR Editorial), 044 (drie gebruikersfeedback channels); INDEX.md + LOG.md bijgewerkt | gewijzigd: docs/wiki/decisions/040-044*.md, docs/wiki/INDEX.md, docs/LOG.md
+---
 [2026-05-03 23:30] refactor: Werksessie B — drie-lagen architectuur geïmplementeerd: /alternative/* (5 pages) verwijderd; /youtube-transcript-generator → /transcribe (301); /support → /contact (301); 18 top-level SEO-articles + 3 /blog/* verhuisd naar /articles/* (18× 301); /about + /privacy + /terms scaffolds aangemaakt; 17 nieuwe /docs/* scaffold-pages (credits, accuracy, export-formats, limits, languages, privacy-handling, how-to, troubleshooting + subs); DocsShell verwijderd uit ArticleTemplate/ToolPageTemplate/TutorialTemplate; docs-config.ts herschreven (alleen /docs/*); Header/Footer/homepage bijgewerkt (/transcribe links); sitemap.ts volledig herschreven (marketing 9 + docs 21 + articles 19 routes); next.config.ts 23 redirects; sitemap.md bijgewerkt naar post-Werksessie B staat | gewijzigd: next.config.ts, src/app/sitemap.ts, src/components/Header.tsx, src/components/Footer.tsx, src/app/(marketing)/page.tsx, src/lib/docs-config.ts, src/components/content/templates/ArticleTemplate.tsx, src/components/content/templates/ToolPageTemplate.tsx, src/components/content/templates/TutorialTemplate.tsx, src/app/transcribe/*, src/app/contact/*, src/app/about/*, src/app/privacy/*, src/app/terms/*, src/app/articles/*, src/app/docs/*, docs/wiki/architecture/sitemap.md, docs/wiki/INDEX.md
 ---
 [2026-05-03 22:00] wiki: Werksessie A2 — ADR cleanup (S001-S007 hernoemd naar 033-039, verhuisd naar wiki/decisions/, Dutch format); marketing.md herschreven (verouderde URL-tabellen weg, nieuwe structuur, Decodo i.p.v. IPRoyal); /support gecorrigeerd CLIENT in sitemap.md; /pricing metadata-issue gedocumenteerd in INBOX.md | gewijzigd: docs/wiki/decisions/033-039*.md (nieuw), docs/wiki/strategy/decisions/ (verwijderd), docs/wiki/strategy/principles.md, docs/wiki/INDEX.md, docs/wiki/business/marketing.md, docs/wiki/architecture/sitemap.md, docs/INBOX.md
@@ -3282,3 +3284,102 @@ docs/wiki/strategy/decisions/007-llms-txt-low-priority.md
 docs/wiki/strategy/principles.md
 ---
 [2026-05-03 23:12] precompact: context compaction triggered
+[2026-05-03 23:17] commit: refactor: Werksessie B — drie-lagen site-architectuur geïmplementeerd
+
+- /alternative/* (5 comparison pages) verwijderd (ADR-037)
+- /youtube-transcript-generator → /transcribe (301)
+- /support → /contact (301)
+- 18 top-level SEO-articles + 3 /blog/* → /articles/* (18× 301)
+- /about, /privacy, /terms scaffolds aangemaakt
+- 17 nieuwe /docs/* scaffold-pages (credits, accuracy, export-formats, limits, languages, privacy-handling, how-to, troubleshooting + subs)
+- DocsShell ontkoppeld uit ArticleTemplate/ToolPageTemplate/TutorialTemplate
+- docs-config.ts herschreven (alleen /docs/* in sidebar)
+- Header/Footer/homepage: alle /transcribe links bijgewerkt, Footer kolommen herschreven
+- sitemap.ts: 3-groepen structuur (marketing 9 + docs 21 + articles 19)
+- next.config.ts: 23 redirects totaal
+- Build: 85 routes, 0 errors
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/sitemap.md
+next.config.ts
+src/app/(marketing)/page.tsx
+src/app/about/page.tsx
+src/app/alternative/downsub/page.tsx
+src/app/alternative/happyscribe/page.tsx
+src/app/alternative/notegpt/page.tsx
+src/app/alternative/tactiq/page.tsx
+src/app/alternative/turboscribe/page.tsx
+src/app/articles/audio-to-text/page.tsx
+src/app/articles/bulk-youtube-transcript/page.tsx
+src/app/articles/chunk-youtube-transcripts-for-rag/page.tsx
+src/app/articles/page.tsx
+src/app/articles/youtube-age-restricted-transcript/page.tsx
+src/app/articles/youtube-channel-knowledge-base/page.tsx
+src/app/articles/youtube-members-only-transcript/page.tsx
+src/app/articles/youtube-playlist-transcript/page.tsx
+src/app/articles/youtube-srt-download/page.tsx
+src/app/articles/youtube-to-text/page.tsx
+src/app/articles/youtube-transcript-csv/page.tsx
+src/app/articles/youtube-transcript-for-rag/page.tsx
+src/app/articles/youtube-transcript-json/page.tsx
+src/app/articles/youtube-transcript-markdown/page.tsx
+src/app/articles/youtube-transcript-non-english/page.tsx
+src/app/articles/youtube-transcript-not-available/page.tsx
+src/app/articles/youtube-transcript-obsidian/page.tsx
+src/app/articles/youtube-transcript-without-extension/page.tsx
+src/app/articles/youtube-transcripts-vector-database/page.tsx
+src/app/audio-to-text/page.tsx
+src/app/blog/chunk-youtube-transcripts-for-rag/page.tsx
+src/app/blog/youtube-channel-knowledge-base/page.tsx
+src/app/blog/youtube-transcripts-vector-database/page.tsx
+src/app/bulk-youtube-transcript/page.tsx
+src/app/contact/page.tsx
+src/app/docs/accuracy/ai-transcription/page.tsx
+src/app/docs/accuracy/auto-captions/page.tsx
+src/app/docs/accuracy/page.tsx
+src/app/docs/api/page.tsx
+src/app/docs/credits/page.tsx
+src/app/docs/export-formats/csv/page.tsx
+src/app/docs/export-formats/json/page.tsx
+src/app/docs/export-formats/markdown/page.tsx
+src/app/docs/export-formats/page.tsx
+src/app/docs/export-formats/srt/page.tsx
+src/app/docs/export-formats/txt/page.tsx
+src/app/docs/export-formats/vtt/page.tsx
+src/app/docs/faq/page.tsx
+src/app/docs/getting-started/page.tsx
+src/app/docs/how-to/page.tsx
+src/app/docs/languages/page.tsx
+src/app/docs/limits/page.tsx
+src/app/docs/privacy-handling/page.tsx
+src/app/docs/troubleshooting/page.tsx
+src/app/privacy/page.tsx
+src/app/sitemap.ts
+src/app/support/page.tsx
+src/app/terms/page.tsx
+src/app/transcribe/layout.tsx
+src/app/transcribe/page.tsx
+src/app/youtube-age-restricted-transcript/page.tsx
+src/app/youtube-members-only-transcript/page.tsx
+src/app/youtube-playlist-transcript/page.tsx
+src/app/youtube-srt-download/page.tsx
+src/app/youtube-to-text/page.tsx
+src/app/youtube-transcript-csv/page.tsx
+src/app/youtube-transcript-for-rag/page.tsx
+src/app/youtube-transcript-generator/layout.tsx
+src/app/youtube-transcript-generator/page.tsx
+src/app/youtube-transcript-json/page.tsx
+src/app/youtube-transcript-markdown/page.tsx
+src/app/youtube-transcript-non-english/page.tsx
+src/app/youtube-transcript-not-available/page.tsx
+src/app/youtube-transcript-obsidian/page.tsx
+src/app/youtube-transcript-without-extension/page.tsx
+src/components/Footer.tsx
+src/components/Header.tsx
+src/components/content/templates/ArticleTemplate.tsx
+src/components/content/templates/ToolPageTemplate.tsx
+src/components/content/templates/TutorialTemplate.tsx
+src/lib/docs-config.ts
+---
