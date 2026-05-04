@@ -28,13 +28,12 @@ Exports YouTube transcripts as RAG-optimized JSON with 90–120 second chunks, s
 
 ## Key pages
 
-- /docs/getting-started — product explanation and onboarding
+- /docs/getting-started — quickstart guide (3 minutes to first transcript)
+- /docs/how-indxr-works/overview — how the extraction and transcription pipeline works
 - /pricing — credit packages
-- /youtube-transcript-for-rag — RAG pipeline documentation
-- /youtube-transcript-markdown — Obsidian and Notion workflow
-- /youtube-transcript-not-available — troubleshooting guide
-- /alternative/downsub — comparison with DownSub
-- /blog/chunk-youtube-transcripts-for-rag — chunking research and best practices
+- /articles/youtube-transcript-for-rag — RAG pipeline documentation
+- /articles/youtube-transcript-not-available — troubleshooting guide
+- /articles/chunk-youtube-transcripts-for-rag — chunking research and best practices
 
 ## What INDXR.AI does NOT do
 

@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // Legacy URL cleanup
-      { source: '/faq', destination: '/docs/faq', permanent: true },
+      { source: '/faq', destination: '/docs/help/faq', permanent: true },
       { source: '/account/credits', destination: '/dashboard/account', permanent: true },
       { source: '/how-it-works', destination: '/', permanent: true },
 
@@ -32,6 +32,27 @@ const nextConfig: NextConfig = {
       { source: '/blog/chunk-youtube-transcripts-for-rag', destination: '/articles/chunk-youtube-transcripts-for-rag', permanent: true },
       { source: '/blog/youtube-channel-knowledge-base', destination: '/articles/youtube-channel-knowledge-base', permanent: true },
       { source: '/blog/youtube-transcripts-vector-database', destination: '/articles/youtube-transcripts-vector-database', permanent: true },
+
+      // Docs URL hernesting (2026-05-04 — flat → categorical)
+      { source: '/docs/credits', destination: '/docs/how-indxr-works/credits', permanent: true },
+      { source: '/docs/accuracy', destination: '/docs/how-indxr-works/accuracy', permanent: true },
+      { source: '/docs/accuracy/auto-captions', destination: '/docs/how-indxr-works/accuracy/auto-captions', permanent: true },
+      { source: '/docs/accuracy/ai-transcription', destination: '/docs/how-indxr-works/accuracy/ai-transcription', permanent: true },
+      { source: '/docs/export-formats', destination: '/docs/how-indxr-works/export-formats', permanent: true },
+      { source: '/docs/export-formats/txt', destination: '/docs/how-indxr-works/export-formats/txt', permanent: true },
+      { source: '/docs/export-formats/markdown', destination: '/docs/how-indxr-works/export-formats/markdown', permanent: true },
+      { source: '/docs/export-formats/csv', destination: '/docs/how-indxr-works/export-formats/csv', permanent: true },
+      { source: '/docs/export-formats/srt', destination: '/docs/how-indxr-works/export-formats/srt', permanent: true },
+      { source: '/docs/export-formats/vtt', destination: '/docs/how-indxr-works/export-formats/vtt', permanent: true },
+      { source: '/docs/export-formats/json', destination: '/docs/how-indxr-works/export-formats/json', permanent: true },
+      { source: '/docs/languages', destination: '/docs/how-indxr-works/languages', permanent: true },
+      { source: '/docs/limits', destination: '/docs/how-indxr-works/limits', permanent: true },
+      { source: '/docs/api', destination: '/docs/how-indxr-works/api', permanent: true },
+      { source: '/docs/account', destination: '/docs/account-and-data/credits-and-billing', permanent: true },
+      { source: '/docs/privacy-handling', destination: '/docs/account-and-data/data-handling', permanent: true },
+      { source: '/docs/how-to', destination: '/docs/help/how-to', permanent: true },
+      { source: '/docs/troubleshooting', destination: '/docs/help/troubleshooting', permanent: true },
+      { source: '/docs/faq', destination: '/docs/help/faq', permanent: true },
     ]
   },
   images: {

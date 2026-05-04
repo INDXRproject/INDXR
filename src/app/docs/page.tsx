@@ -1,50 +1,52 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import { docsConfig } from "@/lib/docs-config"
 import { Footer } from "@/components/Footer"
+import { JsonLd } from "@/components/seo/JsonLd"
+import { DocsHubHero } from "@/components/docs/DocsHubHero"
+import { FeaturedDocsGrid } from "@/components/docs/FeaturedDocsGrid"
+import { DocsCategorySection } from "@/components/docs/DocsCategorySection"
+import { docsConfig } from "@/lib/docs-config"
 
 export const metadata: Metadata = {
   title: "Documentation — INDXR.AI",
-  description: "Everything you need to get started with INDXR — from your first transcript to advanced workflows.",
+  description: "Everything you need to get started with INDXR — from your first transcript to advanced export and RAG workflows.",
   robots: { index: true, follow: true },
+}
+
+const categoryIntros: Record<string, string> = {
+  "Getting started": "New to INDXR? Start here.",
+  "How INDXR works": "Understand extraction, accuracy, credits, and export formats.",
+  "Account & data": "Credits, billing, and how your data is handled.",
+  "Help": "FAQ, how-to guides, and troubleshooting.",
+}
+
+const collectionPageSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "INDXR.AI Documentation",
+  description: "Product documentation for INDXR — YouTube transcript extraction and AI transcription.",
+  url: "https://indxr.ai/docs",
 }
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl font-semibold text-[var(--fg)] mb-3">Documentation</h1>
-          {/* KHIDR: intro copy voor docs landing */}
-          <p className="text-[var(--fg-subtle)] text-lg max-w-2xl">
-            Everything you need to get the most out of INDXR — from your first transcript to advanced export workflows.
-          </p>
-        </div>
-
-        {/* Sections grid */}
-        <div className="grid gap-8 md:grid-cols-2">
-          {docsConfig.sections.map((section) => (
-            <div key={section.label} className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6">
-              <h2 className="text-base font-semibold text-[var(--fg)] mb-4">{section.label}</h2>
-              <ul className="space-y-2">
-                {section.pages.map((page) => (
-                  <li key={page.href}>
-                    <Link
-                      href={page.href}
-                      className="text-sm text-[var(--fg-muted)] hover:text-[var(--accent)] transition-colors"
-                    >
-                      {page.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+    <>
+      <JsonLd schemas={[collectionPageSchema]} />
+      <div className="min-h-screen bg-[var(--bg)]">
+        <div className="max-w-4xl mx-auto px-4 pb-16">
+          <DocsHubHero />
+          <FeaturedDocsGrid />
+          <div className="grid sm:grid-cols-2 gap-8">
+            {docsConfig.sections.map((section) => (
+              <DocsCategorySection
+                key={section.label}
+                section={section}
+                intro={categoryIntros[section.label]}
+              />
+            ))}
+          </div>
         </div>
       </div>
-
       <Footer />
-    </div>
+    </>
   )
 }

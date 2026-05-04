@@ -206,6 +206,15 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
 - [ ] Longform: "How to use YouTube transcripts for RAG and vector databases" — gericht op AI/developer doelgroep, linkt naar RAG JSON export.
 - [ ] Longform: "YouTube transcript JSON format — complete guide" — informationeel, hoog zoekvolume.
 
+### Polish / deferred UI
+
+Items die bewust buiten scope zijn gehouden in skeleton-bouw sessies. Te oppakken in Claude Design rondje of dedicated polish-sessie.
+
+- [ ] **Format-export gating (friction case 3c)** — Anonymous users die een non-TXT export proberen (Markdown, JSON, CSV, SRT, VTT) zouden een inline `FrictionConversionCard` moeten zien i.p.v. directe download. Vereist aanpassing van `src/components/TranscriptCard.tsx`: per format-knop controleren op `user` auth-state en bij anonymous een inline card tonen. Deferred vanwege scope ("backend logica niet aanraken" in Batch 1).
+- [ ] **Playlist eerste-3-free UI** — Visueel onderscheid "Free" vs "Sign up to extract" per video in de PlaylistTab/PlaylistManager. Vereist aanpassing van `src/components/PlaylistManager.tsx` om per-video-rij een badge of state te tonen. Deferred naar content/design-pass.
+
+Zie ook `docs/wiki/architecture/page-structures/free-tool.md` voor context.
+
 ### Pre-launch — bestaande features afronden
 
 - [ ] **Opus 249 audio format valideren en deployen** — kwaliteitstest op 50 diverse video's, dan format selector aanpassen. Zie ADR-016. ~63% reductie in proxy-bandbreedte.

@@ -1,11 +1,11 @@
 export type DocsPage = {
   href: string
   label: string
+  indent?: number
 }
 
 export type DocsSection = {
   label: string
-  slug?: string
   pages: DocsPage[]
 }
 
@@ -17,63 +17,43 @@ export const docsConfig: DocsConfig = {
   sections: [
     {
       label: "Getting started",
-      slug: "getting-started",
       pages: [
-        { href: "/docs/getting-started", label: "Welcome to INDXR" },
+        { href: "/docs/getting-started", label: "Quickstart" },
       ],
     },
     {
-      label: "Account",
+      label: "How INDXR works",
       pages: [
-        { href: "/docs/account", label: "Credits and billing" },
-        { href: "/docs/credits", label: "How credits work" },
-        { href: "/docs/limits", label: "Usage limits" },
+        { href: "/docs/how-indxr-works/overview", label: "Overview" },
+        { href: "/docs/how-indxr-works/credits", label: "How credits work" },
+        { href: "/docs/how-indxr-works/accuracy", label: "Accuracy" },
+        { href: "/docs/how-indxr-works/accuracy/auto-captions", label: "Auto-captions", indent: 1 },
+        { href: "/docs/how-indxr-works/accuracy/ai-transcription", label: "AI transcription", indent: 1 },
+        { href: "/docs/how-indxr-works/export-formats", label: "Export formats" },
+        { href: "/docs/how-indxr-works/export-formats/txt", label: "Plain text (TXT)", indent: 1 },
+        { href: "/docs/how-indxr-works/export-formats/markdown", label: "Markdown", indent: 1 },
+        { href: "/docs/how-indxr-works/export-formats/csv", label: "CSV", indent: 1 },
+        { href: "/docs/how-indxr-works/export-formats/srt", label: "SRT subtitles", indent: 1 },
+        { href: "/docs/how-indxr-works/export-formats/vtt", label: "VTT subtitles", indent: 1 },
+        { href: "/docs/how-indxr-works/export-formats/json", label: "JSON / RAG JSON", indent: 1 },
+        { href: "/docs/how-indxr-works/languages", label: "Supported languages" },
+        { href: "/docs/how-indxr-works/limits", label: "Limits" },
+        { href: "/docs/how-indxr-works/api", label: "API" },
       ],
     },
     {
-      label: "Accuracy",
+      label: "Account & data",
       pages: [
-        { href: "/docs/accuracy", label: "Accuracy overview" },
-        { href: "/docs/accuracy/auto-captions", label: "Auto-captions" },
-        { href: "/docs/accuracy/ai-transcription", label: "AI transcription" },
+        { href: "/docs/account-and-data/credits-and-billing", label: "Credits and billing" },
+        { href: "/docs/account-and-data/data-handling", label: "How we handle your data" },
       ],
     },
     {
-      label: "Export formats",
+      label: "Help",
       pages: [
-        { href: "/docs/export-formats", label: "All formats overview" },
-        { href: "/docs/export-formats/txt", label: "Plain text (TXT)" },
-        { href: "/docs/export-formats/markdown", label: "Markdown" },
-        { href: "/docs/export-formats/csv", label: "CSV" },
-        { href: "/docs/export-formats/srt", label: "SRT subtitles" },
-        { href: "/docs/export-formats/vtt", label: "VTT subtitles" },
-        { href: "/docs/export-formats/json", label: "JSON / RAG JSON" },
-      ],
-    },
-    {
-      label: "Languages & privacy",
-      pages: [
-        { href: "/docs/languages", label: "Supported languages" },
-        { href: "/docs/privacy-handling", label: "How we handle your data" },
-      ],
-    },
-    {
-      label: "How-to guides",
-      pages: [
-        { href: "/docs/how-to", label: "All how-to guides" },
-      ],
-    },
-    {
-      label: "Troubleshooting",
-      pages: [
-        { href: "/docs/troubleshooting", label: "All troubleshooting" },
-      ],
-    },
-    {
-      label: "Reference",
-      pages: [
-        { href: "/docs/faq", label: "FAQ" },
-        { href: "/docs/api", label: "API (coming soon)" },
+        { href: "/docs/help/how-to", label: "How-to guides" },
+        { href: "/docs/help/troubleshooting", label: "Troubleshooting" },
+        { href: "/docs/help/faq", label: "FAQ" },
       ],
     },
   ],

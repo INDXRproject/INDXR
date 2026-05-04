@@ -84,10 +84,28 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 
 ---
 
+## Page structures (`architecture/page-structures/`)
+
+Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat er op elke pagina staat.
+
+→ [README.md](architecture/page-structures/README.md) — index van alle page-structure docs
+
+| Bestand | Onderwerp |
+|---------|-----------|
+| [homepage.md](architecture/page-structures/homepage.md) | `/` — sectie-volgorde, componentenlijst, beslissingen (Batch 1) |
+| [free-tool.md](architecture/page-structures/free-tool.md) | `/transcribe` — tool + friction-states, componentenlijst, beslissingen (Batch 1) |
+| [pricing.md](architecture/page-structures/pricing.md) | `/pricing` — tier-structuur, credit-cost tabel, AggregateOffer schema (Batch 1) |
+| [docs-hub.md](architecture/page-structures/docs-hub.md) | `/docs` hub |
+| [reference-doc.md](architecture/page-structures/reference-doc.md) | reference doc template |
+| [tutorial-doc.md](architecture/page-structures/tutorial-doc.md) | tutorial doc template |
+
+---
+
 ## Architectuur (`architecture/`)
 
 | Bestand | Onderwerp |
 |---------|-----------|
+| [pricing-source-of-truth.md](architecture/pricing-source-of-truth.md) | **`src/lib/pricing.ts` is de enige bron voor PACKAGES, CREDIT_COSTS, FREE_TIER** |
 | [sitemap.md](architecture/sitemap.md) | **Routestructuur, navigatie, redirects — post-refactor bron van waarheid** |
 | [sitemap-audit-2026-05.md](architecture/sitemap-audit-2026-05.md) | Volledige sitemap audit (2026-05): routes, componenten, metadata, inconsistenties — input voor research/design/implementatie |
 | [overview.md](architecture/overview.md) | High-level architectuur met request flows en tech stack |

@@ -6,7 +6,6 @@ import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { CreditBalance } from "@/components/CreditBalance"
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
 import {
   DropdownMenu,
@@ -128,6 +127,9 @@ export function Header() {
           <Link href="/docs" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             Docs
           </Link>
+          <Link href="/articles" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+            Articles
+          </Link>
           <Link href="/transcribe">
             <Button size="sm" className="bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]">
               Try it free
@@ -139,17 +141,18 @@ export function Header() {
         <div className="hidden md:flex items-center gap-3 shrink-0">
           <ThemeToggle />
           {user ? (
-            <>
-              <CreditBalance />
-              <AvatarDropdown />
-            </>
+            <Link href="/dashboard">
+              <Button size="sm" className="bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]">
+                Go to app
+              </Button>
+            </Link>
           ) : (
             <>
               <Link href="/login">
                 <Button variant="ghost" size="sm">Log in</Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm">Start free</Button>
+                <Button size="sm">Sign up</Button>
               </Link>
             </>
           )}
@@ -167,11 +170,6 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <div className="flex flex-col gap-6 mt-8">
-                {user && (
-                  <div className="pb-4 border-b border-[var(--border)]">
-                    <CreditBalance />
-                  </div>
-                )}
                 <nav className="flex flex-col gap-4">
                   <SheetClose asChild>
                     <Link href="/pricing" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
@@ -184,6 +182,11 @@ export function Header() {
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
+                    <Link href="/articles" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+                      Articles
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
                     <Link href="/transcribe" className="text-lg font-medium text-[var(--accent)]">
                       Try it free
                     </Link>
@@ -193,8 +196,8 @@ export function Header() {
                   {user ? (
                     <>
                       <SheetClose asChild>
-                        <Link href="/dashboard/account" className="w-full">
-                          <Button variant="outline" className="w-full">Account</Button>
+                        <Link href="/dashboard" className="w-full">
+                          <Button className="w-full bg-[var(--accent)] text-[var(--fg-on-accent)]">Go to app</Button>
                         </Link>
                       </SheetClose>
                       <SheetClose asChild>
@@ -210,7 +213,7 @@ export function Header() {
                       </SheetClose>
                       <SheetClose asChild>
                         <Link href="/signup" className="w-full">
-                          <Button className="w-full">Start free</Button>
+                          <Button className="w-full">Sign up</Button>
                         </Link>
                       </SheetClose>
                     </>

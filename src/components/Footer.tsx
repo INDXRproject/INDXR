@@ -12,7 +12,7 @@ const exportFormats = [
 const learn = [
   { href: "/docs", label: "Documentation" },
   { href: "/docs/getting-started", label: "Getting started" },
-  { href: "/docs/faq", label: "FAQ" },
+  { href: "/docs/help/faq", label: "FAQ" },
   { href: "/articles/youtube-playlist-transcript", label: "Playlist transcripts" },
   { href: "/articles/audio-to-text", label: "Audio file upload" },
   { href: "/articles/youtube-transcript-not-available", label: "Transcript not available?" },

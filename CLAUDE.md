@@ -9,10 +9,85 @@ YouTube transcript SaaS. Next.js 16 frontend op Vercel, FastAPI Python backend o
 Bij het begin van elke sessie:
 
 1. Lees `docs/wiki/INDEX.md` — navigatiehub naar alle wiki-pagina's
-2. Lees de laatste 15 regels van `docs/LOG.md` — recente wijzigingen
-3. Lees `docs/INBOX.md` — als er inhoud staat onder de `---` lijn:
-   - Verwerk naar de juiste wiki-pagina's in `docs/wiki/`
-   - Maak daarna de inhoud onder de `---` leeg (behoud de header boven de lijn)
+2. Lees `docs/LESSONS.md` — terugkerende valkuilen, niet opnieuw maken
+3. Lees de laatste 15 regels van `docs/LOG.md` — recente wijzigingen
+
+Bij twijfel of conflicten die buiten scope van een sessie vallen: stop, documenteer beknopt in `docs/wiki/roadmap/priorities.md` onder de juiste sectie, en rapporteer terug in je response.
+
+
+---
+
+## Werkprincipes
+
+Deze vier regels gelden voor elke taak. Ze overrulen jouw intuïtie als die met ze in conflict komt.
+
+### 1. Denk vóór je codeert
+- Geen stille aannames. Bij ambiguïteit: stel één gerichte vraag of presenteer 2 interpretaties met tradeoffs.
+- Bij twijfel over framework-gedrag (Next.js, Supabase, ARQ, Sentry): web_search of lees source, niet gokken.
+- Als een eenvoudigere aanpak bestaat dan de gevraagde: zeg het. Niet stilzwijgend complexer maken.
+
+### 2. Eenvoud eerst
+- Minimum code dat het probleem oplost. Niets speculatief.
+- Geen abstracties voor single-use code. Geen "flexibiliteit" die niet gevraagd is.
+- Geen error-handling voor onmogelijke scenario's.
+- Als 200 regels naar 50 kunnen: herschrijf. Test: zou een staff engineer dit te ingewikkeld noemen.
+
+### 3. Chirurgische wijzigingen
+- Raak alleen aan wat de taak vereist. Geen drive-by refactors. Geen styling-fixes in onaangrenzende files.
+- Match bestaande stijl, ook als jij het anders zou doen.
+- Bij ongerelateerde dode code: noem het in je rapport, verwijder het niet.
+- Door jouw wijziging verweesd geworden imports/variabelen: opruimen. Pre-existing dead code: laten staan.
+- Test: elke gewijzigde regel moet direct herleidbaar zijn naar de taak.
+
+### 4. Doelgericht uitvoeren
+- Vage instructies omzetten in verifieerbare targets vóór je begint.
+  - "Voeg validatie toe" → "Schrijf tests voor invalide input, maak ze groen."
+  - "Fix de bug" → "Schrijf test die hem reproduceert, maak hem groen."
+- Voor multi-step taken: schets eerst plan met verify-stappen, dan loopen tot alle checks groen zijn.
+
+---
+
+## Verification gates — niet onderhandelbaar
+
+Een taak is **niet klaar** tot je het bewezen hebt. Bewijs = build groen + relevante test/check + concreet productie-gedrag of unit-test output.
+
+**Verboden:**
+- LOG.md entry "✅ done" zonder bewijs in dezelfde response.
+- Wiki-update met "Opgelost" zonder verificatie-rapport.
+- ADR-aanmaak voor architectuurkeuze die nog niet getest is in productie.
+
+**Verplicht per taak:**
+1. Build check (`npm run build` of relevante backend test).
+2. Concrete verificatie:
+   - Bug fix: reproductie-test + bewijs dat hij groen is.
+   - Nieuwe feature: minstens één run (lokaal of productie) met output gerapporteerd.
+   - Wiki/ADR: verifieer claims tegen broncode (geen referentie-naar-eigen-eerdere-wiki).
+3. Bij twijfel of het werkt: rapporteer dat expliciet, markeer als `[~]` (in progress), niet `[x]` (done).
+
+Cross-reference: dit gedrag is vereist door wiki-onderhoud-richtlijn in `docs/wiki/INDEX.md`.
+
+---
+
+## Self-improving rules — `docs/LESSONS.md`
+
+Naast LOG.md (wat je deed) bestaat **`docs/LESSONS.md`** (wat je niet meer mag vergeten). 
+
+**Append-regel:** elke keer dat Khidr je corrigeert op iets dat geen one-off is — een patroon dat opnieuw kan voorkomen — append een regel aan `docs/LESSONS.md` in dit format:
+
+[YYYY-MM-DD] <gebied>: <wat fout ging> → <regel om herhaling te voorkomen>
+
+**Voorbeelden van wat WEL in LESSONS.md hoort:**
+- Status enum-waarden (`'complete'` niet `'completed'`)
+- Library-eigenaardigheden (ARQ heeft geen `ack_late`, lingua language codes via `normalize_language_code`)
+- Patronen die op meerdere plekken fout gaan (RPC parameter-namen, kolom-namen)
+- Architectuur-grenzen die makkelijk overschreden worden (financiële routes vragen extra audit)
+
+**Wat NIET in LESSONS.md hoort:**
+- One-off bugs zonder generalisatie.
+- Beslissingen — die gaan in een ADR.
+- Tijdelijke workarounds — die gaan in `known-issues.md`.
+
+**Sessiestart:** lees `docs/LESSONS.md` mee bij sessie-start (na INDEX.md, vóór LOG.md). Dit voorkomt dat je dezelfde fout twee keer maakt.
 
 ---
 
