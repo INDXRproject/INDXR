@@ -1,3 +1,7 @@
+[2026-05-04 14:15] infra: Werksessie C Sessie 1 fixes — middleware.ts: marketingOnlyPaths array vervangen door inverse !isAppPath check; localhost-branch ?next gebruikt nextUrl.origin i.p.v. APP_URL (voorkomt app.localhost redirect lokaal); login/page.tsx: resolvePostLoginTarget accepteert ook localhost als valid next-hostname, single-host fallback naar relatief '/dashboard/transcribe', call site conditioneel router.push vs window.location.href; @supabase/ssr 0.8.0 source-inspectie bevestigd: cookieOptions.domain wordt gespread in alle set/remove paden — client.ts ongewijzigd; build groen (86 routes, 0 errors) | gewijzigd: src/middleware.ts, src/app/login/page.tsx
+---
+[2026-05-04 13:30] infra: Werksessie C Code Sessie 1 — subdomain split implementatie (app.indxr.ai): (1) src/app/dashboard/ + src/app/admin/ verplaatst naar route group src/app/(app)/ (URL's ongewijzigd); (2) Supabase cookie domain ingesteld op .indxr.ai in alle 3 supabase utils (server.ts, client.ts, middleware.ts) voor cross-subdomain session sharing; (3) updateSession() gerefactord naar {response, user} tuple; (4) src/middleware.ts volledig herschreven met hostname-aware routing (indxr.ai/dashboard → 308 app.indxr.ai/dashboard, app.indxr.ai zonder auth → indxr.ai/login?next=..., app.indxr.ai marketing-paths → 308 indxr.ai); (5) login/page.tsx: ?redirect → ?next, router.push → window.location.href met open-redirect validatie; auth/callback/route.ts: ${origin}/... → ${APP_URL}/... en ${MARKETING_URL}/...; AuthContext.tsx: SIGNED_OUT op app host → redirect naar MARKETING_URL/login; (6) .env.example bijgewerkt met NEXT_PUBLIC_APP_URL + NEXT_PUBLIC_MARKETING_URL; build groen (86 routes, 0 errors) | gewijzigd: src/app/(app)/dashboard/*, src/app/(app)/admin/*, src/utils/supabase/{server,client,middleware}.ts, src/middleware.ts, src/app/login/page.tsx, src/app/auth/callback/route.ts, src/contexts/AuthContext.tsx, .env.example, docs/wiki/architecture/auth-and-security.md, docs/LOG.md
+---
 [2026-05-04 12:00] docs + scaffold: Batch 1 / page-type 4 — /docs hernesting flat → categorisch: docs-config.ts herschreven (4 secties: Getting started / How INDXR works / Account & data / Help); DocsSidebar bijgewerkt (Search verwijderd, indent-prop toegevoegd); 15 nieuwe docs-componenten in src/components/docs/ (DocsBreadcrumb, DefinitionLeadOpening, ReferenceTable, EdgeCasesCallout, RelatedTopicsList, AnchorHeading, InPageTOC, TutorialOpening, PrerequisitesBlock, TutorialStep, WhatJustHappened, NextStepsBlock, DocsHubHero, FeaturedDocsGrid, DocsCategorySection); 22 nieuwe page.tsx bestanden aangemaakt onder /docs/how-indxr-works/*, /docs/account-and-data/*, /docs/help/*; 11 oude directories verwijderd; /docs/page.tsx herschreven (CollectionPage schema); /docs/getting-started herschreven (Tutorial layout + HowTo schema); 20 redirects toegevoegd aan next.config.ts; sitemap.ts bijgewerkt (22 docs-routes); Footer /docs/faq → /docs/help/faq; llms.txt bijgewerkt (verouderde URLs); wiki: docs-hub.md + reference-doc.md + tutorial-doc.md aangemaakt; sitemap.md Laag 2A volledig herschreven; INDEX.md + README.md bijgewerkt | gewijzigd: src/lib/docs-config.ts, src/components/docs/DocsSidebar.tsx, src/components/docs/{15 nieuwe}, src/app/docs/page.tsx, src/app/docs/getting-started/page.tsx, src/app/docs/how-indxr-works/** (15 nieuwe), src/app/docs/account-and-data/** (2 nieuwe), src/app/docs/help/** (3 nieuwe), next.config.ts, src/app/sitemap.ts, src/components/Footer.tsx, public/llms.txt, docs/wiki/architecture/page-structures/{docs-hub.md,reference-doc.md,tutorial-doc.md} (nieuw), docs/wiki/architecture/page-structures/README.md, docs/wiki/architecture/sitemap.md, docs/wiki/INDEX.md, docs/LOG.md
 ---
 [2026-05-04 02:45] cleanup: INBOX.md uitgefaseerd — pricing-discrepantie tabel + Khidr-actie gemigreerd naar pricing-source-of-truth.md (nieuwe sectie "Migration history"); /transcribe deferred polish-items (format-export gating 3c + playlist eerste-3-free UI) gemigreerd naar wiki/roadmap/priorities.md (nieuwe sectie "Polish / deferred UI"); INBOX.md-verwijzingen in free-tool.md bijgewerkt naar priorities.md; INBOX.md verwijderd; CLAUDE.md sessiestart-protocol bijgewerkt (stap 3 vervallen, nieuwe handoff-instructie → priorities.md) | gewijzigd: docs/INBOX.md (verwijderd), docs/wiki/architecture/pricing-source-of-truth.md, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/page-structures/free-tool.md, CLAUDE.md, docs/LOG.md
@@ -3415,3 +3419,142 @@ docs/wiki/decisions/043-author-byline-indxr-editorial.md
 docs/wiki/decisions/044-user-feedback-channels.md
 ---
 [2026-05-04 01:45] precompact: context compaction triggered
+[2026-05-04 08:15] commit: refactor: Batch 1 — marketing, pricing, free tool, reference docs
+
+Page-type 1 — Homepage:
+- Header: Articles nav, Sign up (was Start free), logged-in Go to app
+- 9 new marketing components (HowItWorks, Differentiators, Stats, etc.)
+- Homepage: 8-section structure, fake testimonials removed
+
+Page-type 2 — Free tool (/transcribe):
+- FrictionConversionCard, MicroTrustRow, FAQAccordion (new)
+- Audio tab gated for anonymous, Playlist inline friction
+- ClosingCTASection extended with copy-override props
+
+Page-type 3 — Pricing (/pricing):
+- src/lib/pricing.ts as single source of truth (PACKAGES, CREDIT_COSTS, FREE_TIER)
+- Stripe checkout route reads from pricing.ts
+- 9 new pricing components, /pricing refactored SERVER with JSON-LD
+- AggregateOffer + FAQPage schema, 3 prominent + 2 secondary tiers
+
+Page-type 4 — Reference docs + hub:
+- docs-config.ts: 4 categories (Getting started / How INDXR works / Account & data / Help)
+- URL restructure: flat → nested (20 redirects)
+- 15 new skeleton components in src/components/docs/
+- /docs hub: CollectionPage schema
+- /docs/getting-started: Tutorial layout, HowTo schema
+- All reference docs: TechArticle + BreadcrumbList schema
+
+Other:
+- INBOX.md retired → priorities.md
+- CLAUDE.md: LESSONS.md protocol added
+- sitemap.ts, Footer, llms.txt, wiki docs updated
+- Build: 86 routes, 0 errors
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: CLAUDE.md
+docs/INBOX.md
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/page-structures/README.md
+docs/wiki/architecture/page-structures/docs-hub.md
+docs/wiki/architecture/page-structures/free-tool.md
+docs/wiki/architecture/page-structures/homepage.md
+docs/wiki/architecture/page-structures/pricing.md
+docs/wiki/architecture/page-structures/reference-doc.md
+docs/wiki/architecture/page-structures/tutorial-doc.md
+docs/wiki/architecture/pricing-source-of-truth.md
+docs/wiki/architecture/sitemap.md
+docs/wiki/roadmap/priorities.md
+next.config.ts
+public/llms.txt
+src/app/(marketing)/page.tsx
+src/app/api/stripe/checkout/route.ts
+src/app/docs/account-and-data/credits-and-billing/page.tsx
+src/app/docs/account-and-data/data-handling/page.tsx
+src/app/docs/account/page.tsx
+src/app/docs/accuracy/ai-transcription/page.tsx
+src/app/docs/accuracy/auto-captions/page.tsx
+src/app/docs/accuracy/page.tsx
+src/app/docs/api/page.tsx
+src/app/docs/credits/page.tsx
+src/app/docs/export-formats/csv/page.tsx
+src/app/docs/export-formats/json/page.tsx
+src/app/docs/export-formats/markdown/page.tsx
+src/app/docs/export-formats/page.tsx
+src/app/docs/export-formats/srt/page.tsx
+src/app/docs/export-formats/txt/page.tsx
+src/app/docs/export-formats/vtt/page.tsx
+src/app/docs/faq/page.tsx
+src/app/docs/getting-started/page.tsx
+src/app/docs/help/faq/page.tsx
+src/app/docs/help/how-to/page.tsx
+src/app/docs/help/troubleshooting/page.tsx
+src/app/docs/how-indxr-works/accuracy/ai-transcription/page.tsx
+src/app/docs/how-indxr-works/accuracy/auto-captions/page.tsx
+src/app/docs/how-indxr-works/accuracy/page.tsx
+src/app/docs/how-indxr-works/api/page.tsx
+src/app/docs/how-indxr-works/credits/page.tsx
+src/app/docs/how-indxr-works/export-formats/csv/page.tsx
+src/app/docs/how-indxr-works/export-formats/json/page.tsx
+src/app/docs/how-indxr-works/export-formats/markdown/page.tsx
+src/app/docs/how-indxr-works/export-formats/page.tsx
+src/app/docs/how-indxr-works/export-formats/srt/page.tsx
+src/app/docs/how-indxr-works/export-formats/txt/page.tsx
+src/app/docs/how-indxr-works/export-formats/vtt/page.tsx
+src/app/docs/how-indxr-works/languages/page.tsx
+src/app/docs/how-indxr-works/limits/page.tsx
+src/app/docs/how-indxr-works/overview/page.tsx
+src/app/docs/how-to/page.tsx
+src/app/docs/languages/page.tsx
+src/app/docs/limits/page.tsx
+src/app/docs/page.tsx
+src/app/docs/privacy-handling/page.tsx
+src/app/docs/troubleshooting/page.tsx
+src/app/pricing/page.tsx
+src/app/sitemap.ts
+src/app/transcribe/page.tsx
+src/components/Footer.tsx
+src/components/Header.tsx
+src/components/docs/AnchorHeading.tsx
+src/components/docs/DefinitionLeadOpening.tsx
+src/components/docs/DocsBreadcrumb.tsx
+src/components/docs/DocsCategorySection.tsx
+src/components/docs/DocsHubHero.tsx
+src/components/docs/DocsSidebar.tsx
+src/components/docs/EdgeCasesCallout.tsx
+src/components/docs/FeaturedDocsGrid.tsx
+src/components/docs/InPageTOC.tsx
+src/components/docs/NextStepsBlock.tsx
+src/components/docs/PrerequisitesBlock.tsx
+src/components/docs/ReferenceTable.tsx
+src/components/docs/RelatedTopicsList.tsx
+src/components/docs/TutorialOpening.tsx
+src/components/docs/TutorialStep.tsx
+src/components/docs/WhatJustHappened.tsx
+src/components/marketing/ClosingCTASection.tsx
+src/components/marketing/DifferentiatorStrip.tsx
+src/components/marketing/FAQAccordion.tsx
+src/components/marketing/FrictionConversionCard.tsx
+src/components/marketing/HeroImage.tsx
+src/components/marketing/HowItWorksBlock.tsx
+src/components/marketing/MacbookMockupFrame.tsx
+src/components/marketing/MicroTrustRow.tsx
+src/components/marketing/PricingTeaserBlock.tsx
+src/components/marketing/RemotionLoop.tsx
+src/components/marketing/StatsFromTesting.tsx
+src/components/marketing/TestimonialPlaceholder.tsx
+src/components/pricing/AlwaysFreeBlock.tsx
+src/components/pricing/BuyButton.tsx
+src/components/pricing/CreditCostTable.tsx
+src/components/pricing/PricingHero.tsx
+src/components/pricing/PricingTierCard.tsx
+src/components/pricing/PricingTierGrid.tsx
+src/components/pricing/SecondaryTierStrip.tsx
+src/components/pricing/TrustRowCards.tsx
+src/components/pricing/VatLine.tsx
+src/lib/docs-config.ts
+src/lib/pricing.ts
+---
+[2026-05-04 09:28] precompact: context compaction triggered

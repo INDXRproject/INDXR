@@ -15,7 +15,26 @@ import { loginAction, loginWithGoogleAction } from "@/app/auth/actions"
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const redirectTo = searchParams?.get('redirect')
+  const nextParam = searchParams?.get('next')
+
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3000'
+
+  function resolvePostLoginTarget(): string {
+    if (nextParam) {
+      try {
+        const url = new URL(nextParam)
+        const isLocalhost = url.hostname === 'localhost' || url.hostname.startsWith('app.localhost')
+        if (url.hostname === 'app.indxr.ai' || isLocalhost) {
+          return nextParam
+        }
+      } catch { /* invalid URL — fall through */ }
+    }
+    // On localhost (single-host dev), stay on same origin
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return '/dashboard/transcribe'
+    }
+    return `${APP_URL}/dashboard/transcribe`
+  }
   
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -31,8 +50,8 @@ export default function LoginPage() {
       const formData = new FormData()
       formData.append('email', email)
       formData.append('password', password)
-      if (redirectTo) {
-        formData.append('redirectTo', redirectTo)
+      if (nextParam) {
+        formData.append('redirectTo', nextParam)
       }
 
       // Call Server Action
@@ -44,13 +63,13 @@ export default function LoginPage() {
         setIsSubmitting(false)
       } else {
         toast.success("Logged in successfully!")
-        
-        // CRITICAL: Refresh router to update Server Components with new session
-        router.refresh()
-        
-        // Then navigate
-        const target = redirectTo || '/dashboard/transcribe'
-        router.push(target)
+
+        const target = resolvePostLoginTarget()
+        if (target.startsWith('/')) {
+          router.push(target)
+        } else {
+          window.location.href = target
+        }
       }
     } catch (err) {
       // Check if it's a redirect error (NEXT_REDIRECT) - although we removed redirect from action,

@@ -138,6 +138,15 @@ export function AuthProvider({
         setCredits(null)
         setQuota(null)
         setProfile(null)
+
+        // On app host, redirect to marketing domain login after sign-out
+        if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
+          const hostname = window.location.hostname
+          if (hostname === 'app.indxr.ai' || hostname.startsWith('app.localhost')) {
+            const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'
+            window.location.href = `${marketingUrl}/login`
+          }
+        }
       }
       
       setLoading(false)

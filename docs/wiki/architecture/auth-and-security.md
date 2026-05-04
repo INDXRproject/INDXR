@@ -21,13 +21,70 @@ Auth volgt het Supabase SSR patroon:
    └─ Accepteert initialUser — geen loading state voor eerste render
    └─ Abonneert op supabase.auth.onAuthStateChange() voor updates
    └─ Haalt credits + profile op via RPC en profiles tabel
+   └─ Bij SIGNED_OUT op app.indxr.ai: redirect naar indxr.ai/login
 
 3. Middleware (src/middleware.ts):
    └─ updateSession() op elke request → vernieuwt Supabase session cookie
+   └─ Hostname-aware routing (zie subdomain-routing hieronder)
    └─ Matcher: alle routes behalve static assets
 
 4. Client components: useAuth() hook voor user/credits/loading
 ```
+
+---
+
+## Subdomain Routing
+
+Zie ADR-034 (app-subdomain) en ADR-036 (auth-on-marketing-domain).
+
+### Domein-indeling
+
+| Domein | Wat |
+|--------|-----|
+| `indxr.ai` | Marketing, login, signup, docs, /transcribe |
+| `app.indxr.ai` | Dashboard, admin (authenticated app) |
+
+### Middleware hostname routing (`src/middleware.ts`)
+
+| Verzoek | Actie |
+|---------|-------|
+| `indxr.ai/dashboard/*` | 308 → `app.indxr.ai/dashboard/*` |
+| `indxr.ai/admin/*` | 308 → `app.indxr.ai/admin/*` |
+| `app.indxr.ai/` | redirect → `/dashboard` |
+| `app.indxr.ai/dashboard` (ingelogd) | passthrough |
+| `app.indxr.ai/dashboard` (niet ingelogd) | redirect → `indxr.ai/login?next=https://app.indxr.ai/dashboard` |
+| `app.indxr.ai/login` | 308 → `indxr.ai/login` |
+| `app.indxr.ai/pricing` | 308 → `indxr.ai/pricing` |
+| `localhost:3000/*` | local dev passthrough (old auth bewaard) |
+
+### Cookie cross-subdomain sharing
+
+Supabase session cookies worden gezet op root-domain `.indxr.ai`, zodat `indxr.ai` (login) en `app.indxr.ai` (app) dezelfde sessie lezen.
+
+```typescript
+const cookieDomain = isProd ? '.indxr.ai' : undefined
+// undefined = current host in local dev (geen cross-subdomain nodig)
+```
+
+Geconfigureerd in: `src/utils/supabase/server.ts`, `client.ts`, `middleware.ts` (supabase util).
+
+### Login redirect flow (na implementatie subdomain split)
+
+1. `app.indxr.ai/dashboard` zonder sessie → middleware redirect naar `indxr.ai/login?next=https://app.indxr.ai/dashboard`
+2. Login slaagt → `window.location.href = resolvePostLoginTarget()` (cross-host, niet `router.push`)
+3. `?next` gevalideerd: hostname moet `app.indxr.ai` of `app.localhost` zijn (open redirect preventie)
+4. Fallback: `NEXT_PUBLIC_APP_URL + '/dashboard/transcribe'`
+
+### Auth callback (`src/app/auth/callback/route.ts`)
+
+Na OAuth code exchange: redirect naar `NEXT_PUBLIC_APP_URL/dashboard/transcribe` (niet `${origin}/...`).
+
+### Nieuwe env vars
+
+| Var | Local dev | Productie |
+|-----|-----------|-----------|
+| `NEXT_PUBLIC_APP_URL` | `http://app.localhost:3000` | `https://app.indxr.ai` |
+| `NEXT_PUBLIC_MARKETING_URL` | `http://localhost:3000` | `https://indxr.ai` |
 
 ### PostHog Identificatie
 
@@ -106,6 +163,7 @@ allow_origins=[
     "http://localhost:3001",
     "https://indxr.ai",
     "https://www.indxr.ai",
+    "https://app.indxr.ai",   # TODO: toevoegen bij subdomain deploy
     "https://indxr.vercel.app",
 ]
 ```
