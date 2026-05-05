@@ -3,13 +3,20 @@
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@9.15.0",
-  "engines": { "node": ">=20.9.0" },
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
     "dev:marketing": "pnpm --filter @indxr/marketing dev",
     "dev:app": "pnpm --filter @indxr/app dev",
     "build:marketing": "pnpm --filter @indxr/marketing build",
-    "build:app": "pnpm --filter @indxr/app build",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r lint"
+    "build:app": "pnpm --filter @indxr/app build"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.9"
   }
 }

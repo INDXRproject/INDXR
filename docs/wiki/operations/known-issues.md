@@ -165,6 +165,43 @@ Bij een Sentry SDK major update of Vercel infrastructure change: opnieuw testen 
 
 ---
 
+## Pending deprecations
+
+### Sentry: `disableLogger` deprecated
+**Aangetroffen:** B0.8 build output (2026-05-05)  
+**Bestanden:** `apps/marketing/next.config.ts`, `apps/app/next.config.ts`  
+- [ ] Vervang `disableLogger: true` door `webpack.treeshake.removeDebugLogging` bij volgende Sentry SDK update. Zie [@sentry/nextjs changelog](https://github.com/getsentry/sentry-javascript).
+
+### Next.js: `middleware` file convention deprecated
+**Aangetroffen:** B0.8 build output (2026-05-05)  
+**Bestanden:** `apps/marketing/src/middleware.ts`, `apps/app/src/middleware.ts`  
+- [ ] Migreren naar nieuwe `proxy` convention vóór Next.js 17. Onderzoek migratiepath op [nextjs.org/docs/messages/middleware-to-proxy](https://nextjs.org/docs/messages/middleware-to-proxy) voorafgaand aan Next.js 17 upgrade.
+
+---
+
+## Risk monitoring
+
+### Vercel zero-config Turborepo deployment
+
+**Status:** Actieve configuratie (vanaf B1.1 / 2026-05-05)  
+**Risico:** Vercel community-rapport (aug 2025) dat `buildCommand` genegeerd werd voor pnpm monorepos. Geen vervolg-meldingen — vermoedelijk gefixt of edge-case. We vertrouwen op Vercel's zero-config Turborepo integratie (`framework: "nextjs"` in vercel.json, rest auto-detect).
+
+**Fallback indien Vercel deploys falen** (symptomen: "Cannot find module", TS2307 errors, ongebruikelijke build-paden):
+
+Herstel expliciete commands in beide `apps/*/vercel.json`:
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@indxr/<app>",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "framework": "nextjs",
+  "outputDirectory": ".next"
+}
+```
+
+---
+
 ## Niet-kritieke TODO's
 
 ### ~~assemblyai SDK niet gepind in requirements.txt~~ ✅ Opgelost 2026-04-26
@@ -277,8 +314,10 @@ Geen externe service die alarmeert bij downtime.
 - [x] AudioTab: job recovery na page refresh (sessionStorage, resume banner, elapsed timer via `created_at`)
 - [x] `no_warnings`: was al `True` in `audio_utils.py` — geen fix nodig geweest
 - [x] **BACKEND_API_SECRET toevoegen aan Vercel environment variables** ✓ (geverifieerd 2026-04-15: Railway→401 zonder header, Next.js→307 met correcte auth flow)
-- [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten in live mode + webhook registreren
-- [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel
+- [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten in live mode + webhook registreren (**URL: `https://app.indxr.ai/api/stripe/webhook`**)
+- [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel (apps/app project)
+- [ ] `NEXT_PUBLIC_PYTHON_BACKEND_URL` verwijderen uit Vercel dashboard — var is vervangen door `NEXT_PUBLIC_AUDIO_UPLOAD_URL`, staat nog in Vercel env vars maar niet meer in codebase (B0 cleanup 2026-05-05)
+- [ ] Vercel dashboard: "Automatically skip unnecessary deployments" inschakelen per project (Project Settings → Git) — vervangt `ignoreCommand`, native Turborepo-integratie
 - [x] Supabase email verificatie re-enabled ✓
 - [x] `UPSTASH_REDIS_REST_URL` + `_TOKEN` geconfigureerd in Vercel ✓ (rate limiting bewust uitgeschakeld tijdens testfase — activeren bij launch)
 - [ ] Supabase database backups configureren

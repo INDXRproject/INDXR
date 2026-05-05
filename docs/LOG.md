@@ -1,3 +1,13 @@
+[2026-05-05 20:00] taak: B1.1-revisie 2 vercel.json minimaliseren | beide vercel.json gereduceerd tot {framework: "nextjs"} — Vercel zero-config Turborepo integratie. Fallback config gedocumenteerd in known-issues.md (Risk monitoring sectie). deployment.md bijgewerkt.
+---
+[2026-05-05 19:45] taak: B1.1-revisie ignoreCommand verwijderen | ignoreCommand uit beide vercel.json verwijderd, turbo-ignore gedeinstalleerd. Vercel native "skip unnecessary deployments" feature vervangt dit — TODO in pre-launch checklist. known-issues.md turbo-ignore entry verwijderd. deployment.md bijgewerkt. pnpm turbo build ✓
+---
+[2026-05-05 19:30] taak: B1.1 vercel.json per app | apps/marketing/vercel.json + apps/app/vercel.json aangemaakt (buildCommand via turbo filter, installCommand pnpm root, ignoreCommand turbo-ignore). turbo-ignore@2.9.9 apart geïnstalleerd (niet in turbo binary). Beide filter-builds ✓. turbo-ignore deprecated (→ turbo query affected), genoteerd in known-issues.md. deployment.md bijgewerkt met vercel.json sectie.
+---
+[2026-05-05 19:00] taak: B0.8 Turborepo introduceren | turbo@2.9.9 geïnstalleerd, turbo.json aangemaakt, root scripts bijgewerkt (turbo run build/dev/lint/typecheck + pnpm filter commands behouden), .gitignore bijgewerkt (.turbo/). Cold build 51.3s, warm build 63ms (FULL TURBO), partial invalidation verified. ADR-047 aangemaakt. CLAUDE.md Lokale commando's bijgewerkt naar pnpm/turbo workflow.
+---
+[2026-05-05 18:30] taak: B0 env var audit + cleanup | NEXT_PUBLIC_PYTHON_BACKEND_URL verwijderd uit apps/app/.env.local (stale — AudioTab gebruikt al NEXT_PUBLIC_AUDIO_UPLOAD_URL). NEXT_PUBLIC_SITE_URL: 0 hits, al dood. PYTHON_BACKEND_URL: 11 hits, KEEP. TODO toegevoegd aan known-issues.md: verwijder NEXT_PUBLIC_PYTHON_BACKEND_URL ook uit Vercel dashboard. Beide builds ✓
+---
 [2026-05-05 18:00] taak: commit 1794f6b opsplitsen in 2 logische commits | soft reset → commit f8aab3d (monorepo code, 333 files) + commit a7f8ac5 (tooling + wiki, 13 files). LESSONS.md bijgewerkt met git-workflow regel.
 ---
 [2026-05-05 17:30] taak: orphan-verificatie docs-componenten | verwijderd: apps/marketing/src/components/docs/AnchorHeading.tsx, InPageTOC.tsx, ReferenceTable.tsx — geen MDX-bestanden, geen MDX-config, nul referenties buiten eigen definitie. Build ✓
@@ -5061,4 +5071,8 @@ docs/wiki/decisions/015-rag-json-export.md
 docs/wiki/decisions/046-monorepo-import-aliases.md
 docs/wiki/operations/deployment.md
 docs/wiki/operations/known-issues.md
+---
+[2026-05-05 12:58] commit: docs: LOG entry + LESSONS git-workflow rule
+Changed: docs/LESSONS.md
+docs/LOG.md
 ---

@@ -142,11 +142,26 @@ ADR-formaat:
 
 ### Lokale commando's
 
-**Frontend:**
+**Frontend (monorepo — pnpm + Turborepo):**
 ```bash
 cd "INDXR.AI V2"
-npm install
-npm run dev          # http://localhost:3000
+pnpm install
+
+# Beide apps parallel (canoniek):
+pnpm dev             # turbo run dev --parallel
+                     # marketing → http://localhost:3000
+                     # app       → http://localhost:3001
+
+# Één app:
+pnpm dev:marketing   # http://localhost:3000
+pnpm dev:app         # http://localhost:3001
+
+# Build met caching (canoniek):
+pnpm build           # turbo run build (cold ~51s, warm ~63ms)
+
+# Build één app:
+pnpm build:marketing
+pnpm build:app
 ```
 
 **Backend (apart starten, niet via Next.js):**
@@ -160,7 +175,7 @@ venv/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 npx playwright test                        # alle 29 specs headless
 npx playwright test specs/01-single-video  # één spec
 ```
-Vereist: `npm run dev` + backend draaiend + `tests/test_accounts.json` aanwezig.
+Vereist: `pnpm dev:marketing` + backend draaiend + `tests/test_accounts.json` aanwezig.
 
 **Python packages updaten:**
 ```bash

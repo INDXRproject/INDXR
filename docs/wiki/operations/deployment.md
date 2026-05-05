@@ -38,6 +38,31 @@ Twee aparte Vercel-projecten, allebei op dezelfde GitHub repo (`master`-branch).
 
 **Auto-deploy:** Push naar `master` → beide Vercel-projecten deployen automatisch.
 
+### Vercel project instellingen
+
+Beide projecten worden geconfigureerd via `vercel.json` in de app-root — geen custom build/install commands in Vercel UI nodig.
+
+| Instelling | indxr-marketing | indxr-app |
+|---|---|---|
+| Root Directory | `apps/marketing` | `apps/app` |
+| Framework Preset | Next.js (auto-detect) | Next.js (auto-detect) |
+| Build Command | *via vercel.json* | *via vercel.json* |
+| Install Command | *via vercel.json* | *via vercel.json* |
+
+**vercel.json per app** (versioned in code, zero-config):
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs"
+}
+```
+
+Vercel detecteert via `turbo.json` automatisch: build command, install command, output directory en Turborepo Remote Caching. `framework: "nextjs"` is de enige expliciete instelling om Next.js-optimalisaties te garanderen.
+
+**Skip onnodige deploys:** Vercel heeft een ingebouwde platform-feature "Automatically skip unnecessary deployments in monorepos" die via Turborepo's dependency graph detecteert of een app geraakt is door een commit. Geen `ignoreCommand` nodig — **Khidr activeert dit in het Vercel dashboard per project** (Project Settings → Git → "Automatically cancel deployments").
+
+**Fallback bij deploy-problemen:** zie known-issues.md → "Risk monitoring → Vercel zero-config Turborepo deployment" voor expliciete config.
+
 ### Environment Variables — @indxr/marketing (indxr.ai)
 
 ```bash
