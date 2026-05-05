@@ -1,3 +1,5 @@
+[2026-05-05 04:10] fix: cross-host navigatie bugs — (1) app-sidebar.tsx:189 router.push("/login") → window.location.href = marketingHref('/login'); router.refresh() verwijderd (overbodig na full reload); marketingHref import toegevoegd; useRouter import gebleven (nog 3 andere uses). (2) WelcomeCreditCard.tsx:128 window.location.href = '/pricing' → marketingHref('/pricing'); import toegevoegd. Build groen | gewijzigd: src/components/app-sidebar.tsx, src/components/dashboard/WelcomeCreditCard.tsx
+---
 [2026-05-05 03:50] fix: C.2.2 — Header <Link href="/dashboard*"> → <a href={appHref(...)}> voor alle 5 app-path instanties (AvatarDropdown dashboard/account/settings, desktop "Go to app", mobile "Go to app"); Link import verwijderd, appHref toegevoegd aan cross-host-links import; docs/account-and-data/credits-and-billing/page.tsx Link import verwijderd (<Link href="/pricing"> → <a>, <Link href="/dashboard/account"> → appHref); build groen | gewijzigd: src/components/Header.tsx, src/app/docs/account-and-data/credits-and-billing/page.tsx
 ---
 [2026-05-05 02:00] wiki: Werksessie C openstaande items gedocumenteerd in priorities.md (nieuwe sectie "Werksessie C — app.indxr.ai subdomain split"): C.1.1 [~] auth-recovery verify, C.1.2 productie-tests, C.1.3 OAuth, C.2.1 manifest CORS bug (bevestigd), C.2.2 Header /dashboard → appHref (nieuw gevonden), C.2.3 email templates, C.2.4 Python CORS ontbreekt (bevestigd), C.2.5 robots.txt, C.3.1 [!] Upstash quota blocker, C.3.2 [~] rate limiting uitgeschakeld; afgewezen items: Stripe checkout (correct), sitemap (geen dashboard URLs), admin fetch (passthrough werkt), OG/metadata (niet geïndexeerd); known-issues.md inconsistentie over Upstash gedocumenteerd; LESSONS.md 2 regels bijgewerkt | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LESSONS.md, docs/LOG.md
@@ -3678,3 +3680,16 @@ docs/wiki/roadmap/priorities.md
 src/utils/supabase/middleware.ts
 ---
 [2026-05-05 03:42] precompact: context compaction triggered
+[2026-05-05 03:48] commit: fix(C.2.2): Header /dashboard Links → appHref to prevent cross-host prefetch crash
+
+5 <Link href="/dashboard*"> instances in Header.tsx (dropdown 3, desktop, mobile)
+veroorzaakten Next.js RSC prefetch op marketing-host → 308 cross-origin → CORS
+block → TypeError 'Error in input stream' → 'Application error' flash van ~1s
+tijdens login redirect.
+
+Vervangen door <a href={appHref(...)}> conform sessie 1 patroon.
+Bonus: docs/credits-and-billing /dashboard/account Link ook gefixed.
+Changed: docs/LOG.md
+src/app/docs/account-and-data/credits-and-billing/page.tsx
+src/components/Header.tsx
+---

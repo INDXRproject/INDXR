@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import { marketingHref } from "@/lib/cross-host-links"
 import Link from "next/link"
 import {
   Home, Library, AudioLines, Inbox, BookOpen, Settings, User, LogOut,
@@ -186,8 +187,7 @@ export function AppSidebar() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push("/login")
-    router.refresh()
+    window.location.href = marketingHref('/login')
   }
 
   const handleCreate = async () => {

@@ -7,6 +7,7 @@ import { claimWelcomeRewardAction } from "@/app/actions/credits"
 import { toast } from "sonner"
 import { useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
+import { marketingHref } from "@/lib/cross-host-links"
 
 interface CheckResult {
   claimed: boolean
@@ -125,7 +126,7 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
         <Button
             variant="outline"
             className="flex-1"
-            onClick={() => window.location.href = '/pricing'}
+            onClick={() => { window.location.href = marketingHref('/pricing') }}
         >
             Buy More Credits
         </Button>
