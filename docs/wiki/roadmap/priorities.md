@@ -274,9 +274,8 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (me
 - [ ] **C.2.3 — Email templates audit** — handmatige check Khidr
   Supabase Dashboard → Auth → Email Templates. Controleer of `{{ .SiteURL }}` variabelen correct resolven naar `https://indxr.ai` (confirm/reset links moeten naar marketing-host verwijzen, niet naar app). Niet code-verifieerbaar.
 
-- [ ] **C.2.4 — Python backend CORS origins** ⚠️ BEVESTIGD
-  `backend/main.py:151-161`: `allow_origins` bevat `https://indxr.ai` en `https://www.indxr.ai` maar **niet** `https://app.indxr.ai`. Browser op `app.indxr.ai` maakt directe POST calls naar Railway voor audio-uploads (`NEXT_PUBLIC_PYTHON_BACKEND_URL` — gevonden op `AudioTab.tsx:349`). Deze calls falen met CORS-error.
-  **Fix:** `"https://app.indxr.ai"` toevoegen aan `allow_origins` in `backend/main.py:155` (na `"https://www.indxr.ai"`).
+- [x] **C.2.4 — Python backend CORS origins** ✅ OPGELOST 2026-05-05
+  `"https://app.indxr.ai"` toegevoegd aan `allow_origins` in `backend/main.py`. Cleanup-001.
 
 - [ ] **C.2.5 — Robots.txt strategie voor app-host**
   `public/robots.txt` bevat `Disallow: /dashboard/` en `Disallow: /admin/` — correct voor marketing-host. Op `app.indxr.ai` geeft middleware `/robots.txt` een 308 naar `indxr.ai/robots.txt`; sommige crawlers volgen geen redirects voor robots.txt. Ideaal: `app.indxr.ai/robots.txt` retourneert `Disallow: /` inline. Optie: voeg `/robots.txt` toe als uitzonderingspad in middleware (`!isAppPath` skip) en serveer via Next.js `src/app/robots.ts` met host-detectie.

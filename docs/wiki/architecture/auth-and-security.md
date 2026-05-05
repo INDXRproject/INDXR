@@ -165,7 +165,7 @@ allow_origins=[
     "http://localhost:3001",
     "https://indxr.ai",
     "https://www.indxr.ai",
-    "https://app.indxr.ai",   # TODO: toevoegen bij subdomain deploy
+    "https://app.indxr.ai",
     "https://indxr.vercel.app",
 ]
 ```

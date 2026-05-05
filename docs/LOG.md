@@ -1,3 +1,7 @@
+[2026-05-05 09:15] taak: pre-migratie cleanup (cleanup-001) — cross-host links (7 fixes in TranscriptCard, contact/page, PlaylistManager, AudioTab, VideoTab), NEXT_PUBLIC_SITE_URL → APP/MARKETING_URL in auth/actions.ts (4 regels), CORS app.indxr.ai toegevoegd aan backend/main.py, 4 dode componenten verwijderd (HeroImage, AuthModal, CreditBalance, FeatureCard), LESSONS.md uitgebreid | gewijzigd: src/components/TranscriptCard.tsx, src/app/contact/page.tsx, src/components/PlaylistManager.tsx, src/components/free-tool/AudioTab.tsx, src/components/free-tool/VideoTab.tsx, src/app/auth/actions.ts, backend/main.py, docs/LESSONS.md, docs/wiki/migration/cleanup-001-report.md
+---
+[2026-05-05 08:03] audit: monorepo migratie audit-001 aangemaakt — read-only codebase audit (12 secties: middleware routing, cross-host links, lekkende links, route verhuiskaart, auth flows, shared components, supabase utils, manifest/robots/sitemap, env vars matrix, CORS, deps, observaties) | gewijzigd: docs/wiki/migration/audit-001.md, docs/LOG.md
+---
 [2026-05-05 06:00] docs: corrigeer migratie-checkpoint van d13c30e naar 1fc0589 in priorities.md — 1fc0589 bevat bug-fix d13c30e plus handoff-documentatie (ADR-045 + status-docs); bij rollback wil je docs ook behouden | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LOG.md
 ---
 [2026-05-05 05:45] docs: sessie-handoff documentatie — ADR-045 aangemaakt (twee Vercel projecten monorepo beslissing, context: RSC architectural mismatch met middleware 308-redirects); priorities.md: Werksessie C status-sectie toegevoegd (TypeError-bug gesloten, resterende items beoordeeld, C.4 migratie-placeholder); INDEX.md: ADR-045 toegevoegd aan beslissingen-tabel | gewijzigd: docs/wiki/decisions/045-two-vercel-projects-decision.md, docs/wiki/roadmap/priorities.md, docs/wiki/INDEX.md
@@ -3804,4 +3808,35 @@ Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/decisions/045-two-vercel-projects-decision.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-05-05 07:45] commit: docs: correct migration checkpoint reference in priorities.md
+
+Two references to d13c30e (the bug-fix commit) have been updated to 1fc0589
+(the handoff commit, which includes d13c30e + ADR-045 + status documentation).
+
+On rollback the desired state is the bug-fix code AND the handoff documentation,
+not just the bug-fix alone. 1fc0589 is the correct restore baseline.
+Changed: docs/LOG.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-05-05 10:37] commit: cleanup(pre-migration): cross-host links, NEXT_PUBLIC_SITE_URL decommissioning, CORS, dead code
+
+- Fix raw /dashboard links in TranscriptCard, contact, PlaylistManager
+- Fix <Link href=/dashboard/...> in free-tool/* (rendered on marketing host)
+- Replace NEXT_PUBLIC_SITE_URL with APP_URL/MARKETING_URL in auth/actions.ts
+- Add https://app.indxr.ai to backend CORS allow_origins
+- Delete unused components: AuthModal, CreditBalance, FeatureCard, HeroImage (root)
+
+Prepares codebase for monorepo migration (ADR-045).
+Changed: backend/main.py
+src/app/auth/actions.ts
+src/app/contact/page.tsx
+src/components/AuthModal.tsx
+src/components/CreditBalance.tsx
+src/components/FeatureCard.tsx
+src/components/HeroImage.tsx
+src/components/PlaylistManager.tsx
+src/components/TranscriptCard.tsx
+src/components/free-tool/AudioTab.tsx
+src/components/free-tool/VideoTab.tsx
 ---
