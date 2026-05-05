@@ -62,10 +62,9 @@ export default function LoginPage() {
         setIsSubmitting(false)
       }
     } catch (err) {
-      // Server Action's redirect() throws NEXT_REDIRECT — let Next.js handle navigation.
-      if ((err as Error).message === 'NEXT_REDIRECT' || (err as any)?.digest?.startsWith('NEXT_REDIRECT')) {
-        throw err
-      }
+      // NEXT_REDIRECT is thrown by redirect() in the Server Action to stop server execution.
+      // The 303 redirect is already handled by Next.js before this catch runs — swallow silently.
+      if ((err as any)?.digest?.startsWith('NEXT_REDIRECT')) return
       console.error(err)
       setError("An unexpected error occurred")
       setIsSubmitting(false)

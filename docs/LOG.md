@@ -1,3 +1,5 @@
+[2026-05-05 05:20] fix: "Uncaught (in promise) Error: NEXT_REDIRECT" cosmetisch console-issue — catch-block in login/page.tsx re-throwde NEXT_REDIRECT maar event handler heeft geen NEXT_REDIRECT boundary; 303 redirect al geïnitieerd door Next.js vóór throw bereikt catch; fix: `throw err` → `return` zodat NEXT_REDIRECT silently geswallowed wordt; build groen | gewijzigd: src/app/login/page.tsx
+---
 [2026-05-05 05:00] fix: TypeError "Error in input stream" tijdens login flow — root cause: Server Action (loginAction) triggerde browser RSC stream abort doordat window.location.href navigeerde weg terwijl Next.js de action response nog streemde (bevestigd door Next.js GitHub Issue #81377). Fix: loginAction retourneert nu redirect(finalTarget) i.p.v. { success: true }; finalTarget gevalideerd op server (app.indxr.ai / localhost / app.localhost hostnames); client stuurt altijd resolvePostLoginTarget() als redirectTo via formData; client-side navigatie (window.location.href + router.push) verwijderd; useRouter import verwijderd; NEXT_REDIRECT catch-block gebleven; build groen (86 routes, 0 errors) | gewijzigd: src/app/auth/actions.ts, src/app/login/page.tsx
 ---
 [2026-05-05 04:30] fix: Server Component redirect("/login") → absolute marketing URL — 6 instances in dashboard/* Server Components (layout ×2, billing, settings, account, library/[id]); /suspended bevestigd als marketing-route; NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000' als fallback; admin/layout.tsx redirect("/dashboard") onaangeroerd (app-path); LESSONS.md bijgewerkt; build groen | gewijzigd: src/app/(app)/dashboard/layout.tsx, src/app/(app)/dashboard/billing/page.tsx, src/app/(app)/dashboard/settings/page.tsx, src/app/(app)/dashboard/account/page.tsx, src/app/(app)/dashboard/library/[id]/page.tsx, docs/LESSONS.md
@@ -3739,4 +3741,27 @@ src/app/(app)/dashboard/billing/page.tsx
 src/app/(app)/dashboard/layout.tsx
 src/app/(app)/dashboard/library/[id]/page.tsx
 src/app/(app)/dashboard/settings/page.tsx
+---
+[2026-05-05 05:19] commit: fix(login): Server Action redirect to prevent RSC stream abort
+
+loginAction retourneert nu redirect(finalTarget) i.p.v. { success: true }
+gevolgd door client-side window.location.href. Browser aborteerde de RSC
+action-response stream mid-transmission zodra client navigeerde →
+TypeError 'Error in input stream' + 'Application error' flash op
+www.indxr.ai tijdens elke login.
+
+Bevestigd via Next.js GitHub #81377: redirect() in Server Action is
+atomisch (303 response, browser volgt zonder concurrent stream).
+
+Hostname-validatie toegevoegd voor cross-host redirects (app.indxr.ai,
+localhost, app.localhost). resolvePostLoginTarget() altijd doorgegeven
+als redirectTo via formData.
+
+Sluit definitief de bug-klasse die we sinds Werksessie C deploy
+hebben gechased: TypeError 'Error in input stream'.
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/auth-and-security.md
+src/app/auth/actions.ts
+src/app/login/page.tsx
 ---
