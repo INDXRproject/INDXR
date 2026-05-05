@@ -13,6 +13,7 @@ import { PlaylistAvailabilitySummary } from "@/components/PlaylistAvailabilitySu
 import { useAuth } from "@/hooks/useAuth";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
+import { appHref } from "@/lib/cross-host-links";
 
 interface PlaylistEntry {
   id: string;
@@ -471,7 +472,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         </Button>
                         <Button
                             className="bg-accent hover:bg-accent/90 text-fg-on-accent"
-                            onClick={() => window.location.href = '/dashboard/library'} // Simple redirect
+                            onClick={() => window.location.href = appHref('/dashboard/library')}
                         >
                             View in Library
                         </Button>
@@ -672,7 +673,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                                  <>
                                    {captionsEntry && (
                                      <a
-                                       href={`/dashboard/library/${captionsEntry.transcriptId}`}
+                                       href={appHref(`/dashboard/library/${captionsEntry.transcriptId}`)}
                                        target="_blank"
                                        onClick={(e) => e.stopPropagation()}
                                        className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-amber-500/20 transition-colors"
@@ -683,7 +684,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                                    )}
                                    {whisperEntry && (
                                      <a
-                                       href={`/dashboard/library/${whisperEntry.transcriptId}`}
+                                       href={appHref(`/dashboard/library/${whisperEntry.transcriptId}`)}
                                        target="_blank"
                                        onClick={(e) => e.stopPropagation()}
                                        className="text-[10px] uppercase font-bold text-violet-500 bg-violet-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-violet-500/20 transition-colors"

@@ -9,7 +9,7 @@ import { TranscriptMetadata, PROCESSING_METHODS } from "@/types/transcript"
 import { toast } from "sonner"
 import { validateYouTubeUrl, YouTubeUrlType } from "@/utils/youtube"
 import Link from "next/link"
-import { marketingHref } from "@/lib/cross-host-links"
+import { marketingHref, appHref } from "@/lib/cross-host-links"
 import { createClient } from "@/utils/supabase/client"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import { cn } from "@/lib/utils"
@@ -1157,9 +1157,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    <p className="text-sm text-fg/80">
                      Your transcript is still being processed. Check your Library in a few minutes — it will appear there when ready.
                    </p>
-                   <Link href="/dashboard/library" className="text-xs text-accent hover:underline mt-1 inline-block">
+                   <a href={appHref('/dashboard/library')} className="text-xs text-accent hover:underline mt-1 inline-block">
                      Go to Library →
-                   </Link>
+                   </a>
                  </div>
                </div>
              ) : error?.isMembersOnly ? (
@@ -1288,9 +1288,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                      {hasEnoughCredits ? (
                        `You have ${credits} credits remaining`
                      ) : (
-                       <Link href="/dashboard/billing" className="text-warning-fg hover:text-amber-700 hover:underline">
+                       <a href={appHref('/dashboard/billing')} className="text-warning-fg hover:text-amber-700 hover:underline">
                          Not enough credits — top up
-                       </Link>
+                       </a>
                      )}
                    </span>
                  </div>
@@ -1325,11 +1325,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     )}
                   </p>
                 </div>
-                <Link href="/dashboard/library">
+                <a href={appHref('/dashboard/library')}>
                   <Button variant="outline" size="sm" className="ml-4 border-warning/40 text-warning-fg dark:text-warning hover:bg-warning-subtle">
                     View in Library
                   </Button>
-                </Link>
+                </a>
               </div>
             ) : (
               <div className="mb-4 p-4 bg-success-subtle border border-success/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
@@ -1342,11 +1342,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     )}
                   </p>
                 </div>
-                <Link href="/dashboard/library">
+                <a href={appHref('/dashboard/library')}>
                   <Button variant="outline" size="sm" className="ml-4 border-success/40 text-success-fg dark:text-success hover:bg-success-subtle">
                     View in Library
                   </Button>
-                </Link>
+                </a>
               </div>
             )
           )}

@@ -7,6 +7,7 @@ import { useState } from "react"
 import { HelpCircle, Lightbulb, Send, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/Footer"
+import { appHref } from "@/lib/cross-host-links"
 
 type Category = "help" | "feedback"
 
@@ -158,7 +159,7 @@ export default function SupportPage() {
               <h2 className="text-lg font-semibold text-[var(--fg)] mb-2">Message received</h2>
               <p className="text-sm text-[var(--fg-muted)] max-w-sm mx-auto">
                 We&apos;ve received your message — check your{" "}
-                <a href="/dashboard/messages" className="text-[var(--accent)] hover:underline">Messages inbox</a>{" "}
+                <a href={appHref('/dashboard/messages')} className="text-[var(--accent)] hover:underline">Messages inbox</a>{" "}
                 for our reply.
               </p>
             </div>

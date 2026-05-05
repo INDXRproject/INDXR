@@ -10,7 +10,7 @@ import { toast } from "sonner"
 import { TranscriptCard, TranscriptItem } from "@/components/TranscriptCard"
 import { TranscriptMetadata } from "@/types/transcript"
 import Link from "next/link"
-import { marketingHref } from "@/lib/cross-host-links"
+import { marketingHref, appHref } from "@/lib/cross-host-links"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "@/utils/supabase/client"
@@ -670,11 +670,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Link href="/dashboard/library">
+                <a href={appHref('/dashboard/library')}>
                   <Button variant="outline" size="sm" className="text-success border-green-500/50 hover:bg-success-subtle">
                     View in Library
                   </Button>
-                </Link>
+                </a>
                 <button
                   onClick={() => setSaveStatus('idle')}
                   className="p-1 hover:bg-success-subtle rounded transition-colors text-success"

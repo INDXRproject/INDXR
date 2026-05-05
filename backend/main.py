@@ -153,6 +153,7 @@ app.add_middleware(
         "http://localhost:3001",
         "https://indxr.ai",
         "https://www.indxr.ai",
+        "https://app.indxr.ai",
         "https://indxr.vercel.app",
     ],
     allow_credentials=True,
