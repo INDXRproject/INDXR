@@ -1,0 +1,42 @@
+{
+  "name": "@indxr/marketing",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@indxr/shared": "workspace:*",
+    "@sentry/nextjs": "^10.50.0",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.90.1",
+    "@hookform/resolvers": "^5.2.2",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.1",
+    "next": "16.1.4",
+    "posthog-js": "^1.335.2",
+    "posthog-node": "^5.24.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "lucide-react": "^0.562.0",
+    "react-hook-form": "^7.71.1",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.4",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "postcss": "^8"
+  }
+}

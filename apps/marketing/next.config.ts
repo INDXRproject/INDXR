@@ -1,0 +1,89 @@
+import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
+
+const nextConfig: NextConfig = {
+  transpilePackages: ["@indxr/shared"],
+  async redirects() {
+    return [
+      // Legacy URL cleanup
+      { source: '/faq', destination: '/docs/help/faq', permanent: true },
+      { source: '/account/credits', destination: '/dashboard/account', permanent: true },
+      { source: '/how-it-works', destination: '/', permanent: true },
+
+      // Renamed routes
+      { source: '/youtube-transcript-generator', destination: '/transcribe', permanent: true },
+      { source: '/support', destination: '/contact', permanent: true },
+
+      // Articles migration (top-level SEO → /articles/*)
+      { source: '/youtube-transcript-not-available', destination: '/articles/youtube-transcript-not-available', permanent: true },
+      { source: '/youtube-age-restricted-transcript', destination: '/articles/youtube-age-restricted-transcript', permanent: true },
+      { source: '/youtube-members-only-transcript', destination: '/articles/youtube-members-only-transcript', permanent: true },
+      { source: '/youtube-transcript-non-english', destination: '/articles/youtube-transcript-non-english', permanent: true },
+      { source: '/youtube-transcript-without-extension', destination: '/articles/youtube-transcript-without-extension', permanent: true },
+      { source: '/bulk-youtube-transcript', destination: '/articles/bulk-youtube-transcript', permanent: true },
+      { source: '/youtube-playlist-transcript', destination: '/articles/youtube-playlist-transcript', permanent: true },
+      { source: '/audio-to-text', destination: '/articles/audio-to-text', permanent: true },
+      { source: '/youtube-to-text', destination: '/articles/youtube-to-text', permanent: true },
+      { source: '/youtube-transcript-markdown', destination: '/articles/youtube-transcript-markdown', permanent: true },
+      { source: '/youtube-transcript-csv', destination: '/articles/youtube-transcript-csv', permanent: true },
+      { source: '/youtube-srt-download', destination: '/articles/youtube-srt-download', permanent: true },
+      { source: '/youtube-transcript-json', destination: '/articles/youtube-transcript-json', permanent: true },
+      { source: '/youtube-transcript-for-rag', destination: '/articles/youtube-transcript-for-rag', permanent: true },
+      { source: '/youtube-transcript-obsidian', destination: '/articles/youtube-transcript-obsidian', permanent: true },
+      { source: '/blog/chunk-youtube-transcripts-for-rag', destination: '/articles/chunk-youtube-transcripts-for-rag', permanent: true },
+      { source: '/blog/youtube-channel-knowledge-base', destination: '/articles/youtube-channel-knowledge-base', permanent: true },
+      { source: '/blog/youtube-transcripts-vector-database', destination: '/articles/youtube-transcripts-vector-database', permanent: true },
+
+      // Docs URL hernesting (2026-05-04 — flat → categorical)
+      { source: '/docs/credits', destination: '/docs/how-indxr-works/credits', permanent: true },
+      { source: '/docs/accuracy', destination: '/docs/how-indxr-works/accuracy', permanent: true },
+      { source: '/docs/accuracy/auto-captions', destination: '/docs/how-indxr-works/accuracy/auto-captions', permanent: true },
+      { source: '/docs/accuracy/ai-transcription', destination: '/docs/how-indxr-works/accuracy/ai-transcription', permanent: true },
+      { source: '/docs/export-formats', destination: '/docs/how-indxr-works/export-formats', permanent: true },
+      { source: '/docs/export-formats/txt', destination: '/docs/how-indxr-works/export-formats/txt', permanent: true },
+      { source: '/docs/export-formats/markdown', destination: '/docs/how-indxr-works/export-formats/markdown', permanent: true },
+      { source: '/docs/export-formats/csv', destination: '/docs/how-indxr-works/export-formats/csv', permanent: true },
+      { source: '/docs/export-formats/srt', destination: '/docs/how-indxr-works/export-formats/srt', permanent: true },
+      { source: '/docs/export-formats/vtt', destination: '/docs/how-indxr-works/export-formats/vtt', permanent: true },
+      { source: '/docs/export-formats/json', destination: '/docs/how-indxr-works/export-formats/json', permanent: true },
+      { source: '/docs/languages', destination: '/docs/how-indxr-works/languages', permanent: true },
+      { source: '/docs/limits', destination: '/docs/how-indxr-works/limits', permanent: true },
+      { source: '/docs/api', destination: '/docs/how-indxr-works/api', permanent: true },
+      { source: '/docs/account', destination: '/docs/account-and-data/credits-and-billing', permanent: true },
+      { source: '/docs/privacy-handling', destination: '/docs/account-and-data/data-handling', permanent: true },
+      { source: '/docs/how-to', destination: '/docs/help/how-to', permanent: true },
+      { source: '/docs/troubleshooting', destination: '/docs/help/troubleshooting', permanent: true },
+      { source: '/docs/faq', destination: '/docs/help/faq', permanent: true },
+    ]
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'yt3.ggpht.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+    ],
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '30mb',
+    },
+    proxyClientMaxBodySize: '30mb',
+  },
+};
+
+export default withSentryConfig(nextConfig, {
+  org: "indxrai",
+  project: "indxr-frontend",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  disableLogger: true,
+});
