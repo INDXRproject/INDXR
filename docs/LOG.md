@@ -1,3 +1,5 @@
+[2026-05-05 05:00] fix: TypeError "Error in input stream" tijdens login flow — root cause: Server Action (loginAction) triggerde browser RSC stream abort doordat window.location.href navigeerde weg terwijl Next.js de action response nog streemde (bevestigd door Next.js GitHub Issue #81377). Fix: loginAction retourneert nu redirect(finalTarget) i.p.v. { success: true }; finalTarget gevalideerd op server (app.indxr.ai / localhost / app.localhost hostnames); client stuurt altijd resolvePostLoginTarget() als redirectTo via formData; client-side navigatie (window.location.href + router.push) verwijderd; useRouter import verwijderd; NEXT_REDIRECT catch-block gebleven; build groen (86 routes, 0 errors) | gewijzigd: src/app/auth/actions.ts, src/app/login/page.tsx
+---
 [2026-05-05 04:30] fix: Server Component redirect("/login") → absolute marketing URL — 6 instances in dashboard/* Server Components (layout ×2, billing, settings, account, library/[id]); /suspended bevestigd als marketing-route; NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000' als fallback; admin/layout.tsx redirect("/dashboard") onaangeroerd (app-path); LESSONS.md bijgewerkt; build groen | gewijzigd: src/app/(app)/dashboard/layout.tsx, src/app/(app)/dashboard/billing/page.tsx, src/app/(app)/dashboard/settings/page.tsx, src/app/(app)/dashboard/account/page.tsx, src/app/(app)/dashboard/library/[id]/page.tsx, docs/LESSONS.md
 ---
 [2026-05-05 04:10] fix: cross-host navigatie bugs — (1) app-sidebar.tsx:189 router.push("/login") → window.location.href = marketingHref('/login'); router.refresh() verwijderd (overbodig na full reload); marketingHref import toegevoegd; useRouter import gebleven (nog 3 andere uses). (2) WelcomeCreditCard.tsx:128 window.location.href = '/pricing' → marketingHref('/pricing'); import toegevoegd. Build groen | gewijzigd: src/components/app-sidebar.tsx, src/components/dashboard/WelcomeCreditCard.tsx
@@ -3711,4 +3713,30 @@ full page reload).
 Changed: docs/LOG.md
 src/components/app-sidebar.tsx
 src/components/dashboard/WelcomeCreditCard.tsx
+---
+[2026-05-05 04:48] commit: fix(C.2.6): Server Component redirect('/login') → absolute marketing URL
+
+6 instances in dashboard Server Components: layout.tsx (login + suspended),
+billing, settings, account, library/[id]. Op app.indxr.ai veroorzaakte
+relatief pad redirect 307 → middleware 308 cross-origin chain → RSC prefetch
+parser kreeg redirect-response in plaats van RSC stream → TypeError 'Error
+in input stream' persistent op alle dashboard pages.
+
+Fix: redirect(`${NEXT_PUBLIC_MARKETING_URL}/login`) gebruikt absolute
+marketing URL → browser volgt direct naar marketing-host zonder middleware
+intercept. /suspended bevestigd als marketing-route.
+
+admin/layout.tsx:16 redirect('/dashboard') onaangeroerd (app-path, blijft
+relatief).
+
+Sluit C.2.2 / C.2.6 prefetch-crash bug-klasse: cross-host navigation moet
+absolute URL gebruiken in alle lagen (Link → marketingHref/appHref,
+window.location → marketingHref, redirect() → process.env URL).
+Changed: docs/LESSONS.md
+docs/LOG.md
+src/app/(app)/dashboard/account/page.tsx
+src/app/(app)/dashboard/billing/page.tsx
+src/app/(app)/dashboard/layout.tsx
+src/app/(app)/dashboard/library/[id]/page.tsx
+src/app/(app)/dashboard/settings/page.tsx
 ---

@@ -71,9 +71,11 @@ Geconfigureerd in: `src/utils/supabase/server.ts`, `client.ts`, `middleware.ts` 
 ### Login redirect flow (na implementatie subdomain split)
 
 1. `app.indxr.ai/dashboard` zonder sessie → middleware redirect naar `indxr.ai/login?next=https://app.indxr.ai/dashboard`
-2. Login slaagt → `window.location.href = resolvePostLoginTarget()` (cross-host, niet `router.push`)
-3. `?next` gevalideerd: hostname moet `app.indxr.ai` of `app.localhost` zijn (open redirect preventie)
-4. Fallback: `NEXT_PUBLIC_APP_URL + '/dashboard/transcribe'`
+2. Login form roept `loginAction` (Server Action) aan — client pass `resolvePostLoginTarget()` als `redirectTo` via formData
+3. `loginAction` valideert `redirectTo` hostname (app.indxr.ai / localhost / app.localhost) en roept `redirect(finalTarget)` aan — Next.js stuurt 303, geen client-side navigatie
+4. Fallback target: `NEXT_PUBLIC_APP_URL + '/dashboard/transcribe'`
+
+> **Waarom Server Action redirect, niet `window.location.href`:** Next.js GitHub #81377 — browser aborteert RSC action-response stream zodra `window.location.href` navigeert; RSC parser gooit "Error in input stream" + "Application error" flash. `redirect()` in de action is atomisch en heeft dit probleem niet.
 
 ### Auth callback (`src/app/auth/callback/route.ts`)
 

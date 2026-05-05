@@ -8,13 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Link from "next/link"
 import { Chrome, Apple } from "lucide-react"
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { loginAction, loginWithGoogleAction } from "@/app/auth/actions"
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const nextParam = searchParams?.get('next')
 
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3000'
@@ -50,30 +49,20 @@ export default function LoginPage() {
       const formData = new FormData()
       formData.append('email', email)
       formData.append('password', password)
-      if (nextParam) {
-        formData.append('redirectTo', nextParam)
-      }
+      // Always pass resolved target — server action redirects directly,
+      // avoiding the RSC stream abort caused by concurrent window.location.href.
+      formData.append('redirectTo', resolvePostLoginTarget())
 
-      // Call Server Action
+      // Call Server Action — redirects on success, returns { error } on failure.
       const result = await loginAction(null, formData)
 
       if (result?.error) {
         setError(result.error)
         toast.error(result.error)
         setIsSubmitting(false)
-      } else {
-        toast.success("Logged in successfully!")
-
-        const target = resolvePostLoginTarget()
-        if (target.startsWith('/')) {
-          router.push(target)
-        } else {
-          window.location.href = target
-        }
       }
     } catch (err) {
-      // Check if it's a redirect error (NEXT_REDIRECT) - although we removed redirect from action,
-      // good practice to keep it safe.
+      // Server Action's redirect() throws NEXT_REDIRECT — let Next.js handle navigation.
       if ((err as Error).message === 'NEXT_REDIRECT' || (err as any)?.digest?.startsWith('NEXT_REDIRECT')) {
         throw err
       }

@@ -9,7 +9,7 @@ import { redirect } from 'next/navigation'
 export async function loginAction(prevState: unknown, formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
-  const redirectTo = formData.get('redirectTo') as string || '/dashboard/transcribe'
+  const rawRedirectTo = formData.get('redirectTo') as string
 
   // 1. Rate Limiting Check
   const headersList = await headers()
@@ -50,8 +50,30 @@ export async function loginAction(prevState: unknown, formData: FormData) {
      redirect('/onboarding')
   }
 
-  // 4. Return success for client-side redirection
-  return { success: true }
+  // 4. Resolve and validate the post-login redirect target.
+  // redirect() is called outside try/catch per Next.js requirement.
+  // Absolute cross-origin redirects (app.indxr.ai) are supported since Next.js 14.
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  let finalTarget = `${APP_URL}/dashboard/transcribe`
+
+  if (rawRedirectTo) {
+    if (rawRedirectTo.startsWith('/')) {
+      finalTarget = rawRedirectTo
+    } else {
+      try {
+        const url = new URL(rawRedirectTo)
+        if (
+          url.hostname === 'app.indxr.ai' ||
+          url.hostname === 'localhost' ||
+          url.hostname.startsWith('app.localhost')
+        ) {
+          finalTarget = rawRedirectTo
+        }
+      } catch { /* invalid URL — use default */ }
+    }
+  }
+
+  redirect(finalTarget)
 }
 
 export async function signupAction(prevState: unknown, formData: FormData) {
