@@ -1,3 +1,5 @@
+[2026-05-05 03:50] fix: C.2.2 — Header <Link href="/dashboard*"> → <a href={appHref(...)}> voor alle 5 app-path instanties (AvatarDropdown dashboard/account/settings, desktop "Go to app", mobile "Go to app"); Link import verwijderd, appHref toegevoegd aan cross-host-links import; docs/account-and-data/credits-and-billing/page.tsx Link import verwijderd (<Link href="/pricing"> → <a>, <Link href="/dashboard/account"> → appHref); build groen | gewijzigd: src/components/Header.tsx, src/app/docs/account-and-data/credits-and-billing/page.tsx
+---
 [2026-05-05 02:00] wiki: Werksessie C openstaande items gedocumenteerd in priorities.md (nieuwe sectie "Werksessie C — app.indxr.ai subdomain split"): C.1.1 [~] auth-recovery verify, C.1.2 productie-tests, C.1.3 OAuth, C.2.1 manifest CORS bug (bevestigd), C.2.2 Header /dashboard → appHref (nieuw gevonden), C.2.3 email templates, C.2.4 Python CORS ontbreekt (bevestigd), C.2.5 robots.txt, C.3.1 [!] Upstash quota blocker, C.3.2 [~] rate limiting uitgeschakeld; afgewezen items: Stripe checkout (correct), sitemap (geen dashboard URLs), admin fetch (passthrough werkt), OG/metadata (niet geïndexeerd); known-issues.md inconsistentie over Upstash gedocumenteerd; LESSONS.md 2 regels bijgewerkt | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LESSONS.md, docs/LOG.md
 ---
 [2026-05-05 01:15] fix: auth-error recovery in updateSession() — clearAuthCookies() helper toegevoegd die sb-* cookies met maxAge:0 en correcte domain wist op zowel response als request; getUser() omgeven door try/catch: bij error of exception cookies clearen + console.error('[auth-recovery] ...'), user=null; voorkomt infinite refresh-loop bij stale/revoked tokens (refresh_token_not_found → Redis quota explosie); LESSONS.md bijgewerkt; build groen (86 routes, 0 errors) | gewijzigd: src/utils/supabase/middleware.ts, docs/LESSONS.md
@@ -3659,3 +3661,20 @@ src/components/free-tool/VideoTab.tsx
 src/components/library/TranscriptViewer.tsx
 src/lib/cross-host-links.ts
 ---
+[2026-05-05 03:28] commit: fix: auth-error recovery in updateSession + Werksessie C priorities
+
+Voorkomt infinite refresh-loop bij stale Supabase auth cookies door
+clearAuthCookies() te triggeren bij refresh_token_not_found of getUser
+exception. Wist sb-* cookies op zowel response als request.cookies met
+maxAge:0 en correcte parent-domain (.indxr.ai).
+
+Bewezen oorzaak van 500K Upstash commands in 5 dagen: stale cookies +
+Vercel rate-limit-checks per loop-iteratie.
+
+Werksessie C openstaande items gedocumenteerd in priorities.md.
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
+src/utils/supabase/middleware.ts
+---
+[2026-05-05 03:42] precompact: context compaction triggered

@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
-import { marketingHref } from "@/lib/cross-host-links"
+import { marketingHref, appHref } from "@/lib/cross-host-links"
 import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
@@ -38,23 +37,23 @@ function AvatarDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem asChild>
-          <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
+          <a href={appHref('/dashboard')} className="flex items-center gap-2 cursor-pointer">
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
-          </Link>
+          </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/account" className="flex items-center gap-2 cursor-pointer">
+          <a href={appHref('/dashboard/account')} className="flex items-center gap-2 cursor-pointer">
             <User className="h-4 w-4" />
             Account
-          </Link>
+          </a>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings" className="flex items-center gap-2 cursor-pointer">
+          <a href={appHref('/dashboard/settings')} className="flex items-center gap-2 cursor-pointer">
             <Settings className="h-4 w-4" />
             Settings
-          </Link>
+          </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -137,11 +136,11 @@ export function Header() {
         <div className="hidden md:flex items-center gap-3 shrink-0">
           <ThemeToggle />
           {user ? (
-            <Link href="/dashboard">
+            <a href={appHref('/dashboard')}>
               <Button size="sm" className="bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]">
                 Go to app
               </Button>
-            </Link>
+            </a>
           ) : (
             <>
               <a href={marketingHref('/login')}>
@@ -192,9 +191,9 @@ export function Header() {
                   {user ? (
                     <>
                       <SheetClose asChild>
-                        <Link href="/dashboard" className="w-full">
+                        <a href={appHref('/dashboard')} className="w-full">
                           <Button className="w-full bg-[var(--accent)] text-[var(--fg-on-accent)]">Go to app</Button>
-                        </Link>
+                        </a>
                       </SheetClose>
                       <SheetClose asChild>
                         <MobileSignOutButton />

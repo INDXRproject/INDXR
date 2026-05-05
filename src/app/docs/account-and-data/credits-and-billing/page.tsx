@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 import { DocsShell } from "@/components/docs/DocsShell"
+import { appHref } from "@/lib/cross-host-links"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { Footer } from "@/components/Footer"
@@ -49,7 +49,7 @@ export default function DocsCreditsAndBillingPage() {
 
           <h2>Buying credits</h2>
           <p>
-            Credits are purchased in one-time packages — no subscriptions. See the <Link href="/pricing">pricing page</Link> for current packages.
+            Credits are purchased in one-time packages — no subscriptions. See the <a href="/pricing">pricing page</a> for current packages.
           </p>
 
           <h2>Credits never expire</h2>
@@ -59,7 +59,7 @@ export default function DocsCreditsAndBillingPage() {
 
           <h2>Refunds</h2>
           <p>
-            If an AI transcription or summarization fails, your credits are automatically refunded. You will see a &quot;Refund&quot; entry in your transaction history on the <Link href="/dashboard/account">Account page</Link>.
+            If an AI transcription or summarization fails, your credits are automatically refunded. You will see a &quot;Refund&quot; entry in your transaction history on the <a href={appHref('/dashboard/account')}>Account page</a>.
           </p>
 
           {/* KHIDR: voeg credit transaction history uitleg toe */}
