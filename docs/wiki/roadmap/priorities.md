@@ -228,7 +228,19 @@ Zie ook `docs/wiki/architecture/page-structures/free-tool.md` voor context.
 
 Doel: `/dashboard` en `/admin` verhuizen van `indxr.ai` naar `app.indxr.ai`. Auth-flows (login, signup, OAuth) blijven op marketing-domain; cookies op root-domain `.indxr.ai` zodat sessie cross-host werkt. Zie ADR-034 en ADR-036.
 
-Geïmplementeerd 2026-05-04/05 (Code Sessie 1). Code Sessie 2 (mechanische sweep) nog te doen.
+### Status (per 2026-05-05): TypeError-bug definitief opgelost
+
+Commits 825574f (Server Action redirect) en d13c30e (NEXT_REDIRECT swallow) sluiten samen de bug-klasse "TypeError: Error in input stream" die sinds subdomain-split deploy aanwezig was. Productie-test bevestigd 2026-05-05: schone Console na login flow.
+
+d13c30e is migratie-checkpoint voor twee-projecten migratie (zie ADR-045).
+
+Resterende C.x items zijn geen blockers meer voor migratie:
+- **C.2.1** manifest CORS, **C.2.4** Python CORS: worden gefixed tijdens migratie
+- **C.3.1** Upstash quota: blijft openstaan, los van migratie
+- **C.3.2** rate limiting: hangt aan C.3.1
+- **C.2.3** email templates: handmatige check Khidr
+
+Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (mechanische sweep) deels gedaan; resterende items worden opgepakt tijdens migratie of daarna.
 
 ### Code Sessie 1 — auth / cookies / middleware
 
@@ -281,6 +293,13 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1). Code Sessie 2 (mechanische sweep
   Direct gevolg van C.3.1-mitigatie. `noopLimiter` actief → geen rate limiting in productie. Caption cache (Upstash Redis) ook down.
   **Pre-launch actie:** herstellen zodra C.3.1 opgelost. Cross-referentie: item 1.19 ("Upstash Redis rate limiting activeren") in Fase 1.
   **Status:** tijdelijk acceptabel, geen blocker voor verdere development. Niet lanceren met paid users zonder rate limiting.
+
+### C.4 — Migratie naar twee Vercel projecten (monorepo)
+
+- [ ] **C.4.1 — Migratie uitvoeren** — zie ADR-045 voor beslissing en scope
+  pnpm monorepo aanmaken: `apps/marketing/` (indxr.ai) + `apps/app/` (app.indxr.ai) + `packages/shared/`.
+  Middleware hostname-routing verwijderen. Twee Vercel projecten aanmaken. Env vars per project.
+  **Checkpoint:** commit d13c30e is de clean baseline voor migratie.
 
 ---
 

@@ -81,6 +81,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [042-about-page-organization-schema.md](decisions/042-about-page-organization-schema.md) | /about gebruikt Organization schema, geen Person schema — founder anoniem |
 | [043-author-byline-indxr-editorial.md](decisions/043-author-byline-indxr-editorial.md) | Author byline: "INDXR Editorial" als enige author op alle articles |
 | [044-user-feedback-channels.md](decisions/044-user-feedback-channels.md) | Drie aparte feedback channels: Messages, Support, Testimonials (post-launch unlock) |
+| [045-two-vercel-projects-decision.md](decisions/045-two-vercel-projects-decision.md) | Migratie van één-project subdomain split naar twee Vercel projecten (monorepo) |
 
 ---
 

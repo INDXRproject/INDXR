@@ -1,3 +1,5 @@
+[2026-05-05 05:45] docs: sessie-handoff documentatie — ADR-045 aangemaakt (twee Vercel projecten monorepo beslissing, context: RSC architectural mismatch met middleware 308-redirects); priorities.md: Werksessie C status-sectie toegevoegd (TypeError-bug gesloten, resterende items beoordeeld, C.4 migratie-placeholder); INDEX.md: ADR-045 toegevoegd aan beslissingen-tabel | gewijzigd: docs/wiki/decisions/045-two-vercel-projects-decision.md, docs/wiki/roadmap/priorities.md, docs/wiki/INDEX.md
+---
 [2026-05-05 05:20] fix: "Uncaught (in promise) Error: NEXT_REDIRECT" cosmetisch console-issue — catch-block in login/page.tsx re-throwde NEXT_REDIRECT maar event handler heeft geen NEXT_REDIRECT boundary; 303 redirect al geïnitieerd door Next.js vóór throw bereikt catch; fix: `throw err` → `return` zodat NEXT_REDIRECT silently geswallowed wordt; build groen | gewijzigd: src/app/login/page.tsx
 ---
 [2026-05-05 05:00] fix: TypeError "Error in input stream" tijdens login flow — root cause: Server Action (loginAction) triggerde browser RSC stream abort doordat window.location.href navigeerde weg terwijl Next.js de action response nog streemde (bevestigd door Next.js GitHub Issue #81377). Fix: loginAction retourneert nu redirect(finalTarget) i.p.v. { success: true }; finalTarget gevalideerd op server (app.indxr.ai / localhost / app.localhost hostnames); client stuurt altijd resolvePostLoginTarget() als redirectTo via formData; client-side navigatie (window.location.href + router.push) verwijderd; useRouter import verwijderd; NEXT_REDIRECT catch-block gebleven; build groen (86 routes, 0 errors) | gewijzigd: src/app/auth/actions.ts, src/app/login/page.tsx
@@ -3763,5 +3765,18 @@ Changed: docs/LESSONS.md
 docs/LOG.md
 docs/wiki/architecture/auth-and-security.md
 src/app/auth/actions.ts
+src/app/login/page.tsx
+---
+[2026-05-05 05:32] commit: fix(login): swallow NEXT_REDIRECT in client catch-block
+
+NEXT_REDIRECT throw uit Server Action's redirect() bereikte client-side
+catch maar React event handler heeft geen NEXT_REDIRECT boundary →
+unhandled promise rejection in console. De 303 redirect response is
+al verwerkt door Next.js voordat de throw bij ons catch-block aankomt;
+re-throwen had geen ontvanger. Silently returnen sluit de error chain
+zonder gedragswijziging.
+
+Sluit cosmetisch console-issue na 825574f.
+Changed: docs/LOG.md
 src/app/login/page.tsx
 ---
