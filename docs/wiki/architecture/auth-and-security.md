@@ -104,7 +104,7 @@ Bij logout: `posthog.reset()`.
 
 ## Rate Limiting
 
-Geconfigureerd in `src/lib/ratelimit.ts` via Upstash Redis (sliding window):
+Geconfigureerd in `packages/shared/src/lib/ratelimit.ts` via Upstash Redis (sliding window):
 
 | Tier | Limiet | Venster | Key |
 |------|--------|---------|-----|

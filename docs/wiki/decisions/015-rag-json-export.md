@@ -4,7 +4,7 @@
 **Datum:** 2026-04-14
 **Geïmplementeerd v1:** 2026-04-22
 **Geïmplementeerd v2:** 2026-04-23
-**Gerelateerde code:** `src/components/TranscriptCard.tsx`, `src/utils/formatTranscript.ts`, `src/app/actions/rag-export.ts`, `src/components/dashboard/settings/DeveloperExportsCard.tsx`
+**Gerelateerde code:** `packages/shared/src/components/TranscriptCard.tsx`, `packages/shared/src/utils/formatTranscript.ts`, `packages/shared/src/actions/rag-export.ts`, `apps/app/src/components/dashboard/settings/DeveloperExportsCard.tsx`
 
 ---
 

@@ -42,10 +42,10 @@ uvicorn handler-conflict op maar niet het Sentry-override probleem.
 **⚠️ Let op:** De pricing-pagina toont al de nieuwe prijzen (€6.99/€13.99/€27.99) maar de `PACKAGES` in `checkout/route.ts` bevat nog de oude bedragen. Deze moeten synchroon zijn vóór launch.
 
 ### Upstash Redis: Rate limiting bewust uitgeschakeld tijdens testfase
-**Bestand:** `src/lib/ratelimit.ts`
+**Bestand:** `packages/shared/src/lib/ratelimit.ts`
 **Status:** Credentials zijn ingesteld in Vercel (`UPSTASH_REDIS_REST_URL` + `_TOKEN`), maar rate limiting is bewust uitgeschakeld — app valt terug op `noopLimiter` zodat testen niet geblokkeerd worden.
 **Setup:** Database `indxr-redis` aangemaakt op eigen Upstash account (Khidr), regio Frankfurt (eu-central-1).
-**Activeren bij launch:** Rate limiting inschakelen in `src/lib/ratelimit.ts` en limieten opnieuw beoordelen vóór go-live.
+**Activeren bij launch:** Rate limiting inschakelen in `packages/shared/src/lib/ratelimit.ts` en limieten opnieuw beoordelen vóór go-live.
 
 ---
 

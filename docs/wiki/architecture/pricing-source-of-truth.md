@@ -1,6 +1,6 @@
 # Pricing source of truth
 
-**Alle prijzen, credit-costs, en free-tier limits leven in `src/lib/pricing.ts`.**
+**Alle prijzen, credit-costs, en free-tier limits leven in `packages/shared/src/lib/pricing.ts`.**
 
 Wijzig daar, en de hele applicatie volgt automatisch:
 - /pricing tier cards
@@ -18,7 +18,7 @@ Wijzig daar, en de hele applicatie volgt automatisch:
 - Email templates
 - Markdown content
 
-Importeer altijd vanuit `src/lib/pricing.ts`.
+Importeer altijd via `@indxr/shared/lib/pricing` (resolveert naar `packages/shared/src/lib/pricing.ts`). Geen lokale kopieën in `apps/*/src/lib/`.
 
 ---
 
@@ -29,7 +29,7 @@ Bij introductie van pricing.ts werden drie inconsistente bronnen gevonden:
 - `src/app/pricing/page.tsx` — hogere EUR-prijzen, deels incorrecte credits
 - Geen enkele bron klopte volledig
 
-Na migratie naar pricing.ts is één bron authoritative.
+Na migratie naar pricing.ts is één bron authoritative. Na monorepo-split (2026-05-05) leeft die bron in `packages/shared/src/lib/pricing.ts`.
 
 ### Migration history — volledige discrepantie-tabel
 

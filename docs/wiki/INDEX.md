@@ -82,6 +82,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [043-author-byline-indxr-editorial.md](decisions/043-author-byline-indxr-editorial.md) | Author byline: "INDXR Editorial" als enige author op alle articles |
 | [044-user-feedback-channels.md](decisions/044-user-feedback-channels.md) | Drie aparte feedback channels: Messages, Support, Testimonials (post-launch unlock) |
 | [045-two-vercel-projects-decision.md](decisions/045-two-vercel-projects-decision.md) | Migratie van één-project subdomain split naar twee Vercel projecten (monorepo) |
+| [046-monorepo-import-aliases.md](decisions/046-monorepo-import-aliases.md) | @/* lokaal, @indxr/shared/* expliciet voor shared — silent shadow risico geëlimineerd |
 
 ---
 

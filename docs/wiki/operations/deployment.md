@@ -3,28 +3,74 @@
 ## Architectuur overzicht
 
 ```
-indxr.ai (Vercel)          ←─── Next.js 16 frontend
+indxr.ai (Vercel — @indxr/marketing)    ←─── Marketing, auth, free tool
+app.indxr.ai (Vercel — @indxr/app)      ←─── Dashboard, admin
     │ PYTHON_BACKEND_URL
     ▼
-Railway (Docker)            ←─── FastAPI Python backend
+Railway (Docker)                         ←─── FastAPI Python backend
     │ SUPABASE_URL
     ▼
-Supabase                    ←─── PostgreSQL + Auth
-    
-Upstash Redis               ←─── Rate limiting (indxr-redis, Frankfurt, uitgeschakeld in testfase)
+Supabase                                 ←─── PostgreSQL + Auth
+
+Upstash Redis               ←─── Rate limiting (indxr-redis, Frankfurt)
 Stripe                      ←─── Payments
 PostHog                     ←─── Analytics
 ```
 
+**Monorepo structuur (pnpm workspaces):**
+```
+apps/marketing/   → @indxr/marketing  → indxr.ai
+apps/app/         → @indxr/app        → app.indxr.ai
+packages/shared/  → @indxr/shared     → gedeelde UI, auth, utils
+backend/          → FastAPI           → Railway
+```
+
 ---
 
-## Frontend (Vercel)
+## Frontend (Vercel) — twee projecten
 
-**Auto-deploy:** Push naar `master` → Vercel deployt automatisch.  
-**DNS:** `indxr.ai` → `76.76.21.21` (Vercel A-record)  
-**Framework:** Next.js (automatisch herkend door Vercel)
+Twee aparte Vercel-projecten, allebei op dezelfde GitHub repo (`master`-branch).
 
-### Environment Variables (Vercel)
+| Project | Root directory | Domein |
+|---------|---------------|--------|
+| `indxr-marketing` | `apps/marketing` | `indxr.ai` |
+| `indxr-app` | `apps/app` | `app.indxr.ai` |
+
+**Auto-deploy:** Push naar `master` → beide Vercel-projecten deployen automatisch.
+
+### Environment Variables — @indxr/marketing (indxr.ai)
+
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+
+# URLs
+NEXT_PUBLIC_APP_URL=https://app.indxr.ai
+NEXT_PUBLIC_MARKETING_URL=https://indxr.ai
+
+# Python Backend
+PYTHON_BACKEND_URL=https://indxr-production.up.railway.app
+
+# Backend Auth
+BACKEND_API_SECRET=your-secret-key
+
+# Rate Limiting
+UPSTASH_REDIS_REST_URL=https://...
+UPSTASH_REDIS_REST_TOKEN=...
+
+# Analytics
+NEXT_PUBLIC_POSTHOG_KEY=phc_...
+NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+
+# Feature Flags
+NEXT_PUBLIC_ENABLE_OAUTH=true
+
+# Admin
+ADMIN_EMAIL=...
+```
+
+### Environment Variables — @indxr/app (app.indxr.ai)
 
 ```bash
 # Supabase
@@ -32,32 +78,28 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...          # ⚠️ Server-only, nooit in browser
 
+# URLs
+NEXT_PUBLIC_APP_URL=https://app.indxr.ai
+NEXT_PUBLIC_MARKETING_URL=https://indxr.ai
+
 # Python Backend
 PYTHON_BACKEND_URL=https://indxr-production.up.railway.app
-NEXT_PUBLIC_PYTHON_BACKEND_URL=https://indxr-production.up.railway.app
+NEXT_PUBLIC_AUDIO_UPLOAD_URL=https://indxr-production.up.railway.app  # AudioTab directe upload (bypast Vercel 4.5MB limiet)
 
 # Backend Auth
-BACKEND_API_SECRET=your-secret-key        # Shared secret Next.js ↔ Python
+BACKEND_API_SECRET=your-secret-key
 
 # Stripe
 STRIPE_SECRET_KEY=sk_live_...             # ⚠️ Server-only
 STRIPE_WEBHOOK_SECRET=whsec_...           # Webhook signature verificatie
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 
-# Rate Limiting — credentials ingesteld, feature bewust uitgeschakeld tijdens testfase
-# Database: indxr-redis, Frankfurt (eu-central-1), eigen Upstash account (Khidr)
-UPSTASH_REDIS_REST_URL=https://...        # ✓ ingesteld
-UPSTASH_REDIS_REST_TOKEN=...              # ✓ ingesteld
-
 # Analytics
 NEXT_PUBLIC_POSTHOG_KEY=phc_...
 NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 
-# App URL
-NEXT_PUBLIC_APP_URL=https://indxr.ai
-
-# Feature Flags
-NEXT_PUBLIC_ENABLE_OAUTH=true
+# Admin
+ADMIN_EMAIL=...
 ```
 
 ---
@@ -195,12 +237,12 @@ Productie-checklist Stripe:
   - Plus — €11.99 / 1.100 credits *(meest populair)*
   - Pro — €24.99 / 2.600 credits
   - Power — €49.99 / 5.500 credits
-- [ ] Webhook endpoint registreren: `https://indxr.ai/api/stripe/webhook`
+- [ ] Webhook endpoint registreren: `https://app.indxr.ai/api/stripe/webhook`
 - [ ] `STRIPE_WEBHOOK_SECRET` (live mode) instellen in Vercel
 - [ ] Live mode keys configureren in Vercel (`sk_live_*`, `pk_live_*`)
 - [ ] Test met kleine aankoop (Try €2.49) ter verificatie
 
-**Code is al klaar** — `PACKAGES` object in `src/app/api/stripe/checkout/route.ts` bevat de juiste bedragen en credits.
+**Code is al klaar** — `PACKAGES` object in `apps/app/src/app/api/stripe/checkout/route.ts` bevat de juiste bedragen en credits.
 
 ---
 
@@ -210,8 +252,13 @@ Productie-checklist Stripe:
 
 ```bash
 cd "INDXR.AI V2"
-npm install
-npm run dev           # Port 3000
+pnpm install
+
+# Marketing (indxr.ai) op port 3000:
+pnpm dev:marketing
+
+# App (app.indxr.ai) op port 3001:
+pnpm dev:app
 ```
 
 ### Backend
