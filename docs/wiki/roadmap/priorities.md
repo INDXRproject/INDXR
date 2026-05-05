@@ -232,7 +232,7 @@ Doel: `/dashboard` en `/admin` verhuizen van `indxr.ai` naar `app.indxr.ai`. Aut
 
 Commits 825574f (Server Action redirect) en d13c30e (NEXT_REDIRECT swallow) sluiten samen de bug-klasse "TypeError: Error in input stream" die sinds subdomain-split deploy aanwezig was. Productie-test bevestigd 2026-05-05: schone Console na login flow.
 
-d13c30e is migratie-checkpoint voor twee-projecten migratie (zie ADR-045).
+1fc0589 is migratie-checkpoint voor twee-projecten migratie (zie ADR-045) — bevat bug-fix d13c30e plus handoff-documentatie. Bij rollback worden zowel code-state als ADR-045 + status-docs behouden.
 
 Resterende C.x items zijn geen blockers meer voor migratie:
 - **C.2.1** manifest CORS, **C.2.4** Python CORS: worden gefixed tijdens migratie
@@ -299,7 +299,7 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (me
 - [ ] **C.4.1 — Migratie uitvoeren** — zie ADR-045 voor beslissing en scope
   pnpm monorepo aanmaken: `apps/marketing/` (indxr.ai) + `apps/app/` (app.indxr.ai) + `packages/shared/`.
   Middleware hostname-routing verwijderen. Twee Vercel projecten aanmaken. Env vars per project.
-  **Checkpoint:** commit d13c30e is de clean baseline voor migratie.
+  **Checkpoint:** commit 1fc0589 is de clean baseline voor migratie (bevat bug-fix d13c30e + handoff-documentatie inclusief ADR-045).
 
 ---
 

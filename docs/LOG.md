@@ -1,3 +1,5 @@
+[2026-05-05 06:00] docs: corrigeer migratie-checkpoint van d13c30e naar 1fc0589 in priorities.md — 1fc0589 bevat bug-fix d13c30e plus handoff-documentatie (ADR-045 + status-docs); bij rollback wil je docs ook behouden | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LOG.md
+---
 [2026-05-05 05:45] docs: sessie-handoff documentatie — ADR-045 aangemaakt (twee Vercel projecten monorepo beslissing, context: RSC architectural mismatch met middleware 308-redirects); priorities.md: Werksessie C status-sectie toegevoegd (TypeError-bug gesloten, resterende items beoordeeld, C.4 migratie-placeholder); INDEX.md: ADR-045 toegevoegd aan beslissingen-tabel | gewijzigd: docs/wiki/decisions/045-two-vercel-projects-decision.md, docs/wiki/roadmap/priorities.md, docs/wiki/INDEX.md
 ---
 [2026-05-05 05:20] fix: "Uncaught (in promise) Error: NEXT_REDIRECT" cosmetisch console-issue — catch-block in login/page.tsx re-throwde NEXT_REDIRECT maar event handler heeft geen NEXT_REDIRECT boundary; 303 redirect al geïnitieerd door Next.js vóór throw bereikt catch; fix: `throw err` → `return` zodat NEXT_REDIRECT silently geswallowed wordt; build groen | gewijzigd: src/app/login/page.tsx
@@ -3779,4 +3781,27 @@ zonder gedragswijziging.
 Sluit cosmetisch console-issue na 825574f.
 Changed: docs/LOG.md
 src/app/login/page.tsx
+---
+[2026-05-05 07:41] commit: docs: handoff documentation for two-Vercel-projects migration
+
+- ADR-045 created: decision rationale for monorepo with two Vercel projects
+  (apps/marketing + apps/app + packages/shared). Context: RSC architectural
+  mismatch with middleware 308-redirects caused persistent TypeError 'Error
+  in input stream'. Linear/Vercel/Notion don't actually do subdomain split;
+  Slack pattern (separate deployments per host) is the correct precedent.
+
+- priorities.md Werksessie C status section added: bug definitively closed
+  via commits 825574f + d13c30e. d13c30e marked as migration-restore
+  checkpoint. Remaining C.x items assessed as non-blockers (C.2.1 + C.2.4
+  fixed during migration; C.3.1 Upstash quota independent).
+
+- C.4.1 placeholder added for migration execution (separate session).
+
+- INDEX.md updated with ADR-045 row.
+
+Prepares clean handoff state for new session focused on migration.
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/045-two-vercel-projects-decision.md
+docs/wiki/roadmap/priorities.md
 ---
