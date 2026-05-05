@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { marketingHref } from "@/lib/cross-host-links"
 import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
@@ -16,16 +17,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/utils/supabase/client"
 import { UserAvatar } from "@/components/UserAvatar"
-import { useRouter } from "next/navigation"
-
 function AvatarDropdown() {
-  const router = useRouter()
-
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push("/login")
-    router.refresh()
+    window.location.href = marketingHref('/login')
   }
 
   return (
@@ -92,7 +88,7 @@ export function Header() {
       <div className="container flex h-16 items-center px-4 mx-auto">
 
         {/* Logo — left */}
-        <Link href="/" className="flex items-center shrink-0 gap-3">
+        <a href={marketingHref('/')} className="flex items-center shrink-0 gap-3">
           <img
             src="/logo/indxr-mark-black-transparent.png"
             alt=""
@@ -117,24 +113,24 @@ export function Header() {
             className="hidden dark:block"
             style={{ height: '48px', width: 'auto' }}
           />
-        </Link>
+        </a>
 
         {/* Desktop nav — centered */}
         <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
-          <Link href="/pricing" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+          <a href={marketingHref('/pricing')} className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             Pricing
-          </Link>
-          <Link href="/docs" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+          </a>
+          <a href={marketingHref('/docs')} className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             Docs
-          </Link>
-          <Link href="/articles" className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+          </a>
+          <a href={marketingHref('/articles')} className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
             Articles
-          </Link>
-          <Link href="/transcribe">
+          </a>
+          <a href={marketingHref('/transcribe')}>
             <Button size="sm" className="bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]">
               Try it free
             </Button>
-          </Link>
+          </a>
         </nav>
 
         {/* Right-side controls */}
@@ -148,12 +144,12 @@ export function Header() {
             </Link>
           ) : (
             <>
-              <Link href="/login">
+              <a href={marketingHref('/login')}>
                 <Button variant="ghost" size="sm">Log in</Button>
-              </Link>
-              <Link href="/signup">
+              </a>
+              <a href={marketingHref('/signup')}>
                 <Button size="sm">Sign up</Button>
-              </Link>
+              </a>
             </>
           )}
         </div>
@@ -172,24 +168,24 @@ export function Header() {
               <div className="flex flex-col gap-6 mt-8">
                 <nav className="flex flex-col gap-4">
                   <SheetClose asChild>
-                    <Link href="/pricing" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+                    <a href={marketingHref('/pricing')} className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
                       Pricing
-                    </Link>
+                    </a>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/docs" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+                    <a href={marketingHref('/docs')} className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
                       Docs
-                    </Link>
+                    </a>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/articles" className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+                    <a href={marketingHref('/articles')} className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
                       Articles
-                    </Link>
+                    </a>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/transcribe" className="text-lg font-medium text-[var(--accent)]">
+                    <a href={marketingHref('/transcribe')} className="text-lg font-medium text-[var(--accent)]">
                       Try it free
-                    </Link>
+                    </a>
                   </SheetClose>
                 </nav>
                 <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border)]">
@@ -207,14 +203,14 @@ export function Header() {
                   ) : (
                     <>
                       <SheetClose asChild>
-                        <Link href="/login" className="w-full">
+                        <a href={marketingHref('/login')} className="w-full">
                           <Button variant="outline" className="w-full">Log in</Button>
-                        </Link>
+                        </a>
                       </SheetClose>
                       <SheetClose asChild>
-                        <Link href="/signup" className="w-full">
+                        <a href={marketingHref('/signup')} className="w-full">
                           <Button className="w-full">Sign up</Button>
-                        </Link>
+                        </a>
                       </SheetClose>
                     </>
                   )}
@@ -229,12 +225,10 @@ export function Header() {
 }
 
 function MobileSignOutButton() {
-  const router = useRouter()
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push("/login")
-    router.refresh()
+    window.location.href = marketingHref('/login')
   }
   return (
     <Button

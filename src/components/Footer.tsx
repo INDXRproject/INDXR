@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { marketingHref } from "@/lib/cross-host-links";
 
 const exportFormats = [
   { href: "/articles/youtube-to-text", label: "Plain TXT / Timestamps" },
@@ -28,12 +28,12 @@ function FooterColumn({ title, links }: { title: string; links: { href: string; 
       <ul className="flex flex-col gap-2">
         {links.map((link) => (
           <li key={link.href}>
-            <Link
-              href={link.href}
+            <a
+              href={marketingHref(link.href)}
               className="text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
             >
               {link.label}
-            </Link>
+            </a>
           </li>
         ))}
       </ul>
@@ -52,24 +52,24 @@ export function Footer() {
 
         <div className="mt-12 pt-6 border-t border-[var(--border)] flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[var(--fg-muted)]">
           <span>© 2026 INDXR.AI</span>
-          <Link href="/pricing" className="hover:text-[var(--fg)] transition-colors">
+          <a href={marketingHref('/pricing')} className="hover:text-[var(--fg)] transition-colors">
             Pricing
-          </Link>
-          <Link href="/docs" className="hover:text-[var(--fg)] transition-colors">
+          </a>
+          <a href={marketingHref('/docs')} className="hover:text-[var(--fg)] transition-colors">
             Docs
-          </Link>
-          <Link href="/about" className="hover:text-[var(--fg)] transition-colors">
+          </a>
+          <a href={marketingHref('/about')} className="hover:text-[var(--fg)] transition-colors">
             About
-          </Link>
-          <Link href="/privacy" className="hover:text-[var(--fg)] transition-colors">
+          </a>
+          <a href={marketingHref('/privacy')} className="hover:text-[var(--fg)] transition-colors">
             Privacy
-          </Link>
-          <Link href="/terms" className="hover:text-[var(--fg)] transition-colors">
+          </a>
+          <a href={marketingHref('/terms')} className="hover:text-[var(--fg)] transition-colors">
             Terms
-          </Link>
-          <Link href="/contact" className="hover:text-[var(--fg)] transition-colors">
+          </a>
+          <a href={marketingHref('/contact')} className="hover:text-[var(--fg)] transition-colors">
             Contact
-          </Link>
+          </a>
         </div>
       </div>
     </footer>

@@ -34,6 +34,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { marketingHref } from "@/lib/cross-host-links";
 
 export interface TranscriptItem {
   text: string;
@@ -253,13 +254,13 @@ export function TranscriptCard({
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <a
-            href="/signup"
+            href={marketingHref('/signup')}
             className="rounded-md bg-accent px-4 py-1.5 text-sm font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors whitespace-nowrap"
           >
             Sign Up Free
           </a>
           <a
-            href="/login"
+            href={marketingHref('/login')}
             className="text-sm font-medium text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
           >
             Log In
@@ -415,7 +416,7 @@ export function TranscriptCard({
             <LogIn className="size-4 text-accent shrink-0" />
             <span className="text-fg"><strong>Sign up or log in</strong> to export as CSV, SRT, VTT, JSON, or Markdown.</span>
           </div>
-          <a href="/login" className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors">
+          <a href={marketingHref('/login')} className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors">
             Sign in
           </a>
         </div>

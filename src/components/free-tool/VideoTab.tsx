@@ -9,6 +9,7 @@ import { TranscriptMetadata, PROCESSING_METHODS } from "@/types/transcript"
 import { toast } from "sonner"
 import { validateYouTubeUrl, YouTubeUrlType } from "@/utils/youtube"
 import Link from "next/link"
+import { marketingHref } from "@/lib/cross-host-links"
 import { createClient } from "@/utils/supabase/client"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import { cn } from "@/lib/utils"
@@ -1215,7 +1216,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  <p className="text-sm text-error">
                    {error.message}
                  </p>
-                 <Link href="/pricing" className="self-start">
+                 <a href={marketingHref('/pricing')} className="self-start">
                    <Button
                      variant="outline"
                      size="sm"
@@ -1223,7 +1224,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    >
                      Buy Credits →
                    </Button>
-                 </Link>
+                 </a>
                </div>
              ) : loading && whisperStatus !== 'idle' ? (
                <TranscriptionProgress
@@ -1287,7 +1288,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                      {hasEnoughCredits ? (
                        `You have ${credits} credits remaining`
                      ) : (
-                       <Link href="/dashboard/credits" className="text-warning-fg hover:text-amber-700 hover:underline">
+                       <Link href="/dashboard/billing" className="text-warning-fg hover:text-amber-700 hover:underline">
                          Not enough credits — top up
                        </Link>
                      )}

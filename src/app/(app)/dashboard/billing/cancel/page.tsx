@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { XCircle } from "lucide-react"
 import Link from 'next/link'
+import { marketingHref } from "@/lib/cross-host-links"
 
 export default function BillingCancelPage() {
   return (
@@ -20,11 +21,11 @@ export default function BillingCancelPage() {
             No worries! No charges were made to your card. You can try again whenever you're ready.
           </p>
           <div className="flex flex-col gap-3">
-            <Link href="/pricing">
+            <a href={marketingHref('/pricing')}>
                 <Button className="w-full h-12">
                     Return to Pricing
                 </Button>
-            </Link>
+            </a>
             <Link href="/dashboard">
                 <Button variant="outline" className="w-full h-12">
                     Back to Dashboard

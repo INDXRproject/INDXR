@@ -14,6 +14,7 @@ import { SaveErrorModal } from "@/components/SaveErrorModal"
 import { WelcomeCreditCard } from "@/components/dashboard/WelcomeCreditCard"
 import { ActiveJobsIndicator } from "@/components/dashboard/ActiveJobsIndicator"
 import { useEffect } from "react"
+import { marketingHref } from "@/lib/cross-host-links"
 
 export default function TranscribePage() {
   const [activeTab, setActiveTab] = useState("video")
@@ -377,7 +378,7 @@ export default function TranscribePage() {
        <WelcomeCreditCard claimed={isRewardClaimed} />
        <div>
          <h1 className="text-3xl font-bold text-[var(--fg)] mb-2">Transcribe</h1>
-         <p className="text-[var(--fg-muted)]">Extract captions from videos, playlists, or audio files. <a href="/docs" className="text-[var(--accent)] hover:underline">Learn more →</a></p>
+         <p className="text-[var(--fg-muted)]">Extract captions from videos, playlists, or audio files. <a href={marketingHref('/docs')} className="text-[var(--accent)] hover:underline">Learn more →</a></p>
        </div>
 
        <ActiveJobsIndicator />

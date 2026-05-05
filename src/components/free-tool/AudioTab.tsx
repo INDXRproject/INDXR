@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { TranscriptCard, TranscriptItem } from "@/components/TranscriptCard"
 import { TranscriptMetadata } from "@/types/transcript"
 import Link from "next/link"
+import { marketingHref } from "@/lib/cross-host-links"
 import { CardSkeleton } from "@/components/ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "@/utils/supabase/client"
@@ -216,7 +217,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-fg mb-2">Authentication Required</h3>
           <p className="text-sm text-amber-200 mb-4">
-            Please <Link href="/login" className="underline font-semibold">sign in</Link> to use audio transcription.
+            Please <a href={marketingHref('/login')} className="underline font-semibold">sign in</a> to use audio transcription.
           </p>
         </div>
       </div>
@@ -386,9 +387,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             <div>
               <p className="font-semibold">Not enough credits</p>
               <p className="text-sm">You need {data.required_credits as number} credits but only have {data.available_credits as number}.</p>
-              <Link href="/pricing" className="text-accent underline text-sm">
+              <a href={marketingHref('/pricing')} className="text-accent underline text-sm">
                 Buy Credits →
-              </Link>
+              </a>
             </div>
           )
           return
@@ -589,11 +590,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           </div>
 
           {!hasEnoughCredits && credits !== null && (
-            <Link href="/pricing">
+            <a href={marketingHref('/pricing')}>
               <Button variant="outline" size="sm" className="mt-3 w-full">
                 Buy Credits →
               </Button>
-            </Link>
+            </a>
           )}
         </div>
       )}
@@ -700,7 +701,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       {!user && (
         <div className="p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
           <p className="text-sm text-amber-200">
-            Please <Link href="/login" className="underline font-semibold">sign in</Link> to use audio transcription.
+            Please <a href={marketingHref('/login')} className="underline font-semibold">sign in</a> to use audio transcription.
           </p>
         </div>
       )}

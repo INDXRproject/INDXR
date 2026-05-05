@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/dialog";
 
 import Link from "next/link";
+import { marketingHref } from "@/lib/cross-host-links";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
@@ -819,9 +820,9 @@ export function TranscriptViewer({
                           <div className="flex flex-col gap-1">
                             <span className="font-semibold text-sm">Not enough credits</span>
                             <span className="text-xs">You need 3 credits to generate a summary.</span>
-                            <Link href="/pricing" className="text-accent hover:underline text-xs mt-1">
+                            <a href={marketingHref('/pricing')} className="text-accent hover:underline text-xs mt-1">
                               Buy Credits →
-                            </Link>
+                            </a>
                           </div>
                         );
                         return;

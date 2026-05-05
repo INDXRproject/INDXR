@@ -1,6 +1,6 @@
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Coins, XCircle } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { marketingHref } from "@/lib/cross-host-links";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -350,11 +350,11 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
                ) : (
                    <div className="flex items-center gap-2">
                        <p className="text-xs text-error font-medium">Insufficient credits</p>
-                       <Link href="/pricing">
+                       <a href={marketingHref('/pricing')}>
                            <Button variant="outline" size="sm" className="h-6 text-xs px-2">
                                Buy Credits →
                            </Button>
-                       </Link>
+                       </a>
                    </div>
                )}
             </div>

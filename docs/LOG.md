@@ -1,3 +1,7 @@
+[2026-05-04 15:45] fix: cross-host prefetch crash vervolg — resterende marketing <Link>/<a> in app-host components gefixed: VideoTab (/pricing → <a>, /dashboard/credits → /dashboard/billing), PlaylistTab (/pricing → <a>), AudioTab (/login×2 + /pricing×2 → <a>), PlaylistAvailabilitySummary (/pricing → <a>), billing/cancel (/pricing → <a>), TranscriptViewer (/pricing in toast → <a>), TranscriptCard (/signup + /login×2 plain <a> → marketingHref), dashboard/transcribe/page.tsx (/docs → marketingHref); Header signout handlers: router.push("/login") → window.location.href = marketingHref('/login'), useRouter import verwijderd; LESSONS.md bijgewerkt; build groen (86 routes, 0 errors) | gewijzigd: src/components/free-tool/{VideoTab,PlaylistTab,AudioTab}.tsx, src/components/PlaylistAvailabilitySummary.tsx, src/components/library/TranscriptViewer.tsx, src/components/TranscriptCard.tsx, src/components/Header.tsx, src/app/(app)/dashboard/billing/cancel/page.tsx, src/app/(app)/dashboard/transcribe/page.tsx, docs/LESSONS.md
+---
+[2026-05-04 15:00] fix: cross-host prefetch crash op app.indxr.ai — Next.js <Link> naar marketing-paths vervangen door plain <a href={marketingHref(...)}> in Header (12 links: logo, /pricing×2, /docs×2, /articles×2, /transcribe×2, /login×2, /signup×2), Footer (13 links: alle /pricing, /docs, /about, /privacy, /terms, /contact, /articles/* via FooterColumn), DocsShell (/docs×3); src/lib/cross-host-links.ts aangemaakt (marketingHref + appHref); app-targets (/dashboard, /dashboard/account, /dashboard/settings) blijven <Link>; build groen (86 routes, 0 errors); openstaand sessie 2: VideoTab/PlaylistTab/AudioTab/PlaylistAvailabilitySummary/billing/cancel hebben nog relatieve /pricing links op app-host | gewijzigd: src/lib/cross-host-links.ts (nieuw), src/components/Header.tsx, src/components/Footer.tsx, src/components/docs/DocsShell.tsx
+---
 [2026-05-04 14:15] infra: Werksessie C Sessie 1 fixes — middleware.ts: marketingOnlyPaths array vervangen door inverse !isAppPath check; localhost-branch ?next gebruikt nextUrl.origin i.p.v. APP_URL (voorkomt app.localhost redirect lokaal); login/page.tsx: resolvePostLoginTarget accepteert ook localhost als valid next-hostname, single-host fallback naar relatief '/dashboard/transcribe', call site conditioneel router.push vs window.location.href; @supabase/ssr 0.8.0 source-inspectie bevestigd: cookieOptions.domain wordt gespread in alle set/remove paden — client.ts ongewijzigd; build groen (86 routes, 0 errors) | gewijzigd: src/middleware.ts, src/app/login/page.tsx
 ---
 [2026-05-04 13:30] infra: Werksessie C Code Sessie 1 — subdomain split implementatie (app.indxr.ai): (1) src/app/dashboard/ + src/app/admin/ verplaatst naar route group src/app/(app)/ (URL's ongewijzigd); (2) Supabase cookie domain ingesteld op .indxr.ai in alle 3 supabase utils (server.ts, client.ts, middleware.ts) voor cross-subdomain session sharing; (3) updateSession() gerefactord naar {response, user} tuple; (4) src/middleware.ts volledig herschreven met hostname-aware routing (indxr.ai/dashboard → 308 app.indxr.ai/dashboard, app.indxr.ai zonder auth → indxr.ai/login?next=..., app.indxr.ai marketing-paths → 308 indxr.ai); (5) login/page.tsx: ?redirect → ?next, router.push → window.location.href met open-redirect validatie; auth/callback/route.ts: ${origin}/... → ${APP_URL}/... en ${MARKETING_URL}/...; AuthContext.tsx: SIGNED_OUT op app host → redirect naar MARKETING_URL/login; (6) .env.example bijgewerkt met NEXT_PUBLIC_APP_URL + NEXT_PUBLIC_MARKETING_URL; build groen (86 routes, 0 errors) | gewijzigd: src/app/(app)/dashboard/*, src/app/(app)/admin/*, src/utils/supabase/{server,client,middleware}.ts, src/middleware.ts, src/app/login/page.tsx, src/app/auth/callback/route.ts, src/contexts/AuthContext.tsx, .env.example, docs/wiki/architecture/auth-and-security.md, docs/LOG.md
@@ -3558,3 +3562,70 @@ src/lib/docs-config.ts
 src/lib/pricing.ts
 ---
 [2026-05-04 09:28] precompact: context compaction triggered
+[2026-05-04 12:19] commit: feat(auth): app.indxr.ai subdomain split — middleware hostname routing + cross-subdomain Supabase cookies
+
+- src/app/dashboard/* → src/app/(app)/dashboard/* (route group, URLs unchanged)
+- src/app/admin/* → src/app/(app)/admin/* (route group, URLs unchanged)
+- middleware.ts: hostname-aware routing (indxr.ai vs app.indxr.ai), 308 redirects, ?next deep-link preservation, open-redirect validation
+- supabase/{server,client,middleware}.ts: cookieDomain = .indxr.ai in production, undefined locally
+- updateSession() refactored to {response, user} tuple
+- login/page.tsx: ?redirect → ?next, conditional router.push vs window.location.href
+- auth/callback/route.ts: redirect to APP_URL/dashboard/transcribe instead of ${origin}
+- AuthContext: SIGNED_OUT on app host → redirect to MARKETING_URL/login
+
+Implements ADR-034 (app-subdomain) and ADR-036 (auth-on-marketing-domain).
+Local tests pass (single-host). Production verification pending after Vercel deploy.
+Changed: docs/LOG.md
+docs/wiki/architecture/auth-and-security.md
+src/app/(app)/admin/credits/CreditsCsvExport.tsx
+src/app/(app)/admin/credits/page.tsx
+src/app/(app)/admin/layout.tsx
+src/app/(app)/admin/page.tsx
+src/app/(app)/admin/paid-users/page.tsx
+src/app/(app)/admin/transcripts/TranscriptDeleteButton.tsx
+src/app/(app)/admin/transcripts/[id]/page.tsx
+src/app/(app)/admin/transcripts/page.tsx
+src/app/(app)/admin/users/UsersTable.tsx
+src/app/(app)/admin/users/page.tsx
+src/app/(app)/dashboard/account/page.tsx
+src/app/(app)/dashboard/billing/cancel/page.tsx
+src/app/(app)/dashboard/billing/page.tsx
+src/app/(app)/dashboard/billing/success/page.tsx
+src/app/(app)/dashboard/layout.tsx
+src/app/(app)/dashboard/library/[id]/page.tsx
+src/app/(app)/dashboard/library/page.tsx
+src/app/(app)/dashboard/messages/MessagesClient.tsx
+src/app/(app)/dashboard/messages/page.tsx
+src/app/(app)/dashboard/page.tsx
+src/app/(app)/dashboard/settings/page.tsx
+src/app/(app)/dashboard/transcribe/page.tsx
+src/app/admin/credits/CreditsCsvExport.tsx
+src/app/admin/credits/page.tsx
+src/app/admin/layout.tsx
+src/app/admin/page.tsx
+src/app/admin/paid-users/page.tsx
+src/app/admin/transcripts/TranscriptDeleteButton.tsx
+src/app/admin/transcripts/[id]/page.tsx
+src/app/admin/transcripts/page.tsx
+src/app/admin/users/UsersTable.tsx
+src/app/admin/users/page.tsx
+src/app/auth/callback/route.ts
+src/app/dashboard/account/page.tsx
+src/app/dashboard/billing/cancel/page.tsx
+src/app/dashboard/billing/page.tsx
+src/app/dashboard/billing/success/page.tsx
+src/app/dashboard/layout.tsx
+src/app/dashboard/library/[id]/page.tsx
+src/app/dashboard/library/page.tsx
+src/app/dashboard/messages/MessagesClient.tsx
+src/app/dashboard/messages/page.tsx
+src/app/dashboard/page.tsx
+src/app/dashboard/settings/page.tsx
+src/app/dashboard/transcribe/page.tsx
+src/app/login/page.tsx
+src/contexts/AuthContext.tsx
+src/middleware.ts
+src/utils/supabase/client.ts
+src/utils/supabase/middleware.ts
+src/utils/supabase/server.ts
+---

@@ -1,8 +1,8 @@
 "use client"
 
 import type { ReactNode } from "react"
-import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { marketingHref } from "@/lib/cross-host-links"
 import { ChevronRight } from "lucide-react"
 import { DocsSidebar } from "./DocsSidebar"
 import { findPageInDocs } from "@/lib/docs-config"
@@ -20,12 +20,12 @@ export function DocsShell({ children }: DocsShellProps) {
       {/* Left sidebar — hidden on mobile, visible lg+ */}
       <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-[var(--border)] bg-[var(--surface)] sticky top-0 h-screen overflow-y-auto">
         <div className="px-4 py-5 border-b border-[var(--border)]">
-          <Link
-            href="/docs"
+          <a
+            href={marketingHref('/docs')}
             className="text-sm font-semibold text-[var(--fg)] hover:text-[var(--accent)] transition-colors"
           >
             Documentation
-          </Link>
+          </a>
         </div>
         <div className="py-4 flex-1">
           <DocsSidebar />
@@ -38,9 +38,9 @@ export function DocsShell({ children }: DocsShellProps) {
         {match && (
           <div className="border-b border-[var(--border)] bg-[var(--surface)] px-6 py-3">
             <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-[var(--fg-muted)]">
-              <Link href="/docs" className="hover:text-[var(--fg)] transition-colors">
+              <a href={marketingHref('/docs')} className="hover:text-[var(--fg)] transition-colors">
                 Docs
-              </Link>
+              </a>
               <ChevronRight className="h-3 w-3 shrink-0" />
               <span className="text-[var(--fg-subtle)]">{match.section.label}</span>
               <ChevronRight className="h-3 w-3 shrink-0" />
@@ -51,12 +51,12 @@ export function DocsShell({ children }: DocsShellProps) {
 
         {/* Mobile nav hint */}
         <div className="lg:hidden border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2">
-          <Link
-            href="/docs"
+          <a
+            href={marketingHref('/docs')}
             className="text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
           >
             ← All docs
-          </Link>
+          </a>
         </div>
 
         {/* Page content */}

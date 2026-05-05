@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { PlaylistManager, VideoStatus } from "@/components/PlaylistManager"
 import { AlertCircle, Loader2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { marketingHref } from "@/lib/cross-host-links"
 import { useAuth } from "@/hooks/useAuth"
 import { useJobStatus, JobStatusRow } from "@/hooks/useJobStatus"
 import { createClient } from "@/utils/supabase/client"
@@ -545,11 +545,11 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
             <div className="flex flex-col gap-2">
               <p className="text-error text-sm font-medium">{error.message}</p>
               {error.isCreditsError && (
-                <Link href="/pricing">
+                <a href={marketingHref('/pricing')}>
                   <Button variant="outline" size="sm" className="h-7 text-xs">
                     Buy Credits →
                   </Button>
-                </Link>
+                </a>
               )}
             </div>
           </div>
