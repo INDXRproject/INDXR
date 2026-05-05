@@ -1,3 +1,5 @@
+[2026-05-05 18:00] taak: commit 1794f6b opsplitsen in 2 logische commits | soft reset → commit f8aab3d (monorepo code, 333 files) + commit a7f8ac5 (tooling + wiki, 13 files). LESSONS.md bijgewerkt met git-workflow regel.
+---
 [2026-05-05 17:30] taak: orphan-verificatie docs-componenten | verwijderd: apps/marketing/src/components/docs/AnchorHeading.tsx, InPageTOC.tsx, ReferenceTable.tsx — geen MDX-bestanden, geen MDX-config, nul referenties buiten eigen definitie. Build ✓
 ---
 [2026-05-05 17:00] taak: tsconfig @indxr/shared/* refactor (A1b) + orphan-audit + stop hook fix | gewijzigd: apps/marketing/tsconfig.json, apps/app/tsconfig.json, 100 .ts(x) bestanden (@indxr/shared/* imports), apps/app/src/lib/pollingBackoff.ts (verwijderd), docs/wiki/decisions/046-monorepo-import-aliases.md (nieuw), docs/wiki/INDEX.md, docs/wiki/architecture/pricing-source-of-truth.md, .claude/settings.json, .claude/hooks/check-wiki.sh
@@ -5032,4 +5034,31 @@ src/utils/supabase/middleware.ts
 src/utils/supabase/server.ts
 src/utils/validation.ts
 src/utils/youtube.ts
+---
+[2026-05-05 12:54] commit: docs(monorepo): tooling, ADR-046, wiki updates after monorepo split
+
+- .claude/hooks/check-wiki.sh: extracted inline stop hook to readable script
+- ADR-046: import alias decision (@/* local, @indxr/shared/* shared)
+- INDEX.md: ADR-046 entry added
+- pricing-source-of-truth.md: import path finalized
+- auth-and-security.md, known-issues.md: ratelimit path updated
+- deployment.md: two-Vercel architecture documented
+- LOG.md: A1 through orphan-cleanup entries
+- Orphan cleanup: AnchorHeading, InPageTOC, ReferenceTable removed
+  (no MDX files in project, zero references outside own definitions)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: .claude/hooks/check-wiki.sh
+.claude/settings.json
+apps/marketing/src/components/docs/AnchorHeading.tsx
+apps/marketing/src/components/docs/InPageTOC.tsx
+apps/marketing/src/components/docs/ReferenceTable.tsx
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/auth-and-security.md
+docs/wiki/architecture/pricing-source-of-truth.md
+docs/wiki/decisions/015-rag-json-export.md
+docs/wiki/decisions/046-monorepo-import-aliases.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
 ---
