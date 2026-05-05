@@ -28,7 +28,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(`${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/login`);
   }
 
   const [{ data: transcript, error }, { data: profileData }] = await Promise.all([

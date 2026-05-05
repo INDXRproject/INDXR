@@ -8,7 +8,7 @@ export default async function SettingsPage() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
+  if (!user) redirect(`${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/login`)
 
   const { data: profile } = await supabase
     .from("profiles")

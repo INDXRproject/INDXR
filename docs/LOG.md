@@ -1,3 +1,5 @@
+[2026-05-05 04:30] fix: Server Component redirect("/login") → absolute marketing URL — 6 instances in dashboard/* Server Components (layout ×2, billing, settings, account, library/[id]); /suspended bevestigd als marketing-route; NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000' als fallback; admin/layout.tsx redirect("/dashboard") onaangeroerd (app-path); LESSONS.md bijgewerkt; build groen | gewijzigd: src/app/(app)/dashboard/layout.tsx, src/app/(app)/dashboard/billing/page.tsx, src/app/(app)/dashboard/settings/page.tsx, src/app/(app)/dashboard/account/page.tsx, src/app/(app)/dashboard/library/[id]/page.tsx, docs/LESSONS.md
+---
 [2026-05-05 04:10] fix: cross-host navigatie bugs — (1) app-sidebar.tsx:189 router.push("/login") → window.location.href = marketingHref('/login'); router.refresh() verwijderd (overbodig na full reload); marketingHref import toegevoegd; useRouter import gebleven (nog 3 andere uses). (2) WelcomeCreditCard.tsx:128 window.location.href = '/pricing' → marketingHref('/pricing'); import toegevoegd. Build groen | gewijzigd: src/components/app-sidebar.tsx, src/components/dashboard/WelcomeCreditCard.tsx
 ---
 [2026-05-05 03:50] fix: C.2.2 — Header <Link href="/dashboard*"> → <a href={appHref(...)}> voor alle 5 app-path instanties (AvatarDropdown dashboard/account/settings, desktop "Go to app", mobile "Go to app"); Link import verwijderd, appHref toegevoegd aan cross-host-links import; docs/account-and-data/credits-and-billing/page.tsx Link import verwijderd (<Link href="/pricing"> → <a>, <Link href="/dashboard/account"> → appHref); build groen | gewijzigd: src/components/Header.tsx, src/app/docs/account-and-data/credits-and-billing/page.tsx
@@ -3692,4 +3694,21 @@ Bonus: docs/credits-and-billing /dashboard/account Link ook gefixed.
 Changed: docs/LOG.md
 src/app/docs/account-and-data/credits-and-billing/page.tsx
 src/components/Header.tsx
+---
+[2026-05-05 04:31] commit: fix(C.2.2): cross-host navigation in app-sidebar signout + WelcomeCreditCard
+
+app-sidebar.tsx:189 router.push('/login') triggerde Next.js client-side
+navigation naar app.indxr.ai/login → middleware 308 → indxr.ai/login →
+cross-origin RSC fetch crash → persistente TypeError 'Error in input stream'
+op alle dashboard pages.
+
+WelcomeCreditCard.tsx:128 window.location.href = '/pricing' veroorzaakte
+onnodige redirect-hop op app-host (functioneel werkte het, maar 308 extra).
+
+Beide vervangen door window.location.href = marketingHref(...) conform
+sessie 1 patroon. router.refresh() in signout verwijderd (overbodig na
+full page reload).
+Changed: docs/LOG.md
+src/components/app-sidebar.tsx
+src/components/dashboard/WelcomeCreditCard.tsx
 ---

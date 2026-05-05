@@ -9,7 +9,7 @@ export default async function AccountPage() {
 
   // Auth guard
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
+  if (!user) redirect(`${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/login`)
 
   // Fetch profile
   const { data: profile } = await supabase

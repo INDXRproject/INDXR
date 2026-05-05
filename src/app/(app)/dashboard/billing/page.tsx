@@ -17,7 +17,7 @@ export default async function BillingPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect("/login")
+    redirect(`${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/login`)
   }
 
   // Get credits usage and balance securely

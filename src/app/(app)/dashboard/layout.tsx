@@ -15,8 +15,10 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser()
 
+  const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'
+
   if (!user) {
-    redirect("/login")
+    redirect(`${MARKETING_URL}/login`)
   }
 
   const { data: profile } = await supabase
@@ -26,7 +28,7 @@ export default async function DashboardLayout({
     .single()
 
   if (profile?.suspended) {
-    redirect("/suspended")
+    redirect(`${MARKETING_URL}/suspended`)
   }
 
   return (
