@@ -1,3 +1,7 @@
+[2026-05-05 02:00] wiki: Werksessie C openstaande items gedocumenteerd in priorities.md (nieuwe sectie "Werksessie C — app.indxr.ai subdomain split"): C.1.1 [~] auth-recovery verify, C.1.2 productie-tests, C.1.3 OAuth, C.2.1 manifest CORS bug (bevestigd), C.2.2 Header /dashboard → appHref (nieuw gevonden), C.2.3 email templates, C.2.4 Python CORS ontbreekt (bevestigd), C.2.5 robots.txt, C.3.1 [!] Upstash quota blocker, C.3.2 [~] rate limiting uitgeschakeld; afgewezen items: Stripe checkout (correct), sitemap (geen dashboard URLs), admin fetch (passthrough werkt), OG/metadata (niet geïndexeerd); known-issues.md inconsistentie over Upstash gedocumenteerd; LESSONS.md 2 regels bijgewerkt | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LESSONS.md, docs/LOG.md
+---
+[2026-05-05 01:15] fix: auth-error recovery in updateSession() — clearAuthCookies() helper toegevoegd die sb-* cookies met maxAge:0 en correcte domain wist op zowel response als request; getUser() omgeven door try/catch: bij error of exception cookies clearen + console.error('[auth-recovery] ...'), user=null; voorkomt infinite refresh-loop bij stale/revoked tokens (refresh_token_not_found → Redis quota explosie); LESSONS.md bijgewerkt; build groen (86 routes, 0 errors) | gewijzigd: src/utils/supabase/middleware.ts, docs/LESSONS.md
+---
 [2026-05-04 15:45] fix: cross-host prefetch crash vervolg — resterende marketing <Link>/<a> in app-host components gefixed: VideoTab (/pricing → <a>, /dashboard/credits → /dashboard/billing), PlaylistTab (/pricing → <a>), AudioTab (/login×2 + /pricing×2 → <a>), PlaylistAvailabilitySummary (/pricing → <a>), billing/cancel (/pricing → <a>), TranscriptViewer (/pricing in toast → <a>), TranscriptCard (/signup + /login×2 plain <a> → marketingHref), dashboard/transcribe/page.tsx (/docs → marketingHref); Header signout handlers: router.push("/login") → window.location.href = marketingHref('/login'), useRouter import verwijderd; LESSONS.md bijgewerkt; build groen (86 routes, 0 errors) | gewijzigd: src/components/free-tool/{VideoTab,PlaylistTab,AudioTab}.tsx, src/components/PlaylistAvailabilitySummary.tsx, src/components/library/TranscriptViewer.tsx, src/components/TranscriptCard.tsx, src/components/Header.tsx, src/app/(app)/dashboard/billing/cancel/page.tsx, src/app/(app)/dashboard/transcribe/page.tsx, docs/LESSONS.md
 ---
 [2026-05-04 15:00] fix: cross-host prefetch crash op app.indxr.ai — Next.js <Link> naar marketing-paths vervangen door plain <a href={marketingHref(...)}> in Header (12 links: logo, /pricing×2, /docs×2, /articles×2, /transcribe×2, /login×2, /signup×2), Footer (13 links: alle /pricing, /docs, /about, /privacy, /terms, /contact, /articles/* via FooterColumn), DocsShell (/docs×3); src/lib/cross-host-links.ts aangemaakt (marketingHref + appHref); app-targets (/dashboard, /dashboard/account, /dashboard/settings) blijven <Link>; build groen (86 routes, 0 errors); openstaand sessie 2: VideoTab/PlaylistTab/AudioTab/PlaylistAvailabilitySummary/billing/cancel hebben nog relatieve /pricing links op app-host | gewijzigd: src/lib/cross-host-links.ts (nieuw), src/components/Header.tsx, src/components/Footer.tsx, src/components/docs/DocsShell.tsx
@@ -3628,4 +3632,30 @@ src/middleware.ts
 src/utils/supabase/client.ts
 src/utils/supabase/middleware.ts
 src/utils/supabase/server.ts
+---
+[2026-05-05 02:33] commit: fix(routing): cross-host prefetch crash — Link → marketingHref sweep + signout handlers
+
+Next.js prefetcht <Link href='/pricing'> etc. op app.indxr.ai → 307 cross-origin block → TypeError 'Error in input stream' tijdens login redirect overgang.
+
+Fix: alle marketing-targets in app-host renderpath worden plain <a> met absolute URL via nieuwe utility marketingHref()/appHref().
+
+Header signout handlers: router.push -> window.location.href = marketingHref('/login') om 308-hop te vermijden.
+
+VideoTab path-correctie: /dashboard/credits -> /dashboard/billing (oud path bestond niet).
+
+Build groen (86 routes). Productie-verificatie pending.
+Changed: docs/LESSONS.md
+docs/LOG.md
+src/app/(app)/dashboard/billing/cancel/page.tsx
+src/app/(app)/dashboard/transcribe/page.tsx
+src/components/Footer.tsx
+src/components/Header.tsx
+src/components/PlaylistAvailabilitySummary.tsx
+src/components/TranscriptCard.tsx
+src/components/docs/DocsShell.tsx
+src/components/free-tool/AudioTab.tsx
+src/components/free-tool/PlaylistTab.tsx
+src/components/free-tool/VideoTab.tsx
+src/components/library/TranscriptViewer.tsx
+src/lib/cross-host-links.ts
 ---

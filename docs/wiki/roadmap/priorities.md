@@ -224,6 +224,66 @@ Zie ook `docs/wiki/architecture/page-structures/free-tool.md` voor context.
 
 ---
 
+## Werksessie C — app.indxr.ai subdomain split
+
+Doel: `/dashboard` en `/admin` verhuizen van `indxr.ai` naar `app.indxr.ai`. Auth-flows (login, signup, OAuth) blijven op marketing-domain; cookies op root-domain `.indxr.ai` zodat sessie cross-host werkt. Zie ADR-034 en ADR-036.
+
+Geïmplementeerd 2026-05-04/05 (Code Sessie 1). Code Sessie 2 (mechanische sweep) nog te doen.
+
+### Code Sessie 1 — auth / cookies / middleware
+
+- [~] **C.1.1 — Auth-error recovery in updateSession** — geïmplementeerd 2026-05-05
+  `clearAuthCookies()` toegevoegd aan `src/utils/supabase/middleware.ts`: bij `getUser()` error of exception worden alle `sb-*` cookies gewist met `maxAge: 0` en correcte `cookieDomain`. Voorkomt infinite refresh-loop bij stale/revoked tokens (root cause Upstash quota blow-out — zie C.3.1). Sentinel: `[auth-recovery]` in Vercel logs.
+  **Productie-verificatie pending** — Khidr: na deploy een verlopen sessie simuleren (revoke refresh token via Supabase Dashboard → refresh pagina → verwacht: cookies verdwenen, geen retry-loop, `[auth-recovery]` in logs).
+
+- [ ] **C.1.2 — Productie-tests na sessie 1 deploy**
+  Handmatig browser-tests na Vercel-deploy met `NEXT_PUBLIC_APP_URL=https://app.indxr.ai` en `NEXT_PUBLIC_MARKETING_URL=https://indxr.ai`:
+  - `sb-*` cookies staan op domain `.indxr.ai` (zichtbaar op beide hosts in DevTools)
+  - `indxr.ai/dashboard` → 308 → `app.indxr.ai/dashboard`
+  - `app.indxr.ai/` → redirect → `/dashboard`
+  - `app.indxr.ai/dashboard` zonder sessie → `indxr.ai/login?next=https://app.indxr.ai/dashboard`
+  - Na login: belandt op `app.indxr.ai/dashboard`
+  - Logout: `sb-*` cookies verdwenen op beide hosts
+  - `login?next=https://evil.com/steal` → belandt op `/dashboard/transcribe` (open redirect preventie)
+
+- [ ] **C.1.3 — Google OAuth flow productie-test**
+  Verifieer vóór test in Vercel Dashboard: is `NEXT_PUBLIC_ENABLE_OAUTH=true` op Production scope gezet? Als nee: OAuth-knoppen niet zichtbaar — skip test.
+  Test: Google-login op `indxr.ai/login` → OAuth callback op `indxr.ai/auth/callback` → redirect naar `app.indxr.ai/dashboard/transcribe`. Controleer: cookie op `.indxr.ai`, sessie zichtbaar op beide hosts.
+
+### Code Sessie 2 — mechanische sweep
+
+- [ ] **C.2.1 — Manifest CORS bug** ⚠️ BEVESTIGD
+  `src/app/layout.tsx:35: manifest: "/site.webmanifest"` — op `app.indxr.ai` vraagt de browser `app.indxr.ai/site.webmanifest` op; middleware geeft 308 → `indxr.ai/site.webmanifest` (cross-origin redirect) → CORS block in Console. Rapportage Khidr bevestigd via codebase.
+  **Fix:** `manifest: "/site.webmanifest"` → `manifest: "https://indxr.ai/site.webmanifest"` in `src/app/layout.tsx`. Of voeg een `(app)`-groep-layout toe die de manifest-tag overschrijft.
+
+- [ ] **C.2.2 — Header: `/dashboard` links → `appHref`** ⚠️ NIEUW (niet in advieslijst)
+  `src/components/Header.tsx` heeft 3× `<Link href="/dashboard">` (regel 41 dropdown, regel 140 desktop "Go to app", regel 195 mobile). Op `indxr.ai` prefetcht Next.js `indxr.ai/dashboard` → 308 → `app.indxr.ai/dashboard` (cross-origin) → zelfde TypeError-crash als de omgekeerde fix in sessie 1. Alle drie moeten `<a href={appHref('/dashboard')}>` worden.
+
+- [ ] **C.2.3 — Email templates audit** — handmatige check Khidr
+  Supabase Dashboard → Auth → Email Templates. Controleer of `{{ .SiteURL }}` variabelen correct resolven naar `https://indxr.ai` (confirm/reset links moeten naar marketing-host verwijzen, niet naar app). Niet code-verifieerbaar.
+
+- [ ] **C.2.4 — Python backend CORS origins** ⚠️ BEVESTIGD
+  `backend/main.py:151-161`: `allow_origins` bevat `https://indxr.ai` en `https://www.indxr.ai` maar **niet** `https://app.indxr.ai`. Browser op `app.indxr.ai` maakt directe POST calls naar Railway voor audio-uploads (`NEXT_PUBLIC_PYTHON_BACKEND_URL` — gevonden op `AudioTab.tsx:349`). Deze calls falen met CORS-error.
+  **Fix:** `"https://app.indxr.ai"` toevoegen aan `allow_origins` in `backend/main.py:155` (na `"https://www.indxr.ai"`).
+
+- [ ] **C.2.5 — Robots.txt strategie voor app-host**
+  `public/robots.txt` bevat `Disallow: /dashboard/` en `Disallow: /admin/` — correct voor marketing-host. Op `app.indxr.ai` geeft middleware `/robots.txt` een 308 naar `indxr.ai/robots.txt`; sommige crawlers volgen geen redirects voor robots.txt. Ideaal: `app.indxr.ai/robots.txt` retourneert `Disallow: /` inline. Optie: voeg `/robots.txt` toe als uitzonderingspad in middleware (`!isAppPath` skip) en serveer via Next.js `src/app/robots.ts` met host-detectie.
+
+### Operationele issues
+
+- [!] **C.3.1 — Upstash Redis quota exhausted — BLOCKER voor async jobs**
+  500K commands/maand limiet bereikt op 2026-05-04. Bewezen oorzaak: stale `.indxr.ai` cookies triggerde infinite refresh-loop in browser; elke loop-call passeerde middleware met Redis rate-limit-check. C.1.1 fix sluit de oorzaak af.
+  **Huidige staat:** `UPSTASH_REDIS_REST_URL` + `_TOKEN` op Development scope gezet in Vercel → `UPSTASH_ENABLED=false` in productie → `noopLimiter` actief → rate limiting uitgeschakeld, caption cache uitgeschakeld. Railway ARQ worker: vermoedelijk ook geraakt door quota (geen async jobs in productie mogelijk).
+  **Beslissing nodig:** Upstash plan upgraden (Pay-as-you-go of Pro) vs Redis op Railway zelf vs wachten op maandelijkse reset. Prioriteit: vóór launch met paid users.
+  **Inconsistentie met known-issues.md:** `docs/wiki/operations/known-issues.md:44-47` stelt "rate limiting is bewust uitgeschakeld". Dit was **incorrect** — de code (`src/lib/ratelimit.ts`) deed wél echte Redis-calls zolang de env vars beschikbaar waren op Production scope. Ze waren actief, niet bewust uitgeschakeld. LESSONS.md bijgewerkt.
+
+- [~] **C.3.2 — Rate limiting en caption cache uitgeschakeld in productie**
+  Direct gevolg van C.3.1-mitigatie. `noopLimiter` actief → geen rate limiting in productie. Caption cache (Upstash Redis) ook down.
+  **Pre-launch actie:** herstellen zodra C.3.1 opgelost. Cross-referentie: item 1.19 ("Upstash Redis rate limiting activeren") in Fase 1.
+  **Status:** tijdelijk acceptabel, geen blocker voor verdere development. Niet lanceren met paid users zonder rate limiting.
+
+---
+
 ## Fase 2 — Eerste 30 dagen na launch (data-gestuurd)
 
 Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het signaal geeft.
