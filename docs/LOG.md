@@ -1,3 +1,5 @@
+[2026-05-07 10:30] taak: hotfix runtime crash dashboard | useSidebar context error: AppTopbar (met SidebarTrigger) stond buiten SidebarProvider na vorige refactor. Fix: SidebarProvider als outer wrapper, layout-flex in nested div (flex flex-col h-svh w-full + flex flex-1 overflow-hidden). Build ✓ | gewijzigd: apps/app/src/app/dashboard/layout.tsx
+---
 [2026-05-07 10:00] taak: app-host skelet visuele fix + post-login routing | ThemeToggle: `relative overflow-hidden` containment (Moon absolute positioning bug). AppTopbar: CircleDollarSign h-4→size-5, credits in pill (bg-surface-elevated, tabular-nums), UserAvatar h-9→h-7. Dashboard layout: AppTopbar verplaatst BUITEN SidebarProvider, outer div `flex flex-col h-svh`, SidebarProvider `flex-1 overflow-hidden`, main `overflow-y-auto`. Sidebar: variant=inset → collapsible="none" + h-full border-r (verwijdert fixed top-16 assumptie). Post-login redirect /dashboard/transcribe → /dashboard. Documentatie: app-host-skeleton.md. Build ✓ (31 routes, geen TS errors). | gewijzigd: packages/shared/src/components/ui/theme-toggle.tsx, packages/shared/src/actions/auth-actions.ts, apps/app/src/components/AppTopbar.tsx, apps/app/src/components/AvatarDropdown.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/components/app-sidebar.tsx, docs/wiki/architecture/app-host-skeleton.md (nieuw)
 ---
 [2026-05-06 18:30] taak: app-host skelet-fix — marketing Header verwijderd, AppTopbar, sidebar herwerkt | Marketing Header verwijderd uit apps/app root layout (provider-shell only). Nieuw: AppTopbar.tsx (logo → SidebarTrigger md:hidden → ThemeToggle → Messages dot → Credits → AvatarDropdown). Nieuw: AvatarDropdown.tsx (app-host variant, relatieve links). Dashboard layout: topbar vervangen door AppTopbar, min-h 65→56px, main#main-content. Sidebar: collapse-toggle hidden op mobile (hidden md:block), libraryOpen init op basis van pathname. Admin layout: ThemeToggle + AvatarDropdown toegevoegd rechts in nav. ThemeToggle: resolvedTheme fix (was raw theme, niet resolved). MOCK_MESSAGES geëxporteerd voor unread indicator. Build ✓ (31 routes, geen TS errors). | gewijzigd: apps/app/src/app/layout.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/app/admin/layout.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/components/AppTopbar.tsx (nieuw), apps/app/src/components/AvatarDropdown.tsx (nieuw), apps/app/src/app/dashboard/messages/MessagesClient.tsx, packages/shared/src/components/ui/theme-toggle.tsx
@@ -5178,5 +5180,23 @@ apps/app/src/components/app-sidebar.tsx
 docs/LESSONS.md
 docs/LOG.md
 docs/wiki/architecture/cross-host-auth.md
+packages/shared/src/components/ui/theme-toggle.tsx
+---
+[2026-05-07 00:11] commit: fix: app-host skelet visueel + post-login routing
+
+- ThemeToggle relative overflow-hidden (Moon positioning bug)
+- AppTopbar icon sizes uniform, credits pill, avatar smaller
+- Dashboard layout restructured: AppTopbar buiten SidebarProvider
+- Sidebar collapsible='none' (geen fixed top-16 meer)
+- Post-login redirect: /dashboard/transcribe → /dashboard
+- Nieuwe baseline doc: app-host-skeleton.md
+Changed: apps/app/src/app/dashboard/layout.tsx
+apps/app/src/components/AppTopbar.tsx
+apps/app/src/components/AvatarDropdown.tsx
+apps/app/src/components/app-sidebar.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/app-host-skeleton.md
+packages/shared/src/actions/auth-actions.ts
 packages/shared/src/components/ui/theme-toggle.tsx
 ---
