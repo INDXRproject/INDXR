@@ -1,8 +1,17 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://indxr.ai'
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@indxr/shared"],
+  async redirects() {
+    return [
+      { source: '/login',           destination: `${MARKETING_URL}/login`,           permanent: true },
+      { source: '/signup',          destination: `${MARKETING_URL}/signup`,          permanent: true },
+      { source: '/forgot-password', destination: `${MARKETING_URL}/forgot-password`, permanent: true },
+    ]
+  },
   images: {
     remotePatterns: [
       {

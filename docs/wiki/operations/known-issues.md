@@ -314,12 +314,26 @@ Geen externe service die alarmeert bij downtime.
 - [x] AudioTab: job recovery na page refresh (sessionStorage, resume banner, elapsed timer via `created_at`)
 - [x] `no_warnings`: was al `True` in `audio_utils.py` — geen fix nodig geweest
 - [x] **BACKEND_API_SECRET toevoegen aan Vercel environment variables** ✓ (geverifieerd 2026-04-15: Railway→401 zonder header, Next.js→307 met correcte auth flow)
+- [x] Vercel projects aangemaakt: `indxr-marketing` (15 env vars) + `indxr-app` (18 env vars, Stripe live) ✓ (B1.2/B2, 2026-05-06)
+- [x] Env vars gemigreerd naar nieuwe Vercel projects ✓ — let op: Upstash URL had quotes uit .env-paste; Vercel UI vereist rauwe waarden zonder quotes
 - [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten in live mode + webhook registreren (**URL: `https://app.indxr.ai/api/stripe/webhook`**)
-- [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel (apps/app project)
+- [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel indxr-app (wacht op B5 webhook re-registratie)
 - [ ] `NEXT_PUBLIC_PYTHON_BACKEND_URL` verwijderen uit Vercel dashboard — var is vervangen door `NEXT_PUBLIC_AUDIO_UPLOAD_URL`, staat nog in Vercel env vars maar niet meer in codebase (B0 cleanup 2026-05-05)
-- [ ] Vercel dashboard: "Automatically skip unnecessary deployments" inschakelen per project (Project Settings → Git) — vervangt `ignoreCommand`, native Turborepo-integratie
+- [ ] Vercel dashboard: "Automatically skip unnecessary deployments" inschakelen per project (Project Settings → Git) — native Turborepo-integratie
+- [x] B3: Custom domains transferred ✓ — indxr.ai canonical op indxr-marketing, www.indxr.ai 301 → apex, app.indxr.ai op indxr-app. Curl-verificatie ✓ (2026-05-06)
+- [x] B4: A-record indxr.ai → 216.150.1.1 (Vercel IP range expansion, plan-specifieke aanbeveling). Badge verdwenen ✓ (2026-05-06)
+- [x] B5: Stripe webhook live mode op app.indxr.ai/api/stripe/webhook. 3 events (checkout.session.completed, async_payment_succeeded, async_payment_failed). STRIPE_WEBHOOK_SECRET in Vercel indxr-app ✓ (2026-05-06)
+- [~] B6: Smoke tests op productiedomeinen
+  - [ ] Cross-host redirects: `app.indxr.ai/login|signup|forgot-password` → 308 → `indxr.ai/...` (curl -I verificatie)
+  - [ ] Smoke test checklist doorlopen (zie `wiki/operations/cross-host-smoke-tests.md`)
+  - [ ] Eerste echte betaling (Try-pakket €2.49) — pas na smoke-tests groen
+  - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks
+- [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
 - [x] Supabase email verificatie re-enabled ✓
-- [x] `UPSTASH_REDIS_REST_URL` + `_TOKEN` geconfigureerd in Vercel ✓ (rate limiting bewust uitgeschakeld tijdens testfase — activeren bij launch)
+- [!] **Upstash Redis quota** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Oorzaak: quota-blow-out (500.000/500.000 req), zelfde patroon als C.3.1. Tevens: elke 60s een `[auth-recovery] getUser error` ping op `indxr.ai/` in Vercel logs — bron niet gediagnosticeerd (verdacht: externe uptime monitor of Vercel Speed Insights). Pre-launch acties:
+  - [ ] Bron van 60s ping op `indxr.ai/` identificeren en stoppen
+  - [ ] Upstash quota strategie beslissen (upgrade plan vs alternatief)
+  - [ ] Env vars opnieuw toevoegen en verifieer geen quota leak
 - [ ] Supabase database backups configureren
 - [ ] `LOG_LEVEL=WARNING` instellen in Railway
 - [ ] `has_ever_purchased` implementeren in Stripe webhook (zie priorities.md)

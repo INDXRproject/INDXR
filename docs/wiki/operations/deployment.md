@@ -27,14 +27,43 @@ backend/          → FastAPI           → Railway
 
 ---
 
+## Domain configuration
+
+| Domain | Project | Type |
+|---|---|---|
+| `indxr.ai` | `indxr-marketing` | Canonical (apex) |
+| `www.indxr.ai` | `indxr-marketing` | 301 redirect → indxr.ai |
+| `app.indxr.ai` | `indxr-app` | Production |
+| `indxr.vercel.app` | `indxr` (oud) | Te verwijderen B7 |
+
+**Canonical domain rationale:** apex (indxr.ai) gekozen boven www voor branding (modern SaaS standaard, kortere URL — Stripe, Linear, Anthropic gebruiken ook apex). 301 permanent redirect van www → apex enforced, single canonical voor SEO.
+
+**A-record (apex):** 216.150.1.1 (Vercel plan-specifieke aanbeveling, geüpdatet 2026-05-06).
+
+---
+
+## Stripe webhook
+
+| Veld | Waarde |
+|---|---|
+| URL | `https://app.indxr.ai/api/stripe/webhook` |
+| API version | 2025-12-15.clover |
+| Events | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` |
+| Secret | `STRIPE_WEBHOOK_SECRET` in Vercel `indxr-app` (sensitive flag) |
+| Beheer | Stripe Dashboard → Workbench → Webhooks |
+
+---
+
 ## Frontend (Vercel) — twee projecten
 
-Twee aparte Vercel-projecten, allebei op dezelfde GitHub repo (`master`-branch).
+Twee aparte Vercel-projecten (INDXR TEAM, Pro tier), allebei op dezelfde GitHub repo (`master`-branch). **Status: aangemaakt en operationeel (2026-05-06).**
 
-| Project | Root directory | Domein |
-|---------|---------------|--------|
-| `indxr-marketing` | `apps/marketing` | `indxr.ai` |
-| `indxr-app` | `apps/app` | `app.indxr.ai` |
+| Project | Root directory | Env vars | Domein |
+|---------|---------------|----------|--------|
+| `indxr-marketing` | `apps/marketing` | 15 | `indxr.ai` ✓ |
+| `indxr-app` | `apps/app` | 18 (incl. Stripe live) | `app.indxr.ai` ✓ |
+
+**Oud project:** `indxr` (enkelvoudig, pre-monorepo) is gedisconnect van GitHub. Te verwijderen in B7 nadat custom domains overgezet zijn.
 
 **Auto-deploy:** Push naar `master` → beide Vercel-projecten deployen automatisch.
 
@@ -48,6 +77,8 @@ Beide projecten worden geconfigureerd via `vercel.json` in de app-root — geen 
 | Framework Preset | Next.js (auto-detect) | Next.js (auto-detect) |
 | Build Command | *via vercel.json* | *via vercel.json* |
 | Install Command | *via vercel.json* | *via vercel.json* |
+
+**⚠️ Env vars plakken in Vercel UI:** gebruik altijd de rauwe waarde ZONDER quotes. `.env` files gebruiken `KEY="value"` syntax — die quotes worden in Vercel UI letterlijk deel van de string en breken de runtime. Verwijder quotes bij kopiëren uit `.env.local`.
 
 **vercel.json per app** (versioned in code, zero-config):
 ```json

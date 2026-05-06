@@ -1,3 +1,21 @@
+[2026-05-06 16:00] taak: cross-host redirects + smoke test scaffold | apps/app/next.config.ts: 308 redirects voor /login, /signup, /forgot-password naar marketing host. cross-host-smoke-tests.md aangemaakt (13 tests, pre-test checklist). known-issues.md B6 bijgewerkt. Build ✓ | gewijzigd: apps/app/next.config.ts, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/known-issues.md
+---
+[2026-05-06 15:00] taak: cross-host architectuur baseline gedocumenteerd | wiki/architecture/cross-host-auth.md aangemaakt: user journeys, cookie strategie (.indxr.ai domain), login/OAuth flows, middleware per host, cross-host link contract, env var contract, Supabase URL config, edge cases. | gewijzigd: docs/wiki/architecture/cross-host-auth.md
+---
+[2026-05-06 14:30] taak: Upstash quota recurrence | UPSTASH_REDIS_REST_URL + _TOKEN verwijderd uit indxr-marketing + indxr-app (quota 500k/500k blow-out, zelfde patroon C.3.1). noopLimiter actief in productie. Login werkt weer. Bron 60s auth-recovery ping nog niet gediagnosticeerd. | gewijzigd: docs/wiki/operations/known-issues.md
+---
+[2026-05-06 13:00] taak: B5 Stripe webhook live mode | webhook aangemaakt op app.indxr.ai/api/stripe/webhook, 3 checkout events, STRIPE_WEBHOOK_SECRET in Vercel indxr-app sensitive. Verificatie naar B6 (eerste echte betaling). | gewijzigd: docs/wiki/operations/deployment.md, docs/wiki/operations/known-issues.md
+---
+[2026-05-06 12:30] taak: B4 DNS A-record update | indxr.ai apex A-record gewijzigd van 216.198.79.1 naar 216.150.1.1 (Vercel IP range expansion, plan-specifieke aanbeveling). Badge weg in 30s. | gewijzigd: docs/wiki/operations/deployment.md, docs/wiki/operations/known-issues.md
+---
+[2026-05-06 12:00] taak: B3 domain transfer | indxr.ai canonical op indxr-marketing, www.indxr.ai 301 redirect naar apex, app.indxr.ai op indxr-app. Curl-verificatie ✓. | gewijzigd: docs/wiki/operations/deployment.md, docs/wiki/operations/known-issues.md
+---
+[2026-05-06 11:00] taak: docs update na Vercel migratie (B1.2/B2) | deployment.md bijgewerkt: beide Vercel projects operationeel, env var quotes-waarschuwing toegevoegd. known-issues.md: B1.2/B2 afgevinkt, B3–B7 checklist toegevoegd. LESSONS.md: Vercel UI quotes-regel. 
+---
+[2026-05-06 10:30] taak: B2 env vars migratie | 18 vars naar indxr-app (incl. Stripe live), 15 vars naar indxr-marketing (geen Stripe). Quotes-cleanup nodig op Upstash URL. STRIPE_WEBHOOK_SECRET wacht op B5.
+---
+[2026-05-06 10:20] taak: B1.2 Vercel projects aanmaken | indxr-marketing + indxr-app aangemaakt in INDXR TEAM (Pro), root directories apps/marketing en apps/app. Turborepo auto-detect werkt. Beide builds slagen.
+---
 [2026-05-06 10:15] taak: turbo.json passThroughEnv → globalPassThroughEnv | secrets verplaatst naar top-level globalPassThroughEnv (DRY, alle tasks). ADR-047 bijgewerkt met secret-handling rationale. Build ✓ (26s)
 ---
 [2026-05-06 10:00] taak: turbo.json passThroughEnv server-side secrets | Vercel build apps/app faalde door Turborepo strip van STRIPE_SECRET_KEY e.a. Toegevoegd aan passThroughEnv: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY, BACKEND_API_SECRET, PYTHON_BACKEND_URL, SENTRY_AUTH_TOKEN, ADMIN_EMAIL, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN. Build ✓ (28s)
@@ -5100,3 +5118,18 @@ package.json
 pnpm-lock.yaml
 turbo.json
 ---
+[2026-05-06 05:12] commit: fix(turbo): use globalPassThroughEnv for server-side secrets
+
+Vercel build of apps/app failed because Turborepo strict mode strips
+env vars not whitelisted in turbo.json. After initial per-task fix,
+refactored to globalPassThroughEnv for DRY config — secrets are
+available to all tasks (build, dev, lint, typecheck) without
+duplication. Future tasks (test, e2e, db:migrate) inherit access
+automatically.
+
+ADR-047 updated with secret-handling rationale.
+Changed: docs/LOG.md
+docs/wiki/decisions/047-turborepo-build-orchestration.md
+turbo.json
+---
+[2026-05-06 05:57] precompact: context compaction triggered
