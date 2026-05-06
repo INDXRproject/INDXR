@@ -19,7 +19,7 @@ interface Message {
   archived: boolean
 }
 
-const MOCK_MESSAGES: Message[] = [
+export const MOCK_MESSAGES: Message[] = [
   {
     id: "1",
     sender: "Khidr @ INDXR",

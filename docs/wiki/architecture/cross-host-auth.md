@@ -188,12 +188,16 @@ Alle cross-host navigatie gebruikt `<a href={...}>` (niet `<Link>`). `<Link>` ve
 
 | Component | Link type |
 |---|---|
-| `Header.tsx` | Marketing-links → `marketingHref()`, app-links → `appHref()` |
+| `Header.tsx` (marketing-host only) | Marketing-links → `marketingHref()`, app-links → `appHref()` |
+| `AppTopbar.tsx` (app-host only) | Logo/nav → relatieve links `/dashboard/...`, logout → `marketingHref('/login')` |
 | `Footer.tsx` | Alle links → `marketingHref()` |
+| `AvatarDropdown.tsx` (app-host) | Account/Settings → relatieve links, logout → `marketingHref('/login')` |
 | `app-sidebar.tsx` | Logout → `window.location.href = marketingHref('/login')` |
 | `AuthContext.tsx` | SIGNED_OUT op app-host → `window.location.href = marketingHref('/login')` |
 | Dashboard server components | Niet-ingelogd → `redirect(MARKETING_URL + '/login')` |
 | app-middleware | Unauthenticated → `redirect(MARKETING_URL + '/login?next=...')` |
+
+**Opmerking:** Marketing `Header.tsx` wordt NIET geladen op `app.indxr.ai`. De app-host heeft een eigen `AppTopbar` (logo + account controls) zonder marketing navigatie (Pricing/Docs/Articles/Try).
 
 ---
 

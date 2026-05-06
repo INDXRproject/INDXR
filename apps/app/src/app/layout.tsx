@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "@indxr/shared/components/Header";
 import { Toaster } from "@indxr/shared/components/ui/sonner";
 import { AuthProvider } from "@indxr/shared/contexts/AuthContext";
 import { PostHogProvider } from "@indxr/shared/providers/PostHogProvider";
@@ -59,10 +58,7 @@ export default async function RootLayout({
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem disableTransitionOnChange>
           <PostHogProvider>
             <AuthProvider initialUser={user}>
-              <Header />
-              <main id="main-content" className="flex-1">
-                {children}
-              </main>
+              {children}
               <Toaster />
             </AuthProvider>
           </PostHogProvider>

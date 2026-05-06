@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { redirect } from "next/navigation"
+import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
+import { AvatarDropdown } from "@/components/AvatarDropdown"
 
 export default async function AdminLayout({
   children,
@@ -53,13 +55,15 @@ export default async function AdminLayout({
           >
             Paid Users
           </Link>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
             <Link
               href="/dashboard"
               className="px-3 py-1.5 text-sm rounded-md hover:bg-surface-elevated transition-colors text-fg-muted"
             >
               ← Back to App
             </Link>
+            <ThemeToggle />
+            <AvatarDropdown />
           </div>
         </div>
       </nav>

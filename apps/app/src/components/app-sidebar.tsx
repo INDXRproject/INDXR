@@ -65,7 +65,7 @@ export function AppSidebar() {
   // ── Collections state ──────────────────────────────────────────────────────
   const [collections, setCollections]         = useState<Collection[]>([])
   const [transcripts, setTranscripts]         = useState<{id: string, collection_id: string | null, character_count: number | null}[]>([])
-  const [libraryOpen, setLibraryOpen]         = useState(true)
+  const [libraryOpen, setLibraryOpen]         = useState(() => !!pathname?.startsWith('/dashboard/library'))
 
   // ── Collapsible sidebar state ──────────────────────────────────────────────
   const [collapsed, setCollapsed] = useState(() => {
@@ -319,8 +319,8 @@ export function AppSidebar() {
     <TooltipProvider delayDuration={300}>
       <Sidebar variant="inset" className={cn(collapsed ? "w-14" : "w-64")}>
         <SidebarContent>
-          {/* Collapse toggle button */}
-          <div className="px-3 py-2 border-b border-[var(--border)]/50">
+          {/* Collapse toggle button — desktop only; mobile uses SidebarTrigger in AppTopbar */}
+          <div className="hidden md:block px-3 py-2 border-b border-[var(--border)]/50">
             <button
               onClick={handleToggleCollapse}
               className="h-8 w-8 flex items-center justify-center rounded text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)] transition-colors cursor-pointer"

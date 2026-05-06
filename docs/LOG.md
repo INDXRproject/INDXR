@@ -1,3 +1,5 @@
+[2026-05-06 18:30] taak: app-host skelet-fix — marketing Header verwijderd, AppTopbar, sidebar herwerkt | Marketing Header verwijderd uit apps/app root layout (provider-shell only). Nieuw: AppTopbar.tsx (logo → SidebarTrigger md:hidden → ThemeToggle → Messages dot → Credits → AvatarDropdown). Nieuw: AvatarDropdown.tsx (app-host variant, relatieve links). Dashboard layout: topbar vervangen door AppTopbar, min-h 65→56px, main#main-content. Sidebar: collapse-toggle hidden op mobile (hidden md:block), libraryOpen init op basis van pathname. Admin layout: ThemeToggle + AvatarDropdown toegevoegd rechts in nav. ThemeToggle: resolvedTheme fix (was raw theme, niet resolved). MOCK_MESSAGES geëxporteerd voor unread indicator. Build ✓ (31 routes, geen TS errors). | gewijzigd: apps/app/src/app/layout.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/app/admin/layout.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/components/AppTopbar.tsx (nieuw), apps/app/src/components/AvatarDropdown.tsx (nieuw), apps/app/src/app/dashboard/messages/MessagesClient.tsx, packages/shared/src/components/ui/theme-toggle.tsx
+---
 [2026-05-06 16:00] taak: cross-host redirects + smoke test scaffold | apps/app/next.config.ts: 308 redirects voor /login, /signup, /forgot-password naar marketing host. cross-host-smoke-tests.md aangemaakt (13 tests, pre-test checklist). known-issues.md B6 bijgewerkt. Build ✓ | gewijzigd: apps/app/next.config.ts, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/known-issues.md
 ---
 [2026-05-06 15:00] taak: cross-host architectuur baseline gedocumenteerd | wiki/architecture/cross-host-auth.md aangemaakt: user journeys, cookie strategie (.indxr.ai domain), login/OAuth flows, middleware per host, cross-host link contract, env var contract, Supabase URL config, edge cases. | gewijzigd: docs/wiki/architecture/cross-host-auth.md
@@ -5133,3 +5135,25 @@ docs/wiki/decisions/047-turborepo-build-orchestration.md
 turbo.json
 ---
 [2026-05-06 05:57] precompact: context compaction triggered
+[2026-05-06 20:27] commit: feat: cross-host redirects + B3-B5 migratie afronding
+
+- apps/app/next.config.ts: 308 redirects voor /login, /signup,
+  /forgot-password naar marketing host (SaaS standaard pattern)
+- B3 domain transfer: indxr.ai canonical, www 301 → apex,
+  app.indxr.ai → indxr-app project
+- B4 DNS: A-record geüpdatet naar 216.150.1.1 (Vercel IP range)
+- B5 Stripe webhook: live mode op app.indxr.ai/api/stripe/webhook,
+  3 events, STRIPE_WEBHOOK_SECRET in Vercel
+- Upstash quota recurrence: env vars verwijderd uit beide projects,
+  noopLimiter actief tot bron 60s ping gediagnosticeerd is
+- Nieuwe docs: cross-host-auth.md (architectuur baseline),
+  cross-host-smoke-tests.md (productie validatie checklist)
+Changed: apps/app/next.config.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/cross-host-auth.md
+docs/wiki/operations/cross-host-smoke-tests.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
+---
+[2026-05-06 23:14] precompact: context compaction triggered
