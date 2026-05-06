@@ -54,7 +54,7 @@ export async function loginAction(prevState: unknown, formData: FormData) {
   // redirect() is called outside try/catch per Next.js requirement.
   // Absolute cross-origin redirects (app.indxr.ai) are supported since Next.js 14.
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  let finalTarget = `${APP_URL}/dashboard/transcribe`
+  let finalTarget = `${APP_URL}/dashboard`
 
   if (rawRedirectTo) {
     if (rawRedirectTo.startsWith('/')) {

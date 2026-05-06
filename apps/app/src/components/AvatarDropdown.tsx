@@ -28,7 +28,7 @@ export function AvatarDropdown() {
           size="icon"
           className="rounded-full h-9 w-9 p-0 hover:ring-2 hover:ring-border transition-all border-none bg-transparent"
         >
-          <UserAvatar className="h-9 w-9 text-sm" />
+          <UserAvatar className="h-7 w-7 text-sm" />
           <span className="sr-only">User menu</span>
         </Button>
       </DropdownMenuTrigger>

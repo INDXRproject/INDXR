@@ -1,3 +1,5 @@
+[2026-05-07 10:00] taak: app-host skelet visuele fix + post-login routing | ThemeToggle: `relative overflow-hidden` containment (Moon absolute positioning bug). AppTopbar: CircleDollarSign h-4→size-5, credits in pill (bg-surface-elevated, tabular-nums), UserAvatar h-9→h-7. Dashboard layout: AppTopbar verplaatst BUITEN SidebarProvider, outer div `flex flex-col h-svh`, SidebarProvider `flex-1 overflow-hidden`, main `overflow-y-auto`. Sidebar: variant=inset → collapsible="none" + h-full border-r (verwijdert fixed top-16 assumptie). Post-login redirect /dashboard/transcribe → /dashboard. Documentatie: app-host-skeleton.md. Build ✓ (31 routes, geen TS errors). | gewijzigd: packages/shared/src/components/ui/theme-toggle.tsx, packages/shared/src/actions/auth-actions.ts, apps/app/src/components/AppTopbar.tsx, apps/app/src/components/AvatarDropdown.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/components/app-sidebar.tsx, docs/wiki/architecture/app-host-skeleton.md (nieuw)
+---
 [2026-05-06 18:30] taak: app-host skelet-fix — marketing Header verwijderd, AppTopbar, sidebar herwerkt | Marketing Header verwijderd uit apps/app root layout (provider-shell only). Nieuw: AppTopbar.tsx (logo → SidebarTrigger md:hidden → ThemeToggle → Messages dot → Credits → AvatarDropdown). Nieuw: AvatarDropdown.tsx (app-host variant, relatieve links). Dashboard layout: topbar vervangen door AppTopbar, min-h 65→56px, main#main-content. Sidebar: collapse-toggle hidden op mobile (hidden md:block), libraryOpen init op basis van pathname. Admin layout: ThemeToggle + AvatarDropdown toegevoegd rechts in nav. ThemeToggle: resolvedTheme fix (was raw theme, niet resolved). MOCK_MESSAGES geëxporteerd voor unread indicator. Build ✓ (31 routes, geen TS errors). | gewijzigd: apps/app/src/app/layout.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/app/admin/layout.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/components/AppTopbar.tsx (nieuw), apps/app/src/components/AvatarDropdown.tsx (nieuw), apps/app/src/app/dashboard/messages/MessagesClient.tsx, packages/shared/src/components/ui/theme-toggle.tsx
 ---
 [2026-05-06 16:00] taak: cross-host redirects + smoke test scaffold | apps/app/next.config.ts: 308 redirects voor /login, /signup, /forgot-password naar marketing host. cross-host-smoke-tests.md aangemaakt (13 tests, pre-test checklist). known-issues.md B6 bijgewerkt. Build ✓ | gewijzigd: apps/app/next.config.ts, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/known-issues.md
@@ -5157,3 +5159,24 @@ docs/wiki/operations/deployment.md
 docs/wiki/operations/known-issues.md
 ---
 [2026-05-06 23:14] precompact: context compaction triggered
+[2026-05-06 23:32] commit: feat: app-host skelet — AppTopbar + sidebar rework
+
+- Marketing Header verwijderd uit apps/app root layout
+- Nieuwe AppTopbar (logo + theme/messages/credits/avatar)
+- Sidebar: één toggle bovenin (desktop), SidebarTrigger in topbar (mobile)
+- Admin nav: theme + avatar toegevoegd
+- ThemeToggle: resolvedTheme fix (system state preserved)
+- Library default ingeklapt buiten /dashboard/library route
+- AvatarDropdown app-host variant met relatieve links
+Changed: apps/app/src/app/admin/layout.tsx
+apps/app/src/app/dashboard/layout.tsx
+apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/app/layout.tsx
+apps/app/src/components/AppTopbar.tsx
+apps/app/src/components/AvatarDropdown.tsx
+apps/app/src/components/app-sidebar.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/cross-host-auth.md
+packages/shared/src/components/ui/theme-toggle.tsx
+---

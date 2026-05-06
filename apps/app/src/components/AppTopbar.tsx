@@ -73,8 +73,10 @@ export function AppTopbar() {
           href="/dashboard/billing"
           className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-sm text-[var(--fg-subtle)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)] transition-colors"
         >
-          <CircleDollarSign className="h-4 w-4 text-[var(--accent)] shrink-0" />
-          <span className="text-xs font-medium text-[var(--fg)]">{credits ?? 0}</span>
+          <CircleDollarSign className="size-5 text-[var(--accent)] shrink-0" />
+          <span className="bg-[var(--surface-elevated)] text-[var(--fg-muted)] px-1.5 py-0.5 rounded text-xs font-medium tabular-nums">
+            {credits ?? 0}
+          </span>
         </a>
 
         <AvatarDropdown />

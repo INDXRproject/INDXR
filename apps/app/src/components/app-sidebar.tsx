@@ -317,7 +317,7 @@ export function AppSidebar() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <Sidebar variant="inset" className={cn(collapsed ? "w-14" : "w-64")}>
+      <Sidebar collapsible="none" className={cn("h-full border-r", collapsed ? "w-14" : "w-64")}>
         <SidebarContent>
           {/* Collapse toggle button — desktop only; mobile uses SidebarTrigger in AppTopbar */}
           <div className="hidden md:block px-3 py-2 border-b border-[var(--border)]/50">

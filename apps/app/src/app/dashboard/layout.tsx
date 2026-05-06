@@ -33,16 +33,18 @@ export default async function DashboardLayout({
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <main id="main-content" className="w-full">
-        <AppTopbar />
-        {/* pb-[3.5rem] on mobile to avoid content hiding behind MobileTabBar */}
-        <div className="p-4 md:p-8 bg-bg min-h-[calc(100vh-56px)] pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
-          {children}
-        </div>
-      </main>
-      <MobileTabBar />
-    </SidebarProvider>
+    <div className="flex flex-col h-svh">
+      <AppTopbar />
+      <SidebarProvider className="flex-1 overflow-hidden">
+        <AppSidebar />
+        <main id="main-content" className="w-full overflow-y-auto">
+          {/* pb-[3.5rem] on mobile to avoid content hiding behind MobileTabBar */}
+          <div className="p-4 md:p-8 bg-bg pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
+            {children}
+          </div>
+        </main>
+        <MobileTabBar />
+      </SidebarProvider>
+    </div>
   )
 }
