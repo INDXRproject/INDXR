@@ -50,6 +50,12 @@ Gemeten op 2026-05-05:
 | Warm build (FULL TURBO) | 63ms |
 | Partial invalidation (1 app gewijzigd) | 29s (alleen gewijzigde app herbouwt) |
 
+## Secret handling — globalPassThroughEnv
+
+Server-side secrets (Stripe, Supabase service role, etc.) staan in `globalPassThroughEnv` op top-level in `turbo.json`. Dit is DRY ten opzichte van per-task `passThroughEnv`: nieuwe tasks (test, e2e, db:migrate) krijgen automatisch toegang zonder extra config.
+
+`env` op task-niveau (voor `NEXT_PUBLIC_*` en `NODE_ENV`) blijft per-task omdat deze vars build-outputs beïnvloeden en dus cache-invalidation triggeren. `passThroughEnv`/`globalPassThroughEnv` worden niet gehashed voor cache — ze zijn alleen beschikbaar tijdens uitvoering.
+
 ## Consequenties
 
 - `turbo run build/dev/lint/typecheck` zijn de canonieke commands (via `pnpm build/dev/lint/typecheck`)
@@ -57,3 +63,4 @@ Gemeten op 2026-05-05:
 - `.turbo/` en `apps/*/.turbo/` staan in `.gitignore`
 - Vercel detecteert `turbo.json` automatisch en schakelt Turborepo in voor builds
 - `packages/shared` heeft geen eigen `build` script — Turborepo's `dependsOn: ["^build"]` is dus no-op voor shared (Next.js compileert shared via `transpilePackages`)
+- Server-side secrets via `globalPassThroughEnv` — beschikbaar voor alle tasks, niet gehashed voor cache

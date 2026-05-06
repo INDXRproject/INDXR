@@ -1,3 +1,7 @@
+[2026-05-06 10:15] taak: turbo.json passThroughEnv → globalPassThroughEnv | secrets verplaatst naar top-level globalPassThroughEnv (DRY, alle tasks). ADR-047 bijgewerkt met secret-handling rationale. Build ✓ (26s)
+---
+[2026-05-06 10:00] taak: turbo.json passThroughEnv server-side secrets | Vercel build apps/app faalde door Turborepo strip van STRIPE_SECRET_KEY e.a. Toegevoegd aan passThroughEnv: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY, BACKEND_API_SECRET, PYTHON_BACKEND_URL, SENTRY_AUTH_TOKEN, ADMIN_EMAIL, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN. Build ✓ (28s)
+---
 [2026-05-05 20:00] taak: B1.1-revisie 2 vercel.json minimaliseren | beide vercel.json gereduceerd tot {framework: "nextjs"} — Vercel zero-config Turborepo integratie. Fallback config gedocumenteerd in known-issues.md (Risk monitoring sectie). deployment.md bijgewerkt.
 ---
 [2026-05-05 19:45] taak: B1.1-revisie ignoreCommand verwijderen | ignoreCommand uit beide vercel.json verwijderd, turbo-ignore gedeinstalleerd. Vercel native "skip unnecessary deployments" feature vervangt dit — TODO in pre-launch checklist. known-issues.md turbo-ignore entry verwijderd. deployment.md bijgewerkt. pnpm turbo build ✓
@@ -5075,4 +5079,24 @@ docs/wiki/operations/known-issues.md
 [2026-05-05 12:58] commit: docs: LOG entry + LESSONS git-workflow rule
 Changed: docs/LESSONS.md
 docs/LOG.md
+---
+[2026-05-05 14:33] commit: feat(monorepo): Turborepo + minimal vercel.json + wiki updates
+
+- Turborepo introduced for build orchestration (ADR-047)
+- vercel.json per app: minimal zero-config (framework: nextjs)
+- LOG.md, INDEX.md, deployment.md, known-issues.md updates
+- pnpm-lock.yaml updates
+- .gitignore: .turbo/ added
+Changed: .gitignore
+CLAUDE.md
+apps/app/vercel.json
+apps/marketing/vercel.json
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/047-turborepo-build-orchestration.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
+package.json
+pnpm-lock.yaml
+turbo.json
 ---

@@ -1,6 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalPassThroughEnv": [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "BACKEND_API_SECRET",
+    "PYTHON_BACKEND_URL",
+    "SENTRY_AUTH_TOKEN",
+    "ADMIN_EMAIL",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
