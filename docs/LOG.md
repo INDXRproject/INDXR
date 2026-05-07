@@ -1,3 +1,5 @@
+[2026-05-07 17:00] taak: 3 visuele fixes VideoTab + ThemeToggle | VideoTab input: flex-col sm:flex-row → flex altijd row, min-w-0 op input-wrapper, w-full sm:w-auto → shrink-0 op Extract button. Hint-tekst boven input geplaatst (verwijderd als fallback onderaan). ThemeToggle: CSS dark: classes vervangen door JS-driven conditional rendering (useState mounted + useEffect) — één icon tegelijk getoond. Build ✓ (2/2, 43s). | gewijzigd: packages/shared/src/components/free-tool/VideoTab.tsx, packages/shared/src/components/ui/theme-toggle.tsx
+---
 [2026-05-07 16:00] taak: 9 layout + visuele fixes app-host | Page layouts: home mx-auto centering, library/[id] dubbele padding + min-h-screen verwijderd, billing max-w-4xl + single-column grid. Shared VideoTab: max-w-xl→2xl input-sectie, placeholder min-h-200px. Sidebar storage Progress: CSS-variable-cycle verwijderd (--accent self-ref), track-kleur naar --border voor contrast. ThemeToggle Moon: inset-0 m-auto voor correcte centering in button. AppTopbar credits link: py-1.5→h-9 gelijke hoogte als buttons. Build ✓ (2/2, 47s). | gewijzigd: apps/app/src/app/dashboard/page.tsx, apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/app/dashboard/billing/page.tsx, packages/shared/src/components/free-tool/VideoTab.tsx, apps/app/src/components/app-sidebar.tsx, packages/shared/src/components/ui/theme-toggle.tsx, apps/app/src/components/AppTopbar.tsx
 ---
 [2026-05-07 10:30] taak: hotfix runtime crash dashboard | useSidebar context error: AppTopbar (met SidebarTrigger) stond buiten SidebarProvider na vorige refactor. Fix: SidebarProvider als outer wrapper, layout-flex in nested div (flex flex-col h-svh w-full + flex flex-1 overflow-hidden). Build ✓ | gewijzigd: apps/app/src/app/dashboard/layout.tsx
@@ -5220,3 +5222,25 @@ Twee plekken op marketing-host overrulden vorige server-action fix:
 Changed: apps/marketing/src/app/auth/callback/route.ts
 apps/marketing/src/app/login/page.tsx
 ---
+[2026-05-07 15:19] commit: fix: 9 layout + visuele fixes app-host
+
+Pagina layouts (4): home mx-auto centering, library/[id] dubbele
+padding verwijderd, billing max-w-4xl + single column grid.
+
+Shared VideoTab (2): input max-w-xl→2xl, placeholder min-h-200px.
+Raakt ook marketing /transcribe (akkoord).
+
+Visuele bugs (3): sidebar Progress CSS-cycle gefixt (track zichtbaar),
+ThemeToggle Moon inset-0 m-auto centering, AppTopbar credits h-9
+gelijke baseline.
+Changed: apps/app/src/app/dashboard/billing/page.tsx
+apps/app/src/app/dashboard/library/[id]/page.tsx
+apps/app/src/app/dashboard/page.tsx
+apps/app/src/components/AppTopbar.tsx
+apps/app/src/components/app-sidebar.tsx
+docs/LESSONS.md
+docs/LOG.md
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/ui/theme-toggle.tsx
+---
+[2026-05-07 15:31] precompact: context compaction triggered

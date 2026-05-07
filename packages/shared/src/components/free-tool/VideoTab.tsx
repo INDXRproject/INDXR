@@ -964,8 +964,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       )}
 
       <div className="flex flex-col gap-4 max-w-2xl mx-auto mb-12">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <p className="text-sm text-fg-muted px-1">Paste any YouTube video URL to extract captions</p>
+        <div className="flex gap-3">
+          <div className="relative flex-1 min-w-0">
             <div className="absolute left-3 top-3.5 text-fg-muted">
               <Search className="h-5 w-5" />
             </div>
@@ -985,7 +986,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           {!showDuplicateChoices && (
             <Button
               size="lg"
-              className="h-12 px-6 w-full sm:w-auto min-w-[120px]"
+              className="h-12 px-6 shrink-0 min-w-[120px]"
               onClick={() => handleExtract()}
               disabled={loading || !url || isCheckingDuplicate}
             >
@@ -1233,11 +1234,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  audioDurationSeconds={videoDuration}
                  className="mt-2"
                />
-             ) : (
-               <p className={cn("text-sm text-fg-muted", error && "text-error")}>
-                 {error ? error.message : "Paste any YouTube video URL to extract captions"}
-               </p>
-             )}
+             ) : error ? (
+               <p className="text-sm text-error">{error.message}</p>
+             ) : null}
           </div>
         )}
       </div>
