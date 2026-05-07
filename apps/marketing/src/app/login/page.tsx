@@ -30,9 +30,9 @@ export default function LoginPage() {
     }
     // On localhost (single-host dev), stay on same origin
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      return '/dashboard/transcribe'
+      return '/dashboard'
     }
-    return `${APP_URL}/dashboard/transcribe`
+    return `${APP_URL}/dashboard`
   }
   
   const [email, setEmail] = useState("")

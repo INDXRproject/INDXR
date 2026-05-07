@@ -35,10 +35,10 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${MARKETING_URL}/onboarding`)
       }
 
-      return NextResponse.redirect(`${APP_URL}/dashboard/transcribe`)
+      return NextResponse.redirect(`${APP_URL}/dashboard`)
     }
   }
 
   // Fallback (e.g. no code)
-  return NextResponse.redirect(`${APP_URL}/dashboard/transcribe`)
+  return NextResponse.redirect(`${APP_URL}/dashboard`)
 }
