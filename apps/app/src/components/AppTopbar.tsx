@@ -54,7 +54,7 @@ export function AppTopbar() {
       <div className="flex items-center gap-1">
         <ThemeToggle />
 
-        <div className="relative">
+        <div className="relative flex items-center">
           <Button variant="ghost" size="icon" asChild>
             <a href="/dashboard/messages">
               <Mail className="h-5 w-5" />

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
-import { Loader2, ListOrdered, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink, Info } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "./ui/scroll-area";
 import Image from "next/image";
@@ -327,12 +327,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
     <div className="space-y-6">
       <div className="flex gap-2 max-w-xl mx-auto">
         <div className="relative flex-1">
-          <div className="absolute left-3 top-2.5 text-fg-muted">
-            <ListOrdered className="h-5 w-5" />
-          </div>
           <Input
             placeholder="Paste YouTube Playlist URL..."
-            className="pl-10 h-12 bg-bg border-border text-fg"
+            className="h-12 bg-bg border-border text-fg"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchPlaylistInfo()}

@@ -3,7 +3,7 @@
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { useState, useEffect, useRef } from "react"
-import { Search, Loader2, AlertCircle, Sparkles, Mic } from "lucide-react"
+import { Loader2, AlertCircle, Sparkles, Mic } from "lucide-react"
 import { TranscriptCard, TranscriptItem } from "../TranscriptCard"
 import { TranscriptMetadata, PROCESSING_METHODS } from "../../types/transcript"
 import { toast } from "sonner"
@@ -967,13 +967,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         <p className="text-sm text-fg-muted px-1">Paste any YouTube video URL to extract captions</p>
         <div className="flex gap-3">
           <div className="relative flex-1 min-w-0">
-            <div className="absolute left-3 top-3.5 text-fg-muted">
-              <Search className="h-5 w-5" />
-            </div>
             <Input
               placeholder="https://www.youtube.com/watch?v=..."
               className={cn(
-                "pl-10 h-12 bg-bg border-border text-fg transition-all duration-200",
+                "h-12 bg-bg border-border text-fg transition-all duration-200",
                 "focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary",
                 error && "border-error focus-visible:ring-destructive"
               )}
