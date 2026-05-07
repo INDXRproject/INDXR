@@ -42,7 +42,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
   }
 
   return (
-    <div className="flex flex-col bg-bg min-h-screen overflow-x-hidden p-6 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col overflow-x-hidden max-w-7xl mx-auto w-full">
       <div className="mb-6 flex space-x-4 border-b border-border text-sm">
         <Link
           href={`/dashboard/library/${id}?tab=original`}

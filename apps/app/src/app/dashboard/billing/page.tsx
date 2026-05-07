@@ -26,13 +26,13 @@ export default async function BillingPage() {
   const credits = parsedCredits?.credits || 0
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex max-w-4xl mx-auto w-full flex-col">
       <div className="flex flex-col items-start gap-4 mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-fg">Billing</h1>
         <p className="text-fg-muted">Manage your credits and purchase top-ups.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6">
         {/* Credits Card */}
         <Card className="bg-[var(--surface)] border-[var(--border)] relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-10 blur-xl rounded-full bg-[var(--accent)]/50 w-32 h-32 -mr-10 -mt-10" />

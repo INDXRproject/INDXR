@@ -1,3 +1,5 @@
+[2026-05-07 16:00] taak: 9 layout + visuele fixes app-host | Page layouts: home mx-auto centering, library/[id] dubbele padding + min-h-screen verwijderd, billing max-w-4xl + single-column grid. Shared VideoTab: max-w-xl→2xl input-sectie, placeholder min-h-200px. Sidebar storage Progress: CSS-variable-cycle verwijderd (--accent self-ref), track-kleur naar --border voor contrast. ThemeToggle Moon: inset-0 m-auto voor correcte centering in button. AppTopbar credits link: py-1.5→h-9 gelijke hoogte als buttons. Build ✓ (2/2, 47s). | gewijzigd: apps/app/src/app/dashboard/page.tsx, apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/app/dashboard/billing/page.tsx, packages/shared/src/components/free-tool/VideoTab.tsx, apps/app/src/components/app-sidebar.tsx, packages/shared/src/components/ui/theme-toggle.tsx, apps/app/src/components/AppTopbar.tsx
+---
 [2026-05-07 10:30] taak: hotfix runtime crash dashboard | useSidebar context error: AppTopbar (met SidebarTrigger) stond buiten SidebarProvider na vorige refactor. Fix: SidebarProvider als outer wrapper, layout-flex in nested div (flex flex-col h-svh w-full + flex flex-1 overflow-hidden). Build ✓ | gewijzigd: apps/app/src/app/dashboard/layout.tsx
 ---
 [2026-05-07 10:00] taak: app-host skelet visuele fix + post-login routing | ThemeToggle: `relative overflow-hidden` containment (Moon absolute positioning bug). AppTopbar: CircleDollarSign h-4→size-5, credits in pill (bg-surface-elevated, tabular-nums), UserAvatar h-9→h-7. Dashboard layout: AppTopbar verplaatst BUITEN SidebarProvider, outer div `flex flex-col h-svh`, SidebarProvider `flex-1 overflow-hidden`, main `overflow-y-auto`. Sidebar: variant=inset → collapsible="none" + h-full border-r (verwijdert fixed top-16 assumptie). Post-login redirect /dashboard/transcribe → /dashboard. Documentatie: app-host-skeleton.md. Build ✓ (31 routes, geen TS errors). | gewijzigd: packages/shared/src/components/ui/theme-toggle.tsx, packages/shared/src/actions/auth-actions.ts, apps/app/src/components/AppTopbar.tsx, apps/app/src/components/AvatarDropdown.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/components/app-sidebar.tsx, docs/wiki/architecture/app-host-skeleton.md (nieuw)
@@ -5199,4 +5201,22 @@ docs/LOG.md
 docs/wiki/architecture/app-host-skeleton.md
 packages/shared/src/actions/auth-actions.ts
 packages/shared/src/components/ui/theme-toggle.tsx
+---
+[2026-05-07 00:22] commit: fix: hotfix SidebarProvider als outer wrapper
+
+useSidebar context error: AppTopbar bevat SidebarTrigger maar stond
+buiten SidebarProvider. Fix: Provider als outer wrapper, layout-flex
+in geneste div.
+Changed: apps/app/src/app/dashboard/layout.tsx
+docs/LESSONS.md
+docs/LOG.md
+---
+[2026-05-07 14:30] precompact: context compaction triggered
+[2026-05-07 14:37] commit: fix: post-login redirect /dashboard/transcribe → /dashboard
+
+Twee plekken op marketing-host overrulden vorige server-action fix:
+- login/page.tsx getRedirectTarget()
+- auth/callback/route.ts post-OAuth redirect
+Changed: apps/marketing/src/app/auth/callback/route.ts
+apps/marketing/src/app/login/page.tsx
 ---

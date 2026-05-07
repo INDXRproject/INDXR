@@ -604,10 +604,10 @@ export function AppSidebar() {
                 <span className="text-xs text-[var(--fg-muted)]">Storage</span>
                 <span className="text-[10px] text-[var(--fg-muted)]">{usedMB > 0.1 ? usedMB.toFixed(1) + ' MB' : usedKB.toFixed(0) + ' KB'} / {MAX_MB} MB</span>
               </div>
-              <Progress 
-                value={storagePercentage} 
+              <Progress
+                value={storagePercentage}
                 className={cn("h-1.5", storagePercentage > 80 && "bg-error/20")}
-                style={{ "--accent": "var(--accent)" } as React.CSSProperties}
+                style={{ "--accent-subtle": "var(--border)" } as React.CSSProperties}
               />
               <p className="text-[10px] text-[var(--fg-muted)]">
                 {transcripts.length} transcript{transcripts.length !== 1 ? "s" : ""} saved

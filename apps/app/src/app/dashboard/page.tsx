@@ -74,7 +74,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-semibold text-[var(--fg)]">Home</h1>
 
       {/* ── Section 1: Credits balance ── */}

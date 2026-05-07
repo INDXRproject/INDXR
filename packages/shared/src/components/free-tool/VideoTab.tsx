@@ -963,7 +963,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         </div>
       )}
 
-      <div className="flex flex-col gap-4 max-w-xl mx-auto mb-12">
+      <div className="flex flex-col gap-4 max-w-2xl mx-auto mb-12">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <div className="absolute left-3 top-3.5 text-fg-muted">
@@ -1367,7 +1367,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   />
         </div>
       ) : !loading && !transcript && (
-        <div className="p-12 rounded-2xl border border-dashed border-border bg-surface-elevated/20 flex flex-col items-center justify-center text-fg-muted">
+        <div className="p-12 min-h-[200px] rounded-2xl border border-dashed border-border bg-surface-elevated/20 flex flex-col items-center justify-center text-fg-muted">
           <p>Transcript results will appear here</p>
         </div>
       )}
