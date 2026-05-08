@@ -138,6 +138,8 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | [monitoring.md](operations/monitoring.md) | PostHog events, logging levels, alerts |
 | [known-issues.md](operations/known-issues.md) | Openstaande TODOs, bekende bugs, workarounds, pre-launch checklist |
 | [test-reports.md](operations/test-reports.md) | Handmatige testrapporten per feature |
+| [cross-host-smoke-tests.md](operations/cross-host-smoke-tests.md) | 13 smoke tests post-migratie (8 geautomatiseerd via Playwright) |
+| [migration-summary.md](operations/migration-summary.md) | 5-minuten overzicht: huidige staat, wat gedaan, wat resteert |
 
 ---
 

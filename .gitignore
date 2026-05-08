@@ -64,6 +64,9 @@ tests/results/
 tests/__pycache__/
 test-results/
 
+# Playwright auth state (contains session cookies)
+tests/playwright/specs/cross-host/.auth.json
+
 # Obsidian UI state (not project content)
 docs/.obsidian/workspace.json
 docs/.obsidian/workspace-mobile.json

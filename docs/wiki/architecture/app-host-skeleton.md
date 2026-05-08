@@ -51,17 +51,16 @@ Dit document beschrijft de skelet-staat van de app-host UI zoals opgeleverd na d
 2. SidebarTrigger — `md:hidden`, opent mobile drawer (Shadcn Sheet)
 
 **Rechterkant (links → rechts):**
-1. `ThemeToggle` — Sun/Moon, `Button size="icon"` (36px), `relative overflow-hidden` containment
+1. `ThemeToggle` — JS-driven: toont Sun (light) of Moon (dark) via `useState(mounted)`; `Button size="icon"` (36px)
 2. Messages icon — `Mail size-5`, `Button variant="ghost" size="icon"`, link → `/dashboard/messages`. Accent-kleur dot indicator als MOCK_MESSAGES unread > 0.
 3. Credits — `CircleDollarSign size-5` + count in pill (`bg-[var(--surface-elevated)]`, `tabular-nums`), link → `/dashboard/billing`
 4. `AvatarDropdown` — `UserAvatar h-7 w-7` binnen `Button h-9 w-9`, dropdown: Account / Settings / Sign Out
 
 **Onopgeloste visuele punten:**
-- ThemeToggle Sun/Moon kleuren: Sun = `text-warning`, Moon = `text-accent` — valt op als er geen `--warning` token is gedefinieerd (fallback onbekend)
 - Credits indicator toont altijd MOCK_MESSAGES unread count (hardcoded initiële staat); update wacht op backend messages API
 - Logo-afmetingen zijn inline `style={{ height: "32px" }}` — niet via design token of className
 - Gap tussen logo en SidebarTrigger op mobile: `gap-3` op header, kan druk aanvoelen op kleine schermen
-- Rechter cluster: `gap-1` (4px) tussen alle items — functioneel maar niet bewust afgestemd op een spacing scale
+- Rechter cluster: `gap-1` (4px) tussen alle items — verticale baseline gelijkgetrokken (2026-05-07), spacing cosmetically krap maar functioneel
 
 ---
 
@@ -144,6 +143,18 @@ redirect(APP_URL + '/dashboard')  ← Home landing pagina
 Als `?redirectTo=` param aanwezig en valide (zelfde-host): redirect terug naar die URL (bijv. na beschermde route interceptie door middleware).
 
 Onboarding-pad: als `profiles.onboarding_completed = false` → redirect naar `indxr.ai/onboarding` ipv dashboard.
+
+---
+
+## Gepland voor redesign
+
+Functioneel werkend maar bewust niet afgewerkt — wacht op designsprint:
+
+- **Single Video / Playlist URL inputs** — max-w-2xl vs max-w-xl; niet exact even breed. Cosmetically inconsistent, functioneel correct.
+- **AppTopbar spacing** — `gap-1` (4px) tussen rechter-cluster items. Functioneel maar krap; geen bewuste spacing-scale beslissing.
+- **Marketing host** — `/login`, `/signup`, landing page navigatie: volledig herontwerp gepland. Huidige staat is pre-redesign baseline.
+- **Storage progress bar** — functioneel correct (`usedMB / 500 MB`), track contrast verbeterd via `var(--border)`. Geen kleur-gradatie bij hoog gebruik; visuele styling is placeholder.
+- **Sidebar collapsed state** — eerste element is collapse toggle, geen branding. Bewust (dubbel logo = chaos), maar ziet er kaal uit ingeklapt.
 
 ---
 

@@ -1,3 +1,7 @@
+[2026-05-08 12:00] taak: Playwright cross-host smoke tests | 5 spec files in tests/playwright/specs/cross-host/ (redirects, auth-flow, nav, logout, admin). Auth setup via auth.setup.ts (storageState). 8 van 13 tests geautomatiseerd; TEST 8 (OAuth), 9 (signup email), 10 (reset email), 11 (Stripe), 13 (Vercel logs) manueel. Smoke config: playwright.smoke.config.ts. Scripts: pnpm test:smoke + test:smoke:headed. .auth.json toegevoegd aan .gitignore. | gewijzigd: playwright.smoke.config.ts, tests/playwright/specs/cross-host/*.ts, package.json, .gitignore
+---
+[2026-05-08 11:00] taak: docs consolidatie | known-issues.md B6 herschreven (redirect [x], Playwright item toegevoegd, Stripe uitgesteld). app-host-skeleton.md geüpdatet: ThemeToggle beschrijving JS-driven, opgeloste baseline-punt verwijderd, nieuwe sectie "Gepland voor redesign". cross-host-auth.md: alle /dashboard/transcribe → /dashboard (post-login routing fix). cross-host-smoke-tests.md: verwachte URLs gecorrigeerd, automatisering-kolom + "Hoe testen" sectie toegevoegd. Nieuw: docs/wiki/operations/migration-summary.md. | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/architecture/app-host-skeleton.md, docs/wiki/architecture/cross-host-auth.md, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/migration-summary.md (nieuw)
+---
 [2026-05-07 18:00] taak: 3 finale visuele fixes — icons + topbar baseline | VideoTab: Search icon + pl-10 verwijderd uit URL input, unused import opgeruimd. PlaylistManager: ListOrdered icon + pl-10 verwijderd uit playlist URL input, unused import opgeruimd. AppTopbar: `flex items-center` toegevoegd aan `<div relative>` wrapper rond Messages button — block div in flex row had geen expliciete alignment, waardoor Mail button visueel hoger zat dan h-9 siblings. Build ✓ (2/2, 85s). | gewijzigd: packages/shared/src/components/free-tool/VideoTab.tsx, packages/shared/src/components/PlaylistManager.tsx, apps/app/src/components/AppTopbar.tsx
 ---
 [2026-05-07 17:00] taak: 3 visuele fixes VideoTab + ThemeToggle | VideoTab input: flex-col sm:flex-row → flex altijd row, min-w-0 op input-wrapper, w-full sm:w-auto → shrink-0 op Extract button. Hint-tekst boven input geplaatst (verwijderd als fallback onderaan). ThemeToggle: CSS dark: classes vervangen door JS-driven conditional rendering (useState mounted + useEffect) — één icon tegelijk getoond. Build ✓ (2/2, 43s). | gewijzigd: packages/shared/src/components/free-tool/VideoTab.tsx, packages/shared/src/components/ui/theme-toggle.tsx
@@ -5256,4 +5260,15 @@ packages/shared/src/components/ui/theme-toggle.tsx
 Changed: docs/LOG.md
 packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/components/ui/theme-toggle.tsx
+---
+[2026-05-07 17:07] commit: fix: 3 finale visuele fixes — icons + topbar baseline
+
+- VideoTab: Search icon + pl-10 verwijderd uit URL input
+- PlaylistManager: ListOrdered icon + pl-10 verwijderd
+- AppTopbar: flex items-center op Messages wrapper voor gelijke
+  baseline met andere icons
+Changed: apps/app/src/components/AppTopbar.tsx
+docs/LOG.md
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
 ---

@@ -324,10 +324,11 @@ Geen externe service die alarmeert bij downtime.
 - [x] B4: A-record indxr.ai → 216.150.1.1 (Vercel IP range expansion, plan-specifieke aanbeveling). Badge verdwenen ✓ (2026-05-06)
 - [x] B5: Stripe webhook live mode op app.indxr.ai/api/stripe/webhook. 3 events (checkout.session.completed, async_payment_succeeded, async_payment_failed). STRIPE_WEBHOOK_SECRET in Vercel indxr-app ✓ (2026-05-06)
 - [~] B6: Smoke tests op productiedomeinen
-  - [ ] Cross-host redirects: `app.indxr.ai/login|signup|forgot-password` → 308 → `indxr.ai/...` (curl -I verificatie)
-  - [ ] Smoke test checklist doorlopen (zie `wiki/operations/cross-host-smoke-tests.md`)
-  - [ ] Eerste echte betaling (Try-pakket €2.49) — pas na smoke-tests groen
-  - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks
+  - [x] Cross-host redirects: `app.indxr.ai/login|signup|forgot-password` → 308 → `indxr.ai/...` ✓ curl-bewezen 2026-05-06
+  - [ ] Playwright smoke tests draaien: `tests/playwright/specs/cross-host/` — `pnpm test:smoke` — TEST 1–7 + 12 geautomatiseerd (zie `wiki/operations/cross-host-smoke-tests.md`)
+  - [ ] Smoke test checklist handmatig doorlopen na Playwright groen
+  - [ ] Eerste echte betaling (Try-pakket €2.49) — uitgesteld (Stripe tax setup pending bij Khidr)
+  - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks (na eerste echte betaling)
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
 - [x] Supabase email verificatie re-enabled ✓
 - [!] **Upstash Redis quota** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Oorzaak: quota-blow-out (500.000/500.000 req), zelfde patroon als C.3.1. Tevens: elke 60s een `[auth-recovery] getUser error` ping op `indxr.ai/` in Vercel logs — bron niet gediagnosticeerd (verdacht: externe uptime monitor of Vercel Speed Insights). Pre-launch acties:

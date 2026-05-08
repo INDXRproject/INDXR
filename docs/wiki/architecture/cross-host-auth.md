@@ -16,14 +16,14 @@ indxr.ai → signup → email verificatie → indxr.ai/auth/callback
 ### Terugkerende gebruiker (email/password)
 ```
 indxr.ai/login → loginAction (SA) → cookie .indxr.ai gezet
-→ redirect(https://app.indxr.ai/dashboard/transcribe)
+→ redirect(https://app.indxr.ai/dashboard)
 ```
 
 ### Terugkerende gebruiker (Google OAuth)
 ```
 indxr.ai/login → loginWithGoogleAction → Google OAuth
 → indxr.ai/auth/callback?code=... → cookie .indxr.ai gezet
-→ redirect(https://app.indxr.ai/dashboard/transcribe)
+→ redirect(https://app.indxr.ai/dashboard)
 ```
 
 ### Directe app-toegang (unauthenticated)
@@ -117,10 +117,11 @@ const cookieDomain = isProd ? '.indxr.ai' : undefined
       → true: doorgaan
    d. Redirect target resolve:
       rawRedirectTo (uit form) → valideer op app.indxr.ai of localhost
-      Default: process.env.NEXT_PUBLIC_APP_URL + '/dashboard/transcribe'
+      login/page.tsx passeert altijd redirectTo='/dashboard' → effectief doel is APP_URL/dashboard
+      Fallback in auth-actions.ts (nooit bereikt via login-UI): APP_URL + '/dashboard/transcribe'
    e. redirect(finalTarget)  ← absolute cross-origin redirect
 
-3. Browser ontvangt 307 → app.indxr.ai/dashboard/transcribe
+3. Browser ontvangt 307 → app.indxr.ai/dashboard
    Cookie .indxr.ai is al aanwezig in browser
 
 4. app.indxr.ai middleware: updateSession() leest cookie → user authenticated
@@ -151,7 +152,7 @@ const cookieDomain = isProd ? '.indxr.ai' : undefined
    a. exchangeCodeForSession(code) → Set-Cookie sb-* domain=.indxr.ai
    b. Disposable email check → signOut + redirect naar login indien positief
    c. Onboarding check → redirect naar indxr.ai/onboarding indien nodig
-   d. Success: redirect(APP_URL + '/dashboard/transcribe')
+   d. Success: redirect(APP_URL + '/dashboard')
 ```
 
 **Enige OAuth callback:** `indxr.ai/auth/callback`. De apps/app heeft géén callback route.

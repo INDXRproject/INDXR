@@ -86,7 +86,7 @@ curl -I https://app.indxr.ai/forgot-password
 
 | Check | Verwacht | Status |
 |---|---|---|
-| Na login: browser URL | `https://app.indxr.ai/dashboard/transcribe` | [ ] |
+| Na login: browser URL | `https://app.indxr.ai/dashboard` | [ ] |
 | Dashboard rendert correct | Geen foutpagina, sidebar zichtbaar | [ ] |
 | Cookie aanwezig (DevTools → Application → Cookies → `.indxr.ai`) | `sb-<project>-auth-token` aanwezig met domain `.indxr.ai` | [ ] |
 | Header toont ingelogde staat | Avatar/naam zichtbaar, geen "Login" knop | [ ] |
@@ -180,7 +180,7 @@ curl -I https://app.indxr.ai/forgot-password
 |---|---|---|
 | Redirect naar Google accounts | `accounts.google.com` in URL | [ ] |
 | Na Google auth: callback op marketing | Browser gaat via `https://indxr.ai/auth/callback?code=...` | [ ] |
-| Eindbestemming | `https://app.indxr.ai/dashboard/transcribe` | [ ] |
+| Eindbestemming | `https://app.indxr.ai/dashboard` | [ ] |
 | Cookie `.indxr.ai` aanwezig | `sb-*` met domain `.indxr.ai` in DevTools | [ ] |
 
 ---
@@ -197,7 +197,7 @@ curl -I https://app.indxr.ai/forgot-password
 | Verificatie-email ontvangen | Email van Supabase/indxr.ai met bevestigingslink | [ ] |
 | Klik verificatielink → `indxr.ai/auth/callback?code=...` | Geen 404, geen error | [ ] |
 | Redirect naar onboarding | `https://indxr.ai/onboarding` | [ ] |
-| Onboarding invullen → redirect naar app | `https://app.indxr.ai/dashboard/transcribe` | [ ] |
+| Onboarding invullen → redirect naar app | `https://app.indxr.ai/dashboard` | [ ] |
 
 ---
 
@@ -264,18 +264,46 @@ Na alle bovenstaande tests:
 
 ## Resultaten samenvatting
 
-| Test | Beschrijving | Status |
-|---|---|---|
-| TEST 1 | Cross-host redirects (308) | [ ] |
-| TEST 2 | Email/password login + cross-host redirect | [ ] |
-| TEST 3 | Directe app-toegang zonder sessie | [ ] |
-| TEST 4 | Navbar links op marketing | [ ] |
-| TEST 5 | Navbar links op app | [ ] |
-| TEST 6 | Logout op app.indxr.ai | [ ] |
-| TEST 7 | Logout op indxr.ai | [ ] |
-| TEST 8 | Google OAuth login | [ ] |
-| TEST 9 | Signup flow | [ ] |
-| TEST 10 | Forgot password flow | [ ] |
-| TEST 11 | Stripe checkout | [ ] |
-| TEST 12 | Admin route | [ ] |
-| TEST 13 | Vercel function logs | [ ] |
+| Test | Beschrijving | Automatisering | Status |
+|---|---|---|---|
+| TEST 1 | Cross-host redirects (308) | ✓ `redirects.spec.ts` | [ ] |
+| TEST 2 | Email/password login + cross-host redirect | ✓ `auth-flow.spec.ts` | [ ] |
+| TEST 3 | Directe app-toegang zonder sessie | ✓ `auth-flow.spec.ts` | [ ] |
+| TEST 4 | Navbar links op marketing | ✓ `nav.spec.ts` | [ ] |
+| TEST 5 | Navbar links op app | ✓ `nav.spec.ts` | [ ] |
+| TEST 6 | Logout op app.indxr.ai | ✓ `logout.spec.ts` | [ ] |
+| TEST 7 | Logout op indxr.ai | ✓ `logout.spec.ts` | [ ] |
+| TEST 8 | Google OAuth login | [Manual] Third-party auth, niet automatiseerbaar | [ ] |
+| TEST 9 | Signup flow | [Manual] Vereist echte verificatie-email | [ ] |
+| TEST 10 | Forgot password flow | [Manual] Vereist echte reset-email | [ ] |
+| TEST 11 | Stripe checkout | [Manual] Third-party + Stripe tax setup pending | [ ] |
+| TEST 12 | Admin route | ✓ `admin.spec.ts` | [ ] |
+| TEST 13 | Vercel function logs | [Manual] Dashboard-only inspectie | [ ] |
+
+---
+
+## Hoe testen
+
+### Playwright smoke tests (TEST 1–7 + 12)
+
+Vereiste: `tests/test_accounts.json` aanwezig (zie `.gitignore`).
+
+```bash
+# Tegen productie (default: https://indxr.ai + https://app.indxr.ai)
+pnpm test:smoke
+
+# Headed (zichtbaar browser)
+pnpm test:smoke:headed
+
+# Tegen andere omgevingen
+BASE_URL_MARKETING=https://indxr.ai BASE_URL_APP=https://app.indxr.ai pnpm test:smoke
+```
+
+Config: `playwright.smoke.config.ts`  
+Specs: `tests/playwright/specs/cross-host/`
+
+**Auth setup:** De `setup`-project logt eenmalig in met `account1` en slaat cookies op in `tests/playwright/specs/cross-host/.auth.json`. Wordt gereset bij elke `pnpm test:smoke` run.
+
+### Handmatige tests (TEST 8–11 + 13)
+
+Gebruik incognito venster. Volg de stappen per test hierboven. Vink af wanneer geslaagd.

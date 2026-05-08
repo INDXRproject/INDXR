@@ -14,7 +14,9 @@
     "dev:marketing": "pnpm --filter @indxr/marketing dev",
     "dev:app": "pnpm --filter @indxr/app dev",
     "build:marketing": "pnpm --filter @indxr/marketing build",
-    "build:app": "pnpm --filter @indxr/app build"
+    "build:app": "pnpm --filter @indxr/app build",
+    "test:smoke": "playwright test --config=playwright.smoke.config.ts",
+    "test:smoke:headed": "playwright test --config=playwright.smoke.config.ts --headed"
   },
   "devDependencies": {
     "turbo": "^2.9.9"
