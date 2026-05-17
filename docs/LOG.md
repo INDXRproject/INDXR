@@ -1,3 +1,5 @@
+[2026-05-17 12:00] taak: fix TEST 9 + 10 — onboarding cross-host redirect + password reset callback flow | TEST 9: router.push('/dashboard/transcribe') in onboarding/page.tsx (marketing host) navigeerde naar indxr.ai/dashboard/transcribe → 404. Fix: window.location.href = appHref('/dashboard'). TEST 10: resetPasswordForEmail redirectTo wees direct naar app.indxr.ai/dashboard/settings?reset=true — PKCE code nooit ingewisseld via exchangeCodeForSession → otp_expired. Fix: redirectTo via marketing /auth/callback?next=<encoded-final-target>, callback leest next param, valideert hostname (alleen app.indxr.ai/localhost), redirect daarheen na succesvolle exchange. Build ✓ (2/2, 0 TS errors). | gewijzigd: apps/marketing/src/app/onboarding/page.tsx, packages/shared/src/actions/auth-actions.ts, apps/marketing/src/app/auth/callback/route.ts
+---
 [2026-05-17 00:00] taak: fix OAuth callback PKCE bug — getClaims() pattern + matcher exclude | Root cause was clearAuthCookies() (commit 22a0059, 2026-05-05) die alle sb-* cookies wiste op getUser() error, inclusief de PKCE code-verifier die exchangeCodeForSession() nodig heeft. exchangeCodeForSession faalde silently, callback viel door naar fallback-redirect naar app.indxr.ai/dashboard zonder sessie → app-middleware stuurde naar login. Fix C: middleware.ts gebruikt nu getClaims() ipv getUser() per officieel Supabase 2025 template — geen error-recovery, geen cookie-clearing, geen retry-loop. Fix A: /auth/callback uitgesloten van marketing middleware matcher als defense-in-depth. Build ✓ (2/2, 0 TS errors). Aandachtspunt: stale-cookie refresh-loop die clearAuthCookies adresseerde kan niet terugkomen via getClaims() (geen per-request retry); Upstash veilig her-in te schakelen mits 60s ping bron eerst gediagnosticeerd. | gewijzigd: packages/shared/src/utils/supabase/middleware.ts, apps/marketing/src/middleware.ts
 ---
 [2026-05-08 22:00] taak: Playwright smoke tests groen — alle 8 geautomatiseerde tests geslaagd | Fixes: (1) loginFresh in logout.spec.ts: waitForURL(/dashboard|onboarding/) + onboarding bypass voor account2. (2) TEST 7 gebruikt mobiele viewport (390px) — marketing Header toont Sign Out alleen in mobile Sheet, niet in desktop nav. (3) Resultaten: 15 passed, 1 skip (admin-can-access), 1 transient network blip hertest ✓. Docs bijgewerkt: cross-host-smoke-tests.md statussen [x] 2026-05-08, known-issues.md B6 → [x]. | gewijzigd: tests/playwright/specs/cross-host/logout.spec.ts, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/known-issues.md
@@ -5303,3 +5305,22 @@ tests/playwright/specs/cross-host/nav.spec.ts
 tests/playwright/specs/cross-host/redirects.spec.ts
 ---
 [2026-05-08 21:39] precompact: context compaction triggered
+[2026-05-17 06:58] commit: fix: OAuth callback PKCE bug — getClaims() + matcher exclude
+
+Root cause: clearAuthCookies (commit 22a0059) wiste alle sb-* cookies
+op getUser() error, inclusief PKCE code-verifier. exchangeCodeForSession
+faalde silently → fallback redirect zonder sessie.
+
+Fix C: middleware gebruikt nu getClaims() per officieel Supabase template.
+Geen error-recovery, geen retry-loop, geen cookie-clearing.
+
+Fix A: /auth/callback uitgesloten van marketing middleware matcher als
+defense-in-depth.
+Changed: apps/marketing/src/middleware.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/cross-host-auth.md
+docs/wiki/operations/known-issues.md
+packages/shared/src/utils/supabase/middleware.ts
+---
+[2026-05-17 07:22] precompact: context compaction triggered

@@ -260,11 +260,17 @@ http://app.localhost:3001/**
 ### `app.indxr.ai/login` → 404 (te fixen)
 De apps/app heeft geen `/login` route. Middleware beschermt alleen `/dashboard` en `/admin`. Een directe hit op `app.indxr.ai/login` geeft 404 in plaats van een 307 naar `indxr.ai/login`. Fix: voeg een catch-all redirect toe in apps/app middleware of een dedicated redirect-route.
 
-### Password reset redirect target
-`resetPasswordAction` stuurt de reset-link naar `APP_URL/dashboard/settings?reset=true`. Dit vereist dat `https://app.indxr.ai/dashboard/settings?reset=true` als Allowed Redirect URL in Supabase staat (zie boven).
+### Password reset flow (PKCE via callback)
+`resetPasswordAction` stuurt de reset-link naar:
+```
+indxr.ai/auth/callback?next=<encoded: app.indxr.ai/dashboard/settings?reset=true>
+```
+De callback route wisselt de PKCE code in via `exchangeCodeForSession`, leest dan de `next` param, valideert de hostname (alleen `app.indxr.ai` of `localhost`), en redirect daarheen. De settings-pagina toont altijd het password-update formulier (`SecuritySettingsCard`); `reset=true` is een semantische marker.
+
+**Supabase Allowed Redirect URLs:** `https://indxr.ai/**` dekt de `?next=` variant — geen aparte entry nodig.
 
 ### Rate limiting uitgeschakeld (tijdelijk)
 `UPSTASH_REDIS_REST_URL` + `_TOKEN` zijn verwijderd uit beide Vercel projects na quota-blow-out (2026-05-06). `noopLimiter` actief — alle rate limit checks retourneren `{ success: true }`. Zie `known-issues.md` → Upstash Redis quota.
 
 ### Auth-recovery ping (60s interval, onbekende bron)
-Vercel logs tonen elke ~60s een `GET / → [auth-recovery] getUser error` op `indxr.ai`. Bron niet gediagnosticeerd. Verdacht: externe uptime monitor of Vercel Speed Insights. Betekenis: iets houdt een stale Supabase cookie in stand en triggert de cookie-clear routine in middleware.
+Vercel logs toonden elke ~60s een `GET / → [auth-recovery] getUser error` op `indxr.ai`. Architectureel opgelost via getClaims() fix (2026-05-17) — middleware doet geen error-recovery meer. Als de ping na deploy blijft: bron opsporen (externe uptime monitor of Vercel Speed Insights met stale cookie).

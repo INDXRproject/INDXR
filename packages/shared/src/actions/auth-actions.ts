@@ -218,8 +218,12 @@ export async function resetPasswordAction(formData: FormData) {
 
   const supabase = await createClient()
 
+  const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3000'
+  const finalTarget = encodeURIComponent(`${APP_URL}/dashboard/settings?reset=true`)
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/settings?reset=true`,
+    redirectTo: `${MARKETING_URL}/auth/callback?next=${finalTarget}`,
   })
 
   if (error) {

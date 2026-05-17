@@ -326,7 +326,7 @@ Geen externe service die alarmeert bij downtime.
 - [x] B6: Smoke tests op productiedomeinen
   - [x] Cross-host redirects: `app.indxr.ai/login|signup|forgot-password` → 308 → `indxr.ai/...` ✓ curl-bewezen 2026-05-06
   - [x] Playwright smoke tests: TEST 1–7 + 12 groen (`pnpm test:smoke`) ✓ 2026-05-08 (15/16 passed, 1 skipped — admin-can-access vereist ADMIN_EMAIL account)
-  - [ ] Smoke test checklist handmatig doorlopen (TEST 8–11 + 13) — TEST 8 (Google OAuth) + TEST 9 (signup) + TEST 10 (forgot-password) verwacht werkend na getClaims() fix deploy (2026-05-17)
+  - [ ] Smoke test checklist handmatig doorlopen (TEST 8–11 + 13) — TEST 8 (Google OAuth) verwacht werkend na getClaims() fix deploy (2026-05-17). TEST 9 (onboarding redirect) + TEST 10 (password reset PKCE) gefixed 2026-05-17: zie LOG.md
   - [ ] Eerste echte betaling (Try-pakket €2.49) — uitgesteld (Stripe tax setup pending bij Khidr)
   - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks (na eerste echte betaling)
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)

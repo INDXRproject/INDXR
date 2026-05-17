@@ -8,13 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { updateProfileAction } from "@indxr/shared/actions/auth-actions"
+import { appHref } from "@indxr/shared/lib/cross-host-links"
 import { toast } from "sonner"
 import { CheckCircle2, Circle } from "lucide-react"
-import { useRouter } from "next/navigation"
 
 export default function OnboardingPage() {
   const { user } = useAuth()
-  const router = useRouter()
   const [username, setUsername] = useState("")
   const [role, setRole] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -44,7 +43,7 @@ export default function OnboardingPage() {
         setIsSubmitting(false)
       } else {
         toast.success("Profile updated! Let's get started.")
-        router.push('/dashboard/transcribe')
+        window.location.href = appHref('/dashboard')
       }
     } catch (error) {
       console.error(error)

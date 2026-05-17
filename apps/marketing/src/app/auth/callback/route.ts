@@ -35,6 +35,18 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${MARKETING_URL}/onboarding`)
       }
 
+      const next = requestUrl.searchParams.get('next')
+      if (next) {
+        try {
+          const nextUrl = new URL(next)
+          if (nextUrl.host === new URL(APP_URL).host) {
+            return NextResponse.redirect(nextUrl)
+          }
+        } catch {
+          // invalid URL — fallthrough to default
+        }
+      }
+
       return NextResponse.redirect(`${APP_URL}/dashboard`)
     }
   }
