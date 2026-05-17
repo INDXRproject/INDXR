@@ -299,7 +299,7 @@ Geen externe service die alarmeert bij downtime.
 - [x] Welcome credits RPC updaten: 5 → 25 in `claim_welcome_reward`
 - [x] AudioTab: credit cost card verbergen na succesvolle transcriptie
 - [x] BACKEND_API_SECRET validatie: header toegevoegd aan alle 10 Next.js→Python routes + FastAPI `verify_backend_secret` dependency
-- [x] BACKEND_API_SECRET ingesteld in Railway ✓ (401 geverifieerd); **Vercel nog te doen**
+- [x] BACKEND_API_SECRET ingesteld in Railway ✓ (401 geverifieerd); Vercel `indxr-app` correct ingesteld zonder quotes ✓ 2026-05-17
 - [x] verify_backend_secret: Bearer-token bypass voor directe audio uploads (browser → Railway)
 - [x] Export gating: anonymous users krijgen alleen TXT; andere formaten tonen inline sign-up prompt
 - [x] Export overhaul: watermarks verwijderd uit alle formats, TXT gesplitst in plain/timestamps, Markdown export toegevoegd (plain + timestamps), SRT branding bug gefixed
@@ -346,6 +346,7 @@ Geen externe service die alarmeert bij downtime.
 - [ ] Anonymous user flows testen via Playwright
 - [ ] **Messages page hardcoded placeholder content** — `MOCK_MESSAGES` in `apps/app/src/app/dashboard/messages/MessagesClient.tsx` bevat hardcoded test-berichten ("Welcome to INDXR", "Credits added to your account") met user-specifieke teksten en fake timestamps. Vóór launch vervangen door echte messages API of verwijderen.
 - [ ] **Welcome message + credits notification ontbreken** — Nieuwe gebruikers krijgen geen welkomstmessage bij signup. De 25-credits-claim banner staat op `/transcribe` (werkt functioneel) maar er is geen Message in inbox die de claim bevestigt of toelicht. Pre-launch: ofwel een welkomstmessage bij signup (via Supabase trigger of webhook), ofwel een post-claim confirmation message. Voorkom duplicatie met bestaande banner.
+- [ ] **Redesign context herbevestigen voor nieuwe sessie** — eerdere Claude Design sprint (kleur-tokens, blauwe accent-knoppen, hexagon-achtergronden) zit in chat-geschiedenis maar niet samengevat in wiki. Voor volgende sessie: Khidr brengt design-context terug via chat-history of geheugen; dan integreren in priorities.md 1.20 polish + voorbereiding Fase 3 redesign.
 - [ ] 4+ uur video stress test
 - [ ] RAG JSON: yt-dlp originele taal forceren i.p.v. `tlang=en` vertaling
 - [ ] RAG JSON: Settings chunk size ✓ feedback zichtbaarheid controleren (`DeveloperExportsCard.tsx`)

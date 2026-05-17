@@ -1,3 +1,7 @@
+[2026-05-17 16:00] taak: sessie wrap-up | B6 auth complete (TEST 8/9/10 PASS in productie). Caption extractie hersteld via BACKEND_API_SECRET correctie op Vercel indxr-app + indxr-marketing (var niet goed gemigreerd na monorepo split). CLAUDE.md BACKEND_API_SECRET sectie gecorrigeerd. Volgende sessie: priorities.md 1.12–1.20 oppakken, met design-context (Claude Design sprint, blauwe knoppen/hexagons) als input voor 1.20 polish + voorbereiding Fase 3 redesign. | gewijzigd: docs/LOG.md
+---
+[2026-05-17 15:00] taak: fix /api/extract/youtube 401 — BACKEND_API_SECRET env var op Vercel | Mismatch tussen Vercel indxr-app en Railway agile-creation: var niet correct gemigreerd naar nieuwe Vercel projecten tijdens monorepo split (of ingesteld met quotes). Var correct ingesteld op Vercel indxr-app zonder quotes, scope Production, redeploy zonder cache. Caption extractie werkt. CLAUDE.md gecorrigeerd (stond incorrect "nog niet geïmplementeerd" — implementatie bestond al). | gewijzigd: CLAUDE.md, docs/LESSONS.md, docs/wiki/operations/known-issues.md
+---
 [2026-05-17 14:00] taak: docs checkpoint na B6 PASS | cross-host-smoke-tests TEST 8/9/10 afgevinkt [x] 2026-05-17; TEST 10 stap bijgewerkt (reset-link gaat nu via /auth/callback, niet direct naar settings). Twee nieuwe pre-launch items: messages placeholder content (MOCK_MESSAGES) + welcome message gap. migration-summary geüpdatet: B6 fixes sectie toegevoegd, blokkeerders bijgewerkt (Playwright smoke done, SMTP + Stripe resterend). | gewijzigd: docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/known-issues.md, docs/wiki/operations/migration-summary.md
 ---
 [2026-05-17 13:30] taak: corrigeer SMTP-bullet known-issues.md | AWS SES claim was incorrect (geen AWS in stack, DNS via registrar). Resend gekozen als provider. | gewijzigd: docs/wiki/operations/known-issues.md
@@ -5346,4 +5350,18 @@ docs/LOG.md
 docs/wiki/architecture/cross-host-auth.md
 docs/wiki/operations/known-issues.md
 packages/shared/src/actions/auth-actions.ts
+---
+[2026-05-17 10:21] commit: docs: B6 checkpoint — TEST 8/9/10 PASS + new pre-launch items
+
+cross-host-smoke-tests TEST 8/9/10 afgevinkt 2026-05-17.
+TEST 10 stap bijgewerkt voor /auth/callback?next= flow.
+Twee nieuwe pre-launch items: MOCK_MESSAGES placeholder +
+welcome message gap. migration-summary geüpdatet.
+Changed: docs/LOG.md
+docs/wiki/operations/cross-host-smoke-tests.md
+docs/wiki/operations/known-issues.md
+docs/wiki/operations/migration-summary.md
+---
+[2026-05-17 10:29] commit: chore: trigger redeploy for BACKEND_API_SECRET
+Changed: 
 ---

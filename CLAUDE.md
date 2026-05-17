@@ -297,9 +297,9 @@ Als ze verschijnen: `git rm -r --cached <path>`
 - Trigger in dat geval een nieuwe extractie
 
 ### BACKEND_API_SECRET
-- **⚠️ Nog niet geïmplementeerd** — Next.js routes versturen dit header niet; Python valideert het niet
-- Staat op de pre-launch checklist (`known-issues.md`) als TODO
-- Wanneer geïmplementeerd: gedeeld secret tussen Next.js (Vercel) en Python (Railway)
+- **Geïmplementeerd** — Next.js routes sturen `X-Backend-Secret` header; FastAPI valideert via `verify_backend_secret` dependency op alle backend-facing endpoints
+- Permissieve fallback: als Railway `BACKEND_API_SECRET` leeg/unset → check wordt overgeslagen (handig voor lokale dev zonder secret)
+- **Pre-launch:** zorg dat de var op exact dezelfde rauwe waarde staat in Railway én in beide Vercel projecten (`indxr-marketing` + `indxr-app`). Vercel UI accepteert geen quotes — plak de rauwe waarde zonder aanhalingstekens. Na migratie naar nieuwe Vercel projecten altijd opnieuw verifiëren dat de var correct geset is.
 
 ### Playlist Whisper duplicaten
 - Na Whisper job in playlist: backend maakt eigen transcript-rij aan
