@@ -1,3 +1,9 @@
+[2026-05-17 14:00] taak: docs checkpoint na B6 PASS | cross-host-smoke-tests TEST 8/9/10 afgevinkt [x] 2026-05-17; TEST 10 stap bijgewerkt (reset-link gaat nu via /auth/callback, niet direct naar settings). Twee nieuwe pre-launch items: messages placeholder content (MOCK_MESSAGES) + welcome message gap. migration-summary geüpdatet: B6 fixes sectie toegevoegd, blokkeerders bijgewerkt (Playwright smoke done, SMTP + Stripe resterend). | gewijzigd: docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/known-issues.md, docs/wiki/operations/migration-summary.md
+---
+[2026-05-17 13:30] taak: corrigeer SMTP-bullet known-issues.md | AWS SES claim was incorrect (geen AWS in stack, DNS via registrar). Resend gekozen als provider. | gewijzigd: docs/wiki/operations/known-issues.md
+---
+[2026-05-17 13:00] taak: pre-launch item — custom SMTP provider | Supabase email rate limit (2/h hardcoded) geblokkeerd tijdens TEST 9 retry. Custom SMTP nodig voor productie. Item toegevoegd aan known-issues.md. | gewijzigd: docs/wiki/operations/known-issues.md
+---
 [2026-05-17 12:00] taak: fix TEST 9 + 10 — onboarding cross-host redirect + password reset callback flow | TEST 9: router.push('/dashboard/transcribe') in onboarding/page.tsx (marketing host) navigeerde naar indxr.ai/dashboard/transcribe → 404. Fix: window.location.href = appHref('/dashboard'). TEST 10: resetPasswordForEmail redirectTo wees direct naar app.indxr.ai/dashboard/settings?reset=true — PKCE code nooit ingewisseld via exchangeCodeForSession → otp_expired. Fix: redirectTo via marketing /auth/callback?next=<encoded-final-target>, callback leest next param, valideert hostname (alleen app.indxr.ai/localhost), redirect daarheen na succesvolle exchange. Build ✓ (2/2, 0 TS errors). | gewijzigd: apps/marketing/src/app/onboarding/page.tsx, packages/shared/src/actions/auth-actions.ts, apps/marketing/src/app/auth/callback/route.ts
 ---
 [2026-05-17 00:00] taak: fix OAuth callback PKCE bug — getClaims() pattern + matcher exclude | Root cause was clearAuthCookies() (commit 22a0059, 2026-05-05) die alle sb-* cookies wiste op getUser() error, inclusief de PKCE code-verifier die exchangeCodeForSession() nodig heeft. exchangeCodeForSession faalde silently, callback viel door naar fallback-redirect naar app.indxr.ai/dashboard zonder sessie → app-middleware stuurde naar login. Fix C: middleware.ts gebruikt nu getClaims() ipv getUser() per officieel Supabase 2025 template — geen error-recovery, geen cookie-clearing, geen retry-loop. Fix A: /auth/callback uitgesloten van marketing middleware matcher als defense-in-depth. Build ✓ (2/2, 0 TS errors). Aandachtspunt: stale-cookie refresh-loop die clearAuthCookies adresseerde kan niet terugkomen via getClaims() (geen per-request retry); Upstash veilig her-in te schakelen mits 60s ping bron eerst gediagnosticeerd. | gewijzigd: packages/shared/src/utils/supabase/middleware.ts, apps/marketing/src/middleware.ts
@@ -5324,3 +5330,20 @@ docs/wiki/operations/known-issues.md
 packages/shared/src/utils/supabase/middleware.ts
 ---
 [2026-05-17 07:22] precompact: context compaction triggered
+[2026-05-17 07:34] commit: fix: TEST 9 + 10 — onboarding cross-host redirect + password reset PKCE
+
+TEST 9: router.push('/dashboard/transcribe') op marketing-host
+bleef op indxr.ai → 404. Fix: window.location.href = appHref('/dashboard').
+
+TEST 10: resetPasswordForEmail redirectTo wees direct naar app-host
+settings → PKCE code nooit ingewisseld → otp_expired. Fix: redirect
+via marketing /auth/callback?next=<encoded-target>, callback wisselt
+code in en redirect daarna met hostname-validatie.
+Changed: apps/marketing/src/app/auth/callback/route.ts
+apps/marketing/src/app/onboarding/page.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/cross-host-auth.md
+docs/wiki/operations/known-issues.md
+packages/shared/src/actions/auth-actions.ts
+---

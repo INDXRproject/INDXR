@@ -1,6 +1,6 @@
 # Migratie & recente sprint — snel overzicht
 
-**Bijgewerkt:** 2026-05-08  
+**Bijgewerkt:** 2026-05-17  
 **Doel:** 5 minuten lezen → volledig begrip van huidige staat, wat gedaan is, wat resteert.
 
 ---
@@ -54,15 +54,23 @@
 - 500K requests in 5 dagen door stale Supabase cookie + refresh-loop + onbekende 60s ping
 - Fix: `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects; `noopLimiter` actief
 
+### B6 smoke tests + auth fixes (2026-05-17)
+- **getClaims() fix (TEST 8):** `updateSession()` in middleware gebruikt nu `getClaims()` ipv `getUser()` — geen netwerk-calls bij geen sessie, geen retry-loop, geen cookie-clearing. Verwijderd: `clearAuthCookies` (wiste PKCE code-verifier, brak OAuth en password-reset flows). `/auth/callback` uitgesloten van marketing middleware matcher (defense-in-depth).
+- **TEST 9 (onboarding redirect):** `router.push('/dashboard/transcribe')` in `onboarding/page.tsx` navigeerde naar `indxr.ai/dashboard/transcribe` → 404. Fix: `window.location.href = appHref('/dashboard')`.
+- **TEST 10 (password reset PKCE):** `resetPasswordForEmail` stuurde reset-link direct naar `app.indxr.ai/dashboard/settings` — PKCE code nooit ingewisseld → `otp_expired`. Fix: `redirectTo` via `indxr.ai/auth/callback?next=<encoded settings URL>`; callback wisselt code in en redirect naar `next` met hostname-validatie.
+- TEST 8/9/10 PASS in productie ✓
+
 ---
 
 ## 3. Wat resteert voor launch
 
 ### Blokkeerders
-- [ ] **Playwright smoke tests draaien** — `pnpm test:smoke` (geautomatiseerd, TEST 1–7 + 12)
+- [x] Playwright smoke tests (TEST 1–7 + 12) ✓ 2026-05-08
+- [x] Auth smoke tests handmatig (TEST 8/9/10) ✓ 2026-05-17
+- [ ] **Custom SMTP (Resend)** — Supabase built-in rate limit 2/h blokkeert productie-email. Resend gekozen (native Supabase integratie). Setup: Resend account → DNS verificatie → Supabase Dashboard → Authentication → SMTP Settings.
 - [ ] **Stripe eerste echte betaling** — Try-pakket €2.49; uitgesteld door Khidr (tax setup)
 - [ ] **Stripe webhook delivery verifiëren** — `checkout.session.completed` → status 200 in Stripe Dashboard
-- [ ] **Upstash quota strategie** — bron van 60s ping identificeren; quota plan beslissen
+- [ ] **Upstash quota strategie** — quota plan beslissen; env vars opnieuw toevoegen na beslissing (refresh-loop architectureel opgelost via getClaims())
 
 ### Openstaand (niet-blokkerend)
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
@@ -71,6 +79,8 @@
 - [ ] Supabase database backups configureren
 - [ ] `LOG_LEVEL=WARNING` in Railway
 - [ ] `has_ever_purchased` implementeren in Stripe webhook
+- [ ] Messages page: `MOCK_MESSAGES` vervangen door echte API of verwijderen
+- [ ] Welkomstmessage bij signup implementeren (Supabase trigger of webhook)
 - [ ] Marketing host redesign: `/login`, landing page nav (gepland, geen deadline)
 
 Volledig overzicht: `docs/wiki/operations/known-issues.md` → Pre-Launch Checklist.

@@ -51,7 +51,7 @@ Voer dit uit vóór je begint met de tests.
 |---|---|
 | Site URL | `https://indxr.ai` |
 | Allowed Redirect URL | `https://indxr.ai/auth/callback` |
-| Allowed Redirect URL | `https://app.indxr.ai/dashboard/settings?reset=true` |
+| ~~Allowed Redirect URL~~ | ~~`https://app.indxr.ai/dashboard/settings?reset=true`~~ — niet meer nodig: reset-link gaat via `indxr.ai/auth/callback?next=...`, valt onder `https://indxr.ai/**` wildcard |
 | Allowed Redirect URL | `https://indxr.ai/**` |
 | Allowed Redirect URL | `https://app.indxr.ai/**` |
 | ~~`*.vercel.app`~~ | **verwijderd** (oud project) |
@@ -210,8 +210,8 @@ curl -I https://app.indxr.ai/forgot-password
 
 | Check | Verwacht | Status |
 |---|---|---|
-| Reset-email ontvangen | Link in email gaat naar `https://app.indxr.ai/dashboard/settings?reset=true` | [ ] |
-| Klik link → geen fout | Pagina laadt op app.indxr.ai | [ ] |
+| Reset-email ontvangen | Link in email gaat naar `https://indxr.ai/auth/callback?next=<encoded settings URL>` | [ ] |
+| Klik link → geen fout | Callback wisselt PKCE code in, redirect naar `https://app.indxr.ai/dashboard/settings?reset=true` | [ ] |
 | Password reset formulier zichtbaar | Settings-pagina toont reset-optie | [ ] |
 | Wachtwoord updaten slaagt | Geen error, bevestiging zichtbaar | [ ] |
 
@@ -266,18 +266,18 @@ Na alle bovenstaande tests:
 
 | Test | Beschrijving | Automatisering | Status |
 |---|---|---|---|
-| TEST 1 | Cross-host redirects (308) | ✓ `redirects.spec.ts` | [ ] |
-| TEST 2 | Email/password login + cross-host redirect | ✓ `auth-flow.spec.ts` | [ ] |
-| TEST 3 | Directe app-toegang zonder sessie | ✓ `auth-flow.spec.ts` | [ ] |
-| TEST 4 | Navbar links op marketing | ✓ `nav.spec.ts` | [ ] |
-| TEST 5 | Navbar links op app | ✓ `nav.spec.ts` | [ ] |
-| TEST 6 | Logout op app.indxr.ai | ✓ `logout.spec.ts` | [ ] |
-| TEST 7 | Logout op indxr.ai | ✓ `logout.spec.ts` | [ ] |
-| TEST 8 | Google OAuth login | [Manual] Third-party auth, niet automatiseerbaar | [ ] |
-| TEST 9 | Signup flow | [Manual] Vereist echte verificatie-email | [ ] |
-| TEST 10 | Forgot password flow | [Manual] Vereist echte reset-email | [ ] |
+| TEST 1 | Cross-host redirects (308) | ✓ `redirects.spec.ts` | [x] 2026-05-08 |
+| TEST 2 | Email/password login + cross-host redirect | ✓ `auth-flow.spec.ts` | [x] 2026-05-08 |
+| TEST 3 | Directe app-toegang zonder sessie | ✓ `auth-flow.spec.ts` | [x] 2026-05-08 |
+| TEST 4 | Navbar links op marketing | ✓ `nav.spec.ts` | [x] 2026-05-08 |
+| TEST 5 | Navbar links op app | ✓ `nav.spec.ts` | [x] 2026-05-08 |
+| TEST 6 | Logout op app.indxr.ai | ✓ `logout.spec.ts` | [x] 2026-05-08 |
+| TEST 7 | Logout op indxr.ai (mobile menu) | ✓ `logout.spec.ts` | [x] 2026-05-08 |
+| TEST 8 | Google OAuth login | [Manual] Third-party auth, niet automatiseerbaar | [x] 2026-05-17 |
+| TEST 9 | Signup flow | [Manual] Vereist echte verificatie-email | [x] 2026-05-17 |
+| TEST 10 | Forgot password flow | [Manual] Vereist echte reset-email | [x] 2026-05-17 |
 | TEST 11 | Stripe checkout | [Manual] Third-party + Stripe tax setup pending | [ ] |
-| TEST 12 | Admin route | ✓ `admin.spec.ts` | [ ] |
+| TEST 12 | Admin route | ✓ `admin.spec.ts` | [x] 2026-05-08 |
 | TEST 13 | Vercel function logs | [Manual] Dashboard-only inspectie | [ ] |
 
 ---

@@ -326,7 +326,11 @@ Geen externe service die alarmeert bij downtime.
 - [x] B6: Smoke tests op productiedomeinen
   - [x] Cross-host redirects: `app.indxr.ai/login|signup|forgot-password` → 308 → `indxr.ai/...` ✓ curl-bewezen 2026-05-06
   - [x] Playwright smoke tests: TEST 1–7 + 12 groen (`pnpm test:smoke`) ✓ 2026-05-08 (15/16 passed, 1 skipped — admin-can-access vereist ADMIN_EMAIL account)
-  - [ ] Smoke test checklist handmatig doorlopen (TEST 8–11 + 13) — TEST 8 (Google OAuth) verwacht werkend na getClaims() fix deploy (2026-05-17). TEST 9 (onboarding redirect) + TEST 10 (password reset PKCE) gefixed 2026-05-17: zie LOG.md
+  - [x] TEST 8 (Google OAuth) ✓ 2026-05-17 — getClaims() fix resolved PKCE verifier bug
+  - [x] TEST 9 (Signup + onboarding redirect) ✓ 2026-05-17 — router.push → window.location.href = appHref('/dashboard')
+  - [x] TEST 10 (Password reset PKCE flow) ✓ 2026-05-17 — redirectTo via /auth/callback?next=<settings URL>
+  - [ ] TEST 11 (Stripe checkout) — uitgesteld, Stripe tax setup pending bij Khidr
+  - [ ] TEST 13 (Vercel logs inspectie) — handmatig, na deploy
   - [ ] Eerste echte betaling (Try-pakket €2.49) — uitgesteld (Stripe tax setup pending bij Khidr)
   - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks (na eerste echte betaling)
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
@@ -335,10 +339,13 @@ Geen externe service die alarmeert bij downtime.
   - [ ] Bron van 60s ping op `indxr.ai/` identificeren (ter info, geen blocker meer)
   - [ ] Upstash quota strategie beslissen (upgrade plan vs alternatief)
   - [ ] Env vars opnieuw toevoegen en verifieer geen quota leak (veilig nu refresh-loop weg is)
+- [ ] **Custom SMTP provider configureren voor productie email** — Supabase built-in email service heeft een hardcoded rate limit van 2/h die niet via dashboard verhoogbaar is (custom SMTP vereist). Limiet is project-wide, niet IP-based, en geldt ongeacht Supabase plan-tier (Pro/Team verhogen de default sender limiet niet). Impact: signup, email confirmation, password reset en magic links zijn allemaal gelimiteerd. **Gekozen oplossing: Resend** — native Supabase integratie, react-email JSX templates passen bij Next.js stack, 3000 emails/maand free tier, $20/maand voor 50K bij scaling. Setup: Resend account → domain DNS verificatie → SMTP credentials in Supabase Dashboard → Authentication → SMTP Settings. Met custom SMTP gaat de auth-email rate limit automatisch naar 30/h, verder configureerbaar via Authentication → Rate Limits.
 - [ ] Supabase database backups configureren
 - [ ] `LOG_LEVEL=WARNING` instellen in Railway
 - [ ] `has_ever_purchased` implementeren in Stripe webhook (zie priorities.md)
 - [ ] Anonymous user flows testen via Playwright
+- [ ] **Messages page hardcoded placeholder content** — `MOCK_MESSAGES` in `apps/app/src/app/dashboard/messages/MessagesClient.tsx` bevat hardcoded test-berichten ("Welcome to INDXR", "Credits added to your account") met user-specifieke teksten en fake timestamps. Vóór launch vervangen door echte messages API of verwijderen.
+- [ ] **Welcome message + credits notification ontbreken** — Nieuwe gebruikers krijgen geen welkomstmessage bij signup. De 25-credits-claim banner staat op `/transcribe` (werkt functioneel) maar er is geen Message in inbox die de claim bevestigt of toelicht. Pre-launch: ofwel een welkomstmessage bij signup (via Supabase trigger of webhook), ofwel een post-claim confirmation message. Voorkom duplicatie met bestaande banner.
 - [ ] 4+ uur video stress test
 - [ ] RAG JSON: yt-dlp originele taal forceren i.p.v. `tlang=en` vertaling
 - [ ] RAG JSON: Settings chunk size ✓ feedback zichtbaarheid controleren (`DeveloperExportsCard.tsx`)
