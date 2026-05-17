@@ -93,9 +93,9 @@ const cookieDomain = isProd ? '.indxr.ai' : undefined
 | `secure` | `true` |
 | `path` | `/` |
 
-**Effect:** Een sessie-cookie aangemaakt op `indxr.ai` (bij login of OAuth callback) is onmiddellijk beschikbaar op `app.indxr.ai`. De `updateSession()` middleware op de app-host leest de cookie, bevestigt de sessie bij Supabase, en schrijft hem terug met dezelfde `.indxr.ai` domain scope.
+**Effect:** Een sessie-cookie aangemaakt op `indxr.ai` (bij login of OAuth callback) is onmiddellijk beschikbaar op `app.indxr.ai`. De `updateSession()` middleware op de app-host leest de cookie en schrijft hem terug met dezelfde `.indxr.ai` domain scope.
 
-**Cookie cleanup bij stale token:** `middleware.ts` heeft `clearAuthCookies()` die alle `sb-*` cookies wist met `domain: '.indxr.ai'` en `maxAge: 0`. Dit voorkomt een eindeloze refresh-loop op beide hosts bij een verlopen of ingetrokken token.
+**Session check:** `updateSession()` gebruikt `supabase.auth.getClaims()` (niet `getUser()`). `getClaims()` returnt null bij geen sessie zonder netwerk-calls of retry-loops, waardoor de middleware veilig draait op elke route zonder de PKCE verifier te verstoren.
 
 ---
 
@@ -163,6 +163,8 @@ const cookieDomain = isProd ? '.indxr.ai' : undefined
 
 ### indxr.ai (apps/marketing/src/middleware.ts)
 Doet uitsluitend `updateSession()` — vernieuwt Supabase cookies op elke request. Geen auth-gating: alle marketing-routes zijn publiek toegankelijk.
+
+`/auth/callback` is **uitgesloten** van de matcher. De callback route handelt zelf de code-exchange af (`exchangeCodeForSession`) en heeft geen session-refresh nodig. Middleware draaien op de callback zou de PKCE code-verifier cookie kunnen verstoren.
 
 ### app.indxr.ai (apps/app/src/middleware.ts)
 ```

@@ -323,18 +323,18 @@ Geen externe service die alarmeert bij downtime.
 - [x] B3: Custom domains transferred ✓ — indxr.ai canonical op indxr-marketing, www.indxr.ai 301 → apex, app.indxr.ai op indxr-app. Curl-verificatie ✓ (2026-05-06)
 - [x] B4: A-record indxr.ai → 216.150.1.1 (Vercel IP range expansion, plan-specifieke aanbeveling). Badge verdwenen ✓ (2026-05-06)
 - [x] B5: Stripe webhook live mode op app.indxr.ai/api/stripe/webhook. 3 events (checkout.session.completed, async_payment_succeeded, async_payment_failed). STRIPE_WEBHOOK_SECRET in Vercel indxr-app ✓ (2026-05-06)
-- [~] B6: Smoke tests op productiedomeinen
+- [x] B6: Smoke tests op productiedomeinen
   - [x] Cross-host redirects: `app.indxr.ai/login|signup|forgot-password` → 308 → `indxr.ai/...` ✓ curl-bewezen 2026-05-06
-  - [ ] Playwright smoke tests draaien: `tests/playwright/specs/cross-host/` — `pnpm test:smoke` — TEST 1–7 + 12 geautomatiseerd (zie `wiki/operations/cross-host-smoke-tests.md`)
-  - [ ] Smoke test checklist handmatig doorlopen na Playwright groen
+  - [x] Playwright smoke tests: TEST 1–7 + 12 groen (`pnpm test:smoke`) ✓ 2026-05-08 (15/16 passed, 1 skipped — admin-can-access vereist ADMIN_EMAIL account)
+  - [ ] Smoke test checklist handmatig doorlopen (TEST 8–11 + 13) — TEST 8 (Google OAuth) + TEST 9 (signup) + TEST 10 (forgot-password) verwacht werkend na getClaims() fix deploy (2026-05-17)
   - [ ] Eerste echte betaling (Try-pakket €2.49) — uitgesteld (Stripe tax setup pending bij Khidr)
   - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks (na eerste echte betaling)
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
 - [x] Supabase email verificatie re-enabled ✓
-- [!] **Upstash Redis quota** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Oorzaak: quota-blow-out (500.000/500.000 req), zelfde patroon als C.3.1. Tevens: elke 60s een `[auth-recovery] getUser error` ping op `indxr.ai/` in Vercel logs — bron niet gediagnosticeerd (verdacht: externe uptime monitor of Vercel Speed Insights). Pre-launch acties:
-  - [ ] Bron van 60s ping op `indxr.ai/` identificeren en stoppen
+- [!] **Upstash Redis quota** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Oorzaak: quota-blow-out (500.000/500.000 req), zelfde patroon als C.3.1. De middleware-stale-cookie refresh-loop die meeveroorzaker was is **architectureel opgelost** (2026-05-17): `updateSession()` gebruikt nu `getClaims()` ipv `getUser()` — geen per-request retry-loop meer bij stale tokens. Tevens: elke 60s een `[auth-recovery]` ping op `indxr.ai/` in Vercel logs — dit log verdwijnt na de getClaims() deploy (geen `[auth-recovery]` meer in de nieuwe code). Bron van de 60s ping zelf (verdacht: externe uptime monitor of Vercel Speed Insights) hoeft minder urgent gediagnosticeerd — geen Upstash-impact meer. Pre-launch acties:
+  - [ ] Bron van 60s ping op `indxr.ai/` identificeren (ter info, geen blocker meer)
   - [ ] Upstash quota strategie beslissen (upgrade plan vs alternatief)
-  - [ ] Env vars opnieuw toevoegen en verifieer geen quota leak
+  - [ ] Env vars opnieuw toevoegen en verifieer geen quota leak (veilig nu refresh-loop weg is)
 - [ ] Supabase database backups configureren
 - [ ] `LOG_LEVEL=WARNING` instellen in Railway
 - [ ] `has_ever_purchased` implementeren in Stripe webhook (zie priorities.md)

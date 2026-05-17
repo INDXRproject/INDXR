@@ -1,3 +1,7 @@
+[2026-05-17 00:00] taak: fix OAuth callback PKCE bug — getClaims() pattern + matcher exclude | Root cause was clearAuthCookies() (commit 22a0059, 2026-05-05) die alle sb-* cookies wiste op getUser() error, inclusief de PKCE code-verifier die exchangeCodeForSession() nodig heeft. exchangeCodeForSession faalde silently, callback viel door naar fallback-redirect naar app.indxr.ai/dashboard zonder sessie → app-middleware stuurde naar login. Fix C: middleware.ts gebruikt nu getClaims() ipv getUser() per officieel Supabase 2025 template — geen error-recovery, geen cookie-clearing, geen retry-loop. Fix A: /auth/callback uitgesloten van marketing middleware matcher als defense-in-depth. Build ✓ (2/2, 0 TS errors). Aandachtspunt: stale-cookie refresh-loop die clearAuthCookies adresseerde kan niet terugkomen via getClaims() (geen per-request retry); Upstash veilig her-in te schakelen mits 60s ping bron eerst gediagnosticeerd. | gewijzigd: packages/shared/src/utils/supabase/middleware.ts, apps/marketing/src/middleware.ts
+---
+[2026-05-08 22:00] taak: Playwright smoke tests groen — alle 8 geautomatiseerde tests geslaagd | Fixes: (1) loginFresh in logout.spec.ts: waitForURL(/dashboard|onboarding/) + onboarding bypass voor account2. (2) TEST 7 gebruikt mobiele viewport (390px) — marketing Header toont Sign Out alleen in mobile Sheet, niet in desktop nav. (3) Resultaten: 15 passed, 1 skip (admin-can-access), 1 transient network blip hertest ✓. Docs bijgewerkt: cross-host-smoke-tests.md statussen [x] 2026-05-08, known-issues.md B6 → [x]. | gewijzigd: tests/playwright/specs/cross-host/logout.spec.ts, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/known-issues.md
+---
 [2026-05-08 12:00] taak: Playwright cross-host smoke tests | 5 spec files in tests/playwright/specs/cross-host/ (redirects, auth-flow, nav, logout, admin). Auth setup via auth.setup.ts (storageState). 8 van 13 tests geautomatiseerd; TEST 8 (OAuth), 9 (signup email), 10 (reset email), 11 (Stripe), 13 (Vercel logs) manueel. Smoke config: playwright.smoke.config.ts. Scripts: pnpm test:smoke + test:smoke:headed. .auth.json toegevoegd aan .gitignore. | gewijzigd: playwright.smoke.config.ts, tests/playwright/specs/cross-host/*.ts, package.json, .gitignore
 ---
 [2026-05-08 11:00] taak: docs consolidatie | known-issues.md B6 herschreven (redirect [x], Playwright item toegevoegd, Stripe uitgesteld). app-host-skeleton.md geüpdatet: ThemeToggle beschrijving JS-driven, opgeloste baseline-punt verwijderd, nieuwe sectie "Gepland voor redesign". cross-host-auth.md: alle /dashboard/transcribe → /dashboard (post-login routing fix). cross-host-smoke-tests.md: verwachte URLs gecorrigeerd, automatisering-kolom + "Hoe testen" sectie toegevoegd. Nieuw: docs/wiki/operations/migration-summary.md. | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/architecture/app-host-skeleton.md, docs/wiki/architecture/cross-host-auth.md, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/migration-summary.md (nieuw)
@@ -5272,3 +5276,30 @@ docs/LOG.md
 packages/shared/src/components/PlaylistManager.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 ---
+[2026-05-08 21:20] commit: feat: docs consolidation + Playwright cross-host smoke tests
+
+DEEL 1: known-issues B6 herschreven, app-host-skeleton geüpdatet,
+cross-host-auth redirect targets gefixt, smoke-tests doc bijgewerkt
+met automatisering-kolom + run-instructies, nieuwe migration-summary.md
+
+DEEL 2: 6 spec files (auth.setup, redirects, auth-flow, nav, logout,
+admin), playwright.smoke.config.ts, pnpm test:smoke scripts.
+8 van 13 tests geautomatiseerd.
+Changed: .gitignore
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/app-host-skeleton.md
+docs/wiki/architecture/cross-host-auth.md
+docs/wiki/operations/cross-host-smoke-tests.md
+docs/wiki/operations/known-issues.md
+docs/wiki/operations/migration-summary.md
+package.json
+playwright.smoke.config.ts
+tests/playwright/specs/cross-host/admin.spec.ts
+tests/playwright/specs/cross-host/auth-flow.spec.ts
+tests/playwright/specs/cross-host/auth.setup.ts
+tests/playwright/specs/cross-host/logout.spec.ts
+tests/playwright/specs/cross-host/nav.spec.ts
+tests/playwright/specs/cross-host/redirects.spec.ts
+---
+[2026-05-08 21:39] precompact: context compaction triggered
