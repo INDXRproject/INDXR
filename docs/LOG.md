@@ -1,3 +1,9 @@
+[2026-05-18 12:00] fix: 4 cross-host link bugs uit post-migratie audit | BUG-1/2a/2b: VideoTab window.location + Link → appHref(); BUG-3: next.config.ts /account/credits → absolute APP_URL. Build: 2/2 ✅ | gewijzigd: packages/shared/src/components/free-tool/VideoTab.tsx, apps/marketing/next.config.ts, docs/wiki/operations/post-migration-audit-2026-05.md
+---
+[2026-05-18 11:00] audit: post-migratie cross-host link audit | gewijzigd: docs/wiki/operations/post-migration-audit-2026-05.md
+---
+[2026-05-17 17:15] docs: worker-crash root cause gediagnosticeerd + gedocumenteerd | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/roadmap/priorities.md, docs/LESSONS.md
+---
 [2026-05-17 16:00] taak: sessie wrap-up | B6 auth complete (TEST 8/9/10 PASS in productie). Caption extractie hersteld via BACKEND_API_SECRET correctie op Vercel indxr-app + indxr-marketing (var niet goed gemigreerd na monorepo split). CLAUDE.md BACKEND_API_SECRET sectie gecorrigeerd. Volgende sessie: priorities.md 1.12–1.20 oppakken, met design-context (Claude Design sprint, blauwe knoppen/hexagons) als input voor 1.20 polish + voorbereiding Fase 3 redesign. | gewijzigd: docs/LOG.md
 ---
 [2026-05-17 15:00] taak: fix /api/extract/youtube 401 — BACKEND_API_SECRET env var op Vercel | Mismatch tussen Vercel indxr-app en Railway agile-creation: var niet correct gemigreerd naar nieuwe Vercel projecten tijdens monorepo split (of ingesteld met quotes). Var correct ingesteld op Vercel indxr-app zonder quotes, scope Production, redeploy zonder cache. Caption extractie werkt. CLAUDE.md gecorrigeerd (stond incorrect "nog niet geïmplementeerd" — implementatie bestond al). | gewijzigd: CLAUDE.md, docs/LESSONS.md, docs/wiki/operations/known-issues.md
@@ -5364,4 +5370,10 @@ docs/wiki/operations/migration-summary.md
 ---
 [2026-05-17 10:29] commit: chore: trigger redeploy for BACKEND_API_SECRET
 Changed: 
+---
+[2026-05-17 16:38] commit: docs: sessie wrap-up 2026-05-17 + BACKEND_API_SECRET correctie
+Changed: CLAUDE.md
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/operations/known-issues.md
 ---

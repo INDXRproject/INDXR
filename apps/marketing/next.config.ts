@@ -1,13 +1,15 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3001';
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@indxr/shared"],
   async redirects() {
     return [
       // Legacy URL cleanup
       { source: '/faq', destination: '/docs/help/faq', permanent: true },
-      { source: '/account/credits', destination: '/dashboard/account', permanent: true },
+      { source: '/account/credits', destination: `${APP_URL}/dashboard/account`, permanent: true },
       { source: '/how-it-works', destination: '/', permanent: true },
 
       // Renamed routes

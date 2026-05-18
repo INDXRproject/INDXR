@@ -160,7 +160,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
     toast.success("Transcript extracted & saved with AI", {
       description: "Added to your library automatically.",
-      action: { label: "View", onClick: () => window.location.href = '/dashboard/library' }
+      action: { label: "View", onClick: () => window.location.href = appHref('/dashboard/library') }
     })
     window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
     setSaveStatus('saved')
@@ -1106,12 +1106,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               <span className="font-medium">You already have this transcript in your library. Extract again?</span>
             </div>
             <div className="flex items-center gap-2 pl-5">
-              <Link
-                href={`/dashboard/library/${existingTranscriptId}`}
+              <a
+                href={appHref(`/dashboard/library/${existingTranscriptId}`)}
                 className="text-sm font-medium text-accent hover:underline"
               >
                 View in Library
-              </Link>
+              </a>
               <span className="text-fg-muted/40 text-xs">·</span>
               <button
                 className="text-sm text-fg-muted hover:text-fg hover:underline transition-colors"
@@ -1139,9 +1139,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 ? 'You already have this transcript (AI Transcription) — '
                 : 'You already have this transcript in your library — '}
             </span>
-            <Link href={`/dashboard/library/${existingTranscriptId}`} className="font-medium hover:underline">
+            <a href={appHref(`/dashboard/library/${existingTranscriptId}`)} className="font-medium hover:underline">
               View in Library
-            </Link>
+            </a>
           </div>
         )}
 
