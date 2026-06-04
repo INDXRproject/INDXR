@@ -1,3 +1,5 @@
+[2026-06-04 11:00] docs: ADR-048 Redis-splitsing Upstash/Railway — diagnose geverifieerd (10.860 commands/uur idle = 7,84M/maand, structureel onmogelijk op Free Tier), beslissing gedocumenteerd, implementatie fase 2 volgt | gewijzigd: docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/INDEX.md, docs/wiki/operations/known-issues.md, docs/LESSONS.md
+---
 [2026-06-04 10:00] fix: 2 visuele bugs marketing site — header nav leeg + button kleuren ontbreken | Oorzaak: Tailwind v4 scande packages/shared/src/ niet → md:flex/md:hidden + bg-accent/text-fg-on-accent ontbraken in CSS. Fix: @source directive toegevoegd aan tokens.css. Build: 2/2 ✅ | gewijzigd: apps/marketing/src/app/styles/tokens.css
 ---
 [2026-05-18 14:00] audit: Redis/Upstash usage audit — alle aanroeplocaties geïnventariseerd (ratelimit, caption cache, ARQ enqueue, watchdog) | gewijzigd: docs/wiki/operations/redis-usage-audit-2026-05.md
@@ -5399,4 +5401,20 @@ Changed: apps/marketing/next.config.ts
 docs/LOG.md
 docs/wiki/operations/post-migration-audit-2026-05.md
 packages/shared/src/components/free-tool/VideoTab.tsx
+---
+[2026-06-04 11:12] commit: fix: header nav leeg + button kleuren ontbreken op marketing site
+
+Tailwind v4 scande packages/shared/src/ niet automatisch waardoor
+kritieke CSS classes ontbraken in de marketing build:
+- md:flex / md:hidden → desktop nav altijd verborgen (Bug 1)
+- bg-accent, hover:bg-accent-hover, text-fg-subtle, text-fg-on-accent
+  → Button component zonder achtergrond/tekstkleur (Bug 2)
+
+Fix: @source directive toegevoegd aan apps/marketing/tokens.css.
+Build: 2/2 ✅, alle ontbrekende classes bevestigd aanwezig na build.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/marketing/src/app/styles/tokens.css
+docs/LESSONS.md
+docs/LOG.md
 ---

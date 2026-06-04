@@ -47,6 +47,29 @@ uvicorn handler-conflict op maar niet het Sentry-override probleem.
 **Setup:** Database `indxr-redis` aangemaakt op eigen Upstash account (Khidr), regio Frankfurt (eu-central-1).
 **Activeren bij launch:** Rate limiting inschakelen in `packages/shared/src/lib/ratelimit.ts` en limieten opnieuw beoordelen vóór go-live.
 
+### Railway ARQ worker — Upstash quota / Redis-splitsing
+**Vastgesteld:** 2026-05-17 (worker crash) → 2026-06-04 (root cause volledig begrepen)
+**Status:** BESLIST — implementatie fase 2 gepland, nog niet uitgevoerd
+**ADR:** [048-redis-split-upstash-railway.md](../decisions/048-redis-split-upstash-railway.md)
+
+**Root cause (volledig):** ARQ worker genereert ~10.860 Redis-commando's per uur in idle toestand:
+- Queue-polling: BLPOP elke 0.5s (ARQ `poll_delay` default) = 7.200 reads/uur
+- Health-check: EXISTS + SET elke 1s (ARQ `health_check_interval` default) = ~3.600 commands/uur
+- Totaal idle: ~7,84 miljoen commando's/maand — 15,7× het Upstash Free Tier (500K/maand)
+
+Dit is geen bug maar inherent aan het ARQ-polling-model. Upstash (per-commando pricing) is structureel incompatibel met een constant pollende worker.
+
+**Beslissing:** Redis-splitsing (zie ADR-048):
+- ARQ worker → eigen Railway Redis-service (TCP, private netwerk `redis.railway.internal`, ~$1–3/maand)
+- Vercel rate-limiter + caption-cache → blijven op Upstash Free Tier (sporadisch, past binnen quota)
+
+**Fase 2 — uit te voeren:**
+1. Railway Redis-service aanmaken in hetzelfde project
+2. `WorkerSettings.redis_settings` in `backend/worker.py` updaten naar `WORKER_REDIS_URL`
+3. Env var instellen op worker-service, worker herstarten, worker online verifiëren
+
+**Impact huidige situatie:** run_whisper_job, process_playlist_video, process_playlist_retries, watchdog_interrupted_jobs — plat. Caption-extractie (synchroon FastAPI) werkt.
+
 ---
 
 ## Known Limitation: Niet-Engelse captions onbetrouwbaar
@@ -316,6 +339,7 @@ Geen externe service die alarmeert bij downtime.
 - [x] **BACKEND_API_SECRET toevoegen aan Vercel environment variables** ✓ (geverifieerd 2026-04-15: Railway→401 zonder header, Next.js→307 met correcte auth flow)
 - [x] Vercel projects aangemaakt: `indxr-marketing` (15 env vars) + `indxr-app` (18 env vars, Stripe live) ✓ (B1.2/B2, 2026-05-06)
 - [x] Env vars gemigreerd naar nieuwe Vercel projects ✓ — let op: Upstash URL had quotes uit .env-paste; Vercel UI vereist rauwe waarden zonder quotes
+- [x] OSS-registratie bij Belastingdienst ingediend ✓ — wacht op reactie. Blocker voor Stripe live (1.13) blijft staan tot goedkeuring binnen is.
 - [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten in live mode + webhook registreren (**URL: `https://app.indxr.ai/api/stripe/webhook`**)
 - [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel indxr-app (wacht op B5 webhook re-registratie)
 - [ ] `NEXT_PUBLIC_PYTHON_BACKEND_URL` verwijderen uit Vercel dashboard — var is vervangen door `NEXT_PUBLIC_AUDIO_UPLOAD_URL`, staat nog in Vercel env vars maar niet meer in codebase (B0 cleanup 2026-05-05)
@@ -335,10 +359,12 @@ Geen externe service die alarmeert bij downtime.
   - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks (na eerste echte betaling)
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
 - [x] Supabase email verificatie re-enabled ✓
-- [!] **Upstash Redis quota** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Oorzaak: quota-blow-out (500.000/500.000 req), zelfde patroon als C.3.1. De middleware-stale-cookie refresh-loop die meeveroorzaker was is **architectureel opgelost** (2026-05-17): `updateSession()` gebruikt nu `getClaims()` ipv `getUser()` — geen per-request retry-loop meer bij stale tokens. Tevens: elke 60s een `[auth-recovery]` ping op `indxr.ai/` in Vercel logs — dit log verdwijnt na de getClaims() deploy (geen `[auth-recovery]` meer in de nieuwe code). Bron van de 60s ping zelf (verdacht: externe uptime monitor of Vercel Speed Insights) hoeft minder urgent gediagnosticeerd — geen Upstash-impact meer. Pre-launch acties:
-  - [ ] Bron van 60s ping op `indxr.ai/` identificeren (ter info, geen blocker meer)
-  - [ ] Upstash quota strategie beslissen (upgrade plan vs alternatief)
-  - [ ] Env vars opnieuw toevoegen en verifieer geen quota leak (veilig nu refresh-loop weg is)
+- [!] **Upstash Redis quota + worker-herstel** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Strategie besloten op 2026-06-04 (zie [ADR-048](../decisions/048-redis-split-upstash-railway.md)):
+  - Worker → Railway Redis (polling-kosten structureel onmogelijk op Upstash — 7,84M commands/maand idle)
+  - Vercel rate-limiter + caption-cache → Upstash Free Tier herinschakelen na worker-splitsing (past ruim binnen 500K/maand zonder worker)
+  - [ ] **Fase 2**: Railway Redis-service aanmaken + worker omzetten (zie ADR-048 consequenties)
+  - [ ] Upstash env vars opnieuw toevoegen aan Vercel (beide projecten) ná worker-splitsing
+  - [ ] Bron van 60s ping op `indxr.ai/` identificeren (ter info, geen blocker)
 - [ ] **Custom SMTP provider configureren voor productie email** — Supabase built-in email service heeft een hardcoded rate limit van 2/h die niet via dashboard verhoogbaar is (custom SMTP vereist). Limiet is project-wide, niet IP-based, en geldt ongeacht Supabase plan-tier (Pro/Team verhogen de default sender limiet niet). Impact: signup, email confirmation, password reset en magic links zijn allemaal gelimiteerd. **Gekozen oplossing: Resend** — native Supabase integratie, react-email JSX templates passen bij Next.js stack, 3000 emails/maand free tier, $20/maand voor 50K bij scaling. Setup: Resend account → domain DNS verificatie → SMTP credentials in Supabase Dashboard → Authentication → SMTP Settings. Met custom SMTP gaat de auth-email rate limit automatisch naar 30/h, verder configureerbaar via Authentication → Rate Limits.
 - [ ] Supabase database backups configureren
 - [ ] `LOG_LEVEL=WARNING` instellen in Railway
