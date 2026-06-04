@@ -1,3 +1,7 @@
+[2026-06-04 10:00] fix: 2 visuele bugs marketing site — header nav leeg + button kleuren ontbreken | Oorzaak: Tailwind v4 scande packages/shared/src/ niet → md:flex/md:hidden + bg-accent/text-fg-on-accent ontbraken in CSS. Fix: @source directive toegevoegd aan tokens.css. Build: 2/2 ✅ | gewijzigd: apps/marketing/src/app/styles/tokens.css
+---
+[2026-05-18 14:00] audit: Redis/Upstash usage audit — alle aanroeplocaties geïnventariseerd (ratelimit, caption cache, ARQ enqueue, watchdog) | gewijzigd: docs/wiki/operations/redis-usage-audit-2026-05.md
+---
 [2026-05-18 12:00] fix: 4 cross-host link bugs uit post-migratie audit | BUG-1/2a/2b: VideoTab window.location + Link → appHref(); BUG-3: next.config.ts /account/credits → absolute APP_URL. Build: 2/2 ✅ | gewijzigd: packages/shared/src/components/free-tool/VideoTab.tsx, apps/marketing/next.config.ts, docs/wiki/operations/post-migration-audit-2026-05.md
 ---
 [2026-05-18 11:00] audit: post-migratie cross-host link audit | gewijzigd: docs/wiki/operations/post-migration-audit-2026-05.md
@@ -5376,4 +5380,23 @@ Changed: CLAUDE.md
 docs/LESSONS.md
 docs/LOG.md
 docs/wiki/operations/known-issues.md
+---
+[2026-05-18 14:58] commit: fix: 4 cross-host link bugs uit post-migratie audit
+
+VideoTab.tsx (packages/shared) rendert op zowel marketing- als app-host.
+Drie relatieve /dashboard/... paden braken op indxr.ai/transcribe → 404:
+- :163 window.location.href → appHref('/dashboard/library')
+- :1110/:1142 <Link href> → <a href={appHref(...)}>
+
+next.config.ts (apps/marketing): /account/credits redirect had relatief
+destination /dashboard/account → bleef op marketing-host → 404.
+Fix: absolute URL via NEXT_PUBLIC_APP_URL.
+
+Build: pnpm turbo run build — 2/2 ✅, 0 TS errors.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/marketing/next.config.ts
+docs/LOG.md
+docs/wiki/operations/post-migration-audit-2026-05.md
+packages/shared/src/components/free-tool/VideoTab.tsx
 ---
