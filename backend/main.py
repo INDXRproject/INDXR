@@ -118,13 +118,13 @@ sentry_sdk.init(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    redis_url = os.getenv("UPSTASH_REDIS_URL")
+    redis_url = os.getenv("ARQ_REDIS_URL")
     if redis_url:
         app.state.arq_pool = await create_pool(ArqRedisSettings.from_dsn(redis_url))
         logger.info("ARQ pool initialized")
     else:
         app.state.arq_pool = None
-        logger.warning("UPSTASH_REDIS_URL not set — YouTube Whisper falls back to asyncio.create_task")
+        logger.warning("ARQ_REDIS_URL not set — YouTube Whisper falls back to asyncio.create_task")
     yield
     if getattr(app.state, 'arq_pool', None):
         await app.state.arq_pool.aclose()
@@ -757,7 +757,7 @@ async def transcribe_with_whisper(
                 title=title,
             )
         else:
-            # Fallback: UPSTASH_REDIS_URL not configured (local dev without Redis)
+            # Fallback: ARQ_REDIS_URL not configured (local dev without Redis)
             asyncio.create_task(do_assemblyai_transcription(
                 user_id, video_id,
                 job_id=job_id,

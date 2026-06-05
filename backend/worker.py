@@ -1002,7 +1002,7 @@ class WorkerSettings:
         cron(watchdog_interrupted_jobs, minute=set(range(0, 60, 2))),
     ]
     redis_settings = RedisSettings.from_dsn(
-        os.getenv("UPSTASH_REDIS_URL") or "redis://localhost:6379"
+        os.getenv("ARQ_REDIS_URL") or "redis://localhost:6379"
     )
     keep_result = 3600  # default for run_whisper_job / noop_task
     # job_timeout: verhoogd van default 300s naar 7200s (2 uur).

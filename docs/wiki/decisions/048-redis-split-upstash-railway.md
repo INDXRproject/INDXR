@@ -2,7 +2,7 @@
 
 **Status:** Geaccepteerd  
 **Datum:** 2026-06-04  
-**Gerelateerde code:** `backend/worker.py`, `packages/shared/src/lib/ratelimit.ts`, `packages/shared/src/lib/caption-cache.ts`
+**Gerelateerde code:** `backend/worker.py`, `backend/main.py`, `packages/shared/src/lib/ratelimit.ts`
 
 ---
 
@@ -56,8 +56,8 @@ Deze twee modellen zijn structureel incompatibel voor een productie ARQ-worker.
 
 **Huidige Upstash-gebruikers buiten de worker:**
 
-1. **Vercel rate-limiter** (`ratelimit.ts`): sporadische HTTP-calls bij inkomende requests — past perfect bij Upstash's pricing model.
-2. **Caption-cache** (`caption-cache.ts`): ook sporadisch, only on cache hit/miss per extractie-request.
+1. **Vercel rate-limiter** (`packages/shared/src/lib/ratelimit.ts`): sporadische HTTP-calls bij inkomende requests — REST/HTTPS via `UPSTASH_REDIS_REST_URL` + `_TOKEN`.
+2. **Caption-cache** (`backend/main.py`, Python): ook sporadisch, per extractie-request — eveneens REST/HTTPS via `UPSTASH_REDIS_REST_URL` + `_TOKEN`. Er bestaat geen `caption-cache.ts` — de cache leeft uitsluitend in Python.
 
 Beide passen ruim binnen het Free Tier (geschat 10.000–50.000 commando's/maand, afhankelijk van traffic).
 
@@ -127,8 +127,14 @@ Bovendien:
 ### Wat niet verandert
 
 - `ratelimit.ts` en `caption-cache.ts`: geen codewijziging
-- ARQ worker-logica: geen codewijziging, alleen env var
+- ARQ worker-logica: geen codewijziging, alleen env var en naam
 - Upstash database zelf: blijft bestaan, krijgt gewoon minder load
+
+**Correctie t.o.v. originele ADR (vastgesteld 2026-06-05):** De ARQ-queue heeft twee producers/consumers die dezelfde Redis-verbinding nodig hebben:
+- `backend/worker.py` — consument + interne producent (playlist-chaining via `ctx['redis']`, watchdog re-enqueue)
+- `backend/main.py` — externe producent (`app.state.arq_pool`); enqueued `run_whisper_job` (r.752) en `process_playlist_video` (r.1037)
+
+Beide lezen dezelfde env var (`UPSTASH_REDIS_URL`, hernoemd naar `ARQ_REDIS_URL`) en moeten naar dezelfde Railway Redis wijzen. Als alleen de worker wordt omgezet maar de API niet, worden jobs geënqueued naar Upstash terwijl de worker op Railway Redis luistert — stille queue-mismatch.
 
 ### Risico's
 
@@ -136,10 +142,13 @@ Bovendien:
 - **Geen persistentie**: ARQ-jobs die in-flight zijn bij een Railway Redis restart gaan verloren. Dit is het bestaande gedrag al (ARQ ack_late bestaat niet, zie LESSONS.md 2026-05-04) — geen regressie.
 - **Maandelijkse kosten**: Railway Redis ~$1–3/maand extra op het Hobby-plan. Binnen de ingestelde spend-limit.
 
-### Fase 2 — implementatie (nog uit te voeren)
+### Fase 2 — implementatie
 
-1. Railway Redis-service aanmaken in hetzelfde project als de worker
-2. `WorkerSettings.redis_settings` in `backend/worker.py` updaten naar nieuwe env var
-3. Env var instellen op de worker-service in Railway
-4. Worker herstarten en verifiëren: quota-error weg, worker online, health-check groen
-5. Upstash env vars uit worker-service verwijderen
+- [x] `backend/main.py` r.121: `UPSTASH_REDIS_URL` → `ARQ_REDIS_URL` (2026-06-05)
+- [x] `backend/worker.py` r.1005: `UPSTASH_REDIS_URL` → `ARQ_REDIS_URL` (2026-06-05)
+- [x] `backend/.env.example`: `ARQ_REDIS_URL` gedocumenteerd met uitleg (2026-06-05)
+- [ ] **[Khidr]** Railway Redis-service aanmaken in hetzelfde project als de worker (Project → New Service → Redis)
+- [ ] **[Khidr]** `ARQ_REDIS_URL` instellen op service `agile-creation` (API) — waarde: Railway-internal connection string van de nieuwe Redis-service
+- [ ] **[Khidr]** `ARQ_REDIS_URL` instellen op service `fortunate-mindfulness` (worker) — zelfde waarde
+- [ ] **[Khidr]** Beide services herstarten; in worker-logs verifiëren: geen `ResponseError: max requests limit exceeded`, wél `ARQ pool initialized` / worker health-check groen
+- [ ] **[Khidr]** `UPSTASH_REDIS_URL` verwijderen uit beide Railway-services (var bestaat na hernoemen niet meer in code)

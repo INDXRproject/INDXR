@@ -1,3 +1,5 @@
+[2026-06-05 10:00] fix: ADR-048 fase 2 — UPSTASH_REDIS_URL → ARQ_REDIS_URL in main.py + worker.py; ADR gecorrigeerd (caption-cache.ts bestond niet, API-service ontbrak in fase-2-checklist, worker-als-producent toegevoegd); .env.example gedocumenteerd. Build: 2/2 ✅ (cached). Khidr-acties staan open (Railway Redis aanmaken + env vars instellen). | gewijzigd: backend/main.py, backend/worker.py, backend/.env.example, docs/wiki/decisions/048-redis-split-upstash-railway.md
+---
 [2026-06-04 11:00] docs: ADR-048 Redis-splitsing Upstash/Railway — diagnose geverifieerd (10.860 commands/uur idle = 7,84M/maand, structureel onmogelijk op Free Tier), beslissing gedocumenteerd, implementatie fase 2 volgt | gewijzigd: docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/INDEX.md, docs/wiki/operations/known-issues.md, docs/LESSONS.md
 ---
 [2026-06-04 10:00] fix: 2 visuele bugs marketing site — header nav leeg + button kleuren ontbreken | Oorzaak: Tailwind v4 scande packages/shared/src/ niet → md:flex/md:hidden + bg-accent/text-fg-on-accent ontbraken in CSS. Fix: @source directive toegevoegd aan tokens.css. Build: 2/2 ✅ | gewijzigd: apps/marketing/src/app/styles/tokens.css
@@ -5417,4 +5419,23 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: apps/marketing/src/app/styles/tokens.css
 docs/LESSONS.md
 docs/LOG.md
+---
+[2026-06-04 12:49] commit: docs: ADR-048 Redis-splitsing Upstash/Railway — fase 1 documentatie
+
+Diagnose (2026-06-04): ARQ worker genereert ~10.860 Redis-commando's/uur
+idle (7,84M/maand) door poll_delay=0.5s + health_check_interval=1s —
+structureel onmogelijk binnen Upstash Free Tier (500K/maand).
+
+Beslissing: Upstash voor frontend (rate-limiter + caption-cache, past
+binnen Free Tier zonder worker), Railway-Redis voor ARQ worker (container,
+geen kosten per commando, private netwerk).
+
+Fase 2 (implementatie) volgt na review.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/048-redis-split-upstash-railway.md
+docs/wiki/operations/known-issues.md
 ---
