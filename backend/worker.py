@@ -60,6 +60,13 @@ logger.setLevel(logging.INFO)
 # Force root logger to INFO — zelfde Sentry-override probleem als main.py.
 logging.getLogger().setLevel(logging.INFO)
 
+# TIJDELIJKE DEBUG — verwijderen na diagnose (zie ADR-048)
+_arq_url_raw = os.environ.get("ARQ_REDIS_URL")
+_upstash_url_raw = os.environ.get("UPSTASH_REDIS_URL")
+logger.info("[DEBUG] ARQ_REDIS_URL aanwezig: %s | preview: %s", _arq_url_raw is not None, (_arq_url_raw or "")[:20] or "(leeg)")
+logger.info("[DEBUG] UPSTASH_REDIS_URL aanwezig: %s", _upstash_url_raw is not None)
+# EINDE TIJDELIJKE DEBUG
+
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN_BACKEND"),
     traces_sample_rate=0.1,
