@@ -1,3 +1,5 @@
+[2026-06-05 12:00] fix: ADR-048 fase 3 — dual-stack monkey-patch voor Railway IPv6-only private DNS; debug-logging verwijderd; deployment.md + ADR-048 bijgewerkt met Railway Redis-sectie en IPv6-resolutie-uitleg | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/operations/deployment.md
+---
 [2026-06-05 10:00] fix: ADR-048 fase 2 — UPSTASH_REDIS_URL → ARQ_REDIS_URL in main.py + worker.py; ADR gecorrigeerd (caption-cache.ts bestond niet, API-service ontbrak in fase-2-checklist, worker-als-producent toegevoegd); .env.example gedocumenteerd. Build: 2/2 ✅ (cached). Khidr-acties staan open (Railway Redis aanmaken + env vars instellen). | gewijzigd: backend/main.py, backend/worker.py, backend/.env.example, docs/wiki/decisions/048-redis-split-upstash-railway.md
 ---
 [2026-06-04 11:00] docs: ADR-048 Redis-splitsing Upstash/Railway — diagnose geverifieerd (10.860 commands/uur idle = 7,84M/maand, structureel onmogelijk op Free Tier), beslissing gedocumenteerd, implementatie fase 2 volgt | gewijzigd: docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/INDEX.md, docs/wiki/operations/known-issues.md, docs/LESSONS.md
@@ -5438,4 +5440,35 @@ docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/decisions/048-redis-split-upstash-railway.md
 docs/wiki/operations/known-issues.md
+---
+[2026-06-05 10:19] commit: fix: ADR-048 fase 2 — UPSTASH_REDIS_URL → ARQ_REDIS_URL (API + worker)
+
+Beide ARQ-producers/consumers omgezet naar nieuwe env var ARQ_REDIS_URL:
+- backend/main.py r.121: arq_pool leest ARQ_REDIS_URL (producent)
+- backend/worker.py r.1005: WorkerSettings leest ARQ_REDIS_URL (consument)
+
+Lokale dev-fallback ongewijzigd: ARQ_REDIS_URL unset → arq_pool=None →
+Whisper valt terug op asyncio.create_task, playlists geven 503.
+
+ADR-048 gecorrigeerd:
+- caption-cache.ts (niet-bestaand) verwijderd uit gerelateerde code
+- API-service toegevoegd als verplichte migratiestap (was missing)
+- Worker-als-interne-producent (ctx['redis']) gedocumenteerd
+- Fase-2-checklist: code-stappen afgevinkt, Railway-stappen open voor Khidr
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/decisions/048-redis-split-upstash-railway.md
+---
+[2026-06-05 10:19] precompact: context compaction triggered
+[2026-06-05 11:25] commit: debug: tijdelijke env-var logging in worker voor ADR-048 diagnose
+
+Logt of ARQ_REDIS_URL en UPSTASH_REDIS_URL aanwezig zijn in os.environ
+bij worker-startup, vóór WorkerSettings.redis_settings evaluatie.
+Verwijderen na diagnose.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/worker.py
 ---

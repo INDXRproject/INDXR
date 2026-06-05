@@ -12,7 +12,8 @@ Railway (Docker)                         ←─── FastAPI Python backend
     ▼
 Supabase                                 ←─── PostgreSQL + Auth
 
-Upstash Redis               ←─── Rate limiting (indxr-redis, Frankfurt)
+Upstash Redis               ←─── Rate limiting + caption-cache (REST/HTTPS)
+Railway Redis               ←─── ARQ job queue (TCP, private netwerk)
 Stripe                      ←─── Payments
 PostHog                     ←─── Analytics
 ```
@@ -198,9 +199,9 @@ git add requirements.txt && git commit -m "update: add <package>"
 1. Railway Dashboard → project → **New Service** → GitHub Repo → dezelfde repo
 2. **Root Directory:** `backend`
 3. **Start Command:** `python -m arq worker.WorkerSettings`
-4. Kopieer alle env vars van API-service + voeg toe: `UPSTASH_REDIS_URL` (TCP, zie onder)
+4. Kopieer alle env vars van API-service + voeg toe: `ARQ_REDIS_URL` (Railway-internal TCP URL, zie onder)
 
-> **Gotcha: aanhalingstekens in Railway env-var waarde.** Plak de waarde als pure string, zonder aanhalingstekens — `rediss://default:TOKEN@HOST.upstash.io:6380`, **niet** `'rediss://...'`. Aanhalingstekens worden letterlijk meegenomen en resulteren in een `invalid DSN scheme` RuntimeError bij ARQ startup.
+> **Gotcha: aanhalingstekens in Railway env-var waarde.** Plak de waarde als pure string, zonder aanhalingstekens — `redis://default:TOKEN@redis.railway.internal:6379`, **niet** `'redis://...'`. Aanhalingstekens worden letterlijk meegenomen en resulteren in een `invalid DSN scheme` RuntimeError bij ARQ startup.
 
 ### Environment Variables (Railway — beide services)
 
@@ -228,8 +229,8 @@ SENTRY_DSN_BACKEND=https://...@sentry.io/...
 # Logging
 LOG_LEVEL=INFO                   # DEBUG | INFO | WARNING | ERROR
 
-# ARQ queue verbinding (TCP — verschilt van REST URL hieronder)
-UPSTASH_REDIS_URL=rediss://default:TOKEN@HOST.upstash.io:6380
+# ARQ job queue (TCP — Railway private netwerk, zie sectie Railway Redis hieronder)
+ARQ_REDIS_URL=redis://default:PASSWORD@redis.railway.internal:6379
 
 # Cloudflare R2 object storage (master_transcripts cache + toekomstige audio-upload flow)
 # Account ID staat bovenaan Cloudflare R2 overview. API tokens per bucket aanmaken.
@@ -237,6 +238,18 @@ R2_ACCOUNT_ID=...
 R2_ACCESS_KEY_ID=...             # Access Key ID van indxr-transcripts token
 R2_SECRET_ACCESS_KEY=...         # Secret Access Key van indxr-transcripts token
 ```
+
+### Railway Redis (ARQ job queue)
+
+Railway Redis draait als derde service in hetzelfde Railway-project, naast de API en de worker. De ARQ job queue gebruikt uitsluitend deze instantie — Upstash (REST/HTTPS) is structureel incompatibel met ARQ's polling-model (zie ADR-048).
+
+**Aanmaken (eenmalig):** Railway Dashboard → project → New Service → Database → Redis
+
+**Verbinding:** Railway private netwerk via `redis.railway.internal:6379` — geen publiek internet, geen extra egress-kosten binnen hetzelfde project.
+
+**IPv6-resolutie:** Railway's private netwerk in dit project is IPv6-only. redis-py asyncio doet standaard een IPv4-only DNS-lookup en kan `redis.railway.internal` daarmee niet resolven. Beide Python-services (`main.py` en `worker.py`) bevatten een monkey-patch die `Connection._connection_arguments()` uitbreidt met `family=socket.AF_UNSPEC` (dual-stack lookup). Deze patch is noodzakelijk zolang Railway's private DNS IPv6-only is. Zie ADR-048 en de Railway-docs: https://docs.railway.com/databases/troubleshooting/enotfound-redis-railway-internal
+
+**`ARQ_REDIS_URL`** moet op zowel `agile-creation` (API) als `fortunate-mindfulness` (worker) staan. Beide services zijn producer én/of consumer van dezelfde queue — als ze naar verschillende Redis-instanties wijzen ontstaat een stille queue-mismatch.
 
 ### Environment Variables (Railway — alleen API-service)
 

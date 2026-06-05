@@ -116,6 +116,18 @@ sentry_sdk.init(
     environment=os.getenv("RAILWAY_ENVIRONMENT", "development"),
 )
 
+# Railway private networking is IPv6-only; redis-py asyncio doet standaard een IPv4-only
+# DNS-lookup (asyncio.open_connection zonder family=). ARQ biedt geen hook om connection_class
+# of socket-family door te geven via RedisSettings. Oplossing: patch _connection_arguments()
+# om family=AF_UNSPEC (0) mee te geven → dual-stack lookup, resolvet zowel A als AAAA.
+# Zie: https://docs.railway.com/databases/troubleshooting/enotfound-redis-railway-internal
+# en ADR-048 (docs/wiki/decisions/048-redis-split-upstash-railway.md).
+import socket as _socket
+import redis.asyncio.connection as _redis_async_conn
+_redis_async_conn.Connection._connection_arguments = lambda self: {
+    "host": self.host, "port": self.port, "family": _socket.AF_UNSPEC
+}
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     redis_url = os.getenv("ARQ_REDIS_URL")

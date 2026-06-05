@@ -136,6 +136,11 @@ Bovendien:
 
 Beide lezen dezelfde env var (`UPSTASH_REDIS_URL`, hernoemd naar `ARQ_REDIS_URL`) en moeten naar dezelfde Railway Redis wijzen. Als alleen de worker wordt omgezet maar de API niet, worden jobs geënqueued naar Upstash terwijl de worker op Railway Redis luistert — stille queue-mismatch.
 
+**Correctie 2 (vastgesteld 2026-06-05 — IPv6-resolutieprobleem):** Railway's private netwerk is IPv6-only in dit project. redis-py asyncio (`Connection._connection_arguments`) retourneert standaard alleen `{"host": ..., "port": ...}` zonder `family`, waardoor `asyncio.open_connection()` een IPv4-only DNS-lookup doet. `redis.railway.internal` resolvet dan niet → `socket.gaierror: [Errno -2] Name or service not known`. ARQ biedt geen hook om `connection_class` of socket-family via `RedisSettings` of `create_pool()` door te geven. Oplossing: monkey-patch `Connection._connection_arguments` op module-niveau in beide services om `family=socket.AF_UNSPEC` (waarde 0) mee te geven → dual-stack lookup. Zie Railway-docs: https://docs.railway.com/databases/troubleshooting/enotfound-redis-railway-internal
+
+- [x] `backend/worker.py`: dual-stack monkey-patch toegevoegd na logging-setup (2026-06-05)
+- [x] `backend/main.py`: dual-stack monkey-patch toegevoegd vóór lifespan (2026-06-05)
+
 ### Risico's
 
 - **Railway Redis restarts**: bij Railway container-restart verliest Redis zijn data. Voor ARQ is dit acceptabel: de watchdog (`watchdog_interrupted_jobs`) is gebouwd om precies dit scenario af te handelen — interrupted jobs worden gedetecteerd en opnieuw geënqueued via Supabase state, niet via Redis-persistentie.

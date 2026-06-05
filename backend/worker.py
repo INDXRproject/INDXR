@@ -60,12 +60,17 @@ logger.setLevel(logging.INFO)
 # Force root logger to INFO — zelfde Sentry-override probleem als main.py.
 logging.getLogger().setLevel(logging.INFO)
 
-# TIJDELIJKE DEBUG — verwijderen na diagnose (zie ADR-048)
-_arq_url_raw = os.environ.get("ARQ_REDIS_URL")
-_upstash_url_raw = os.environ.get("UPSTASH_REDIS_URL")
-logger.info("[DEBUG] ARQ_REDIS_URL aanwezig: %s | preview: %s", _arq_url_raw is not None, (_arq_url_raw or "")[:20] or "(leeg)")
-logger.info("[DEBUG] UPSTASH_REDIS_URL aanwezig: %s", _upstash_url_raw is not None)
-# EINDE TIJDELIJKE DEBUG
+# Railway private networking is IPv6-only; redis-py asyncio doet standaard een IPv4-only
+# DNS-lookup (asyncio.open_connection zonder family=). ARQ biedt geen hook om connection_class
+# of socket-family door te geven via RedisSettings. Oplossing: patch _connection_arguments()
+# om family=AF_UNSPEC (0) mee te geven → dual-stack lookup, resolvet zowel A als AAAA.
+# Zie: https://docs.railway.com/databases/troubleshooting/enotfound-redis-railway-internal
+# en ADR-048 (docs/wiki/decisions/048-redis-split-upstash-railway.md).
+import socket as _socket
+import redis.asyncio.connection as _redis_async_conn
+_redis_async_conn.Connection._connection_arguments = lambda self: {
+    "host": self.host, "port": self.port, "family": _socket.AF_UNSPEC
+}
 
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN_BACKEND"),
