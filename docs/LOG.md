@@ -1,3 +1,5 @@
+[2026-06-06 10:00] fix: ADR-048 volledig afgerond — monkey-patch (family=AF_UNSPEC) + debug-logging verwijderd; ADR-048 status geïmplementeerd+geverifieerd (root cause: 3 aparte Railway-projecten); deployment.md: 3-services-in-1-project structuur + YOUTUBE_API_KEY gecorrigeerd naar beide services | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/operations/deployment.md
+---
 [2026-06-05 12:00] fix: ADR-048 fase 3 — dual-stack monkey-patch voor Railway IPv6-only private DNS; debug-logging verwijderd; deployment.md + ADR-048 bijgewerkt met Railway Redis-sectie en IPv6-resolutie-uitleg | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/operations/deployment.md
 ---
 [2026-06-05 10:00] fix: ADR-048 fase 2 — UPSTASH_REDIS_URL → ARQ_REDIS_URL in main.py + worker.py; ADR gecorrigeerd (caption-cache.ts bestond niet, API-service ontbrak in fase-2-checklist, worker-als-producent toegevoegd); .env.example gedocumenteerd. Build: 2/2 ✅ (cached). Khidr-acties staan open (Railway Redis aanmaken + env vars instellen). | gewijzigd: backend/main.py, backend/worker.py, backend/.env.example, docs/wiki/decisions/048-redis-split-upstash-railway.md
@@ -5471,4 +5473,19 @@ Verwijderen na diagnose.
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/worker.py
+---
+[2026-06-05 11:44] commit: fix: dual-stack DNS patch voor Railway IPv6 private networking (ADR-048)
+
+redis-py asyncio Connection._connection_arguments() doet standaard IPv4-only
+DNS-lookup. railway.internal resolvet alleen via IPv6 in dit project.
+ARQ biedt geen hook voor connection_class of socket-family. Oplossing:
+monkey-patch in beide services om family=AF_UNSPEC (dual-stack) mee te geven.
+Verwijdert ook de tijdelijke debug-logging uit commit 62eb075.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/decisions/048-redis-split-upstash-railway.md
+docs/wiki/operations/deployment.md
 ---

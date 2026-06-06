@@ -163,15 +163,18 @@ ADMIN_EMAIL=...
 
 ## Backend (Railway)
 
-Railway draait twee aparte services op hetzelfde Docker image:
+Railway draait **drie services in één project** (`agile-creation`):
 
 | Service | Start Command | Rol |
 |---|---|---|
-| **API** (bestaand) | `uvicorn main:app --host 0.0.0.0 --port 8000` | HTTP endpoints |
-| **Worker** (nieuw, Fase 1.5) | `python -m arq worker.WorkerSettings` | ARQ job verwerking |
+| **API** (`agile-creation`) | `uvicorn main:app --host 0.0.0.0 --port 8000` | HTTP endpoints |
+| **Worker** (`fortunate-mindfulness`) | `python -m arq worker.WorkerSettings` | ARQ job verwerking |
+| **Redis** | — (Railway managed) | ARQ job queue (TCP) |
 
-**Auto-deploy:** Push naar `master` → Railway rebuildt Docker image en deployt beide services.  
-**Dockerfile:** `backend/Dockerfile` (gedeeld door API en worker)  
+API en worker bouwen uit **dezelfde GitHub-repo en dezelfde `/backend` root directory** — het is één codebase met een ander start command. Railway's private networking (`redis.railway.internal`) werkt uitsluitend binnen één project; cross-project private hostnames resolven niet (root-oorzaak van de connectiefouten tijdens ADR-048 implementatie, zie ADR-048).
+
+**Auto-deploy:** Push naar `master` → Railway rebuildt Docker image en deployt API + worker.  
+**Dockerfile:** `backend/Dockerfile` (gedeeld door API en worker — de worker overschrijft de `CMD` via Railway's "Start Command" instelling)  
 **Gezondheidscheck:** `GET /health` → `{"status": "healthy"}` (alleen API-service)
 
 ### Docker Build
@@ -232,8 +235,12 @@ LOG_LEVEL=INFO                   # DEBUG | INFO | WARNING | ERROR
 # ARQ job queue (TCP — Railway private netwerk, zie sectie Railway Redis hieronder)
 ARQ_REDIS_URL=redis://default:PASSWORD@redis.railway.internal:6379
 
-# Cloudflare R2 object storage (master_transcripts cache + toekomstige audio-upload flow)
-# Account ID staat bovenaan Cloudflare R2 overview. API tokens per bucket aanmaken.
+# YouTube Data API (playlist metadata + video details)
+# Nodig voor zowel API als worker: worker roept YouTubeClient.get_video_details aan
+# in run_whisper_job en process_playlist_video.
+YOUTUBE_API_KEY=...
+
+# Cloudflare R2 object storage (master_transcripts cache)
 R2_ACCOUNT_ID=...
 R2_ACCESS_KEY_ID=...             # Access Key ID van indxr-transcripts token
 R2_SECRET_ACCESS_KEY=...         # Secret Access Key van indxr-transcripts token
@@ -247,7 +254,7 @@ Railway Redis draait als derde service in hetzelfde Railway-project, naast de AP
 
 **Verbinding:** Railway private netwerk via `redis.railway.internal:6379` — geen publiek internet, geen extra egress-kosten binnen hetzelfde project.
 
-**IPv6-resolutie:** Railway's private netwerk in dit project is IPv6-only. redis-py asyncio doet standaard een IPv4-only DNS-lookup en kan `redis.railway.internal` daarmee niet resolven. Beide Python-services (`main.py` en `worker.py`) bevatten een monkey-patch die `Connection._connection_arguments()` uitbreidt met `family=socket.AF_UNSPEC` (dual-stack lookup). Deze patch is noodzakelijk zolang Railway's private DNS IPv6-only is. Zie ADR-048 en de Railway-docs: https://docs.railway.com/databases/troubleshooting/enotfound-redis-railway-internal
+**Verbinding werkt alleen binnen één Railway-project.** Private hostnames zoals `redis.railway.internal` zijn niet bereikbaar vanuit andere projecten — cross-project private networking bestaat niet in Railway. API, worker en Redis moeten op hetzelfde canvas zitten (zie ADR-048 voor de volledige root-cause-analyse).
 
 **`ARQ_REDIS_URL`** moet op zowel `agile-creation` (API) als `fortunate-mindfulness` (worker) staan. Beide services zijn producer én/of consumer van dezelfde queue — als ze naar verschillende Redis-instanties wijzen ontstaat een stille queue-mismatch.
 
@@ -260,13 +267,9 @@ DEEPSEEK_API_KEY=...
 # Auth (gedeeld secret Next.js ↔ Python)
 BACKEND_API_SECRET=your-secret-key
 
-# Redis caption cache + rate limiting (REST/HTTPS)
+# Redis caption cache (REST/HTTPS — Upstash)
 UPSTASH_REDIS_REST_URL=https://...upstash.io
 UPSTASH_REDIS_REST_TOKEN=...
-
-# YouTube Data API (playlist metadata)
-YOUTUBE_API_KEY=...
-
 ```
 
 > `SUPABASE_ANON_KEY` hoort **niet** op Railway — alleen op Vercel (Next.js client-side RLS). De worker gebruikt uitsluitend de service role key.

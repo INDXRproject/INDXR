@@ -1,7 +1,7 @@
 # Beslissing 048: Redis-splitsing — Upstash voor frontend, Railway-Redis voor worker
 
-**Status:** Geaccepteerd  
-**Datum:** 2026-06-04  
+**Status:** Geïmplementeerd en geverifieerd  
+**Datum:** 2026-06-04 — volledig operationeel 2026-06-06  
 **Gerelateerde code:** `backend/worker.py`, `backend/main.py`, `packages/shared/src/lib/ratelimit.ts`
 
 ---
@@ -136,10 +136,11 @@ Bovendien:
 
 Beide lezen dezelfde env var (`UPSTASH_REDIS_URL`, hernoemd naar `ARQ_REDIS_URL`) en moeten naar dezelfde Railway Redis wijzen. Als alleen de worker wordt omgezet maar de API niet, worden jobs geënqueued naar Upstash terwijl de worker op Railway Redis luistert — stille queue-mismatch.
 
-**Correctie 2 (vastgesteld 2026-06-05 — IPv6-resolutieprobleem):** Railway's private netwerk is IPv6-only in dit project. redis-py asyncio (`Connection._connection_arguments`) retourneert standaard alleen `{"host": ..., "port": ...}` zonder `family`, waardoor `asyncio.open_connection()` een IPv4-only DNS-lookup doet. `redis.railway.internal` resolvet dan niet → `socket.gaierror: [Errno -2] Name or service not known`. ARQ biedt geen hook om `connection_class` of socket-family via `RedisSettings` of `create_pool()` door te geven. Oplossing: monkey-patch `Connection._connection_arguments` op module-niveau in beide services om `family=socket.AF_UNSPEC` (waarde 0) mee te geven → dual-stack lookup. Zie Railway-docs: https://docs.railway.com/databases/troubleshooting/enotfound-redis-railway-internal
+**Correctie 2 — root-oorzaak connectiefouten (vastgesteld 2026-06-06):** De `Name or service not known`-fout bij het verbinden met `redis.railway.internal` had een infrastructurele oorzaak: de Redis, de API (`agile-creation`) en de worker (`fortunate-mindfulness`) stonden aanvankelijk in **drie aparte Railway-projecten**. Railway's private networking werkt uitsluitend binnen één project — cross-project private hostnames resolven nooit. De `redis.railway.internal` hostname was dus structureel onbereikbaar, ongeacht client-configuratie.
 
-- [x] `backend/worker.py`: dual-stack monkey-patch toegevoegd na logging-setup (2026-06-05)
-- [x] `backend/main.py`: dual-stack monkey-patch toegevoegd vóór lifespan (2026-06-05)
+**Tussenstap (2026-06-05, teruggedraaid):** Een monkey-patch op `redis.asyncio.connection.Connection._connection_arguments` om `family=socket.AF_UNSPEC` mee te geven (dual-stack DNS-lookup) was gebaseerd op de veronderstelling dat het een IPv6-resolutieprobleem was. De patch loste niets op — de werkelijke oorzaak was de cross-project isolatie. De patch is verwijderd in commit na 2026-06-06 (geen dode code).
+
+**Oplossing:** Alle drie services geconsolideerd in één Railway-project (`agile-creation`): API, worker en Redis als drie services op één canvas. Private networking werkt nu correct. Zie Fase 3 hieronder.
 
 ### Risico's
 
@@ -147,13 +148,18 @@ Beide lezen dezelfde env var (`UPSTASH_REDIS_URL`, hernoemd naar `ARQ_REDIS_URL`
 - **Geen persistentie**: ARQ-jobs die in-flight zijn bij een Railway Redis restart gaan verloren. Dit is het bestaande gedrag al (ARQ ack_late bestaat niet, zie LESSONS.md 2026-05-04) — geen regressie.
 - **Maandelijkse kosten**: Railway Redis ~$1–3/maand extra op het Hobby-plan. Binnen de ingestelde spend-limit.
 
-### Fase 2 — implementatie
+### Fase 2 — implementatie (voltooid 2026-06-05)
 
-- [x] `backend/main.py` r.121: `UPSTASH_REDIS_URL` → `ARQ_REDIS_URL` (2026-06-05)
-- [x] `backend/worker.py` r.1005: `UPSTASH_REDIS_URL` → `ARQ_REDIS_URL` (2026-06-05)
-- [x] `backend/.env.example`: `ARQ_REDIS_URL` gedocumenteerd met uitleg (2026-06-05)
-- [ ] **[Khidr]** Railway Redis-service aanmaken in hetzelfde project als de worker (Project → New Service → Redis)
-- [ ] **[Khidr]** `ARQ_REDIS_URL` instellen op service `agile-creation` (API) — waarde: Railway-internal connection string van de nieuwe Redis-service
-- [ ] **[Khidr]** `ARQ_REDIS_URL` instellen op service `fortunate-mindfulness` (worker) — zelfde waarde
-- [ ] **[Khidr]** Beide services herstarten; in worker-logs verifiëren: geen `ResponseError: max requests limit exceeded`, wél `ARQ pool initialized` / worker health-check groen
-- [ ] **[Khidr]** `UPSTASH_REDIS_URL` verwijderen uit beide Railway-services (var bestaat na hernoemen niet meer in code)
+- [x] `backend/main.py` r.121: `UPSTASH_REDIS_URL` → `ARQ_REDIS_URL`
+- [x] `backend/worker.py` r.1005: `UPSTASH_REDIS_URL` → `ARQ_REDIS_URL`
+- [x] `backend/.env.example`: `ARQ_REDIS_URL` gedocumenteerd met uitleg
+
+### Fase 3 — infrastructuurconsolidatie en verificatie (voltooid 2026-06-06)
+
+- [x] **[Khidr]** Railway Redis-service aangemaakt in project `agile-creation` (zelfde canvas als API)
+- [x] **[Khidr]** Worker-service (`fortunate-mindfulness`) verplaatst naar project `agile-creation`
+- [x] **[Khidr]** `ARQ_REDIS_URL` ingesteld op API + worker met Railway-internal connection string (`redis://default:...@redis.railway.internal:6379`)
+- [x] **[Khidr]** Beide services herstart en geverifieerd: worker-logs tonen `redis_version=8.2.1 clients_connected=1`, geen verbindingsfouten
+- [x] **[Khidr]** `UPSTASH_REDIS_URL` verwijderd uit beide Railway-services
+- [x] End-to-end verificatie: playlist van 4 video's succesvol verwerkt — worker pakte alle jobs op, transcripts weggeschreven ✅
+- [x] Monkey-patch (`family=AF_UNSPEC`) verwijderd uit `backend/worker.py` en `backend/main.py` — was overbodig na consolidatie
