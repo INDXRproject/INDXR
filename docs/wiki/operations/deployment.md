@@ -163,13 +163,13 @@ ADMIN_EMAIL=...
 
 ## Backend (Railway)
 
-Railway draait **drie services in één project** (`agile-creation`):
+Railway draait **drie services in één project** (`indxr-backend`):
 
 | Service | Start Command | Rol |
 |---|---|---|
-| **API** (`agile-creation`) | `uvicorn main:app --host 0.0.0.0 --port 8000` | HTTP endpoints |
-| **Worker** (`fortunate-mindfulness`) | `python -m arq worker.WorkerSettings` | ARQ job verwerking |
-| **Redis** | — (Railway managed) | ARQ job queue (TCP) |
+| **API** (`api`) | `uvicorn main:app --host 0.0.0.0 --port 8000` | HTTP endpoints |
+| **Worker** (`worker`) | `python -m arq worker.WorkerSettings` | ARQ job verwerking |
+| **Redis** (`Redis`) | — (Railway managed) | ARQ job queue (TCP) |
 
 API en worker bouwen uit **dezelfde GitHub-repo en dezelfde `/backend` root directory** — het is één codebase met een ander start command. Railway's private networking (`redis.railway.internal`) werkt uitsluitend binnen één project; cross-project private hostnames resolven niet (root-oorzaak van de connectiefouten tijdens ADR-048 implementatie, zie ADR-048).
 
@@ -256,7 +256,7 @@ Railway Redis draait als derde service in hetzelfde Railway-project, naast de AP
 
 **Verbinding werkt alleen binnen één Railway-project.** Private hostnames zoals `redis.railway.internal` zijn niet bereikbaar vanuit andere projecten — cross-project private networking bestaat niet in Railway. API, worker en Redis moeten op hetzelfde canvas zitten (zie ADR-048 voor de volledige root-cause-analyse).
 
-**`ARQ_REDIS_URL`** moet op zowel `agile-creation` (API) als `fortunate-mindfulness` (worker) staan. Beide services zijn producer én/of consumer van dezelfde queue — als ze naar verschillende Redis-instanties wijzen ontstaat een stille queue-mismatch.
+**`ARQ_REDIS_URL`** moet op zowel `api` als `worker` staan. Beide services zijn producer én/of consumer van dezelfde queue — als ze naar verschillende Redis-instanties wijzen ontstaat een stille queue-mismatch.
 
 ### Environment Variables (Railway — alleen API-service)
 

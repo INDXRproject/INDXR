@@ -1,3 +1,5 @@
+[2026-06-06 11:00] docs: Railway service-namen bijgewerkt (agile-creation → api, fortunate-mindfulness → worker, project → indxr-backend) in deployment.md + ADR-048 | gewijzigd: docs/wiki/operations/deployment.md, docs/wiki/decisions/048-redis-split-upstash-railway.md
+---
 [2026-06-06 10:00] fix: ADR-048 volledig afgerond — monkey-patch (family=AF_UNSPEC) + debug-logging verwijderd; ADR-048 status geïmplementeerd+geverifieerd (root cause: 3 aparte Railway-projecten); deployment.md: 3-services-in-1-project structuur + YOUTUBE_API_KEY gecorrigeerd naar beide services | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/operations/deployment.md
 ---
 [2026-06-05 12:00] fix: ADR-048 fase 3 — dual-stack monkey-patch voor Railway IPv6-only private DNS; debug-logging verwijderd; deployment.md + ADR-048 bijgewerkt met Railway Redis-sectie en IPv6-resolutie-uitleg | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/operations/deployment.md
@@ -5481,6 +5483,21 @@ DNS-lookup. railway.internal resolvet alleen via IPv6 in dit project.
 ARQ biedt geen hook voor connection_class of socket-family. Oplossing:
 monkey-patch in beide services om family=AF_UNSPEC (dual-stack) mee te geven.
 Verwijdert ook de tijdelijke debug-logging uit commit 62eb075.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/decisions/048-redis-split-upstash-railway.md
+docs/wiki/operations/deployment.md
+---
+[2026-06-06 09:51] commit: fix: ADR-048 afronding — monkey-patch + debug-logging verwijderd
+
+Root cause was cross-project Railway isolatie, niet IPv6-resolutie.
+Na consolidatie naar één project is de patch overbodig.
+ADR-048: status → geïmplementeerd+geverifieerd, Fase 3 afgevinkt.
+deployment.md: 3-services-in-1-project structuur, YOUTUBE_API_KEY
+gecorrigeerd naar beide services (worker gebruikt YouTubeClient).
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py

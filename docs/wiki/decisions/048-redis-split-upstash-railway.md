@@ -10,7 +10,7 @@
 
 ### Incident: ARQ worker platgelegd door Upstash quota
 
-Vanaf 2026-05-06 crashte de ARQ worker (Railway-service `fortunate-mindfulness`) bij elke herstart met:
+Vanaf 2026-05-06 crashte de ARQ worker (Railway-service `worker`, destijds `fortunate-mindfulness`) bij elke herstart met:
 
 ```
 ResponseError: max requests limit exceeded
@@ -119,7 +119,7 @@ Bovendien:
 
 ### Wat verandert
 
-- Railway-service `fortunate-mindfulness` krijgt nieuwe env var `ARQ_REDIS_URL` (of `WORKER_REDIS_URL`) die wijst naar de interne Railway Redis instantie
+- Railway-service `worker` krijgt nieuwe env var `ARQ_REDIS_URL` (of `WORKER_REDIS_URL`) die wijst naar de interne Railway Redis instantie
 - `WorkerSettings.redis_settings` in `backend/worker.py` leest de nieuwe var in plaats van `UPSTASH_REDIS_URL`
 - De Upstash env vars (`UPSTASH_REDIS_URL`) in de worker-service worden verwijderd om verwarring te voorkomen
 - Upstash env vars in Vercel (`UPSTASH_REDIS_REST_URL` + `_TOKEN`) blijven ongewijzigd
@@ -136,11 +136,11 @@ Bovendien:
 
 Beide lezen dezelfde env var (`UPSTASH_REDIS_URL`, hernoemd naar `ARQ_REDIS_URL`) en moeten naar dezelfde Railway Redis wijzen. Als alleen de worker wordt omgezet maar de API niet, worden jobs geënqueued naar Upstash terwijl de worker op Railway Redis luistert — stille queue-mismatch.
 
-**Correctie 2 — root-oorzaak connectiefouten (vastgesteld 2026-06-06):** De `Name or service not known`-fout bij het verbinden met `redis.railway.internal` had een infrastructurele oorzaak: de Redis, de API (`agile-creation`) en de worker (`fortunate-mindfulness`) stonden aanvankelijk in **drie aparte Railway-projecten**. Railway's private networking werkt uitsluitend binnen één project — cross-project private hostnames resolven nooit. De `redis.railway.internal` hostname was dus structureel onbereikbaar, ongeacht client-configuratie.
+**Correctie 2 — root-oorzaak connectiefouten (vastgesteld 2026-06-06):** De `Name or service not known`-fout bij het verbinden met `redis.railway.internal` had een infrastructurele oorzaak: de Redis, de API (`api`) en de worker (`worker`) stonden aanvankelijk in **drie aparte Railway-projecten** (destijds: `agile-creation`, `fortunate-mindfulness`, en een separate Redis-project). Railway's private networking werkt uitsluitend binnen één project — cross-project private hostnames resolven nooit. De `redis.railway.internal` hostname was dus structureel onbereikbaar, ongeacht client-configuratie.
 
 **Tussenstap (2026-06-05, teruggedraaid):** Een monkey-patch op `redis.asyncio.connection.Connection._connection_arguments` om `family=socket.AF_UNSPEC` mee te geven (dual-stack DNS-lookup) was gebaseerd op de veronderstelling dat het een IPv6-resolutieprobleem was. De patch loste niets op — de werkelijke oorzaak was de cross-project isolatie. De patch is verwijderd in commit na 2026-06-06 (geen dode code).
 
-**Oplossing:** Alle drie services geconsolideerd in één Railway-project (`agile-creation`): API, worker en Redis als drie services op één canvas. Private networking werkt nu correct. Zie Fase 3 hieronder.
+**Oplossing:** Alle drie services geconsolideerd in één Railway-project (`indxr-backend`): `api`, `worker` en `Redis` als drie services op één canvas. Private networking werkt nu correct. Zie Fase 3 hieronder.
 
 ### Risico's
 
@@ -156,8 +156,8 @@ Beide lezen dezelfde env var (`UPSTASH_REDIS_URL`, hernoemd naar `ARQ_REDIS_URL`
 
 ### Fase 3 — infrastructuurconsolidatie en verificatie (voltooid 2026-06-06)
 
-- [x] **[Khidr]** Railway Redis-service aangemaakt in project `agile-creation` (zelfde canvas als API)
-- [x] **[Khidr]** Worker-service (`fortunate-mindfulness`) verplaatst naar project `agile-creation`
+- [x] **[Khidr]** Railway Redis-service (`Redis`) aangemaakt in project `indxr-backend` (zelfde canvas als API)
+- [x] **[Khidr]** Worker-service (`worker`) geconsolideerd in project `indxr-backend`
 - [x] **[Khidr]** `ARQ_REDIS_URL` ingesteld op API + worker met Railway-internal connection string (`redis://default:...@redis.railway.internal:6379`)
 - [x] **[Khidr]** Beide services herstart en geverifieerd: worker-logs tonen `redis_version=8.2.1 clients_connected=1`, geen verbindingsfouten
 - [x] **[Khidr]** `UPSTASH_REDIS_URL` verwijderd uit beide Railway-services
