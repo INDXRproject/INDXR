@@ -33,6 +33,8 @@
   --color-success-fg: var(--success-fg);
   /* Semantic — warning */
   --color-warning: var(--warning);
+  --color-warning-hover: var(--warning-hover);
+  --color-warning-border: var(--warning-border);
   --color-warning-subtle: var(--warning-subtle);
   --color-warning-fg: var(--warning-fg);
   /* Semantic — error */
@@ -99,6 +101,8 @@
   --success-fg: oklch(0.350 0.080 150);
   /* Semantic — warning */
   --warning: oklch(0.760 0.140 80);
+  --warning-hover: oklch(0.700 0.148 78);
+  --warning-border: oklch(0.660 0.145 75);
   --warning-subtle: oklch(0.965 0.040 85);
   --warning-fg: oklch(0.420 0.090 65);
   /* Semantic — error */
@@ -165,6 +169,8 @@
   --success-fg: oklch(0.860 0.110 150);
   /* Semantic — warning */
   --warning: oklch(0.800 0.140 80);
+  --warning-hover: oklch(0.845 0.130 80);
+  --warning-border: oklch(0.720 0.138 78);
   --warning-subtle: oklch(0.310 0.070 80);
   --warning-fg: oklch(0.890 0.100 80);
   /* Semantic — error */

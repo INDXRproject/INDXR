@@ -127,7 +127,7 @@ export function RagExportView({
       </div>
 
       {/* New export */}
-      <div className="rounded-xl border border-border bg-[var(--surface)] p-6 space-y-4">
+      <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-fg mb-0.5">Export New Preset</h2>
           <p className="text-xs text-fg-muted">

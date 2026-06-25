@@ -35,7 +35,7 @@ export function MobileTabBar({ messagesUnread = 0 }: MobileTabBarProps) {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--surface)] border-t border-[var(--border)]"
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-border"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       aria-label="Mobile navigation"
     >
@@ -50,15 +50,15 @@ export function MobileTabBar({ messagesUnread = 0 }: MobileTabBarProps) {
               className={cn(
                 "flex-1 flex flex-col items-center justify-center gap-0.5 relative transition-colors",
                 active
-                  ? "text-[var(--accent)] border-t-2 border-[var(--accent)]"
-                  : "text-[var(--fg-muted)] border-t-2 border-transparent hover:text-[var(--fg)]"
+                  ? "text-accent border-t-2 border-accent"
+                  : "text-fg-muted border-t-2 border-transparent hover:text-fg"
               )}
               aria-current={active ? "page" : undefined}
             >
               <div className="relative">
                 <Icon className="h-5 w-5" />
                 {tab.label === "Messages" && messagesUnread > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-[var(--accent)] text-[var(--fg-on-accent)] text-[10px] font-medium flex items-center justify-center leading-none">
+                  <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-accent text-fg-on-accent text-[10px] font-medium flex items-center justify-center leading-none">
                     {messagesUnread > 9 ? "9+" : messagesUnread}
                   </span>
                 )}

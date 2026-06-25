@@ -38,16 +38,16 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
   };
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4">
+    <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
       <div>
-        <h2 className="text-[var(--fg)] font-semibold mb-1">Developer Exports</h2>
-        <p className="text-[var(--fg-muted)] text-sm">
+        <h2 className="text-fg font-semibold mb-1">Developer Exports</h2>
+        <p className="text-fg-muted text-sm">
           Configure the default chunk size for RAG JSON exports.
         </p>
       </div>
 
-      <div className="border-t border-[var(--border)]/50 pt-4 space-y-3">
-        <p className="text-sm font-medium text-[var(--fg)]">Chunk size</p>
+      <div className="border-t border-border/50 pt-4 space-y-3">
+        <p className="text-sm font-medium text-fg">Chunk size</p>
         <div className="space-y-2">
           {CHUNK_OPTIONS.map((option) => (
             <label
@@ -55,7 +55,7 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
               className={`flex items-center justify-between gap-4 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
                 chunkSize === option.value
                   ? "border-primary/50 bg-accent/5"
-                  : "border-[var(--border)] hover:border-[var(--border)] hover:bg-surface-elevated/40"
+                  : "border-border hover:border-border hover:bg-surface-elevated/40"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -69,7 +69,7 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
                   className="accent-primary size-4"
                 />
                 <div>
-                  <div className="flex items-center gap-2 text-sm font-medium text-[var(--fg)]">
+                  <div className="flex items-center gap-2 text-sm font-medium text-fg">
                     {option.label}
                     <span className="text-xs text-fg-muted font-normal">({option.sub})</span>
                     {savedValue === option.value && (
@@ -82,7 +82,7 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
             </label>
           ))}
         </div>
-        <p className="text-xs text-[var(--fg-muted)]">
+        <p className="text-xs text-fg-muted">
           Smaller chunks improve precision; larger chunks preserve more context per embedding.{" "}
           <a
             href="/blog/chunk-youtube-transcripts-for-rag"

@@ -63,7 +63,7 @@ export function AppTopbar() {
           </Button>
           {UNREAD_COUNT > 0 && (
             <span
-              className="pointer-events-none absolute top-2 right-2 h-2 w-2 rounded-full bg-[var(--accent)]"
+              className="pointer-events-none absolute top-2 right-2 h-2 w-2 rounded-full bg-accent"
               aria-hidden="true"
             />
           )}
@@ -71,10 +71,10 @@ export function AppTopbar() {
 
         <a
           href="/dashboard/billing"
-          className="flex items-center gap-1.5 px-2 h-9 rounded-md text-sm text-[var(--fg-subtle)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)] transition-colors"
+          className="flex items-center gap-1.5 px-2 h-9 rounded-md text-sm text-fg-subtle hover:text-fg hover:bg-surface-elevated transition-colors"
         >
-          <CircleDollarSign className="size-5 text-[var(--accent)] shrink-0" />
-          <span className="bg-[var(--surface-elevated)] text-[var(--fg-muted)] px-1.5 py-0.5 rounded text-xs font-medium tabular-nums">
+          <CircleDollarSign className="size-5 text-accent shrink-0" />
+          <span className="bg-surface-elevated text-fg-muted px-1.5 py-0.5 rounded text-xs font-medium tabular-nums">
             {credits ?? 0}
           </span>
         </a>

@@ -75,17 +75,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-semibold text-[var(--fg)]">Home</h1>
+      <h1 className="text-2xl font-semibold text-fg">Home</h1>
 
       {/* ── Section 1: Credits balance ── */}
-      <Card className="bg-[var(--surface)] border-[var(--border)]">
+      <Card className="bg-surface border-border">
         <CardContent className="pt-6">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-sm text-[var(--fg-muted)] mb-1">Credits remaining</p>
+              <p className="text-sm text-fg-muted mb-1">Credits remaining</p>
               {/* KHIDR: schrijf final copy voor credit balance card */}
-              <p className="text-4xl font-semibold text-[var(--fg)] tabular-nums">{creditsBalance}</p>
-              <p className="text-xs text-[var(--fg-muted)] mt-1">1 credit = 1 minute of AI transcription</p>
+              <p className="text-4xl font-semibold text-fg tabular-nums">{creditsBalance}</p>
+              <p className="text-xs text-fg-muted mt-1">1 credit = 1 minute of AI transcription</p>
             </div>
             <Link href="/dashboard/billing">
               <Button variant="outline" size="sm">Buy more</Button>
@@ -95,16 +95,16 @@ export default async function DashboardPage() {
       </Card>
 
       {/* ── Section 2: Transcribe CTA ── */}
-      <Card className="bg-[var(--surface)] border-[var(--border)]">
+      <Card className="bg-surface border-border">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-[var(--radius)] bg-[var(--accent-subtle)] flex items-center justify-center shrink-0">
-                <AudioLines className="h-5 w-5 text-[var(--accent)]" />
+              <div className="h-10 w-10 rounded bg-accent-subtle flex items-center justify-center shrink-0">
+                <AudioLines className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="font-medium text-[var(--fg)]">Transcribe a video</p>
-                <p className="text-sm text-[var(--fg-muted)]">Paste a YouTube URL to extract the transcript</p>
+                <p className="font-medium text-fg">Transcribe a video</p>
+                <p className="text-sm text-fg-muted">Paste a YouTube URL to extract the transcript</p>
               </div>
             </div>
             <Link href="/dashboard/transcribe" className="shrink-0">
@@ -117,25 +117,25 @@ export default async function DashboardPage() {
       {/* ── Section 3: Last messages preview ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-medium text-[var(--fg)] flex items-center gap-2">
-            <Inbox className="h-4 w-4 text-[var(--fg-muted)]" />
+          <h2 className="text-base font-medium text-fg flex items-center gap-2">
+            <Inbox className="h-4 w-4 text-fg-muted" />
             Messages
           </h2>
-          <Link href="/dashboard/messages" className="text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] flex items-center gap-1 transition-colors">
+          <Link href="/dashboard/messages" className="text-sm text-fg-muted hover:text-fg flex items-center gap-1 transition-colors">
             View all <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
         <div className="space-y-2">
           {MOCK_MESSAGES.slice(0, 2).map((msg) => (
             <Link key={msg.id} href="/dashboard/messages">
-              <Card className={`bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--surface-elevated)] transition-colors cursor-pointer ${!msg.read ? "border-l-2 border-l-[var(--accent)]" : ""}`}>
+              <Card className={`bg-surface border-border hover:bg-surface-elevated transition-colors cursor-pointer ${!msg.read ? "border-l-2 border-l-accent" : ""}`}>
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-[var(--fg)] truncate">{msg.title}</p>
-                      <p className="text-xs text-[var(--fg-muted)] truncate mt-0.5">{msg.body}</p>
+                      <p className="text-sm font-medium text-fg truncate">{msg.title}</p>
+                      <p className="text-xs text-fg-muted truncate mt-0.5">{msg.body}</p>
                     </div>
-                    <span className="text-xs text-[var(--fg-muted)] shrink-0 mt-0.5">{msg.date}</span>
+                    <span className="text-xs text-fg-muted shrink-0 mt-0.5">{msg.date}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -147,28 +147,28 @@ export default async function DashboardPage() {
       {/* ── Section 4: Recent transcripts ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-medium text-[var(--fg)] flex items-center gap-2">
-            <Library className="h-4 w-4 text-[var(--fg-muted)]" />
+          <h2 className="text-base font-medium text-fg flex items-center gap-2">
+            <Library className="h-4 w-4 text-fg-muted" />
             Recent transcripts
           </h2>
-          <Link href="/dashboard/library" className="text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] flex items-center gap-1 transition-colors">
+          <Link href="/dashboard/library" className="text-sm text-fg-muted hover:text-fg flex items-center gap-1 transition-colors">
             Library <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
         {recentTranscripts.length === 0 ? (
-          <Card className="bg-[var(--surface)] border-[var(--border)]">
+          <Card className="bg-surface border-border">
             <CardContent className="py-6 text-center">
-              <p className="text-sm text-[var(--fg-muted)]">No transcripts yet — try transcribing your first video.</p>
+              <p className="text-sm text-fg-muted">No transcripts yet — try transcribing your first video.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-2">
             {recentTranscripts.map((t) => (
               <Link key={t.id} href={`/dashboard/library/${t.id}`}>
-                <Card className="bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--surface-elevated)] transition-colors cursor-pointer">
+                <Card className="bg-surface border-border hover:bg-surface-elevated transition-colors cursor-pointer">
                   <CardContent className="py-3 px-4 flex items-center justify-between gap-2">
-                    <p className="text-sm text-[var(--fg)] truncate">{t.video_title ?? "Untitled transcript"}</p>
-                    <span className="text-xs text-[var(--fg-muted)] shrink-0">{formatDate(t.created_at)}</span>
+                    <p className="text-sm text-fg truncate">{t.video_title ?? "Untitled transcript"}</p>
+                    <span className="text-xs text-fg-muted shrink-0">{formatDate(t.created_at)}</span>
                   </CardContent>
                 </Card>
               </Link>
@@ -179,21 +179,21 @@ export default async function DashboardPage() {
 
       {/* ── Section 5: Library statistics ── */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="bg-[var(--surface)] border-[var(--border)]">
+        <Card className="bg-surface border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--fg-muted)]">Total transcripts</CardTitle>
+            <CardTitle className="text-sm font-medium text-fg-muted">Total transcripts</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold text-[var(--fg)] tabular-nums">{transcriptCount}</p>
+            <p className="text-3xl font-semibold text-fg tabular-nums">{transcriptCount}</p>
           </CardContent>
         </Card>
-        <Card className="bg-[var(--surface)] border-[var(--border)]">
+        <Card className="bg-surface border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--fg-muted)]">Collections</CardTitle>
+            <CardTitle className="text-sm font-medium text-fg-muted">Collections</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold text-[var(--fg)] tabular-nums">{collectionsCount}</p>
-            <Link href="/dashboard/library" className="text-xs text-[var(--fg-muted)] hover:text-[var(--fg)] mt-1 block transition-colors">
+            <p className="text-3xl font-semibold text-fg tabular-nums">{collectionsCount}</p>
+            <Link href="/dashboard/library" className="text-xs text-fg-muted hover:text-fg mt-1 block transition-colors">
               View library →
             </Link>
           </CardContent>

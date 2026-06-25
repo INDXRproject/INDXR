@@ -116,17 +116,17 @@ export function Header() {
 
         {/* Desktop nav — centered */}
         <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
-          <a href={marketingHref('/pricing')} className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+          <a href={marketingHref('/pricing')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-accent">
             Pricing
           </a>
-          <a href={marketingHref('/docs')} className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+          <a href={marketingHref('/docs')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-accent">
             Docs
           </a>
-          <a href={marketingHref('/articles')} className="text-sm font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+          <a href={marketingHref('/articles')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-accent">
             Articles
           </a>
           <a href={marketingHref('/transcribe')}>
-            <Button size="sm" className="bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]">
+            <Button size="sm" className="bg-accent text-fg-on-accent hover:bg-accent-hover">
               Try it free
             </Button>
           </a>
@@ -137,7 +137,7 @@ export function Header() {
           <ThemeToggle />
           {user ? (
             <a href={appHref('/dashboard')}>
-              <Button size="sm" className="bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]">
+              <Button size="sm" className="bg-accent text-fg-on-accent hover:bg-accent-hover">
                 Go to app
               </Button>
             </a>
@@ -167,32 +167,32 @@ export function Header() {
               <div className="flex flex-col gap-6 mt-8">
                 <nav className="flex flex-col gap-4">
                   <SheetClose asChild>
-                    <a href={marketingHref('/pricing')} className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+                    <a href={marketingHref('/pricing')} className="text-lg font-medium text-fg-subtle transition-colors hover:text-accent">
                       Pricing
                     </a>
                   </SheetClose>
                   <SheetClose asChild>
-                    <a href={marketingHref('/docs')} className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+                    <a href={marketingHref('/docs')} className="text-lg font-medium text-fg-subtle transition-colors hover:text-accent">
                       Docs
                     </a>
                   </SheetClose>
                   <SheetClose asChild>
-                    <a href={marketingHref('/articles')} className="text-lg font-medium text-[var(--fg-subtle)] transition-colors hover:text-[var(--accent)]">
+                    <a href={marketingHref('/articles')} className="text-lg font-medium text-fg-subtle transition-colors hover:text-accent">
                       Articles
                     </a>
                   </SheetClose>
                   <SheetClose asChild>
-                    <a href={marketingHref('/transcribe')} className="text-lg font-medium text-[var(--accent)]">
+                    <a href={marketingHref('/transcribe')} className="text-lg font-medium text-accent">
                       Try it free
                     </a>
                   </SheetClose>
                 </nav>
-                <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border)]">
+                <div className="flex flex-col gap-3 pt-4 border-t border-border">
                   {user ? (
                     <>
                       <SheetClose asChild>
                         <a href={appHref('/dashboard')} className="w-full">
-                          <Button className="w-full bg-[var(--accent)] text-[var(--fg-on-accent)]">Go to app</Button>
+                          <Button className="w-full bg-accent text-fg-on-accent">Go to app</Button>
                         </a>
                       </SheetClose>
                       <SheetClose asChild>

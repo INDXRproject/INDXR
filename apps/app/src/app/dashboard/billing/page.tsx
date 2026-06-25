@@ -34,22 +34,22 @@ export default async function BillingPage() {
 
       <div className="grid gap-6">
         {/* Credits Card */}
-        <Card className="bg-[var(--surface)] border-[var(--border)] relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-10 blur-xl rounded-full bg-[var(--accent)]/50 w-32 h-32 -mr-10 -mt-10" />
+        <Card className="bg-surface border-border relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-10 blur-xl rounded-full bg-accent/50 w-32 h-32 -mr-10 -mt-10" />
           <CardHeader>
-            <CardTitle className="text-[var(--fg)]">Credits Balance</CardTitle>
-            <CardDescription className="text-[var(--fg-subtle)]">
+            <CardTitle className="text-fg">Credits Balance</CardTitle>
+            <CardDescription className="text-fg-subtle">
               Your available credits for transcription
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
               <div className="flex items-end gap-2">
-                <span className="text-6xl font-bold tracking-tighter text-[var(--fg)]">{credits}</span>
-                <span className="text-lg text-[var(--fg-subtle)] font-medium mb-1">credits</span>
+                <span className="text-6xl font-bold tracking-tighter text-fg">{credits}</span>
+                <span className="text-lg text-fg-subtle font-medium mb-1">credits</span>
               </div>
               <Button 
-                className="w-fit bg-[var(--accent)] text-fg hover:bg-[var(--accent-hover)] active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
+                className="w-fit bg-accent text-fg hover:bg-accent-hover active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
                 asChild
               >
                 <Link href="#packages">Buy Credits</Link>

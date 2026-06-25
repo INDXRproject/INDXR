@@ -769,7 +769,7 @@ export function TranscriptViewer({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowVideo(true)}
-                    className="gap-2 h-8 hover:bg-[var(--accent)] hover:text-fg transition-all duration-150"
+                    className="gap-2 h-8 hover:bg-accent hover:text-fg transition-all duration-150"
                   >
                     <Video className="h-4 w-4" />
                     <span className="hidden sm:inline">Show Video</span>
@@ -796,7 +796,7 @@ export function TranscriptViewer({
                     <span className="text-xs font-medium text-success mr-1 hidden sm:inline">Summary ready!</span>
                     <Button
                       size="sm"
-                      className="h-8 text-xs px-3 bg-[var(--warning)] text-fg hover:bg-[var(--color-warning-hover)] border border-[var(--color-warning-border)]"
+                      className="h-8 text-xs px-3 bg-warning text-fg hover:bg-warning-hover border border-warning-border"
                       onClick={() => {
                         router.replace(`?tab=summary`);
                       }}
@@ -808,7 +808,7 @@ export function TranscriptViewer({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 gap-1.5 px-3 text-xs font-medium hover:bg-[var(--accent)] hover:text-fg mr-2 transition-all duration-150 border border-border"
+                    className="h-8 gap-1.5 px-3 text-xs font-medium hover:bg-accent hover:text-fg mr-2 transition-all duration-150 border border-border"
                     disabled={isSummarizing || !user}
                     onClick={() => {
                       if (!user) {
@@ -848,7 +848,7 @@ export function TranscriptViewer({
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 gap-2 hover:bg-[var(--accent)] hover:text-fg transition-all duration-150">
+                  <Button variant="outline" size="sm" className="h-8 gap-2 hover:bg-accent hover:text-fg transition-all duration-150">
                     <Download className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Export</span>
                   </Button>
@@ -1018,7 +1018,7 @@ export function TranscriptViewer({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={cn("h-8 w-8 p-0", editor?.isActive("bold") && "bg-accent text-accent-foreground")}
+                      className={cn("h-8 w-8 p-0", editor?.isActive("bold") && "bg-accent text-fg-on-accent")}
                       onClick={() => editor?.chain().focus().toggleBold().run()}
                       title="Bold"
                     >
@@ -1027,7 +1027,7 @@ export function TranscriptViewer({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={cn("h-8 w-8 p-0", editor?.isActive("italic") && "bg-accent text-accent-foreground")}
+                      className={cn("h-8 w-8 p-0", editor?.isActive("italic") && "bg-accent text-fg-on-accent")}
                       onClick={() => editor?.chain().focus().toggleItalic().run()}
                       title="Italic"
                     >
@@ -1036,7 +1036,7 @@ export function TranscriptViewer({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={cn("h-8 w-8 p-0", editor?.isActive("underline") && "bg-accent text-accent-foreground")}
+                      className={cn("h-8 w-8 p-0", editor?.isActive("underline") && "bg-accent text-fg-on-accent")}
                       onClick={() => editor?.chain().focus().toggleUnderline().run()}
                       title="Underline"
                     >
@@ -1048,7 +1048,7 @@ export function TranscriptViewer({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={cn("h-8 w-8 p-0", editor?.isActive("bulletList") && "bg-accent text-accent-foreground")}
+                      className={cn("h-8 w-8 p-0", editor?.isActive("bulletList") && "bg-accent text-fg-on-accent")}
                       onClick={() => editor?.chain().focus().toggleBulletList().run()}
                       title="Bullet List"
                     >
@@ -1057,7 +1057,7 @@ export function TranscriptViewer({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={cn("h-8 w-8 p-0", editor?.isActive("orderedList") && "bg-accent text-accent-foreground")}
+                      className={cn("h-8 w-8 p-0", editor?.isActive("orderedList") && "bg-accent text-fg-on-accent")}
                       onClick={() => editor?.chain().focus().toggleOrderedList().run()}
                       title="Numbered List"
                     >
@@ -1096,7 +1096,7 @@ export function TranscriptViewer({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleSummarizeConfirm}
-              className="bg-[var(--warning)] hover:bg-[var(--warning)]/90 text-fg gap-2"
+              className="bg-warning hover:bg-warning/90 text-fg gap-2"
             >
               <Sparkles className="h-4 w-4" />
               Generate Summary

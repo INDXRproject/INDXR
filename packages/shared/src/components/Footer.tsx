@@ -22,7 +22,7 @@ const learn = [
 function FooterColumn({ title, links }: { title: string; links: { href: string; label: string }[] }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-[var(--fg)] mb-4">
+      <h3 className="text-xs font-semibold uppercase tracking-widest text-fg mb-4">
         {title}
       </h3>
       <ul className="flex flex-col gap-2">
@@ -30,7 +30,7 @@ function FooterColumn({ title, links }: { title: string; links: { href: string; 
           <li key={link.href}>
             <a
               href={marketingHref(link.href)}
-              className="text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+              className="text-sm text-fg-muted hover:text-fg transition-colors"
             >
               {link.label}
             </a>
@@ -43,31 +43,31 @@ function FooterColumn({ title, links }: { title: string; links: { href: string; 
 
 export function Footer() {
   return (
-    <footer className="border-t border-[var(--border)] bg-[var(--surface)]">
+    <footer className="border-t border-border bg-surface">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
           <FooterColumn title="Export Formats" links={exportFormats} />
           <FooterColumn title="Learn" links={learn} />
         </div>
 
-        <div className="mt-12 pt-6 border-t border-[var(--border)] flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[var(--fg-muted)]">
+        <div className="mt-12 pt-6 border-t border-border flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-fg-muted">
           <span>© 2026 INDXR.AI</span>
-          <a href={marketingHref('/pricing')} className="hover:text-[var(--fg)] transition-colors">
+          <a href={marketingHref('/pricing')} className="hover:text-fg transition-colors">
             Pricing
           </a>
-          <a href={marketingHref('/docs')} className="hover:text-[var(--fg)] transition-colors">
+          <a href={marketingHref('/docs')} className="hover:text-fg transition-colors">
             Docs
           </a>
-          <a href={marketingHref('/about')} className="hover:text-[var(--fg)] transition-colors">
+          <a href={marketingHref('/about')} className="hover:text-fg transition-colors">
             About
           </a>
-          <a href={marketingHref('/privacy')} className="hover:text-[var(--fg)] transition-colors">
+          <a href={marketingHref('/privacy')} className="hover:text-fg transition-colors">
             Privacy
           </a>
-          <a href={marketingHref('/terms')} className="hover:text-[var(--fg)] transition-colors">
+          <a href={marketingHref('/terms')} className="hover:text-fg transition-colors">
             Terms
           </a>
-          <a href={marketingHref('/contact')} className="hover:text-[var(--fg)] transition-colors">
+          <a href={marketingHref('/contact')} className="hover:text-fg transition-colors">
             Contact
           </a>
         </div>

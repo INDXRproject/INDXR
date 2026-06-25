@@ -49,8 +49,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           className={cn(
             "pb-3 border-b-2 px-2 transition-colors",
             activeTab === "original"
-              ? "border-[var(--accent)] font-medium text-fg"
-              : "border-transparent text-[var(--fg-muted)] hover:text-fg"
+              ? "border-accent font-medium text-fg"
+              : "border-transparent text-fg-muted hover:text-fg"
           )}
         >
           Original
@@ -61,8 +61,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             className={cn(
               "pb-3 border-b-2 px-2 transition-colors",
               activeTab === "edited"
-                ? "border-[var(--accent)] font-medium text-fg"
-                : "border-transparent text-[var(--fg-muted)] hover:text-fg"
+                ? "border-accent font-medium text-fg"
+                : "border-transparent text-fg-muted hover:text-fg"
             )}
           >
             Edited
@@ -74,8 +74,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             className={cn(
               "pb-3 border-b-2 px-2 transition-colors",
               activeTab === "developer"
-                ? "border-[var(--accent)] font-medium text-fg"
-                : "border-transparent text-[var(--fg-muted)] hover:text-fg"
+                ? "border-accent font-medium text-fg"
+                : "border-transparent text-fg-muted hover:text-fg"
             )}
           >
             Developer <span className="text-accent text-[10px] font-bold align-super">✦</span>
@@ -88,8 +88,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
               className={cn(
                 "pb-3 border-b-2 px-2 transition-colors",
                 activeTab === "summary"
-                  ? "border-[var(--accent)] font-medium text-fg"
-                  : "border-transparent text-[var(--fg-muted)] hover:text-fg"
+                  ? "border-accent font-medium text-fg"
+                  : "border-transparent text-fg-muted hover:text-fg"
               )}
             >
               AI Summary
@@ -100,8 +100,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
                 className={cn(
                   "pb-3 border-b-2 px-2 transition-colors",
                   activeTab === "summary_edited"
-                    ? "border-[var(--accent)] font-medium text-fg"
-                    : "border-transparent text-[var(--fg-muted)] hover:text-fg"
+                    ? "border-accent font-medium text-fg"
+                    : "border-transparent text-fg-muted hover:text-fg"
                 )}
               >
                 Edited Summary

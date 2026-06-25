@@ -313,17 +313,17 @@ export function AppSidebar() {
   }
 
   const selectedId = getSelectedId()
-  const dropHighlight = "ring-2 ring-[var(--accent)] ring-inset bg-[var(--accent)]/10"
+  const dropHighlight = "ring-2 ring-accent ring-inset bg-accent/10"
 
   return (
     <TooltipProvider delayDuration={300}>
       <Sidebar collapsible="none" className={cn("h-full border-r", collapsed ? "w-14" : "w-64")}>
         <SidebarContent>
           {/* Collapse toggle button — desktop only; mobile uses SidebarTrigger in AppTopbar */}
-          <div className="hidden md:block px-3 py-2 border-b border-[var(--border)]/50">
+          <div className="hidden md:block px-3 py-2 border-b border-border/50">
             <button
               onClick={handleToggleCollapse}
-              className="h-8 w-8 flex items-center justify-center rounded text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)] transition-colors cursor-pointer"
+              className="h-8 w-8 flex items-center justify-center rounded text-fg-muted hover:text-fg hover:bg-surface-elevated transition-colors cursor-pointer"
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {collapsed ? (
@@ -349,8 +349,8 @@ export function AppSidebar() {
                           className={cn(
                             "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                             isActive 
-                              ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
-                              : "text-[var(--fg-subtle)] [&_svg]:text-[var(--fg-muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--fg)]",
+                              ? "bg-accent-subtle text-accent [&_svg]:text-accent" 
+                              : "text-fg-subtle [&_svg]:text-fg-muted hover:bg-surface-elevated hover:text-fg",
                             collapsed && "justify-center"
                           )}
                           title={collapsed ? item.title : undefined}
@@ -382,8 +382,8 @@ export function AppSidebar() {
                         className={cn(
                           "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                           pathname === "/dashboard/library" || pathname?.startsWith("/dashboard/library/")
-                            ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
-                            : "text-[var(--fg-subtle)] [&_svg]:text-[var(--fg-muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--fg)]",
+                            ? "bg-accent-subtle text-accent [&_svg]:text-accent" 
+                            : "text-fg-subtle [&_svg]:text-fg-muted hover:bg-surface-elevated hover:text-fg",
                           collapsed && "justify-center"
                         )}
                         title={collapsed ? "Library" : undefined}
@@ -395,7 +395,7 @@ export function AppSidebar() {
                     {!collapsed && (
                       <button
                         onClick={(e) => { e.preventDefault(); setLibraryOpen(o => !o) }}
-                        className="h-6 w-6 flex items-center justify-center rounded text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)] transition-colors shrink-0 mr-1 cursor-pointer"
+                        className="h-6 w-6 flex items-center justify-center rounded text-fg-muted hover:text-fg hover:bg-surface-elevated transition-colors shrink-0 mr-1 cursor-pointer"
                         aria-label={libraryOpen ? "Collapse library" : "Expand library"}
                       >
                         <ChevronRight
@@ -429,8 +429,8 @@ export function AppSidebar() {
                           className={cn(
                             "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors cursor-pointer",
                             isLibraryPage && !selectedId
-                              ? "bg-[var(--accent-subtle)] text-[var(--accent)] font-medium"
-                              : "text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--accent)]/50",
+                              ? "bg-accent-subtle text-accent font-medium"
+                              : "text-fg-muted hover:text-fg hover:bg-accent/50",
                             dragOverId === "all" && dropHighlight
                           )}
                         >
@@ -453,8 +453,8 @@ export function AppSidebar() {
                                 className={cn(
                                   "group/col flex items-center gap-1 px-2 py-1.5 rounded-md text-xs transition-colors",
                                   isSelected
-                                    ? "bg-[var(--accent-subtle)] text-[var(--accent)] font-medium"
-                                    : "text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--accent)]/50",
+                                    ? "bg-accent-subtle text-accent font-medium"
+                                    : "text-fg-muted hover:text-fg hover:bg-accent/50",
                                   isDragging && dropHighlight
                                 )}
                                 onDragOver={(e) => handleDragOver(e, col.id)}
@@ -479,7 +479,7 @@ export function AppSidebar() {
                                           if (e.key === "Enter") { e.currentTarget.blur() }
                                           if (e.key === "Escape") { setEditingId(null) }
                                         }}
-                                        className="w-full bg-transparent border-b border-[var(--border)] outline-none text-xs text-[var(--fg)]"
+                                        className="w-full bg-transparent border-b border-border outline-none text-xs text-fg"
                                         maxLength={150}
                                       />
                                       {editingName.length > 120 && (
@@ -488,10 +488,10 @@ export function AppSidebar() {
                                         </span>
                                       )}
                                     </div>
-                                    <button onClick={handleRenameSave} className="h-4 w-4 flex items-center justify-center text-[var(--fg-muted)] hover:text-[var(--fg)] cursor-pointer shrink-0">
+                                    <button onClick={handleRenameSave} className="h-4 w-4 flex items-center justify-center text-fg-muted hover:text-fg cursor-pointer shrink-0">
                                       <Check className="h-2.5 w-2.5" />
                                     </button>
-                                    <button onClick={() => setEditingId(null)} className="h-4 w-4 flex items-center justify-center text-[var(--fg-muted)] hover:text-[var(--fg)] cursor-pointer shrink-0">
+                                    <button onClick={() => setEditingId(null)} className="h-4 w-4 flex items-center justify-center text-fg-muted hover:text-fg cursor-pointer shrink-0">
                                       <X className="h-2.5 w-2.5" />
                                     </button>
                                   </>
@@ -508,14 +508,14 @@ export function AppSidebar() {
                                     {/* Action icons — only visible on hover */}
                                     <button
                                       onClick={(e) => { e.stopPropagation(); handleRenameStart(col) }}
-                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-[var(--fg-muted)] hover:text-[var(--fg)] shrink-0 cursor-pointer"
+                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-fg-muted hover:text-fg shrink-0 cursor-pointer"
                                       title="Rename"
                                     >
                                       <Pencil className="h-2.5 w-2.5" />
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(isConfirmDelete ? null : col.id); setEditingId(null) }}
-                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-[var(--fg-muted)] hover:text-[var(--fg)] shrink-0 cursor-pointer"
+                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-fg-muted hover:text-fg shrink-0 cursor-pointer"
                                       title="Delete collection"
                                     >
                                       <Trash2 className="h-2.5 w-2.5" />
@@ -527,14 +527,14 @@ export function AppSidebar() {
                               {/* Inline delete confirmation */}
                               {isConfirmDelete && (
                                 <div className="mx-2 mb-1 p-2 rounded-md bg-error/10 border border-error/20 text-xs">
-                                  <p className="text-[var(--fg)] mb-2 leading-snug">
+                                  <p className="text-fg mb-2 leading-snug">
                                     Delete <span className="font-medium">&ldquo;{col.name}&rdquo;</span>?{" "}
-                                    <span className="text-[var(--fg-muted)]">Transcripts will be moved to All Transcripts.</span>
+                                    <span className="text-fg-muted">Transcripts will be moved to All Transcripts.</span>
                                   </p>
                                   <div className="flex gap-1.5">
                                     <button
                                       onClick={() => setConfirmDeleteId(null)}
-                                      className="flex-1 py-1 rounded text-center text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--bg-surface-elevated)]/50 transition-colors cursor-pointer"
+                                      className="flex-1 py-1 rounded text-center text-fg-muted hover:text-fg hover:bg-surface-elevated/50 transition-colors cursor-pointer"
                                     >
                                       Cancel
                                     </button>
@@ -578,7 +578,7 @@ export function AppSidebar() {
                         ) : (
                           <button
                             onClick={() => setCreating(true)}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--accent)]/50 transition-colors cursor-pointer"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-fg-muted hover:text-fg hover:bg-accent/50 transition-colors cursor-pointer"
                           >
                             <Plus className="h-3 w-3" />
                             <span>New Collection</span>
@@ -599,17 +599,17 @@ export function AppSidebar() {
         <SidebarFooter>
           {/* Transcript stats — StorageMeter */}
           {!collapsed && (
-            <div className="px-3 pb-3 space-y-2 border-t border-[var(--border)]/50 pt-4 mt-2">
+            <div className="px-3 pb-3 space-y-2 border-t border-border/50 pt-4 mt-2">
               <div className="flex justify-between items-end">
-                <span className="text-xs text-[var(--fg-muted)]">Storage</span>
-                <span className="text-[10px] text-[var(--fg-muted)]">{usedMB > 0.1 ? usedMB.toFixed(1) + ' MB' : usedKB.toFixed(0) + ' KB'} / {MAX_MB} MB</span>
+                <span className="text-xs text-fg-muted">Storage</span>
+                <span className="text-[10px] text-fg-muted">{usedMB > 0.1 ? usedMB.toFixed(1) + ' MB' : usedKB.toFixed(0) + ' KB'} / {MAX_MB} MB</span>
               </div>
               <Progress
                 value={storagePercentage}
                 className={cn("h-1.5", storagePercentage > 80 && "bg-error/20")}
                 style={{ "--accent-subtle": "var(--border)" } as React.CSSProperties}
               />
-              <p className="text-[10px] text-[var(--fg-muted)]">
+              <p className="text-[10px] text-fg-muted">
                 {transcripts.length} transcript{transcripts.length !== 1 ? "s" : ""} saved
               </p>
             </div>
@@ -647,21 +647,21 @@ export function AppSidebar() {
 
           {/* Credits coin — persistent display above footer nav */}
           <div className={cn(
-            "px-3 py-2 border-t border-[var(--border)]/50",
+            "px-3 py-2 border-t border-border/50",
           )}>
             <Link
               href="/dashboard/billing"
               className={cn(
-                "flex items-center gap-2 text-sm text-[var(--fg-subtle)] hover:text-[var(--fg)] transition-colors rounded-lg px-2 py-1.5 hover:bg-[var(--surface-elevated)]",
+                "flex items-center gap-2 text-sm text-fg-subtle hover:text-fg transition-colors rounded-lg px-2 py-1.5 hover:bg-surface-elevated",
                 collapsed && "justify-center px-0"
               )}
               title={collapsed ? `${credits ?? 0} credits` : undefined}
             >
               {/* TODO: vervang door custom hexagon SVG van logo motief */}
-              <CircleDollarSign className="h-4 w-4 text-[var(--accent)] shrink-0" />
+              <CircleDollarSign className="h-4 w-4 text-accent shrink-0" />
               <span className={cn("text-xs", collapsed && "hidden")}>
-                <span className="font-medium text-[var(--fg)]">{credits ?? 0}</span>
-                <span className="text-[var(--fg-muted)] ml-1">credits</span>
+                <span className="font-medium text-fg">{credits ?? 0}</span>
+                <span className="text-fg-muted ml-1">credits</span>
               </span>
             </Link>
           </div>
@@ -677,8 +677,8 @@ export function AppSidebar() {
                       className={cn(
                         "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                         isActive 
-                          ? "bg-[var(--accent-subtle)] text-[var(--accent)] [&_svg]:text-[var(--accent)]" 
-                          : "text-[var(--fg-subtle)] [&_svg]:text-[var(--fg-muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--fg)]",
+                          ? "bg-accent-subtle text-accent [&_svg]:text-accent" 
+                          : "text-fg-subtle [&_svg]:text-fg-muted hover:bg-surface-elevated hover:text-fg",
                         collapsed && "justify-center"
                       )}
                       title={collapsed ? item.title : undefined}
@@ -695,7 +695,7 @@ export function AppSidebar() {
                 onClick={handleSignOut}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 w-full cursor-pointer",
-                  "text-[var(--fg-subtle)] [&_svg]:text-[var(--fg-muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--fg)]",
+                  "text-fg-subtle [&_svg]:text-fg-muted hover:bg-surface-elevated hover:text-fg",
                   collapsed && "justify-center"
                 )}
                 title={collapsed ? "Sign Out" : undefined}

@@ -1,3 +1,5 @@
+[2026-06-25 14:00] fix: styling-herstel afronding — (Bev.3) --warning-hover + --warning-border tokens in beide apps; (Bev.4) text-accent-foreground → text-fg-on-accent; (cleanup) 20 bestanden: bg-/text-/border-[var(--...)] → semantische classes. Bewust gelaten: border-[var(--color-success-border)] 2× (undefined token, buiten scope). Build: 2/2 ✅ | gewijzigd: apps/{app,marketing}/tokens.css, TranscriptViewer.tsx, Header.tsx, Footer.tsx, AppTopbar.tsx, app-sidebar.tsx, 14 dashboard/component bestanden
+---
 [2026-06-25 12:00] fix: 2 styling-bugs na monorepo-migratie — (1) @source directive toegevoegd aan apps/app/tokens.css zodat Tailwind packages/shared scant (zelfde fix als marketing 2026-06-04); (2) TranscriptViewer scroll-bug: h-[calc(100vh-4rem)] overflow-hidden verwijderd, sticky action bar, video sidebar lg:sticky. Build: 2/2 ✅ | gewijzigd: apps/app/src/app/styles/tokens.css, apps/app/src/components/library/TranscriptViewer.tsx
 ---
 [2026-06-06 11:00] docs: Railway service-namen bijgewerkt (agile-creation → api, fortunate-mindfulness → worker, project → indxr-backend) in deployment.md + ADR-048 | gewijzigd: docs/wiki/operations/deployment.md, docs/wiki/decisions/048-redis-split-upstash-railway.md
@@ -5518,4 +5520,28 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/decisions/048-redis-split-upstash-railway.md
 docs/wiki/operations/deployment.md
+---
+[2026-06-25 11:57] commit: fix: Tailwind @source directive + TranscriptViewer scroll-bug
+
+Bevinding 1: apps/app/tokens.css miste @source directive voor
+packages/shared/src/ — zelfde root cause als marketing-fix van
+2026-06-04. Alle Tailwind classes exclusief in shared components
+(md:flex, md:hidden, bg-accent, text-fg-muted, etc.) ontbraken
+uit de app CSS-output.
+
+Bevinding 2: TranscriptViewer h-[calc(100vh-4rem)] overflow-hidden
+op de outer div conflicteerde met dashboard layout (overflow-y-auto
++ padding wrapper + tab nav). Hoogte-berekening was ~4rem te groot
+(topbar=3.5rem, padding=1-2rem, tab nav=~2.75rem niet meegeteld).
+Fix: fixed height verwijderd, scroll gedelegeerd aan layout's
+overflow-y-auto, action bar sticky top-0, video sidebar
+lg:sticky lg:top-0 lg:h-[calc(100svh-3.5rem)] zodat split-view
+UX behouden blijft op desktop.
+
+Build: 2/2 ✅ (app 31 routes, marketing 60 routes)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/styles/tokens.css
+apps/app/src/components/library/TranscriptViewer.tsx
+docs/LOG.md
 ---

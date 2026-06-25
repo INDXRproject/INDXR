@@ -195,7 +195,7 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                     <Button 
                       type="submit" 
                       disabled={isSubmitting} 
-                      className="bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
+                      className="bg-accent text-bg hover:bg-accent-hover active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
                     >
                         {isSubmitting ? "Saving..." : "Save Changes"}
                     </Button>
@@ -205,7 +205,7 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                     type="button" 
                     variant="outline" 
                     onClick={() => setIsEditing(true)} 
-                    className="w-full border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] hover:bg-[var(--accent)] hover:text-[var(--bg)] transition-all duration-150 ease-out"
+                    className="w-full border-border bg-surface text-fg hover:bg-accent hover:text-bg transition-all duration-150 ease-out"
                  >
                     Edit Profile
                  </Button>

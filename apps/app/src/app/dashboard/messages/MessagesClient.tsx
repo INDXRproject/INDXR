@@ -103,15 +103,15 @@ export function MessagesClient() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold text-[var(--fg)]">Messages</h1>
+          <h1 className="text-2xl font-semibold text-fg">Messages</h1>
           {unreadCount > 0 && (
-            <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--accent)] text-[var(--fg-on-accent)] text-xs font-medium flex items-center justify-center">
+            <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-accent text-fg-on-accent text-xs font-medium flex items-center justify-center">
               {unreadCount}
             </span>
           )}
         </div>
         {unreadCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={markAllRead} className="text-[var(--fg-muted)] hover:text-[var(--fg)]">
+          <Button variant="ghost" size="sm" onClick={markAllRead} className="text-fg-muted hover:text-fg">
             <CheckCheck className="h-4 w-4 mr-1.5" />
             Mark all read
           </Button>
@@ -127,7 +127,7 @@ export function MessagesClient() {
           mobileDetail && "hidden md:flex"
         )}>
           {visible.length === 0 ? (
-            <div className="text-center py-12 text-[var(--fg-muted)]">
+            <div className="text-center py-12 text-fg-muted">
               <Inbox className="h-8 w-8 mx-auto mb-3 opacity-40" />
               <p className="text-sm">No messages — we'll write when something matters.</p>
             </div>
@@ -137,22 +137,22 @@ export function MessagesClient() {
                 key={msg.id}
                 onClick={() => handleSelect(msg.id)}
                 className={cn(
-                  "w-full text-left px-4 py-3 rounded-[var(--radius)] border transition-colors cursor-pointer",
+                  "w-full text-left px-4 py-3 rounded border transition-colors cursor-pointer",
                   selectedId === msg.id
-                    ? "bg-[var(--accent-subtle)] border-[var(--accent)] text-[var(--accent)]"
-                    : "bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--surface-elevated)]",
-                  !msg.read && selectedId !== msg.id && "border-l-2 border-l-[var(--accent)]"
+                    ? "bg-accent-subtle border-accent text-accent"
+                    : "bg-surface border-border hover:bg-surface-elevated",
+                  !msg.read && selectedId !== msg.id && "border-l-2 border-l-accent"
                 )}
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className={cn("text-sm font-medium truncate", selectedId === msg.id ? "text-[var(--accent)]" : "text-[var(--fg)]")}>
+                  <span className={cn("text-sm font-medium truncate", selectedId === msg.id ? "text-accent" : "text-fg")}>
                     {msg.title}
                   </span>
-                  <span className="text-xs text-[var(--fg-muted)] shrink-0">{msg.date}</span>
+                  <span className="text-xs text-fg-muted shrink-0">{msg.date}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-[var(--fg-muted)] truncate">{msg.sender}</span>
-                  {!msg.read && <span className="h-2 w-2 rounded-full bg-[var(--accent)] shrink-0" />}
+                  <span className="text-xs text-fg-muted truncate">{msg.sender}</span>
+                  {!msg.read && <span className="h-2 w-2 rounded-full bg-accent shrink-0" />}
                 </div>
               </button>
             ))
@@ -165,32 +165,32 @@ export function MessagesClient() {
           !mobileDetail && "hidden md:block"
         )}>
           {!selected ? (
-            <div className="hidden md:flex h-64 items-center justify-center text-[var(--fg-muted)] rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]">
+            <div className="hidden md:flex h-64 items-center justify-center text-fg-muted rounded-lg border border-border bg-surface">
               <div className="text-center">
                 <Inbox className="h-8 w-8 mx-auto mb-3 opacity-40" />
                 <p className="text-sm">Select a message to read it.</p>
               </div>
             </div>
           ) : (
-            <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+            <div className="rounded-lg border border-border bg-surface overflow-hidden">
               {/* Detail header */}
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-start justify-between gap-4">
+              <div className="px-6 py-4 border-b border-border flex items-start justify-between gap-4">
                 <div>
                   <button
                     onClick={() => setMobileDetail(false)}
-                    className="md:hidden flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] mb-2 transition-colors cursor-pointer"
+                    className="md:hidden flex items-center gap-1 text-sm text-fg-muted hover:text-fg mb-2 transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Back
                   </button>
-                  <h2 className="text-base font-semibold text-[var(--fg)]">{selected.title}</h2>
-                  <p className="text-xs text-[var(--fg-muted)] mt-0.5">{selected.sender} · {selected.date}</p>
+                  <h2 className="text-base font-semibold text-fg">{selected.title}</h2>
+                  <p className="text-xs text-fg-muted mt-0.5">{selected.sender} · {selected.date}</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => archive(selected.id)}
-                  className="shrink-0 text-[var(--fg-muted)] hover:text-[var(--fg)]"
+                  className="shrink-0 text-fg-muted hover:text-fg"
                 >
                   <Archive className="h-4 w-4 mr-1.5" />
                   Archive
@@ -198,7 +198,7 @@ export function MessagesClient() {
               </div>
               {/* Detail body */}
               <div className="px-6 py-5">
-                <p className="text-sm text-[var(--fg)] leading-relaxed whitespace-pre-line">{selected.body}</p>
+                <p className="text-sm text-fg leading-relaxed whitespace-pre-line">{selected.body}</p>
               </div>
             </div>
           )}

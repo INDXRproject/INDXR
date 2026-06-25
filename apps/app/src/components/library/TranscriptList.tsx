@@ -378,7 +378,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                                   <TooltipTrigger asChild>
                                       <Badge
                                       variant="secondary"
-                                      className="h-4 px-1 text-[10px] font-bold bg-[var(--success-subtle)] text-[var(--success)] border-[var(--color-success-border)] cursor-pointer hover:bg-[var(--success-subtle)]/80 transition-colors"
+                                      className="h-4 px-1 text-[10px] font-bold bg-success-subtle text-success border-[var(--color-success-border)] cursor-pointer hover:bg-success-subtle/80 transition-colors"
                                       onClick={(e) => handleMarkAsRead(t.id, e)}
                                     >
                                       NEW
@@ -409,12 +409,12 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 text-fg-muted hover:bg-[var(--accent)] hover:text-fg transition-all duration-150"
+                                className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg transition-all duration-150"
                             >
                                 <Eye className="h-4 w-4" />
                             </Button>
                          </Link>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-[var(--accent)] hover:text-fg transition-all duration-150" asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg transition-all duration-150" asChild>
                            <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
                                <ExternalLink className="h-4 w-4" />
                            </a>
@@ -422,7 +422,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-fg-muted hover:text-[var(--error)] hover:bg-error/10"
+                            className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
                             onClick={() => onDelete(t.id)}
                           >
                           <Trash2 className="h-4 w-4" />
@@ -473,7 +473,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                            <TooltipTrigger asChild>
                              <Badge
                                variant="secondary"
-                               className="h-4 px-1 text-[10px] font-bold bg-[var(--success-subtle)] text-[var(--success)] border-[var(--color-success-border)] shrink-0 cursor-pointer hover:bg-[var(--success-subtle)]/80 transition-colors"
+                               className="h-4 px-1 text-[10px] font-bold bg-success-subtle text-success border-[var(--color-success-border)] shrink-0 cursor-pointer hover:bg-success-subtle/80 transition-colors"
                                onClick={(e) => handleMarkAsRead(t.id, e)}
                              >
                                NEW
@@ -493,13 +493,13 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                     <Button 
                         variant="ghost"
                         size="sm"
-                        className="h-8 text-xs bg-surface-elevated/20 hover:bg-[var(--accent)] hover:text-fg text-fg w-full"
+                        className="h-8 text-xs bg-surface-elevated/20 hover:bg-accent hover:text-fg text-fg w-full"
                     >
                         <Eye className="h-3 w-3 mr-1" />
                         View
                     </Button>
                 </Link>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-[var(--accent)] hover:text-fg transition-all duration-150" asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg transition-all duration-150" asChild>
                     <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-3 w-3" />
                     </a>
@@ -507,7 +507,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                 <Button 
                     variant="ghost" 
                     size="icon"
-                    className="h-8 w-8 text-fg-muted hover:text-[var(--error)] hover:bg-error/10"
+                    className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
                     onClick={() => onDelete(t.id)}
                 >
                     <Trash2 className="h-3 w-3" />

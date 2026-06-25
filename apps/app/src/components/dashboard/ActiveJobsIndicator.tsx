@@ -104,7 +104,7 @@ export function ActiveJobsIndicator({ collapsed }: Props) {
       href={href}
       className={cn(
         "flex items-center gap-2 text-sm rounded-lg px-2 py-1.5 transition-colors",
-        "text-[var(--fg-subtle)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)]",
+        "text-fg-subtle hover:text-fg hover:bg-surface-elevated",
         collapsed && "justify-center px-0"
       )}
       title={collapsed ? `${activeCount} job${activeCount !== 1 ? 's' : ''} in progress` : undefined}
@@ -113,7 +113,7 @@ export function ActiveJobsIndicator({ collapsed }: Props) {
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
         <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
       </span>
-      <span className={cn("text-xs text-[var(--fg-muted)]", collapsed && "hidden")}>
+      <span className={cn("text-xs text-fg-muted", collapsed && "hidden")}>
         {activeCount} job{activeCount !== 1 ? 's' : ''} in progress
       </span>
     </Link>

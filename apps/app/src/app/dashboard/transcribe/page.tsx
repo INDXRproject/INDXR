@@ -377,29 +377,29 @@ export default function TranscribePage() {
     <div className="max-w-4xl mx-auto space-y-8">
        <WelcomeCreditCard claimed={isRewardClaimed} />
        <div>
-         <h1 className="text-3xl font-bold text-[var(--fg)] mb-2">Transcribe</h1>
-         <p className="text-[var(--fg-muted)]">Extract captions from videos, playlists, or audio files. <a href={marketingHref('/docs')} className="text-[var(--accent)] hover:underline">Learn more →</a></p>
+         <h1 className="text-3xl font-bold text-fg mb-2">Transcribe</h1>
+         <p className="text-fg-muted">Extract captions from videos, playlists, or audio files. <a href={marketingHref('/docs')} className="text-accent hover:underline">Learn more →</a></p>
        </div>
 
        <ActiveJobsIndicator />
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
-        <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-[var(--surface-elevated)] h-auto rounded-xl">
+        <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-surface-elevated h-auto rounded-xl">
           <TabsTrigger
             value="video"
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-accent data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-fg-muted font-medium gap-2"
           >
             <Video className="h-4 w-4" /> Single Video
           </TabsTrigger>
           <TabsTrigger
             value="playlist"
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-accent data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-fg-muted font-medium gap-2"
           >
             <ListMusic className="h-4 w-4" /> Playlist
           </TabsTrigger>
           <TabsTrigger
             value="audio"
-            className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
+            className="rounded-lg py-2.5 data-[state=active]:bg-accent data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-fg-muted font-medium gap-2"
           >
             <Mic className="h-4 w-4" /> Audio Upload
           </TabsTrigger>
