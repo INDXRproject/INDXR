@@ -170,3 +170,43 @@ curl https://indxr-production.up.railway.app/health
 - **Uptime monitoring:** Geen externe uptime monitor (bijv. healthchecks.io, BetterStack) — taak 1.14.
 - **Sentry alerting rules:** Sentry is geconfigureerd maar nog geen alert-regels ingesteld voor watchdog-errors of financiële failures.
 - **Database monitoring:** Supabase Dashboard heeft basis query-statistieken; geen aangepaste dashboards.
+
+---
+
+## Dependency-onderhoud
+
+### Principe
+
+Pin alle externe dependencies voor reproduceerbare builds, maar loop niet ver achter. Een gap van 3,5 maanden op yt-dlp (bewezen root cause van bot-detection in juni 2026) is te lang. Live-zet altijd handmatig na een groene verificatietest — nooit volledig automatisch, want dependencies (vooral yt-dlp) brengen breaking changes uit die het production-pad kunnen breken.
+
+### Per-dependency risicoverzicht
+
+| Dependency | Onderhoudsfrequentie | Breekrisico | Koppeling |
+|------------|---------------------|-------------|-----------|
+| **yt-dlp + yt-dlp-ejs** | Wekelijks (YouTube adapteert) | Hoog — stale signatures → bot-detection, verwijderde clients, nieuwe JS-runtime-vereisten | yt-dlp-ejs-versie volgt yt-dlp interne ejs-versie; Node.js-versie gekoppeld aan yt-dlp's minimumeisen (nu v22+) |
+| **Node.js** (in Dockerfile) | Majors ~1×/jaar | Laag → Hoog bij major: yt-dlp eist minimumversie (zie upgrade 2026-06-25) | Aan yt-dlp-versie gekoppeld |
+| **Next.js** | Majors 1-2×/jaar | Hoog bij major — middleware→proxy conventie wisselt (Next.js 17, al genoteerd), App Router API wijzigt | Vercel auto-detecteert versie; upgraden vereist migratiepas |
+| **youtube-transcript-api** | Maandelijks | Matig — YouTube timed-text API wijzigt geregeld; proxy-API (`GenericProxyConfig`) kan veranderen | Stap 1 van caption-cascade |
+| **FastAPI / Pydantic** | Meerdere keren per jaar | Laag-Matig — breaking changes bij major | Pydantic v2 was een grote overgang; v3 te monitoren |
+| **AssemblyAI SDK** | Maandelijks | Matig — model-namen en API-endpoints veranderen | Transcript-pipeline; `assemblyai_client.py` |
+| **Stripe** | Maandelijks | Matig bij API-versie bumps — webhook payload-structuur kan veranderen | Financiële routes — extra auditplicht |
+| **Supabase JS + Python** | Maandelijks | Laag-Matig | Auth-cookies, RLS, RPC-signatures |
+| **Sentry** | Maandelijks | Laag | Capture-API is stabiel |
+
+### Verificatietest (nog te bouwen — zie Fase 2 taak 2.9)
+
+Na elke versie-bump van een hoog-risico dependency:
+1. **yt-dlp:** extract captions van 3 bekende video's (Engels, Arabisch, members-only) via de volledige cascade. Verwachte resultaten documenteren.
+2. **youtube-transcript-api:** idem, stap-1-only test.
+3. **Next.js:** volledige Playwright smoke-test (aanwezig: `tests/playwright/specs/`).
+4. **Stripe SDK:** Stripe CLI webhook test (`stripe trigger checkout.session.completed`).
+
+Promotiebeslissing na groene test — nooit automatisch.
+
+### Nightly/master-builds
+
+Bewust NIET in productie. yt-dlp nightly heeft minder stabiel gedrag; marketing-waarde van "altijd nieuwste" weegt niet op tegen productie-risico.
+
+### Latente inconsistentie (kleine opschoontaak)
+
+`youtube_utils.py` + `main.py` gebruiken `enabled_runtimes: ['node']` + `remote_components: ['ejs:github']` als JS-runtime-optienamen in ydl_opts. `audio_utils.py` gebruikt `js_runtimes: {'node': {}}` — een andere spelling van verwante opties. Beide zijn momenteel geldig, maar de inconsistentie is een latent risico bij een toekomstige yt-dlp major die één van de varianten deprecateert. **Niet aanraken in de huidige pass** — opschonen samen met eventuele optie-2-evaluatie (taak 2.8).

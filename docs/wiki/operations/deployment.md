@@ -181,12 +181,15 @@ API en worker bouwen uit **dezelfde GitHub-repo en dezelfde `/backend` root dire
 
 ```dockerfile
 FROM python:3.12-slim
-RUN apt-get install: ffmpeg, wget, nodejs, npm
+# Node.js v22 via NodeSource (yt-dlp 2026.06.09 vereist v22+; Debian Bookworm apt levert slechts v18)
+RUN apt-get install: ffmpeg, wget, curl, nodejs (v22 via NodeSource)
 # pip install -r requirements.txt
 CMD: uvicorn main:app --host 0.0.0.0 --port 8000
 # Worker-service overschrijft CMD via Railway "Start Command" instelling:
 # python -m arq worker.WorkerSettings
 ```
+
+> **Node.js versie-koppeling:** yt-dlp definieert een minimale Node.js-versie. Bij elke yt-dlp major-upgrade: verifieer of de Node.js-versie in de Dockerfile nog voldoet. De NodeSource-URL (`setup_22.x`) moet meegenomen worden als de minimumeis stijgt. Langetermijnsalternatief (geen externe Node.js): zie roadmap taak 2.8 en `monitoring.md` sectie "Dependency-onderhoud".
 
 **Python packages updaten:**
 ```bash

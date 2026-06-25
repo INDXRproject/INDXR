@@ -10,7 +10,7 @@ Voor de strategische "waarom" achter de architectuur-keuzes in Fase 1, zie ADR-0
 
 ## Fase 1 — Pre-launch blockers
 
-Geschatte totale doorlooptijd: 13–17 werkdagen.
+**Launch-datum: 1 juli 2026.** Geschatte werkdagen niet meer relevant — datum is leidend, scope past zich aan.
 
 ### Zachte landing — geïsoleerde quick wins (eerst)
 
@@ -48,6 +48,9 @@ Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Sm
 Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp cascade hangt aan queue (cascade-stappen worden queue-jobs). Graceful shutdown logisch ná queue. R2 logisch vóór master_transcripts (transcripts worden in R2 opgeslagen).
 
 - [~] **1.5 — ARQ via Upstash Redis + per-video decompositie + idempotency keys** (3 dagen)
+
+    > **PRODUCTIE-STATUS 2026-05-17:** worker draait niet sinds 6 mei 2026 door Upstash quota-uitputting. Architectuur is compleet, code is correct, alleen de Redis-backend is onbereikbaar. Zie known-issues.md sectie "Railway ARQ worker crashed sinds 2026-05-06". Resolutie gekoppeld aan Upstash beslissing in B6.
+
     Doel: durable job queue die Railway container-restarts overleeft. 500-video playlist wordt 500 onafhankelijke jobs (één gefaalde video sloopt niet de hele batch).
     Stack: ARQ als aparte Railway worker-service naast bestaande FastAPI API-service.
     Idempotency: tabel `idempotency_keys` met TTL 24u op POST-endpoints.
@@ -321,6 +324,19 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
     Trigger: na week 2, wanneer alle data-bronnen bekend zijn.
 - [ ] **2.7 — Feature request systeem evalueren**
     Contact-form (1.16) volume rechtvaardigt iets formelers? Alternatieven voor Canny onderzoeken (Canny te duur na 100 users → €79/mnd).
+
+- [ ] **2.8 — Interne JS-runtime evalueren (yt-dlp optie 2 — geen externe Node.js)**
+    **Context:** Bij de yt-dlp upgrade van `2026.3.17` naar `2026.06.09` (2026-06-25) is bewust gekozen voor optie 1 (externe Node.js v22 via NodeSource in Dockerfile) als acute fix. Optie 2 — yt-dlp's ingebouwde Python-JS motor (`quickjs-ng` via `yt-dlp[default]`) gebruiken en de externe Node.js-afhankelijkheid elimineren — is een potentieel schonere lange-termijn-architectuur maar vraagt grondig testen.
+    **Afweging:**
+    - Voordeel: minder externe afhankelijkheden (geen NodeSource in Dockerfile, geen Node.js versie-coupling), kleinere image, minder bewegende delen bij yt-dlp-updates.
+    - Risico: `quickjs-ng` is yt-dlp's ingebouwde motor en is minder bewezen in onze specifieke productie-setup. Onduidelijk of het schoon werkt voor zowel caption-extractie (`youtube_utils.py`) als audio-download (`audio_utils.py`) — caption-extractie via iOS client heeft JS normaal niet nodig; audio-extractie kan signature-solving vereisen.
+    - Bijkomend: er is een latente inconsistentie in de huidige ydl_opts — `youtube_utils.py` + `main.py` gebruiken `enabled_runtimes`/`remote_components`, `audio_utils.py` gebruikt `js_runtimes: {'node': {}}`. Bij een overstap naar optie 2 moeten beide paden consistent zijn.
+    **Vereiste test:** cascade en audio beide testen tegen een set bekende video's (incl. lange audio >60 min) vóór eventuele overstap. Zie `operations/monitoring.md` sectie "Dependency-onderhoud" voor context.
+
+- [ ] **2.9 — Dependency-update-discipline implementeren**
+    Zie `operations/monitoring.md` sectie "Dependency-onderhoud" voor het volledige principe en per-dependency risicooverzicht.
+    **Taak:** periodieke versie-check opzetten die waarschuwt bij nieuwe releases zonder automatisch te installeren; verificatie-test die na een versie-bump een handvol bekende video's door de cascade haalt. Specifiek voor yt-dlp is dit het meest kritiek (vaakst nodig, hardst breekend).
+    **Prioriteit:** na launch, zodra CI-pipeline stabiel is.
 
 ---
 
