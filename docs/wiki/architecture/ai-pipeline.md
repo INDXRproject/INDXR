@@ -65,7 +65,7 @@ Zie [ADR-028](../decisions/028-youtube-data-api-metadata.md) voor de keuze van Y
 **Tijdsduur:** 1–5 seconden  
 **Kosten:** 0 credits
 
-> **Bekende beperking:** Caption extractie is betrouwbaar voor Engelstalige video's. Voor niet-Engelse video's geeft YouTube's timedtext API consistent 429 errors, en forceert het `tlang=en` in de VTT URL ongeacht de `subtitleslangs` instelling. **AssemblyAI transcriptie is de enige betrouwbare route voor niet-Engelse content.** Zie `known-issues.md` voor details.
+> **Opgelost 2026-06-25:** De cascade vraagt nu de brontaal van de video op (via `lang_pref` uit de YouTube Data API pre-fetch) in plaats van altijd `'en'`. Dit vermijdt de `tlang=`-parameter in de timedtext-URL — YouTube's rate-limit zit specifiek op vertaalcalls (`lang=ar&tlang=en`). Originele-taal-URLs (`lang=ar`, geen tlang) geven consistent HTTP 200. De eerder gedocumenteerde 429-errors en ongewenste Engelse machinevertalingen zijn hiermee opgelost. Engels blijft de fallback als de brontaal onbekend is.
 
 ### Fallback path (geen captions → audio transcriptie)
 

@@ -24,10 +24,18 @@ De keuze heeft grote impact op snelheid, kosten, accuratesse en het credit-model
 Alleen als er geen captions beschikbaar zijn, valt het systeem terug op audio-transcriptie via AssemblyAI.
 
 Volgorde van captions voorkeur:
-1. Handmatige captions in de aangevraagde taal
-2. Auto-generated captions in de aangevraagde taal
+1. Handmatige captions in de brontaal van de video
+2. Auto-generated captions in de brontaal van de video
 3. Handmatige captions in het Engels als fallback
 4. Auto-generated captions in het Engels als fallback
+
+**Geïmplementeerd 2026-06-25:** De brontaal-eerst-volgorde is nu geïmplementeerd. De
+cascade krijgt `lang_pref` uit de YouTube Data API pre-fetch (`normalised_lang`) en geeft
+dit door aan `extract_via_youtube_transcript_api` en `extract_with_ytdlp`. Dit vermijdt
+YouTube's `tlang=`-parameter (die HTTP 429 triggert op auto-vertaalcalls) en levert de
+originele taal terug in plaats van een machine-vertaald Engelse variant. Engels blijft
+de fallback als de brontaal onbekend is of als er geen captions in die taal beschikbaar
+zijn. Zie `backend/youtube_utils.py` → `lang_pref` parameter.
 
 ---
 

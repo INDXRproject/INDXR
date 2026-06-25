@@ -250,7 +250,7 @@ async def _process_caption_video(
             return True, transcript_id, None, credit_amount
 
     # Cascade step 1: youtube-transcript-api (faster, no yt-dlp overhead)
-    extract_result = await extract_via_youtube_transcript_api(video_id, session_id=proxy_session)
+    extract_result = await extract_via_youtube_transcript_api(video_id, session_id=proxy_session, lang_pref=normalised_lang)
     caption_model = "youtube_transcript_api"
 
     # ── Cascade step 1 metadata enrichment (reuse pre_meta if available) ──
@@ -281,7 +281,7 @@ async def _process_caption_video(
     if extract_result is None:
         try:
             extract_result = await _run_with_heartbeat(
-                extract_with_ytdlp(video_id, use_proxy=True, session_id=proxy_session),
+                extract_with_ytdlp(video_id, use_proxy=True, session_id=proxy_session, lang_pref=normalised_lang),
                 heartbeat_fn,
             )
             caption_model = "youtube_captions"
@@ -291,7 +291,7 @@ async def _process_caption_video(
             # ── Cascade step 3: yt-dlp (tv/android client rotation) ──────
             logger.info(f"[CASCADE] {video_id}: step 2 failed ({type(step2_err).__name__}), trying step 3 (tv/android)")
             extract_result = await _run_with_heartbeat(
-                extract_with_ytdlp(video_id, use_proxy=True, session_id=proxy_session, clients=['tv', 'android']),
+                extract_with_ytdlp(video_id, use_proxy=True, session_id=proxy_session, clients=['tv', 'android'], lang_pref=normalised_lang),
                 heartbeat_fn,
             )
             caption_model = "youtube_captions_rotated"

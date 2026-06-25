@@ -155,15 +155,21 @@ def parse_vtt_to_transcript(subtitle_data: str) -> List[dict]:
 async def extract_via_youtube_transcript_api(
     video_id: str,
     session_id: Optional[str] = None,
+    lang_pref: Optional[str] = None,
 ) -> Optional[dict]:
     """
     Attempt caption extraction via youtube-transcript-api (cascade step 1).
+
+    lang_pref: preferred language (from YouTube Data API video.language). If set and
+    not 'en', tries [lang_pref, 'en'] so the original-language track is returned
+    before any machine-translated English variant. Falls back to ['en'] otherwise.
 
     Returns dict with 'transcript', 'language', 'model' on success, or None on any
     failure (rate-limit, blocked, no captions, etc.). Never raises — None signals
     the cascade to fall through to the next step.
     """
-    logger.info(f"[YT-API] attempting {video_id}")
+    languages = [lang_pref, "en"] if (lang_pref and lang_pref != "en") else ["en"]
+    logger.info(f"[YT-API] attempting {video_id} lang_pref={lang_pref!r} languages={languages}")
     try:
         from youtube_transcript_api import (
             YouTubeTranscriptApi,
@@ -180,7 +186,7 @@ async def extract_via_youtube_transcript_api(
         proxy_config = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url) if proxy_url else None
 
         ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
-        fetched = await asyncio.to_thread(ytt_api.fetch, video_id, languages=["en"])
+        fetched = await asyncio.to_thread(ytt_api.fetch, video_id, languages=languages)
 
         transcript = [
             {"text": snippet.text, "offset": snippet.start, "duration": snippet.duration}
@@ -204,7 +210,7 @@ async def extract_via_youtube_transcript_api(
         logger.info(f"[YT-API] {video_id}: TranscriptsDisabled (geen captions ingeschakeld)")
         return None
     except NoTranscriptFound:
-        logger.info(f"[YT-API] {video_id}: NoTranscriptFound (geen Engelse captions)")
+        logger.info(f"[YT-API] {video_id}: NoTranscriptFound (geen captions voor {languages})")
         return None
     except VideoUnavailable:
         logger.info(f"[YT-API] {video_id}: VideoUnavailable")
@@ -222,9 +228,14 @@ async def extract_with_ytdlp(
     use_proxy: bool = True,
     session_id: Optional[str] = None,
     clients: list | None = None,
+    lang_pref: Optional[str] = None,
 ) -> dict:
     """
-    Extract English captions from a YouTube video via yt-dlp.
+    Extract captions from a YouTube video via yt-dlp.
+
+    lang_pref: preferred language (from YouTube Data API video.language). Requests
+    the original-language track first to avoid YouTube's tlang= translation URLs,
+    which trigger HTTP 429. Falls back to 'en' if original is unavailable.
 
     Returns a dict with 'transcript', 'title', 'channel', etc. on success,
     or an empty dict {} when no captions are available.
@@ -237,13 +248,14 @@ async def extract_with_ytdlp(
     and call with `await`; the event loop is blocked during the sync portions.
     """
     _clients = clients or ['ios', 'web_embedded']
+    _target_lang = lang_pref if (lang_pref and lang_pref != "en") else None
     log_prefix = "[YT-DLP]" if _clients == ['ios', 'web_embedded'] else "[YT-DLP-ROT]"
-    logger.info(f"{log_prefix} attempting {video_id}")
+    logger.info(f"{log_prefix} attempting {video_id} lang_pref={lang_pref!r}")
     ydl_opts = {
         'skip_download': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
-        'subtitleslangs': ['en'],
+        'subtitleslangs': ([_target_lang, 'en'] if _target_lang else ['en']),
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
@@ -266,18 +278,25 @@ async def extract_with_ytdlp(
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
 
             subtitles = None
-            if info.get('subtitles') and 'en' in info['subtitles']:
-                subtitles = info['subtitles']['en']
-            elif info.get('automatic_captions') and 'en' in info['automatic_captions']:
-                subtitles = info['automatic_captions']['en']
+            target_langs = [_target_lang, 'en'] if _target_lang else ['en']
+            selected_lang = None
+            for _lang in target_langs:
+                if info.get('subtitles') and _lang in info['subtitles']:
+                    subtitles = info['subtitles'][_lang]
+                    selected_lang = _lang
+                    break
+                if info.get('automatic_captions') and _lang in info['automatic_captions']:
+                    subtitles = info['automatic_captions'][_lang]
+                    selected_lang = _lang
+                    break
 
             if not subtitles:
-                logger.info(f"{log_prefix} {video_id}: no_captions (no English subtitles)")
+                logger.info(f"{log_prefix} {video_id}: no_captions (tried {target_langs})")
                 return {}
 
             vtt_subtitle = next((s for s in subtitles if s.get('ext') == 'vtt'), None)
             if not vtt_subtitle:
-                logger.info(f"{log_prefix} {video_id}: no_captions (no VTT format)")
+                logger.info(f"{log_prefix} {video_id}: no_captions (no VTT in {selected_lang!r} track)")
                 return {}
 
             subtitle_url = vtt_subtitle['url']

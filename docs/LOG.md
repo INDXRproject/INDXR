@@ -1,6 +1,8 @@
+[2026-06-25 19:00] fix: brontaal-eerst caption cascade — lang_pref parameter toegevoegd aan extract_via_youtube_transcript_api + extract_with_ytdlp; normalised_lang doorgegeven vanuit main.py en worker.py. Vermijdt tlang=-vertaalcalls (root cause van 429 én Engelse machinevertalingen). Lokaal geverifieerd: ar auto-only 776 segmenten in Arabisch ✅, en control ongewijzigd ✅. ADR-002 brontaal-eerst nu werkelijk geïmplementeerd. Wiki gecorrigeerd (known-issues, ai-pipeline, ADR-002). | gewijzigd: backend/youtube_utils.py, backend/main.py, backend/worker.py, docs/wiki/decisions/002-youtube-captions.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md
+---
 [2026-06-25 17:00] docs: wiki dependency-onderhoud gedocumenteerd — B1 optie 2 (interne JS-runtime) als roadmap taak 2.8; B2 dependency-update-discipline als taak 2.9 + monitoring.md sectie "Dependency-onderhoud" (per-dependency risicotabel, verificatietest-recept, latente js_runtimes inconsistentie); deployment.md Node.js versie-koppeling bijgewerkt | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/deployment.md
 ---
-[2026-06-25 16:00] fix: yt-dlp 2026.3.17 → 2026.06.09 + Node.js v18 → v22 in Dockerfile — lost YouTube bot-detection op (web_embedded client was kapot in 2026.3.17, gefixt in 2026.03.13; verouderde signatures). Lokaal getest: qG4k4vJUhaI ✅ success (was bot_detection), FMX-6LiLaB8 ✅ success. yt-dlp-ejs==0.8.0 gepind (was ongepind). Geen cascade-logica gewijzigd | gewijzigd: backend/requirements.txt, backend/Dockerfile
+[2026-06-25 16:00] fix: yt-dlp 2026.3.17 → 2026.06.09 + Node.js v18 → v22 in Dockerfile — lost YouTube bot-detection op (web_embedded client was kapot in 2026.3.17, gefixt in 2026.03.13; verouderde signatures). Lokaal getest: qG4k4vJUhaI en FMX-6LiLaB8 metadata-fetch ✅ (geen bot-detection meer). Let op: de eerder gerapporteerde "FMX-6LiLaB8 ✅ success" was alleen metadata-success; de 429 op de VTT-download (tlang=en) werd pas opgelost door de brontaal-fix. yt-dlp-ejs==0.8.0 gepind | gewijzigd: backend/requirements.txt, backend/Dockerfile
 ---
 [2026-06-25 14:00] fix: styling-herstel afronding — (Bev.3) --warning-hover + --warning-border tokens in beide apps; (Bev.4) text-accent-foreground → text-fg-on-accent; (cleanup) 20 bestanden: bg-/text-/border-[var(--...)] → semantische classes. Bewust gelaten: border-[var(--color-success-border)] 2× (undefined token, buiten scope). Build: 2/2 ✅ | gewijzigd: apps/{app,marketing}/tokens.css, TranscriptViewer.tsx, Header.tsx, Footer.tsx, AppTopbar.tsx, app-sidebar.tsx, 14 dashboard/component bestanden
 ---
@@ -5597,4 +5599,56 @@ apps/marketing/src/app/styles/tokens.css
 docs/LOG.md
 packages/shared/src/components/Footer.tsx
 packages/shared/src/components/Header.tsx
+---
+[2026-06-25 14:15] commit: fix: yt-dlp 2026.3.17 → 2026.06.09 + Dockerfile Node.js v18 → v22
+
+Root cause van bot-detection: web_embedded client was kapot in
+2026.3.17 (gefixt in 2026.03.13), waardoor stap 2 altijd escaleerde
+naar stap 3 — die ook faalde door verouderde YouTube-signatures.
+
+Wijzigingen:
+- yt-dlp==2026.06.09 (was 2026.3.17)
+- yt-dlp-ejs==0.8.0 gepind (was ongepind — mismatch-risico bij pip)
+- Dockerfile: Node.js v22 via NodeSource (yt-dlp 2026.06.09 vereist
+  v22+; Debian Bookworm apt levert slechts v18)
+
+Geen wijzigingen aan cascade-logica, player_client, extractor_args,
+subtitles-API of YoutubeDL embedding-API.
+
+Lokale test (zonder proxy, vanuit residentieel IP):
+- qG4k4vJUhaI: ✅ SUCCESS (was bot_detection)
+- FMX-6LiLaB8: ✅ SUCCESS (eerder 429 op tlang=en — was misclassified,
+  extractie zelf werkte al, alleen cross-language translation blokkeerde)
+
+Na deploy: Railway-logs 48–72u monitoren op bot_detection events.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/Dockerfile
+backend/requirements.txt
+docs/LOG.md
+---
+[2026-06-25 14:16] commit: docs: dependency-onderhoud wiki — optie 2 + update-discipline
+
+B1 — Optie 2 (interne JS-runtime) als roadmap taak 2.8:
+Bewust gekozen voor optie 1 (Node.js v22 via NodeSource) als acute
+fix. Optie 2 (quickjs-ng, geen externe Node) gedocumenteerd als
+post-launch onderzoekstaak met expliciete afweging en aandachtspunt
+voor de latente enabled_runtimes vs js_runtimes inconsistentie.
+
+B2 — Dependency-update-discipline als taak 2.9 + monitoring.md:
+Nieuwe sectie "Dependency-onderhoud" in monitoring.md:
+- Principe: pin + handmatige promotie na groene test
+- Per-dependency risicotabel (yt-dlp, Node.js, Next.js, overige)
+- Verificatietest-recept per hoog-risico dependency
+- Nightly/master-builds bewust uitgesloten van productie
+- Latente js_runtimes inconsistentie gedocumenteerd als kleine
+  opschoontaak (niet aanraken in deze pass)
+
+deployment.md: Node.js versie-koppeling gedocumenteerd met verwijzing
+naar taak 2.8 en monitoring.md.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/wiki/operations/deployment.md
+docs/wiki/operations/monitoring.md
+docs/wiki/roadmap/priorities.md
 ---

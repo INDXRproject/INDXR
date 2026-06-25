@@ -358,7 +358,7 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
 
         # ── Cascade step 1: youtube-transcript-api ───────────────────────────
         session_id = video_id[-8:]
-        result = await extract_via_youtube_transcript_api(video_id, session_id=session_id)
+        result = await extract_via_youtube_transcript_api(video_id, session_id=session_id, lang_pref=normalised_lang)
         caption_model = "youtube_transcript_api"
 
         # ── Cascade step 1 metadata enrichment (reuse pre_meta if available) ──
@@ -389,14 +389,14 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
         # ── Cascade step 2: yt-dlp (ios/web_embedded) ───────────────────────
         if result is None:
             try:
-                result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id)
+                result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id, lang_pref=normalised_lang)
                 caption_model = "youtube_captions"
             except MembersOnlyVideoError:
                 raise  # structural — step 3 cannot help
             except Exception as step2_err:
                 # ── Cascade step 3: yt-dlp (tv/android client rotation) ──────
                 logger.info(f"[CASCADE] {video_id}: step 2 failed ({type(step2_err).__name__}), trying step 3 (tv/android)")
-                result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id, clients=['tv', 'android'])
+                result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id, clients=['tv', 'android'], lang_pref=normalised_lang)
                 caption_model = "youtube_captions_rotated"
 
         # result can be a dict (success) or list (empty/failure)

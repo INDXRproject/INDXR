@@ -77,12 +77,16 @@ Dit is geen bug maar inherent aan het ARQ-polling-model. Upstash (per-commando p
 **Vastgesteld:** 2026-04-23  
 **Impact:** Structureel
 
-YouTube's timedtext API geeft consistent 429 errors bij het downloaden van niet-Engelse auto-captions (getest: Arabisch, Nederlands, Russisch). Dit is een bekend en onopgelost issue in yt-dlp zelf — niet fixbaar via subtitleslangs, sleep, of retries. Daarnaast forceert YouTube `tlang=en` in de VTT URL ongeacht de subtitleslangs instelling, waardoor de originele taal niet via captions beschikbaar is.
+~~YouTube's timedtext API geeft consistent 429 errors bij het downloaden van niet-Engelse auto-captions.~~ **Opgelost 2026-06-25.**
+
+**Analyse achteraf:** De 429 was niet een fundamentele YouTube-beperking op niet-Engelse captions, maar een rate-limit specifiek op de `tlang=`-parameter (YouTube's vertaalservice). Door altijd `subtitleslangs=['en']` te vragen activeerde de cascade automatisch een vertaalcall (`lang=ar&tlang=en`). Die URL geeft 429. Originele-taal-URLs (`lang=ar`, geen `tlang`) geven consistent 200.
+
+**Fix:** De cascade vraagt nu de brontaal van de video op via `lang_pref` (afgeleid uit YouTube Data API's `video.language`). `tlang=`-URLs worden nooit meer aangevraagd. Engels blijft de fallback als de brontaal onbekend is. Zie `backend/youtube_utils.py` en ADR-002.
 
 **Wat dit betekent voor gebruikers:**
-- Engelstalige videos: werkt volledig via captions ✅
-- Niet-Engelse videos via captions: onbetrouwbaar — 429 errors of Engelse vertaling ipv originele taal ❌
-- Niet-Engelse videos via AI transcriptie (AssemblyAI): werkt correct, geeft originele taal terug ✅
+- Engelstalige videos: ongewijzigd ✅
+- Niet-Engelse videos via captions: geeft nu originele taal terug ✅
+- Niet-Engelse videos via AI transcriptie (AssemblyAI): ongewijzigd, geeft originele taal terug ✅
 
 **Aanbevolen flow voor niet-Engelse content:**
 AssemblyAI transcriptie is de enige betrouwbare route voor niet-Engelse videos. Dit moet duidelijk gecommuniceerd worden in de UI en marketing — caption extractie is primair voor Engelstalige content.
