@@ -1,3 +1,7 @@
+[2026-06-25 17:00] docs: wiki dependency-onderhoud gedocumenteerd — B1 optie 2 (interne JS-runtime) als roadmap taak 2.8; B2 dependency-update-discipline als taak 2.9 + monitoring.md sectie "Dependency-onderhoud" (per-dependency risicotabel, verificatietest-recept, latente js_runtimes inconsistentie); deployment.md Node.js versie-koppeling bijgewerkt | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/deployment.md
+---
+[2026-06-25 16:00] fix: yt-dlp 2026.3.17 → 2026.06.09 + Node.js v18 → v22 in Dockerfile — lost YouTube bot-detection op (web_embedded client was kapot in 2026.3.17, gefixt in 2026.03.13; verouderde signatures). Lokaal getest: qG4k4vJUhaI ✅ success (was bot_detection), FMX-6LiLaB8 ✅ success. yt-dlp-ejs==0.8.0 gepind (was ongepind). Geen cascade-logica gewijzigd | gewijzigd: backend/requirements.txt, backend/Dockerfile
+---
 [2026-06-25 14:00] fix: styling-herstel afronding — (Bev.3) --warning-hover + --warning-border tokens in beide apps; (Bev.4) text-accent-foreground → text-fg-on-accent; (cleanup) 20 bestanden: bg-/text-/border-[var(--...)] → semantische classes. Bewust gelaten: border-[var(--color-success-border)] 2× (undefined token, buiten scope). Build: 2/2 ✅ | gewijzigd: apps/{app,marketing}/tokens.css, TranscriptViewer.tsx, Header.tsx, Footer.tsx, AppTopbar.tsx, app-sidebar.tsx, 14 dashboard/component bestanden
 ---
 [2026-06-25 12:00] fix: 2 styling-bugs na monorepo-migratie — (1) @source directive toegevoegd aan apps/app/tokens.css zodat Tailwind packages/shared scant (zelfde fix als marketing 2026-06-04); (2) TranscriptViewer scroll-bug: h-[calc(100vh-4rem)] overflow-hidden verwijderd, sticky action bar, video sidebar lg:sticky. Build: 2/2 ✅ | gewijzigd: apps/app/src/app/styles/tokens.css, apps/app/src/components/library/TranscriptViewer.tsx
@@ -5544,4 +5548,53 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: apps/app/src/app/styles/tokens.css
 apps/app/src/components/library/TranscriptViewer.tsx
 docs/LOG.md
+---
+[2026-06-25 12:21] commit: fix: styling-herstel afronding — bevindingen 3 & 4 + cleanup
+
+Bevinding 3: --warning-hover en --warning-border tokens aangemaakt in
+@theme inline + :root/:dark van beide apps (marketing + app).
+Waarden volgen het patroon van --accent-hover (donkerder in light,
+lichter in dark). Gerelateerde classes in TranscriptViewer opgeschoond
+naar hover:bg-warning-hover en border-warning-border.
+
+Bevinding 4: text-accent-foreground (Shadcn-conventie, undefined token)
+→ text-fg-on-accent (custom token, consistent met rest van codebase
+zoals transcribe/page.tsx). Actieve editor toolbar-iconen zijn nu
+zichtbaar op hun accent-achtergrond.
+
+Cleanup: 20 bestanden — alle bg-[var(--...)], text-[var(--...)],
+border-[var(--...)] → semantische Tailwind equivalenten (bg-accent,
+text-fg-muted, border-border, hover:bg-surface-elevated, etc.).
+Opacity-modifier varianten (bg-accent/50) werken correct in Tailwind v4
+via color-mix. Typo bg-[var(--bg-surface-elevated)] gefixed naar
+bg-surface-elevated. Inline style={{ }} properties ongewijzigd (bewust).
+Bewust gelaten: border-[var(--color-success-border)] 2× in
+TranscriptList.tsx (--color-success-border undefined, analogous aan
+Bev.3 maar buiten scope).
+
+Build: 2/2 ✅ (app 31 routes, marketing 60 routes)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/billing/page.tsx
+apps/app/src/app/dashboard/library/[id]/page.tsx
+apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/app/dashboard/page.tsx
+apps/app/src/app/dashboard/settings/page.tsx
+apps/app/src/app/dashboard/transcribe/page.tsx
+apps/app/src/app/styles/tokens.css
+apps/app/src/components/AppTopbar.tsx
+apps/app/src/components/app-sidebar.tsx
+apps/app/src/components/dashboard/ActiveJobsIndicator.tsx
+apps/app/src/components/dashboard/MobileTabBar.tsx
+apps/app/src/components/dashboard/settings/DeveloperExportsCard.tsx
+apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx
+apps/app/src/components/dashboard/settings/SecuritySettingsCard.tsx
+apps/app/src/components/library/RagExportView.tsx
+apps/app/src/components/library/TranscriptList.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+apps/marketing/src/app/styles/tokens.css
+docs/LOG.md
+packages/shared/src/components/Footer.tsx
+packages/shared/src/components/Header.tsx
 ---

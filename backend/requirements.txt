@@ -6,7 +6,7 @@ sentry-sdk[fastapi]==2.58.0
 upstash-redis==1.7.0
 langcodes==3.5.1
 lingua-language-detector==2.2.0
-yt-dlp-ejs
+yt-dlp-ejs==0.8.0
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
@@ -89,5 +89,5 @@ uvloop==0.22.1
 watchfiles==1.1.1
 websockets==15.0.1
 yarl==1.22.0
-yt-dlp==2026.3.17
+yt-dlp==2026.06.09
 youtube-transcript-api==1.2.4
