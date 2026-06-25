@@ -711,13 +711,13 @@ export function TranscriptViewer({
 
   return (
     <>
-      <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden bg-bg">
+      <div className="flex flex-col lg:flex-row bg-bg">
         {/* ── VIDEO SIDEBAR ── */}
         <div
           className={cn(
             "border-r bg-surface-elevated/10 shrink-0 transition-all duration-300 ease-in-out flex flex-col",
             showVideo
-              ? "w-full lg:w-[400px] xl:w-[480px]"
+              ? "w-full lg:w-[400px] xl:w-[480px] lg:sticky lg:top-0 lg:h-[calc(100svh-3.5rem)] lg:self-start"
               : "w-0 border-r-0 overflow-hidden"
           )}
         >
@@ -754,9 +754,9 @@ export function TranscriptViewer({
         </div>
 
         {/* ── MAIN EDITOR ── */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-bg">
+        <div className="flex-1 flex flex-col bg-bg">
           {/* Top action bar */}
-          <div className="h-14 border-b flex items-center justify-between px-6 shrink-0 bg-bg z-10">
+          <div className="sticky top-0 h-14 border-b flex items-center justify-between px-6 shrink-0 bg-bg z-10">
             <div className="flex items-center gap-3">
               {!showVideo && (
                 <div className="flex items-center gap-2">
@@ -943,9 +943,9 @@ export function TranscriptViewer({
             </div>
           </div>
 
-          {/* Scrollable content */}
-          <div className="flex-1 w-full overflow-hidden">
-            <ScrollArea className="h-full w-full">
+          {/* Scrollable content — scroll is handled by dashboard layout's overflow-y-auto on main */}
+          <div className="flex-1 w-full">
+            <div>
               <div className="max-w-3xl mx-auto px-6 lg:px-12 pb-20 pt-8 space-y-6">
 
                 {/* Editable title */}
@@ -1076,7 +1076,7 @@ export function TranscriptViewer({
                   <EditorContent editor={editor} />
                 </div>
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </div>

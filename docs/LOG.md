@@ -1,3 +1,5 @@
+[2026-06-25 12:00] fix: 2 styling-bugs na monorepo-migratie — (1) @source directive toegevoegd aan apps/app/tokens.css zodat Tailwind packages/shared scant (zelfde fix als marketing 2026-06-04); (2) TranscriptViewer scroll-bug: h-[calc(100vh-4rem)] overflow-hidden verwijderd, sticky action bar, video sidebar lg:sticky. Build: 2/2 ✅ | gewijzigd: apps/app/src/app/styles/tokens.css, apps/app/src/components/library/TranscriptViewer.tsx
+---
 [2026-06-06 11:00] docs: Railway service-namen bijgewerkt (agile-creation → api, fortunate-mindfulness → worker, project → indxr-backend) in deployment.md + ADR-048 | gewijzigd: docs/wiki/operations/deployment.md, docs/wiki/decisions/048-redis-split-upstash-railway.md
 ---
 [2026-06-06 10:00] fix: ADR-048 volledig afgerond — monkey-patch (family=AF_UNSPEC) + debug-logging verwijderd; ADR-048 status geïmplementeerd+geverifieerd (root cause: 3 aparte Railway-projecten); deployment.md: 3-services-in-1-project structuur + YOUTUBE_API_KEY gecorrigeerd naar beide services | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/048-redis-split-upstash-railway.md, docs/wiki/operations/deployment.md
@@ -5503,6 +5505,17 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py
 backend/worker.py
 docs/LOG.md
+docs/wiki/decisions/048-redis-split-upstash-railway.md
+docs/wiki/operations/deployment.md
+---
+[2026-06-06 09:54] commit: docs: Railway service-namen actualiseren na project-herstructurering
+
+agile-creation → api, fortunate-mindfulness → worker,
+project-naam → indxr-backend. Historische namen in ADR-048 voorzien
+van parenthetische noot voor context.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
 docs/wiki/decisions/048-redis-split-upstash-railway.md
 docs/wiki/operations/deployment.md
 ---
