@@ -1198,7 +1198,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
                  <div>
                    <p className="text-sm font-medium text-error">Temporarily blocked by YouTube</p>
-                   <p className="text-sm text-error/80 mt-0.5">YouTube temporarily blocked our request. Wait a few minutes and try again, or enable &quot;Generate with AI&quot; above — it accesses YouTube differently and often works immediately.</p>
+                   <p className="text-sm text-error/80 mt-0.5">
+                     {user
+                       ? <>YouTube temporarily blocked our request. Wait a few minutes and try again, or enable <strong>Generate with AI</strong> above — it transcribes the audio directly and often works immediately.</>
+                       : <>YouTube temporarily blocked our request. Wait a few minutes and try again, or <a href={marketingHref('/signup')} className="underline">sign in</a> to use AI transcription instead.</>
+                     }
+                   </p>
                  </div>
                </div>
              ) : error?.errorType === 'no_captions' ? (
@@ -1206,7 +1211,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
                  <div>
                    <p className="text-sm font-medium text-error">No captions available</p>
-                   <p className="text-sm text-error/80 mt-0.5">No captions found for this video. Enable &quot;Generate with AI&quot; above to transcribe it with AI — 1 credit per minute of audio. If no speech is detected, your credits are automatically refunded.</p>
+                   <p className="text-sm text-error/80 mt-0.5">
+                     {user
+                       ? <>No captions found for this video. Enable <strong>Generate with AI</strong> above to transcribe it with AI — 1 credit per minute of audio. If no speech is detected, your credits are automatically refunded.</>
+                       : <>No captions found for this video. <a href={marketingHref('/signup')} className="underline">Sign in</a> to use AI transcription — 1 credit per minute of audio. If no speech is detected, your credits are automatically refunded.</>
+                     }
+                   </p>
                  </div>
                </div>
              ) : error?.isCreditsError ? (

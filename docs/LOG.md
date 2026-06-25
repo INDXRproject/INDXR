@@ -1,3 +1,5 @@
+[2026-06-25 21:00] fix: AI-transcriptie success-card + bot-detection copy — (1) useJobStatus: Realtime-pad deed extra poll naar API-endpoint zodat transcript-data beschikbaar is voor onComplete (raw Realtime-payload mist transcript-kolom → success-card verscheen nooit); (2) VideoTab: bot_detection en no_captions error-copy nu auth-context-aware (anoniem: verwijst naar signup, ingelogd: verwijst naar "Generate with AI" toggle). Build: 2/2 ✅ | gewijzigd: packages/shared/src/hooks/useJobStatus.ts, packages/shared/src/components/free-tool/VideoTab.tsx
+---
 [2026-06-25 19:00] fix: brontaal-eerst caption cascade — lang_pref parameter toegevoegd aan extract_via_youtube_transcript_api + extract_with_ytdlp; normalised_lang doorgegeven vanuit main.py en worker.py. Vermijdt tlang=-vertaalcalls (root cause van 429 én Engelse machinevertalingen). Lokaal geverifieerd: ar auto-only 776 segmenten in Arabisch ✅, en control ongewijzigd ✅. ADR-002 brontaal-eerst nu werkelijk geïmplementeerd. Wiki gecorrigeerd (known-issues, ai-pipeline, ADR-002). | gewijzigd: backend/youtube_utils.py, backend/main.py, backend/worker.py, docs/wiki/decisions/002-youtube-captions.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md
 ---
 [2026-06-25 17:00] docs: wiki dependency-onderhoud gedocumenteerd — B1 optie 2 (interne JS-runtime) als roadmap taak 2.8; B2 dependency-update-discipline als taak 2.9 + monitoring.md sectie "Dependency-onderhoud" (per-dependency risicotabel, verificatietest-recept, latente js_runtimes inconsistentie); deployment.md Node.js versie-koppeling bijgewerkt | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/operations/monitoring.md, docs/wiki/operations/deployment.md
@@ -5651,4 +5653,41 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/wiki/operations/deployment.md
 docs/wiki/operations/monitoring.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-06-25 18:33] commit: fix: brontaal-eerst caption cascade — vermijdt tlang= 429
+
+Root cause: door altijd subtitleslangs=['en'] + languages=["en"] te
+vragen genereerde YouTube een vertaal-URL (lang=ar&tlang=en). Die URL
+triggert HTTP 429 — YouTube's rate-limit zit specifiek op de
+tlang=-parameter (vertaalservice). Originele-taal-URLs (lang=ar, geen
+tlang) geven consistent HTTP 200.
+
+Fix:
+- extract_via_youtube_transcript_api: lang_pref parameter toegevoegd;
+  languages=[lang_pref, "en"] als lang_pref != 'en', anders ["en"]
+- extract_with_ytdlp: lang_pref parameter toegevoegd; subtitleslangs
+  en selectielogica passen de taalvoorkeur toe; fallback naar 'en'
+- main.py + worker.py: normalised_lang (al beschikbaar uit YouTube
+  Data API pre-fetch) doorgegeven als lang_pref aan alle 6 cascade-
+  aanroepen (stap 1+2+3 in beide paden)
+
+Geverifieerd lokaal:
+- Arabische auto-only (qG4k4vJUhaI, lang_pref='ar'):
+  776 segmenten in Arabisch, geen machine-vertaling ✅
+- Engelse video (dQw4w9WgXcQ, lang_pref='en'): ongewijzigd ✅
+- lang_pref=None: gedrag identiek aan voor de fix ✅
+- youtube-transcript-api stap 1 met ar: lang_code='ar' ✅
+
+ADR-002 brontaal-eerst-volgorde is nu werkelijk geïmplementeerd.
+Wiki gecorrigeerd: ADR-002 status, ai-pipeline.md (tlang-claim),
+known-issues.md (429-documentatie), LOG.md (upgrade-test-claim).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+backend/youtube_utils.py
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/decisions/002-youtube-captions.md
+docs/wiki/operations/known-issues.md
 ---

@@ -70,12 +70,23 @@ export function useJobStatus({ jobId, jobType, onUpdate, onComplete, onError }: 
     const supabase = createClient()
     const endpoint = ENDPOINT[jobType](jobId)
 
-    const handle = (job: JobStatusRow) => {
+    const handle = (job: JobStatusRow, fromRealtime = false) => {
       if (done) return
       if (job.status === 'complete') {
         done = true
         stopped = true
-        cbRef.current.onComplete(job)
+        if (fromRealtime) {
+          // Realtime payload is the raw transcription_jobs row and lacks the
+          // transcript field (stored in a separate transcripts table). Do one
+          // final poll to the API endpoint which JOINs that data, so onComplete
+          // receives the full payload including transcript content.
+          fetch(endpoint)
+            .then(r => (r.ok ? r.json() : job) as Promise<JobStatusRow>)
+            .catch(() => job as JobStatusRow)
+            .then(fullJob => cbRef.current.onComplete(fullJob))
+        } else {
+          cbRef.current.onComplete(job)
+        }
       } else if (TERMINAL.has(job.status)) {
         done = true
         stopped = true
@@ -92,7 +103,7 @@ export function useJobStatus({ jobId, jobType, onUpdate, onComplete, onError }: 
         schema: 'public',
         table: TABLE[jobType],
         filter: `id=eq.${jobId}`,
-      }, (payload) => handle(payload.new as JobStatusRow))
+      }, (payload) => handle(payload.new as JobStatusRow, true))
       .subscribe()
 
     ;(async () => {
