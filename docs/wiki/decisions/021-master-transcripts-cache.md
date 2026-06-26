@@ -261,6 +261,8 @@ CURRENT_PRODUCTION_AI_MODEL = "assemblyai_universal_3"
 
 **Canonical taalformaat:** ISO 639-1 lowercase twee-letter (`en`, `nl`, `ar`, `de`, ...). Normalisatie via `backend/language_utils.py::normalize_language_code()` — alle inkomende codes (yt-dlp info.language, YouTube Data API snippet, lingua lingua-detectie) gaan door deze functie. Manual overrides voor edge cases als `ar-orig → ar`.
 
-**AI-pad (Whisper/AssemblyAI):** De pre-transcriptie cache-read gebruikte al `language=None` (correct — taal is onbekend vóór transcriptie). Na transcriptie wordt de lingua-gedetecteerde taal nu door `normalize_language_code()` gehaald vóór schrijven naar `transcripts.language`. Whisper schrijft niet naar `master_transcripts`.
+**AI-pad (Whisper/AssemblyAI):** De pre-transcriptie cache-read gebruikte al `language=None` (correct — taal is onbekend vóór transcriptie). Na transcriptie wordt de lingua-gedetecteerde taal door `normalize_language_code()` gehaald vóór schrijven naar `transcripts.language`.
+
+**AI-cache write (2026-06-26):** `do_assemblyai_transcription` schrijft nu als fire-and-forget naar `master_transcripts` ná een succesvolle AssemblyAI-transcriptie. Guards: `video_id is not None` (YouTube-pad, nooit uploads — privacy-grens) én `language` truthy (bij onbekende lingua-detectie wordt de write overgeslagen i.p.v. `'unknown'` te forceren). `model=CURRENT_PRODUCTION_AI_MODEL`, `source_method='audio_transcription'`. De read-kant in `run_whisper_job` (taalloze lookup, quality-rank filter ≥ huidig model) was al correct — die levert nu hits zodra de cache gevuld is.
 
 **Pre-launch cache flush:** Vóór launch: `TRUNCATE master_transcripts CASCADE;` in Supabase + R2 bucket leegmaken voor clean-slate met correct genormaliseerde taalcodes.

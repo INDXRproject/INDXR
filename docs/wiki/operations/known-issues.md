@@ -98,6 +98,16 @@ Dit is geen bug die gefixt wordt — het is een YouTube infrastructuur beperking
 
 ## Actieve Bugs
 
+### ~~AI-transcriptie master-cache write ontbrak — cache-pad functioneel dood~~ ✅ Opgelost 2026-06-26
+**Vastgesteld:** 2026-06-26 (CC analyse)
+**Opgelost:** 2026-06-26
+
+`transcription_pipeline.py` importeerde `master_cache` niet en riep `master_transcripts_write` met `source_method='audio_transcription'` nergens aan. De read-kant in `run_whisper_job` was correct (taalloze lookup, quality-rank filter) maar leverde structureel een miss op omdat er nooit geschreven werd.
+
+**Fix:** `master_transcripts_write` toegevoegd als fire-and-forget `asyncio.create_task` aan het einde van Step 8 in `do_assemblyai_transcription` (ná succesvolle Supabase INSERT). Guards: alleen YouTube-pad (`video_id is not None`) én taal bekend (`language` truthy). Bij onbekende taal wordt de write overgeslagen in plaats van een `'unknown'` waarde te forceren — `language TEXT NOT NULL` schema, schone cache boven minimale hit-rate.
+
+**Openstaande gap (niet nu gefixed):** De playlist-Whisper-route (`process_playlist_video` / `process_playlist_retries`) checkt de master-cache **niet** vóór `do_assemblyai_transcription`. De write-fix cacht wel alle playlist-Whisper results, maar herhaalde playlist-aanvragen voor dezelfde video besparen de AssemblyAI-call nog niet.
+
 ### ~~Admin: Whisper transcript count telt nieuwere transcripts niet mee~~ ✅ Opgelost 2026-04-26
 **Opgelost:** `.in("processing_method", [PROCESSING_METHODS.WHISPER_LEGACY, PROCESSING_METHODS.ASSEMBLYAI])` in `src/app/admin/page.tsx`.
 

@@ -1,3 +1,5 @@
+[2026-06-26 14:00] fix: AI-transcriptie master-cache write — master_transcripts_write toegevoegd als fire-and-forget asyncio.create_task aan einde van do_assemblyai_transcription (ná succesvolle Supabase INSERT). Guards: video_id is not None (YouTube-pad, nooit uploads) én language truthy (geen 'unknown' forceren bij lingua-miss). Import CURRENT_PRODUCTION_AI_MODEL + master_transcripts_write toegevoegd. known-issues.md en ADR-021 bijgewerkt. Import-check ✅, guard-condities 4/4 ✅ | gewijzigd: backend/transcription_pipeline.py, docs/wiki/operations/known-issues.md, docs/wiki/decisions/021-master-transcripts-cache.md
+---
 [2026-06-25 21:00] fix: AI-transcriptie success-card + bot-detection copy — (1) useJobStatus: Realtime-pad deed extra poll naar API-endpoint zodat transcript-data beschikbaar is voor onComplete (raw Realtime-payload mist transcript-kolom → success-card verscheen nooit); (2) VideoTab: bot_detection en no_captions error-copy nu auth-context-aware (anoniem: verwijst naar signup, ingelogd: verwijst naar "Generate with AI" toggle). Build: 2/2 ✅ | gewijzigd: packages/shared/src/hooks/useJobStatus.ts, packages/shared/src/components/free-tool/VideoTab.tsx
 ---
 [2026-06-25 19:00] fix: brontaal-eerst caption cascade — lang_pref parameter toegevoegd aan extract_via_youtube_transcript_api + extract_with_ytdlp; normalised_lang doorgegeven vanuit main.py en worker.py. Vermijdt tlang=-vertaalcalls (root cause van 429 én Engelse machinevertalingen). Lokaal geverifieerd: ar auto-only 776 segmenten in Arabisch ✅, en control ongewijzigd ✅. ADR-002 brontaal-eerst nu werkelijk geïmplementeerd. Wiki gecorrigeerd (known-issues, ai-pipeline, ADR-002). | gewijzigd: backend/youtube_utils.py, backend/main.py, backend/worker.py, docs/wiki/decisions/002-youtube-captions.md, docs/wiki/architecture/ai-pipeline.md, docs/wiki/operations/known-issues.md
@@ -5690,4 +5692,35 @@ docs/LOG.md
 docs/wiki/architecture/ai-pipeline.md
 docs/wiki/decisions/002-youtube-captions.md
 docs/wiki/operations/known-issues.md
+---
+[2026-06-25 18:58] commit: fix: AI-transcriptie success-card + bot-detection copy
+
+Issue 1 — success-card verschijnt niet na AI-transcriptie:
+useJobStatus riep onComplete aan met de raw transcription_jobs-rij
+uit het Realtime-event. Die rij heeft geen transcript-kolom (transcript
+staat in de aparte transcripts-tabel). VideoTab._handleWhisperComplete
+en AudioTab.onComplete controleren beide op transcript.length > 0 vóór
+ze saveStatus='saved' en whisperMetadata zetten — zonder transcript in
+de payload retourneerden ze vroegtijdig zonder de success-card te tonen.
+
+Fix: bij complete via Realtime doet useJobStatus één extra poll naar
+het API-endpoint (GET /api/jobs/{id}) dat de transcript-data ophaalt
+via JOIN op de transcripts-tabel. Polling-pad was al correct.
+
+Issue 2 — bot_detection copy klopt niet voor anonieme gebruikers:
+De "Generate with AI"-toggle is alleen zichtbaar voor ingelogde users
+(user && ... op regel 997). De bot_detection- en no_captions-error-
+berichten verwezen naar "enable 'Generate with AI' above" — voor
+anonieme gebruikers verwijst dit naar een niet-zichtbare toggle.
+
+Fix: berichten zijn nu auth-context-aware:
+- user: verwijst naar "Generate with AI" toggle (correct, zichtbaar)
+- anoniem: verwijst naar /signup link als alternatief
+
+Build: 2/2 ✅
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/hooks/useJobStatus.ts
 ---

@@ -33,6 +33,7 @@ from credit_manager import (
 )
 from youtube_utils import get_proxy_url
 from language_utils import normalize_language_code
+from master_cache import master_transcripts_write, CURRENT_PRODUCTION_AI_MODEL
 
 logger = logging.getLogger("indxr-pipeline")
 
@@ -374,6 +375,18 @@ async def do_assemblyai_transcription(
             lambda: supabase.table('transcripts').insert(insert_data).execute()
         )
         transcript_id = result.data[0]['id']
+
+        # Best-effort master cache write — YouTube-pad only (privacy-grens), alleen als
+        # taal bekend is (language TEXT NOT NULL; 'unknown' forceren vervuilt de cache).
+        if video_id is not None and language:
+            asyncio.create_task(master_transcripts_write(
+                video_id=video_id,
+                language=language,
+                model=CURRENT_PRODUCTION_AI_MODEL,
+                transcript_data=transcript,
+                duration_seconds=int(duration),
+                source_method='audio_transcription',
+            ))
 
         processing_ms = int((time.time() - assemblyai_start) * 1000)
         _track(user_id, 'whisper_completed', {
