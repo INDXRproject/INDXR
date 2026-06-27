@@ -1,4 +1,4 @@
-[2026-06-27 23:30] fix: title+channel meegeven aan caption master-cache-write [~verificatie lopend] | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/architecture/database-schema.md, docs/LOG.md
+[2026-06-27 23:30] fix: title+channel meegeven aan caption master-cache-write ✅ write-kant end-to-end bewezen (Sandler-playlist herrun, alle titels correct in library); cache-hit-kant steunt op bewezen read-logica (mc.get("title") or video_title) + pre-launch master-cache-flush die resterende title=null-rijen verwijdert | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/architecture/database-schema.md, docs/LOG.md
 ---
 [2026-06-27 23:00] fix: native caption track selectie — altijd -orig, nooit tlang= ✅ productieverificatie: iKtPI8IMuOM native ASR lang='ja-orig', geen tlang=, success — single-video én playlist-pad bevestigd | gewijzigd: backend/youtube_utils.py, docs/wiki/architecture/ai-pipeline.md, docs/LESSONS.md, docs/LOG.md
 ---
@@ -5973,3 +5973,17 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/main.py
 backend/worker.py
 ---
+[2026-06-27 21:15] commit: docs: title+channel caption-cache-write fix gedocumenteerd
+
+ADR-021: fix beschreven (write-kant null-titel, fallback naar video_id,
+fix in main.py + worker.py, bestaande null-rijen verdwijnen bij flush).
+database-schema.md: title/channel beschrijving gecorrigeerd — gevuld
+bij alle writes, niet alleen audio_transcription.
+LOG.md: tlang-fix als ✅ gesloten + title-fix als [~].
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/decisions/021-master-transcripts-cache.md
+---
+[2026-06-27 21:26] precompact: context compaction triggered

@@ -239,6 +239,20 @@ Herstel expliciete commands in beide `apps/*/vercel.json`:
 
 ---
 
+## Post-launch overwegingen
+
+### Sentry-ruis bij verwachte bot-detectie
+**Status:** Goedaardig — geen actie vereist voor launch.  
+Elke tijdelijk geblokkeerde video logt twee Sentry-errors (`[YT-DLP] stap 2` + `[YT-DLP-ROT] stap 3`), ook als de retry-pass de video alsnog oplost. Bij launch loopt de Sentry-inbox vol met verwacht gedrag.  
+**Overweging post-launch:** bot-detectie die de retry alsnog oplost niet als `error` loggen maar lager (`warning` / `info`) tot óók de retry definitief faalt.
+
+### Preview-credit-schatting wijkt af van werkelijke aftrek
+**Status:** Goedaardig — altijd in voordeel van de user.  
+De playlist-preview berekent kosten als `(totaal − 3 gratis)` vóór de library-check al-aanwezige video's eruit filtert. De user ziet daardoor een hoger bedrag dan er werkelijk wordt afgeschreven (voorbeeld: 16 getoond, 14 afgeschreven — 2 al-aanwezige paid videos overgeslagen door backend).  
+**Overweging post-launch:** laat de preview de library-check meenemen vóór het bedrag wordt getoond voor een exactere schatting.
+
+---
+
 ## Niet-kritieke TODO's
 
 ### ~~assemblyai SDK niet gepind in requirements.txt~~ ✅ Opgelost 2026-04-26
@@ -394,7 +408,7 @@ Geen externe service die alarmeert bij downtime.
 - [ ] **Welcome message + credits notification ontbreken** — Nieuwe gebruikers krijgen geen welkomstmessage bij signup. De 25-credits-claim banner staat op `/transcribe` (werkt functioneel) maar er is geen Message in inbox die de claim bevestigt of toelicht. Pre-launch: ofwel een welkomstmessage bij signup (via Supabase trigger of webhook), ofwel een post-claim confirmation message. Voorkom duplicatie met bestaande banner.
 - [ ] **Redesign context herbevestigen voor nieuwe sessie** — eerdere Claude Design sprint (kleur-tokens, blauwe accent-knoppen, hexagon-achtergronden) zit in chat-geschiedenis maar niet samengevat in wiki. Voor volgende sessie: Khidr brengt design-context terug via chat-history of geheugen; dan integreren in priorities.md 1.20 polish + voorbereiding Fase 3 redesign.
 - [ ] 4+ uur video stress test
-- [ ] RAG JSON: yt-dlp originele taal forceren i.p.v. `tlang=en` vertaling
+- [x] RAG JSON: yt-dlp originele taal forceren i.p.v. `tlang=en` vertaling ✅ Opgelost 2026-06-27 via -orig track selectie (zie ai-pipeline.md)
 - [ ] RAG JSON: Settings chunk size ✓ feedback zichtbaarheid controleren (`DeveloperExportsCard.tsx`)
 - [x] RAG JSON: "Reset export confirmation" knop in Developer Exports settings
 
