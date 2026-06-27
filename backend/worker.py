@@ -126,6 +126,7 @@ async def run_whisper_job(
         logger.info(f"[CACHE HIT] AI transcription job_id={job_id} video={video_id} model={mc['transcription_model']}")
         duration_sec = mc.get("duration_seconds") or 0
         credit_cost = max(1, math.ceil(duration_sec / 60.0))
+        char_count_ai = sum(len(s.get("text", "")) for s in mc["transcript"])
         insert_data_ai: dict = {
             "user_id": user_id,
             "source_type": "youtube",
@@ -133,10 +134,11 @@ async def run_whisper_job(
             "transcript": mc["transcript"],
             "duration": duration_sec,
             "video_id": video_id,
-            "video_url": f"https://www.youtube.com/watch?v={video_id}",
-            "language": mc.get("language", "en"),
+            "character_count": char_count_ai,
             "processing_method": "assemblyai",
         }
+        if mc.get("language"):
+            insert_data_ai["language"] = mc["language"]
         t = await asyncio.to_thread(
             lambda d=insert_data_ai: supabase.table("transcripts").insert(d).execute()
         )

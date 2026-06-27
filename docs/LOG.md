@@ -1,3 +1,5 @@
+[2026-06-27 11:00] fix: cache-hit AI-insert crash — video_url verwijderd uit run_whisper_job cache-hit branch (worker.py). video_url bestaat niet in productie transcripts-tabel (alle andere inserts laten het weg). Bijkomend: character_count toegevoegd (ontbrak vs. werkende AI-insert), language-fallback "en" vervangen door conditionele opname. Credit-veiligheid: insert crashte vóór credit-aftrek — geen financieel verlies. Import-check ✅, insert-dict verificatie ✅ | gewijzigd: backend/worker.py, docs/LOG.md
+---
 [2026-06-26 14:00] fix: AI-transcriptie master-cache write — master_transcripts_write toegevoegd als fire-and-forget asyncio.create_task aan einde van do_assemblyai_transcription (ná succesvolle Supabase INSERT). Guards: video_id is not None (YouTube-pad, nooit uploads) én language truthy (geen 'unknown' forceren bij lingua-miss). Import CURRENT_PRODUCTION_AI_MODEL + master_transcripts_write toegevoegd. known-issues.md en ADR-021 bijgewerkt. Import-check ✅, guard-condities 4/4 ✅ | gewijzigd: backend/transcription_pipeline.py, docs/wiki/operations/known-issues.md, docs/wiki/decisions/021-master-transcripts-cache.md
 ---
 [2026-06-25 21:00] fix: AI-transcriptie success-card + bot-detection copy — (1) useJobStatus: Realtime-pad deed extra poll naar API-endpoint zodat transcript-data beschikbaar is voor onComplete (raw Realtime-payload mist transcript-kolom → success-card verscheen nooit); (2) VideoTab: bot_detection en no_captions error-copy nu auth-context-aware (anoniem: verwijst naar signup, ingelogd: verwijst naar "Generate with AI" toggle). Build: 2/2 ✅ | gewijzigd: packages/shared/src/hooks/useJobStatus.ts, packages/shared/src/components/free-tool/VideoTab.tsx
@@ -5723,4 +5725,27 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/hooks/useJobStatus.ts
+---
+[2026-06-26 12:17] commit: fix: AI-transcriptie master-cache write — herstel dood cache-pad
+
+master_transcripts_write (source_method='audio_transcription') werd nergens
+aangeroepen: pipeline importeerde master_cache niet en had geen write na de
+succesvolle AssemblyAI-transcriptie. De read-kant in run_whisper_job was
+correct maar gaf structureel een miss.
+
+Fix: fire-and-forget asyncio.create_task ná de Supabase INSERT in
+do_assemblyai_transcription (analoog aan caption-flow in worker.py).
+Guards: video_id is not None (YouTube-pad, nooit uploads — privacy-grens)
+ÉN language truthy (geen 'unknown' forceren bij lingua-miss —
+language TEXT NOT NULL, schone cache boven minimale hit-rate).
+
+Openstaande gap (niet nu): playlist-Whisper-route checkt master-cache
+niet vóór transcriptie; herhaalde playlist-aanvragen besparen de
+AssemblyAI-call nog niet.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/transcription_pipeline.py
+docs/LOG.md
+docs/wiki/decisions/021-master-transcripts-cache.md
+docs/wiki/operations/known-issues.md
 ---
