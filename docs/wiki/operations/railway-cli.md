@@ -172,6 +172,31 @@ railway logs -p "$PROJECT_ID" -s worker --since 1h --filter "CACHE HIT"
 
 ---
 
+## Bekende gedragingen en valkuilen
+
+### (a) Token / PATH niet geladen in nieuwe shell
+
+`~/.bashrc` wordt niet altijd gesourced in niet-interactieve shells (bijv. CC Bash tool). Als `railway: command not found` of `Unauthorized` verschijnt: exporteer inline vóór elk commando:
+
+```bash
+export RAILWAY_API_TOKEN=<token-uit-bashrc>
+export PATH="$HOME/.railway/bin:$PATH"
+railway logs ...
+```
+
+De waarde van `RAILWAY_API_TOKEN` staat in `~/.bashrc` — nooit in de repo.
+
+### (b) Log-cap: ~500 regels ≈ 1,5 uur terugkijk
+
+Railway CLI capt op ~500 regels per fetch. Met de watchdog-cron die elke 2 minuten tientallen httpx-regels produceert, dekt `-n 500` of `--since 4h` in de praktijk slechts ~1,5 uur geschiedenis.
+
+**Aanpak voor oudere logs:**
+
+- Gebruik `--since <Xh>` én `--filter "<keyword>"` samen — de server-side filter vergroot het effectieve tijdvenster aanzienlijk (alleen matchende regels tellen mee voor de cap).
+- Voor logs ouder dan ~6 uur: Sentry (Railway-integratie, production events) of Supabase (job-state, transcript-rijen) zijn de fallback. Railway's eigen web-UI kan ook meer tonen.
+
+---
+
 ## Wat Khidr NIET hoeft te doen per sessie
 
 - Geen `railway login` — token-authenticatie is stateless

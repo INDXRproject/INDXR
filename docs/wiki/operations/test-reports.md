@@ -4,6 +4,52 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## AI-cache Step 0 productieverificatie — 2026-06-27
+
+**Datum:** 2026-06-27  
+**Tester:** Khidr (playlist) + CC (log-analyse)  
+**Commit:** 9f29bc3 (refactor: centraliseer AI cache-read in do_assemblyai_transcription Step 0)  
+**Status:** ✅ PASS — cache-hit bevestigd in productie
+
+### Setup
+
+Sandler "Justice"-playlist (`PL30C13C91CFFEFEA6`, playlist-job `75a84011`), 19 video's. Video 1 (`kBdfcR-8hEY`) via Whisper (AI-pad), eerder al getranscribeerd → in `master_transcripts`. Playlist afgerond in **0:54** — verdacht snel, wijst op cache-hit op de AI-video.
+
+### Test 1 — AI cache-hit (kBdfcR-8hEY, Whisper)
+
+| Check | Bewijs |
+|-------|--------|
+| `[pipeline] CACHE HIT` aanwezig | ✅ `13:46:45 - [pipeline] CACHE HIT: video=kBdfcR-8hEY model=assemblyai_universal_3 job=c63da882` |
+| `master_cache read OK` aanwezig | ✅ `13:46:45 - master_cache read OK: kBdfcR-8hEY source=audio_transcription lang=en model=assemblyai_universal_3` |
+| Geen `[YT-DLP-AUDIO]` download | ✅ afwezig in logs |
+| Geen AssemblyAI-call | ✅ afwezig in logs |
+| Jobduur | ✅ **3.17 seconden** (arq timing) — was meerdere minuten bij verse call |
+| Credit-aftrek | ✅ `13:46:46 - [pipeline] Cache hit complete: transcript_id=1965afe9-... 55cr` |
+| Credit-bedrag correct | ✅ 55cr = `ceil(55 min)` — exact correct voor ~55-min video |
+
+### Test 2 — Caption cache-hits (video's 1–16, 18)
+
+Alle 17 caption-video's: direct `[CACHE HIT] caption playlist 75a84011 video=... lang=en`, 1–2 seconden per video. Geen yt-dlp-calls, geen fouten.
+
+### Test 3 — Live extractie (iKtPI8IMuOM, video 17)
+
+Geen cache-hit, 18.85 seconden. Dit is de bekende tlang-kandidaat (YT Data API retourneert `language='en'` voor Japanse video). Geen fout — `Chain complete — no retry-eligible failures`. Openstaand: tlang=en bug (apart onderzoek 2026-06-27).
+
+### Conclusie
+
+| Metric | Waarde |
+|--------|--------|
+| Totaal videos | 19 |
+| AI cache-hit | 1/1 ✅ |
+| Caption cache-hits | 17/17 ✅ |
+| Live extracties | 1 (iKtPI8IMuOM, verwacht) |
+| Fouten | 0 |
+| Doorlooptijd | 0:54 |
+
+AI-cache Step 0 werkt in productie. Beide paden (standalone + playlist) raken nu de cache via `do_assemblyai_transcription`.
+
+---
+
 ## AI-cache, dedup en brontaal-fix — Sessie 2026-06-27
 
 **Datum:** 2026-06-25 t/m 2026-06-27  

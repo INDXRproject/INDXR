@@ -267,4 +267,15 @@ CURRENT_PRODUCTION_AI_MODEL = "assemblyai_universal_3"
 
 **AI-cache read centralisatie (2026-06-27):** De `master_transcripts_read` voor het AI-pad is verplaatst uit `run_whisper_job` naar **Step 0 van `do_assemblyai_transcription`** zelf. Dit deelt de cache-read over beide callers — standalone (`run_whisper_job`) én playlist (`process_playlist_video` Whisper-pad). De playlist miste de cache-read voorheen volledig. Bij een HIT verwerkt de helper alles intern: credits (via `deduct_credits`, respecteert `deduct_credits_on_success`), transcript-INSERT, `_update_job(status='complete')`. Return: `{success: True, transcript_id, credit_cost, duration_seconds}` — zelfde interface als bij een verse transcriptie. Op het playlist-pad: `rpc_credit_amount=0`, RPC trekt nooit credits af voor Whisper-video's (helper doet dat).
 
+**Productieverificatie (2026-06-27):** Sandler "Justice"-playlist (75a84011), video kBdfcR-8hEY (Whisper, ~55 min). Logs bevestigen:
+
+```
+13:46:44 - [playlist 75a84011:0] Processing kBdfcR-8hEY (whisper=True, free=True)
+13:46:45 - master_cache read OK: kBdfcR-8hEY source=audio_transcription lang=en model=assemblyai_universal_3
+13:46:45 - [pipeline] CACHE HIT: video=kBdfcR-8hEY model=assemblyai_universal_3 job=c63da882-...
+13:46:46 - [pipeline] Cache hit complete: transcript_id=1965afe9-... 55cr job=c63da882-...
+```
+
+Totale jobduur: **3.17 seconden** (was meerdere minuten bij verse AssemblyAI-call). Geen `[YT-DLP-AUDIO]` download, geen AssemblyAI-call. Credit-aftrek: **55cr** = `ceil(55 min)` — correct. Beide paden (standalone + playlist) delen nu de cache-read via Step 0.
+
 **Pre-launch cache flush:** Vóór launch: `TRUNCATE master_transcripts CASCADE;` in Supabase + R2 bucket leegmaken voor clean-slate met correct genormaliseerde taalcodes.

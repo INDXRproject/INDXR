@@ -1,3 +1,5 @@
+[2026-06-27 22:00] docs: AI-cache productieverificatie + Railway CLI leerpunten gedocumenteerd — ADR-021 uitgebreid met logbewijs (playlist 75a84011, kBdfcR-8hEY, CACHE HIT 3.17s, 55cr exact); test-reports.md nieuw rapport (19/19, 0:54, 1 AI-hit + 17 caption-hits); railway-cli.md twee valkuil-noten (token/PATH inline-export, ~500-regels log-cap); LESSONS.md playlist-shared-helper patroon toegevoegd | gewijzigd: docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/operations/test-reports.md, docs/wiki/operations/railway-cli.md, docs/LESSONS.md, docs/LOG.md
+---
 [2026-06-27 20:45] ops: Railway CLI volledig geconfigureerd ✅ — account-scoped token (no-workspace) werkt; `railway whoami` → contact@indxr.ai; project-ID 4126c5e1 opgehaald; worker-logs + process_playlist_video filter bewezen; token persistent in ~/.bashrc als RAILWAY_API_TOKEN; railway-cli.md bijgewerkt met echte IDs
 ---
 [2026-06-27 20:30] ops: Railway token verificatie geblokkeerd — token c96d6…1118c9 geeft 401 op beide auth-headers (Bearer + Project-Access-Token); ongeldig token verwijderd uit ~/.bashrc. Wacht op nieuw token van Khidr via railway.com/account/tokens. CLI zelf werkt (v5.23.1 geïnstalleerd)
@@ -5882,4 +5884,21 @@ Changed: backend/transcription_pipeline.py
 backend/worker.py
 docs/wiki/architecture/playlist-engine.md
 docs/wiki/decisions/021-master-transcripts-cache.md
+---
+[2026-06-27 15:44] commit: ops: Railway CLI installeren + log-toegang configureren voor CC
+
+CC kan nu zelfstandig worker- en api-logs ophalen zonder interactieve login.
+Account-scoped token (no-workspace) vereist — workspace-scoped tokens worden
+geweigerd door CLI (bug #845). Token staat persistent in ~/.bashrc als
+RAILWAY_API_TOKEN, niet in de repo.
+
+- railway-cli.md: volledig recept (installatie, token-type, project/service IDs,
+  log-commando's, filter-voorbeelden, persistentie-tabel)
+- INDEX.md: verwijzing naar railway-cli.md toegevoegd
+- LOG.md: sessie-entries bijgewerkt
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/operations/railway-cli.md
 ---
