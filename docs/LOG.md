@@ -1,3 +1,11 @@
+[2026-06-27 20:45] ops: Railway CLI volledig geconfigureerd ✅ — account-scoped token (no-workspace) werkt; `railway whoami` → contact@indxr.ai; project-ID 4126c5e1 opgehaald; worker-logs + process_playlist_video filter bewezen; token persistent in ~/.bashrc als RAILWAY_API_TOKEN; railway-cli.md bijgewerkt met echte IDs
+---
+[2026-06-27 20:30] ops: Railway token verificatie geblokkeerd — token c96d6…1118c9 geeft 401 op beide auth-headers (Bearer + Project-Access-Token); ongeldig token verwijderd uit ~/.bashrc. Wacht op nieuw token van Khidr via railway.com/account/tokens. CLI zelf werkt (v5.23.1 geïnstalleerd)
+---
+[2026-06-27 20:00] ops: Railway CLI geïnstalleerd + non-interactieve authenticatie gedocumenteerd — railway v5.23.1 in ~/.railway/bin; RAILWAY_API_TOKEN-flow beschreven (account token, persistent via ~/.bashrc); commando-recept voor worker/api logs + filter op video-ID, ARQ-task, level, CACHE HIT; wiki railway-cli.md aangemaakt; INDEX.md bijgewerkt. Verificatie wacht op token van Khidr (zie "Wat Khidr moet doen" hieronder) | gewijzigd: docs/wiki/operations/railway-cli.md, docs/wiki/INDEX.md, docs/LOG.md
+---
+[2026-06-27 19:00] refactor: AI-cache read centralisatie — master_transcripts_read verplaatst uit run_whisper_job naar Step 0 van do_assemblyai_transcription. Playlist-Whisper-pad had de cache volledig gemist (riep helper direct aan); nu gedeeld. Cache-hit-handling in de helper: credit-aftrek (respecteert deduct_credits_on_success), transcript-INSERT, _update_job(complete), return {success:True, transcript_id, credit_cost}. Verwijderd uit worker.py: import math, deduct_credits import, inline 47-regel cache-hit blok. Import-check ✅, AST-check Step 0 op r.170 ✅, vier scenario's code-traced ✅ | gewijzigd: backend/transcription_pipeline.py, backend/worker.py, docs/wiki/architecture/playlist-engine.md, docs/wiki/decisions/021-master-transcripts-cache.md, docs/LOG.md
+---
 [2026-06-27 18:00] fix: title+channel in master-cache + grammatica playlist + retry backlog — (1) master_transcripts_write krijgt title/channel parameters; master_transcripts_read retourneert ze; pipeline.py geeft video_title+channel mee; worker.py cache-hit gebruikt mc.get("title") or title or video_id + conditioneel channel. Vereist SQL-migratie (title/channel kolommen, kale SQL geleverd — supabase/config.toml ontbreekt, CLI sync niet mogelijk). (2) PlaylistManager.tsx grammatica: singular/plural gecorrigeerd voor botOrTimeout, membersOnly, youtubeRestricted. (3) User-facing playlist retry toegevoegd aan backlog.md. Import-check ✅, build 2/2 ✅ | gewijzigd: backend/master_cache.py, backend/transcription_pipeline.py, backend/worker.py, packages/shared/src/components/PlaylistManager.tsx, docs/wiki/architecture/database-schema.md, docs/wiki/operations/test-reports.md, docs/wiki/roadmap/backlog.md, docs/LOG.md
 ---
 [2026-06-27 16:00] feat: dead-job reaper (ADR-049) + dedup stale-filter — watchdog Pass 0a: stuck pending (NULL heartbeat + created_at > 30min) → error/interrupted. Pass 0b: stuck active met stale heartbeat > 10min (IS NOT NULL guard) → error/interrupted. Playlist-veiligheid: Pass 0b sluit playlist-video-jobs uit via last_heartbeat_at IS NOT NULL (hun heartbeat schrijft naar playlist_extraction_jobs, nooit transcription_jobs). Dedup OR-filter: 30min created_at / 10min heartbeat drempel. timedelta import toegevoegd main.py. Import-check ✅ | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/049-dead-job-reaper.md, docs/wiki/INDEX.md, docs/wiki/operations/test-reports.md, docs/LOG.md
@@ -5826,4 +5834,52 @@ docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/decisions/049-dead-job-reaper.md
 docs/wiki/operations/test-reports.md
+---
+[2026-06-27 13:50] commit: fix: title+channel in master-cache + playlist grammar fix
+
+master_cache: master_transcripts_write accepteert nu optionele title en
+channel parameters; master_transcripts_read retourneert ze als extra keys.
+transcription_pipeline: geeft video_title en channel mee aan de write.
+worker: cache-hit branch gebruikt mc.get("title") or title or video_id
+en voegt channel conditioneel toe — cache-hit toont nu de echte YouTube-
+titel in de library i.p.v. het video-ID.
+
+Migratie vereist (kolommen in master_transcripts): supabase/config.toml
+ontbreekt dus CLI-push niet mogelijk. SQL geleverd in commit message voor
+handmatige run via Dashboard.
+
+  ALTER TABLE master_transcripts ADD COLUMN IF NOT EXISTS title TEXT;
+  ALTER TABLE master_transcripts ADD COLUMN IF NOT EXISTS channel TEXT;
+
+PlaylistManager: singular/plural gecorrigeerd voor botOrTimeout, membersOnly
+en youtubeRestricted ("1 video were" → "1 video was", "These were" → "It was").
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/master_cache.py
+backend/transcription_pipeline.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/operations/test-reports.md
+docs/wiki/roadmap/backlog.md
+packages/shared/src/components/PlaylistManager.tsx
+---
+[2026-06-27 14:07] precompact: context compaction triggered
+[2026-06-27 15:41] precompact: context compaction triggered
+[2026-06-27 15:44] commit: refactor: centraliseer AI cache-read in do_assemblyai_transcription (Step 0)
+
+Playlist-Whisper-pad miste de master_transcripts cache volledig: process_playlist_video
+roept do_assemblyai_transcription direct aan, waardoor de inline cache-read in
+run_whisper_job nooit bereikt werd. Opgelost door cache-read naar Step 0 van de gedeelde
+helper te verplaatsen — beide paden (standalone + playlist) raken nu altijd de cache.
+
+- transcription_pipeline.py: voeg Step 0 cache-check toe aan do_assemblyai_transcription
+- worker.py: verwijder inline cache-hit block + dode imports (math, deduct_credits)
+- wiki: playlist-engine.md + ADR-021 bijgewerkt
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/transcription_pipeline.py
+backend/worker.py
+docs/wiki/architecture/playlist-engine.md
+docs/wiki/decisions/021-master-transcripts-cache.md
 ---

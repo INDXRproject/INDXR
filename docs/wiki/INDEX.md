@@ -139,6 +139,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | [deployment.md](operations/deployment.md) | Vercel + Railway + alle env vars uitgelegd |
 | [monitoring.md](operations/monitoring.md) | PostHog events, logging levels, alerts |
 | [known-issues.md](operations/known-issues.md) | Openstaande TODOs, bekende bugs, workarounds, pre-launch checklist |
+| [railway-cli.md](operations/railway-cli.md) | Railway CLI setup + log-recepten voor worker/api (CC-gebruik) |
 | [test-reports.md](operations/test-reports.md) | Handmatige testrapporten per feature |
 | [cross-host-smoke-tests.md](operations/cross-host-smoke-tests.md) | 13 smoke tests post-migratie (8 geautomatiseerd via Playwright) |
 | [migration-summary.md](operations/migration-summary.md) | 5-minuten overzicht: huidige staat, wat gedaan, wat resteert |
