@@ -33,7 +33,7 @@ from credit_manager import (
 )
 from youtube_utils import get_proxy_url
 from language_utils import normalize_language_code
-from master_cache import master_transcripts_write, CURRENT_PRODUCTION_AI_MODEL
+from master_cache import master_transcripts_read, master_transcripts_write, CURRENT_PRODUCTION_AI_MODEL
 
 logger = logging.getLogger("indxr-pipeline")
 
@@ -164,6 +164,83 @@ async def do_assemblyai_transcription(
     try:
         video_title = audio_title or video_id or 'Untitled'
         channel: Optional[str] = None
+
+        # ── Step 0: master_transcripts cache check (AI warm path, YouTube only) ──
+        # Upload path (video_id=None) has no cache entry — skip.
+        if video_id is not None:
+            mc = await master_transcripts_read(video_id, source_method="audio_transcription")
+            if mc is not None:
+                logger.info(f"[pipeline] CACHE HIT: video={video_id} model={mc['transcription_model']} job={job_id}")
+                duration_sec = mc.get("duration_seconds") or 0
+                credit_cost = calculate_credit_cost(duration_sec)
+                if deduct_credits_on_success:
+                    try:
+                        balance = await asyncio.to_thread(check_user_balance, user_id)
+                    except Exception as e:
+                        msg = f"Could not check credit balance: {e}"
+                        await _update_job(status="error", error_message=msg)
+                        return {"success": False, "error_type": "credit_check_error", "error_message": msg, "credit_cost": 0}
+                    if balance < credit_cost:
+                        await _update_job(status="error", error_message="Insufficient credits")
+                        return {"success": False, "error_type": "insufficient_credits", "credit_cost": 0}
+                    deduction_result = await asyncio.to_thread(
+                        deduct_credits,
+                        user_id=user_id,
+                        amount=credit_cost,
+                        reason="AssemblyAI transcription (cache hit)",
+                        metadata={
+                            'source_type': 'youtube',
+                            'duration_seconds': duration_sec,
+                            'video_id': video_id,
+                            'job_id': job_id,
+                        },
+                    )
+                    if not deduction_result.get('success'):
+                        await _update_job(status="error", error_message="Credit deduction failed")
+                        return {"success": False, "error_type": "credit_deduction_failed", "credit_cost": 0}
+                    credits_deducted = True
+                    if job_id:
+                        try:
+                            await asyncio.to_thread(
+                                lambda: supabase.table('transcription_jobs')
+                                    .update({'credits_deducted': True})
+                                    .eq('id', job_id).execute()
+                            )
+                        except Exception:
+                            pass
+                char_count = sum(len(s.get("text", "")) for s in mc["transcript"])
+                insert_data: dict = {
+                    "user_id": user_id,
+                    "video_id": video_id,
+                    "title": mc.get("title") or video_title,
+                    "transcript": mc["transcript"],
+                    "duration": duration_sec,
+                    "character_count": char_count,
+                    "processing_method": "assemblyai",
+                }
+                if mc.get("language"):
+                    insert_data["language"] = mc["language"]
+                if mc.get("channel"):
+                    insert_data["channel"] = mc["channel"]
+                if collection_id:
+                    insert_data["collection_id"] = collection_id
+                t = await asyncio.to_thread(
+                    lambda d=insert_data: supabase.table("transcripts").insert(d).execute()
+                )
+                transcript_id = t.data[0]["id"]
+                await _update_job(
+                    status="complete",
+                    transcript_id=transcript_id,
+                    credits_cost=credit_cost,
+                )
+                credits_deducted = False  # success — no refund
+                logger.info(f"[pipeline] Cache hit complete: transcript_id={transcript_id} {credit_cost}cr job={job_id}")
+                return {
+                    "success": True,
+                    "transcript_id": transcript_id,
+                    "credit_cost": credit_cost,
+                    "duration_seconds": duration_sec,
+                }
 
         # ── Step 1: Get audio ─────────────────────────────────────────────────
         if audio_path is None:

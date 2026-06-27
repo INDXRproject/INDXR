@@ -95,7 +95,8 @@ Na de laatste video wordt gecontroleerd of er `bot_detection` of `timeout` foute
       - extract_with_ytdlp() → parse VTT → INSERT transcripts
    b. Whisper pad (AssemblyAI):
       - do_assemblyai_transcription() (youtube_utils + assemblyai_client)
-      - Credits aftrekken op basis van audio-duur (ceil(seconds/60), min 1)
+      - Step 0 in de helper: master_transcripts cache-read (HIT → geen AssemblyAI-call)
+      - Credits aftrekken op basis van audio-duur (ceil(seconds/60), min 1) — altijd via de helper, nooit via de RPC (amount=0)
 4. update_playlist_video_progress RPC (atomic JSONB update + completion check)
 5. Enqueue volgende video of retry-pass
 ```

@@ -24,12 +24,9 @@ from arq.connections import RedisSettings
 from dotenv import load_dotenv
 
 from audio_utils import MembersOnlyVideoError
-import math
-
 from credit_manager import (
     add_credits,
     check_user_balance,
-    deduct_credits,
     get_supabase_client,
 )
 from transcription_pipeline import (
@@ -115,54 +112,6 @@ async def run_whisper_job(
             f"— defaulting to already_deducted=True (safe)"
         )
         already_deducted = True
-
-    # ── master_transcripts cache check (AI warm path) ────────────────────
-    # Geen language-filter — AssemblyAI detecteert de taal; we kennen die niet vooraf.
-    # Alleen hit als cached model_quality_rank >= CURRENT_PRODUCTION_AI_MODEL rank.
-    # Bij hit: sla yt-dlp download + AssemblyAI volledig over. Gebruiker betaalt altijd
-    # (ADR-021 "cache financiert de infrastructuur, niet de prijs").
-    mc = await master_transcripts_read(video_id, source_method="audio_transcription")
-    if mc is not None:
-        logger.info(f"[CACHE HIT] AI transcription job_id={job_id} video={video_id} model={mc['transcription_model']}")
-        duration_sec = mc.get("duration_seconds") or 0
-        credit_cost = max(1, math.ceil(duration_sec / 60.0))
-        char_count_ai = sum(len(s.get("text", "")) for s in mc["transcript"])
-        insert_data_ai: dict = {
-            "user_id": user_id,
-            "source_type": "youtube",
-            "title": mc.get("title") or title or video_id,
-            "transcript": mc["transcript"],
-            "duration": duration_sec,
-            "video_id": video_id,
-            "character_count": char_count_ai,
-            "processing_method": "assemblyai",
-        }
-        if mc.get("language"):
-            insert_data_ai["language"] = mc["language"]
-        if mc.get("channel"):
-            insert_data_ai["channel"] = mc["channel"]
-        t = await asyncio.to_thread(
-            lambda d=insert_data_ai: supabase.table("transcripts").insert(d).execute()
-        )
-        transcript_id = t.data[0]["id"]
-        if not already_deducted:
-            await asyncio.to_thread(
-                lambda: deduct_credits(
-                    user_id, credit_cost,
-                    f"AI Transcription (cache hit): {video_id}",
-                    metadata={"video_id": video_id, "job_id": job_id},
-                )
-            )
-        await asyncio.to_thread(
-            lambda: supabase.table("transcription_jobs").update({
-                "status": "complete",
-                "transcript_id": transcript_id,
-                "credits_cost": credit_cost,
-                "credits_deducted": True,
-            }).eq("id", job_id).execute()
-        )
-        logger.info(f"← run_whisper_job ● cache-hit (transcript_id={transcript_id}, {credit_cost}cr)")
-        return
 
     async def _hb() -> None:
         await asyncio.to_thread(
