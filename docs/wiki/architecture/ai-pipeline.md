@@ -65,7 +65,7 @@ Zie [ADR-028](../decisions/028-youtube-data-api-metadata.md) voor de keuze van Y
 **Tijdsduur:** 1–5 seconden  
 **Kosten:** 0 credits
 
-> **Opgelost 2026-06-25:** De cascade vraagt nu de brontaal van de video op (via `lang_pref` uit de YouTube Data API pre-fetch) in plaats van altijd `'en'`. Dit vermijdt de `tlang=`-parameter in de timedtext-URL — YouTube's rate-limit zit specifiek op vertaalcalls (`lang=ar&tlang=en`). Originele-taal-URLs (`lang=ar`, geen tlang) geven consistent HTTP 200. De eerder gedocumenteerde 429-errors en ongewenste Engelse machinevertalingen zijn hiermee opgelost. Engels blijft de fallback als de brontaal onbekend is.
+> **Tlang-fix (2026-06-27):** `extract_with_ytdlp` (stap 2/3) selecteert altijd de native ASR-track via de **`-orig` suffix** in `automatic_captions` (bv. `ja-orig` voor Japans). Deze sleutel heeft nooit een `tlang=`-parameter in de VTT-URL. Tracks zonder `-orig` suffix (bv. `en` voor een Japanse video) bevatten `tlang=en` (machinevertalings-URL) → werden eerder gedownload → 429. Nu: Priority 1 = `info['subtitles']`, Priority 2 = `-orig` key, Priority 3 = elke sleutel waarvan de VTT-URL geen `tlang=` bevat + safety-net URL-check vlak vóór download. `lang_pref` (YouTube Data API) is onbetrouwbaar (geeft `'en'` terug voor Japanse video's) en stuurt de trackkeuze niet meer — alleen de `-orig` suffix bepaalt native vs. vertaling. Fix geldt voor single-video én playlist (gedeelde `extract_with_ytdlp` helper).
 
 ### Fallback path (geen captions → audio transcriptie)
 

@@ -1,3 +1,5 @@
+[2026-06-27 23:00] fix: native caption track selectie — altijd -orig, nooit tlang= [~verificatie in productie lopend] | gewijzigd: backend/youtube_utils.py, docs/wiki/architecture/ai-pipeline.md, docs/LESSONS.md, docs/LOG.md
+---
 [2026-06-27 22:00] docs: AI-cache productieverificatie + Railway CLI leerpunten gedocumenteerd — ADR-021 uitgebreid met logbewijs (playlist 75a84011, kBdfcR-8hEY, CACHE HIT 3.17s, 55cr exact); test-reports.md nieuw rapport (19/19, 0:54, 1 AI-hit + 17 caption-hits); railway-cli.md twee valkuil-noten (token/PATH inline-export, ~500-regels log-cap); LESSONS.md playlist-shared-helper patroon toegevoegd | gewijzigd: docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/operations/test-reports.md, docs/wiki/operations/railway-cli.md, docs/LESSONS.md, docs/LOG.md
 ---
 [2026-06-27 20:45] ops: Railway CLI volledig geconfigureerd ✅ — account-scoped token (no-workspace) werkt; `railway whoami` → contact@indxr.ai; project-ID 4126c5e1 opgehaald; worker-logs + process_playlist_video filter bewezen; token persistent in ~/.bashrc als RAILWAY_API_TOKEN; railway-cli.md bijgewerkt met echte IDs
@@ -5901,4 +5903,41 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/operations/railway-cli.md
+---
+[2026-06-27 20:24] commit: docs: AI-cache productieverificatie + Railway CLI leerpunten
+
+ADR-021 uitgebreid met logbewijs voor de Step 0 cache-hit in productie
+(playlist 75a84011, kBdfcR-8hEY: CACHE HIT 3.17s, 55cr, geen download).
+test-reports.md nieuw rapport: 19/19 video's in 0:54, 1 AI-hit + 17
+caption-hits + 1 live extractie (iKtPI8IMuOM, tlang-kandidaat).
+railway-cli.md twee valkuil-noten: inline token/PATH export + ~500-regels
+log-cap. LESSONS.md: playlist-shared-helper patroon.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/decisions/021-master-transcripts-cache.md
+docs/wiki/operations/railway-cli.md
+docs/wiki/operations/test-reports.md
+---
+[2026-06-27 20:29] precompact: context compaction triggered
+[2026-06-27 20:44] commit: fix: native caption track selectie — altijd -orig, nooit tlang=
+
+Voor niet-Engelse video's waarvan de YT Data API ten onrechte language='en'
+teruggeeft, pakte extract_with_ytdlp automatic_captions['en'] — een
+machinevertaal-URL (tlang=en) → 429 + ongewenste Engelse vertaling.
+
+yt-dlp markeert de native ASR-track met een -orig suffix (bv. ja-orig).
+Die heeft nooit tlang= in de URL, ongeacht wat lang_pref zegt.
+
+Prioriteitslogica:
+1. info['subtitles'] (handmatig, altijd native)
+2. automatic_captions[*-orig] (native ASR, nooit tlang=)
+3. automatic_captions[lang] mits VTT-URL geen tlang= bevat
++ safety net: reject elke URL met tlang= vlak vóór download
+
+Reparatie geldt voor single-video én playlist (gedeelde helper).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/youtube_utils.py
 ---
