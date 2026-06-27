@@ -727,6 +727,27 @@ async def transcribe_with_whisper(
             "available_credits": current_balance
         })
 
+    supabase = get_supabase_client()
+
+    # Deduplicatie: geef bestaande actieve job terug voor dezelfde user + video.
+    # Voorkomt gelijktijdige yt-dlp downloads naar /tmp (file-conflict) én dubbele
+    # AssemblyAI-calls. Upload-pad is per definitie uniek — alleen YouTube-pad gecheckt.
+    if source_type == "youtube" and video_id:
+        _video_url_check = f"https://www.youtube.com/watch?v={video_id}"
+        _existing = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .select('id,status')
+                .eq('user_id', user_id)
+                .eq('video_url', _video_url_check)
+                .in_('status', ['pending', 'downloading', 'transcribing', 'saving'])
+                .limit(1)
+                .execute()
+        )
+        if _existing.data:
+            _ex = _existing.data[0]
+            logger.info(f"[dedup] Returning existing job {_ex['id']} status={_ex['status']} for {video_id} (user={user_id})")
+            return JSONResponse({"job_id": _ex['id'], "status": _ex['status'], "deduplicated": True})
+
     # Insert job row into Supabase transcription_jobs
     job_id = str(uuid.uuid4())
     video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
@@ -735,7 +756,6 @@ async def transcribe_with_whisper(
         os.path.splitext(audio_filename or '')[1].lstrip('.').lower() or 'unknown'
         if source_type == "upload" else "youtube"
     )
-    supabase = get_supabase_client()
     supabase.table('transcription_jobs').insert({
         'id': job_id,
         'user_id': user_id,

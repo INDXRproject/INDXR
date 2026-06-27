@@ -78,6 +78,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [whisperNetworkDisconnected, setWhisperNetworkDisconnected] = useState(false)
   // Shown when mount-check detects a watchdog_permanent_failure — credits already refunded
   const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
+  // True when backend returned deduplicated:true — an existing job is being re-used
+  const [isAlreadyProcessing, setIsAlreadyProcessing] = useState(false)
 
   // Session resume state — populated on mount when a Whisper job is still running
   const [videoResumeData, setVideoResumeData] = useState<{
@@ -177,6 +179,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setWhisperStatus('idle')
     setShowDuplicateChoices(false)
     setPendingWhisperData(null)
+    setIsAlreadyProcessing(false)
     activeJobContextRef.current = null
     setActiveJobId(null)
   }
@@ -225,6 +228,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setIsReextracting(false)
     setShowDuplicateChoices(false)
     setPendingWhisperData(null)
+    setIsAlreadyProcessing(false)
     activeJobContextRef.current = null
     setActiveJobId(null)
   }
@@ -749,10 +753,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const jobData = await response.json()
       if (!jobData.job_id) throw new Error('Failed to start transcription job')
 
+      const isDedup = !!jobData.deduplicated
+      const initialStatus = (isDedup ? jobData.status : 'pending') as WhisperStatus
+
       sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
         jobId: jobData.job_id, videoId,
         title: pendingWhisperData.title, duration: pendingWhisperData.duration,
-        startTime: Date.now(), status: 'pending',
+        startTime: Date.now(), status: initialStatus,
       }))
 
       if (intervalRef.current !== null) { clearInterval(intervalRef.current); intervalRef.current = null }
@@ -761,10 +768,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setFinalElapsed(null)
       currentJobIdRef.current = jobData.job_id
       setIsStreaming(true)
-      setWhisperStatus('pending')
+      setWhisperStatus(initialStatus)
       intervalRef.current = setInterval(() => { elapsedRef.current += 1; setElapsedSeconds(s => s + 1) }, 1000)
 
       activeJobContextRef.current = { videoId, title: pendingWhisperData.title, context: 'confirm' }
+      setIsAlreadyProcessing(isDedup)
       setActiveJobId(jobData.job_id)
       // Completion and error are handled by _handleWhisperComplete / _handleWhisperError
     } catch (error: unknown) {
@@ -825,10 +833,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const jobData = await response.json()
       if (!jobData.job_id) throw new Error('Failed to start transcription job')
 
+      const isDedup = !!jobData.deduplicated
+      const initialStatus = (isDedup ? jobData.status : 'pending') as WhisperStatus
+
       sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
         jobId: jobData.job_id, videoId: currentVideoId,
         title: videoTitle, duration: videoDuration ?? 0,
-        startTime: Date.now(), status: 'pending',
+        startTime: Date.now(), status: initialStatus,
       }))
 
       if (intervalRef.current !== null) { clearInterval(intervalRef.current); intervalRef.current = null }
@@ -837,10 +848,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setFinalElapsed(null)
       currentJobIdRef.current = jobData.job_id
       setIsStreaming(true)
-      setWhisperStatus('pending')
+      setWhisperStatus(initialStatus)
       intervalRef.current = setInterval(() => { elapsedRef.current += 1; setElapsedSeconds(s => s + 1) }, 1000)
 
       activeJobContextRef.current = { videoId: currentVideoId, title: videoTitle, context: 'upsell' }
+      setIsAlreadyProcessing(isDedup)
       setActiveJobId(jobData.job_id)
       // Completion and error are handled by _handleWhisperComplete / _handleWhisperError
     } catch (err: unknown) {
@@ -1233,6 +1245,18 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                      Buy Credits →
                    </Button>
                  </a>
+               </div>
+             ) : isAlreadyProcessing && loading && whisperStatus !== 'idle' ? (
+               <div className="flex flex-col gap-2 w-full">
+                 <div className="p-3 rounded-lg bg-surface-elevated/60 border border-border flex items-start gap-2">
+                   <AlertCircle className="h-4 w-4 text-fg-muted mt-0.5 shrink-0" />
+                   <p className="text-sm text-fg/80">This video is already being processed — showing the existing progress.</p>
+                 </div>
+                 <TranscriptionProgress
+                   status={whisperStatus}
+                   elapsedSeconds={elapsedSeconds}
+                   audioDurationSeconds={videoDuration}
+                 />
                </div>
              ) : loading && whisperStatus !== 'idle' ? (
                <TranscriptionProgress

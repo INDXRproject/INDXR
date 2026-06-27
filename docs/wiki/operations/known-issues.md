@@ -290,6 +290,12 @@ Hoofdletter `I` en kleine letter `l` zijn visueel identiek. Bij 407: controleer 
 ### VPN blokkeert Upstash Redis TCP
 Proton VPN (en mogelijk andere commerciële VPN's) blokkeren TCP-poort 6379/6380 naar Upstash. REST/HTTPS via poort 443 werkt wel (caption cache). Symptoom: TLS handshake faalt direct — `errno=104` of `Connection reset by peer`. Workaround voor lokaal testen: VPN uit. Productie (Railway) is niet geraakt.
 
+### Post-launch hardening: Redis-lock voor 100% race-afdichting bij gelijktijdige AI-starts
+**Vastgesteld:** 2026-06-27
+**Status:** Acceptabele pre-launch beperking — post-launch hardening-optie
+**Impact:** Twee browser-tabs die binnen ~50ms exact tegelijk dezelfde video starten kunnen de deduplicatie-check omzeilen (race-window tussen SELECT en INSERT). In de praktijk verhinderd door frontend button-disable state (`loading=true` na eerste submit). Financieel: credits worden pas afgetrokken ná succesvolle transcriptie (na insert). Als race optreedt: watchdog pikt de tweede stuck job op na 5 min.
+**Oplossing als nodig:** Redis-lock per `(user_id, video_id)` met TTL van 5 minuten (bijv. `SET whisper:lock:{user_id}:{video_id} 1 NX EX 300`). Te implementeren in `backend/main.py` `transcribe_with_whisper` na de Supabase dedup-check. Vereist beschikbare Redis-instantie (zie ADR-048 Railway Redis-splitsing).
+
 ---
 
 ## Bekende Beperkingen
