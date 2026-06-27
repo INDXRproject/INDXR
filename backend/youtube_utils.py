@@ -233,9 +233,10 @@ async def extract_with_ytdlp(
     """
     Extract captions from a YouTube video via yt-dlp.
 
-    lang_pref: preferred language (from YouTube Data API video.language). Requests
-    the original-language track first to avoid YouTube's tlang= translation URLs,
-    which trigger HTTP 429. Falls back to 'en' if original is unavailable.
+    lang_pref: hint from YouTube Data API (unreliable — may return 'en' for non-English
+    videos). Used only to prefer a specific -orig key; does NOT gate which tracks are
+    requested. yt-dlp always fetches all -orig (native ASR) tracks so we never download
+    a tlang= machine-translation URL, regardless of what lang_pref says.
 
     Returns a dict with 'transcript', 'title', 'channel', etc. on success,
     or an empty dict {} when no captions are available.
@@ -255,7 +256,7 @@ async def extract_with_ytdlp(
         'skip_download': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
-        'subtitleslangs': ([_target_lang, 'en'] if _target_lang else ['en']),
+        'subtitleslangs': ['.*-orig', 'en'],  # native ASR (any lang) + en fallback; .*-orig never has tlang=
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
@@ -278,20 +279,43 @@ async def extract_with_ytdlp(
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
 
             subtitles = None
-            target_langs = [_target_lang, 'en'] if _target_lang else ['en']
             selected_lang = None
-            for _lang in target_langs:
-                if info.get('subtitles') and _lang in info['subtitles']:
-                    subtitles = info['subtitles'][_lang]
+            manual_subs = info.get('subtitles') or {}
+            auto_captions = info.get('automatic_captions') or {}
+
+            # Priority 1: manual subtitles — always native, never tlang=
+            for _lang in ([_target_lang] if _target_lang else []) + ['en'] + list(manual_subs.keys()):
+                if _lang and _lang in manual_subs:
+                    subtitles = manual_subs[_lang]
                     selected_lang = _lang
-                    break
-                if info.get('automatic_captions') and _lang in info['automatic_captions']:
-                    subtitles = info['automatic_captions'][_lang]
-                    selected_lang = _lang
+                    logger.info(f"{log_prefix} {video_id}: manual subtitle lang={_lang!r}")
                     break
 
+            # Priority 2: native ASR (-orig key) — yt-dlp marks native track with -orig suffix,
+            # which guarantees no tlang= in the URL regardless of what lang_pref says
             if not subtitles:
-                logger.info(f"{log_prefix} {video_id}: no_captions (tried {target_langs})")
+                orig_keys = [k for k in auto_captions if k.endswith('-orig')]
+                if orig_keys:
+                    preferred = f'{_target_lang}-orig' if _target_lang else None
+                    chosen_key = preferred if (preferred and preferred in orig_keys) else orig_keys[0]
+                    subtitles = auto_captions[chosen_key]
+                    selected_lang = chosen_key
+                    logger.info(f"{log_prefix} {video_id}: native ASR lang={chosen_key!r} (orig_keys={orig_keys})")
+
+            # Priority 3: last resort — non-orig auto-caption, but only if URL has no tlang=
+            if not subtitles:
+                for _lang in ([_target_lang, 'en'] if _target_lang else ['en']):
+                    if _lang not in auto_captions:
+                        continue
+                    vtt = next((s for s in auto_captions[_lang] if s.get('ext') == 'vtt'), None)
+                    if vtt and 'tlang=' not in vtt.get('url', ''):
+                        subtitles = auto_captions[_lang]
+                        selected_lang = _lang
+                        logger.info(f"{log_prefix} {video_id}: auto-caption fallback lang={_lang!r} (no tlang=)")
+                        break
+
+            if not subtitles:
+                logger.info(f"{log_prefix} {video_id}: no_captions (no native track; lang_pref={lang_pref!r})")
                 return {}
 
             vtt_subtitle = next((s for s in subtitles if s.get('ext') == 'vtt'), None)
@@ -300,6 +324,10 @@ async def extract_with_ytdlp(
                 return {}
 
             subtitle_url = vtt_subtitle['url']
+            # Safety net: never download a machine-translated URL (tlang= = YouTube server-side translation)
+            if 'tlang=' in subtitle_url:
+                logger.warning(f"{log_prefix} {video_id}: rejected tlang= URL for {selected_lang!r}, returning no_captions")
+                return {}
             dl_proxy_url = get_proxy_url(session_id=session_id) if use_proxy else None
 
             subtitle_data = None
