@@ -17,7 +17,7 @@ import tempfile
 import time
 from dotenv import load_dotenv
 import posthog
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from upstash_redis.asyncio import Redis as UpstashRedis
 
 import yt_dlp
@@ -732,14 +732,21 @@ async def transcribe_with_whisper(
     # Deduplicatie: geef bestaande actieve job terug voor dezelfde user + video.
     # Voorkomt gelijktijdige yt-dlp downloads naar /tmp (file-conflict) én dubbele
     # AssemblyAI-calls. Upload-pad is per definitie uniek — alleen YouTube-pad gecheckt.
+    # OR-filter sluit stuck/dode jobs uit (defense-in-depth naast watchdog reaper, ADR-049):
+    #   created_at < 30min: verse pending job (ARQ pikt op in seconden)
+    #   last_heartbeat_at < 10min: actief lopende standalone job
+    # Playlist-video-jobs met NULL heartbeat + oude created_at worden correct uitgesloten.
     if source_type == "youtube" and video_id:
         _video_url_check = f"https://www.youtube.com/watch?v={video_id}"
+        _dedup_fresh = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+        _dedup_hb = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
         _existing = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
                 .select('id,status')
                 .eq('user_id', user_id)
                 .eq('video_url', _video_url_check)
                 .in_('status', ['pending', 'downloading', 'transcribing', 'saving'])
+                .or_(f'created_at.gt.{_dedup_fresh},last_heartbeat_at.gt.{_dedup_hb}')
                 .limit(1)
                 .execute()
         )

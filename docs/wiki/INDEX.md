@@ -85,6 +85,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [046-monorepo-import-aliases.md](decisions/046-monorepo-import-aliases.md) | @/* lokaal, @indxr/shared/* expliciet voor shared — silent shadow risico geëlimineerd |
 | [047-turborepo-build-orchestration.md](decisions/047-turborepo-build-orchestration.md) | Turborepo als build-orchestrator — intelligent caching, cold 51s → warm 63ms |
 | [048-redis-split-upstash-railway.md](decisions/048-redis-split-upstash-railway.md) | Redis-splitsing: Upstash voor frontend (rate-limiter + caption-cache), Railway-Redis voor ARQ worker |
+| [049-dead-job-reaper.md](decisions/049-dead-job-reaper.md) | Dead-job reaper (Pass 0 in watchdog): stuck transcription_jobs → terminale status; playlist-veiligheid via heartbeat-branch-scheiding |
 
 ---
 

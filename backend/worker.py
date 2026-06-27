@@ -749,6 +749,17 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     ARQ cron: crash-recovery voor interrupted Whisper- en playlist-jobs.
     Draait elke 2 minuten.
 
+    Pass 0 — Reaper (industry-standard dead-job cleanup, ADR-049):
+      Sluit transcription_jobs in niet-terminale status die aantoonbaar dood zijn:
+        Pass 0a: status='pending', last_heartbeat_at IS NULL, created_at > 30min oud
+                 (ARQ miste pickup door Railway-restart of queue-verlies)
+        Pass 0b: status IN ('downloading','transcribing','saving'), last_heartbeat_at IS NOT NULL
+                 maar stale > 10min (standalone job die gecrashed is)
+      NOOIT gereapt: status IN ('downloading','transcribing','saving') met NULL heartbeat —
+      dit zijn actieve playlist-video-jobs (hun heartbeat schrijft naar playlist_extraction_jobs).
+      credits_deducted=False → status='error' direct.
+      credits_deducted=True  → status='interrupted' (Pass 1a hervatten voor re-enqueue).
+
     Pass 1 — Re-enqueue (watchdog_attempts=0):
       Selecteert transcription_jobs/playlist_extraction_jobs met:
         status='interrupted', credits_deducted=True, geen transcript,
@@ -771,6 +782,78 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     now = datetime.now(timezone.utc)
     stale_before = (now - timedelta(minutes=5)).isoformat()
     cutoff_24h = (now - timedelta(hours=24)).isoformat()
+
+    # ── Pass 0: Reaper — sluit stuck jobs in niet-terminale status ────────
+    # Twee strikt gescheiden branches om playlist-video-jobs NOOIT te rapen.
+    # Zie ADR-049. Volgorde: Pass 0 vóór Pass 1a zodat credits_deducted=True
+    # stuck jobs direct via Pass 1a worden herstart in dezelfde watchdog-cyclus.
+    _pending_cutoff = (now - timedelta(minutes=30)).isoformat()
+    _active_stale = (now - timedelta(minutes=10)).isoformat()
+
+    # Pass 0a: stuck pending — ARQ heeft de job nooit opgepikt.
+    # Playlist-jobs verlaten 'pending' binnen seconden → vallen buiten 30min drempel.
+    try:
+        _p0a = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .select('id,credits_deducted')
+                .eq('status', 'pending')
+                .is_('last_heartbeat_at', 'null')
+                .lt('created_at', _pending_cutoff)
+                .execute()
+        )
+        for _job in (_p0a.data or []):
+            _jid = _job['id']
+            _new_status = 'interrupted' if _job.get('credits_deducted') else 'error'
+            try:
+                await asyncio.to_thread(
+                    lambda j=_jid, s=_new_status: supabase.table('transcription_jobs').update({
+                        'status': s,
+                        'error_message': 'Watchdog reaper: stuck pending job gesloten (ARQ pickup gemist)',
+                        'updated_at': now.isoformat(),
+                    }).eq('id', j).execute()
+                )
+                logger.info(f"[WATCHDOG reaper 0a] {_jid} → {_new_status} (credits_deducted={_job.get('credits_deducted')})")
+            except Exception as _e:
+                logger.error(f"[WATCHDOG reaper 0a] update failed for {_jid}: {_e}")
+    except Exception as _e:
+        logger.error(f"[WATCHDOG reaper 0a] query failed: {_e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "0a")
+        sentry_sdk.capture_exception(_e)
+
+    # Pass 0b: stuck active — standalone job die gecrashed is tijdens verwerking.
+    # IS NOT NULL op last_heartbeat_at sluit playlist-video-jobs uit (hun heartbeat
+    # schrijft naar playlist_extraction_jobs, nooit naar transcription_jobs).
+    try:
+        _p0b = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .select('id,credits_deducted')
+                .in_('status', ['downloading', 'transcribing', 'saving'])
+                .not_.is_('last_heartbeat_at', 'null')
+                .lt('last_heartbeat_at', _active_stale)
+                .execute()
+        )
+        for _job in (_p0b.data or []):
+            _jid = _job['id']
+            _new_status = 'interrupted' if _job.get('credits_deducted') else 'error'
+            try:
+                await asyncio.to_thread(
+                    lambda j=_jid, s=_new_status: supabase.table('transcription_jobs').update({
+                        'status': s,
+                        'error_message': 'Watchdog reaper: stale heartbeat — job gesloten',
+                        'updated_at': now.isoformat(),
+                    }).eq('id', j).execute()
+                )
+                logger.info(f"[WATCHDOG reaper 0b] {_jid} → {_new_status} (credits_deducted={_job.get('credits_deducted')})")
+            except Exception as _e:
+                logger.error(f"[WATCHDOG reaper 0b] update failed for {_jid}: {_e}")
+    except Exception as _e:
+        logger.error(f"[WATCHDOG reaper 0b] query failed: {_e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "0b")
+        sentry_sdk.capture_exception(_e)
 
     # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
     try:

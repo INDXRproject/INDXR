@@ -1,3 +1,5 @@
+[2026-06-27 16:00] feat: dead-job reaper (ADR-049) + dedup stale-filter — watchdog Pass 0a: stuck pending (NULL heartbeat + created_at > 30min) → error/interrupted. Pass 0b: stuck active met stale heartbeat > 10min (IS NOT NULL guard) → error/interrupted. Playlist-veiligheid: Pass 0b sluit playlist-video-jobs uit via last_heartbeat_at IS NOT NULL (hun heartbeat schrijft naar playlist_extraction_jobs, nooit transcription_jobs). Dedup OR-filter: 30min created_at / 10min heartbeat drempel. timedelta import toegevoegd main.py. Import-check ✅ | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/049-dead-job-reaper.md, docs/wiki/INDEX.md, docs/wiki/operations/test-reports.md, docs/LOG.md
+---
 [2026-06-27 14:00] feat: deduplicatie single-video AI-transcriptie — backend (main.py): dedup-check vóór job-aanmaak (SELECT op user_id + video_url + actieve statussen; geeft bestaande job_id + deduplicated:true terug zonder nieuwe ARQ-job). Frontend (VideoTab.tsx): isAlreadyProcessing state, informatie-card bij dedup-hit (zelfde card-patroon als error-cards), status doorgegeven als initialStatus aan TranscriptionProgress. Redis-lock post-launch hardening gedocumenteerd in known-issues.md. Build: 2/2 ✅, import-check ✅, 4/4 dedup-scenario's ✅ | gewijzigd: backend/main.py, packages/shared/src/components/free-tool/VideoTab.tsx, docs/wiki/operations/known-issues.md, docs/LOG.md
 ---
 [2026-06-27 11:00] fix: cache-hit AI-insert crash — video_url verwijderd uit run_whisper_job cache-hit branch (worker.py). video_url bestaat niet in productie transcripts-tabel (alle andere inserts laten het weg). Bijkomend: character_count toegevoegd (ontbrak vs. werkende AI-insert), language-fallback "en" vervangen door conditionele opname. Credit-veiligheid: insert crashte vóór credit-aftrek — geen financieel verlies. Import-check ✅, insert-dict verificatie ✅ | gewijzigd: backend/worker.py, docs/LOG.md
@@ -5773,3 +5775,22 @@ Changed: backend/worker.py
 docs/LOG.md
 ---
 [2026-06-27 11:55] precompact: context compaction triggered
+[2026-06-27 11:58] commit: feat: deduplicatie single-video AI-transcriptie
+
+Backend: dedup-check vóór job-aanmaak filtert op (user_id, video_url,
+actieve statussen). Bij hit: retourneert bestaande job_id + status
+met deduplicated:true — geen nieuwe ARQ-job, geen dubbele AssemblyAI-call.
+
+Frontend: isAlreadyProcessing state + informatie-card bij dedup-hit
+(zelfde card-patroon als bestaande error-cards), status als initialStatus
+doorgegeven zodat TranscriptionProgress direct de juiste fase toont.
+
+Post-launch hardening (Redis-lock race-afdichting) gedocumenteerd in
+known-issues.md.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/operations/known-issues.md
+packages/shared/src/components/free-tool/VideoTab.tsx
+---

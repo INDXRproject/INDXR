@@ -4,6 +4,88 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## AI-cache, dedup en brontaal-fix — Sessie 2026-06-27
+
+**Datum:** 2026-06-25 t/m 2026-06-27  
+**Tester:** Khidr  
+**Commits:** 327d93a (brontaal), 42d3da7 (cache-write), 7d5304e (cache-hit crash), 35cc184 (dedup)  
+**Status:** DEELS PASS — dedup-bug blootgelegd, reaper fix pending (commit volgt)
+
+### Test A — Brontaal-eerst caption cascade (commit 327d93a, 2026-06-25)
+
+**Doel:** Verifieer dat yt-dlp de originele taal van auto-captions pakt, niet de tlang=en Engelse machinevertaling.
+
+| Scenario | Video | Verwacht | Resultaat |
+|---|---|---|---|
+| Arabische JRE-clip, auto-only | qG4k4vJUhaI | 776 segmenten in Arabisch (`lang=ar`) | ✅ PASS |
+| Engelse controle | dQw4w9WgXcQ | Ongewijzigd (`lang=en`) | ✅ PASS |
+| lang_pref=None (upload-pad) | — | Identiek gedrag als vóór fix | ✅ PASS (lokaal) |
+
+**Conclusie:** ADR-002 brontaal-eerst is nu werkelijk geïmplementeerd. 429-fout op tlang=-VTT-endpoint is opgelost voor niet-Engelse video's.
+
+**Openstaand uit sessie 2 (2026-04-23) nu gesloten:** Bug "yt-dlp pakt tlang=en i.p.v. originele captions" → **OPGELOST** in commit 327d93a.
+
+---
+
+### Test B — AI-transcriptie master-cache write (commit 42d3da7, 2026-06-26)
+
+**Doel:** Verifieer dat `master_transcripts_write` correct wordt aangroepen na een succesvolle AssemblyAI-transcriptie.
+
+**Bevinding vóór fix:** `master_transcripts_write` werd nooit aangeroepen — de import én aanroep ontbraken volledig in `transcription_pipeline.py`. Het cache-schrijf-pad was functioneel dood.
+
+**Fix:** Fire-and-forget `asyncio.create_task(master_transcripts_write(...))` toegevoegd na de `transcripts` INSERT. Guards: `video_id is not None` (YouTube-pad, nooit uploads) + `language truthy` (geen 'unknown' forceren bij onbekende taal; kolom is NOT NULL).
+
+| Check | Resultaat |
+|---|---|
+| Import `master_transcripts_write` aanwezig in pipeline | ✅ bevestigd in code |
+| Guard `video_id is not None` correct | ✅ upload-pad uitgesloten |
+| Guard `language truthy` correct | ✅ geen NULL/unknown in master_transcripts |
+| ADR-021 gecorrigeerd (oude tekst: "Whisper schrijft niet naar master_transcripts") | ✅ bijgewerkt |
+
+---
+
+### Test C — Cache-hit crash fix (commit 7d5304e, 2026-06-27)
+
+**Doel:** Eerste ooit werkende cache-hit (enabled door fix B) veroorzaakte productiecrash.
+
+**Fout:** `APIError: Could not find the 'video_url' column of 'transcripts' in the schema cache`  
+**Root cause:** `run_whisper_job` cache-hit branch probeerde `video_url` in te voegen in `transcripts` — kolom bestaat niet in productie (database-schema.md was incorrect). Bijkomend: `character_count` ontbrak, `language` hardcoded `"en"`.
+
+**Credit-veiligheid:** INSERT crashte vóór `deduct_credits` aanroep → gebruiker is niet afgeschreven. ✅
+
+| Fix | Resultaat |
+|---|---|
+| `video_url` verwijderd uit cache-hit INSERT | ✅ |
+| `character_count` toegevoegd (gelijk aan werkende inserts) | ✅ |
+| `language` conditioneel (geen `"en"` hardcode fallback) | ✅ |
+| `database-schema.md` gecorrigeerd (`video_url` bestaat niet in `transcripts`) | ✅ |
+
+---
+
+### Test D — Dedup productietests (commit 35cc184, 2026-06-27)
+
+**Doel:** Verifieer dedup-bescherming voor single-video AI-transcriptie.
+
+| Scenario | Video | Verwacht | Resultaat |
+|---|---|---|---|
+| Multi-tab dedup — Trump JRE 179 min | dQnF3j5APME | Tweede tab: bestaande job_id, dedup-card, credits 1× | ✅ PASS |
+| Cache-hit na dedup — JRE Bob Lazar | BEWz4SXfyCQ | Cache-hit, completes in seconden | ❌ BUG: stuck rij blokkeerde |
+| Nieuw AI-job — Huberman + Goggins 158 min | (nieuw) | Succesvolle transcriptie, credits correct | ✅ PASS |
+
+**Bug BEWz4SXfyCQ:** Dedup-check vond een historische stuck `transcription_jobs`-rij (status='pending', last_heartbeat_at=NULL, created_at=uren oud) en gaf die terug als "actieve" job. Gebruiker zag spookjob, master-cache-hit nooit bereikt. Dit triggerde ADR-049 (dead-job reaper).
+
+**Aanvullende tests nodig na reaper-deploy (commit volgt):**
+
+| Test | Status |
+|------|--------|
+| Reaper sluit BEWz4SXfyCQ stuck job automatisch (zonder handmatige SQL) | 🔲 nog niet uitgevoerd |
+| Cache-hit BEWz4SXfyCQ na reaper-cleanup | 🔲 nog niet uitgevoerd |
+| Legitimate dedup (verse job <30 min) blokkeert correct | 🔲 nog niet uitgevoerd |
+| Playlist-Whisper-job niet gereapt tijdens actieve playlist | 🔲 nog niet uitgevoerd |
+| Railway logs: `[WATCHDOG reaper]` entries zichtbaar | 🔲 nog niet uitgevoerd |
+
+---
+
 ## Sentry frontend — Sessie 3 (3 mei): definitieve conclusie
 
 **Datum:** 2026-05-03  
