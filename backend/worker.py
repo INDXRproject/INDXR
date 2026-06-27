@@ -130,7 +130,7 @@ async def run_whisper_job(
         insert_data_ai: dict = {
             "user_id": user_id,
             "source_type": "youtube",
-            "title": title or video_id,
+            "title": mc.get("title") or title or video_id,
             "transcript": mc["transcript"],
             "duration": duration_sec,
             "video_id": video_id,
@@ -139,6 +139,8 @@ async def run_whisper_job(
         }
         if mc.get("language"):
             insert_data_ai["language"] = mc["language"]
+        if mc.get("channel"):
+            insert_data_ai["channel"] = mc["channel"]
         t = await asyncio.to_thread(
             lambda d=insert_data_ai: supabase.table("transcripts").insert(d).execute()
         )

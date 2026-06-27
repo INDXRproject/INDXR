@@ -1,3 +1,5 @@
+[2026-06-27 18:00] fix: title+channel in master-cache + grammatica playlist + retry backlog — (1) master_transcripts_write krijgt title/channel parameters; master_transcripts_read retourneert ze; pipeline.py geeft video_title+channel mee; worker.py cache-hit gebruikt mc.get("title") or title or video_id + conditioneel channel. Vereist SQL-migratie (title/channel kolommen, kale SQL geleverd — supabase/config.toml ontbreekt, CLI sync niet mogelijk). (2) PlaylistManager.tsx grammatica: singular/plural gecorrigeerd voor botOrTimeout, membersOnly, youtubeRestricted. (3) User-facing playlist retry toegevoegd aan backlog.md. Import-check ✅, build 2/2 ✅ | gewijzigd: backend/master_cache.py, backend/transcription_pipeline.py, backend/worker.py, packages/shared/src/components/PlaylistManager.tsx, docs/wiki/architecture/database-schema.md, docs/wiki/operations/test-reports.md, docs/wiki/roadmap/backlog.md, docs/LOG.md
+---
 [2026-06-27 16:00] feat: dead-job reaper (ADR-049) + dedup stale-filter — watchdog Pass 0a: stuck pending (NULL heartbeat + created_at > 30min) → error/interrupted. Pass 0b: stuck active met stale heartbeat > 10min (IS NOT NULL guard) → error/interrupted. Playlist-veiligheid: Pass 0b sluit playlist-video-jobs uit via last_heartbeat_at IS NOT NULL (hun heartbeat schrijft naar playlist_extraction_jobs, nooit transcription_jobs). Dedup OR-filter: 30min created_at / 10min heartbeat drempel. timedelta import toegevoegd main.py. Import-check ✅ | gewijzigd: backend/worker.py, backend/main.py, docs/wiki/decisions/049-dead-job-reaper.md, docs/wiki/INDEX.md, docs/wiki/operations/test-reports.md, docs/LOG.md
 ---
 [2026-06-27 14:00] feat: deduplicatie single-video AI-transcriptie — backend (main.py): dedup-check vóór job-aanmaak (SELECT op user_id + video_url + actieve statussen; geeft bestaande job_id + deduplicated:true terug zonder nieuwe ARQ-job). Frontend (VideoTab.tsx): isAlreadyProcessing state, informatie-card bij dedup-hit (zelfde card-patroon als error-cards), status doorgegeven als initialStatus aan TranscriptionProgress. Redis-lock post-launch hardening gedocumenteerd in known-issues.md. Build: 2/2 ✅, import-check ✅, 4/4 dedup-scenario's ✅ | gewijzigd: backend/main.py, packages/shared/src/components/free-tool/VideoTab.tsx, docs/wiki/operations/known-issues.md, docs/LOG.md
@@ -5793,4 +5795,35 @@ Changed: backend/main.py
 docs/LOG.md
 docs/wiki/operations/known-issues.md
 packages/shared/src/components/free-tool/VideoTab.tsx
+---
+[2026-06-27 13:03] commit: feat: dead-job reaper (ADR-049) + dedup stale-filter
+
+Pass 0 toegevoegd aan watchdog_interrupted_jobs:
+- Pass 0a: stuck pending-jobs (NULL heartbeat + created_at >30min) →
+  error (credits_deducted=False) of interrupted (=True, Pass 1a hervatten)
+- Pass 0b: stuck active-jobs met stale heartbeat >10min (IS NOT NULL) →
+  zelfde logica
+
+Playlist-veiligheid (kritiek, geverifieerd): playlist-Whisper-video's
+schrijven heartbeat naar playlist_extraction_jobs, nooit naar
+transcription_jobs.last_heartbeat_at. Pass 0b's IS NOT NULL guard sluit
+ze per definitie uit — actieve playlist-jobs worden nooit gereapt.
+
+Dedup-check (main.py) bijgewerkt met OR-tijdsfilter: alleen jobs die
+<30min oud zijn OF een heartbeat hebben van <10min geleden tellen als
+"actief". Defense-in-depth naast de reaper (dekt 2-min reaper-venster).
+
+timedelta import toegevoegd aan main.py. Import-check ✅
+
+Oplost de BEWz4SXfyCQ stuck-job bug zonder handmatige SQL: reaper sluit
+hem binnen 2 min na deploy, daarna geeft de volgende aanvraag een
+master-cache-hit.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/049-dead-job-reaper.md
+docs/wiki/operations/test-reports.md
 ---

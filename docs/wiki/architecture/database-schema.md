@@ -200,6 +200,8 @@ quality_score            FLOAT                         -- NULL voor caption-extr
 duration_seconds         INTEGER
 character_count          INTEGER
 word_count               INTEGER
+title                    TEXT                          -- YouTube videotitel (gevuld bij audio_transcription-writes)
+channel                  TEXT                          -- YouTube kanaalnaam (gevuld bij audio_transcription-writes)
 fetched_from_provider_at TIMESTAMPTZ DEFAULT NOW()    -- wanneer transcript opgehaald bij YouTube/AssemblyAI
 deprecated_at            TIMESTAMPTZ                   -- NULL = actief; gezet bij model-upgrade of privacy-verwijdering
 created_at               TIMESTAMPTZ DEFAULT NOW()
@@ -208,7 +210,7 @@ UNIQUE (video_id, language, transcription_model)
 
 RLS: ingeschakeld, geen policies — alleen `SUPABASE_SERVICE_ROLE_KEY` (Python backend) heeft toegang.  
 Index: `idx_master_transcripts_lookup` op `(video_id, language, transcription_model) WHERE deprecated_at IS NULL`.  
-Migratie: `20260428_master_transcripts_cache.sql`.
+Migraties: `20260428_master_transcripts_cache.sql` (initieel); `title` + `channel` kolommen toegevoegd 2026-06-27 via SQL Editor (`ALTER TABLE master_transcripts ADD COLUMN IF NOT EXISTS title TEXT; ADD COLUMN IF NOT EXISTS channel TEXT`).
 
 ---
 

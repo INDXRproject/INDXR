@@ -386,6 +386,8 @@ async def do_assemblyai_transcription(
                 transcript_data=transcript,
                 duration_seconds=int(duration),
                 source_method='audio_transcription',
+                title=video_title or None,
+                channel=channel or None,
             ))
 
         processing_ms = int((time.time() - assemblyai_start) * 1000)

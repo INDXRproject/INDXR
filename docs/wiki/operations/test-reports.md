@@ -74,15 +74,20 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 **Bug BEWz4SXfyCQ:** Dedup-check vond een historische stuck `transcription_jobs`-rij (status='pending', last_heartbeat_at=NULL, created_at=uren oud) en gaf die terug als "actieve" job. Gebruiker zag spookjob, master-cache-hit nooit bereikt. Dit triggerde ADR-049 (dead-job reaper).
 
-**Aanvullende tests nodig na reaper-deploy (commit volgt):**
+**Aanvullende tests na reaper-deploy (commits c4a5f54 + volgende):**
 
 | Test | Status |
 |------|--------|
-| Reaper sluit BEWz4SXfyCQ stuck job automatisch (zonder handmatige SQL) | 🔲 nog niet uitgevoerd |
-| Cache-hit BEWz4SXfyCQ na reaper-cleanup | 🔲 nog niet uitgevoerd |
+| Reaper sluit BEWz4SXfyCQ stuck job automatisch (zonder handmatige SQL) | ✅ PASS — reaper gesloten binnen 2 min na deploy (commit c4a5f54) |
+| Playlist-Whisper-job NIET gereapt tijdens actieve playlist | ✅ PASS — 18/19 videos succesvol, AI-video (video 1) correct verwerkt, reaper saboteerde niet |
 | Legitimate dedup (verse job <30 min) blokkeert correct | 🔲 nog niet uitgevoerd |
-| Playlist-Whisper-job niet gereapt tijdens actieve playlist | 🔲 nog niet uitgevoerd |
-| Railway logs: `[WATCHDOG reaper]` entries zichtbaar | 🔲 nog niet uitgevoerd |
+| Cache-hit BEWz4SXfyCQ titel correct na title/channel-fix | 🔲 nog niet uitgevoerd — vereist SQL-migratie (title/channel kolommen) |
+| Railway logs: `[WATCHDOG reaper]` entries zichtbaar | ✅ PASS — entries zichtbaar in Railway logs |
+
+**Playlist test detail (18/19, reaper playlist-veiligheid bevestigd):**
+- Playlist met 19 videos, video 1 via AI-transcriptie (was AI-via-cache)
+- Reaper (Pass 0b) raapte de AI-video-job NIET op — bevestigt dat `last_heartbeat_at IS NOT NULL` guard correct werkt
+- 18/19 videos succesvol geëxtraheerd ✅
 
 ---
 

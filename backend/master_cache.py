@@ -45,6 +45,8 @@ async def master_transcripts_write(
     source_method: str = "caption_extraction",
     quality_score: Optional[float] = None,
     force_refresh: bool = False,
+    title: Optional[str] = None,
+    channel: Optional[str] = None,
 ) -> None:
     """
     Write a transcript to the master cache (R2 + Supabase master_transcripts).
@@ -81,6 +83,10 @@ async def master_transcripts_write(
             "character_count": character_count,
             "word_count": word_count,
         }
+        if title:
+            row["title"] = title
+        if channel:
+            row["channel"] = channel
 
         if not force_refresh:
             await asyncio.to_thread(
@@ -138,7 +144,7 @@ async def master_transcripts_read(
 
         query = (
             supabase.table("master_transcripts")
-            .select("r2_key,duration_seconds,language,transcription_model")
+            .select("r2_key,duration_seconds,language,transcription_model,title,channel")
             .eq("video_id", video_id)
             .eq("source_method", source_method)
             .is_("deprecated_at", "null")
@@ -182,6 +188,8 @@ async def master_transcripts_read(
             "duration_seconds": row.get("duration_seconds"),
             "language": row.get("language"),
             "transcription_model": row.get("transcription_model"),
+            "title": row.get("title"),
+            "channel": row.get("channel"),
         }
 
     except Exception as e:

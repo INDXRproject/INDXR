@@ -33,6 +33,10 @@ Functies en verbeteringen gepland voor na de launch. Geen vaste volgorde — pri
 ### AI & Transcriptie
 - [ ] Multi-language Whisper: taaldetectie verbeteren voor 99+ talen via Universal-2
 - [ ] AssemblyAI: automatic retry voor gefaalde playlist-video's
+- [ ] **User-facing retry voor mislukte playlist-video's** (handmatige variant naast automatische `process_playlist_retries`):
+    - Overzicht van gefaalde video's na playlist-extractie met fout-type per video
+    - Retry-actie met AI-transcriptie-upsell (bot_detection/timeout → "Retry with AI?" flow)
+    - Vraag open: belandt een geretryede video automatisch in de juiste collection, of is aparte logica nodig (collection_id meegeven aan standalone retry-job)?
 
 ### ~~Feature: Language-aware caption extraction voor niet-Engelse videos~~ ✅ Opgelost 2026-05-02
 
