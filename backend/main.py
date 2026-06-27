@@ -437,6 +437,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 transcript_data=result['transcript'],
                 duration_seconds=int(duration_sec),
                 source_method='caption_extraction',
+                title=result.get('title'),
+                channel=result.get('channel'),
             ))
 
         return ExtractResponse(

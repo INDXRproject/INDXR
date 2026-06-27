@@ -285,6 +285,8 @@ async def _process_caption_video(
         transcript_data=transcript,
         duration_seconds=duration,
         source_method='caption_extraction',
+        title=extract_result.get('title'),
+        channel=extract_result.get('channel'),
     ))
 
     # Credit-deductie is verplaatst naar de update_playlist_video_progress RPC (M3).
