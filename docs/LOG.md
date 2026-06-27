@@ -1,4 +1,6 @@
-[2026-06-27 23:00] fix: native caption track selectie — altijd -orig, nooit tlang= [~verificatie in productie lopend] | gewijzigd: backend/youtube_utils.py, docs/wiki/architecture/ai-pipeline.md, docs/LESSONS.md, docs/LOG.md
+[2026-06-27 23:30] fix: title+channel meegeven aan caption master-cache-write [~verificatie lopend] | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/architecture/database-schema.md, docs/LOG.md
+---
+[2026-06-27 23:00] fix: native caption track selectie — altijd -orig, nooit tlang= ✅ productieverificatie: iKtPI8IMuOM native ASR lang='ja-orig', geen tlang=, success — single-video én playlist-pad bevestigd | gewijzigd: backend/youtube_utils.py, docs/wiki/architecture/ai-pipeline.md, docs/LESSONS.md, docs/LOG.md
 ---
 [2026-06-27 22:00] docs: AI-cache productieverificatie + Railway CLI leerpunten gedocumenteerd — ADR-021 uitgebreid met logbewijs (playlist 75a84011, kBdfcR-8hEY, CACHE HIT 3.17s, 55cr exact); test-reports.md nieuw rapport (19/19, 0:54, 1 AI-hit + 17 caption-hits); railway-cli.md twee valkuil-noten (token/PATH inline-export, ~500-regels log-cap); LESSONS.md playlist-shared-helper patroon toegevoegd | gewijzigd: docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/operations/test-reports.md, docs/wiki/operations/railway-cli.md, docs/LESSONS.md, docs/LOG.md
 ---
@@ -5940,4 +5942,34 @@ Reparatie geldt voor single-video én playlist (gedeelde helper).
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: backend/youtube_utils.py
+---
+[2026-06-27 20:47] commit: docs: tlang-fix gedocumenteerd — -orig selectie, subtitleslangs filter
+
+ai-pipeline.md: cascade note bijgewerkt met nieuwe prioriteitslogica
+(-orig suffix als native-track indicator, tlang= URL als safety net).
+LESSONS.md: yt-dlp subtitleslangs filtert info-dict NIET in extract_info
+mode + YT Data API onbetrouwbaar voor taaldetectie (iKtPI8IMuOM bewijs).
+LOG.md: taak gemarkeerd als [~] (verificatie in productie lopend).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+---
+[2026-06-27 21:13] commit: fix: title+channel meegeven aan caption master-cache-write
+
+main.py en worker.py riepen master_transcripts_write voor caption-
+extracties aan zonder title/channel → cache-rij kreeg title=null.
+Bij latere cache-hit viel de read terug op video_id als titel
+(bijv. kBdfcR-8hEY in de library).
+
+title en channel zijn op het aanroepdpunt beschikbaar (uit yt-dlp/
+YouTube Data API metadata) — worden nu doorgegeven in beide paden:
+single-video (main.py) en playlist (worker.py _process_caption_video).
+
+Bestaande title=null-rijen verdwijnen bij de pre-launch master-cache-flush.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
 ---

@@ -200,8 +200,8 @@ quality_score            FLOAT                         -- NULL voor caption-extr
 duration_seconds         INTEGER
 character_count          INTEGER
 word_count               INTEGER
-title                    TEXT                          -- YouTube videotitel (gevuld bij audio_transcription-writes)
-channel                  TEXT                          -- YouTube kanaalnaam (gevuld bij audio_transcription-writes)
+title                    TEXT                          -- YouTube videotitel (gevuld bij alle writes — caption én audio_transcription; fix 2026-06-27)
+channel                  TEXT                          -- YouTube kanaalnaam (gevuld bij alle writes — caption én audio_transcription; fix 2026-06-27)
 fetched_from_provider_at TIMESTAMPTZ DEFAULT NOW()    -- wanneer transcript opgehaald bij YouTube/AssemblyAI
 deprecated_at            TIMESTAMPTZ                   -- NULL = actief; gezet bij model-upgrade of privacy-verwijdering
 created_at               TIMESTAMPTZ DEFAULT NOW()

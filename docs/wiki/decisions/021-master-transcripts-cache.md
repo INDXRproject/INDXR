@@ -278,4 +278,6 @@ CURRENT_PRODUCTION_AI_MODEL = "assemblyai_universal_3"
 
 Totale jobduur: **3.17 seconden** (was meerdere minuten bij verse AssemblyAI-call). Geen `[YT-DLP-AUDIO]` download, geen AssemblyAI-call. Credit-aftrek: **55cr** = `ceil(55 min)` — correct. Beide paden (standalone + playlist) delen nu de cache-read via Step 0.
 
+**Caption-write title+channel fix (2026-06-27):** `main.py` en `worker.py` (`_process_caption_video`) gaven `title` en `channel` eerder niet mee aan `master_transcripts_write` voor caption-extracties — alleen de AI-write (`do_assemblyai_transcription`) deed dat al. Cache-rijen voor captions kregen daardoor `title=null`. Bij een cache-hit viel de read terug op `video_id` als titel (`mc.get("title") or video_title`, waarbij `video_title = audio_title or video_id`). Fix: beide aanroepdpunten geven nu `title=result.get('title')` / `title=extract_result.get('title')` en `channel` mee. Bestaande `title=null`-rijen verdwijnen bij de pre-launch master-cache-flush (zie hieronder).
+
 **Pre-launch cache flush:** Vóór launch: `TRUNCATE master_transcripts CASCADE;` in Supabase + R2 bucket leegmaken voor clean-slate met correct genormaliseerde taalcodes.
