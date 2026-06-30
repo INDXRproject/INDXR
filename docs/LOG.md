@@ -1,4 +1,6 @@
-[2026-06-30 17:30] feature: archief-actie messages-pagina echt gemaakt [~] build groen; archived kolom in DB (migratie 20260630170359); archive/unarchive schrijft naar DB via UPDATE; Inbox/Archived tab-toggle; wacht op Khidr-verificatie | gewijzigd: apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/messages/page.tsx, supabase/migrations/20260630170359_messages_archived.sql, docs/wiki/architecture/database-schema.md, docs/LOG.md
+[2026-06-30 17:45] sessie-afrond 2026-06-30: migration-sync baseline-squash ✅ · messages DB-backed + welkomstbericht-trigger ✅ · archive DB-backed ✅ · analytics/SEO audit (read-only) · worker/Redis realiteit bevestigd (wiki stale → gecorrigeerd) — alle features geverifieerd door Khidr | gewijzigd: docs/wiki/operations/known-issues.md, docs/LOG.md
+---
+[2026-06-30 17:30] feature: archief-actie messages-pagina echt gemaakt ✅ geverifieerd door Khidr; archived kolom in DB (migratie 20260630170359); archive/unarchive schrijft naar DB via UPDATE; Inbox/Archived tab-toggle persistent na refresh | gewijzigd: apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/messages/page.tsx, supabase/migrations/20260630170359_messages_archived.sql, docs/wiki/architecture/database-schema.md, docs/LOG.md
 ---
 [2026-06-27 23:30] fix: title+channel meegeven aan caption master-cache-write ✅ write-kant end-to-end bewezen (Sandler-playlist herrun, alle titels correct in library); cache-hit-kant steunt op bewezen read-logica (mc.get("title") or video_title) + pre-launch master-cache-flush die resterende title=null-rijen verwijdert | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/architecture/database-schema.md, docs/LOG.md
 ---
@@ -6127,3 +6129,20 @@ docs/wiki/operations/known-issues.md
 supabase/migrations/20260630164156_messages.sql
 ---
 [2026-06-30 17:05] precompact: context compaction triggered
+[2026-06-30 17:08] commit: feature: archive-actie messages — DB-backed (archived kolom + Inbox/Archived tabs)
+
+- Migratie 20260630170359: archived BOOLEAN NOT NULL DEFAULT false op messages
+- archive(id) + unarchive(id) schrijven naar Supabase via UPDATE
+- Inbox/Archived tab-toggle (client-side filter op DB-waarden)
+- page.tsx selecteert nu ook archived kolom
+- MessagesClient: archived: boolean (niet optional), geen local-state override meer
+
+Wacht op Khidr-verificatie ([~]).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/app/dashboard/messages/page.tsx
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+supabase/migrations/20260630170359_messages_archived.sql
+---

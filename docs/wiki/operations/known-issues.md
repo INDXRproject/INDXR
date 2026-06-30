@@ -404,7 +404,7 @@ Geen externe service die alarmeert bij downtime.
 - [ ] `LOG_LEVEL=WARNING` instellen in Railway
 - [ ] `has_ever_purchased` implementeren in Stripe webhook (zie priorities.md)
 - [ ] Anonymous user flows testen via Playwright
-- [~] **Messages page echte data + welkomstbericht** — ✅ Geïmplementeerd 2026-06-30, wacht op Khidr's test. `messages` tabel aangemaakt, `handle_new_user_message()` trigger op `auth.users AFTER INSERT`, frontend leest echte data. Mark-as-read schrijft naar DB. Trigger is exception-safe (signup kan niet breken). Verificatie via Management API geslaagd: user aangemaakt, `user_credits` + welkomstbericht allebei aanwezig.
+- [x] **Messages page echte data + welkomstbericht + archief** — ✅ Geverifieerd door Khidr 2026-06-30. `messages` tabel + `handle_new_user_message()` trigger (exception-safe, blokkeert nooit signup). Frontend leest echte data, mark-as-read schrijft naar DB, archive/unarchive schrijven naar DB (`archived` kolom, migratie 20260630170359). Inbox/Archived tab-toggle. Alle drie acties geverifieerd: welkomstbericht aanwezig na signup, read-state persistent, archief persistent na refresh.
 - [ ] **Redesign context herbevestigen voor nieuwe sessie** — eerdere Claude Design sprint (kleur-tokens, blauwe accent-knoppen, hexagon-achtergronden) zit in chat-geschiedenis maar niet samengevat in wiki. Voor volgende sessie: Khidr brengt design-context terug via chat-history of geheugen; dan integreren in priorities.md 1.20 polish + voorbereiding Fase 3 redesign.
 - [ ] 4+ uur video stress test
 - [x] RAG JSON: yt-dlp originele taal forceren i.p.v. `tlang=en` vertaling ✅ Opgelost 2026-06-27 via -orig track selectie (zie ai-pipeline.md)
