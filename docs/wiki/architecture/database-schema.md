@@ -287,38 +287,39 @@ Gebruikt in: `src/app/actions/credits.ts`
 
 ---
 
-## Migrations Chronologie
+## Migrations
 
-| Bestand | Datum | Wijziging |
-|---------|-------|-----------|
-| *(initieel)* | 2025-01 | Basis tabellen: auth.users, profiles, transcripts, credit_transactions, transcription_jobs |
-| `20260301144045_add_avatar_color_to_profiles.sql` | 2026-03-01 | `profiles.avatar_color` kolom |
-| `20260302_add_tiptap_fields.sql` | 2026-03-02 | Tiptap editor velden aan transcripts |
-| `20260304_tiptap_fields_to_jsonb.sql` | 2026-03-04 | Tiptap velden migreren naar JSONB |
-| `20260305_collections.sql` | 2026-03-05 | Collections tabel + `transcripts.collection_id` |
-| `20260306000442_add_ai_summary_to_transcripts.sql` | 2026-03-06 | `transcripts.ai_summary` JSONB |
-| `20260306_add_viewed_at_to_transcripts.sql` | 2026-03-06 | `transcripts.viewed_at` |
-| `20260307_add_updated_at_to_transcripts.sql` | 2026-03-07 | `transcripts.updated_at` |
-| `20260408_backfill_missing_profiles.sql` | 2026-04-08 | Backfill profielen voor bestaande users |
-| `20260408_add_suspended_to_profiles.sql` | 2026-04-08 | `profiles.suspended` boolean |
-| `20260412_playlist_extraction_jobs.sql` | 2026-04-12 | `playlist_extraction_jobs` tabel + RLS |
-| `20260422_add_rag_settings_to_profiles.sql` | 2026-04-22 | `profiles.rag_export_confirmed` + `profiles.rag_chunk_size` |
-| `20260412_job_metrics_and_rename.sql` | 2026-04-12 | Job metrics kolommen + rename |
-| `20260423_rag_chunk_size_90.sql` | 2026-04-23 | `rag_chunk_size` CHECK constraint uitgebreid met waarde 90 |
-| `20260428_playlist_per_video_chain.sql` | 2026-04-28 | `playlist_extraction_jobs.last_progress_at` + partial index + `update_playlist_video_progress` RPC (5-arg) |
-| `20260428_playlist_progress_rpc_status_fix.sql` | 2026-04-28 | Fix: `status='completed'` → `status='complete'` in RPC |
-| `20260428_master_transcripts_cache.sql` | 2026-04-28 | `master_transcripts` tabel + index + RLS (cross-user transcript cache) |
-| `20260430_fase4_transcription_jobs.sql` | 2026-04-30 | Fase 4: `transcription_jobs.credits_deducted` + `last_heartbeat_at` |
-| `20260430_fase4_playlist_extraction_jobs.sql` | 2026-04-30 | Fase 4: `playlist_extraction_jobs.last_heartbeat_at` + `video_metadata` |
-| `20260430_fase4_update_playlist_progress_rpc.sql` | 2026-04-30 | Fase 4: RPC uitgebreid naar 7-arg (+ `p_amount`, `p_reason` voor atomische credit-deductie) |
-| `20260430_fase4_saved_videos.sql` | 2026-04-30 | Fase 4: `saved_videos` tabel + RLS |
-| `add_playlist_jobs.sql` | *(oud)* | Vroege `playlist_jobs` tabel (legacy, vervangen door `playlist_extraction_jobs`) |
+### Huidige staat
+
+**Baseline-squash uitgevoerd op 2026-06-30.**
+
+`supabase/migrations/` bevat nu één bestand: `20260630155944_baseline.sql` — een volledige DDL-snapshot van de productie-DB gegenereerd via Management API introspectie. Dit is de bron van waarheid voor nieuwe omgevingen.
+
+De 24 pre-baseline migratiebestanden zijn bewaard in `supabase/migrations_archive/` (git-geschiedenis blijft intact). De `supabase_migrations.schema_migrations` tracking-tabel is gereset en bevat exact één rij: `version='20260630155944', name='baseline'`.
+
+**Herstelnet:** `supabase/migrations_archive/schema_migrations_backup_2026-06-30.sql` bevat de volledige 15-rij staat van vóór de reset.
+
+### Pre-baseline chronologie (archief)
+
+Voor de geschiedenis van de 24 pre-baseline migratiebestanden, zie `supabase/migrations_archive/`. Highlights:
+
+| Periode | Wijziging |
+|---------|-----------|
+| 2026-03 | Basis-uitbreidingen: `avatar_color`, Tiptap velden, collections, `ai_summary`, `viewed_at`, `updated_at` |
+| 2026-04-08 | `profiles.suspended`, backfill-profielen |
+| 2026-04-12 | `playlist_extraction_jobs` tabel + RLS, job-metrics |
+| 2026-04-22/23 | `profiles.rag_export_confirmed`, `rag_chunk_size` |
+| 2026-04-28 | `master_transcripts` cache-tabel; `update_playlist_video_progress` RPC (5-arg → 7-arg) |
+| 2026-04-30 | Fase 4: heartbeat-kolommen, `saved_videos`, credit-deductie in RPC |
+| 2026-05-01 | `watchdog_attempts` op beide job-tabellen |
+| 2026-05-02 | `retry_pending` status in RPC (ADR-030 Gap 1) |
+| 2026-06-27 | `master_transcripts.title` + `.channel` via SQL Editor (buiten CLI-migraties) |
 
 ---
 
 ## Legacy en Undocumented Tabellen
 
-De volgende tabellen bestaan in de productie-DB maar zijn niet actief in de huidige codebase:
+De volgende tabellen bestaan in de productie-DB (en in de baseline), maar zijn niet actief in de huidige codebase. Ze zijn **niet** verwijderd bij de baseline-squash — data aanraken is post-launch werk.
 
-- **`playlist_jobs`** — vroege tracking-tabel voor playlist-jobs vóór de ARQ-refactor (Fase 3, 2026-04-28). Kolommen wijken af van `playlist_extraction_jobs`. Niet meer geschreven door de backend. Kandidaat voor cleanup post-launch.
-- **`usage_logs`** — bevat `user_id`, `ip_address`, `video_id`, `extraction_type`, `success`, `credits_used`. Mogelijk aangemaakt door een vroege implementatie of Supabase-preset. Niet beschreven in ADR's; niet geschreven door huidige backend-code.
+- **`playlist_jobs`** — vroege tracking-tabel voor playlist-jobs vóór de ARQ-refactor (Fase 3, 2026-04-28). Kolommen wijken af van `playlist_extraction_jobs`. Niet meer geschreven door de backend. **TODO post-launch:** `DROP TABLE public.playlist_jobs;` via nieuwe migratie nadat bevestigd is dat geen productiedata van waarde is.
+- **`usage_logs`** — bevat `user_id`, `ip_address`, `video_id`, `extraction_type`, `success`, `credits_used`. Mogelijk aangemaakt door een vroege implementatie of Supabase-preset. Niet beschreven in ADR's; niet geschreven door huidige backend-code. **TODO post-launch:** evalueren of loggen hier herstart wordt of tabel gedropt wordt.

@@ -414,6 +414,25 @@ Geen externe service die alarmeert bij downtime.
 
 ---
 
+## ~~Supabase migration-sync — schema-drift + tracking-mismatch~~ ✅ Opgelost 2026-06-30
+
+**Vastgesteld:** 2026-06-30 (sessie baseline-route)  
+**Opgelost:** 2026-06-30
+
+8-cijferige timestamp-prefixen en SQL-Editor-wijzigingen waren onzichtbaar voor de CLI-tracking (`supabase_migrations.schema_migrations` had 15 rijen voor 24 bestanden). Getriggerd door `master_transcripts.title` + `.channel` die direct via SQL Editor waren toegevoegd buiten de migration-flow.
+
+**Fix:** Baseline-squash via Management API introspectie:
+- `supabase/migrations/20260630155944_baseline.sql` — volledige DDL-snapshot productie-DB
+- 24 pre-baseline bestanden → `supabase/migrations_archive/`
+- `schema_migrations` tracking-tabel gereset naar 1 rij (version=`20260630155944`, name=`baseline`)
+- Herstelnet: `supabase/migrations_archive/schema_migrations_backup_2026-06-30.sql`
+
+**TODO post-launch:** Legacy tabellen droppen via nieuwe migraties:
+- [ ] `DROP TABLE public.playlist_jobs;` (vervangen door `playlist_extraction_jobs`)
+- [ ] `DROP TABLE public.usage_logs;` of herinschakelen (evalueer eerst of data bewaard moet worden)
+
+---
+
 ## Parking Lot
 
 Zie `wiki/roadmap/backlog.md`.

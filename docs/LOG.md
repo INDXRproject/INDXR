@@ -5987,3 +5987,17 @@ docs/wiki/architecture/database-schema.md
 docs/wiki/decisions/021-master-transcripts-cache.md
 ---
 [2026-06-27 21:26] precompact: context compaction triggered
+[2026-06-27 21:30] commit: docs: sessie-afronding — post-launch observaties + RAG JSON tlang-item ✅
+
+known-issues.md: nieuwe sectie "Post-launch overwegingen" met:
+- Sentry-ruis bij verwachte bot-detectie (goedaardig, overweging)
+- Preview-credit-schatting wijkt af van werkelijke aftrek (goedaardig)
+- RAG JSON tlang pre-launch item gesloten ✅ (fix 2026-06-27)
+
+LOG.md: ongewijzigd (al bijgewerkt in vorige commit van deze sessie).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+---
+[2026-06-30 16:15] taak: Supabase migration-sync baseline-squash ✅ | gewijzigd: supabase/migrations/20260630155944_baseline.sql (nieuw), supabase/migrations_archive/ (24 gearchiveerde bestanden + backup), supabase_migrations.schema_migrations (gereset naar 1 rij), docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md, docs/LESSONS.md
