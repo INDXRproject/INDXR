@@ -49,7 +49,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
 
 - [~] **1.5 — ARQ via Upstash Redis + per-video decompositie + idempotency keys** (3 dagen)
 
-    > **PRODUCTIE-STATUS 2026-05-17:** worker draait niet sinds 6 mei 2026 door Upstash quota-uitputting. Architectuur is compleet, code is correct, alleen de Redis-backend is onbereikbaar. Zie known-issues.md sectie "Railway ARQ worker crashed sinds 2026-05-06". Resolutie gekoppeld aan Upstash beslissing in B6.
+    > **PRODUCTIE-STATUS 2026-06-30:** worker draait op Railway Redis (zie ADR-048 Fase 2, inmiddels uitgevoerd). `ARQ_REDIS_URL` verwijst naar private Railway Redis (`redis.railway.internal`). Worker gestart om 14:12 UTC 2026-06-30, watchdog-cron vuurt elke 2 minuten. ~~Worker lag plat 2026-05-06 t/m onbekende datum door Upstash quota-uitputting.~~ Opgelost via Redis-splitsing.
 
     Doel: durable job queue die Railway container-restarts overleeft. 500-video playlist wordt 500 onafhankelijke jobs (één gefaalde video sloopt niet de hele batch).
     Stack: ARQ als aparte Railway worker-service naast bestaande FastAPI API-service.
@@ -285,16 +285,14 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (me
 
 ### Operationele issues
 
-- [!] **C.3.1 — Upstash Redis quota exhausted — BLOCKER voor async jobs**
-  500K commands/maand limiet bereikt op 2026-05-04. Bewezen oorzaak: stale `.indxr.ai` cookies triggerde infinite refresh-loop in browser; elke loop-call passeerde middleware met Redis rate-limit-check. C.1.1 fix sluit de oorzaak af.
-  **Huidige staat:** `UPSTASH_REDIS_REST_URL` + `_TOKEN` op Development scope gezet in Vercel → `UPSTASH_ENABLED=false` in productie → `noopLimiter` actief → rate limiting uitgeschakeld, caption cache uitgeschakeld. Railway ARQ worker: vermoedelijk ook geraakt door quota (geen async jobs in productie mogelijk).
-  **Beslissing nodig:** Upstash plan upgraden (Pay-as-you-go of Pro) vs Redis op Railway zelf vs wachten op maandelijkse reset. Prioriteit: vóór launch met paid users.
-  **Inconsistentie met known-issues.md:** `docs/wiki/operations/known-issues.md:44-47` stelt "rate limiting is bewust uitgeschakeld". Dit was **incorrect** — de code (`src/lib/ratelimit.ts`) deed wél echte Redis-calls zolang de env vars beschikbaar waren op Production scope. Ze waren actief, niet bewust uitgeschakeld. LESSONS.md bijgewerkt.
+- [x] **C.3.1 — ~~Upstash Redis quota exhausted — BLOCKER voor async jobs~~** ✅ Worker-deel opgelost
+  500K commands/maand limiet bereikt op 2026-05-04. Oplossing: ADR-048 Redis-splitsing besloten 2026-06-04. Worker omgezet naar Railway Redis (`ARQ_REDIS_URL`). Worker draait vanaf 2026-06-30 geverifieerd. Zie ADR-048.
+  **Huidige staat:** Worker ✅ Railway Redis. Rate limiting ❌ (Upstash vars verwijderd uit Vercel 2026-05-06, nog niet hersteld). Caption cache ❌ (Upstash vars ook niet op Railway backend).
 
 - [~] **C.3.2 — Rate limiting en caption cache uitgeschakeld in productie**
-  Direct gevolg van C.3.1-mitigatie. `noopLimiter` actief → geen rate limiting in productie. Caption cache (Upstash Redis) ook down.
-  **Pre-launch actie:** herstellen zodra C.3.1 opgelost. Cross-referentie: item 1.19 ("Upstash Redis rate limiting activeren") in Fase 1.
-  **Status:** tijdelijk acceptabel, geen blocker voor verdere development. Niet lanceren met paid users zonder rate limiting.
+  `noopLimiter` actief → geen rate limiting. Python `get_caption_redis()` → `None` → caption cache disabled.
+  **Pre-launch actie:** Upstash vars opnieuw toevoegen aan Vercel (beide projecten) + Railway backend. Worker heeft geen Upstash nodig (gebruikt Railway Redis).
+  **Status:** tijdelijk acceptabel, geen blocker voor development. Niet lanceren met paid users zonder rate limiting.
 
 ### C.4 — Migratie naar twee Vercel projecten (monorepo)
 

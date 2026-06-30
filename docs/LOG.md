@@ -6076,3 +6076,15 @@ supabase/migrations_archive/add_playlist_jobs.sql
 supabase/migrations_archive/schema_migrations_backup_2026-06-30.sql
 ---
 [2026-06-30 16:30] taak: FAQ "why nearly instant" Q&A toegevoegd aan Technical-sectie | gewijzigd: apps/marketing/src/app/docs/help/faq/page.tsx
+[2026-06-30 16:10] commit: content: FAQ — waarom is een transcript soms bijna instant?
+
+Nieuwe Q&A toegevoegd aan de Technical-sectie van /docs/help/faq.
+Legt uit dat een eerder verwerkte video direct geserveerd wordt uit cache.
+Geen prijs-implicaties — puur over snelheid (guardrail ADR-021).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/help/faq/page.tsx
+docs/LOG.md
+---
+[2026-06-30 16:20] precompact: context compaction triggered
+[2026-06-30 18:00] audit: read-only audit admin/messages/worker — wiki correcties geschreven | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md

@@ -41,15 +41,15 @@ uvicorn handler-conflict op maar niet het Sentry-override probleem.
 
 **⚠️ Let op:** De pricing-pagina toont al de nieuwe prijzen (€6.99/€13.99/€27.99) maar de `PACKAGES` in `checkout/route.ts` bevat nog de oude bedragen. Deze moeten synchroon zijn vóór launch.
 
-### Upstash Redis: Rate limiting bewust uitgeschakeld tijdens testfase
-**Bestand:** `packages/shared/src/lib/ratelimit.ts`
-**Status:** Credentials zijn ingesteld in Vercel (`UPSTASH_REDIS_REST_URL` + `_TOKEN`), maar rate limiting is bewust uitgeschakeld — app valt terug op `noopLimiter` zodat testen niet geblokkeerd worden.
-**Setup:** Database `indxr-redis` aangemaakt op eigen Upstash account (Khidr), regio Frankfurt (eu-central-1).
-**Activeren bij launch:** Rate limiting inschakelen in `packages/shared/src/lib/ratelimit.ts` en limieten opnieuw beoordelen vóór go-live.
+### Upstash Redis: Rate limiting en caption cache uitgeschakeld in productie
+**Bestand:** `packages/shared/src/lib/ratelimit.ts` (Next.js), `backend/main.py` (caption cache)
+**Status:** `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects op 2026-05-06 (na quota-exhaustion incident, zie C.3.1 in priorities.md). Env vars ook niet gezet op Railway backend/worker. Huidige staat: `noopLimiter` actief in Next.js (alle rate limit checks retourneren `success: true`), `get_caption_redis()` retourneert `None` in Python backend (caption cache disabled).
+**Setup:** Database `indxr-redis` aangemaakt op eigen Upstash account (Khidr), regio Frankfurt (eu-central-1). Nog beschikbaar voor herinschakeling.
+**Activeren bij launch:** Upstash env vars opnieuw toevoegen aan Vercel (beide projecten) + Railway backend-service. Worker gebruikt nu Railway Redis (`ARQ_REDIS_URL`) — Upstash is enkel nodig voor rate limiter + caption cache (past binnen Free Tier 500K/maand zonder worker).
 
-### Railway ARQ worker — Upstash quota / Redis-splitsing
-**Vastgesteld:** 2026-05-17 (worker crash) → 2026-06-04 (root cause volledig begrepen)
-**Status:** BESLIST — implementatie fase 2 gepland, nog niet uitgevoerd
+### ~~Railway ARQ worker — Upstash quota / Redis-splitsing~~ ✅ Worker-deel opgelost 2026-06-30
+**Vastgesteld:** 2026-05-17 (worker crash) → 2026-06-04 (root cause volledig begrepen) → 2026-06-30 (Fase 2 geverifieerd voltooid)
+**Status:** Worker draait ✅ — Upstash env vars nog niet hersteld ❌
 **ADR:** [048-redis-split-upstash-railway.md](../decisions/048-redis-split-upstash-railway.md)
 
 **Root cause (volledig):** ARQ worker genereert ~10.860 Redis-commando's per uur in idle toestand:
@@ -63,12 +63,12 @@ Dit is geen bug maar inherent aan het ARQ-polling-model. Upstash (per-commando p
 - ARQ worker → eigen Railway Redis-service (TCP, private netwerk `redis.railway.internal`, ~$1–3/maand)
 - Vercel rate-limiter + caption-cache → blijven op Upstash Free Tier (sporadisch, past binnen quota)
 
-**Fase 2 — uit te voeren:**
-1. Railway Redis-service aanmaken in hetzelfde project
-2. `WorkerSettings.redis_settings` in `backend/worker.py` updaten naar `WORKER_REDIS_URL`
-3. Env var instellen op worker-service, worker herstarten, worker online verifiëren
+**Fase 2 — VOLTOOID (datum onbekend, geverifieerd 2026-06-30):**
+- Railway Redis-service aangemaakt ✅
+- Worker gebruikt `ARQ_REDIS_URL` (env var naam afwijkend van plan; `WORKER_REDIS_URL` is nooit gezet — `ARQ_REDIS_URL` werkt direct voor `arq.connections.RedisSettings.from_dsn()`) ✅
+- Worker gestart 2026-06-30 14:12 UTC, watchdog-cron vuurt elke 2 min, geen errors ✅
 
-**Impact huidige situatie:** run_whisper_job, process_playlist_video, process_playlist_retries, watchdog_interrupted_jobs — plat. Caption-extractie (synchroon FastAPI) werkt.
+**Openstaand:** Upstash env vars (`UPSTASH_REDIS_REST_URL` + `_TOKEN`) zijn nog niet teruggezet op Vercel (beide projecten) of Railway backend-service. Rate limiting en caption cache blijven inactief.
 
 ---
 
@@ -393,11 +393,11 @@ Geen externe service die alarmeert bij downtime.
   - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks (na eerste echte betaling)
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
 - [x] Supabase email verificatie re-enabled ✓
-- [!] **Upstash Redis quota + worker-herstel** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Strategie besloten op 2026-06-04 (zie [ADR-048](../decisions/048-redis-split-upstash-railway.md)):
+- [~] **Upstash Redis quota + worker-herstel** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Strategie besloten op 2026-06-04 (zie [ADR-048](../decisions/048-redis-split-upstash-railway.md)):
   - Worker → Railway Redis (polling-kosten structureel onmogelijk op Upstash — 7,84M commands/maand idle)
   - Vercel rate-limiter + caption-cache → Upstash Free Tier herinschakelen na worker-splitsing (past ruim binnen 500K/maand zonder worker)
-  - [ ] **Fase 2**: Railway Redis-service aanmaken + worker omzetten (zie ADR-048 consequenties)
-  - [ ] Upstash env vars opnieuw toevoegen aan Vercel (beide projecten) ná worker-splitsing
+  - [x] **Fase 2 ✅ gereed** — Railway Redis actief (`ARQ_REDIS_URL`), worker draait. Geverifieerd 2026-06-30.
+  - [ ] Upstash env vars opnieuw toevoegen aan Vercel (beide projecten) + Railway backend-service ná worker-splitsing
   - [ ] Bron van 60s ping op `indxr.ai/` identificeren (ter info, geen blocker)
 - [ ] **Custom SMTP provider configureren voor productie email** — Supabase built-in email service heeft een hardcoded rate limit van 2/h die niet via dashboard verhoogbaar is (custom SMTP vereist). Limiet is project-wide, niet IP-based, en geldt ongeacht Supabase plan-tier (Pro/Team verhogen de default sender limiet niet). Impact: signup, email confirmation, password reset en magic links zijn allemaal gelimiteerd. **Gekozen oplossing: Resend** — native Supabase integratie, react-email JSX templates passen bij Next.js stack, 3000 emails/maand free tier, $20/maand voor 50K bij scaling. Setup: Resend account → domain DNS verificatie → SMTP credentials in Supabase Dashboard → Authentication → SMTP Settings. Met custom SMTP gaat de auth-email rate limit automatisch naar 30/h, verder configureerbaar via Authentication → Rate Limits.
 - [ ] Supabase database backups configureren
