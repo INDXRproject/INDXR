@@ -186,10 +186,9 @@ git add requirements.txt && git commit -m "update: add <package>"
 ```
 
 **Supabase migrations:**
-```bash
-supabase db push
-# of direct in Supabase Dashboard → SQL Editor
-```
+1. Maak een migratiebestand aan met een **14-cijferige timestamp-prefix**: `YYYYMMDDHHMMSS_naam.sql` (bijv. `20260701120000_support_tickets.sql`). 8-cijferige prefixen zijn verboden.
+2. Pas de migratie toe via de **Supabase MCP** (`apply_migration`) of de Management API — geen `supabase db push`, geen directe SQL-Editor-wijzigingen.
+3. Verifieer na apply: `SELECT COUNT(*) FROM supabase_migrations.schema_migrations` — het aantal rijen moet met één zijn toegenomen.
 
 ### Deployment URLs
 
