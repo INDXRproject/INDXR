@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Inbox, Archive, CheckCheck, ChevronLeft } from "lucide-react"
+import { Inbox, Archive, ArchiveRestore, CheckCheck, ChevronLeft } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import { cn } from "@indxr/shared/lib/utils"
 import { createClient } from "@indxr/shared/utils/supabase/client"
@@ -12,9 +12,8 @@ interface Message {
   body: string
   type: string
   read: boolean
+  archived: boolean
   created_at: string
-  // client-only: archive is local state only (no DB column yet)
-  archived?: boolean
 }
 
 interface Props {
@@ -22,21 +21,21 @@ interface Props {
 }
 
 export function MessagesClient({ initialMessages }: Props) {
-  const [messages, setMessages] = useState<Message[]>(
-    initialMessages.map((m) => ({ ...m, archived: false }))
-  )
+  const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
   const [mobileDetail, setMobileDetail] = useState(false)
 
+  const inbox = messages.filter((m) => !m.archived)
+  const archived = messages.filter((m) => m.archived)
+  const visible = showArchived ? archived : inbox
+  const unreadCount = inbox.filter((m) => !m.read).length
   const selected = messages.find((m) => m.id === selectedId)
-  const visible = messages.filter((m) => !m.archived)
-  const unreadCount = visible.filter((m) => !m.read).length
 
   const formatDate = (iso: string) => {
     const d = new Date(iso)
     const now = new Date()
-    const diffMs = now.getTime() - d.getTime()
-    const diffDays = Math.floor(diffMs / 86400000)
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
     if (diffDays === 0) return "Today"
     if (diffDays === 1) return "Yesterday"
     if (diffDays < 7) return `${diffDays} days ago`
@@ -49,16 +48,18 @@ export function MessagesClient({ initialMessages }: Props) {
     await supabase.from("messages").update({ read: true }).eq("id", id)
   }
 
-  const archive = (id: string) => {
-    setMessages((prev) => prev.map((m) => m.id === id ? { ...m, archived: true } : m))
-    if (selectedId === id) {
+  const setArchived = async (id: string, value: boolean) => {
+    setMessages((prev) => prev.map((m) => m.id === id ? { ...m, archived: value } : m))
+    if (value && selectedId === id) {
       setSelectedId(null)
       setMobileDetail(false)
     }
+    const supabase = createClient()
+    await supabase.from("messages").update({ archived: value }).eq("id", id)
   }
 
   const markAllRead = async () => {
-    const unreadIds = visible.filter((m) => !m.read).map((m) => m.id)
+    const unreadIds = inbox.filter((m) => !m.read).map((m) => m.id)
     setMessages((prev) => prev.map((m) => ({ ...m, read: true })))
     if (unreadIds.length > 0) {
       const supabase = createClient()
@@ -73,10 +74,16 @@ export function MessagesClient({ initialMessages }: Props) {
     setMobileDetail(true)
   }
 
+  const switchTab = (toArchived: boolean) => {
+    setShowArchived(toArchived)
+    setSelectedId(null)
+    setMobileDetail(false)
+  }
+
   return (
     <div className="max-w-5xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-semibold text-fg">Messages</h1>
           {unreadCount > 0 && (
@@ -85,12 +92,44 @@ export function MessagesClient({ initialMessages }: Props) {
             </span>
           )}
         </div>
-        {unreadCount > 0 && (
+        {!showArchived && unreadCount > 0 && (
           <Button variant="ghost" size="sm" onClick={markAllRead} className="text-fg-muted hover:text-fg">
             <CheckCheck className="h-4 w-4 mr-1.5" />
             Mark all read
           </Button>
         )}
+      </div>
+
+      {/* Inbox / Archived tab strip */}
+      <div className="flex gap-1 mb-4 border-b border-border">
+        <button
+          onClick={() => switchTab(false)}
+          className={cn(
+            "px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+            !showArchived
+              ? "border-accent text-fg"
+              : "border-transparent text-fg-muted hover:text-fg"
+          )}
+        >
+          Inbox
+          {unreadCount > 0 && (
+            <span className="ml-1.5 text-xs text-accent">({unreadCount})</span>
+          )}
+        </button>
+        <button
+          onClick={() => switchTab(true)}
+          className={cn(
+            "px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+            showArchived
+              ? "border-accent text-fg"
+              : "border-transparent text-fg-muted hover:text-fg"
+          )}
+        >
+          Archived
+          {archived.length > 0 && (
+            <span className="ml-1.5 text-xs text-fg-muted">({archived.length})</span>
+          )}
+        </button>
       </div>
 
       {/* Two-column layout desktop, single column mobile */}
@@ -104,7 +143,9 @@ export function MessagesClient({ initialMessages }: Props) {
           {visible.length === 0 ? (
             <div className="text-center py-12 text-fg-muted">
               <Inbox className="h-8 w-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No messages — we'll write when something matters.</p>
+              <p className="text-sm">
+                {showArchived ? "No archived messages." : "No messages — we'll write when something matters."}
+              </p>
             </div>
           ) : (
             visible.map((msg) => (
@@ -161,15 +202,27 @@ export function MessagesClient({ initialMessages }: Props) {
                   <h2 className="text-base font-semibold text-fg">{selected.title}</h2>
                   <p className="text-xs text-fg-muted mt-0.5">INDXR · {formatDate(selected.created_at)}</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => archive(selected.id)}
-                  className="shrink-0 text-fg-muted hover:text-fg"
-                >
-                  <Archive className="h-4 w-4 mr-1.5" />
-                  Archive
-                </Button>
+                {selected.archived ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setArchived(selected.id, false)}
+                    className="shrink-0 text-fg-muted hover:text-fg"
+                  >
+                    <ArchiveRestore className="h-4 w-4 mr-1.5" />
+                    Unarchive
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setArchived(selected.id, true)}
+                    className="shrink-0 text-fg-muted hover:text-fg"
+                  >
+                    <Archive className="h-4 w-4 mr-1.5" />
+                    Archive
+                  </Button>
+                )}
               </div>
               {/* Detail body */}
               <div className="px-6 py-5">

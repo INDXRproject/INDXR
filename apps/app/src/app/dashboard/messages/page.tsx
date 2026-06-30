@@ -15,7 +15,7 @@ export default async function MessagesPage() {
 
   const { data: messages } = await supabase
     .from("messages")
-    .select("id, title, body, type, read, created_at")
+    .select("id, title, body, type, read, archived, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 

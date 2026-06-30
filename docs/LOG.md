@@ -1,3 +1,5 @@
+[2026-06-30 17:30] feature: archief-actie messages-pagina echt gemaakt [~] build groen; archived kolom in DB (migratie 20260630170359); archive/unarchive schrijft naar DB via UPDATE; Inbox/Archived tab-toggle; wacht op Khidr-verificatie | gewijzigd: apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/messages/page.tsx, supabase/migrations/20260630170359_messages_archived.sql, docs/wiki/architecture/database-schema.md, docs/LOG.md
+---
 [2026-06-27 23:30] fix: title+channel meegeven aan caption master-cache-write ✅ write-kant end-to-end bewezen (Sandler-playlist herrun, alle titels correct in library); cache-hit-kant steunt op bewezen read-logica (mc.get("title") or video_title) + pre-launch master-cache-flush die resterende title=null-rijen verwijdert | gewijzigd: backend/main.py, backend/worker.py, docs/wiki/decisions/021-master-transcripts-cache.md, docs/wiki/architecture/database-schema.md, docs/LOG.md
 ---
 [2026-06-27 23:00] fix: native caption track selectie — altijd -orig, nooit tlang= ✅ productieverificatie: iKtPI8IMuOM native ASR lang='ja-orig', geen tlang=, success — single-video én playlist-pad bevestigd | gewijzigd: backend/youtube_utils.py, docs/wiki/architecture/ai-pipeline.md, docs/LESSONS.md, docs/LOG.md
@@ -6101,3 +6103,27 @@ docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
 ---
 [2026-06-30 19:00] feat: messages-systeem — tabel + welcome-trigger + echte frontend | gewijzigd: supabase/migrations/20260630164156_messages.sql, apps/app/src/app/dashboard/messages/page.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/components/AppTopbar.tsx, docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md
+[2026-06-30 16:46] commit: feat: messages tabel + welkomst-trigger + echte frontend
+
+- Nieuwe migratie 20260630164156_messages.sql: messages tabel + RLS
+  (SELECT + UPDATE voor eigenaar, geen user-INSERT), exception-safe
+  trigger on_auth_user_created_welcome_message op auth.users AFTER INSERT.
+  Aparte functie van handle_new_user — raak bestaande trigger niet aan.
+- MessagesPage: server component, laadt echte rows uit messages tabel.
+- MessagesClient: MOCK_MESSAGES verwijderd, initialMessages prop,
+  mark-as-read schrijft naar DB via Supabase client, archive lokale state.
+- AppTopbar: MOCK_MESSAGES import + hardcoded unread badge verwijderd.
+- schema_migrations geverifieerd: exact 2 rijen (baseline + messages).
+- Trigger-test via Management API geslaagd: user aangemaakt →
+  user_credits aanwezig (handle_new_user) + welkomstbericht aanwezig.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/app/dashboard/messages/page.tsx
+apps/app/src/components/AppTopbar.tsx
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/operations/known-issues.md
+supabase/migrations/20260630164156_messages.sql
+---
+[2026-06-30 17:05] precompact: context compaction triggered

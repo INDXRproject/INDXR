@@ -224,13 +224,14 @@ title      TEXT        NOT NULL
 body       TEXT        NOT NULL
 type       TEXT        NOT NULL DEFAULT 'system'  -- 'welcome' | 'system'
 read       BOOLEAN     NOT NULL DEFAULT false
+archived   BOOLEAN     NOT NULL DEFAULT false      -- (migratie 20260630170359)
 created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 ```
 
-RLS: gebruiker kan eigen berichten lezen (SELECT) en als gelezen markeren (UPDATE). Geen INSERT-policy — berichten worden aangemaakt via `handle_new_user_message()` trigger (service role).  
+RLS: gebruiker kan eigen berichten lezen (SELECT) en updaten — `read` en `archived` — (UPDATE). Geen INSERT-policy — berichten worden aangemaakt via `handle_new_user_message()` trigger (service role).  
 Index: `idx_messages_user_id` op `(user_id)`.  
 Trigger: `on_auth_user_created_welcome_message` AFTER INSERT ON auth.users → `handle_new_user_message()`. Exception-safe: fout in trigger blokkeert nooit de signup.  
-Migratie: `20260630164156_messages.sql`.
+Migraties: `20260630164156_messages.sql` (tabel + trigger), `20260630170359_messages_archived.sql` (`archived` kolom).
 
 ---
 
@@ -313,11 +314,12 @@ Gebruikt in: `src/app/actions/credits.ts`
 
 **Baseline-squash uitgevoerd op 2026-06-30.**
 
-`supabase/migrations/` bevat nu twee bestanden:
+`supabase/migrations/` bevat nu drie bestanden:
 - `20260630155944_baseline.sql` — volledige DDL-snapshot productie-DB (bron van waarheid)
 - `20260630164156_messages.sql` — `messages` tabel + `handle_new_user_message()` trigger (eerste migratie ná baseline)
+- `20260630170359_messages_archived.sql` — `archived BOOLEAN NOT NULL DEFAULT false` kolom op `messages` (tweede migratie ná baseline)
 
-De 24 pre-baseline migratiebestanden zijn bewaard in `supabase/migrations_archive/` (git-geschiedenis blijft intact). De `supabase_migrations.schema_migrations` tracking-tabel is gereset en bevat exact één rij: `version='20260630155944', name='baseline'`.
+De 24 pre-baseline migratiebestanden zijn bewaard in `supabase/migrations_archive/` (git-geschiedenis blijft intact). De `supabase_migrations.schema_migrations` tracking-tabel bevat exact drie rijen.
 
 **Herstelnet:** `supabase/migrations_archive/schema_migrations_backup_2026-06-30.sql` bevat de volledige 15-rij staat van vóór de reset.
 
