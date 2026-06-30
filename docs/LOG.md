@@ -6001,3 +6001,78 @@ Changed: docs/LOG.md
 docs/wiki/operations/known-issues.md
 ---
 [2026-06-30 16:15] taak: Supabase migration-sync baseline-squash ✅ | gewijzigd: supabase/migrations/20260630155944_baseline.sql (nieuw), supabase/migrations_archive/ (24 gearchiveerde bestanden + backup), supabase_migrations.schema_migrations (gereset naar 1 rij), docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md, docs/LESSONS.md
+[2026-06-30 16:02] commit: chore: Supabase migration-sync baseline-squash ✅
+
+Schema-drift hersteld: 8-cijferige timestamp-prefixen en SQL-Editor-wijzigingen
+(master_transcripts.title + .channel) waren onzichtbaar voor de CLI-tracking.
+
+Wijzigingen:
+- supabase/migrations/20260630155944_baseline.sql — volledige DDL-snapshot productie-DB
+  (11 tabellen, 25 indexes, 18 RLS policies, 8 functies, on_auth_user_created trigger)
+- 24 pre-baseline bestanden → supabase/migrations_archive/ (git-geschiedenis intact)
+- supabase/migrations_archive/schema_migrations_backup_2026-06-30.sql — herstelnet 15-rij staat
+- supabase_migrations.schema_migrations gereset naar 1 rij (version=20260630155944)
+- docs/wiki/architecture/database-schema.md — Migrations-sectie vervangen door baseline-notitie
+- docs/wiki/operations/known-issues.md — migration-sync opgelost ✅ + TODO legacy DROP
+- docs/LESSONS.md — les over schema-drift + baseline-squash-recept
+- docs/LOG.md — sessie-entry
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/operations/known-issues.md
+supabase/.gitignore
+supabase/config.toml
+supabase/migrations/20260301144045_add_avatar_color_to_profiles.sql
+supabase/migrations/20260302_add_tiptap_fields.sql
+supabase/migrations/20260304_tiptap_fields_to_jsonb.sql
+supabase/migrations/20260305_collections.sql
+supabase/migrations/20260306000442_add_ai_summary_to_transcripts.sql
+supabase/migrations/20260306_add_viewed_at_to_transcripts.sql
+supabase/migrations/20260307_add_updated_at_to_transcripts.sql
+supabase/migrations/20260408_add_suspended_to_profiles.sql
+supabase/migrations/20260408_backfill_missing_profiles.sql
+supabase/migrations/20260412_job_metrics_and_rename.sql
+supabase/migrations/20260412_playlist_extraction_jobs.sql
+supabase/migrations/20260422_add_rag_settings_to_profiles.sql
+supabase/migrations/20260423_rag_chunk_size_90.sql
+supabase/migrations/20260428_master_transcripts_cache.sql
+supabase/migrations/20260428_playlist_per_video_chain.sql
+supabase/migrations/20260428_playlist_per_video_chain__manual_test.sql
+supabase/migrations/20260428_playlist_progress_rpc_status_fix.sql
+supabase/migrations/20260430_fase4_playlist_extraction_jobs.sql
+supabase/migrations/20260430_fase4_saved_videos.sql
+supabase/migrations/20260430_fase4_transcription_jobs.sql
+supabase/migrations/20260430_fase4_update_playlist_progress_rpc.sql
+supabase/migrations/20260501_watchdog_attempts.sql
+supabase/migrations/20260502_playlist_retry_pending_status.sql
+supabase/migrations/20260630155944_baseline.sql
+supabase/migrations/add_playlist_jobs.sql
+supabase/migrations_archive/20260301144045_add_avatar_color_to_profiles.sql
+supabase/migrations_archive/20260302_add_tiptap_fields.sql
+supabase/migrations_archive/20260304_tiptap_fields_to_jsonb.sql
+supabase/migrations_archive/20260305_collections.sql
+supabase/migrations_archive/20260306000442_add_ai_summary_to_transcripts.sql
+supabase/migrations_archive/20260306_add_viewed_at_to_transcripts.sql
+supabase/migrations_archive/20260307_add_updated_at_to_transcripts.sql
+supabase/migrations_archive/20260408_add_suspended_to_profiles.sql
+supabase/migrations_archive/20260408_backfill_missing_profiles.sql
+supabase/migrations_archive/20260412_job_metrics_and_rename.sql
+supabase/migrations_archive/20260412_playlist_extraction_jobs.sql
+supabase/migrations_archive/20260422_add_rag_settings_to_profiles.sql
+supabase/migrations_archive/20260423_rag_chunk_size_90.sql
+supabase/migrations_archive/20260428_master_transcripts_cache.sql
+supabase/migrations_archive/20260428_playlist_per_video_chain.sql
+supabase/migrations_archive/20260428_playlist_per_video_chain__manual_test.sql
+supabase/migrations_archive/20260428_playlist_progress_rpc_status_fix.sql
+supabase/migrations_archive/20260430_fase4_playlist_extraction_jobs.sql
+supabase/migrations_archive/20260430_fase4_saved_videos.sql
+supabase/migrations_archive/20260430_fase4_transcription_jobs.sql
+supabase/migrations_archive/20260430_fase4_update_playlist_progress_rpc.sql
+supabase/migrations_archive/20260501_watchdog_attempts.sql
+supabase/migrations_archive/20260502_playlist_retry_pending_status.sql
+supabase/migrations_archive/add_playlist_jobs.sql
+supabase/migrations_archive/schema_migrations_backup_2026-06-30.sql
+---
+[2026-06-30 16:30] taak: FAQ "why nearly instant" Q&A toegevoegd aan Technical-sectie | gewijzigd: apps/marketing/src/app/docs/help/faq/page.tsx

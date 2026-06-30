@@ -105,6 +105,11 @@ const faqCategories: FAQCategory[] = [
         answer:
           "For videos with existing YouTube captions, extraction is nearly instant (1-3 seconds). For AI transcription, processing time is roughly 1-2 minutes per 10 minutes of audio.",
       },
+      {
+        question: "Why does a transcript sometimes appear almost instantly?",
+        answer:
+          "Sometimes a transcript appears in just a few seconds. That happens when the same video has already been processed before — we serve the saved result instead of re-processing the audio. You get the exact same transcript, just faster. Caption extraction is fast by default; the nearly-instant case applies mainly to AI transcription that has already been completed once for that video.",
+      },
     ],
   },
 ]
