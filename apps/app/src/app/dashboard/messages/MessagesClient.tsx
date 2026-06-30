@@ -1,74 +1,30 @@
 "use client"
 
-// TODO: Backend hookup — replace mock data with fetch from admin messages API
-// TODO: Mark-read API — POST /api/messages/[id]/read
-// TODO: Archive API — POST /api/messages/[id]/archive
-
 import { useState } from "react"
 import { Inbox, Archive, CheckCheck, ChevronLeft } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import { cn } from "@indxr/shared/lib/utils"
+import { createClient } from "@indxr/shared/utils/supabase/client"
 
 interface Message {
   id: string
-  sender: string
   title: string
   body: string
-  date: string
+  type: string
   read: boolean
-  archived: boolean
+  created_at: string
+  // client-only: archive is local state only (no DB column yet)
+  archived?: boolean
 }
 
-export const MOCK_MESSAGES: Message[] = [
-  {
-    id: "1",
-    sender: "Khidr @ INDXR",
-    title: "Welcome to INDXR",
-    body: "Thanks for signing up. Your 25 welcome credits are in your account and ready to use.\n\nTo get started, paste any YouTube URL into the Transcribe page. Caption extraction is always free — AI transcription uses 1 credit per minute.\n\nIf you have any questions, reply here or visit the docs.",
-    date: "Today",
-    read: false,
-    archived: false,
-  },
-  {
-    id: "2",
-    sender: "INDXR",
-    title: "Export tip: Markdown for Notion",
-    body: "Did you know you can export any transcript as Markdown and paste it directly into Notion? Headings, bold text, and timestamps all carry over cleanly.\n\nTry it from the Export menu in any transcript detail view.",
-    date: "Yesterday",
-    read: false,
-    archived: false,
-  },
-  {
-    id: "3",
-    sender: "Khidr @ INDXR",
-    title: "Credits added to your account",
-    body: "We've added 10 bonus credits to your account as a thank-you for your early feedback. They don't expire, so use them whenever you need.\n\nKeep the feedback coming — it genuinely shapes what we build next.",
-    date: "2 days ago",
-    read: true,
-    archived: false,
-  },
-  {
-    id: "4",
-    sender: "INDXR",
-    title: "New: RAG-optimized JSON export",
-    body: "You can now export transcripts as RAG-optimized JSON — pre-chunked into 30-second segments with full metadata (title, channel, timestamps, language).\n\nThis format feeds directly into LangChain, LlamaIndex, and most vector databases without preprocessing.",
-    date: "3 days ago",
-    read: true,
-    archived: false,
-  },
-  {
-    id: "5",
-    sender: "Khidr @ INDXR",
-    title: "Playlist extraction is live",
-    body: "You can now extract transcripts from entire YouTube playlists in one go. Paste a playlist URL in the Transcribe page, select your videos, and INDXR processes them in parallel.\n\nThe first 3 videos are free. After that, 1 credit per video.",
-    date: "1 week ago",
-    read: true,
-    archived: false,
-  },
-]
+interface Props {
+  initialMessages: Message[]
+}
 
-export function MessagesClient() {
-  const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES)
+export function MessagesClient({ initialMessages }: Props) {
+  const [messages, setMessages] = useState<Message[]>(
+    initialMessages.map((m) => ({ ...m, archived: false }))
+  )
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mobileDetail, setMobileDetail] = useState(false)
 
@@ -76,8 +32,21 @@ export function MessagesClient() {
   const visible = messages.filter((m) => !m.archived)
   const unreadCount = visible.filter((m) => !m.read).length
 
-  const markRead = (id: string) => {
+  const formatDate = (iso: string) => {
+    const d = new Date(iso)
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffDays === 0) return "Today"
+    if (diffDays === 1) return "Yesterday"
+    if (diffDays < 7) return `${diffDays} days ago`
+    return d.toLocaleDateString()
+  }
+
+  const markRead = async (id: string) => {
     setMessages((prev) => prev.map((m) => m.id === id ? { ...m, read: true } : m))
+    const supabase = createClient()
+    await supabase.from("messages").update({ read: true }).eq("id", id)
   }
 
   const archive = (id: string) => {
@@ -88,13 +57,19 @@ export function MessagesClient() {
     }
   }
 
-  const markAllRead = () => {
+  const markAllRead = async () => {
+    const unreadIds = visible.filter((m) => !m.read).map((m) => m.id)
     setMessages((prev) => prev.map((m) => ({ ...m, read: true })))
+    if (unreadIds.length > 0) {
+      const supabase = createClient()
+      await supabase.from("messages").update({ read: true }).in("id", unreadIds)
+    }
   }
 
   const handleSelect = (id: string) => {
     setSelectedId(id)
-    markRead(id)
+    const msg = messages.find((m) => m.id === id)
+    if (msg && !msg.read) markRead(id)
     setMobileDetail(true)
   }
 
@@ -148,10 +123,10 @@ export function MessagesClient() {
                   <span className={cn("text-sm font-medium truncate", selectedId === msg.id ? "text-accent" : "text-fg")}>
                     {msg.title}
                   </span>
-                  <span className="text-xs text-fg-muted shrink-0">{msg.date}</span>
+                  <span className="text-xs text-fg-muted shrink-0">{formatDate(msg.created_at)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-fg-muted truncate">{msg.sender}</span>
+                  <span className="text-xs text-fg-muted truncate">INDXR</span>
                   {!msg.read && <span className="h-2 w-2 rounded-full bg-accent shrink-0" />}
                 </div>
               </button>
@@ -184,7 +159,7 @@ export function MessagesClient() {
                     Back
                   </button>
                   <h2 className="text-base font-semibold text-fg">{selected.title}</h2>
-                  <p className="text-xs text-fg-muted mt-0.5">{selected.sender} · {selected.date}</p>
+                  <p className="text-xs text-fg-muted mt-0.5">INDXR · {formatDate(selected.created_at)}</p>
                 </div>
                 <Button
                   variant="ghost"

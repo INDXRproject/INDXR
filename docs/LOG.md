@@ -6088,3 +6088,16 @@ docs/LOG.md
 ---
 [2026-06-30 16:20] precompact: context compaction triggered
 [2026-06-30 18:00] audit: read-only audit admin/messages/worker — wiki correcties geschreven | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md
+[2026-06-30 16:28] commit: docs: audit-correcties worker/Redis/admin/messages — wiki bijgewerkt
+
+Worker draait op Railway Redis (ARQ_REDIS_URL, geverifieerd 2026-06-30 14:12 UTC).
+Fase 2 ADR-048 Redis-splitsing afgerond. Upstash vars nog niet hersteld op Vercel/Railway.
+known-issues.md: ARQ worker sectie gemarkeerd als opgelost, Upstash-sectie gecorrigeerd.
+priorities.md: C.3.1 status bijgewerkt, Fase 2 todo aangevinkt.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-06-30 19:00] feat: messages-systeem — tabel + welcome-trigger + echte frontend | gewijzigd: supabase/migrations/20260630164156_messages.sql, apps/app/src/app/dashboard/messages/page.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/components/AppTopbar.tsx, docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md

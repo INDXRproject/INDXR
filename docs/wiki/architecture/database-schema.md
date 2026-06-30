@@ -214,6 +214,26 @@ Migraties: `20260428_master_transcripts_cache.sql` (initieel); `title` + `channe
 
 ---
 
+### `messages`
+In-app berichten per gebruiker. Systeem-gegenereerd via trigger of service role; geen user-INSERT-policy.
+
+```sql
+id         UUID        PRIMARY KEY DEFAULT gen_random_uuid()
+user_id    UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
+title      TEXT        NOT NULL
+body       TEXT        NOT NULL
+type       TEXT        NOT NULL DEFAULT 'system'  -- 'welcome' | 'system'
+read       BOOLEAN     NOT NULL DEFAULT false
+created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+```
+
+RLS: gebruiker kan eigen berichten lezen (SELECT) en als gelezen markeren (UPDATE). Geen INSERT-policy — berichten worden aangemaakt via `handle_new_user_message()` trigger (service role).  
+Index: `idx_messages_user_id` op `(user_id)`.  
+Trigger: `on_auth_user_created_welcome_message` AFTER INSERT ON auth.users → `handle_new_user_message()`. Exception-safe: fout in trigger blokkeert nooit de signup.  
+Migratie: `20260630164156_messages.sql`.
+
+---
+
 ## RPC Functies
 
 ### `get_user_credits(p_user_id UUID)`
@@ -293,7 +313,9 @@ Gebruikt in: `src/app/actions/credits.ts`
 
 **Baseline-squash uitgevoerd op 2026-06-30.**
 
-`supabase/migrations/` bevat nu één bestand: `20260630155944_baseline.sql` — een volledige DDL-snapshot van de productie-DB gegenereerd via Management API introspectie. Dit is de bron van waarheid voor nieuwe omgevingen.
+`supabase/migrations/` bevat nu twee bestanden:
+- `20260630155944_baseline.sql` — volledige DDL-snapshot productie-DB (bron van waarheid)
+- `20260630164156_messages.sql` — `messages` tabel + `handle_new_user_message()` trigger (eerste migratie ná baseline)
 
 De 24 pre-baseline migratiebestanden zijn bewaard in `supabase/migrations_archive/` (git-geschiedenis blijft intact). De `supabase_migrations.schema_migrations` tracking-tabel is gereset en bevat exact één rij: `version='20260630155944', name='baseline'`.
 

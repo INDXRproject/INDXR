@@ -7,10 +7,6 @@ import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
 import { Button } from "@indxr/shared/components/ui/button"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { AvatarDropdown } from "./AvatarDropdown"
-import { MOCK_MESSAGES } from "../app/dashboard/messages/MessagesClient"
-
-// Computed once from static mock data — will remain until backend messages API is wired up
-const UNREAD_COUNT = MOCK_MESSAGES.filter((m) => !m.read && !m.archived).length
 
 export function AppTopbar() {
   const { credits } = useAuth()
@@ -54,20 +50,12 @@ export function AppTopbar() {
       <div className="flex items-center gap-1">
         <ThemeToggle />
 
-        <div className="relative flex items-center">
-          <Button variant="ghost" size="icon" asChild>
-            <a href="/dashboard/messages">
-              <Mail className="h-5 w-5" />
-              <span className="sr-only">Messages</span>
-            </a>
-          </Button>
-          {UNREAD_COUNT > 0 && (
-            <span
-              className="pointer-events-none absolute top-2 right-2 h-2 w-2 rounded-full bg-accent"
-              aria-hidden="true"
-            />
-          )}
-        </div>
+        <Button variant="ghost" size="icon" asChild>
+          <a href="/dashboard/messages">
+            <Mail className="h-5 w-5" />
+            <span className="sr-only">Messages</span>
+          </a>
+        </Button>
 
         <a
           href="/dashboard/billing"
