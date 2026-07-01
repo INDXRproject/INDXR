@@ -1,3 +1,5 @@
+[2026-07-01] feat: globale unread-indicator op Messages-sidebar + topbar — useUnreadMessages hook (HEAD COUNT query, pathname-refresh, "indxr-messages-read" event), dot op sidebar Messages-icoon, dot op topbar Mail-icoon, MessagesClient dispatcht event na markRead/markTicketRepliesRead/markAllRead. tsc ✓ | build ✓ | gewijzigd: apps/app/src/hooks/useUnreadMessages.ts (nieuw), apps/app/src/components/app-sidebar.tsx, apps/app/src/components/AppTopbar.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx
+---
 [2026-07-01] fix: unread dot-indicator + dashboard archived-filter — MessagesClient: inbox bold-toggle → constante font-medium + bestaande dot; Support-tab: bold-toggle → standalone accent-dot (open én closed tickets), reply-count altijd text-fg-muted, hasUnread scope terug naar alle tickets. dashboard/page.tsx: .eq("archived", false) zodat gearchiveerde berichten niet in Home-preview lekken. tsc ✓ | build ✓ | gewijzigd: apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/page.tsx
 ---
 [2026-07-01] fix: contactcentrum v1 live-bugs (3 stuks) — admin thread-view: page.tsx haalt nu messages op per ticket (admin client, ASC), TicketsTable herschreven: klik-op-rij opent thread (origineel + replies chronologisch, sender-onderscheid), actions (Close/Reply/Credits) ná thread, Open-filter oudste-eerst (wachtrij), 3-state filter Open/Closed/All, optimistic reply-update. MessagesClient: replies lokaal gesorteerd ASC (bug2 fix), hasUnread alleen op open tickets (closed = niet vetgedrukt). tsc ✓ | build ✓ | gewijzigd: apps/app/src/app/admin/tickets/page.tsx, apps/app/src/app/admin/tickets/TicketsTable.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx
@@ -6284,5 +6286,19 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: apps/app/src/app/admin/tickets/TicketsTable.tsx
 apps/app/src/app/admin/tickets/page.tsx
 apps/app/src/app/dashboard/messages/MessagesClient.tsx
+docs/LOG.md
+---
+[2026-07-01 19:42] commit: fix: unread dot-indicator + dashboard archived-filter
+
+MessagesClient — inbox: verwijder bold/non-bold titelwissel; titel altijd
+font-medium, bestaande accent-dot blijft. Support-tab: bold-wissel verwijderd,
+standalone h-2 w-2 accent-dot toegevoegd per ticket met ongelezen admin-reply
+(open én closed), reply-count altijd text-fg-muted.
+dashboard/page.tsx: .eq("archived", false) zodat gearchiveerde berichten niet
+in de Home-preview verschijnen.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/app/dashboard/page.tsx
 docs/LOG.md
 ---

@@ -10,6 +10,7 @@ import {
   PanelLeftClose, PanelLeftOpen, CircleDollarSign,
 } from "lucide-react"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
+import { useUnreadMessages } from "../hooks/useUnreadMessages"
 
 import {
   Sidebar,
@@ -61,6 +62,7 @@ export function AppSidebar() {
   const pathname = usePathname()
   const supabase = createClient()
   const { credits } = useAuth()
+  const hasUnreadMessages = useUnreadMessages()
 
   // ── Collections state ──────────────────────────────────────────────────────
   const [collections, setCollections]         = useState<Collection[]>([])
@@ -355,7 +357,12 @@ export function AppSidebar() {
                           )}
                           title={collapsed ? item.title : undefined}
                         >
-                          <item.icon className="h-4 w-4" />
+                          <div className="relative shrink-0">
+                            <item.icon className="h-4 w-4" />
+                            {item.title === "Messages" && hasUnreadMessages && (
+                              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-accent" />
+                            )}
+                          </div>
                           <span className={cn(collapsed && "hidden")}>{item.title}</span>
                         </a>
                       </SidebarMenuButton>

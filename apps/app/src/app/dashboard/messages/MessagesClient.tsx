@@ -102,6 +102,7 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
     setMessages((prev) => prev.map((m) => m.id === id ? { ...m, read: true } : m))
     const supabase = createClient()
     await supabase.from("messages").update({ read: true }).eq("id", id)
+    window.dispatchEvent(new CustomEvent("indxr-messages-read"))
   }
 
   const markTicketRepliesRead = async (ticketId: string) => {
@@ -112,6 +113,7 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
     ))
     const supabase = createClient()
     await supabase.from("messages").update({ read: true }).in("id", unread.map((m) => m.id))
+    window.dispatchEvent(new CustomEvent("indxr-messages-read"))
   }
 
   const setArchived = async (id: string, value: boolean) => {
@@ -127,6 +129,7 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
     if (unreadIds.length > 0) {
       const supabase = createClient()
       await supabase.from("messages").update({ read: true }).in("id", unreadIds)
+      window.dispatchEvent(new CustomEvent("indxr-messages-read"))
     }
   }
 

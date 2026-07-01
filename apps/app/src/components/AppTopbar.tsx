@@ -6,10 +6,12 @@ import { SidebarTrigger } from "@indxr/shared/components/ui/sidebar"
 import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
 import { Button } from "@indxr/shared/components/ui/button"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
+import { useUnreadMessages } from "../hooks/useUnreadMessages"
 import { AvatarDropdown } from "./AvatarDropdown"
 
 export function AppTopbar() {
   const { credits } = useAuth()
+  const hasUnreadMessages = useUnreadMessages()
 
   return (
     <header className="sticky top-0 z-40 h-14 border-b bg-bg flex items-center px-4 gap-3 shrink-0">
@@ -51,8 +53,11 @@ export function AppTopbar() {
         <ThemeToggle />
 
         <Button variant="ghost" size="icon" asChild>
-          <a href="/dashboard/messages">
+          <a href="/dashboard/messages" className="relative">
             <Mail className="h-5 w-5" />
+            {hasUnreadMessages && (
+              <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-accent" />
+            )}
             <span className="sr-only">Messages</span>
           </a>
         </Button>
