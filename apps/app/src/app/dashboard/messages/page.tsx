@@ -8,16 +8,44 @@ export const metadata: Metadata = {
   robots: { index: false },
 }
 
-export default async function MessagesPage() {
+export default async function MessagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: messages } = await supabase
-    .from("messages")
-    .select("id, title, body, type, read, archived, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+  const params = await searchParams
+  const initialTab = params.tab === "support" ? "support" : "inbox"
 
-  return <MessagesClient initialMessages={messages ?? []} />
+  const [
+    { data: messages },
+    { data: tickets },
+    { data: transcripts },
+  ] = await Promise.all([
+    supabase
+      .from("messages")
+      .select("id, title, body, type, read, archived, ticket_id, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("support_tickets")
+      .select("id, category, subject, body, status, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("transcripts")
+      .select("id, title")
+      .order("created_at", { ascending: false })
+      .limit(100),
+  ])
+
+  return (
+    <MessagesClient
+      initialMessages={messages ?? []}
+      initialTickets={tickets ?? []}
+      transcripts={transcripts ?? []}
+      initialTab={initialTab}
+    />
+  )
 }

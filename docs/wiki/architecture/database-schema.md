@@ -22,6 +22,7 @@ avatar_color         TEXT    -- hex kleur voor avatar placeholder (migratie 2026
 suspended            BOOLEAN DEFAULT false (migratie 20260408)
 rag_export_confirmed BOOLEAN DEFAULT false (migratie 20260422) -- vervallen, niet meer gebruikt (modal altijd tonen)
 rag_chunk_size       INTEGER DEFAULT 60 CHECK IN (30,60,90,120) (migratie 20260422/20260423) -- chunk preset voor RAG JSON export
+email_notifications  BOOLEAN NOT NULL DEFAULT true (migratie 20260701120000) -- opt-out voor user-gerichte e-mailmeldingen (admin-antwoorden op tickets)
 ```
 
 RLS: gebruiker kan alleen eigen profiel lezen/schrijven.
@@ -214,6 +215,25 @@ Migraties: `20260428_master_transcripts_cache.sql` (initieel); `title` + `channe
 
 ---
 
+### `support_tickets`
+Contact- en supportverzoeken van gebruikers. INSERT alleen via `submit_support_ticket` RPC; geen directe INSERT-policy.
+
+```sql
+id            UUID        PRIMARY KEY DEFAULT gen_random_uuid()
+user_id       UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
+category      TEXT        NOT NULL CHECK IN ('feedback', 'billing', 'bug')
+subject       TEXT        NOT NULL CHECK char_length BETWEEN 1 AND 200
+body          TEXT        NOT NULL CHECK char_length BETWEEN 1 AND 5000
+transcript_id UUID        REFERENCES public.transcripts(id) ON DELETE SET NULL
+status        TEXT        NOT NULL DEFAULT 'open' CHECK IN ('open', 'closed')
+created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+```
+
+RLS: gebruiker kan eigen tickets lezen (SELECT). Geen directe INSERT-policy — inserts verlopen via `submit_support_ticket()` RPC (SECURITY DEFINER).  
+Migratie: `20260701000000_support_tickets.sql`.
+
+---
+
 ### `messages`
 In-app berichten per gebruiker. Systeem-gegenereerd via trigger of service role; geen user-INSERT-policy.
 
@@ -222,13 +242,14 @@ id         UUID        PRIMARY KEY DEFAULT gen_random_uuid()
 user_id    UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
 title      TEXT        NOT NULL
 body       TEXT        NOT NULL
-type       TEXT        NOT NULL DEFAULT 'system'  -- 'welcome' | 'system'
+type       TEXT        NOT NULL DEFAULT 'system'  -- 'welcome' | 'system' | 'support'
 read       BOOLEAN     NOT NULL DEFAULT false
 archived   BOOLEAN     NOT NULL DEFAULT false      -- (migratie 20260630170359)
+ticket_id  UUID        REFERENCES public.support_tickets(id) ON DELETE CASCADE  -- NULL = inbox/systeem; NOT NULL = admin-antwoord op ticket (migratie 20260701120000)
 created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 ```
 
-RLS: gebruiker kan eigen berichten lezen (SELECT) en updaten — `read` en `archived` — (UPDATE). Geen INSERT-policy — berichten worden aangemaakt via `handle_new_user_message()` trigger (service role).  
+RLS: gebruiker kan eigen berichten lezen (SELECT) en updaten — `read` en `archived` — (UPDATE). Geen INSERT-policy — berichten worden aangemaakt via `handle_new_user_message()` trigger of admin-route `/api/admin/tickets/[id]/message` (service role).  
 Index: `idx_messages_user_id` op `(user_id)`.  
 Trigger: `on_auth_user_created_welcome_message` AFTER INSERT ON auth.users → `handle_new_user_message()`. Exception-safe: fout in trigger blokkeert nooit de signup.  
 Migraties: `20260630164156_messages.sql` (tabel + trigger), `20260630170359_messages_archived.sql` (`archived` kolom).
@@ -236,6 +257,27 @@ Migraties: `20260630164156_messages.sql` (tabel + trigger), `20260630170359_mess
 ---
 
 ## RPC Functies
+
+### `submit_support_ticket(p_category, p_subject, p_body, p_transcript_id?)`
+SECURITY DEFINER RPC voor het indienen van support-tickets. Enige toegestane INSERT-pad naar `support_tickets`.
+
+**Checks (in volgorde):**
+1. `auth.uid() IS NULL` → `not_authenticated`
+2. Categorie niet in `('feedback','billing','bug')` → `invalid_category`
+3. Subject buiten 1–200 tekens → `invalid_subject`
+4. Body buiten 1–5000 tekens → `invalid_body`
+5. Meer dan 5 tickets per rolling hour per user → `rate_limit_exceeded`
+6. `transcript_id` opgegeven maar niet van caller → `transcript_not_found`
+
+**Returns:** `uuid` (het nieuwe ticket-ID)
+
+**Grants:** `EXECUTE` voor `authenticated`; `REVOKE` van `public` en `anon`.  
+`SET search_path = public, pg_temp` (voorkomt search_path injection).  
+Migratie: `20260701000000_support_tickets.sql`.
+
+Gebruikt in: `apps/app/src/app/api/support/submit/route.ts`
+
+---
 
 ### `get_user_credits(p_user_id UUID)`
 Geeft creditsaldo en playlist-quota terug.

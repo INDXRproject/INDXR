@@ -26,6 +26,28 @@ uvicorn handler-conflict op maar niet het Sentry-override probleem.
 
 ---
 
+## Support-systeem
+
+### DNS-cleanup Namecheap (niet-urgent, aparte sessie)
+Verweesde Resend-DNS-records in Namecheap opruimen. **Verwijderen:**
+- `_dmarc.mail`, `envelope.mail` (TXT + MX), `resend._domainkey...mail`
+- Drie SES-DKIM-CNAMEs met hash-hosts (bq2sj..., luy2..., oi5c...)
+
+**Niet aanraken:** de @/Proton-MX, de app/Vercel-CNAME, en alle `.send`-records (verified live Resend setup).
+
+---
+
+### Resend mail-notificatie niet actief (DNS-taak Khidr)
+**Bestand:** `apps/app/src/app/api/support/submit/route.ts`  
+**Status:** Mail-notificatie is geïmplementeerd en fail-safe (ticket wordt altijd opgeslagen, ook zonder mail). Twee env-vars moeten gezet worden in Vercel zodra Resend-domein live is:
+- `RESEND_API_KEY` — API-sleutel van Resend
+- `RESEND_FROM` — afzenderadres (bijv. `noreply@indxr.ai`), moet geverifieerd domein zijn
+
+**Gedrag zonder vars:** mail wordt stil overgeslagen, ticket-submit slaagt gewoon.  
+**Gedrag met vars:** Resend POST naar `contact@indxr.ai` met `reply_to = user.email`, subject `[INDXR Support] {category} — {subject}`.
+
+---
+
 ## Kritieke TODO's (blokkeren live launch)
 
 ### Stripe: Account activatie + nieuwe prijzen vereist

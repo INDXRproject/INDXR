@@ -1,3 +1,13 @@
+[2026-07-01] feat: contactcentrum v1 stap 4 — admin/tickets pagina (TicketsTable: inline close/reply/credits), Tickets nav-link in admin-layout, NL→EN taalfix (MessagesClient, SupportClient, settings, EmailNotificationsToggle, mail.ts), build ✓ 35 routes | gewijzigd: apps/app/src/app/admin/tickets/page.tsx (nieuw), apps/app/src/app/admin/tickets/TicketsTable.tsx (nieuw), apps/app/src/app/admin/layout.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/support/SupportClient.tsx, apps/app/src/app/dashboard/settings/page.tsx, apps/app/src/components/dashboard/settings/EmailNotificationsToggle.tsx, apps/app/src/lib/mail.ts
+---
+[2026-07-01] feat: contactcentrum v1 stap 3.5 — support als tab in messages-pagina: migratie messages.ticket_id + profiles.email_notifications (schema_migrations=5), mail-helper (notifyAdmin/notifyUser fail-safe), EmailNotificationsToggle in settings, messagesClient met Inbox+Support toptabs + archive als sub-filter, SupportClient hergebruikt in Support-tab, ticket-lijst met replies, /dashboard/support → redirect, LifeBuoy uit sidebar, build ✓, inbox_count=1 reply_count=0 (welkomstbericht ongewijzigd) | gewijzigd: supabase/migrations/20260701120000_messages_ticket_id_email_pref.sql, apps/app/src/lib/mail.ts, apps/app/src/app/actions/profile.ts, apps/app/src/components/dashboard/settings/EmailNotificationsToggle.tsx, apps/app/src/app/dashboard/settings/page.tsx, apps/app/src/app/dashboard/messages/page.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/support/page.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/app/api/support/submit/route.ts, apps/app/src/app/api/admin/tickets/[id]/message/route.ts, docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md
+---
+[2026-07-01] feat: contactcentrum v1 stap 3 — /dashboard/support pagina: Server Component (transcripts ophalen) + SupportClient (category radio's, subject/body/transcript-selector, inline success/rate-limit/error banners, submit disabled bij request), Support-link in app-sidebar (LifeBuoy icon, zelfde patroon als Messages), build ✓ | gewijzigd: apps/app/src/app/dashboard/support/page.tsx, apps/app/src/app/dashboard/support/SupportClient.tsx, apps/app/src/components/app-sidebar.tsx
+---
+[2026-07-01] docs: CLAUDE.md + LESSONS.md migratie-workflow 14-cijferige timestamp gedocumenteerd | gewijzigd: CLAUDE.md, docs/LESSONS.md
+---
+[2026-07-01] feat: contactcentrum v1 stap 1+2 — support_tickets migratie applied (schema_migrations=4), submit_support_ticket RPC (SECURITY DEFINER, rate-limit 5/uur, transcript-ownership, GRANT authenticated), 4 API-routes (/api/support/submit, /api/admin/tickets GET, /[id]/close, /[id]/message), build ✓, DB-runs geverifieerd via MCP, wiki bijgewerkt (database-schema.md, known-issues.md) | gewijzigd: supabase/migrations/20260701000000_support_tickets.sql, apps/app/src/app/api/support/submit/route.ts, apps/app/src/app/api/admin/tickets/route.ts, apps/app/src/app/api/admin/tickets/[id]/close/route.ts, apps/app/src/app/api/admin/tickets/[id]/message/route.ts, docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md
+---
 [2026-06-30 17:45] sessie-afrond 2026-06-30: migration-sync baseline-squash ✅ · messages DB-backed + welkomstbericht-trigger ✅ · archive DB-backed ✅ · analytics/SEO audit (read-only) · worker/Redis realiteit bevestigd (wiki stale → gecorrigeerd) — alle features geverifieerd door Khidr | gewijzigd: docs/wiki/operations/known-issues.md, docs/LOG.md
 ---
 [2026-06-30 17:30] feature: archief-actie messages-pagina echt gemaakt ✅ geverifieerd door Khidr; archived kolom in DB (migratie 20260630170359); archive/unarchive schrijft naar DB via UPDATE; Inbox/Archived tab-toggle persistent na refresh | gewijzigd: apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/messages/page.tsx, supabase/migrations/20260630170359_messages_archived.sql, docs/wiki/architecture/database-schema.md, docs/LOG.md
@@ -6146,3 +6156,23 @@ docs/LOG.md
 docs/wiki/architecture/database-schema.md
 supabase/migrations/20260630170359_messages_archived.sql
 ---
+[2026-06-30 18:09] commit: docs: sessie-afrond 2026-06-30 — messages/archive geverifieerd, known-issues afgevinkt
+
+- known-issues.md: messages page + welkomstbericht + archief → [x] geverifieerd Khidr
+- LOG.md: sessie-afrondingsregel toegevoegd
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+---
+[2026-06-30 18:34] commit: docs: migratie-workflow gedocumenteerd in CLAUDE.md + LESSONS.md
+
+CLAUDE.md: supabase db push / SQL-Editor vervangen door 14-cijferige
+YYYYMMDDHHMMSS-prefix workflow via Supabase MCP / Management API.
+LESSONS.md: vooruitregel toegevoegd — 8-cijferig is verboden.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: CLAUDE.md
+docs/LESSONS.md
+---
+[2026-06-30 19:45] precompact: context compaction triggered
