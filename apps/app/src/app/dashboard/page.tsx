@@ -32,6 +32,7 @@ export default async function DashboardPage() {
       .select("id, title, body, read, created_at")
       .eq("user_id", user.id)
       .is("ticket_id", null)
+      .eq("archived", false)
       .order("created_at", { ascending: false })
       .limit(3)
     if (data) recentMessages = data as typeof recentMessages

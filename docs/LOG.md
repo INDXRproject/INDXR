@@ -1,3 +1,5 @@
+[2026-07-01] fix: unread dot-indicator + dashboard archived-filter — MessagesClient: inbox bold-toggle → constante font-medium + bestaande dot; Support-tab: bold-toggle → standalone accent-dot (open én closed tickets), reply-count altijd text-fg-muted, hasUnread scope terug naar alle tickets. dashboard/page.tsx: .eq("archived", false) zodat gearchiveerde berichten niet in Home-preview lekken. tsc ✓ | build ✓ | gewijzigd: apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/page.tsx
+---
 [2026-07-01] fix: contactcentrum v1 live-bugs (3 stuks) — admin thread-view: page.tsx haalt nu messages op per ticket (admin client, ASC), TicketsTable herschreven: klik-op-rij opent thread (origineel + replies chronologisch, sender-onderscheid), actions (Close/Reply/Credits) ná thread, Open-filter oudste-eerst (wachtrij), 3-state filter Open/Closed/All, optimistic reply-update. MessagesClient: replies lokaal gesorteerd ASC (bug2 fix), hasUnread alleen op open tickets (closed = niet vetgedrukt). tsc ✓ | build ✓ | gewijzigd: apps/app/src/app/admin/tickets/page.tsx, apps/app/src/app/admin/tickets/TicketsTable.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx
 ---
 [2026-07-01 17:00] push: contactcentrum v1 afwerking (commit ba795f6) → master — Vercel indxr-app ✅ success, indxr-marketing ✅ success, Railway ✅ healthy | live op https://app.indxr.ai
@@ -6269,3 +6271,18 @@ docs/wiki/operations/known-issues.md
 supabase/migrations/20260701200000_messages_sender_role.sql
 ---
 [2026-07-01 19:19] precompact: context compaction triggered
+[2026-07-01 19:27] commit: fix: contactcentrum live-bugs — admin thread-view, sort, unread-scope, 3-state filter
+
+Admin-kant: page.tsx haalt thread-messages op per ticket (admin client, ASC).
+TicketsTable herschreven: rij-klik opent thread (origineel + replies chronologisch,
+sender-onderscheid), Close/Reply/Credits ná de thread, optimistic reply-update,
+3-state filter Open/Closed/All, Open-filter oudste-eerst (wachtrij-volgorde).
+User-kant: replies lokaal gesorteerd ASC (Bug 2), hasUnread beperkt tot open
+tickets zodat closed tickets niet meer vetgedrukt blijven.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/tickets/TicketsTable.tsx
+apps/app/src/app/admin/tickets/page.tsx
+apps/app/src/app/dashboard/messages/MessagesClient.tsx
+docs/LOG.md
+---

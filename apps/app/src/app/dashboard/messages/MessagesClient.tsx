@@ -277,8 +277,8 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <span className={cn(
-                        "text-sm truncate",
-                        selectedId === msg.id ? "text-accent font-medium" : (msg.read ? "text-fg font-medium" : "text-fg font-semibold")
+                        "text-sm font-medium truncate",
+                        selectedId === msg.id ? "text-accent" : "text-fg"
                       )}>
                         {msg.title}
                       </span>
@@ -350,8 +350,7 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
                     (a, b) => a.created_at.localeCompare(b.created_at)
                   )
                   const isExpanded = expandedTicket === ticket.id
-                  // Closed tickets never appear as "loud unread" — only open tickets with unread admin replies get bold treatment
-                  const hasUnread = ticket.status === "open" && ticketHasUnreadReply(ticket.id)
+                  const hasUnread = ticketHasUnreadReply(ticket.id)
 
                   return (
                     <div key={ticket.id} className="rounded-lg border border-border bg-surface overflow-hidden">
@@ -363,10 +362,8 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
                         <span className={cn("shrink-0 text-xs px-2 py-0.5 rounded-full font-medium", CATEGORY_STYLES[ticket.category])}>
                           {CATEGORY_LABELS[ticket.category]}
                         </span>
-                        <span className={cn(
-                          "flex-1 text-sm truncate",
-                          hasUnread ? "font-semibold text-fg" : "font-medium text-fg"
-                        )}>
+                        {hasUnread && <span className="h-2 w-2 rounded-full bg-accent shrink-0" />}
+                        <span className="flex-1 text-sm font-medium text-fg truncate">
                           {ticket.subject}
                         </span>
                         <span className={cn(
@@ -376,9 +373,8 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
                           {ticket.status === "open" ? "Open" : "Closed"}
                         </span>
                         {replies.length > 0 && (
-                          <span className={cn("shrink-0 text-xs", hasUnread ? "text-accent font-medium" : "text-fg-muted")}>
+                          <span className="shrink-0 text-xs text-fg-muted">
                             {replies.length} {replies.length !== 1 ? "replies" : "reply"}
-                            {hasUnread && " ●"}
                           </span>
                         )}
                         <span className="text-xs text-fg-muted shrink-0">{formatDate(ticket.created_at)}</span>
