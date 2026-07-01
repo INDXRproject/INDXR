@@ -10,26 +10,6 @@ export const metadata: Metadata = {
   robots: { index: false },
 }
 
-// TODO: Backend hookup — fetch from Messages API (admin messages table)
-const MOCK_MESSAGES = [
-  {
-    id: "1",
-    sender: "Khidr @ INDXR",
-    title: "Welcome to INDXR",
-    body: "Thanks for signing up. Your 25 welcome credits are ready to use — try transcribing your first video.",
-    date: "Today",
-    read: false,
-  },
-  {
-    id: "2",
-    sender: "INDXR",
-    title: "How to export to Notion",
-    body: "Did you know you can copy your transcript as Markdown and paste it directly into Notion?",
-    date: "Yesterday",
-    read: true,
-  },
-]
-
 export default async function DashboardPage() {
   const supabase = await createClient()
 
@@ -42,6 +22,19 @@ export default async function DashboardPage() {
       .rpc("get_credit_balance", { p_user_id: user.id })
       .maybeSingle()
     creditsBalance = (data as number | null) ?? 0
+  }
+
+  // Recent inbox messages (ticket_id IS NULL = inbox only)
+  let recentMessages: Array<{ id: string; title: string; body: string; read: boolean; created_at: string }> = []
+  if (user) {
+    const { data } = await supabase
+      .from("messages")
+      .select("id, title, body, read, created_at")
+      .eq("user_id", user.id)
+      .is("ticket_id", null)
+      .order("created_at", { ascending: false })
+      .limit(3)
+    if (data) recentMessages = data as typeof recentMessages
   }
 
   // Recent transcripts (3 most recent)
@@ -70,7 +63,14 @@ export default async function DashboardPage() {
 
   const formatDate = (iso: string) => {
     const d = new Date(iso)
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    const now = new Date()
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
+    if (diffDays === 0) return "Today"
+    if (diffDays === 1) return "Yesterday"
+    const sameYear = d.getFullYear() === now.getFullYear()
+    return d.toLocaleDateString("en-US", sameYear
+      ? { month: "short", day: "numeric" }
+      : { month: "short", day: "numeric", year: "numeric" })
   }
 
   return (
@@ -125,23 +125,31 @@ export default async function DashboardPage() {
             View all <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
-        <div className="space-y-2">
-          {MOCK_MESSAGES.slice(0, 2).map((msg) => (
-            <Link key={msg.id} href="/dashboard/messages">
-              <Card className={`bg-surface border-border hover:bg-surface-elevated transition-colors cursor-pointer ${!msg.read ? "border-l-2 border-l-accent" : ""}`}>
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-fg truncate">{msg.title}</p>
-                      <p className="text-xs text-fg-muted truncate mt-0.5">{msg.body}</p>
+        {recentMessages.length === 0 ? (
+          <Card className="bg-surface border-border">
+            <CardContent className="py-6 text-center">
+              <p className="text-sm text-fg-muted">No messages yet.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {recentMessages.map((msg) => (
+              <Link key={msg.id} href="/dashboard/messages">
+                <Card className={`bg-surface border-border hover:bg-surface-elevated transition-colors cursor-pointer${!msg.read ? " border-l-2 border-l-accent" : ""}`}>
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className={`text-sm truncate ${msg.read ? "font-medium text-fg" : "font-semibold text-fg"}`}>{msg.title}</p>
+                        <p className="text-xs text-fg-muted truncate mt-0.5">{msg.body}</p>
+                      </div>
+                      <span className="text-xs text-fg-muted shrink-0 mt-0.5">{formatDate(msg.created_at)}</span>
                     </div>
-                    <span className="text-xs text-fg-muted shrink-0 mt-0.5">{msg.date}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Section 4: Recent transcripts ── */}

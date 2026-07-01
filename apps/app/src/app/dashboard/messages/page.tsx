@@ -27,7 +27,7 @@ export default async function MessagesPage({
   ] = await Promise.all([
     supabase
       .from("messages")
-      .select("id, title, body, type, read, archived, ticket_id, created_at")
+      .select("id, title, body, type, read, archived, ticket_id, sender_role, created_at")
       .order("created_at", { ascending: false }),
     supabase
       .from("support_tickets")

@@ -245,14 +245,19 @@ body       TEXT        NOT NULL
 type       TEXT        NOT NULL DEFAULT 'system'  -- 'welcome' | 'system' | 'support'
 read       BOOLEAN     NOT NULL DEFAULT false
 archived   BOOLEAN     NOT NULL DEFAULT false      -- (migratie 20260630170359)
-ticket_id  UUID        REFERENCES public.support_tickets(id) ON DELETE CASCADE  -- NULL = inbox/systeem; NOT NULL = admin-antwoord op ticket (migratie 20260701120000)
-created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+ticket_id   UUID        REFERENCES public.support_tickets(id) ON DELETE CASCADE  -- NULL = inbox/systeem; NOT NULL = thread-bericht op ticket (migratie 20260701120000)
+sender_role TEXT        NOT NULL DEFAULT 'admin' CHECK IN ('admin', 'user')      -- 'admin' = INDXR Support, 'user' = gebruiker-reply (migratie 20260701200000)
+created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 ```
 
-RLS: gebruiker kan eigen berichten lezen (SELECT) en updaten — `read` en `archived` — (UPDATE). Geen INSERT-policy — berichten worden aangemaakt via `handle_new_user_message()` trigger of admin-route `/api/admin/tickets/[id]/message` (service role).  
+RLS: gebruiker kan eigen berichten lezen (SELECT) en updaten — `read` en `archived` — (UPDATE). Geen directe INSERT-policy — berichten worden aangemaakt via:
+- `handle_new_user_message()` trigger (welkomstbericht)
+- Admin-route `/api/admin/tickets/[id]/message` (service role, sender_role='admin')
+- User-reply route `/api/support/tickets/[id]/reply` (service role, sender_role='user', na ownership + open-status check)
+
 Index: `idx_messages_user_id` op `(user_id)`.  
 Trigger: `on_auth_user_created_welcome_message` AFTER INSERT ON auth.users → `handle_new_user_message()`. Exception-safe: fout in trigger blokkeert nooit de signup.  
-Migraties: `20260630164156_messages.sql` (tabel + trigger), `20260630170359_messages_archived.sql` (`archived` kolom).
+Migraties: `20260630164156_messages.sql` (tabel + trigger), `20260630170359_messages_archived.sql` (`archived`), `20260701120000_messages_ticket_id_email_pref.sql` (`ticket_id`), `20260701200000_messages_sender_role.sql` (`sender_role`).
 
 ---
 

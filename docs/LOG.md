@@ -1,3 +1,7 @@
+[2026-07-01] feat: contactcentrum v1 afwerking (A-F) — migratie messages.sender_role (schema_migrations=6), user-reply route /api/support/tickets/[id]/reply (ownership+open-check, notifyAdmin), MessagesClient: thread sender-onderscheid (You/INDXR Support), reply-form open ticket, closed-notice, read/unread vetgedrukt, badge-kleuren (feedback=groen/success, billing=oranje/warning, bug=rood/error), formatDate fix (Today/Yesterday/Jul 1), word-break op bodies. dashboard/page.tsx mock→echte inbox-data. TicketsTable: open/all filter, toast-bevestiging, fmtDate fix, badge-kleuren, word-break. tsc ✓ | build ✓ 40 routes | gewijzigd: supabase/migrations/20260701200000_messages_sender_role.sql (nieuw), apps/app/src/app/api/support/tickets/[id]/reply/route.ts (nieuw), apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/messages/page.tsx, apps/app/src/app/dashboard/page.tsx, apps/app/src/app/admin/tickets/TicketsTable.tsx, apps/app/src/app/api/admin/tickets/[id]/message/route.ts, docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md
+---
+[2026-07-01 15:53] push: contactcentrum v1 (commit f924bf6) → master — Vercel indxr-app ✅ success, indxr-marketing ✅ success, Railway ✅ healthy | live op https://app.indxr.ai
+---
 [2026-07-01] feat: contactcentrum v1 stap 4 — admin/tickets pagina (TicketsTable: inline close/reply/credits), Tickets nav-link in admin-layout, NL→EN taalfix (MessagesClient, SupportClient, settings, EmailNotificationsToggle, mail.ts), build ✓ 35 routes | gewijzigd: apps/app/src/app/admin/tickets/page.tsx (nieuw), apps/app/src/app/admin/tickets/TicketsTable.tsx (nieuw), apps/app/src/app/admin/layout.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/support/SupportClient.tsx, apps/app/src/app/dashboard/settings/page.tsx, apps/app/src/components/dashboard/settings/EmailNotificationsToggle.tsx, apps/app/src/lib/mail.ts
 ---
 [2026-07-01] feat: contactcentrum v1 stap 3.5 — support als tab in messages-pagina: migratie messages.ticket_id + profiles.email_notifications (schema_migrations=5), mail-helper (notifyAdmin/notifyUser fail-safe), EmailNotificationsToggle in settings, messagesClient met Inbox+Support toptabs + archive als sub-filter, SupportClient hergebruikt in Support-tab, ticket-lijst met replies, /dashboard/support → redirect, LifeBuoy uit sidebar, build ✓, inbox_count=1 reply_count=0 (welkomstbericht ongewijzigd) | gewijzigd: supabase/migrations/20260701120000_messages_ticket_id_email_pref.sql, apps/app/src/lib/mail.ts, apps/app/src/app/actions/profile.ts, apps/app/src/components/dashboard/settings/EmailNotificationsToggle.tsx, apps/app/src/app/dashboard/settings/page.tsx, apps/app/src/app/dashboard/messages/page.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/support/page.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/app/api/support/submit/route.ts, apps/app/src/app/api/admin/tickets/[id]/message/route.ts, docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md
@@ -6176,3 +6180,46 @@ Changed: CLAUDE.md
 docs/LESSONS.md
 ---
 [2026-06-30 19:45] precompact: context compaction triggered
+[2026-07-01 17:52] commit: feat: contactcentrum v1 — support ticket systeem volledig
+
+DB: support_tickets tabel + SECURITY DEFINER RPC submit_support_ticket,
+messages.ticket_id FK, profiles.email_notifications bool.
+
+Backend: /api/support/submit (rate-limit via RPC), /api/admin/tickets
+(lijst + email resolve), /api/admin/tickets/[id]/close + /message.
+
+Frontend: SupportClient (3 categorieën, inline banners), MessagesClient
+uitgebreid met Support-tab (ticketlijst + expandable replies, Inbox/Archive
+sub-filter behouden), /dashboard/support → redirect. EmailNotificationsToggle
+in settings. Admin /admin/tickets pagina met inline Close/Reply/Credits acties.
+
+Mail: notifyAdmin + notifyUser helper (fail-safe, opt-out, Resend REST).
+
+Alle UI-strings NL→EN (MessagesClient, SupportClient, settings, mail.ts).
+
+tsc --noEmit: ✓ | build: ✓ 35 routes
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/actions/profile.ts
+apps/app/src/app/admin/layout.tsx
+apps/app/src/app/admin/tickets/TicketsTable.tsx
+apps/app/src/app/admin/tickets/page.tsx
+apps/app/src/app/api/admin/tickets/[id]/close/route.ts
+apps/app/src/app/api/admin/tickets/[id]/message/route.ts
+apps/app/src/app/api/admin/tickets/route.ts
+apps/app/src/app/api/support/submit/route.ts
+apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/app/dashboard/messages/page.tsx
+apps/app/src/app/dashboard/settings/page.tsx
+apps/app/src/app/dashboard/support/SupportClient.tsx
+apps/app/src/app/dashboard/support/page.tsx
+apps/app/src/components/dashboard/settings/EmailNotificationsToggle.tsx
+apps/app/src/lib/mail.ts
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/operations/known-issues.md
+supabase/migrations/20260701000000_support_tickets.sql
+supabase/migrations/20260701120000_messages_ticket_id_email_pref.sql
+tests/playwright/specs/cross-host/logout.spec.ts
+tests/playwright/specs/cross-host/nav.spec.ts
+---

@@ -28,6 +28,15 @@ uvicorn handler-conflict op maar niet het Sentry-override probleem.
 
 ## Support-systeem
 
+### Contactcentrum v1 status (2026-07-01)
+Live op app.indxr.ai. Volledig geïmplementeerd:
+- Ticket indienen (SupportClient + submit RPC, rate-limit 5/uur)
+- Admin-panel `/admin/tickets` — inline close/reply/credits, open/all filter
+- User-reply op open ticket via `/api/support/tickets/[id]/reply`
+- Thread-view in Support-tab met sender-onderscheid (You / INDXR Support)
+- E-mailmeldingen (notifyAdmin + notifyUser, fail-safe, opt-out in settings)
+- Dashboard messages-preview gekoppeld aan echte inbox-data
+
 ### DNS-cleanup Namecheap (niet-urgent, aparte sessie)
 Verweesde Resend-DNS-records in Namecheap opruimen. **Verwijderen:**
 - `_dmarc.mail`, `envelope.mail` (TXT + MX), `resend._domainkey...mail`

@@ -32,11 +32,12 @@ export async function POST(
   }
 
   const { error } = await admin.from("messages").insert({
-    user_id:   ticket.user_id,
+    user_id:     ticket.user_id,
     title,
     body,
-    type:      "support",
-    ticket_id: id,
+    type:        "support",
+    ticket_id:   id,
+    sender_role: "admin",
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
