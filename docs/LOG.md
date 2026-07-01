@@ -1,3 +1,5 @@
+[2026-07-01] docs: sessie-afronding contactcentrum v1 — known-issues.md bijgewerkt (v1-featurelijst compleet, GDPR/PostHog-hardening als launch-blocker, bewuste niet-gedane keuzes gedocumenteerd), database-schema.md migrations-sectie gecorrigeerd (3 → 6 rijen, 3 nieuwe contactcentrum-migraties vermeld). Contactcentrum v1 volledig live + end-to-end getest door Khidr op 2026-07-01. | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/architecture/database-schema.md
+---
 [2026-07-01] feat: globale unread-indicator op Messages-sidebar + topbar — useUnreadMessages hook (HEAD COUNT query, pathname-refresh, "indxr-messages-read" event), dot op sidebar Messages-icoon, dot op topbar Mail-icoon, MessagesClient dispatcht event na markRead/markTicketRepliesRead/markAllRead. tsc ✓ | build ✓ | gewijzigd: apps/app/src/hooks/useUnreadMessages.ts (nieuw), apps/app/src/components/app-sidebar.tsx, apps/app/src/components/AppTopbar.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx
 ---
 [2026-07-01] fix: unread dot-indicator + dashboard archived-filter — MessagesClient: inbox bold-toggle → constante font-medium + bestaande dot; Support-tab: bold-toggle → standalone accent-dot (open én closed tickets), reply-count altijd text-fg-muted, hasUnread scope terug naar alle tickets. dashboard/page.tsx: .eq("archived", false) zodat gearchiveerde berichten niet in Home-preview lekken. tsc ✓ | build ✓ | gewijzigd: apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/page.tsx
@@ -6300,5 +6302,22 @@ in de Home-preview verschijnen.
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: apps/app/src/app/dashboard/messages/MessagesClient.tsx
 apps/app/src/app/dashboard/page.tsx
+docs/LOG.md
+---
+[2026-07-01 19:52] commit: feat: globale unread-dot op Messages-sidebar-link en topbar Mail-icoon
+
+Nieuwe useUnreadMessages hook: één HEAD COUNT query op messages waar
+read=false en sender_role!='user' — geen data-overdracht, alleen een boolean.
+Refresht bij pathname-change (navigation away from messages page) en op het
+"indxr-messages-read" custom event. MessagesClient dispatcht dat event na
+markRead, markTicketRepliesRead en markAllRead zodat de dot real-time verdwijnt.
+Dot op sidebar Messages-icoon (absolute, boven-rechts van icon, werkt collapsed
+én expanded). Zelfde dot op topbar Mail-icoon.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/components/AppTopbar.tsx
+apps/app/src/components/app-sidebar.tsx
+apps/app/src/hooks/useUnreadMessages.ts
 docs/LOG.md
 ---

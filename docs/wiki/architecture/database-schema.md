@@ -359,14 +359,17 @@ Gebruikt in: `src/app/actions/credits.ts`
 
 ### Huidige staat
 
-**Baseline-squash uitgevoerd op 2026-06-30.**
+**Baseline-squash uitgevoerd op 2026-06-30. Contactcentrum v1 migraties toegevoegd op 2026-07-01.**
 
-`supabase/migrations/` bevat nu drie bestanden:
+`supabase/migrations/` bevat zes bestanden:
 - `20260630155944_baseline.sql` — volledige DDL-snapshot productie-DB (bron van waarheid)
-- `20260630164156_messages.sql` — `messages` tabel + `handle_new_user_message()` trigger (eerste migratie ná baseline)
-- `20260630170359_messages_archived.sql` — `archived BOOLEAN NOT NULL DEFAULT false` kolom op `messages` (tweede migratie ná baseline)
+- `20260630164156_messages.sql` — `messages` tabel + `handle_new_user_message()` trigger
+- `20260630170359_messages_archived.sql` — `archived BOOLEAN NOT NULL DEFAULT false` op `messages`
+- `20260701000000_support_tickets.sql` — `support_tickets` tabel, `submit_support_ticket` RPC, RLS-policies
+- `20260701120000_messages_ticket_id_email_pref.sql` — `messages.ticket_id` FK, `profiles.email_notifications`
+- `20260701200000_messages_sender_role.sql` — `messages.sender_role TEXT NOT NULL DEFAULT 'admin' CHECK IN ('admin','user')`
 
-De 24 pre-baseline migratiebestanden zijn bewaard in `supabase/migrations_archive/` (git-geschiedenis blijft intact). De `supabase_migrations.schema_migrations` tracking-tabel bevat exact drie rijen.
+De 24 pre-baseline migratiebestanden zijn bewaard in `supabase/migrations_archive/` (git-geschiedenis blijft intact). De `supabase_migrations.schema_migrations` tracking-tabel bevat exact **zes** rijen.
 
 **Herstelnet:** `supabase/migrations_archive/schema_migrations_backup_2026-06-30.sql` bevat de volledige 15-rij staat van vóór de reset.
 

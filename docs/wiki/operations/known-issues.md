@@ -28,16 +28,22 @@ uvicorn handler-conflict op maar niet het Sentry-override probleem.
 
 ## Support-systeem
 
-### Contactcentrum v1 status (2026-07-01)
-Live op app.indxr.ai. Volledig geïmplementeerd:
-- Ticket indienen (SupportClient + submit RPC, rate-limit 5/uur)
-- Admin-panel `/admin/tickets` — inline close/reply/credits, open/all filter
-- User-reply op open ticket via `/api/support/tickets/[id]/reply`
-- Thread-view in Support-tab met sender-onderscheid (You / INDXR Support)
-- E-mailmeldingen (notifyAdmin + notifyUser, fail-safe, opt-out in settings)
-- Dashboard messages-preview gekoppeld aan echte inbox-data
+### Contactcentrum v1 — volledig live (2026-07-01, commits f924bf6 → 149896c)
+Live op app.indxr.ai. End-to-end getest door Khidr op 2026-07-01.
 
-### DNS-cleanup Namecheap (niet-urgent, aparte sessie)
+**Geïmplementeerd:**
+- Ticket indienen (SupportClient + `submit_support_ticket` RPC, rate-limit 5/uur)
+- Admin-panel `/admin/tickets` — klik-op-rij opent volledige thread, Close/Reply/Credits ná de thread
+  - 3-state filter: Open (oudste-eerst, wachtrij-volgorde) / Closed / All, met counts
+  - Optimistic reply-update: admin ziet eigen antwoord meteen na verzenden
+- User-thread-reply op open tickets via `/api/support/tickets/[id]/reply` (ownership + open-check, notifyAdmin)
+- Thread-view user-kant (Support-tab `/dashboard/messages`): chronologisch ascending, sender-onderscheid (You / INDXR Support)
+- E-mailmeldingen: `notifyAdmin` bij nieuw ticket/user-reply, `notifyUser` bij admin-antwoord; fail-safe (ticket opgeslagen ook zonder mail); opt-out via `profiles.email_notifications`
+- Unread-indicator: accent-dot op Messages-sidebar-link + topbar Mail-icoon (`useUnreadMessages` hook: HEAD COUNT query `read=false AND sender_role!='user'`, real-time via `"indxr-messages-read"` custom event + pathname-change)
+- Dashboard-preview (`/dashboard`): inbox-only, `.eq("archived", false)` — gearchiveerde berichten lekken niet door
+- Read/unread: dot-indicator (geen bold-toggle), verdwijnt na openen via `markRead` / `markTicketRepliesRead`
+
+### DNS-cleanup Namecheap (niet-urgent, aparte sessie — taak Khidr)
 Verweesde Resend-DNS-records in Namecheap opruimen. **Verwijderen:**
 - `_dmarc.mail`, `envelope.mail` (TXT + MX), `resend._domainkey...mail`
 - Drie SES-DKIM-CNAMEs met hash-hosts (bq2sj..., luy2..., oi5c...)
@@ -54,6 +60,29 @@ Verweesde Resend-DNS-records in Namecheap opruimen. **Verwijderen:**
 
 **Gedrag zonder vars:** mail wordt stil overgeslagen, ticket-submit slaagt gewoon.  
 **Gedrag met vars:** Resend POST naar `contact@indxr.ai` met `reply_to = user.email`, subject `[INDXR Support] {category} — {subject}`.
+
+---
+
+### GDPR/PostHog-hardening ⚠️ launch-blocking
+**Vastgesteld:** 2026-07-01
+
+Twee openstaande punten vóór launch:
+
+1. **Session-replay zonder field-masking** — PostHog session replay draait in productie zonder dat gevoelige velden gemaskeerd zijn. Formuliervelden (wachtwoord, betaaldata, ticket-body) zijn zichtbaar in replay-opnames. Fix: `data-ph-no-capture` attributen toevoegen aan gevoelige inputs, of PostHog `maskAllInputs: true` instellen in de initialisatie. Zie [PostHog docs: data masking](https://posthog.com/docs/session-replay/privacy).
+
+2. **Privacy policy placeholder** — `[KHIDR: vul aan]`-placeholder in de privacy policy voor de PostHog/analytics-sectie is nog niet ingevuld. Moet beschrijven: welke data PostHog verzamelt, session replay, opt-out mechanisme. Vereist juridische review vóór launch.
+
+**Aanbevolen volgorde:** privacy policy tekst → field masking → dan pas launch.
+
+---
+
+### Bewuste niet-gedane keuzes (geen bug, geen TODO)
+Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
+
+- **Support-tickets niet op Home-preview** — `/dashboard` toont alleen inbox-berichten (aankondigingen van INDXR). Tickets hebben hun eigen Support-tab in `/dashboard/messages`. Bewuste scheiding: Home = omroep, Support = dialoog.
+- **Geen derde indicator op Home** — de unread-dot zit op de sidebar-link en topbar, niet op de Home-paginapreview. Home is al klikbaar naar `/dashboard/messages`; een extra indicator is redundant.
+- **Geen sorteertoggle op ticket-lijsten** — admin Open-filter is altijd oudste-eerst (wachtrij). User-kant is altijd nieuwste-eerst. Sorteertoggle toevoegen is niet gevraagd en voegt complexiteit zonder noodzaak.
+- **Geen realtime/WebSocket push voor de unread-dot** — de `useUnreadMessages` hook refresht op navigation en op `"indxr-messages-read"` custom event (near-real-time). Volledige WebSocket push is disproportioneel voor een support-systeem met lage berichtfrequentie. Zie ADR-008 (polling vs. WebSockets).
 
 ---
 
