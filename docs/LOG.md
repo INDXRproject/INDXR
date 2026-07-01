@@ -1,3 +1,7 @@
+[2026-07-01] fix: contactcentrum v1 live-bugs (3 stuks) — admin thread-view: page.tsx haalt nu messages op per ticket (admin client, ASC), TicketsTable herschreven: klik-op-rij opent thread (origineel + replies chronologisch, sender-onderscheid), actions (Close/Reply/Credits) ná thread, Open-filter oudste-eerst (wachtrij), 3-state filter Open/Closed/All, optimistic reply-update. MessagesClient: replies lokaal gesorteerd ASC (bug2 fix), hasUnread alleen op open tickets (closed = niet vetgedrukt). tsc ✓ | build ✓ | gewijzigd: apps/app/src/app/admin/tickets/page.tsx, apps/app/src/app/admin/tickets/TicketsTable.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx
+---
+[2026-07-01 17:00] push: contactcentrum v1 afwerking (commit ba795f6) → master — Vercel indxr-app ✅ success, indxr-marketing ✅ success, Railway ✅ healthy | live op https://app.indxr.ai
+---
 [2026-07-01] feat: contactcentrum v1 afwerking (A-F) — migratie messages.sender_role (schema_migrations=6), user-reply route /api/support/tickets/[id]/reply (ownership+open-check, notifyAdmin), MessagesClient: thread sender-onderscheid (You/INDXR Support), reply-form open ticket, closed-notice, read/unread vetgedrukt, badge-kleuren (feedback=groen/success, billing=oranje/warning, bug=rood/error), formatDate fix (Today/Yesterday/Jul 1), word-break op bodies. dashboard/page.tsx mock→echte inbox-data. TicketsTable: open/all filter, toast-bevestiging, fmtDate fix, badge-kleuren, word-break. tsc ✓ | build ✓ 40 routes | gewijzigd: supabase/migrations/20260701200000_messages_sender_role.sql (nieuw), apps/app/src/app/api/support/tickets/[id]/reply/route.ts (nieuw), apps/app/src/app/dashboard/messages/MessagesClient.tsx, apps/app/src/app/dashboard/messages/page.tsx, apps/app/src/app/dashboard/page.tsx, apps/app/src/app/admin/tickets/TicketsTable.tsx, apps/app/src/app/api/admin/tickets/[id]/message/route.ts, docs/wiki/architecture/database-schema.md, docs/wiki/operations/known-issues.md
 ---
 [2026-07-01 15:53] push: contactcentrum v1 (commit f924bf6) → master — Vercel indxr-app ✅ success, indxr-marketing ✅ success, Railway ✅ healthy | live op https://app.indxr.ai
@@ -6223,3 +6227,45 @@ supabase/migrations/20260701120000_messages_ticket_id_email_pref.sql
 tests/playwright/specs/cross-host/logout.spec.ts
 tests/playwright/specs/cross-host/nav.spec.ts
 ---
+[2026-07-01 18:58] commit: feat: contactcentrum v1 afwerking (A–F + toast-fix)
+
+Migratie messages.sender_role (schema_migrations=6): onderscheid
+admin vs user berichten in ticket-thread.
+
+A: user-reply op open ticket via /api/support/tickets/[id]/reply
+   (auth + RLS-ownership + open-check + notifyAdmin), thread toont
+   You/INDXR Support met visueel onderscheid, closed-ticket notice.
+
+B: dashboard/page.tsx mock MOCK_MESSAGES vervangen door echte
+   Supabase-query (ticket_id IS NULL, created_at DESC, limit 3).
+
+C: ongelezen berichten/tickets vetgedrukt (font-semibold) + accent
+   dot; markTicketRepliesRead() bij uitklappen ticket.
+
+D: category-badges drie duidelijke kleuren — feedback=success/groen,
+   billing=warning/oranje, bug=error/rood — in MessagesClient en
+   TicketsTable consistent.
+
+E: formatDate in alle drie instanties (MessagesClient, dashboard,
+   TicketsTable) uniform: Today/Yesterday/Jul 1/Jul 1 2025.
+
+F: break-words op alle ticket/bericht-body elementen; admin
+   TicketsTable toast→inline persistente notice met sluitknop
+   (geen setTimeout — conform no-toast regel, ook LESSONS.md).
+
+tsc --noEmit: ✓ | build: ✓ 40 routes
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/tickets/TicketsTable.tsx
+apps/app/src/app/api/admin/tickets/[id]/message/route.ts
+apps/app/src/app/api/support/tickets/[id]/reply/route.ts
+apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/app/dashboard/messages/page.tsx
+apps/app/src/app/dashboard/page.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/operations/known-issues.md
+supabase/migrations/20260701200000_messages_sender_role.sql
+---
+[2026-07-01 19:19] precompact: context compaction triggered

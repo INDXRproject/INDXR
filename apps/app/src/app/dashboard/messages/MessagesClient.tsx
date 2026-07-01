@@ -346,9 +346,12 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
               <h2 className="text-base font-semibold text-fg mb-3">Your tickets</h2>
               <div className="space-y-3">
                 {initialTickets.map((ticket) => {
-                  const replies = repliesByTicket[ticket.id] ?? []
+                  const replies = [...(repliesByTicket[ticket.id] ?? [])].sort(
+                    (a, b) => a.created_at.localeCompare(b.created_at)
+                  )
                   const isExpanded = expandedTicket === ticket.id
-                  const hasUnread = ticketHasUnreadReply(ticket.id)
+                  // Closed tickets never appear as "loud unread" — only open tickets with unread admin replies get bold treatment
+                  const hasUnread = ticket.status === "open" && ticketHasUnreadReply(ticket.id)
 
                   return (
                     <div key={ticket.id} className="rounded-lg border border-border bg-surface overflow-hidden">
