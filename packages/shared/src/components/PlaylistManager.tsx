@@ -5,7 +5,6 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
 import { Loader2, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink, Info } from "lucide-react";
-import { toast } from "sonner";
 import { ScrollArea } from "./ui/scroll-area";
 import Image from "next/image";
 import { validateYouTubeUrl } from "../utils/youtube";
@@ -81,6 +80,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   const [finalElapsed, setFinalElapsed] = useState(0)
   const [hasExtracted, setHasExtracted] = useState(false);
   const [existingDuplicates, setExistingDuplicates] = useState<Record<string, Array<{ transcriptId: string; processingMethod: string }>>>({}); // video_id -> [{ transcriptId, processingMethod }]
+  const [inlineError, setInlineError] = useState<string | null>(null);
   const supabase = createClient();
 
   // Monitor extraction progress
@@ -188,10 +188,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       );
       const initialSelected = new Set<string>(validEntries.map((e: PlaylistEntry) => e.id));
       setSelectedIds(initialSelected);
-      toast.success(`Found ${data.entries.length} videos!`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to fetch playlist";
-      toast.error(message);
+      setInlineError(message);
     } finally {
       setLoading(false);
     }
@@ -234,7 +233,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
     }
 
     if (selectedIds.size === 0) {
-      toast.error("Please select at least one video");
+      setInlineError("Please select at least one video");
       return;
     }
 
@@ -284,7 +283,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
 
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to check availability";
-      toast.error(message);
+      setInlineError(message);
       onError(message);
     } finally {
       setIsCheckingAvailability(false);
@@ -348,6 +347,14 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       <p className="text-xs text-fg-muted text-center -mt-4">
         Auto-captions are free for the first 3 videos. From video 4: 1 credit per video (with auto-captions). Videos using AI Transcription cost 1 credit per minute instead — no per-video charge.
       </p>
+
+      {inlineError && (
+        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span className="flex-1">{inlineError}</span>
+          <button onClick={() => setInlineError(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
+        </div>
+      )}
 
       {/* Progress / Completion Bar */}
       {(isExtracting || isCompleted) && (

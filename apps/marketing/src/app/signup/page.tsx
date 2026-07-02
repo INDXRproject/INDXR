@@ -10,7 +10,6 @@ import { useState } from "react"
 import { validatePassword } from "@indxr/shared/utils/validation"
 import { useRouter } from "next/navigation"
 import { signupAction, loginWithGoogleAction } from "@indxr/shared/actions/auth-actions"
-import { toast } from "sonner"
 import { Alert, AlertDescription } from "@indxr/shared/components/ui/alert"
 
 export default function SignupPage() {
@@ -46,11 +45,7 @@ export default function SignupPage() {
       if (result?.error) {
         setError(result.error)
         setIsSubmitting(false)
-        toast.error(result.error)
       } else {
-        // Success
-        toast.success("Account created successfully! Please check your email to verify your account.")
-        // Optionally redirect or show next steps
         router.push('/login?message=Check your email to verify your account')
       }
     } catch (err) {

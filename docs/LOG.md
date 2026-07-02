@@ -1,3 +1,5 @@
+[2026-07-02 20:30] feat: volledige toast-eliminatie (A+B+C) — (A) alle sonner/toast-calls verwijderd uit 18 bestanden; FeedbackCard canonical inline feedback-component; Copy-knoppen → button-level bool-state; sidebar → compact banner; financiële callsites persistent tot dismiss; Toaster verwijderd uit beide layouts; sonner.tsx verwijderd; sonner uit alle package.json-dependencies. (B) bulk-download dropdown uitgebreid van 4 naar 8 formats: TXT, TXT+timestamps, MD, MD+timestamps, JSON, CSV, SRT, VTT — elk als ZIP. (C) bulk-RAG chunk size leest nu profiles.rag_chunk_size (ipv hardcoded 60); filename _rag_60s.json → _rag_<N>s.json; dialog copy toont chunk preset. Build ✓ beide apps, grep toast → 0 hits. | gewijzigd: packages/shared/src/components/ui/FeedbackCard.tsx, packages/shared/src/components/ui/sonner.tsx (verwijderd), packages/shared/src/components/free-tool/AudioTab.tsx, packages/shared/src/components/free-tool/VideoTab.tsx, packages/shared/src/components/PlaylistManager.tsx, apps/app/src/app/layout.tsx, apps/marketing/src/app/layout.tsx, apps/app/src/components/library/TranscriptViewer.tsx, apps/app/src/components/library/TranscriptList.tsx, apps/app/src/components/library/AiSummaryView.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx, apps/app/src/components/dashboard/WelcomeCreditCard.tsx, apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx, apps/app/src/components/dashboard/settings/SecuritySettingsCard.tsx, apps/app/src/app/dashboard/library/page.tsx, apps/marketing/src/components/pricing/BuyButton.tsx, apps/marketing/src/app/forgot-password/page.tsx, apps/marketing/src/app/login/page.tsx, apps/marketing/src/app/signup/page.tsx, apps/marketing/src/app/onboarding/page.tsx, apps/marketing/src/app/transcribe/page.tsx, docs/LESSONS.md
+---
 [2026-07-02] fix: bulk-RAG toast vervangen door inline persistente feedback — toast.error/success verwijderd uit handleBulkRagPreview en handleBulkRagExecute; ragBulkError/ragBulkSuccess state toegevoegd; fouten persistent in dialog (blijft open), success inline 1.2s dan sluiten, export-knop geblokkeerd bij success-state. Build ✓ | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md
 ---
 [2026-07-02] fix: RAG-export credit-lek gedicht + bulk-RAG met dubbele-export-bescherming — render-guard in [id]/page.tsx (rag_exports.length > 0 vereist), component-level fallback in RagExportView, bulkDeductRagExportCreditsAction (één atomische RPC voor totaal, geen partial charge), bevestigingsdialoog met per-transcript breakdown + saldo-check. Build ✓ | gewijzigd: apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/components/library/RagExportView.tsx, apps/app/src/components/library/TranscriptList.tsx, packages/shared/src/actions/rag-export.ts, docs/wiki/architecture/credit-system.md, docs/LESSONS.md
@@ -6401,3 +6403,19 @@ docs/LOG.md
 docs/wiki/architecture/credit-system.md
 packages/shared/src/actions/rag-export.ts
 ---
+[2026-07-02 18:06] commit: fix: bulk-RAG toast vervangen door inline persistente feedback
+
+toast.error/success verwijderd uit de bulk-RAG-flow (financieel pad,
+auto-dismiss onacceptabel). Vervangen door ragBulkError/ragBulkSuccess
+state: fouten persistent in dialog tot sluiting, success 1.2s inline
+dan sluiten, knop geblokkeerd tijdens success-state.
+
+toast-import blijft: handleBatchDownload (andere flow) gebruikt het nog.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+docs/LESSONS.md
+docs/LOG.md
+---
+[2026-07-02 18:23] precompact: context compaction triggered
+[2026-07-02 18:35] precompact: context compaction triggered

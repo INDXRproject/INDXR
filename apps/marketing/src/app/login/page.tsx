@@ -9,7 +9,6 @@ import Link from "next/link"
 import { Chrome, Apple } from "lucide-react"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { toast } from "sonner"
 import { loginAction, loginWithGoogleAction } from "@indxr/shared/actions/auth-actions"
 
 export default function LoginPage() {
@@ -58,7 +57,6 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError(result.error)
-        toast.error(result.error)
         setIsSubmitting(false)
       }
     } catch (err) {

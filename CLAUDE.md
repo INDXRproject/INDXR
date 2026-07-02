@@ -239,10 +239,13 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 
 ### Design system
 
-- CSS-variabelen in `src/app/globals.css`: `--bg-base`, `--bg-surface`, `--accent`, `--radius`
-- Dark mode via `next-themes`
-- Geen OKLCH (vervangen door hex), geen glassmorphism (`backdrop-blur` verwijderd)
-- Deprecated: Starlight/Midnight themes, `.cline/skills/indxr-design/`
+- Token-bronbestand: `apps/app/src/app/styles/tokens.css` en `apps/marketing/src/app/styles/tokens.css` (identiek)
+- Alle waarden in **OKLCH** — geen hex in de token-files
+- Token-namen: `--bg`, `--bg-subtle`, `--surface`, `--surface-elevated`, `--surface-sunken`, `--border`, `--border-subtle`, `--border-strong`, `--fg`, `--fg-muted`, `--fg-subtle`, `--fg-strong`, `--fg-on-accent`, `--accent`, `--accent-hover`, `--accent-subtle`, `--error`, `--warning`, `--success` (plus `-subtle`/`-fg`-varianten)
+- `@theme inline`-blok bridget Tailwind naar de custom properties (`--color-bg: var(--bg)` etc.)
+- Dark mode: `[data-theme="dark"]`-selector in tokens.css — dark-variant `@custom-variant dark (&:is([data-theme="dark"] *))`; themewissel via `ThemeProvider` uit `packages/shared`
+- Fonts: **IBM Plex Sans** + **IBM Plex Mono** via `next/font/google`, variabelen `--font-ibm-plex-sans` / `--font-ibm-plex-mono`
+- Geen glassmorphism (`backdrop-blur` verwijderd)
 
 ### Tiptap editors
 

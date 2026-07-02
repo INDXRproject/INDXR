@@ -6,27 +6,29 @@ import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import { useState } from "react"
-import { toast } from "sonner"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { validatePassword } from "@indxr/shared/utils/validation"
+import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
 
 export function SecuritySettingsCard() {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [passwordFeedback, setPasswordFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
   const supabase = createClient()
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    setPasswordFeedback(null)
+
     if (newPassword !== confirmPassword) {
-        toast.error("Passwords do not match")
+        setPasswordFeedback({ type: 'error', message: 'Passwords do not match' })
         return
     }
 
     const validation = validatePassword(newPassword)
     if (!validation.isValid) {
-        toast.error("Password does not meet requirements")
+        setPasswordFeedback({ type: 'error', message: 'Password does not meet requirements' })
         return
     }
 
@@ -34,14 +36,14 @@ export function SecuritySettingsCard() {
     try {
         const { error } = await supabase.auth.updateUser({ password: newPassword })
         if (error) {
-            toast.error(error.message)
+            setPasswordFeedback({ type: 'error', message: error.message })
         } else {
-            toast.success("Password updated successfully")
+            setPasswordFeedback({ type: 'success', message: 'Password updated successfully' })
             setNewPassword("")
             setConfirmPassword("")
         }
-    } catch (e) {
-        toast.error("Failed to update password")
+    } catch {
+        setPasswordFeedback({ type: 'error', message: 'Failed to update password' })
     } finally {
         setIsSubmitting(false)
     }
@@ -73,9 +75,16 @@ export function SecuritySettingsCard() {
                     placeholder="•••••••"
                 />
             </div>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || !newPassword} 
+            {passwordFeedback && (
+                <FeedbackCard
+                    variant={passwordFeedback.type}
+                    message={passwordFeedback.message}
+                    onDismiss={() => setPasswordFeedback(null)}
+                />
+            )}
+            <Button
+              type="submit"
+              disabled={isSubmitting || !newPassword}
               className="w-full bg-accent text-fg hover:bg-accent-hover active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
             >
                 {isSubmitting ? "Updating..." : "Update Password"}

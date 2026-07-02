@@ -2,12 +2,14 @@
 
 import { useState } from "react"
 import { PricingCard } from "@indxr/shared/components/ui/pricing-card"
-import { toast } from "sonner"
+import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
 
 export function BillingPurchaseGrid() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   const handlePurchase = async (plan: string) => {
+    setCheckoutError(null)
     try {
       setLoadingPlan(plan)
       const res = await fetch('/api/stripe/checkout', {
@@ -30,13 +32,21 @@ export function BillingPurchaseGrid() {
     } catch (error) {
       console.error('Checkout error:', error)
       const msg = error instanceof Error ? error.message : "An error occurred during checkout."
-      toast.error(msg)
+      setCheckoutError(msg)
       setLoadingPlan(null)
     }
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start mt-8">
+    <div className="space-y-4">
+      {checkoutError && (
+        <FeedbackCard
+          variant="error"
+          message={checkoutError}
+          onDismiss={() => setCheckoutError(null)}
+        />
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start mt-8">
       <PricingCard
         name="Try"
         price="€2.49"
@@ -117,6 +127,7 @@ export function BillingPurchaseGrid() {
         ]}
         onSelect={() => handlePurchase('power')}
       />
+      </div>
     </div>
   )
 }

@@ -31,7 +31,6 @@ import { createClient } from "@indxr/shared/utils/supabase/client"
 import { UserAvatar } from "@indxr/shared/components/UserAvatar"
 import { Progress } from "@indxr/shared/components/ui/progress"
 import { cn } from "@indxr/shared/lib/utils"
-import { toast } from "sonner"
 
 interface Collection {
   id: string
@@ -94,6 +93,9 @@ export function AppSidebar() {
 
   // Drag over
   const [dragOverId, setDragOverId] = useState<string | "all" | null>(null)
+
+  // Compact feedback banner above collection list
+  const [sidebarFeedback, setSidebarFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   // Pending navigation — set when user tries to navigate during active extraction
   const [pendingNavHref, setPendingNavHref] = useState<string | null>(null)
@@ -205,8 +207,8 @@ export function AppSidebar() {
       setCollections(prev => [...prev, data as Collection])
       setNewName("")
       setCreating(false)
-      toast.success(`Collection "${name}" created`)
-    } catch { toast.error("Failed to create collection") }
+      setSidebarFeedback({ type: 'success', message: `Collection "${name}" created` })
+    } catch { setSidebarFeedback({ type: 'error', message: 'Failed to create collection' }) }
     finally { setIsSaving(false) }
   }
 
@@ -219,7 +221,7 @@ export function AppSidebar() {
   const handleRenameSave = async () => {
     const name = editingName.trim()
     if (!name || !editingId) { setEditingId(null); return }
-    if (name.length > 150) { toast.error("Name must be 150 characters or fewer"); return }
+    if (name.length > 150) { setSidebarFeedback({ type: 'error', message: 'Name must be 150 characters or fewer' }); return }
     const original = collections.find(c => c.id === editingId)?.name ?? ""
     if (name === original) { setEditingId(null); return }
     try {
@@ -227,10 +229,9 @@ export function AppSidebar() {
         .from("collections").update({ name }).eq("id", editingId)
       if (error) throw error
       setCollections(prev => prev.map(c => c.id === editingId ? { ...c, name } : c))
-      // Dispatch so library/page.tsx re-fetches collections and refreshes the page title
       window.dispatchEvent(new CustomEvent("transcripts-updated"))
-      toast.success("Renamed")
-    } catch { toast.error("Rename failed") }
+      setSidebarFeedback({ type: 'success', message: 'Renamed' })
+    } catch { setSidebarFeedback({ type: 'error', message: 'Rename failed' }) }
     finally { setEditingId(null) }
   }
 
@@ -257,16 +258,14 @@ export function AppSidebar() {
       setTranscripts(prev => prev.map(t => t.collection_id === colId ? { ...t, collection_id: null } : t))
       setConfirmDeleteId(null)
 
-      // 4. If we were viewing this collection, navigate away
       if (getSelectedId() === colId) {
         router.push("/dashboard/library")
       }
 
-      // 5. Notify library to re-fetch
       window.dispatchEvent(new CustomEvent("transcripts-updated"))
-      toast.success(`"${col?.name}" deleted — transcripts moved to All Transcripts`)
+      setSidebarFeedback({ type: 'success', message: `"${col?.name}" deleted — transcripts moved to All Transcripts` })
     } catch {
-      toast.error("Failed to delete collection")
+      setSidebarFeedback({ type: 'error', message: 'Failed to delete collection' })
     } finally {
       setIsDeleting(false)
     }
@@ -291,27 +290,24 @@ export function AppSidebar() {
     const { data, error } = await supabase
       .from("transcripts").update({ collection_id: targetId }).eq("id", transcriptId).select()
     
-    if (error) { 
+    if (error) {
       console.error("Supabase move error details:", {
         error,
         code: error.code,
         message: error.message,
         details: error.details
       })
-      toast.error("Failed to move transcript")
-      return 
+      setSidebarFeedback({ type: 'error', message: 'Failed to move transcript' })
+      return
     }
 
-    // Update local transcripts array
     setTranscripts(prev => prev.map(t => t.id === transcriptId ? { ...t, collection_id: targetId } : t))
-    
-    // Notify library page to re-fetch
     window.dispatchEvent(new CustomEvent("transcripts-updated"))
-    
+
     const colName = targetId
       ? (collections.find(c => c.id === targetId)?.name ?? "collection")
       : "All Transcripts"
-    toast.success(`Moved to "${colName}"`)
+    setSidebarFeedback({ type: 'success', message: `Moved to "${colName}"` })
   }
 
   const selectedId = getSelectedId()
@@ -426,6 +422,18 @@ export function AppSidebar() {
                     >
                       <div className="overflow-y-auto" style={{ maxHeight: "40vh" }}>
                         <div className="pl-12 py-1 space-y-0.5">
+
+                        {sidebarFeedback && (
+                          <div className={cn(
+                            "mx-2 mb-1 flex items-start gap-1.5 rounded-md border px-2 py-1.5 text-[10px] leading-snug",
+                            sidebarFeedback.type === 'error'
+                              ? "bg-error/10 border-error/20 text-error"
+                              : "bg-success/10 border-success/20 text-success"
+                          )}>
+                            <span className="flex-1">{sidebarFeedback.message}</span>
+                            <button onClick={() => setSidebarFeedback(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
+                          </div>
+                        )}
 
                         {/* All Transcripts */}
                         <button

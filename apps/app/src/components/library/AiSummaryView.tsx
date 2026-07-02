@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Sparkles, Loader2, Copy, X, Check, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Download } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
-import { toast } from "sonner";
+import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -33,6 +33,8 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
   const [summary, setSummary] = useState(initialSummary);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const supabase = createClient();
   const router = useRouter();
 
@@ -95,13 +97,12 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
       
     setIsSaving(false);
     if (error) {
-      toast.error("Failed to save summary edits");
+      setSaveFeedback({ type: 'error', message: 'Failed to save summary edits' });
     } else {
-      toast.success("Summary saved");
+      setSaveFeedback({ type: 'success', message: 'Summary saved' });
       setSummary(updatedSummary);
       setIsEditing(false);
-      
-      // If we are saving from the original tab for the first time
+
       if (mode === "original") {
         router.replace(`?tab=summary_edited`);
       }
@@ -111,7 +112,8 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
   const handleCopy = () => {
     const textToCopy = editor ? editor.getText() : "";
     navigator.clipboard.writeText(textToCopy);
-    toast.success("Summary copied to clipboard");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const handleExportTxt = () => {
@@ -136,8 +138,8 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
             {!isEditing ? (
               <>
                 <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8">
-                  <Copy className="mr-2 h-3.5 w-3.5" />
-                  Copy
+                  {copied ? <Check className="mr-2 h-3.5 w-3.5 text-success" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
+                  {copied ? "Copied!" : "Copy"}
                 </Button>
                 
                 <DropdownMenu>
@@ -228,6 +230,13 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
           </div>
         )}
 
+        {saveFeedback && (
+          <FeedbackCard
+            variant={saveFeedback.type}
+            message={saveFeedback.message}
+            onDismiss={() => setSaveFeedback(null)}
+          />
+        )}
         <div className={cn(
           "space-y-8",
           isEditing && "rounded-xl border border-border bg-surface p-5 min-h-[400px]"

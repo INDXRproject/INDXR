@@ -7,7 +7,6 @@ import { Search, LayoutGrid, List as ListIcon, Loader2 } from "lucide-react";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { TranscriptList, Transcript } from "@/components/library/TranscriptList";
 import { Button } from "@indxr/shared/components/ui/button";
-import { toast } from "sonner";
 import { cn } from "@indxr/shared/lib/utils";
 
 interface Collection {
@@ -26,6 +25,7 @@ function LibraryContent() {
   const [loading, setLoading]         = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode]       = useState<"grid" | "list">("list");
+  const [listError, setListError]     = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -43,7 +43,7 @@ function LibraryContent() {
       if (colResult.data) setCollections(colResult.data);
     } catch (err) {
       console.error("Error fetching library:", err);
-      toast.error("Failed to load library");
+      setListError("Failed to load library. Please refresh the page.");
     } finally {
       setLoading(false);
     }
@@ -66,9 +66,8 @@ function LibraryContent() {
       const { error } = await supabase.from("transcripts").delete().eq("id", id);
       if (error) throw error;
       setTranscripts(prev => prev.filter(t => t.id !== id));
-      toast.success("Transcript deleted");
     } catch {
-      toast.error("Failed to delete transcript");
+      setListError("Failed to delete transcript");
     }
   };
 
@@ -79,7 +78,7 @@ function LibraryContent() {
       if (error) throw error;
       setTranscripts(prev => prev.map(t => t.id === id ? { ...t, title: newTitle } : t));
     } catch {
-      toast.error("Failed to rename transcript");
+      setListError("Failed to rename transcript");
     }
   };
 
@@ -161,6 +160,13 @@ function LibraryContent() {
           </div>
         </div>
       </div>
+
+      {listError && (
+        <div className="flex items-center gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error mb-4">
+          {listError}
+          <button onClick={() => setListError(null)} className="ml-auto opacity-60 hover:opacity-100 cursor-pointer">✕</button>
+        </div>
+      )}
 
       {/* Count label with search/filter context */}
       {(searchQuery || selectedCollectionId) && (

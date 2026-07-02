@@ -3,11 +3,13 @@
 
 "use client"
 
+"use client"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { PricingPackage } from "@indxr/shared/lib/pricing"
+import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
 
 interface BuyButtonProps {
   pkg: PricingPackage
@@ -17,14 +19,15 @@ interface BuyButtonProps {
 
 export function BuyButton({ pkg, featured = false, className }: BuyButtonProps) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   const handlePurchase = async () => {
+    setError(null)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      toast.error("Please log in to purchase credits")
       router.push(`/login?next=/pricing`)
       return
     }
@@ -44,9 +47,9 @@ export function BuyButton({ pkg, featured = false, className }: BuyButtonProps) 
 
       const { url } = await res.json()
       if (url) window.location.href = url
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "An error occurred during checkout."
-      toast.error(msg)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "An error occurred during checkout."
+      setError(msg)
       setLoading(false)
     }
   }
@@ -57,12 +60,21 @@ export function BuyButton({ pkg, featured = false, className }: BuyButtonProps) 
     : `${base} border border-[var(--border)] text-[var(--fg)] hover:bg-[var(--surface-elevated)]`
 
   return (
-    <button
-      onClick={handlePurchase}
-      disabled={loading}
-      className={`${variant} ${className ?? ""}`}
-    >
-      {loading ? "Redirecting…" : `Buy ${pkg.name}`}
-    </button>
+    <div className="space-y-2">
+      {error && (
+        <FeedbackCard
+          variant="error"
+          message={error}
+          onDismiss={() => setError(null)}
+        />
+      )}
+      <button
+        onClick={handlePurchase}
+        disabled={loading}
+        className={`${variant} ${className ?? ""}`}
+      >
+        {loading ? "Redirecting…" : `Buy ${pkg.name}`}
+      </button>
+    </div>
   )
 }

@@ -6,7 +6,6 @@ import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
 import { useState } from "react"
-import { toast } from "sonner"
 import { resetPasswordAction } from "@indxr/shared/actions/auth-actions"
 import { ArrowLeft, Mail } from "lucide-react"
 
@@ -14,9 +13,11 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSent, setIsSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setError(null)
     setIsSubmitting(true)
 
     try {
@@ -26,14 +27,13 @@ export default function ForgotPasswordPage() {
       const result = await resetPasswordAction(formData)
 
       if (result?.error) {
-        toast.error(result.error)
+        setError(result.error)
       } else {
         setIsSent(true)
-        toast.success("Reset link sent!")
       }
     } catch (err) {
       console.error(err)
-      toast.error("An unexpected error occurred")
+      setError("An unexpected error occurred")
     } finally {
       setIsSubmitting(false)
     }
@@ -80,6 +80,11 @@ export default function ForgotPasswordPage() {
                   required
                 />
               </div>
+              {error && (
+                <div className="text-error text-sm font-medium bg-error/10 border border-error/20 rounded-lg p-3">
+                  {error}
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? "Sending..." : "Send Reset Link"}
               </Button>

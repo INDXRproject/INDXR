@@ -3,7 +3,6 @@ import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@indxr/shared/components/Header";
 import { Footer } from "@indxr/shared/components/Footer";
-import { Toaster } from "@indxr/shared/components/ui/sonner";
 import { AuthProvider } from "@indxr/shared/contexts/AuthContext";
 import { PostHogProvider } from "@indxr/shared/providers/PostHogProvider";
 import { ThemeProvider } from "@indxr/shared/components/theme-provider";
@@ -65,7 +64,6 @@ export default async function RootLayout({
                 {children}
               </main>
               <Footer />
-              <Toaster />
             </AuthProvider>
           </PostHogProvider>
         </ThemeProvider>

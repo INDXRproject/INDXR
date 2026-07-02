@@ -6,7 +6,6 @@ import { Button } from "../ui/button"
 import { Progress } from "../ui/progress"
 import { useAuth } from "../../hooks/useAuth"
 import { useJobStatus } from "../../hooks/useJobStatus"
-import { toast } from "sonner"
 import { TranscriptCard, TranscriptItem } from "../TranscriptCard"
 import { TranscriptMetadata } from "../../types/transcript"
 import Link from "next/link"
@@ -43,6 +42,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activeFilenameRef = useRef<string>('Audio Upload')
   const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Active job tracked via Realtime + polling
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
@@ -79,9 +79,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
       sessionStorage.removeItem(AUDIO_JOB_KEY)
       if (job.error_message === 'Insufficient credits') {
-        toast.error('Not enough credits to transcribe this file.')
+        setError('Not enough credits to transcribe this file.')
       } else if (job.status !== 'network_error') {
-        toast.error(job.error_message || 'Transcription failed')
+        setError(job.error_message || 'Transcription failed')
       }
       setIsTranscribing(false)
       setWhisperStatus('idle')
@@ -258,7 +258,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
 
     if (!validTypes.includes(fileExt)) {
-      toast.error(`Unsupported file type. Please use: ${validTypes.join(', ')}`)
+      setError(`Unsupported file type. Please use: ${validTypes.join(', ')}`)
       setIsUploading(false)
       return
     }
@@ -266,7 +266,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     // Check file size (500MB limit)
     const maxSize = 500 * 1024 * 1024
     if (selectedFile.size > maxSize) {
-      toast.error(`File too large (${formatFileSize(selectedFile.size)}). Maximum size is 500 MB.`)
+      setError(`File too large (${formatFileSize(selectedFile.size)}). Maximum size is 500 MB.`)
       setIsUploading(false)
       return
     }
@@ -328,7 +328,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       const preflightRes = await fetch('/api/transcribe/preflight', { method: 'POST' })
       if (!preflightRes.ok) {
         const preflightData = await preflightRes.json()
-        toast.error(preflightData.error || 'Request blocked. Please try again.')
+        setError(preflightData.error || 'Request blocked. Please try again.')
         return
       }
 
@@ -336,7 +336,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) {
-        toast.error('Session expired. Please sign in again.')
+        setError('Session expired. Please sign in again.')
         return
       }
 
@@ -383,24 +383,16 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
       if (httpStatus !== 200 && httpStatus !== 201) {
         if (httpStatus === 402) {
-          toast.error(
-            <div>
-              <p className="font-semibold">Not enough credits</p>
-              <p className="text-sm">You need {data.required_credits as number} credits but only have {data.available_credits as number}.</p>
-              <a href={marketingHref('/pricing')} className="text-accent underline text-sm">
-                Buy Credits →
-              </a>
-            </div>
-          )
+          setError(`Not enough credits — you need ${data.required_credits as number} but have ${data.available_credits as number}. Buy more at /pricing.`)
           return
         }
-        toast.error((data.user_friendly_message as string) || (data.error as string) || 'Transcription failed')
+        setError((data.user_friendly_message as string) || (data.error as string) || 'Transcription failed')
         return
       }
 
       const job_id = data.job_id as string | undefined
       if (!job_id) {
-        toast.error('Failed to start transcription job')
+        setError('Failed to start transcription job')
         return
       }
 
@@ -415,7 +407,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       // Completion handled by useJobStatus onComplete/onError callbacks
     } catch (error) {
       console.error('Transcription error:', error)
-      toast.error(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
+      setError(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
       setIsTranscribing(false)
       setWhisperStatus('idle')
       setUploadPhase('idle')
@@ -452,6 +444,14 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           </button>
         </div>
       )}
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
+        </div>
+      )}
+
       {/* Resume Banner — shown when a running job is detected on mount */}
       {resumeData && !isTranscribing && (
         <div

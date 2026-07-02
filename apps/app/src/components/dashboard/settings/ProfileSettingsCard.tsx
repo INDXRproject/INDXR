@@ -5,10 +5,10 @@ import { Input } from "@indxr/shared/components/ui/input"
 import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import { useState } from "react"
-import { toast } from "sonner"
 import { User } from "@supabase/supabase-js"
 import { updateProfileAction, resendVerificationAction } from "@indxr/shared/actions/auth-actions"
 import { Badge } from "@indxr/shared/components/ui/badge"
+import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 
 interface Profile {
@@ -29,30 +29,33 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
   const [avatarColor, setAvatarColor] = useState(profile?.avatar_color || AVATAR_COLORS[4]) // default blue
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResending, setIsResending] = useState(false)
+  const [profileFeedback, setProfileFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+  const [resendFeedback, setResendFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   // Explicitly check for verification (Supabase sets email_confirmed_at)
   const isVerified = !!user.email_confirmed_at
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
+    setProfileFeedback(null)
     setIsSubmitting(true)
-    
+
     try {
       const formData = new FormData()
       formData.append('username', username)
       formData.append('role', role)
       formData.append('avatar_color', avatarColor)
-      
+
       const result = await updateProfileAction(formData)
-      
+
       if (result?.error) {
-        toast.error(result.error)
+        setProfileFeedback({ type: 'error', message: result.error })
       } else {
-        toast.success("Profile updated")
+        setProfileFeedback({ type: 'success', message: 'Profile updated' })
         setIsEditing(false)
       }
-    } catch (error) {
-      toast.error("Failed to update profile")
+    } catch {
+      setProfileFeedback({ type: 'error', message: 'Failed to update profile' })
     } finally {
       setIsSubmitting(false)
     }
@@ -60,16 +63,17 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
 
   const handleResendVerification = async () => {
     if (!user.email) return
+    setResendFeedback(null)
     setIsResending(true)
     try {
        const result = await resendVerificationAction(user.email)
        if (result?.error) {
-           toast.error(result.error)
+           setResendFeedback({ type: 'error', message: result.error })
        } else {
-           toast.success("Verification email sent")
+           setResendFeedback({ type: 'success', message: 'Verification email sent' })
        }
-    } catch (e) {
-        toast.error("Failed to send verification email")
+    } catch {
+        setResendFeedback({ type: 'error', message: 'Failed to send verification email' })
     } finally {
         setIsResending(false)
     }
@@ -114,6 +118,13 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                 <p className="text-xs text-warning/80">
                     Your email is unverified. Please check your inbox to fully activate your account features.
                 </p>
+            )}
+            {resendFeedback && (
+                <FeedbackCard
+                    variant={resendFeedback.type}
+                    message={resendFeedback.message}
+                    onDismiss={() => setResendFeedback(null)}
+                />
             )}
         </div>
 
@@ -177,6 +188,13 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                 )}
             </div>
             
+            {profileFeedback && (
+                <FeedbackCard
+                    variant={profileFeedback.type}
+                    message={profileFeedback.message}
+                    onDismiss={() => setProfileFeedback(null)}
+                />
+            )}
             {isEditing ? (
                  <div className="flex gap-2 justify-end pt-2">
                     <Button 

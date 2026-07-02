@@ -6,7 +6,6 @@ import { useState, useEffect, useRef } from "react"
 import { Loader2, AlertCircle, Sparkles, Mic } from "lucide-react"
 import { TranscriptCard, TranscriptItem } from "../TranscriptCard"
 import { TranscriptMetadata, PROCESSING_METHODS } from "../../types/transcript"
-import { toast } from "sonner"
 import { validateYouTubeUrl, YouTubeUrlType } from "../../utils/youtube"
 import Link from "next/link"
 import { marketingHref, appHref } from "../../lib/cross-host-links"
@@ -160,10 +159,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       ...(ctx?.context === 'confirm' ? { user_selected_whisper: true } : {}),
     })
 
-    toast.success("Transcript extracted & saved with AI", {
-      description: "Added to your library automatically.",
-      action: { label: "View", onClick: () => window.location.href = appHref('/dashboard/library') }
-    })
     window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
     setSaveStatus('saved')
     refreshCredits()
@@ -219,7 +214,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             : errorMsg,
           isYouTubeRestricted,
         })
-        if (!isYouTubeRestricted) toast.error(errorMsg)
       }
     }
 
@@ -685,7 +679,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         setUrl("")
 
       } else {
-        toast.info("Video has no captions available")
+        setError({ message: "Video has no captions available. Enable 'Generate with AI' above to transcribe it with AI." })
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unable to retrieve captions — this video may be restricted or our server is temporarily blocked"
@@ -702,7 +696,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       }
 
       setError({ message: errorMessage })
-      toast.error(errorMessage)
     } finally {
       setLoading(false)
       setShowDuplicateChoices(false)
@@ -784,7 +777,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           : errMsg,
         isYouTubeRestricted
       })
-      if (!isYouTubeRestricted) toast.error(errMsg)
       setLoading(false)
       setWhisperStatus('idle')
       setIsStreaming(false)
@@ -865,7 +857,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         setError({ message: '', isNoSpeech: true })
       } else {
         setError({ message: errMsg })
-        toast.error(errMsg)
       }
       setLoading(false)
       setWhisperStatus('idle')

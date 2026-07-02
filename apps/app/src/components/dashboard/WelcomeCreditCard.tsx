@@ -2,52 +2,33 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import { Button } from "@indxr/shared/components/ui/button"
-import { Gift, Zap } from "lucide-react"
+import { Gift } from "lucide-react"
 import { claimWelcomeRewardAction } from "@/app/actions/credits"
-import { toast } from "sonner"
+import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
 import { useState } from "react"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
 
-interface CheckResult {
-  claimed: boolean
-}
-
 export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
   const [isClaiming, setIsClaiming] = useState(false)
   const { refreshCredits } = useAuth()
-  const [isHidden, setIsHidden] = useState(false)
+  const [claimResult, setClaimResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  // Sync state with prop
-  // If claimed is null (loading), hide it.
-  // If claimed is true, hide it.
-  // If claimed is false, show it (unless user manually dismissed it? no manual dismiss implemented yet).
-  
-  if (claimed === null || claimed === true) {
-      if (!isHidden) return null // Or return skeleton? null is fine for "pop in" effect
-  }
-  
-  // Actually, if we return null here, mounting state is lost.
-  // Better:
-  if (claimed === true || claimed === null) {
-      return null
-  }
-  
-  if (isHidden) return null
+  if (claimed === true || claimed === null) return null
 
   const handleClaim = async () => {
+    setClaimResult(null)
     setIsClaiming(true)
     try {
       const result = await claimWelcomeRewardAction()
       if (result.error) {
-        toast.error(result.error)
+        setClaimResult({ type: 'error', message: result.error })
       } else {
-        toast.success("25 Credits added to your account!")
         await refreshCredits()
-        setIsHidden(true)
+        setClaimResult({ type: 'success', message: '25 credits added to your account!' })
       }
-    } catch (error) {
-      toast.error("Failed to claim reward")
+    } catch {
+      setClaimResult({ type: 'error', message: 'Failed to claim reward' })
     } finally {
       setIsClaiming(false)
     }
@@ -115,21 +96,31 @@ export function WelcomeCreditCard({ claimed }: { claimed: boolean | null }) {
 
         </div>
       </CardContent>
-      <CardFooter className="flex gap-3">
-        <Button
-            onClick={handleClaim}
-            disabled={isClaiming}
-            className="flex-1"
-        >
-          {isClaiming ? "Claiming..." : "Claim 25 Free Credits"}
-        </Button>
-        <Button
-            variant="outline"
-            className="flex-1"
-            onClick={() => { window.location.href = marketingHref('/pricing') }}
-        >
-            Buy More Credits
-        </Button>
+      <CardFooter className="flex flex-col gap-3">
+        {claimResult && (
+          <FeedbackCard
+            variant={claimResult.type}
+            message={claimResult.message}
+            onDismiss={() => setClaimResult(null)}
+            className="w-full"
+          />
+        )}
+        <div className="flex gap-3 w-full">
+          <Button
+              onClick={handleClaim}
+              disabled={isClaiming || claimResult?.type === 'success'}
+              className="flex-1"
+          >
+            {isClaiming ? "Claiming..." : "Claim 25 Free Credits"}
+          </Button>
+          <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => { window.location.href = marketingHref('/pricing') }}
+          >
+              Buy More Credits
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )

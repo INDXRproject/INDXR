@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Download,
   Copy,
+  Check,
   Trash2,
   ArrowLeft,
   Video,
@@ -64,7 +65,7 @@ import {
 
 import Link from "next/link";
 import { marketingHref } from "@indxr/shared/lib/cross-host-links";
-import { toast } from "sonner";
+import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard";
 import { useRouter } from "next/navigation";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
@@ -325,6 +326,14 @@ export function TranscriptViewer({
   const [searchMatchesCount, setSearchMatchesCount] = useState(0);
   const [currentMatchIdx, setCurrentMatchIdx] = useState(0);
 
+  // Inline feedback state
+  const [copied, setCopied] = useState(false);
+  const [titleFeedback, setTitleFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+  const [contentSaveFeedback, setContentSaveFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [summarizeError, setSummarizeError] = useState<string | null>(null);
+
   // RAG export modal state
   const [localRagExports, setLocalRagExports] = useState<Array<{ chunk_size: number; exported_at: string; credits_spent: number }>>(ragExports ?? []);
   const [showRagModal, setShowRagModal] = useState(false);
@@ -410,8 +419,8 @@ export function TranscriptViewer({
       .update({ title })
       .eq("id", id);
     titleIsSaving.current = false;
-    if (error) toast.error("Failed to save title");
-    else toast.success("Title saved");
+    if (error) setTitleFeedback({ type: 'error', message: 'Failed to save title' });
+    else setTitleFeedback({ type: 'success', message: 'Title saved' });
   }, [id, supabase, title]);
 
   // ── Explicit Save ──────────────────────────────────────────────────────────
@@ -423,9 +432,7 @@ export function TranscriptViewer({
     // Guard against empty doc (no content or all empty paragraphs)
     const plainText = editor.getText().trim();
     if (!plainText) {
-      toast.error(
-        "Cannot save empty transcript. Use Reset to restore the original."
-      );
+      setContentSaveFeedback({ type: 'error', message: 'Cannot save empty transcript. Use Reset to restore the original.' });
       return;
     }
 
@@ -437,13 +444,12 @@ export function TranscriptViewer({
     setIsSaving(false);
 
     if (error) {
-      toast.error("Failed to save changes");
+      setContentSaveFeedback({ type: 'error', message: 'Failed to save changes' });
     } else {
       setIsDirty(false);
       setHasSavedEdits(true);
       setIsEditingOriginal(false);
-      toast.success("Saved!");
-      // If we are saving an unsaved edit, reload cleanly to '?tab=edited'
+      setContentSaveFeedback({ type: 'success', message: 'Saved!' });
       if (!isEditedMode) {
         router.replace(`?tab=edited`);
       }
@@ -521,10 +527,9 @@ export function TranscriptViewer({
         downloadFile(generateSrt(transcript, { extractionMethod: processingMethod ?? undefined }), `${safe}.srt`, "text/plain");
       else if (format === "vtt")
         downloadFile(generateVtt(transcript, { title, extractionMethod: processingMethod ?? undefined }), `${safe}.vtt`, "text/vtt");
-      toast.success(`Downloaded ${format.toUpperCase()}`);
     } catch (e) {
       console.error(e);
-      toast.error(`Failed to download ${format.toUpperCase()}`);
+      setDownloadError(`Failed to download ${format.toUpperCase()}`);
     }
   };
 
@@ -614,16 +619,15 @@ export function TranscriptViewer({
         .eq("id", id)
         .single();
       if (error || !data?.edited_content) {
-        toast.error("No saved edits found");
+        setDownloadError("No saved edits found");
         return;
       }
       const json = data.edited_content as JSONContent;
       const text = (json.content ?? []).map(tiptapNodeToText).join("\n");
       downloadFile(text, `${safe}_edited.txt`, "text/plain");
-      toast.success("Downloaded Edited TXT");
     } catch (e) {
       console.error(e);
-      toast.error("Failed to download Edited TXT");
+      setDownloadError("Failed to download Edited TXT");
     }
   };
 
@@ -637,23 +641,23 @@ export function TranscriptViewer({
         .eq("id", id)
         .single();
       if (error || !data?.edited_content) {
-        toast.error("No saved edits found");
+        setDownloadError("No saved edits found");
         return;
       }
       const json = data.edited_content as JSONContent;
       const md = `# ${title}\n\n` + (json.content ?? []).map(tiptapNodeToMarkdown).join("");
       downloadFile(md, `${safe}_edited.md`, "text/markdown");
-      toast.success("Downloaded Edited MD");
     } catch (e) {
       console.error(e);
-      toast.error("Failed to download Edited MD");
+      setDownloadError("Failed to download Edited MD");
     }
   };
 
   const handleCopy = () => {
     const text = editor ? editor.getText() : "";
     navigator.clipboard.writeText(text);
-    toast.success("Transcript copied to clipboard");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const handleDeleteConfirm = async () => {
@@ -664,10 +668,9 @@ export function TranscriptViewer({
       .delete()
       .eq("id", id);
     if (error) {
-      toast.error("Failed to delete transcript");
+      setDeleteError("Failed to delete transcript");
       setIsDeleting(false);
     } else {
-      toast.success("Transcript deleted");
       router.push("/dashboard/library");
     }
   };
@@ -687,13 +690,13 @@ export function TranscriptViewer({
         data = await response.json();
       } catch (e) {
         console.error("Failed to parse response:", e);
-        toast.error("Server error: received invalid response.");
+        setSummarizeError("Server error: received invalid response.");
         setIsSummarizing(false);
         return;
       }
 
       if (!response.ok || !data.success) {
-        toast.error(data?.error || "Failed to generate summary");
+        setSummarizeError(data?.error || "Failed to generate summary");
         setIsSummarizing(false);
         return;
       }
@@ -701,7 +704,7 @@ export function TranscriptViewer({
       setSummarySuccess(true);
     } catch (error) {
       console.error("Summarize error:", error);
-      toast.error("Failed to summarize transcript");
+      setSummarizeError("Failed to summarize transcript");
     } finally {
       setIsSummarizing(false);
     }
@@ -812,19 +815,11 @@ export function TranscriptViewer({
                     disabled={isSummarizing || !user}
                     onClick={() => {
                       if (!user) {
-                        toast.error("Please sign in to summarize.");
+                        setSummarizeError("Please sign in to summarize.");
                         return;
                       }
                       if (credits !== null && credits < 3) {
-                        toast.error(
-                          <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-sm">Not enough credits</span>
-                            <span className="text-xs">You need 3 credits to generate a summary.</span>
-                            <a href={marketingHref('/pricing')} className="text-accent hover:underline text-xs mt-1">
-                              Buy Credits →
-                            </a>
-                          </div>
-                        );
+                        setSummarizeError("Not enough credits — you need 3 credits to generate a summary.");
                         return;
                       }
 
@@ -843,8 +838,8 @@ export function TranscriptViewer({
               )}
 
               <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8">
-                <Copy className="mr-2 h-3.5 w-3.5" />
-                Copy
+                {copied ? <Check className="mr-2 h-3.5 w-3.5 text-success" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
+                {copied ? "Copied!" : "Copy"}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -973,7 +968,48 @@ export function TranscriptViewer({
                   )}
                 </div>
 
-                {/* AI Summary card replaced by bottom section */}
+                {titleFeedback && (
+                  <FeedbackCard
+                    variant={titleFeedback.type}
+                    message={titleFeedback.message}
+                    onDismiss={() => setTitleFeedback(null)}
+                  />
+                )}
+                {contentSaveFeedback && (
+                  <FeedbackCard
+                    variant={contentSaveFeedback.type}
+                    message={contentSaveFeedback.message}
+                    onDismiss={() => setContentSaveFeedback(null)}
+                  />
+                )}
+                {downloadError && (
+                  <FeedbackCard
+                    variant="error"
+                    message={downloadError}
+                    onDismiss={() => setDownloadError(null)}
+                  />
+                )}
+                {deleteError && (
+                  <FeedbackCard
+                    variant="error"
+                    message={deleteError}
+                    onDismiss={() => setDeleteError(null)}
+                  />
+                )}
+                {summarizeError && (
+                  <FeedbackCard
+                    variant="error"
+                    message={
+                      <>
+                        {summarizeError}
+                        {summarizeError.includes("credits") && (
+                          <a href={marketingHref('/pricing')} className="ml-2 underline">Buy Credits →</a>
+                        )}
+                      </>
+                    }
+                    onDismiss={() => setSummarizeError(null)}
+                  />
+                )}
 
                 {/* Search bar */}
                 <div className="flex items-center gap-2">

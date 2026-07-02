@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { Video, ListMusic, Mic } from "lucide-react"
-import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@indxr/shared/components/ui/tabs"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { VideoTab } from "@indxr/shared/components/free-tool/VideoTab"
@@ -92,7 +91,6 @@ export default function FreeToolPage() {
         credits_used: metadata.creditsUsed || 0,
         processing_method: metadata.processingMethod || "youtube_captions",
       })
-      toast.success("Saved to your Library")
     } catch (err) {
       console.error("Auto-save failed", err)
     }

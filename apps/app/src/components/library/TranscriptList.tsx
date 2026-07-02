@@ -31,6 +31,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@indxr/shared/components/ui/dropdown-menu";
@@ -42,11 +43,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@indxr/shared/components/ui/dialog";
-import { toast } from "sonner";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { generateTxt, generateCsv, buildRagJson } from "@indxr/shared/utils/formatTranscript";
+import { generateTxt, generateCsv, generateSrt, generateVtt, generateMarkdown, buildRagJson } from "@indxr/shared/utils/formatTranscript";
 import { bulkDeductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 
@@ -145,6 +145,8 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
   const [ragBulkExecuting, setRagBulkExecuting] = useState(false);
   const [ragBulkError, setRagBulkError]         = useState<string | null>(null);
   const [ragBulkSuccess, setRagBulkSuccess]     = useState(false);
+  const [ragChunkSize, setRagChunkSize]         = useState<number>(60);
+  const [downloadError, setDownloadError]       = useState<string | null>(null);
 
   /** Mark a single transcript as viewed without navigating to it */
   const handleMarkAsRead = async (transcriptId: string, e: React.MouseEvent) => {
@@ -223,6 +225,17 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
     setRagBulkError(null);
     setRagBulkSuccess(false);
     try {
+      // Fetch user's chunk size preference
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('rag_chunk_size')
+          .eq('id', authUser.id)
+          .single();
+        setRagChunkSize(profile?.rag_chunk_size ?? 60);
+      }
+
       const { data, error } = await supabase
         .from('transcripts')
         .select('id, title, duration, rag_exports')
@@ -261,7 +274,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       // Deduct total in one atomic RPC — all or nothing
       if (newExports.length > 0) {
         const result = await bulkDeductRagExportCreditsAction(
-          newExports.map(item => ({ transcriptId: item.id, durationSeconds: item.duration, chunkSize: 60 }))
+          newExports.map(item => ({ transcriptId: item.id, durationSeconds: item.duration, chunkSize: ragChunkSize }))
         );
         if (!result.success) {
           setRagBulkError(result.error ?? 'Insufficient credits');
@@ -283,8 +296,8 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
         const safeTitle = ((item.title as string) || `video-${item.video_id as string}`)
           .replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const json = buildRagJson(item.transcript as any, { videoId: item.video_id as string, title: item.title as string, chunkSize: 60 });
-        zip.file(`${safeTitle}_rag_60s.json`, json);
+        const json = buildRagJson(item.transcript as any, { videoId: item.video_id as string, title: item.title as string, chunkSize: ragChunkSize });
+        zip.file(`${safeTitle}_rag_${ragChunkSize}s.json`, json);
       });
 
       const content = await zip.generateAsync({ type: 'blob' });
@@ -306,56 +319,57 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
     }
   };
 
-  // Batch Download Logic
-  const handleBatchDownload = async (format: 'zip' | 'txt' | 'json' | 'csv') => {
+  type BatchFormat = 'txt' | 'txt-ts' | 'md' | 'md-ts' | 'json' | 'csv' | 'srt' | 'vtt';
+
+  const handleBatchDownload = async (format: BatchFormat) => {
     setIsDownloading(true);
+    setDownloadError(null);
     try {
-      // 1. Fetch full content
       const { data, error } = await supabase
         .from('transcripts')
-        .select('*, transcript') 
+        .select('id, title, video_id, processing_method, transcript')
         .in('id', Array.from(selectedIds));
 
       if (error || !data) throw new Error("Failed to fetch transcript data");
 
       const zip = new JSZip();
-      
+
       data.forEach((item: Record<string, unknown>) => {
-        const safeTitle = ((item.title as string) || `video-${item.video_id as string}`).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const safeTitle = ((item.title as string) || `video-${item.video_id as string}`).replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 40);
         const videoUrl = `https://www.youtube.com/watch?v=${item.video_id as string}`;
-        
+        const tx = item.transcript as Parameters<typeof generateTxt>[0];
+
         let fileContent = "";
         let extension = "";
 
-        // Use shared utilities for generation
-        if (format === 'json') {
-           fileContent = JSON.stringify({
-              metadata: { title: item.title, videoUrl },
-              transcript: item.transcript
-           }, null, 2);
-           extension = "json";
+        if (format === 'txt') {
+          fileContent = generateTxt(tx, false); extension = "txt";
+        } else if (format === 'txt-ts') {
+          fileContent = generateTxt(tx, true); extension = "txt";
+        } else if (format === 'md') {
+          fileContent = generateMarkdown(tx, item.title as string, false); extension = "md";
+        } else if (format === 'md-ts') {
+          fileContent = generateMarkdown(tx, item.title as string, true); extension = "md";
+        } else if (format === 'json') {
+          fileContent = JSON.stringify({ metadata: { title: item.title, videoUrl }, transcript: tx }, null, 2); extension = "json";
         } else if (format === 'csv') {
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           fileContent = generateCsv(item.transcript as any);
-           extension = "csv";
-        } else {
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           fileContent = generateTxt(item.transcript as any, true);
-           extension = "txt";
+          fileContent = generateCsv(tx); extension = "csv";
+        } else if (format === 'srt') {
+          fileContent = generateSrt(tx, { extractionMethod: item.processing_method as string ?? undefined }); extension = "srt";
+        } else if (format === 'vtt') {
+          fileContent = generateVtt(tx, { title: item.title as string, extractionMethod: item.processing_method as string ?? undefined }); extension = "vtt";
         }
 
-        zip.file(`${safeTitle}.${extension}`, fileContent);
+        const suffix = format === 'txt-ts' ? '_timestamps' : format === 'md-ts' ? '_timestamps' : '';
+        zip.file(`${safeTitle}${suffix}.${extension}`, fileContent);
       });
 
-      // 2. Generate and Save
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `transcripts-export-${new Date().toISOString().slice(0,10)}.zip`);
-      toast.success("Download started");
-      setSelectedIds(new Set()); // Clear selection
-
+      saveAs(content, `transcripts-${format}-${new Date().toISOString().slice(0,10)}.zip`);
+      setSelectedIds(new Set());
     } catch (e) {
       console.error(e);
-      toast.error("Download failed");
+      setDownloadError("Download failed. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -393,25 +407,24 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                     Download
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center">
-                  <DropdownMenuItem onClick={() => handleBatchDownload('zip')}>
-                    Download All (ZIP)
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="center" className="w-52">
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleBatchDownload('txt')}>TXT — plain text (.zip)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBatchDownload('txt-ts')}>TXT — with timestamps (.zip)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBatchDownload('md')}>Markdown (.zip)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBatchDownload('md-ts')}>Markdown — with timestamps (.zip)</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleBatchDownload('txt')}>
-                    Text Only (.zip)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('json')}>
-                    JSON (.zip)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('csv')}>
-                    CSV (.zip)
-                  </DropdownMenuItem>
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Data</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleBatchDownload('json')}>JSON (.zip)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBatchDownload('csv')}>CSV (.zip)</DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Subtitles</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleBatchDownload('srt')}>SRT (.zip)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBatchDownload('vtt')}>VTT (.zip)</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
                   <DropdownMenuItem onClick={handleBulkRagPreview} disabled={ragBulkLoading}>
-                    {ragBulkLoading
-                      ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
-                      : null}
+                    {ragBulkLoading ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : null}
                     RAG JSON <span className="text-accent text-[10px] font-bold align-super ml-0.5">✦</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -425,6 +438,14 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                 ×
               </Button>
            </div>
+        </div>
+      )}
+
+      {downloadError && (
+        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error mb-2">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span className="flex-1">{downloadError}</span>
+          <button onClick={() => setDownloadError(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
         </div>
       )}
 
@@ -650,7 +671,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
               <DialogHeader>
                 <DialogTitle>Bulk RAG JSON Export</DialogTitle>
                 <DialogDescription>
-                  Review costs before exporting. All presets use 60s chunks (balanced).
+                  Chunk size: {ragChunkSize}s (from your Settings preset). Re-downloads are always free.
                 </DialogDescription>
               </DialogHeader>
 

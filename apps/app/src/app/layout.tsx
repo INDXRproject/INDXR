@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@indxr/shared/components/ui/sonner";
 import { AuthProvider } from "@indxr/shared/contexts/AuthContext";
 import { PostHogProvider } from "@indxr/shared/providers/PostHogProvider";
 import { ThemeProvider } from "@indxr/shared/components/theme-provider";
@@ -59,7 +58,6 @@ export default async function RootLayout({
           <PostHogProvider>
             <AuthProvider initialUser={user}>
               {children}
-              <Toaster />
             </AuthProvider>
           </PostHogProvider>
         </ThemeProvider>

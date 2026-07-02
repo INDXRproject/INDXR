@@ -9,7 +9,6 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { updateProfileAction } from "@indxr/shared/actions/auth-actions"
 import { appHref } from "@indxr/shared/lib/cross-host-links"
-import { toast } from "sonner"
 import { CheckCircle2, Circle } from "lucide-react"
 
 export default function OnboardingPage() {
@@ -17,6 +16,7 @@ export default function OnboardingPage() {
   const [username, setUsername] = useState("")
   const [role, setRole] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Pre-fill username from email
   useEffect(() => {
@@ -29,6 +29,7 @@ export default function OnboardingPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setError(null)
     setIsSubmitting(true)
 
     try {
@@ -39,15 +40,14 @@ export default function OnboardingPage() {
       const result = await updateProfileAction(formData)
 
       if (result?.error) {
-        toast.error(result.error)
+        setError(result.error)
         setIsSubmitting(false)
       } else {
-        toast.success("Profile updated! Let's get started.")
         window.location.href = appHref('/dashboard')
       }
-    } catch (error) {
-      console.error(error)
-      toast.error("Something went wrong. Please try again.")
+    } catch (err) {
+      console.error(err)
+      setError("Something went wrong. Please try again.")
       setIsSubmitting(false)
     }
   }
@@ -137,6 +137,11 @@ export default function OnboardingPage() {
                   </Select>
                 </div>
 
+                {error && (
+                  <div className="text-error text-sm font-medium bg-error/10 border border-error/20 rounded-lg p-3">
+                    {error}
+                  </div>
+                )}
                 <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : "Get Started →"}
                 </Button>
