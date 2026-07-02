@@ -1,0 +1,21 @@
+{
+  "projectId": "43b8e30d-d44f-4943-a841-3bb6fd80df17",
+  "shape": "package",
+  "pkg": "@indxr/shared",
+  "srcDir": "src/components/ui",
+  "cssEntry": ".design-sync-tokens.css",
+  "runtimeFontPrefixes": ["IBM Plex"],
+  "libOverrides": {
+    "bundle.mjs": "Next.js process.env.__NEXT_* refs throw in browser IIFE — add process.env shim define"
+  },
+  "componentSrcMap": {
+    "Form": null,
+    "FormItem": null,
+    "FormLabel": null,
+    "FormControl": null,
+    "FormDescription": null,
+    "FormMessage": null,
+    "FormField": null,
+    "useFormField": null
+  }
+}

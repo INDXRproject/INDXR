@@ -1,3 +1,7 @@
+[2026-07-02] design-sync: synced @indxr/shared (137 componenten, 20 authored previews) naar claude.ai/design project 43b8e30d — config, 20 preview-TSX bestanden, bundle-override, gecompileerde tokens. Alle previews graded "good". | gewijzigd: .design-sync/
+---
+[2026-07-01] docs: design-token sync + branch hygiene — CLAUDE.md design-sectie herschreven naar OKLCH-werkelijkheid (tokens.css), redesign/visual-overhaul branch verwijderd (alle commits op master), LESSONS.md uitgebreid met docs-vs-code patroon. tsc ✓ (apps/app + apps/marketing) | gewijzigd: CLAUDE.md, docs/LESSONS.md, docs/LOG.md
+---
 [2026-07-01] docs: sessie-afronding contactcentrum v1 — known-issues.md bijgewerkt (v1-featurelijst compleet, GDPR/PostHog-hardening als launch-blocker, bewuste niet-gedane keuzes gedocumenteerd), database-schema.md migrations-sectie gecorrigeerd (3 → 6 rijen, 3 nieuwe contactcentrum-migraties vermeld). Contactcentrum v1 volledig live + end-to-end getest door Khidr op 2026-07-01. | gewijzigd: docs/wiki/operations/known-issues.md, docs/wiki/architecture/database-schema.md
 ---
 [2026-07-01] feat: globale unread-indicator op Messages-sidebar + topbar — useUnreadMessages hook (HEAD COUNT query, pathname-refresh, "indxr-messages-read" event), dot op sidebar Messages-icoon, dot op topbar Mail-icoon, MessagesClient dispatcht event na markRead/markTicketRepliesRead/markAllRead. tsc ✓ | build ✓ | gewijzigd: apps/app/src/hooks/useUnreadMessages.ts (nieuw), apps/app/src/components/app-sidebar.tsx, apps/app/src/components/AppTopbar.tsx, apps/app/src/app/dashboard/messages/MessagesClient.tsx
@@ -6321,3 +6325,20 @@ apps/app/src/components/app-sidebar.tsx
 apps/app/src/hooks/useUnreadMessages.ts
 docs/LOG.md
 ---
+[2026-07-01 20:09] commit: docs: sessie-afronding contactcentrum v1 — wiki bijgewerkt naar live staat
+
+known-issues.md: contactcentrum v1-featurelijst compleet (thread-view,
+3-state filter, unread-dot, archived-filter, dot-pattern), GDPR/PostHog-
+hardening als launch-blocker toegevoegd (session replay + privacy policy
+placeholder), bewuste niet-gedane keuzes gedocumenteerd (geen Home-tickets,
+geen sorteertoggle, near-real-time via event ipv WebSocket), DNS-cleanup
+precies afgebakend. database-schema.md: migrations-sectie gecorrigeerd
+van 3 naar 6 rijen incl. de drie contactcentrum-migraties.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/operations/known-issues.md
+---
+[2026-07-02 15:17] precompact: context compaction triggered
+[2026-07-02 16:18] precompact: context compaction triggered
