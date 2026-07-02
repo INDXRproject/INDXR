@@ -1,3 +1,5 @@
+[2026-07-02] fix: RAG-export credit-lek gedicht + bulk-RAG met dubbele-export-bescherming — render-guard in [id]/page.tsx (rag_exports.length > 0 vereist), component-level fallback in RagExportView, bulkDeductRagExportCreditsAction (één atomische RPC voor totaal, geen partial charge), bevestigingsdialoog met per-transcript breakdown + saldo-check. Build ✓ | gewijzigd: apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/components/library/RagExportView.tsx, apps/app/src/components/library/TranscriptList.tsx, packages/shared/src/actions/rag-export.ts, docs/wiki/architecture/credit-system.md, docs/LESSONS.md
+---
 [2026-07-02] design-sync: synced @indxr/shared (137 componenten, 20 authored previews) naar claude.ai/design project 43b8e30d — config, 20 preview-TSX bestanden, bundle-override, gecompileerde tokens. Alle previews graded "good". | gewijzigd: .design-sync/
 ---
 [2026-07-01] docs: design-token sync + branch hygiene — CLAUDE.md design-sectie herschreven naar OKLCH-werkelijkheid (tokens.css), redesign/visual-overhaul branch verwijderd (alle commits op master), LESSONS.md uitgebreid met docs-vs-code patroon. tsc ✓ (apps/app + apps/marketing) | gewijzigd: CLAUDE.md, docs/LESSONS.md, docs/LOG.md
@@ -6342,3 +6344,35 @@ docs/wiki/operations/known-issues.md
 ---
 [2026-07-02 15:17] precompact: context compaction triggered
 [2026-07-02 16:18] precompact: context compaction triggered
+[2026-07-02 16:20] commit: feat: design-sync — @indxr/shared naar claude.ai/design project
+
+137 componenten gesyncet (20 authored previews, 117 floor-cards).
+Alle previews visueel geverifieerd en graded "good". Duurzame bestanden:
+config, 20 preview-TSX, bundle-override (process.env shim), tokens.css.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: .design-sync/compiled-tokens.css
+.design-sync/config.json
+.design-sync/overrides/bundle.mjs
+.design-sync/previews/Alert.tsx
+.design-sync/previews/AlertDialog.tsx
+.design-sync/previews/Avatar.tsx
+.design-sync/previews/Badge.tsx
+.design-sync/previews/Button.tsx
+.design-sync/previews/Card.tsx
+.design-sync/previews/Checkbox.tsx
+.design-sync/previews/Dialog.tsx
+.design-sync/previews/DropdownMenu.tsx
+.design-sync/previews/EmptyState.tsx
+.design-sync/previews/Input.tsx
+.design-sync/previews/Logo.tsx
+.design-sync/previews/Progress.tsx
+.design-sync/previews/Select.tsx
+.design-sync/previews/Separator.tsx
+.design-sync/previews/Skeleton.tsx
+.design-sync/previews/Switch.tsx
+.design-sync/previews/Table.tsx
+.design-sync/previews/Tabs.tsx
+.design-sync/previews/Tooltip.tsx
+docs/LOG.md
+---

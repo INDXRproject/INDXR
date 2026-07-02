@@ -9,6 +9,7 @@ import {
   Loader2,
   Download,
   Pencil,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
 import { Badge } from "@indxr/shared/components/ui/badge";
@@ -33,11 +34,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@indxr/shared/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@indxr/shared/components/ui/dialog";
 import { toast } from "sonner";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { generateTxt, generateCsv } from "@indxr/shared/utils/formatTranscript";
+import { generateTxt, generateCsv, buildRagJson } from "@indxr/shared/utils/formatTranscript";
+import { bulkDeductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
+import { useAuth } from "@indxr/shared/hooks/useAuth";
 
 // Helper for relative time
 function getRelativeTime(dateString: string) {
@@ -124,6 +135,14 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
   const [locallyReadIds, setLocallyReadIds] = useState<Set<string>>(new Set());
   const editTitleRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+  const { credits, refreshCredits } = useAuth();
+
+  // ── Bulk RAG export state ────────────────────────────────────────────────
+  type RagBulkItem = { id: string; title: string; duration: number; alreadyExported: boolean; cost: number };
+  const [ragBulkItems, setRagBulkItems]       = useState<RagBulkItem[] | null>(null);
+  const [showRagBulkModal, setShowRagBulkModal] = useState(false);
+  const [ragBulkLoading, setRagBulkLoading]   = useState(false);
+  const [ragBulkExecuting, setRagBulkExecuting] = useState(false);
 
   /** Mark a single transcript as viewed without navigating to it */
   const handleMarkAsRead = async (transcriptId: string, e: React.MouseEvent) => {
@@ -194,6 +213,85 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
     if (!confirm(`Delete ${selectedIds.size} transcripts?`)) return;
     selectedIds.forEach(id => onDelete(id));
     setSelectedIds(new Set());
+  };
+
+  // ── Bulk RAG: fetch preview data then show confirmation modal ────────────
+  const handleBulkRagPreview = async () => {
+    setRagBulkLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('transcripts')
+        .select('id, title, duration, rag_exports')
+        .in('id', Array.from(selectedIds));
+
+      if (error || !data) throw new Error('Failed to fetch data');
+
+      const items: RagBulkItem[] = data.map((t: Record<string, unknown>) => {
+        const ragExports = (t.rag_exports as object[] | null) ?? [];
+        const alreadyExported = ragExports.length > 0;
+        const duration = (t.duration as number) ?? 0;
+        const cost = alreadyExported ? 0 : Math.max(1, Math.ceil(duration / 900));
+        return { id: t.id as string, title: (t.title as string) || `Video ${t.id}`, duration, alreadyExported, cost };
+      });
+
+      setRagBulkItems(items);
+      setShowRagBulkModal(true);
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to prepare RAG export');
+    } finally {
+      setRagBulkLoading(false);
+    }
+  };
+
+  // ── Bulk RAG: deduct (atomic total) then generate ZIP ───────────────────
+  const handleBulkRagExecute = async () => {
+    if (!ragBulkItems) return;
+    setRagBulkExecuting(true);
+    try {
+      const newExports = ragBulkItems.filter(item => !item.alreadyExported);
+
+      // Deduct total in one atomic RPC — all or nothing
+      if (newExports.length > 0) {
+        const result = await bulkDeductRagExportCreditsAction(
+          newExports.map(item => ({ transcriptId: item.id, durationSeconds: item.duration, chunkSize: 60 }))
+        );
+        if (!result.success) {
+          toast.error(result.error ?? 'Insufficient credits');
+          return;
+        }
+        refreshCredits();
+      }
+
+      // Fetch full transcript content for ZIP generation
+      const { data, error } = await supabase
+        .from('transcripts')
+        .select('id, title, video_id, transcript')
+        .in('id', Array.from(selectedIds));
+
+      if (error || !data) throw new Error('Failed to fetch transcript data');
+
+      const zip = new JSZip();
+      data.forEach((item: Record<string, unknown>) => {
+        const safeTitle = ((item.title as string) || `video-${item.video_id as string}`)
+          .replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const json = buildRagJson(item.transcript as any, { videoId: item.video_id as string, title: item.title as string, chunkSize: 60 });
+        zip.file(`${safeTitle}_rag_60s.json`, json);
+      });
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, `transcripts-rag-${new Date().toISOString().slice(0, 10)}.zip`);
+      toast.success(`RAG JSON exported for ${data.length} transcript${data.length !== 1 ? 's' : ''}`);
+      setSelectedIds(new Set());
+      setShowRagBulkModal(false);
+    } catch (e) {
+      console.error(e);
+      toast.error('RAG export failed');
+    } finally {
+      setRagBulkExecuting(false);
+      setRagBulkItems(null);
+    }
   };
 
   // Batch Download Logic
@@ -296,6 +394,13 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleBatchDownload('csv')}>
                     CSV (.zip)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleBulkRagPreview} disabled={ragBulkLoading}>
+                    {ragBulkLoading
+                      ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                      : null}
+                    RAG JSON <span className="text-accent text-[10px] font-bold align-super ml-0.5">✦</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -517,6 +622,86 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
           ))}
         </div>
       )}
+
+      {/* ── Bulk RAG confirmation dialog ────────────────────────────────────── */}
+      {(() => {
+        const totalCost    = ragBulkItems?.reduce((s, i) => s + i.cost, 0) ?? 0;
+        const paidCount    = ragBulkItems?.filter(i => !i.alreadyExported).length ?? 0;
+        const freeCount    = ragBulkItems?.filter(i => i.alreadyExported).length ?? 0;
+        const insufficient = credits !== null && totalCost > 0 && credits < totalCost;
+        return (
+          <Dialog open={showRagBulkModal} onOpenChange={(open) => { setShowRagBulkModal(open); if (!open) setRagBulkItems(null); }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Bulk RAG JSON Export</DialogTitle>
+                <DialogDescription>
+                  Review costs before exporting. All presets use 60s chunks (balanced).
+                </DialogDescription>
+              </DialogHeader>
+
+              {ragBulkItems && (
+                <div className="space-y-4">
+                  {/* Per-transcript breakdown */}
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {ragBulkItems.map(item => (
+                      <div key={item.id} className="flex items-center justify-between text-sm gap-2">
+                        <span className="text-fg truncate flex-1">{item.title}</span>
+                        {item.alreadyExported
+                          ? <span className="text-fg-muted text-xs shrink-0">Free (re-download)</span>
+                          : <span className="text-fg-muted text-xs shrink-0">{item.cost} credit{item.cost !== 1 ? 's' : ''}</span>
+                        }
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Summary */}
+                  <div className="rounded-lg border border-border bg-surface-elevated/30 p-3 text-sm space-y-0.5">
+                    {freeCount > 0 && (
+                      <p className="text-fg-muted">{freeCount} already exported — free</p>
+                    )}
+                    {paidCount > 0 && (
+                      <p className="text-fg">
+                        <span className="font-semibold">{paidCount} new</span>
+                        {' · '}{totalCost} credit{totalCost !== 1 ? 's' : ''}
+                        {credits !== null && <span className="text-fg-muted ml-1">({credits} available)</span>}
+                      </p>
+                    )}
+                    {totalCost === 0 && (
+                      <p className="text-success font-medium">All transcripts already exported — free!</p>
+                    )}
+                  </div>
+
+                  {/* Insufficient credits warning */}
+                  {insufficient && (
+                    <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      Not enough credits. You have {credits} but need {totalCost}.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <DialogFooter>
+                <button
+                  className="text-sm text-fg-muted hover:text-fg transition-colors px-3 py-1.5"
+                  onClick={() => setShowRagBulkModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-fg-on-accent hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleBulkRagExecute}
+                  disabled={ragBulkExecuting || insufficient}
+                >
+                  {ragBulkExecuting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <Download className="h-4 w-4" />
+                  {totalCost > 0 ? `Export · ${totalCost} credits` : 'Export — Free'}
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </>
   );
 }

@@ -19,6 +19,10 @@ Credits zijn de interne valuta van INDXR.AI. Gebruikers kopen credits via Stripe
 | AI-transcriptie (YouTube, geen captions) | **1 credit** | Per minuut (afgerond naar boven) |
 | AI-transcriptie (audio upload) | **1 credit** | Per minuut (afgerond naar boven) |
 | AI samenvatting (DeepSeek) | **3 credits** | Flat per samenvatting |
+| RAG JSON export (eerste export) | **1 credit per 15 min** | `ceil(duration_s / 900)`, min 1 |
+| RAG JSON export (re-download) | **Gratis** | Altijd gratis na eerste betaalde export |
+| Bulk RAG JSON export (nieuwe transcripts) | **1 credit per 15 min** | Per niet-eerder-geëxporteerd transcript |
+| Bulk RAG JSON export (al geëxporteerde transcripts) | **Gratis** | Re-download-pad ook in bulk |
 | Welcome bonus (eenmalig bij registratie) | **+25 credits** | — |
 
 **Geen dubbele rekening bij AI-transcriptie in playlists:** Als een playlist-video geen captions heeft, betaalt de gebruiker alleen het AI-transcriptie tarief (1 cr/min) — niet bovenop de 1 credit/video voor captions. Zie [ADR-010](../decisions/010-playlist-pricing.md).
@@ -116,6 +120,48 @@ Zie [ADR-012](../decisions/012-pricing-tiers.md) voor de rationale achter deze t
 5. Transcriptie uitgevoerd
 6. Bij fout: add_credits(user_id, amount, "Refund: ...")
 ```
+
+### Verbruik (RAG JSON export — per transcript)
+
+```
+1. Gebruiker klikt "RAG JSON" in de TranscriptViewer export-dropdown
+2. Als rag_exports.length > 0 (al eerder geëxporteerd):
+   → Gratis re-download, geen Server Action aanroepen
+3. Als rag_exports.length === 0 (eerste export):
+   a. Modal toont kosten: Math.max(1, ceil(duration_seconds / 900))
+   b. Bevestiging door gebruiker
+   c. deductRagExportCreditsAction() (Server Action, packages/shared/src/actions/rag-export.ts)
+   d. RPC: deduct_credits_atomic(user_id, cost, 'RAG JSON Export')
+   e. Log entry in transcripts.rag_exports JSONB: {chunk_size, exported_at, credits_spent}
+4. buildRagJson() genereert JSON client-side (geen AI-generatie, puur format-conversie)
+5. Browser-download
+```
+
+**Guard-lagen:** Render-guard in `dashboard/library/[id]/page.tsx` + component-level fallback in `RagExportView.tsx` zorgen dat de re-download-view nooit zichtbaar is zonder eerdere betaalde export.
+
+### Verbruik (RAG JSON export — bulk)
+
+```
+1. Gebruiker selecteert meerdere transcripts in Library, kiest "RAG JSON ✦" in bulk-dropdown
+2. Preview-fetch: id, title, duration, rag_exports per transcript (lichtgewicht)
+3. Bereken per transcript:
+   - rag_exports.length > 0 → cost = 0 (gratis re-download)
+   - rag_exports.length === 0 → cost = Math.max(1, ceil(duration_s / 900))
+4. Bevestigingsdialoog toont:
+   - Per transcript: gratis of X credits
+   - Totaal: "N new · Y credits · M already exported, free"
+   - Beschikbaar saldo (indien onvoldoende: knop geblokkeerd, melding)
+5. Op bevestiging:
+   a. bulkDeductRagExportCreditsAction() (packages/shared/src/actions/rag-export.ts)
+   b. Één deduct_credits_atomic RPC voor het TOTAAL van alle nieuwe exports
+      → Atomisch: óf alles wordt afgetrokken, óf niets (geen partial charge)
+   c. Per transcript log entry in rag_exports JSONB (best-effort na aftrek)
+6. Fetch volledige transcript-content, genereer ZIP met _rag_60s.json per transcript
+7. Browser-download ZIP
+```
+
+**Chunk-grootte bulk:** altijd 60s (balanced). Per-transcript keuze alleen in de viewer.
+**Onvoldoende saldo:** client-side blokkering (credits < totalCost) + server-side via RPC.
 
 ### Verbruik (AI samenvatting)
 

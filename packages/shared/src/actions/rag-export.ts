@@ -83,4 +83,64 @@ export async function deductRagExportCreditsAction(
   return { success: true, cost, newBalance: result.new_balance }
 }
 
+/**
+ * Bulk RAG export: deducts the TOTAL cost in one atomic RPC call, then logs
+ * each export entry. Partial charges are structurally impossible — the RPC
+ * either succeeds for the full amount or fails entirely.
+ *
+ * Only pass transcripts that have NO prior rag_exports (i.e., need payment).
+ * Free re-downloads skip this action entirely on the client side.
+ */
+export async function bulkDeductRagExportCreditsAction(
+  newExports: Array<{ transcriptId: string; durationSeconds: number; chunkSize: number }>,
+): Promise<{ success: true; totalCost: number; newBalance: number } | { success: false; error: string }> {
+  if (newExports.length === 0) return { success: false, error: 'No exports provided' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const itemsWithCost = newExports.map(item => ({
+    ...item,
+    cost: Math.max(1, Math.ceil(item.durationSeconds / 900)),
+  }))
+  const totalCost = itemsWithCost.reduce((sum, item) => sum + item.cost, 0)
+
+  // Single atomic deduction for the full amount
+  const { data, error } = await supabase.rpc('deduct_credits_atomic', {
+    p_user_id: user.id,
+    p_amount: totalCost,
+    p_reason: 'Bulk RAG JSON Export',
+    p_metadata: { transcript_count: newExports.length },
+  })
+
+  if (error) return { success: false, error: error.message }
+
+  const result = data as { success: boolean; new_balance: number; error?: string }
+  if (!result.success) return { success: false, error: result.error ?? 'Insufficient credits' }
+
+  // Log each export entry (best-effort after atomic deduction)
+  for (const item of itemsWithCost) {
+    const { data: row } = await supabase
+      .from('transcripts')
+      .select('rag_exports')
+      .eq('id', item.transcriptId)
+      .eq('user_id', user.id)
+      .single()
+
+    const current = (row?.rag_exports as object[] | null) ?? []
+    await supabase
+      .from('transcripts')
+      .update({
+        rag_exports: [
+          ...current,
+          { chunk_size: item.chunkSize, exported_at: new Date().toISOString(), credits_spent: item.cost },
+        ],
+      })
+      .eq('id', item.transcriptId)
+      .eq('user_id', user.id)
+  }
+
+  return { success: true, totalCost, newBalance: result.new_balance }
+}
 

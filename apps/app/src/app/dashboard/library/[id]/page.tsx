@@ -138,7 +138,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             mode={activeTab === "summary" ? "original" : "edited"}
           />
         </div>
-      ) : activeTab === "developer" ? (
+      ) : activeTab === "developer" && Array.isArray(transcript.rag_exports) && (transcript.rag_exports as unknown[]).length > 0 ? (
         <RagExportView
           transcriptId={transcript.id}
           transcript={transcript.transcript}

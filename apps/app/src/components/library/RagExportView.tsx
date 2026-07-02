@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Download } from "lucide-react";
+import Link from "next/link";
+import { Download, Lock } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
 import { buildRagJson } from "@indxr/shared/utils/formatTranscript";
 import type { TranscriptItem } from "@indxr/shared/utils/formatTranscript";
@@ -51,12 +52,31 @@ function getRelativeTime(dateString: string): string {
 }
 
 export function RagExportView({
+  transcriptId,
   transcript,
   videoId,
   title,
   processingMethod,
   ragExports,
 }: RagExportViewProps) {
+  // Defense-in-depth: this view is only for re-downloads after a paid first export.
+  // The page-level render-guard should prevent reaching this state, but we guard
+  // here too so the component can never serve as a free bypass.
+  if (ragExports.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-4">
+        <Lock className="h-8 w-8 text-fg-muted mx-auto" />
+        <p className="text-fg-muted text-sm">
+          No RAG exports yet. Use the <strong>Export → RAG JSON</strong> option in the transcript
+          viewer to create your first export.
+        </p>
+        <Link href={`/dashboard/library/${transcriptId}`}>
+          <Button variant="outline" size="sm">Back to transcript</Button>
+        </Link>
+      </div>
+    );
+  }
+
   const lastChunkSize = ragExports.length > 0
     ? (ragExports[ragExports.length - 1].chunk_size as 30 | 60 | 90 | 120)
     : 60;
