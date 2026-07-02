@@ -1,3 +1,5 @@
+[2026-07-02] fix: bulk-RAG toast vervangen door inline persistente feedback — toast.error/success verwijderd uit handleBulkRagPreview en handleBulkRagExecute; ragBulkError/ragBulkSuccess state toegevoegd; fouten persistent in dialog (blijft open), success inline 1.2s dan sluiten, export-knop geblokkeerd bij success-state. Build ✓ | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md
+---
 [2026-07-02] fix: RAG-export credit-lek gedicht + bulk-RAG met dubbele-export-bescherming — render-guard in [id]/page.tsx (rag_exports.length > 0 vereist), component-level fallback in RagExportView, bulkDeductRagExportCreditsAction (één atomische RPC voor totaal, geen partial charge), bevestigingsdialoog met per-transcript breakdown + saldo-check. Build ✓ | gewijzigd: apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/components/library/RagExportView.tsx, apps/app/src/components/library/TranscriptList.tsx, packages/shared/src/actions/rag-export.ts, docs/wiki/architecture/credit-system.md, docs/LESSONS.md
 ---
 [2026-07-02] design-sync: synced @indxr/shared (137 componenten, 20 authored previews) naar claude.ai/design project 43b8e30d — config, 20 preview-TSX bestanden, bundle-override, gecompileerde tokens. Alle previews graded "good". | gewijzigd: .design-sync/
@@ -6375,4 +6377,27 @@ Changed: .design-sync/compiled-tokens.css
 .design-sync/previews/Tabs.tsx
 .design-sync/previews/Tooltip.tsx
 docs/LOG.md
+---
+[2026-07-02 18:00] commit: fix: RAG-export credit-lek dichten + bulk-RAG met atomische aftrek
+
+Lek: gewone gebruiker kon via ?tab=developer gratis RAG JSON downloaden
+zonder eerdere betaalde export. Twee guard-lagen toegevoegd:
+1. Render-guard in [id]/page.tsx: RagExportView alleen bij rag_exports.length > 0
+2. Component-level fallback in RagExportView: toont lock-screen bij length === 0
+
+Bulk-RAG export toegevoegd aan TranscriptList selection-bar:
+- bulkDeductRagExportCreditsAction: één atomische deduct_credits_atomic RPC
+  voor het totaal (geen partial charge mogelijk)
+- Per transcript: gratis re-download als al eerder geëxporteerd, anders betalen
+- Bevestigingsdialoog met per-transcript breakdown + saldo-check vóór uitvoering
+- Onvoldoende saldo: knop geblokkeerd, geen aftrek
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/library/[id]/page.tsx
+apps/app/src/components/library/RagExportView.tsx
+apps/app/src/components/library/TranscriptList.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/credit-system.md
+packages/shared/src/actions/rag-export.ts
 ---

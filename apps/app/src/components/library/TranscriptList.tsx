@@ -139,10 +139,12 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
 
   // ── Bulk RAG export state ────────────────────────────────────────────────
   type RagBulkItem = { id: string; title: string; duration: number; alreadyExported: boolean; cost: number };
-  const [ragBulkItems, setRagBulkItems]       = useState<RagBulkItem[] | null>(null);
+  const [ragBulkItems, setRagBulkItems]         = useState<RagBulkItem[] | null>(null);
   const [showRagBulkModal, setShowRagBulkModal] = useState(false);
-  const [ragBulkLoading, setRagBulkLoading]   = useState(false);
+  const [ragBulkLoading, setRagBulkLoading]     = useState(false);
   const [ragBulkExecuting, setRagBulkExecuting] = useState(false);
+  const [ragBulkError, setRagBulkError]         = useState<string | null>(null);
+  const [ragBulkSuccess, setRagBulkSuccess]     = useState(false);
 
   /** Mark a single transcript as viewed without navigating to it */
   const handleMarkAsRead = async (transcriptId: string, e: React.MouseEvent) => {
@@ -218,13 +220,15 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
   // ── Bulk RAG: fetch preview data then show confirmation modal ────────────
   const handleBulkRagPreview = async () => {
     setRagBulkLoading(true);
+    setRagBulkError(null);
+    setRagBulkSuccess(false);
     try {
       const { data, error } = await supabase
         .from('transcripts')
         .select('id, title, duration, rag_exports')
         .in('id', Array.from(selectedIds));
 
-      if (error || !data) throw new Error('Failed to fetch data');
+      if (error || !data) throw new Error('Failed to load transcript data');
 
       const items: RagBulkItem[] = data.map((t: Record<string, unknown>) => {
         const ragExports = (t.rag_exports as object[] | null) ?? [];
@@ -238,7 +242,9 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       setShowRagBulkModal(true);
     } catch (e) {
       console.error(e);
-      toast.error('Failed to prepare RAG export');
+      // Open the modal to show the error persistently (no auto-dismissing toast)
+      setRagBulkError('Failed to load transcript data. Please try again.');
+      setShowRagBulkModal(true);
     } finally {
       setRagBulkLoading(false);
     }
@@ -248,6 +254,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
   const handleBulkRagExecute = async () => {
     if (!ragBulkItems) return;
     setRagBulkExecuting(true);
+    setRagBulkError(null);
     try {
       const newExports = ragBulkItems.filter(item => !item.alreadyExported);
 
@@ -257,7 +264,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
           newExports.map(item => ({ transcriptId: item.id, durationSeconds: item.duration, chunkSize: 60 }))
         );
         if (!result.success) {
-          toast.error(result.error ?? 'Insufficient credits');
+          setRagBulkError(result.error ?? 'Insufficient credits');
           return;
         }
         refreshCredits();
@@ -282,15 +289,20 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
 
       const content = await zip.generateAsync({ type: 'blob' });
       saveAs(content, `transcripts-rag-${new Date().toISOString().slice(0, 10)}.zip`);
-      toast.success(`RAG JSON exported for ${data.length} transcript${data.length !== 1 ? 's' : ''}`);
+
+      // Show inline success state, then close after brief confirmation
+      setRagBulkSuccess(true);
       setSelectedIds(new Set());
-      setShowRagBulkModal(false);
+      setTimeout(() => {
+        setShowRagBulkModal(false);
+        setRagBulkSuccess(false);
+        setRagBulkItems(null);
+      }, 1200);
     } catch (e) {
       console.error(e);
-      toast.error('RAG export failed');
+      setRagBulkError('Export failed. Please try again.');
     } finally {
       setRagBulkExecuting(false);
-      setRagBulkItems(null);
     }
   };
 
@@ -630,7 +642,10 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
         const freeCount    = ragBulkItems?.filter(i => i.alreadyExported).length ?? 0;
         const insufficient = credits !== null && totalCost > 0 && credits < totalCost;
         return (
-          <Dialog open={showRagBulkModal} onOpenChange={(open) => { setShowRagBulkModal(open); if (!open) setRagBulkItems(null); }}>
+          <Dialog open={showRagBulkModal} onOpenChange={(open) => {
+            setShowRagBulkModal(open);
+            if (!open) { setRagBulkItems(null); setRagBulkError(null); setRagBulkSuccess(false); }
+          }}>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Bulk RAG JSON Export</DialogTitle>
@@ -671,13 +686,28 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                     )}
                   </div>
 
-                  {/* Insufficient credits warning */}
+                  {/* Pre-confirm: insufficient credits */}
                   {insufficient && (
                     <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
                       <AlertCircle className="h-4 w-4 shrink-0" />
                       Not enough credits. You have {credits} but need {totalCost}.
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Persistent inline error (replaces toast) */}
+              {ragBulkError && (
+                <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {ragBulkError}
+                </div>
+              )}
+
+              {/* Inline success confirmation */}
+              {ragBulkSuccess && (
+                <div className="rounded-lg bg-success/10 border border-success/20 px-3 py-2 text-sm text-success font-medium">
+                  Export complete — ZIP download started.
                 </div>
               )}
 
@@ -691,7 +721,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                 <button
                   className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-fg-on-accent hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleBulkRagExecute}
-                  disabled={ragBulkExecuting || insufficient}
+                  disabled={ragBulkExecuting || insufficient || !ragBulkItems || ragBulkSuccess}
                 >
                   {ragBulkExecuting && <Loader2 className="h-4 w-4 animate-spin" />}
                   <Download className="h-4 w-4" />
