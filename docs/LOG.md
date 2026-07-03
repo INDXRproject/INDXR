@@ -1,3 +1,5 @@
+[2026-07-03 13:15] fix: bulk-export bestandsnaam-conventie herschreven naar volledige-titel-slug — slugify(title) zonder slice/video_id; schema ${slug}_${type}[_variant].${ext}; teller-fallback behouden; bouw groen. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md, docs/wiki/decisions/018-export-consolidation.md
+---
 [2026-07-03 11:00] fix: bulk-export naamgeving-collision + insufficient-render-artefact + integriteitscheck — (1) handleBatchDownload en handleBulkRagExecute gebruiken nu ${safeTitle}_${videoId}${suffix}.${ext}; teller-fallback bij resterende collision; JSZip overschrijft niet meer. (2) Object.keys(zip.files).length === selectedIds.size check; bij mismatch: warning-FeedbackCard. (3) insufficient-guard: !ragBulkExecuting && !ragBulkSuccess; refreshCredits() awaited. Code-inspectie verificaties alle drie ✓. Build ✓ beide apps. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md, docs/wiki/decisions/018-export-consolidation.md
 ---
 [2026-07-02 20:30] feat: volledige toast-eliminatie (A+B+C) — (A) alle sonner/toast-calls verwijderd uit 18 bestanden; FeedbackCard canonical inline feedback-component; Copy-knoppen → button-level bool-state; sidebar → compact banner; financiële callsites persistent tot dismiss; Toaster verwijderd uit beide layouts; sonner.tsx verwijderd; sonner uit alle package.json-dependencies. (B) bulk-download dropdown uitgebreid van 4 naar 8 formats: TXT, TXT+timestamps, MD, MD+timestamps, JSON, CSV, SRT, VTT — elk als ZIP. (C) bulk-RAG chunk size leest nu profiles.rag_chunk_size (ipv hardcoded 60); filename _rag_60s.json → _rag_<N>s.json; dialog copy toont chunk preset. Build ✓ beide apps, grep toast → 0 hits. | gewijzigd: packages/shared/src/components/ui/FeedbackCard.tsx, packages/shared/src/components/ui/sonner.tsx (verwijderd), packages/shared/src/components/free-tool/AudioTab.tsx, packages/shared/src/components/free-tool/VideoTab.tsx, packages/shared/src/components/PlaylistManager.tsx, apps/app/src/app/layout.tsx, apps/marketing/src/app/layout.tsx, apps/app/src/components/library/TranscriptViewer.tsx, apps/app/src/components/library/TranscriptList.tsx, apps/app/src/components/library/AiSummaryView.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx, apps/app/src/components/dashboard/WelcomeCreditCard.tsx, apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx, apps/app/src/components/dashboard/settings/SecuritySettingsCard.tsx, apps/app/src/app/dashboard/library/page.tsx, apps/marketing/src/components/pricing/BuyButton.tsx, apps/marketing/src/app/forgot-password/page.tsx, apps/marketing/src/app/login/page.tsx, apps/marketing/src/app/signup/page.tsx, apps/marketing/src/app/onboarding/page.tsx, apps/marketing/src/app/transcribe/page.tsx, docs/LESSONS.md
@@ -6480,3 +6482,26 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 pnpm-lock.yaml
 ---
+[2026-07-03 12:28] commit: fix: bulk-export naamgeving-collision + insufficient-render-artefact + integriteitscheck
+
+Bug 1 (data-verlies): handleBatchDownload en handleBulkRagExecute gebruikten
+safeTitle.slice(40/30) zonder uniciteitsgarantie — JSZip overschreef stil bij
+identieke bestandsnamen. Fix: ${safeTitle}_${videoId}${suffix}.${ext} als
+primaire disambiguator; teller-fallback (_2, _3, ...) voor resterende collisions.
+Geldt voor alle 8 formats + RAG.
+
+Bug 2 (cosmetisch): refreshCredits() was niet awaited in handleBulkRagExecute,
+waardoor de re-render na credits-update de insufficient-conditie herrekende
+met post-aftrek saldo < totalCost. Fix: await refreshCredits() + guard
+!ragBulkExecuting && !ragBulkSuccess op de insufficient-conditie.
+
+Nieuw: integriteitscheck na ZIP-vulling — bij fileCount !== selectedIds.size
+verschijnt een warning-FeedbackCard (download gaat door).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/decisions/018-export-consolidation.md
+---
+[2026-07-03 12:40] precompact: context compaction triggered

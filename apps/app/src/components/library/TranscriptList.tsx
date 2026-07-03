@@ -292,13 +292,15 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
 
       if (error || !data) throw new Error('Failed to fetch transcript data');
 
+      const slugify = (s: string) =>
+        (s || 'video').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
       const zip = new JSZip();
       const usedNames = new Set<string>();
       data.forEach((item: Record<string, unknown>) => {
-        const safeTitle = ((item.title as string) || `video`)
-          .replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30);
+        const slug = slugify(item.title as string);
         const videoId = (item.video_id as string) || 'unknown';
-        const base = `${safeTitle}_${videoId}_rag_${ragChunkSize}s`;
+        const base = `${slug}_rag_${ragChunkSize}s`;
         let filename = `${base}.json`;
         let counter = 2;
         while (usedNames.has(filename)) { filename = `${base}_${counter++}.json`; }
@@ -347,13 +349,16 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
 
       if (error || !data) throw new Error("Failed to fetch transcript data");
 
+      const slugify = (s: string) =>
+        (s || 'video').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
       const zip = new JSZip();
       const usedNames = new Set<string>();
-      const tsSuffix = format === 'txt-ts' ? '_timestamps' : format === 'md-ts' ? '_timestamps' : '';
+      const tsSuffix = format === 'txt-ts' || format === 'md-ts' ? '_timestamps' : '';
+      const formatType = format === 'txt-ts' ? 'txt' : format === 'md-ts' ? 'md' : format;
 
       data.forEach((item: Record<string, unknown>) => {
-        const safeTitle = ((item.title as string) || 'video')
-          .replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30);
+        const slug = slugify(item.title as string);
         const videoId = (item.video_id as string) || 'unknown';
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
         const tx = item.transcript as Parameters<typeof generateTxt>[0];
@@ -375,8 +380,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
           fileContent = generateVtt(tx, { title: item.title as string, extractionMethod: (item.processing_method as string) ?? undefined }); extension = "vtt";
         }
 
-        // Unique name: safeTitle_videoId[_timestamps].ext, teller-suffix bij resterende collision
-        const base = `${safeTitle}_${videoId}${tsSuffix}`;
+        const base = `${slug}_${formatType}${tsSuffix}`;
         let filename = `${base}.${extension}`;
         let counter = 2;
         while (usedNames.has(filename)) { filename = `${base}_${counter++}.${extension}`; }
