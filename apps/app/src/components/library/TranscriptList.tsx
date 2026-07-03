@@ -37,6 +37,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@indxr/shared/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@indxr/shared/components/ui/alert-dialog";
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern";
 import { HexagonEmptyState } from "@indxr/shared/components/icons/HexagonEmptyState";
 import { createClient } from "@indxr/shared/utils/supabase/client";
@@ -191,6 +201,21 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
   const [downloadError, setDownloadError]       = useState<string | null>(null);
   const [downloadWarning, setDownloadWarning]   = useState<string | null>(null);
 
+  // ── Delete confirmation ──────────────────────────────────────────────────
+  type DeleteTarget = { type: "single"; id: string; title: string } | { type: "bulk"; count: number };
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === "single") {
+      onDelete(deleteTarget.id);
+    } else {
+      selectedIds.forEach(id => onDelete(id));
+      setSelectedIds(new Set());
+    }
+    setDeleteTarget(null);
+  };
+
   /** Mark a single transcript as viewed without navigating to it */
   const handleMarkAsRead = async (transcriptId: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -257,9 +282,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
   };
 
   const handleBatchDelete = () => {
-    if (!confirm(`Delete ${selectedIds.size} transcripts?`)) return;
-    selectedIds.forEach(id => onDelete(id));
-    setSelectedIds(new Set());
+    setDeleteTarget({ type: "bulk", count: selectedIds.size });
   };
 
   // ── Bulk RAG: fetch preview data then show confirmation modal ────────────
@@ -644,7 +667,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
-                      onClick={() => onDelete(t.id)}
+                      onClick={() => setDeleteTarget({ type: "single", id: t.id, title: t.title || `Video ${t.video_id}` })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -737,7 +760,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
-                      onClick={() => onDelete(t.id)}
+                      onClick={() => setDeleteTarget({ type: "single", id: t.id, title: t.title || `Video ${t.video_id}` })}
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -855,6 +878,31 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
           </Dialog>
         );
       })()}
+
+      {/* ── Delete confirmation dialog (per-row + bulk) ───────────────────────── */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteTarget?.type === "bulk"
+                ? `Delete ${deleteTarget.count} transcript${deleteTarget.count !== 1 ? "s" : ""}?`
+                : `Delete "${deleteTarget?.type === "single" ? deleteTarget.title : ""}"?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-error text-white hover:bg-error/90"
+              onClick={confirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
