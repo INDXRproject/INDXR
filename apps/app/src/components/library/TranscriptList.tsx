@@ -10,6 +10,7 @@ import {
   Download,
   Pencil,
   AlertCircle,
+  X,
 } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
 import { Badge } from "@indxr/shared/components/ui/badge";
@@ -318,16 +319,13 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       }
 
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, `transcripts-rag-${new Date().toISOString().slice(0, 10)}.zip`);
+      const now = new Date();
+      const zipDate = now.toISOString().slice(0, 10);
+      const zipTime = now.toISOString().slice(11, 16).replace(':', '');
+      saveAs(content, `indxr-${selectedIds.size}-transcripts-rag-${zipDate}-${zipTime}.zip`);
 
-      // Show inline success state, then close after brief confirmation
       setRagBulkSuccess(true);
       setSelectedIds(new Set());
-      setTimeout(() => {
-        setShowRagBulkModal(false);
-        setRagBulkSuccess(false);
-        setRagBulkItems(null);
-      }, 1200);
     } catch (e) {
       console.error(e);
       setRagBulkError('Export failed. Please try again.');
@@ -395,7 +393,10 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       }
 
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `transcripts-${format}-${new Date().toISOString().slice(0,10)}.zip`);
+      const now = new Date();
+      const zipDate = now.toISOString().slice(0, 10);
+      const zipTime = now.toISOString().slice(11, 16).replace(':', '');
+      saveAs(content, `indxr-${selectedIds.size}-transcripts-${format}-${zipDate}-${zipTime}.zip`);
       setSelectedIds(new Set());
     } catch (e) {
       console.error(e);
@@ -706,7 +707,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
             setShowRagBulkModal(open);
             if (!open) { setRagBulkItems(null); setRagBulkError(null); setRagBulkSuccess(false); }
           }}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Bulk RAG JSON Export</DialogTitle>
                 <DialogDescription>
@@ -720,7 +721,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {ragBulkItems.map(item => (
                       <div key={item.id} className="flex items-center justify-between text-sm gap-2">
-                        <span className="text-fg truncate flex-1">{item.title}</span>
+                        <span className="text-fg truncate flex-1 min-w-0">{item.title}</span>
                         {item.alreadyExported
                           ? <span className="text-fg-muted text-xs shrink-0">Free (re-download)</span>
                           : <span className="text-fg-muted text-xs shrink-0">{item.cost} credit{item.cost !== 1 ? 's' : ''}</span>
@@ -764,10 +765,17 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
                 </div>
               )}
 
-              {/* Inline success confirmation */}
+              {/* Inline success confirmation — persistent until user dismisses */}
               {ragBulkSuccess && (
-                <div className="rounded-lg bg-success/10 border border-success/20 px-3 py-2 text-sm text-success font-medium">
-                  Export complete — ZIP download started.
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-success/10 border border-success/20 px-3 py-2 text-sm text-success">
+                  <span className="font-medium">Export complete — ZIP download started.</span>
+                  <button
+                    onClick={() => setShowRagBulkModal(false)}
+                    className="shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+                    aria-label="Close"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               )}
 
