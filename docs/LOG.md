@@ -6691,3 +6691,14 @@ Delete logic and credit/collection side effects are unchanged.
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 Changed: apps/app/src/components/library/TranscriptList.tsx
 ---
+[2026-07-03 23:14] commit: docs: log Library production-verification outcome + delete-confirmation lesson
+
+Full checklist verified on app.indxr.ai with screenshot evidence (drag-to-
+collection, RAG export + credit deduction, mark-as-read, bulk-download
+uniqueness). Records the delete-confirmation fix and the confirmed
+cancel/confirm behavior for both per-row and bulk delete.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+---
