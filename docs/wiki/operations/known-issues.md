@@ -1,6 +1,31 @@
 # Known Issues & TODOs
 
-Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-04-28.
+Actieve openstaande punten gevonden in de codebase. Bijgewerkt: 2026-07-03.
+
+---
+
+## [~] design-sync: bundle-upload naar claude.ai/design nog niet voltooid (2026-07-03)
+
+`@indxr/shared` re-sync naar het "INDXR Component Library" project
+(`43b8e30d-d44f-4943-a841-3bb6fd80df17`) draaide door tot en met verificatie
+(`package-validate.mjs` exit 0), maar de upload zelf is niet uitgevoerd.
+
+**Root cause:** de MCP-uploadtool in deze sessie accepteert alleen inline
+file-content (geen local-path upload), en `_ds_bundle.js` is ~860KB —
+groter dan de 256KB-cap van de `Read`-tool. Chunked reconstructie zou het risico
+lopen op stille byte-corruptie in code die de design-agent uitvoert; op verzoek
+van Khidr is de upload daarom gestopt vóórdat er iets onverifieerds werd
+geschreven.
+
+**Status:** lokaal is `ds-bundle/` volledig gebouwd en gevalideerd, inclusief
+een nieuw `.design-sync/conventions.md` (styling-conventies voor de
+design-agent) en de diff (`FeedbackCard` toegevoegd, `Toaster` verwijderd uit
+de package). Het claude.ai/design-project zelf staat nog op de vorige,
+werkende sync-versie — niets is corrupt of half geschreven.
+
+**Vervolgstap:** eerstvolgende `/design-sync`-run de upload afmaken, bij
+voorkeur vanuit een omgeving met local-path file-upload support. Details en
+het exacte diff-overzicht staan in `.design-sync/NOTES.md`.
 
 ---
 

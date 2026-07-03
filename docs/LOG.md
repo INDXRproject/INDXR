@@ -1,3 +1,11 @@
+[2026-07-03 16:45] fix: DialogContent-primitive grid-cols-[minmax(0,1fr)] — structurele overflow-fix bij de bron. Verwijderd: redundante min-w-0 op space-y-4-wrapper. Build ✓ (0 cached, full rebuild). Gepusht 40ae5be..9791e34. | gewijzigd: packages/shared/src/components/ui/dialog.tsx, apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md
+---
+[2026-07-03 16:00] fix: RAG-dialog layout — min-w-0 op directe grid-child (space-y-4 wrapper). Root cause: DialogContent=grid, grid-children hebben min-width:auto, samenvatting-blok liep over card-rand. Twee eerdere pogingen (min-w-0 op span + overflow-x-hidden) bewaard als correcte sub-lagen. Build ✓. Gepusht 25c01f5..40ae5be. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md
+---
+[2026-07-03 15:15] fix: RAG-dialog layout — overflow-x-hidden op lijst-container (overflow-y:auto dwong overflow-x:auto, labels niet geclipt); max-w-[min(32rem,calc(100%-2rem))] vervangt max-w-lg (voorkomt tailwind-merge drop van viewport-marge). Vervolg op min-w-0-poging (e3cee0c) die correct element raak maar container-level clip miste. Build ✓. Gepusht e3cee0c..25c01f5. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LOG.md
+---
+[2026-07-03 14:30] fix: RAG-dialog layout-bug (min-w-0 + max-w-lg), success-auto-dismiss verwijderd, ZIP-naam uniek (indxr-N-transcripts-format-datum-HHmm.zip). Build ✓. Gepusht 122e96b..e3cee0c. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md
+---
 [2026-07-03 13:15] fix: bulk-export bestandsnaam-conventie herschreven naar volledige-titel-slug — slugify(title) zonder slice/video_id; schema ${slug}_${type}[_variant].${ext}; teller-fallback behouden; bouw groen. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md, docs/wiki/decisions/018-export-consolidation.md
 ---
 [2026-07-03 11:00] fix: bulk-export naamgeving-collision + insufficient-render-artefact + integriteitscheck — (1) handleBatchDownload en handleBulkRagExecute gebruiken nu ${safeTitle}_${videoId}${suffix}.${ext}; teller-fallback bij resterende collision; JSZip overschrijft niet meer. (2) Object.keys(zip.files).length === selectedIds.size check; bij mismatch: warning-FeedbackCard. (3) insufficient-guard: !ragBulkExecuting && !ragBulkSuccess; refreshCredits() awaited. Code-inspectie verificaties alle drie ✓. Build ✓ beide apps. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md, docs/wiki/decisions/018-export-consolidation.md
@@ -6505,3 +6513,115 @@ docs/LOG.md
 docs/wiki/decisions/018-export-consolidation.md
 ---
 [2026-07-03 12:40] precompact: context compaction triggered
+[2026-07-03 12:44] commit: fix: bulk-export bestandsnamen — volledige-titel-slug zonder video_id of slice
+
+Vervang safeTitle_videoId-schema door slugify(title)_type[_variant].ext.
+slugify: lowercase, [^a-z0-9]+→-, leading/trailing hyphens strippen,
+geen maximale lengte. Beide handlers (handleBatchDownload +
+handleBulkRagExecute) bijgewerkt; teller-fallback behouden.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/decisions/018-export-consolidation.md
+---
+[2026-07-03 12:51] commit: fix: slugify strip apostrofs/quotes vóór hyphenisering (what's → whats)
+
+Module-level slugify const vervangt twee identieke inline definities.
+Strip ['''"""`] vóór [^a-z0-9]+→- zodat apostrofs geen losse koppeltekens
+veroorzaken in bestandsnamen.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+---
+[2026-07-03 13:10] commit: fix: RAG-dialog layout, success-persistentie, ZIP-bestandsnaam
+
+- Layout: max-w-md → max-w-lg; min-w-0 op title-span zodat truncate
+  werkt in flex-context (flex-item min-width: auto bug)
+- Success: setTimeout-dismiss verwijderd; FeedbackCard blijft staan
+  met X-dismiss-knop; dialog sluit niet automatisch na export
+- ZIP-naam: indxr-<N>-transcripts-<format>-<datum>-<HHmm>.zip
+  (uniek per export, geen browser-(2)(3)-hernoeming)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+---
+[2026-07-03 13:23] commit: fix: RAG-dialog layout — overflow-x-hidden + viewport-marge hersteld
+
+overflow-y-auto op de lijst-container dwong overflow-x naar auto (CSS-spec),
+waardoor credit-labels niet geclipt werden en de dialogrand overlapten.
+Fix: overflow-x-hidden toegevoegd aan de lijst-container.
+
+max-w-lg conflicteerde via tailwind-merge met de base max-w-[calc(100%-2rem)]
+en dropte de viewport-veiligheidsmarge op smalle schermen. Vervangen door
+max-w-[min(32rem,calc(100%-2rem))]: één class, geen merge-conflict, pikt
+automatisch de kleinste van 512px en viewport−32px.
+
+Vervolg op min-w-0-fix (e3cee0c) die op het juiste element zat maar één
+niveau te laag — de werkelijke clip-grens ontbrak op de container.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+---
+[2026-07-03 13:35] commit: fix: RAG-dialog layout definitief — min-w-0 op grid-child
+
+Root cause: DialogContent is display:grid; directe grid-children hebben
+min-width:auto by default en krimpen niet binnen de grid-track. De
+space-y-4 wrapper (omvat scrolllijst + samenvatting-blok) miste min-w-0
+waardoor het bg-surface-elevated samenvatting-blok over de card-rand liep.
+
+Bewaard:
+- min-w-0 op titel-span: correct voor flex-truncatie binnen de rij
+- overflow-x-hidden op lijst-container: legitiem vangnet (overflow-y:auto
+  impliceert overflow-x:auto; expliciete clip bij scrollbar-aanwezigheid)
+- max-w-[min(32rem,calc(100%-2rem))]: viewport-marge, geen merge-conflict
+
+Andere dialogs (TranscriptViewer, SaveErrorModal, UsersTable) hebben geen
+brede grid-children die het patroon triggeren — lokale fix volstaat.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+docs/LESSONS.md
+---
+[2026-07-03 13:54] commit: fix: DialogContent-primitive grid-cols-[minmax(0,1fr)] — structurele overflow-fix
+
+Alle dialog-grid-children kregen min-width:auto (default) en konden de
+grid-track overschrijden. Fix bij de bron: grid-cols-[minmax(0,1fr)] op
+de DialogContent-primitive begrenst de kolom-track tot de beschikbare
+breedte; alle huidige en toekomstige dialogs erven dit automatisch.
+
+Absolute close button is geen grid-item → niet geraakt.
+Bestaande callsites (TranscriptViewer grid-cols-4, SaveErrorModal,
+UsersTable inputs, RAG-dialog) zijn gecontroleerd — geen regressie.
+
+Redundante min-w-0 op space-y-4-wrapper in TranscriptList verwijderd;
+min-w-0 op flex-span en overflow-x-hidden op scroll-container behouden
+als correcte sub-lagen.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+docs/LESSONS.md
+packages/shared/src/components/ui/dialog.tsx
+---
+[2026-07-03 16:20] taak: [~] design-sync re-sync @indxr/shared → claude.ai/design (upload niet voltooid) | gewijzigd: .design-sync/config.json, .design-sync/conventions.md, .design-sync/NOTES.md, .gitignore, docs/wiki/operations/known-issues.md
+
+Gecorrigeerde remote-anchor (ontbrekende sourceHashes veroorzaakte "malformed"
+fallback naar full re-verify) → echte diff: FeedbackCard toegevoegd, Toaster
+verwijderd uit @indxr/shared sinds vorige sync. `.design-sync/conventions.md`
+aangemaakt (géén provider nodig — theming via data-theme attribuut, niet React
+context; Tailwind-utility-idioom over OKLCH-tokens) en gewired via
+readmeHeader. package-validate.mjs exit 0; 20 pre-existing blanke floor-cards
+bevestigd als verwacht gedrag (layout-only children, niet los renderbaar),
+zitten allen in de unchanged/buiten-scope verificatiepartitie.
+
+Upload naar het claude.ai/design-project NIET voltooid: de MCP write_files
+tool accepteert alleen inline file-content, _ds_bundle.js is ~860KB (boven
+Read's 256KB-cap). Chunked reconstructie zou stille byte-corruptie kunnen
+introduceren in code die de design-agent uitvoert — op verzoek van Khidr
+gestopt vóór upload. Project staat nog op vorige werkende sync-versie, niets
+corrupt. Zie docs/wiki/operations/known-issues.md en .design-sync/NOTES.md
+voor vervolgstappen.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+---

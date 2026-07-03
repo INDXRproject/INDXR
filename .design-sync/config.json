@@ -4,6 +4,7 @@
   "pkg": "@indxr/shared",
   "srcDir": "src/components/ui",
   "cssEntry": ".design-sync-tokens.css",
+  "readmeHeader": ".design-sync/conventions.md",
   "runtimeFontPrefixes": ["IBM Plex"],
   "libOverrides": {
     "bundle.mjs": "Next.js process.env.__NEXT_* refs throw in browser IIFE — add process.env shim define"
