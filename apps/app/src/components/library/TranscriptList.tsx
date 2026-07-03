@@ -707,7 +707,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
             setShowRagBulkModal(open);
             if (!open) { setRagBulkItems(null); setRagBulkError(null); setRagBulkSuccess(false); }
           }}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-[min(32rem,calc(100%-2rem))]">
               <DialogHeader>
                 <DialogTitle>Bulk RAG JSON Export</DialogTitle>
                 <DialogDescription>
@@ -718,7 +718,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
               {ragBulkItems && (
                 <div className="space-y-4">
                   {/* Per-transcript breakdown */}
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto overflow-x-hidden">
                     {ragBulkItems.map(item => (
                       <div key={item.id} className="flex items-center justify-between text-sm gap-2">
                         <span className="text-fg truncate flex-1 min-w-0">{item.title}</span>
