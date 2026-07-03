@@ -6625,3 +6625,26 @@ voor vervolgstappen.
 
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 ---
+[2026-07-03 16:56] commit: design-sync: author conventions.md, fix anchor validation, document pending bundle upload
+
+Re-sync of @indxr/shared to the claude.ai/design component library caught a
+missing sourceHashes field in the hand-saved remote anchor (validSidecar
+requires it, else falls back to full re-verify). Fixed, then diffed clean:
+FeedbackCard added, Toaster removed since last sync.
+
+Authored .design-sync/conventions.md (no provider needed — theming is via
+data-theme attribute, not context; Tailwind-utility-over-OKLCH-token idiom)
+and wired it via readmeHeader. Upload itself did not complete this session:
+_ds_bundle.js (~860KB) exceeds the available inline-upload tooling's 256KB
+read cap, and chunked manual reconstruction risked byte corruption in code
+the design agent executes — stopped rather than risk it. Documented in
+NOTES.md and known-issues.md for the next sync to finish.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Changed: .design-sync/NOTES.md
+.design-sync/config.json
+.design-sync/conventions.md
+.gitignore
+docs/LOG.md
+docs/wiki/operations/known-issues.md
+---
