@@ -1,3 +1,5 @@
+[2026-07-03 23:10] fix+verify: Library production-verificatie afgerond + delete-confirmatie toegevoegd. Verificatie op app.indxr.ai met testaccount test1@indxr-test.com (email_confirmed_at gezet, wachtwoord gereset naar TestPassword123! — geautoriseerd door Khidr, tests/test_accounts.json UUID bijgewerkt naar f136104d… — oude f8d9dc98… bestond niet meer). Alle checklist-items bevestigd met screenshot-bewijs: multi-select+selectionbar ✓, bulk-download SRT/VTT/RAG — ZIP's uitgepakt, unieke bestandsnamen bevestigd (geen collision) ✓, bulk-RAG-export — dialog rendert zonder overflow, credit-aftrek 100→98 geverifieerd zowel in UI als in credit_transactions (reason "Bulk RAG JSON Export", amount 2) ✓, per-rij open/externe-link/delete/rename ✓, collections — aanmaken + drag-to-collection + filter-context-chip (verschijnt/verdwijnt correct) ✓, search ✓, grid/list-toggle ✓, mark-as-read — NEW-badge verdwijnt na openen, overige rijen ongemoeid ✓, visueel — titel-rijen/haarlijnen/badge-kleuren (info-blauw/violet/neutraal)/hexagon-bg/hexagon-credit-icon topbar+sidebar/empty-state allemaal bevestigd. Bug gevonden tijdens verificatie: per-rij delete had géén bevestiging (direct destructief), bulk-delete gebruikte een ongestylede window.confirm(). Fix: beide vervangen door de gedeelde AlertDialog-primitive (packages/shared/src/components/ui/alert-dialog.tsx) — per-rij toont transcript-titel, bulk toont aantal geselecteerd; delete-logica en credit/collection-effecten ongewijzigd. Op productie geverifieerd: per-rij Cancel behoudt data, per-rij Delete verwijdert (bevestigd via directe DB-query, transcripts-tabel leeg na test), bulk Cancel behoudt, bulk Delete verwijdert. Build ✓ (pnpm build:app). Gepusht 1eb01df (redesign) en b6ed205 (delete-confirmatie). Alle tijdelijke Playwright-testscripts (verify-*.mjs) en scratch auth-state.json verwijderd uit apps/marketing/ — working tree schoon. Minor observatie (niet gefixed, buiten scope): sidebar "X transcripts saved"-teller en per-collectie count blijven soms 1 stap achter na delete tot page-refresh — pre-existing, niet door deze taak veroorzaakt. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, tests/test_accounts.json, docs/LESSONS.md
+---
 [2026-07-03 18:20] redesign: Library-pagina (stijl-anker dashboard-shell) — titel-gedreven rijen (line-clamp-2), haarlijn-scheiding i.p.v. per-rij card-border, badge-families (bron=blauw `--info`, AI-outputs=violet `--violet`, collectie=neutraal), display-options-menu (sort date/duration/title + thumbnails-toggle, uit by default), filter-context-chip voor actieve collectie, hero empty-state (HexagonEmptyState + CTA), hexagon-credit-icon in topbar+sidebar (vervangt CircleDollarSign), subtiele hexagon-achtergrond op Library-body (bewuste uitzondering op wiki §5.4 — zie LESSONS.md). Nieuwe tokens `--info`/`--violet` (+subtle/fg, light+dark) toegevoegd aan beide tokens.css. Management-laag (multi-select, bulk-download alle 8 formaten + RAG-dialog, bulk-delete, per-rij open/externe-link/delete/rename, mark-as-read, drag-to-collection, search, sidebar-collecties) volledig behouden — geen functionaliteit verwijderd. Discrepantie t.o.v. brief: "video-toggle" als per-rij-actie bestond niet in de originele component en is niet toegevoegd (niet gevonden in codebase, waarschijnlijk verward met een andere pagina) — gerapporteerd i.p.v. verzonnen. Verificatie: `pnpm build:app` ✓ en `pnpm build:marketing` ✓ (beide groen, alle routes gegenereerd, inclusief gewijzigde tokens.css in marketing). Live browser-verificatie via Playwright NIET voltooid — testaccounts uit tests/test_accounts.json gaven "Invalid login credentials" (wachtwoord vermoedelijk verlopen/gewijzigd) en Supabase-project redirect-allowlist staat alleen indxr.ai toe (geen localhost), dus ook een admin-gegenereerde magic-link kon niet lokaal worden ingewisseld zonder de auth-config aan te passen — dat viel buiten scope van deze taak. Login-pagina zelf (ongewijzigd, zelfde tokens) rendert wel correct in Playwright-screenshot, wat de tokens.css-wijziging indirect bevestigt. Aanbeveling: testaccount-wachtwoord verversen voor toekomstige browser-verificatie. | gewijzigd: apps/app/src/app/dashboard/library/page.tsx, apps/app/src/components/library/TranscriptList.tsx, apps/app/src/components/AppTopbar.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/app/styles/tokens.css, apps/marketing/src/app/styles/tokens.css, packages/shared/src/components/icons/HexagonCreditIcon.tsx, packages/shared/src/components/icons/HexagonPattern.tsx, packages/shared/src/components/icons/HexagonEmptyState.tsx, docs/LESSONS.md, docs/wiki/design/system.md, docs/wiki/design/research/batch-3b-ux-aesthetic.md
 ---
 [2026-07-03 16:45] fix: DialogContent-primitive grid-cols-[minmax(0,1fr)] — structurele overflow-fix bij de bron. Verwijderd: redundante min-w-0 op space-y-4-wrapper. Build ✓ (0 cached, full rebuild). Gepusht 40ae5be..9791e34. | gewijzigd: packages/shared/src/components/ui/dialog.tsx, apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md
@@ -6656,3 +6658,36 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 Changed: docs/LOG.md
 ---
 [2026-07-03 20:58] precompact: context compaction triggered
+[2026-07-03 21:11] commit: redesign: Library page as dashboard style-anchor (title-driven rows, hexagon motif)
+
+Apple-style title-driven list with hairline dividers, subtle hexagon-honeycomb
+background, source/output badge families (info/violet tokens), opt-in
+thumbnails, and a custom hexagon credit icon replacing CircleDollarSign in
+topbar + sidebar. Full management layer (multi-select, bulk download/RAG,
+collections, search, mark-as-read) preserved unchanged.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/app/styles/tokens.css
+apps/app/src/components/AppTopbar.tsx
+apps/app/src/components/app-sidebar.tsx
+apps/app/src/components/library/TranscriptList.tsx
+apps/marketing/src/app/styles/tokens.css
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/design/research/batch-3b-ux-aesthetic.md
+docs/wiki/design/system.md
+packages/shared/src/components/icons/HexagonCreditIcon.tsx
+packages/shared/src/components/icons/HexagonEmptyState.tsx
+packages/shared/src/components/icons/HexagonPattern.tsx
+---
+[2026-07-03 23:03] commit: fix: add confirmation dialog before Library delete (per-row + bulk)
+
+Per-row delete had zero confirmation; bulk delete used an unstyled
+window.confirm(). Both now go through the shared AlertDialog primitive,
+showing the transcript title or selection count before destroying data.
+Delete logic and credit/collection side effects are unchanged.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+---
