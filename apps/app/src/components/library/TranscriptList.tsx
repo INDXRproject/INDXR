@@ -716,7 +716,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
               </DialogHeader>
 
               {ragBulkItems && (
-                <div className="space-y-4">
+                <div className="space-y-4 min-w-0">
                   {/* Per-transcript breakdown */}
                   <div className="space-y-1.5 max-h-48 overflow-y-auto overflow-x-hidden">
                     {ragBulkItems.map(item => (
