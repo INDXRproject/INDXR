@@ -101,8 +101,16 @@ Elk design-besluit wordt getoetst aan deze zeven. Bij twijfel: terug naar `wiki/
   --error: oklch(0.580 0.180 27);
   --error-subtle: oklch(0.960 0.030 25);
   --error-fg: oklch(0.420 0.140 27);
+  --info: oklch(0.620 0.150 250);
+  --info-subtle: oklch(0.955 0.025 250);
+  --info-fg: oklch(0.380 0.090 250);
+  --violet: oklch(0.620 0.150 300);
+  --violet-subtle: oklch(0.955 0.025 300);
+  --violet-fg: oklch(0.380 0.090 300);
 }
 ```
+
+**Badge families (added 2026-07-03, Library redesign):** `--info` (blue) marks a transcript's *source* — Auto-captions vs. AI Transcription, one per row. `--violet` marks *AI-derived outputs* — Edited, AI Summary, Edited Summary, RAG, zero or more per row. Usage convention matches `success`/`warning`/`error`: `bg-{family}-subtle` background + base `text-{family}` (not `-fg`) for text. Both apply identically in dark mode via the same token names.
 
 **Dark theme (`[data-theme="dark"]`):**
 ```css
@@ -135,6 +143,12 @@ Elk design-besluit wordt getoetst aan deze zeven. Bij twijfel: terug naar `wiki/
   --error: oklch(0.680 0.180 27);
   --error-subtle: oklch(0.310 0.080 27);
   --error-fg: oklch(0.880 0.120 27);
+  --info: oklch(0.700 0.150 250);
+  --info-subtle: oklch(0.290 0.060 250);
+  --info-fg: oklch(0.860 0.110 250);
+  --violet: oklch(0.700 0.150 300);
+  --violet-subtle: oklch(0.290 0.060 300);
+  --violet-fg: oklch(0.860 0.110 300);
 }
 ```
 
@@ -145,6 +159,8 @@ Elk design-besluit wordt getoetst aan deze zeven. Bij twijfel: terug naar `wiki/
 **Logo:** bestaand 7-hexagon honeycomb, behouden. Varianten nodig: full color (32px marketing, 28px sidebar), favicon (single hex outline), watermark (24px @ 0.4 opacity).
 
 **Credit-coin:** custom hexagon SVG, matched aan logo proporties. Functioneel — toont credits in sidebar, library, billing.
+
+**Geïmplementeerd (2026-07-03):** `HexagonCreditIcon` in `packages/shared/src/components/icons/`, amber-gevuld hexagon, vervangt lucide `CircleDollarSign` in `AppTopbar.tsx` en `app-sidebar.tsx`. Zelfde map bevat `HexagonPattern` (tessellerende honeycomb-achtergrond, parametriseerbaar via `size`-prop) en `HexagonEmptyState` (hexagon + play-glyph voor empty states).
 
 **Beauty patterns:** Zie §5 voor surface-by-surface map.
 
@@ -482,6 +498,8 @@ Right edge: `MoreHorizontal` → context menu (Open, Export, Add to collection, 
 **Empty state:** hexagonal central illustration + "Geen transcripts nog" + "Plak een YouTube-URL om je eerste transcript te maken" + "Transcribe a video" CTA + "Bekijk hoe het werkt" link.
 
 **Bulk:** multi-select via row checkbox. Floating action bar onderaan bij ≥1 selected.
+
+**Geïmplementeerd (2026-07-03, `apps/app/src/components/library/TranscriptList.tsx` + `.../dashboard/library/page.tsx`):** titel-gedreven rijen (`line-clamp-2`), haarlijn-scheiding (`divide-border-subtle`) i.p.v. per-rij card-border, twee badge-families i.p.v. de hierboven geschetste single source-badge — bron (`--info`, blauw) + AI-afgeleide outputs (`--violet`: Edited/AI Summary/Edited Summary/RAG) + neutrale collectiebadge. Eén display-options menu (sort date/duration/title + thumbnails-toggle, uit by default) i.p.v. losse chip-filters — smallere scope dan hierboven geschetst, chip-filters (Source/Status/Collection/Date range) zijn nog niet gebouwd. `MoreHorizontal`-contextmenu is niet gebouwd; per-rij acties staan als losse hover-icons (Open/ExternalLink/Delete/Rename), zoals al vóór de redesign. Hexagon-achtergrond op de Library-body zelf (§5 tabel hieronder noemt dit niet voor "Library list") is een bewuste uitzondering — zie `docs/LESSONS.md` [2026-07-03] design-hexagon-bg-uitzondering.
 
 ### Transcript Detail Patterns
 

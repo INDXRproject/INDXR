@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { Mail, CircleDollarSign } from "lucide-react"
+import { Mail } from "lucide-react"
 import { SidebarTrigger } from "@indxr/shared/components/ui/sidebar"
 import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
 import { Button } from "@indxr/shared/components/ui/button"
+import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { useUnreadMessages } from "../hooks/useUnreadMessages"
 import { AvatarDropdown } from "./AvatarDropdown"
@@ -66,7 +67,7 @@ export function AppTopbar() {
           href="/dashboard/billing"
           className="flex items-center gap-1.5 px-2 h-9 rounded-md text-sm text-fg-subtle hover:text-fg hover:bg-surface-elevated transition-colors"
         >
-          <CircleDollarSign className="size-5 text-accent shrink-0" />
+          <HexagonCreditIcon className="size-5" />
           <span className="bg-surface-elevated text-fg-muted px-1.5 py-0.5 rounded text-xs font-medium tabular-nums">
             {credits ?? 0}
           </span>

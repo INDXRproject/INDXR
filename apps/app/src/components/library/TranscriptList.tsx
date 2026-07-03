@@ -9,24 +9,17 @@ import {
   Loader2,
   Download,
   Pencil,
+  Folder,
   AlertCircle,
   X,
 } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
-import { Badge } from "@indxr/shared/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@indxr/shared/components/ui/tooltip";
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@indxr/shared/components/ui/card";
 import { Checkbox } from "@indxr/shared/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -44,19 +37,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@indxr/shared/components/ui/dialog";
+import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern";
+import { HexagonEmptyState } from "@indxr/shared/components/icons/HexagonEmptyState";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { generateTxt, generateCsv, generateSrt, generateVtt, generateMarkdown, buildRagJson } from "@indxr/shared/utils/formatTranscript";
 import { bulkDeductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
+import { cn } from "@indxr/shared/lib/utils";
 
 // Helper for relative time
 function getRelativeTime(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
+
   if (diffInSeconds < 60) return 'Just now';
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
@@ -68,6 +64,12 @@ function formatDuration(seconds: number) {
   const min = Math.floor(seconds / 60);
   const sec = seconds % 60;
   return `${min}:${sec.toString().padStart(2, '0')}`;
+}
+
+function formatWordCount(characterCount?: number) {
+  if (!characterCount) return null;
+  const words = Math.round(characterCount / 5);
+  return `${words.toLocaleString()} words`;
 }
 
 export interface Transcript {
@@ -83,7 +85,7 @@ export interface Transcript {
   processing_method?: string | null;
   // New fields
   edited_content?: object | null;
-  ai_summary?: object | null;
+  ai_summary?: { edited_html?: string } | null;
   rag_exports?: object[] | null;
   collection_id?: string | null;
   playlist_id?: string | null;
@@ -93,34 +95,65 @@ export interface Transcript {
 const slugify = (s: string) =>
   (s || 'video').toLowerCase().replace(/['''"""`]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-/** Build a human-readable metadata line under each transcript title */
-function buildMetaLine(t: Transcript): string {
-  const parts: string[] = [];
-
-  // Size
-  if (t.character_count) {
-    const kb = t.character_count / 1024;
-    parts.push(`${kb.toFixed(1)} KB`);
-  }
-
-  // Processing method
+/** Source badge — one per transcript, cool/blue family */
+function sourceBadgeLabel(t: Transcript): string {
   const method = t.processing_method;
-  if (!method || method === 'youtube_captions') {
-    parts.push('Auto-captions');
-  } else if (method === 'whisper_ai' || method === 'whisper' || method === 'assemblyai') {
-    parts.push('AI Transcription');
-  }
+  if (!method || method === 'youtube_captions') return 'Auto-captions';
+  return 'AI Transcription';
+}
 
-  // Edited
-  if (t.edited_content) parts.push('Edited');
+/** Output badges — one per available derived artifact, violet family */
+function outputBadgeLabels(t: Transcript): string[] {
+  const labels: string[] = [];
+  if (t.edited_content) labels.push('Edited');
+  if (t.ai_summary) labels.push('AI Summary');
+  if (t.ai_summary?.edited_html) labels.push('Edited Summary');
+  if (t.rag_exports && t.rag_exports.length > 0) labels.push('RAG ✦');
+  return labels;
+}
 
-  // AI Summary
-  if (t.ai_summary) parts.push('AI Summary');
+function SourceBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-info-subtle px-2 py-0.5 text-[10px] font-medium text-info whitespace-nowrap">
+      {label}
+    </span>
+  );
+}
 
-  // RAG export history
-  if (t.rag_exports && t.rag_exports.length > 0) parts.push('RAG ✦');
+function OutputBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-violet-subtle px-2 py-0.5 text-[10px] font-medium text-violet whitespace-nowrap">
+      {label}
+    </span>
+  );
+}
 
-  return parts.join(' · ');
+function CollectionBadge({ name }: { name: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] font-medium text-fg-subtle whitespace-nowrap">
+      <Folder className="h-2.5 w-2.5" />
+      {name}
+    </span>
+  );
+}
+
+function NewBadge({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            role="button"
+            onClick={onClick}
+            className="inline-flex items-center rounded-full bg-success-subtle px-1.5 py-0.5 text-[10px] font-bold text-success cursor-pointer hover:bg-success-subtle/80 transition-colors whitespace-nowrap"
+          >
+            NEW
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>Click to mark as read</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 interface TranscriptListProps {
@@ -128,9 +161,11 @@ interface TranscriptListProps {
   onDelete: (id: string) => void;
   onRename?: (id: string, newTitle: string) => void;
   viewMode: 'grid' | 'list';
+  showThumbnails?: boolean;
+  collections?: { id: string; name: string }[];
 }
 
-export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: TranscriptListProps) {
+export function TranscriptList({ transcripts, onDelete, onRename, viewMode, showThumbnails = false, collections = [] }: TranscriptListProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDownloading, setIsDownloading] = useState(false);
   const [editingId, setEditingId]     = useState<string | null>(null);
@@ -140,6 +175,9 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
   const editTitleRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const { credits, refreshCredits } = useAuth();
+
+  const collectionName = (id: string | null | undefined) =>
+    id ? collections.find(c => c.id === id)?.name : undefined;
 
   // ── Bulk RAG export state ────────────────────────────────────────────────
   type RagBulkItem = { id: string; title: string; duration: number; alreadyExported: boolean; cost: number };
@@ -408,15 +446,18 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
 
   if (transcripts.length === 0) {
     return (
-      <div className="text-center py-20 border border-dashed border-border rounded-xl bg-surface-elevated/20">
-        <Eye className="h-10 w-10 text-fg-muted mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-fg-muted">Library is empty</h3>
-        <p className="text-sm text-fg-muted mt-2">
-          Transcripts you extract will appear here
-        </p>
-        <Link href="/dashboard/transcribe">
-           <Button variant="outline" className="mt-6">Go to Transcribe</Button>
-        </Link>
+      <div className="relative overflow-hidden rounded-xl border border-dashed border-border py-20 text-center">
+        <HexagonPattern className="opacity-[0.035] dark:opacity-[0.05]" />
+        <div className="relative flex flex-col items-center">
+          <HexagonEmptyState className="mb-4" />
+          <h3 className="text-lg font-medium text-fg">Library is empty</h3>
+          <p className="text-sm text-fg-muted mt-2 max-w-xs">
+            Transcripts you extract will appear here.
+          </p>
+          <Link href="/dashboard/transcribe">
+            <Button className="mt-6">Transcribe a video</Button>
+          </Link>
+        </div>
       </div>
     );
   }
@@ -428,9 +469,9 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 fade-in">
            <div className="bg-surface border border-border shadow-xl rounded-full px-6 py-3 flex items-center gap-4">
               <span className="text-sm font-medium text-fg">{selectedIds.size} selected</span>
-              
+
               <div className="h-6 w-px bg-border/50" />
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="secondary" disabled={isDownloading}>
@@ -464,7 +505,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
               <Button size="sm" variant="ghost" className="text-error hover:text-error hover:bg-error/10" onClick={handleBatchDelete}>
                  <Trash2 className="h-4 w-4" />
               </Button>
-              
+
               <Button size="sm" variant="ghost" className="rounded-full h-6 w-6 p-0" onClick={() => setSelectedIds(new Set())}>
                 ×
               </Button>
@@ -488,209 +529,223 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       )}
 
       {viewMode === 'list' ? (
-        <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-surface-elevated/50 text-fg-muted">
-              <tr>
-                <th className="p-4 w-[40px]">
-                  <Checkbox 
-                     checked={selectedIds.size === transcripts.length && transcripts.length > 0}
-                     onCheckedChange={handleSelectAll}
-                  />
-                </th>
-                <th className="p-4 font-medium">Title</th>
-                <th className="p-4 font-medium hidden md:table-cell">Duration</th>
-                <th className="p-4 font-medium hidden sm:table-cell">Date</th>
-                <th className="p-4 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {transcripts.map((t) => (
-                <tr key={t.id} draggable onDragStart={(e) => handleDragStart(e, t.id)} className={`group hover:bg-surface-elevated/30 transition-colors cursor-grab active:cursor-grabbing ${selectedIds.has(t.id) ? 'bg-surface-elevated/40' : ''}`}>
-                  <td className="p-4">
-                     <Checkbox 
-                       checked={selectedIds.has(t.id)}
-                       onCheckedChange={() => toggleSelect(t.id)}
-                     />
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="group/title">
-                          {editingId === t.id ? (
-                            <input
-                              ref={editTitleRef}
-                              value={editingTitle}
-                              onChange={e => setEditingTitle(e.target.value)}
-                              onBlur={() => handleRenameSave(t.id)}
-                              onKeyDown={e => {
-                                if (e.key === "Enter") e.currentTarget.blur();
-                                if (e.key === "Escape") { setEditingId(null); }
-                              }}
-                              className="font-medium text-fg w-full bg-transparent border-b border-border outline-none text-sm leading-none py-0.5"
-                            />
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              <Link
-                                href={`/dashboard/library/${t.id}`}
-                                className="font-medium text-fg line-clamp-1 hover:text-accent transition-colors"
-                                onDoubleClick={e => { e.preventDefault(); handleRenameStart(t); }}
-                              >
-                                {t.title || `Video ${t.video_id}`}
-                              </Link>
-                              <button
-                                onClick={() => handleRenameStart(t)}
-                                className="opacity-0 group-hover/title:opacity-100 transition-opacity text-fg-muted hover:text-fg h-4 w-4 flex items-center justify-center shrink-0"
-                                title="Rename"
-                              >
-                                <Pencil className="h-2.5 w-2.5" />
-                              </button>
-                            </div>
-                          )}
-                          {/* New metadata line: replaces Edited/AI badges */}
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <TooltipProvider delayDuration={200}>
-                              {isNew(t) && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                      <Badge
-                                      variant="secondary"
-                                      className="h-4 px-1 text-[10px] font-bold bg-success-subtle text-success border-[var(--color-success-border)] cursor-pointer hover:bg-success-subtle/80 transition-colors"
-                                      onClick={(e) => handleMarkAsRead(t.id, e)}
-                                    >
-                                      NEW
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Click to mark as read</TooltipContent>
-                                </Tooltip>
-                              )}
-                            </TooltipProvider>
-                            <span className="text-xs text-fg-muted">{buildMetaLine(t)}</span>
-                          </div>
+        <div className="relative overflow-hidden rounded-xl border border-border">
+          <HexagonPattern className="opacity-[0.035] dark:opacity-[0.05]" />
+
+          {/* Header row */}
+          <div className="relative flex items-center gap-3 border-b border-border-subtle bg-surface-elevated/50 px-4 py-2.5 text-xs font-medium text-fg-muted">
+            <Checkbox
+              checked={selectedIds.size === transcripts.length && transcripts.length > 0}
+              onCheckedChange={handleSelectAll}
+            />
+            <span className="flex-1">Title</span>
+          </div>
+
+          <div className="relative divide-y divide-border-subtle">
+            {transcripts.map((t) => {
+              const outputs = outputBadgeLabels(t);
+              const colName = collectionName(t.collection_id);
+              const words = formatWordCount(t.character_count);
+              return (
+                <div
+                  key={t.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, t.id)}
+                  className={cn(
+                    "group flex items-start gap-3 px-4 py-3 transition-colors cursor-grab active:cursor-grabbing hover:bg-surface-elevated/40",
+                    selectedIds.has(t.id) && "bg-surface-elevated/50"
+                  )}
+                >
+                  {/* Checkbox — visible on hover / when selected */}
+                  <div className={cn("pt-0.5 transition-opacity", selectedIds.has(t.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
+                    <Checkbox
+                      checked={selectedIds.has(t.id)}
+                      onCheckedChange={() => toggleSelect(t.id)}
+                    />
+                  </div>
+
+                  {/* Thumbnail — opt-in only */}
+                  {showThumbnails && t.thumbnail_url && (
+                    <div className="hidden sm:block h-[36px] w-16 shrink-0 overflow-hidden rounded-md bg-bg-subtle">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={t.thumbnail_url} alt="" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+
+                  {/* Title-driven content block */}
+                  <div className="min-w-0 flex-1">
+                    <div className="group/title flex items-start gap-1.5">
+                      {editingId === t.id ? (
+                        <input
+                          ref={editTitleRef}
+                          value={editingTitle}
+                          onChange={e => setEditingTitle(e.target.value)}
+                          onBlur={() => handleRenameSave(t.id)}
+                          onKeyDown={e => {
+                            if (e.key === "Enter") e.currentTarget.blur();
+                            if (e.key === "Escape") { setEditingId(null); }
+                          }}
+                          className="w-full bg-transparent border-b border-border font-medium text-fg text-[15px] leading-snug outline-none py-0.5"
+                        />
+                      ) : (
+                        <>
+                          <Link
+                            href={`/dashboard/library/${t.id}`}
+                            className="font-medium text-fg text-[15px] leading-snug line-clamp-2 hover:text-accent transition-colors"
+                            onDoubleClick={e => { e.preventDefault(); handleRenameStart(t); }}
+                          >
+                            {t.title || `Video ${t.video_id}`}
+                          </Link>
+                          <button
+                            onClick={() => handleRenameStart(t)}
+                            className="opacity-0 group-hover/title:opacity-100 transition-opacity text-fg-muted hover:text-fg h-4 w-4 flex items-center justify-center shrink-0 mt-1"
+                            title="Rename"
+                          >
+                            <Pencil className="h-2.5 w-2.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Badges + metadata */}
+                    <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {isNew(t) && <NewBadge onClick={(e) => handleMarkAsRead(t.id, e)} />}
+                        <SourceBadge label={sourceBadgeLabel(t)} />
+                        {outputs.map(label => <OutputBadge key={label} label={label} />)}
+                        {colName && <CollectionBadge name={colName} />}
+                      </div>
+                      <div className="text-xs text-fg-muted whitespace-nowrap">
+                        {t.duration ? formatDuration(t.duration) : '—'}
+                        {words && <> · {words}</>}
+                        {' · '}
+                        {getRelativeTime(
+                          t.updated_at && new Date(t.updated_at) > new Date(t.created_at)
+                            ? t.updated_at
+                            : t.created_at
+                        )}
                       </div>
                     </div>
-                  </td>
-                  <td className="p-4 text-fg-muted hidden md:table-cell">
-                     {t.duration ? formatDuration(t.duration) : '-'}
-                  </td>
-                  <td className="p-4 text-fg-muted hidden sm:table-cell">
-                    {getRelativeTime(
-                      t.updated_at && new Date(t.updated_at) > new Date(t.created_at)
-                        ? t.updated_at
-                        : t.created_at
-                    )}
-                  </td>
-                  <td className="p-4 text-right">
-                     <div className="flex justify-end gap-2">
-                         <Link href={`/dashboard/library/${t.id}`}>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg transition-all duration-150"
-                            >
-                                <Eye className="h-4 w-4" />
-                            </Button>
-                         </Link>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg transition-all duration-150" asChild>
-                           <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
-                               <ExternalLink className="h-4 w-4" />
-                           </a>
-                        </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
-                            onClick={() => onDelete(t.id)}
-                          >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+
+                  {/* Row actions — visible on hover */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <Link href={`/dashboard/library/${t.id}`}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent" asChild>
+                      <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
+                      onClick={() => onDelete(t.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {transcripts.map((t) => (
-            <Card key={t.id} draggable onDragStart={(e) => handleDragStart(e, t.id)} className={`bg-surface-elevated/20 border-border hover:border-border/80 transition-all group cursor-grab active:cursor-grabbing ${selectedIds.has(t.id) ? 'ring-2 ring-primary border-transparent' : ''} relative`}>
-                <div 
-                   className="absolute top-3 left-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity data-[checked=true]:opacity-100" 
-                   data-checked={selectedIds.has(t.id)}
+        <div className="relative">
+          <div className="absolute inset-0 -m-4 overflow-hidden rounded-xl">
+            <HexagonPattern className="opacity-[0.035] dark:opacity-[0.05]" />
+          </div>
+          <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {transcripts.map((t) => {
+              const outputs = outputBadgeLabels(t);
+              const colName = collectionName(t.collection_id);
+              return (
+                <div
+                  key={t.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, t.id)}
+                  className={cn(
+                    "group relative rounded-xl border border-border bg-surface transition-colors cursor-grab active:cursor-grabbing hover:border-border-strong",
+                    selectedIds.has(t.id) && "ring-2 ring-accent border-transparent"
+                  )}
                 >
-                   <Checkbox 
-                     checked={selectedIds.has(t.id)}
-                     onCheckedChange={() => toggleSelect(t.id)}
-                     className="bg-bg/80 border-foreground/20 data-[state=checked]:bg-accent data-[state=checked]:border-primary"
-                   />
-                </div>
-
-                {t.thumbnail_url && (
-                <div className="aspect-video w-full overflow-hidden rounded-t-xl bg-bg relative">
-                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                        src={t.thumbnail_url} 
-                        alt={t.title} 
-                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                  <div
+                    className={cn("absolute top-3 left-3 z-20 transition-opacity", selectedIds.has(t.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100")}
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(t.id)}
+                      onCheckedChange={() => toggleSelect(t.id)}
+                      className="bg-bg/80"
                     />
-                    <div className="absolute bottom-2 right-2 bg-bg/80 px-1.5 py-0.5 rounded text-[10px] font-mono text-fg">
+                  </div>
+
+                  {showThumbnails && t.thumbnail_url && (
+                    <div className="aspect-video w-full overflow-hidden rounded-t-xl bg-bg-subtle relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={t.thumbnail_url}
+                        alt=""
+                        className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                      />
+                      <div className="absolute bottom-2 right-2 bg-bg/80 px-1.5 py-0.5 rounded text-[10px] font-mono text-fg">
                         {t.duration ? formatDuration(t.duration) : '00:00'}
+                      </div>
                     </div>
-                </div>
-                )}
-                <CardHeader className="p-4 pb-2">
-                   <CardTitle className="text-base font-medium line-clamp-1 text-fg flex items-center gap-1.5" title={t.title}>
-                     <Link href={`/dashboard/library/${t.id}`} className="hover:underline flex-1 truncate">
-                       {t.title || `Video ${t.video_id}`}
-                     </Link>
-                     <TooltipProvider delayDuration={200}>
-                       {isNew(t) && (
-                         <Tooltip>
-                           <TooltipTrigger asChild>
-                             <Badge
-                               variant="secondary"
-                               className="h-4 px-1 text-[10px] font-bold bg-success-subtle text-success border-[var(--color-success-border)] shrink-0 cursor-pointer hover:bg-success-subtle/80 transition-colors"
-                               onClick={(e) => handleMarkAsRead(t.id, e)}
-                             >
-                               NEW
-                             </Badge>
-                           </TooltipTrigger>
-                           <TooltipContent>Click to mark as read</TooltipContent>
-                         </Tooltip>
-                       )}
-                     </TooltipProvider>
-                   </CardTitle>
-                 <CardDescription className="text-xs text-fg-muted mt-1">
-                   {buildMetaLine(t)}
-                 </CardDescription>
-              </CardHeader>
-              <CardFooter className="p-4 pt-2 flex justify-end gap-2 border-t border-border/10 bg-surface-elevated/10">
-                <Link href={`/dashboard/library/${t.id}`} className="flex-1">
-                    <Button 
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-xs bg-surface-elevated/20 hover:bg-accent hover:text-fg text-fg w-full"
-                    >
+                  )}
+
+                  <div className="p-4">
+                    <div className="flex items-start gap-1.5">
+                      <Link
+                        href={`/dashboard/library/${t.id}`}
+                        className="font-medium text-fg text-sm leading-snug line-clamp-2 flex-1 hover:text-accent transition-colors"
+                      >
+                        {t.title || `Video ${t.video_id}`}
+                      </Link>
+                      {isNew(t) && <NewBadge onClick={(e) => handleMarkAsRead(t.id, e)} />}
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <SourceBadge label={sourceBadgeLabel(t)} />
+                      {outputs.map(label => <OutputBadge key={label} label={label} />)}
+                      {colName && <CollectionBadge name={colName} />}
+                    </div>
+
+                    {!showThumbnails && (
+                      <p className="mt-2 text-xs text-fg-muted">
+                        {t.duration ? formatDuration(t.duration) : '—'} · {getRelativeTime(t.created_at)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1 px-3 pb-3">
+                    <Link href={`/dashboard/library/${t.id}`} className="flex-1">
+                      <Button variant="ghost" size="sm" className="h-8 text-xs w-full text-fg hover:bg-accent hover:text-fg-on-accent">
                         <Eye className="h-3 w-3 mr-1" />
                         View
-                    </Button>
-                </Link>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg transition-all duration-150" asChild>
-                    <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
+                      </Button>
+                    </Link>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent" asChild>
+                      <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-3 w-3" />
-                    </a>
-                </Button>
-                <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
-                    onClick={() => onDelete(t.id)}
-                >
-                    <Trash2 className="h-3 w-3" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                      </a>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
+                      onClick={() => onDelete(t.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

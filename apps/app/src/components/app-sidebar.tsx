@@ -7,8 +7,9 @@ import Link from "next/link"
 import {
   Home, Library, AudioLines, Inbox, BookOpen, Settings, User, LogOut,
   ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2,
-  PanelLeftClose, PanelLeftOpen, CircleDollarSign,
+  PanelLeftClose, PanelLeftOpen,
 } from "lucide-react"
+import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { useUnreadMessages } from "../hooks/useUnreadMessages"
 
@@ -672,8 +673,7 @@ export function AppSidebar() {
               )}
               title={collapsed ? `${credits ?? 0} credits` : undefined}
             >
-              {/* TODO: vervang door custom hexagon SVG van logo motief */}
-              <CircleDollarSign className="h-4 w-4 text-accent shrink-0" />
+              <HexagonCreditIcon className="h-4 w-4" />
               <span className={cn("text-xs", collapsed && "hidden")}>
                 <span className="font-medium text-fg">{credits ?? 0}</span>
                 <span className="text-fg-muted ml-1">credits</span>

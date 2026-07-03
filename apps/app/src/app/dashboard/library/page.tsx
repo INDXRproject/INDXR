@@ -3,10 +3,20 @@
 import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Input } from "@indxr/shared/components/ui/input";
-import { Search, LayoutGrid, List as ListIcon, Loader2 } from "lucide-react";
+import { Button } from "@indxr/shared/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@indxr/shared/components/ui/dropdown-menu";
+import { Search, LayoutGrid, List as ListIcon, Loader2, SlidersHorizontal, X } from "lucide-react";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { TranscriptList, Transcript } from "@/components/library/TranscriptList";
-import { Button } from "@indxr/shared/components/ui/button";
 import { cn } from "@indxr/shared/lib/utils";
 
 interface Collection {
@@ -14,18 +24,22 @@ interface Collection {
   name: string;
 }
 
+type SortBy = "date" | "duration" | "title";
+
 // Inner component reads searchParams
 function LibraryContent() {
   const searchParams    = useSearchParams();
   const router          = useRouter();
   const selectedCollectionId = searchParams.get("collection"); // null = All Transcripts
 
-  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode]       = useState<"grid" | "list">("list");
-  const [listError, setListError]     = useState<string | null>(null);
+  const [transcripts, setTranscripts]     = useState<Transcript[]>([]);
+  const [collections, setCollections]     = useState<Collection[]>([]);
+  const [loading, setLoading]             = useState(true);
+  const [searchQuery, setSearchQuery]     = useState("");
+  const [viewMode, setViewMode]           = useState<"grid" | "list">("list");
+  const [sortBy, setSortBy]               = useState<SortBy>("date");
+  const [showThumbnails, setShowThumbnails] = useState(false);
+  const [listError, setListError]         = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -82,7 +96,7 @@ function LibraryContent() {
     }
   };
 
-  // Filter: collection, then search
+  // Filter: collection, then search, then sort
   const filteredTranscripts = useMemo(() => {
     let list = selectedCollectionId === null
       ? transcripts
@@ -96,8 +110,17 @@ function LibraryContent() {
           (t.video_id?.toLowerCase() ?? "").includes(q)
       );
     }
-    return list;
-  }, [transcripts, selectedCollectionId, searchQuery]);
+
+    const sorted = [...list];
+    if (sortBy === "duration") {
+      sorted.sort((a, b) => (b.duration ?? 0) - (a.duration ?? 0));
+    } else if (sortBy === "title") {
+      sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    } else {
+      sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+    return sorted;
+  }, [transcripts, selectedCollectionId, searchQuery, sortBy]);
 
   // Bug 4: Resolve collected name for page title display
   const selectedCollectionName = selectedCollectionId
@@ -110,56 +133,83 @@ function LibraryContent() {
   return (
     <div className="flex flex-col h-full space-y-0">
       {/* Top bar */}
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-bold text-fg wrap-break-word">
-            {pageTitle}
-            <span className="text-fg-muted font-normal text-xl ml-3 whitespace-nowrap">
-              · {pageSubtitle}
-            </span>
-          </h1>
-          {selectedCollectionId && (
-            <button
-              className="mt-1 text-xs underline text-fg-muted hover:text-fg cursor-pointer transition-colors duration-150"
-              onClick={() => router.push("/dashboard/library")}
-            >
-              ← All Transcripts
-            </button>
-          )}
-        </div>
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
+        <h1 className="text-2xl font-semibold text-fg wrap-break-word">
+          {pageTitle}
+          <span className="text-fg-muted font-normal text-base ml-2.5 whitespace-nowrap">
+            · {pageSubtitle}
+          </span>
+        </h1>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Search */}
           <div className="relative w-56">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-fg-muted" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted" />
             <Input
               placeholder="Search…"
-              className="pl-9 h-9 bg-surface-elevated border-border text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent-subtle transition-all duration-150"
+              className="pl-8 h-9 rounded-lg border-border bg-surface text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent-subtle transition-all duration-150"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
+
           {/* View toggle */}
-          <div className="flex items-center border border-border rounded-lg p-1 bg-surface-elevated">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5 bg-surface">
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-7 w-7 rounded transition-all duration-150", viewMode === "grid" ? "bg-accent text-bg" : "text-fg-muted hover:text-fg-subtle")}
-              onClick={() => setViewMode("grid")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn("h-7 w-7 rounded transition-all duration-150", viewMode === "list" ? "bg-accent text-bg" : "text-fg-muted hover:text-fg-subtle")}
+              className={cn("h-8 w-8 rounded-md transition-colors duration-150", viewMode === "list" ? "bg-accent text-fg-on-accent hover:bg-accent hover:text-fg-on-accent" : "text-fg-muted hover:text-fg")}
               onClick={() => setViewMode("list")}
+              aria-label="List view"
             >
               <ListIcon className="h-4 w-4" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn("h-8 w-8 rounded-md transition-colors duration-150", viewMode === "grid" ? "bg-accent text-fg-on-accent hover:bg-accent hover:text-fg-on-accent" : "text-fg-muted hover:text-fg")}
+              onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
           </div>
+
+          {/* Display options */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-border text-fg-muted hover:text-fg" aria-label="Display options">
+                <SlidersHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Sort by</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+                <DropdownMenuRadioItem value="date">Date</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="duration">Duration</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="title">Title</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuCheckboxItem checked={showThumbnails} onCheckedChange={setShowThumbnails}>
+                Show thumbnails
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
+      {/* Collection filter-context bar */}
+      {selectedCollectionId && (
+        <div className="mb-4">
+          <button
+            onClick={() => router.push("/dashboard/library")}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-elevated pl-3 pr-2 py-1 text-xs text-fg-subtle hover:text-fg hover:border-border-strong transition-colors duration-150 cursor-pointer"
+          >
+            Collection: <span className="font-medium text-fg">{selectedCollectionName}</span>
+            <X className="h-3 w-3 ml-0.5" />
+          </button>
+        </div>
+      )}
 
       {listError && (
         <div className="flex items-center gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error mb-4">
@@ -168,12 +218,10 @@ function LibraryContent() {
         </div>
       )}
 
-      {/* Count label with search/filter context */}
-      {(searchQuery || selectedCollectionId) && (
+      {/* Count label with search context */}
+      {searchQuery && (
         <p className="text-sm text-fg-muted mb-4">
-          {searchQuery && `Searching for "${searchQuery}"`}
-          {searchQuery && selectedCollectionId && " in "}
-          {selectedCollectionId && !searchQuery && "Filtered by collection"}
+          Searching for &ldquo;{searchQuery}&rdquo;
         </p>
       )}
 
@@ -188,6 +236,8 @@ function LibraryContent() {
           onDelete={handleDelete}
           onRename={handleRename}
           viewMode={viewMode}
+          showThumbnails={showThumbnails}
+          collections={collections}
         />
       )}
     </div>

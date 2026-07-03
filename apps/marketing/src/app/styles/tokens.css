@@ -41,6 +41,14 @@
   --color-error: var(--error);
   --color-error-subtle: var(--error-subtle);
   --color-error-fg: var(--error-fg);
+  /* Semantic — info (badge family: source / origin) */
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-fg: var(--info-fg);
+  /* Semantic — violet (badge family: AI-derived outputs) */
+  --color-violet: var(--violet);
+  --color-violet-subtle: var(--violet-subtle);
+  --color-violet-fg: var(--violet-fg);
   /* Sidebar (aliases to semantic tokens) */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -109,6 +117,14 @@
   --error: oklch(0.580 0.180 27);
   --error-subtle: oklch(0.960 0.030 25);
   --error-fg: oklch(0.420 0.140 27);
+  /* Semantic — info (badge family: source / origin) */
+  --info: oklch(0.620 0.150 250);
+  --info-subtle: oklch(0.955 0.025 250);
+  --info-fg: oklch(0.380 0.090 250);
+  /* Semantic — violet (badge family: AI-derived outputs) */
+  --violet: oklch(0.620 0.150 300);
+  --violet-subtle: oklch(0.955 0.025 300);
+  --violet-fg: oklch(0.380 0.090 300);
   /* Typography */
   --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
@@ -177,6 +193,14 @@
   --error: oklch(0.680 0.180 27);
   --error-subtle: oklch(0.310 0.080 27);
   --error-fg: oklch(0.880 0.120 27);
+  /* Semantic — info (badge family: source / origin) */
+  --info: oklch(0.700 0.150 250);
+  --info-subtle: oklch(0.290 0.060 250);
+  --info-fg: oklch(0.860 0.110 250);
+  /* Semantic — violet (badge family: AI-derived outputs) */
+  --violet: oklch(0.700 0.150 300);
+  --violet-subtle: oklch(0.290 0.060 300);
+  --violet-fg: oklch(0.860 0.110 300);
   /* Shadows (border-based in dark) */
   --shadow-xs: 0 0 0 1px var(--border-subtle);
   --shadow-sm: 0 0 0 1px var(--border);

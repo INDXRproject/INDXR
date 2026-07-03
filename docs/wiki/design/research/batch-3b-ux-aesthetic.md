@@ -410,6 +410,8 @@ A useful test: **does this beauty serve coherence, brand identity, or invisible 
 Examples:
 - Hexagon pattern on login page background → **Husn** (coherence + reflective dignity).
 - Hexagon pattern on Library list → **Israf** (competes with content).
+
+> **Documented exception (2026-07-03):** the Library redesign (working session, `docs/LOG.md` 2026-07-03) added a hexagon-honeycomb background to the Library list body anyway, at very low opacity (`opacity-[0.035]` light / `opacity-[0.05]` dark) via `HexagonPattern` in `packages/shared/src/components/icons/`. This was an explicit, informed override by Khidr after this classification was raised — not a silent deviation. Treat as a one-off exception for this surface, not as precedent for adding hexagon backgrounds to other working surfaces (Transcribe, Settings, Admin) without the same explicit call. See `docs/LESSONS.md` [2026-07-03] design-hexagon-bg-uitzondering.
 - Hexagonal spinner → **Husn** (replaces a generic with a brand element).
 - Hexagonal spinner with rainbow gradient → **Israf** (decoration that broke restraint).
 - Drop cap in `/docs` article → **Husn** (typographic care, signals editorial quality).
