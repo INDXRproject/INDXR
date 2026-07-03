@@ -89,6 +89,9 @@ export interface Transcript {
   viewed_at?: string | null;
 }
 
+const slugify = (s: string) =>
+  (s || 'video').toLowerCase().replace(/['''"""`]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
 /** Build a human-readable metadata line under each transcript title */
 function buildMetaLine(t: Transcript): string {
   const parts: string[] = [];
@@ -292,8 +295,6 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
 
       if (error || !data) throw new Error('Failed to fetch transcript data');
 
-      const slugify = (s: string) =>
-        (s || 'video').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
       const zip = new JSZip();
       const usedNames = new Set<string>();
@@ -349,8 +350,6 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
 
       if (error || !data) throw new Error("Failed to fetch transcript data");
 
-      const slugify = (s: string) =>
-        (s || 'video').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
       const zip = new JSZip();
       const usedNames = new Set<string>();
