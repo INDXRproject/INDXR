@@ -1,3 +1,5 @@
+[2026-07-03 11:00] fix: bulk-export naamgeving-collision + insufficient-render-artefact + integriteitscheck — (1) handleBatchDownload en handleBulkRagExecute gebruiken nu ${safeTitle}_${videoId}${suffix}.${ext}; teller-fallback bij resterende collision; JSZip overschrijft niet meer. (2) Object.keys(zip.files).length === selectedIds.size check; bij mismatch: warning-FeedbackCard. (3) insufficient-guard: !ragBulkExecuting && !ragBulkSuccess; refreshCredits() awaited. Code-inspectie verificaties alle drie ✓. Build ✓ beide apps. | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md, docs/wiki/decisions/018-export-consolidation.md
+---
 [2026-07-02 20:30] feat: volledige toast-eliminatie (A+B+C) — (A) alle sonner/toast-calls verwijderd uit 18 bestanden; FeedbackCard canonical inline feedback-component; Copy-knoppen → button-level bool-state; sidebar → compact banner; financiële callsites persistent tot dismiss; Toaster verwijderd uit beide layouts; sonner.tsx verwijderd; sonner uit alle package.json-dependencies. (B) bulk-download dropdown uitgebreid van 4 naar 8 formats: TXT, TXT+timestamps, MD, MD+timestamps, JSON, CSV, SRT, VTT — elk als ZIP. (C) bulk-RAG chunk size leest nu profiles.rag_chunk_size (ipv hardcoded 60); filename _rag_60s.json → _rag_<N>s.json; dialog copy toont chunk preset. Build ✓ beide apps, grep toast → 0 hits. | gewijzigd: packages/shared/src/components/ui/FeedbackCard.tsx, packages/shared/src/components/ui/sonner.tsx (verwijderd), packages/shared/src/components/free-tool/AudioTab.tsx, packages/shared/src/components/free-tool/VideoTab.tsx, packages/shared/src/components/PlaylistManager.tsx, apps/app/src/app/layout.tsx, apps/marketing/src/app/layout.tsx, apps/app/src/components/library/TranscriptViewer.tsx, apps/app/src/components/library/TranscriptList.tsx, apps/app/src/components/library/AiSummaryView.tsx, apps/app/src/components/app-sidebar.tsx, apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx, apps/app/src/components/dashboard/WelcomeCreditCard.tsx, apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx, apps/app/src/components/dashboard/settings/SecuritySettingsCard.tsx, apps/app/src/app/dashboard/library/page.tsx, apps/marketing/src/components/pricing/BuyButton.tsx, apps/marketing/src/app/forgot-password/page.tsx, apps/marketing/src/app/login/page.tsx, apps/marketing/src/app/signup/page.tsx, apps/marketing/src/app/onboarding/page.tsx, apps/marketing/src/app/transcribe/page.tsx, docs/LESSONS.md
 ---
 [2026-07-02] fix: bulk-RAG toast vervangen door inline persistente feedback — toast.error/success verwijderd uit handleBulkRagPreview en handleBulkRagExecute; ragBulkError/ragBulkSuccess state toegevoegd; fouten persistent in dialog (blijft open), success inline 1.2s dan sluiten, export-knop geblokkeerd bij success-state. Build ✓ | gewijzigd: apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md
@@ -6419,3 +6421,62 @@ docs/LOG.md
 ---
 [2026-07-02 18:23] precompact: context compaction triggered
 [2026-07-02 18:35] precompact: context compaction triggered
+[2026-07-02 18:50] commit: feat: volledige toast-eliminatie + bulk-export 8 formats + RAG chunk fix
+
+(A) Alle sonner/toast-calls verwijderd uit 18 bestanden. FeedbackCard is
+het nieuwe kanonieke feedback-component: inline, persistent, met onDismiss.
+Copy-knoppen krijgen button-level bool-state (1.5s). Download-success is
+stil. Sidebar-feedback is een compact inline banner. Financiële callsites
+(checkout, credit-claim) tonen zowel success als error persistent.
+Toaster verwijderd uit beide layouts; sonner.tsx verwijderd; sonner
+als dependency verwijderd uit alle package.json-bestanden.
+
+(B) Bulk-download dropdown uitgebreid van 4 naar 8 formats:
+TXT, TXT+timestamps, MD, MD+timestamps, JSON, CSV, SRT, VTT — elk als ZIP.
+
+(C) Bulk-RAG leest nu profiles.rag_chunk_size (ipv hardcoded 60);
+bestandsnaam _rag_60s.json → _rag_<N>s.json; dialog toont chunk preset.
+
+Build ✓ beide apps (marketing + app). grep toast → 0 hits.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: CLAUDE.md
+apps/app/package.json
+apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/app/layout.tsx
+apps/app/src/components/app-sidebar.tsx
+apps/app/src/components/dashboard/WelcomeCreditCard.tsx
+apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
+apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx
+apps/app/src/components/dashboard/settings/SecuritySettingsCard.tsx
+apps/app/src/components/library/AiSummaryView.tsx
+apps/app/src/components/library/TranscriptList.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+apps/marketing/package.json
+apps/marketing/src/app/forgot-password/page.tsx
+apps/marketing/src/app/layout.tsx
+apps/marketing/src/app/login/page.tsx
+apps/marketing/src/app/onboarding/page.tsx
+apps/marketing/src/app/signup/page.tsx
+apps/marketing/src/app/transcribe/page.tsx
+apps/marketing/src/components/pricing/BuyButton.tsx
+docs/LESSONS.md
+docs/LOG.md
+packages/shared/package.json
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/ui/FeedbackCard.tsx
+packages/shared/src/components/ui/sonner.tsx
+---
+[2026-07-02 21:28] commit: fix: regenereer pnpm-lock.yaml na sonner-verwijdering (Vercel frozen-lockfile fix)
+
+Commit 99c7099 verwijderde sonner uit drie package.json-bestanden maar
+regenereerde pnpm-lock.yaml niet. Vercel faalde met ERR_PNPM_OUTDATED_LOCKFILE.
+
+pnpm install --frozen-lockfile slaagt nu lokaal zonder errors.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+pnpm-lock.yaml
+---

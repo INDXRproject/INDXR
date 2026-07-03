@@ -147,6 +147,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
   const [ragBulkSuccess, setRagBulkSuccess]     = useState(false);
   const [ragChunkSize, setRagChunkSize]         = useState<number>(60);
   const [downloadError, setDownloadError]       = useState<string | null>(null);
+  const [downloadWarning, setDownloadWarning]   = useState<string | null>(null);
 
   /** Mark a single transcript as viewed without navigating to it */
   const handleMarkAsRead = async (transcriptId: string, e: React.MouseEvent) => {
@@ -280,7 +281,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
           setRagBulkError(result.error ?? 'Insufficient credits');
           return;
         }
-        refreshCredits();
+        await refreshCredits();
       }
 
       // Fetch full transcript content for ZIP generation
@@ -292,13 +293,26 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       if (error || !data) throw new Error('Failed to fetch transcript data');
 
       const zip = new JSZip();
+      const usedNames = new Set<string>();
       data.forEach((item: Record<string, unknown>) => {
-        const safeTitle = ((item.title as string) || `video-${item.video_id as string}`)
+        const safeTitle = ((item.title as string) || `video`)
           .replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30);
+        const videoId = (item.video_id as string) || 'unknown';
+        const base = `${safeTitle}_${videoId}_rag_${ragChunkSize}s`;
+        let filename = `${base}.json`;
+        let counter = 2;
+        while (usedNames.has(filename)) { filename = `${base}_${counter++}.json`; }
+        usedNames.add(filename);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const json = buildRagJson(item.transcript as any, { videoId: item.video_id as string, title: item.title as string, chunkSize: ragChunkSize });
-        zip.file(`${safeTitle}_rag_${ragChunkSize}s.json`, json);
+        const json = buildRagJson(item.transcript as any, { videoId, title: item.title as string, chunkSize: ragChunkSize });
+        zip.file(filename, json);
       });
+
+      // Integrity check: archive must contain as many files as selected
+      const fileCount = Object.keys(zip.files).length;
+      if (fileCount !== selectedIds.size) {
+        setRagBulkError(`Warning: exported ${fileCount} of ${selectedIds.size} files — some may have been skipped.`);
+      }
 
       const content = await zip.generateAsync({ type: 'blob' });
       saveAs(content, `transcripts-rag-${new Date().toISOString().slice(0, 10)}.zip`);
@@ -324,6 +338,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
   const handleBatchDownload = async (format: BatchFormat) => {
     setIsDownloading(true);
     setDownloadError(null);
+    setDownloadWarning(null);
     try {
       const { data, error } = await supabase
         .from('transcripts')
@@ -333,36 +348,48 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
       if (error || !data) throw new Error("Failed to fetch transcript data");
 
       const zip = new JSZip();
+      const usedNames = new Set<string>();
+      const tsSuffix = format === 'txt-ts' ? '_timestamps' : format === 'md-ts' ? '_timestamps' : '';
 
       data.forEach((item: Record<string, unknown>) => {
-        const safeTitle = ((item.title as string) || `video-${item.video_id as string}`).replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 40);
-        const videoUrl = `https://www.youtube.com/watch?v=${item.video_id as string}`;
+        const safeTitle = ((item.title as string) || 'video')
+          .replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30);
+        const videoId = (item.video_id as string) || 'unknown';
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
         const tx = item.transcript as Parameters<typeof generateTxt>[0];
 
         let fileContent = "";
         let extension = "";
 
-        if (format === 'txt') {
-          fileContent = generateTxt(tx, false); extension = "txt";
-        } else if (format === 'txt-ts') {
-          fileContent = generateTxt(tx, true); extension = "txt";
-        } else if (format === 'md') {
-          fileContent = generateMarkdown(tx, item.title as string, false); extension = "md";
-        } else if (format === 'md-ts') {
-          fileContent = generateMarkdown(tx, item.title as string, true); extension = "md";
+        if (format === 'txt' || format === 'txt-ts') {
+          fileContent = generateTxt(tx, format === 'txt-ts'); extension = "txt";
+        } else if (format === 'md' || format === 'md-ts') {
+          fileContent = generateMarkdown(tx, item.title as string, format === 'md-ts'); extension = "md";
         } else if (format === 'json') {
           fileContent = JSON.stringify({ metadata: { title: item.title, videoUrl }, transcript: tx }, null, 2); extension = "json";
         } else if (format === 'csv') {
           fileContent = generateCsv(tx); extension = "csv";
         } else if (format === 'srt') {
-          fileContent = generateSrt(tx, { extractionMethod: item.processing_method as string ?? undefined }); extension = "srt";
+          fileContent = generateSrt(tx, { extractionMethod: (item.processing_method as string) ?? undefined }); extension = "srt";
         } else if (format === 'vtt') {
-          fileContent = generateVtt(tx, { title: item.title as string, extractionMethod: item.processing_method as string ?? undefined }); extension = "vtt";
+          fileContent = generateVtt(tx, { title: item.title as string, extractionMethod: (item.processing_method as string) ?? undefined }); extension = "vtt";
         }
 
-        const suffix = format === 'txt-ts' ? '_timestamps' : format === 'md-ts' ? '_timestamps' : '';
-        zip.file(`${safeTitle}${suffix}.${extension}`, fileContent);
+        // Unique name: safeTitle_videoId[_timestamps].ext, teller-suffix bij resterende collision
+        const base = `${safeTitle}_${videoId}${tsSuffix}`;
+        let filename = `${base}.${extension}`;
+        let counter = 2;
+        while (usedNames.has(filename)) { filename = `${base}_${counter++}.${extension}`; }
+        usedNames.add(filename);
+
+        zip.file(filename, fileContent);
       });
+
+      // Integrity check: warn when archive file count doesn't match selection
+      const fileCount = Object.keys(zip.files).length;
+      if (fileCount !== selectedIds.size) {
+        setDownloadWarning(`Exported ${fileCount} of ${selectedIds.size} files — some transcripts may have been skipped.`);
+      }
 
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, `transcripts-${format}-${new Date().toISOString().slice(0,10)}.zip`);
@@ -446,6 +473,13 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span className="flex-1">{downloadError}</span>
           <button onClick={() => setDownloadError(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
+        </div>
+      )}
+      {downloadWarning && (
+        <div className="flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning mb-2">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span className="flex-1">{downloadWarning}</span>
+          <button onClick={() => setDownloadWarning(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
         </div>
       )}
 
@@ -661,7 +695,9 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode }: Tr
         const totalCost    = ragBulkItems?.reduce((s, i) => s + i.cost, 0) ?? 0;
         const paidCount    = ragBulkItems?.filter(i => !i.alreadyExported).length ?? 0;
         const freeCount    = ragBulkItems?.filter(i => i.alreadyExported).length ?? 0;
-        const insufficient = credits !== null && totalCost > 0 && credits < totalCost;
+        // Guard: suppress insufficient banner while export is running or after success to prevent
+        // post-deduct re-render artefact (credits refreshed to post-aftrek saldo < totalCost).
+        const insufficient = !ragBulkExecuting && !ragBulkSuccess && credits !== null && totalCost > 0 && credits < totalCost;
         return (
           <Dialog open={showRagBulkModal} onOpenChange={(open) => {
             setShowRagBulkModal(open);

@@ -46,3 +46,21 @@ Optie A gekozen: pure transformatielogica behoort in utils, niet in UI-component
 - `src/components/TranscriptCard.tsx`: ~100 regels inline logica verwijderd (downloadCsv, downloadMarkdown, downloadMarkdownWithTimestamps, buildYamlFrontmatter, formatSrtTimestamp, formatVttTimestamp, fullTextWithTimestamps).
 - `src/utils/formatTranscript.ts`: `generateCsv` uitgebreid met `publishedAt`, `durationSeconds`, `language`, `extractionMethod`. `generateMarkdown` uitgebreid met optioneel `context`-object inclusief YAML frontmatter en timestamp-links. `buildYamlFrontmatter` helper toegevoegd. `resegmentTranscript`, `wrapSubtitleText`, `buildRagChunks` zijn nu module-private (export verwijderd).
 - Backwards compatibel: alle bestaande callers in `TranscriptViewer.tsx` en `TranscriptList.tsx` werken ongewijzigd (context-param is optioneel).
+
+## Update 2026-07-03 — Bulk-export naamgeving
+
+**Naamgeving-schema voor bulk-ZIP (alle formaten):**
+
+`${safeTitle}_${videoId}${tsSuffix}.${ext}` — waar:
+- `safeTitle` = titel gesaniteerd (`[^a-z0-9]→_`, lowercase, max 30 tekens)
+- `videoId` = `video_id` uit de database — primaire disambiguator
+- `tsSuffix` = `_timestamps` voor `txt-ts` en `md-ts`, anders leeg
+- `ext` = `txt` / `md` / `json` / `csv` / `srt` / `vtt`
+
+RAG-variant: `${safeTitle}_${videoId}_rag_${chunkSize}s.json`
+
+**Teller-fallback:** bij een resterende collision (zelfde `video_id`, meerdere aanroepen in één batch) wordt `_2`, `_3`, ... als suffix vóór de extensie gezet.
+
+**Integriteitscheck:** na het vullen van de ZIP wordt `Object.keys(zip.files).length` vergeleken met `selectedIds.size`. Bij mismatch: download gaat door, maar een warning-FeedbackCard verschijnt boven de lijst.
+
+**Implementatie:** `apps/app/src/components/library/TranscriptList.tsx` — `handleBatchDownload` en `handleBulkRagExecute`.
