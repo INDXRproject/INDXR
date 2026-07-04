@@ -61,6 +61,12 @@ export default async function AdminLayout({
           >
             Tickets
           </Link>
+          <Link
+            href="/admin/broadcast"
+            className="px-3 py-1.5 text-sm rounded-md hover:bg-surface-elevated transition-colors"
+          >
+            Broadcast
+          </Link>
           <div className="ml-auto flex items-center gap-1">
             <Link
               href="/dashboard"

@@ -32,6 +32,65 @@ export async function notifyAdmin(params: {
   })
 }
 
+// Marketing/broadcast email with an unsubscribe footer. Deliberately separate
+// from notifyUser (transactional support mail): this channel honours
+// marketing_unsubscribed, NOT email_notifications. Callers MUST have already
+// filtered out marketing-unsubscribed recipients. Sent via Resend's batch
+// endpoint (<=100 messages/call) with a throttle between batches so a large
+// broadcast never hits the API — or the domain reputation — in one burst.
+export async function sendBroadcastEmails(params: {
+  recipients: { email: string; unsubscribeUrl: string }[]
+  subject: string
+  body: string
+}): Promise<{ sent: number; failed: number }> {
+  const apiKey = process.env.RESEND_API_KEY
+  const from = process.env.RESEND_FROM
+  if (!apiKey || !from) return { sent: 0, failed: params.recipients.length }
+
+  let sent = 0
+  let failed = 0
+  const BATCH = 100
+  const THROTTLE_MS = 600
+
+  for (let i = 0; i < params.recipients.length; i += BATCH) {
+    const chunk = params.recipients.slice(i, i + BATCH)
+    const payload = chunk.map((r) => ({
+      from,
+      to: r.email,
+      reply_to: "contact@indxr.ai",
+      subject: params.subject,
+      text: [
+        params.body,
+        "",
+        "—",
+        "You're receiving this because you have an INDXR.AI account.",
+        `Unsubscribe from broadcast emails: ${r.unsubscribeUrl}`,
+      ].join("\n"),
+      headers: { "List-Unsubscribe": `<${r.unsubscribeUrl}>` },
+    }))
+    try {
+      const res = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        sent += chunk.length
+      } else {
+        failed += chunk.length
+        console.warn("[mail] broadcast batch non-ok:", res.status)
+      }
+    } catch (err) {
+      failed += chunk.length
+      console.warn("[mail] broadcast batch failed (non-blocking):", err)
+    }
+    if (i + BATCH < params.recipients.length) {
+      await new Promise((resolve) => setTimeout(resolve, THROTTLE_MS))
+    }
+  }
+  return { sent, failed }
+}
+
 // Notify user on admin reply. Respects email_notifications opt-out.
 export async function notifyUser(params: {
   userId:  string
