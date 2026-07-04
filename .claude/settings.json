@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/check-wiki.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-wiki.sh\""
           }
         ]
       }

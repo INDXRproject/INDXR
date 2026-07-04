@@ -47,7 +47,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@indxr/shared/components/ui/alert-dialog";
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern";
 import { HexagonEmptyState } from "@indxr/shared/components/icons/HexagonEmptyState";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import JSZip from "jszip";
@@ -57,17 +56,30 @@ import { bulkDeductRagExportCreditsAction } from "@indxr/shared/actions/rag-expo
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 import { cn } from "@indxr/shared/lib/utils";
 
-// Helper for relative time
-function getRelativeTime(dateString: string) {
+// Hybrid timestamp — relative for the last ~2 days, compact absolute date + time after.
+function formatDateHybrid(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffInSeconds < 60) return 'Just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  return date.toLocaleDateString();
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 172800) return '1d ago';
+  // Older than ~2 days → absolute date + time, compact.
+  const sameYear = date.getFullYear() === now.getFullYear();
+  const datePart = date.toLocaleDateString('en-US', sameYear
+    ? { month: 'short', day: 'numeric' }
+    : { month: 'short', day: 'numeric', year: 'numeric' });
+  const timePart = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return `${datePart} · ${timePart}`;
+}
+
+/** Timestamp shown for a transcript — prefer a later edit time over creation. */
+function displayDate(t: Transcript) {
+  return t.updated_at && new Date(t.updated_at) > new Date(t.created_at)
+    ? t.updated_at
+    : t.created_at;
 }
 
 function formatDuration(seconds: number) {
@@ -105,34 +117,60 @@ export interface Transcript {
 const slugify = (s: string) =>
   (s || 'video').toLowerCase().replace(/['''"""`]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-/** Source badge — one per transcript, cool/blue family */
-function sourceBadgeLabel(t: Transcript): string {
-  const method = t.processing_method;
-  if (!method || method === 'youtube_captions') return 'Auto-captions';
-  return 'AI Transcription';
+/** Badge variant → OKLCH family classes (see tokens.css "Badge families").
+ *  Hue = family, "-soft"/"-edit" = edited variant (same hue, higher L). */
+const BADGE_CLASSES = {
+  auto:           'bg-sky-subtle text-sky',
+  'auto-edit':    'bg-sky-soft-subtle text-sky-soft',
+  ai:             'bg-indigo-subtle text-indigo',
+  'ai-edit':      'bg-indigo-soft-subtle text-indigo-soft',
+  summary:        'bg-violet-subtle text-violet',
+  'summary-edit': 'bg-violet-soft-subtle text-violet-soft',
+  rag:            'bg-teal-subtle text-teal',
+} as const;
+
+type BadgeVariant = keyof typeof BADGE_CLASSES;
+type BadgeSpec = { key: string; label: string; variant: BadgeVariant };
+
+/** Type + output badges for a transcript. Edited state folds into the family
+ *  colour (higher-L variant) instead of a separate grey "Edited" chip. */
+function transcriptBadges(t: Transcript): BadgeSpec[] {
+  const isAi = !!t.processing_method && t.processing_method !== 'youtube_captions';
+  const edited = !!t.edited_content;
+  const badges: BadgeSpec[] = [];
+
+  // Source (one per transcript) — captions (sky) vs AI transcription (indigo).
+  if (isAi) {
+    badges.push(edited
+      ? { key: 'src', label: 'Edited AI Transcription', variant: 'ai-edit' }
+      : { key: 'src', label: 'AI Transcription',        variant: 'ai' });
+  } else {
+    badges.push(edited
+      ? { key: 'src', label: 'Edited Auto-captions', variant: 'auto-edit' }
+      : { key: 'src', label: 'Auto-captions',        variant: 'auto' });
+  }
+
+  // AI summary (violet), edited = lighter violet.
+  if (t.ai_summary) {
+    badges.push(t.ai_summary.edited_html
+      ? { key: 'sum', label: 'Edited Summary', variant: 'summary-edit' }
+      : { key: 'sum', label: 'AI Summary',     variant: 'summary' });
+  }
+
+  // RAG export (developer) — teal.
+  if (t.rag_exports && t.rag_exports.length > 0) {
+    badges.push({ key: 'rag', label: 'RAG ✦', variant: 'rag' });
+  }
+
+  return badges;
 }
 
-/** Output badges — one per available derived artifact, violet family */
-function outputBadgeLabels(t: Transcript): string[] {
-  const labels: string[] = [];
-  if (t.edited_content) labels.push('Edited');
-  if (t.ai_summary) labels.push('AI Summary');
-  if (t.ai_summary?.edited_html) labels.push('Edited Summary');
-  if (t.rag_exports && t.rag_exports.length > 0) labels.push('RAG ✦');
-  return labels;
-}
-
-function SourceBadge({ label }: { label: string }) {
+function Badge({ label, variant }: { label: string; variant: BadgeVariant }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-info-subtle px-2 py-0.5 text-[10px] font-medium text-info whitespace-nowrap">
-      {label}
-    </span>
-  );
-}
-
-function OutputBadge({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center rounded-full bg-violet-subtle px-2 py-0.5 text-[10px] font-medium text-violet whitespace-nowrap">
+    <span className={cn(
+      'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap',
+      BADGE_CLASSES[variant],
+    )}>
       {label}
     </span>
   );
@@ -469,9 +507,8 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
 
   if (transcripts.length === 0) {
     return (
-      <div className="relative overflow-hidden rounded-xl border border-dashed border-border py-20 text-center">
-        <HexagonPattern className="opacity-[0.035] dark:opacity-[0.05]" />
-        <div className="relative flex flex-col items-center">
+      <div className="rounded-xl border border-dashed border-border py-20 text-center">
+        <div className="flex flex-col items-center">
           <HexagonEmptyState className="mb-4" />
           <h3 className="text-lg font-medium text-fg">Library is empty</h3>
           <p className="text-sm text-fg-muted mt-2 max-w-xs">
@@ -487,10 +524,10 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
 
   return (
     <>
-      {/* Floating Action Bar */}
+      {/* Floating Action Bar — lifted above the mobile bottom tab bar (h-14 + safe area) */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 fade-in">
-           <div className="bg-surface border border-border shadow-xl rounded-full px-6 py-3 flex items-center gap-4">
+        <div className="fixed left-1/2 -translate-x-1/2 z-50 bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom,0px))] md:bottom-6 animate-in slide-in-from-bottom-5 fade-in">
+           <div className="bg-surface border border-border shadow-xl rounded-full px-5 md:px-6 py-3 flex items-center gap-3 md:gap-4 max-w-[calc(100vw-1.5rem)]">
               <span className="text-sm font-medium text-fg">{selectedIds.size} selected</span>
 
               <div className="h-6 w-px bg-border/50" />
@@ -552,21 +589,25 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
       )}
 
       {viewMode === 'list' ? (
-        <div className="relative overflow-hidden rounded-xl border border-border">
-          <HexagonPattern className="opacity-[0.035] dark:opacity-[0.05]" />
-
+        <div className="overflow-hidden rounded-xl border border-border bg-surface/60">
           {/* Header row */}
-          <div className="relative flex items-center gap-3 border-b border-border-subtle bg-surface-elevated/50 px-4 py-2.5 text-xs font-medium text-fg-muted">
+          <div className="flex items-center gap-3 border-b border-border-subtle bg-surface-elevated/50 px-4 py-2.5 text-xs font-medium text-fg-muted">
             <Checkbox
               checked={selectedIds.size === transcripts.length && transcripts.length > 0}
               onCheckedChange={handleSelectAll}
             />
             <span className="flex-1">Title</span>
+            <div className="hidden sm:flex items-center gap-4 shrink-0">
+              <span className="w-14 text-right">Duration</span>
+              <span className="w-28 text-right">Words</span>
+              <span className="w-40 text-right">Added</span>
+            </div>
+            <span className="w-[104px] shrink-0" aria-hidden />
           </div>
 
-          <div className="relative divide-y divide-border-subtle">
+          <div className="divide-y divide-border-subtle">
             {transcripts.map((t) => {
-              const outputs = outputBadgeLabels(t);
+              const badges = transcriptBadges(t);
               const colName = collectionName(t.collection_id);
               const words = formatWordCount(t.character_count);
               return (
@@ -630,25 +671,26 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                       )}
                     </div>
 
-                    {/* Badges + metadata */}
-                    <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {isNew(t) && <NewBadge onClick={(e) => handleMarkAsRead(t.id, e)} />}
-                        <SourceBadge label={sourceBadgeLabel(t)} />
-                        {outputs.map(label => <OutputBadge key={label} label={label} />)}
-                        {colName && <CollectionBadge name={colName} />}
-                      </div>
-                      <div className="text-xs text-fg-muted whitespace-nowrap">
-                        {t.duration ? formatDuration(t.duration) : '—'}
-                        {words && <> · {words}</>}
-                        {' · '}
-                        {getRelativeTime(
-                          t.updated_at && new Date(t.updated_at) > new Date(t.created_at)
-                            ? t.updated_at
-                            : t.created_at
-                        )}
-                      </div>
+                    {/* Badges */}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      {isNew(t) && <NewBadge onClick={(e) => handleMarkAsRead(t.id, e)} />}
+                      {badges.map(b => <Badge key={b.key} label={b.label} variant={b.variant} />)}
+                      {colName && <CollectionBadge name={colName} />}
                     </div>
+
+                    {/* Compact metadata — mobile only (desktop uses the aligned columns) */}
+                    <div className="mt-1.5 sm:hidden text-[11px] text-fg-muted tabular-nums">
+                      {t.duration ? formatDuration(t.duration) : '—'}
+                      {words && <> · {words}</>}
+                      {' · '}{formatDateHybrid(displayDate(t))}
+                    </div>
+                  </div>
+
+                  {/* Metadata — right-aligned parallel columns, aligned across rows */}
+                  <div className="hidden sm:flex items-center gap-4 shrink-0 pt-0.5 text-xs text-fg-muted tabular-nums">
+                    <span className="w-14 text-right">{t.duration ? formatDuration(t.duration) : '—'}</span>
+                    <span className="w-28 text-right">{words ?? '—'}</span>
+                    <span className="w-40 text-right whitespace-nowrap">{formatDateHybrid(displayDate(t))}</span>
                   </div>
 
                   {/* Row actions — visible on hover */}
@@ -678,13 +720,10 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
           </div>
         </div>
       ) : (
-        <div className="relative">
-          <div className="absolute inset-0 -m-4 overflow-hidden rounded-xl">
-            <HexagonPattern className="opacity-[0.035] dark:opacity-[0.05]" />
-          </div>
-          <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {transcripts.map((t) => {
-              const outputs = outputBadgeLabels(t);
+              const badges = transcriptBadges(t);
               const colName = collectionName(t.collection_id);
               return (
                 <div
@@ -732,14 +771,13 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                     </div>
 
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <SourceBadge label={sourceBadgeLabel(t)} />
-                      {outputs.map(label => <OutputBadge key={label} label={label} />)}
+                      {badges.map(b => <Badge key={b.key} label={b.label} variant={b.variant} />)}
                       {colName && <CollectionBadge name={colName} />}
                     </div>
 
                     {!showThumbnails && (
-                      <p className="mt-2 text-xs text-fg-muted">
-                        {t.duration ? formatDuration(t.duration) : '—'} · {getRelativeTime(t.created_at)}
+                      <p className="mt-2 text-xs text-fg-muted tabular-nums">
+                        {t.duration ? formatDuration(t.duration) : '—'} · {formatDateHybrid(displayDate(t))}
                       </p>
                     )}
                   </div>

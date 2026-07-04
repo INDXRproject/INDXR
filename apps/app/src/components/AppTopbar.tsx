@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { Mail } from "lucide-react"
-import { SidebarTrigger } from "@indxr/shared/components/ui/sidebar"
 import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
 import { Button } from "@indxr/shared/components/ui/button"
 import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
@@ -44,33 +43,32 @@ export function AppTopbar() {
         />
       </Link>
 
-      {/* Mobile-only: opens sidebar drawer. Desktop: sidebar toggle lives inside the sidebar itself. */}
-      <SidebarTrigger className="md:hidden" />
+      {/* On mobile, navigation is the bottom tab bar only — no sidebar, so no trigger here. */}
 
       <div className="flex-1" />
 
       {/* Right-side controls: ThemeToggle → Messages → Credits → Avatar */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2.5">
         <ThemeToggle />
 
-        <Button variant="ghost" size="icon" asChild>
+        <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
           <a href="/dashboard/messages" className="relative">
-            <Mail className="h-5 w-5" />
+            <Mail className="h-[1.35rem] w-[1.35rem]" />
             {hasUnreadMessages && (
-              <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-accent" />
+              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-accent" />
             )}
             <span className="sr-only">Messages</span>
           </a>
         </Button>
 
+        {/* Credits — coin + count grouped as one element */}
         <a
           href="/dashboard/billing"
-          className="flex items-center gap-1.5 px-2 h-9 rounded-md text-sm text-fg-subtle hover:text-fg hover:bg-surface-elevated transition-colors"
+          className="flex items-center gap-1.5 h-9 pl-1.5 pr-2.5 rounded-full border border-border bg-surface-elevated text-fg hover:border-border-strong transition-colors"
+          aria-label={`${credits ?? 0} credits`}
         >
           <HexagonCreditIcon className="size-5" />
-          <span className="bg-surface-elevated text-fg-muted px-1.5 py-0.5 rounded text-xs font-medium tabular-nums">
-            {credits ?? 0}
-          </span>
+          <span className="text-sm font-medium tabular-nums">{credits ?? 0}</span>
         </a>
 
         <AvatarDropdown />

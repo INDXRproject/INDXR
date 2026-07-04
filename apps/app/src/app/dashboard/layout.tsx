@@ -37,7 +37,10 @@ export default async function DashboardLayout({
       <div className="flex flex-col h-svh w-full">
         <AppTopbar />
         <div className="flex flex-1 overflow-hidden">
-          <AppSidebar />
+          {/* Sidebar is desktop-only — on mobile navigation is the bottom tab bar */}
+          <div className="hidden md:flex shrink-0">
+            <AppSidebar />
+          </div>
           <main id="main-content" className="flex-1 overflow-y-auto">
             {/* pb-[3.5rem] on mobile to avoid content hiding behind MobileTabBar */}
             <div className="p-4 md:p-8 bg-bg pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">

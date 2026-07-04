@@ -41,14 +41,22 @@
   --color-error: var(--error);
   --color-error-subtle: var(--error-subtle);
   --color-error-fg: var(--error-fg);
-  /* Semantic — info (badge family: source / origin) */
-  --color-info: var(--info);
-  --color-info-subtle: var(--info-subtle);
-  --color-info-fg: var(--info-fg);
-  /* Semantic — violet (badge family: AI-derived outputs) */
+  /* Badge families — source + AI-derived outputs (see TranscriptList).
+     L/C constant per role, hue-shift per family; -soft = edited variant (higher L). */
+  --color-sky: var(--sky);
+  --color-sky-subtle: var(--sky-subtle);
+  --color-sky-soft: var(--sky-soft);
+  --color-sky-soft-subtle: var(--sky-soft-subtle);
+  --color-indigo: var(--indigo);
+  --color-indigo-subtle: var(--indigo-subtle);
+  --color-indigo-soft: var(--indigo-soft);
+  --color-indigo-soft-subtle: var(--indigo-soft-subtle);
   --color-violet: var(--violet);
   --color-violet-subtle: var(--violet-subtle);
-  --color-violet-fg: var(--violet-fg);
+  --color-violet-soft: var(--violet-soft);
+  --color-violet-soft-subtle: var(--violet-soft-subtle);
+  --color-teal: var(--teal);
+  --color-teal-subtle: var(--teal-subtle);
   /* Sidebar (aliases to semantic tokens) */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -117,14 +125,22 @@
   --error: oklch(0.580 0.180 27);
   --error-subtle: oklch(0.960 0.030 25);
   --error-fg: oklch(0.420 0.140 27);
-  /* Semantic — info (badge family: source / origin) */
-  --info: oklch(0.620 0.150 250);
-  --info-subtle: oklch(0.955 0.025 250);
-  --info-fg: oklch(0.380 0.090 250);
-  /* Semantic — violet (badge family: AI-derived outputs) */
-  --violet: oklch(0.620 0.150 300);
-  --violet-subtle: oklch(0.955 0.025 300);
-  --violet-fg: oklch(0.380 0.090 300);
+  /* Badge families — L/C constant per role, hue only shifts between families.
+     -soft = edited (higher L). Every pair WCAG AA on its -subtle bg (light min 4.75). */
+  --sky: oklch(0.470 0.150 230);
+  --sky-subtle: oklch(0.935 0.050 230);
+  --sky-soft: oklch(0.510 0.130 230);
+  --sky-soft-subtle: oklch(0.975 0.020 230);
+  --indigo: oklch(0.470 0.150 265);
+  --indigo-subtle: oklch(0.935 0.050 265);
+  --indigo-soft: oklch(0.510 0.130 265);
+  --indigo-soft-subtle: oklch(0.975 0.020 265);
+  --violet: oklch(0.470 0.150 300);
+  --violet-subtle: oklch(0.935 0.050 300);
+  --violet-soft: oklch(0.510 0.130 300);
+  --violet-soft-subtle: oklch(0.975 0.020 300);
+  --teal: oklch(0.470 0.150 185);
+  --teal-subtle: oklch(0.935 0.050 185);
   /* Typography */
   --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
@@ -193,14 +209,21 @@
   --error: oklch(0.680 0.180 27);
   --error-subtle: oklch(0.310 0.080 27);
   --error-fg: oklch(0.880 0.120 27);
-  /* Semantic — info (badge family: source / origin) */
-  --info: oklch(0.700 0.150 250);
-  --info-subtle: oklch(0.290 0.060 250);
-  --info-fg: oklch(0.860 0.110 250);
-  /* Semantic — violet (badge family: AI-derived outputs) */
-  --violet: oklch(0.700 0.150 300);
-  --violet-subtle: oklch(0.290 0.060 300);
-  --violet-fg: oklch(0.860 0.110 300);
+  /* Badge families — dark (min AA 6.73 on -subtle bg). -soft = edited (higher L). */
+  --sky: oklch(0.780 0.140 230);
+  --sky-subtle: oklch(0.295 0.065 230);
+  --sky-soft: oklch(0.860 0.120 230);
+  --sky-soft-subtle: oklch(0.360 0.045 230);
+  --indigo: oklch(0.780 0.140 265);
+  --indigo-subtle: oklch(0.295 0.065 265);
+  --indigo-soft: oklch(0.860 0.120 265);
+  --indigo-soft-subtle: oklch(0.360 0.045 265);
+  --violet: oklch(0.780 0.140 300);
+  --violet-subtle: oklch(0.295 0.065 300);
+  --violet-soft: oklch(0.860 0.120 300);
+  --violet-soft-subtle: oklch(0.360 0.045 300);
+  --teal: oklch(0.780 0.140 185);
+  --teal-subtle: oklch(0.295 0.065 185);
   /* Shadows (border-based in dark) */
   --shadow-xs: 0 0 0 1px var(--border-subtle);
   --shadow-sm: 0 0 0 1px var(--border);

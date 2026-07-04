@@ -4,6 +4,9 @@
 
 INPUT=$(cat)
 
+# Anchor to the project root so git commands work regardless of invocation cwd.
+[ -n "$CLAUDE_PROJECT_DIR" ] && cd "$CLAUDE_PROJECT_DIR" 2>/dev/null
+
 # If Claude already handled the stop hook this turn, skip.
 if [ "$(printf '%s' "$INPUT" | jq -r '.stop_hook_active' 2>/dev/null)" = 'true' ]; then
   exit 0

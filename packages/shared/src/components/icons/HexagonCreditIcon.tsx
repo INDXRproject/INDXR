@@ -1,6 +1,10 @@
 import { cn } from "../../lib/utils"
 
-/** Amber-filled hexagon, geometric match to the logo's 7-hexagon mark. Replaces the generic coin/dollar icon wherever credits are shown. */
+/**
+ * Credit token — a coin (amber) carrying the INDXR hexagon mark in its centre.
+ * Replaces the plain coin/dollar glyph wherever credits are shown; pairs with
+ * the accent (amber) theme. Sits directly beside the credit count as one unit.
+ */
 export function HexagonCreditIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -9,14 +13,13 @@ export function HexagonCreditIcon({ className }: { className?: string }) {
       className={cn("size-4 shrink-0", className)}
       aria-hidden="true"
     >
+      {/* Coin body */}
+      <circle cx="12" cy="12" r="10.25" className="fill-accent-subtle stroke-accent" strokeWidth="1.5" />
+      {/* Inner rim — coin bevel */}
+      <circle cx="12" cy="12" r="7.9" className="stroke-accent/45" strokeWidth="0.9" fill="none" />
+      {/* INDXR hexagon mark */}
       <path
-        d="M12 1.5 21.79 7v10L12 22.5 2.21 17V7Z"
-        className="fill-accent-subtle stroke-accent"
-        strokeWidth="1.25"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12 6 17.2 9v6L12 18l-5.2-3V9Z"
+        d="M12 7.1 16.24 9.55 16.24 14.45 12 16.9 7.76 14.45 7.76 9.55Z"
         className="fill-accent"
       />
     </svg>

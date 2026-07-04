@@ -23,6 +23,7 @@ suspended            BOOLEAN DEFAULT false (migratie 20260408)
 rag_export_confirmed BOOLEAN DEFAULT false (migratie 20260422) -- vervallen, niet meer gebruikt (modal altijd tonen)
 rag_chunk_size       INTEGER DEFAULT 60 CHECK IN (30,60,90,120) (migratie 20260422/20260423) -- chunk preset voor RAG JSON export
 email_notifications  BOOLEAN NOT NULL DEFAULT true (migratie 20260701120000) -- opt-out voor user-gerichte e-mailmeldingen (admin-antwoorden op tickets)
+library_page_size    INTEGER NOT NULL DEFAULT 50 CHECK IN (25,50,100) (migratie 20260704113930) -- transcripts per pagina in Library (server-side pagination)
 ```
 
 RLS: gebruiker kan alleen eigen profiel lezen/schrijven.
@@ -368,6 +369,7 @@ Gebruikt in: `src/app/actions/credits.ts`
 - `20260701000000_support_tickets.sql` — `support_tickets` tabel, `submit_support_ticket` RPC, RLS-policies
 - `20260701120000_messages_ticket_id_email_pref.sql` — `messages.ticket_id` FK, `profiles.email_notifications`
 - `20260701200000_messages_sender_role.sql` — `messages.sender_role TEXT NOT NULL DEFAULT 'admin' CHECK IN ('admin','user')`
+- `20260704113930_profiles_library_page_size.sql` — `profiles.library_page_size INTEGER NOT NULL DEFAULT 50 CHECK IN (25,50,100)` (Library server-side pagination)
 
 De 24 pre-baseline migratiebestanden zijn bewaard in `supabase/migrations_archive/` (git-geschiedenis blijft intact). De `supabase_migrations.schema_migrations` tracking-tabel bevat exact **zes** rijen.
 

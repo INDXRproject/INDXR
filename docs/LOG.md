@@ -6702,3 +6702,9 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 docs/LOG.md
 ---
+[2026-07-03 23:15] commit: docs: log auto-appended entry for d856115
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Changed: docs/LOG.md
+---
+[2026-07-04 14:27] taak: Library launch-afronding (metadata-kolommen, hybride datum, hexagon→achtergrond, OKLCH badge-hue-systeem, munt-credit-icoon, topnav-spacing, mobiele nav-fixes, server-side pagination 50/pp + settings-toggle 25/50/100, check-wiki hook-hardening) — build groen beide apps; lokaal browser-geverifieerd (test1, geïnjecteerde sessie) licht+dark+mobiel met screenshots: badges alle families onderscheidbaar + WCAG AA (licht min 4.75, dark min 6.73), metadata 3 uitgelijnde kolommen, hexagon subtiel op pagina-achtergrond niet in rijen, munt-icoon+getal gegroepeerd, mobiel enkel bottom-tab-bar (geen zijbalk-overlap) + selection-bar boven tab-bar, pagination page2 (51–55/55) + server-side zoek over hele dataset (Item 45 van pagina 2 gevonden). | gewijzigd: apps/*/src/app/styles/tokens.css, apps/app/src/components/library/TranscriptList.tsx, apps/app/src/app/dashboard/library/page.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/components/AppTopbar.tsx, packages/shared/src/components/icons/HexagonCreditIcon.tsx, apps/app/src/app/dashboard/settings/page.tsx, apps/app/src/components/dashboard/settings/LibraryPageSizeSelect.tsx, apps/app/src/app/actions/profile.ts, supabase/migrations/20260704113930_profiles_library_page_size.sql, .claude/settings.json, .claude/hooks/check-wiki.sh
