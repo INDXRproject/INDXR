@@ -5,6 +5,7 @@ Shared between main.py (FastAPI API process) and worker.py (ARQ worker process).
 import asyncio
 import logging
 import os
+import random
 import re
 import secrets
 import time
@@ -328,14 +329,22 @@ async def extract_with_ytdlp(
             if 'tlang=' in subtitle_url:
                 logger.warning(f"{log_prefix} {video_id}: rejected tlang= URL for {selected_lang!r}, returning no_captions")
                 return {}
-            dl_proxy_url = get_proxy_url(session_id=session_id) if use_proxy else None
-
             subtitle_data = None
             for attempt in range(3):
+                # Rotate the proxy exit IP per attempt: a residential IP that YouTube
+                # rate-limited (429) on the timedtext endpoint keeps returning 429, so
+                # retrying on the SAME IP is futile. Mirror the audio path's -r{i}
+                # session rotation (see ADR-031). Without a pinned session_id,
+                # get_proxy_url() generates a fresh random sid, so rotation is automatic.
+                if use_proxy:
+                    rot_session = f"{session_id}-r{attempt}" if session_id else None
+                    attempt_proxy = get_proxy_url(session_id=rot_session)
+                else:
+                    attempt_proxy = None
                 try:
                     kwargs: dict = {"timeout": 15.0}
-                    if dl_proxy_url:
-                        kwargs["proxy"] = dl_proxy_url
+                    if attempt_proxy:
+                        kwargs["proxy"] = attempt_proxy
                     with httpx.Client(**kwargs) as client:
                         resp = client.get(subtitle_url)
                         resp.raise_for_status()
@@ -345,7 +354,8 @@ async def extract_with_ytdlp(
                     logger.warning(f"{log_prefix} {video_id}: VTT download attempt {attempt + 1} failed: {e}")
                     if attempt == 2:
                         raise Exception(f"Failed to download subtitles after 3 attempts: {e}")
-                    time.sleep(1)
+                    # Async exponential backoff + jitter (was a fixed blocking time.sleep(1)).
+                    await asyncio.sleep(2 ** attempt + random.uniform(0, 0.5))
 
             if not subtitle_data:
                 logger.info(f"{log_prefix} {video_id}: no_captions (VTT download empty)")

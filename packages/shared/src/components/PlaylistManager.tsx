@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
-import { Loader2, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink, Info } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink, Info, RefreshCw } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import Image from "next/image";
 import { validateYouTubeUrl } from "../utils/youtube";
@@ -54,6 +54,7 @@ interface PlaylistManagerProps {
   onAuthRequired: () => void;
   onError: (message: string | null) => void;
   onSwitchToAudio?: () => void;
+  onRetryVideo?: (videoId: string) => void;
   elapsedSeconds?: number;
 }
 
@@ -63,7 +64,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, elapsedSeconds = 0 }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryVideo, elapsedSeconds = 0 }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -393,7 +394,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       const youtubeRestricted = vals.filter(s => s === 'youtube_restricted').length;
                       const extractionError = vals.filter(s => s === 'error').length;
                       const groups: string[] = [
-                        ...(botOrTimeout > 0 ? [`⚠️ ${botOrTimeout} video${botOrTimeout !== 1 ? 's' : ''} ${botOrTimeout !== 1 ? 'were' : 'was'} temporarily blocked by YouTube. ${botOrTimeout !== 1 ? 'These were' : 'It was'} retried automatically — if still failing, try again later or use Audio Upload.`] : []),
+                        ...(botOrTimeout > 0 ? [`⚠️ ${botOrTimeout} video${botOrTimeout !== 1 ? 's' : ''} ${botOrTimeout !== 1 ? 'were' : 'was'} blocked by YouTube's rate limit and failed after an automatic retry. Retry ${botOrTimeout !== 1 ? 'them' : 'it'} below with a fresh connection, or use Audio Upload.`] : []),
                         ...(ageRestricted > 0 ? [`🔞 ${ageRestricted} video${ageRestricted !== 1 ? 's' : ''} ${ageRestricted !== 1 ? 'are' : 'is'} age-restricted. YouTube prevents transcription of these videos. Download the audio manually and use Audio Upload instead.`] : []),
                         ...(membersOnly > 0 ? [`🔒 ${membersOnly} video${membersOnly !== 1 ? 's' : ''} ${membersOnly !== 1 ? 'are' : 'is'} members-only. You need a channel membership to access these videos.`] : []),
                         ...(youtubeRestricted > 0 ? [`🚫 ${youtubeRestricted} video${youtubeRestricted !== 1 ? 's' : ''} ${youtubeRestricted !== 1 ? 'are' : 'is'} unavailable or restricted on YouTube.`] : []),
@@ -463,6 +464,46 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                               </Button>
                             </div>
                           )}
+                        </div>
+                      )
+                    })()}
+
+                    {/* Rate-limited videos — retry each without re-running the whole playlist */}
+                    {(() => {
+                      const retryableIds = Object.entries(videoStatuses)
+                        .filter(([, s]) => s === 'bot_detection' || s === 'timeout')
+                        .map(([id]) => id)
+                      const retryableEntries = playlist?.entries.filter(e => retryableIds.includes(e.id)) ?? []
+                      if (retryableEntries.length === 0 || !onRetryVideo) return null
+                      return (
+                        <div className="p-3 bg-surface-elevated/50 border border-border rounded-lg space-y-2">
+                          <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
+                            {retryableEntries.length} video{retryableEntries.length !== 1 ? 's' : ''} to retry
+                          </p>
+                          <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
+                            {retryableEntries.map(e => (
+                              <div key={e.id} className="flex items-center gap-2">
+                                {e.thumbnail && (
+                                  <Image src={e.thumbnail} alt="" width={40} height={22} className="rounded shrink-0 object-cover" unoptimized />
+                                )}
+                                <span className="text-xs text-fg-muted truncate flex-1">{e.title}</span>
+                                <span className="shrink-0 text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                  {videoStatuses[e.id] === 'timeout' ? 'Timeout' : 'Blocked'}
+                                </span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isExtracting || videoStatuses[e.id] === 'extracting'}
+                                  className="h-7 text-xs shrink-0"
+                                  onClick={() => onRetryVideo(e.id)}
+                                >
+                                  {videoStatuses[e.id] === 'extracting'
+                                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                                    : <><RefreshCw className="h-3 w-3 mr-1" /> Retry</>}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )
                     })()}

@@ -611,7 +611,10 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
 
         is_whisper = video_id in use_whisper_ids
         is_free = orig_index < 3
-        proxy_session = f"{playlist_id[:4]}{orig_index:04d}"
+        # Retry pass: use a DIFFERENT sticky session than the original attempt
+        # (worker.py process_playlist_video) so the retry lands on a fresh Decodo
+        # exit IP instead of the same IP that YouTube already rate-limited (429).
+        proxy_session = f"{playlist_id[:4]}{orig_index:04d}-retry"
 
         rpc_success = False
         rpc_transcript_id: Optional[str] = None

@@ -58,6 +58,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const startTimeRef = useRef<number>(0)
   const playlistJobIdRef = useRef<string | null>(null)
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Non-null while a single-video manual retry job is running (see handleRetryVideo).
+  const retryVideoIdRef = useRef<string | null>(null)
   const { credits, refreshCredits } = useAuth()
 
   // Active playlist job being tracked
@@ -90,6 +92,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   }
 
   const _handlePlaylistComplete = (job: JobStatusRow) => {
+    const isRetry = retryVideoIdRef.current !== null
+    retryVideoIdRef.current = null
+
     playlistJobIdRef.current = null
     setProgressMessage("")
     sessionStorage.removeItem('indxr-active-playlist-job')
@@ -101,6 +106,24 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       finalStatuses[vid] = mapBackendStatus(res)
       if (res.free) finalFreeIds.add(vid)
     }
+
+    if (isRetry) {
+      // Single-video manual retry: MERGE only this video's result so every other
+      // row keeps its status from the original run. Skip onPlaylistComplete (it
+      // writes a playlist_jobs analytics row) and the error banner — this was a
+      // targeted one-video re-run, not a full playlist completion.
+      setVideoStatuses(prev => ({ ...prev, ...finalStatuses }))
+      setFreeVideoIds(prev => { const s = new Set(prev); finalFreeIds.forEach(id => s.add(id)); return s })
+      window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+      refreshCredits()
+      setTimeout(() => {
+        setLoading(false)
+        if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      }, 0)
+      setActiveJobId(null)
+      return
+    }
+
     setVideoStatuses(finalStatuses)
     setFreeVideoIds(finalFreeIds)
 
@@ -472,6 +495,79 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     }
   }
 
+  // Manual per-video retry: re-run a single failed (rate-limited/timeout) video
+  // as its own playlist job. A new job_id → new backend proxy session, so the
+  // retry lands on a fresh Decodo exit IP instead of the one YouTube 429'd.
+  // Already-succeeded videos are untouched (they aren't in this job); their
+  // statuses are preserved via the merge in _handlePlaylistComplete.
+  const handleRetryVideo = async (videoId: string) => {
+    if (loading) return
+    setError(null)
+    const prevStatus = videoStatuses[videoId]
+    const isWhisper = whisperVideoIds?.has(videoId) ?? false
+    retryVideoIdRef.current = videoId
+    setVideoStatuses(prev => ({ ...prev, [videoId]: 'extracting' }))
+
+    try {
+      setLoading(true)
+      setElapsedSeconds(0)
+      startTimeRef.current = Date.now()
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+
+      // Reuse the playlist's existing collection (found by title) so the retried
+      // transcript lands in the same place.
+      let autoCollectionId: string | undefined = undefined
+      const title = fallbackMetaRef.current.title
+      if (title) {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: existingCol } = await supabase.from('collections').select('id').eq('user_id', user.id).ilike('name', title).limit(1).maybeSingle()
+          if (existingCol) autoCollectionId = existingCol.id
+        }
+      }
+
+      const response = await fetch('/api/playlist/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          video_ids: [videoId],
+          collection_id: autoCollectionId ?? null,
+          use_whisper_ids: isWhisper ? [videoId] : [],
+          playlist_title: title ?? null,
+          playlist_url: fallbackMetaRef.current.url ?? null,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Failed to retry video')
+      }
+
+      const { job_id } = await response.json()
+      playlistJobIdRef.current = job_id
+      sessionStorage.setItem('indxr-active-playlist-job', JSON.stringify({
+        jobId: job_id,
+        startTime: Date.now(),
+        playlistTitle: title ?? null,
+        videoIds: [videoId],
+        whisperIds: isWhisper ? [videoId] : [],
+      }))
+      setProgressMessage('Retrying 1 video with a fresh connection...')
+      setActiveJobId(job_id)
+    } catch (error: unknown) {
+      retryVideoIdRef.current = null
+      const errorMessage = error instanceof Error ? error.message : 'Failed to retry video'
+      setError({ message: errorMessage })
+      setLoading(false)
+      setProgressMessage("")
+      // Restore the row's original failed status so the retry button stays available.
+      setVideoStatuses(prev => ({ ...prev, [videoId]: prevStatus ?? 'bot_detection' }))
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    }
+  }
+
   return (
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
       {/* Watchdog permanent failure notice — credits already refunded */}
@@ -580,6 +676,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         onAuthRequired={onAuthRequired}
         onError={(message) => setError(message ? { message } : null)}
         onSwitchToAudio={onSwitchToAudio}
+        onRetryVideo={handleRetryVideo}
         elapsedSeconds={elapsedSeconds}
       />
     </div>
