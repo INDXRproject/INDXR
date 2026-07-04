@@ -4,6 +4,7 @@ import { Button } from "@indxr/shared/components/ui/button"
 import Link from "next/link"
 import { AudioLines, Library, Inbox, ChevronRight } from "lucide-react"
 import { createClient } from "@indxr/shared/utils/supabase/server"
+import { HomeCreditsBalance } from "@/components/dashboard/HomeCreditsBalance"
 
 export const metadata: Metadata = {
   title: "Home — INDXR.AI",
@@ -15,14 +16,8 @@ export default async function DashboardPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Credits balance
-  let creditsBalance = 0
-  if (user) {
-    const { data } = await supabase
-      .rpc("get_credit_balance", { p_user_id: user.id })
-      .maybeSingle()
-    creditsBalance = (data as number | null) ?? 0
-  }
+  // Credits balance is rendered client-side via <HomeCreditsBalance /> using the
+  // same live source as the topbar/sidebar (useAuth().credits).
 
   // Recent inbox messages (ticket_id IS NULL = inbox only)
   let recentMessages: Array<{ id: string; title: string; body: string; read: boolean; created_at: string }> = []
@@ -85,7 +80,7 @@ export default async function DashboardPage() {
             <div>
               <p className="text-sm text-fg-muted mb-1">Credits remaining</p>
               {/* KHIDR: schrijf final copy voor credit balance card */}
-              <p className="text-4xl font-semibold text-fg tabular-nums">{creditsBalance}</p>
+              <HomeCreditsBalance />
               <p className="text-xs text-fg-muted mt-1">1 credit = 1 minute of AI transcription</p>
             </div>
             <Link href="/dashboard/billing">

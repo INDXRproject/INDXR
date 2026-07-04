@@ -27,11 +27,15 @@ class YouTubeClient:
         except Exception:
             return 0
 
-    def get_playlist_items(self, playlist_id, max_results=50):
+    def get_playlist_items(self, playlist_id, max_results=500):
         """
         Fetch all items from a playlist.
-        Note: We limit to 50 for now based on current requirements, 
-        but pagination support can be added easily.
+
+        The YouTube Data API returns at most 50 items per page, so we page
+        through with nextPageToken until the playlist is exhausted or we hit
+        max_results (default 500, matching the yt-dlp fallback's '1-500' cap).
+        Video details (videos.list) are also capped at 50 IDs per request, so
+        those calls are batched in chunks of 50.
         """
         if not self.youtube:
             raise Exception("YouTube API client not initialized")
@@ -42,71 +46,84 @@ class YouTubeClient:
                 part="snippet,contentDetails",
                 id=playlist_id
             ).execute()
-            
+
             if not playlist_response.get("items"):
                 raise Exception("Playlist not found or private")
-                
+
             playlist_title = playlist_response["items"][0]["snippet"]["title"]
-            
-            # 2. Get playlist items (video IDs)
-            # We fetch up to 50 items (1 quota unit)
-            # For >50 items, we would need to handle nextPageToken
-            items_response = self.youtube.playlistItems().list(
-                part="snippet,contentDetails",
-                playlistId=playlist_id,
-                maxResults=max_results
-            ).execute()
-            
-            video_ids = []
+
+            # 2. Get playlist items (video IDs) — paginate with nextPageToken.
             playlist_entries = []
-            
-            for item in items_response.get("items", []):
-                snippet = item["snippet"]
-                video_id = snippet["resourceId"]["videoId"]
-                video_ids.append(video_id)
-                
-                # Preliminary entry with basic info
-                playlist_entries.append({
-                    "id": video_id,
-                    "title": snippet["title"],
-                    "thumbnail": snippet["thumbnails"].get("high", {}).get("url") or snippet["thumbnails"].get("default", {}).get("url"),
-                    # Duration is NOT in playlistItems, must fetch from videos endpoint
-                    "duration": 0
-                })
-                
-            # 3. Get video details (duration, caption status)
-            # Batch fetch video details (1 quota unit)
-            if video_ids:
+            page_token = None
+            while len(playlist_entries) < max_results:
+                items_response = self.youtube.playlistItems().list(
+                    part="snippet,contentDetails",
+                    playlistId=playlist_id,
+                    maxResults=50,  # API hard limit per page
+                    pageToken=page_token
+                ).execute()
+
+                for item in items_response.get("items", []):
+                    snippet = item["snippet"]
+                    video_id = snippet["resourceId"]["videoId"]
+                    playlist_entries.append({
+                        "id": video_id,
+                        "title": snippet["title"],
+                        "thumbnail": snippet["thumbnails"].get("high", {}).get("url") or snippet["thumbnails"].get("default", {}).get("url"),
+                        # Duration is NOT in playlistItems, must fetch from videos endpoint
+                        "duration": 0
+                    })
+
+                page_token = items_response.get("nextPageToken")
+                if not page_token:
+                    break
+
+            # Trim in case the final page overshot the cap.
+            playlist_entries = playlist_entries[:max_results]
+            fetched_count = len(playlist_entries)
+
+            # 3. Get video details (duration, caption status) — batched by 50.
+            video_map = {}
+            all_video_ids = [e["id"] for e in playlist_entries]
+            for i in range(0, len(all_video_ids), 50):
+                chunk = all_video_ids[i:i + 50]
                 videos_response = self.youtube.videos().list(
                     part="contentDetails,snippet",
-                    id=",".join(video_ids)
+                    id=",".join(chunk)
                 ).execute()
-                
-                video_map = {v["id"]: v for v in videos_response.get("items", [])}
-                
-                # Enrich entries with duration and verify availability
-                final_entries = []
-                for entry in playlist_entries:
-                    vid_details = video_map.get(entry["id"])
-                    if vid_details:
-                        # Update duration
-                        duration_iso = vid_details["contentDetails"]["duration"]
-                        entry["duration"] = self.parse_duration(duration_iso)
-                        
-                        # Check caption availability (returns 'true' or 'false' string)
-                        caption_status = vid_details["contentDetails"].get("caption", "false")
-                        entry["has_captions"] = (caption_status == "true")
-                        
-                        # Filter out private/deleted videos if title indicates it
-                        # API usually returns them but title might be "Private video"
-                        if entry["title"] not in ["Private video", "Deleted video"]:
-                             final_entries.append(entry)
-            
+                for v in videos_response.get("items", []):
+                    video_map[v["id"]] = v
+
+            # Enrich resolvable videos; drop private/deleted/unavailable ones.
+            # videos.list omits videos it can't return (private/deleted/region),
+            # and playlistItems titles them "Private video"/"Deleted video".
+            final_entries = []
+            for entry in playlist_entries:
+                vid_details = video_map.get(entry["id"])
+                if not vid_details:
+                    continue
+                if entry["title"] in ["Private video", "Deleted video"]:
+                    continue
+
+                duration_iso = vid_details["contentDetails"]["duration"]
+                entry["duration"] = self.parse_duration(duration_iso)
+
+                # Check caption availability (returns 'true' or 'false' string)
+                caption_status = vid_details["contentDetails"].get("caption", "false")
+                entry["has_captions"] = (caption_status == "true")
+
+                final_entries.append(entry)
+
+            # Real unavailable count: fetched playlist items that could not be
+            # resolved to a playable video (private/members-only/deleted).
+            unavailable_count = fetched_count - len(final_entries)
+
             return {
                 "success": True,
                 "title": playlist_title,
                 "entries": final_entries,
-                "total_count": playlist_response["items"][0]["contentDetails"]["itemCount"]
+                "total_count": playlist_response["items"][0]["contentDetails"]["itemCount"],
+                "unavailable_count": unavailable_count,
             }
 
         except HttpError as e:

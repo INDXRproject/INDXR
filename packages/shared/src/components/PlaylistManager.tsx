@@ -67,7 +67,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [playlist, setPlaylist] = useState<{ title: string; entries: PlaylistEntry[]; total_count?: number } | null>(null);
+  const [playlist, setPlaylist] = useState<{ title: string; entries: PlaylistEntry[]; total_count?: number; unavailable_count?: number } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set<string>());
   const [visibleCount, setVisibleCount] = useState(25);
   
@@ -319,8 +319,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   };
 
   const availableCount = playlist?.entries?.length || 0;
-  const totalInPlaylist = playlist?.total_count || availableCount;
-  const missingCount = Math.max(0, totalInPlaylist - availableCount);
+  // Real count from the backend: playlist items that could not be resolved to a
+  // playable video (private/members-only/deleted). Not a cap-driven subtraction.
+  const missingCount = playlist?.unavailable_count ?? 0;
 
   return (
     <div className="space-y-6">

@@ -195,6 +195,7 @@ class PlaylistInfoResponse(BaseModel):
     title: Optional[str] = None
     entries: Optional[List[PlaylistEntry]] = None
     total_count: Optional[int] = None
+    unavailable_count: Optional[int] = None
     error: Optional[str] = None
 
 class PlaylistExtractRequest(BaseModel):
@@ -520,7 +521,8 @@ async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_ba
                     success=True,
                     title=result['title'],
                     entries=[PlaylistEntry(**e) for e in result['entries']],
-                    total_count=result['total_count']
+                    total_count=result['total_count'],
+                    unavailable_count=result.get('unavailable_count')
                 )
             except Exception as e:
                 logger.warning(f"API Fetch failed ({e}). Falling back to yt-dlp.")
@@ -577,13 +579,17 @@ async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_ba
             
             # Robust total count check
             total_count = info.get('playlist_count') or info.get('expected_warnings') or len(entries)
+            # yt-dlp (ignoreerrors=True) drops private/deleted entries, so any gap
+            # between the reported count and the returned entries is genuinely unavailable.
+            unavailable_count = max(0, total_count - len(entries))
             logger.info(f"Playlist metadata extracted. Title: {info.get('title')}, Entries: {len(entries)}, Total Count (reported): {total_count}")
-            
+
             return PlaylistInfoResponse(
                 success=True,
                 title=info.get('title'),
                 entries=entries,
-                total_count=total_count
+                total_count=total_count,
+                unavailable_count=unavailable_count
             )
             
     except Exception as e:
