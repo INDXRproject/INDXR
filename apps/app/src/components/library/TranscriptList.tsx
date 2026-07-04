@@ -12,6 +12,7 @@ import {
   Folder,
   AlertCircle,
   X,
+  CheckCheck,
 } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
 import {
@@ -264,32 +265,47 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
   };
 
   /**
-   * Mark a single transcript as viewed without navigating to it.
-   * React 19 optimistic pattern: addOptimisticRead hides the NEW badge instantly
-   * (must be called INSIDE startTransition or it flashes back), the canonical
-   * viewed_at mutation runs in the background, and only a successful write commits
-   * to readIds. On failure the optimistic overlay reverts and the badge returns.
-   * No transcripts-updated dispatch → no list refetch, reflow or scroll-reset.
+   * Mark one or more transcripts as viewed. Shared by the per-row NEW badge and
+   * the bulk selection-bar action. React 19 optimistic pattern: every id is hidden
+   * optimistically inside a SINGLE startTransition (addOptimisticRead must run
+   * inside it or the badge flashes back), one batched viewed_at write runs in the
+   * background, and only a successful write commits all ids to readIds. On failure
+   * nothing commits and the optimistic overlay reverts. No transcripts-updated
+   * dispatch → no list refetch, reflow or scroll-reset.
    */
-  const handleMarkAsRead = (transcriptId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const markRead = (ids: string[]) => {
+    if (ids.length === 0) return;
     startTransition(async () => {
-      addOptimisticRead(transcriptId);
+      ids.forEach(id => addOptimisticRead(id));
       const { error } = await supabase
         .from('transcripts')
         .update({ viewed_at: new Date().toISOString() })
-        .eq('id', transcriptId);
+        .in('id', ids);
       if (error) {
         console.error('Mark as read failed:', error);
-        // No commit → optimistic overlay reverts, NEW badge reappears.
+        // No commit → optimistic overlay reverts, NEW badges reappear.
         return;
       }
-      setReadIds(prev => new Set(prev).add(transcriptId));
+      setReadIds(prev => { const s = new Set(prev); ids.forEach(id => s.add(id)); return s; });
     });
   };
 
+  /** Per-row NEW badge click — guards the event, then reuses markRead. */
+  const handleMarkAsRead = (transcriptId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    markRead([transcriptId]);
+  };
+
   const isNew = (t: Transcript) => !t.viewed_at && !optimisticReadIds.has(t.id);
+
+  // Unread ids within the current selection. Because isNew folds in the
+  // optimistic overlay, this empties out as bulk marking commits, so the
+  // selection-bar "Mark as read" button hides itself once nothing is NEW.
+  const selectedUnreadIds = Array.from(selectedIds).filter(id => {
+    const t = transcripts.find(x => x.id === id);
+    return t ? isNew(t) : false;
+  });
 
   // Drag start — pass transcript id via dataTransfer
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -578,6 +594,13 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {selectedUnreadIds.length > 0 && (
+                <Button size="sm" variant="ghost" className="text-fg-muted hover:text-fg" onClick={() => markRead(selectedUnreadIds)}>
+                  <CheckCheck className="mr-2 h-4 w-4" />
+                  Mark as read
+                </Button>
+              )}
 
               <Button size="sm" variant="ghost" className="text-error hover:text-error hover:bg-error/10" onClick={handleBatchDelete}>
                  <Trash2 className="h-4 w-4" />
