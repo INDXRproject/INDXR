@@ -6795,3 +6795,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/library/TranscriptList.tsx
 docs/LESSONS.md
 ---
+[2026-07-04 16:11] commit: docs: log mark-as-read optimistic update + production verification
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+---
