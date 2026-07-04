@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useOptimistic, startTransition } from "react";
 import Link from "next/link";
 import {
   Trash2,
@@ -222,8 +222,13 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
   const [isDownloading, setIsDownloading] = useState(false);
   const [editingId, setEditingId]     = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
-  // Track locally-marked-as-read IDs so badge hides instantly
-  const [locallyReadIds, setLocallyReadIds] = useState<Set<string>>(new Set());
+  // Committed mark-as-read IDs (persisted to DB). The optimistic overlay below
+  // hides the NEW badge instantly while the mutation is in flight — no list refetch.
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [optimisticReadIds, addOptimisticRead] = useOptimistic(
+    readIds,
+    (prev, id: string) => new Set(prev).add(id),
+  );
   const editTitleRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const { credits, refreshCredits } = useAuth();
@@ -258,25 +263,33 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
     setDeleteTarget(null);
   };
 
-  /** Mark a single transcript as viewed without navigating to it */
-  const handleMarkAsRead = async (transcriptId: string, e: React.MouseEvent) => {
+  /**
+   * Mark a single transcript as viewed without navigating to it.
+   * React 19 optimistic pattern: addOptimisticRead hides the NEW badge instantly
+   * (must be called INSIDE startTransition or it flashes back), the canonical
+   * viewed_at mutation runs in the background, and only a successful write commits
+   * to readIds. On failure the optimistic overlay reverts and the badge returns.
+   * No transcripts-updated dispatch → no list refetch, reflow or scroll-reset.
+   */
+  const handleMarkAsRead = (transcriptId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setLocallyReadIds(prev => new Set(prev).add(transcriptId));
-    const { error } = await supabase
-      .from('transcripts')
-      .update({ viewed_at: new Date().toISOString() })
-      .eq('id', transcriptId);
-    if (error) {
-      console.error('Mark as read failed:', error);
-      // Rollback optimistic update
-      setLocallyReadIds(prev => { const s = new Set(prev); s.delete(transcriptId); return s; });
-    } else {
-      window.dispatchEvent(new CustomEvent('transcripts-updated'));
-    }
+    startTransition(async () => {
+      addOptimisticRead(transcriptId);
+      const { error } = await supabase
+        .from('transcripts')
+        .update({ viewed_at: new Date().toISOString() })
+        .eq('id', transcriptId);
+      if (error) {
+        console.error('Mark as read failed:', error);
+        // No commit → optimistic overlay reverts, NEW badge reappears.
+        return;
+      }
+      setReadIds(prev => new Set(prev).add(transcriptId));
+    });
   };
 
-  const isNew = (t: Transcript) => !t.viewed_at && !locallyReadIds.has(t.id);
+  const isNew = (t: Transcript) => !t.viewed_at && !optimisticReadIds.has(t.id);
 
   // Drag start — pass transcript id via dataTransfer
   const handleDragStart = (e: React.DragEvent, id: string) => {
