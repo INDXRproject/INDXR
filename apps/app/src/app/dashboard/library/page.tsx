@@ -279,7 +279,7 @@ function LibraryContent() {
 
             {/* Pagination — server-side, works over the whole filtered dataset */}
             {totalCount > pageSize && (
-              <div className="mt-5 flex items-center justify-between gap-4 text-sm text-fg-muted">
+              <div className="mt-5 mb-3 sm:mb-0 flex items-center justify-between gap-4 text-sm text-fg-muted">
                 <span className="tabular-nums">
                   {rangeFrom + 1}–{Math.min(rangeFrom + pageSize, totalCount)} of {totalCount}
                 </span>

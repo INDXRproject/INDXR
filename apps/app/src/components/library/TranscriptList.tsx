@@ -132,29 +132,33 @@ const BADGE_CLASSES = {
 type BadgeVariant = keyof typeof BADGE_CLASSES;
 type BadgeSpec = { key: string; label: string; variant: BadgeVariant };
 
-/** Type + output badges for a transcript. Edited state folds into the family
- *  colour (higher-L variant) instead of a separate grey "Edited" chip. */
+/** Checkbox styling for the Library — a clearly-outlined, filled box when
+ *  unchecked (AA-visible in both themes); the checked state keeps the accent
+ *  fill from the primitive (its variant has higher specificity). */
+const CHECKBOX_CLS = "data-[state=unchecked]:border-border-strong data-[state=unchecked]:bg-surface-sunken";
+
+/** Type + output badges for a transcript. The full-colour source badge always
+ *  shows; an edited artifact adds a separate lighter "-soft" chip of the same
+ *  hue next to it, so both the source and its edited state read at a glance. */
 function transcriptBadges(t: Transcript): BadgeSpec[] {
   const isAi = !!t.processing_method && t.processing_method !== 'youtube_captions';
   const edited = !!t.edited_content;
   const badges: BadgeSpec[] = [];
 
   // Source (one per transcript) — captions (sky) vs AI transcription (indigo).
+  // Edited source content adds a lighter same-hue "Edited" chip beside it.
   if (isAi) {
-    badges.push(edited
-      ? { key: 'src', label: 'Edited AI Transcription', variant: 'ai-edit' }
-      : { key: 'src', label: 'AI Transcription',        variant: 'ai' });
+    badges.push({ key: 'src', label: 'AI Transcription', variant: 'ai' });
+    if (edited) badges.push({ key: 'src-edit', label: 'Edited', variant: 'ai-edit' });
   } else {
-    badges.push(edited
-      ? { key: 'src', label: 'Edited Auto-captions', variant: 'auto-edit' }
-      : { key: 'src', label: 'Auto-captions',        variant: 'auto' });
+    badges.push({ key: 'src', label: 'Auto-captions', variant: 'auto' });
+    if (edited) badges.push({ key: 'src-edit', label: 'Edited', variant: 'auto-edit' });
   }
 
-  // AI summary (violet), edited = lighter violet.
+  // AI summary (violet) + lighter "Edited" chip when the summary was edited.
   if (t.ai_summary) {
-    badges.push(t.ai_summary.edited_html
-      ? { key: 'sum', label: 'Edited Summary', variant: 'summary-edit' }
-      : { key: 'sum', label: 'AI Summary',     variant: 'summary' });
+    badges.push({ key: 'sum', label: 'AI Summary', variant: 'summary' });
+    if (t.ai_summary.edited_html) badges.push({ key: 'sum-edit', label: 'Edited', variant: 'summary-edit' });
   }
 
   // RAG export (developer) — teal.
@@ -589,10 +593,11 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
       )}
 
       {viewMode === 'list' ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface/60">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {/* Header row */}
           <div className="flex items-center gap-3 border-b border-border-subtle bg-surface-elevated/50 px-4 py-2.5 text-xs font-medium text-fg-muted">
             <Checkbox
+              className={CHECKBOX_CLS}
               checked={selectedIds.size === transcripts.length && transcripts.length > 0}
               onCheckedChange={handleSelectAll}
             />
@@ -602,7 +607,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
               <span className="w-28 text-right">Words</span>
               <span className="w-40 text-right">Added</span>
             </div>
-            <span className="w-[104px] shrink-0" aria-hidden />
+            <span className="hidden sm:block w-[104px] shrink-0" aria-hidden />
           </div>
 
           <div className="divide-y divide-border-subtle">
@@ -620,9 +625,10 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                     selectedIds.has(t.id) && "bg-surface-elevated/50"
                   )}
                 >
-                  {/* Checkbox — visible on hover / when selected */}
-                  <div className={cn("pt-0.5 transition-opacity", selectedIds.has(t.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
+                  {/* Checkbox — always visible on mobile (no hover); hover/selected on desktop */}
+                  <div className={cn("pt-0.5 transition-opacity", selectedIds.has(t.id) ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100")}>
                     <Checkbox
+                      className={CHECKBOX_CLS}
                       checked={selectedIds.has(t.id)}
                       onCheckedChange={() => toggleSelect(t.id)}
                     />
@@ -662,7 +668,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                           </Link>
                           <button
                             onClick={() => handleRenameStart(t)}
-                            className="opacity-0 group-hover/title:opacity-100 transition-opacity text-fg-muted hover:text-fg h-4 w-4 flex items-center justify-center shrink-0 mt-1"
+                            className="opacity-0 group-hover/title:opacity-100 transition-opacity text-fg-muted hover:text-fg h-4 w-4 hidden sm:flex items-center justify-center shrink-0 mt-1"
                             title="Rename"
                           >
                             <Pencil className="h-2.5 w-2.5" />
@@ -693,8 +699,8 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                     <span className="w-40 text-right whitespace-nowrap">{formatDateHybrid(displayDate(t))}</span>
                   </div>
 
-                  {/* Row actions — visible on hover */}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  {/* Row actions — desktop hover only (hidden on mobile so the title uses full width) */}
+                  <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                     <Link href={`/dashboard/library/${t.id}`}>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent">
                         <Eye className="h-4 w-4" />
@@ -736,12 +742,12 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                   )}
                 >
                   <div
-                    className={cn("absolute top-3 left-3 z-20 transition-opacity", selectedIds.has(t.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100")}
+                    className={cn("absolute top-3 left-3 z-20 transition-opacity", selectedIds.has(t.id) ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100")}
                   >
                     <Checkbox
                       checked={selectedIds.has(t.id)}
                       onCheckedChange={() => toggleSelect(t.id)}
-                      className="bg-bg/80"
+                      className={CHECKBOX_CLS}
                     />
                   </div>
 
