@@ -6707,4 +6707,41 @@ docs/LOG.md
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 Changed: docs/LOG.md
 ---
-[2026-07-04 14:27] taak: Library launch-afronding (metadata-kolommen, hybride datum, hexagon→achtergrond, OKLCH badge-hue-systeem, munt-credit-icoon, topnav-spacing, mobiele nav-fixes, server-side pagination 50/pp + settings-toggle 25/50/100, check-wiki hook-hardening) — build groen beide apps; lokaal browser-geverifieerd (test1, geïnjecteerde sessie) licht+dark+mobiel met screenshots: badges alle families onderscheidbaar + WCAG AA (licht min 4.75, dark min 6.73), metadata 3 uitgelijnde kolommen, hexagon subtiel op pagina-achtergrond niet in rijen, munt-icoon+getal gegroepeerd, mobiel enkel bottom-tab-bar (geen zijbalk-overlap) + selection-bar boven tab-bar, pagination page2 (51–55/55) + server-side zoek over hele dataset (Item 45 van pagina 2 gevonden). | gewijzigd: apps/*/src/app/styles/tokens.css, apps/app/src/components/library/TranscriptList.tsx, apps/app/src/app/dashboard/library/page.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/components/AppTopbar.tsx, packages/shared/src/components/icons/HexagonCreditIcon.tsx, apps/app/src/app/dashboard/settings/page.tsx, apps/app/src/components/dashboard/settings/LibraryPageSizeSelect.tsx, apps/app/src/app/actions/profile.ts, supabase/migrations/20260704113930_profiles_library_page_size.sql, .claude/settings.json, .claude/hooks/check-wiki.sh
+[2026-07-04 14:27] taak: Library launch-afronding (metadata-kolommen, hybride datum, hexagon→achtergrond, OKLCH badge-hue-systeem, munt-credit-icoon, topnav-spacing, mobiele nav-fixes, server-side pagination 50/pp + settings-toggle 25/50/100, check-wiki hook-hardening) — build groen beide apps; gecommit + gepusht naar master (f4fd26e, geen conflicts); migratie 20260704113930 bevestigd op PRODUCTIE (kolom profiles.library_page_size, CHECK 25/50/100, default 50, schema_migrations=7); geverifieerd op PRODUCTIE app.indxr.ai (test1, geïnjecteerde prod-sessie, seed opgeruimd) in licht+dark+mobiel met screenshots: badges alle families onderscheidbaar + WCAG AA (licht min 4.75, dark min 6.73), metadata 3 uitgelijnde kolommen, hexagon subtiel op pagina-achtergrond niet in rijen, munt-icoon+getal gegroepeerd, mobiel enkel bottom-tab-bar (geen zijbalk-overlap) + selection-bar boven tab-bar, pagination page2 (51–55/55, 50/pp default) + server-side zoek over hele dataset (Item 45 van pagina 2 gevonden) + Settings-toggle 25 persisteert na reload (library toont daarna 1–25 van 55). | gewijzigd: apps/*/src/app/styles/tokens.css, apps/app/src/components/library/TranscriptList.tsx, apps/app/src/app/dashboard/library/page.tsx, apps/app/src/app/dashboard/layout.tsx, apps/app/src/components/AppTopbar.tsx, packages/shared/src/components/icons/HexagonCreditIcon.tsx, apps/app/src/app/dashboard/settings/page.tsx, apps/app/src/components/dashboard/settings/LibraryPageSizeSelect.tsx, apps/app/src/app/actions/profile.ts, supabase/migrations/20260704113930_profiles_library_page_size.sql, .claude/settings.json, .claude/hooks/check-wiki.sh
+[2026-07-04 15:07] commit: feat(library): launch polish — badge hue system, metadata columns, hybrid date, server-side pagination
+
+- Badges: OKLCH hue-family system (sky/indigo/violet/teal) with -soft edited
+  variants (same hue, higher L); replaces the info/violet two-family setup.
+  WCAG AA verified both themes (light min 4.75, dark min 6.73).
+- Metadata: three right-aligned parallel columns (Duration/Words/Added) on
+  desktop, compact single line on mobile.
+- Date: hybrid relative (<48h) / compact absolute date+time after.
+- Hexagon: moved from rows to a subtle page-background layer.
+- Credit icon: coin with INDXR hexagon mark; icon+count grouped as one pill
+  in topbar; increased topnav spacing.
+- Mobile: sidebar hidden (bottom tab bar is the only nav), removed broken
+  mobile sidebar trigger, floating selection bar lifted above the tab bar.
+- Pagination: server-side, 50/page default, search/sort/collection filters
+  run over the full dataset in Postgres; page-size preference (25/50/100)
+  persisted in profiles.library_page_size (migration 20260704113930) with a
+  Settings toggle.
+- Hook: harden check-wiki stop hook path via $CLAUDE_PROJECT_DIR.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: .claude/hooks/check-wiki.sh
+.claude/settings.json
+apps/app/src/app/actions/profile.ts
+apps/app/src/app/dashboard/layout.tsx
+apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/app/dashboard/settings/page.tsx
+apps/app/src/app/styles/tokens.css
+apps/app/src/components/AppTopbar.tsx
+apps/app/src/components/dashboard/settings/LibraryPageSizeSelect.tsx
+apps/app/src/components/library/TranscriptList.tsx
+apps/marketing/src/app/styles/tokens.css
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+packages/shared/src/components/icons/HexagonCreditIcon.tsx
+supabase/migrations/20260704113930_profiles_library_page_size.sql
+---
