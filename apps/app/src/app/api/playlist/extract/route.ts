@@ -13,6 +13,12 @@ const requestSchema = z.object({
   use_whisper_ids: z.array(z.string()).optional(),
   playlist_title: z.string().nullable().optional(),
   playlist_url: z.string().nullable().optional(),
+  // Per-video display metadata ({video_id: {title, duration}}), persisted on the
+  // job row so the per-video list can be rebuilt from the DB on resume.
+  video_metadata: z.record(z.string(), z.object({
+    title: z.string().optional(),
+    duration: z.number().optional(),
+  })).optional(),
 });
 
 export async function POST(request: Request) {

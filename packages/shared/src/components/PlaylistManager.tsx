@@ -56,6 +56,7 @@ interface PlaylistManagerProps {
   onSwitchToAudio?: () => void;
   onRetryVideo?: (videoId: string) => void;
   elapsedSeconds?: number;
+  resumePlaylist?: { title: string; entries: PlaylistEntry[] } | null;
 }
 
 function formatElapsed(seconds: number): string {
@@ -64,7 +65,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryVideo, elapsedSeconds = 0 }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryVideo, elapsedSeconds = 0, resumePlaylist }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -102,6 +103,17 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       setIsCompleted(false)
     }
   }, [isExtracting, videoStatuses, refreshCredits, elapsedSeconds])
+
+  // Resume hydration: when returning to an in-progress job, the parent supplies
+  // the persisted entry list (titles/thumbnails). Rebuild the playlist card so the
+  // per-video list reappears; the per-video statuses come in via `videoStatuses`
+  // (hydrated from the DB job row). Only seeds when the list isn't already built.
+  useEffect(() => {
+    if (resumePlaylist && resumePlaylist.entries.length > 0) {
+      setPlaylist(prev => prev ?? { title: resumePlaylist.title, entries: resumePlaylist.entries })
+      setHasExtracted(true)
+    }
+  }, [resumePlaylist])
 
   const handleReset = () => {
     setHasExtracted(false);
@@ -652,17 +664,6 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         className="border-border"
                         onClick={(e) => e.stopPropagation()}
                       />
-                      {entry.thumbnail && (
-                        <div className="relative h-12 w-20 rounded-lg overflow-hidden shrink-0 border border-border">
-                          <Image
-                            src={entry.thumbnail}
-                            alt={entry.title}
-                            fill
-                            sizes="80px"
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-sm text-fg truncate font-medium">
@@ -778,14 +779,19 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
               })}
               
               {availableCount > visibleCount && (
-                <Button 
-                  variant="ghost" 
-                  className="w-full mt-2 h-12 text-fg-muted hover:text-fg hover:bg-surface-elevated/50 border border-border border-dashed"
-                  onClick={loadMore}
-                >
-                  <ChevronDown className="h-4 w-4 mr-2" />
-                  Load More ({availableCount - visibleCount} more)
-                </Button>
+                <>
+                  <p className="text-center text-xs text-fg-muted mt-1">
+                    Showing {Math.min(visibleCount, availableCount)} of {availableCount}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    className="w-full mt-2 h-12 text-fg-muted hover:text-fg hover:bg-surface-elevated/50 border border-border border-dashed"
+                    onClick={loadMore}
+                  >
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    Load More ({availableCount - visibleCount} more)
+                  </Button>
+                </>
               )}
             </div>
           </ScrollArea>

@@ -54,6 +54,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [resumeData, setResumeData] = useState<{ jobId: string; completed: number; total: number; title?: string } | null>(null)
   const [resumeBarActive, setResumeBarActive] = useState(false)
+  // Entry list rebuilt from the DB (video_metadata) on resume so PlaylistManager
+  // can re-render the per-video list; statuses come from the DB via videoStatuses.
+  const [resumePlaylist, setResumePlaylist] = useState<{ title: string; entries: Array<{ id: string; title: string; duration?: number }> } | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
   const playlistJobIdRef = useRef<string | null>(null)
@@ -212,6 +215,16 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         const job = await resp.json()
         const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
 
+        // Rebuild the per-video entry list from the DB job row (single source of
+        // truth): titles/durations come from `video_metadata`, ordered by
+        // `video_ids`. Statuses come from `vr` (video_results), above. No
+        // sessionStorage, no thumbnails. Older jobs (started before video_metadata
+        // was sent) fall back to the video id as the title so rows still render.
+        const vm = (job.video_metadata ?? {}) as Record<string, { title?: string; duration?: number }>
+        const jobVideoIds: string[] = Array.isArray(job.video_ids) ? job.video_ids : []
+        const restoredEntries: Array<{ id: string; title: string; duration?: number }> =
+          jobVideoIds.map(id => ({ id, title: vm[id]?.title || id, duration: vm[id]?.duration }))
+
         if (job.status === 'error' && job.error_type === 'watchdog_permanent_failure') {
           sessionStorage.removeItem('indxr-active-playlist-job')
           setWatchdogRefundNotice(true)
@@ -291,6 +304,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
             setVideoStatuses(restoredStatuses)
             setFreeVideoIds(restoredFreeIds)
           }
+          if (restoredEntries.length > 0) {
+            setResumePlaylist({ title: job.playlist_title ?? 'Playlist', entries: restoredEntries })
+          }
           setResumeData({
             jobId: activeJobId,
             completed: job.completed ?? 0,
@@ -310,6 +326,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           if (Object.keys(restoredStatuses).length > 0) {
             setVideoStatuses(restoredStatuses)
             setFreeVideoIds(restoredFreeIds)
+          }
+          if (restoredEntries.length > 0) {
+            setResumePlaylist({ title: job.playlist_title ?? 'Playlist', entries: restoredEntries })
           }
           setProgressMessage("Retrying failed videos...")
           playlistJobIdRef.current = activeJobId
@@ -458,6 +477,16 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         return !av?.duplicateId
       })
 
+      // Per-video display metadata ({video_id: {title, duration}}), persisted on
+      // the DB job row so the per-video list can be rebuilt from the DB on resume
+      // (single source of truth — no sessionStorage entry cache). No thumbnails:
+      // the list is title-driven.
+      const videoMetadata: Record<string, { title: string; duration?: number }> = {}
+      for (const id of extractableIds) {
+        const av = availabilityMap.get(id)
+        videoMetadata[id] = { title: av?.title ?? '', duration: av?.duration }
+      }
+
       // Start extraction job on the backend
       const response = await fetch('/api/playlist/extract', {
         method: 'POST',
@@ -468,6 +497,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           use_whisper_ids: useWhisperIds,
           playlist_title: playlistTitle ?? null,
           playlist_url: playlistUrl ?? null,
+          video_metadata: videoMetadata,
         }),
       })
 
@@ -478,6 +508,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
       const { job_id } = await response.json()
       playlistJobIdRef.current = job_id
+      // sessionStorage holds only pointers/timers — the per-video entry list is
+      // now sourced from the DB (video_metadata) on resume, not cached here.
       sessionStorage.setItem('indxr-active-playlist-job', JSON.stringify({
         jobId: job_id,
         startTime: Date.now(),
@@ -682,6 +714,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         onSwitchToAudio={onSwitchToAudio}
         onRetryVideo={handleRetryVideo}
         elapsedSeconds={elapsedSeconds}
+        resumePlaylist={resumePlaylist}
       />
     </div>
   )
