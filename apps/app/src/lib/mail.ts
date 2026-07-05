@@ -80,12 +80,26 @@ function renderBroadcastEmailHtml(params: {
       : `You're receiving this account notification from INDXR.AI.<br />` +
         `Read our <a href="${privacyUrl}" style="color:#643400;text-decoration:underline;">Privacy Policy</a>.`
 
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fcfaf7;margin:0;padding:0;">
+  // Wrapped in a full document so the <head> can carry color-scheme declarations
+  // (light dark) — these tell Gmail/Apple Mail that dark mode is handled and damp
+  // aggressive full-inversion. Images are never inverted by clients, so the logo
+  // sits on a genuine-dark (#141414, not pure #000 which Apple Mail auto-flips)
+  // header bar with the WHITE wordmark — readable in both light and dark mode.
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
+</head>
+<body style="margin:0;padding:0;color-scheme:light dark;background-color:#fcfaf7;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fcfaf7;margin:0;padding:0;">
   <tr>
     <td align="center" style="padding:32px 16px;">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #dbd7d2;border-radius:12px;overflow:hidden;font-family:${EMAIL_FONT};">
         <tr>
-          <td style="padding:28px 32px 0 32px;">
+          <td style="padding:24px 32px;background-color:#141414;border-top-left-radius:12px;border-top-right-radius:12px;">
             <img src="${logoUrl}" alt="INDXR.AI" height="28" style="height:28px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
           </td>
         </tr>
@@ -116,7 +130,9 @@ function renderBroadcastEmailHtml(params: {
       </table>
     </td>
   </tr>
-</table>`
+</table>
+</body>
+</html>`
 }
 
 // Broadcast email sent via Resend's batch endpoint (<=100 messages/call) with a
@@ -145,11 +161,12 @@ export async function sendBroadcastEmails(params: {
   const BATCH = 100
   const THROTTLE_MS = 600
 
-  // Absolute asset URLs (email can't resolve relative paths). Light-mode wordmark
-  // only — email has no reliable dark-mode. Same env fallbacks the send-route uses.
+  // Absolute asset URLs (email can't resolve relative paths). WHITE wordmark on a
+  // dark header bar so it reads in both light and dark mode (images aren't
+  // inverted by clients). Same env fallbacks the send-route uses.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.indxr.ai"
   const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL ?? "https://indxr.ai"
-  const logoUrl = `${appUrl}/logo/indxr-wordmark-black-transparent.png`
+  const logoUrl = `${appUrl}/logo/indxr-wordmark-white-transparent.png`
   const privacyUrl = `${marketingUrl}/privacy`
 
   for (let i = 0; i < params.recipients.length; i += BATCH) {
