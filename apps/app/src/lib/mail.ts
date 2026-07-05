@@ -32,6 +32,93 @@ export async function notifyAdmin(params: {
   })
 }
 
+// ── Email-safe HTML template (broadcast) ────────────────────────────────────
+// Email clients (Gmail/Outlook/Apple Mail) strip <style> blocks, ignore
+// flexbox/grid, drop custom fonts and don't support OKLCH. So: table-based
+// layout, every style inline, web-safe font stack, brand colours as hex
+// (translated from tokens.css OKLCH light-mode values), and a plain-text
+// fallback is always sent alongside (see the `text` field in the payload).
+const EMAIL_FONT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+}
+
+// Admin types a plain-text message → render as escaped paragraphs, preserving
+// blank-line paragraph breaks and single line breaks.
+function bodyToHtmlParagraphs(text: string): string {
+  return text
+    .split(/\n{2,}/)
+    .map(
+      (para) =>
+        `<p style="margin:0 0 16px 0;">${escapeHtml(para).replace(/\n/g, "<br />")}</p>`,
+    )
+    .join("")
+}
+
+// Full branded, email-safe HTML. The footer variant is driven purely by
+// `includeUnsubscribe` (the same flag the send-route already passes): marketing
+// gets an "Unsubscribe" text-link (raw token URL hidden behind the word);
+// service gets a privacy-policy link and no unsubscribe.
+function renderBroadcastEmailHtml(params: {
+  bodyText: string
+  includeUnsubscribe: boolean
+  unsubscribeUrl?: string
+  logoUrl: string
+  privacyUrl: string
+}): string {
+  const { bodyText, includeUnsubscribe, unsubscribeUrl, logoUrl, privacyUrl } = params
+
+  const footer =
+    includeUnsubscribe && unsubscribeUrl
+      ? `You're receiving this because you have an INDXR.AI account.<br />` +
+        `<a href="${unsubscribeUrl}" style="color:#643400;text-decoration:underline;">Unsubscribe</a> from these emails.`
+      : `You're receiving this account notification from INDXR.AI.<br />` +
+        `Read our <a href="${privacyUrl}" style="color:#643400;text-decoration:underline;">Privacy Policy</a>.`
+
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fcfaf7;margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #dbd7d2;border-radius:12px;overflow:hidden;font-family:${EMAIL_FONT};">
+        <tr>
+          <td style="padding:28px 32px 0 32px;">
+            <img src="${logoUrl}" alt="INDXR.AI" height="28" style="height:28px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px 0 32px;">
+            <div style="height:3px;width:44px;background-color:#d79628;border-radius:2px;font-size:0;line-height:0;">&nbsp;</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px 8px 32px;color:#27231f;font-family:${EMAIL_FONT};font-size:16px;line-height:1.6;">
+            ${bodyToHtmlParagraphs(bodyText)}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px 28px 32px;">
+            <div style="border-top:1px solid #dbd7d2;padding-top:16px;color:#77726d;font-family:${EMAIL_FONT};font-size:13px;line-height:1.5;">
+              ${footer}
+            </div>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+        <tr>
+          <td align="center" style="padding:16px 32px;color:#77726d;font-family:${EMAIL_FONT};font-size:12px;line-height:1.5;">
+            INDXR.AI &mdash; YouTube transcripts &amp; summaries
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`
+}
+
 // Broadcast email sent via Resend's batch endpoint (<=100 messages/call) with a
 // throttle between batches so a large send never hits the API — or the domain
 // reputation — in one burst. Two legal flavours, driven by `includeUnsubscribe`:
@@ -58,6 +145,13 @@ export async function sendBroadcastEmails(params: {
   const BATCH = 100
   const THROTTLE_MS = 600
 
+  // Absolute asset URLs (email can't resolve relative paths). Light-mode wordmark
+  // only — email has no reliable dark-mode. Same env fallbacks the send-route uses.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.indxr.ai"
+  const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL ?? "https://indxr.ai"
+  const logoUrl = `${appUrl}/logo/indxr-wordmark-black-transparent.png`
+  const privacyUrl = `${marketingUrl}/privacy`
+
   for (let i = 0; i < params.recipients.length; i += BATCH) {
     const chunk = params.recipients.slice(i, i + BATCH)
     const payload = chunk.map((r) => ({
@@ -65,6 +159,16 @@ export async function sendBroadcastEmails(params: {
       to: r.email,
       reply_to: "contact@indxr.ai",
       subject: params.subject,
+      html: renderBroadcastEmailHtml({
+        bodyText: params.body,
+        includeUnsubscribe: params.includeUnsubscribe,
+        unsubscribeUrl: r.unsubscribeUrl,
+        logoUrl,
+        privacyUrl,
+      }),
+      // Plain-text fallback (required by some clients/spam filters). Marketing
+      // shows the unsubscribe URL in text (a link can't hide behind a word here);
+      // service sends the bare body.
       text: params.includeUnsubscribe && r.unsubscribeUrl
         ? [
             params.body,
