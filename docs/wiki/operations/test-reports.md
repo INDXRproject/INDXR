@@ -4,6 +4,72 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## JRE-462 playlist stress-test — proxy-rotatie op schaal — 2026-07-05
+
+**Datum:** 2026-07-05
+**Tester:** Khidr (live playlist-run) + CC (DB-analyse)
+**Bron:** `playlist_extraction_jobs` job `c23cc227-3c74-4603-ae7c-6f8ed86142a9` — autoritatief uit het `video_results` JSONB-veld (462 keys, volledig), **niet** de vluchtige Sentry-mails.
+**Status:** ✅ PASS — proxy-rotatie-fix bevestigd op 9× het volume; faalrate meer dan gehalveerd.
+
+### Setup
+
+"The Joe Rogan Experience", **462 video's**, auto-captions, afleveringen ~150 min elk. Grootste real-world caption-playlist tot nu toe (net onder de 500-video hardgrens). Doel: valideert de caption-429-mitigatie (proxy-sessie-rotatie per retry, ADR-030 / LOG 2026-07-04) op schaal.
+
+### Resultaat (autoritatief, uit `video_results`)
+
+| Metric | Waarde |
+|--------|--------|
+| Succes | **449 / 462 = 97,19%** |
+| Faal (permanent) | **13 / 462 = 2,81%** |
+| Wall-clock | 4884 s = **1:21:24** (`created_at`→`completed_at`) |
+| Gemiddelde tijd/video | **~10,6 s** (4884 / 462) |
+
+De counters `completed=449` + `failed=69` tellen op tot 518 (> 462) — dat is géén fout maar het retry-bewijs (zie onder). Het `video_results`-veld bevat de definitieve per-video-status en is de enige betrouwbare bron: 449 `success` + 13 `error` = 462.
+
+> **Kanttekening op ~10,6 s/video:** de playlist wordt strikt **sequentieel** verwerkt (`_enqueue_next` kettingt één video tegelijk), dus dit is echte wall-clock-doorvoer, inclusief de retry-pass. Het is de tijd om **auto-captions** van lange video's te halen (timedtext-download + parse — géén audio-transcriptie). **Niet representatief voor korte video's** en niet voor de Whisper/AI-route.
+
+### Faaltype-uitsplitsing (de 13 permanente fails)
+
+| `error_type` | Aantal | Retry-eligible? |
+|--------------|--------|-----------------|
+| `bot_detection` (YouTube rate-limit/blokkade) | **7** | ja — geretried, opnieuw geblokkeerd |
+| `extraction_error` | **3** | nee |
+| `no_captions` (video heeft geen captions) | **3** | nee |
+
+### Retry / proxy-rotatie — bewijs dat de fix werkt
+
+RPC-semantiek geverifieerd (`update_playlist_video_progress`): `failed` telt elke video's **eerste** mislukking precies één keer; een same-status re-failure is idempotent (geen counter-wijziging); een geslaagde retry flipt de entry naar `success` en verhoogt `completed`. Daaruit volgt:
+
+- **69** video's faalden minstens één keer op de eerste poging (`failed=69`).
+- **13** bleven permanent gefaald.
+- → **56 video's herstelden op de auto-retry** (69 − 13): geblokkeerd op poging 1, geslaagd na rotatie naar een vers Decodo exit-IP.
+- Van de 69 eerste-fails waren **63 retry-eligible** (`bot_detection`/`timeout`): 56 hersteld + 7 nog geblokkeerd. De **6 niet-retry-bare** (`extraction_error` + `no_captions`) kregen terecht geen retry.
+
+Dit is de directe, gemeten werking van de proxy-sessie-rotatie: zonder rotatie zouden die 56 op hetzelfde geblokkeerde IP opnieuw 429/bot_detection hebben gekregen.
+
+### Vergelijking met vóór de fix
+
+| | Volume | Faalrate |
+|---|--------|----------|
+| Vóór de fix (kleine test) | 50 video's | 3/50 = **6,0%** |
+| Na de fix (JRE-462) | 462 video's | 13/462 = **2,81%** |
+
+Netto faalrate **meer dan gehalveerd** (6,0% → 2,81%) ondanks **9,24× het volume**.
+
+### Gebruikersrichtlijn (gemeten, eerlijk — marketing-bruikbaar)
+
+Alleen op deze meting gebaseerd, geen extrapolatie daarbuiten:
+
+- Verwacht **~97% succes** op grote auto-caption-playlists.
+- Een klein percentage (~3%) valt uit door YouTube-blokkades of ontbrekende captions; de geblokkeerde video's zijn **handmatig te herproberen** (per-video retry-UI) en slagen dan vaak alsnog.
+- **500-video hardgrens** per playlist (`get_playlist_items` cap, gelijk aan de yt-dlp-fallback `playlist_items: '1-500'`).
+
+### Conclusie
+
+De caption-429-mitigatie schaalt: op 462 lange auto-caption-video's herstelde de auto-retry 56 blokkades en bleef de netto faalrate onder 3%, lager dan de 6% van vóór de fix op een 9× kleinere set. De ~97%-succesclaim is meet-onderbouwd en mag als eerlijke marketingclaim gebruikt worden voor grote Engelstalige auto-caption-playlists.
+
+---
+
 ## AI-cache Step 0 productieverificatie — 2026-06-27
 
 **Datum:** 2026-06-27  
