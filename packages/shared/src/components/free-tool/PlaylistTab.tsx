@@ -255,7 +255,11 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           return
         }
 
-        if (job.status === 'running') {
+        if (job.status === 'running' || job.status === 'interrupted') {
+          // 'interrupted' is a transient, recoverable state (watchdog re-enqueues
+          // it) — treat it like 'running' on reload: show the Resume banner instead
+          // of discarding the job. Resuming re-attaches the poll, which now survives
+          // an interrupted status (see useJobStatus TERMINAL).
           // Build a complete status map: start all stored videoIds as 'pending',
           // then override with actual results from the job and mark the current video as 'extracting'.
           // This gives the full picture so badges update correctly once polling resumes.

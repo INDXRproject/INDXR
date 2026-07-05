@@ -46,7 +46,13 @@ const ENDPOINT = {
   playlist: (id: string) => `/api/playlist/jobs/${id}`,
 } as const
 
-const TERMINAL = new Set(['complete', 'error', 'interrupted'])
+// 'interrupted' is NOT terminal — it's a transient, recoverable state. The poll
+// endpoint marks a job 'interrupted' on a stale heartbeat (a worker restart or a
+// long stall), and the worker watchdog re-enqueues it within ~2 min (crash
+// recovery). Treating it as terminal made the UI stop polling and render the
+// completion summary while the backend was still running. A genuinely-dead job
+// ends in 'error' (watchdog Pass 2 after exhausted retries), which IS terminal.
+const TERMINAL = new Set(['complete', 'error'])
 const MAX_CONSECUTIVE_ERRORS = 3
 
 /**
