@@ -17,7 +17,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  const { title, body, target, manualIds, sendEmail, confirmCount } = await req.json().catch(() => ({}))
+  const { title, body, target, manualIds, sendEmail, confirmCount, messageType } = await req.json().catch(() => ({}))
+
+  // Fail-safe classification: only an explicit "service" opts out of the
+  // unsubscribe machinery. Any other/missing value is treated as "marketing"
+  // so a broadcast can never accidentally bypass a user's opt-out.
+  const isService = messageType === "service"
 
   if (!title || typeof title !== "string" || !body || typeof body !== "string") {
     return NextResponse.json({ error: "title en body zijn verplicht." }, { status: 400 })
@@ -81,19 +86,23 @@ export async function POST(req: NextRequest) {
   let emailFailed = 0
   let skippedUnsubscribed = 0
   if (sendEmail === true) {
-    // Honour marketing_unsubscribed (NOT email_notifications — that's support mail).
-    // A missing profiles row means the user has never opted out → still emailed.
-    const ids = recipients.map((r) => r.id)
+    // Marketing: honour marketing_unsubscribed (NOT email_notifications — that's
+    // support mail). A missing profiles row means never opted out → still emailed.
+    // Service: legitimate-interest notice to everyone — skip the filter entirely,
+    // no unsubscribe footer/header (isService drives both).
     const unsubscribed = new Set<string>()
-    for (let i = 0; i < ids.length; i += 1000) {
-      const idChunk = ids.slice(i, i + 1000)
-      const { data } = await admin
-        .from("profiles")
-        .select("id, marketing_unsubscribed")
-        .in("id", idChunk)
-      for (const p of data ?? []) {
-        if ((p as { marketing_unsubscribed?: boolean }).marketing_unsubscribed) {
-          unsubscribed.add((p as { id: string }).id)
+    if (!isService) {
+      const ids = recipients.map((r) => r.id)
+      for (let i = 0; i < ids.length; i += 1000) {
+        const idChunk = ids.slice(i, i + 1000)
+        const { data } = await admin
+          .from("profiles")
+          .select("id, marketing_unsubscribed")
+          .in("id", idChunk)
+        for (const p of data ?? []) {
+          if ((p as { marketing_unsubscribed?: boolean }).marketing_unsubscribed) {
+            unsubscribed.add((p as { id: string }).id)
+          }
         }
       }
     }
@@ -103,11 +112,18 @@ export async function POST(req: NextRequest) {
       .filter((r) => r.email && !unsubscribed.has(r.id))
       .map((r) => ({
         email: r.email as string,
-        unsubscribeUrl: `${appUrl}/unsubscribe?token=${encodeURIComponent(signUnsubscribe(r.id))}`,
+        ...(isService
+          ? {}
+          : { unsubscribeUrl: `${appUrl}/unsubscribe?token=${encodeURIComponent(signUnsubscribe(r.id))}` }),
       }))
-    skippedUnsubscribed = recipients.filter((r) => r.email && unsubscribed.has(r.id)).length
+    skippedUnsubscribed = isService ? 0 : recipients.filter((r) => r.email && unsubscribed.has(r.id)).length
 
-    const result = await sendBroadcastEmails({ recipients: emailRecipients, subject: title, body })
+    const result = await sendBroadcastEmails({
+      recipients: emailRecipients,
+      subject: title,
+      body,
+      includeUnsubscribe: !isService,
+    })
     emailed = result.sent
     emailFailed = result.failed
   }

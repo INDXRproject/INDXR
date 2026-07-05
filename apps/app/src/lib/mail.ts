@@ -32,16 +32,22 @@ export async function notifyAdmin(params: {
   })
 }
 
-// Marketing/broadcast email with an unsubscribe footer. Deliberately separate
-// from notifyUser (transactional support mail): this channel honours
-// marketing_unsubscribed, NOT email_notifications. Callers MUST have already
-// filtered out marketing-unsubscribed recipients. Sent via Resend's batch
-// endpoint (<=100 messages/call) with a throttle between batches so a large
-// broadcast never hits the API — or the domain reputation — in one burst.
+// Broadcast email sent via Resend's batch endpoint (<=100 messages/call) with a
+// throttle between batches so a large send never hits the API — or the domain
+// reputation — in one burst. Two legal flavours, driven by `includeUnsubscribe`:
+//   • marketing (includeUnsubscribe=true): consent-based, MUST carry the
+//     unsubscribe footer + List-Unsubscribe header. Callers MUST have already
+//     filtered out marketing-unsubscribed recipients (honours
+//     marketing_unsubscribed, NOT email_notifications).
+//   • service (includeUnsubscribe=false): legitimate-interest account/outage
+//     notices to everyone — no unsubscribe footer, no List-Unsubscribe header,
+//     and MUST NOT contain promotional content (that would make it marketing).
+// Deliberately separate from notifyUser (transactional support mail).
 export async function sendBroadcastEmails(params: {
-  recipients: { email: string; unsubscribeUrl: string }[]
+  recipients: { email: string; unsubscribeUrl?: string }[]
   subject: string
   body: string
+  includeUnsubscribe: boolean
 }): Promise<{ sent: number; failed: number }> {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM
@@ -59,14 +65,18 @@ export async function sendBroadcastEmails(params: {
       to: r.email,
       reply_to: "contact@indxr.ai",
       subject: params.subject,
-      text: [
-        params.body,
-        "",
-        "—",
-        "You're receiving this because you have an INDXR.AI account.",
-        `Unsubscribe from broadcast emails: ${r.unsubscribeUrl}`,
-      ].join("\n"),
-      headers: { "List-Unsubscribe": `<${r.unsubscribeUrl}>` },
+      text: params.includeUnsubscribe && r.unsubscribeUrl
+        ? [
+            params.body,
+            "",
+            "—",
+            "You're receiving this because you have an INDXR.AI account.",
+            `Unsubscribe from broadcast emails: ${r.unsubscribeUrl}`,
+          ].join("\n")
+        : params.body,
+      ...(params.includeUnsubscribe && r.unsubscribeUrl
+        ? { headers: { "List-Unsubscribe": `<${r.unsubscribeUrl}>` } }
+        : {}),
     }))
     try {
       const res = await fetch("https://api.resend.com/emails/batch", {

@@ -17,6 +17,7 @@ import {
 } from "@indxr/shared/components/ui/alert-dialog"
 
 type Target = "all" | "paid" | "free" | "manual"
+type MessageType = "marketing" | "service"
 interface UserHit { id: string; email: string }
 interface SendResult {
   recipients: number
@@ -35,6 +36,7 @@ export function BroadcastComposer() {
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
   const [target, setTarget] = useState<Target>("manual")
+  const [messageType, setMessageType] = useState<MessageType>("marketing")
   const [manual, setManual] = useState<UserHit[]>([])
   const [search, setSearch] = useState("")
   const [results, setResults] = useState<UserHit[]>([])
@@ -115,7 +117,7 @@ export function BroadcastComposer() {
       const res = await fetch("/api/admin/broadcast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body, target, manualIds, sendEmail, confirmCount: count }),
+        body: JSON.stringify({ title, body, target, manualIds, sendEmail, messageType, confirmCount: count }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -180,6 +182,36 @@ export function BroadcastComposer() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Message type — drives the unsubscribe machinery */}
+      <div className="space-y-2">
+        <Label>Message type</Label>
+        <div className="flex flex-wrap gap-2">
+          {(["marketing", "service"] as MessageType[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setMessageType(t)}
+              className={`px-3 py-1.5 text-sm rounded-md border transition-colors capitalize ${
+                messageType === t ? "border-accent bg-accent-subtle text-fg" : "border-border hover:bg-surface-elevated text-fg-muted"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        {messageType === "service" ? (
+          <p className="text-xs text-warning-fg">
+            Service messages (outages, account notices) go to <strong>all</strong> users regardless of
+            marketing preference and carry no unsubscribe footer. They must contain <strong>no</strong>{" "}
+            promotional content — promotion in a service email makes it marketing.
+          </p>
+        ) : (
+          <p className="text-xs text-fg-muted">
+            Marketing emails honour unsubscribes and include an unsubscribe footer.
+          </p>
+        )}
       </div>
 
       {/* Manual selection */}

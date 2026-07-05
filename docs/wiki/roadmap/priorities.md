@@ -168,6 +168,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     - Supabase database backups configureren in Supabase Dashboard
     - Upstash Redis rate limiting activeren in `src/lib/ratelimit.ts` (nu no-op tijdens testfase)
     - Supabase email-verificatie aanzetten (uitgeschakeld tijdens dev)
+    - **check-wiki.sh stop-hook loop** — de post-commit-hook her-appendt de commit-message aan `docs/LOG.md` bij elke commit (self-perpetuating), waardoor de working tree na elke commit opnieuw vervuilt; de stop-hook faalt bovendien intermitterend. Opruimen: de auto-append-loop stoppen of de hook-logica corrigeren zodat de working tree niet elke commit vuil wordt.
 
 - [ ] **1.19b — Error messaging audit + AI-suggestie differentiatie** (1 dag)
     Doel: alle user-facing error messages uitwerken op basis van error-taxonomy.md, en
@@ -215,6 +216,7 @@ Items die bewust buiten scope zijn gehouden in skeleton-bouw sessies. Te oppakke
 
 - [ ] **Format-export gating (friction case 3c)** — Anonymous users die een non-TXT export proberen (Markdown, JSON, CSV, SRT, VTT) zouden een inline `FrictionConversionCard` moeten zien i.p.v. directe download. Vereist aanpassing van `src/components/TranscriptCard.tsx`: per format-knop controleren op `user` auth-state en bij anonymous een inline card tonen. Deferred vanwege scope ("backend logica niet aanraken" in Batch 1).
 - [ ] **Playlist eerste-3-free UI** — Visueel onderscheid "Free" vs "Sign up to extract" per video in de PlaylistTab/PlaylistManager. Vereist aanpassing van `src/components/PlaylistManager.tsx` om per-video-rij een badge of state te tonen. Deferred naar content/design-pass.
+- [ ] **Mobiele credits / koop-toegang (dashboard-shell-redesign)** — Op mobiel is er geen credits-tab in de bottom-nav (4 tabs: Home/Transcribe/Library/Messages) en zit kopen verstopt achter het topnav-credit-icoon. Afweging: geen 5e tab (4 is schoon), maar kopen is cruciaal en nu te verborgen. Oplossing bij de redesign: credit-pill in de mobiele topnav prominent + tapbaar, plus een duidelijke koop-CTA op Home en de billing-pagina, zodat kopen niet afhangt van het weten dat je op het credit-icoon moet klikken.
 
 Zie ook `docs/wiki/architecture/page-structures/free-tool.md` voor context.
 
@@ -335,6 +337,9 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
     Zie `operations/monitoring.md` sectie "Dependency-onderhoud" voor het volledige principe en per-dependency risicooverzicht.
     **Taak:** periodieke versie-check opzetten die waarschuwt bij nieuwe releases zonder automatisch te installeren; verificatie-test die na een versie-bump een handvol bekende video's door de cascade haalt. Specifiek voor yt-dlp is dit het meest kritiek (vaakst nodig, hardst breekend).
     **Prioriteit:** na launch, zodra CI-pipeline stabiel is.
+
+- [ ] **2.10 — Broadcast e-mail house-style templates** (post-launch)
+    De admin-broadcast-e-mail (zie `apps/app/src/lib/mail.ts` `sendBroadcastEmails`) heeft bij launch een functionele maar kale plain-text unsubscribe-footer. Post-launch: e-mails opmaken in INDXR house-style — branded HTML-template, consistent met `send.indxr.ai`.
 
 ---
 
