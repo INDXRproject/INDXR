@@ -235,7 +235,9 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 
 - Alle 6 user-facing tabellen hebben RLS — gebruikers zien alleen eigen data
 - `SUPABASE_SERVICE_ROLE_KEY` alleen in Python backend (bypass RLS) — nooit in browser of Next.js client
-- Credits = `SUM(amount)` over `credit_transactions` (geen aparte balance-kolom)
+- **Balans-bron:** `user_credits.credits` is de **gezaghebbende, gematerialiseerde balans** — onderhouden door 4 RPC's (`deduct_credits_atomic`, `add_credits`, `claim_welcome_reward`, `update_playlist_video_progress`) onder `FOR UPDATE`-rijlock. `get_user_credits` leest deze kolom → dat is wat de user ziet. Reserveringen/aftrek altijd hierop opereren.
+- `credit_transactions` is een **audit-log, GEEN balans-bron**. Herleid de balans **niet** uit `SUM(amount)` — het log reconcilieert door een sign-bug niet schoon (whisper-debits positief, caption-debits negatief, beide `type='debit'`; zie known-issues / priorities 1.22a). (Geverifieerd tegen baseline-migratie + RPC's, 2026-07-06.)
+- **Dode orphans — niet als balans gebruiken:** `profiles.credits` (`DEFAULT 5`) en de oude SQL-functie `deduct_credits(...)` die die kolom muteert hebben **geen callers**; idem ongebruikt: `credit_transactions.balance_after`/`transaction_type`, `user_credits.total_credits_purchased`/`credits_bonus`.
 
 ### Design system
 
