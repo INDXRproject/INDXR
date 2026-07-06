@@ -166,6 +166,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     - VTT httpx timeout van 30s naar 60s
     - `LOG_LEVEL=WARNING` instellen in Railway (nu `INFO` — logs lopen vol)
     - Supabase database backups configureren in Supabase Dashboard
+        > **Risico — Railway single-point-of-failure** (bron: Railway-postmortems): 5 grote incidenten sinds nov 2025. Tijdens de **mei-2026 outage** waren database-backups **ontoegankelijk voor de duur van het incident** en trof het **alle klanten ongeacht plan**; de **feb-2026 postmortem** noemde "strak gekoppelde systemen met grote blast radius" als terugkerend patroon. Implicatie: (a) Supabase-backups moeten **los van Railway** staan (Supabase Pro, onafhankelijke backups) zodat een Railway-incident onze recovery-optie niet meesleurt; (b) dit **versterkt de VPS-migratie-rationale** (zie 3.3) op termijn — minder afhankelijkheid van één strak-gekoppelde provider.
     - Upstash Redis rate limiting activeren in `src/lib/ratelimit.ts` (nu no-op tijdens testfase)
     - Supabase email-verificatie aanzetten (uitgeschakeld tijdens dev)
     - **check-wiki.sh stop-hook loop** — de post-commit-hook her-appendt de commit-message aan `docs/LOG.md` bij elke commit (self-perpetuating), waardoor de working tree na elke commit opnieuw vervuilt; de stop-hook faalt bovendien intermitterend. Opruimen: de auto-append-loop stoppen of de hook-logica corrigeren zodat de working tree niet elke commit vuil wordt.
@@ -195,21 +196,29 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     Plek in volgorde: laatste van Fase 1 zodat alle UI-componenten al bestaan.
 
 - [ ] **1.21 — Prijs-per-credit herijken tegen werkelijke kosten** (0,5–1 dag)
-    Doel: prijzen dekken de echte marginale kosten en sturen naar grotere pakketten.
-    Componenten:
-    - Werkelijke kosten per credit berekenen uit **AssemblyAI** (transcriptie/min) + **Decodo** (residentiële proxy-bandbreedte/GB) + **Vercel/Railway** (compute/egress) — meten, niet schatten.
-    - Steilere **volumekorting**: kleine pakketten een hogere prijs-per-credit, grote pakketten lager, zodat de marge op de instap klopt en volume beloond wordt.
+    Doel: prijzen dekken de echte marginale kosten + vaste infra + arbeid, en sturen naar grotere pakketten.
+    **Kostenbasis (geverifieerd 2026-07-06, zie [unit-economics.md](../business/unit-economics.md)):** directe kost ≈ **€0,0054/credit** (AssemblyAI $0,0035/min + Decodo ~$0,0023/min). Varieert per video → per job meten, niet schatten.
+    **Concrete strategie:**
+    - **Cheap tiers (Try/Basic) → ~3× directe kost ≈ €0,016/min** (nu €0,012/min). De instap draagt de meeste vaste kosten.
+    - **Power → ~2,2× directe kost ≈ €0,012/min** (nu €0,009/min). Steilere, aantrekkelijkere volumekorting die de zwaarste users niet subsidieert.
+    - Tussenpakketten (Plus/Pro) glijdend tussen die twee.
+    **Rationale (expliciet vastleggen):** de prijs moet naast directe API-kosten óók **vaste infra** (Vercel/Railway/Supabase/Upstash/Resend/domein), **support-last**, **operationeel onderhoud** (proxy-rotatie, watchdog, yt-dlp/Node-upgrades) én **ontwikkelarbeid** (honderden uren) dekken. **2× kostprijs is niet levensvatbaar voor SaaS** — daarom cheap tiers op ~3×.
     - **Koppelen aan 1.13 (Stripe live-mode):** de 5 pakketten worden in live mode toch opnieuw aangemaakt — stel de nieuwe prijspunten daar in één keer correct in. `PACKAGES` in `checkout/route.ts` synchroniseren.
-    Afhankelijk van / koppelen aan: 1.13, [ADR-012](../decisions/012-pricing-tiers.md).
+    Afhankelijk van / koppelen aan: 1.13, [ADR-012](../decisions/012-pricing-tiers.md), [unit-economics.md](../business/unit-economics.md).
 
 - [ ] **1.22 — Credit-reservering bij job-start + refund van ongebruikte/gefaalde video's** (financieel-kritiek)
     Doel: los de credit-race bij concurrent jobs op; **blokkeert veilige concurrency / horizontaal schalen.**
     Probleem: credits worden nu per-video op verwerkingsmoment afgetrokken, niet gereserveerd bij job-start; `deduct_credits_atomic` is niet job-idempotent (geen dedup op `job_id`) → bij concurrent uitvoering of watchdog-re-enqueue is dubbele aftrek mogelijk (zie replica-safety-audit, LOG 2026-07-06).
-    Componenten:
+    Componenten (backend):
     - **Reserveer** de geschatte kosten bij job-start (som over de te verwerken video's), i.p.v. per-video best-effort aftrek.
     - **Refund** het ongebruikte/gefaalde deel bij afronding (per gefaalde video, en het verschil tussen reservering en werkelijk verbruik).
-    - Aftrek **DB-idempotent** maken op `job_id` (unique-constraint/dedup-guard in de RPC) zodat een tweede deduct voor dezelfde video een no-op is.
-    Raakt: credit-logica, send/start-payload, `deduct_credits_atomic`, watchdog — audit vereist vóór implementatie.
+    - Aftrek **DB-idempotent** maken op `job_id` — **UNIQUE-constraint op de debit per `job_id`** (of dedup-guard in de RPC) zodat een tweede `deduct_credits_atomic` voor dezelfde job een **no-op** is. Sluit het dubbele-aftrek-risico definitief.
+    - **Watchdog-claim atomair maken** — conditional UPDATE / CAS i.p.v. read-then-write: Pass 1 `UPDATE … WHERE id=X AND watchdog_attempts=0`, Pass 2 `… WHERE id=X AND status='interrupted'`, alleen handelen bij `rows_affected=1`. Sluit het dubbele-refund-risico ook als de cron-dedup ooit faalt. (Beide hardenings gelden al bij 1 worker; zie replica-safety-audit, LOG 2026-07-06.)
+    Componenten (user-facing refund-zichtbaarheid — de UI-helft van deze fix):
+    - Huidige credit-UI (`TransactionHistoryCard`, `/dashboard/account`) toont refunds alleen als **rauwe UUID-gelabelde regels** (`Refund: transcription failed | job=<uuid>`) **zonder playlist-context** en **zonder verbruikt-vs-teruggestort-reconciliatie**.
+    - Nieuw **UI-component** dat **per job/playlist** toont: **gereserveerd → werkelijk verbruikt → teruggestort**, met **leesbare redenen** i.p.v. job-UUID's.
+    - Transactie-geschiedenis **volledig doorbladerbaar** maken — nu `limit(20)` met "View all" die alleen 10↔20 toggelt (oudere refunds onzichtbaar). Paginering of volledige fetch.
+    Raakt: credit-logica, send/start-payload, `deduct_credits_atomic`, watchdog, `credit_transactions`-schema (UNIQUE op job_id), `TransactionHistoryCard`/account-page — audit vereist vóór implementatie.
 
 - [ ] **1.23 — max_jobs expliciet zetten + ThreadPool-executor meeschalen** (0,5 dag)
     Doel: bewuste worker-concurrency-knop en de verborgen ThreadPool-bottleneck oplossen **vóór** horizontaal schalen.
@@ -219,6 +228,15 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     - **Bij verhoging** (Pro-replicas): tegelijk `loop.set_default_executor(ThreadPoolExecutor(max_workers=max_jobs+8))` zetten, anders blijft de default pool de effectieve cap.
     - **Hard-cap: `max_jobs × replicas ≤ AssemblyAI-accountconcurrency`** (extern limiet — Khidr haalt op bij AssemblyAI). Overschrijding → 429 (geen client-side afhandeling → job faalt → refund).
     Koppeling: **samen met 1.22 voorwaarde voor veilig horizontaal schalen** — 1.22 sluit de credit-race, 1.23 het concurrency-/resource-plafond. Zie replica-safety-audit (LOG 2026-07-06).
+
+- [ ] **1.24 — Admin financieel dashboard: granted-vs-purchased splitsen + kost/winst** (financieel-strategisch, koppelen aan 1.17)
+    Doel: correct winst-inzicht vóór launch. **Hoeft niet perfect** — wel de cijfers moeten kloppen.
+    Diagnose (2026-07-06, zie admin-audit hieronder): het overview + de users-tabel + de credits-pagina berekenen "Credits Purchased" als `SUM(amount) WHERE type='credit'` — dat telt **álle** credit-toevoegingen (Stripe-aankopen, admin-grants, welcome-bonus én refunds via `add_credits`), niet alleen aankopen. Daardoor klopt het winst-cijfer niet. (Revenue en Paying Users zijn wél correct — die filteren al op `metadata.stripe_session_id` / `metadata.amount_paid`.)
+    Componenten:
+    - **(a) Granted scheiden van purchased** — admin-grants (`metadata.granted_by`), welcome-bonus en refunds (`reason LIKE 'Refund:%'`) niet als "purchased" tellen. Aanpak: **aparte kolom/`source`-veld op `credit_transactions`** (of, minimaal, filteren op `metadata.stripe_session_id` zoals Revenue al doet). Zodat "Credits Purchased" = alleen echte Stripe-aankopen.
+    - **(b) Kost-per-job vastleggen** — AssemblyAI-minuten (`transcription_jobs.duration_seconds`, aanwezig) + **Decodo-GB per job** tegen een **instelbare tarief-config** (nieuw: €/GB en €/min, invulbaar of automatisch gekoppeld). ⚠️ Er is nu **geen tarief-/config-tabel** (moet nieuw). ⚠️ Decodo-bytes worden per YouTube-job **nog niet gepersisteerd** (`file_size_bytes` is 0 voor de YouTube-AI-route — download gebeurt in de worker; wél gelogd, niet opgeslagen) → backend moet de gedownloade bytes per job wegschrijven.
+    - **(c) Winst-overzicht** — omzet (Stripe) **minus** kosten (AssemblyAI + Decodo + vaste infra uit [unit-economics.md](../business/unit-economics.md)) op het overview-scherm.
+    Raakt: `admin/page.tsx` (overview), `admin/users/UsersTable`, `admin/credits/page.tsx`, `credit_transactions`-schema (source), nieuwe tarief-config-tabel, backend job-rijen (Decodo-bytes persisteren). Koppelen aan 1.17 (minimaal admin-dashboard) en [unit-economics.md](../business/unit-economics.md).
 
 ### Pre-launch — buiten code (parallel uit te voeren)
 
@@ -376,6 +394,7 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
     Trigger: 100+ DAU.
 - [ ] **3.3 — VPS-migratie van Python werklasten naar Hetzner**
     Trigger: Railway-bill > €80–100/maand.
+    Risico-onderbouwing: Railway single-point-of-failure (5 grote incidenten sinds nov 2025; mei-2026 outage trof alle klanten + maakte backups tijdelijk ontoegankelijk; feb-2026 postmortem "grote blast radius") — minder afhankelijkheid van één strak-gekoppelde provider. Zie de risico-notitie bij de Supabase-backups-taak (1.19).
 - [ ] **3.4 — Self-hosted observability evalueren**
     Trigger: 25k+ gebruikers.
 - [ ] **3.5 — Channel extractie** (heel YouTube-kanaal in één klik) — vereist queue-architectuur die in Fase 1 is gelegd.
