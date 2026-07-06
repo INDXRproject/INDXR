@@ -1,10 +1,10 @@
 # Beslissing 050: Credit-reservering (reserve-and-hold) voor alle transcriptie-jobs
 
-**Status:** Geaccepteerd (ontwerp) — gefaseerde implementatie, gedrag nog niet in productie
+**Status:** Geaccepteerd — code gebouwd (reserve+settle+refund), achter `CREDIT_RESERVATION_ENABLED` (OFF); activering apart ná prod-verificatie
 **Datum:** 2026-07-06
-**Gerelateerde code:** `backend/credit_manager.py`, `backend/worker.py` (watchdog), RPC's `deduct_credits_atomic` / `update_playlist_video_progress` / `add_credits`, tabellen `credit_transactions` / `transcription_jobs` / `playlist_extraction_jobs`
+**Gerelateerde code:** `backend/credit_manager.py`, `backend/transcription_pipeline.py`, `backend/worker.py` (watchdog), RPC's `reserve_credits` / `settle_credits` / `refund_credits` / `update_playlist_video_progress` / `deduct_credits_atomic` / `add_credits`, tabellen `credit_transactions` / `transcription_jobs` / `playlist_extraction_jobs`
 
-> **Implementatiestatus (2026-07-06):** Dit ADR legt het door Khidr goedgekeurde ontwerp vast uit de 2a-designsessie. Alléén de additieve, niet-gedrags-fundering is gebouwd (schema-migraties M1/M2, watchdog-CAS — zie ADR-consequenties + `priorities.md` 1.22). De reserve/settle/refund-gedrags-RPC's, het uit-het-hete-pad halen van de per-video-aftrek, en de watchdog-playlist-refund-uitbreiding zijn **nog niet geïmplementeerd of in productie getest** — die vereisen Khidr's live review + een testregime. Dit ADR is dus een ontwerp-registratie, geen bewijs van productie-gedrag.
+> **Implementatiestatus (2026-07-06):** Dit ADR legt het door Khidr goedgekeurde ontwerp vast uit de 2a-designsessie. **Alle drie de gedrags-fasen zijn nu gebouwd én in de prod-DB toegepast** (M1/M2-fundering + watchdog-CAS in fase 1; `reserve_credits` in gedrags-fase 1; `settle_credits`/`refund_credits` + de reservation-aware pipeline/worker + caption-settle in gedrags-fase 2 — migraties `20260706205451/205619/205835/205918` staan in `schema_migrations`). **Het nieuwe gedrag is echter INACTIEF in productie:** de feature-flag `CREDIT_RESERVATION_ENABLED` staat default OFF, waardoor nieuwe jobs niet reserveren (`credits_reserved=0`) en overal de byte-identieke oude directe aftrek loopt (rollback-veilige `else`-tak). De code brancht per-job op `credits_reserved > 0`, niet op de flag, zodat er geen dubbel/nul-aftrek-window ontstaat bij activering. Activering is een aparte 1-regel-follow-up (flag → true) ná prod-verificatie. Bewezen met `backend/test_settle_refund.py` (29/29: whisper/playlist partial+full-fail/mixed/idempotentie/reconciliatie/watchdog/flag-flip) + de fase-1 concurrency-regressie (14/14). Tot de flag AAN gaat is de overspend-race in productie bewust nog NIET gesloten.
 
 ## Context
 
@@ -55,10 +55,17 @@ Twee structurele problemen die vóór launch dicht moeten (financieel-kritiek):
 - **M2** (`credit_transactions`): kolommen `kind` (`reservation|settlement|refund|purchase|grant|bonus`) + `job_id` + `playlist_id`; partiële `UNIQUE(job_id, kind) WHERE job_id IS NOT NULL`; bestaande rijen `kind`-backfilled uit `reason`/`metadata`.
 - **Watchdog-CAS:** de bestaande claim is atomair gemaakt (conditional `UPDATE`, verwerken bij `rows_affected=1`).
 
-**Wacht op volgende sessie (verandert live credit-gedrag — vereist Khidr's review + testregime):**
-- Reserve/settle/refund-RPC's die op `user_credits.credits` opereren onder `FOR UPDATE`.
-- Backend-refactor: per-video-aftrek uit het hete pad halen; job-start reserveert, afronding settelt/refund.
-- Watchdog Pass 2 uitbreiden met playlist-reservering-refund.
-- Refund-UI (aparte fase, datacontract gereserveerd→verbruikt→teruggestort).
+**Gebouwd in de gedrags-fasen (code klaar + in prod-DB, INACTIEF want flag OFF):**
+- **`reserve_credits`** (gedrags-fase 1, `20260706200207`): insert-first onder `FOR UPDATE`, idempotent via partiële UNIQUE, saldocheck, `credits_reserved` op de job/playlist-rij.
+- **`settle_credits`** (M5, `20260706205619`): **balans-neutrale** settlement-registratie per succesvolle video (`kind='settlement'`, `ON CONFLICT (job_id,kind) DO NOTHING`) — som-bron voor de refund, muteert `user_credits` NIET.
+- **`refund_credits`** (M6, `20260706205835`): één netto-post `reserved − Σsettlements` onder `FOR UPDATE`; positief=credit, negatief=best-effort debit gecapt op saldo (`LEAST`) + `RAISE WARNING`, nooit `EXCEPTION` (§4); insert-first idempotent; leesbare reason ("bijbetaald" bij negatief) + structured metadata (datacontract refund-UI).
+- **Caption-draw-down** (M7, `20260706205918`): `update_playlist_video_progress` brancht op `credits_reserved > 0` → settlement i.p.v. aftrek; de `else`-tak is byte-identiek aan de oude aftrek (`20260706172045`).
+- **Pipeline/worker**: `reservation_mode`/`playlist_id` doorgegeven; pre-transcribe-aftrek geskipt in reservation-mode; settle-on-success (incl. cache-hit op werkelijke gecachte duur); refund-hooks op whisper-completion, playlist-completion en beide retry-completion-transities; **watchdog Pass 2** job-refund + nieuwe **Pass 2b** playlist-refund (terminal-only `watchdog_attempts>=1`).
+- **M4** (`20260706205451`): `(playlist_id,kind)` UNIQUE herbouwd met `WHERE ... AND kind <> 'settlement'` (settlements zijn meervoudig per playlist).
+- **Reconciliatie-invariant aangescherpt**: nieuwe settlements (`job_id`/`playlist_id` NOT NULL) zijn balans-neutraal en worden UITGESLOTEN uit `balans == Σ(credit) − Σ(debit)`; legacy-settlements (fase-1-backfill, NULL-ref) blijven balans-affecterend tot de launch-reset (taak 1.26), waarna dit vereenvoudigt tot `WHERE kind <> 'settlement'`. Admin-metric "Credits Consumed" = `SUM WHERE kind='settlement'` (niet `SUM type='debit'`).
+
+**Wacht op aparte fase:**
+- **Flag-activering** (`CREDIT_RESERVATION_ENABLED` → true): 1-regel-follow-up ná prod-verificatie — dán pas reserveren nieuwe jobs en sluit de overspend-race live.
+- **Refund-UI** (frontend): datacontract (settlement/refund-rijen + `credits_reserved/refunded`) staat klaar; weergave gereserveerd→verbruikt→teruggestort is nog niet gebouwd.
 
 **Invariant die bewaard moet blijven:** `user_credits.credits` is de balans-bron; reservering, settlement en refund muteren die kolom onder rijlock. `credit_transactions` reconcilieert (`SUM(credit) − SUM(debit)`) naar die balans — de fase-1 sign-fix (`ee4c9ca`) herstelde die reconciliatie-invariant en die moet intact blijven.

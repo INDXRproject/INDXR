@@ -7002,3 +7002,43 @@ packages/shared/src/components/free-tool/PlaylistTab.tsx
 [2026-07-06 21:12] schema-fundering (ADR-050 fase 1, additief/non-breaking): M1 credits_reserved/refunded (default 0, nullable) op transcription_jobs+playlist_extraction_jobs; M2 kind+job_id+playlist_id op credit_transactions + CHECK(kind IS NULL OR ...) + 2 partiële UNIQUE-indexen (job_id,kind)/(playlist_id,kind) + kind-backfill (1003 settlement/13 grant/9 refund/4 bonus, 0 NULL-fallthrough); watchdog-CAS: 4 claim-passes conditional UPDATE + rowcount-guard (Pass 2 dubbele-refund dicht). Rowcount-semantiek empirisch bevestigd (supabase-py 2.27.2 .data). GEEN gedrags-RPC's/refactor (wachten op review). Migraties 20260706190140+20260706190216 geregistreerd (+2). py_compile groen. Commit-ready, niet gepusht. | gewijzigd: supabase/migrations/20260706190140_add_credits_reserved_refunded.sql, supabase/migrations/20260706190216_credit_transactions_kind_jobref.sql, backend/worker.py, docs/LESSONS.md
 [2026-07-06 22:11] reserve_credits (ADR-050 gedrags-fase 1/3, flag-gated): nieuwe RPC reserve_credits (FOR UPDATE, insert-first idempotentie via partiële UNIQUE, saldocheck, credits_reserved op job-rij; migratie 20260706200207). credit_manager.reserve_credits-helper + CREDIT_RESERVATION_ENABLED-flag (default OFF). Call-sites bedraad achter de flag: whisper (main.py, estimated_cost, job_id) + playlist (main.py, _compute_playlist_reservation mirrort exact worker per-video-logica incl. index-gratis-slot en whisper-negeert-is_free, playlist_id). Flag OFF => nul live gedragswijziging, geen dubbele aftrek. Bewezen: concurrent-overspend-test RED->GREEN (14/14, balans nooit negatief, verliezer insufficient_credits, idempotent job_id+playlist_id) + amount-mirror-test (6/6). Buiten scope (fase 2/3): settle/refund, per-video-aftrek ombouwen, watchdog playlist-refund, refund-UI. Race in prod bewust nog NIET gesloten tot flag AAN mét settle. Commit-ready, niet gepusht. | gewijzigd: supabase/migrations/20260706200207_reserve_credits_rpc.sql, backend/credit_manager.py, backend/main.py, docs/LESSONS.md
 [2026-07-06 22:24] test: reserve_credits-concurrency-regressietest verankerd op backend/test_reserve_credits.py (root-conventie, naast bestaande test_*.py). Live integratie-test (geen mock — FOR UPDATE-race alleen tegen echte Postgres bewijsbaar), self-cleaning via wegwerp auth-user, exit 0/1, gewrapt achter __main__ zodat pytest-collectie 'm niet live draait (geverifieerd: 0 tests collected). Draaien: cd backend && venv/bin/python test_reserve_credits.py. 14/14 groen. | gewijzigd: backend/test_reserve_credits.py
+[2026-07-06 23:22] precompact: context compaction triggered
+[2026-07-06 23:55] settle+refund draw-down (ADR-050 gedrags-fase 2/3, flag OFF): M4 (playlist_id,kind)-UNIQUE herbouwd met `kind <> 'settlement'` (settlements meervoudig per playlist); M5 settle_credits (balans-neutrale settlement-registratie, `ON CONFLICT (job_id,kind) DO NOTHING`); M6 refund_credits (netto-post `reserved − Σsettlements`; positief=credit, negatief=best-effort debit gecapt op saldo + WARNING, nooit EXCEPTION; insert-first idempotent; reason "bijbetaald"/"teruggestort" + structured metadata datacontract); M7 update_playlist_video_progress caption-tak reservation-aware (`credits_reserved>0` → settlement, else = byte-identieke oude aftrek uit 172045, `v_already_done`-guard onverkort). Pipeline (`reservation_mode`/`playlist_id`-params, skip pre-aftrek, settle-on-success + cache-hit = werkelijke gecachte duur) + worker (whisper/playlist/retries refund-hooks; watchdog Pass 2 job-refund + nieuwe Pass 2b playlist-refund, terminal-only `watchdog_attempts>=1`). Admin-metrics (2 dashboards): Consumed → `kind='settlement'` (niet `SUM type='debit'`), Purchased → excl. `kind='refund'`. BRANCH OP `credits_reserved>0` niet op de flag → geen dubbel/nul-window. Flag `CREDIT_RESERVATION_ENABLED` blijft OFF ⇒ nieuw pad inactief in prod, oude aftrek = rollback. Bewezen: test_settle_refund.py 29/29 (whisper reserve→settle→refund werkelijk< én ≈schatting; playlist partial-fail 2 én 12; full-fail; mixed caption+whisper met playlist_id-som; idempotentie settle/refund 2×; geen-dubbele-aftrek; reconciliatie-invariant happy/partial/full geïsoleerd diff=0; watchdog terminal-only; in-flight flag-flip); fase-1 regressie 14/14 groen; pnpm build groen; py_compile groen. M4-M7 in schema_migrations (+4). Commit-ready per thema, NIET gepusht; activering apart ná prod-verificatie. | gewijzigd: supabase/migrations/20260706205451_playlist_kind_uidx_exclude_settlements.sql, supabase/migrations/20260706205619_settle_credits_rpc.sql, supabase/migrations/20260706205835_refund_credits_rpc.sql, supabase/migrations/20260706205918_playlist_progress_caption_settle.sql, backend/credit_manager.py, backend/transcription_pipeline.py, backend/worker.py, apps/app/src/app/admin/page.tsx, apps/app/src/app/admin/credits/page.tsx, backend/test_settle_refund.py, docs/LESSONS.md, docs/wiki/decisions/050-credit-reservation-model.md
+[2026-07-06 23:45] commit: feat(credits): settle+refund RPCs + caption draw-down migraties (ADR-050 fase 2, flag OFF)
+
+M4 (playlist_id,kind)-UNIQUE herbouwd met kind<>'settlement' (settlements meervoudig per playlist). M5 settle_credits: balans-neutrale settlement-registratie. M6 refund_credits: netto-post reserved-Sigma(settlements), negatief=best-effort cap+WARNING (nooit EXCEPTION), insert-first idempotent, reason 'bijbetaald'. M7 update_playlist_video_progress caption-tak reservation-aware; else-tak byte-identiek aan 20260706172045.
+
+Alle 4 toegepast in prod-DB (schema_migrations +4). Nieuw pad inactief zolang CREDIT_RESERVATION_ENABLED OFF.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260706205451_playlist_kind_uidx_exclude_settlements.sql
+supabase/migrations/20260706205619_settle_credits_rpc.sql
+supabase/migrations/20260706205835_refund_credits_rpc.sql
+supabase/migrations/20260706205918_playlist_progress_caption_settle.sql
+---
+[2026-07-06 23:45] commit: feat(credits): reservation-aware pipeline + worker refund-hooks (ADR-050 fase 2, flag OFF)
+
+transcription_pipeline: reservation_mode/playlist_id-params, skip pre-transcribe-aftrek, settle-on-success (incl. cache-hit op werkelijke gecachte duur). worker: refund-hooks op whisper-/playlist-/retry-completion; watchdog Pass 2 job-refund + Pass 2b playlist-refund (terminal-only attempts>=1). credit_manager: settle/refund-helpers, flag default OFF.
+
+Brancht per-job op credits_reserved>0, niet op de flag => geen dubbel/nul-window.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/credit_manager.py
+backend/transcription_pipeline.py
+backend/worker.py
+---
+[2026-07-06 23:45] commit: fix(admin): Credits Consumed = SUM kind='settlement', Purchased excl. refunds (ADR-050 fase 2)
+
+Consumed telde SUM type='debit' => dubbeltelling (reservering + settlement, beide debit) zodra reservering AAN. Nu kind='settlement' = werkelijk verbruik. Purchased sluit kind='refund' uit zodat refund-credits de aankoop-metric niet inflateren. Beide dashboards (overview + credits).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/credits/page.tsx
+apps/app/src/app/admin/page.tsx
+---
+[2026-07-06 23:45] commit: test(credits): live settle+refund integratietest, 29/29 (ADR-050 fase 2)
+
+reserve->settle->refund draw-down: whisper standalone (werkelijk< en ~=schatting), playlist partial-fail (2 en 12), full-fail, mixed caption+whisper (playlist_id-som), idempotentie, geen-dubbele-aftrek, reconciliatie-invariant (happy/partial/full geisoleerd), watchdog terminal-only, in-flight flag-flip. Self-cleaning wegwerp-user, gewrapt achter __main__.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_settle_refund.py
+---
