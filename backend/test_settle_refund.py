@@ -17,7 +17,11 @@ Dekt de fase-2-succescriteria:
      (happy path G, partial-fail playlist G2, full-fail playlist G3 — elk geïsoleerd)
   H  watchdog terminal-only: Pass 2b selecteert attempts>=1 (permanent), NIET attempts=0 (transient)
   I  in-flight over flag-flip: niet-gereserveerd (oude aftrek) naast gereserveerd (settlement)
+  J  upload-dispatch e2e: reserve->settle->refund door de gedeelde wrapper
+     (run_whisper_reservation_aware) — bewijst dat main.py:829/817 geen dubbele aftrek doen
+  J2 flag-OFF-regressie: wrapper zonder reservering doet oude aftrek, geen refund
 """
+import os
 import sys
 import uuid
 from pathlib import Path
@@ -40,6 +44,10 @@ def _load_env():
 
 def main() -> int:
     URL, KEY = _load_env()
+    # De gedeelde wrapper (scenario J) gebruikt credit_manager.get_supabase_client(), die uit
+    # os.environ leest — vul die zodat dezelfde DB als `sb` wordt geraakt.
+    os.environ.setdefault("SUPABASE_URL", URL)
+    os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", KEY)
     sb = create_client(URL, KEY)
     email = f"test-settle-{uuid.uuid4().hex[:12]}@example.invalid"
     USER = sb.auth.admin.create_user({"email": email, "password": uuid.uuid4().hex, "email_confirm": True}).user.id
@@ -279,6 +287,69 @@ def main() -> int:
         check("I: oude modus trekt direct af (100->99)", b_old == 99, f"={b_old}")
         check("I: nieuwe modus reserveert (99->98) dan settle balans-neutraal (98)",
               b_new_reserve == 98 and b_new_settle == 98, f"reserve={b_new_reserve} settle={b_new_settle}")
+
+        # ── J: UPLOAD-DISPATCH e2e — reserve->settle->refund door de gedeelde wrapper ────────
+        # Dekt het gat dat de RPC-tests (A-I) misten: main.py:829 (upload) + :817 (fallback)
+        # roepen nu run_whisper_reservation_aware aan i.p.v. de pipeline direct. Zonder die
+        # bedrading vuurden reserve + de oude aftrek samen = dubbele afrekening bij flag ON.
+        # We stubben de pipeline (settle in reservation_mode = wat de echte pipeline op success
+        # doet) en bewijzen dat de dispatch reserve->settle->refund sluit: balans exact één keer.
+        print("J — upload-dispatch e2e (gedeelde wrapper, gestubde pipeline):")
+        import asyncio as _aio
+        import transcription_pipeline as _tp
+        _orig_pipeline = _tp.do_assemblyai_transcription
+        _seen = {}
+
+        async def _fake_success(user_id, video_id, **kw):
+            _seen["success_res_mode"] = kw.get("reservation_mode")
+            settle(7, job_id=kw["job_id"])   # simuleer werkelijk verbruik 7 (schatting was 10)
+            return {"success": True, "transcript_id": None, "credit_cost": 7}
+
+        async def _fake_failure(user_id, video_id, **kw):
+            return {"success": False, "error_type": "test", "credit_cost": 0}
+
+        # Success: reserve 10 -> pipeline settelt 7 -> refund 3 -> balans 100-7=93 (één keer).
+        set_balance(100); jj = mk_job()
+        sb.table("transcription_jobs").update({"source_type": "upload"}).eq("id", jj).execute()
+        reserve(10, job_id=jj)   # zet credits_reserved=10 (zoals main.py:790 bij flag ON)
+        _tp.do_assemblyai_transcription = _fake_success
+        try:
+            _aio.run(_tp.run_whisper_reservation_aware(USER, None, job_id=jj, audio_path="/dev/null", audio_title="t"))
+        finally:
+            _tp.do_assemblyai_transcription = _orig_pipeline
+        check("J: upload-dispatch geeft reservation_mode=True door (oude aftrek onderdrukt)", _seen.get("success_res_mode") is True)
+        check("J: upload-success -> settle 7 geregistreerd", settlements_sum("job_id", jj) == 7, f"={settlements_sum('job_id', jj)}")
+        check("J: upload-success -> balans exact 93 (=100-7, geen dubbele aftrek)", balance() == 93, f"={balance()}")
+
+        # Failure: reserve 10 -> geen settle -> refund 10 -> balans terug op 100.
+        set_balance(100); jk = mk_job()
+        sb.table("transcription_jobs").update({"source_type": "upload"}).eq("id", jk).execute()
+        reserve(10, job_id=jk)
+        _tp.do_assemblyai_transcription = _fake_failure
+        try:
+            _aio.run(_tp.run_whisper_reservation_aware(USER, None, job_id=jk, audio_path="/dev/null", audio_title="t"))
+        finally:
+            _tp.do_assemblyai_transcription = _orig_pipeline
+        check("J: upload-failure -> geen settle", settlements_sum("job_id", jk) == 0, f"={settlements_sum('job_id', jk)}")
+        check("J: upload-failure -> volledige refund, balans terug op 100", balance() == 100, f"={balance()}")
+
+        # J2: flag-OFF-regressie — ongereserveerde job (credits_reserved=0) mag NIET refunden en
+        # de pipeline krijgt de oude-aftrek-modus. Bewijst rollback-veiligheid van de wrapper.
+        print("J2 — wrapper zonder reservering: oude aftrek-modus, geen refund (flag-OFF-regressie):")
+        set_balance(100); jl = mk_job()   # GEEN reserve -> credits_reserved=0
+        async def _fake_old(user_id, video_id, **kw):
+            _seen["old_res_mode"] = kw.get("reservation_mode")
+            _seen["old_deduct"] = kw.get("deduct_credits_on_success")
+            return {"success": True, "transcript_id": None, "credit_cost": 5}
+        _tp.do_assemblyai_transcription = _fake_old
+        try:
+            _aio.run(_tp.run_whisper_reservation_aware(USER, None, job_id=jl, audio_title="t"))
+        finally:
+            _tp.do_assemblyai_transcription = _orig_pipeline
+        _refunds_jl = sb.table("credit_transactions").select("id").eq("user_id", USER).eq("kind", "refund").eq("job_id", jl).execute().data
+        check("J2: ongereserveerd -> reservation_mode=False + oude aftrek toegestaan",
+              _seen.get("old_res_mode") is False and _seen.get("old_deduct") is True, f"seen={_seen}")
+        check("J2: ongereserveerd -> GEEN refund-post", len(_refunds_jl) == 0, f"={len(_refunds_jl)}")
 
     finally:
         sb.table("credit_transactions").delete().eq("user_id", USER).execute()
