@@ -29,6 +29,7 @@ from credit_manager import (
     calculate_credit_cost,
     check_user_balance,
     deduct_credits,
+    settle_credits,
     get_supabase_client,
 )
 from youtube_utils import get_proxy_url
@@ -127,6 +128,8 @@ async def do_assemblyai_transcription(
     audio_title: Optional[str] = None,
     collection_id: Optional[str] = None,
     deduct_credits_on_success: bool = True,
+    reservation_mode: bool = False,
+    playlist_id: Optional[str] = None,
     proxy_session_id: Optional[str] = None,
     heartbeat_fn=None,
 ) -> dict:
@@ -173,7 +176,9 @@ async def do_assemblyai_transcription(
                 logger.info(f"[pipeline] CACHE HIT: video={video_id} model={mc['transcription_model']} job={job_id}")
                 duration_sec = mc.get("duration_seconds") or 0
                 credit_cost = calculate_credit_cost(duration_sec)
-                if deduct_credits_on_success:
+                # Reservation-mode: balans is al bij reserve bewogen -> geen aftrek hier;
+                # settlement volgt op success. Cache-hit-verbruik = de gecachte duur (werkelijk).
+                if deduct_credits_on_success and not reservation_mode:
                     try:
                         balance = await asyncio.to_thread(check_user_balance, user_id)
                     except Exception as e:
@@ -234,6 +239,12 @@ async def do_assemblyai_transcription(
                     credits_cost=credit_cost,
                 )
                 credits_deducted = False  # success — no refund
+                if reservation_mode and credit_cost > 0:
+                    # Draw-down uit de reservering: registreer werkelijk verbruik (balans-neutraal).
+                    await asyncio.to_thread(
+                        settle_credits, user_id, credit_cost, job_id, playlist_id, video_id,
+                        "AI transcriptie settlement (cache hit)",
+                    )
                 logger.info(f"[pipeline] Cache hit complete: transcript_id={transcript_id} {credit_cost}cr job={job_id}")
                 return {
                     "success": True,
@@ -314,7 +325,9 @@ async def do_assemblyai_transcription(
 
         # ── Step 4: Credit check + deduction ─────────────────────────────────
         credit_cost = calculate_credit_cost(duration)
-        if deduct_credits_on_success:
+        # Reservation-mode: het saldo is al bij reserve gereserveerd -> sla de pre-transcribe
+        # aftrek + balanscheck over; settlement (werkelijke duur) volgt op success.
+        if deduct_credits_on_success and not reservation_mode:
             try:
                 balance = await asyncio.to_thread(check_user_balance, user_id)
             except Exception as e:
@@ -485,6 +498,12 @@ async def do_assemblyai_transcription(
             **({"error_message": truncation_warning} if truncation_warning else {}),
         )
         credits_deducted = False  # success — no refund
+        if reservation_mode and credit_cost > 0:
+            # Draw-down uit de reservering: registreer het WERKELIJKE verbruik (balans-neutraal).
+            await asyncio.to_thread(
+                settle_credits, user_id, credit_cost, job_id, playlist_id, video_id,
+                "AI transcriptie settlement",
+            )
 
         return {
             "success": True,

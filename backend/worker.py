@@ -27,6 +27,7 @@ from audio_utils import MembersOnlyVideoError
 from credit_manager import (
     add_credits,
     check_user_balance,
+    refund_credits,
     get_supabase_client,
 )
 from transcription_pipeline import (
@@ -102,16 +103,19 @@ async def run_whisper_job(
     try:
         row = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('credits_deducted')
+                .select('credits_deducted,credits_reserved')
                 .eq('id', job_id).single().execute()
         )
         already_deducted = bool(row.data and row.data.get('credits_deducted'))
+        # Reservation-mode uit de EIGEN standalone-job-rij (die is bij start gereserveerd).
+        reservation_mode = bool(row.data and (row.data.get('credits_reserved') or 0) > 0)
     except Exception as e:
         logger.warning(
             f"[run_whisper_job] credits_deducted read failed for {job_id}: {e} "
             f"— defaulting to already_deducted=True (safe)"
         )
         already_deducted = True
+        reservation_mode = False
 
     async def _hb() -> None:
         await asyncio.to_thread(
@@ -127,8 +131,14 @@ async def run_whisper_job(
         audio_title=title,
         proxy_session_id=job_id[:8],
         deduct_credits_on_success=not already_deducted,
+        reservation_mode=reservation_mode,
         heartbeat_fn=_hb,
     )
+    # ADR-050 fase 2: gereserveerde standalone job -> verreken aan het eind
+    # (reserved − settled). Vuurt op success (refund=verschil) én failure (refund=alles),
+    # idempotent via (job_id,'refund').
+    if reservation_mode:
+        await asyncio.to_thread(refund_credits, job_id, None)
     if result['success']:
         logger.info(f"← run_whisper_job ● (transcript_id={result['transcript_id']}, {result['credit_cost']}cr)")
     else:
@@ -297,7 +307,10 @@ async def _process_caption_video(
 
 async def _call_progress_rpc(supabase, playlist_id: str, video_id: str, success: bool,
                               transcript_id: Optional[str] = None, error_type: Optional[str] = None,
-                              amount: int = 0) -> None:
+                              amount: int = 0) -> Optional[dict]:
+    """Registreer video-progress via de RPC. Retourneert het RPC-resultaat
+    ({playlist_complete, should_retry, ...}) of None bij fout — de caller gebruikt dit om
+    op de completion-transitie de één-malige refund te triggeren (ADR-050 fase 2)."""
     try:
         params = {
             'p_playlist_id': playlist_id,
@@ -309,9 +322,10 @@ async def _call_progress_rpc(supabase, playlist_id: str, video_id: str, success:
             params['p_transcript_id'] = transcript_id
         else:
             params['p_error_type'] = error_type or 'extraction_error'
-        await asyncio.to_thread(
+        resp = await asyncio.to_thread(
             lambda: supabase.rpc('update_playlist_video_progress', params).execute()
         )
+        return resp.data if resp else None
     except Exception as e:
         logger.error(f"[playlist {playlist_id}] RPC update failed for {video_id}: {e}")
         with sentry_sdk.push_scope() as scope:
@@ -319,6 +333,7 @@ async def _call_progress_rpc(supabase, playlist_id: str, video_id: str, success:
             scope.set_tag("playlist_job_id", playlist_id)
             scope.set_tag("video_id", video_id)
         sentry_sdk.capture_exception(e)
+        return None
 
 
 async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) -> None:
@@ -339,7 +354,7 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     try:
         row = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-            .select('user_id,video_ids,use_whisper_ids,collection_id,total_videos,video_results')
+            .select('user_id,video_ids,use_whisper_ids,collection_id,total_videos,video_results,credits_reserved')
             .eq('id', playlist_id)
             .single()
             .execute()
@@ -364,6 +379,9 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     use_whisper_ids: set = set(job.get('use_whisper_ids') or [])
     total_videos: int = job['total_videos']
     video_results: dict = job.get('video_results') or {}
+    # Reservation-mode uit de PLAYLIST-rij (playlist-niveau reservering). NIET uit de
+    # per-video whisper_job-rij (die is nooit individueel gereserveerd -> credits_reserved=0).
+    reservation_mode: bool = (job.get('credits_reserved') or 0) > 0
 
     if video_index >= len(video_ids):
         logger.error(f"{log_prefix} video_index out of bounds (total={len(video_ids)})")
@@ -437,6 +455,8 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
                 collection_id=collection_id,
                 proxy_session_id=proxy_session,
                 deduct_credits_on_success=not already_deducted,
+                reservation_mode=reservation_mode,
+                playlist_id=playlist_id,
                 heartbeat_fn=_hb_playlist,
             )
             if result['success']:
@@ -465,7 +485,7 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
                 scope.set_tag("user_id", user_id)
             sentry_sdk.capture_exception(e)
 
-    await _call_progress_rpc(supabase, playlist_id, video_id, rpc_success, rpc_transcript_id, rpc_error_type,
+    rpc_result = await _call_progress_rpc(supabase, playlist_id, video_id, rpc_success, rpc_transcript_id, rpc_error_type,
                               amount=rpc_credit_amount)
 
     # Build final video_results for the last-video retry check
@@ -476,6 +496,12 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
         final_video_results[video_id] = {'status': 'error', 'error_type': rpc_error_type}
 
     await _enqueue_next(ctx, playlist_id, video_index, total_videos, final_video_results)
+
+    # ADR-050 fase 2: rondde deze video de playlist definitief af (compleet, geen retry) en is
+    # er gereserveerd -> verreken één keer (reserved − Σsettlements). Idempotent via
+    # (playlist_id,'refund'). Bij should_retry gebeurt de refund pas ná de retry-pass.
+    if reservation_mode and rpc_result and rpc_result.get('playlist_complete') and not rpc_result.get('should_retry'):
+        await asyncio.to_thread(refund_credits, None, playlist_id)
 
 
 async def _enqueue_next(
@@ -540,7 +566,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     try:
         row = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-            .select('user_id,video_ids,use_whisper_ids,collection_id,video_results')
+            .select('user_id,video_ids,use_whisper_ids,collection_id,video_results,credits_reserved')
             .eq('id', playlist_id)
             .single()
             .execute()
@@ -563,6 +589,8 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     collection_id: Optional[str] = job.get('collection_id')
     use_whisper_ids: set = set(job.get('use_whisper_ids') or [])
     video_results: dict = job.get('video_results') or {}
+    # Reservation-mode uit de PLAYLIST-rij (playlist-niveau reservering).
+    reservation_mode: bool = (job.get('credits_reserved') or 0) > 0
 
     # Heartbeat at start — watchdog detects stale 'retry_pending' jobs (ADR-030 Gap 1 fix).
     # This keeps the heartbeat fresh so watchdog won't re-enqueue a running retry-pass.
@@ -583,6 +611,10 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
                     'completed_at': datetime.now(timezone.utc).isoformat(),
                 }).eq('id', playlist_id).execute()
             )
+            # ADR-050 fase 2: retry-pass definitief afgerond -> verreken de reservering één keer
+            # (reserved − Σsettlements), idempotent via (playlist_id,'refund').
+            if reservation_mode:
+                await asyncio.to_thread(refund_credits, None, playlist_id)
         except Exception as e:
             logger.error(f"{log_prefix} Failed to set status=complete: {e}")
             with sentry_sdk.push_scope() as scope:
@@ -665,6 +697,8 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
                     collection_id=collection_id,
                     proxy_session_id=proxy_session,
                     deduct_credits_on_success=not already_deducted,
+                    reservation_mode=reservation_mode,
+                    playlist_id=playlist_id,
                     heartbeat_fn=_hb_retry,
                 )
                 if result['success']:
@@ -983,16 +1017,16 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # Scenario: Pass 1 re-enqueued, maar ook de tweede poging crashte — job staat
     # nog 'interrupted' en heeft >5 min geen heartbeat meer gekregen.
     # Refund binnen ~10 min na mislukte re-enqueue (geen 24u-wacht).
-    # Alleen transcription_jobs — playlist-credits zijn per-video atomisch in de RPC.
+    # Vangt zowel oude-modus (credits_deducted) als gereserveerde jobs (credits_reserved>0).
     try:
         result = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,user_id,credits_cost')
+                .select('id,user_id,credits_cost,credits_reserved')
                 .eq('status', 'interrupted')
-                .eq('credits_deducted', True)
                 .is_('transcript_id', 'null')
                 .gte('watchdog_attempts', 1)
                 .lt('last_heartbeat_at', stale_before)
+                .or_('credits_deducted.eq.true,credits_reserved.gt.0')
                 .execute()
         )
         for job in (result.data or []):
@@ -1012,7 +1046,13 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 if not claim.data:
                     logger.info(f"[WATCHDOG refund] job_id={job_id}: al verwerkt door andere cyclus — skip")
                     continue
-                if refund_amount > 0:
+                if (job.get('credits_reserved') or 0) > 0:
+                    # Gereserveerde job: verreken de reservering (reserved − Σsettlements),
+                    # idempotent via (job_id,'refund'). run_whisper_job deed dit normaal al;
+                    # dit vangt de crash vóór die refund-call.
+                    await asyncio.to_thread(refund_credits, job_id, None)
+                    logger.info(f"[WATCHDOG refund] reserved job_id={job_id} -> refund_credits")
+                elif refund_amount > 0:
                     await asyncio.to_thread(
                         lambda uid=job['user_id'], amt=refund_amount, jid=job_id:
                             add_credits(uid, amt, f"Refund: watchdog crash-recovery (job {jid})")
@@ -1039,6 +1079,51 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("pass", "2")
+        sentry_sdk.capture_exception(e)
+
+    # ── Pass 2b: playlist auto-refund — gecrashte GERESERVEERDE playlist ─────
+    # Een playlist die NA re-enqueue (Pass 1b, watchdog_attempts>=1) opnieuw stale
+    # 'interrupted' raakt = permanent mislukt. Verreken de reservering éénmalig
+    # (reserved − Σsettlements) via refund_credits. TERMINAL-only: attempts>=1 vereist,
+    # zodat een transient-geïnterrumpeerde-maar-hervattende playlist (attempts=0, Pass 1b)
+    # NIET vroegtijdig refundt (ADR-050 fase 2). Idempotent via (playlist_id,'refund');
+    # de status-flip (CAS) stopt her-selectie in volgende cycli.
+    try:
+        result = await asyncio.to_thread(
+            lambda: supabase.table('playlist_extraction_jobs')
+                .select('id,user_id')
+                .eq('status', 'interrupted')
+                .gte('watchdog_attempts', 1)
+                .lt('last_heartbeat_at', stale_before)
+                .gt('credits_reserved', 0)
+                .execute()
+        )
+        for job in (result.data or []):
+            playlist_id = job['id']
+            try:
+                claim = await asyncio.to_thread(
+                    lambda j=job: supabase.table('playlist_extraction_jobs').update({
+                        'status': 'error',
+                        'completed_at': datetime.now(timezone.utc).isoformat(),
+                    }).eq('id', j['id']).eq('status', 'interrupted').execute()
+                )
+                if not claim.data:
+                    logger.info(f"[WATCHDOG refund] playlist {playlist_id}: al verwerkt — skip")
+                    continue
+                await asyncio.to_thread(refund_credits, None, playlist_id)
+                logger.info(f"[WATCHDOG refund] playlist {playlist_id} -> refund_credits (reserved − settled)")
+            except Exception as e:
+                logger.error(f"[WATCHDOG] playlist auto-refund failed for {playlist_id}: {e}")
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                    scope.set_tag("pass", "2b")
+                    scope.set_tag("job_id", playlist_id)
+                sentry_sdk.capture_exception(e)
+    except Exception as e:
+        logger.error(f"[WATCHDOG] playlist auto-refund query failed: {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "2b")
         sentry_sdk.capture_exception(e)
 
 

@@ -229,3 +229,58 @@ def reserve_credits(
     except Exception as e:
         logger.error(f"Credit reservation error: {e}")
         return {'success': False, 'error': f"Failed to reserve credits: {str(e)}"}
+
+
+def settle_credits(
+    user_id: str,
+    amount: int,
+    job_id: str,
+    playlist_id: Optional[str] = None,
+    video_id: Optional[str] = None,
+    reason: str = "AI transcriptie settlement",
+) -> Dict:
+    """
+    Registreer het WERKELIJKE verbruik van één succesvolle whisper-video (ADR-050 fase 2).
+    BALANS-NEUTRAAL: de balans is al bij reserve bewogen; dit is een consumptie-registratie
+    (kind='settlement'), idempotent via (job_id,'settlement'). playlist_id meesturen bij
+    whisper-in-playlist zodat de playlist-refund het meesomt.
+    """
+    try:
+        supabase = get_supabase_client()
+        response = supabase.rpc('settle_credits', {
+            'p_user_id': user_id,
+            'p_amount': amount,
+            'p_job_id': job_id,
+            'p_playlist_id': playlist_id,
+            'p_video_id': video_id,
+            'p_reason': reason,
+        }).execute()
+        if response.data:
+            return response.data
+        return {'success': False, 'error': 'Unexpected response from settle_credits'}
+    except Exception as e:
+        logger.error(f"Credit settlement error: {e}")
+        return {'success': False, 'error': f"Failed to settle credits: {str(e)}"}
+
+
+def refund_credits(job_id: Optional[str] = None, playlist_id: Optional[str] = None) -> Dict:
+    """
+    Verreken aan het eind van een job/playlist de reservering tegen het werkelijke verbruik
+    (ADR-050 fase 2): refund = credits_reserved − Σ(settlements). Idempotent via (.,'refund').
+    Exact één van job_id/playlist_id opgeven. Geen-reservering => no-op.
+    """
+    try:
+        supabase = get_supabase_client()
+        response = supabase.rpc('refund_credits', {
+            'p_job_id': job_id,
+            'p_playlist_id': playlist_id,
+        }).execute()
+        if response.data:
+            result = response.data
+            if not result.get('success'):
+                logger.warning(f"Credit refund failed: {result.get('error')} (job={job_id}, playlist={playlist_id})")
+            return result
+        return {'success': False, 'error': 'Unexpected response from refund_credits'}
+    except Exception as e:
+        logger.error(f"Credit refund error: {e}")
+        return {'success': False, 'error': f"Failed to refund credits: {str(e)}"}
