@@ -89,6 +89,8 @@ from credit_manager import (
     calculate_credit_cost,
     deduct_credits,
     add_credits,
+    reserve_credits,
+    RESERVATION_ENABLED,
     get_supabase_client
 )
 
@@ -781,6 +783,25 @@ async def transcribe_with_whisper(
         'file_format': file_format,
     }).execute()
 
+    # ADR-050 fase 1 — reserveer het geschatte bedrag bij job-start (flag-gated, default OFF).
+    # Sluit de concurrent-overspend-race. Flag UIT => overgeslagen => nul gedragswijziging;
+    # de bestaande per-video-aftrek blijft dan de enige balans-mutatie (geen dubbele aftrek).
+    if RESERVATION_ENABLED:
+        _resv = await asyncio.to_thread(
+            reserve_credits, user_id=user_id, amount=estimated_cost, job_id=job_id
+        )
+        if not _resv.get('success'):
+            # Reservering geweigerd (concurrent overspend) — job-rij opruimen, niets afgetrokken.
+            await asyncio.to_thread(
+                lambda: supabase.table('transcription_jobs').delete().eq('id', job_id).execute()
+            )
+            return JSONResponse(status_code=402, content={
+                "error": "Insufficient credits",
+                "code": "insufficient_credits",
+                "required_credits": estimated_cost,
+                "available_credits": _resv.get('available', current_balance),
+            })
+
     if source_type == "youtube":
         arq_pool = request.app.state.arq_pool
         if arq_pool:
@@ -1031,6 +1052,30 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
         sentry_sdk.capture_exception(e)
         return SummarizeResponse(success=False, error=str(e))
 
+def _compute_playlist_reservation(video_ids, use_whisper_ids, video_metadata) -> int:
+    """
+    Reserveringsbedrag voor een playlist bij job-start (ADR-050 fase 1). Mirrort EXACT de
+    per-video aftrek-logica in worker.py (process_playlist_video):
+      - caption-video (niet in use_whisper_ids): 1 credit, GRATIS als index < 3
+        (worker.py: is_free = video_index < 3).
+      - whisper-video (in use_whisper_ids): ceil(duration/60), min 1, GEEN gratis-korting
+        (worker.py negeert is_free in de whisper-branch).
+    Duur ontbreekt/0 => min 1 credit (mirror calculate_credit_cost). Bewust GEEN naïeve
+    total_videos-3: een whisper-video op index 0-2 verbruikt een gratis-slot zonder korting,
+    exact zoals de worker.
+    """
+    whisper_set = set(use_whisper_ids or [])
+    meta = video_metadata or {}
+    total = 0
+    for idx, vid in enumerate(video_ids):
+        if vid in whisper_set:
+            d = (meta.get(vid) or {}).get('duration')
+            total += calculate_credit_cost(d) if d and d > 0 else 1
+        elif idx >= 3:
+            total += 1
+    return total
+
+
 @app.post("/api/playlist/extract")
 async def start_playlist_extraction(request: PlaylistExtractRequest, http_request: Request, _: None = Depends(verify_backend_secret)):
     """
@@ -1066,6 +1111,28 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
             scope.set_tag("user_id", request.user_id)
         sentry_sdk.capture_exception(e)
         return JSONResponse(status_code=500, content={"error": "Failed to create job"})
+
+    # ADR-050 fase 1 — reserveer het geschatte playlist-bedrag bij job-start (flag-gated,
+    # default OFF). Bedrag mirrort exact de worker per-video-aftrek. Flag UIT => overgeslagen
+    # => nul gedragswijziging; de bestaande per-video-aftrek blijft de enige balans-mutatie.
+    if RESERVATION_ENABLED:
+        _reserve_amount = _compute_playlist_reservation(
+            request.video_ids, request.use_whisper_ids, request.video_metadata
+        )
+        _resv = await asyncio.to_thread(
+            reserve_credits, user_id=request.user_id, amount=_reserve_amount, playlist_id=job_id
+        )
+        if not _resv.get('success'):
+            # Reservering geweigerd — job-rij opruimen, niets afgetrokken, niets geënqueued.
+            await asyncio.to_thread(
+                lambda: supabase.table('playlist_extraction_jobs').delete().eq('id', job_id).execute()
+            )
+            return JSONResponse(status_code=402, content={
+                "error": "Insufficient credits",
+                "code": "insufficient_credits",
+                "required_credits": _reserve_amount,
+                "available_credits": _resv.get('available'),
+            })
 
     arq_pool = http_request.app.state.arq_pool
     if arq_pool:

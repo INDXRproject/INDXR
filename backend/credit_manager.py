@@ -11,6 +11,12 @@ from supabase import create_client, Client
 
 logger = logging.getLogger("indxr-backend")
 
+# ADR-050 fase 1 — credit-reservering. Default UIT: zolang de flag OFF is, wordt er GEEN
+# reserve_credits aangeroepen in het live pad en verandert er niets aan de bestaande
+# per-video-aftrek (geen dubbele aftrek). De flag gaat pas AAN samen met settle+refund
+# (fase 2/3), wanneer de per-video-aftrek wordt omgebouwd naar draw-down-uit-de-reservering.
+RESERVATION_ENABLED = os.environ.get("CREDIT_RESERVATION_ENABLED", "false").lower() == "true"
+
 # Supabase client (singleton)
 _supabase_client: Optional[Client] = None
 
@@ -186,3 +192,40 @@ def add_credits(user_id: str, amount: int, reason: str = "Manual credit addition
             'success': False,
             'error': str(e)
         }
+
+
+def reserve_credits(
+    user_id: str,
+    amount: int,
+    job_id: Optional[str] = None,
+    playlist_id: Optional[str] = None,
+) -> Dict:
+    """
+    Reserveer credits bij job-start (ADR-050 fase 1). Trekt `amount` atomair af van
+    user_credits.credits en legt een kind='reservation'-rij vast, zodat gereserveerde
+    credits onbeschikbaar zijn voor concurrent jobs (sluit de overspend-race).
+
+    Idempotent: dezelfde job twee keer reserveren trekt niet dubbel af (partiële UNIQUE
+    (job_id,kind)/(playlist_id,kind)). Exact één van job_id/playlist_id opgeven.
+
+    Returns:
+        Dict met `success`; bij mislukking `error` (o.a. 'insufficient_credits') +
+        `required`/`available`. `noop`/`idempotent` markeren de no-op/retry-gevallen.
+    """
+    try:
+        supabase = get_supabase_client()
+        response = supabase.rpc('reserve_credits', {
+            'p_user_id': user_id,
+            'p_amount': amount,
+            'p_job_id': job_id,
+            'p_playlist_id': playlist_id,
+        }).execute()
+        if response.data:
+            result = response.data
+            if not result.get('success'):
+                logger.warning(f"Credit reservation failed: {result.get('error')} (user {user_id})")
+            return result
+        return {'success': False, 'error': 'Unexpected response from reserve_credits'}
+    except Exception as e:
+        logger.error(f"Credit reservation error: {e}")
+        return {'success': False, 'error': f"Failed to reserve credits: {str(e)}"}
