@@ -203,8 +203,10 @@ export function BroadcastComposer() {
         </div>
         {messageType === "service" ? (
           <p className="text-xs text-warning-fg">
-            Service messages (outages, account notices) go to <strong>all</strong> users regardless of
-            marketing preference and carry no unsubscribe footer. They must contain <strong>no</strong>{" "}
+            Service messages (outages, account notices) still go to the audience selected above — this
+            does <strong>not</strong> send to everyone. What changes is that they <strong>ignore the
+            marketing-unsubscribe preference</strong> (delivered even to recipients who opted out of
+            marketing) and carry no unsubscribe footer. They must contain <strong>no</strong>{" "}
             promotional content — promotion in a service email makes it marketing.
           </p>
         ) : (
@@ -284,8 +286,10 @@ export function BroadcastComposer() {
               <div className="space-y-2 text-sm text-fg-muted">
                 <p>
                   This will deliver an in-app message to <strong>{count?.toLocaleString()}</strong>{" "}
-                  {TARGET_LABELS[target].toLowerCase()}
-                  {target === "manual" ? "" : ""}.
+                  {target === "manual"
+                    ? `selected user${count === 1 ? "" : "s"}`
+                    : TARGET_LABELS[target].toLowerCase()}
+                  .
                 </p>
                 <p>
                   {sendEmail

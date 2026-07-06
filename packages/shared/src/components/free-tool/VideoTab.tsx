@@ -16,6 +16,7 @@ import { useAuth } from "../../hooks/useAuth"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
 import posthog from "posthog-js"
 import { TranscriptionProgress } from "../transcription/TranscriptionProgress"
+import { BackgroundJobNotice } from "../BackgroundJobNotice"
 
 interface VideoTabProps {
   onPlaylistDetected?: () => void
@@ -374,11 +375,16 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const videoId = (match && match[2].length === 11) ? match[2] : "";
 
       if (videoId) {
-        // Cooldown: don't show duplicate warning within 10s of a successful extraction
+        // Suppress the duplicate warning for the transcript this session just
+        // created. No time window: the previous 10s cooldown let the banner
+        // re-appear once the freshly created transcript landed in the DB (the
+        // check effect re-runs on every render). We keep existingTranscriptIdRef
+        // intact so the result card keeps its Library link; only the banner
+        // state is cleared. handleUrlChange resets this marker, so deliberately
+        // re-entering a URL for an existing transcript still warns.
         const recent = lastSuccessTimestampRef.current
-        if (recent && recent.videoId === videoId && Date.now() - recent.time < 10000) {
+        if (recent && recent.videoId === videoId) {
           setExistingTranscriptId(null)
-          existingTranscriptIdRef.current = null
           setExistingTranscriptMethod(null)
           setShowDuplicateChoices(false)
           setIsCheckingDuplicate(false)
@@ -455,6 +461,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
   const handleUrlChange = (newUrl: string) => {
     setUrl(newUrl)
+
+    // A manual URL edit begins a fresh attempt: drop the "just created" marker
+    // so the duplicate warning can fire again for an already-existing transcript.
+    lastSuccessTimestampRef.current = null
 
     // Detect if the URL is a playlist for the smart suggestion
     const validation = validateYouTubeUrl(newUrl, 'video')
@@ -1248,14 +1258,17 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    elapsedSeconds={elapsedSeconds}
                    audioDurationSeconds={videoDuration}
                  />
+                 <BackgroundJobNotice />
                </div>
              ) : loading && whisperStatus !== 'idle' ? (
-               <TranscriptionProgress
-                 status={whisperStatus}
-                 elapsedSeconds={elapsedSeconds}
-                 audioDurationSeconds={videoDuration}
-                 className="mt-2"
-               />
+               <div className="flex flex-col gap-2 w-full mt-2">
+                 <TranscriptionProgress
+                   status={whisperStatus}
+                   elapsedSeconds={elapsedSeconds}
+                   audioDurationSeconds={videoDuration}
+                 />
+                 <BackgroundJobNotice />
+               </div>
              ) : error ? (
                <p className="text-sm text-error">{error.message}</p>
              ) : null}

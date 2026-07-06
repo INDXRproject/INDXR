@@ -28,6 +28,15 @@ export default function TranscribePage() {
   
   const supabase = createClient()
 
+  // Honour the ?tab= query param (e.g. from the active-jobs indicator, which
+  // links to the tab where a job is running) so it opens on the right tab.
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab')
+    if (tab === 'video' || tab === 'playlist' || tab === 'audio') {
+      setActiveTab(tab)
+    }
+  }, [])
+
   useEffect(() => {
     async function checkReward() {
         const { data: { user } } = await supabase.auth.getUser()

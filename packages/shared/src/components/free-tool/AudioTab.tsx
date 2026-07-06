@@ -14,6 +14,7 @@ import { CardSkeleton } from "../ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "../../utils/supabase/client"
 import { TranscriptionProgress } from "../transcription/TranscriptionProgress"
+import { BackgroundJobNotice } from "../BackgroundJobNotice"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
 
@@ -631,9 +632,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 elapsedSeconds={elapsedSeconds}
                 audioDurationSeconds={audioDuration}
               />
-              <p className="text-xs text-fg-muted/70 text-center">
-                AI is transcribing — you can leave this page; we&apos;ll keep working in the background
-              </p>
+              <BackgroundJobNotice />
             </div>
           )}
 

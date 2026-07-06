@@ -9,6 +9,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import Image from "next/image";
 import { validateYouTubeUrl } from "../utils/youtube";
 import { PlaylistAvailabilitySummary } from "./PlaylistAvailabilitySummary";
+import { BackgroundJobNotice } from "./BackgroundJobNotice";
 import { useAuth } from "../hooks/useAuth";
 import { createClient } from "../utils/supabase/client";
 import { cn } from "../lib/utils";
@@ -554,6 +555,10 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                             style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted' || s === 'age_restricted' || s === 'bot_detection' || s === 'timeout' || s === 'members_only' || s === 'no_captions').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
                         />
                     </div>
+                    <BackgroundJobNotice
+                        largePlaylist={Object.keys(videoStatuses).length > 50}
+                        className="mt-4"
+                    />
                 </>
             )}
         </div>
