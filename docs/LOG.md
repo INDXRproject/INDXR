@@ -6997,3 +6997,5 @@ docs/LOG.md
 packages/shared/src/components/PlaylistManager.tsx
 packages/shared/src/components/free-tool/PlaylistTab.tsx
 ---
+[2026-07-06 19:25] precompact: context compaction triggered
+[2026-07-06 21:09] adr+docs: ADR-050 reserve-and-hold credit-reservering vastgelegd (goedgekeurd ontwerp, gefaseerd — gedrag nog niet in prod, alleen fundering gebouwd); launch-reset-taak 1.26 toegevoegd aan priorities (ná reservering-fix, balans+log+job-rijen consistent leegmaken) | gewijzigd: docs/wiki/decisions/050-credit-reservation-model.md, docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md

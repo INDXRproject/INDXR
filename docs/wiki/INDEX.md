@@ -86,6 +86,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [047-turborepo-build-orchestration.md](decisions/047-turborepo-build-orchestration.md) | Turborepo als build-orchestrator — intelligent caching, cold 51s → warm 63ms |
 | [048-redis-split-upstash-railway.md](decisions/048-redis-split-upstash-railway.md) | Redis-splitsing: Upstash voor frontend (rate-limiter + caption-cache), Railway-Redis voor ARQ worker |
 | [049-dead-job-reaper.md](decisions/049-dead-job-reaper.md) | Dead-job reaper (Pass 0 in watchdog): stuck transcription_jobs → terminale status; playlist-veiligheid via heartbeat-branch-scheiding |
+| [050-credit-reservation-model.md](decisions/050-credit-reservation-model.md) | Credit-reservering (reserve-and-hold) voor alle jobs — reserveren bij start, refund = gereserveerd − verbruik; sluit concurrent-overspend race; gefaseerd (fundering nu, gedrag na review) |
 
 ---
 

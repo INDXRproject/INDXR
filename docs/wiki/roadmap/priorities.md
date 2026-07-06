@@ -250,6 +250,15 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     - Ongebruikte kolommen die de live paden niet onderhouden: `credit_transactions.balance_after`, `credit_transactions.transaction_type` (naast de wél-gebruikte `type`), `user_credits.total_credits_purchased`, `user_credits.credits_bonus`.
     Aanpak: eerst verifiëren dat er écht geen callers/lezers zijn (grep + prod-check), dan migratie om te droppen of expliciet als deprecated markeren. Kan post-launch; documenteer nu zodat het niet verloren gaat.
 
+- [ ] **1.26 — Schone-lei reset vóór launch** (financieel-kritiek, NÁ de reservering-fix uitvoeren) 💰
+    Eén gecontroleerde reset van alle testdata zodat launch start met een leeg, consistent systeem. Nu zit er testdata van 6 test-users in (test-transacties, test-transcripts/library-entries) + master-cache-vervuiling. Een bewuste, atomaire reset is schoner dan ad-hoc rijen verwijderen.
+    **Volgorde-eis:** draaien **ná** de credit-reservering-fix (ADR-050 / 1.22), zodat de reconciliatie-invariant (`user_credits.credits` == afgeleide `SUM(credit) − SUM(debit)`) intact blijft tot het moment van reset. Reset vóór de fix zou de invariant verbergen die we juist willen bewaken.
+    **Scope — consistent leegmaken, niet één ervan:**
+    - Balans + log + job-rijen samen: `user_credits`, `credit_transactions`, `transcription_jobs`, `playlist_extraction_jobs`, transcripts/library-entries van test-users.
+    - Master-cache-reset: Upstash caption-cache + eventuele andere caches (rate-limit-buckets, metadata-cache).
+    - Test-users zelf (auth + profielen).
+    **Kritiek genoteerd:** `user_credits.credits` is de balans-bron. Een reset moet **balans, audit-log én job-rijen tegelijk** leegmaken — nooit alleen de balans of alleen het log, anders ontstaat precies de inconsistentie die fase-1 (`ee4c9ca`) net heeft gerepareerd. Implementeer NIET nu; dit is een pre-launch-uitvoertaak.
+
 ### Pre-launch — buiten code (parallel uit te voeren)
 
 - [ ] Google Search Console: domein verifiëren, sitemap indienen
