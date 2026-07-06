@@ -52,8 +52,10 @@ export default async function AdminOverviewPage() {
     { data: allTranscriptUsers },
   ] = await Promise.all([
     admin.from("transcripts").select("*", { count: "exact", head: true }),
-    admin.from("credit_transactions").select("amount").eq("type", "credit"),
-    admin.from("credit_transactions").select("amount").eq("type", "debit"),
+    // Purchased = credit-toevoegingen behalve refunds (kind='refund'); NULL-kind blijft meetellen.
+    admin.from("credit_transactions").select("amount").eq("type", "credit").or("kind.is.null,kind.neq.refund"),
+    // Consumed = werkelijk verbruik = kind='settlement' (niet SUM type='debit' -> dubbeltelling na activering).
+    admin.from("credit_transactions").select("amount").eq("kind", "settlement"),
     // Fetch user_ids for distinct active user count
     admin
       .from("transcripts")

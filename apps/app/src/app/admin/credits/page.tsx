@@ -50,8 +50,13 @@ export default async function AdminCreditsPage({
 
   // Summary totals (unfiltered)
   const [purchasedRes, consumedRes] = await Promise.all([
-    admin.from("credit_transactions").select("amount").eq("type", "credit"),
-    admin.from("credit_transactions").select("amount").eq("type", "debit"),
+    // Purchased = credit-toevoegingen behalve refunds (kind='refund'). NULL-kind (bestaande
+    // purchases/grants) blijft meetellen; na ADR-050-activering zouden de vele refund-credits
+    // dit anders inflaten.
+    admin.from("credit_transactions").select("amount").eq("type", "credit").or("kind.is.null,kind.neq.refund"),
+    // Consumed = werkelijk verbruik = kind='settlement'. NIET SUM(type='debit'): dat telt na
+    // activering reservering + settlement dubbel (beide type='debit').
+    admin.from("credit_transactions").select("amount").eq("kind", "settlement"),
   ])
 
   const totalPurchased = purchasedRes.data?.reduce((s, r) => s + r.amount, 0) ?? 0
