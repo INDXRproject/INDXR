@@ -194,6 +194,32 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     GEEN volledige redesign — die komt in Fase 3 wanneer product-market-fit signalen er zijn.
     Plek in volgorde: laatste van Fase 1 zodat alle UI-componenten al bestaan.
 
+- [ ] **1.21 — Prijs-per-credit herijken tegen werkelijke kosten** (0,5–1 dag)
+    Doel: prijzen dekken de echte marginale kosten en sturen naar grotere pakketten.
+    Componenten:
+    - Werkelijke kosten per credit berekenen uit **AssemblyAI** (transcriptie/min) + **Decodo** (residentiële proxy-bandbreedte/GB) + **Vercel/Railway** (compute/egress) — meten, niet schatten.
+    - Steilere **volumekorting**: kleine pakketten een hogere prijs-per-credit, grote pakketten lager, zodat de marge op de instap klopt en volume beloond wordt.
+    - **Koppelen aan 1.13 (Stripe live-mode):** de 5 pakketten worden in live mode toch opnieuw aangemaakt — stel de nieuwe prijspunten daar in één keer correct in. `PACKAGES` in `checkout/route.ts` synchroniseren.
+    Afhankelijk van / koppelen aan: 1.13, [ADR-012](../decisions/012-pricing-tiers.md).
+
+- [ ] **1.22 — Credit-reservering bij job-start + refund van ongebruikte/gefaalde video's** (financieel-kritiek)
+    Doel: los de credit-race bij concurrent jobs op; **blokkeert veilige concurrency / horizontaal schalen.**
+    Probleem: credits worden nu per-video op verwerkingsmoment afgetrokken, niet gereserveerd bij job-start; `deduct_credits_atomic` is niet job-idempotent (geen dedup op `job_id`) → bij concurrent uitvoering of watchdog-re-enqueue is dubbele aftrek mogelijk (zie replica-safety-audit, LOG 2026-07-06).
+    Componenten:
+    - **Reserveer** de geschatte kosten bij job-start (som over de te verwerken video's), i.p.v. per-video best-effort aftrek.
+    - **Refund** het ongebruikte/gefaalde deel bij afronding (per gefaalde video, en het verschil tussen reservering en werkelijk verbruik).
+    - Aftrek **DB-idempotent** maken op `job_id` (unique-constraint/dedup-guard in de RPC) zodat een tweede deduct voor dezelfde video een no-op is.
+    Raakt: credit-logica, send/start-payload, `deduct_credits_atomic`, watchdog — audit vereist vóór implementatie.
+
+- [ ] **1.23 — max_jobs expliciet zetten + ThreadPool-executor meeschalen** (0,5 dag)
+    Doel: bewuste worker-concurrency-knop en de verborgen ThreadPool-bottleneck oplossen **vóór** horizontaal schalen.
+    Reden: `max_jobs` staat nu impliciet op **10** (ARQ-default, niet gezet in `WorkerSettings`). Alle blocking-werk (yt-dlp, ffmpeg, AssemblyAI-poll, DB) loopt via `asyncio.to_thread` → de **default ThreadPoolExecutor** = `min(32, cpu_count+4)` = **12 threads op 8 vCPU**. Meer dan ~12 slots heeft nu dus geen zin — de 13e blocking-call wacht toch op een vrije thread.
+    Componenten:
+    - **`max_jobs=8`** op de huidige Hobby-worker (expliciet in `WorkerSettings`) — conservatief onder de 12-thread-pool, met ruimte voor heartbeat/DB-`to_thread`.
+    - **Bij verhoging** (Pro-replicas): tegelijk `loop.set_default_executor(ThreadPoolExecutor(max_workers=max_jobs+8))` zetten, anders blijft de default pool de effectieve cap.
+    - **Hard-cap: `max_jobs × replicas ≤ AssemblyAI-accountconcurrency`** (extern limiet — Khidr haalt op bij AssemblyAI). Overschrijding → 429 (geen client-side afhandeling → job faalt → refund).
+    Koppeling: **samen met 1.22 voorwaarde voor veilig horizontaal schalen** — 1.22 sluit de credit-race, 1.23 het concurrency-/resource-plafond. Zie replica-safety-audit (LOG 2026-07-06).
+
 ### Pre-launch — buiten code (parallel uit te voeren)
 
 - [ ] Google Search Console: domein verifiëren, sitemap indienen

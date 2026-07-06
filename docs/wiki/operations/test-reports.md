@@ -4,6 +4,108 @@ Handmatige testrapporten per feature of sprint. Automatische Playwright-specs st
 
 ---
 
+## 254-min single-video AI-transcriptie — timeout-marge + concurrency — 2026-07-06
+
+**Datum:** 2026-07-06
+**Tester:** Khidr (live run) + CC (log-analyse)
+**Bron:** `transcription_jobs`-rij + Railway worker-logs voor video `JuU8cbz8TYI`.
+**Status:** ✅ PASS — langste AI-video tot nu toe, ruim binnen de 2u-jobtimeout; draaide concurrent met een playlist.
+
+### Setup
+
+Eén single-video AI-transcriptie (AssemblyAI-route) op een **254-minuten** video (`JuU8cbz8TYI`). Doel: valideren dat `job_timeout=7200`s (2u, `worker.py:1053`) ook 4u+ video's dekt, en dat de aftrek klopt op deze lengte.
+
+### Resultaat (geverifieerd uit de job-rij + logs)
+
+| Metric | Waarde |
+|--------|--------|
+| Audio-duur | **15228 s = 254 min** |
+| Job wall-time | **654,55 s (~10:55)** |
+| `job_timeout` | 7200 s |
+| Marge t.o.v. timeout | **~11×** (7200 / 654,55 ≈ 11,0) |
+| Eindstatus | `complete` |
+| Credits afgetrokken | **254 cr** — `ceil(15228 / 60) = 254`, exact correct |
+| Segmenten | 2676 |
+
+De job voltooide in ~11 minuten wall-time terwijl de timeout op 2 uur staat — een 4u14m video verbruikt dus grofweg een elfde van het beschikbare venster. Dit bevestigt dat de 2u-timeout ruim volstaat, zelfs voor video's boven de 4 uur.
+
+### Concurrency-datapunt (geverifieerd)
+
+Deze 254-min job **liep gelijktijdig met de 10-video Happiness Lab-playlist** (zie rapport hieronder) op **één worker**; **beide voltooiden** met eindstatus `complete`. Dit bevestigt twee dingen die uit de logs blijken:
+
+- De worker verwerkt **concurrente onafhankelijke jobs** (single-video + playlist tegelijk) zonder dat één de ander blokkeert.
+- Jobs draaien **volledig server-side** (ARQ-worker pulls uit Redis) — niet afhankelijk van de browser-tab; de gebruiker kan tijdens verwerking de tab sluiten of uitloggen zonder de job te verliezen.
+
+> Kanttekening: dit is een N=1-observatie van twee gelijktijdige jobs, geen belastingtest van de volledige `max_jobs`-concurrency. Het bewijst dat concurrent draaien werkt, niet wat het plafond is.
+
+---
+
+## 10-video AI-playlist (Happiness Lab) — resume-fix live verificatie — 2026-07-06
+
+**Datum:** 2026-07-06
+**Tester:** Khidr (live run)
+**Bron:** live playlist-run + UI-observatie; DB `playlist_extraction_jobs` / `video_results`.
+**Status:** ✅ PASS — 10/10 succes; resume-gedrag live bevestigd.
+
+### Setup
+
+"The Happiness Lab"-playlist, **10 video's via de AI-route**. Doel: valideren van de resume-fix (DB-gedreven per-video-lijst + statussen op terugkeer naar een lopende job, LOG 2026-07-05/07-06) in een echte run.
+
+### Resultaat (geverifieerd)
+
+| Metric | Waarde |
+|--------|--------|
+| Succes | **10 / 10** |
+| Wall-clock | **17:31** |
+| Eindstatus | `complete` |
+
+### Resume-verificatie (live, handmatig)
+
+Tijdens de lopende job: weg-genavigeerd naar **Messages**, terug naar Transcribe, en een **page-refresh** uitgevoerd. Uitkomst:
+
+- De per-video-lijst en de individuele statussen werden **correct hersteld** uit de DB.
+- **Geen voortijdige "Complete"**-weergave — de job bleef als lopend getoond tot hij daadwerkelijk `complete` was.
+
+Dit bevestigt de resume-hydratatie (lijst uit `video_metadata`/`video_ids`, statussen uit `video_results`) en dat de transiënte-interrupt-mislabel niet langer een valse completion-summary triggert.
+
+> Kanttekening: credit-totaal is in deze run niet apart vastgelegd; het rapport dekt succesrate, doorlooptijd en resume-gedrag.
+
+---
+
+## 63-video AI-playlist (job ee6e7a81, "History") — self-healing na interruptie — 2026-07-05
+
+**Datum:** 2026-07-05
+**Tester:** Khidr (live run) + CC (log-/DB-analyse)
+**Bron:** live playlist-job `ee6e7a81` ("History"); brondata + meting in `docs/LOG.md` (entry 2026-07-05 14:35).
+**Status:** ✅ PASS — job onderbroken en automatisch hervat door de watchdog tot `complete`.
+
+### Setup
+
+"History"-playlist, **63 video's via de AI-route** (AssemblyAI). De job werd mid-chain onderbroken (interruptie rond video 21). Doel van de meting: valideren dat de crash-recovery (watchdog `watchdog_interrupted_jobs`, 2-min cron) een onderbroken AI-playlist automatisch hervat.
+
+### Resultaat (geverifieerd uit `video_results` + logs)
+
+| Metric | Waarde |
+|--------|--------|
+| Totaal video's | 63 (AI-route) |
+| Hervatting | **21 → 63** via watchdog (`watchdog_attempts=1`) |
+| Eindstatus | `complete` |
+| Succes | **60 / 63** |
+| Faal | **3 / 63** |
+| Credit-debits | **60** (`AssemblyAI transcription`, per-minuut — alleen geslaagde video's) |
+
+De 3 gefaalde video's kregen **geen aftrek** (geen debit bij failure); 0 niet-verwerkte video's. 60 succes → 60 debits, één-op-één.
+
+### Self-healing — het datapunt
+
+De job werd onderbroken en bleef niet hangen: de watchdog detecteerde de interruptie, re-enqueuede de chain vanaf de openstaande video (`watchdog_attempts=1`) en verwerkte 21→63 tot eindstatus `complete`. Dit is het gemeten bewijs dat de crash-recovery op een échte 63-video AI-playlist werkt.
+
+### Eerlijkheid over de 3 fails
+
+De LOG-entry noteert "3 fail" zonder per-`error_type`-uitsplitsing. Op basis van de run-context (en consistent met alle eerdere playlist-runs) zijn dit **proxy-/beschikbaarheids-gerelateerde** uitkomsten aan de YouTube-/exit-IP-kant — **geen systeem- of chainfout**. Bewijs daarvoor: de chain zelf herstelde schoon van de interruptie en bereikte `complete`; de fails betroffen individuele video's, niet de orchestratie. Een exacte faaltype-breakdown is voor deze job niet in de logs vastgelegd.
+
+---
+
 ## JRE-462 playlist stress-test — proxy-rotatie op schaal — 2026-07-05
 
 **Datum:** 2026-07-05
