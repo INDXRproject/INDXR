@@ -7042,3 +7042,31 @@ reserve->settle->refund draw-down: whisper standalone (werkelijk< en ~=schatting
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/test_settle_refund.py
 ---
+[2026-07-06 23:45] commit: docs(credits): ADR-050 fase-2-status + LESSONS/LOG (settle+refund, flag OFF)
+
+ADR-050: gedrags-fasen gebouwd + in prod-DB maar flag OFF => nieuw pad inactief; branch op credits_reserved>0. LESSONS: settle=balans-neutraal & uitgesloten van reconciliatie en type='debit'-metric; refund=netto-post; branch op reserveringsstaat niet op de flag. LOG-entry.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/decisions/050-credit-reservation-model.md
+---
+[2026-07-07 00:15] fix: upload-pad + youtube-fallback reservation-aware vóór ADR-050-activering (dubbele-aftrek-blocker). Reserve draait in main.py vóór de source_type-splitsing; alleen worker.run_whisper_job was bedraad, maar het upload-pad (main.py, source_type!=youtube, asyncio.create_task — permanent pad, geen fallback) en de arq-loze youtube-fallback riepen do_assemblyai_transcription DIRECT aan zonder reservation_mode/refund => bij flag ON reserve + oude aftrek = dubbele afrekening + reservering nooit teruggeboekt (prod-bereikbaar voor elke upload-transcriptie). Fix: gedeeld dispatch-primitief run_whisper_reservation_aware (transcription_pipeline.py) leest credits_deducted+credits_reserved van de eigen job-rij, leidt reservation_mode af, draait de pipeline, refundt ná afloop (success én failure, idempotent via (job_id,'refund')); worker + upload + fallback gaan er nu alle drie doorheen (geen drift). Playlist-whisper ongewijzigd (refundt op playlist-niveau). Trace van alle 5 do_assemblyai_transcription-callers: worker.run_whisper_job/upload/fallback via de wrapper; playlist-video + playlist-retries direct met playlist-niveau reservation_mode + playlist-refund — geen enkel pad reserveert + doet de oude aftrek samen. Bewezen: test_settle_refund.py 36/36 (nieuw J: upload-dispatch e2e — balans exact 100-7=93 op success, volledige refund op failure, reservation_mode=True doorgegeven, oude aftrek onderdrukt; J2: flag-OFF-regressie — ongereserveerd = oude aftrek + geen refund); fase-1 regressie 14/14; py_compile + pnpm build groen. Flag CREDIT_RESERVATION_ENABLED blijft OFF — activering apart ná dit rapport. Niet gepusht. | gewijzigd: backend/transcription_pipeline.py, backend/worker.py, backend/main.py, backend/test_settle_refund.py, docs/LESSONS.md
+[2026-07-07 00:11] commit: fix(credits): route all standalone-whisper dispatch through reservation-aware wrapper (ADR-050 fase 2)
+
+Blocker gevonden vóór activering: reserve_credits draait in main.py vóór de source_type-splitsing, maar alleen worker.run_whisper_job was reservation-aware. Het upload-pad (main.py, source_type!=youtube, permanent asyncio.create_task) en de arq-loze youtube-fallback riepen do_assemblyai_transcription direct aan zonder reservation_mode/refund => bij flag ON reserve + oude aftrek = dubbele afrekening, reservering nooit teruggeboekt (prod-bereikbaar voor elke upload).
+
+Fix: gedeeld dispatch-primitief run_whisper_reservation_aware (transcription_pipeline.py) leest credits_deducted+credits_reserved van de eigen job-rij, leidt reservation_mode af, draait de pipeline en refundt na afloop (success EN failure, idempotent (job_id,'refund')). worker + upload + fallback gaan er nu alle drie doorheen -> geen drift. Playlist-whisper ongewijzigd (refundt op playlist-niveau).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+backend/transcription_pipeline.py
+backend/worker.py
+---
+[2026-07-07 00:11] commit: test(credits): upload-dispatch e2e (J/J2) — bewijst geen dubbele aftrek, 36/36 (ADR-050 fase 2)
+
+Nieuwe e2e op het dispatch-pad zelf (RPC-tests dekten main.py niet): stubt de pipeline (settle in reservation_mode) en traceert reserve->settle->refund door run_whisper_reservation_aware. J: upload-success balans exact 100-7=93 (een keer), upload-failure volledige refund terug op 100, reservation_mode=True doorgegeven. J2: flag-OFF-regressie -> ongereserveerd = oude aftrek, geen refund. Populeert os.environ zodat de wrapper-client dezelfde DB raakt.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_settle_refund.py
+---
