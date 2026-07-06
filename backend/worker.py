@@ -832,13 +832,18 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             video_id_from_url = (_qs.get('v') or [video_url])[0]
             try:
                 await redis.delete(f'arq:job:{job_id}', f'arq:in-progress:{job_id}')
-                await asyncio.to_thread(
+                # CAS-claim: alleen re-enqueuen als DEZE cyclus de rij van attempts=0 -> 1
+                # flipt (rowcount==1). Voorkomt dubbele re-enqueue bij overlappende runs.
+                claim = await asyncio.to_thread(
                     lambda j=job: supabase.table('transcription_jobs').update({
                         'status': 'pending',
                         'watchdog_attempts': 1,
                         'last_heartbeat_at': None,
-                    }).eq('id', j['id']).execute()
+                    }).eq('id', j['id']).eq('watchdog_attempts', 0).execute()
                 )
+                if not claim.data:
+                    logger.info(f"[WATCHDOG] job_id={job_id}: al geclaimd door andere cyclus — skip")
+                    continue
                 await redis.enqueue_job(
                     'run_whisper_job',
                     job_id=job_id,
@@ -895,12 +900,15 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                         continue
                     _job_id = f"{playlist_id}:retries"
                     await redis.delete(f'arq:job:{_job_id}', f'arq:in-progress:{_job_id}')
-                    await asyncio.to_thread(
+                    claim = await asyncio.to_thread(
                         lambda pid=playlist_id: supabase.table('playlist_extraction_jobs').update({
                             'watchdog_attempts': 1,
                             'last_heartbeat_at': None,
-                        }).eq('id', pid).execute()
+                        }).eq('id', pid).eq('watchdog_attempts', 0).execute()
                     )
+                    if not claim.data:
+                        logger.info(f"[WATCHDOG] playlist {playlist_id} retry-pass: al geclaimd — skip")
+                        continue
                     await redis.enqueue_job('process_playlist_retries', playlist_id, _job_id=_job_id)
                     logger.info(f"[WATCHDOG re-enqueue] retry-pass {playlist_id} user_id={job['user_id']}")
                     continue
@@ -936,13 +944,16 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
 
                 _job_id = f"{playlist_id}:{video_index}"
                 await redis.delete(f'arq:job:{_job_id}', f'arq:in-progress:{_job_id}')
-                await asyncio.to_thread(
+                claim = await asyncio.to_thread(
                     lambda pid=playlist_id: supabase.table('playlist_extraction_jobs').update({
                         'status': 'running',
                         'watchdog_attempts': 1,
                         'last_heartbeat_at': None,
-                    }).eq('id', pid).execute()
+                    }).eq('id', pid).eq('watchdog_attempts', 0).execute()
                 )
+                if not claim.data:
+                    logger.info(f"[WATCHDOG] playlist {playlist_id}: al geclaimd door andere cyclus — skip")
+                    continue
                 await redis.enqueue_job(
                     'process_playlist_video',
                     playlist_id,
@@ -988,13 +999,19 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             job_id = job['id']
             refund_amount = job.get('credits_cost') or 0
             try:
-                await asyncio.to_thread(
+                # CAS-claim: alleen refunden als DEZE cyclus de rij van 'interrupted' -> 'error'
+                # flipt (rowcount==1). Postgres serialiseert de row-lock, dus bij overlappende
+                # watchdog-runs matcht de tweede UPDATE 0 rijen -> geen dubbele terugstorting.
+                claim = await asyncio.to_thread(
                     lambda j=job: supabase.table('transcription_jobs').update({
                         'status': 'error',
                         'error_type': 'watchdog_permanent_failure',
                         'error_message': 'Automatisch teruggestort na mislukte crash-recovery.',
-                    }).eq('id', j['id']).execute()
+                    }).eq('id', j['id']).eq('status', 'interrupted').execute()
                 )
+                if not claim.data:
+                    logger.info(f"[WATCHDOG refund] job_id={job_id}: al verwerkt door andere cyclus — skip")
+                    continue
                 if refund_amount > 0:
                     await asyncio.to_thread(
                         lambda uid=job['user_id'], amt=refund_amount, jid=job_id:
