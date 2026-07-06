@@ -23,7 +23,7 @@ from upstash_redis.asyncio import Redis as UpstashRedis
 import yt_dlp
 from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp
-from transcription_pipeline import do_assemblyai_transcription
+from transcription_pipeline import run_whisper_reservation_aware
 from language_utils import normalize_language_code
 
 # Load environment variables
@@ -813,8 +813,11 @@ async def transcribe_with_whisper(
                 title=title,
             )
         else:
-            # Fallback: ARQ_REDIS_URL not configured (local dev without Redis)
-            asyncio.create_task(do_assemblyai_transcription(
+            # Fallback: ARQ_REDIS_URL not configured (local dev without Redis).
+            # Reservation-aware wrapper (ADR-050 fase 2): reserve draait hierboven vóór de
+            # source_type-splitsing, dus dit directe pipeline-pad MOET reservation-aware zijn
+            # mét refund-hook — anders reserve + oude aftrek = dubbele afrekening bij flag ON.
+            asyncio.create_task(run_whisper_reservation_aware(
                 user_id, video_id,
                 job_id=job_id,
                 audio_title=title,
@@ -826,7 +829,10 @@ async def transcribe_with_whisper(
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(audio_content)
             tmp_path = tmp.name
-        asyncio.create_task(do_assemblyai_transcription(
+        # Reservation-aware wrapper (ADR-050 fase 2): idem — reserve is al gebeurd, dus deze
+        # directe pipeline-aanroep moet via de wrapper (reservation_mode + refund), anders
+        # dubbele aftrek bij flag ON en de reservering wordt nooit teruggeboekt.
+        asyncio.create_task(run_whisper_reservation_aware(
             user_id, None,
             job_id=job_id,
             audio_path=tmp_path,

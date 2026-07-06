@@ -30,6 +30,7 @@ from credit_manager import (
     check_user_balance,
     deduct_credits,
     settle_credits,
+    refund_credits,
     get_supabase_client,
 )
 from youtube_utils import get_proxy_url
@@ -117,6 +118,65 @@ def _classify_download_error(
         f"video_id={video_id} job_id={job_id}"
     )
     return 'extraction_error'
+
+
+async def run_whisper_reservation_aware(
+    user_id: str,
+    video_id: Optional[str],
+    *,
+    job_id: str,
+    **pipeline_kwargs,
+) -> dict:
+    """
+    Reservation-aware wrapper rond do_assemblyai_transcription voor STANDALONE whisper-jobs
+    (worker.run_whisper_job, het upload-pad en de arq-loze youtube-fallback). ADR-050 fase 2.
+
+    KRITIEK: `reserve_credits` draait in main.py vóór de source_type-splitsing, dus ELK pad dat
+    daarna de pipeline aanroept moet reservation-aware zijn mét refund-hook — anders vuren
+    reserve + de oude per-video-aftrek samen = DUBBELE aftrek bij flag ON (en de reservering
+    wordt nooit teruggeboekt). Deze wrapper is de ENIGE dispatch-primitief voor standalone jobs
+    zodat die bedrading niet per call-site kan driften.
+
+    Leest credits_deducted + credits_reserved van de EIGEN transcription_jobs-rij:
+      - reservation_mode = credits_reserved > 0  → pipeline skipt de oude aftrek en settelt het
+        werkelijke verbruik; ná afloop verrekent refund_credits(job_id) de reservering
+        (reserved − settled) op success (refund=verschil) én failure (refund=alles), idempotent
+        via (job_id,'refund').
+      - anders (flag OFF / niet gereserveerd) → ongewijzigd oude gedrag (directe aftrek).
+    Fail-safe bij read-fout: already_deducted=True + reservation_mode=False (liever gratis dan
+    dubbel). Playlist-whisper gebruikt deze wrapper NIET — die refundt op playlist-niveau
+    (worker.process_playlist_video / process_playlist_retries).
+    """
+    supabase = get_supabase_client()
+    try:
+        row = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .select('credits_deducted,credits_reserved')
+                .eq('id', job_id).single().execute()
+        )
+        already_deducted = bool(row.data and row.data.get('credits_deducted'))
+        reservation_mode = bool(row.data and (row.data.get('credits_reserved') or 0) > 0)
+    except Exception as e:
+        logger.warning(
+            f"[run_whisper_reservation_aware] credits_deducted/reserved read failed for "
+            f"{job_id}: {e} — defaulting to already_deducted=True, reservation_mode=False (safe)"
+        )
+        already_deducted = True
+        reservation_mode = False
+
+    result = await do_assemblyai_transcription(
+        user_id,
+        video_id,
+        job_id=job_id,
+        deduct_credits_on_success=not already_deducted,
+        reservation_mode=reservation_mode,
+        **pipeline_kwargs,
+    )
+    # ADR-050 fase 2: gereserveerde job → verreken aan het eind (reserved − settled). Vuurt op
+    # success (refund=verschil) én failure (refund=alles), idempotent via (job_id,'refund').
+    if reservation_mode:
+        await asyncio.to_thread(refund_credits, job_id, None)
+    return result
 
 
 async def do_assemblyai_transcription(

@@ -34,6 +34,7 @@ from transcription_pipeline import (
     _classify_download_error,
     _run_with_heartbeat,
     do_assemblyai_transcription,
+    run_whisper_reservation_aware,
 )
 from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_client import YouTubeClient
@@ -97,26 +98,6 @@ async def run_whisper_job(
     logger.info(f"→ run_whisper_job(job_id={job_id!r}, video={video_id!r})")
     supabase = get_supabase_client()
 
-    # Idempotency: lees credits_deducted vóór de pipeline-call.
-    # Fail-safe default=True: bij Supabase read-fout liever één gratis transcriptie
-    # dan een dubbele aftrek bij ack_late-retry.
-    try:
-        row = await asyncio.to_thread(
-            lambda: supabase.table('transcription_jobs')
-                .select('credits_deducted,credits_reserved')
-                .eq('id', job_id).single().execute()
-        )
-        already_deducted = bool(row.data and row.data.get('credits_deducted'))
-        # Reservation-mode uit de EIGEN standalone-job-rij (die is bij start gereserveerd).
-        reservation_mode = bool(row.data and (row.data.get('credits_reserved') or 0) > 0)
-    except Exception as e:
-        logger.warning(
-            f"[run_whisper_job] credits_deducted read failed for {job_id}: {e} "
-            f"— defaulting to already_deducted=True (safe)"
-        )
-        already_deducted = True
-        reservation_mode = False
-
     async def _hb() -> None:
         await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
@@ -124,21 +105,19 @@ async def run_whisper_job(
                 .eq('id', job_id).execute()
         )
 
-    result = await do_assemblyai_transcription(
+    # Reservation-aware dispatch (ADR-050 fase 2): de gedeelde wrapper leest credits_deducted +
+    # credits_reserved van de eigen job-rij, skipt de oude aftrek in reservation-mode + settelt,
+    # en verrekent de reservering ná afloop (refund op success én failure, idempotent via
+    # (job_id,'refund')). Zelfde primitief als het upload-pad en de youtube-fallback (main.py)
+    # — één bedrading, geen drift. Fail-safe (read-fout) zit in de wrapper.
+    result = await run_whisper_reservation_aware(
         user_id,
         video_id,
         job_id=job_id,
         audio_title=title,
         proxy_session_id=job_id[:8],
-        deduct_credits_on_success=not already_deducted,
-        reservation_mode=reservation_mode,
         heartbeat_fn=_hb,
     )
-    # ADR-050 fase 2: gereserveerde standalone job -> verreken aan het eind
-    # (reserved − settled). Vuurt op success (refund=verschil) én failure (refund=alles),
-    # idempotent via (job_id,'refund').
-    if reservation_mode:
-        await asyncio.to_thread(refund_credits, job_id, None)
     if result['success']:
         logger.info(f"← run_whisper_job ● (transcript_id={result['transcript_id']}, {result['credit_cost']}cr)")
     else:
