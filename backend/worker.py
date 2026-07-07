@@ -25,9 +25,9 @@ from dotenv import load_dotenv
 
 from audio_utils import MembersOnlyVideoError
 from credit_manager import (
-    add_credits,
     check_user_balance,
     refund_credits,
+    refund_credits_flat,
     get_supabase_client,
 )
 from transcription_pipeline import (
@@ -713,6 +713,97 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     await _set_complete()
 
 
+async def _refund_then_claim_job(supabase, job) -> None:
+    """Pass 2 per-job (ADR-050 crash-recovery): refund EERST (idempotent), claim de status pas
+    terminal ('interrupted' -> 'error') bij een BEWEZEN-geboekte refund. Faalt de refund (bv. 522)
+    -> status blijft 'interrupted' zodat de volgende 2-min-cyclus 'm opnieuw selecteert en retry't,
+    plus error-Sentry (refund_failed=true). Dit draait de faalmodus om van 'stil geld kwijt' naar
+    'veilige retry'. Dubbel-refund is uitgesloten door de (job_id,'refund')-idempotentie; de CAS
+    (WHERE status='interrupted') voorkomt dubbele status-churn bij overlappende cycli."""
+    job_id = job['id']
+    reserved = (job.get('credits_reserved') or 0) > 0
+    refund_amount = job.get('credits_cost') or 0
+
+    # 1. Refund eerst — idempotent via de partiële UNIQUE (job_id,'refund').
+    if reserved:
+        r = await asyncio.to_thread(refund_credits, job_id, None)
+    elif refund_amount > 0:
+        r = await asyncio.to_thread(
+            refund_credits_flat, job['user_id'], job_id, refund_amount,
+            f"Refund: watchdog crash-recovery (job {job_id})"
+        )
+    else:
+        r = {'success': True, 'noop': True}  # niets te refunden (credits_cost=0, niet gereserveerd)
+
+    # 2. Returnwaarde checken — een GEFAALDE refund mag de status NIET terminal maken.
+    if not (r and r.get('success')):
+        logger.error(
+            f"[WATCHDOG refund] job_id={job_id}: refund FAILED, status blijft 'interrupted' "
+            f"-> retry volgende cyclus: {r}"
+        )
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "2")
+            scope.set_tag("refund_failed", "true")
+            scope.set_tag("job_id", job_id)
+            scope.set_tag("user_id", str(job.get('user_id', 'unknown')))
+            scope.set_extra("refund_result", r)
+        sentry_sdk.capture_message(
+            "Watchdog auto-refund failed (job left interrupted for retry)", level="error"
+        )
+        return
+
+    # 3. Refund geboekt -> terminal claimen (CAS). rows==0 = andere cyclus was eerder.
+    claim = await asyncio.to_thread(
+        lambda: supabase.table('transcription_jobs').update({
+            'status': 'error',
+            'error_type': 'watchdog_permanent_failure',
+            'error_message': 'Automatisch teruggestort na mislukte crash-recovery.',
+        }).eq('id', job_id).eq('status', 'interrupted').execute()
+    )
+    if not claim.data:
+        logger.info(f"[WATCHDOG refund] job_id={job_id}: al verwerkt door andere cyclus — skip")
+    else:
+        logger.info(
+            f"[WATCHDOG refund] job_id={job_id} -> refund geboekt + status=error "
+            f"({'reserved' if reserved else str(refund_amount) + 'cr'})"
+        )
+
+
+async def _refund_then_claim_playlist(supabase, job) -> None:
+    """Pass 2b per-job: refund EERST (idempotent via (playlist_id,'refund')), claim de playlist
+    pas terminal bij bewezen-geboekte refund. Zelfde faalmodus-omkering als Pass 2."""
+    playlist_id = job['id']
+    r = await asyncio.to_thread(refund_credits, None, playlist_id)
+    if not (r and r.get('success')):
+        logger.error(
+            f"[WATCHDOG refund] playlist {playlist_id}: refund FAILED, status blijft 'interrupted' "
+            f"-> retry volgende cyclus: {r}"
+        )
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "2b")
+            scope.set_tag("refund_failed", "true")
+            scope.set_tag("job_id", playlist_id)
+            scope.set_tag("user_id", str(job.get('user_id', 'unknown')))
+            scope.set_extra("refund_result", r)
+        sentry_sdk.capture_message(
+            "Watchdog playlist auto-refund failed (playlist left interrupted for retry)", level="error"
+        )
+        return
+
+    claim = await asyncio.to_thread(
+        lambda: supabase.table('playlist_extraction_jobs').update({
+            'status': 'error',
+            'completed_at': datetime.now(timezone.utc).isoformat(),
+        }).eq('id', playlist_id).eq('status', 'interrupted').execute()
+    )
+    if not claim.data:
+        logger.info(f"[WATCHDOG refund] playlist {playlist_id}: al verwerkt — skip")
+    else:
+        logger.info(f"[WATCHDOG refund] playlist {playlist_id} -> refund geboekt + status=error")
+
+
 async def watchdog_interrupted_jobs(ctx: dict) -> None:
     """
     ARQ cron: crash-recovery voor interrupted Whisper- en playlist-jobs.
@@ -785,10 +876,11 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             except Exception as _e:
                 logger.error(f"[WATCHDOG reaper 0a] update failed for {_jid}: {_e}")
     except Exception as _e:
-        logger.error(f"[WATCHDOG reaper 0a] query failed: {_e}")
+        logger.warning(f"[WATCHDOG reaper 0a] query failed (transient, retry in 2min): {_e}")
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("pass", "0a")
+            scope.set_level("warning")
         sentry_sdk.capture_exception(_e)
 
     # Pass 0b: stuck active — standalone job die gecrashed is tijdens verwerking.
@@ -818,10 +910,11 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             except Exception as _e:
                 logger.error(f"[WATCHDOG reaper 0b] update failed for {_jid}: {_e}")
     except Exception as _e:
-        logger.error(f"[WATCHDOG reaper 0b] query failed: {_e}")
+        logger.warning(f"[WATCHDOG reaper 0b] query failed (transient, retry in 2min): {_e}")
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("pass", "0b")
+            scope.set_level("warning")
         sentry_sdk.capture_exception(_e)
 
     # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
@@ -876,10 +969,11 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                     scope.set_tag("job_id", job_id)
                 sentry_sdk.capture_exception(e)
     except Exception as e:
-        logger.error(f"[WATCHDOG] transcription_jobs re-enqueue query failed: {e}")
+        logger.warning(f"[WATCHDOG] transcription_jobs re-enqueue query failed (transient, retry in 2min): {e}")
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("pass", "1a")
+            scope.set_level("warning")
         sentry_sdk.capture_exception(e)
 
     # ── Pass 1b: playlist_extraction_jobs re-enqueue ──────────────────────
@@ -985,10 +1079,11 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                     scope.set_tag("job_id", playlist_id)
                 sentry_sdk.capture_exception(e)
     except Exception as e:
-        logger.error(f"[WATCHDOG] playlist_extraction_jobs re-enqueue query failed: {e}")
+        logger.warning(f"[WATCHDOG] playlist_extraction_jobs re-enqueue query failed (transient, retry in 2min): {e}")
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("pass", "1b")
+            scope.set_level("warning")
         sentry_sdk.capture_exception(e)
 
     # ── Pass 2: auto-refund — heartbeat stale na re-enqueue ──────────────
@@ -1010,54 +1105,24 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
         )
         for job in (result.data or []):
             job_id = job['id']
-            refund_amount = job.get('credits_cost') or 0
             try:
-                # CAS-claim: alleen refunden als DEZE cyclus de rij van 'interrupted' -> 'error'
-                # flipt (rowcount==1). Postgres serialiseert de row-lock, dus bij overlappende
-                # watchdog-runs matcht de tweede UPDATE 0 rijen -> geen dubbele terugstorting.
-                claim = await asyncio.to_thread(
-                    lambda j=job: supabase.table('transcription_jobs').update({
-                        'status': 'error',
-                        'error_type': 'watchdog_permanent_failure',
-                        'error_message': 'Automatisch teruggestort na mislukte crash-recovery.',
-                    }).eq('id', j['id']).eq('status', 'interrupted').execute()
-                )
-                if not claim.data:
-                    logger.info(f"[WATCHDOG refund] job_id={job_id}: al verwerkt door andere cyclus — skip")
-                    continue
-                if (job.get('credits_reserved') or 0) > 0:
-                    # Gereserveerde job: verreken de reservering (reserved − Σsettlements),
-                    # idempotent via (job_id,'refund'). run_whisper_job deed dit normaal al;
-                    # dit vangt de crash vóór die refund-call.
-                    await asyncio.to_thread(refund_credits, job_id, None)
-                    logger.info(f"[WATCHDOG refund] reserved job_id={job_id} -> refund_credits")
-                elif refund_amount > 0:
-                    await asyncio.to_thread(
-                        lambda uid=job['user_id'], amt=refund_amount, jid=job_id:
-                            add_credits(uid, amt, f"Refund: watchdog crash-recovery (job {jid})")
-                    )
-                    logger.info(
-                        f"[WATCHDOG refund] job_id={job_id} user_id={job['user_id']} "
-                        f"refund={refund_amount}cr"
-                    )
-                else:
-                    logger.info(
-                        f"[WATCHDOG refund] job_id={job_id}: credits_cost=0 of onbekend — geen aftrek"
-                    )
+                await _refund_then_claim_job(supabase, job)
             except Exception as e:
+                # Onverwachte exception (bv. de claim-UPDATE zelf raist). Retry-veilig: de refund
+                # is idempotent en de status blijft 'interrupted' als de claim niet doorging.
                 logger.error(f"[WATCHDOG] auto-refund failed for {job_id}: {e}")
                 with sentry_sdk.push_scope() as scope:
                     scope.set_tag("task_name", "watchdog_interrupted_jobs")
                     scope.set_tag("pass", "2")
                     scope.set_tag("job_id", job_id)
-                    scope.set_tag("user_id", job.get("user_id", "unknown"))
-                    scope.set_extra("refund_amount", refund_amount)
+                    scope.set_tag("user_id", str(job.get("user_id", "unknown")))
                 sentry_sdk.capture_exception(e)
     except Exception as e:
-        logger.error(f"[WATCHDOG] auto-refund query failed: {e}")
+        logger.warning(f"[WATCHDOG] auto-refund query failed (transient, retry in 2min): {e}")
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("pass", "2")
+            scope.set_level("warning")
         sentry_sdk.capture_exception(e)
 
     # ── Pass 2b: playlist auto-refund — gecrashte GERESERVEERDE playlist ─────
@@ -1080,17 +1145,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
         for job in (result.data or []):
             playlist_id = job['id']
             try:
-                claim = await asyncio.to_thread(
-                    lambda j=job: supabase.table('playlist_extraction_jobs').update({
-                        'status': 'error',
-                        'completed_at': datetime.now(timezone.utc).isoformat(),
-                    }).eq('id', j['id']).eq('status', 'interrupted').execute()
-                )
-                if not claim.data:
-                    logger.info(f"[WATCHDOG refund] playlist {playlist_id}: al verwerkt — skip")
-                    continue
-                await asyncio.to_thread(refund_credits, None, playlist_id)
-                logger.info(f"[WATCHDOG refund] playlist {playlist_id} -> refund_credits (reserved − settled)")
+                await _refund_then_claim_playlist(supabase, job)
             except Exception as e:
                 logger.error(f"[WATCHDOG] playlist auto-refund failed for {playlist_id}: {e}")
                 with sentry_sdk.push_scope() as scope:
@@ -1099,10 +1154,11 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                     scope.set_tag("job_id", playlist_id)
                 sentry_sdk.capture_exception(e)
     except Exception as e:
-        logger.error(f"[WATCHDOG] playlist auto-refund query failed: {e}")
+        logger.warning(f"[WATCHDOG] playlist auto-refund query failed (transient, retry in 2min): {e}")
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("pass", "2b")
+            scope.set_level("warning")
         sentry_sdk.capture_exception(e)
 
 
