@@ -77,6 +77,7 @@ CACHED_CAPTION_REQUIRED_KEYS = frozenset({
 # Import Whisper modules
 from audio_utils import (
     get_audio_duration,
+    estimate_upload_reserve_cost,
     extract_youtube_audio,
     validate_audio_file,
     compress_audio_if_needed,
@@ -651,6 +652,16 @@ async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_sec
         sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=404, detail=f"Failed to fetch video metadata: {str(e)}")
 
+
+def _cleanup_tmp(path: Optional[str]) -> None:
+    """Ruim een vóór-reserve geschreven upload-temp-bestand op bij een vroege return (402/500)."""
+    if path:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+
+
 @app.post("/api/transcribe/whisper")
 async def transcribe_with_whisper(
     request: Request,
@@ -710,6 +721,8 @@ async def transcribe_with_whisper(
     # Read upload bytes now — UploadFile cannot be read inside a background task
     audio_content: Optional[bytes] = None
     audio_filename: Optional[str] = None
+    upload_tmp_path: Optional[str] = None   # temp-bestand: één keer geschreven, hergebruikt door de pipeline
+    known_duration: Optional[float] = None  # server-side geprobede duur (None => size_fallback => pipeline probet zelf)
     if source_type == "upload" and audio_file:
         audio_content = await audio_file.read()
         audio_filename = audio_file.filename
@@ -722,14 +735,30 @@ async def transcribe_with_whisper(
                 "code": "file_too_large"
             })
 
-    # Credit pre-check: use forwarded duration for accurate cost estimate
-    estimated_cost = calculate_credit_cost(duration) if duration and duration > 0 else 1
+        # ADR-050 — bepaal het reserve-bedrag server-side VÓÓR reserve. De upload-duur is nog niet
+        # bekend (bestand wordt pas in de pipeline geprobed) en de client-waarde is onbetrouwbaar
+        # (directe JWT-upload), dus zonder deze probe viel estimated_cost terug op 1 = lege gate.
+        # Schrijf het bestand één keer naar temp (hergebruikt door de pipeline) en probe het hier.
+        suffix = os.path.splitext(audio_filename or "")[1] or ".mp3"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(audio_content)
+            upload_tmp_path = tmp.name
+        _est = await asyncio.to_thread(estimate_upload_reserve_cost, upload_tmp_path)
+        estimated_cost = _est["credits"]
+        known_duration = _est["duration"]   # None bij size_fallback → pipeline probet zelf (settle blijft echt)
+        logger.info(f"[upload reserve] {audio_filename}: {estimated_cost}cr (source={_est['source']}, dur={known_duration})")
+    else:
+        # YouTube: de browser stuurt de duur (metadata) mee vóór reserve.
+        estimated_cost = calculate_credit_cost(duration) if duration and duration > 0 else 1
+
     try:
         current_balance = await asyncio.to_thread(check_user_balance, user_id)
     except Exception as e:
+        _cleanup_tmp(upload_tmp_path)
         return JSONResponse(status_code=500, content={"error": f"Could not check credit balance: {str(e)}"})
 
     if current_balance < estimated_cost:
+        _cleanup_tmp(upload_tmp_path)
         return JSONResponse(status_code=402, content={
             "error": "Insufficient credits",
             "code": "insufficient_credits",
@@ -795,6 +824,7 @@ async def transcribe_with_whisper(
             await asyncio.to_thread(
                 lambda: supabase.table('transcription_jobs').delete().eq('id', job_id).execute()
             )
+            _cleanup_tmp(upload_tmp_path)
             return JSONResponse(status_code=402, content={
                 "error": "Insufficient credits",
                 "code": "insufficient_credits",
@@ -824,19 +854,18 @@ async def transcribe_with_whisper(
             ))
     else:
         # Upload path: bytes not queue-serializable — stays on asyncio.create_task.
-        # Write bytes to temp file now (UploadFile cannot be read inside a background task).
-        suffix = os.path.splitext(audio_filename or "")[1] or ".mp3"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            tmp.write(audio_content)
-            tmp_path = tmp.name
-        # Reservation-aware wrapper (ADR-050 fase 2): idem — reserve is al gebeurd, dus deze
-        # directe pipeline-aanroep moet via de wrapper (reservation_mode + refund), anders
-        # dubbele aftrek bij flag ON en de reservering wordt nooit teruggeboekt.
+        # Het temp-bestand is hierboven al geschreven (upload_tmp_path) om de duur te proben vóór
+        # reserve — hergebruik dat (niet opnieuw schrijven). known_duration is de geprobede duur
+        # (None bij size_fallback → de pipeline probet zelf → settle blijft op de echte duur).
+        # Reservation-aware wrapper (ADR-050 fase 2): reserve is al gebeurd, dus deze directe
+        # pipeline-aanroep moet via de wrapper (reservation_mode + refund), anders dubbele aftrek
+        # bij flag ON en de reservering wordt nooit teruggeboekt.
         asyncio.create_task(run_whisper_reservation_aware(
             user_id, None,
             job_id=job_id,
-            audio_path=tmp_path,
+            audio_path=upload_tmp_path,
             audio_title=title or audio_filename,
+            known_duration_seconds=known_duration,
         ))
 
     logger.info(f"Whisper job created: {job_id} (user={user_id}, source={source_type}, video={video_id})")

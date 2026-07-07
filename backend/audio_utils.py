@@ -4,6 +4,7 @@ Handles audio duration detection, YouTube audio extraction, and file validation
 """
 
 import os
+import math
 import subprocess
 import logging
 import time
@@ -74,6 +75,38 @@ def get_audio_duration(file_path: str) -> float:
         return duration
     except Exception as e:
         raise Exception(f"Could not determine audio duration: {str(e)}")
+
+
+# ADR-050 — reserve-bedrag voor een audio-UPLOAD, server-side + onomzeilbaar bepaald VÓÓR reserve.
+# De duur van een upload is niet bekend op reserve-moment (het bestand wordt pas in de pipeline
+# geprobed) en de client-waarde is onbetrouwbaar (directe JWT-upload → volledig client-gecontroleerd).
+# Zonder deze probe viel het reserve-bedrag terug op ceil(0/60)→1 credit = een LEGE overspend-gate
+# voor uploads (iemand met 1 credit kon een uur-lange upload starten; het meerdere werd gratis werk).
+UPLOAD_FALLBACK_BYTES_PER_SEC = 8000  # ~64 kbps, bewust laag → overschat de duur (royaal reserveren; settle+refund corrigeren)
+
+
+def estimate_upload_reserve_cost(audio_path: str) -> Dict:
+    """Bepaal het reserve-bedrag (credits) voor een upload uit de ECHTE duur (ffprobe/pydub).
+    Faalt de probe → royale schatting uit de bestandsgrootte. Valt NOOIT stil terug op 1
+    (dat zou de overspend-gate leegmaken). Retour: {credits, duration|None, source}.
+
+    'duration' is alleen gezet bij een geslaagde probe; de aanroeper geeft die als known_duration
+    door aan de pipeline zodat er niet dubbel geprobed wordt. Bij 'size_fallback' is duration None
+    → de pipeline probet zelf → settle blijft op de ECHTE duur (of de job faalt netjes + refund).
+    Credit-formule identiek aan calculate_credit_cost (1 credit = 1 minuut, minimaal 1)."""
+    try:
+        dur = get_audio_duration(audio_path)
+    except Exception as e:
+        logger.warning(f"[upload reserve] duration probe failed ({e}); falling back to size estimate")
+        dur = None
+    if dur and dur > 0:
+        return {"credits": max(1, math.ceil(dur / 60.0)), "duration": dur, "source": "probe"}
+    try:
+        size = os.path.getsize(audio_path)
+    except OSError:
+        size = 0
+    est_seconds = size / UPLOAD_FALLBACK_BYTES_PER_SEC
+    return {"credits": max(1, math.ceil(est_seconds / 60.0)), "duration": None, "source": "size_fallback"}
 
 
 def extract_youtube_audio(

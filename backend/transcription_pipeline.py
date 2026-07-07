@@ -231,6 +231,7 @@ async def do_assemblyai_transcription(
     playlist_id: Optional[str] = None,
     proxy_session_id: Optional[str] = None,
     heartbeat_fn=None,
+    known_duration_seconds: Optional[float] = None,
 ) -> dict:
     """
     Full AssemblyAI transcription pipeline.
@@ -415,8 +416,15 @@ async def do_assemblyai_transcription(
             return {"success": False, "error_type": "validation_error", "error_message": validation['error'], "credit_cost": 0}
 
         # ── Step 3: Duration ──────────────────────────────────────────────────
+        # ADR-050: bij een upload heeft main.py de duur al geprobed vóór reserve; hergebruik die
+        # (niet dubbel proben). known_duration is ALLEEN gezet bij een geslaagde reserve-probe —
+        # bij size_fallback is 'ie None en probet de pipeline zelf, zodat settle op de ECHTE duur
+        # blijft. Settle-rekenwerk hieronder is ongewijzigd.
         try:
-            duration = await asyncio.to_thread(get_audio_duration, audio_path)
+            if known_duration_seconds and known_duration_seconds > 0:
+                duration = known_duration_seconds
+            else:
+                duration = await asyncio.to_thread(get_audio_duration, audio_path)
         except Exception as e:
             msg = f"Could not determine audio duration: {e}"
             await _update_job(status="error", error_message=msg)
