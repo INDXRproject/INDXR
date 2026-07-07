@@ -286,3 +286,26 @@ def refund_credits(job_id: Optional[str] = None, playlist_id: Optional[str] = No
     except Exception as e:
         logger.error(f"Credit refund error: {e}")
         return {'success': False, 'error': f"Failed to refund credits: {str(e)}"}
+
+
+def refund_credits_flat(user_id: str, job_id: str, amount: int, reason: str) -> Dict:
+    """
+    Idempotente vlakke refund voor het OUDE-modus-watchdog-pad (niet-gereserveerde job): boekt
+    `amount` terug op user_credits.credits, idempotent via de partiële UNIQUE (job_id,'refund').
+    Nodig omdat de watchdog-fix refund-vóór-terminal-claim doet — een retry ná een 522 mag niet
+    dubbel terugboeken. Gebruik `refund_credits` voor gereserveerde jobs.
+    """
+    try:
+        supabase = get_supabase_client()
+        response = supabase.rpc('refund_credits_flat', {
+            'p_user_id': user_id,
+            'p_job_id': job_id,
+            'p_amount': amount,
+            'p_reason': reason,
+        }).execute()
+        if response.data:
+            return response.data
+        return {'success': False, 'error': 'Unexpected response from refund_credits_flat'}
+    except Exception as e:
+        logger.error(f"Credit flat-refund error: {e}")
+        return {'success': False, 'error': f"Failed to flat-refund credits: {str(e)}"}
