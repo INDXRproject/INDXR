@@ -7118,3 +7118,57 @@ K/K2: gefaalde refund (gestubde 522) -> status NIET terminal + geen boeking + ba
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/test_settle_refund.py
 ---
+[2026-07-07 12:03] commit: docs(credits): LESSONS recovery-pad-boek-geld-vóór-terminal-claim + LOG watchdog-fix
+
+LESSONS: herhaalbaar patroon (muteer geld eerst/idempotent, check returnwaarde, claim pas terminal bij succes; genegeerde refund-returnwaarde = stil verlies; transient SELECT-522 = warning niet error). LOG: bug-inhoud + bestanden. Geen nieuwe ADR (hardening binnen ADR-050).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+---
+[2026-07-07 12:35] fix: terminale refund-paden bounded-retry + Pass 2c reconciliatie-vangnet (ADR-050 crash-recovery, launch-ready). Twee resterende genegeerde-returnwaarde-gaten dicht: (1) run_whisper_reservation_aware (whisper-success) had alleen error-Sentry, geen retry; (2) process_playlist_video + process_playlist_retries._set_complete negeerden de refund_credits-returnwaarde volledig. Alle drie zijn terminaal (transcript_id gezet / status='complete') → buiten Pass 2/2b → een transient 522 = stil verlies van het schattingsverschil. Fix laag 1 (bounded-retry): gedeeld primitief refund_with_retry (transcription_pipeline.py) — 3 pogingen met backoff (1s,2s), idempotent via (.,'refund') dus herproberen dubbel-refundt nooit; error-Sentry pas als álle pogingen falen. Alle drie de sites routeren er doorheen (geen drift). Fix laag 2 (structureel net): watchdog Pass 2c-reconciliatie (_reconcile_unrefunded_reserved + anti-join RPC watchdog_unrefunded_reserved, migratie 20260707102113) — dekt het residuele gat dat retry NIET dekt: worker-crash tussen terminal-status-set en refund-retries. Anti-join = TERMINALE status + credits_reserved>0 + GEEN (.,'refund')-rij (NOT EXISTS, cap 50/cyclus/tabel); Pass 2c boekt de gemiste refund idempotent en MUTEERT GEEN STATUS (job is al terminaal+correct, niets te claimen — verschil met Pass 2/2b); elke hit = error-Sentry (context=pass-2c-reconciliation, structureel signaal). Prod-vondst tijdens bouw: anti-join gaf 6 unrefunded — bleken puur test-orphans (test-settle-*@example.invalid) van een ReadTimeout-gecrashte testrun; opgeruimd, anti-join nu 0 (geen echte gemiste refunds). Bewezen: test_settle_refund.py 69/69 incl. M/M2 (retry fail-1x-dan-succes → één rij), M3 (blijvend falen → error-Sentry + geen mutatie), N/N2 (Pass 2c anti-join → één rij + status ongemuteerd + tweede cyclus idempotent, job+playlist). fase-1 14/14 + py_compile groen. Hardening binnen ADR-050 (geen nieuwe ADR). Commit-ready per thema, NIET gepusht. | gewijzigd: supabase/migrations/20260707102113_watchdog_unrefunded_reserved_antijoin.sql, backend/transcription_pipeline.py, backend/worker.py, backend/test_settle_refund.py, docs/LESSONS.md
+[2026-07-07 12:33] precompact: context compaction triggered
+[2026-07-07 22:23] commit: fix(credits): terminale refund bounded-retry + watchdog Pass 2c reconciliatie (ADR-050)
+
+Twee resterende genegeerde-returnwaarde-gaten in het refund-pad dicht — beide
+terminaal (transcript_id gezet / status='complete') dus buiten Pass 2/2b, waar
+een transient 522 stil het schattingsverschil (reserved − verbruikt) zou verliezen.
+
+Laag 1 — bounded idempotente retry: gedeeld primitief refund_with_retry in
+transcription_pipeline.py (3 pogingen, backoff 1s/2s; idempotent via (.,'refund')
+dus herproberen dubbel-refundt nooit; error-Sentry pas als álle pogingen falen).
+Alle drie terminale sites routeren erdoorheen (geen drift):
+  - run_whisper_reservation_aware (whisper-success) — had alleen error-Sentry
+  - process_playlist_video — negeerde refund_credits-returnwaarde volledig
+  - process_playlist_retries._set_complete — idem
+
+Laag 2 — structureel net: watchdog Pass 2c (_reconcile_unrefunded_reserved +
+anti-join RPC watchdog_unrefunded_reserved). Dekt het residuele gat dat retry NIET
+dekt: worker-crash tússen terminal-status-set en refund-retries. Anti-join =
+TERMINALE status + credits_reserved>0 + GEEN (.,'refund')-rij (NOT EXISTS), cap
+50/cyclus/tabel. Boekt idempotent en MUTEERT GEEN STATUS (job is al terminaal +
+correct — niets te claimen, verschil met Pass 2/2b; de anti-join zelf is de
+idempotentie). Elke hit = error-Sentry (context=pass-2c-reconciliation) want retry
+én crash-recovery faalden allebei — structureel signaal, geen routine.
+
+Hardening binnen ADR-050 (geen nieuwe ADR).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/transcription_pipeline.py
+backend/worker.py
+supabase/migrations/20260707102113_watchdog_unrefunded_reserved_antijoin.sql
+---
+[2026-07-07 22:24] commit: test(credits): refund_with_retry M/M2/M3 + Pass 2c reconciliatie N/N2, 69/69 (ADR-050)
+
+M/M2: refund_with_retry faalt 1× dan succes (job- én playlist-pad) -> precies één
+refund-rij, balans-delta één keer, stub 2× aangeroepen (retry gebeurde).
+M3: blijvend falen -> error-Sentry (capture_message level=error) + geen refund-rij +
+balans ongewijzigd.
+N/N2: Pass 2c anti-join vindt terminale reserved-zonder-refund -> boekt één rij,
+status NIET gemuteerd (blijft 'complete'), tweede cyclus matcht niets meer
+(idempotent, geen dubbele rij) — voor job- én playlist-pad.
+Delta-asserts t.o.v. baseline (immuun voor transient balans-drift).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_settle_refund.py
+---
