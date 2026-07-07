@@ -6,6 +6,7 @@ import { AlertCircle, Loader2, X } from "lucide-react"
 import { Button } from "../ui/button"
 import { marketingHref } from "../../lib/cross-host-links"
 import { useAuth } from "../../hooks/useAuth"
+import { useCompletionReceipt } from "../../hooks/useCompletionReceipt"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
 import { createClient } from "../../utils/supabase/client"
 
@@ -67,6 +68,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
   // Active playlist job being tracked
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const [completedPlaylistId, setCompletedPlaylistId] = useState<string | null>(null)  // feeds the completion receipt (RLS read)
+  const playlistReceipt = useCompletionReceipt('playlist', completedPlaylistId, !!completedPlaylistId)
   const fallbackMetaRef = useRef<{ title?: string; url?: string; total?: number }>({})
   const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
 
@@ -98,6 +101,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     const isRetry = retryVideoIdRef.current !== null
     retryVideoIdRef.current = null
 
+    const completedJid = playlistJobIdRef.current  // capture before nulling — feeds the receipt
     playlistJobIdRef.current = null
     setProgressMessage("")
     sessionStorage.removeItem('indxr-active-playlist-job')
@@ -152,6 +156,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     })
 
     refreshCredits()
+    if (completedJid) setCompletedPlaylistId(completedJid)  // show the receipt for this run
     setTimeout(() => {
       setLoading(false)
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
@@ -520,7 +525,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       setProgressMessage(`Starting extraction of ${extractableIds.length} video${extractableIds.length !== 1 ? 's' : ''}...`)
 
       fallbackMetaRef.current = { title: playlistTitle, url: playlistUrl, total: extractableIds.length }
+      setCompletedPlaylistId(null)  // clear any prior run's receipt
       setActiveJobId(job_id)
+      refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to extract playlist"
@@ -592,6 +599,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       }))
       setProgressMessage('Retrying 1 video with a fresh connection...')
       setActiveJobId(job_id)
+      refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately
     } catch (error: unknown) {
       retryVideoIdRef.current = null
       const errorMessage = error instanceof Error ? error.message : 'Failed to retry video'
@@ -715,6 +723,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         onRetryVideo={handleRetryVideo}
         elapsedSeconds={elapsedSeconds}
         resumePlaylist={resumePlaylist}
+        receipt={playlistReceipt}
       />
     </div>
   )

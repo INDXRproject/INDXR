@@ -5,6 +5,8 @@ import { UploadCloud, FileAudio, X, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "../ui/button"
 import { Progress } from "../ui/progress"
 import { useAuth } from "../../hooks/useAuth"
+import { CompletionReceipt } from "../ui/CompletionReceipt"
+import { useCompletionReceipt } from "../../hooks/useCompletionReceipt"
 import { useJobStatus } from "../../hooks/useJobStatus"
 import { TranscriptCard, TranscriptItem } from "../TranscriptCard"
 import { TranscriptMetadata } from "../../types/transcript"
@@ -47,6 +49,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   // Active job tracked via Realtime + polling
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const [completedJobId, setCompletedJobId] = useState<string | null>(null)  // for the completion receipt (RLS read)
+  const receipt = useCompletionReceipt('transcription', completedJobId, saveStatus === 'saved')
 
   useJobStatus({
     jobId: activeJobId,
@@ -69,6 +73,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       })
       refreshCredits()
       window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
+      setCompletedJobId(activeJobId)  // capture before nulling — feeds the completion receipt (RLS read)
       setSaveStatus('saved')
       setIsTranscribing(false)
       setWhisperStatus('idle')
@@ -405,6 +410,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
       activeFilenameRef.current = file.name
       setActiveJobId(job_id)
+      refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately
       // Completion handled by useJobStatus onComplete/onError callbacks
     } catch (error) {
       console.error('Transcription error:', error)
@@ -653,35 +659,20 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       {/* Transcript Display with TranscriptCard */}
       {transcript && transcript.length > 0 && audioMetadata && (
         <>
-          {/* Persistent Save Status Message */}
+          {/* Completion receipt (ADR-050 fase 3) — State A normally; State C strip only on ffprobe-fallback overshoot */}
           {saveStatus === 'saved' && (
-            <div className="mb-4 p-4 rounded-lg border border-green-500/50 bg-success-subtle flex items-center justify-between animate-in slide-in-from-top-2">
-              <div className="flex items-center gap-3">
-                <div className="h-2 w-2 bg-green-500 rounded-full" />
-                <div>
-                  <p className="text-sm font-medium text-success">Transcript saved to library</p>
-                  <p className="text-xs text-success/70">
-                    Used {audioMetadata.creditsUsed} credits • {audioMetadata.creditsUsed} min
-                    {audioMetadata.processingTimeSecs > 0 && (
-                      <> • Completed in {Math.floor(audioMetadata.processingTimeSecs / 60)}:{String(audioMetadata.processingTimeSecs % 60).padStart(2, '0')}</>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <a href={appHref('/dashboard/library')}>
-                  <Button variant="outline" size="sm" className="text-success border-green-500/50 hover:bg-success-subtle">
-                    View in Library
-                  </Button>
-                </a>
-                <button
-                  onClick={() => setSaveStatus('idle')}
-                  className="p-1 hover:bg-success-subtle rounded transition-colors text-success"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            <CompletionReceipt
+              kind="upload"
+              status="complete"
+              headline="Transcript saved to library"
+              used={audioMetadata.creditsUsed}
+              reserved={receipt.reserved}
+              refunded={receipt.refunded}
+              durationSeconds={audioMetadata.duration}
+              elapsedSeconds={audioMetadata.processingTimeSecs}
+              libraryHref={appHref('/dashboard/library')}
+              loading={receipt.loading}
+            />
           )}
 
           <div className="animate-in fade-in slide-in-from-top-4 duration-500">

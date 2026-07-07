@@ -14,6 +14,8 @@ import { useAuth } from "../hooks/useAuth";
 import { createClient } from "../utils/supabase/client";
 import { cn } from "../lib/utils";
 import { appHref } from "../lib/cross-host-links";
+import { CompletionReceipt } from "./ui/CompletionReceipt";
+import type { ReceiptData } from "../hooks/useCompletionReceipt";
 
 interface PlaylistEntry {
   id: string;
@@ -58,6 +60,7 @@ interface PlaylistManagerProps {
   onRetryVideo?: (videoId: string) => void;
   elapsedSeconds?: number;
   resumePlaylist?: { title: string; entries: PlaylistEntry[] } | null;
+  receipt?: ReceiptData;
 }
 
 function formatElapsed(seconds: number): string {
@@ -66,7 +69,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryVideo, elapsedSeconds = 0, resumePlaylist }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryVideo, elapsedSeconds = 0, resumePlaylist, receipt }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -397,6 +400,26 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                              </p>
                         </div>
                     </div>
+
+                    {/* Credit receipt (ADR-050 fase 3) — total charged + per-video breakdown; refund transparency when videos were skipped */}
+                    {receipt && receipt.used != null && (
+                      <div className="border-t border-border-subtle pt-3 -mt-1">
+                        <CompletionReceipt
+                          kind="playlist"
+                          status="complete"
+                          headline="Playlist extracted"
+                          used={receipt.used}
+                          reserved={receipt.reserved}
+                          refunded={receipt.refunded}
+                          transcribedCount={receipt.transcribedCount}
+                          skippedCount={receipt.skippedCount}
+                          videos={receipt.videos}
+                          elapsedSeconds={finalElapsed}
+                          libraryHref={appHref('/dashboard/library')}
+                          embedded
+                        />
+                      </div>
+                    )}
 
                     {/* Grouped failure summary */}
                     {(() => {

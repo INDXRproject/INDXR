@@ -13,6 +13,7 @@ import { createClient } from "../../utils/supabase/client"
 import { CardSkeleton } from "../ui/loading-skeleton"
 import { cn } from "../../lib/utils"
 import { useAuth } from "../../hooks/useAuth"
+import { CompletionReceipt } from "../ui/CompletionReceipt"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
 import posthog from "posthog-js"
 import { TranscriptionProgress } from "../transcription/TranscriptionProgress"
@@ -777,6 +778,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       activeJobContextRef.current = { videoId, title: pendingWhisperData.title, context: 'confirm' }
       setIsAlreadyProcessing(isDedup)
       setActiveJobId(jobData.job_id)
+      refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately (backend reserved before returning job_id)
       // Completion and error are handled by _handleWhisperComplete / _handleWhisperError
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : 'Whisper extraction failed'
@@ -856,6 +858,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       activeJobContextRef.current = { videoId: currentVideoId, title: videoTitle, context: 'upsell' }
       setIsAlreadyProcessing(isDedup)
       setActiveJobId(jobData.job_id)
+      refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately
       // Completion and error are handled by _handleWhisperComplete / _handleWhisperError
     } catch (err: unknown) {
       console.error('[WHISPER UPSELL] ERROR caught:', err)
@@ -1366,22 +1369,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 </a>
               </div>
             ) : (
-              <div className="mb-4 p-4 bg-success-subtle border border-success/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex-1">
-                  <p className="text-success-fg dark:text-success font-semibold mb-1">Transcript ready! AI transcription completed successfully.</p>
-                  <p className="text-xs text-fg-muted">
-                    Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {whisperMetadata.creditsUsed} min
-                    {finalElapsed !== null && (
-                      <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
-                    )}
-                  </p>
-                </div>
-                <a href={appHref('/dashboard/library')}>
-                  <Button variant="outline" size="sm" className="ml-4 border-success/40 text-success-fg dark:text-success hover:bg-success-subtle">
-                    View in Library
-                  </Button>
-                </a>
-              </div>
+              <CompletionReceipt
+                kind="video"
+                status="complete"
+                headline="Transcript ready"
+                used={whisperMetadata.creditsUsed}
+                durationSeconds={whisperMetadata.duration}
+                elapsedSeconds={finalElapsed}
+                libraryHref={appHref('/dashboard/library')}
+              />
             )
           )}
 
