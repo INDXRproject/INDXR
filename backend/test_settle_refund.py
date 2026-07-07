@@ -26,6 +26,9 @@ Dekt de fase-2-succescriteria:
   M/M2/M3 refund_with_retry (job/playlist): bounded idempotente retry; blijvend falen -> alarm zonder mutatie
   N/N2 Pass 2c reconciliatie (job/playlist): anti-join vindt gemiste terminale refund -> boekt één rij,
        status ONgemuteerd, tweede cyclus idempotent
+  O  upload-reserve uit server-side probe: reserve = geprobede duur (niet 1), wrapper sluit
+     reserve->settle->refund (exact: refund 0; overshoot: refund = verschil), balans exact één keer
+  P  fail-probe fallback: gefaalde probe -> size-schatting, nooit stil reserve=1 (gate niet leeg)
 """
 import os
 import sys
@@ -358,6 +361,78 @@ def main() -> int:
         check("J2: ongereserveerd -> reservation_mode=False + oude aftrek toegestaan",
               _seen.get("old_res_mode") is False and _seen.get("old_deduct") is True, f"seen={_seen}")
         check("J2: ongereserveerd -> GEEN refund-post", len(_refunds_jl) == 0, f"={len(_refunds_jl)}")
+
+        # ── O: upload-reserve uit server-side probe (ADR-050) — reserve = geprobede duur, niet 1 ──
+        # Bewijst dat estimate_upload_reserve_cost het reserve-bedrag uit de ECHTE duur haalt (dicht
+        # de overspend-gate voor uploads) en dat de wrapper reserve->settle->refund sluit — zowel
+        # exact (refund 0) als bij overschatting (refund = verschil), balans exact één keer.
+        print("O — upload-reserve uit server-side probe (90s WAV -> 2 credits):")
+        import wave as _wave
+        import tempfile as _tempfile
+        import math as _math
+        from audio_utils import estimate_upload_reserve_cost as _est_cost
+
+        def _write_silence_wav(seconds, framerate=8000):
+            fd, path = _tempfile.mkstemp(suffix=".wav")
+            os.close(fd)
+            with _wave.open(path, "wb") as w:
+                w.setnchannels(1); w.setsampwidth(2); w.setframerate(framerate)
+                w.writeframes(b"\x00\x00" * (framerate * seconds))
+            return path
+
+        _wav = _write_silence_wav(90)
+        try:
+            _e = _est_cost(_wav)
+        finally:
+            try: os.unlink(_wav)
+            except OSError: pass
+        check("O: probe geeft credits=2 (ceil(90/60), niet 1)", _e["credits"] == 2, f"={_e}")
+        check("O: probe-bron + duur ~90s", _e["source"] == "probe" and _e["duration"] and 88 <= _e["duration"] <= 92, f"={_e}")
+
+        _orig_pl_O = _tp.do_assemblyai_transcription
+        async def _fake_upload_success(user_id, video_id, **kw):
+            settle(2, job_id=kw["job_id"])   # echte duur == geprobede duur (2 credits)
+            return {"success": True, "transcript_id": None, "credit_cost": 2}
+
+        # Exact geval: reserve = probe-cost (2) -> settle 2 -> refund 0 -> balans == baseline.
+        set_balance(100); jo = mk_job()
+        sb.table("transcription_jobs").update({"source_type": "upload"}).eq("id", jo).execute()
+        reserve(_e["credits"], job_id=jo)   # reserve = 2 (uit de probe), NIET 1
+        b0jo = balance()
+        _tp.do_assemblyai_transcription = _fake_upload_success
+        try:
+            _aio.run(_tp.run_whisper_reservation_aware(USER, None, job_id=jo, audio_path="/dev/null", audio_title="t", known_duration_seconds=_e["duration"]))
+        finally:
+            _tp.do_assemblyai_transcription = _orig_pl_O
+        check("O: upload-success -> settle 2 geregistreerd", settlements_sum("job_id", jo) == 2, f"={settlements_sum('job_id', jo)}")
+        check("O: reserve exact -> refund 0 -> balans == baseline (één keer bewogen bij reserve)", balance() == b0jo, f"b0={b0jo} nu={balance()}")
+
+        # Overshoot-geval (zoals size_fallback): reserve royaal (5) -> settle echte 2 -> refund 3.
+        set_balance(100); jo2 = mk_job()
+        sb.table("transcription_jobs").update({"source_type": "upload"}).eq("id", jo2).execute()
+        reserve(5, job_id=jo2)
+        b0jo2 = balance()
+        _tp.do_assemblyai_transcription = _fake_upload_success
+        try:
+            _aio.run(_tp.run_whisper_reservation_aware(USER, None, job_id=jo2, audio_path="/dev/null", audio_title="t"))
+        finally:
+            _tp.do_assemblyai_transcription = _orig_pl_O
+        check("O: overshoot reserve 5 -> settle 2 -> refund 3 -> balans == baseline + 3", balance() == b0jo2 + 3, f"b0={b0jo2} nu={balance()}")
+
+        # ── P: fail-probe fallback — nooit stil reserve=1 (ADR-050) ──
+        print("P — fail-probe fallback (garbage -> size-schatting, nooit 1):")
+        _fd, _bad = _tempfile.mkstemp(suffix=".mp3")
+        os.write(_fd, os.urandom(2_000_000))   # 2 MB onleesbare bytes -> ffprobe + pydub falen
+        os.close(_fd)
+        try:
+            _p = _est_cost(_bad)
+            _sz = os.path.getsize(_bad)
+        finally:
+            try: os.unlink(_bad)
+            except OSError: pass
+        _expected = max(1, _math.ceil((_sz / 8000) / 60))
+        check("P: gefaalde probe -> size_fallback (geen probe-duur)", _p["source"] == "size_fallback" and _p["duration"] is None, f"={_p}")
+        check("P: fallback-credits == size-schatting én != 1 (gate niet leeg)", _p["credits"] == _expected and _p["credits"] != 1, f"credits={_p['credits']} expected={_expected}")
 
         # ── K: watchdog Pass 2 refund-vóór-claim — gefaalde refund NIET terminal, retry-veilig ──
         print("K — watchdog Pass 2 (gereserveerd): gefaalde refund blijft 'interrupted', geslaagde is idempotent:")
