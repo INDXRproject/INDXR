@@ -175,7 +175,22 @@ async def run_whisper_reservation_aware(
     # ADR-050 fase 2: gereserveerde job → verreken aan het eind (reserved − settled). Vuurt op
     # success (refund=verschil) én failure (refund=alles), idempotent via (job_id,'refund').
     if reservation_mode:
-        await asyncio.to_thread(refund_credits, job_id, None)
+        r = await asyncio.to_thread(refund_credits, job_id, None)
+        # KRITIEK: géén retry-pad zoals in de watchdog — bij een geslaagde transcriptie is
+        # transcript_id gezet, dus Pass 2 (filtert transcript_id IS NULL) vangt deze job NIET.
+        # Een gefaalde refund (bv. 522) mag dus niet stil verdwijnen: maak 'm luid (error-Sentry)
+        # i.p.v. stil te slikken. Zelfde genegeerde-returnwaarde-antipatroon als de watchdog-fix.
+        if not (r and r.get('success')):
+            logger.error(f"[refund] reservation refund FAILED for job {job_id}: {r}")
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("refund_failed", "true")
+                scope.set_tag("job_id", str(job_id))
+                scope.set_tag("user_id", str(user_id))
+                scope.set_extra("refund_result", r)
+            sentry_sdk.capture_message(
+                "Reservation refund failed on whisper terminal (silent-loss risk, no watchdog retry)",
+                level="error",
+            )
     return result
 
 
