@@ -7079,3 +7079,42 @@ Changed: docs/LESSONS.md
 docs/LOG.md
 ---
 [2026-07-07 00:20] ACTIVERING (ADR-050 fase 2/3): CREDIT_RESERVATION_ENABLED default "false" → "true" in credit_manager.py. Het reserve → settle → refund-model is nu het LEVENDE credit-model in prod: nieuwe jobs reserveren bij start (credits_reserved>0), de per-video-aftrek is draw-down-uit-de-reservering (balans-neutrale settlement), en aan het eind volgt één netto refund-post (reserved − verbruikt). De concurrent-overspend-race is LIVE GESLOTEN — de balans daalt direct bij reserve, dus gereserveerde credits zijn onbeschikbaar voor parallelle jobs. De oude directe aftrek blijft als else-tak voor niet-gereserveerde in-flight jobs (branch op credits_reserved>0, niet op de flag → geen dubbel/nul-window bij de flip). Alle standalone-dispatch (worker, upload, arq-loze fallback) loopt via run_whisper_reservation_aware, dus geen dubbele aftrek op het upload-pad. Rollback zonder deploy: env-var CREDIT_RESERVATION_ENABLED=false in Railway. Bewijs vóór push: py_compile groen; test_settle_refund.py 36/36 + fase-1 regressie 14/14 (in vorige commits). Gepusht naar master (fix-commits + fase-2-commits + deze activering samen → Railway + Vercel auto-deploy). | gewijzigd: backend/credit_manager.py, docs/wiki/decisions/050-credit-reservation-model.md
+[2026-07-07 10:27] commit: feat(credits): activate reserve→settle→refund — CREDIT_RESERVATION_ENABLED default true (ADR-050)
+
+Laatste schakel van ADR-050 fase 2/3. Nieuwe jobs reserveren bij start; reserve→settle→refund is het levende credit-model; overspend-race live gesloten (balans daalt direct bij reserve). Oude directe aftrek blijft als else-tak voor niet-gereserveerde in-flight jobs (branch op credits_reserved>0, niet op de flag → geen dubbel/nul-window). Alle standalone-dispatch via run_whisper_reservation_aware → geen dubbele aftrek op het upload-pad. Rollback zonder deploy: env-var CREDIT_RESERVATION_ENABLED=false.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/credit_manager.py
+docs/LOG.md
+docs/wiki/decisions/050-credit-reservation-model.md
+---
+[2026-07-07 12:05] fix: watchdog claim-vóór-refund BLOCKER dicht (ADR-050 crash-recovery hardening). Diagnose vond dat Pass 2 (transcription_jobs) + Pass 2b (playlist) de status EERST terminal claimden ('interrupted'→'error') en daarná refundden in een 2e round-trip; faalde die op een 522 dan stond de job al terminal → nooit meer geselecteerd (query filtert status='interrupted') → refund stil + permanent kwijt (refund_credits slikt exception, returnwaarde genegeerd, geen Sentry). Fix: volgorde omgedraaid naar refund-VÓÓR-claim via gedeelde helpers _refund_then_claim_job/_refund_then_claim_playlist (worker.py): refund eerst (idempotent), returnwaarde checken, status pas terminal bij bewezen-geboekte refund; faalt de refund → status blijft 'interrupted' (volgende 2-min-cyclus retry't) + error-Sentry (refund_failed=true). Dubbel-refund uitgesloten door (job_id/playlist_id,'refund')-idempotentie; CAS voorkomt dubbele status-churn. Oude niet-gereserveerde add_credits-pad (niet idempotent) vervangen door nieuwe idempotente RPC refund_credits_flat (migratie 20260707093004, geregistreerd) + credit_manager-helper. Meegenomen: (a) run_whisper_reservation_aware (transcription_pipeline.py) checkt nu de refund-returnwaarde op het whisper-success-pad — géén watchdog-vangnet daar (transcript_id gezet) → faalt de refund dan luid error-Sentry i.p.v. stil; (b) 6 SELECT-lijst-query except-blokken (Pass 0a/0b/1a/1b/2/2b) gedegradeerd naar warning (scope.set_level, sentry-sdk 2.58.0 default=error) — een gefaalde SELECT muteert niets en retry't vanzelf, hoort geen high-priority alert. Bewezen: test_settle_refund.py 49/49 incl. nieuwe K/K2 (gefaalde refund NIET terminal + geen boeking + balans ongewijzigd; geslaagde = één boeking +6/+5 + terminal; retry idempotent — delta-asserts, immuun voor transient balans-drift) + L (wrapper-failure triggert error-Sentry). refund_credits_flat-idempotentie los geverifieerd (1× +5, 2e idempotent, 1 rij). Detector-query reserved-error-zonder-refund blijft 0. fase-1 regressie + py_compile groen. Hardening binnen ADR-050 (geen nieuwe ADR). Commit-ready per thema, NIET gepusht. | gewijzigd: supabase/migrations/20260707093004_refund_credits_flat_rpc.sql, backend/credit_manager.py, backend/worker.py, backend/transcription_pipeline.py, backend/test_settle_refund.py, docs/LESSONS.md
+[2026-07-07 12:03] commit: feat(credits): idempotent refund_credits_flat RPC + helper (ADR-050 crash-recovery)
+
+Idempotente vlakke refund voor het oude-modus-watchdog-pad, keyed op de bestaande partiële UNIQUE (job_id,'refund'). Nodig omdat de watchdog-fix refund-vóór-terminal-claim doet en add_credits NIET idempotent is -> een retry na een 522 zou anders dubbel terugboeken. Mirror van refund_credits: insert-first onder FOR UPDATE, ON CONFLICT DO NOTHING, noop bij amount<=0. Migratie 20260707093004 toegepast + geregistreerd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/credit_manager.py
+supabase/migrations/20260707093004_refund_credits_flat_rpc.sql
+---
+[2026-07-07 12:03] commit: fix(credits): watchdog refund-vóór-claim — dicht stille-verlies-BLOCKER (ADR-050 Pass 2/2b)
+
+Pass 2/2b claimden de status EERST terminal ('interrupted'->'error') en refundden daarná; faalde de refund-round-trip op een 522 dan stond de job al terminal -> nooit meer geselecteerd -> refund stil + permanent kwijt. Fix via gedeelde helpers _refund_then_claim_job/_refund_then_claim_playlist: refund eerst (idempotent), returnwaarde checken, status pas terminal bij bewezen succes; faalt de refund -> blijft 'interrupted' (volgende cyclus retry't) + error-Sentry (refund_failed=true). Oude add_credits-pad -> idempotente refund_credits_flat. Alert-degradatie: 6 SELECT-lijst-query except-blokken naar warning (scope.set_level) — muteren niets, retry'en vanzelf.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/worker.py
+---
+[2026-07-07 12:03] commit: fix(credits): wrapper checkt whisper-success refund-returnwaarde + alarmeert (ADR-050)
+
+run_whisper_reservation_aware negeerde de refund_credits-returnwaarde op het whisper-success-pad. Dat pad heeft GEEN watchdog-vangnet (transcript_id gezet -> valt buiten Pass 2), dus een gefaalde refund (522) verdween stil. Nu: returnwaarde checken -> bij failure logger.error + error-Sentry (refund_failed=true, silent-loss risk). Geen retry-pad, dus luid alarmeren is de fix.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/transcription_pipeline.py
+---
+[2026-07-07 12:03] commit: test(credits): watchdog refund retry-veiligheid K/K2 + wrapper-alarm L, 49/49 (ADR-050)
+
+K/K2: gefaalde refund (gestubde 522) -> status NIET terminal + geen boeking + balans ongewijzigd; geslaagde refund -> precies één rij + terminal; retry -> idempotent. Delta-asserts t.o.v. baseline (immuun voor transient balans-drift). K2 dekt het refund_credits_flat oude-modus-pad. L: gefaalde wrapper-refund triggert error-Sentry (geen stille slik).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_settle_refund.py
+---
