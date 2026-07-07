@@ -120,6 +120,42 @@ def _classify_download_error(
     return 'extraction_error'
 
 
+async def refund_with_retry(
+    job_id: Optional[str] = None,
+    playlist_id: Optional[str] = None,
+    *,
+    attempts: int = 3,
+    base_delay: float = 1.0,
+    context: str = "",
+) -> dict:
+    """Terminale refund met bounded idempotente retry (ADR-050 crash-recovery). Gebruikt door de
+    whisper-success-wrapper én de twee playlist-completion-transities — géén van die paden heeft
+    een watchdog-vangnet (whisper-success zet transcript_id, playlist-completion zet
+    status='complete' → buiten Pass 2/2b). Een transient 522 zou daar stil het schattingsverschil
+    verliezen. refund_credits is idempotent via de partiële UNIQUE (job_id/playlist_id,'refund'),
+    dus herproberen dubbel-refundt NOOIT. Pas error-Sentry als ÁLLE pogingen falen; het residuele
+    crash-tussen-status-en-refund-gat wordt door de watchdog Pass 2c-reconciliatie gedekt."""
+    last = None
+    for i in range(attempts):
+        r = await asyncio.to_thread(refund_credits, job_id, playlist_id)
+        if r and r.get('success'):
+            return r
+        last = r
+        if i < attempts - 1:
+            await asyncio.sleep(base_delay * (i + 1))  # 1s, 2s
+    logger.error(f"[refund] terminale refund FAILED na {attempts} pogingen ({context}): {last}")
+    with sentry_sdk.push_scope() as scope:
+        scope.set_tag("refund_failed", "true")
+        scope.set_tag("refund_context", context)
+        scope.set_tag("ref_id", str(job_id or playlist_id))
+        scope.set_extra("refund_result", last)
+    sentry_sdk.capture_message(
+        f"Terminal refund failed after {attempts} retries (silent-loss risk, no watchdog fallback): {context}",
+        level="error",
+    )
+    return last or {'success': False, 'error': 'refund_with_retry exhausted'}
+
+
 async def run_whisper_reservation_aware(
     user_id: str,
     video_id: Optional[str],
@@ -175,22 +211,10 @@ async def run_whisper_reservation_aware(
     # ADR-050 fase 2: gereserveerde job → verreken aan het eind (reserved − settled). Vuurt op
     # success (refund=verschil) én failure (refund=alles), idempotent via (job_id,'refund').
     if reservation_mode:
-        r = await asyncio.to_thread(refund_credits, job_id, None)
-        # KRITIEK: géén retry-pad zoals in de watchdog — bij een geslaagde transcriptie is
-        # transcript_id gezet, dus Pass 2 (filtert transcript_id IS NULL) vangt deze job NIET.
-        # Een gefaalde refund (bv. 522) mag dus niet stil verdwijnen: maak 'm luid (error-Sentry)
-        # i.p.v. stil te slikken. Zelfde genegeerde-returnwaarde-antipatroon als de watchdog-fix.
-        if not (r and r.get('success')):
-            logger.error(f"[refund] reservation refund FAILED for job {job_id}: {r}")
-            with sentry_sdk.push_scope() as scope:
-                scope.set_tag("refund_failed", "true")
-                scope.set_tag("job_id", str(job_id))
-                scope.set_tag("user_id", str(user_id))
-                scope.set_extra("refund_result", r)
-            sentry_sdk.capture_message(
-                "Reservation refund failed on whisper terminal (silent-loss risk, no watchdog retry)",
-                level="error",
-            )
+        # Terminale refund: whisper-success zet transcript_id → buiten Pass 2. Bounded idempotente
+        # retry (refund_credits idempotent via (job_id,'refund')); alarmeert als álle pogingen falen.
+        # Residueel crash-gap wordt door de watchdog Pass 2c-reconciliatie gedekt.
+        await refund_with_retry(job_id, None, context="whisper-success")
     return result
 
 

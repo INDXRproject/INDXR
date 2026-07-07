@@ -35,6 +35,7 @@ from transcription_pipeline import (
     _run_with_heartbeat,
     do_assemblyai_transcription,
     run_whisper_reservation_aware,
+    refund_with_retry,
 )
 from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_client import YouTubeClient
@@ -477,10 +478,12 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     await _enqueue_next(ctx, playlist_id, video_index, total_videos, final_video_results)
 
     # ADR-050 fase 2: rondde deze video de playlist definitief af (compleet, geen retry) en is
-    # er gereserveerd -> verreken één keer (reserved − Σsettlements). Idempotent via
-    # (playlist_id,'refund'). Bij should_retry gebeurt de refund pas ná de retry-pass.
+    # er gereserveerd -> verreken één keer (reserved − Σsettlements). Bounded idempotente retry:
+    # de playlist is nu status='complete' → buiten Pass 2b, dus een gefaalde refund heeft géén
+    # ander vangnet dan de Pass 2c-reconciliatie. Bij should_retry gebeurt de refund pas ná de
+    # retry-pass.
     if reservation_mode and rpc_result and rpc_result.get('playlist_complete') and not rpc_result.get('should_retry'):
-        await asyncio.to_thread(refund_credits, None, playlist_id)
+        await refund_with_retry(None, playlist_id, context="playlist-complete")
 
 
 async def _enqueue_next(
@@ -591,9 +594,10 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
                 }).eq('id', playlist_id).execute()
             )
             # ADR-050 fase 2: retry-pass definitief afgerond -> verreken de reservering één keer
-            # (reserved − Σsettlements), idempotent via (playlist_id,'refund').
+            # (reserved − Σsettlements). Bounded idempotente retry: status is nu 'complete' →
+            # buiten Pass 2b, dus geen ander vangnet dan de Pass 2c-reconciliatie.
             if reservation_mode:
-                await asyncio.to_thread(refund_credits, None, playlist_id)
+                await refund_with_retry(None, playlist_id, context="playlist-retry-complete")
         except Exception as e:
             logger.error(f"{log_prefix} Failed to set status=complete: {e}")
             with sentry_sdk.push_scope() as scope:
@@ -802,6 +806,67 @@ async def _refund_then_claim_playlist(supabase, job) -> None:
         logger.info(f"[WATCHDOG refund] playlist {playlist_id}: al verwerkt — skip")
     else:
         logger.info(f"[WATCHDOG refund] playlist {playlist_id} -> refund geboekt + status=error")
+
+
+async def _reconcile_unrefunded_reserved(supabase, limit: int = 50) -> None:
+    """Watchdog Pass 2c — reconciliatie-vangnet (ADR-050). Vindt via de anti-join
+    (`watchdog_unrefunded_reserved`) TERMINALE jobs/playlists (status complete/error) met
+    credits_reserved>0 en GEEN refund-rij: dat zijn refunds die zowel de bounded-retry ÁLS een
+    worker-crash misten (buiten Pass 2/2b want al terminaal). Boekt de ontbrekende refund via
+    `refund_credits` (idempotent via (job_id/playlist_id,'refund')).
+
+    MUTEERT BEWUST GEEN STATUS. Anders dan Pass 2/2b (die 'interrupted'→'error' claimen als
+    onderdeel van crash-afhandeling) is een Pass 2c-job al terminaal én correct afgehandeld —
+    alleen de geld-boeking ontbreekt. Er valt dus niets te claimen; de anti-join zelf is de
+    idempotentie (zodra de refund-rij bestaat verdwijnt de job uit de selectie). Een hit betekent
+    dat een eerdere terminale refund gemist is (retry ÉN crash faalden) → error-level Sentry, want
+    dat is een structureel signaal, geen routine. `limit` capt de rijen/cyclus (drainen over
+    meerdere 2-min-cycli bij achterstand)."""
+    try:
+        rows = await asyncio.to_thread(
+            lambda: supabase.rpc('watchdog_unrefunded_reserved', {'p_limit': limit}).execute()
+        )
+    except Exception as e:
+        logger.warning(f"[WATCHDOG reconcile 2c] query failed (transient, retry in 2min): {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "2c")
+            scope.set_level("warning")
+        sentry_sdk.capture_exception(e)
+        return
+
+    for row in (rows.data or []):
+        entity = row.get('entity')
+        ref_id = row.get('ref_id')
+        try:
+            if entity == 'job':
+                r = await asyncio.to_thread(refund_credits, ref_id, None)
+            else:
+                r = await asyncio.to_thread(refund_credits, None, ref_id)
+            ok = bool(r and r.get('success'))
+            logger.error(
+                f"[WATCHDOG reconcile 2c] gemiste terminale refund voor {entity} {ref_id} "
+                f"-> refund_credits {'geboekt' if ok else 'FAALDE'}: {r}"
+            )
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                scope.set_tag("pass", "2c")
+                scope.set_tag("refund_context", "pass-2c-reconciliation")
+                scope.set_tag("ref_id", str(ref_id))
+                scope.set_tag("refund_failed", "false" if ok else "true")
+                scope.set_extra("refund_result", r)
+            sentry_sdk.capture_message(
+                f"Pass 2c reconciliation booked a missed terminal refund ({entity})"
+                if ok else f"Pass 2c reconciliation refund FAILED, retry next cycle ({entity})",
+                level="error",
+            )
+        except Exception as e:
+            logger.error(f"[WATCHDOG reconcile 2c] refund raised for {entity} {ref_id}: {e}")
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                scope.set_tag("pass", "2c")
+                scope.set_tag("ref_id", str(ref_id))
+            sentry_sdk.capture_exception(e)
 
 
 async def watchdog_interrupted_jobs(ctx: dict) -> None:
@@ -1160,6 +1225,13 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "2b")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
+
+    # ── Pass 2c: reconciliatie-vangnet — gemiste terminale refunds ────────────────
+    # Dekt het residuele gat dat de bounded-retry NIET dekt: een worker-crash tussen de
+    # terminal-status-set en de refund-retries. Zulke jobs zijn al 'complete'/'error' → buiten
+    # Pass 2/2b. De anti-join (credits_reserved>0 + geen refund-rij) levert precies die gemiste
+    # refunds; Pass 2c boekt ze idempotent zonder de status te muteren (cap = 50 rijen/cyclus/tabel).
+    await _reconcile_unrefunded_reserved(supabase, limit=50)
 
 
 async def noop_task(ctx: dict) -> str:
