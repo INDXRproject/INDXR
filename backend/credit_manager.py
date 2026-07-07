@@ -11,11 +11,13 @@ from supabase import create_client, Client
 
 logger = logging.getLogger("indxr-backend")
 
-# ADR-050 fase 1 — credit-reservering. Default UIT: zolang de flag OFF is, wordt er GEEN
-# reserve_credits aangeroepen in het live pad en verandert er niets aan de bestaande
-# per-video-aftrek (geen dubbele aftrek). De flag gaat pas AAN samen met settle+refund
-# (fase 2/3), wanneer de per-video-aftrek wordt omgebouwd naar draw-down-uit-de-reservering.
-RESERVATION_ENABLED = os.environ.get("CREDIT_RESERVATION_ENABLED", "false").lower() == "true"
+# ADR-050 — credit-reservering, DEFAULT AAN sinds 2026-07-07 (fase 2/3 geactiveerd). Nieuwe
+# jobs reserveren bij start (reserve → settle → refund is het levende credit-model); de
+# overspend-race is live gesloten. Alle standalone-dispatch loopt via de reservation-aware
+# wrapper (run_whisper_reservation_aware), dus geen dubbele aftrek. De oude directe aftrek
+# blijft als else-tak voor niet-gereserveerde in-flight jobs. Rollback: zet de env-var
+# CREDIT_RESERVATION_ENABLED expliciet op "false" (geen deploy nodig).
+RESERVATION_ENABLED = os.environ.get("CREDIT_RESERVATION_ENABLED", "true").lower() == "true"
 
 # Supabase client (singleton)
 _supabase_client: Optional[Client] = None

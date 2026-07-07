@@ -7070,3 +7070,12 @@ Nieuwe e2e op het dispatch-pad zelf (RPC-tests dekten main.py niet): stubt de pi
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/test_settle_refund.py
 ---
+[2026-07-07 00:11] commit: docs(credits): LESSONS reserve-voor-dispatch-splitsing + LOG upload-pad-fix (ADR-050 fase 2)
+
+LESSONS: reserve draait voor de source_type-splitsing => elk pad dat daarna de pipeline aanroept moet reservation-aware zijn met refund-hook; meerdere call-sites = een gedeeld primitief; e2e-test op het dispatch-pad zelf. LOG-entry met de volledige caller-trace.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+---
+[2026-07-07 00:20] ACTIVERING (ADR-050 fase 2/3): CREDIT_RESERVATION_ENABLED default "false" → "true" in credit_manager.py. Het reserve → settle → refund-model is nu het LEVENDE credit-model in prod: nieuwe jobs reserveren bij start (credits_reserved>0), de per-video-aftrek is draw-down-uit-de-reservering (balans-neutrale settlement), en aan het eind volgt één netto refund-post (reserved − verbruikt). De concurrent-overspend-race is LIVE GESLOTEN — de balans daalt direct bij reserve, dus gereserveerde credits zijn onbeschikbaar voor parallelle jobs. De oude directe aftrek blijft als else-tak voor niet-gereserveerde in-flight jobs (branch op credits_reserved>0, niet op de flag → geen dubbel/nul-window bij de flip). Alle standalone-dispatch (worker, upload, arq-loze fallback) loopt via run_whisper_reservation_aware, dus geen dubbele aftrek op het upload-pad. Rollback zonder deploy: env-var CREDIT_RESERVATION_ENABLED=false in Railway. Bewijs vóór push: py_compile groen; test_settle_refund.py 36/36 + fase-1 regressie 14/14 (in vorige commits). Gepusht naar master (fix-commits + fase-2-commits + deze activering samen → Railway + Vercel auto-deploy). | gewijzigd: backend/credit_manager.py, docs/wiki/decisions/050-credit-reservation-model.md
