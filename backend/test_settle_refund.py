@@ -351,6 +351,97 @@ def main() -> int:
               _seen.get("old_res_mode") is False and _seen.get("old_deduct") is True, f"seen={_seen}")
         check("J2: ongereserveerd -> GEEN refund-post", len(_refunds_jl) == 0, f"={len(_refunds_jl)}")
 
+        # ── K: watchdog Pass 2 refund-vóór-claim — gefaalde refund NIET terminal, retry-veilig ──
+        print("K — watchdog Pass 2 (gereserveerd): gefaalde refund blijft 'interrupted', geslaagde is idempotent:")
+        import worker as _wk
+        _orig_wk_refund = _wk.refund_credits
+
+        def _tj_status(jid):
+            return sb.table("transcription_jobs").select("status").eq("id", jid).single().execute().data["status"]
+        def _refund_rows(jid):
+            return len(sb.table("credit_transactions").select("id").eq("user_id", USER)
+                       .eq("kind", "refund").eq("job_id", jid).execute().data)
+
+        sb.table("credit_transactions").delete().eq("user_id", USER).execute()  # hermetisch
+        set_balance(100); jK = mk_job()
+        reserve(10, job_id=jK); settle(4, job_id=jK)   # reserved 10, verbruikt 4 -> refund 6
+        sb.table("transcription_jobs").update({
+            "status": "interrupted", "watchdog_attempts": 1,
+            "last_heartbeat_at": "2000-01-01T00:00:00+00:00",
+        }).eq("id", jK).execute()
+        jobK = {"id": jK, "user_id": USER, "credits_reserved": 10, "credits_cost": 0}
+        b0K = balance()  # baseline na reserve+settle — assert op DELTA (immuun voor transient balans-drift)
+
+        # (1) Refund faalt (gesimuleerde 522): status mag NIET terminal worden.
+        _wk.refund_credits = lambda job_id=None, playlist_id=None: {"success": False, "error": "sim 522"}
+        _aio.run(_wk._refund_then_claim_job(sb, jobK))
+        _wk.refund_credits = _orig_wk_refund
+        check("K: gefaalde refund -> status blijft 'interrupted'", _tj_status(jK) == "interrupted", f"={_tj_status(jK)}")
+        check("K: gefaalde refund -> geen refund-rij", _refund_rows(jK) == 0, f"={_refund_rows(jK)}")
+        check("K: gefaalde refund -> balans ongewijzigd (== baseline)", balance() == b0K, f"b0={b0K} nu={balance()}")
+
+        # (2) Volgende cyclus: refund lukt -> terminal + één rij (6) + balans += 6 (reserved 10 - settled 4).
+        _aio.run(_wk._refund_then_claim_job(sb, jobK))
+        check("K: geslaagde refund -> status 'error'", _tj_status(jK) == "error", f"={_tj_status(jK)}")
+        check("K: geslaagde refund -> precies één refund-rij", _refund_rows(jK) == 1, f"={_refund_rows(jK)}")
+        check("K: geslaagde refund -> balans = baseline + 6", balance() == b0K + 6, f"b0={b0K} nu={balance()}")
+
+        # (3) Retry ná succes: idempotent, geen dubbele rij/mutatie.
+        _aio.run(_wk._refund_then_claim_job(sb, jobK))
+        check("K: retry ná succes -> nog steeds één refund-rij (idempotent)", _refund_rows(jK) == 1, f"={_refund_rows(jK)}")
+        check("K: retry ná succes -> balans onveranderd (baseline + 6)", balance() == b0K + 6, f"b0={b0K} nu={balance()}")
+
+        # ── K2: oude-modus pad (refund_credits_flat) — zelfde retry-veiligheid ────────────────
+        print("K2 — watchdog Pass 2 (oude modus, refund_credits_flat):")
+        _orig_wk_flat = _wk.refund_credits_flat
+        sb.table("credit_transactions").delete().eq("user_id", USER).execute()  # hermetisch
+        set_balance(100); jK2 = mk_job()
+        sb.table("transcription_jobs").update({
+            "status": "interrupted", "watchdog_attempts": 1, "credits_deducted": True,
+            "last_heartbeat_at": "2000-01-01T00:00:00+00:00",
+        }).eq("id", jK2).execute()
+        jobK2 = {"id": jK2, "user_id": USER, "credits_reserved": 0, "credits_cost": 5}
+        b0K2 = balance()  # baseline (== 100 na set_balance) — assert op DELTA
+
+        _wk.refund_credits_flat = lambda *a, **k: {"success": False, "error": "sim 522"}
+        _aio.run(_wk._refund_then_claim_job(sb, jobK2))
+        _wk.refund_credits_flat = _orig_wk_flat
+        check("K2: gefaalde flat-refund -> status blijft 'interrupted'", _tj_status(jK2) == "interrupted", f"={_tj_status(jK2)}")
+        check("K2: gefaalde flat-refund -> geen refund-rij + balans ongewijzigd", _refund_rows(jK2) == 0 and balance() == b0K2, f"rows={_refund_rows(jK2)} b0={b0K2} nu={balance()}")
+
+        _aio.run(_wk._refund_then_claim_job(sb, jobK2))
+        check("K2: geslaagde flat-refund -> status 'error', één rij (5), balans = baseline + 5",
+              _tj_status(jK2) == "error" and _refund_rows(jK2) == 1 and balance() == b0K2 + 5,
+              f"status={_tj_status(jK2)} rows={_refund_rows(jK2)} b0={b0K2} nu={balance()}")
+        _aio.run(_wk._refund_then_claim_job(sb, jobK2))
+        check("K2: retry ná succes -> idempotent (één rij, balans baseline + 5)",
+              _refund_rows(jK2) == 1 and balance() == b0K2 + 5, f"rows={_refund_rows(jK2)} b0={b0K2} nu={balance()}")
+
+        # ── L: wrapper whisper-success refund-failure ALARMEERT (geen stille slik) ────────────
+        print("L — wrapper whisper-success refund-failure alarmeert (geen stille slik):")
+        _alerts = []
+        _orig_cap = _tp.sentry_sdk.capture_message
+        _orig_tp_refund = _tp.refund_credits
+
+        async def _succ_settle(user_id, video_id, **kw):
+            settle(7, job_id=kw["job_id"])
+            return {"success": True, "transcript_id": None, "credit_cost": 7}
+
+        set_balance(100); jL = mk_job()
+        sb.table("transcription_jobs").update({"source_type": "upload"}).eq("id", jL).execute()
+        reserve(10, job_id=jL)
+        _tp.do_assemblyai_transcription = _succ_settle
+        _tp.refund_credits = lambda job_id=None, playlist_id=None: {"success": False, "error": "sim 522"}
+        _tp.sentry_sdk.capture_message = lambda msg, **kw: _alerts.append((msg, kw.get("level")))
+        try:
+            _aio.run(_tp.run_whisper_reservation_aware(USER, None, job_id=jL, audio_path="/dev/null", audio_title="t"))
+        finally:
+            _tp.do_assemblyai_transcription = _orig_pipeline
+            _tp.refund_credits = _orig_tp_refund
+            _tp.sentry_sdk.capture_message = _orig_cap
+        check("L: gefaalde wrapper-refund triggert error-Sentry (geen stille slik)",
+              any(lvl == "error" for _, lvl in _alerts), f"alerts={_alerts}")
+
     finally:
         sb.table("credit_transactions").delete().eq("user_id", USER).execute()
         if _jobs:
