@@ -314,10 +314,11 @@ def main() -> int:
         async def _fake_failure(user_id, video_id, **kw):
             return {"success": False, "error_type": "test", "credit_cost": 0}
 
-        # Success: reserve 10 -> pipeline settelt 7 -> refund 3 -> balans 100-7=93 (één keer).
+        # Success: reserve 10 -> pipeline settelt 7 (balans-neutraal) -> refund 3 -> balans = baseline+3.
         set_balance(100); jj = mk_job()
         sb.table("transcription_jobs").update({"source_type": "upload"}).eq("id", jj).execute()
         reserve(10, job_id=jj)   # zet credits_reserved=10 (zoals main.py:790 bij flag ON)
+        b0jj = balance()  # baseline na reserve — assert op DELTA (immuun voor transient balans-drift)
         _tp.do_assemblyai_transcription = _fake_success
         try:
             _aio.run(_tp.run_whisper_reservation_aware(USER, None, job_id=jj, audio_path="/dev/null", audio_title="t"))
@@ -325,19 +326,20 @@ def main() -> int:
             _tp.do_assemblyai_transcription = _orig_pipeline
         check("J: upload-dispatch geeft reservation_mode=True door (oude aftrek onderdrukt)", _seen.get("success_res_mode") is True)
         check("J: upload-success -> settle 7 geregistreerd", settlements_sum("job_id", jj) == 7, f"={settlements_sum('job_id', jj)}")
-        check("J: upload-success -> balans exact 93 (=100-7, geen dubbele aftrek)", balance() == 93, f"={balance()}")
+        check("J: upload-success -> balans = baseline + 3 (refund 10-7, geen dubbele aftrek)", balance() == b0jj + 3, f"b0={b0jj} nu={balance()}")
 
-        # Failure: reserve 10 -> geen settle -> refund 10 -> balans terug op 100.
+        # Failure: reserve 10 -> geen settle -> refund 10 -> balans = baseline+10.
         set_balance(100); jk = mk_job()
         sb.table("transcription_jobs").update({"source_type": "upload"}).eq("id", jk).execute()
         reserve(10, job_id=jk)
+        b0jk = balance()  # baseline na reserve — assert op DELTA
         _tp.do_assemblyai_transcription = _fake_failure
         try:
             _aio.run(_tp.run_whisper_reservation_aware(USER, None, job_id=jk, audio_path="/dev/null", audio_title="t"))
         finally:
             _tp.do_assemblyai_transcription = _orig_pipeline
         check("J: upload-failure -> geen settle", settlements_sum("job_id", jk) == 0, f"={settlements_sum('job_id', jk)}")
-        check("J: upload-failure -> volledige refund, balans terug op 100", balance() == 100, f"={balance()}")
+        check("J: upload-failure -> volledige refund, balans = baseline + 10", balance() == b0jk + 10, f"b0={b0jk} nu={balance()}")
 
         # J2: flag-OFF-regressie — ongereserveerde job (credits_reserved=0) mag NIET refunden en
         # de pipeline krijgt de oude-aftrek-modus. Bewijst rollback-veiligheid van de wrapper.
