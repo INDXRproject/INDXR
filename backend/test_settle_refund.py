@@ -20,6 +20,12 @@ Dekt de fase-2-succescriteria:
   J  upload-dispatch e2e: reserve->settle->refund door de gedeelde wrapper
      (run_whisper_reservation_aware) — bewijst dat main.py:829/817 geen dubbele aftrek doen
   J2 flag-OFF-regressie: wrapper zonder reservering doet oude aftrek, geen refund
+  K  watchdog Pass 2 (gereserveerd): refund-vóór-claim — gefaalde refund blijft niet-terminaal, geslaagde idempotent
+  K2 watchdog Pass 2 (oude modus, refund_credits_flat): idem
+  L  wrapper whisper-success refund-failure -> error-Sentry (geen stille slik)
+  M/M2/M3 refund_with_retry (job/playlist): bounded idempotente retry; blijvend falen -> alarm zonder mutatie
+  N/N2 Pass 2c reconciliatie (job/playlist): anti-join vindt gemiste terminale refund -> boekt één rij,
+       status ONgemuteerd, tweede cyclus idempotent
 """
 import os
 import sys
@@ -441,6 +447,99 @@ def main() -> int:
             _tp.sentry_sdk.capture_message = _orig_cap
         check("L: gefaalde wrapper-refund triggert error-Sentry (geen stille slik)",
               any(lvl == "error" for _, lvl in _alerts), f"alerts={_alerts}")
+
+        # ── M/M2/M3: refund_with_retry — bounded idempotente retry op de terminale refund-paden ──
+        _orig_tp_refund2 = _tp.refund_credits
+        _calls = {"n": 0}
+        def _fail_once(job_id=None, playlist_id=None):
+            _calls["n"] += 1
+            if _calls["n"] == 1:
+                return {"success": False, "error": "sim 522"}
+            return _orig_tp_refund2(job_id, playlist_id)
+
+        print("M — refund_with_retry (job/whisper-pad): fail-1x-dan-succes -> één rij, retry idempotent:")
+        set_balance(100); jM = mk_job()
+        reserve(10, job_id=jM); settle(3, job_id=jM)   # refund = 10 - 3 = 7
+        b0M = balance()
+        _calls["n"] = 0
+        _tp.refund_credits = _fail_once
+        try:
+            _aio.run(_tp.refund_with_retry(jM, None, base_delay=0, context="test"))
+        finally:
+            _tp.refund_credits = _orig_tp_refund2
+        check("M: retry gebeurde (stub 2x aangeroepen)", _calls["n"] == 2, f"={_calls['n']}")
+        check("M: precies één refund-rij", _refund_rows(jM) == 1, f"={_refund_rows(jM)}")
+        check("M: balans = baseline + 7", balance() == b0M + 7, f"b0={b0M} nu={balance()}")
+
+        print("M2 — refund_with_retry (playlist-pad): fail-1x-dan-succes -> één rij:")
+        set_balance(100); pM = mk_playlist(4)
+        reserve(3, playlist_id=pM)   # geen settlements -> refund 3
+        b0M2 = balance()
+        def _plrows(pid):
+            return len(sb.table("credit_transactions").select("id").eq("user_id", USER)
+                       .eq("kind", "refund").eq("playlist_id", pid).execute().data)
+        _calls["n"] = 0
+        _tp.refund_credits = _fail_once
+        try:
+            _aio.run(_tp.refund_with_retry(None, pM, base_delay=0, context="test"))
+        finally:
+            _tp.refund_credits = _orig_tp_refund2
+        check("M2: retry gebeurde (stub 2x)", _calls["n"] == 2, f"={_calls['n']}")
+        check("M2: precies één refund-rij (playlist)", _plrows(pM) == 1, f"={_plrows(pM)}")
+        check("M2: balans = baseline + 3", balance() == b0M2 + 3, f"b0={b0M2} nu={balance()}")
+
+        print("M3 — refund_with_retry blijvend falen -> error-Sentry, geen mutatie, geen rij:")
+        _alerts2 = []
+        _orig_cap2 = _tp.sentry_sdk.capture_message
+        set_balance(100); jM3 = mk_job()
+        reserve(5, job_id=jM3)
+        b0M3 = balance()
+        _tp.refund_credits = lambda job_id=None, playlist_id=None: {"success": False, "error": "sim 522"}
+        _tp.sentry_sdk.capture_message = lambda msg, **kw: _alerts2.append((msg, kw.get("level")))
+        try:
+            _aio.run(_tp.refund_with_retry(jM3, None, attempts=3, base_delay=0, context="test"))
+        finally:
+            _tp.refund_credits = _orig_tp_refund2
+            _tp.sentry_sdk.capture_message = _orig_cap2
+        check("M3: blijvend falen -> error-Sentry getriggerd", any(lvl == "error" for _, lvl in _alerts2), f"={_alerts2}")
+        check("M3: blijvend falen -> geen refund-rij + balans ongewijzigd",
+              _refund_rows(jM3) == 0 and balance() == b0M3, f"rows={_refund_rows(jM3)} b0={b0M3} nu={balance()}")
+
+        # ── N/N2: Pass 2c reconciliatie — anti-join + idempotente refund, status ONgemuteerd ─────
+        # Test de exacte Pass 2c-operaties (anti-join RPC + per-rij refund_credits) scoped op een
+        # wegwerp-job, deterministisch. _reconcile_unrefunded_reserved is precies deze loop.
+        def _antijoin_has(ref_id):
+            data = sb.rpc("watchdog_unrefunded_reserved", {"p_limit": 200}).execute().data
+            return any(r["ref_id"] == ref_id for r in (data or []))
+
+        print("N — Pass 2c (job): anti-join vindt terminale reserved-zonder-refund -> boekt één rij, status ongemuteerd:")
+        set_balance(100); jN = mk_job()
+        reserve(10, job_id=jN); settle(4, job_id=jN)   # refund = 6
+        sb.table("transcription_jobs").update({"status": "complete"}).eq("id", jN).execute()
+        b0N = balance()
+        check("N: anti-join vindt de gemiste refund", _antijoin_has(jN))
+        refund(job_id=jN)   # = wat Pass 2c per anti-join-hit doet
+        check("N: precies één refund-rij", _refund_rows(jN) == 1, f"={_refund_rows(jN)}")
+        check("N: balans = baseline + 6", balance() == b0N + 6, f"b0={b0N} nu={balance()}")
+        check("N: status NIET gemuteerd (blijft 'complete')", _tj_status(jN) == "complete", f"={_tj_status(jN)}")
+        check("N: tweede cyclus -> anti-join matcht niets meer (idempotent)", not _antijoin_has(jN))
+        refund(job_id=jN)
+        check("N: tweede cyclus -> nog steeds één rij (geen dubbel)", _refund_rows(jN) == 1, f"={_refund_rows(jN)}")
+
+        print("N2 — Pass 2c (playlist): idem voor het playlist-pad:")
+        set_balance(100); pN = mk_playlist(5)
+        reserve(2, playlist_id=pN)   # refund = 2
+        sb.table("playlist_extraction_jobs").update({"status": "complete"}).eq("id", pN).execute()
+        b0N2 = balance()
+        check("N2: anti-join vindt de playlist", _antijoin_has(pN))
+        refund(playlist_id=pN)
+        check("N2: precies één refund-rij (playlist)", _plrows(pN) == 1, f"={_plrows(pN)}")
+        check("N2: balans = baseline + 2", balance() == b0N2 + 2, f"b0={b0N2} nu={balance()}")
+        check("N2: status NIET gemuteerd (blijft 'complete')",
+              sb.table("playlist_extraction_jobs").select("status").eq("id", pN).single().execute().data["status"] == "complete")
+        check("N2: tweede cyclus -> anti-join matcht niets meer", not _antijoin_has(pN))
+        refund(playlist_id=pN)
+        check("N2: tweede cyclus -> nog steeds één rij", _plrows(pN) == 1, f"={_plrows(pN)}")
 
     finally:
         sb.table("credit_transactions").delete().eq("user_id", USER).execute()
