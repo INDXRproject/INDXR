@@ -297,7 +297,7 @@ interface AuthContextType {
 
 **Let op:** `isPaidUser` bestaat **niet** in AuthContext. De `isPremium`-check in API routes haalt `total_credits_purchased` direct op via RPC.
 
-`refreshCredits()` aanroepen na succesvolle aankoop of verbruik om de UI bij te werken.
+`refreshCredits()` aanroepen na succesvolle aankoop of verbruik om de UI bij te werken. **Sinds ADR-050 fase 3 ook bij job-START** (`VideoTab`/`AudioTab`/`PlaylistTab`, direct na `setActiveJobId`) — de reservering is server-side al gecommit vóór `job_id` terugkomt, dus zonder deze aanroep loopt de topbar-balans achter (hij toonde 114 terwijl de backend al naar 53 gereserveerd had). Er is géén polling/realtime op `user_credits`; refresh is puur deze handmatige aanroepen.
 
 ---
 
@@ -310,3 +310,14 @@ Momenteel zichtbaar: laatste 20 transacties onder Account > Billing & Credits.
 - Bij 10.000 gebruikers × 100 transacties = 1M rijen → nog steeds verwaarloosbaar
 - Implementeer hogere/onbeperkte cut-off als post-launch verbetering
 - Integreer ook in admin dashboard (processing times + transacties per tijdvenster)
+
+---
+
+## Completion Receipt / reserve-transparantie (ADR-050 fase 3)
+
+Eén herbruikbaar, read-only receipt-component toont ná afloop van elke job eerlijk wat er gebeurde. Principe: **stilte bij succes, uitleg bij afwijking**.
+
+- **Component:** `packages/shared/src/components/ui/CompletionReceipt.tsx` (variant-gedreven, gemodelleerd op `FeedbackCard`). Ingebouwd in de drie completion-oppervlakken: `VideoTab`, `AudioTab` (vervangen de oude banners) en `PlaylistManager` (embedded bovenaan de Final Summary View).
+- **Data-hook:** `packages/shared/src/hooks/useCompletionReceipt.ts` — **read-only**, muteert nooit credits. Leest onder RLS: de job/playlist-rij (`credits_reserved/credits_refunded/credits_cost`, `video_results`, `video_metadata`) + `credit_transactions`. De vier cijfers (reserved → used → refunded → net) komen uit de **gestructureerde `metadata` van de refund-rij** (`{reserved, consumed, refunded, applied, failed_count, total}`); de reason-string wordt NOOIT geparsed. Per-video (playlist): settlement-rijen (`metadata.video_id` → `amount`) ⋈ `video_results` (status/error_type). charged = settlement-amount; success zonder settlement = free; error = skipped (niet afgerekend).
+- **States:** A = schone job (één regel, alleen wat betaald is); B = refund aanwezig (reserved→used→refunded + uitklapbare per-video-lijst, "not used — refunded"); C = alléén upload-overschatting (`kind='upload' && reserved > used`, ffprobe-fallback) → geruststellings-strook. Een playlist met mislukte video's is B (normale transparantie), **geen** C.
+- Zie ADR-050 en [[reserve-bedrag-realistisch-vóór-de-gate-betekenis-heeft]] (LESSONS).

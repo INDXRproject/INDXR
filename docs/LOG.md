@@ -7238,3 +7238,57 @@ credits == max(1, ceil(size/8000/60)) én != 1 → nooit stil reserve=1 (gate ni
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/test_settle_refund.py
 ---
+[2026-07-07 23:36] commit: docs(credits): priorities upload-reserve done + 1.27 bot-detectie + LESSONS lege-gate + LOG (ADR-050)
+
+priorities.md: upload-reserve-fix als opgeleverde deelfix onder 1.22 (✅ 2026-07-07);
+nieuw open item 1.27 — yt-dlp bot-detectie bij playlist-extractie (launch-aandachtspunt,
+los van credits, niet nu fixen). LESSONS: reserve-bedrag-realistisch-vóór-de-gate-
+betekenis-heeft (een reserve die stil naar minimum-1 terugvalt is een lege gate; stel het
+server-side + onomzeilbaar vast, overschat royaal bij een gefaalde meting, nooit uit een
+client-waarde). LOG: fix-entry. Geen nieuwe ADR (hardening binnen ADR-050).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-07-08 00:05] feat: completion-receipt + reserve-transparantie voor alle job-types (ADR-050 fase 3/3, UI). Eén herbruikbaar read-only CompletionReceipt-component (packages/shared/src/components/ui/CompletionReceipt.tsx, variant-gedreven à la FeedbackCard) vervangt de 3 divergente completion-banners (video/upload) en augmenteert de playlist Final Summary View (embedded). Principe "stilte bij succes, uitleg bij afwijking": State A schone job = één regel (alleen betaald bedrag); State B refund aanwezig = reserved→used→refunded + uitklapbare per-video-lijst ("not used — refunded", skipped = niet afgerekend); State C = ALLEEN upload-overschatting (kind='upload' && reserved>used, ffprobe-fallback) → geruststellings-strook (NIET bij playlist-mislukking-refunds). Data via nieuwe read-only hook useCompletionReceipt (RLS-reads van de job/playlist-rij + credit_transactions; gebruikt de gestructureerde refund-metadata {reserved,consumed,refunded,...}, NOOIT de reason-string; per-video = settlement-rijen ⋈ video_results; muteert nooit credits). Balans-refresh gefixt: refreshCredits() draait nu óók bij job-START (VideoTab, AudioTab, PlaylistTab extract + retry) — reservering is server-side gecommit vóór job_id terugkomt, dus de topbar zakt nu meteen naar de gereserveerde balans (was: bleef op oude balans tot completion). Copy: refund-woordkeuze "not used — refunded". Geverifieerd: pnpm build (beide apps) + tsc --noEmit (shared) groen; data-derivatie tegen de 3 echte prod-jobs klopt exact — video 73beee2b→State A (162cr), upload fdd09c70→State A (22cr, bijbetaald back=0 dus geen ruis), playlist 512c5874→State B (charged 59 · 12 transcribed · 2 skipped, 14-video breakdown: 11 charged Σ59 + 1 free + 2 skipped bot_detection). Geen backend-/credit-RPC-wijziging, geen migratie. Gerapporteerd (buiten scope, niet aangeraakt): ongebruikte tweede whisper-poll in apps/app/src/app/dashboard/transcribe/page.tsx (rendert niets, refresht nooit). Commit-ready per thema, NIET gepusht. | gewijzigd: packages/shared/src/components/ui/CompletionReceipt.tsx, packages/shared/src/hooks/useCompletionReceipt.ts, packages/shared/src/components/free-tool/VideoTab.tsx, AudioTab.tsx, PlaylistTab.tsx, packages/shared/src/components/PlaylistManager.tsx, docs/LESSONS.md, docs/wiki/architecture/credit-system.md
+[2026-07-08 00:44] commit: feat(ui): CompletionReceipt component + useCompletionReceipt read-only hook (ADR-050 fase 3)
+
+One honest, reusable completion receipt for every job type — "silence on success,
+explain on deviation". Variant-driven, modeled on FeedbackCard, using library tokens
+(success/accent-subtle hues, tabular-nums metadata, divide-border-subtle hairlines).
+States: A = clean (one line, only what was charged); B = refund present (reserved→used→
+refunded + expandable per-video breakdown, "not used — refunded"); C = upload overshoot
+ONLY (kind='upload' && reserved>used, ffprobe-fallback) → reassurance strip; plus a failed
+state. `embedded` mode drops the chrome/header for the playlist Final Summary View.
+
+useCompletionReceipt: read-only assembly from data the user owns under RLS (job/playlist
+row + credit_transactions). Uses the refund row's structured metadata {reserved, consumed,
+refunded, ...} — never parses the reason string; per-video = settlement rows (metadata.video_id)
+joined with video_results. Never mutates credits.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: packages/shared/src/components/ui/CompletionReceipt.tsx
+packages/shared/src/hooks/useCompletionReceipt.ts
+---
+[2026-07-08 00:45] commit: feat(ui): wire CompletionReceipt into video/upload/playlist + refresh balance on job start (ADR-050 fase 3)
+
+Replaces the three divergent completion banners: VideoTab + AudioTab now render
+<CompletionReceipt> above the transcript; PlaylistManager renders it embedded at the top
+of the Final Summary View (fed by useCompletionReceipt keyed on the completed playlist id,
+threaded from PlaylistTab). Video is State A synchronously; upload/playlist enrich via the
+read-only hook.
+
+Balance refresh on job START: refreshCredits() now also fires right after setActiveJobId at
+whisper start (VideoTab confirm + upsell paths), upload start (AudioTab), and playlist
+extract + single-video retry (PlaylistTab). The reservation is committed server-side before
+job_id returns, so the topbar/sidebar/home balance now drops to the reserved amount
+immediately instead of lagging until completion. Completion-side refresh unchanged.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/PlaylistTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+---
