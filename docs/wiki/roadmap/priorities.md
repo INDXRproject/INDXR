@@ -1,6 +1,6 @@
 # Launch Priorities (Plan van Aanpak)
 
-Bijgewerkt: 2026-04-26. Single source of truth voor pre-launch volgorde, na strategische sessie met Claude Desktop.
+Bijgewerkt: 2026-07-07. Single source of truth voor pre-launch volgorde, na strategische sessie met Claude Desktop.
 
 Deze lijst is het Plan van Aanpak (PVA) tot launch. Volgorde is geoptimaliseerd voor solo-developer, met afhankelijkheden in acht genomen. Status-markers per item: `[ ]` todo, `[~]` in progress, `[x]` done, `[!]` blocked.
 
@@ -213,6 +213,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     - **Reserveer** de geschatte kosten bij job-start (som over de te verwerken video's), i.p.v. per-video best-effort aftrek. Reserveren op **`user_credits.credits`** (de gezaghebbende balans — NIET op `SUM(credit_transactions)`, dat reconcilieert niet, zie bug (a)). Per-video-duur is bij start bekend (availability-check + `video_metadata`) → vol bedrag reserveerbaar; settle tegen de **werkelijke** audio-duur en refund het verschil + duur-0-randgevallen.
     - **Refund** het ongebruikte/gefaalde deel bij afronding (per gefaalde video, en het verschil tussen reservering en werkelijk verbruik).
     - **Watchdog-claim atomair maken** — conditional UPDATE / CAS i.p.v. read-then-write: Pass 1 `UPDATE … WHERE id=X AND watchdog_attempts=0`, Pass 2 `… WHERE id=X AND status='interrupted'`, alleen handelen bij `rows_affected=1`. Sluit het dubbele-refund-risico ook als de cron-dedup ooit faalt. (Geldt al bij 1 worker; zie replica-safety-audit, LOG 2026-07-06.)
+    - **[x] Deelfix opgeleverd — upload-reserve server-side probe (✅ 2026-07-07):** een audio-**upload** reserveerde `ceil(0/60)→1` credit (de duur is pas ná reserve bekend) → de overspend-gate was **leeg voor uploads** (1 credit → uur-lange upload; het meerdere werd gratis werk via de bijbetaald-cap `LEAST(-refund, balance)`). Nu bepaalt de backend de duur **server-side vóór reserve** (`estimate_upload_reserve_cost`, ffprobe; royale bestandsgrootte-schatting als fallback, **nooit stil 1**); de client-waarde wordt niet vertrouwd (directe JWT-upload). YouTube reserveerde al correct (duur uit metadata). Settle/refund **ongewijzigd** (settle blijft op de echte geprobede duur). Geverifieerd: live test 1 (reserve 1 → settle 22 → refund −21 vóór de fix) + `test_settle_refund.py` scenario's O/P (76/76). Zie [ADR-050](../decisions/050-credit-reservation-model.md).
 
     **Twee latente credit-bugs die deze fix meteen meepakt (geverifieerd 2026-07-06 tegen baseline-migratie + RPC's):**
     - **(a) Tegengestelde sign-conventies in `credit_transactions`** 💰 — whisper-debits worden **positief** opgeslagen (`deduct_credits_atomic`, `type='debit'`), caption-debits **negatief** (`update_playlist_video_progress` insert `-p_amount`, óók `type='debit'`). Gevolg: het log **reconcilieert niet** naar `user_credits.credits`, en de admin-metric **"Credits Consumed" (`SUM WHERE type='debit'`) is nu al fout** — caption- en whisper-debits heffen elkaar deels op. De **live balans klopt wel** (beide paden doen `credits = credits - p_amount`). Fix: **sign-conventie uniformeren** + een **reconciliatie-invariant** (balans == afgeleide som; nu geen DB-constraint die dit afdwingt). Voorwaarde voor betrouwbare admin-metrics (1.24) en voor een auditeerbaar log.
@@ -258,6 +259,9 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     - Master-cache-reset: Upstash caption-cache + eventuele andere caches (rate-limit-buckets, metadata-cache).
     - Test-users zelf (auth + profielen).
     **Kritiek genoteerd:** `user_credits.credits` is de balans-bron. Een reset moet **balans, audit-log én job-rijen tegelijk** leegmaken — nooit alleen de balans of alleen het log, anders ontstaat precies de inconsistentie die fase-1 (`ee4c9ca`) net heeft gerepareerd. Implementeer NIET nu; dit is een pre-launch-uitvoertaak.
+
+- [ ] **1.27 — yt-dlp bot-detectie bij playlist-/video-extractie** (launch-aandachtspunt, proxy/yt-dlp — niet nu fixen)
+    Waargenomen: in de live ADR-050-verificatie faalden **2/14** playlist-video's op yt-dlp bot-detectie ("Sign in to confirm you're not a bot"). **Los van credits** — gefaalde video's worden correct niet gesetteld en meegerefund (bewezen in dezelfde test), dus dit is géén financieel probleem. Maar **launch-relevant**: bij grotere playlists en hoger volume kan dit vaker optreden en de completion-rate drukken. Proxy/yt-dlp-kwestie (Decodo residentieel, PO-tokens/bgutil, `web_embedded`-client). **Niet nu fixen** — monitoren (Sentry/worker-logs op `bot_detection`) en zo nodig aanpakken via cookies/PO-token-strategie, proxy-rotatie of een retry-tier. Zie [ADR-007](../decisions/007-bgutil-pot.md).
 
 ### Pre-launch — buiten code (parallel uit te voeren)
 

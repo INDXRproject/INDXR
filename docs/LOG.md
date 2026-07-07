@@ -7172,3 +7172,69 @@ Delta-asserts t.o.v. baseline (immuun voor transient balans-drift).
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/test_settle_refund.py
 ---
+[2026-07-07 22:24] commit: docs(credits): LESSONS twee-lagen terminaal-refund-vangnet + LOG (ADR-050)
+
+LESSONS: recovery-pad-regel uitgebreid met de twee lagen die een terminaal
+refund-pad (zonder watchdog-vangnet) allebei nodig heeft — (a) bounded idempotente
+retry op de refund-call zelf; (b) reconciliatie-sweep (anti-join) als structureel
+net voor het crash-tussen-status-en-refund-gat, idempotent en zonder status-mutatie.
+LOG: fix-inhoud + testresultaat. Geen nieuwe ADR (hardening binnen ADR-050).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+---
+[2026-07-07 22:31] commit: test(credits): J upload-dispatch naar delta-asserts (consistent met K/K2), 69/69 (ADR-050)
+
+J's twee absolute-balans-asserts (exact 93 / exact 100) waren drift-gevoelig bij
+flaky netwerk (een transient 522 op set_balance/reserve verschoof de absolute balans).
+Nu baseline vastleggen ná reserve (b0jj/b0jk) en asserten op delta: success = b0+3
+(refund reserved 10 − settled 7; settle is balans-neutraal), failure = b0+10 (volle
+refund). Haalt de laatste drift-gevoeligheid uit de suite. Gedrag ongewijzigd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_settle_refund.py
+---
+[2026-07-07 23:34] fix: upload reserveert server-side geprobede duur vóór reserve — dicht overspend-gate (ADR-050). BLOCKER uit de live-verificatie: een audio-upload reserveerde ceil(0/60)→1 credit i.p.v. de werkelijke kosten (duur pas ná reserve bekend; bestand wordt pas in de pipeline geprobed) → de overspend-gate was leeg voor uploads: iemand met 1 credit kon een 22-credit-upload starten, het meerdere werd gratis werk via de bijbetaald-cap (LEAST(-refund, balance)). YouTube reserveerde al correct (browser stuurt de duur uit metadata mee vóór reserve). Bewezen in live test 1: reserve 1 → settle 22 → refund −21. Fix (server-side, geen client-vertrouwen want directe JWT-upload = client-gecontroleerd): nieuwe helper estimate_upload_reserve_cost (audio_utils.py) bepaalt de duur met ffprobe/pydub; faalt dat → royale schatting uit bestandsgrootte (UPLOAD_FALLBACK_BYTES_PER_SEC=8000, ~64kbps, overschat bewust), NOOIT stil terug naar 1. main.py: voor uploads het temp-bestand één keer geschreven + geprobed VÓÓR de estimated_cost/reserve, zodat de balans-pre-check én reserve nu 402'en bij te weinig credits; temp-bestand hergebruikt door de pipeline (niet dubbel schrijven), opgeruimd bij vroege return. transcription_pipeline.py: known_duration_seconds-passthrough zodat er niet dubbel geprobed wordt — alleen doorgegeven bij een geslaagde probe (size_fallback=None → pipeline probet zelf → settle blijft op de ECHTE duur). Settle/refund-logica ONGEWIJZIGD (test 1 bewees settle 22 op de echte 1296s). Geen frontend-wijziging, geen migratie. Bewezen: test_settle_refund.py 76/76 incl. O (probe→2 credits, exact refund 0, overshoot reserve 5→settle 2→refund 3) + P (fail-probe → size_fallback credits 5, nooit 1); fase-1 14/14; py_compile + pnpm build groen. Hardening binnen ADR-050 (geen nieuwe ADR). Commit-ready per thema, NIET gepusht. | gewijzigd: backend/audio_utils.py, backend/main.py, backend/transcription_pipeline.py, backend/test_settle_refund.py, docs/wiki/roadmap/priorities.md, docs/LESSONS.md
+[2026-07-07 23:35] commit: fix(credits): server-side probe upload-duur vóór reserve — dicht overspend-gate (ADR-050)
+
+Een audio-upload reserveerde ceil(0/60)→1 credit i.p.v. de werkelijke kosten: de
+duur is pas ná reserve bekend (het bestand wordt pas in de pipeline geprobed). Gevolg:
+de overspend-gate was LEEG voor uploads — iemand met 1 credit kon een 22-credit-upload
+starten; het meerdere werd gratis werk via de bijbetaald-cap (LEAST(-refund, balance)).
+YouTube reserveerde al correct (de browser stuurt de duur uit metadata mee vóór reserve).
+Bewezen in live test 1: reserve 1 → settle 22 → refund −21.
+
+Fix — server-side + onomzeilbaar, géén client-vertrouwen (directe JWT-upload is volledig
+client-gecontroleerd → een client-duur zou de gate heropenen):
+- audio_utils.estimate_upload_reserve_cost: bepaalt de duur met ffprobe/pydub; faalt dat
+  → royale schatting uit bestandsgrootte (UPLOAD_FALLBACK_BYTES_PER_SEC=8000 ~64kbps,
+  overschat bewust; overschatten is veilig want settle+refund corrigeren). NOOIT stil 1.
+- main.py: voor uploads het temp-bestand één keer geschreven + geprobed VÓÓR estimated_cost,
+  zodat de balans-pre-check én reserve nu 402'en bij te weinig credits. Temp hergebruikt
+  door de pipeline (niet dubbel schrijven); opgeruimd bij vroege return (_cleanup_tmp).
+- transcription_pipeline.py: known_duration_seconds-passthrough vermijdt dubbel proben —
+  alleen doorgegeven bij een geslaagde probe (size_fallback=None → pipeline probet zelf →
+  settle blijft op de ECHTE duur, of de job faalt netjes + volledige refund).
+
+Settle/refund-logica ONGEWIJZIGD (test 1 bewees settle 22 op de echte 1296s). Geen
+frontend-wijziging, geen migratie. Hardening binnen ADR-050 (geen nieuwe ADR).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/audio_utils.py
+backend/main.py
+backend/transcription_pipeline.py
+---
+[2026-07-07 23:35] commit: test(credits): upload-reserve probe O + fail-probe fallback P, 76/76 (ADR-050)
+
+O: 90s stilte-WAV (pure-python wave) → estimate_upload_reserve_cost geeft credits=2,
+source='probe' (niet 1). Wrapper e2e: reserve = probe-cost (2) → settle 2 → refund 0,
+balans == baseline (één keer bewogen bij reserve); overshoot-geval reserve 5 → settle 2
+→ refund 3 → balans baseline+3. Bewijst reserve=geprobede duur, settle=echte duur,
+refund=verschil, balans exact één keer. Delta-asserts consistent met J/K.
+P: garbage .mp3 (2 MB onleesbaar) → ffprobe+pydub falen → source='size_fallback',
+credits == max(1, ceil(size/8000/60)) én != 1 → nooit stil reserve=1 (gate niet leeg).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_settle_refund.py
+---
