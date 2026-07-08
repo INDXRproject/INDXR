@@ -662,6 +662,43 @@ def _cleanup_tmp(path: Optional[str]) -> None:
             pass
 
 
+MAX_CONCURRENT_JOBS = 3
+
+def _count_active_jobs(supabase, user_id: str) -> int:
+    """
+    Tel de daadwerkelijk lopende jobs van een user over transcription_jobs +
+    playlist_extraction_jobs — voor de concurrency-cap (ADR-050), die VÓÓR elke
+    credit-reservering draait. Mirrort de dedup-versheidsfilter (created <30m OF
+    heartbeat <10m) zodat zombie/stale jobs (bv. de april-crashes) niet meetellen.
+    'interrupted' is een watchdog-herstelstaat → bewust NIET meegeteld.
+    Service-role client => geen RLS; daarom expliciet op user_id filteren.
+    Houd de statuslijsten in sync met ActiveJobsIndicator (LESSONS: active-job filter).
+    """
+    fresh_created = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+    fresh_hb = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+    or_fresh = f'created_at.gt.{fresh_created},last_heartbeat_at.gt.{fresh_hb}'
+    tx = (supabase.table('transcription_jobs')
+          .select('id', count='exact', head=True)
+          .eq('user_id', user_id)
+          .in_('status', ['pending', 'downloading', 'transcribing', 'saving'])
+          .or_(or_fresh)
+          .execute())
+    pl = (supabase.table('playlist_extraction_jobs')
+          .select('id', count='exact', head=True)
+          .eq('user_id', user_id)
+          .in_('status', ['running', 'retry_pending'])
+          .or_(or_fresh)
+          .execute())
+    return (tx.count or 0) + (pl.count or 0)
+
+
+def _too_many_jobs_response() -> JSONResponse:
+    return JSONResponse(status_code=429, content={
+        "error": f"You have {MAX_CONCURRENT_JOBS} jobs running — wait for one to finish before starting another.",
+        "code": "too_many_jobs",
+    })
+
+
 @app.post("/api/transcribe/whisper")
 async def transcribe_with_whisper(
     request: Request,
@@ -793,6 +830,13 @@ async def transcribe_with_whisper(
             _ex = _existing.data[0]
             logger.info(f"[dedup] Returning existing job {_ex['id']} status={_ex['status']} for {video_id} (user={user_id})")
             return JSONResponse({"job_id": _ex['id'], "status": _ex['status'], "deduplicated": True})
+
+    # Concurrency cap (ADR-050) — reject BEFORE reserving credits, and after dedup so
+    # a dedup-hit doesn't count. A denied job never inserts a row and never reserves.
+    _active = await asyncio.to_thread(_count_active_jobs, supabase, user_id)
+    if _active >= MAX_CONCURRENT_JOBS:
+        _cleanup_tmp(upload_tmp_path)
+        return _too_many_jobs_response()
 
     # Insert job row into Supabase transcription_jobs
     job_id = str(uuid.uuid4())
@@ -1122,6 +1166,13 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
         return JSONResponse(status_code=400, content={"error": "video_ids must not be empty"})
 
     supabase = get_supabase_client()
+
+    # Concurrency cap (ADR-050) — reject BEFORE the job row + reservation, so a denied
+    # job (incl. a retry / retry-all that would exceed the cap) never reserves credits.
+    _active = await asyncio.to_thread(_count_active_jobs, supabase, request.user_id)
+    if _active >= MAX_CONCURRENT_JOBS:
+        return _too_many_jobs_response()
+
     job_id = str(uuid.uuid4())
 
     try:
