@@ -7292,3 +7292,77 @@ packages/shared/src/components/free-tool/AudioTab.tsx
 packages/shared/src/components/free-tool/PlaylistTab.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 ---
+[2026-07-08 00:45] commit: docs(credits): completion-receipt style-anchor LESSON + credit-system wiki + LOG (ADR-050 fase 3)
+
+LESSONS: completion-receipt-één-component-stilte-bij-succes (build status/financial feedback
+as one variant-driven reusable inline component, not per-screen; read the structured refund
+metadata never the reason string; distinguish failure-refund from over-estimate; refresh the
+balance on job start too). Wiki credit-system: new "Completion Receipt / reserve-transparantie"
+section + note that refreshCredits() now runs on job start. LOG entry.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/credit-system.md
+---
+[2026-07-08 01:00] precompact: context compaction triggered
+
+[2026-07-08 03:30] taak: 5 fixes na live-test (launch-ready) | fix1 receipt aggregeert playlist-retries over collection_id + refreshToken (verrekening geverifieerd correct tegen ledger de42c5d4: reserved 154/used 153/net-refund 1/12-0 — puur weergave, geen settlement-bug); fix2 ActiveJobsIndicator telt echte gelijktijdige jobs via RLS ipv sessionStorage-per-type; fix3 concurrency-cap max 3 (_count_active_jobs) VÓÓR reserve in /whisper + /playlist/extract → 429 too_many_jobs (getest: count bereikt 3, weigert vóór reservering); fix4 playlist-samenvatting behoudt totaaltijd na retry; fix5 "Retry all failed" via gedeelde _startRetryJob (hergebruikt exact het playlist-reserve-pad, geen apart pad). build+tsc+py_compile groen. NIET gepusht. | gewijzigd: packages/shared/src/hooks/useCompletionReceipt.ts, packages/shared/src/components/free-tool/PlaylistTab.tsx, packages/shared/src/components/PlaylistManager.tsx, apps/app/src/components/dashboard/ActiveJobsIndicator.tsx, backend/main.py, docs/LESSONS.md, docs/wiki/architecture/credit-system.md
+[2026-07-08 22:50] commit: fix(ui): playlist receipt aggregates retries by collection_id + Retry-all (ADR-050)
+
+Fix 1 (BLOCKER, display-only): a playlist retry (per-video and the new "Retry all")
+runs as a SEPARATE playlist job with its own playlist_id but the same collection_id.
+useCompletionReceipt now aggregates the playlist over collection_id — merges every
+collection job (success wins per video) and sums settlements/refunds across them — so
+the receipt shows the true end-state after retries (e.g. 12 transcribed / 0 skipped,
+corrected credit total) instead of the frozen first-run snapshot. A refreshToken param
+re-fetches on retry completion (the anchor id doesn't change). Falls back to job-scoped
+when there is no collection_id. The ledger itself was already correct (reserve==settle
+per job, refund deferred past the retry pass) — verified against the real ledger of
+collection de42c5d4: reserved 154 / used 153 / net refund 1 / 12 transcribed / 0 skipped.
+
+Fix 5: "Retry all failed videos" — one new collection job for all blocked/timeout
+videos at once (sharing collection_id so the receipt aggregates it). handleRetryVideo
+and handleRetryAll share a single _startRetryJob, reusing the EXACT playlist
+reserve/settle path (no separate reserve path, no separate settlement risk). The
+concurrency cap applies since it hits the same endpoint.
+
+Fix 4: the playlist summary keeps the original total extraction time after a retry
+(the retry restarts the parent's elapsed timer, which would otherwise overwrite the
+whole-playlist time with the retry's few seconds) — preserve finalElapsed, reset it in
+handleReset for a genuinely new extraction.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/PlaylistTab.tsx
+packages/shared/src/hooks/useCompletionReceipt.ts
+---
+[2026-07-08 22:51] commit: fix(ui): active-jobs indicator counts real concurrent jobs via RLS
+
+Fix 2: the old indicator counted sessionStorage keys — one per job-type — so two
+concurrent same-type jobs collapsed into "1 job in progress" (and the count was lost on
+reload / another device). Now it counts genuinely-running jobs straight from the DB
+under RLS: two count queries over transcription_jobs (pending/downloading/transcribing/
+saving) + playlist_extraction_jobs (running/retry_pending), with the dedup freshness
+filter (created <30m OR heartbeat <10m) so zombie/stale jobs don't count. Status lists
+mirror the backend concurrency cap — keep in sync (see LESSONS: active-job filter).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/dashboard/ActiveJobsIndicator.tsx
+---
+[2026-07-08 22:51] commit: feat(backend): cap concurrent jobs at 3 before credit reservation (ADR-050)
+
+Fix 3 (financial-critical placement): _count_active_jobs(user_id) counts a user's
+non-terminal, fresh jobs across transcription_jobs + playlist_extraction_jobs (same
+freshness filter as dedup — zombie/stale jobs excluded; 'interrupted' is a watchdog
+recovery state, not counted). The cap check runs BEFORE any credit reservation — in
+/api/transcribe/whisper (after dedup, before the job insert + reserve_credits) and in
+/api/playlist/extract (before the insert + reserve) — so a denied job never reserves
+credits. At >= 3 active it returns HTTP 429 {code: too_many_jobs}; both Next.js routes
+already forward the status + error to the UI. Applies to retry / Retry-all too (same
+endpoint). Verified: with 3 fresh active rows the count hits 3 and the 4th request is
+rejected before insert/reserve.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+---
