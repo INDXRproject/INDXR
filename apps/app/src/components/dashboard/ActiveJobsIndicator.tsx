@@ -3,86 +3,48 @@
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { cn } from "@indxr/shared/lib/utils"
-
-const AUDIO_JOB_KEY  = 'indxr-active-audio-job'
-const VIDEO_JOB_KEY  = 'indxr-active-video-job'
-const PLAYLIST_JOB_KEY = 'indxr-active-playlist-job'
+import { createClient } from "@indxr/shared/utils/supabase/client"
 
 const POLL_INTERVAL_MS = 30_000
 
-type ActiveJob = {
-  type: 'audio' | 'video' | 'playlist'
-  jobId: string
-  label: string
-}
-
-const TERMINAL = new Set(['complete', 'error', 'interrupted'])
-
-async function checkJobAlive(endpoint: string, jobId: string): Promise<boolean> {
-  try {
-    const resp = await fetch(`${endpoint}/${jobId}`)
-    if (!resp.ok) return false
-    const data = await resp.json()
-    return !TERMINAL.has(data.status)
-  } catch {
-    return false
-  }
-}
-
-function readActiveJobs(): ActiveJob[] {
-  const jobs: ActiveJob[] = []
-  try {
-    const raw = sessionStorage.getItem(AUDIO_JOB_KEY)
-    if (raw) {
-      const p = JSON.parse(raw)
-      jobs.push({ type: 'audio', jobId: p.jobId, label: p.filename ?? 'Audio job' })
-    }
-  } catch { /* ignore */ }
-  try {
-    const raw = sessionStorage.getItem(VIDEO_JOB_KEY)
-    if (raw) {
-      const p = JSON.parse(raw)
-      jobs.push({ type: 'video', jobId: p.jobId, label: p.title ?? 'Video job' })
-    }
-  } catch { /* ignore */ }
-  try {
-    const raw = sessionStorage.getItem(PLAYLIST_JOB_KEY)
-    if (raw) {
-      const p = JSON.parse(raw)
-      jobs.push({ type: 'playlist', jobId: p.jobId, label: p.playlistTitle ?? 'Playlist job' })
-    }
-  } catch { /* ignore */ }
-  return jobs
-}
+// Non-terminal statuses per table (mirrors the backend concurrency-cap / dedup
+// filter — keep in sync, see LESSONS "active-job filter"). "Fresh" = created in the
+// last 30m OR a heartbeat in the last 10m, which excludes zombie/stale jobs (e.g.
+// the April crashes) exactly like the dedup query in main.py.
+const TX_ACTIVE = ['pending', 'downloading', 'transcribing', 'saving']
+const PL_ACTIVE = ['running', 'retry_pending']
 
 interface Props {
   collapsed?: boolean
 }
 
+// Counts the user's genuinely-running jobs straight from the DB under RLS. This
+// replaces the old sessionStorage approach, which kept one key per job-type and so
+// collapsed two concurrent same-type jobs into a count of 1 (and lost the count on
+// reload / another device).
 export function ActiveJobsIndicator({ collapsed }: Props) {
   const [activeCount, setActiveCount] = useState(0)
-  const [firstJobType, setFirstJobType] = useState<'audio' | 'video' | 'playlist' | null>(null)
+  const [hasPlaylist, setHasPlaylist] = useState(false)
 
   const refresh = useCallback(async () => {
-    const candidates = readActiveJobs()
-    if (candidates.length === 0) { setActiveCount(0); setFirstJobType(null); return }
-
-    const results = await Promise.all(
-      candidates.map(j => {
-        const endpoint = j.type === 'playlist' ? '/api/playlist/jobs' : '/api/jobs'
-        return checkJobAlive(endpoint, j.jobId).then(alive => {
-          if (!alive) {
-            const key = j.type === 'audio' ? AUDIO_JOB_KEY : j.type === 'video' ? VIDEO_JOB_KEY : PLAYLIST_JOB_KEY
-            sessionStorage.removeItem(key)
-          }
-          return alive ? j : null
-        })
-      })
-    )
-
-    const alive = results.filter(Boolean) as ActiveJob[]
-    setActiveCount(alive.length)
-    setFirstJobType(alive[0]?.type ?? null)
+    try {
+      const supabase = createClient()
+      const freshCreated = new Date(Date.now() - 30 * 60_000).toISOString()
+      const freshHeartbeat = new Date(Date.now() - 10 * 60_000).toISOString()
+      const orFresh = `created_at.gt.${freshCreated},last_heartbeat_at.gt.${freshHeartbeat}`
+      const [tx, pl] = await Promise.all([
+        supabase.from('transcription_jobs').select('id', { count: 'exact', head: true })
+          .in('status', TX_ACTIVE).or(orFresh),
+        supabase.from('playlist_extraction_jobs').select('id', { count: 'exact', head: true })
+          .in('status', PL_ACTIVE).or(orFresh),
+      ])
+      const plCount = pl.count ?? 0
+      setActiveCount((tx.count ?? 0) + plCount)
+      setHasPlaylist(plCount > 0)
+    } catch {
+      setActiveCount(0)
+      setHasPlaylist(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -93,11 +55,7 @@ export function ActiveJobsIndicator({ collapsed }: Props) {
 
   if (activeCount === 0) return null
 
-  const href = firstJobType === 'playlist'
-    ? '/dashboard/transcribe?tab=playlist'
-    : firstJobType === 'audio'
-    ? '/dashboard/transcribe?tab=audio'
-    : '/dashboard/transcribe'
+  const href = hasPlaylist ? '/dashboard/transcribe?tab=playlist' : '/dashboard/transcribe'
 
   return (
     <Link
