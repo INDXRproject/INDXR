@@ -84,7 +84,9 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
           'X-Backend-Secret': process.env.BACKEND_API_SECRET || '',
         },
-        body: JSON.stringify({ videoIdOrUrl }),
+        // user_id (server-derived) lets the backend apply the concurrency cap to
+        // authenticated users; anonymous callers send null and stay uncapped.
+        body: JSON.stringify({ videoIdOrUrl, user_id: user?.id ?? null }),
       });
 
       const data = await response.json();

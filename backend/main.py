@@ -167,6 +167,7 @@ app.add_middleware(
 # Request/Response Models
 class ExtractRequest(BaseModel):
     videoIdOrUrl: str
+    user_id: Optional[str] = None  # geauthenticeerde caller (concurrency-cap); None voor anon marketing
 
 class TranscriptItem(BaseModel):
     text: str
@@ -262,6 +263,14 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
     """Extract transcript from YouTube video using yt-dlp."""
     try:
         video_id = extract_video_id(request.videoIdOrUrl)
+
+        # Concurrency-cap (resource-bescherming, geen credits): een geauthenticeerde user met >= MAX
+        # lopende jobs mag geen extra yt-dlp/proxy-belasting starten. Anonieme marketing-requests
+        # (geen user_id) blijven ongewijzigd (IP-rate-limited door de Next.js-route).
+        if request.user_id:
+            _cap_sb = get_supabase_client()
+            if await asyncio.to_thread(_count_active_jobs, _cap_sb, request.user_id) >= MAX_CONCURRENT_JOBS:
+                return _too_many_jobs_response()
         # Language-agnostic key — language lives in the stored value, not the key.
         cache_key = f"caption:{video_id}"
         redis = get_caption_redis()
