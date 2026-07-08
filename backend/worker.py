@@ -33,6 +33,7 @@ from credit_manager import (
 from transcription_pipeline import (
     _classify_download_error,
     _run_with_heartbeat,
+    CAPTION_EXTRACT_TIMEOUT,
     do_assemblyai_transcription,
     run_whisper_reservation_aware,
     refund_with_retry,
@@ -192,8 +193,18 @@ async def _process_caption_video(
             credit_amount = 0 if is_free else 1
             return True, transcript_id, None, credit_amount
 
-    # Cascade step 1: youtube-transcript-api (faster, no yt-dlp overhead)
-    extract_result = await extract_via_youtube_transcript_api(video_id, session_id=proxy_session, lang_pref=normalised_lang)
+    # Cascade step 1: youtube-transcript-api (faster, no yt-dlp overhead).
+    # Timeout-gewrapt zodat een hangende step-1-fetch de keten niet blokkeert; een timeout hier
+    # valt door naar step 2/3 (net als een normale step-1-miss), niet naar een harde fout.
+    try:
+        extract_result = await _run_with_heartbeat(
+            extract_via_youtube_transcript_api(video_id, session_id=proxy_session, lang_pref=normalised_lang),
+            heartbeat_fn,
+            timeout=CAPTION_EXTRACT_TIMEOUT,
+        )
+    except Exception as step1_err:
+        logger.info(f"[CASCADE] {video_id}: step 1 timed out/failed ({type(step1_err).__name__}), trying step 2")
+        extract_result = None
     caption_model = "youtube_transcript_api"
 
     # ── Cascade step 1 metadata enrichment (reuse pre_meta if available) ──
@@ -226,6 +237,7 @@ async def _process_caption_video(
             extract_result = await _run_with_heartbeat(
                 extract_with_ytdlp(video_id, use_proxy=True, session_id=proxy_session, lang_pref=normalised_lang),
                 heartbeat_fn,
+                timeout=CAPTION_EXTRACT_TIMEOUT,
             )
             caption_model = "youtube_captions"
         except MembersOnlyVideoError:
@@ -236,6 +248,7 @@ async def _process_caption_video(
             extract_result = await _run_with_heartbeat(
                 extract_with_ytdlp(video_id, use_proxy=True, session_id=proxy_session, clients=['tv', 'android'], lang_pref=normalised_lang),
                 heartbeat_fn,
+                timeout=CAPTION_EXTRACT_TIMEOUT,
             )
             caption_model = "youtube_captions_rotated"
 
@@ -869,6 +882,110 @@ async def _reconcile_unrefunded_reserved(supabase, limit: int = 50) -> None:
             sentry_sdk.capture_exception(e)
 
 
+# ── Stuck-running-playlist reap (stuck-playlist fix) ─────────────────────────────
+REAP_PROGRESS_STALE_MIN = 25   # geen video voltooid in 25min (of nooit voortgang & ouder dan 25min)
+REAP_HEARTBEAT_STALE_MIN = 5   # geen levende worker: heartbeat NULL of ouder dan 5min
+
+# Pass 1b re-enqueue is niet meer one-shot: een transient-geïnterrumpeerde playlist krijgt tot 3
+# herstelpogingen (met de per-video-timeout uit Fix 1 hangen retries niet meer). Bij uitputting
+# refundt Pass 2b (interrupted + attempts>=1 + stale) of reapt Pass 3 (stuck 'running').
+MAX_PLAYLIST_WATCHDOG_ATTEMPTS = 3
+
+
+def _should_reap_running_playlist(job: dict, now: datetime) -> bool:
+    """Pure predikaat voor de stale-'running'-playlist reap (Fix 2). BEIDE condities moeten gelden:
+
+      (1) VOORTGANG stale: COALESCE(last_progress_at, created_at) ouder dan 25min. last_progress_at
+          wordt per video door de RPC update_playlist_video_progress gezet; de created_at-fallback
+          vangt de never-progressed zombie (progress NULL, created oud). Een vers-gestarte playlist
+          (recente created_at, NULL progress) is NIET stale → wordt NOOIT gereapt.
+      (2) HEARTBEAT stale: last_heartbeat_at NULL of ouder dan 5min. Dit is een PROTECTIEVE guard,
+          geen trigger: een legitiem trage whisper-video tikt elke 60s heartbeat → progress oud maar
+          heartbeat vers → NIET gereapt. Combined met de per-video-timeout (Fix 1, elke healthy worker
+          tikt <2min) betekent een heartbeat ≥5min stale een DODE worker → geen latere settlement →
+          geen money-loss-window bij de refund-vóór-claim.
+    """
+    prog_raw = job.get('last_progress_at') or job.get('created_at')
+    if not prog_raw:
+        return False  # geen tijdsreferentie — defensief niet rapen
+    try:
+        prog = datetime.fromisoformat(prog_raw)
+    except (ValueError, TypeError):
+        return False
+    if prog >= now - timedelta(minutes=REAP_PROGRESS_STALE_MIN):
+        return False  # recente voortgang (of net gestart) → gezond
+
+    hb_raw = job.get('last_heartbeat_at')
+    if hb_raw:
+        try:
+            hb = datetime.fromisoformat(hb_raw)
+        except (ValueError, TypeError):
+            hb = None
+        if hb is not None and hb >= now - timedelta(minutes=REAP_HEARTBEAT_STALE_MIN):
+            return False  # verse heartbeat → levende worker (trage video) → niet rapen
+    return True
+
+
+async def _reap_stale_running_playlist(supabase, job: dict) -> None:
+    """Fix 2: refund + terminale-claim voor een vastgelopen 'running' playlist. REFUND-VÓÓR-CLAIM
+    (zelfde faalmodus-omkering als Pass 2b), idempotent via (playlist_id,'refund') + CAS op
+    status='running' (dubbel-reap-guard). Markeert onverwerkte video's als 'timeout' (retryable via de
+    bestaande Retry-all UX) en zet status='complete' → frontend toont Final Summary + retry-knoppen.
+    NIET auto-re-enqueuen (voorkomt oneindige hang-loop; de gebruiker retryt zelf)."""
+    playlist_id = job['id']
+    reserved = job.get('credits_reserved') or 0
+
+    # 1. Refund EERST (alleen als er gereserveerd is — pre-ADR-050 zombies hebben reserved 0/NULL →
+    #    skip refund, alleen terminaal markeren). Idempotent via (playlist_id,'refund'). Faalt →
+    #    status blijft 'running' → volgende cyclus retry't (zoals _refund_then_claim_playlist).
+    if reserved > 0:
+        r = await asyncio.to_thread(refund_credits, None, playlist_id)
+        if not (r and r.get('success')):
+            logger.error(
+                f"[WATCHDOG reap] playlist {playlist_id}: refund FAILED, blijft 'running' "
+                f"-> retry volgende cyclus: {r}"
+            )
+            with sentry_sdk.push_scope() as scope:
+                scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                scope.set_tag("pass", "reap-running")
+                scope.set_tag("refund_failed", "true")
+                scope.set_tag("job_id", playlist_id)
+                scope.set_tag("user_id", str(job.get('user_id', 'unknown')))
+                scope.set_extra("refund_result", r)
+            sentry_sdk.capture_message(
+                "Watchdog reap: stale-running playlist refund failed (left running for retry)",
+                level="error",
+            )
+            return
+
+    # 2. Markeer onverwerkte video's als getimede-out (retryable via Retry-all) + herbereken failed.
+    video_ids = job.get('video_ids') or []
+    vr = dict(job.get('video_results') or {})
+    newly_failed = 0
+    for vid in video_ids:
+        if vid not in vr:
+            vr[vid] = {'status': 'error', 'error_type': 'timeout'}
+            newly_failed += 1
+    new_failed = (job.get('failed') or 0) + newly_failed
+
+    # 3. CAS-claim terminal: alleen als nog steeds 'running' → idempotent + dubbel-reap + race-guard.
+    claim = await asyncio.to_thread(
+        lambda: supabase.table('playlist_extraction_jobs').update({
+            'status': 'complete',
+            'video_results': vr,
+            'failed': new_failed,
+            'completed_at': datetime.now(timezone.utc).isoformat(),
+        }).eq('id', playlist_id).eq('status', 'running').execute()
+    )
+    if not claim.data:
+        logger.info(f"[WATCHDOG reap] playlist {playlist_id}: al verwerkt/gewijzigd — skip")
+    else:
+        logger.warning(
+            f"[WATCHDOG reap] playlist {playlist_id} -> reserved={reserved} "
+            f"(refunded indien >0), {newly_failed} video's timeout, status=complete"
+        )
+
+
 async def watchdog_interrupted_jobs(ctx: dict) -> None:
     """
     ARQ cron: crash-recovery voor interrupted Whisper- en playlist-jobs.
@@ -1049,9 +1166,9 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         result = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-                .select('id,user_id,video_ids,video_results,completed,failed,total_videos,status,last_heartbeat_at')
+                .select('id,user_id,video_ids,video_results,completed,failed,total_videos,status,last_heartbeat_at,watchdog_attempts')
                 .in_('status', ['interrupted', 'retry_pending'])
-                .eq('watchdog_attempts', 0)
+                .lt('watchdog_attempts', MAX_PLAYLIST_WATCHDOG_ATTEMPTS)
                 .gt('created_at', cutoff_24h)
                 .execute()
         )
@@ -1072,11 +1189,12 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                         continue
                     _job_id = f"{playlist_id}:retries"
                     await redis.delete(f'arq:job:{_job_id}', f'arq:in-progress:{_job_id}')
+                    _attempts = job.get('watchdog_attempts', 0)
                     claim = await asyncio.to_thread(
-                        lambda pid=playlist_id: supabase.table('playlist_extraction_jobs').update({
-                            'watchdog_attempts': 1,
+                        lambda pid=playlist_id, a=_attempts: supabase.table('playlist_extraction_jobs').update({
+                            'watchdog_attempts': a + 1,
                             'last_heartbeat_at': None,
-                        }).eq('id', pid).eq('watchdog_attempts', 0).execute()
+                        }).eq('id', pid).eq('watchdog_attempts', a).execute()
                     )
                     if not claim.data:
                         logger.info(f"[WATCHDOG] playlist {playlist_id} retry-pass: al geclaimd — skip")
@@ -1116,12 +1234,13 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
 
                 _job_id = f"{playlist_id}:{video_index}"
                 await redis.delete(f'arq:job:{_job_id}', f'arq:in-progress:{_job_id}')
+                _attempts = job.get('watchdog_attempts', 0)
                 claim = await asyncio.to_thread(
-                    lambda pid=playlist_id: supabase.table('playlist_extraction_jobs').update({
+                    lambda pid=playlist_id, a=_attempts: supabase.table('playlist_extraction_jobs').update({
                         'status': 'running',
-                        'watchdog_attempts': 1,
+                        'watchdog_attempts': a + 1,
                         'last_heartbeat_at': None,
-                    }).eq('id', pid).eq('watchdog_attempts', 0).execute()
+                    }).eq('id', pid).eq('watchdog_attempts', a).execute()
                 )
                 if not claim.data:
                     logger.info(f"[WATCHDOG] playlist {playlist_id}: al geclaimd door andere cyclus — skip")
@@ -1232,6 +1351,43 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # Pass 2/2b. De anti-join (credits_reserved>0 + geen refund-rij) levert precies die gemiste
     # refunds; Pass 2c boekt ze idempotent zonder de status te muteren (cap = 50 rijen/cyclus/tabel).
     await _reconcile_unrefunded_reserved(supabase, limit=50)
+
+    # ── Pass 3: reap stale RUNNING playlists (stuck-playlist fix) ──────────────
+    # Een 'running' playlist waarvan de ARQ-keten stierf is onzichtbaar voor Pass 1b/2b (die query'en
+    # alleen 'interrupted'/'retry_pending') én voor de poll-endpoint (die flipt 'running'→'interrupted'
+    # ALLEEN bij aanwezige heartbeat). Detectie op VOORTGANG (last_progress_at, fallback created_at)
+    # ≥25min stale ÉN heartbeat ≥5min stale/NULL — zie _should_reap_running_playlist. De heartbeat-guard
+    # sluit een levende worker (trage whisper) uit → geen latere settlement → geen money-loss.
+    try:
+        _reap_progress_cutoff = (now - timedelta(minutes=REAP_PROGRESS_STALE_MIN)).isoformat()
+        result = await asyncio.to_thread(
+            lambda: supabase.table('playlist_extraction_jobs')
+                .select('id,user_id,video_ids,video_results,completed,failed,total_videos,'
+                        'credits_reserved,last_heartbeat_at,last_progress_at,created_at')
+                .eq('status', 'running')
+                .or_(f'last_progress_at.lt.{_reap_progress_cutoff},last_progress_at.is.null')
+                .limit(200)
+                .execute()
+        )
+        for job in (result.data or []):
+            if not _should_reap_running_playlist(job, now):
+                continue
+            try:
+                await _reap_stale_running_playlist(supabase, job)
+            except Exception as e:
+                logger.error(f"[WATCHDOG reap] failed for {job.get('id')}: {e}")
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                    scope.set_tag("pass", "reap-running")
+                    scope.set_tag("job_id", str(job.get('id')))
+                sentry_sdk.capture_exception(e)
+    except Exception as e:
+        logger.warning(f"[WATCHDOG reap] query failed (transient, retry in 2min): {e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "reap-running")
+            scope.set_level("warning")
+        sentry_sdk.capture_exception(e)
 
 
 async def noop_task(ctx: dict) -> str:

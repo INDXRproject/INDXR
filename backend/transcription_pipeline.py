@@ -64,16 +64,39 @@ async def _heartbeat_loop(heartbeat_fn, interval: int = 60) -> None:
             pass  # nooit crashen door heartbeat-fout
 
 
-async def _run_with_heartbeat(awaitable, heartbeat_fn):
+# Per-extractie wall-clock ceilings (stuck-playlist fix). Kappen een hangende yt-dlp-download/
+# caption-extractie zodat één video de sequentiële playlist-keten niet blokkeert. Ruim boven normaal,
+# ver onder de watchdog reap-drempel (25min) en de 2u ARQ job_timeout. NOOIT op AssemblyAI-polling.
+CAPTION_EXTRACT_TIMEOUT = 120.0   # captions = tekst; seconden normaal, 120s vangt een yt-dlp-hang
+AUDIO_DOWNLOAD_TIMEOUT = 600.0    # grote audio over trage residential proxy (ruim, < reap-drempel)
+
+
+async def _run_with_heartbeat(awaitable, heartbeat_fn, timeout: Optional[float] = None):
     """
     Voert `awaitable` uit terwijl `heartbeat_fn` elke 60s op de achtergrond tikt.
     Als heartbeat_fn None is, wordt awaitable direct uitgevoerd (geen overhead).
+
+    Als `timeout` gezet is, wordt de awaitable na `timeout` seconden afgebroken met een
+    `TimeoutError` waarvan de message "timed out" bevat → `_classify_download_error` mapt 'm naar
+    het bestaande retryable `'timeout'`-type (error→refund→retry). GEBRUIK ALLEEN op de
+    yt-dlp/caption-EXTRACTIE-stap (waar de hang zit), NOOIT op de AssemblyAI-transcriptie-poll —
+    een legitiem trage whisper-video mag niet gekilld worden. NB: bij een `asyncio.to_thread`-
+    awaitable stopt de timeout de onderliggende thread niet (Python kan threads niet killen); de
+    coroutine raist wél en de keten gaat door — de losgekoppelde thread eindigt vanzelf.
     """
+    async def _await_it():
+        if timeout is None:
+            return await awaitable
+        try:
+            return await asyncio.wait_for(awaitable, timeout)
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"extraction timed out after {timeout:.0f}s")
+
     if heartbeat_fn is None:
-        return await awaitable
+        return await _await_it()
     task = asyncio.create_task(_heartbeat_loop(heartbeat_fn))
     try:
-        return await awaitable
+        return await _await_it()
     finally:
         task.cancel()
         try:
@@ -381,6 +404,7 @@ async def do_assemblyai_transcription(
                 audio_path, video_title, channel = await _run_with_heartbeat(
                     asyncio.to_thread(extract_youtube_audio, video_id, proxy_urls=proxy_urls),
                     heartbeat_fn,
+                    timeout=AUDIO_DOWNLOAD_TIMEOUT,  # kap een hangende download → 'timeout' (retryable)
                 )
                 temp_files.append(audio_path)
             except MembersOnlyVideoError:
