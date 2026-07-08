@@ -58,6 +58,7 @@ interface PlaylistManagerProps {
   onError: (message: string | null) => void;
   onSwitchToAudio?: () => void;
   onRetryVideo?: (videoId: string) => void;
+  onRetryAll?: (videoIds: string[]) => void;
   elapsedSeconds?: number;
   resumePlaylist?: { title: string; entries: PlaylistEntry[] } | null;
   receipt?: ReceiptData;
@@ -69,7 +70,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryVideo, elapsedSeconds = 0, resumePlaylist, receipt }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryVideo, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -100,7 +101,11 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       )
       if (allDone) {
          setIsCompleted(true)
-         setFinalElapsed(elapsedSeconds)
+         // Keep the original run's total time. A retry restarts the parent's
+         // elapsedSeconds from 0, so overwriting here would show the retry's short
+         // duration instead of the whole-playlist time. handleReset clears this for
+         // a genuinely new extraction (the only path back to the form).
+         setFinalElapsed(prev => prev > 0 ? prev : elapsedSeconds)
          refreshCredits()
       }
     } else if (isExtracting) {
@@ -122,6 +127,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   const handleReset = () => {
     setHasExtracted(false);
     setIsCompleted(false);
+    setFinalElapsed(0);
     setAvailabilityResults(null);
     setAvailabilitySummary(null);
     setShowAvailabilityModal(false);
@@ -513,9 +519,22 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       if (retryableEntries.length === 0 || !onRetryVideo) return null
                       return (
                         <div className="p-3 bg-surface-elevated/50 border border-border rounded-lg space-y-2">
-                          <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
-                            {retryableEntries.length} video{retryableEntries.length !== 1 ? 's' : ''} to retry
-                          </p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
+                              {retryableEntries.length} video{retryableEntries.length !== 1 ? 's' : ''} to retry
+                            </p>
+                            {onRetryAll && retryableIds.length > 1 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isExtracting}
+                                className="h-7 text-xs shrink-0"
+                                onClick={() => onRetryAll(retryableIds)}
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" /> Retry all {retryableIds.length}
+                              </Button>
+                            )}
+                          </div>
                           <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
                             {retryableEntries.map(e => (
                               <div key={e.id} className="flex items-center gap-2">

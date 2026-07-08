@@ -69,7 +69,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   // Active playlist job being tracked
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const [completedPlaylistId, setCompletedPlaylistId] = useState<string | null>(null)  // feeds the completion receipt (RLS read)
-  const playlistReceipt = useCompletionReceipt('playlist', completedPlaylistId, !!completedPlaylistId)
+  const [receiptNonce, setReceiptNonce] = useState(0)  // bumped on retry completion → re-fetch the collection-scoped receipt
+  const playlistReceipt = useCompletionReceipt('playlist', completedPlaylistId, !!completedPlaylistId, receiptNonce)
   const fallbackMetaRef = useRef<{ title?: string; url?: string; total?: number }>({})
   const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
 
@@ -123,6 +124,12 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       setFreeVideoIds(prev => { const s = new Set(prev); finalFreeIds.forEach(id => s.add(id)); return s })
       window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
       refreshCredits()
+      // The retry ran as a separate playlist job (same collection_id). Bump the nonce
+      // so the collection-scoped receipt re-fetches and shows the true end-state
+      // (retried videos now transcribed, corrected credit total) instead of the
+      // frozen first-run snapshot. completedPlaylistId stays the first run — its
+      // collection_id is the aggregation anchor.
+      setReceiptNonce(n => n + 1)
       setTimeout(() => {
         setLoading(false)
         if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
@@ -538,18 +545,28 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     }
   }
 
-  // Manual per-video retry: re-run a single failed (rate-limited/timeout) video
-  // as its own playlist job. A new job_id → new backend proxy session, so the
-  // retry lands on a fresh Decodo exit IP instead of the one YouTube 429'd.
-  // Already-succeeded videos are untouched (they aren't in this job); their
-  // statuses are preserved via the merge in _handlePlaylistComplete.
-  const handleRetryVideo = async (videoId: string) => {
-    if (loading) return
+  // Manual retry: re-run failed (rate-limited/timeout) videos as ONE new playlist
+  // job. A new job_id → new backend proxy session, so the retry lands on a fresh
+  // Decodo exit IP instead of the one YouTube 429'd. The retry job reuses the
+  // playlist's collection_id, so the completion receipt aggregates it into the
+  // whole-playlist total (see useCompletionReceipt + the isRetry branch above).
+  // Already-succeeded videos are untouched (they aren't in this job); their statuses
+  // are preserved via the merge in _handlePlaylistComplete. `handleRetryVideo`
+  // (one video) and `handleRetryAll` (all failed at once) share this path so both
+  // reuse the exact same reserve/settle logic as a normal playlist — no separate
+  // reserve path, no separate settlement risk.
+  const _startRetryJob = async (videoIds: string[]) => {
+    if (loading || videoIds.length === 0) return
     setError(null)
-    const prevStatus = videoStatuses[videoId]
-    const isWhisper = whisperVideoIds?.has(videoId) ?? false
-    retryVideoIdRef.current = videoId
-    setVideoStatuses(prev => ({ ...prev, [videoId]: 'extracting' }))
+    const prevStatuses: Record<string, VideoStatus | undefined> = {}
+    for (const vid of videoIds) prevStatuses[vid] = videoStatuses[vid]
+    const whisperIds = videoIds.filter(vid => whisperVideoIds?.has(vid) ?? false)
+    retryVideoIdRef.current = videoIds.join(',')  // non-null marks this as a retry
+    setVideoStatuses(prev => {
+      const next = { ...prev }
+      for (const vid of videoIds) next[vid] = 'extracting'
+      return next
+    })
 
     try {
       setLoading(true)
@@ -559,7 +576,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
 
       // Reuse the playlist's existing collection (found by title) so the retried
-      // transcript lands in the same place.
+      // transcript lands in the same place — and so the receipt can aggregate it.
       let autoCollectionId: string | undefined = undefined
       const title = fallbackMetaRef.current.title
       if (title) {
@@ -575,9 +592,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          video_ids: [videoId],
+          video_ids: videoIds,
           collection_id: autoCollectionId ?? null,
-          use_whisper_ids: isWhisper ? [videoId] : [],
+          use_whisper_ids: whisperIds,
           playlist_title: title ?? null,
           playlist_url: fallbackMetaRef.current.url ?? null,
         }),
@@ -585,7 +602,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
       if (!response.ok) {
         const err = await response.json()
-        throw new Error(err.error || 'Failed to retry video')
+        // Surfaces the concurrency-cap 429 ("You have 3 jobs running…") and credit errors.
+        throw new Error(err.error || 'Failed to retry')
       }
 
       const { job_id } = await response.json()
@@ -594,23 +612,32 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         jobId: job_id,
         startTime: Date.now(),
         playlistTitle: title ?? null,
-        videoIds: [videoId],
-        whisperIds: isWhisper ? [videoId] : [],
+        videoIds,
+        whisperIds,
       }))
-      setProgressMessage('Retrying 1 video with a fresh connection...')
+      setProgressMessage(videoIds.length === 1
+        ? 'Retrying 1 video with a fresh connection...'
+        : `Retrying ${videoIds.length} videos with a fresh connection...`)
       setActiveJobId(job_id)
       refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately
     } catch (error: unknown) {
       retryVideoIdRef.current = null
-      const errorMessage = error instanceof Error ? error.message : 'Failed to retry video'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to retry'
       setError({ message: errorMessage })
       setLoading(false)
       setProgressMessage("")
-      // Restore the row's original failed status so the retry button stays available.
-      setVideoStatuses(prev => ({ ...prev, [videoId]: prevStatus ?? 'bot_detection' }))
+      // Restore original failed statuses so the retry buttons stay available.
+      setVideoStatuses(prev => {
+        const next = { ...prev }
+        for (const vid of videoIds) next[vid] = prevStatuses[vid] ?? 'bot_detection'
+        return next
+      })
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
     }
   }
+
+  const handleRetryVideo = (videoId: string) => _startRetryJob([videoId])
+  const handleRetryAll = (videoIds: string[]) => _startRetryJob(videoIds)
 
   return (
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
@@ -721,6 +748,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         onError={(message) => setError(message ? { message } : null)}
         onSwitchToAudio={onSwitchToAudio}
         onRetryVideo={handleRetryVideo}
+        onRetryAll={handleRetryAll}
         elapsedSeconds={elapsedSeconds}
         resumePlaylist={resumePlaylist}
         receipt={playlistReceipt}
