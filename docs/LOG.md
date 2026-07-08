@@ -7366,3 +7366,67 @@ rejected before insert/reserve.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/main.py
 ---
+[2026-07-08 22:51] commit: docs: retry-aggregation + active-job-filter LESSONS, credit-system wiki, LOG
+
+LESSONS: playlist-retry-collection-scoped-receipt (retries are separate jobs sharing
+collection_id → aggregate read-only over collection_id, ledger stays correct, free-tier
+resets per job = Policy K) + active-job-filter-twee-implementaties-sync (keep backend
+_count_active_jobs and frontend ActiveJobsIndicator filters identical; cap before
+reserve). Wiki credit-system: retry-aggregation note on the Completion Receipt section
++ new Concurrency cap (max 3) section. LOG entry for the 5-fix batch.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/credit-system.md
+---
+
+[2026-07-09 05:30] taak: stuck-playlist fix (ADR-051, financieel-kritiek) | Fix1 per-video download-timeout (_run_with_heartbeat timeout= op yt-dlp/caption-extractie + whisper-download, NIET AssemblyAI-poll; 120s/600s; timeout→'timeout'→bestaand refund/retry-pad). Fix2 watchdog Pass 3 reap van stale 'running' playlists: detectie op VOORTGANG (last_progress_at, fallback created_at ≥25min) ÉN heartbeat stale/NULL (guard tegen levende worker → money-loss dicht); refund-vóór-claim (idempotent (playlist_id,'refund'), skip bij reserved 0), onverwerkte video's→'timeout', CAS-claim status='complete'. Fix3 Pass 1b bounded (attempts<3 i.p.v. =0, CAS op gelezen waarde). Fix4 caption-cap op /api/extract/youtube alleen voor geauth. users (anon ongewijzigd). Dry-run 3 stuck jobs: bfd1d7ed refund 9 + 8 timeout, 8da59fb7/0ad1c75c skip refund (0 reserved). 12 nieuwe unit-tests groen, geen nieuwe regressies (7 pre-existing add_credits-failures ongewijzigd), pnpm build + tsc + py_compile groen. | gewijzigd: backend/transcription_pipeline.py, backend/worker.py, backend/main.py, apps/app+marketing/.../api/extract/route.ts, backend/test_stuck_playlist_fix.py, docs/wiki/decisions/051-*, LESSONS, priorities
+[2026-07-09 01:25] commit: feat(backend): stuck-running-playlist recovery — per-video timeout + reap-pass + bounded Pass 1b (ADR-051)
+
+Root cause: a status='running' playlist whose ARQ chain died is invisible to every
+recovery path (poll-endpoint only flips running→interrupted when a heartbeat exists;
+no watchdog pass queried 'running'; Pass 1b was one-shot on attempts=0). One hung
+yt-dlp video blocked the sequential chain up to the 2h ARQ job_timeout. Evidence: a
+71-day-old 'running' zombie never reaped.
+
+Fix 1 (preventie): _run_with_heartbeat gains a timeout= param (asyncio.wait_for),
+applied to the yt-dlp/caption EXTRACTION step (caption cascade steps 1/2/3 + whisper
+audio download) but NOT the AssemblyAI poll (a legit slow whisper must not be killed).
+On timeout → TimeoutError("... timed out ...") → existing _classify_download_error →
+retryable 'timeout' → existing error→refund→retry path. 120s caption / 600s audio.
+
+Fix 2 (vangnet): new watchdog Pass 3. Detection (_should_reap_running_playlist) on a
+PROGRESS signal — COALESCE(last_progress_at, created_at) ≥25min stale — AND heartbeat
+stale/NULL (a protective guard: a live worker ticks heartbeat every 60s → not reaped;
+combined with Fix 1 this closes the money-loss window — a ≥5min-stale heartbeat means a
+dead worker → no settlement after the refund). Action refunds-BEFORE-terminal-claim via
+the existing refund_credits ((playlist_id,'refund') idempotent; skipped when reserved is
+0/NULL), marks unprocessed videos 'timeout' (retryable via Retry-all), CAS-claims
+status='complete' on .eq('status','running'). No auto-re-enqueue.
+
+Fix 3: Pass 1b bounded (watchdog_attempts < 3 instead of = 0), CAS on the read value.
+
+12 new unit tests (timeout classification + reap predicate false-positive guards + reap
+action idempotency). Verified against 3 stuck jobs (dry-run): bfd1d7ed refund 9, two
+0-reserved zombies skip refund. No new test regressions.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_stuck_playlist_fix.py
+backend/transcription_pipeline.py
+backend/worker.py
+---
+[2026-07-09 01:25] commit: feat(backend): cap free caption extraction for authenticated users (ADR-051)
+
+/api/extract/youtube bypassed the concurrency cap (yt-dlp + proxy load). It's shared
+with anonymous marketing traffic and had no user_id, so per-user capping is only
+meaningful for authenticated callers. ExtractRequest gains an optional user_id
+(server-derived in both Next.js routes); the backend rejects with 429 too_many_jobs
+when an authenticated user already has MAX_CONCURRENT_JOBS active. Anonymous callers
+send null and stay unchanged (IP-rate-limited by the Next.js route).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/extract/route.ts
+apps/marketing/src/app/api/extract/route.ts
+backend/main.py
+---
