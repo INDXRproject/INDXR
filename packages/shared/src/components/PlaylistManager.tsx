@@ -436,11 +436,11 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       const youtubeRestricted = vals.filter(s => s === 'youtube_restricted').length;
                       const extractionError = vals.filter(s => s === 'error').length;
                       const groups: string[] = [
-                        ...(botOrTimeout > 0 ? [`⚠️ ${botOrTimeout} video${botOrTimeout !== 1 ? 's' : ''} ${botOrTimeout !== 1 ? 'were' : 'was'} blocked by YouTube's rate limit and failed after an automatic retry. Retry ${botOrTimeout !== 1 ? 'them' : 'it'} below with a fresh connection, or use Audio Upload.`] : []),
+                        ...(botOrTimeout > 0 ? [`⚠️ ${botOrTimeout} video${botOrTimeout !== 1 ? 's' : ''} couldn't be fetched — YouTube's rate limit or a temporary connection issue — and failed after an automatic retry. Retry ${botOrTimeout !== 1 ? 'them' : 'it'} below with a fresh connection, or use Audio Upload.`] : []),
                         ...(ageRestricted > 0 ? [`🔞 ${ageRestricted} video${ageRestricted !== 1 ? 's' : ''} ${ageRestricted !== 1 ? 'are' : 'is'} age-restricted. YouTube prevents transcription of these videos. Download the audio manually and use Audio Upload instead.`] : []),
                         ...(membersOnly > 0 ? [`🔒 ${membersOnly} video${membersOnly !== 1 ? 's' : ''} ${membersOnly !== 1 ? 'are' : 'is'} members-only. You need a channel membership to access these videos.`] : []),
                         ...(youtubeRestricted > 0 ? [`🚫 ${youtubeRestricted} video${youtubeRestricted !== 1 ? 's' : ''} ${youtubeRestricted !== 1 ? 'are' : 'is'} unavailable or restricted on YouTube.`] : []),
-                        ...(extractionError > 0 ? [`❌ ${extractionError} video${extractionError !== 1 ? 's' : ''} failed due to a temporary connection error — try again later.`] : []),
+                        ...(extractionError > 0 ? [`❌ ${extractionError} video${extractionError !== 1 ? 's' : ''} failed with an unexpected error and couldn't be transcribed. This is uncommon — try Audio Upload, or contact support if it keeps happening.`] : []),
                       ];
                       if (groups.length === 0) return null;
                       return (

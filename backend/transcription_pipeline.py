@@ -128,7 +128,19 @@ def _classify_download_error(
         return 'age_restricted'
     if any(kw in lower for kw in ('sign in to confirm', 'confirming you', 'not a bot', '429', 'too many requests')):
         return 'bot_detection'
-    if any(kw in lower for kw in ('timed out', 'timeout', 'read timed out', '504', 'gateway timeout')):
+    # Transient network / connection failures map to the retryable 'timeout' family: on a
+    # residential proxy an unknown download drop is almost always recoverable with a fresh
+    # exit IP (same remedy as bot_detection). Reusing 'timeout' keeps ONE retryable slug that
+    # is already wired through every retry gate (worker retry-set, RPC v_has_retryable, the
+    # frontend retry filter/badge "Connection timeout"). Permanent errors (age_restricted /
+    # members_only / youtube_restricted) are matched earlier/below and stay non-retryable.
+    if any(kw in lower for kw in (
+        'timed out', 'timeout', 'read timed out', '504', 'gateway timeout',
+        'connection reset', 'connection aborted', 'connection refused', 'connection error',
+        'connection broken', 'broken pipe', 'econnreset', 'remote end closed',
+        'temporarily unavailable', 'temporary failure', 'network is unreachable',
+        '502', '503', 'bad gateway', 'service unavailable',
+    )):
         return 'timeout'
     if any(kw in lower for kw in ('bytes read', 'more expected', 'incomplete read')):
         # HTTP content-length mismatch after all retry attempts — residential proxy
