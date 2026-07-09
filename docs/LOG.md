@@ -7558,3 +7558,58 @@ the same video → completed=1, failed=1.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: supabase/migrations/20260709140000_playlist_progress_transition_aware_failed.sql
 ---
+[2026-07-09 13:50] commit: docs: net-final receipt + transition-aware counter lessons; correct FK-cascade note
+
+- LESSONS: receipt-net-final (derive from merged final state, not gross per-job);
+  playlist-progress-teller-transition-aware; and CORRECT the earlier "no FK cascade"
+  lesson — pg_constraint shows public tables DO have FKs to auth.users (most CASCADE;
+  transcripts=NO ACTION, usage_logs=SET NULL). information_schema missed cross-schema FKs.
+- priorities 1.26: fix the FK-cascade guidance for the reset accordingly.
+- LOG: three entries.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
+---
+
+[2026-07-09 15:30] taak: Fix A — extraction_error retrybaar via classificatie (connection/network-keywords → bestaande retryable 'timeout'-slug; geen nieuwe slug); eerlijke UI-copy voor timeout-groep + de onbekend-vangbak | gewijzigd: backend/transcription_pipeline.py, packages/shared/src/components/PlaylistManager.tsx, backend/test_error_classification.py
+[2026-07-09 15:30] taak: Fix B — transcripts→auth.users FK op ON DELETE CASCADE (migratie 20260709160000; 0 orphans geverifieerd, niets verwijderd). Transcript-cleanup: geen verweesde/test-transcripts (alle 719 bij echte users; mbelabas 714 niet aangeraakt) | gewijzigd: supabase/migrations/20260709160000_transcripts_fk_cascade.sql, docs/LESSONS.md, docs/wiki/roadmap/priorities.md
+[2026-07-09 14:10] commit: fix(retry): classify transient connection/network failures as retryable
+
+Two playlist videos failed as extraction_error (the unknown-error catch-all) and got
+no Retry button while the UI called them "temporary — try again later" (contradictory).
+On a residential proxy an unknown download drop is almost always recoverable with a
+fresh exit IP, like bot_detection.
+
+Fix via CLASSIFICATION (not by making the whole unknown bucket blindly retryable):
+_classify_download_error now maps connection/network errors (connection reset/aborted/
+refused, 502/503, bad gateway, service unavailable, temporarily unavailable, network
+unreachable, …) to the existing retryable 'timeout' slug. Reused 'timeout' rather than a
+new slug because it is already wired through every retry gate (worker auto-retry set, RPC
+v_has_retryable, frontend retry filter + the "Connection timeout" badge) — a new slug
+would touch ~13 places + an RPC migration for display granularity only. Permanent errors
+(age/members/youtube_restricted) stay non-retryable; the genuinely-unknown remainder stays
+extraction_error with honest copy (no false "try again" promise; points to Audio Upload).
+
+Test: backend/test_error_classification.py.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_error_classification.py
+backend/transcription_pipeline.py
+packages/shared/src/components/PlaylistManager.tsx
+---
+[2026-07-09 14:10] commit: fix(db): transcripts.user_id FK → ON DELETE CASCADE
+
+transcripts was the one non-CASCADE user-FK (NO ACTION), so deleting an account WITH
+transcripts was blocked. Switch to ON DELETE CASCADE so a deleted account takes its
+transcripts with it, consistent with the other user-scoped tables. Verified safe: 0
+orphaned transcripts and every row maps to a live auth.users row, so the constraint
+re-validates cleanly and nothing is deleted now — only future delete behaviour changes.
+
+Cleanup: no orphaned/test transcripts exist — all 719 belong to real users (714 the
+dev/QA account, untouched), the deleted test users and the test1 fixture had none.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260709160000_transcripts_fk_cascade.sql
+---
