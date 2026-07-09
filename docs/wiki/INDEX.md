@@ -149,6 +149,16 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 
 ---
 
+## Testing (`testing/`)
+
+Durende end-to-end **live-verificaties** met nagerekende data (onderscheiden van de per-feature smoke-/handmatige rapporten in `operations/`).
+
+| Bestand | Onderwerp |
+|---------|-----------|
+| [2026-07-09-credit-playlist-e2e-live-verification.md](testing/2026-07-09-credit-playlist-e2e-live-verification.md) | Credit/playlist-spoor e2e live-geverifieerd met nagerekende ledger (ADR-050/051) — Σreserved=Σsettled+Σrefunded, Policy-S, transition-aware teller, classificatie |
+
+---
+
 ## Roadmap (`roadmap/`)
 
 | Bestand | Onderwerp |

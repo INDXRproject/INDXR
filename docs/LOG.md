@@ -7613,3 +7613,19 @@ dev/QA account, untouched), the deleted test users and the test1 fixture had non
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: supabase/migrations/20260709160000_transcripts_fk_cascade.sql
 ---
+[2026-07-09 14:10] commit: docs: retryable-slug-reuse lesson; transcripts-cascade + extraction_error-retry resolved
+
+- LESSONS: reuse an existing retryable slug wired through all retry-gates rather than a
+  new one (~13 touch points + RPC migration); correct the FK-cascade lesson (transcripts
+  now CASCADE, only usage_logs=SET NULL remains).
+- priorities: 1.29 extraction_error→retryable resolved; 1.26 transcripts-cascade done +
+  transcript-cleanup finding (nothing to delete).
+- LOG: two entries.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
+---
+
+[2026-07-09 16:30] taak: LIVE-VERIFICATIE (read-only) credit/playlist-spoor e2e — playlist "Tadabbur Juz 1-30" (collection 99d73063, 30 vids, 10 whisper+20 caption, 3 jobs/retry-rondes). Alle 7 punten BEVESTIGD: Σreserved 81=Σsettled 76+Σrefunded 5, eindsaldo 94 (=170−76 netto), receipt 76=56 whisper+20 caption, Policy-S (retry belast gratis-3 niet), transition-aware teller (geen phantom), 4× bot_detection retrybaar (incl. 3xOK85qRQ_o één keer gesetteld na 2 fails), 30 distinct settlements. Eerste e2e live-verificatie met nagerekende ledger → launch-ready | gewijzigd: docs/wiki/testing/2026-07-09-credit-playlist-e2e-live-verification.md (nieuw), docs/wiki/INDEX.md, docs/wiki/decisions/050+051, docs/LOG.md

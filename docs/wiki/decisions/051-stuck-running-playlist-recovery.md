@@ -2,6 +2,7 @@
 
 **Status:** Geaccepteerd
 **Datum:** 2026-07-09
+**Live-geverifieerd:** [testing/2026-07-09-credit-playlist-e2e-live-verification.md](../testing/2026-07-09-credit-playlist-e2e-live-verification.md) — net-final receipt (churn-vrij), transition-aware failed-teller (geen phantom), bot_detection-classificatie + retrybaarheid, geen stuck playlist.
 **Gerelateerde code:** `backend/transcription_pipeline.py` (`_run_with_heartbeat` timeout), `backend/worker.py` (`_should_reap_running_playlist`, `_reap_stale_running_playlist`, watchdog Pass 3 + Pass 1b bounded), `backend/main.py` (caption-cap), `backend/test_stuck_playlist_fix.py`
 
 ## Context

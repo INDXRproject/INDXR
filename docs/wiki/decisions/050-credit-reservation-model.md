@@ -1,6 +1,7 @@
 # Beslissing 050: Credit-reservering (reserve-and-hold) voor alle transcriptie-jobs
 
 **Status:** Geaccepteerd — **ACTIEF in productie sinds 2026-07-07** (reserve → settle → refund, overspend-race live gesloten)
+**Live-geverifieerd:** [testing/2026-07-09-credit-playlist-e2e-live-verification.md](../testing/2026-07-09-credit-playlist-e2e-live-verification.md) — eerste volledige e2e live-verificatie met nagerekende ledger (Σreserved=Σsettled+Σrefunded, eindsaldo = netto verbruikt, over meerdere retry-rondes).
 **Datum:** 2026-07-06 (geactiveerd 2026-07-07)
 **Gerelateerde code:** `backend/credit_manager.py`, `backend/transcription_pipeline.py`, `backend/worker.py` (watchdog), RPC's `reserve_credits` / `settle_credits` / `refund_credits` / `update_playlist_video_progress` / `deduct_credits_atomic` / `add_credits`, tabellen `credit_transactions` / `transcription_jobs` / `playlist_extraction_jobs`
 
