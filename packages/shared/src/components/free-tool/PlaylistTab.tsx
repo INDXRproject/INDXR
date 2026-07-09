@@ -597,6 +597,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           use_whisper_ids: whisperIds,
           playlist_title: title ?? null,
           playlist_url: fallbackMetaRef.current.url ?? null,
+          is_retry: true,  // onderdrukt de gratis-3 server-side (die is al in de originele run verbruikt)
         }),
       })
 

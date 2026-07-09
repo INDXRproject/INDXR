@@ -19,6 +19,10 @@ const requestSchema = z.object({
     title: z.string().optional(),
     duration: z.number().optional(),
   })).optional(),
+  // Retry-/retry-all-job: suppresses the first-3-free tier server-side (the free-3 was
+  // already consumed by the original run). Fixed allow-list — must be declared here or
+  // safeParse strips it before it reaches the backend.
+  is_retry: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {

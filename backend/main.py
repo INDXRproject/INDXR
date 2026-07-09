@@ -210,6 +210,7 @@ class PlaylistExtractRequest(BaseModel):
     playlist_title: Optional[str] = None
     playlist_url: Optional[str] = None
     video_metadata: Optional[dict] = {}  # {video_id: {title, duration, thumbnail}}
+    is_retry: bool = False  # retry-/retry-all-job: onderdrukt de gratis-3 (die is al in de originele run verbruikt)
 
 class WhisperRequest(BaseModel):
     user_id: str
@@ -1140,17 +1141,19 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
         sentry_sdk.capture_exception(e)
         return SummarizeResponse(success=False, error=str(e))
 
-def _compute_playlist_reservation(video_ids, use_whisper_ids, video_metadata) -> int:
+def _compute_playlist_reservation(video_ids, use_whisper_ids, video_metadata, is_retry=False) -> int:
     """
     Reserveringsbedrag voor een playlist bij job-start (ADR-050 fase 1). Mirrort EXACT de
     per-video aftrek-logica in worker.py (process_playlist_video):
       - caption-video (niet in use_whisper_ids): 1 credit, GRATIS als index < 3
-        (worker.py: is_free = video_index < 3).
+        (worker.py: is_free = video_index < 3 and not is_retry).
       - whisper-video (in use_whisper_ids): ceil(duration/60), min 1, GEEN gratis-korting
         (worker.py negeert is_free in de whisper-branch).
     Duur ontbreekt/0 => min 1 credit (mirror calculate_credit_cost). Bewust GEEN naïeve
     total_videos-3: een whisper-video op index 0-2 verbruikt een gratis-slot zonder korting,
     exact zoals de worker.
+    is_retry=True: retry-/retry-all-job — de gratis-3 is al in de originele run verbruikt, dus
+    ALLE caption-video's worden belast (mirror worker: is_free = idx<3 and not is_retry).
     """
     whisper_set = set(use_whisper_ids or [])
     meta = video_metadata or {}
@@ -1159,7 +1162,7 @@ def _compute_playlist_reservation(video_ids, use_whisper_ids, video_metadata) ->
         if vid in whisper_set:
             d = (meta.get(vid) or {}).get('duration')
             total += calculate_credit_cost(d) if d and d > 0 else 1
-        elif idx >= 3:
+        elif is_retry or idx >= 3:
             total += 1
     return total
 
@@ -1197,6 +1200,7 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
                 'use_whisper_ids': request.use_whisper_ids,
                 'collection_id': request.collection_id,
                 'video_metadata': request.video_metadata or {},
+                'is_retry': request.is_retry,
             }).execute()
         )
     except Exception as e:
@@ -1212,7 +1216,7 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
     # => nul gedragswijziging; de bestaande per-video-aftrek blijft de enige balans-mutatie.
     if RESERVATION_ENABLED:
         _reserve_amount = _compute_playlist_reservation(
-            request.video_ids, request.use_whisper_ids, request.video_metadata
+            request.video_ids, request.use_whisper_ids, request.video_metadata, request.is_retry
         )
         _resv = await asyncio.to_thread(
             reserve_credits, user_id=request.user_id, amount=_reserve_amount, playlist_id=job_id

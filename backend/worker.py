@@ -347,7 +347,7 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     try:
         row = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-            .select('user_id,video_ids,use_whisper_ids,collection_id,total_videos,video_results,credits_reserved')
+            .select('user_id,video_ids,use_whisper_ids,collection_id,total_videos,video_results,credits_reserved,is_retry')
             .eq('id', playlist_id)
             .single()
             .execute()
@@ -375,6 +375,8 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     # Reservation-mode uit de PLAYLIST-rij (playlist-niveau reservering). NIET uit de
     # per-video whisper_job-rij (die is nooit individueel gereserveerd -> credits_reserved=0).
     reservation_mode: bool = (job.get('credits_reserved') or 0) > 0
+    # Retry-job: gratis-3 is al in de originele run verbruikt -> geen gratis-tier hier.
+    is_retry: bool = bool(job.get('is_retry'))
 
     if video_index >= len(video_ids):
         logger.error(f"{log_prefix} video_index out of bounds (total={len(video_ids)})")
@@ -382,7 +384,7 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
 
     video_id = video_ids[video_index]
     is_whisper = video_id in use_whisper_ids
-    is_free = video_index < 3
+    is_free = video_index < 3 and not is_retry
 
     # Idempotency: skip if already succeeded (e.g. duplicate enqueue)
     existing = video_results.get(video_id, {})
@@ -561,7 +563,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     try:
         row = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-            .select('user_id,video_ids,use_whisper_ids,collection_id,video_results,credits_reserved')
+            .select('user_id,video_ids,use_whisper_ids,collection_id,video_results,credits_reserved,is_retry')
             .eq('id', playlist_id)
             .single()
             .execute()
@@ -586,6 +588,8 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     video_results: dict = job.get('video_results') or {}
     # Reservation-mode uit de PLAYLIST-rij (playlist-niveau reservering).
     reservation_mode: bool = (job.get('credits_reserved') or 0) > 0
+    # Retry-job: gratis-3 is al in de originele run verbruikt -> geen gratis-tier hier.
+    is_retry: bool = bool(job.get('is_retry'))
 
     # Heartbeat at start — watchdog detects stale 'retry_pending' jobs (ADR-030 Gap 1 fix).
     # This keeps the heartbeat fresh so watchdog won't re-enqueue a running retry-pass.
@@ -638,7 +642,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
             continue
 
         is_whisper = video_id in use_whisper_ids
-        is_free = orig_index < 3
+        is_free = orig_index < 3 and not is_retry
         # Retry pass: use a DIFFERENT sticky session than the original attempt
         # (worker.py process_playlist_video) so the retry lands on a fresh Decodo
         # exit IP instead of the same IP that YouTube already rate-limited (429).
