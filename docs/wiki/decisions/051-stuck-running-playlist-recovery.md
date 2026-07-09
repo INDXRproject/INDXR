@@ -47,5 +47,7 @@ Vier chirurgische ingrepen, gebouwd op de bestaande refund-primitieven (geen nie
   gebruiker retryt via de bestaande Retry-all.
 - Een echt-vastgelopen `running` playlist wordt binnen ~25–30min gereapt, gerefund en terminaal
   gemarkeerd (Final Summary + retry UX). De 3 bestaande zombies worden automatisch door de cron opgevangen.
-- De onderliggende yt-dlp bot-detectie/read-timeout-frequentie is NIET opgelost (aparte proxy-reliability
-  track, priorities 1.27) — deze beslissing maakt hangs onschadelijk/herstelbaar.
+- De onderliggende yt-dlp bot-detectie is een niet-te-winnen kat-en-muis met YouTube en wordt **by design**
+  afgehandeld (gefaalde video niet-gesetteld + refund + duidelijke communicatie + retry) — zie priorities 1.27.
+  Deze beslissing (ADR-051) maakt zulke hangs bovendien onschadelijk/herstelbaar. Geen openstaand werk;
+  frequentie is puur ter observatie via Sentry.

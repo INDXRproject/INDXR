@@ -7430,3 +7430,68 @@ Changed: apps/app/src/app/api/extract/route.ts
 apps/marketing/src/app/api/extract/route.ts
 backend/main.py
 ---
+[2026-07-09 01:25] commit: docs: ADR-051 stuck-playlist recovery + LESSONS running-status-invisible + priorities/INDEX/LOG
+
+ADR-051 documents the per-video timeout + reap-pass design. LESSONS:
+running-status-onzichtbaar-voor-recovery (detect stuck jobs on a progress signal not
+heartbeat presence; every non-terminal state must be queried by ≥1 watchdog pass;
+refund-before-claim + heartbeat-guard closes the money-loss window). priorities: 1.28
+done (caption-cap done, Policy-K free-tier-on-retry noted open), 1.27 reframed as the
+separate yt-dlp-reliability track. INDEX ADR table + LOG entry.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/051-stuck-running-playlist-recovery.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-07-09 11:56] precompact: context compaction triggered
+[2026-07-09 12:00] commit: docs: ADR-051 stuck-playlist recovery + LESSONS running-status-invisible + priorities/INDEX/LOG
+
+ADR-051 documents the per-video timeout + reap-pass design. LESSONS:
+running-status-onzichtbaar-voor-recovery (detect stuck jobs on a progress signal not
+heartbeat presence; every non-terminal state must be queried by ≥1 watchdog pass;
+refund-before-claim + heartbeat-guard closes the money-loss window). priorities: 1.28
+done (caption-cap done, Policy-K free-tier-on-retry noted open), 1.27 reframed as the
+separate yt-dlp-reliability track. INDEX ADR table + LOG entry.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/051-stuck-running-playlist-recovery.md
+docs/wiki/roadmap/priorities.md
+---
+
+[2026-07-09 12:30] taak: Policy-K→S fix — retry-jobs passen de gratis-3 niet opnieuw toe (revenue-lek gedicht) | migratie 20260709120000_playlist_is_retry (kolom is_retry) + is_retry door reserve (_compute_playlist_reservation) én settle (worker.py beide passes) → mirror-invariant reserve==settle | gewijzigd: backend/main.py, backend/worker.py, apps/app/src/app/api/playlist/extract/route.ts, packages/shared/src/components/free-tool/PlaylistTab.tsx, supabase/migrations/20260709120000_playlist_is_retry.sql, backend/test_retry_free_tier.py
+[2026-07-09 12:30] taak: doc — 1.27 yt-dlp bot-detectie herschreven naar "afgehandeld by design" (geen openstaand werk; refund+communicatie+retry IS de oplossing) | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/decisions/051-stuck-running-playlist-recovery.md
+[2026-07-09 12:30] taak: prod test-troep opgeruimd — 3 @example.invalid integratietest-users consistent verwijderd (3 auth + 11 credit_transactions + 6 tjobs + 7 pej + 3 msgs + 2 user_credits; 0 orphans geverifieerd). Behouden: test1@indxr-test.com (actieve Playwright-fixture), mbelabas (menselijke beslissing), 2 echte OAuth-users, 2 owner-accounts. Gekoppeld aan 1.26. GEEN FK-cascade naar auth.users → expliciete deletes. | gewijzigd: docs/wiki/roadmap/priorities.md, docs/LESSONS.md (2 lessen)
+[2026-07-09 12:21] commit: fix(credits): retry playlist jobs no longer re-grant the first-3-free tier (Policy S)
+
+A frontend Retry / Retry-all runs as a NEW playlist_extraction_jobs row with a
+subset of video_ids. Because the free-tier is index-based (is_free = idx < 3),
+its first <=3 caption videos were wrongly re-granted for free — a revenue leak
+(Policy K). Fix: thread an is_retry signal end-to-end so a retry job suppresses
+the free tier and charges every caption like a paid video.
+
+- migration 20260709120000_playlist_is_retry: adds playlist_extraction_jobs.is_retry
+  (boolean NOT NULL DEFAULT false) — existing rows and all non-retry jobs unchanged.
+- PlaylistExtractRequest.is_retry + Next.js zod allow-list (both proxy hops strip
+  undeclared fields, so it must be declared in each).
+- reserve (_compute_playlist_reservation) and BOTH worker settle passes
+  (process_playlist_video + process_playlist_retries) read is_retry:
+  is_free = idx < 3 AND NOT is_retry. Mirror-invariant reserve==settle preserved.
+- auto-retry within the same job (retry_pending/Pass 1b, is_retry=false) keeps the
+  original index → no double charge.
+- test_retry_free_tier.py: proves a previously-paid retry subset stays paid, a
+  previously-free subset becomes paid, and reserve==settle across shapes.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/playlist/extract/route.ts
+backend/main.py
+backend/test_retry_free_tier.py
+backend/worker.py
+packages/shared/src/components/free-tool/PlaylistTab.tsx
+supabase/migrations/20260709120000_playlist_is_retry.sql
+---
