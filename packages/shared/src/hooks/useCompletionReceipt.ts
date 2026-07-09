@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "../utils/supabase/client"
 import type { ReceiptVideo } from "../components/ui/CompletionReceipt"
+import { aggregatePlaylistReceipt, type ReceiptJobRow } from "./receiptAggregation"
 
 // ── useCompletionReceipt (ADR-050 fase 3) ───────────────────────────────────────
 // Read-only assembly of the completion-receipt numbers from data the user already
@@ -30,15 +31,7 @@ export interface ReceiptData {
 }
 
 interface RefundMeta { reserved?: number; consumed?: number; refunded?: number }
-interface VideoResult { status?: string; error_type?: string }
-interface PlaylistJobRow {
-  id?: string
-  collection_id?: string | null
-  credits_reserved?: number | null
-  credits_refunded?: number | null
-  video_results?: Record<string, VideoResult> | null
-  video_metadata?: Record<string, { title?: string }> | null
-}
+type PlaylistJobRow = ReceiptJobRow & { collection_id?: string | null }
 type Tx = { kind: string; amount: number; metadata: Record<string, unknown> | null }
 
 const EMPTY: ReceiptData = {
@@ -81,9 +74,12 @@ export function useCompletionReceipt(
           return
         }
 
-        // ── Playlist — collection-scoped aggregation (covers retries) ────────────
+        // ── Playlist — collection-scoped, NET-FINAL aggregation (covers retries) ──
+        // Charged/not-used are derived per-video from the merged final state (see
+        // receiptAggregation), NOT summed per-job — so retry churn (a video refunded in
+        // round 1 then re-charged in round 2) never leaks into "not used".
         const anchorRes = await supabase.from("playlist_extraction_jobs")
-          .select("id,collection_id,credits_reserved,credits_refunded,video_results,video_metadata")
+          .select("id,collection_id,is_retry,credits_reserved,credits_refunded,video_ids,use_whisper_ids,video_results,video_metadata")
           .eq("id", id).single()
         if (cancelled) return
         const anchor = (anchorRes.data ?? {}) as PlaylistJobRow
@@ -94,7 +90,7 @@ export function useCompletionReceipt(
         let jobRows: PlaylistJobRow[] = [anchor]
         if (collectionId) {
           const sibsRes = await supabase.from("playlist_extraction_jobs")
-            .select("id,credits_reserved,credits_refunded,video_results,video_metadata")
+            .select("id,is_retry,credits_reserved,credits_refunded,video_ids,use_whisper_ids,video_results,video_metadata")
             .eq("collection_id", collectionId)
           if (cancelled) return
           if (sibsRes.data?.length) jobRows = sibsRes.data as PlaylistJobRow[]
@@ -107,51 +103,8 @@ export function useCompletionReceipt(
         if (cancelled) return
         const txs = (txRes.data ?? []) as Tx[]
 
-        // Aggregate credit totals + merge per-video results across all collection jobs.
-        let reserved = 0
-        let hasReserved = false
-        let refunded = 0
-        const mergedResults: Record<string, VideoResult> = {}
-        const mergedMeta: Record<string, { title?: string }> = {}
-        for (const j of jobRows) {
-          if (j.credits_reserved != null) { reserved += j.credits_reserved; hasReserved = true }
-          refunded += j.credits_refunded ?? 0
-          for (const [vid, r] of Object.entries(j.video_results ?? {})) {
-            const cur = mergedResults[vid]
-            // success wins: a retried video that later succeeds overrides the earlier error
-            if (!cur || (cur.status !== "success" && r.status === "success")) mergedResults[vid] = r
-          }
-          for (const [vid, m] of Object.entries(j.video_metadata ?? {})) {
-            if (!mergedMeta[vid]?.title && m?.title) mergedMeta[vid] = m
-          }
-        }
-
-        const settlements = txs.filter(t => t.kind === "settlement")
-        const used = settlements.reduce((s, t) => s + (t.amount || 0), 0)
-        const chargedBy: Record<string, number> = {}
-        for (const t of settlements) {
-          const vid = t.metadata?.video_id as string | undefined
-          if (vid) chargedBy[vid] = (chargedBy[vid] || 0) + (t.amount || 0)
-        }
-
-        const ids = Object.keys(mergedResults).length ? Object.keys(mergedResults) : Object.keys(mergedMeta)
-        const videos: ReceiptVideo[] = ids.map(vid => {
-          const r = mergedResults[vid] || {}
-          const title = mergedMeta[vid]?.title
-          if (r.status === "error") return { videoId: vid, title, state: "skipped" as const, errorType: r.error_type }
-          if (chargedBy[vid] > 0) return { videoId: vid, title, state: "charged" as const, credits: chargedBy[vid] }
-          return { videoId: vid, title, state: "free" as const }
-        })
-
-        setData({
-          reserved: hasReserved ? reserved : null,
-          used,
-          refunded,
-          transcribedCount: videos.filter(v => v.state !== "skipped").length,
-          skippedCount: videos.filter(v => v.state === "skipped").length,
-          videos,
-          loading: false,
-        })
+        const agg = aggregatePlaylistReceipt(jobRows, txs, id)
+        setData({ ...agg, loading: false })
       } catch {
         if (!cancelled) setData({ ...EMPTY, loading: false })
       }
