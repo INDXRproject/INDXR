@@ -7495,3 +7495,66 @@ backend/worker.py
 packages/shared/src/components/free-tool/PlaylistTab.tsx
 supabase/migrations/20260709120000_playlist_is_retry.sql
 ---
+[2026-07-09 12:21] commit: docs: yt-dlp bot-detection handled-by-design + Policy-S resolution + prod test-data cleanup record
+
+- priorities 1.27 rewritten: yt-dlp bot-detection is an unwinnable cat-and-mouse
+  with YouTube, handled BY DESIGN (failed video not settled + refund + clear
+  communication + retry) — not open work. Sentry frequency is pure observation.
+  ADR-051 consequence line aligned.
+- priorities 1.28: Policy K resolved to Policy S (implemented) — mirror-invariant note.
+- priorities 1.26: recorded the partial cleanup + the KEEP list (Playwright fixture,
+  ambiguous heavy account, real OAuth users, owners) + the no-FK-cascade warning.
+- LESSONS: discount-signal-must-reach-reserve-AND-settle (mirror-invariant);
+  no-FK-cascade-to-auth-users (delete children explicitly, verify 0 orphans).
+- LOG: three entries.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/decisions/051-stuck-running-playlist-recovery.md
+docs/wiki/roadmap/priorities.md
+---
+
+[2026-07-09 14:15] taak: playlist-receipt netto-eindstand na retries (churn weg) — 'used'/'refunded' per-video-netto i.p.v. bruto-per-job; An-Najm rendert nu 23/26/4/4 (was …/…/…/8) | gewijzigd: packages/shared/src/hooks/receiptAggregation.ts (nieuw), useCompletionReceipt.ts, receiptAggregation.test.ts (nieuw), packages/shared/tsconfig.json
+[2026-07-09 14:15] taak: failed-teller transition-aware in update_playlist_video_progress RPC (geen dubbeltelling bij error→success) + backfill terminale jobs (An-Najm job1 7→6) | gewijzigd: supabase/migrations/20260709140000_playlist_progress_transition_aware_failed.sql
+[2026-07-09 14:15] taak: correctie — FK's naar auth.users bestaan WEL (meeste CASCADE; transcripts NO ACTION, usage_logs SET NULL); eerdere "geen FK-cascade" was een information_schema-artefact, pg_constraint is authoritatief | gewijzigd: docs/LESSONS.md, docs/wiki/roadmap/priorities.md
+[2026-07-09 13:50] commit: fix(ui): playlist receipt shows net-final numbers after retries (no churn)
+
+Counts (transcribed/skipped) came from the merged final per-video state, but
+`used`/`refunded` were gross-cumulative sums across all collection jobs — so a
+retry's reserve→refund→re-reserve churn leaked into "not used" ("8 not used"
+next to only 4 skips on the An-Najm collection).
+
+Extract a pure, framework-free aggregatePlaylistReceipt(jobRows, txs, anchorId)
+that derives every number from the merged final state:
+- used     = Σ per-video settlement of finally-succeeded videos (each settles once)
+- not-used = Σ would-be credits of finally-skipped videos (0 for free-tier;
+             ceil(dur/60) for whisper) — mirrors the backend per-video cost.
+So charged + not-used reconciles with transcribed + skipped and the churn is
+invisible. Display only — the ledger is untouched (Σreserved == Σused + Σrefunded).
+
+Verified on the real An-Najm collection: renders "Charged 23 · 26 transcribed ·
+4 skipped — 4 not used" (was …8). Tests via node --experimental-strip-types.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: packages/shared/src/hooks/receiptAggregation.test.ts
+packages/shared/src/hooks/receiptAggregation.ts
+packages/shared/src/hooks/useCompletionReceipt.ts
+packages/shared/tsconfig.json
+---
+[2026-07-09 13:50] commit: fix(db): transition-aware completed/failed in update_playlist_video_progress
+
+A video that goes error→success on retry was counted in BOTH buckets (completed+1
+without failed-1), because the idempotency guard only fires on an unchanged status.
+So `failed` overcounted (An-Najm job1: failed=7 for 6 real failures).
+
+Make the counters transition-aware: a non-idempotent status change leaves the old
+bucket and enters the new one (error→success: completed+1 & failed-1; symmetric for
+success→error), GREATEST(0,…) guarding underflow. The credit paths are UNCHANGED —
+this is a counter fix only; the receipt does not read this column. Backfills existing
+terminal jobs from video_results (job1 7→6). Verified live: error,error,success on
+the same video → completed=1, failed=1.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260709140000_playlist_progress_transition_aware_failed.sql
+---
