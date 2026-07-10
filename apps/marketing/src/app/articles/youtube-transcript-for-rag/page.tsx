@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Transcripts for RAG Pipelines — Chunked JSON Export | INDXR.AI",
@@ -347,7 +348,7 @@ for i in range(0, len(vectors), 100):
       <p>
         For RAG pipelines where retrieval quality matters, use AI Transcription. The resulting chunks
         have proper sentence boundaries, accurate text, and sentence-level overlap. For a 19-minute
-        video, AI Transcription costs 19 credits — roughly €0.23 at Basic pricing.
+        video, AI Transcription costs 19 credits — roughly {creditCostEur(19)} at {getAnchorPackage().name} pricing.
       </p>
 
       <p>

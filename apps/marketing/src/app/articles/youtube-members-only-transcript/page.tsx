@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Members-Only Transcript — What's Possible and What Isn't | INDXR.AI",
@@ -24,7 +25,7 @@ const faqs = [
   },
   {
     q: "What's the cost to transcribe a members-only video using the audio upload path?",
-    a: "1 credit per minute of audio at standard AI Transcription pricing. A 1-hour video costs 60 credits — approximately €0.70–€0.84 depending on which credit package you use. The first audio upload uses welcome credits if you haven't spent them.",
+    a: `1 credit per minute of audio at standard AI Transcription pricing. A 1-hour video costs 60 credits — approximately ${creditCostEur(60)} at ${getAnchorPackage().name} pricing. The first audio upload uses welcome credits if you haven't spent them.`,
   },
   {
     q: "Can I transcribe a members-only video if I'm the creator?",
@@ -108,7 +109,7 @@ export default function YouTubeMembersOnlyTranscriptPage() {
 
       <p>
         Cost: 1 credit per minute of audio, minimum 1 credit. A 30-minute members-only video would
-        cost 30 credits — about €0.35 at Plus pricing. See the{" "}
+        cost 30 credits — about {creditCostEur(30)} at {getAnchorPackage().name} pricing. See the{" "}
         <Link href="/pricing">pricing page</Link> for all package options, or{" "}
         <Link href="/how-it-works">how INDXR.AI works</Link> for an overview of the full pipeline.
       </p>

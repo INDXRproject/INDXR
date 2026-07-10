@@ -112,3 +112,43 @@ export function costInTier(credits: number, pkg: PricingPackage): number {
 export function pricePerMinute(pkg: PricingPackage): number {
   return pricePerCredit(pkg) * CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 }
+
+// ---------------------------------------------------------------------------
+// Content helpers — render álle getoonde prijzen/credit-voorbeelden uit deze bron.
+// Nooit hardcoden in artikelen/pagina's. Credits-first (stabiel); euro-voorbeelden
+// worden berekend tegen een ankertier (Plus). Repricing = wijzig alleen PACKAGES.
+// Vind elke pricing-plek in de codebase met:  grep -rn "@indxr/shared/lib/pricing" apps/
+// ---------------------------------------------------------------------------
+
+// Ankertier voor euro-kostenvoorbeelden in content ("at Plus pricing").
+export const ANCHOR_TIER_ID: PricingPackage["id"] = "plus"
+
+export function getAnchorPackage(): PricingPackage {
+  return getPackage(ANCHOR_TIER_ID)
+}
+
+// Goedkoopste tier — voor "starting at …".
+export function cheapestPackage(): PricingPackage {
+  return PACKAGES.reduce((lo, p) => (p.priceEur < lo.priceEur ? p : lo))
+}
+
+// "€3.49 / 100 credits" voor een specifieke tier.
+export function tierPriceCredits(id: PricingPackage["id"]): string {
+  const p = getPackage(id)
+  return `${formatEur(p.priceEur)} / ${p.credits.toLocaleString()} credits`
+}
+
+// Euro-kost van N credits tegen een tier (default: anker), geformatteerd → "€1.15".
+export function creditCostEur(credits: number, pkg: PricingPackage = getAnchorPackage()): string {
+  return formatEur(costInTier(credits, pkg))
+}
+
+// Volledige voorbeeldfrase → "~€1.15 at Plus pricing".
+export function creditCostPhrase(credits: number, pkg: PricingPackage = getAnchorPackage()): string {
+  return `~${creditCostEur(credits, pkg)} at ${pkg.name} pricing`
+}
+
+// Prijs-per-credit tegen het anker, 3 decimalen → "€0.019/credit".
+export function anchorPerCreditText(): string {
+  return `€${pricePerCredit(getAnchorPackage()).toFixed(3)}/credit`
+}

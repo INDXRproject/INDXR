@@ -9,7 +9,7 @@ import { SecondaryTierStrip } from "@/components/pricing/SecondaryTierStrip"
 import { CreditCostTable } from "@/components/pricing/CreditCostTable"
 import { TrustRowCards } from "@/components/pricing/TrustRowCards"
 import { VatLine } from "@/components/pricing/VatLine"
-import { PACKAGES } from "@indxr/shared/lib/pricing"
+import { PACKAGES, tierPriceCredits } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "Pricing — INDXR.AI",
@@ -31,7 +31,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "What if I need fewer credits than Starter?",
-    answer: "The Try package (€3.49 / 100 credits) is available for a single project or a quick test.",
+    answer: `The Try package (${tierPriceCredits("try")}) is available for a single project or a quick test.`,
   },
   {
     question: "Does INDXR.AI work for audio files, not just YouTube?",

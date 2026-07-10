@@ -22,6 +22,35 @@ Importeer altijd via `@indxr/shared/lib/pricing` (resolveert naar `packages/shar
 
 ---
 
+## Content-helpers — prijzen/credits in artikelen & pagina's (2026-07-10)
+
+Alle **getoonde** prijzen en euro-kostenvoorbeelden in klant-gerichte content (artikelen, FAQ's, pricing-pagina, teaser, kostentabellen) worden **berekend uit `pricing.ts`** — nul hardcoded bedragen. Repricing = alleen `PACKAGES` wijzigen; alle content volgt automatisch.
+
+**De bron = deze helpers in `packages/shared/src/lib/pricing.ts`:**
+
+| Helper | Levert | Gebruik |
+|--------|--------|---------|
+| `cheapestPackage()` | goedkoopste tier | "Starting at €X" (teaser, pricing-metadata) |
+| `tierPriceCredits(id)` | `"€3.49 / 100 credits"` | tier inline noemen (bv. Try in pricing-FAQ) |
+| `creditCostEur(credits, pkg?)` | `"€1.15"` | euro-kost van N credits (default anker = Plus) — kostentabellen |
+| `creditCostPhrase(credits, pkg?)` | `"~€1.15 at Plus pricing"` | voorbeeld-frase in prozaïsche tekst |
+| `anchorPerCreditText()` | `"€0.019/credit"` | prijs-per-credit voorbeeld |
+| `getAnchorPackage()` / `ANCHOR_TIER_ID` | Plus-tier | ankertier voor alle euro-voorbeelden |
+
+**Conventies:**
+- **Credits-first.** Credit-aantallen (stabiel bij repricing) staan als tekst; euro-bedragen worden altijd berekend.
+- **Ankertier = Plus** (`ANCHOR_TIER_ID = "plus"`, €24,99/1.300). Alle "at Plus pricing"-voorbeelden komen hier vandaan. Repricing van Plus herrekent elk voorbeeld.
+- **Geen "Basic"/"Pro" meer** — die tiers bestaan niet (ADR-052). Oude twee-koloms kostentabellen ("Cost at Basic" + "Cost at Plus") zijn gereduceerd tot één berekende Plus-kolom.
+- **Credit-RATES** ("1 credit per minute", "3 credits per summary", "1 credit / 15 min") staan als proza — dat zijn stabiele productconstanten uit `CREDIT_COSTS`, geen prijzen; ze wijzigen niet bij repricing.
+
+**Vind elke pricing-plek met één grep:**
+```bash
+grep -rn "@indxr/shared/lib/pricing" apps/
+```
+Elk klant-gericht bestand dat prijs/credit-content toont importeert uit deze module. Bestanden die pricing renderen (2026-07-10): `apps/marketing/src/app/pricing/page.tsx`, `components/pricing/*`, `components/marketing/PricingTeaserBlock.tsx`, en de artikelen `audio-to-text`, `youtube-transcript-json`, `youtube-channel-knowledge-base`, `youtube-playlist-transcript`, `bulk-youtube-transcript`, `youtube-srt-download`, `youtube-transcript-markdown`, `youtube-members-only-transcript`, `youtube-transcripts-vector-database`, `youtube-age-restricted-transcript`, `youtube-transcript-for-rag`, `youtube-transcript-non-english`.
+
+---
+
 ## Historische discrepantie (opgelost 2026-05-04)
 
 Bij introductie van pricing.ts werden drie inconsistente bronnen gevonden:

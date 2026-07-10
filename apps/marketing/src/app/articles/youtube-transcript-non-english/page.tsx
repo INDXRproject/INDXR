@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Transcripts in Non-English Languages — What Works | INDXR.AI",
@@ -176,7 +177,7 @@ export default function YouTubeTranscriptNonEnglishPage() {
       </p>
 
       <p>
-        A 28-minute Arabic lecture: 28 credits. At Basic pricing (€6.99/500 credits), that&apos;s €0.39.
+        A 28-minute Arabic lecture: 28 credits. At {getAnchorPackage().name} pricing, that&apos;s {creditCostEur(28)}.
       </p>
 
       <p>

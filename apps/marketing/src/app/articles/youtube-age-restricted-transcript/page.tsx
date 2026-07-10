@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Age-Restricted Video Transcript — Options and Workarounds | INDXR.AI",
@@ -127,7 +128,7 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
 
       <p>
         <strong>Cost:</strong> 1 credit per minute of audio. A 45-minute video: 45 credits,
-        approximately €0.54 at Plus pricing (€0.012/credit) — see the{" "}
+        approximately {creditCostEur(45)} at {getAnchorPackage().name} pricing ({anchorPerCreditText()}) — see the{" "}
         <Link href="/pricing">pricing page</Link> for all packages. For a full technical overview of
         how INDXR.AI handles audio transcription, see{" "}
         <Link href="/how-it-works">how INDXR.AI works</Link>.

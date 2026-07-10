@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "Audio File to Text — Upload MP3, MP4, WAV & More | INDXR.AI",
@@ -138,16 +139,15 @@ export default function AudioToTextPage() {
           <tr>
             <th>Audio length</th>
             <th>Credits</th>
-            <th>Cost at Basic (€6.99/500cr)</th>
-            <th>Cost at Plus (€13.99/1,200cr)</th>
+            <th>Cost at {getAnchorPackage().name} pricing</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>Under 1 minute</td><td>1 credit</td><td>€0.01</td><td>€0.01</td></tr>
-          <tr><td>10 minutes</td><td>10 credits</td><td>€0.14</td><td>€0.12</td></tr>
-          <tr><td>30 minutes</td><td>30 credits</td><td>€0.42</td><td>€0.35</td></tr>
-          <tr><td>1 hour</td><td>60 credits</td><td>€0.84</td><td>€0.70</td></tr>
-          <tr><td>2 hours</td><td>120 credits</td><td>€1.68</td><td>€1.40</td></tr>
+          <tr><td>Under 1 minute</td><td>1 credit</td><td>{creditCostEur(1)}</td></tr>
+          <tr><td>10 minutes</td><td>10 credits</td><td>{creditCostEur(10)}</td></tr>
+          <tr><td>30 minutes</td><td>30 credits</td><td>{creditCostEur(30)}</td></tr>
+          <tr><td>1 hour</td><td>60 credits</td><td>{creditCostEur(60)}</td></tr>
+          <tr><td>2 hours</td><td>120 credits</td><td>{creditCostEur(120)}</td></tr>
         </tbody>
       </table>
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Transcript to Markdown — Obsidian, Notion & Blog Ready | INDXR.AI",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Does this work for videos without auto-captions?",
-    a: "Yes. Enable AI Transcription before extracting. INDXR.AI uses AssemblyAI Universal-3 Pro, which produces properly punctuated, capitalized text — significantly more readable than auto-captions. The trade-off is cost: 1 credit per minute. For a 60-minute video, that's 60 credits, roughly €0.84 at Basic pricing.",
+    a: `Yes. Enable AI Transcription before extracting. INDXR.AI uses AssemblyAI Universal-3 Pro, which produces properly punctuated, capitalized text — significantly more readable than auto-captions. The trade-off is cost: 1 credit per minute. For a 60-minute video, that's 60 credits, roughly ${creditCostEur(60)} at ${getAnchorPackage().name} pricing.`,
   },
   {
     q: "What's the difference between plain and timestamps variants?",
@@ -268,8 +269,8 @@ SORT created DESC`}</code></pre>
         One honest note: auto-caption transcripts don&apos;t have punctuation or capitalization. The
         paragraphs are readable but the text isn&apos;t polished. If you&apos;re repurposing content for
         publication, AI Transcription produces text with proper sentence structure that&apos;s
-        significantly easier to edit. For a 30-minute podcast, the cost is 30 credits — about €0.42
-        at Basic pricing.
+        significantly easier to edit. For a 30-minute podcast, the cost is 30 credits — about
+        {" "}{creditCostEur(30)} at {getAnchorPackage().name} pricing.
       </p>
 
       <h2>When Markdown Is and Isn&apos;t the Right Format</h2>

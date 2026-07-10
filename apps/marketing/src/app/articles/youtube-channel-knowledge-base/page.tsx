@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Channel Knowledge Base — Transcribe, Index & Search | INDXR.AI",
@@ -145,9 +146,9 @@ export default function YouTubeChannelKnowledgeBasePage() {
       </p>
       <ul>
         <li>50 videos × 30 minutes × 1 credit/minute = <strong>1,500 credits</strong></li>
-        <li>At Plus pricing (€0.012/credit): <strong>€18</strong></li>
+        <li>At {getAnchorPackage().name} pricing ({anchorPerCreditText()}): <strong>{creditCostEur(1500)}</strong></li>
         <li>RAG JSON export: 1,500 minutes ÷ 15 minutes per credit = <strong>100 more credits</strong></li>
-        <li>Total: <strong>1,600 credits = ~€19.20</strong></li>
+        <li>Total: <strong>1,600 credits = ~{creditCostEur(1600)}</strong></li>
       </ul>
 
       <p>

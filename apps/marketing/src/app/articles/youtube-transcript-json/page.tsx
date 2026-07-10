@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Transcript JSON Export — What You Actually Get | INDXR.AI",
@@ -216,34 +217,29 @@ export default function YouTubeTranscriptJsonPage() {
           <tr>
             <th>Video length</th>
             <th>Credits</th>
-            <th>Cost at Basic (€6.99/500cr)</th>
-            <th>Cost at Plus (€13.99/1,200cr)</th>
+            <th>Cost at {getAnchorPackage().name} pricing</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>10 min</td>
             <td>10</td>
-            <td>€0.14</td>
-            <td>€0.12</td>
+            <td>{creditCostEur(10)}</td>
           </tr>
           <tr>
             <td>30 min</td>
             <td>30</td>
-            <td>€0.42</td>
-            <td>€0.35</td>
+            <td>{creditCostEur(30)}</td>
           </tr>
           <tr>
             <td>1 hour</td>
             <td>60</td>
-            <td>€0.84</td>
-            <td>€0.70</td>
+            <td>{creditCostEur(60)}</td>
           </tr>
           <tr>
             <td>2 hours</td>
             <td>120</td>
-            <td>€1.68</td>
-            <td>€1.40</td>
+            <td>{creditCostEur(120)}</td>
           </tr>
         </tbody>
       </table>

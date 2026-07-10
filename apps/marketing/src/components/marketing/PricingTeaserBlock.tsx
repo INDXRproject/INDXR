@@ -1,6 +1,7 @@
 // Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
 
 import Link from "next/link"
+import { cheapestPackage, formatEur } from "@indxr/shared/lib/pricing"
 
 export function PricingTeaserBlock() {
   return (
@@ -10,7 +11,7 @@ export function PricingTeaserBlock() {
           Pay only for what you use. Credits never expire.
         </p>
         <p className="text-[var(--fg-subtle)] mb-6">
-          Starting at €3.49 — no subscription.
+          Starting at {formatEur(cheapestPackage().priceEur)} — no subscription.
         </p>
         <Link
           href="/pricing"

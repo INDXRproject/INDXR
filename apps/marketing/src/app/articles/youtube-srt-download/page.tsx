@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube SRT Download — Resegmented for Video Editors | INDXR.AI",
@@ -210,7 +211,7 @@ to understand about this topic`}</code></pre>
         SRT and VTT export from auto-caption YouTube videos is free — no account required for a
         single extraction, no credit cost for the export itself. For videos without auto-captions,
         AI Transcription costs 1 credit per minute (a 30-minute video: 30 credits, approximately
-        €0.36 at Plus pricing).
+        {" "}{creditCostEur(30)} at {getAnchorPackage().name} pricing).
       </p>
 
       <p>

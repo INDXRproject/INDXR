@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostPhrase } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Playlist Transcript Extractor — Batch Download in Minutes | INDXR.AI",
@@ -98,7 +99,7 @@ export default function YouTubePlaylistTranscriptPage() {
       <ul>
         <li>Videos 1–3 (auto-captions): Free</li>
         <li>Videos 4–20 (auto-captions): 17 credits</li>
-        <li>Total: <strong>17 credits</strong> (~€0.20 at Plus pricing)</li>
+        <li>Total: <strong>17 credits</strong> ({creditCostPhrase(17)})</li>
       </ul>
 
       <p><strong>Example 2: 20-video course, 5 videos without captions averaging 15 minutes each</strong></p>
@@ -106,13 +107,13 @@ export default function YouTubePlaylistTranscriptPage() {
         <li>Videos 1–3 (auto-captions): Free</li>
         <li>Videos 4–15 (auto-captions): 12 credits</li>
         <li>5 videos × AI Transcription × 15 min: 75 credits</li>
-        <li>Total: <strong>87 credits</strong> (~€1.04 at Plus pricing)</li>
+        <li>Total: <strong>87 credits</strong> ({creditCostPhrase(87)})</li>
       </ul>
 
       <p><strong>Example 3: 19-video Harvard lecture series, all AI Transcription, 783 total minutes</strong></p>
       <ul>
         <li>All 19 videos via AI Transcription: 783 credits</li>
-        <li>Total: <strong>783 credits</strong> (~€9.40 at Plus pricing) — 13 hours of professional-grade transcription</li>
+        <li>Total: <strong>783 credits</strong> ({creditCostPhrase(783)}) — 13 hours of professional-grade transcription</li>
       </ul>
 
       <p>

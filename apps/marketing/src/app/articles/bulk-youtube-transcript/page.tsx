@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostPhrase } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "Bulk YouTube Transcript Download — Entire Playlists in One Job | INDXR.AI",
@@ -92,7 +93,7 @@ export default function BulkYouTubeTranscriptPage() {
       <p><strong>Example: 30-video lecture series, all auto-captions</strong></p>
       <ul>
         <li>Videos 1–3: Free</li>
-        <li>Videos 4–30: 27 credits (~€0.32 at Plus pricing)</li>
+        <li>Videos 4–30: 27 credits ({creditCostPhrase(27)})</li>
       </ul>
 
       <p><strong>Example: 10-video research playlist, 4 videos without captions (avg 20 min)</strong></p>
@@ -100,7 +101,7 @@ export default function BulkYouTubeTranscriptPage() {
         <li>Videos 1–3: Free (assuming auto-captions)</li>
         <li>Videos 4–6 (auto-captions): 3 credits</li>
         <li>4 videos × AI Transcription × 20 min: 80 credits</li>
-        <li>Total: 83 credits (~€1.00 at Plus pricing)</li>
+        <li>Total: 83 credits ({creditCostPhrase(83)})</li>
       </ul>
 
       <p>Credits never expire. Buy when you need to, use when you&apos;re ready.</p>

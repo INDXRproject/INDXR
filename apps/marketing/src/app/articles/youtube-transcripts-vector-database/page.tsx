@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   title: "YouTube Transcripts to Vector Database — Python Pipeline Guide | INDXR.AI",
@@ -401,7 +402,7 @@ print(answer("Explain the role of positional encoding in transformers"))`}</code
 
       <p>
         The embedding cost is negligible. The primary cost is INDXR.AI credits for AI Transcription
-        (~€0.012/credit at Plus, 1 credit/minute = ~€0.36 for 30 minutes). See{" "}
+        ({anchorPerCreditText()} at {getAnchorPackage().name}, 1 credit/minute = ~{creditCostEur(30)} for 30 minutes). See{" "}
         <Link href="/pricing">pricing</Link> for package details.
       </p>
 

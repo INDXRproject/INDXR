@@ -7658,3 +7658,82 @@ docs/wiki/testing/2026-07-09-credit-playlist-e2e-live-verification.md
 [2026-07-09 16:06] pricing: kostenbasis geherijkt + 5→4 tiers (BTW-incl, worst-case-geprijsd) vóór Stripe live. pricing.md volledig herschreven; ADR-052 aangemaakt (supersedet ADR-012, banner); INDEX bijgewerkt; per-job kosten-capture als launch-blocker in known-issues geregistreerd; stale prijzen/kostprijs (€0,009-vloer, €0,0054) opgeschoond in credit-system/pricing-source-of-truth/deployment/known-issues/marketing/cross-host-smoke/migration-summary/page-structures(pricing,homepage)/unit-economics/audit-frontend/ADR-009 + priorities 1.13/1.21. | gewijzigd: docs/wiki/business/pricing.md, docs/wiki/business/unit-economics.md, docs/wiki/decisions/052-*.md (nieuw), docs/wiki/decisions/012-*.md, docs/wiki/decisions/009-*.md, docs/wiki/INDEX.md, docs/wiki/operations/known-issues.md, docs/wiki/operations/deployment.md, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/migration-summary.md, docs/wiki/architecture/credit-system.md, docs/wiki/architecture/pricing-source-of-truth.md, docs/wiki/architecture/page-structures/{pricing,homepage}.md, docs/wiki/business/marketing.md, docs/wiki/design/audit-frontend.md, docs/wiki/roadmap/priorities.md
 
 [2026-07-10 17:50] factuur+deploy: on-demand BTW-factuur afgerond (inclusive tax_behavior + automatic_tax + tax_code txcd_10000000 → totaal = betaald bruto, correcte BTW-regel; factuur-metadata koppelt original_payment_intent; één Stripe Customer per user via profiles.stripe_customer_id + getOrCreateStripeCustomer); checkout attach customer + tax_id_collection + customer_update; webhook fail-closed in productie; migratie 20260710154218 (profiles.stripe_customer_id) toegepast (count 22→23); ADR-053 aangemaakt; sign-bug-noot CLAUDE.md gecorrigeerd; pricing-source-of-truth→4 tiers; Test→Try in ADR-052+INDEX; CLAUDE.md werkwijzeregel → CC commit/pusht zelf. | gewijzigd: apps/app/src/app/api/stripe/{checkout,webhook,invoice}/route.ts, apps/app/src/lib/stripe-customer.ts, apps/app/src/components/dashboard/billing/{PurchaseHistoryCard,InvoiceButton,BillingPurchaseGrid}.tsx, apps/app/src/app/dashboard/billing/{page,success/page}.tsx, packages/shared/src/lib/pricing.ts, supabase/migrations/20260710154218_profiles_stripe_customer_id.sql, CLAUDE.md, docs/LESSONS.md, docs/wiki/**
+[2026-07-10 17:56] commit: feat(billing): 4-tier pricing sync + full credit/billing flow + on-demand VAT invoices
+
+Pricing (ADR-052):
+- pricing.ts synced to 4 live Stripe tiers (Try/Starter/Plus/Power) with
+  product IDs, lookup keys, credits (100/400/1300/3100) and customer-facing
+  descriptions; removed the old 5-tier model. Marketing + dashboard billing
+  now render dynamically from PACKAGES.
+
+Checkout + webhook:
+- One Stripe Customer per user (profiles.stripe_customer_id + getOrCreateStripeCustomer);
+  checkout attaches the customer, saves address/name, collects B2B tax IDs.
+- Webhook fail-closed in production when STRIPE_WEBHOOK_SECRET is missing.
+- Removed invoice_creation (no auto-invoice on every sale).
+
+Success + history:
+- Success page confirms exact credits added + authoritative new balance.
+- /dashboard/account ledger + /dashboard/billing purchase history.
+
+On-demand VAT invoices (ADR-053):
+- POST /api/stripe/invoice: Customer -> Invoice(automatic_tax) ->
+  InvoiceItem(tax_behavior inclusive, txcd_10000000) -> finalize ->
+  pay(paid_out_of_band). Total stays exactly the paid gross with a correct
+  VAT breakdown; invoice metadata links original_payment_intent; URL cached
+  in transaction metadata (no double creation). Guarded, never touches credits.
+
+DB: migration 20260710154218 adds profiles.stripe_customer_id (applied, count 22->23).
+
+Docs: ADR-053; CLAUDE.md sign-bug note corrected + self-commit/push work rule;
+pricing-source-of-truth -> 4 tiers; Test->Try in ADR-052 + INDEX; schema +
+credit-system + backlog (admin Stripe datapoints, self-built invoice generator).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: CLAUDE.md
+apps/app/src/app/api/stripe/checkout/route.ts
+apps/app/src/app/api/stripe/invoice/route.ts
+apps/app/src/app/api/stripe/webhook/route.ts
+apps/app/src/app/dashboard/billing/page.tsx
+apps/app/src/app/dashboard/billing/success/page.tsx
+apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
+apps/app/src/components/dashboard/billing/InvoiceButton.tsx
+apps/app/src/components/dashboard/billing/PurchaseHistoryCard.tsx
+apps/app/src/lib/stripe-customer.ts
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/components/marketing/PricingTeaserBlock.tsx
+apps/marketing/src/components/pricing/PricingTierGrid.tsx
+apps/marketing/src/components/pricing/SecondaryTierStrip.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/credit-system.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/page-structures/homepage.md
+docs/wiki/architecture/page-structures/pricing.md
+docs/wiki/architecture/pricing-source-of-truth.md
+docs/wiki/business/marketing.md
+docs/wiki/business/pricing.md
+docs/wiki/business/unit-economics.md
+docs/wiki/decisions/009-credit-granularity.md
+docs/wiki/decisions/012-pricing-tiers.md
+docs/wiki/decisions/052-pricing-restructure-4-tiers.md
+docs/wiki/decisions/053-on-demand-invoicing.md
+docs/wiki/design/audit-frontend.md
+docs/wiki/operations/cross-host-smoke-tests.md
+docs/wiki/operations/deployment.md
+docs/wiki/operations/known-issues.md
+docs/wiki/operations/migration-summary.md
+docs/wiki/operations/redis-usage-audit-2026-05.md
+docs/wiki/roadmap/backlog.md
+docs/wiki/roadmap/priorities.md
+packages/shared/.design-sync-tokens.css
+packages/shared/src/lib/pricing.ts
+supabase/.temp/cli-latest
+supabase/.temp/gotrue-version
+supabase/.temp/storage-migration
+supabase/.temp/storage-version
+supabase/migrations/20260710154218_profiles_stripe_customer_id.sql
+---
+
+[2026-07-10 18:40] pricing-content-refactor: alle getoonde prijzen/euro-voorbeelden in content nu berekend uit pricing.ts (nul hardcoded). Nieuwe content-helpers (cheapestPackage, tierPriceCredits, creditCostEur, creditCostPhrase, anchorPerCreditText, getAnchorPackage/ANCHOR_TIER_ID=plus). 15 vindplaatsen omgezet: pricing-FAQ + teaser + 2 kostentabellen (Basic-kolom verwijderd) + 11 artikel-prozavermeldingen; alle "at Basic pricing" vervangen door Plus-anker, alle "at Plus pricing" berekend. Repricing = alleen PACKAGES wijzigen. Wiki: pricing-source-of-truth.md content-helper-sectie. | gewijzigd: packages/shared/src/lib/pricing.ts + apps/marketing/src/app/{pricing/page.tsx,articles/*}, components/{marketing/PricingTeaserBlock,pricing}.tsx, docs/wiki/architecture/pricing-source-of-truth.md
