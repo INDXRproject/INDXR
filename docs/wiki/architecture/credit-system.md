@@ -52,19 +52,18 @@ minimum = 1
 
 ## Credit pakketten (Stripe)
 
-| Pakket | Prijs | Credits | €/credit | Volume-korting |
-|--------|-------|---------|----------|---------------|
-| **Try** | €2.49 | 200 | €0.01245 | — |
-| **Basic** | €5.99 | 500 | €0.01198 | 4% |
-| **Plus** ★ | €11.99 | 1.100 | €0.01090 | 12% |
-| **Pro** | €24.99 | 2.600 | €0.00961 | 23% |
-| **Power** | €49.99 | 5.500 | €0.00909 | 27% |
+| Tier | Prijs (incl. BTW) | Credits | Bruto €/cr | Netto €/cr (÷1,21) |
+|------|-------------------|---------|-----------|--------------------|
+| **Test** | €3,49 | 100 | €0,03490 | €0,02884 |
+| **Starter** | €9,99 | 400 | €0,02498 | €0,02064 |
+| **Plus** ★ | €24,99 | 1.300 | €0,01922 | €0,01589 |
+| **Power** | €49,99 | 3.100 | €0,01613 | €0,01333 |
 
-★ = "Meest populair" in UI
+★ = anker ("Meest populair") in UI
 
-**Credits verlopen niet.** Eenmalige aankoop, geen abonnement.
+**Credits verlopen nooit.** Eenmalige aankoop, geen abonnement. Prijzen BTW-inclusief; netto omzet = prijs ÷ 1,21.
 
-Zie [ADR-012](../decisions/012-pricing-tiers.md) voor de rationale achter deze tiers.
+Zie [ADR-052](../decisions/052-pricing-restructure-4-tiers.md) voor de rationale (supersedet ADR-012) en [pricing.md](../business/pricing.md) voor de volledige marge-matrix.
 
 ---
 
@@ -85,26 +84,32 @@ Zie [ADR-012](../decisions/012-pricing-tiers.md) voor de rationale achter deze t
 ### Aankoop (Stripe)
 
 ```
-1. Gebruiker selecteert pakket op /pricing
-2. Frontend: POST /api/stripe/checkout met {plan: 'try' | 'basic' | 'plus' | 'pro' | 'power'}
+1. Gebruiker selecteert pakket op /pricing of /dashboard/billing
+2. Frontend: POST /api/stripe/checkout met {plan: 'try' | 'starter' | 'plus' | 'power'}
 3. Next.js checkout route:
    a. Verifieert auth + suspension check
-   b. Maakt Stripe Checkout Session aan met server-side price_data
-   c. Slaat {userId, credits} op in session.metadata
-   d. Returns {url: checkout_url}
+   b. getOrCreateStripeCustomer → één Customer per user (profiles.stripe_customer_id)
+   c. Maakt Stripe Checkout Session aan met server-side price_data, customer,
+      customer_update (address/name auto) en tax_id_collection (B2B BTW-nummer)
+   d. Slaat {userId, credits} op in session.metadata
+   e. Returns {url: checkout_url}
 4. Gebruiker betaalt op Stripe-pagina
 5. Stripe stuurt POST /api/stripe/webhook
 6. Webhook handler:
-   a. Verifieert Stripe-signature (STRIPE_WEBHOOK_SECRET)
+   a. Verifieert Stripe-signature (STRIPE_WEBHOOK_SECRET) — in productie fail-closed
+      (leeg secret → request geweigerd; geen ongeverifieerde body-parse)
    b. Event type: checkout.session.completed
    c. Extraheert userId + credits uit session.metadata
-   d. Roept add_credits RPC aan
-   e. Slaat 'paid user status' op in profiles (has_ever_purchased = true)
-   f. Tracks 'credits_purchased' event in PostHog
+   d. Roept add_credits RPC aan (metadata: stripe_session_id, amount_paid, currency)
+   e. Tracks 'credits_purchased' event in PostHog
 7. Credits direct beschikbaar in gebruikersaccount
 ```
 
-**Beveiligingsaspect:** De prijs is server-side vastgelegd in `PACKAGES` object (`checkout/route.ts`). De client stuurt alleen de pakket-naam — nooit de prijs.
+**Beveiligingsaspect:** De prijs is server-side vastgelegd in `PACKAGES` (`pricing.ts` → `checkout/route.ts`). De client stuurt alleen de pakket-naam — nooit de prijs.
+
+### Factuur (on-demand)
+
+Aankopen krijgen **geen** automatische factuur. In de billing history kan de gebruiker per aankoop een BTW-factuur opvragen (`POST /api/stripe/invoice`): Stripe Customer → Invoice (`automatic_tax`) → InvoiceItem (`tax_behavior: 'inclusive'`, `tax_code txcd_10000000`) → `finalizeInvoice` → `pay(paid_out_of_band)`. Inclusive houdt het totaal exact gelijk aan het betaalde brutobedrag met een correcte BTW-regel; de factuur-metadata koppelt aan de originele betaling (`original_payment_intent`). URL wordt gecachet in `credit_transactions.metadata.invoice_url` (geen dubbele aanmaak). Zie [ADR-053](../decisions/053-on-demand-invoicing.md).
 
 ---
 

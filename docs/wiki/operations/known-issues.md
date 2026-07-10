@@ -113,18 +113,28 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 
 ## Kritieke TODO's (blokkeren live launch)
 
+### Per-job kosten-capture ontbreekt — LAUNCH-BLOCKER (historische data onherstelbaar)
+**Geregistreerd:** 2026-07-09 (bij ADR-052 pricing-herstructurering).
+**Probleem:** de worst-case-prijsstelling (ADR-052) is verdedigd op **schatting**, niet op gemeten data. Er is geen capture-laag die de werkelijke kosten en verbruik **per job** vastlegt. Zolang die ontbreekt kunnen we marges niet verifiëren, geen echte kost/winst tonen (priorities 1.24) en achteraf niets reconstrueren — **niet-gecaptured data is permanent verloren** (geen backfill mogelijk).
+**Vast te leggen per `job_id`:**
+- **Proxy-bytes per job** (Decodo) — nu **niet** gepersisteerd voor de YouTube-AI-route (`transcription_jobs.file_size_bytes = 0`; download gebeurt in de worker, wél gelogd, niet opgeslagen). Dit is de grootste kostenvariabele.
+- **AssemblyAI-minuten + model** — `duration_seconds` is aanwezig; model-/tarief-veld niet.
+- **DeepSeek-tokens** (in/uit) per AI-samenvatting.
+- **Storage-per-user** (R2-bytes) voor toekomstige storage-economics.
+**Waarom blocker:** zonder dit start de launch blind op kosten; elke dag zonder capture is onherroepelijk dataverlies. Koppelt aan priorities **1.24** (admin financieel dashboard: kost-per-job + tarief-config) en ADR-052 (consequenties). **Alleen geregistreerd** — implementatie is een aparte taak.
+
 ### Stripe: Account activatie + nieuwe prijzen vereist
 **Status:** Stripe account nog niet geactiveerd met KVK/bedrijfsinfo. Vereist voor live betalingen.
 **Impact:** Geen live betalingen mogelijk tot activatie compleet is.
 **Fix (aparte sessie):**
 1. Stripe Dashboard → activeer account met KVK en bedrijfsgegevens
 2. Switch naar live mode
-3. Maak 5 producten aan met **nieuwe prijzen**: Starter €2.99/150cr, Basic €6.99/500cr, Plus €13.99/1200cr, Pro €27.99/2800cr, Power €54.99/6000cr (type: One-off, EUR)
-4. Update `PACKAGES` in `src/app/api/stripe/checkout/route.ts` met nieuwe bedragen en credits (plan-strings 'try'→Starter, 'basic', 'plus', 'pro', 'power' blijven hetzelfde)
+3. Maak **4 producten** aan (BTW-inclusief, type One-off, EUR) volgens [ADR-052](../decisions/052-pricing-restructure-4-tiers.md): **Test €3,49/100cr, Starter €9,99/400cr, Plus €24,99/1.300cr, Power €49,99/3.100cr**. Zet Stripe Tax aan (categorie `txcd_10000000`, prijzen inclusief, OSS) + Adaptive Pricing (EUR-settlement).
+4. Update `PACKAGES` in **`src/app/api/stripe/checkout/route.ts` én `packages/shared/src/lib/pricing.ts`** met de 4 tiers (de plan-set daalt van 5 → 4).
 5. Registreer webhook endpoint: `https://indxr.ai/api/stripe/webhook`
 6. Kopieer `STRIPE_WEBHOOK_SECRET` naar Vercel environment variables
 
-**⚠️ Let op:** De pricing-pagina toont al de nieuwe prijzen (€6.99/€13.99/€27.99) maar de `PACKAGES` in `checkout/route.ts` bevat nog de oude bedragen. Deze moeten synchroon zijn vóór launch.
+**⚠️ Let op:** zowel `pricing.ts` als `checkout/route.ts` bevatten nog het **oude 5-tier-model** (Try €2,49/150cr … Power €49,99/6000cr). Beide moeten naar het 4-tier-model uit ADR-052 vóór launch. Dit is de code-sync-taak gekoppeld aan priorities 1.13.
 
 ### Upstash Redis: Rate limiting en caption cache uitgeschakeld in productie
 **Bestand:** `packages/shared/src/lib/ratelimit.ts` (Next.js), `backend/main.py` (caption cache)
@@ -474,7 +484,7 @@ Geen externe service die alarmeert bij downtime.
   - [x] TEST 10 (Password reset PKCE flow) ✓ 2026-05-17 — redirectTo via /auth/callback?next=<settings URL>
   - [ ] TEST 11 (Stripe checkout) — uitgesteld, Stripe tax setup pending bij Khidr
   - [ ] TEST 13 (Vercel logs inspectie) — handmatig, na deploy
-  - [ ] Eerste echte betaling (Try-pakket €2.49) — uitgesteld (Stripe tax setup pending bij Khidr)
+  - [ ] Eerste echte betaling (Test-pakket €3,49) — uitgesteld (Stripe tax setup pending bij Khidr)
   - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks (na eerste echte betaling)
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
 - [x] Supabase email verificatie re-enabled ✓

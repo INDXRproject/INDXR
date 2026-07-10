@@ -20,7 +20,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 → [AI Pipeline](architecture/ai-pipeline.md) → [001 Python Backend](decisions/001-python-backend.md) → [002 YouTube Captions](decisions/002-youtube-captions.md)
 
 **...pricing of business wilt begrijpen:**
-→ [Pricing](business/pricing.md) → [Positionering](business/positioning.md) → [012 Pricing Tiers](decisions/012-pricing-tiers.md)
+→ [Pricing](business/pricing.md) → [Positionering](business/positioning.md) → [052 Pricing Restructure (4 tiers)](decisions/052-pricing-restructure-4-tiers.md)
 
 **...het credit-systeem begrijpt:**
 → [Credit System](architecture/credit-system.md) → [009 Credit Granulariteit](decisions/009-credit-granularity.md) → [010 Playlist Pricing](decisions/010-playlist-pricing.md)
@@ -88,6 +88,8 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [049-dead-job-reaper.md](decisions/049-dead-job-reaper.md) | Dead-job reaper (Pass 0 in watchdog): stuck transcription_jobs → terminale status; playlist-veiligheid via heartbeat-branch-scheiding |
 | [050-credit-reservation-model.md](decisions/050-credit-reservation-model.md) | Credit-reservering (reserve-and-hold) voor alle jobs — reserveren bij start, refund = gereserveerd − verbruik; sluit concurrent-overspend race; gefaseerd (fundering nu, gedrag na review) |
 | [051-stuck-running-playlist-recovery.md](decisions/051-stuck-running-playlist-recovery.md) | Stuck-'running'-playlist recovery — per-video download-timeout (preventie) + watchdog reap-pass (detectie op voortgang, refund-vóór-claim via bestaande primitieven) + Pass 1b bounded + caption-cap |
+| [052-pricing-restructure-4-tiers.md](decisions/052-pricing-restructure-4-tiers.md) | Pricing-herstructurering: 4 tiers (Try/Starter/Plus/Power), BTW-inclusief, worst-case-geprijsd, Power 3.100cr, Adaptive Pricing EUR-settlement, max −20% uniform (supersedet ADR-012) |
+| [053-on-demand-invoicing.md](decisions/053-on-demand-invoicing.md) | On-demand BTW-facturen voor afgeronde Checkout-betalingen: Customer→Invoice→inclusive item→finalize→paid_out_of_band, één Customer per user, koppeling aan originele betaling, geen fee op sales zonder factuurbehoefte |
 
 ---
 

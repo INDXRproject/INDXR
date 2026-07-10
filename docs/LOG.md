@@ -7629,3 +7629,32 @@ docs/wiki/roadmap/priorities.md
 ---
 
 [2026-07-09 16:30] taak: LIVE-VERIFICATIE (read-only) credit/playlist-spoor e2e — playlist "Tadabbur Juz 1-30" (collection 99d73063, 30 vids, 10 whisper+20 caption, 3 jobs/retry-rondes). Alle 7 punten BEVESTIGD: Σreserved 81=Σsettled 76+Σrefunded 5, eindsaldo 94 (=170−76 netto), receipt 76=56 whisper+20 caption, Policy-S (retry belast gratis-3 niet), transition-aware teller (geen phantom), 4× bot_detection retrybaar (incl. 3xOK85qRQ_o één keer gesetteld na 2 fails), 30 distinct settlements. Eerste e2e live-verificatie met nagerekende ledger → launch-ready | gewijzigd: docs/wiki/testing/2026-07-09-credit-playlist-e2e-live-verification.md (nieuw), docs/wiki/INDEX.md, docs/wiki/decisions/050+051, docs/LOG.md
+[2026-07-09 14:35] commit: docs: live e2e verification of the credit/playlist track (ledger reconciled)
+
+First full end-to-end live verification of the reserve→settle→refund track with a
+hand-reconciled ledger, against production. Playlist "Tadabbur Juz 1-30" (collection
+99d73063, 30 videos / 10 whisper + 20 captions, 3 jobs across retry rounds, all 30
+succeeded). All 7 points confirmed:
+- ledger: Σreserved 81 = Σsettled 76 + Σrefunded 5; balance 94 = 170 − 76 net consumed
+- receipt: 76 = 56 (10 whisper) + 20 (20 captions); charged 72→75→76 over rounds
+- Policy-S: retry jobs charged (no re-granted free-3); reserve==settle+refund per retry
+- transition-aware counter: completed+failed = distinct videos per job (no phantom)
+- classification: 4 bot_detection fails retryable; 3xOK85qRQ_o settled exactly once after
+  two failures + one success
+- 30 distinct settlements, each video settled exactly once
+
+New durable record under docs/wiki/testing/, linked from INDEX + ADR-050/051.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/050-credit-reservation-model.md
+docs/wiki/decisions/051-stuck-running-playlist-recovery.md
+docs/wiki/testing/2026-07-09-credit-playlist-e2e-live-verification.md
+---
+
+[2026-07-09 14:58] wiki-hygiene: priorities.md Werksessie C status rechtgetrokken (C.4.1/C.1.2/C.1.3/C.2.1/C.2.2/C.2.5 → done, geverifieerd tegen code; C.1.1 achterhaald-note; sectie-statusbanner) + 4 niet-getrackte items toegevoegd (1.30 custom-SMTP, 1.31 Sentry-noise-filter, 1.32 PostHog-masking, 1.33 OSS-status) | gewijzigd: docs/wiki/roadmap/priorities.md
+
+[2026-07-09 16:06] pricing: kostenbasis geherijkt + 5→4 tiers (BTW-incl, worst-case-geprijsd) vóór Stripe live. pricing.md volledig herschreven; ADR-052 aangemaakt (supersedet ADR-012, banner); INDEX bijgewerkt; per-job kosten-capture als launch-blocker in known-issues geregistreerd; stale prijzen/kostprijs (€0,009-vloer, €0,0054) opgeschoond in credit-system/pricing-source-of-truth/deployment/known-issues/marketing/cross-host-smoke/migration-summary/page-structures(pricing,homepage)/unit-economics/audit-frontend/ADR-009 + priorities 1.13/1.21. | gewijzigd: docs/wiki/business/pricing.md, docs/wiki/business/unit-economics.md, docs/wiki/decisions/052-*.md (nieuw), docs/wiki/decisions/012-*.md, docs/wiki/decisions/009-*.md, docs/wiki/INDEX.md, docs/wiki/operations/known-issues.md, docs/wiki/operations/deployment.md, docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/operations/migration-summary.md, docs/wiki/architecture/credit-system.md, docs/wiki/architecture/pricing-source-of-truth.md, docs/wiki/architecture/page-structures/{pricing,homepage}.md, docs/wiki/business/marketing.md, docs/wiki/design/audit-frontend.md, docs/wiki/roadmap/priorities.md
+
+[2026-07-10 17:50] factuur+deploy: on-demand BTW-factuur afgerond (inclusive tax_behavior + automatic_tax + tax_code txcd_10000000 → totaal = betaald bruto, correcte BTW-regel; factuur-metadata koppelt original_payment_intent; één Stripe Customer per user via profiles.stripe_customer_id + getOrCreateStripeCustomer); checkout attach customer + tax_id_collection + customer_update; webhook fail-closed in productie; migratie 20260710154218 (profiles.stripe_customer_id) toegepast (count 22→23); ADR-053 aangemaakt; sign-bug-noot CLAUDE.md gecorrigeerd; pricing-source-of-truth→4 tiers; Test→Try in ADR-052+INDEX; CLAUDE.md werkwijzeregel → CC commit/pusht zelf. | gewijzigd: apps/app/src/app/api/stripe/{checkout,webhook,invoice}/route.ts, apps/app/src/lib/stripe-customer.ts, apps/app/src/components/dashboard/billing/{PurchaseHistoryCard,InvoiceButton,BillingPurchaseGrid}.tsx, apps/app/src/app/dashboard/billing/{page,success/page}.tsx, packages/shared/src/lib/pricing.ts, supabase/migrations/20260710154218_profiles_stripe_customer_id.sql, CLAUDE.md, docs/LESSONS.md, docs/wiki/**

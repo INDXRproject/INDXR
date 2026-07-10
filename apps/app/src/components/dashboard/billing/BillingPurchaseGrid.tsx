@@ -3,6 +3,17 @@
 import { useState } from "react"
 import { PricingCard } from "@indxr/shared/components/ui/pricing-card"
 import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
+import { PACKAGES, formatEur } from "@indxr/shared/lib/pricing"
+
+// Tier-onafhankelijke capabilities (gelden voor alle betaalde tiers). Geen
+// verzonnen per-tier perks — credits/prijzen komen dynamisch uit PACKAGES.
+const FEATURES = [
+  "AI transcription (1 credit/min)",
+  "Playlist & batch processing (first 3 free)",
+  "RAG-ready JSON export for vector DBs",
+  "Free existing-caption extraction",
+  "All export formats · credits never expire",
+]
 
 export function BillingPurchaseGrid() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
@@ -46,87 +57,21 @@ export function BillingPurchaseGrid() {
           onDismiss={() => setCheckoutError(null)}
         />
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start mt-8">
-      <PricingCard
-        name="Try"
-        price="€2.49"
-        credits={200}
-        label="Try it out"
-        description="Perfect for trying out the platform."
-        ctaLabel={loadingPlan === 'try' ? 'Redirecting...' : 'Buy Now'}
-        features={[
-          "200 transcript credits",
-          "~3h AI transcription or 200 playlist videos",
-          "All export formats",
-        ]}
-        onSelect={() => handlePurchase('try')}
-      />
-
-      <PricingCard
-        name="Basic"
-        price="€5.99"
-        credits={500}
-        description="Great for regular users."
-        ctaLabel={loadingPlan === 'basic' ? 'Redirecting...' : 'Buy Now'}
-        features={[
-          "500 transcript credits",
-          "~8h AI transcription or 500 playlist videos",
-          "All export formats",
-          "Email support",
-        ]}
-        onSelect={() => handlePurchase('basic')}
-      />
-
-      <PricingCard
-        name="Plus"
-        price="€11.99"
-        credits={1100}
-        label="Most Popular"
-        featured={true}
-        description="Best value for creators and researchers."
-        ctaLabel={loadingPlan === 'plus' ? 'Redirecting...' : 'Buy Now'}
-        features={[
-          "1,100 transcript credits",
-          "~18h AI transcription or 1,100 playlist videos",
-          "All export formats",
-          "Priority processing",
-          "Batch playlist extraction",
-        ]}
-        onSelect={() => handlePurchase('plus')}
-      />
-
-      <PricingCard
-        name="Pro"
-        price="€24.99"
-        credits={2600}
-        description="For heavy users and teams."
-        ctaLabel={loadingPlan === 'pro' ? 'Redirecting...' : 'Buy Now'}
-        features={[
-          "2,600 transcript credits",
-          "~43h AI transcription or 2,600 playlist videos",
-          "All export formats",
-          "Priority support",
-          "Batch processing",
-        ]}
-        onSelect={() => handlePurchase('pro')}
-      />
-
-      <PricingCard
-        name="Power"
-        price="€49.99"
-        credits={5500}
-        label="Best Value"
-        description="Maximum value for archiving."
-        ctaLabel={loadingPlan === 'power' ? 'Redirecting...' : 'Buy Now'}
-        features={[
-          "5,500 transcript credits",
-          "~91h AI transcription or 5,500 playlist videos",
-          "All export formats",
-          "Priority support",
-          "API access (Beta)",
-        ]}
-        onSelect={() => handlePurchase('power')}
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start mt-8">
+        {PACKAGES.map((pkg) => (
+          <PricingCard
+            key={pkg.id}
+            name={pkg.name}
+            price={formatEur(pkg.priceEur)}
+            credits={pkg.credits}
+            label={pkg.mostPopular ? "Most Popular" : undefined}
+            featured={pkg.mostPopular}
+            description={pkg.description}
+            ctaLabel={loadingPlan === pkg.id ? 'Redirecting...' : 'Buy Now'}
+            features={FEATURES}
+            onSelect={() => handlePurchase(pkg.id)}
+          />
+        ))}
       </div>
     </div>
   )

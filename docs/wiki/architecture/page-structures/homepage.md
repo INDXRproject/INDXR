@@ -93,7 +93,7 @@ Compact strip onder How it works. Drie korte punten met icon.
 
 ### Sectie 6 — Pricing teaser
 
-> "Pay only for what you use. Credits never expire. Starting at €2.49 — no subscription."
+> "Pay only for what you use. Credits never expire. Starting at €3,49 — no subscription."
 > [See pricing →] → `/pricing`
 
 ### Sectie 7 — Closing CTA (signup-pull)

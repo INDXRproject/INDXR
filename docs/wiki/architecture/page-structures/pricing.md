@@ -49,13 +49,15 @@ Per card:
 
 ### Sectie 5 — Secundary tiers
 
-Twee compactere cards naast elkaar (Try + Power):
-- **Try (€2.49 / 150 credits)** — "Just want to test? Enough for a 25-min AI transcription."
-- **Power (€49.99 / 6,000 credits)** — "Power user? Our best per-credit rate."
+> **⚠️ 2026-07-09:** prijzen/tiers hier zijn achterhaald — het model is nu 4 tiers (ADR-052). De exacte page-structuur (welke tiers primair vs. secundair) hoort bij de pricing-pagina-rebuild ("Website copy volledig herschrijven" + pricing-pagina). Nieuwe tiers: Test €3,49/100 · Starter €9,99/400 · Plus €24,99/1.300 (anker) · Power €49,99/3.100.
+
+Twee compactere cards naast elkaar (voorheen Try + Power):
+- **Test (€3,49 / 100 credits)** — "Just want to test? Enough for a ~100-min AI transcription."
+- **Power (€49,99 / 3.100 credits)** — "Power user? Our best per-credit rate."
 
 ### Sectie 6 — Credit-cost table met tier-toggle
 
-Client island. Boven tabel: tier-selector (5 buttons), default = Plus.
+Client island. Boven tabel: tier-selector (nu 4 buttons), default = Plus.
 Click → derde kolom rendert kosten in die tier.
 
 Rijen:

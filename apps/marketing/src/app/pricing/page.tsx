@@ -30,8 +30,8 @@ const faqItems: FAQItem[] = [
     answer: "You can purchase a new package. Your library and all previously extracted transcripts remain available — nothing is deleted when your credit balance reaches zero.",
   },
   {
-    question: "What if I need fewer credits than Basic?",
-    answer: "The Try package (€2.49 / 150 credits) is available for a single project or a quick test.",
+    question: "What if I need fewer credits than Starter?",
+    answer: "The Try package (€3.49 / 100 credits) is available for a single project or a quick test.",
   },
   {
     question: "Does INDXR.AI work for audio files, not just YouTube?",

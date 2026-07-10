@@ -98,6 +98,7 @@ Naast LOG.md (wat je deed) bestaat **`docs/LESSONS.md`** (wat je niet meer mag v
    ```
    [YYYY-MM-DD HH:MM] taak: <beschrijving> | gewijzigd: <bestanden>
    ```
+3. **Commit en push zelf** (norm sinds 2026-07-10 — vervangt de oude "Khidr pusht handmatig"-regel). Na elke voltooide, geverifieerde taak: commit de wijzigingen met een duidelijke message en push naar `master`. Werk je op `master`, dan is committen daar akkoord voor deze repo. Push → Vercel + Railway auto-deploy; controleer daarna dat de deploy groen is. Eindig de commit-message met `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`. Commit alleen bewezen werk (build groen + verificatie) — een falende taak wordt niet gepusht.
 
 ---
 
@@ -236,7 +237,7 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 - Alle 6 user-facing tabellen hebben RLS — gebruikers zien alleen eigen data
 - `SUPABASE_SERVICE_ROLE_KEY` alleen in Python backend (bypass RLS) — nooit in browser of Next.js client
 - **Balans-bron:** `user_credits.credits` is de **gezaghebbende, gematerialiseerde balans** — onderhouden door 4 RPC's (`deduct_credits_atomic`, `add_credits`, `claim_welcome_reward`, `update_playlist_video_progress`) onder `FOR UPDATE`-rijlock. `get_user_credits` leest deze kolom → dat is wat de user ziet. Reserveringen/aftrek altijd hierop opereren.
-- `credit_transactions` is een **audit-log, GEEN balans-bron**. Herleid de balans **niet** uit `SUM(amount)` — het log reconcilieert door een sign-bug niet schoon (whisper-debits positief, caption-debits negatief, beide `type='debit'`; zie known-issues / priorities 1.22a). (Geverifieerd tegen baseline-migratie + RPC's, 2026-07-06.)
+- `credit_transactions` is een **audit-log, GEEN balans-bron**. Herleid de balans **niet** uit `SUM(amount)` — de balans is gematerialiseerd in `user_credits.credits` (gezaghebbend). De vroegere sign-bug (caption-debits negatief) is **gefixt** in migratie `20260706172045_fix_caption_debit_sign.sql`: `amount` is nu **altijd positief** en de kolom `type` (`'debit'`/`'credit'`) draagt de richting. Reden om alsnog niet te sommeren: `SUM(amount)` telt met altijd-positieve bedragen sowieso fout, en reserverings-/settlement-/refund-`kind`s (ADR-050) kunnen dubbeltellen. Lees dus altijd `user_credits.credits` via `get_user_credits`. (Geverifieerd tegen migraties + RPC's, 2026-07-10.)
 - **Dode orphans — niet als balans gebruiken:** `profiles.credits` (`DEFAULT 5`) en de oude SQL-functie `deduct_credits(...)` die die kolom muteert hebben **geen callers**; idem ongebruikt: `credit_transactions.balance_after`/`transaction_type`, `user_credits.total_credits_purchased`/`credits_bonus`.
 
 ### Design system

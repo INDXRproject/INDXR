@@ -1,168 +1,173 @@
 # Pricing
 
-## Credit Pakketten
+**Herzien: 2026-07-09.** 4-tier-model, BTW-inclusief, worst-case-geprijsd. Vervangt het 5-tier-model (Try/Basic/Plus/Pro/Power). Zie [ADR-052](../decisions/052-pricing-restructure-4-tiers.md) voor de volledige rationale; [ADR-012](../decisions/012-pricing-tiers.md) is hierdoor superseded.
 
-INDXR.AI verkoopt credits als eenmalige aankopen (geen abonnement). Credits verlopen niet.
-
-### Weergave op pricing-pagina (3 primaire tiers + 2 quiet links)
-
-| Pakket | Prijs | Credits | €/credit | UI-behandeling |
-|--------|-------|---------|----------|----------------|
-| **Starter** | €2.99 | 150 | €0.01993 | Quiet tekst-link ("Need fewer?") |
-| **Basic** | €6.99 | 500 | €0.01398 | Primaire kaart |
-| **Plus** ★ | €13.99 | 1.200 | €0.01166 | Primaire kaart, featured |
-| **Pro** | €27.99 | 2.800 | €0.00999 | Primaire kaart |
-| **Power** | €54.99 | 6.000 | €0.00916 | Quiet tekst-link ("Larger volumes?") |
-
-★ = "Meest populair" badge in UI (center stage pricing)
-
-**Valuta:** EUR. Europese primaire doelgroep; EUR-pricing voelt psychologisch lager aan dan USD.
-
-> ⚠️ **Stripe backend discrepantie:** De `PACKAGES` in `src/app/api/stripe/checkout/route.ts` bevat nog de oude prijzen (Try €2.49/200cr, Basic €5.99/500cr, Plus €11.99/1100cr, Pro €24.99/2600cr, Power €49.99/5500cr). De plan-strings ('try'→Starter, 'basic', 'plus', 'pro', 'power') zijn hetzelfde, maar bedragen en credits moeten bijgewerkt worden vóór launch. Dit staat op de pre-launch checklist.
-
-Zie [ADR-012](../decisions/012-pricing-tiers.md) voor de volledige rationale.
+INDXR.AI verkoopt credits als **eenmalige** aankopen (geen abonnement). **Credits verlopen nooit** — dit is een bewust *ihsaan*-principe (geen verval-druk, geen "use it or lose it"). Behoud dit; het is een expliciet verkoopargument.
 
 ---
 
-## Credit Formule
+## Credit-pakketten (4 tiers)
+
+Alle prijzen zijn **BTW-inclusief** (EU B2C, 21% NL-tarief als referentie; OSS regelt het werkelijke per-land-tarief — zie Tax).
+
+| Tier | Prijs (incl. BTW) | Credits | Bruto €/cr | Netto €/cr (÷1,21) | UI-rol |
+|------|-------------------|---------|-----------|--------------------|--------|
+| **Test** | €3,49 | 100 | €0,03490 | €0,02884 | Instap / "even proberen" |
+| **Starter** | €9,99 | 400 | €0,02498 | €0,02064 | Primaire kaart |
+| **Plus** ★ | €24,99 | 1.300 | €0,01922 | €0,01589 | **Anker** (featured, "Meest populair") |
+| **Power** | €49,99 | 3.100 | €0,01613 | €0,01333 | Volume / zware gebruikers |
+
+★ = center-stage anker in de UI.
+
+**BTW is doorstroom, geen marge.** De klant betaalt de lijstprijs incl. BTW; wij dragen de BTW af. De **netto omzet = prijs ÷ 1,21**. Alle marge-/winstberekeningen hieronder rekenen op de **netto** €/cr, nooit op de bruto lijstprijs. Input-BTW is verwaarloosbaar: onze zwaarste leveranciers (AssemblyAI, Decodo) zijn US-bedrijven → **reverse-charge**, geen NL-input-BTW om te verrekenen.
+
+---
+
+## Kostenbasis (juli 2026)
+
+Geprijsd tegen **worst-case**, niet gemiddeld — zo blijft elke tier winstgevend ook op de duurste video's en met korting.
+
+| Component | Kost/credit | Bron / aanname |
+|-----------|-------------|----------------|
+| AssemblyAI (Universal-3.5 Pro) | €0,0031/cr | Transcriptie-minuut; 1 cr = 1 min |
+| Decodo (residentiële proxy, PAYG) | ~€0,0034/cr | ~1 MB/min-schatting; varieert per video |
+| **Marginaal — realistisch** | **~€0,0065/cr** | = **€0,65 / 100 cr** |
+| **Marginaal — worst-case** | **~€0,010/cr** | = **€1,00 / 100 cr** (grote/zware audio, ongunstige proxy-route) |
+
+> De proxy-kost is de grootste variabele en de minst voorspelbare (bytes per video verschillen sterk). Daarom: worst-case als ontwerpbasis. Per-job meten blijft nodig zodra de capture-laag er is (zie known-issues — launch-blocker).
+
+### Vaste infra bij launch (~€70–90/maand)
+
+| Dienst | Plan | Waarom |
+|--------|------|--------|
+| Railway | Pro | Worker + API, container-Redis voor ARQ |
+| Vercel | Pro | Twee projecten (marketing + app) |
+| Supabase | Pro | Backups + 8 GB DB (los van Railway — backup-onafhankelijkheid) |
+| Resend | Free | Transactioneel + broadcast; Pro pas nodig bij >3.000/mnd of 100/dag-piek |
+| Cloudflare R2 | Free tier | Audio/transcript-opslag; **egress gratis** → verwaarloosbaar |
+| Upstash | PAYG | Rate-limiter + caption-cache (sporadische serverless calls) |
+
+Vaste infra wordt gedekt door de marge, niet per credit doorbelast. Zie [unit-economics.md](unit-economics.md).
+
+---
+
+## Netto winst per 100 credits
+
+Netto omzet per 100 cr = (bruto €/cr ÷ 1,21) × 100. Winst = netto omzet − kost. Bij **−20% korting** schaalt de netto omzet mee met 0,8 (BTW is proportioneel).
+
+| Tier | Netto omzet /100cr | **Realistisch** (−€0,65) | idem **−20%** | **Worst-case** (−€1,00) | idem **−20%** |
+|------|--------------------|--------------------------|---------------|-------------------------|---------------|
+| Test | €2,884 | +€2,234 | +€1,657 | +€1,884 | +€1,307 |
+| Starter | €2,064 | +€1,414 | +€1,001 | +€1,064 | +€0,651 |
+| Plus | €1,589 | +€0,939 | +€0,621 | +€0,589 | +€0,271 |
+| Power | €1,333 | +€0,683 | +€0,416 | +€0,333 | **+€0,066** |
+
+**Kernclaim:** elke tier houdt winst in **élk** scenario — óók de duurste tier (Power), tegen worst-case kost, mét de maximale korting. Power worst-case −20% = **+€0,07/100cr**, de dunste cel in de hele matrix en nog steeds positief. Dat is de bewuste ontwerpvloer.
+
+Netto-marge% op lijstprijs, worst-case kost: Test ~65% · Starter ~52% · Plus ~37% · Power ~25%. Op realistische kost: ~78% / ~69% / ~59% / ~51%.
+
+---
+
+## Kortingsbeleid
+
+- **Maximaal −20%**, **uniform over alle tiers**. Nooit dieper.
+- **Zeldzaam** ingezet (gerichte campagne, win-back). **Stabiele prijs is de norm** — geen permanente "sale"-sfeer.
+- −20% is veilig by design: in élk scenario blijft de winst positief (zie matrix; Power worst-case −20% = +€0,07/100cr).
+- **Geen −30%.** Elke −30%-referentie in oudere docs is achterhaald en moet weg.
+
+---
+
+## Valuta & internationale betalingen
+
+- **EUR** is zowel integration- als settlement-currency. Eén valuta, geen handmatige multi-currency-tabellen.
+- **USD en overige valuta lopen via Stripe Adaptive Pricing:** de klant ziet en betaalt in de eigen valuta; Stripe rekent de **2–4% conversie door aan de klant**, niet aan ons. Onze **marge blijft 100% intact** in EUR.
+- Geen handmatig onderhouden prijzen per land/valuta.
+
+---
+
+## Tax (Stripe Tax)
+
+- **Categorie:** "General – Electronically Supplied Services" (`txcd_10000000`).
+- **Prijzen zijn inclusief** belasting ingesteld — de klant ziet de all-in prijs.
+- **Stripe Tax OSS** (One-Stop-Shop) regelt automatisch het **per-land-BTW-tarief** binnen de EU; wij dragen via één OSS-aangifte af.
+- BTW blijft **doorstroom** (zie boven): netto omzet = lijstprijs ÷ (1 + lokaal tarief). De marges hierboven gebruiken 21% als conservatieve referentie.
+
+---
+
+## Credit-formule (per feature)
 
 ```
-AI-transcriptie: ⌈video_duur_seconden / 60⌉ credits, minimum 1
-Playlist captions: 1 credit per video (na de eerste 3 gratis)
-AI samenvatting: 3 credits flat
+AI-transcriptie:        ⌈video_duur_seconden / 60⌉ credits, minimum 1   (1 credit = 1 minuut)
+Playlist (auto-caption): 1 credit per video, ná de eerste 3 gratis
+Playlist (Whisper-video): ⌈duur / 60⌉ credits, min 1, GEEN gratis-korting
+AI-samenvatting:         3 credits flat
+RAG JSON-export:         ⌈video_duur_seconden / 900⌉ credits, min 1 (1 cr / 15 min), eerste 3 exports gratis
+Caption-extractie (los): 0 credits — altijd gratis
 ```
 
-| Video duur | Credits (AI-transcriptie) |
-|-----------|--------------------------|
-| 0–1 min | 1 |
-| 5 min | 5 |
-| 12 min | 12 |
-| 30 min | 30 |
-| 1 uur | 60 |
+| Video-duur | AI-transcriptie (cr) | RAG-export (cr) |
+|-----------|----------------------|-----------------|
+| 0–1 min | 1 | 1 |
+| 5 min | 5 | 1 |
+| 15 min | 15 | 1 |
+| 30 min | 30 | 2 |
+| 1 uur | 60 | 4 |
 
-**Caption-extractie is gratis** — geen credits voor enkelvoudige video's met YouTube-captions (~90% van video's).
-
-**Eerste 3 playlist-video's altijd gratis** — auto-captions, automatisch geselecteerd, gelabeld "FREE" in UI.
+**Caption-extractie van één video is gratis** (~90% van video's heeft YouTube-captions), ook anoniem (10/dag). **Eerste 3 playlist-video's altijd gratis** (auto-captions, gelabeld "FREE" in UI).
 
 ---
 
-## Gratis Tier
+## Reële gebruikswaarde per tier
 
-- **25 gratis credits** bij registratie (Welcome Reward) — genoeg voor een kleine playlist of 25 minuten AI-transcriptie
-- Caption-extractie (enkelvoudige video): onbeperkt gratis (ook anoniem, 10/dag)
-- Playlist metadata preview: onbeperkt (ook anoniem)
-- Playlist extractie, AI-transcriptie, audio upload: vereisen account + credits
-
-**Paid user status:** Gratis credits verlenen GEEN paid user status. Betaalde status is permanent na eerste Stripe-aankoop. Zie [ADR-013](../decisions/013-welcome-credits-freemium.md).
-
----
-
-## Reële gebruikswaarde per pakket
-
-| Pakket | Playlist-video's | AI-transcriptie | Audio uploads | AI samenvattingen |
-|--------|----------------|----------------|---------------|------------------|
-| Starter (150) | 150 video's | 2,5 uur | 2,5 uur | 50 |
-| Basic (500) | 500 video's | 8,3 uur | 8,3 uur | 166 |
-| Plus (1.200) | 1.200 video's | 20 uur | 20 uur | 400 |
-| Pro (2.800) | 2.800 video's | 46,7 uur | 46,7 uur | 933 |
-| Power (6.000) | 6.000 video's | 100 uur | 100 uur | 2.000 |
+| Tier | Credits | AI-transcriptie | Playlist-video's (captions) | AI-samenvattingen (3cr) |
+|------|---------|-----------------|-----------------------------|--------------------------|
+| Test | 100 | ~1,7 uur | 100 | 33 |
+| Starter | 400 | ~6,7 uur | 400 | 133 |
+| Plus | 1.300 | ~21,7 uur | 1.300 | 433 |
+| Power | 3.100 | ~51,7 uur | 3.100 | 1.033 |
 
 ---
 
-## Kosten & Marges
+## Gratis tier
 
-### COGS per actie (verified)
+- **25 gratis credits** bij registratie (Welcome Reward) — genoeg voor ~25 min AI-transcriptie of een kleine playlist.
+- Caption-extractie (losse video): onbeperkt gratis (ook anoniem, 10/dag).
+- Playlist-metadata preview: onbeperkt (ook anoniem).
+- Playlist-extractie, AI-transcriptie, audio-upload: vereisen account + credits.
 
-| Actie | COGS | Bron |
-|-------|------|------|
-| Auto-caption extractie | ~€0.002 | Proxy (~515 KB) + compute + storage |
-| AI-transcriptie 10 min (geoptimaliseerd, Opus 249) | ~€0.045 | AssemblyAI $0.0035/min + proxy ~3.7 MB |
-| AI-transcriptie 10 min (huidig, Opus 251) | ~€0.061 | AssemblyAI $0.0035/min + proxy ~10 MB |
-| Audio upload AI 10 min | ~€0.036 | AssemblyAI $0.0035/min, geen proxy |
-| AI samenvatting | ~€0.001 | DeepSeek V3 ~2K tokens in, ~500 out |
-
-**Aanname:** $2.50/GB voor IPRoyal residentiële proxy is de **schaalprijs**. Huidige testkosten zijn hoger (€12.50/2GB, €18.75/3GB). Margeberekeningen zijn gebaseerd op de schaalprijs — herbereken niet op basis van testkosten.
-
-### Bruto marges per tier (geoptimaliseerde audio)
-
-| Tier | Playlist captions | AI-transcriptie | Audio upload | AI samenvatting (3cr) |
-|------|------------------|----------------|-------------|----------------------|
-| Try | 92.0% | 67.9% | 71.9% | 97.3% |
-| Basic | 91.7% | 66.6% | 70.8% | 97.2% |
-| Plus | 90.8% | 63.3% | 67.9% | 96.9% |
-| Pro | 89.6% | 58.4% | 63.6% | 96.5% |
-| Power | 89.0% | 56.0% | 61.5% | 96.3% |
-
-*Minimum ≥56% marge op de duurste actie (AI-transcriptie, Power-tier) is het ontwerpdoel.*
-
-**Verificatie Power-tier AI-transcriptie:** Revenue €0.00909/cr. COGS €0.004/cr. Marge = (€0.00909 − €0.004) ÷ €0.00909 = **56.0%** ✓
+**Paid-user-status:** gratis credits verlenen **geen** paid-status. Betaalde status is permanent na de eerste Stripe-aankoop. Zie [ADR-013](../decisions/013-welcome-credits-freemium.md).
 
 ---
 
-## Break-even analyse
+## Stripe-configuratie
 
-Maandelijkse infrastructuurkosten: Railway ($5) + Vercel ($20) + Supabase ($25) = ~**€50/maand**.
+Geïmplementeerd als **Checkout Sessions** (niet Payment Links):
+- Server-side prijs in `PACKAGES` (`checkout/route.ts`) — client stuurt alleen de pakket-naam.
+- `mode: 'payment'` (eenmalig), `billing_address_collection: 'required'` (EU-factuurverplichting).
+- Integration- + settlement-currency: **EUR**; internationale valuta via **Adaptive Pricing**.
+- **Stripe Tax** aan, categorie `txcd_10000000`, prijzen inclusief, OSS.
 
-| Scenario | Try (€2.49) | Basic (€5.99) | Plus (€11.99) |
-|----------|------------|--------------|--------------|
-| 100% AI-transcriptie (worst case) | ~30 klanten | ~14 | ~8 |
-| Gemengd (40% captions, 50% AI, 10% summary) | ~22 | ~10 | ~5 |
-
----
-
-## Stripe Configuratie
-
-Geïmplementeerd als **Checkout Sessions** (niet Stripe Payment Links):
-- Server-side prijs bepaald in `PACKAGES` object (`checkout/route.ts`) — client stuurt alleen pakket-naam
-- `price_data` dynamisch aangemaakt per sessie (geen opgeslagen Stripe Price IDs)
-- `mode: 'payment'` (eenmalig, geen subscription)
-- `billing_address_collection: 'required'` (EU-factuurverplichting)
-- Valuta: EUR
-
-**Stripe metadata** per checkout session:
-```json
-{"userId": "uuid", "credits": "200"}
-```
+> ⚠️ **Sync-taak (apart, niet deze documentatie-taak):** `PACKAGES` in `checkout/route.ts` **en** `packages/shared/src/lib/pricing.ts` bevatten nog het oude 5-tier-model (Try €2,49/150cr … Power €49,99/6000cr) en moeten worden vervangen door de 4 tiers hierboven vóór Stripe live-mode. De Stripe-producten worden in live mode toch opnieuw aangemaakt — stel de nieuwe prijspunten daar in één keer correct in. Zie ADR-052 (consequenties) en priorities 1.13.
 
 ---
 
-## Concurrentievergelijking
-
-| Concurrent | Model | Effectief $/min |
-|-----------|-------|----------------|
-| TubeText | $3.99/500 credits (1 cr = 1 video) | ~$0.001/min (captions only) |
-| YouTube-Transcript.io | $9.99/mo / 1.000 tokens | ~$0.001/min (captions only) |
-| DownloadYouTubeTranscripts | $4.99/100 credits | ~$0.005/min (captions only) |
-| TurboScribe | $10/mo onbeperkt | ~$0.02/min typisch gebruik |
-| Sonix (PAYG) | $10/uur | $0.167/min |
-| Otter.ai Pro | $16.99/mo / 1.200 min | $0.014/min |
-| **INDXR.AI Try** | **€2.49/200 credits** | **€0.012/min (AI) of €0.012/video (captions)** |
-| **INDXR.AI Power** | **€49.99/5.500 credits** | **€0.009/min (AI) of €0.009/video (captions)** |
-
-INDXR.AI zit laag-tot-mediaan voor AI-transcriptie en hoger dan caption-only tools (gerechtvaardigd door AI-fallback, bibliotheek, en multi-format export).
-
----
-
-## Marketing Copy Anchors (voor pricing-pagina)
+## Marketing copy anchors (voor pricing-pagina)
 
 | Angle | Copy |
 |-------|------|
 | Tijdsbesparing | "Extract een 50-video playlist in 60 seconden. Handmatig? Dat is 3+ uur kopiëren." |
-| Per-unit framing | "Elk transcript kost minder dan €0.02." |
-| Loss framing | "Stop met uren verspillen aan transcripten één voor één kopiëren." |
-| Anchoring | "Een VA zou €50+ rekenen voor hetzelfde werk." |
+| Per-unit framing | "Een uur AI-transcriptie kost minder dan €1 op Power." |
 | No-subscription | "Koop credits eenmalig. Gebruik wanneer je wil. Ze verlopen nooit." |
-| Nauwkeurigheid | "YouTube auto-captions: 60% nauwkeurig. Onze AI-transcriptie: 99%." |
-| No-extension | "Werkt in elke browser. Geen Chrome-extensie nodig. Plak een URL, krijg een transcript." |
+| Nauwkeurigheid | "YouTube auto-captions: ~60% nauwkeurig. Onze AI-transcriptie: ~99%." |
+| No-extension | "Werkt in elke browser. Geen extensie. Plak een URL, krijg een transcript." |
+| Anchoring | "Een VA zou €50+ rekenen voor hetzelfde werk." |
+
+Effectieve **bruto** prijs per minuut AI-transcriptie (= bruto €/cr, want 1 cr = 1 min): Test €0,035 · Starter €0,025 · Plus €0,019 · Power €0,016. Gebruik Plus/Power voor "vanaf"-copy.
 
 ---
 
-## Openstaande Vragen
+## Openstaande vragen
 
-1. **Storage upgrades:** Moeten library-visibility upgrades (Otter.ai-model, zie ADR-020-toekomstig) met credits betaald worden of als aparte Stripe-aankoop? Mixing van consumable en permanent werkt als de UI dit duidelijk onderscheidt ("Gebruik Credits" vs. "Unlock Forever").
-
-2. **Markdown export:** Content creators willen `## [00:05:30] Topic heading` stijl. Vereist keuze tussen AssemblyAI chapter detection of tijdsinterval-aanpak.
-
-3. **Referral program:** "5 credits voor referrer + 5 voor referee" is de waarschijnlijke structuur, maar wegwerp-email abuse-preventie moet worden uitgewerkt.
-
-4. **Upstash Redis:** Rate limiting is momenteel uitgeschakeld in productie (no-op limiter). Moet geconfigureerd worden vóór implementatie van de nieuwe tier-gebaseerde rate limits.
+1. **Storage-upgrades:** library-visibility-upgrades met credits of aparte Stripe-aankoop? (Otter.ai-model, ADR-020-toekomstig.)
+2. **Referral:** "5+5 credits" waarschijnlijke structuur; wegwerp-email-abuse nog uit te werken.
+3. **Rate limiting:** momenteel no-op in productie (Upstash vars verwijderd) — configureren vóór tier-gebaseerde limits. Zie priorities C.3.2 / 1.19.

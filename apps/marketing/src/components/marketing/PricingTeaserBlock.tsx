@@ -10,7 +10,7 @@ export function PricingTeaserBlock() {
           Pay only for what you use. Credits never expire.
         </p>
         <p className="text-[var(--fg-subtle)] mb-6">
-          Starting at €2.49 — no subscription.
+          Starting at €3.49 — no subscription.
         </p>
         <Link
           href="/pricing"

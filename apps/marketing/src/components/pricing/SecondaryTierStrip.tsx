@@ -1,5 +1,6 @@
 // Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
-// Renders Try and Power as compact secondary cards under the 3 prominent tiers.
+// Renders the non-prominent tier(s) (currently Try) as compact secondary cards
+// under the prominent tiers.
 
 import { PACKAGES, formatEur } from "@indxr/shared/lib/pricing"
 import { BuyButton } from "@/components/pricing/BuyButton"

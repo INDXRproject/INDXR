@@ -306,18 +306,18 @@ Migrations zitten in `supabase/migrations/`. Chronologische volgorde is belangri
 Productie-checklist Stripe:
 - [ ] Stripe account activeren met KVK/bedrijfsinfo
 - [ ] Switch naar live mode
-- [ ] 5 producten aanmaken (type: One-off, EUR):
-  - Try — €2.49 / 200 credits
-  - Basic — €5.99 / 500 credits
-  - Plus — €11.99 / 1.100 credits *(meest populair)*
-  - Pro — €24.99 / 2.600 credits
-  - Power — €49.99 / 5.500 credits
+- [ ] **4 producten** aanmaken (type: One-off, EUR, BTW-inclusief) — zie [ADR-052](../decisions/052-pricing-restructure-4-tiers.md):
+  - Test — €3,49 / 100 credits
+  - Starter — €9,99 / 400 credits
+  - Plus — €24,99 / 1.300 credits *(anker, meest populair)*
+  - Power — €49,99 / 3.100 credits
+- [ ] Stripe Tax aan (categorie `txcd_10000000`, prijzen inclusief, OSS) + Adaptive Pricing (EUR-settlement)
 - [ ] Webhook endpoint registreren: `https://app.indxr.ai/api/stripe/webhook`
 - [ ] `STRIPE_WEBHOOK_SECRET` (live mode) instellen in Vercel
 - [ ] Live mode keys configureren in Vercel (`sk_live_*`, `pk_live_*`)
-- [ ] Test met kleine aankoop (Try €2.49) ter verificatie
+- [ ] Test met kleine aankoop (Test €3,49) ter verificatie
 
-**Code is al klaar** — `PACKAGES` object in `apps/app/src/app/api/stripe/checkout/route.ts` bevat de juiste bedragen en credits.
+**⚠️ Code-sync vereist** — `PACKAGES` in `apps/app/src/app/api/stripe/checkout/route.ts` **én** `packages/shared/src/lib/pricing.ts` bevatten nog het oude 5-tier-model; vervang door de 4 tiers hierboven vóór launch.
 
 ---
 

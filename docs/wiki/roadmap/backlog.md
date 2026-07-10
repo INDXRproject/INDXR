@@ -59,6 +59,14 @@ Functies en verbeteringen gepland voor na de launch. Geen vaste volgorde — pri
 
 - [ ] Uptime monitoring (UptimeRobot of BetterUptime)
 - [ ] Multi-region deployment (Railway)
+- [ ] **Eigen €0-fee VAT-factuurgenerator uit `credit_transactions` + bedrijfsgegevens** — toekomstig alternatief voor de huidige Stripe on-demand route. Genereer facturen zelf uit de purchase-rijen (metadata: `stripe_session_id`, `amount_paid`, `currency`, credits) met correcte BTW-uitsplitsing en eigen bedrijfsgegevens/nummering. Huidige situatie: facturen worden **on-demand** aangemaakt via `api/stripe/invoice` (Stripe Invoice → finalize → `paid_out_of_band`), wat een Stripe invoice-fee (~0,4%/factuur) kost per opgevraagde factuur. Omslagpunt: bij hoog factuur-opvraagvolume waar die fee significant wordt. Zie ook de admin-dashboard fee-monitoring hieronder.
+- [ ] **Admin-dashboard — Stripe financials (alleen registratie, niet gebouwd)** — vooruitdenkend te tonen datapunten per transactie/periode:
+    - Exacte Stripe-fee per sale uit `balance_transaction.fee` (via de charge/PaymentIntent → `balance_transaction`).
+    - Bruto vs. netto per sale (betaald bedrag − fee).
+    - BTW-bedrag per sale (uit de betaling / Stripe Tax, voor de VAT-aangifte).
+    - Verkoopaantallen per tier (uit `credit_transactions` purchase-rijen, tier afgeleid uit exact credit-aantal 100/400/1.300/3.100).
+    - Aantal **opgevraagde facturen** (tel purchase-rijen met `metadata.invoice_url` gezet) — om de on-demand invoice-fee (~0,4%/factuur) te monitoren en het omslagpunt naar de eigen generator te bepalen.
+
 - [ ] **Job continuation na crash — watchdog + Resume-knop + refund**
     Trigger: eerste productie-incident waarbij gebruikers gefrustreerd raken over `interrupted` jobs zonder refund of herstart-optie.
     Opties (zie ADR-019 voor afweging):

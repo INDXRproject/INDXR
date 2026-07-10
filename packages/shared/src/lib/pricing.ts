@@ -3,60 +3,73 @@
 // Geïmporteerd door: pricing page, billing page, Stripe checkout route, docs pages, free tool, API endpoints.
 
 export interface PricingPackage {
-  id: "try" | "basic" | "plus" | "pro" | "power"
+  id: "try" | "starter" | "plus" | "power"
   name: string
   priceEur: number
   credits: number
-  audience: string
+  audience: string // korte positionering (tier-kaart)
+  description: string // klant-gerichte omschrijving, in lijn met de Stripe-producten
   mostPopular: boolean
-  prominent: boolean // true voor Basic/Plus/Pro, false voor Try/Power
+  prominent: boolean // true voor Starter/Plus/Power, false voor Try (secondary strip)
+  // Live Stripe koppeling (one-off prices, EUR, BTW-inclusief). credits MOET exact
+  // gelijk zijn aan de Stripe price-metadata `credits` (meervoud) van dit product.
+  stripeProductId: string
+  stripeLookupKey: string
 }
 
+// 4-tier model — zie ADR-052. Credits matchen 1-op-1 de live Stripe price-metadata `credits`.
 export const PACKAGES: PricingPackage[] = [
   {
     id: "try",
     name: "Try",
-    priceEur: 2.49,
-    credits: 150,
-    audience: "Testing the waters — a single project or quick experiment",
+    priceEur: 3.49,
+    credits: 100,
+    audience: "Try it on your own videos",
+    description:
+      "100 credits to try INDXR on your own videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports for vector databases (1 credit per 15 minutes of video). Extracting existing YouTube captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: false,
+    stripeProductId: "prod_UrNkT2na9l2iPA",
+    stripeLookupKey: "try_100",
   },
   {
-    id: "basic",
-    name: "Basic",
-    priceEur: 5.99,
-    credits: 500,
-    audience: "Occasional use, short courses, individual research",
+    id: "starter",
+    name: "Starter",
+    priceEur: 9.99,
+    credits: 400,
+    audience: "Occasional use",
+    description:
+      "400 credits for regular use. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 15 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: true,
+    stripeProductId: "prod_UrNnnbtllIVRtd",
+    stripeLookupKey: "starter_400",
   },
   {
     id: "plus",
     name: "Plus",
-    priceEur: 11.99,
-    credits: 1200,
-    audience: "Regular use — researchers, content creators, developers",
+    priceEur: 24.99,
+    credits: 1300,
+    audience: "Regular transcription — best value",
+    description:
+      "1,300 credits — the sweet spot for regular transcription. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 15 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: true,
     prominent: true,
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    priceEur: 24.99,
-    credits: 2800,
-    audience: "Heavy use, large corpus projects, agencies",
-    mostPopular: false,
-    prominent: true,
+    stripeProductId: "prod_UrNoFwMCKp8OOB",
+    stripeLookupKey: "plus_1300",
   },
   {
     id: "power",
     name: "Power",
     priceEur: 49.99,
-    credits: 6000,
-    audience: "Power users — best per-credit rate",
+    credits: 3100,
+    audience: "High volume, lowest price per credit",
+    description:
+      "3,100 credits at our lowest price per credit, for people who process a lot of long videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 15 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: false,
-    prominent: false,
+    prominent: true,
+    stripeProductId: "prod_UrNpeuGzIiVMf5",
+    stripeLookupKey: "power_3100",
   },
 ]
 

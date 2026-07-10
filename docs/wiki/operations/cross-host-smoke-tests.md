@@ -219,7 +219,7 @@ curl -I https://app.indxr.ai/forgot-password
 
 ## TEST 11 — Stripe checkout (eenmalige betaling)
 
-**Vereiste:** Stripe account actief in live mode, Try-pakket (€2.49) aangemaakt.
+**Vereiste:** Stripe account actief in live mode, Test-pakket (€3,49) aangemaakt.
 
 1. Log in op `app.indxr.ai/dashboard`
 2. Ga naar Billing

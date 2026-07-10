@@ -1,6 +1,6 @@
 # Launch Priorities (Plan van Aanpak)
 
-Bijgewerkt: 2026-07-07. Single source of truth voor pre-launch volgorde, na strategische sessie met Claude Desktop.
+Bijgewerkt: 2026-07-09. Single source of truth voor pre-launch volgorde, na strategische sessie met Claude Desktop.
 
 Deze lijst is het Plan van Aanpak (PVA) tot launch. Volgorde is geoptimaliseerd voor solo-developer, met afhankelijkheden in acht genomen. Status-markers per item: `[ ]` todo, `[~]` in progress, `[x]` done, `[!]` blocked.
 
@@ -130,7 +130,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     ⚠️ Vóór uitvoering: zie [ADR-012 sectie "Pricing-evolutie"](../decisions/012-pricing-tiers.md) — nieuwe prijspunten vaststellen en early-adopter strategie bepalen vóór producten aanmaken in Stripe.
     Componenten:
     - Stripe account activeren met KVK/bedrijfsinfo
-    - 5 producten in live mode (Try €2.49/200cr, Basic €5.99/500cr, Plus €11.99/1100cr, Pro €24.99/2600cr, Power €49.99/5500cr) — prijzen herzien vóór aanmaken (zie ADR-012)
+    - **4 producten** in live mode, BTW-inclusief (Test €3,49/100cr, Starter €9,99/400cr, Plus €24,99/1.300cr, Power €49,99/3.100cr) — prijzen vastgesteld in [ADR-052](../decisions/052-pricing-restructure-4-tiers.md); Stripe Tax (`txcd_10000000`, inclusief, OSS) + Adaptive Pricing (EUR-settlement) aan
     - `PACKAGES` in `src/app/api/stripe/checkout/route.ts` synchroniseren met live-prijzen
     - Webhook endpoint registreren op `https://indxr.ai/api/stripe/webhook`
     - `STRIPE_WEBHOOK_SECRET` toevoegen aan Vercel
@@ -195,16 +195,10 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     GEEN volledige redesign — die komt in Fase 3 wanneer product-market-fit signalen er zijn.
     Plek in volgorde: laatste van Fase 1 zodat alle UI-componenten al bestaan.
 
-- [ ] **1.21 — Prijs-per-credit herijken tegen werkelijke kosten** (0,5–1 dag)
-    Doel: prijzen dekken de echte marginale kosten + vaste infra + arbeid, en sturen naar grotere pakketten.
-    **Kostenbasis (geverifieerd 2026-07-06, zie [unit-economics.md](../business/unit-economics.md)):** directe kost ≈ **€0,0054/credit** (AssemblyAI $0,0035/min + Decodo ~$0,0023/min). Varieert per video → per job meten, niet schatten.
-    **Concrete strategie:**
-    - **Cheap tiers (Try/Basic) → ~3× directe kost ≈ €0,016/min** (nu €0,012/min). De instap draagt de meeste vaste kosten.
-    - **Power → ~2,2× directe kost ≈ €0,012/min** (nu €0,009/min). Steilere, aantrekkelijkere volumekorting die de zwaarste users niet subsidieert.
-    - Tussenpakketten (Plus/Pro) glijdend tussen die twee.
-    **Rationale (expliciet vastleggen):** de prijs moet naast directe API-kosten óók **vaste infra** (Vercel/Railway/Supabase/Upstash/Resend/domein), **support-last**, **operationeel onderhoud** (proxy-rotatie, watchdog, yt-dlp/Node-upgrades) én **ontwikkelarbeid** (honderden uren) dekken. **2× kostprijs is niet levensvatbaar voor SaaS** — daarom cheap tiers op ~3×.
-    - **Koppelen aan 1.13 (Stripe live-mode):** de 5 pakketten worden in live mode toch opnieuw aangemaakt — stel de nieuwe prijspunten daar in één keer correct in. `PACKAGES` in `checkout/route.ts` synchroniseren.
-    Afhankelijk van / koppelen aan: 1.13, [ADR-012](../decisions/012-pricing-tiers.md), [unit-economics.md](../business/unit-economics.md).
+- [x] **1.21 — Prijs-per-credit herijken tegen werkelijke kosten** ✅ 2026-07-09 (beslist in [ADR-052](../decisions/052-pricing-restructure-4-tiers.md))
+    De prijsstelling is definitief herijkt: **4 tiers, BTW-inclusief, worst-case-geprijsd** (Test €3,49/100cr · Starter €9,99/400cr · Plus €24,99/1.300cr · Power €49,99/3.100cr). Kostenbasis (juli 2026): AssemblyAI €0,0031/cr + Decodo ~€0,0034/cr → marginaal realistisch ~€0,0065/cr, worst-case ~€0,010/cr. Geprijsd tegen worst-case; elke tier houdt winst in élk scenario incl. −20% korting (Power worst-case −20% = +€0,07/100cr). Volledige matrix in [pricing.md](../business/pricing.md); rationale (vaste infra + support + onderhoud + arbeid dekken, niet slechts 2× kostprijs) in ADR-052.
+    **Resterend werk = code-sync (zit in 1.13):** `PACKAGES` in `checkout/route.ts` én `packages/shared/src/lib/pricing.ts` naar de 4 tiers + Stripe live-producten. Per-job kosten-capture om marges te *bewijzen* = launch-blocker (zie known-issues + 1.24).
+    Zie: [ADR-052](../decisions/052-pricing-restructure-4-tiers.md), [pricing.md](../business/pricing.md), [unit-economics.md](../business/unit-economics.md).
 
 - [ ] **1.22 — Credit-reservering bij job-start + refund van ongebruikte/gefaalde video's** (financieel-kritiek)
     Doel: los de credit-race bij concurrent jobs op; **blokkeert veilige concurrency / horizontaal schalen.**
@@ -286,6 +280,22 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
 - [x] **1.29 — extraction_error → retrybaar via classificatie** ✅ 2026-07-09
     Twee playlist-video's faalden met `extraction_error` (de onbekend-fout-vangbak) en kregen géén Retry-knop, terwijl de UI ze "temporary connection error — try again later" noemde (tegenstrijdig). Fix via CLASSIFICATIE, niet door de vangbak blind retrybaar te maken: `_classify_download_error` mapt nu connection/network-foutmeldingen (`connection reset/aborted/refused`, `502/503`, `bad gateway`, `service unavailable`, `temporarily unavailable`, `network is unreachable`, …) op de bestaande retryable **`timeout`**-slug. Bewust hergebruikt i.p.v. een nieuwe `connection_error`-slug: `timeout` is al door ELKE retry-gate bedraad (worker auto-retry-set, RPC `v_has_retryable`, frontend retry-filter/badge "Connection timeout") — een nieuwe slug had ~13 plekken + een RPC-migratie geraakt voor alleen weergave-granulariteit. Permanente fouten (age_restricted/members_only/youtube_restricted) blijven niet-retrybaar; de echt-onbekende rest blijft `extraction_error` (geen knop) met nu eerlijke copy ("unexpected error … try Audio Upload"). Test: `backend/test_error_classification.py`. **NB:** de exacte rauwe foutstrings van die 2 An-Najm-video's waren niet verifieerbaar (Sentry, uit Railway-buffer gerold) — de fix dekt de connection/network-klasse; of die 2 exact matchen hangt af van hun rauwe string.
 
+### Nieuw geïdentificeerd (2026-07-09) — nog niet ingepland
+
+Vier items die tot nu toe buiten de PVA vielen. Alleen *wat* + launch-relevantie hier — geen implementatie.
+
+- [ ] **1.30 — Custom SMTP voor transactionele auth-mail (Resend)** — **blocker**
+  Supabase's ingebouwde auth-mailer (signup-confirm, password-reset, magic-link) draait op een gedeelde SMTP met strakke rate-limits (~enkele mails/uur) en matige deliverability — niet productie-waardig. `send.indxr.ai` bestaat al als Resend-domein, maar voor **broadcast/marketing** (`sendBroadcastEmails`); de **transactionele** auth-mail loopt nog niet via een custom SMTP. Actie: Resend-SMTP koppelen in Supabase Auth → SMTP Settings. Launch-relevantie: **blocker** — zonder betrouwbare bezorging van confirm/reset-mails kan een deel van de nieuwe users niet inloggen. Koppelt aan 1.19 (Supabase email-verificatie aanzetten) en 1.12 (anti-abuse: welcome credits ná verificatie).
+
+- [ ] **1.31 — Sentry noise-filtering vóór launch** — **belangrijk (pre-launch)**
+  Bij launch moeten alerts alleen vuren op **nieuwe/relevante** errors, niet op bekende ruis: verwachte user-fouten, browser-extensie-/third-party-noise, en by-design-gerefunde `bot_detection`/`timeout`-fails (zie 1.27). Zonder filtering verdrinkt een echt signaal. Actie (later): `ignoreErrors`/`beforeSend`-filters, inbox-triage van bestaande issues, alert-rules beperken tot nieuwe of geregresseerde issues. Launch-relevantie: **belangrijk** — observability moet bruikbaar zijn op dag 1. Koppelt aan 1.14 (BetterStack/alerts) en ADR-023.
+
+- [ ] **1.32 — PostHog session-recording field-masking** — **belangrijk (pre-launch)**
+  Expliciete masking van gevoelige velden in PostHog session-recordings (e-mailadres, credit-saldo, transcript-inhoud, betaalgegevens). Nu impliciet deels gedekt onder 1.18 (GDPR-basis), maar de concrete recording-masking is niet apart belegd. PostHog neemt standaard DOM-input op; zonder `maskAllInputs` / `maskTextSelector`-config lekt PII in recordings. Launch-relevantie: **belangrijk** (GDPR/privacy). Koppelen aan 1.18.
+
+- [ ] **1.33 — OSS-status beslissing (open-source vs source-available)** — **belangrijk (beslissing), geen code-blocker**
+  Beslissen of (delen van) INDXR open-source of source-available worden en onder welke licentie. Raakt positionering, community en of de repo publiek kan. Launch-relevantie: **belangrijk maar niet code-blocking** — de keuze moet helder zijn vóór launch-**communicatie** (je kunt niet half-open lanceren), maar niets in de code blokkeert. Post-launch uitvoerbaar; nu vastgelegd zodat het niet verdwijnt. Kandidaat voor een eigen ADR.
+
 ### Pre-launch — buiten code (parallel uit te voeren)
 
 - [ ] Google Search Console: domein verifiëren, sitemap indienen
@@ -325,6 +335,8 @@ Zie ook `docs/wiki/architecture/page-structures/free-tool.md` voor context.
 
 Doel: `/dashboard` en `/admin` verhuizen van `indxr.ai` naar `app.indxr.ai`. Auth-flows (login, signup, OAuth) blijven op marketing-domain; cookies op root-domain `.indxr.ai` zodat sessie cross-host werkt. Zie ADR-034 en ADR-036.
 
+> **STATUS 2026-07-09 — grotendeels afgerond.** De twee-projecten-migratie (C.4.1 / ADR-045) is uitgevoerd en draait live in productie. Code-geverifieerd done: **C.4.1, C.1.2, C.1.3, C.2.1, C.2.2, C.2.4, C.2.5**. Nog open: **C.2.3** (email-templates — manuele Supabase-dashboard-check, niet code-verifieerbaar) en **C.3.2** (rate-limiting + caption-cache in productie heractiveren — overlapt met 1.19; zie noot daar). C.1.1 is achterhaald (aanpak teruggedraaid). De historische narratief hieronder is bewaard voor context maar beschrijft de één-project-fase van vóór de migratie.
+
 ### Status (per 2026-05-05): TypeError-bug definitief opgelost
 
 Commits 825574f (Server Action redirect) en d13c30e (NEXT_REDIRECT swallow) sluiten samen de bug-klasse "TypeError: Error in input stream" die sinds subdomain-split deploy aanwezig was. Productie-test bevestigd 2026-05-05: schone Console na login flow.
@@ -342,10 +354,13 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (me
 ### Code Sessie 1 — auth / cookies / middleware
 
 - [~] **C.1.1 — Auth-error recovery in updateSession** — geïmplementeerd 2026-05-05
+  > **⚠️ ACHTERHAALD (2026-07-09):** de `clearAuthCookies()`-aanpak is **teruggedraaid** en bestaat niet meer in de code — hij wiste ook de PKCE `code-verifier`-cookie waardoor `exchangeCodeForSession()` faalde in OAuth/email-callback flows (zie LESSONS 2026-05-17). De huidige `updateSession` (`packages/shared/src/utils/supabase/middleware.ts`) gebruikt `getClaims()` en volgt letterlijk het officiële Supabase-template — **geen** error-recovery cookie-clearing in middleware. De "productie-verificatie pending" hieronder is dus niet langer van toepassing. De onderliggende infinite-refresh-loop is opgelost via de `getClaims()`-migratie, niet via cookie-clearing.
+
   `clearAuthCookies()` toegevoegd aan `src/utils/supabase/middleware.ts`: bij `getUser()` error of exception worden alle `sb-*` cookies gewist met `maxAge: 0` en correcte `cookieDomain`. Voorkomt infinite refresh-loop bij stale/revoked tokens (root cause Upstash quota blow-out — zie C.3.1). Sentinel: `[auth-recovery]` in Vercel logs.
   **Productie-verificatie pending** — Khidr: na deploy een verlopen sessie simuleren (revoke refresh token via Supabase Dashboard → refresh pagina → verwacht: cookies verdwenen, geen retry-loop, `[auth-recovery]` in logs).
 
-- [ ] **C.1.2 — Productie-tests na sessie 1 deploy**
+- [x] **C.1.2 — Productie-tests na sessie 1 deploy** ✅ 2026-07-09 — geverifieerd via live twee-projecten-productie (ADR-045)
+  Deze checklist beschreef de één-project subdomain-split; na de C.4.1-migratie draaien deze cross-host-gedragingen (cookies op `.indxr.ai`, redirects, open-redirect-preventie) live in productie en zijn ze bewezen werkend (authenticated dashboard cross-host + credit/playlist e2e-live-verificatie 2026-07-09). Env-vars `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_MARKETING_URL` staan per project.
   Handmatig browser-tests na Vercel-deploy met `NEXT_PUBLIC_APP_URL=https://app.indxr.ai` en `NEXT_PUBLIC_MARKETING_URL=https://indxr.ai`:
   - `sb-*` cookies staan op domain `.indxr.ai` (zichtbaar op beide hosts in DevTools)
   - `indxr.ai/dashboard` → 308 → `app.indxr.ai/dashboard`
@@ -355,18 +370,20 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (me
   - Logout: `sb-*` cookies verdwenen op beide hosts
   - `login?next=https://evil.com/steal` → belandt op `/dashboard/transcribe` (open redirect preventie)
 
-- [ ] **C.1.3 — Google OAuth flow productie-test**
+- [x] **C.1.3 — Google OAuth flow productie-test** ✅ 2026-07-09 — bewezen in productie (PKCE-callback-bug gevonden + gefixt)
+  De OAuth-callback (`apps/marketing/src/app/auth/callback/route.ts`) draait live; een PKCE-bug in dit pad is in productie ontdekt en opgelost (commit `f7dfa53` — `getClaims()` + middleware-matcher-exclude), wat betekent dat de flow daadwerkelijk end-to-end is uitgevoerd. Cross-host cookie op `.indxr.ai` werkt (zie C.1.2).
   Verifieer vóór test in Vercel Dashboard: is `NEXT_PUBLIC_ENABLE_OAUTH=true` op Production scope gezet? Als nee: OAuth-knoppen niet zichtbaar — skip test.
   Test: Google-login op `indxr.ai/login` → OAuth callback op `indxr.ai/auth/callback` → redirect naar `app.indxr.ai/dashboard/transcribe`. Controleer: cookie op `.indxr.ai`, sessie zichtbaar op beide hosts.
 
 ### Code Sessie 2 — mechanische sweep
 
-- [ ] **C.2.1 — Manifest CORS bug** ⚠️ BEVESTIGD
+- [x] **C.2.1 — Manifest CORS bug** ✅ OPGELOST door migratie (2026-07-09 geverifieerd)
   `src/app/layout.tsx:35: manifest: "/site.webmanifest"` — op `app.indxr.ai` vraagt de browser `app.indxr.ai/site.webmanifest` op; middleware geeft 308 → `indxr.ai/site.webmanifest` (cross-origin redirect) → CORS block in Console. Rapportage Khidr bevestigd via codebase.
-  **Fix:** `manifest: "/site.webmanifest"` → `manifest: "https://indxr.ai/site.webmanifest"` in `src/app/layout.tsx`. Of voeg een `(app)`-groep-layout toe die de manifest-tag overschrijft.
+  **Opgelost:** in de twee-projecten-setup serveert de app-host zijn eigen `apps/app/public/site.webmanifest` → `app.indxr.ai/site.webmanifest` resolvet same-origin, geen 308, geen CORS-block. De `manifest: "/site.webmanifest"`-tag in `apps/app/src/app/layout.tsx` is nu correct. (De originele fix-suggestie is achterhaald; de migratie loste de root-oorzaak op.)
 
-- [ ] **C.2.2 — Header: `/dashboard` links → `appHref`** ⚠️ NIEUW (niet in advieslijst)
+- [x] **C.2.2 — Header: `/dashboard` links → `appHref`** ✅ 2026-07-09 geverifieerd
   `src/components/Header.tsx` heeft 3× `<Link href="/dashboard">` (regel 41 dropdown, regel 140 desktop "Go to app", regel 195 mobile). Op `indxr.ai` prefetcht Next.js `indxr.ai/dashboard` → 308 → `app.indxr.ai/dashboard` (cross-origin) → zelfde TypeError-crash als de omgekeerde fix in sessie 1. Alle drie moeten `<a href={appHref('/dashboard')}>` worden.
+  **Opgelost:** `packages/shared/src/components/Header.tsx` gebruikt nu overal `appHref('/dashboard')` (+ `/dashboard/account`, `/dashboard/settings`) en `marketingHref(...)` voor marketing-paden — geen enkele `<Link href="/dashboard">` meer. Onderdeel van de 4-cross-host-link-fix (commit `8881619`).
 
 - [ ] **C.2.3 — Email templates audit** — handmatige check Khidr
   Supabase Dashboard → Auth → Email Templates. Controleer of `{{ .SiteURL }}` variabelen correct resolven naar `https://indxr.ai` (confirm/reset links moeten naar marketing-host verwijzen, niet naar app). Niet code-verifieerbaar.
@@ -374,8 +391,9 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (me
 - [x] **C.2.4 — Python backend CORS origins** ✅ OPGELOST 2026-05-05
   `"https://app.indxr.ai"` toegevoegd aan `allow_origins` in `backend/main.py`. Cleanup-001.
 
-- [ ] **C.2.5 — Robots.txt strategie voor app-host**
+- [x] **C.2.5 — Robots.txt strategie voor app-host** ✅ OPGELOST door migratie (2026-07-09 geverifieerd)
   `public/robots.txt` bevat `Disallow: /dashboard/` en `Disallow: /admin/` — correct voor marketing-host. Op `app.indxr.ai` geeft middleware `/robots.txt` een 308 naar `indxr.ai/robots.txt`; sommige crawlers volgen geen redirects voor robots.txt. Ideaal: `app.indxr.ai/robots.txt` retourneert `Disallow: /` inline. Optie: voeg `/robots.txt` toe als uitzonderingspad in middleware (`!isAppPath` skip) en serveer via Next.js `src/app/robots.ts` met host-detectie.
+  **Opgelost:** elke app serveert nu zijn eigen statische `robots.txt`. `apps/app/public/robots.txt` = `User-agent: *` / `Disallow: /` (exact het beoogde inline-resultaat); `apps/marketing/public/robots.txt` behoudt de volledige marketing-regels + AI-crawler-allowlist + sitemap. Geen middleware-redirect meer nodig.
 
 ### Operationele issues
 
@@ -390,10 +408,11 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (me
 
 ### C.4 — Migratie naar twee Vercel projecten (monorepo)
 
-- [ ] **C.4.1 — Migratie uitvoeren** — zie ADR-045 voor beslissing en scope
+- [x] **C.4.1 — Migratie uitvoeren** ✅ 2026-07-09 geverifieerd — zie ADR-045 voor beslissing en scope
   pnpm monorepo aanmaken: `apps/marketing/` (indxr.ai) + `apps/app/` (app.indxr.ai) + `packages/shared/`.
   Middleware hostname-routing verwijderen. Twee Vercel projecten aanmaken. Env vars per project.
   **Checkpoint:** commit 1fc0589 is de clean baseline voor migratie (bevat bug-fix d13c30e + handoff-documentatie inclusief ADR-045).
+  **Geverifieerd tegen code (2026-07-09):** `apps/app` + `apps/marketing` + `packages/shared` bestaan, geen root `src/` meer, elke app heeft eigen `middleware.ts` zónder hostname-routing (alleen auth-guard + `/`→`/dashboard`). Commits `f8aab3d` (split), `fb0e359` (Turborepo), `875896f` (cross-host redirects). Productie draait live op de twee-projecten-setup.
 
 ---
 

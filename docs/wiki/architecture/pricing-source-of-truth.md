@@ -31,9 +31,11 @@ Bij introductie van pricing.ts werden drie inconsistente bronnen gevonden:
 
 Na migratie naar pricing.ts is één bron authoritative. Na monorepo-split (2026-05-05) leeft die bron in `packages/shared/src/lib/pricing.ts`.
 
-### Migration history — volledige discrepantie-tabel
+> **✅ 2026-07-10 — 4-tier-model live in `pricing.ts` (ADR-052).** `pricing.ts` bevat nu de 4 tiers, BTW-inclusief, exact gekoppeld aan de live Stripe-producten: **Try €3,49/100cr (`prod_UrNkT2na9l2iPA`, `try_100`) · Starter €9,99/400cr (`prod_UrNnnbtllIVRtd`, `starter_400`) · Plus €24,99/1.300cr (`prod_UrNoFwMCKp8OOB`, `plus_1300`) · Power €49,99/3.100cr (`prod_UrNpeuGzIiVMf5`, `power_3100`)** ([ADR-052](../decisions/052-pricing-restructure-4-tiers.md), [pricing.md](../business/pricing.md)). Elke tier draagt `stripeProductId` + `stripeLookupKey` + een klant-gerichte `description`. De credit-counts matchen 1-op-1 de Stripe price-metadata `credits`. Het 5-tier-model in de tabel hieronder is **historie**. NB: de instaptier heet **Try** (niet "Test" zoals een vroege ADR-052-draft) — de live Stripe-producten zijn leidend.
 
-| Pakket | Stripe checkout route (was) | Pricing page (was) | pricing.ts (nu authoritative) |
+### Migration history — volledige discrepantie-tabel (historisch, pre-ADR-052)
+
+| Pakket | Stripe checkout route (was) | Pricing page (was) | pricing.ts (5-tier, pre-052) |
 |--------|-----------------------------|--------------------|-------------------------------|
 | Try    | €2.49 / 200 credits         | €2.99 / 150 credits | €2.49 / 150 credits          |
 | Basic  | €5.99 / 500 credits         | €6.99 / 500 credits | €5.99 / 500 credits          |

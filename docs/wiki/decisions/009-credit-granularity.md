@@ -32,9 +32,9 @@ Tegelijk: alle credit-pakketten krijgen 10× meer credits (maar zijn duurder in 
 
 ## Rationale
 
-**Numerosity heuristic:** 200 credits bij €2.49 voelt waardevoller dan 20 credits bij €2.49, ook bij equivalente waarde per minuut. SaaS-norm: Pixverse 1.200/mo, Abacus 20.000/mo, Airtable 500–25.000.
+**Numerosity heuristic:** 100 credits bij €3,49 voelt waardevoller dan 10 credits bij €3,49, ook bij equivalente waarde per minuut. SaaS-norm: Pixverse 1.200/mo, Abacus 20.000/mo, Airtable 500–25.000.
 
-**Conversion prompts:** "Je hebt 72 credits nodig. Koop 200 voor €2.49" is overtuigender dan "Je hebt 8 credits nodig. Koop 20 voor €2.49."
+**Conversion prompts:** "Je hebt 72 credits nodig. Koop 400 voor €9,99" is overtuigender dan "Je hebt 8 credits nodig. Koop 40 voor €9,99."
 
 **Margezekerheid:** Met het nieuwe tiers-systeem (ADR-012) blijft de marge op Power-tier ≥56% ook bij niet-geoptimaliseerde audio.
 

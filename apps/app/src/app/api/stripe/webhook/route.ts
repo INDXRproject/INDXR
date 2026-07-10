@@ -27,9 +27,16 @@ export async function POST(req: Request) {
       console.error('Webhook signature verification failed:', msg)
       return new NextResponse(`Webhook Error: ${msg}`, { status: 400 })
     }
+  } else if (process.env.NODE_ENV === 'production') {
+    // Fail-closed: in productie nooit een ongeverifieerde webhook accepteren.
+    const msg = 'STRIPE_WEBHOOK_SECRET is not set in production — refusing unverified webhook.'
+    Sentry.captureException(new Error(msg), { tags: { route: 'api/stripe/webhook', step: 'missing_secret' } })
+    await Sentry.flush(2000)
+    console.error(msg)
+    return new NextResponse('Webhook secret not configured', { status: 500 })
   } else {
     console.warn('⚠️ STRIPE_WEBHOOK_SECRET is not set. Skipping signature verification. Do NOT do this in production!')
-    // Fallback to parsing the body if no secret is provided for local testing
+    // Fallback to parsing the body if no secret is provided for local testing (non-production only)
     try {
       event = JSON.parse(body) as Stripe.Event
     } catch (parseError) {
@@ -52,7 +59,8 @@ export async function POST(req: Request) {
       return new NextResponse('Missing metadata', { status: 200 }) // Return 200 to acknowledge receipt even if invalid logic to stop retries
     }
 
-    // Add credits securely via RPC
+    // Add credits securely via RPC. Facturen worden niet hier aangemaakt maar on-demand
+    // vanuit de billing history (api/stripe/invoice) — invoice_url wordt daar bijgeschreven.
     const { error } = await supabase.rpc('add_credits', {
       p_user_id: userId,
       p_amount: credits,

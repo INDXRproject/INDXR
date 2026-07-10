@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { PACKAGES, getPackage, PricingPackage } from "@indxr/shared/lib/pricing"
+import { getOrCreateStripeCustomer } from "@/lib/stripe-customer"
 
 // Validate plan ID against known packages
 const VALID_IDS = new Set(PACKAGES.map((p) => p.id))
@@ -34,10 +35,19 @@ export async function POST(req: Request) {
     const pkg: PricingPackage = getPackage(plan)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
+    // Eén Stripe Customer per user — betaling + latere factuur vallen onder dezelfde Customer.
+    const customerId = await getOrCreateStripeCustomer(user.id, user.email)
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
       billing_address_collection: "required",
+      customer: customerId,
+      // Bewaar het bij checkout ingevoerde adres + (bedrijfs)naam op de Customer, zodat
+      // Stripe Tax de BTW correct kan berekenen op de on-demand factuur.
+      customer_update: { address: "auto", name: "auto" },
+      // B2B: laat klanten hun BTW-nummer opgeven → verschijnt op de factuur + reverse charge.
+      tax_id_collection: { enabled: true },
       line_items: [
         {
           price_data: {
@@ -55,9 +65,10 @@ export async function POST(req: Request) {
         userId: user.id,
         credits: pkg.credits.toString(),
       },
+      // Geen automatische factuur op elke sale — facturen worden on-demand aangemaakt
+      // vanuit de billing history (api/stripe/invoice). Zie backlog voor de eigen generator.
       success_url: `${appUrl}/dashboard/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/dashboard/billing/cancel`,
-      customer_email: user.email,
     })
 
     return NextResponse.json({ url: session.url })

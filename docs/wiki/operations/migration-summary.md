@@ -68,7 +68,7 @@
 - [x] Playwright smoke tests (TEST 1–7 + 12) ✓ 2026-05-08
 - [x] Auth smoke tests handmatig (TEST 8/9/10) ✓ 2026-05-17
 - [ ] **Custom SMTP (Resend)** — Supabase built-in rate limit 2/h blokkeert productie-email. Resend gekozen (native Supabase integratie). Setup: Resend account → DNS verificatie → Supabase Dashboard → Authentication → SMTP Settings.
-- [ ] **Stripe eerste echte betaling** — Try-pakket €2.49; uitgesteld door Khidr (tax setup)
+- [ ] **Stripe eerste echte betaling** — Test-pakket €3,49; uitgesteld door Khidr (tax setup)
 - [ ] **Stripe webhook delivery verifiëren** — `checkout.session.completed` → status 200 in Stripe Dashboard
 - [ ] **Upstash quota strategie** — quota plan beslissen; env vars opnieuw toevoegen na beslissing (refresh-loop architectureel opgelost via getClaims())
 

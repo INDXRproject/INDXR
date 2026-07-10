@@ -1,5 +1,5 @@
 // Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
-// Renders the 3 prominent tiers (Basic / Plus / Pro) in a responsive grid.
+// Renders the prominent tiers (Starter / Plus / Power) in a responsive grid.
 
 import { PACKAGES } from "@indxr/shared/lib/pricing"
 import { PricingTierCard } from "@/components/pricing/PricingTierCard"

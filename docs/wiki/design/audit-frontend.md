@@ -637,7 +637,7 @@ Enige uitzondering: `src/components/ui/form.tsx` bestaat (Shadcn/ui FormProvider
 
 ### 10.2 Verouderde Pagina
 
-`/account/credits` toont de oude pricing-structuur (1 credit = 10 min, Starter €9.99, "Coming Soon" knoppen). Huidige pricing is 5-tier (Try €2.49 tot Power €49.99, 1 credit = 1 minuut). De pagina is niet verwijderd en bereikbaar.
+`/account/credits` toont de oude pricing-structuur (1 credit = 10 min, Starter €9.99, "Coming Soon" knoppen). Huidige pricing is 4-tier (Test €3,49 tot Power €49,99, BTW-inclusief, 1 credit = 1 minuut — zie ADR-052). De pagina is niet verwijderd en bereikbaar.
 
 ### 10.3 Dark-Only Componenten
 

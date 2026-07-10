@@ -10,6 +10,7 @@ import {
 } from "@indxr/shared/components/ui/card"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { BillingPurchaseGrid } from "@/components/dashboard/billing/BillingPurchaseGrid"
+import { PurchaseHistoryCard, PurchaseRow } from "@/components/dashboard/billing/PurchaseHistoryCard"
 import Link from "next/link"
 
 export default async function BillingPage() {
@@ -24,6 +25,16 @@ export default async function BillingPage() {
   const { data: creditsData } = await supabase.rpc("get_user_credits", { p_user_id: user.id }).single()
   const parsedCredits = creditsData as { credits?: number }
   const credits = parsedCredits?.credits || 0
+
+  // Aankoophistorie: 'credit'-transacties met een Stripe-session in metadata.
+  const { data: purchaseRows } = await supabase
+    .from("credit_transactions")
+    .select("id, amount, created_at, metadata")
+    .eq("user_id", user.id)
+    .eq("type", "credit")
+    .not("metadata->>stripe_session_id", "is", null)
+    .order("created_at", { ascending: false })
+  const purchases = (purchaseRows as PurchaseRow[] | null) ?? []
 
   return (
     <div className="flex max-w-4xl mx-auto w-full flex-col">
@@ -62,8 +73,12 @@ export default async function BillingPage() {
       <div className="mt-12" id="packages">
         <h2 className="text-2xl font-bold tracking-tight text-fg mb-2">Credit Packages</h2>
         <p className="text-fg-muted">Pay as you go. No subscriptions, no hidden fees.</p>
-        
+
         <BillingPurchaseGrid />
+      </div>
+
+      <div className="mt-12">
+        <PurchaseHistoryCard purchases={purchases} />
       </div>
 
     </div>

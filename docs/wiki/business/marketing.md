@@ -76,7 +76,7 @@ Anonieme bezoeker (SEO / social / referral)
   → Ziet "3 gratis video's" label + "Maak gratis account + 25 credits" CTA
   → Registreert
   → Gebruikt 25 welcome credits (kleine playlist of AI-transcriptie)
-  → Tweede taak triggert eerste credit-aankoop (Try = €2.49)
+  → Tweede taak triggert eerste credit-aankoop (Test = €3,49)
 ```
 
 ### Conversion prompt voorbeeld (21-video playlist, anoniem)

@@ -3,17 +3,21 @@
 **Laatst geverifieerd:** 2026-07-06
 **Bron:** live provider-dashboards + gemeten job-logs (o.a. de 254-min AI-job `JuU8cbz8TYI`, zie [test-reports.md](../operations/test-reports.md)).
 
-> **1 credit = 1 minuut AI-transcriptie** (AssemblyAI-route). Caption-extractie kost 0 credits. Dit document dekt de **variabele** kosten van de AI-route + de vaste infra-kosten. Prijszetting: zie taak 1.21 in [priorities.md](../roadmap/priorities.md) en [ADR-012](../decisions/012-pricing-tiers.md).
+> **1 credit = 1 minuut AI-transcriptie** (AssemblyAI-route). Caption-extractie kost 0 credits. Dit document dekt de **variabele** kosten van de AI-route + de vaste infra-kosten. Prijszetting is beslist in **[ADR-052](../decisions/052-pricing-restructure-4-tiers.md)** (4 tiers, worst-case-geprijsd) — zie ook [pricing.md](pricing.md).
+
+> **⚠️ Reconciliatie met de pricing-basis (2026-07-09).** Het cijfer **€0,0054/credit** hieronder is een **gunstig één-meting-gemiddelde** (video `JuU8cbz8TYI`, 0,73 MB/min). Voor de prijszetting rekent ADR-052 **conservatiever**: AssemblyAI **€0,0031/cr** + Decodo **~€0,0034/cr** bij een voorzichtiger **~1 MB/min** → **marginaal realistisch ~€0,0065/cr**, **worst-case ~€0,010/cr**. De tiers zijn tegen **worst-case** geprijsd. Behandel €0,0054 als optimistische ondergrens, niet als ontwerpbasis.
 
 ---
 
 ## Variabele kosten per AI-credit (1 minuut)
 
-| Component | Tarief (geverifieerd) | Kost per minuut |
+| Component | Tarief (geverifieerd) | Kost per credit (EUR) |
 |---|---|---|
-| **AssemblyAI** Universal-3/3.5 Pro | **$0,21/uur** = $0,0035/min | **$0,0035** |
-| **Decodo** residentiële proxy (pay-as-you-go) | **$3,25/GB** | **~$0,0023** |
-| **Directe kost per credit** | — | **~$0,0058 ≈ €0,0054** |
+| **AssemblyAI** Universal-3.5 Pro | **$0,21/uur** = $0,0035/min | **~€0,0031** |
+| **Decodo** residentiële proxy (PAYG) | **$3,25/GB**, ~1 MB/min (conservatief) | **~€0,0034** |
+| **Marginaal — realistisch** | — | **~€0,0065/cr** (= €0,65/100cr) |
+| **Marginaal — worst-case (pricing-basis)** | zware audio / ongunstige proxy-route | **~€0,010/cr** (= €1,00/100cr) |
+| *Optimistische ondergrens (1 meting, 0,73 MB/min)* | — | *~€0,0054/cr* |
 
 ### AssemblyAI
 - Universal-3/3.5 Pro, pay-as-you-go **$0,21/uur = $0,0035/min**.
@@ -46,13 +50,13 @@ Deze vaste kosten staan **los van** de per-credit variabele kost en moeten in de
 ## Waarom prijs ≠ 2× kostprijs
 
 De verkoopprijs per credit moet **méér** dekken dan de directe API-kost:
-- **Directe API-kost** (AssemblyAI + Decodo) — ~€0,0054/credit.
+- **Directe API-kost** (AssemblyAI + Decodo) — realistisch ~€0,0065/credit, worst-case ~€0,010/credit (pricing-basis).
 - **Vaste infra** (Vercel, Railway, Supabase, Upstash, Resend, domein) — amortiseren over volume.
 - **Support-last** — tickets, refunds, gebruikersvragen.
 - **Operationeel onderhoud** — proxy-rotatie, watchdog, yt-dlp/Node-upgrades, incident-respons.
 - **Ontwikkelarbeid** — honderden uren bouw; moet terugverdiend worden.
 
-**2× kostprijs is niet levensvatbaar voor een SaaS.** De prijszetting in taak 1.21 (cheap tiers ~3× directe kost, Power ~2,2×) is hierop gebaseerd: een steilere, aantrekkelijke volumekorting die de zwaarste gebruikers niet subsidieert, met genoeg marge voor het bovenstaande.
+**2× kostprijs is niet levensvatbaar voor een SaaS.** De prijszetting in [ADR-052](../decisions/052-pricing-restructure-4-tiers.md) is hierop gebaseerd: 4 tiers tegen worst-case kost, waarbij de goedkoopste tier de meeste vaste kosten draagt en de volumekorting (Power) de zwaarste gebruikers niet subsidieert — elke tier houdt winst in élk scenario, óók met −20% korting.
 
 ---
 

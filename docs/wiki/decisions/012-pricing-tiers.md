@@ -1,6 +1,8 @@
 # Beslissing 012: Nieuwe Pricing Tiers — Try/Basic/Plus/Pro/Power
 
-**Status:** Geaccepteerd (pending implementatie)
+> **⚠️ SUPERSEDED door [ADR-052](052-pricing-restructure-4-tiers.md) (2026-07-09).** Het hier beschreven 5-tier-model (Try €2,49 … Power €49,99) is vervangen door een 4-tier-model (Test €3,49 / Starter €9,99 / Plus €24,99 / Power €49,99), BTW-inclusief en worst-case-geprijsd. Alle prijzen en €/cr-cijfers in dit document zijn **historisch** — gebruik ze niet. Behouden voor context.
+
+**Status:** Superseded (was: Geaccepteerd, pending implementatie)
 **Datum:** 2026-04-14
 **Vervangt:** de oude Starter/Basic/Plus/Pro/Power tiers
 **Gerelateerde code:** `src/app/api/stripe/checkout/route.ts` (PACKAGES object), `/src/app/(public)/pricing/`
