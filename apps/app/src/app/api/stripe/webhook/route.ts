@@ -59,17 +59,56 @@ export async function POST(req: Request) {
       return new NextResponse('Missing metadata', { status: 200 }) // Return 200 to acknowledge receipt even if invalid logic to stop retries
     }
 
+    // Net-revenue capture (BTW + Stripe fee + EUR settlement) so net = gross − BTW − fee is exactly
+    // reconstructable later. BEST-EFFORT: any failure here MUST NOT block the credit grant — we log a
+    // warning and proceed with gross-only metadata. balance_transaction is sometimes not available
+    // synchronously; when absent the fee fields are simply omitted (backfillable from Stripe later).
+    const purchaseMeta: Record<string, unknown> = {
+      stripe_session_id: session.id,
+      amount_paid: amountPaid,
+      currency: session.currency,
+    }
+    try {
+      // BTW (tax) portion — pricing is BTW-inclusive (ADR-052/053), so this is the tax within amount_paid.
+      const amountTax = session.total_details?.amount_tax
+      if (amountTax != null) purchaseMeta.amount_tax = amountTax / 100
+
+      const piId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id
+      if (piId) {
+        const pi = await stripe.paymentIntents.retrieve(piId, {
+          expand: ['latest_charge.balance_transaction'],
+        })
+        purchaseMeta.payment_intent_id = pi.id
+        const charge = pi.latest_charge as Stripe.Charge | null
+        const bt = charge?.balance_transaction
+        if (bt && typeof bt !== 'string') {
+          // fee/net are in the SETTLEMENT currency's minor units (settlement_currency records which).
+          purchaseMeta.stripe_fee = bt.fee / 100
+          purchaseMeta.net_settlement = bt.net / 100
+          purchaseMeta.settlement_currency = bt.currency
+          purchaseMeta.balance_transaction_id = bt.id
+        }
+      }
+    } catch (feeErr) {
+      const msg = feeErr instanceof Error ? feeErr.message : 'unknown'
+      console.warn('Stripe webhook: net/fee capture failed (grant proceeds with gross-only):', msg)
+      Sentry.captureException(feeErr, {
+        level: 'warning',
+        tags: { route: 'api/stripe/webhook', step: 'fee_capture', user_id: userId ?? 'unknown' },
+        extra: { stripe_session_id: session.id },
+      })
+    }
+
     // Add credits securely via RPC. Facturen worden niet hier aangemaakt maar on-demand
     // vanuit de account-betaalhistorie (api/stripe/invoice) — invoice_url wordt daar bijgeschreven.
     const { error } = await supabase.rpc('add_credits', {
       p_user_id: userId,
       p_amount: credits,
       p_reason: `Purchased ${credits} Credits`,
-      p_metadata: {
-          stripe_session_id: session.id,
-          amount_paid: amountPaid,
-          currency: session.currency
-      }
+      p_metadata: purchaseMeta,
+      p_kind: 'purchase',
     })
 
     if (error) {

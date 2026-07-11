@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     p_amount: amount,
     p_reason: reason ?? "Admin credit grant",
     p_metadata: { granted_by: user.id },
+    p_kind: "grant",
   })
 
   if (error) {
