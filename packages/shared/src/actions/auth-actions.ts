@@ -2,9 +2,27 @@
 
 import { createClient } from '../utils/supabase/server'
 import { limiters, getClientIp } from '../lib/ratelimit'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 import { isDisposableEmail } from '../utils/disposable-email'
 import { redirect } from 'next/navigation'
+
+// Read the first-touch acquisition cookie (set client-side by AcquisitionCapture on the marketing
+// landing) and shape it into signUp user_metadata → copied to profiles by the acquisition trigger.
+async function readAcquisitionMetadata(): Promise<Record<string, string>> {
+  try {
+    const raw = (await cookies()).get('indxr_acq')?.value
+    if (!raw) return {}
+    const acq = JSON.parse(decodeURIComponent(raw)) as Record<string, unknown>
+    const out: Record<string, string> = {}
+    for (const key of ['signup_source', 'utm_source', 'utm_medium', 'utm_campaign', 'referrer', 'landing_path'] as const) {
+      const v = acq[key]
+      if (typeof v === 'string' && v) out[key === 'referrer' ? 'signup_referrer' : key === 'landing_path' ? 'signup_landing_path' : key] = v
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
 
 export async function loginAction(prevState: unknown, formData: FormData) {
   const email = formData.get('email') as string
@@ -105,12 +123,16 @@ export async function signupAction(prevState: unknown, formData: FormData) {
 
   const supabase = await createClient()
 
-  // 3. Signup Attempt
+  // 3. Signup Attempt — attach first-touch acquisition source into user_metadata so the
+  // acquisition trigger can persist it onto profiles (utm/referrer/source per channel).
+  const acquisition = await readAcquisitionMetadata()
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback`,
+      data: acquisition,
     },
   })
 

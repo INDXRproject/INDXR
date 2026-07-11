@@ -5,6 +5,7 @@ import { Header } from "@indxr/shared/components/Header";
 import { Footer } from "@indxr/shared/components/Footer";
 import { AuthProvider } from "@indxr/shared/contexts/AuthContext";
 import { PostHogProvider } from "@indxr/shared/providers/PostHogProvider";
+import { AcquisitionCapture } from "@indxr/shared/components/AcquisitionCapture";
 import { ThemeProvider } from "@indxr/shared/components/theme-provider";
 import { createClient } from "@indxr/shared/utils/supabase/server";
 
@@ -59,6 +60,7 @@ export default async function RootLayout({
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem disableTransitionOnChange>
           <PostHogProvider>
             <AuthProvider initialUser={user}>
+              <AcquisitionCapture />
               <Header />
               <main id="main-content" className="flex-1">
                 {children}
