@@ -177,18 +177,15 @@ API en worker bouwen uit **dezelfde GitHub-repo en dezelfde `/backend` root dire
 **Dockerfile:** `backend/Dockerfile` (gedeeld door API en worker — de worker overschrijft de `CMD` via Railway's "Start Command" instelling)  
 **Gezondheidscheck:** `GET /health` → `{"status": "healthy"}` (alleen API-service, unauthenticated, geen DB/Redis-afhankelijkheid → nooit flaky)
 
-### Zero-downtime deploy (health-gated cutover)
+### Zero-downtime deploy
 
-**API-service:** de cutover is health-check-gated via **`backend/railway.json`** (in de repo, dus versie-gecontroleerd en survivet service-hercreatie):
+**Cutover:** Railway's **default** — zodra de nieuwe container start en de target-poort luistert, schakelt het verkeer om. Dit is het gedrag dat al maanden werkt.
 
-```json
-{ "$schema": "https://railway.com/railway.schema.json",
-  "deploy": { "healthcheckPath": "/health", "healthcheckTimeout": 300 } }
-```
+> **⚠️ NIET DOEN: `healthcheckPath` in een gedeelde `backend/railway.json`.** Op 2026-07-11 is dit geprobeerd (BLOK C) en het **brak beide services**: api én worker deploys gingen op FAILED. Twee oorzaken, beide bevestigd via `railway deployment list`: (1) **api** — de app start wél op, maar Railway's healthcheck-probe kon `/health` niet bereiken (uvicorn bindt hardcoded `--port 8000`, Railway probet op `$PORT`/IPv6) → deploy FAILED + shutdown; (2) **worker** — deelt dezelfde `/backend` root dus dezelfde `railway.json`, maar heeft **geen HTTP-server** → healthcheck kan per definitie niet slagen. Railway hield telkens de vorige (gezonde) deploy draaiend, wat het maskeerde tot de deployment-list het toonde. **Teruggedraaid** (`backend/railway.json` verwijderd) → deploys weer SUCCESS.
 
-Railway wacht met verkeer-omschakeling tot de nieuwe deployment `GET /health` = 200 teruggeeft → **geen request-gap** bij deploy. Zonder deze setting schakelt Railway zodra de container start (mogelijk vóór uvicorn requests aankan). `/health` is unauthenticated en statisch, dus de probe slaagt zodra de app luistert. **Alternatief (dashboard, als de file ooit niet gepakt wordt):** Service → Settings → Deploy → **Health Check Path** = `/health`. De file wint; verifieer bij de volgende deploy dat de deploy-logs een healthcheck-stap tonen vóór "Active".
+**Wil je later tóch health-gated cutover (post-launch, alléén api):** vereist twee dingen samen — (a) uvicorn op `$PORT` laten binden (`--port ${PORT}` via shell-form CMD, of `--host ::` voor IPv6) zodat de probe `/health` kan bereiken, én (b) de healthcheck **alleen op de api-service** zetten, niet in een door de worker gedeelde `railway.json` — dus via de **dashboard** (api → Settings → Deploy → Health Check Path = `/health`) of een per-service config-file-pad. Nooit een healthcheck aan de portloze worker opleggen.
 
-**Worker-service:** heeft **geen** HTTP-server → geen healthcheck van toepassing. Zie de deploy-werkregel hieronder.
+**Worker-service:** heeft **geen** HTTP-server → nooit een healthcheck. Zie de deploy-werkregel hieronder.
 
 > **⚠️ WERKREGEL — niet deployen terwijl jobs draaien.** Een deploy naar de **worker** herstart de container en **doodt elke lopende job** (transcriptie/playlist) — er is geen graceful drain. Herstel is niet gegarandeerd instant: de watchdog re-enqueuet `interrupted`/stuck jobs pas bij de volgende cron-pass (elke 2 min; ADR-049/051). Regel: **push niet naar `master` terwijl er actieve jobs lopen** (check `ActiveJobsIndicator` / `transcription_jobs`+`playlist_extraction_jobs` op niet-terminale status). Pre-launch is dit laag-risico (weinig verkeer); post-launch is graceful worker-drain een benoemde roadmap-taak — zie [priorities.md](../roadmap/priorities.md).
 
