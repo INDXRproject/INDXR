@@ -1084,7 +1084,7 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
         
         # TODO: model selector - future BYOK feature
         data = {
-            "model": "deepseek-chat",
+            "model": "deepseek-v4-flash",  # was 'deepseek-chat' (deprecated 2026-07-24); chat routed here anyway
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Transcript:\\n{full_text}"}
