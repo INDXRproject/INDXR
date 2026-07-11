@@ -8119,3 +8119,22 @@ docs/wiki/decisions/004-deepseek-v3.md
 docs/wiki/decisions/054-cost-usage-capture-layer.md
 supabase/migrations/20260711214500_deepseek_cache_and_peak_cost_config.sql
 ---
+[2026-07-11 23:00] commit: chore(deploy): health-gated Railway cutover + worker deploy work-rule (Blok C)
+
+- backend/railway.json: healthcheckPath=/health, healthcheckTimeout=300. Railway now
+  waits for GET /health = 200 before switching traffic on the API service -> no request
+  gap on deploy. The api service builds from /backend so the file is picked up; /health
+  is unauthenticated + static so the probe is never flaky. Strictly safer than no config
+  (wait vs blind cutover); cannot break an in-flight deploy.
+- deployment.md: documents the health-gated cutover (file + dashboard fallback), confirms
+  Vercel is already atomic/zero-downtime, and adds the work-rule: deploying the worker
+  kills running jobs (no graceful drain; watchdog re-enqueues only on the 2-min cron) ->
+  do not push while active jobs are running.
+- priorities.md 1.34: post-launch graceful worker-drain + watchdog-resume latency.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/railway.json
+docs/LOG.md
+docs/wiki/operations/deployment.md
+docs/wiki/roadmap/priorities.md
+---
