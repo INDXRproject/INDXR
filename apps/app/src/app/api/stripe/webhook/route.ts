@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import * as Sentry from '@sentry/nextjs'
 import { stripe } from '@/lib/stripe'
 import Stripe from 'stripe'
-import { createClient } from '@indxr/shared/utils/supabase/server'
+import { createAdminClient } from '@indxr/shared/utils/supabase/admin'
 
 export const runtime = 'nodejs';
 
@@ -49,8 +49,10 @@ export async function POST(req: Request) {
   const session = event.data.object as Stripe.Checkout.Session
 
   if (event.type === 'checkout.session.completed') {
-    const supabase = await createClient()
-    
+    // Service-role client: add_credits is locked to service_role (RPC privilege hardening).
+    // The webhook has no user session anyway; it grants credits server-side.
+    const supabase = createAdminClient()
+
     const userId = session.metadata?.userId
     const credits = parseInt(session.metadata?.credits || '0')
     const amountPaid = session.amount_total ? session.amount_total / 100 : 0
