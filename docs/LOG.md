@@ -8236,3 +8236,17 @@ Changed: backend/worker.py
 docs/wiki/operations/deployment.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-12 00:25] commit: docs(cost): plain-language DeepSeek cost explanation + precision rule (Blok C)
+
+- Adds a plain-language intro to the DeepSeek unit-economics section: response returns only
+  tokens (no amount); cost = tokens x rate from cost_config; the cache-hit/miss split is
+  logged so our calc is right; rate changes are a config row (no deploy); peak pricing is off
+  (multiplier 1.0) and would be config-only.
+- Documents the hard precision rule: sum on full precision, never round to cents mid-calc,
+  round only at display. Verified there is no premature cent-rounding in any cost path (no EUR
+  cost computation exists yet; the only money round is checkout->Stripe cents, which is the
+  sale price, not a cost). cost_config keeps high precision (cache-hit numeric(18,10)).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/business/unit-economics.md
+---
