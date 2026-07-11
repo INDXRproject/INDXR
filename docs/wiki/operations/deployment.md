@@ -191,7 +191,11 @@ API en worker bouwen uit **dezelfde GitHub-repo en dezelfde `/backend` root dire
 
 #### Graceful worker-drain (optioneel aan te zetten, env-gated)
 
-De worker ondersteunt nu graceful drain op SIGTERM (`WorkerSettings.job_completion_wait`, arq 0.28.0): bij een deploy stopt de worker met nieuwe jobs oppakken en laat lopende jobs afronden vóór shutdown. **Inert by default** (`ARQ_JOB_COMPLETION_WAIT=0`) — nul gedragsverandering tot expliciet aangezet. Aanzetten vereist **drie** dingen samen op de **worker-service** (anders triggert het niet):
+De worker ondersteunt nu graceful drain op SIGTERM (`WorkerSettings.job_completion_wait`, arq 0.28.0): bij een deploy stopt de worker met nieuwe jobs oppakken en laat lopende jobs afronden vóór shutdown.
+
+**Huidige beslissing (Khidr, 2026-07-12): drain staat UIT** (`ARQ_JOB_COMPLETION_WAIT` niet gezet = 0 = inert). Reden: dubbele aftrek is toch al onmogelijk (reserve/settle/refund idempotent, bewezen), en zonder veel gelijktijdige jobs is "job herstart ~2 min na deploy via de watchdog" acceptabel; drain aanzetten vertraagt élke deploy. De code is klaar en env-gated, dus later is het een **instelling, geen herontwerp**.
+
+**Wanneer wél aanzetten:** zodra er structureel **veel gelijktijdige users/jobs** zijn (een deploy zou dan meerdere lopende transcripties killen en ~2 min recovery-latency is dan merkbaar). Aanzetten vereist **drie** dingen samen op de **worker-service** (anders triggert het niet):
 
 | Setting | Waar | Waarom |
 |---|---|---|

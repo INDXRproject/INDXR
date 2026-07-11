@@ -8289,3 +8289,26 @@ backend/worker.py
 backend/youtube_utils.py
 docs/wiki/decisions/054-cost-usage-capture-layer.md
 ---
+[2026-07-12 00:58] commit: docs: deduct_credits_atomic STOP-report (B) + drain-activation (C) + test reminders (D)
+
+BLOK B (STOP & REPORT — no financial code mutated): deduct_credits_atomic is NOT dormant.
+Caller map: /api/summarize (3cr, and the UI's "Regenerate Summary" re-charges every time),
+RAG single-export (once-per-transcript), RAG bulk-export (one atomic sum over N transcripts),
+the dormant whisper-legacy branch, and a one-off SQL script. Removing the RPC is unsafe now:
+transcript_id-keyed idempotency would make summary regeneration FREE; reserve/settle/refund
+can't be reused (they touch the job row — verified); bulk RAG doesn't map to one (job_id,kind);
+dropping the whisper-legacy branch drops the RESERVATION_ENABLED rollback. The RPC is not
+unsafe for its synchronous callers (each call = intentional charge, atomic FOR UPDATE); the
+re-run tijbomb applies only to the dormant path. Recorded as priorities.md 1.35 with the safe
+path (idempotency-token feature) — awaiting Khidr's decision.
+
+BLOK C: deployment.md drain section now states the current decision (drain OFF, code ready,
+env-gated), the exact 3 activation steps, and when to enable (many concurrent users) + trade-off.
+
+BLOK D: priorities.md pre-launch checks — TEST 4 (Stripe net capture), TEST 5 (utm_source=test
+acquisition), healthcheck-in-practice on next api deploy, Napoleon live re-extract.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/operations/deployment.md
+docs/wiki/roadmap/priorities.md
+---
