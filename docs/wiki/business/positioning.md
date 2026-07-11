@@ -48,12 +48,27 @@ INDXR.AI extraheert transcripten van YouTube-video's en maakt ze doorzoekbaar, e
 
 ## Prijspositie
 
-INDXR is bewust **niet gratis**: de 5 gratis credits testen de bereidheid om te betalen. Gebruikers die waarde zien kopen een pakket.
+INDXR is bewust **niet gratis** voor betaalde features: welcome credits + gratis caption-extractie testen de bereidheid om te betalen. Caption-extractie is altijd gratis; AI-transcriptie/RAG/playlist kosten credits.
 
-De target CPE (cost per extraction) voor de gebruiker:
-- Gratis (captions): €0
-- Basic pakket: ~€0.077/credit ≈ €0.077 per 10-minuten video
-- Vs. ChatGPT transcriptie: handmatig, omslachtig, geen bibliotheekfunctie
+### Concurrentie-analyse AI-transcriptie (2026-07, per minuut)
+
+INDXR's AI-transcriptie kost **€0,035/min (Try) → €0,016/min (Power)** — 1 credit/min, dus per-minuut = prijs-per-credit per tier.
+
+| Aanbieder | Prijs/min | Type |
+|-----------|-----------|------|
+| **INDXR** | **€0,035 → €0,016** | GUI + RAG + playlist + gratis captions |
+| Rev / Temi | ~$0,25/min | UI-transcriptie |
+| Happy Scribe | ~€0,20/min | UI-transcriptie |
+| Algemene AI-transcriptiemarkt | $0,10–0,50/min | UI |
+| Deepgram (kale API) | ~$0,0043/min | API, geen GUI |
+| VexaScribe e.d. (bulk/self-host) | < INDXR | API/self-host, geen GUI |
+
+**Conclusie (concurrentie-analyse bevestigt):**
+- INDXR zit **fors ónder de UI-concurrenten** (Rev/Temi/Happy Scribe, 5–15×) én onder de algemene AI-transcriptiemarkt.
+- INDXR is **duurder dan kale API's/self-hosted** (Deepgram, VexaScribe-bulk) — maar die missen GUI, RAG-export, playlist-batch, gratis caption-extractie en de bibliotheekfunctie. Dat is de bewuste waarde-premie.
+- **Prijs niet verlagen.** De prijs is goed/onder de markt. Het openstaande punt is puur **presentatie**: de per-minuut/per-uur-weergave beter framen met deze concurrentie-context — dat is **redesign-werk** (zie [roadmap/backlog.md → Redesign](../roadmap/backlog.md)), geen prijswijziging.
+
+Vs. ChatGPT/handmatig: omslachtig, geen bibliotheek, geen playlist/RAG.
 
 ---
 

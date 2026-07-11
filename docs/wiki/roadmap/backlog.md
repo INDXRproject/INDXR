@@ -88,6 +88,17 @@ Schema al ontworpen, nog niet geïmplementeerd:
 
 ---
 
+## Redesign (post-launch — presentatie, geen prijswijziging)
+
+Prijs is bevestigd goed/onder de markt (zie [business/positioning.md → Prijspositie](../business/positioning.md)). Deze punten zijn puur **presentatie**:
+
+- [ ] **Pricing-kaarten: proza-blok + vinkjes is dubbel.** De klant-gerichte `description` (prozablok) en de capability-vinkjes zeggen deels hetzelfde. Vinkjes behouden, prozablok inkorten (of andersom) — niet beide de volledige credit-mechanica laten herhalen.
+- [ ] **Prijs-per-uur/-minuut-anker herformuleren met concurrentie-context.** De per-minuut-weergave zonder context oogt duur; frame 'm tegen Rev/Temi ($0,25/min) en Happy Scribe (€0,20/min) zodat de €0,016–0,035/min als voordeel leest.
+- [ ] **Stripe-productafbeeldingen + betaalpagina-visuals.** Product images per tier in Stripe + gepolijste Checkout-branding.
+- [ ] **Logo op de Stripe-factuur** (Stripe Dashboard → Settings → Branding) — verschijnt op de on-demand facturen (zie [ADR-053](../decisions/053-on-demand-invoicing.md)).
+
+---
+
 ## Branding (open vraag)
 
 Domeinnaam/branding herbeoordelen post-launch:

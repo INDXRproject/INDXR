@@ -3,13 +3,14 @@
 import { useState } from "react"
 import { PricingCard } from "@indxr/shared/components/ui/pricing-card"
 import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
-import { PACKAGES, formatEur } from "@indxr/shared/lib/pricing"
+import { PACKAGES, formatEur, CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 
 // Tier-onafhankelijke capabilities (gelden voor alle betaalde tiers). Geen
-// verzonnen per-tier perks — credits/prijzen komen dynamisch uit PACKAGES.
+// verzonnen per-tier perks — credits/prijzen/tarieven komen dynamisch uit pricing.ts.
+const PLAYLIST_RATE = CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS
 const FEATURES = [
-  "AI transcription (1 credit/min)",
-  "Playlist & batch processing (first 3 free)",
+  `AI transcription (${CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min)`,
+  `Playlist & batch processing (first ${FREE_TIER.PLAYLIST_FREE_VIDEOS} free, then ${PLAYLIST_RATE} credit${PLAYLIST_RATE === 1 ? "" : "s"}/video)`,
   "RAG-ready JSON export for vector DBs",
   "Free existing-caption extraction",
   "All export formats · credits never expire",

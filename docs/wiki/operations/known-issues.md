@@ -123,18 +123,17 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 - **Storage-per-user** (R2-bytes) voor toekomstige storage-economics.
 **Waarom blocker:** zonder dit start de launch blind op kosten; elke dag zonder capture is onherroepelijk dataverlies. Koppelt aan priorities **1.24** (admin financieel dashboard: kost-per-job + tarief-config) en ADR-052 (consequenties). **Alleen geregistreerd** — implementatie is een aparte taak.
 
-### Stripe: Account activatie + nieuwe prijzen vereist
-**Status:** Stripe account nog niet geactiveerd met KVK/bedrijfsinfo. Vereist voor live betalingen.
-**Impact:** Geen live betalingen mogelijk tot activatie compleet is.
-**Fix (aparte sessie):**
-1. Stripe Dashboard → activeer account met KVK en bedrijfsgegevens
-2. Switch naar live mode
-3. Maak **4 producten** aan (BTW-inclusief, type One-off, EUR) volgens [ADR-052](../decisions/052-pricing-restructure-4-tiers.md): **Test €3,49/100cr, Starter €9,99/400cr, Plus €24,99/1.300cr, Power €49,99/3.100cr**. Zet Stripe Tax aan (categorie `txcd_10000000`, prijzen inclusief, OSS) + Adaptive Pricing (EUR-settlement).
-4. Update `PACKAGES` in **`src/app/api/stripe/checkout/route.ts` én `packages/shared/src/lib/pricing.ts`** met de 4 tiers (de plan-set daalt van 5 → 4).
-5. Registreer webhook endpoint: `https://indxr.ai/api/stripe/webhook`
-6. Kopieer `STRIPE_WEBHOOK_SECRET` naar Vercel environment variables
+### ~~Stripe: Account activatie + nieuwe prijzen vereist~~ ✅ Live (2026-07-10)
+**Status:** Stripe live. 4 producten aangemaakt (Try €3,49/100cr, Starter €9,99/400cr, Plus €24,99/1.300cr, Power €49,99/3.100cr, [ADR-052](../decisions/052-pricing-restructure-4-tiers.md)); `pricing.ts` gesynct naar 4 tiers; webhook geregistreerd + `STRIPE_WEBHOOK_SECRET` gezet (webhook fail-closed in productie); on-demand facturen ([ADR-053](../decisions/053-on-demand-invoicing.md)); betaal→credit-keten geverifieerd. `checkout/route.ts` bouwt prijzen uit `pricing.ts`.
 
-**⚠️ Let op:** zowel `pricing.ts` als `checkout/route.ts` bevatten nog het **oude 5-tier-model** (Try €2,49/150cr … Power €49,99/6000cr). Beide moeten naar het 4-tier-model uit ADR-052 vóór launch. Dit is de code-sync-taak gekoppeld aan priorities 1.13.
+### Stripe: post-launch instellingen-todo (Khidr, Dashboard)
+Niet code, wél vóór/kort na publiek gaan:
+- [ ] **Afzender-e-mail wijzigen** van de persoonlijke Protonmail → **`contact@indxr.ai`** (Stripe Dashboard → Settings → Public business details / e-mailafzender). Verschijnt op klant-mails en facturen.
+- [ ] **Factuur-branding/logo** instellen (Settings → Branding) — logo verschijnt op de on-demand facturen. Later oppakken; zie [roadmap/backlog.md → Redesign](../roadmap/backlog.md).
+- [ ] **Bij toekomstige BV + holding-structuur**: factuur-NAW/bedrijfsgegevens herzien (juiste rechtsvorm, KVK/BTW-nummer op de factuur).
+
+### Stripe: valuta-gedrag (geen bug — verwacht)
+**Adaptive Pricing** kiest de presentment-valuta op basis van het IP van de bezoeker. In een test verscheen **GBP** — dat was een **test-IP-artefact** (VPN/exit-node), geen bug. De **EUR-optie is altijd aanwezig** op de Checkout, settlement is EUR ([ADR-052](../decisions/052-pricing-restructure-4-tiers.md)). **Geen fix nodig.** Te verifiëren vanaf een schoon NL-IP dat EUR de default presentment is.
 
 ### Upstash Redis: Rate limiting en caption cache uitgeschakeld in productie
 **Bestand:** `packages/shared/src/lib/ratelimit.ts` (Next.js), `backend/main.py` (caption cache)

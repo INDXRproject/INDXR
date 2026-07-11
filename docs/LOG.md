@@ -7737,3 +7737,41 @@ supabase/migrations/20260710154218_profiles_stripe_customer_id.sql
 ---
 
 [2026-07-10 18:40] pricing-content-refactor: alle getoonde prijzen/euro-voorbeelden in content nu berekend uit pricing.ts (nul hardcoded). Nieuwe content-helpers (cheapestPackage, tierPriceCredits, creditCostEur, creditCostPhrase, anchorPerCreditText, getAnchorPackage/ANCHOR_TIER_ID=plus). 15 vindplaatsen omgezet: pricing-FAQ + teaser + 2 kostentabellen (Basic-kolom verwijderd) + 11 artikel-prozavermeldingen; alle "at Basic pricing" vervangen door Plus-anker, alle "at Plus pricing" berekend. Repricing = alleen PACKAGES wijzigen. Wiki: pricing-source-of-truth.md content-helper-sectie. | gewijzigd: packages/shared/src/lib/pricing.ts + apps/marketing/src/app/{pricing/page.tsx,articles/*}, components/{marketing/PricingTeaserBlock,pricing}.tsx, docs/wiki/architecture/pricing-source-of-truth.md
+[2026-07-10 18:16] commit: refactor(pricing): render all shown prices/credit examples from pricing.ts (zero hardcoded)
+
+Repricing now costs zero content edits — change PACKAGES and every price/example follows.
+
+- New content helpers in pricing.ts: cheapestPackage, tierPriceCredits,
+  creditCostEur, creditCostPhrase, anchorPerCreditText, getAnchorPackage/
+  ANCHOR_TIER_ID (Plus). Credits-first; euro examples computed against the
+  Plus anchor (€24.99/1300).
+- Converted 15 hardcoded spots: pricing FAQ + teaser + 2 cost tables
+  (dropped the dead "Basic" column) + 11 article prose mentions.
+- Removed all "at Basic pricing" (tier gone, ADR-052); all "at Plus pricing"
+  figures now computed.
+- Credit RATES (1/min, 3/summary, 1/15min) left as prose — stable CREDIT_COSTS
+  constants, not repricing-sensitive.
+- Wiki: pricing-source-of-truth.md documents the helpers + the single grep
+  ("@indxr/shared/lib/pricing") that finds every pricing spot.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-members-only-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-markdown/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/components/marketing/PricingTeaserBlock.tsx
+docs/LOG.md
+docs/wiki/architecture/pricing-source-of-truth.md
+packages/shared/src/lib/pricing.ts
+---
+
+[2026-07-11 10:15] post-launch fixes+docs: (1) invoice-actie zit al alléén op billing (PurchaseHistoryCard); /account (TransactionHistoryCard) had geen invoice-knop → niets te verwijderen, gerapporteerd. (2) BillingPurchaseGrid FEATURES: playlist-regel nu "first 3 free, then 1 credit/video" uit CREDIT_COSTS/FREE_TIER (niet hardcoded); rate geverifieerd PLAYLIST_VIDEO_AUTO_CAPTIONS=1. (3) Wiki: positioning.md prijspositie herschreven met concurrentie-analyse (INDXR €0,035→€0,016/min vs Rev/Temi $0,25, Happy Scribe €0,20; conclusie: niet verlagen, framing=redesign); backlog Redesign-sectie (pricing-kaart proza/vinkjes, per-min anker, Stripe product images, factuur-logo); known-issues Stripe-sectie geactualiseerd (live), + post-launch todos (afzender→contact@indxr.ai, factuur-branding, BV/holding-NAW) + valuta-gedrag-note (Adaptive Pricing presentment op IP; GBP=test-artefact; EUR altijd aanwezig). Geen prijswijziging. | gewijzigd: apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx, docs/wiki/business/positioning.md, docs/wiki/roadmap/backlog.md, docs/wiki/operations/known-issues.md
