@@ -8180,3 +8180,32 @@ Changed: docs/LOG.md
 scripts/git-hooks/README.md
 scripts/git-hooks/post-commit
 ---
+[2026-07-12 00:21] commit: fix(captions): native-anchored track selection — always original, never a translation
+
+Bm1RhjcdJek (Napoleon, English audio) returned an Albanian transcript. Root cause: it has
+NO -orig ASR track and 26 manual community translations; the English manual sub is keyed
+'en-GB', not bare 'en'. The old Priority-1 iterated ['en'] + list(manual_subs.keys()), missed
+'en', and fell to manual_subs.keys()[0] = 'sq' (a human Albanian translation). Manual subs
+are NOT inherently native.
+
+Fix (both cascade paths, no language preference, never a translation):
+- extract_with_ytdlp: anchor native language on info['language'] (yt-dlp audio language,
+  e.g. en-GB/ar/ja) + the -orig marker. Select ONLY a track whose base code matches native:
+  P1 manual-native, P2 -orig ASR-native, P3 non-orig auto-native without tlang=, else
+  no_captions. lang_pref no longer steers.
+- extract_via_youtube_transcript_api: read the generated (ASR) track = native, pick manual-
+  native or native ASR, never .translate(); no ASR track -> return None -> defer to yt-dlp.
+- _base_lang() matches regional variants (en-GB->en, pt-BR->pt).
+
+Verified against real repros: Napoleon -> English; Arabic video -> Arabic native; Japanese
+video -> Japanese native (the original tlang auto-translation bug does not return).
+
+Docs: ai-pipeline.md native-selection note, LESSONS, backlog (optional preferred-language
+setting when multiple tracks exist — native stays default).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/youtube_utils.py
+docs/LESSONS.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/roadmap/backlog.md
+---

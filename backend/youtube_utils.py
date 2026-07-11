@@ -153,6 +153,12 @@ def parse_vtt_to_transcript(subtitle_data: str) -> List[dict]:
     return final_transcript
 
 
+def _base_lang(code: Optional[str]) -> Optional[str]:
+    """Base language code, region- and marker-stripped: 'en-GB'->'en', 'pt-BR'->'pt', 'ja'->'ja'.
+    Used to match a track against the native/audio language regardless of regional variant."""
+    return code.split('-')[0].lower() if code else None
+
+
 async def extract_via_youtube_transcript_api(
     video_id: str,
     session_id: Optional[str] = None,
@@ -169,8 +175,9 @@ async def extract_via_youtube_transcript_api(
     failure (rate-limit, blocked, no captions, etc.). Never raises — None signals
     the cascade to fall through to the next step.
     """
-    languages = [lang_pref, "en"] if (lang_pref and lang_pref != "en") else ["en"]
-    logger.info(f"[YT-API] attempting {video_id} lang_pref={lang_pref!r} languages={languages}")
+    # lang_pref is IGNORED for track selection (unreliable). We anchor on the native/audio
+    # language via the ASR (generated) track and never translate — see below.
+    logger.info(f"[YT-API] attempting {video_id} (native-anchored; lang_pref={lang_pref!r} not used for steering)")
     try:
         from youtube_transcript_api import (
             YouTubeTranscriptApi,
@@ -187,14 +194,31 @@ async def extract_via_youtube_transcript_api(
         proxy_config = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url) if proxy_url else None
 
         ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
-        fetched = await asyncio.to_thread(ytt_api.fetch, video_id, languages=languages)
+
+        # List base transcripts (translations are on-demand via .translate(), NOT listed here, so
+        # nothing we iterate is a machine translation). The GENERATED (ASR) transcript's language
+        # is the video's native/audio language. Prefer a MANUAL transcript in that native language
+        # (human native), else the native ASR. If there is NO ASR track we cannot determine native
+        # reliably here → return None so the yt-dlp cascade (which has info['language']) decides.
+        transcript_list = await asyncio.to_thread(ytt_api.list, video_id)
+        generated = [t for t in transcript_list if t.is_generated]
+        if not generated:
+            logger.info(f"[YT-API] {video_id}: no ASR track to anchor native language → defer to yt-dlp cascade")
+            return None
+        native = generated[0].language_code
+        native_base = _base_lang(native)
+        chosen = next(
+            (t for t in transcript_list if not t.is_generated and _base_lang(t.language_code) == native_base),
+            None,
+        ) or generated[0]
+        fetched = await asyncio.to_thread(chosen.fetch)
 
         transcript = [
             {"text": snippet.text, "offset": snippet.start, "duration": snippet.duration}
             for snippet in fetched
         ]
 
-        logger.info(f"[YT-API] success for {video_id} lang={fetched.language_code}")
+        logger.info(f"[YT-API] success for {video_id} native={native!r} lang={fetched.language_code} generated={chosen.is_generated}")
         return {
             "transcript": transcript,
             "language": fetched.language_code,
@@ -250,7 +274,9 @@ async def extract_with_ytdlp(
     and call with `await`; the event loop is blocked during the sync portions.
     """
     _clients = clients or ['ios', 'web_embedded']
-    _target_lang = lang_pref if (lang_pref and lang_pref != "en") else None
+    # lang_pref (YouTube Data API) is NOT used to steer track selection — it is unreliable
+    # (returns 'en' for non-English videos). The native/audio language is anchored on yt-dlp's
+    # own info['language'] + the '-orig' ASR marker below. Kept only for diagnostics.
     log_prefix = "[YT-DLP]" if _clients == ['ios', 'web_embedded'] else "[YT-DLP-ROT]"
     logger.info(f"{log_prefix} attempting {video_id} lang_pref={lang_pref!r}")
     ydl_opts = {
@@ -283,40 +309,55 @@ async def extract_with_ytdlp(
             selected_lang = None
             manual_subs = info.get('subtitles') or {}
             auto_captions = info.get('automatic_captions') or {}
+            orig_keys = [k for k in auto_captions if k.endswith('-orig')]
 
-            # Priority 1: manual subtitles — always native, never tlang=
-            for _lang in ([_target_lang] if _target_lang else []) + ['en'] + list(manual_subs.keys()):
-                if _lang and _lang in manual_subs:
-                    subtitles = manual_subs[_lang]
-                    selected_lang = _lang
-                    logger.info(f"{log_prefix} {video_id}: manual subtitle lang={_lang!r}")
-                    break
+            # ── Native-anchored selection (ADR: always the ORIGINAL track, never a translation) ──
+            # Determine the video's native/audio language, then pick ONLY a track in that language.
+            # Manual subtitles are NOT inherently native — a video can carry human translations in
+            # many languages (e.g. Napoleon Bm1RhjcdJek has 26 manual tracks incl. Albanian). The
+            # old code picked manual_subs.keys()[0] when 'en' wasn't a literal key (the English track
+            # was 'en-GB'), returning Albanian. We anchor instead on two reliable native signals:
+            #   1. info['language'] — yt-dlp's detected audio language (e.g. 'en-GB', 'ar', 'ja')
+            #   2. the '-orig' key — YouTube's structural native-ASR marker (never has tlang=)
+            native_base = _base_lang(info.get('language'))
+            if not native_base and orig_keys:
+                native_base = _base_lang(orig_keys[0][:-len('-orig')])
 
-            # Priority 2: native ASR (-orig key) — yt-dlp marks native track with -orig suffix,
-            # which guarantees no tlang= in the URL regardless of what lang_pref says
-            if not subtitles:
-                orig_keys = [k for k in auto_captions if k.endswith('-orig')]
-                if orig_keys:
-                    preferred = f'{_target_lang}-orig' if _target_lang else None
-                    chosen_key = preferred if (preferred and preferred in orig_keys) else orig_keys[0]
+            # Priority 1: MANUAL subtitle in the native language (human native, best quality, no tlang=)
+            if native_base:
+                for k in manual_subs:
+                    if _base_lang(k) == native_base:
+                        subtitles = manual_subs[k]
+                        selected_lang = k
+                        logger.info(f"{log_prefix} {video_id}: native manual subtitle lang={k!r} (native={native_base!r})")
+                        break
+
+            # Priority 2: native ASR (-orig) — guaranteed native, never tlang=. Only an -orig that
+            # matches the native language (or, if native is unknown, the -orig marker itself).
+            if not subtitles and orig_keys:
+                if native_base:
+                    chosen_key = next((k for k in orig_keys if _base_lang(k[:-len('-orig')]) == native_base), None)
+                else:
+                    chosen_key = orig_keys[0]
+                if chosen_key:
                     subtitles = auto_captions[chosen_key]
                     selected_lang = chosen_key
                     logger.info(f"{log_prefix} {video_id}: native ASR lang={chosen_key!r} (orig_keys={orig_keys})")
 
-            # Priority 3: last resort — non-orig auto-caption, but only if URL has no tlang=
-            if not subtitles:
-                for _lang in ([_target_lang, 'en'] if _target_lang else ['en']):
-                    if _lang not in auto_captions:
+            # Priority 3: non-orig auto-caption in the native language, only if the URL has no tlang=
+            if not subtitles and native_base:
+                for k in auto_captions:
+                    if k.endswith('-orig') or _base_lang(k) != native_base:
                         continue
-                    vtt = next((s for s in auto_captions[_lang] if s.get('ext') == 'vtt'), None)
+                    vtt = next((s for s in auto_captions[k] if s.get('ext') == 'vtt'), None)
                     if vtt and 'tlang=' not in vtt.get('url', ''):
-                        subtitles = auto_captions[_lang]
-                        selected_lang = _lang
-                        logger.info(f"{log_prefix} {video_id}: auto-caption fallback lang={_lang!r} (no tlang=)")
+                        subtitles = auto_captions[k]
+                        selected_lang = k
+                        logger.info(f"{log_prefix} {video_id}: native auto-caption lang={k!r} (no tlang=)")
                         break
 
             if not subtitles:
-                logger.info(f"{log_prefix} {video_id}: no_captions (no native track; lang_pref={lang_pref!r})")
+                logger.info(f"{log_prefix} {video_id}: no_captions (no NATIVE track; native={native_base!r} video_lang={info.get('language')!r})")
                 return {}
 
             vtt_subtitle = next((s for s in subtitles if s.get('ext') == 'vtt'), None)
