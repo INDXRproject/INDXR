@@ -16,7 +16,9 @@ De keuze van het LLM heeft directe impact op kosten per transactie en daarmee op
 
 ## Beslissing
 
-**DeepSeek V3** (`deepseek-chat` model) aanroepen via de DeepSeek Chat Completions API.
+**DeepSeek V3** aanroepen via de DeepSeek Chat Completions API.
+
+> **UPDATE 2026-07-11 — model-migratie:** het model-ID is gemigreerd van **`deepseek-chat`** → **`deepseek-v4-flash`** omdat `deepseek-chat` op **2026-07-24 15:59 UTC** wordt uitgezet (API-calls zouden dan falen → breekt de samenvatting). Gedrag identiek (`deepseek-chat` routeerde al naar v4-flash non-thinking). Echte pricing (v4-flash cache-miss): **input $0,14/M, output $0,28/M** — vastgelegd in `cost_config` + [unit-economics.md](../business/unit-economics.md). Code: `backend/main.py` (summarize-call). Tokens per samenvatting worden nu gelogd (`transcripts.ai_summary_usage`, ADR-054).
 
 Endpoint: `https://api.deepseek.com/chat/completions`  
 Auth: `DEEPSEEK_API_KEY` env var  

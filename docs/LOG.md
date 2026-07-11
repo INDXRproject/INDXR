@@ -7931,3 +7931,83 @@ packages/shared/src/components/AcquisitionCapture.tsx
 ---
 
 [2026-07-11 17:30] cost/usage capture-laag (ADR-054): pre-launch onherstelbare capture gebouwd + geverifieerd. 6 migraties (cost_config tarief-tabel, transcription_jobs.proxy_bytes/assemblyai_model, transcripts.ai_summary_usage, daily_cost_counters+bump RPC, credit `kind`-stempel+add_credits p_kind+welcome, user_credits.library_bytes-meter+trigger+backfill, profiles acquisitie+trigger) via MCP toegepast en met rolled-back DO-block proofs bewezen (meter 0→46, kind=grant, caption bump 12400/2). Backend: Decodo-bytes/AssemblyAI-model/DeepSeek-tokens/caption-bytes capture + kind='refund' op summary-refunds (py_compile + 11/11 audio-test). Stripe-webhook: best-effort fee+BTW+settlement (nooit blokkerend) + kind='purchase'; admin-grant kind='grant'. Acquisitie: first-touch cookie→signup→profiles (OAuth-gap gerapporteerd). STAP 0: priorities.md gecorrigeerd (1.22a gefixt+live, ADR-050 reservation LIVE). Builds groen (beide apps). Security-bevinding: add_credits/deduct/reserve EXECUTE-baar door anon+authenticated → priorities.md pre-launch fix. | gewijzigd: supabase/migrations/2026071110{0000..0500}_*.sql, backend/{audio_utils,assemblyai_client,transcription_pipeline,youtube_utils,credit_manager,main}.py, apps/app/src/app/api/stripe/webhook/route.ts, apps/app/src/app/api/admin/add-credits/route.ts, packages/shared/src/{components/AcquisitionCapture.tsx,actions/auth-actions.ts}, apps/marketing/src/app/layout.tsx, docs/wiki/{decisions/054-cost-usage-capture-layer.md,INDEX.md,architecture/database-schema.md,roadmap/priorities.md}
+[2026-07-11 19:00] commit: docs(capture): ADR-054 + schema/priorities/LOG for cost-usage capture (STAP 8)
+
+- ADR-054: cost/usage capture layer + cost_config rationale, consequences,
+  reported gaps (OAuth acquisition, playlist-caption bytes, DeepSeek rate,
+  R2 per-user) and the pre-existing add_credits EXECUTE-grant security finding.
+- INDEX.md: ADR-054 row.
+- database-schema.md: new capture section (cost_config, daily_cost_counters,
+  new columns, library-bytes + acquisition triggers, add_credits p_kind).
+- priorities.md: BULK-EXPORT stress test (~100 transcripts) added; 4h-video
+  stress test confirmed; security fix item for the RPC EXECUTE grants.
+- LOG.md: task entry (+ carries prior auto-appended commit footers).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/decisions/054-cost-usage-capture-layer.md
+docs/wiki/roadmap/priorities.md
+---
+[2026-07-11 19:45] commit: fix(security): lock credit-mutating RPCs to service_role (Blok A)
+
+RPC privilege lek: add_credits/reserve/settle/refund/refund_flat/
+update_playlist_video_progress waren EXECUTE-baar door anon+authenticated →
+self-grant mogelijk. Webhook omgezet naar service_role-client (was anon) zodat
+de credit-grant blijft werken NA de REVOKE. Migratie REVOKEt anon+PUBLIC en
+GRANTt service_role; deduct_credits_atomic + claim_welcome_reward houden
+authenticated (RAG-export server-action / welcome-server-action); get_user_credits
+ACL ongemoeid (read-only). search_path gepind. Migratie toegepast NA webhook-deploy.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/stripe/webhook/route.ts
+supabase/migrations/20260711170300_lock_credit_rpcs.sql
+---
+[2026-07-11 19:45] commit: feat(acquisition): fill OAuth signup acquisition in callback (Blok B)
+
+Guarded (.is('signup_source', null)) profiles-upsert van de first-touch cookie in
+de OAuth-callback na sessie-creatie — vult wat signInWithOAuth niet meedraagt.
+First-touch only, geen overschrijven, best-effort (PKCE-flow ongemoeid).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/auth/callback/route.ts
+---
+[2026-07-11 19:45] commit: feat(capture): playlist-caption proxy bytes into daily counter (Blok C)
+
+Bump bump_caption_proxy_bytes ook op de playlist-caption-route (worker), gated op
+proxy_bytes → alleen step 2/3 (yt-dlp VTT), nooit cache-hit/step-1 dubbeltellen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/worker.py
+---
+[2026-07-11 19:45] commit: fix(ai): migrate deepseek-chat -> deepseek-v4-flash + real rate (Blok D)
+
+deepseek-chat wordt 2026-07-24 uitgezet (breekt de samenvatting). Model naar
+deepseek-v4-flash (identiek gedrag). cost_config bijgewerkt met echte tarieven
+(input $0.14/M, output $0.28/M ×0.92 EUR, apart in/out).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+supabase/migrations/20260711170000_deepseek_v4_flash_rate.sql
+---
+[2026-07-11 19:45] commit: refactor(credits): fold welcome+bonus into grant → 3 credit kinds (Blok E)
+
+Bijschrijf-kant = exact purchase|grant|refund. 'welcome' (0 rijen) + 4 legacy
+'bonus'-rijen → 'grant'; CHECK ingekort; claim_welcome_reward stempelt kind='grant'
++ search_path gepind. Balans-neutraal.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/credit_manager.py
+supabase/migrations/20260711170100_fold_welcome_bonus_into_grant.sql
+---
+[2026-07-11 19:45] commit: chore(storage): library_bytes_cap default 5GiB -> 100MiB placeholder (Blok F)
+
+Niet-gehandhaafd (meter-only); bestaande rijen mee-verlaagd, geen enforcement dus
+geen breuk. Enforcement+grandfather+credit-sink = benoemde post-launch taak.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260711170200_library_cap_default_100mb.sql
+---
+
+[2026-07-11 19:45] capture/security-afsluiting (6 blokken, ADR-054 vervolg): A) RPC-privilege-lek gedicht — credit-muterende SECURITY DEFINER-RPC's (add_credits/reserve/settle/refund/refund_flat/update_playlist_video_progress) service_role-only; webhook omgezet naar service_role-client vóór de REVOKE; deduct_credits_atomic+claim_welcome_reward houden authenticated (caller-map geverifieerd); search_path gepind. Bewezen via has_function_privilege (auth=denied, service_role=ok). B) OAuth-acquisitie gedicht in auth/callback (guarded .is(signup_source,null)). C) playlist-caption proxy-bytes in dagteller (worker, step2/3). D) DeepSeek-model deepseek-chat→deepseek-v4-flash (deprecatie 24 jul) + echt tarief in cost_config (in $0.14/M, out $0.28/M ×0.92, apart). E) credit-kinds bijschrijf-kant terug naar 3 (purchase/grant/refund); welcome+4 legacy bonus→grant; CHECK ingekort. F) library_bytes_cap default 5GiB→100MiB (niet-gehandhaafd, storage-monetisatie=benoemde post-launch taak). Builds groen (backend py_compile + beide apps). 4 migraties (170000/170100/170200/170300). Wiki: auth-and-security (RPC-privileges), database-schema, ADR-054, unit-economics, ai-pipeline, ADR-004. | gewijzigd: apps/app/.../stripe/webhook/route.ts, apps/marketing/.../auth/callback/route.ts, backend/{main,worker,credit_manager}.py, supabase/migrations/2026071117{0000,0100,0200,0300}_*.sql, docs/wiki/{architecture/{auth-and-security,database-schema,ai-pipeline}.md,decisions/{004-deepseek-v3,054-cost-usage-capture-layer}.md,business/unit-economics.md}

@@ -135,6 +135,22 @@ Alle 6 user-facing tabellen hebben RLS ingeschakeld. Gebruikers kunnen **alleen 
 
 **Service Role Key:** Alleen de Python backend heeft de Service Role Key (bypass RLS). Next.js API routes gebruiken de anon key met de user's JWT. De Service Role Key staat nooit in de browser.
 
+### RPC EXECUTE-privileges (2026-07-11, ADR-054)
+
+SECURITY DEFINER-RPC's bypassen RLS — hun **EXECUTE-grant** is dus de enige toegangscontrole. Tot 2026-07-11 waren de credit-muterende RPC's `EXECUTE`-baar door `anon`+`authenticated` (via PUBLIC), waardoor een ingelogde user zichzelf via een directe `rpc()`-call credits kon geven. Gelockt via migratie `20260711170300_lock_credit_rpcs`:
+
+| RPC | Toegestane rol(len) | Reden |
+|---|---|---|
+| `add_credits`, `reserve_credits`, `settle_credits`, `refund_credits`, `refund_credits_flat`, `update_playlist_video_progress` | **service_role only** | credit-muterend; alleen de Python-backend (of de service-role Stripe-webhook) roept ze aan |
+| `deduct_credits_atomic` | `authenticated` + `service_role` | RAG-export server-action trekt de **eigen** credits van de user af (geen exploit); backend gebruikt service_role |
+| `claim_welcome_reward` | `authenticated` + `service_role` | server-action; 1× per user (`welcome_reward_claimed`-guard) |
+| `get_user_credits` | ACL ongemoeid (anon+authenticated) | read-only; geen balans-mutatie |
+| `submit_support_ticket` | `authenticated` + `service_role` | was al gelockt (geen anon/PUBLIC) |
+
+Alle SECURITY DEFINER-credit-RPC's hebben nu `search_path` gepind (`public, pg_temp`) tegen search_path-hijacking. **Regel:** een nieuwe credit-MUTERENDE RPC krijgt standaard **service_role-only** EXECUTE; alleen een RPC die de eigen data van de aanroepende user muteert (of read-only is) mag `authenticated` behouden — verifieer per RPC tegen de caller-map (frontend+backend grep) vóór je een grant verbreedt.
+
+**Openstaand (post-launch hardening):** `get_user_credits(p_user_id)` accepteert een willekeurige user-id → een user kan andermans saldo lezen (minor info-leak, geen credit-diefstal). Harden door `auth.uid()` te gebruiken i.p.v. de parameter.
+
 ---
 
 ## Account Suspension

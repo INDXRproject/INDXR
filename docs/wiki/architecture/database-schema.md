@@ -402,7 +402,7 @@ Migraties `20260711100000`–`20260711100500`. Doel: kost-inputs per job/aankoop
 ### Nieuwe tabellen
 
 - **`cost_config`** — runtime EUR-tarief-bron. Kolommen: `id`, `effective_from`, `currency` (CHECK `='EUR'`), `decodo_eur_per_gb`, `assemblyai_eur_per_min`, `deepseek_eur_per_1k_input_tokens`, `deepseek_eur_per_1k_output_tokens`, `fixed_monthly_infra_eur`, `usd_eur_rate`, `notes`, `created_at`. RLS aan, **geen policies** (service-role only). Lees "huidig" tarief = laatste `effective_from <= t`. Geseed 2026-07-11 (Decodo €2,99/GB, AssemblyAI €0,00322/min, USD→EUR @0,92; DeepSeek-tarieven informationeel/te-verifiëren).
-- **`daily_cost_counters`** — dag-grain aggregaat. `day` (PK), `caption_proxy_bytes` (bigint), `caption_count` (int), `updated_at`. Gevuld via RPC **`bump_caption_proxy_bytes(p_bytes)`** (SECURITY DEFINER, O(1) upsert) vanuit de gratis-caption-route (cache-miss). RLS aan, service-role only.
+- **`daily_cost_counters`** — dag-grain aggregaat. `day` (PK), `caption_proxy_bytes` (bigint), `caption_count` (int), `updated_at`. Gevuld via RPC **`bump_caption_proxy_bytes(p_bytes)`** (SECURITY DEFINER, O(1) upsert) vanuit **beide** caption-routes bij cache-miss: de losse-video-route (`main.py`) én de playlist-route (`worker.py`, `20260711...` Blok C). Alleen de yt-dlp/VTT-tak (cascade step 2/3) is geïnstrumenteerd; step 1 (`youtube-transcript-api`) bytes blijven ongemeten. RLS aan, service-role only.
 
 ### Nieuwe kolommen
 
@@ -410,13 +410,14 @@ Migraties `20260711100000`–`20260711100500`. Doel: kost-inputs per job/aankoop
 - **`transcription_jobs.assemblyai_model`** (text, nullable) — effectief `speech_model_used`, gezet op completion.
 - **`transcripts.ai_summary_usage`** (jsonb, nullable) — DeepSeek `{prompt_tokens, completion_tokens, total_tokens, model, generated_at}`. Informationeel (samenvatting = flat 3 credits); overschrijft bij regeneratie.
 - **`user_credits.library_bytes`** (bigint NOT NULL default 0) — lopend totaal van de eigen bibliotheek-footprint (`transcript`+`edited_content`+`ai_summary`+`rag_exports` `octet_length`). Onderhouden door trigger; backfilled.
-- **`user_credits.library_bytes_cap`** (bigint NOT NULL default 5368709120 = 5 GiB) — per-user cap. **Fundering only — niet gehandhaafd.**
+- **`user_credits.library_bytes_cap`** (bigint NOT NULL, default **104857600 = 100 MiB** per 2026-07-11 Blok F; was 5 GiB) — per-user placeholder-gratis-tier cap. **Fundering only — NIET gehandhaafd.** ⚠️ **Storage-toekomsttaak (benoemd):** enforcement + grandfather-logica (pre-launch heavy accounts, bv. ~191 MB, niet retroactief blokkeren) + credit-sink-UI ("X credits voor +MB") = aparte post-launch storage-monetisatietaak die een **prijsbeslissing** vereist. Zie [ADR-054](../decisions/054-cost-usage-capture-layer.md).
 - **`profiles.signup_source`, `utm_source`, `utm_medium`, `utm_campaign`, `signup_referrer`, `signup_landing_path`** (text, nullable) — first-touch acquisitie.
 
 ### Gewijzigde/nieuwe functies + triggers
 
-- **`add_credits(p_user_id, p_amount, p_reason, p_metadata, p_kind)`** — `p_kind` toegevoegd (default NULL) → stempelt `credit_transactions.kind`. `EXECUTE`-grants exact behouden. `credit_transactions_kind_check` verbreed met `'welcome'`.
-- **`claim_welcome_reward`** — stempelt nu `kind='welcome'`.
+- **`add_credits(p_user_id, p_amount, p_reason, p_metadata, p_kind)`** — `p_kind` stempelt `credit_transactions.kind`. **Bijschrijf-kant (type='credit') = exact 3 kinds: `purchase` | `grant` | `refund`** (Blok E, 2026-07-11: `welcome`+legacy `bonus` teruggevouwen in `grant`; CHECK = `reservation|settlement|refund|purchase|grant`). **EXECUTE gelockt tot `service_role` only** (Blok A, `20260711170300`) — zie [auth-and-security.md](auth-and-security.md#rpc-execute-privileges-2026-07-11-adr-054).
+- **`claim_welcome_reward`** — stempelt `kind='grant'`; `EXECUTE` = `authenticated`+`service_role`; `search_path` gepind.
+- **RPC-privilege-lockdown (Blok A):** credit-muterende RPC's (`add_credits`/`reserve_credits`/`settle_credits`/`refund_credits`/`refund_credits_flat`/`update_playlist_video_progress`) zijn nu `service_role`-only; `deduct_credits_atomic` houdt `authenticated` (RAG-export eigen-aftrek). Details + regel in auth-and-security.md.
 - **`transcripts_library_bytes_trigger()`** + triggers `transcripts_library_bytes_ins/del/upd` op `transcripts` (INSERT/DELETE/UPDATE OF content-kolommen) — onderhoudt `user_credits.library_bytes` (vangt álle insert-paden).
 - **`handle_new_user_acquisition()`** + trigger `on_auth_user_created_acquisition` op `auth.users` — exception-safe upsert van acquisitie-kolommen uit `raw_user_meta_data` (blokkeert nooit signup; los van `handle_new_user`).
 

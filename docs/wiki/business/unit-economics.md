@@ -27,6 +27,10 @@
 - Pay-as-you-go **$3,25/GB**.
 - **Gemeten** (254-min video `JuU8cbz8TYI`): **185,51 MB** download over 254 min = **0,73 MB/min** → $3,25 × (185,51/1024) = **$0,589 voor de hele video** = **~$0,0023/min**.
 
+### DeepSeek (AI-samenvatting) — aparte kostenpost
+- Model **`deepseek-v4-flash`** (per 2026-07-11; `deepseek-chat` gedeprecieerd 2026-07-24). Echte pricing (cache-miss): **input $0,14/M, output $0,28/M** → ×0,92 EUR = **€0,000129/1k input**, **€0,000258/1k output** (in `cost_config`, apart in/out zodat kost = in-tokens×rate_in + out-tokens×rate_out). Bron: officiële DeepSeek pricing-pagina, geverifieerd 2026-07-11.
+- Samenvatting wordt **flat 3 credits** gerekend (ontkoppeld van tokens); de tokens zijn puur voor kost-inzicht. Werkelijke tokens/samenvatting nu gelogd in `transcripts.ai_summary_usage` (ADR-054). Een typische samenvatting (paar duizend tokens in/uit) kost ruim onder €0,001 → 3 credits dekt dit ruimschoots.
+
 ### ⚠️ Kost per job varieert — meten, niet schatten
 De ~€0,0054/credit is een **gemiddelde uit één meting**. De werkelijke Decodo-kost hangt af van bitrate/bestandsgrootte van de bron-audio (verschilt sterk per video), en AssemblyAI rekent op audio-duur. **De kost per job moet per job gemeten worden** (AssemblyAI-minuten + werkelijk gedownloade Decodo-bytes), niet geëxtrapoleerd uit dit ene cijfer. Zie admin-financieel-dashboard-taak (kost-per-job vastleggen) in [priorities.md](../roadmap/priorities.md).
 

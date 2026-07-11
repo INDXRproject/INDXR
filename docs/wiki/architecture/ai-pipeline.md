@@ -131,7 +131,7 @@ Frontend
                  ├─ Haal transcript op uit Supabase
                  ├─ Combineer alle {text} velden tot volledige tekst
                  ├─ POST naar DeepSeek API:
-                 │    model: "deepseek-chat"
+                 │    model: "deepseek-v4-flash"  (was "deepseek-chat", deprecated 2026-07-24)
                  │    response_format: {"type": "json_object"}
                  │    timeout: 120s
                  ├─ Parse JSON: {text, action_points}
