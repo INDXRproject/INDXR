@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         credits: pkg.credits.toString(),
       },
       // Geen automatische factuur op elke sale — facturen worden on-demand aangemaakt
-      // vanuit de billing history (api/stripe/invoice). Zie backlog voor de eigen generator.
+      // vanuit de account-betaalhistorie (api/stripe/invoice). Zie backlog voor de eigen generator.
       success_url: `${appUrl}/dashboard/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/dashboard/billing/cancel`,
     })

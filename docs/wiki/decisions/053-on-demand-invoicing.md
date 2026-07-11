@@ -10,7 +10,7 @@
 Aankopen lopen via Stripe Checkout in `payment`-mode (one-off, EUR, BTW-inclusief). Zo'n betaling maakt een PaymentIntent/Charge maar **geen** Invoice. Klanten (zeker B2B) willen een BTW-factuur die bruikbaar is voor BTW-teruggave. Twee opties:
 
 1. `invoice_creation.enabled` op elke Checkout-sessie → automatische factuur op élke sale (Stripe invoice-fee ~0,4% per sale, ook als niemand de factuur wil).
-2. **On-demand**: factuur alleen aanmaken wanneer de klant er in de billing history om vraagt.
+2. **On-demand**: factuur alleen aanmaken wanneer de klant er op de account-pagina (`/dashboard/account`, betaalhistorie) om vraagt.
 
 We kozen **on-demand** — geen fee op sales waarvoor niemand een factuur nodig heeft.
 

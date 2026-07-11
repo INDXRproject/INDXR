@@ -27,13 +27,18 @@ function packageName(credits: number): string | null {
   return PACKAGES.find((p) => p.credits === credits)?.name ?? null
 }
 
-export function PurchaseHistoryCard({ purchases }: { purchases: PurchaseRow[] }) {
+// showInvoice=true (account): volledige betaalhistorie mét InvoiceButton (facturen horen op
+// /account thuis). showInvoice=false (billing): puur overzicht (datum, pakket, credits, bedrag),
+// geen invoice-knop. Zelfde rij-logica; alleen de knop + kop-copy verschillen.
+export function PurchaseHistoryCard({ purchases, showInvoice = true }: { purchases: PurchaseRow[]; showInvoice?: boolean }) {
   return (
     <Card className="bg-surface border-border">
       <CardHeader>
-        <CardTitle className="text-fg">Purchase history</CardTitle>
+        <CardTitle className="text-fg">{showInvoice ? "Purchases & invoices" : "Purchase history"}</CardTitle>
         <CardDescription className="text-fg-subtle">
-          Your previous credit purchases. Request an invoice for any purchase — it stays available to download afterwards.
+          {showInvoice
+            ? "Your payments. Request an invoice for any purchase — it stays available to download afterwards."
+            : "Your previous credit purchases."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -57,7 +62,7 @@ export function PurchaseHistoryCard({ purchases }: { purchases: PurchaseRow[] })
                     <span className="text-sm font-medium text-fg tabular-nums">
                       {paid != null ? formatEur(paid) : '—'}
                     </span>
-                    <InvoiceButton transactionId={p.id} initialUrl={invoiceUrl} />
+                    {showInvoice && <InvoiceButton transactionId={p.id} initialUrl={invoiceUrl} />}
                   </div>
                 </div>
               )

@@ -126,10 +126,10 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 ### ~~Stripe: Account activatie + nieuwe prijzen vereist~~ ✅ Live (2026-07-10)
 **Status:** Stripe live. 4 producten aangemaakt (Try €3,49/100cr, Starter €9,99/400cr, Plus €24,99/1.300cr, Power €49,99/3.100cr, [ADR-052](../decisions/052-pricing-restructure-4-tiers.md)); `pricing.ts` gesynct naar 4 tiers; webhook geregistreerd + `STRIPE_WEBHOOK_SECRET` gezet (webhook fail-closed in productie); on-demand facturen ([ADR-053](../decisions/053-on-demand-invoicing.md)); betaal→credit-keten geverifieerd. `checkout/route.ts` bouwt prijzen uit `pricing.ts`.
 
-### Stripe: post-launch instellingen-todo (Khidr, Dashboard)
-Niet code, wél vóór/kort na publiek gaan:
-- [ ] **Afzender-e-mail wijzigen** van de persoonlijke Protonmail → **`contact@indxr.ai`** (Stripe Dashboard → Settings → Public business details / e-mailafzender). Verschijnt op klant-mails en facturen.
-- [ ] **Factuur-branding/logo** instellen (Settings → Branding) — logo verschijnt op de on-demand facturen. Later oppakken; zie [roadmap/backlog.md → Redesign](../roadmap/backlog.md).
+### Stripe: post-launch instellingen
+✅ **Afgerond (2026-07-11):** afzender-e-mail → `contact@indxr.ai`; factuur-branding/logo ingesteld (Settings → Branding, logo verschijnt op de on-demand facturen).
+
+Openstaand:
 - [ ] **Bij toekomstige BV + holding-structuur**: factuur-NAW/bedrijfsgegevens herzien (juiste rechtsvorm, KVK/BTW-nummer op de factuur).
 
 ### Stripe: valuta-gedrag (geen bug — verwacht)

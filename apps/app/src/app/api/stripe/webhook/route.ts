@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     }
 
     // Add credits securely via RPC. Facturen worden niet hier aangemaakt maar on-demand
-    // vanuit de billing history (api/stripe/invoice) — invoice_url wordt daar bijgeschreven.
+    // vanuit de account-betaalhistorie (api/stripe/invoice) — invoice_url wordt daar bijgeschreven.
     const { error } = await supabase.rpc('add_credits', {
       p_user_id: userId,
       p_amount: credits,

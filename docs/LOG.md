@@ -7775,3 +7775,28 @@ packages/shared/src/lib/pricing.ts
 ---
 
 [2026-07-11 10:15] post-launch fixes+docs: (1) invoice-actie zit al alléén op billing (PurchaseHistoryCard); /account (TransactionHistoryCard) had geen invoice-knop → niets te verwijderen, gerapporteerd. (2) BillingPurchaseGrid FEATURES: playlist-regel nu "first 3 free, then 1 credit/video" uit CREDIT_COSTS/FREE_TIER (niet hardcoded); rate geverifieerd PLAYLIST_VIDEO_AUTO_CAPTIONS=1. (3) Wiki: positioning.md prijspositie herschreven met concurrentie-analyse (INDXR €0,035→€0,016/min vs Rev/Temi $0,25, Happy Scribe €0,20; conclusie: niet verlagen, framing=redesign); backlog Redesign-sectie (pricing-kaart proza/vinkjes, per-min anker, Stripe product images, factuur-logo); known-issues Stripe-sectie geactualiseerd (live), + post-launch todos (afzender→contact@indxr.ai, factuur-branding, BV/holding-NAW) + valuta-gedrag-note (Adaptive Pricing presentment op IP; GBP=test-artefact; EUR altijd aanwezig). Geen prijswijziging. | gewijzigd: apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx, docs/wiki/business/positioning.md, docs/wiki/roadmap/backlog.md, docs/wiki/operations/known-issues.md
+[2026-07-11 16:34] commit: fix(billing): playlist per-video rate in features + post-launch pricing docs
+
+- BillingPurchaseGrid FEATURES: playlist line now reads "first 3 free, then
+  1 credit/video" sourced from CREDIT_COSTS/FREE_TIER (not hardcoded);
+  AI-transcription rate also from CREDIT_COSTS.
+- Invoice action: confirmed it lives only on the billing purchase history
+  (PurchaseHistoryCard); /account ledger (TransactionHistoryCard) never had
+  one — nothing to remove there.
+- Docs: positioning.md price-position rewritten with competitor analysis
+  (INDXR €0.035→€0.016/min well under Rev/Temi/Happy Scribe; don't lower,
+  framing is redesign); backlog Redesign section; known-issues Stripe section
+  marked live + post-launch settings todos (sender email, invoice branding,
+  BV/holding NAW) + Adaptive Pricing currency note (GBP was a test-IP artefact).
+
+No price changes.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
+docs/LOG.md
+docs/wiki/business/positioning.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/backlog.md
+---
+
+[2026-07-11 11:30] invoice-knop verplaatst billing→account + docs-cleanup: PurchaseHistoryCard kreeg showInvoice-prop (default true). /account toont nu de volledige betaalhistorie mét InvoiceButton (facturen horen hier); /billing toont dezelfde historie als puur overzicht (showInvoice=false, geen knop). Ledger-kaart (TransactionHistoryCard) hertiteld "Billing & Credits"→"Credit activity" om dubbeling met de nieuwe betaalhistorie-kaart te vermijden — twee gescheiden lenzen (facturen vs credit-balans/verbruik). Invoice-route/credit-logica ongewijzigd. Docs: known-issues Stripe post-launch todos (afzender→contact@indxr.ai, factuur-branding/logo) afgevinkt/verwijderd (BV+holding blijft); backlog factuur-logo-item weg; IA bijgewerkt (ADR-053 + credit-system + checkout/webhook-comments: facturen nu op /account). | gewijzigd: apps/app/src/components/dashboard/billing/PurchaseHistoryCard.tsx, apps/app/src/app/dashboard/{account,billing}/page.tsx, apps/app/src/components/dashboard/settings/TransactionHistoryCard.tsx, apps/app/src/app/api/stripe/{checkout,webhook}/route.ts (comments), docs/wiki/operations/known-issues.md, docs/wiki/roadmap/backlog.md, docs/wiki/decisions/053-on-demand-invoicing.md, docs/wiki/architecture/credit-system.md

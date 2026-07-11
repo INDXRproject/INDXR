@@ -2,6 +2,7 @@ import { createClient } from "@indxr/shared/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { ProfileSettingsCard } from "@/components/dashboard/settings/ProfileSettingsCard"
 import { TransactionHistoryCard } from "@/components/dashboard/settings/TransactionHistoryCard"
+import { PurchaseHistoryCard, PurchaseRow } from "@/components/dashboard/billing/PurchaseHistoryCard"
 import { SentryFeedbackCard } from "@/components/dashboard/settings/SentryFeedbackCard"
 
 export default async function AccountPage() {
@@ -25,13 +26,23 @@ export default async function AccountPage() {
   const parsedCredits = creditsData as { credits?: number }
   const credits = parsedCredits?.credits || 0
 
-  // Fetch transaction history
+  // Fetch transaction history (volledige credit-ledger)
   const { data: transactions } = await supabase
     .from("credit_transactions")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(20)
+
+  // Betaalhistorie: 'credit'-transacties met een Stripe-session in metadata (facturen).
+  const { data: purchaseRows } = await supabase
+    .from("credit_transactions")
+    .select("id, amount, created_at, metadata")
+    .eq("user_id", user.id)
+    .eq("type", "credit")
+    .not("metadata->>stripe_session_id", "is", null)
+    .order("created_at", { ascending: false })
+  const purchases = (purchaseRows as PurchaseRow[] | null) ?? []
 
   return (
     <div className="container max-w-4xl py-10 px-4 sm:px-6 mx-auto animate-in fade-in zoom-in-95 duration-500">
@@ -42,6 +53,9 @@ export default async function AccountPage() {
 
       <div className="space-y-8">
         <ProfileSettingsCard user={user} profile={profile} />
+        {/* Billing & Credits: betaalhistorie + facturen (payments/receipts) boven de
+            credit-ledger (balans + verbruik) — twee duidelijk gescheiden lenzen. */}
+        <PurchaseHistoryCard purchases={purchases} />
         <TransactionHistoryCard transactions={transactions || []} credits={credits} />
         <SentryFeedbackCard userId={user.id} email={user.email} />
       </div>

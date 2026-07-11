@@ -78,7 +78,8 @@ export default async function BillingPage() {
       </div>
 
       <div className="mt-12">
-        <PurchaseHistoryCard purchases={purchases} />
+        {/* Overzicht zonder invoice-knop — facturen staan op /dashboard/account. */}
+        <PurchaseHistoryCard purchases={purchases} showInvoice={false} />
       </div>
 
     </div>

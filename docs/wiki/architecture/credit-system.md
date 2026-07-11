@@ -109,7 +109,7 @@ Zie [ADR-052](../decisions/052-pricing-restructure-4-tiers.md) voor de rationale
 
 ### Factuur (on-demand)
 
-Aankopen krijgen **geen** automatische factuur. In de billing history kan de gebruiker per aankoop een BTW-factuur opvragen (`POST /api/stripe/invoice`): Stripe Customer → Invoice (`automatic_tax`) → InvoiceItem (`tax_behavior: 'inclusive'`, `tax_code txcd_10000000`) → `finalizeInvoice` → `pay(paid_out_of_band)`. Inclusive houdt het totaal exact gelijk aan het betaalde brutobedrag met een correcte BTW-regel; de factuur-metadata koppelt aan de originele betaling (`original_payment_intent`). URL wordt gecachet in `credit_transactions.metadata.invoice_url` (geen dubbele aanmaak). Zie [ADR-053](../decisions/053-on-demand-invoicing.md).
+Aankopen krijgen **geen** automatische factuur. Op de account-pagina (`/dashboard/account`, betaalhistorie) kan de gebruiker per aankoop een BTW-factuur opvragen (`POST /api/stripe/invoice`): Stripe Customer → Invoice (`automatic_tax`) → InvoiceItem (`tax_behavior: 'inclusive'`, `tax_code txcd_10000000`) → `finalizeInvoice` → `pay(paid_out_of_band)`. Inclusive houdt het totaal exact gelijk aan het betaalde brutobedrag met een correcte BTW-regel; de factuur-metadata koppelt aan de originele betaling (`original_payment_intent`). URL wordt gecachet in `credit_transactions.metadata.invoice_url` (geen dubbele aanmaak). Zie [ADR-053](../decisions/053-on-demand-invoicing.md).
 
 ---
 

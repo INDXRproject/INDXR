@@ -46,8 +46,8 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
   return (
     <Card className="bg-surface/50 border-border">
       <CardHeader>
-        <CardTitle className="text-fg">Billing & Credits</CardTitle>
-        <CardDescription className="text-fg-muted">Your current balance and transaction history</CardDescription>
+        <CardTitle className="text-fg">Credit activity</CardTitle>
+        <CardDescription className="text-fg-muted">Your balance and full credit history — purchases, usage and refunds</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Credits Display */}
