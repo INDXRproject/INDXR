@@ -172,9 +172,9 @@ def add_credits(
         user_id: User UUID
         amount: Number of credits to add
         reason: Reason for addition
-        kind: Optional classification stamped on the ledger row
-              ('purchase'|'grant'|'welcome'|'refund'|'bonus'). Backend refunds pass 'refund'
-              so refund credits are separable from purchases/grants in cost/revenue metrics.
+        kind: Optional classification stamped on the ledger row. Credit side = exactly three:
+              'purchase' | 'grant' | 'refund' (welcome/bonus rewards are grants). Backend refunds
+              pass 'refund' so refund credits are separable from purchases/grants in metrics.
         metadata: Optional metadata dict merged into the ledger row.
 
     Returns:
