@@ -71,3 +71,11 @@ Bij elke failure (API down, parse error, timeout) wordt automatisch 1 credit ter
 
 **Toekomstig:**
 - `TODO: model selector` op regel 1173 — BYOK (Bring Your Own Key) feature gepland waarbij gebruikers eigen API keys kunnen invullen voor OpenAI/Anthropic/DeepSeek
+
+---
+
+## Account & key (ops, 2026-07-11)
+
+- Het DeepSeek-account draait op **`contact@indxr.ai`**. De key is door Khidr gezet als **`DEEPSEEK_API_KEY`** op **Railway** (API-service). **Env-only, nergens hardcoded** — bevestigd via grep 2026-07-11: de enige lezer is `os.getenv("DEEPSEEK_API_KEY")` op `backend/main.py:1068`.
+- Model per 2026-07-11: **`deepseek-v4-flash`** (`deepseek-chat` gedeprecieerd 2026-07-24). Echte cache-miss-pricing in `cost_config` (zie [unit-economics.md](../business/unit-economics.md#deepseek-ai-samenvatting--aparte-kostenpost)).
+- ⚠️ **Peak-pricing (medio juli 2026):** de in `cost_config` opgeslagen rate is de **REGULAR (off-peak)** rate. DeepSeek rekent tijdens **UTC 01:00–04:00 én 06:00–10:00** elk billing-item **2×**. Er is **bewust géén peak-logic gebouwd** — samenvatting is flat 3 credits, kost sub-cent (óók bij 2×). Caveat alleen voor eerlijke interpretatie van het kost-cijfer; ook genoteerd in `cost_config.notes`.

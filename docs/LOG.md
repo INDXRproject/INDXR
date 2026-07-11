@@ -8028,3 +8028,33 @@ docs/wiki/decisions/004-deepseek-v3.md
 docs/wiki/decisions/054-cost-usage-capture-layer.md
 ---
 [2026-07-11 22:22] precompact: context compaction triggered
+[2026-07-11 22:28] commit: feat(welcome): move 25-credit welcome from transcribe card to inbox message
+
+The one-time welcome credits were claimed via a manual "Claim 25 Free Credits"
+card on the Transcribe page. Move the grant to onboarding-completion (auto) and
+surface it as a service-type inbox message instead of a card.
+
+- claim_welcome_reward RPC now inserts a service inbox message atomically with the
+  grant, inside the same welcome_reward_claimed guard → credits + message land
+  together, exactly once (migration 20260711180000).
+- Auto-called from updateProfileAction at onboarding completion (best-effort,
+  non-blocking) instead of a card click.
+- Remove WelcomeCreditCard.tsx + the orphaned claimWelcomeRewardAction
+  (apps/app/src/app/actions/credits.ts) and their wiring in the transcribe page.
+
+Verified: rolled-back DB proof — call 1 grants +25 credits + 1 service message;
+repeat call returns "Reward already claimed" (no double grant, no double message).
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/actions/credits.ts
+apps/app/src/app/dashboard/transcribe/page.tsx
+apps/app/src/components/dashboard/WelcomeCreditCard.tsx
+docs/LOG.md
+packages/shared/src/actions/auth-actions.ts
+supabase/migrations/20260711180000_welcome_grant_inbox_message.sql
+---
+[2026-07-11 22:40] Blok A — welkomst-25-credits van transcribe-card naar messages-inbox (commit e5bfbc0, gepusht). De manuele "Claim 25 Free Credits"-card is verwijderd; de grant loopt nu auto bij onboarding-completion. `claim_welcome_reward` (migratie 20260711180000, via MCP apply_migration, 14-cijferig) insert nu ATOMISCH met de grant een `type='service'` inbox-bericht ("25 welcome credits added 🎉"), binnen dezelfde `welcome_reward_claimed`-guard → credits + bericht landen samen, EXACT één keer (faalt de message-insert dan rolt de hele grant terug). SECURITY DEFINER bypasst messages-RLS; `kind='grant'`, search_path gepind, grants ongewijzigd. Aangeroepen vanuit `updateProfileAction` (enige onboarding_completed-setter) ná de profiel-upsert, best-effort try/catch (onboarding mag nooit blokkeren op de grant). Verwijderd: `WelcomeCreditCard.tsx` + de verweesde `claimWelcomeRewardAction` (`apps/app/src/app/actions/credits.ts`, geen andere callers) + hun wiring in de transcribe-page (import, isRewardClaimed-state, checkReward-effect, render — `supabase`/`useEffect` blijven elders in gebruik, geen dangling bindings). VERIFICATIE: rolled-back DO-block proof — call 1 = success, balans 0→25, service-messages 0→1; herhaalde call = "Reward already claimed" (geen dubbele grant, geen dubbel bericht), alles teruggerold (geen persistente mutatie). Beide apps build groen (`pnpm build`: 2 successful, 3m08s). LIVE NOG TE CHECKEN (kan ik niet vanuit deze omgeving): echte test-signup → onboarding afronden → 25 credits (één keer) + service-bericht in inbox met unread-indicator; re-login → geen tweede claim/bericht. EDGE CASE GERAPPORTEERD: 2 bestaande users zijn onboarded-maar-unclaimed (welcome_reward_claimed=false); zij krijgen de grant NIET automatisch (geen toekomstige onboarding-flip). Bewust NIET gebackfilld (credit-mutatie op echte users = STOP-en-rapporteer-principe) — losse beslissing voor Khidr of we ze handmatig de 25cr + bericht geven. | gewijzigd: apps/app/src/app/dashboard/transcribe/page.tsx, packages/shared/src/actions/auth-actions.ts, apps/app/src/components/dashboard/WelcomeCreditCard.tsx (verwijderd), apps/app/src/app/actions/credits.ts (verwijderd), supabase/migrations/20260711180000_welcome_grant_inbox_message.sql (nieuw)
+---
+[2026-07-11 22:45] Blok B — DeepSeek-account/-key wiki + ops-verificatie (geen code-wijziging). SECURITY-GREP: `DEEPSEEK_API_KEY` staat NERGENS hardcoded — enige lezer is `os.getenv("DEEPSEEK_API_KEY")` op `backend/main.py:1068` (env-only bevestigd; grep over *.py/*.ts/*.tsx/*.js excl. node_modules/.next; alle `sk-`-hits waren Obsidian dataview-plugin false-positives). WIKI: (1) `operations/deployment.md` env-var-blok — DeepSeek-account draait op contact@indxr.ai, key door Khidr als DEEPSEEK_API_KEY op Railway gezet (env-only, bron main.py:1068). (2) ADR-004 nieuwe sectie "Account & key (ops)" — account + key-locatie + model deepseek-v4-flash + peak-pricing-caveat. (3) `business/unit-economics.md` + `cost_config.notes` (DB, via UPDATE op de actieve rij, alleen notes — geen rate-/effective_from-wijziging): de opgeslagen deepseek_eur_per_1k_*-rate is de REGULAR (off-peak) rate; DeepSeek voert per medio juli 2026 peak-pricing in (UTC 01:00–04:00 & 06:00–10:00 = 2× regular, alle billing-items). BEWUST GEEN peak-logic gebouwd — samenvatting is flat 3 credits, kost sub-cent óók bij 2×; caveat puur voor eerlijke interpretatie van het kost-cijfer. Geen code aangeraakt (docs + DB-notes only). | gewijzigd: docs/wiki/operations/deployment.md, docs/wiki/decisions/004-deepseek-v3.md, docs/wiki/business/unit-economics.md, cost_config.notes (DB)
+---

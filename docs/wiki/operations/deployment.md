@@ -264,7 +264,9 @@ Railway Redis draait als derde service in hetzelfde Railway-project, naast de AP
 ### Environment Variables (Railway — alleen API-service)
 
 ```bash
-# AI samenvatting
+# AI samenvatting — DeepSeek-account draait op contact@indxr.ai; key door Khidr
+# als DEEPSEEK_API_KEY op Railway gezet (env-only, nergens hardcoded — bevestigd
+# 2026-07-11, enige lezer is backend/main.py:1068 os.getenv).
 DEEPSEEK_API_KEY=...
 
 # Auth (gedeeld secret Next.js ↔ Python)
