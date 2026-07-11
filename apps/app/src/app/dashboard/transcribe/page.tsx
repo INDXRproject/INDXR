@@ -11,7 +11,6 @@ import { TranscriptItem } from "@indxr/shared/components/TranscriptCard"
 import { TranscriptMetadata } from "@indxr/shared/types/transcript"
 import { SaveErrorModal } from "@/components/SaveErrorModal"
 
-import { WelcomeCreditCard } from "@/components/dashboard/WelcomeCreditCard"
 import { ActiveJobsIndicator } from "@/components/dashboard/ActiveJobsIndicator"
 import { useEffect } from "react"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
@@ -22,10 +21,7 @@ export default function TranscribePage() {
   const [showSaveError, setShowSaveError] = useState(false)
   const [saveErrorMessage, setSaveErrorMessage] = useState("")
   const [pendingSave, setPendingSave] = useState<{ transcript: TranscriptItem[], metadata: TranscriptMetadata } | null>(null)
-  
-  // Reward State
-  const [isRewardClaimed, setIsRewardClaimed] = useState<boolean | null>(null) // Null = loading
-  
+
   const supabase = createClient()
 
   // Honour the ?tab= query param (e.g. from the active-jobs indicator, which
@@ -37,20 +33,6 @@ export default function TranscribePage() {
     }
   }, [])
 
-  useEffect(() => {
-    async function checkReward() {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-            const { data, error } = await supabase.from('profiles').select('welcome_reward_claimed').eq('id', user.id).single()
-            if (error || !data) {
-                setIsRewardClaimed(false)
-            } else {
-                setIsRewardClaimed(data.welcome_reward_claimed)
-            }
-        }
-    }
-    checkReward()
-  }, [supabase])
 
   // Unified auto-save handler with retry logic
   const handleTranscriptLoaded = async (
@@ -384,7 +366,6 @@ export default function TranscribePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-       <WelcomeCreditCard claimed={isRewardClaimed} />
        <div>
          <h1 className="text-3xl font-bold text-fg mb-2">Transcribe</h1>
          <p className="text-fg-muted">Extract captions from videos, playlists, or audio files. <a href={marketingHref('/docs')} className="text-accent hover:underline">Learn more →</a></p>

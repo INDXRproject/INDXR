@@ -222,6 +222,15 @@ export async function updateProfileAction(formData: FormData) {
     return { error: `Failed to update profile: ${error.message} (${error.code})` }
   }
 
+  // Auto-grant the one-time welcome credits + inbox message at onboarding completion
+  // (replaces the old manual "Claim" card). The RPC is guarded by welcome_reward_claimed →
+  // exactly once, safe on re-submit/re-login. Best-effort: onboarding must complete regardless.
+  try {
+    await supabase.rpc('claim_welcome_reward', { p_user_id: user.id })
+  } catch (grantErr) {
+    console.error('Welcome grant at onboarding failed (non-blocking):', grantErr)
+  }
+
   return { success: true }
 }
 

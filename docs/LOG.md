@@ -8011,3 +8011,20 @@ Changed: supabase/migrations/20260711170200_library_cap_default_100mb.sql
 ---
 
 [2026-07-11 19:45] capture/security-afsluiting (6 blokken, ADR-054 vervolg): A) RPC-privilege-lek gedicht — credit-muterende SECURITY DEFINER-RPC's (add_credits/reserve/settle/refund/refund_flat/update_playlist_video_progress) service_role-only; webhook omgezet naar service_role-client vóór de REVOKE; deduct_credits_atomic+claim_welcome_reward houden authenticated (caller-map geverifieerd); search_path gepind. Bewezen via has_function_privilege (auth=denied, service_role=ok). B) OAuth-acquisitie gedicht in auth/callback (guarded .is(signup_source,null)). C) playlist-caption proxy-bytes in dagteller (worker, step2/3). D) DeepSeek-model deepseek-chat→deepseek-v4-flash (deprecatie 24 jul) + echt tarief in cost_config (in $0.14/M, out $0.28/M ×0.92, apart). E) credit-kinds bijschrijf-kant terug naar 3 (purchase/grant/refund); welcome+4 legacy bonus→grant; CHECK ingekort. F) library_bytes_cap default 5GiB→100MiB (niet-gehandhaafd, storage-monetisatie=benoemde post-launch taak). Builds groen (backend py_compile + beide apps). 4 migraties (170000/170100/170200/170300). Wiki: auth-and-security (RPC-privileges), database-schema, ADR-054, unit-economics, ai-pipeline, ADR-004. | gewijzigd: apps/app/.../stripe/webhook/route.ts, apps/marketing/.../auth/callback/route.ts, backend/{main,worker,credit_manager}.py, supabase/migrations/2026071117{0000,0100,0200,0300}_*.sql, docs/wiki/{architecture/{auth-and-security,database-schema,ai-pipeline}.md,decisions/{004-deepseek-v3,054-cost-usage-capture-layer}.md,business/unit-economics.md}
+[2026-07-11 19:50] commit: docs(capture): wiki for security lockdown, model migration, kinds, cap (Blokken A-F)
+
+auth-and-security.md: RPC EXECUTE-privilege tabel + regel. database-schema.md:
+3-kind model, 100MiB cap + storage-toekomsttaak, playlist bump, RPC-lockdown.
+ADR-054: gaten gedicht (OAuth, playlist-bytes, DeepSeek), security-lockdown.
+unit-economics.md + ai-pipeline.md + ADR-004: deepseek-v4-flash + echt tarief.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/architecture/auth-and-security.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/business/unit-economics.md
+docs/wiki/decisions/004-deepseek-v3.md
+docs/wiki/decisions/054-cost-usage-capture-layer.md
+---
+[2026-07-11 22:22] precompact: context compaction triggered
