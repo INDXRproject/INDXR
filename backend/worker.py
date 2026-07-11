@@ -1432,10 +1432,27 @@ class WorkerSettings:
     # playlist-jobs met 100+ videos duren meerdere uren.
     # Default 300s zou deze jobs halverwege killen.
     job_timeout = 7200
-    # NOTE — ack_late bestaat NIET in arq 0.28.0 (ook niet in eerdere versies).
-    # Het is een Celery-concept; arq heeft geen equivalente parameter.
-    # Jobs worden in arq altijd geacknowledged bij pickup (geen retry bij worker-crash).
-    # De idempotency-vlaggen (credits_deducted, v_already_done) zijn live maar beschermen
-    # alleen bij handmatige herstart, niet bij automatische retry.
-    # Crash-recovery verloopt via watchdog_interrupted_jobs (zie boven).
+
+    # ── Graceful drain op deploy (SIGTERM) ────────────────────────────────────────────
+    # Env-gated → inert by default (0 = huidig gedrag, geen risico tot expliciet aangezet).
+    # Bij >0: arq stopt op SIGTERM met NIEUWE jobs oppakken (allow_pick_jobs=False) en wacht
+    # dit aantal seconden op in-flight jobs vóór het cancelt. VEREIST op de Railway worker-
+    # service, anders triggert dit nooit:
+    #   - RAILWAY_DEPLOYMENT_DRAINING_SECONDS >= ARQ_JOB_COMPLETION_WAIT  (Railway-default = 0
+    #     = directe SIGKILL, die het drain-venster volledig overslaat)
+    #   - Start Command `exec python -m arq worker.WorkerSettings` zodat SIGTERM python bereikt
+    #     (kaal `python -m arq …` onder `sh -c` laat sh PID 1 en slikt het signaal op)
+    # Korte jobs (captions, korte whisper) ronden schoon af. Lange jobs die het venster
+    # overschrijden worden gecancelled → later her-gedraaid (arq retry_jobs op CancelledError,
+    # óf de watchdog-cron). Een re-run rekent NOOIT dubbel af: reserve/settle/refund zijn
+    # idempotent via de UNIQUE (job_id,kind)-index (ADR-050); het legacy deduct_credits_atomic-
+    # pad is dormant (RESERVATION_ENABLED=true). Zie priorities.md 1.34.
+    handle_signals = True
+    job_completion_wait = int(os.getenv("ARQ_JOB_COMPLETION_WAIT", "0"))
+
+    # NOTE — ack_late bestaat NIET in arq 0.28.0 (Celery-concept). Jobs worden bij PICKUP
+    # geacknowledged. Bij een HARDE SIGKILL (crash / grace-window overschreden) gaat de in-flight
+    # job verloren → crash-recovery via de watchdog-cron (watchdog_interrupted_jobs, elke 2 min).
+    # Bij een GRACEFUL cancel (job_completion_wait verstreken) re-queuet arq de job zelf
+    # (retry_jobs=True, arq-default). Beide re-runs zijn idempotent (zie hierboven).
 

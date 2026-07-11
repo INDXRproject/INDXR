@@ -8209,3 +8209,30 @@ docs/LESSONS.md
 docs/wiki/architecture/ai-pipeline.md
 docs/wiki/roadmap/backlog.md
 ---
+[2026-07-12 00:24] commit: feat(worker): env-gated graceful drain on SIGTERM (idempotent re-run proven)
+
+Validated the desktop hypotheses against arq 0.28.0 + the codebase and deviated where
+needed:
+- arq HAS job_completion_wait (drain on SIGTERM: allow_pick_jobs=False + wait), but does
+  NOT auto-rerun a hard-SIGKILLed job (ack at pickup -> watchdog recovers); it DOES
+  re-queue on graceful CancelledError (retry_jobs=True).
+- Railway's shutdown grace defaults to 0s (immediate SIGKILL) -> needs
+  RAILWAY_DEPLOYMENT_DRAINING_SECONDS; SIGTERM must reach python (exec start command).
+
+Change: WorkerSettings gains handle_signals + job_completion_wait, env-gated via
+ARQ_JOB_COMPLETION_WAIT (default 0 = inert, zero behavior change until enabled on Railway).
+
+Hard constraint (no double credit deduction on re-run) is ALREADY met by the live
+reservation model: reserve/settle/refund are insert-first idempotent on the UNIQUE
+(job_id,kind) index. Proven with a rolled-back re-run: balance 141->141, settlement/refund
+rows 1->1, RPCs return idempotent:true. The legacy deduct_credits_atomic TOCTOU is dormant
+(RESERVATION_ENABLED=true) and left untouched (hot RPC) — reported, not blind-fixed.
+
+Docs: deployment.md graceful-drain config table + work-rule; priorities.md 1.34 -> code
+done / activation needs Railway config.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/worker.py
+docs/wiki/operations/deployment.md
+docs/wiki/roadmap/priorities.md
+---

@@ -187,7 +187,19 @@ API en worker bouwen uit **dezelfde GitHub-repo en dezelfde `/backend` root dire
 
 **Worker-service:** heeft **geen** HTTP-server → nooit een healthcheck. Zie de deploy-werkregel hieronder.
 
-> **⚠️ WERKREGEL — niet deployen terwijl jobs draaien.** Een deploy naar de **worker** herstart de container en **doodt elke lopende job** (transcriptie/playlist) — er is geen graceful drain. Herstel is niet gegarandeerd instant: de watchdog re-enqueuet `interrupted`/stuck jobs pas bij de volgende cron-pass (elke 2 min; ADR-049/051). Regel: **push niet naar `master` terwijl er actieve jobs lopen** (check `ActiveJobsIndicator` / `transcription_jobs`+`playlist_extraction_jobs` op niet-terminale status). Pre-launch is dit laag-risico (weinig verkeer); post-launch is graceful worker-drain een benoemde roadmap-taak — zie [priorities.md](../roadmap/priorities.md).
+> **⚠️ WERKREGEL — niet deployen terwijl jobs draaien.** Een deploy naar de **worker** herstart de container en **doodt elke lopende job** (transcriptie/playlist). Herstel loopt via de watchdog-cron (`interrupted`/stuck jobs, elke 2 min; ADR-049/051) — vertraagd, niet instant. Regel: **push niet naar `master` terwijl er actieve jobs lopen** (check `ActiveJobsIndicator` / `transcription_jobs`+`playlist_extraction_jobs` op niet-terminale status). Een re-run rekent **nooit** dubbel af (reserve/settle/refund zijn idempotent via de UNIQUE `(job_id,kind)`-index — bewezen 2026-07-12).
+
+#### Graceful worker-drain (optioneel aan te zetten, env-gated)
+
+De worker ondersteunt nu graceful drain op SIGTERM (`WorkerSettings.job_completion_wait`, arq 0.28.0): bij een deploy stopt de worker met nieuwe jobs oppakken en laat lopende jobs afronden vóór shutdown. **Inert by default** (`ARQ_JOB_COMPLETION_WAIT=0`) — nul gedragsverandering tot expliciet aangezet. Aanzetten vereist **drie** dingen samen op de **worker-service** (anders triggert het niet):
+
+| Setting | Waar | Waarom |
+|---|---|---|
+| `ARQ_JOB_COMPLETION_WAIT=<sec>` (bv. `120`) | Railway env (worker) | arq wacht dit aantal seconden op in-flight jobs vóór cancel |
+| `RAILWAY_DEPLOYMENT_DRAINING_SECONDS >= ARQ_JOB_COMPLETION_WAIT` | Railway env (worker) | Railway-default is **0** = directe SIGKILL → drain wordt anders overgeslagen |
+| Start Command = `exec python -m arq worker.WorkerSettings` | Railway → worker → Settings → Deploy | zonder `exec` blijft `sh` PID 1 onder `sh -c` en slikt SIGTERM op → arq krijgt het signaal nooit |
+
+Korte jobs (captions, korte whisper) ronden dan schoon af; lange jobs (> drain-venster) worden gecancelled → later her-gedraaid (arq `retry_jobs` óf de watchdog) — **idempotent, geen dubbele aftrek**. Trade-off: het drain-venster vertraagt elke worker-deploy met tot `ARQ_JOB_COMPLETION_WAIT` seconden. **Live nog te verifiëren door Khidr:** deploy tijdens een korte job → job rondt af, geen nieuwe opgepakt (log `Setting allow_pick_jobs to False`).
 
 **Vercel (frontend):** al **atomic/zero-downtime** by design — elke build is een immutable deployment; de productie-alias switcht instant naar de nieuwe build zodra die klaar is (geen gedeelde mutable state, geen gap). Geen extra config nodig.
 
