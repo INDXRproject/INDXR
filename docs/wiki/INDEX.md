@@ -90,6 +90,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [051-stuck-running-playlist-recovery.md](decisions/051-stuck-running-playlist-recovery.md) | Stuck-'running'-playlist recovery — per-video download-timeout (preventie) + watchdog reap-pass (detectie op voortgang, refund-vóór-claim via bestaande primitieven) + Pass 1b bounded + caption-cap |
 | [052-pricing-restructure-4-tiers.md](decisions/052-pricing-restructure-4-tiers.md) | Pricing-herstructurering: 4 tiers (Try/Starter/Plus/Power), BTW-inclusief, worst-case-geprijsd, Power 3.100cr, Adaptive Pricing EUR-settlement, max −20% uniform (supersedet ADR-012) |
 | [053-on-demand-invoicing.md](decisions/053-on-demand-invoicing.md) | On-demand BTW-facturen voor afgeronde Checkout-betalingen: Customer→Invoice→inclusive item→finalize→paid_out_of_band, één Customer per user, koppeling aan originele betaling, geen fee op sales zonder factuurbehoefte |
+| [054-cost-usage-capture-layer.md](decisions/054-cost-usage-capture-layer.md) | Cost/usage capture-laag + `cost_config` runtime tarief-tabel: per-job Decodo-bytes/AssemblyAI-model/DeepSeek-tokens, Stripe netto (fee+BTW+settlement), credit-`kind`-stempel, per-user `library_bytes`-meter, acquisitie-bron bij signup |
 
 ---
 

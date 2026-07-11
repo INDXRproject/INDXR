@@ -7800,3 +7800,134 @@ docs/wiki/roadmap/backlog.md
 ---
 
 [2026-07-11 11:30] invoice-knop verplaatst billing→account + docs-cleanup: PurchaseHistoryCard kreeg showInvoice-prop (default true). /account toont nu de volledige betaalhistorie mét InvoiceButton (facturen horen hier); /billing toont dezelfde historie als puur overzicht (showInvoice=false, geen knop). Ledger-kaart (TransactionHistoryCard) hertiteld "Billing & Credits"→"Credit activity" om dubbeling met de nieuwe betaalhistorie-kaart te vermijden — twee gescheiden lenzen (facturen vs credit-balans/verbruik). Invoice-route/credit-logica ongewijzigd. Docs: known-issues Stripe post-launch todos (afzender→contact@indxr.ai, factuur-branding/logo) afgevinkt/verwijderd (BV+holding blijft); backlog factuur-logo-item weg; IA bijgewerkt (ADR-053 + credit-system + checkout/webhook-comments: facturen nu op /account). | gewijzigd: apps/app/src/components/dashboard/billing/PurchaseHistoryCard.tsx, apps/app/src/app/dashboard/{account,billing}/page.tsx, apps/app/src/components/dashboard/settings/TransactionHistoryCard.tsx, apps/app/src/app/api/stripe/{checkout,webhook}/route.ts (comments), docs/wiki/operations/known-issues.md, docs/wiki/roadmap/backlog.md, docs/wiki/decisions/053-on-demand-invoicing.md, docs/wiki/architecture/credit-system.md
+[2026-07-11 16:52] commit: refactor(billing): move invoice action from /billing to /account
+
+- PurchaseHistoryCard gets a showInvoice prop (default true). /account renders
+  the full payment history WITH InvoiceButton (invoices belong on account);
+  /billing renders the same history as a plain overview (showInvoice={false},
+  no button). Same row logic reused — placement only.
+- Retitled the ledger card "Billing & Credits" -> "Credit activity" so the two
+  account cards read as distinct lenses (receipts/invoices vs credit balance &
+  usage) with no duplication.
+- Invoice route (api/stripe/invoice) and credit handling unchanged.
+- Docs: known-issues Stripe post-launch todos (sender email, invoice branding/
+  logo) done -> removed; BV+holding note kept; backlog invoice-logo item
+  dropped; IA updated (ADR-053, credit-system, checkout/webhook comments now
+  point to /account).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/stripe/checkout/route.ts
+apps/app/src/app/api/stripe/webhook/route.ts
+apps/app/src/app/dashboard/account/page.tsx
+apps/app/src/app/dashboard/billing/page.tsx
+apps/app/src/components/dashboard/billing/PurchaseHistoryCard.tsx
+apps/app/src/components/dashboard/settings/TransactionHistoryCard.tsx
+docs/LOG.md
+docs/wiki/architecture/credit-system.md
+docs/wiki/decisions/053-on-demand-invoicing.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/backlog.md
+---
+[2026-07-11 18:39] commit: feat(capture): DB foundation for cost/usage capture layer
+
+STAP 0 + Block 1 of the pre-launch cost/usage capture layer (capture-complete,
+display-light). All migrations applied to prod via MCP and proven with
+rolled-back DO-block tests (nothing persisted):
+
+- cost_config: runtime EUR rate table (Decodo/AssemblyAI/DeepSeek + fixed infra)
+  with effective_from history; service-role only. Seeded from unit-economics.md
+  (USD->EUR @0.92; DeepSeek rates flagged informational/verify).
+- transcription_jobs.proxy_bytes + assemblyai_model; transcripts.ai_summary_usage.
+- daily_cost_counters + bump_caption_proxy_bytes() for free-caption proxy bytes
+  (day-grain aggregate; usage_logs has no writers).
+- credit_transactions.kind CHECK widened to include 'welcome'; add_credits gains
+  p_kind (grants preserved exactly); claim_welcome_reward stamps kind='welcome'.
+- user_credits.library_bytes + library_bytes_cap (5 GiB default) + trigger on
+  transcripts (all insert paths) + backfill (max ~191MB verified).
+- profiles acquisition columns (utm_*, signup_source/referrer/landing_path) +
+  isolated exception-safe on_auth_user_created_acquisition trigger.
+
+STAP 0: priorities.md corrected — bug 1.22(a) sign-fix is landed+live-verified;
+ADR-050 reservation model runs LIVE (RESERVATION_ENABLED default true), not dark.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/priorities.md
+supabase/migrations/20260711100000_cost_config.sql
+supabase/migrations/20260711100100_job_cost_capture_columns.sql
+supabase/migrations/20260711100200_daily_cost_counters.sql
+supabase/migrations/20260711100300_credit_kind_stamping.sql
+supabase/migrations/20260711100400_library_bytes_meter.sql
+supabase/migrations/20260711100500_profiles_acquisition.sql
+---
+[2026-07-11 18:46] commit: feat(capture): backend per-job cost/usage capture (STAP 2,4,5)
+
+- Decodo egress bytes: extract_youtube_audio now returns raw pre-ffmpeg size in
+  bytes (was logged+dropped); pipeline persists it to transcription_jobs.proxy_bytes
+  right after download (recorded even if transcription later fails). Covers the
+  paid YT-AI/whisper route (upload path unaffected; file_size_bytes untouched).
+- AssemblyAI effective model: assemblyai_client returns transcript.speech_model_used;
+  pipeline persists transcription_jobs.assemblyai_model on completion.
+- DeepSeek tokens: main.py summarize now reads result_json['usage'] and stores
+  {prompt,completion,total,model} on transcripts.ai_summary_usage atomically with
+  the summary (informational — summaries billed flat 3cr).
+- Free-caption proxy bytes: extract_with_ytdlp returns the VTT download bytes;
+  the caption route (cache-MISS only) calls bump_caption_proxy_bytes → day-grain
+  daily_cost_counters. Playlist-caption bytes are a noted follow-up (task scoped
+  to the free route).
+- kind stamping: credit_manager.add_credits gains kind/metadata params; the five
+  AI-summary refund calls pass kind='refund' so refunds are separable in metrics.
+
+py_compile clean; test_audio_retry.py 11/11 green. Live DB landing of proxy_bytes/
+model/tokens is verified via the hand-over checklist (needs a real job).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/assemblyai_client.py
+backend/audio_utils.py
+backend/credit_manager.py
+backend/main.py
+backend/transcription_pipeline.py
+backend/youtube_utils.py
+---
+[2026-07-11 18:50] commit: feat(billing): capture Stripe net (fee+BTW+settlement) + stamp credit kind (STAP 3,4)
+
+- Stripe webhook: best-effort fetch of PaymentIntent→Charge→BalanceTransaction to
+  store amount_tax (BTW), stripe_fee, net_settlement, settlement_currency,
+  balance_transaction_id + payment_intent_id in the purchase row's metadata, so
+  net = gross − BTW − fee is exactly reconstructable in EUR settlement. The fetch
+  is wrapped so ANY failure (incl. balance_transaction not yet available) logs a
+  warning and the credit grant proceeds with gross-only metadata — the money path
+  is never blocked. add_credits now stamps p_kind='purchase'.
+- Admin add-credits route stamps p_kind='grant'.
+  (Webhook idempotency on session_id is a pre-existing gap, unchanged here.)
+
+pnpm build:app green. Live fee/settlement values verified via a test payment in
+the hand-over checklist.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/admin/add-credits/route.ts
+apps/app/src/app/api/stripe/webhook/route.ts
+---
+[2026-07-11 18:56] commit: feat(acquisition): first-touch UTM/referrer capture at signup (STAP 7)
+
+- AcquisitionCapture (client, mounted in the marketing layout) writes a first-touch
+  cookie (utm_source/medium/campaign + referrer + landing_path + derived
+  signup_source) on the first marketing landing; never overwritten on later pages.
+- signupAction reads that cookie server-side and threads it into signUp
+  options.data → raw_user_meta_data → profiles (via the acquisition trigger).
+  ADR-036 keeps auth on the marketing host, so the cookie is same-host at signup.
+
+GAP (reported, not half-done): OAuth (Google) signups do NOT carry the cookie
+through signInWithOAuth, so their acquisition lands NULL. Fix location: a guarded
+(.is('signup_source', null)) profiles upsert in apps/marketing/src/app/auth/
+callback/route.ts — deferred to avoid modifying the auth-critical PKCE callback
+without a live OAuth test.
+
+pnpm build (both apps) green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/layout.tsx
+packages/shared/src/actions/auth-actions.ts
+packages/shared/src/components/AcquisitionCapture.tsx
+---
+
+[2026-07-11 17:30] cost/usage capture-laag (ADR-054): pre-launch onherstelbare capture gebouwd + geverifieerd. 6 migraties (cost_config tarief-tabel, transcription_jobs.proxy_bytes/assemblyai_model, transcripts.ai_summary_usage, daily_cost_counters+bump RPC, credit `kind`-stempel+add_credits p_kind+welcome, user_credits.library_bytes-meter+trigger+backfill, profiles acquisitie+trigger) via MCP toegepast en met rolled-back DO-block proofs bewezen (meter 0→46, kind=grant, caption bump 12400/2). Backend: Decodo-bytes/AssemblyAI-model/DeepSeek-tokens/caption-bytes capture + kind='refund' op summary-refunds (py_compile + 11/11 audio-test). Stripe-webhook: best-effort fee+BTW+settlement (nooit blokkerend) + kind='purchase'; admin-grant kind='grant'. Acquisitie: first-touch cookie→signup→profiles (OAuth-gap gerapporteerd). STAP 0: priorities.md gecorrigeerd (1.22a gefixt+live, ADR-050 reservation LIVE). Builds groen (beide apps). Security-bevinding: add_credits/deduct/reserve EXECUTE-baar door anon+authenticated → priorities.md pre-launch fix. | gewijzigd: supabase/migrations/2026071110{0000..0500}_*.sql, backend/{audio_utils,assemblyai_client,transcription_pipeline,youtube_utils,credit_manager,main}.py, apps/app/src/app/api/stripe/webhook/route.ts, apps/app/src/app/api/admin/add-credits/route.ts, packages/shared/src/{components/AcquisitionCapture.tsx,actions/auth-actions.ts}, apps/marketing/src/app/layout.tsx, docs/wiki/{decisions/054-cost-usage-capture-layer.md,INDEX.md,architecture/database-schema.md,roadmap/priorities.md}

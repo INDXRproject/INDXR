@@ -305,8 +305,10 @@ Vier items die tot nu toe buiten de PVA vielen. Alleen *wat* + launch-relevantie
 
 ### Pre-launch — testen
 
-- [ ] **4+ uur video stress test** — Whisper-transcriptie op video > 4 uur. Test of Railway-restart-mitigatie (1.7) werkt zoals verwacht.
+- [ ] **4+ uur video stress test** — Whisper-transcriptie op video > 4 uur. Test of Railway-restart-mitigatie (1.7) werkt zoals verwacht. *(bevestigd genoteerd 2026-07-11 — blijft staan.)*
+- [ ] **BULK-EXPORT stress test** (nieuw, 2026-07-11) — RAG/ZIP-export met ~100 geselecteerde transcripts. Het grootste test-account heeft ~700+ transcripts / ~190 MB (`library_bytes` bevestigd). Losse exports waren lang geleden groen, maar **bulk** (100 volledige transcripts ophalen + client-side zippen in JSZip) is nooit in bulk getest → geheugen/timeout/browser-freeze-risico. Koppelt aan de audit-observatie dat sommige admin-queries de hele `transcripts`-tabel in geheugen laden (Overview "Top Users", `admin/page.tsx`). Test: selecteer ~100 rijen in de Library, RAG-ZIP-export, meet geheugen + tijd + of de download slaagt zonder tab-crash.
 - [ ] **Anonymous user flow Playwright tests** — anonieme gebruiker → free tool → gated feature → signup prompt → registratie. Voorkomt foutmeldingen waar signup-prompt hoort.
+- [ ] **🔐 Security: `add_credits`/`deduct_credits_atomic`/`reserve_credits` zijn `EXECUTE`-baar door `anon`+`authenticated`** (bevinding 2026-07-11, ADR-054). Deze SECURITY DEFINER-RPC's bypassen RLS; een ingelogde user kan zichzelf via een directe Supabase-`rpc()`-call credits geven. **Pre-launch fixen:** `REVOKE EXECUTE … FROM anon, authenticated` op deze drie (en verwante credit-muterende RPC's), en alleen de RPC's die de client legitiem aanroept (`claim_welcome_reward`) behouden. Grants zijn bij de capture-laag **bewust exact behouden** (posture niet stilzwijgend gewijzigd) — dit is een aparte, gerichte security-taak.
 
 ### Pre-launch — SEO content
 

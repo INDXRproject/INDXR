@@ -395,6 +395,33 @@ Voor de geschiedenis van de 24 pre-baseline migratiebestanden, zie `supabase/mig
 
 ---
 
+## Cost/usage capture-laag (2026-07-11, ADR-054)
+
+Migraties `20260711100000`–`20260711100500`. Doel: kost-inputs per job/aankoop/user permanent vastleggen. Zie [ADR-054](../decisions/054-cost-usage-capture-layer.md).
+
+### Nieuwe tabellen
+
+- **`cost_config`** — runtime EUR-tarief-bron. Kolommen: `id`, `effective_from`, `currency` (CHECK `='EUR'`), `decodo_eur_per_gb`, `assemblyai_eur_per_min`, `deepseek_eur_per_1k_input_tokens`, `deepseek_eur_per_1k_output_tokens`, `fixed_monthly_infra_eur`, `usd_eur_rate`, `notes`, `created_at`. RLS aan, **geen policies** (service-role only). Lees "huidig" tarief = laatste `effective_from <= t`. Geseed 2026-07-11 (Decodo €2,99/GB, AssemblyAI €0,00322/min, USD→EUR @0,92; DeepSeek-tarieven informationeel/te-verifiëren).
+- **`daily_cost_counters`** — dag-grain aggregaat. `day` (PK), `caption_proxy_bytes` (bigint), `caption_count` (int), `updated_at`. Gevuld via RPC **`bump_caption_proxy_bytes(p_bytes)`** (SECURITY DEFINER, O(1) upsert) vanuit de gratis-caption-route (cache-miss). RLS aan, service-role only.
+
+### Nieuwe kolommen
+
+- **`transcription_jobs.proxy_bytes`** (bigint, nullable) — rauwe pre-ffmpeg Decodo-egress voor de YT-AI/whisper-route; gezet meteen na download (`transcription_pipeline.py`). `file_size_bytes` ongemoeid (upload-only, 0 voor YouTube).
+- **`transcription_jobs.assemblyai_model`** (text, nullable) — effectief `speech_model_used`, gezet op completion.
+- **`transcripts.ai_summary_usage`** (jsonb, nullable) — DeepSeek `{prompt_tokens, completion_tokens, total_tokens, model, generated_at}`. Informationeel (samenvatting = flat 3 credits); overschrijft bij regeneratie.
+- **`user_credits.library_bytes`** (bigint NOT NULL default 0) — lopend totaal van de eigen bibliotheek-footprint (`transcript`+`edited_content`+`ai_summary`+`rag_exports` `octet_length`). Onderhouden door trigger; backfilled.
+- **`user_credits.library_bytes_cap`** (bigint NOT NULL default 5368709120 = 5 GiB) — per-user cap. **Fundering only — niet gehandhaafd.**
+- **`profiles.signup_source`, `utm_source`, `utm_medium`, `utm_campaign`, `signup_referrer`, `signup_landing_path`** (text, nullable) — first-touch acquisitie.
+
+### Gewijzigde/nieuwe functies + triggers
+
+- **`add_credits(p_user_id, p_amount, p_reason, p_metadata, p_kind)`** — `p_kind` toegevoegd (default NULL) → stempelt `credit_transactions.kind`. `EXECUTE`-grants exact behouden. `credit_transactions_kind_check` verbreed met `'welcome'`.
+- **`claim_welcome_reward`** — stempelt nu `kind='welcome'`.
+- **`transcripts_library_bytes_trigger()`** + triggers `transcripts_library_bytes_ins/del/upd` op `transcripts` (INSERT/DELETE/UPDATE OF content-kolommen) — onderhoudt `user_credits.library_bytes` (vangt álle insert-paden).
+- **`handle_new_user_acquisition()`** + trigger `on_auth_user_created_acquisition` op `auth.users` — exception-safe upsert van acquisitie-kolommen uit `raw_user_meta_data` (blokkeert nooit signup; los van `handle_new_user`).
+
+---
+
 ## Legacy en Undocumented Tabellen
 
 De volgende tabellen bestaan in de productie-DB (en in de baseline), maar zijn niet actief in de huidige codebase. Ze zijn **niet** verwijderd bij de baseline-squash — data aanraken is post-launch werk.
