@@ -389,6 +389,7 @@ async def do_assemblyai_transcription(
                 }
 
         # ── Step 1: Get audio ─────────────────────────────────────────────────
+        proxy_bytes = None  # Decodo egress bytes; only set on the YouTube download path
         if audio_path is None:
             # YouTube path: download audio via yt-dlp
             await _update_job(status="downloading", started_at=job_started_at.isoformat())
@@ -413,12 +414,16 @@ async def do_assemblyai_transcription(
                 logger.warning(f"[pipeline] Proxy DISABLED for {video_id}")
                 proxy_urls = None
             try:
-                audio_path, video_title, channel = await _run_with_heartbeat(
+                audio_path, video_title, channel, proxy_bytes = await _run_with_heartbeat(
                     asyncio.to_thread(extract_youtube_audio, video_id, proxy_urls=proxy_urls),
                     heartbeat_fn,
                     timeout=AUDIO_DOWNLOAD_TIMEOUT,  # kap een hangende download → 'timeout' (retryable)
                 )
                 temp_files.append(audio_path)
+                # Persist the Decodo egress bytes now — the proxy cost was incurred at download,
+                # even if a later step (transcription) fails. Cost accounting must not lose it.
+                if proxy_bytes is not None:
+                    await _update_job(proxy_bytes=proxy_bytes)
             except MembersOnlyVideoError:
                 await _update_job(status="error", error_message="members_only")
                 return {"success": False, "error_type": "members_only", "credit_cost": 0}
@@ -638,6 +643,7 @@ async def do_assemblyai_transcription(
             duration_seconds=int(duration),
             credits_cost=credit_cost,
             processing_time_seconds=processing_secs,
+            assemblyai_model=whisper_result.get('model'),
             **({"error_message": truncation_warning} if truncation_warning else {}),
         )
         credits_deducted = False  # success — no refund

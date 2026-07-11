@@ -158,25 +158,37 @@ def deduct_credits(
         }
 
 
-def add_credits(user_id: str, amount: int, reason: str = "Manual credit addition") -> Dict:
+def add_credits(
+    user_id: str,
+    amount: int,
+    reason: str = "Manual credit addition",
+    kind: Optional[str] = None,
+    metadata: Optional[Dict] = None,
+) -> Dict:
     """
-    Add credits to user account (for testing/admin).
-    
+    Add credits to user account (for testing/admin/refunds).
+
     Args:
         user_id: User UUID
         amount: Number of credits to add
         reason: Reason for addition
-        
+        kind: Optional classification stamped on the ledger row
+              ('purchase'|'grant'|'welcome'|'refund'|'bonus'). Backend refunds pass 'refund'
+              so refund credits are separable from purchases/grants in cost/revenue metrics.
+        metadata: Optional metadata dict merged into the ledger row.
+
     Returns:
         Dict with success status and balances
     """
     try:
         supabase = get_supabase_client()
-        
+
         response = supabase.rpc('add_credits', {
             'p_user_id': user_id,
             'p_amount': amount,
-            'p_reason': reason
+            'p_reason': reason,
+            'p_metadata': metadata or {},
+            'p_kind': kind,
         }).execute()
         
         if response.data:

@@ -330,6 +330,7 @@ async def extract_with_ytdlp(
                 logger.warning(f"{log_prefix} {video_id}: rejected tlang= URL for {selected_lang!r}, returning no_captions")
                 return {}
             subtitle_data = None
+            caption_bytes = 0  # Decodo egress of the VTT download (aggregated per day, free-caption route)
             for attempt in range(3):
                 # Rotate the proxy exit IP per attempt: a residential IP that YouTube
                 # rate-limited (429) on the timedtext endpoint keeps returning 429, so
@@ -349,6 +350,7 @@ async def extract_with_ytdlp(
                         resp = client.get(subtitle_url)
                         resp.raise_for_status()
                         subtitle_data = resp.text
+                        caption_bytes = len(resp.content)
                         break
                 except Exception as e:
                     logger.warning(f"{log_prefix} {video_id}: VTT download attempt {attempt + 1} failed: {e}")
@@ -393,6 +395,7 @@ async def extract_with_ytdlp(
                 'language': language,
                 'language_detected': language_detected,
                 'upload_date': iso_date,
+                'proxy_bytes': caption_bytes,
             }
 
     except MembersOnlyVideoError:

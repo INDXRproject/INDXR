@@ -25,6 +25,10 @@ def transcribe_with_assemblyai(audio_path: str) -> dict:
         if transcript.status == aai.TranscriptStatus.error:
             return {'success': False, 'error': transcript.error}
 
+        # Effective model AssemblyAI actually ran (speech_models config is a preference list with
+        # fallback). Captured per job for cost accounting (transcription_jobs.assemblyai_model).
+        model_used = getattr(transcript, 'speech_model_used', None)
+
         # Convert AssemblyAI words to ~5 second segments matching our format
         segments = []
         if transcript.words:
@@ -63,7 +67,8 @@ def transcribe_with_assemblyai(audio_path: str) -> dict:
         return {
             'success': True,
             'transcript': segments,
-            'duration': duration
+            'duration': duration,
+            'model': model_used
         }
 
     except Exception as e:

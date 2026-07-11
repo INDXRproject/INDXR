@@ -422,6 +422,18 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 error_type="no_captions"
             )
 
+        # Aggregate the free-caption Decodo egress (day-grain counter; NO per-extraction row).
+        # This is the cache-MISS path — a cache hit returns earlier and incurs no proxy cost.
+        cap_bytes = result.get('proxy_bytes') or 0
+        if cap_bytes:
+            try:
+                _cap_sb = get_supabase_client()
+                await asyncio.to_thread(
+                    lambda: _cap_sb.rpc('bump_caption_proxy_bytes', {'p_bytes': cap_bytes}).execute()
+                )
+            except Exception as _bump_err:
+                logger.warning(f"[caption-bytes] bump failed for {video_id}: {_bump_err}")
+
         transcript = [
             TranscriptItem(
                 text=item['text'],
@@ -1043,19 +1055,19 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             transcript_data = response.data['transcript']
         except Exception as e:
             logger.error(f"Failed to fetch transcript {request.transcript_id}: {e}")
-            add_credits(request.user_id, 3, "AI Summarization Refund (Transcript fetch failed)")
+            add_credits(request.user_id, 3, "AI Summarization Refund (Transcript fetch failed)", kind='refund')
             return SummarizeResponse(success=False, error="Transcript not found")
             
         # Combine transcript text
         full_text = " ".join([item['text'] for item in transcript_data if 'text' in item])
         if not full_text.strip():
-            add_credits(request.user_id, 3, "AI Summarization Refund (Empty text)")
+            add_credits(request.user_id, 3, "AI Summarization Refund (Empty text)", kind='refund')
             return SummarizeResponse(success=False, error="Transcript is empty")
             
         # 4. Call DeepSeek API
         deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
         if not deepseek_api_key:
-            add_credits(request.user_id, 3, "AI Summarization Refund (DeepSeek API key missing)")
+            add_credits(request.user_id, 3, "AI Summarization Refund (DeepSeek API key missing)", kind='refund')
             return SummarizeResponse(success=False, error="DeepSeek API key not configured")
             
         deepseek_url = "https://api.deepseek.com/chat/completions"
@@ -1091,22 +1103,36 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             
             if ds_resp.status_code != 200:
                 logger.error(f"DeepSeek API error: {ds_resp.status_code} {ds_resp.text}")
-                add_credits(request.user_id, 3, "AI Summarization Refund (DeepSeek API Error)")
+                add_credits(request.user_id, 3, "AI Summarization Refund (DeepSeek API Error)", kind='refund')
                 return SummarizeResponse(success=False, error="Failed to generate summary")
                 
             result_json = ds_resp.json()
             content = result_json['choices'][0]['message']['content']
             summary_data = json.loads(content)
-            
+
+            # DeepSeek token usage — captured per summary for cost insight. Informational only
+            # (summaries are billed a flat 3 credits, decoupled from real token consumption).
+            usage = result_json.get('usage') or {}
+            ai_summary_usage = {
+                "prompt_tokens": usage.get("prompt_tokens"),
+                "completion_tokens": usage.get("completion_tokens"),
+                "total_tokens": usage.get("total_tokens"),
+                "model": data["model"],
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
             ai_summary = {
                 "text": summary_data.get("text", ""),
                 "action_points": summary_data.get("action_points", []),
                 "generated_at": datetime.now(timezone.utc).isoformat(),
                 "edited": False
             }
-            
-            # 5. Save to Supabase
-            update_resp = supabase.table('transcripts').update({"ai_summary": ai_summary}).eq('id', request.transcript_id).execute()
+
+            # 5. Save to Supabase (+ token usage, atomic with the summary)
+            update_resp = supabase.table('transcripts').update({
+                "ai_summary": ai_summary,
+                "ai_summary_usage": ai_summary_usage,
+            }).eq('id', request.transcript_id).execute()
             if not update_resp.data:
                 logger.warning(f"Could not confirm transcript update for {request.transcript_id}")
                 
@@ -1123,7 +1149,7 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             
         except Exception as e:
             logger.error(f"DeepSeek call exception: {type(e).__name__}: {e}")
-            add_credits(request.user_id, 3, f"AI Summarization Refund ({type(e).__name__})")
+            add_credits(request.user_id, 3, f"AI Summarization Refund ({type(e).__name__})", kind='refund')
             with sentry_sdk.push_scope() as scope:
                 scope.set_tag("endpoint", "summarize_transcript")
                 scope.set_tag("step", "deepseek_api_call")

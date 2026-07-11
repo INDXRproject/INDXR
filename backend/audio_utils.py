@@ -114,7 +114,7 @@ def extract_youtube_audio(
     output_dir: str = "/tmp",
     proxy_url: Optional[str] = None,
     proxy_urls: Optional[list] = None,
-) -> tuple[str, str, Optional[str]]:
+) -> tuple[str, str, Optional[str], int]:
     """
     Extract audio from YouTube video using yt-dlp.
 
@@ -128,7 +128,9 @@ def extract_youtube_audio(
                     mid-download. Takes precedence over proxy_url per attempt.
 
     Returns:
-        Tuple of (audio_path, video_title, channel)
+        Tuple of (audio_path, video_title, channel, raw_bytes) where raw_bytes is the
+        pre-ffmpeg downloaded size in bytes = the true Decodo proxy egress (persisted as
+        transcription_jobs.proxy_bytes for cost accounting).
 
     Raises:
         MembersOnlyVideoError: If video is members-only
@@ -211,7 +213,8 @@ def extract_youtube_audio(
                 raise Exception("yt-dlp did not produce any audio file")
 
             raw_path = raw_files[0]
-            raw_size = os.path.getsize(raw_path) / 1024 / 1024
+            raw_size_bytes = os.path.getsize(raw_path)  # pre-ffmpeg = true Decodo egress (persisted per job)
+            raw_size = raw_size_bytes / 1024 / 1024
             logger.info(f"[YT-DLP-AUDIO] downloaded: {raw_path} ({raw_size:.2f}MB)")
 
             # Convert to mono Opus/OGG using ffmpeg (12kbps handles up to ~5 hours within 25MB)
@@ -235,7 +238,7 @@ def extract_youtube_audio(
             final_size = os.path.getsize(final_output_path) / 1024 / 1024
             logger.info(f"[YT-DLP-AUDIO] conversion done: {raw_size:.2f}MB → {final_size:.2f}MB ogg")
 
-            return final_output_path, video_title, channel
+            return final_output_path, video_title, channel, raw_size_bytes
 
         except Exception as e:
             last_error = e
