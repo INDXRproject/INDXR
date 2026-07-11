@@ -1110,15 +1110,27 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             content = result_json['choices'][0]['message']['content']
             summary_data = json.loads(content)
 
-            # DeepSeek token usage — captured per summary for cost insight. Informational only
-            # (summaries are billed a flat 3 credits, decoupled from real token consumption).
+            # DeepSeek token usage — captured per summary so the REAL cost is reconstructable
+            # (billing stays a flat 3 credits; this is cost-accounting only). Logging the raw
+            # tokens against one stored (cache-miss) rate would be WRONG whenever DeepSeek deviates,
+            # so we log the two things that actually vary the price and let cost_config carry the rates:
+            #   - prompt_cache_hit_tokens / prompt_cache_miss_tokens: DeepSeek prices cache-hit input
+            #     ~50× cheaper than cache-miss ($0.0028/M vs $0.14/M). Real input cost =
+            #     hit*cache_hit_rate + miss*cache_miss_rate (prompt_tokens = hit + miss).
+            #   - deepseek_created: DeepSeek's server-side UTC epoch for this call — the authoritative
+            #     timestamp to test against cost_config.deepseek_peak_windows_utc (peak_multiplier).
+            #     The response returns no monetary cost and no peak flag, so time-pricing is recomputed
+            #     from this timestamp + config (peak hours live in config, never hardcoded here).
             usage = result_json.get('usage') or {}
             ai_summary_usage = {
                 "prompt_tokens": usage.get("prompt_tokens"),
                 "completion_tokens": usage.get("completion_tokens"),
                 "total_tokens": usage.get("total_tokens"),
+                "prompt_cache_hit_tokens": usage.get("prompt_cache_hit_tokens"),
+                "prompt_cache_miss_tokens": usage.get("prompt_cache_miss_tokens"),
                 "model": data["model"],
                 "generated_at": datetime.now(timezone.utc).isoformat(),
+                "deepseek_created": result_json.get("created"),
             }
 
             ai_summary = {
