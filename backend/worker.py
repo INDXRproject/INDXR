@@ -256,8 +256,8 @@ async def _process_caption_video(
         return False, None, 'no_captions', 0
 
     # Aggregate the free-caption Decodo egress from the PLAYLIST route too (day-grain counter).
-    # Only fires when step 2/3 (yt-dlp VTT) actually ran — step 1 (youtube-transcript-api) and any
-    # cache-hit yield no 'proxy_bytes', so this never double-counts.
+    # Post-cascade → both routes measured: step 1 (youtube-transcript-api, video page + timedtext)
+    # and step 2/3 (yt-dlp VTT) each return 'proxy_bytes'. A cache-hit yields none → no double-count.
     _cap_bytes = extract_result.get('proxy_bytes') or 0
     if _cap_bytes:
         try:

@@ -171,14 +171,16 @@ async def extract_via_youtube_transcript_api(
     not 'en', tries [lang_pref, 'en'] so the original-language track is returned
     before any machine-translated English variant. Falls back to ['en'] otherwise.
 
-    Returns dict with 'transcript', 'language', 'model' on success, or None on any
-    failure (rate-limit, blocked, no captions, etc.). Never raises — None signals
-    the cascade to fall through to the next step.
+    lang_pref is IGNORED for track selection (unreliable). Native-anchored — see below.
+
+    Returns dict with 'transcript', 'language', 'model', 'proxy_bytes' on success, or None on
+    any failure (rate-limit, blocked, no captions, etc.). Never raises — None signals the
+    cascade to fall through to the next step. 'proxy_bytes' = the real Decodo egress of this
+    fetch (video page + timedtext), so the free-caption cost is measured like the yt-dlp route.
     """
-    # lang_pref is IGNORED for track selection (unreliable). We anchor on the native/audio
-    # language via the ASR (generated) track and never translate — see below.
     logger.info(f"[YT-API] attempting {video_id} (native-anchored; lang_pref={lang_pref!r} not used for steering)")
     try:
+        import requests
         from youtube_transcript_api import (
             YouTubeTranscriptApi,
             IpBlocked,
@@ -193,7 +195,17 @@ async def extract_via_youtube_transcript_api(
         proxy_url = get_proxy_url(session_id or secrets.token_hex(4))
         proxy_config = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url) if proxy_url else None
 
-        ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
+        # Measure real Decodo egress: youtube-transcript-api runs ALL its HTTP (video page +
+        # timedtext) through this requests.Session, which the library routes via the proxy. A
+        # response hook sums len(response.content) — same decompressed-body convention as the
+        # yt-dlp VTT route (caption_bytes) — closing the step-1 capture gap (previously proxied
+        # but never counted). The library applies proxy_config (proxies + 429-retries) to it.
+        _egress = {"bytes": 0}
+        _http_client = requests.Session()
+        _http_client.hooks["response"].append(
+            lambda r, *a, **k: _egress.__setitem__("bytes", _egress["bytes"] + len(r.content))
+        )
+        ytt_api = YouTubeTranscriptApi(http_client=_http_client, proxy_config=proxy_config)
 
         # List base transcripts (translations are on-demand via .translate(), NOT listed here, so
         # nothing we iterate is a machine translation). The GENERATED (ASR) transcript's language
@@ -218,11 +230,12 @@ async def extract_via_youtube_transcript_api(
             for snippet in fetched
         ]
 
-        logger.info(f"[YT-API] success for {video_id} native={native!r} lang={fetched.language_code} generated={chosen.is_generated}")
+        logger.info(f"[YT-API] success for {video_id} native={native!r} lang={fetched.language_code} generated={chosen.is_generated} proxy_bytes={_egress['bytes']}")
         return {
             "transcript": transcript,
             "language": fetched.language_code,
             "model": "youtube_transcript_api",
+            "proxy_bytes": _egress["bytes"],
         }
 
     except RequestBlocked:

@@ -8266,3 +8266,26 @@ under-counts free-caption Decodo cost (misses all step-1 captions, the first cas
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/decisions/054-cost-usage-capture-layer.md
 ---
+[2026-07-12 00:52] commit: feat(capture): measure step-1 (youtube-transcript-api) Decodo egress — gap closed
+
+Step 1 runs through the Decodo proxy but returned no proxy_bytes, so daily_cost_counters
+never counted these free captions (structural under-count; only step 2/3 yt-dlp was measured).
+
+Fix: youtube-transcript-api accepts a custom requests.Session; attach a hooks['response']
+callback that sums len(response.content) over all proxied requests of the fetch (video page +
+timedtext) — same decompressed-body convention as the yt-dlp route. extract_via_youtube_
+transcript_api now returns proxy_bytes; the existing post-cascade bump in main.py and worker.py
+already reads result.get('proxy_bytes'), so both routes now bump automatically.
+
+Verified (real proxied fetch): zsks48kTYB4 -> proxy_bytes=1,949,116; Arabic -> 1,534,552
+(previously 0). Only on a real fetch (cache-hit returns before step 1). Honest asymmetry
+documented: step 1 measures full egress (page+timedtext), yt-dlp measures only the VTT.
+
+ADR-054: caption-cost model updated — both routes measured, rest-gap closed.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+backend/youtube_utils.py
+docs/wiki/decisions/054-cost-usage-capture-layer.md
+---

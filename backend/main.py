@@ -423,7 +423,9 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             )
 
         # Aggregate the free-caption Decodo egress (day-grain counter; NO per-extraction row).
-        # This is the cache-MISS path — a cache hit returns earlier and incurs no proxy cost.
+        # Post-cascade → covers BOTH routes now that step 1 (youtube-transcript-api) also returns
+        # proxy_bytes: step 1 (video page + timedtext) and step 2/3 (yt-dlp VTT) are both measured.
+        # This is the cache-MISS path — a Redis/master cache hit returns earlier and incurs no proxy cost.
         cap_bytes = result.get('proxy_bytes') or 0
         if cap_bytes:
             try:
