@@ -8250,3 +8250,19 @@ docs/wiki/roadmap/priorities.md
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/business/unit-economics.md
 ---
+[2026-07-12 00:27] commit: docs(cost): factual caption Decodo-cost model — corrects the cache-hit assumption (Blok E)
+
+Measured the real cost path for zsks48kTYB4 and Bm1RhjcdJek (code path + live repro):
+- zsks48kTYB4 -> step 1 youtube-transcript-api (lang=en). This route IS proxied via Decodo
+  but returns no proxy_bytes -> never bumps daily_cost_counters, regardless of cache. So its
+  empty counter is NOT (only) a Redis cache-hit as previously stated.
+- Bm1RhjcdJek -> step 2 yt-dlp VTT (proxy_bytes=122069) -> a fresh extraction DOES bump.
+
+Corrects the assumption that youtube-transcript-api incurs no Decodo cost: it is proxied
+(cost incurred) but unmeasured. Adds a table to ADR-054: step 1 = proxied+unmeasured,
+step 2/3 = proxied+measured, cache-hit = zero egress. Consequence: daily_cost_counters
+under-counts free-caption Decodo cost (misses all step-1 captions, the first cascade step).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/decisions/054-cost-usage-capture-layer.md
+---
