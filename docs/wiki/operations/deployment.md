@@ -175,7 +175,24 @@ API en worker bouwen uit **dezelfde GitHub-repo en dezelfde `/backend` root dire
 
 **Auto-deploy:** Push naar `master` → Railway rebuildt Docker image en deployt API + worker.  
 **Dockerfile:** `backend/Dockerfile` (gedeeld door API en worker — de worker overschrijft de `CMD` via Railway's "Start Command" instelling)  
-**Gezondheidscheck:** `GET /health` → `{"status": "healthy"}` (alleen API-service)
+**Gezondheidscheck:** `GET /health` → `{"status": "healthy"}` (alleen API-service, unauthenticated, geen DB/Redis-afhankelijkheid → nooit flaky)
+
+### Zero-downtime deploy (health-gated cutover)
+
+**API-service:** de cutover is health-check-gated via **`backend/railway.json`** (in de repo, dus versie-gecontroleerd en survivet service-hercreatie):
+
+```json
+{ "$schema": "https://railway.com/railway.schema.json",
+  "deploy": { "healthcheckPath": "/health", "healthcheckTimeout": 300 } }
+```
+
+Railway wacht met verkeer-omschakeling tot de nieuwe deployment `GET /health` = 200 teruggeeft → **geen request-gap** bij deploy. Zonder deze setting schakelt Railway zodra de container start (mogelijk vóór uvicorn requests aankan). `/health` is unauthenticated en statisch, dus de probe slaagt zodra de app luistert. **Alternatief (dashboard, als de file ooit niet gepakt wordt):** Service → Settings → Deploy → **Health Check Path** = `/health`. De file wint; verifieer bij de volgende deploy dat de deploy-logs een healthcheck-stap tonen vóór "Active".
+
+**Worker-service:** heeft **geen** HTTP-server → geen healthcheck van toepassing. Zie de deploy-werkregel hieronder.
+
+> **⚠️ WERKREGEL — niet deployen terwijl jobs draaien.** Een deploy naar de **worker** herstart de container en **doodt elke lopende job** (transcriptie/playlist) — er is geen graceful drain. Herstel is niet gegarandeerd instant: de watchdog re-enqueuet `interrupted`/stuck jobs pas bij de volgende cron-pass (elke 2 min; ADR-049/051). Regel: **push niet naar `master` terwijl er actieve jobs lopen** (check `ActiveJobsIndicator` / `transcription_jobs`+`playlist_extraction_jobs` op niet-terminale status). Pre-launch is dit laag-risico (weinig verkeer); post-launch is graceful worker-drain een benoemde roadmap-taak — zie [priorities.md](../roadmap/priorities.md).
+
+**Vercel (frontend):** al **atomic/zero-downtime** by design — elke build is een immutable deployment; de productie-alias switcht instant naar de nieuwe build zodra die klaar is (geen gedeelde mutable state, geen gap). Geen extra config nodig.
 
 ### Docker Build
 

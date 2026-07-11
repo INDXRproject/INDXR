@@ -8061,6 +8061,8 @@ supabase/migrations/20260711180000_welcome_grant_inbox_message.sql
 [2026-07-11 22:32] commit: docs(deepseek): account/key ops note + peak-pricing caveat (Blok B)
 ---
 [2026-07-11 23:05] Blok A (verificatie, geen code) + Blok B (DeepSeek exacte kost, ECHTE fix). **BLOK A — live-capture 3 test-jobs geverifieerd tegen de DB (echte waarden):** (1) betaalde AI-job `SVfajDS-bj0` → `transcription_jobs`: proxy_bytes=15.392.032 (>0 ✓), assemblyai_model='universal-3-pro' (✓), credits_cost=16, credits_reserved=16, credits_deducted=false (reserverings-model ADR-050), status=complete, duration=921s (16=ceil(921/60) ✓). (2) samenvatting zelfde video → `transcripts.ai_summary_usage` = {model deepseek-v4-flash, prompt 3027, completion 347, total 3374} (✓). (3) gratis caption `zsks48kTYB4` → `daily_cost_counters` LEEG. DIAGNOSE (geen blind fix): GEEN capture-gat. De bump (`bump_caption_proxy_bytes`, main.py:432/worker.py:265) vuurt alleen op een cache-MISS (proxied VTT-download → proxy_bytes>0); Redis-cache-hit (30d TTL) én master_transcripts-hit retourneren vóór de download, nul Decodo-egress → terecht niets te tellen. RPC+grants(service_role)+byte-meting(len(resp.content)) alle correct (rolled-back proof bytes=12345 count=1); video zat in Redis-cache (niet in master_transcripts, geen user-transcript). LIVE-CONFIRM: verse nooit-geëxtraheerde caption-video bumpt de dag-teller. **BLOK B — DeepSeek kost = ECHTE kost, niet tokens×vast tarief.** ONDERZOEK (web + echte response gelogd): usage geeft `prompt_cache_hit_tokens`/`prompt_cache_miss_tokens` (hit+miss=prompt_tokens) + server-`created` (UTC-epoch), GEEN bedrag/piek-vlag; officiële pricing (2 bronnen): input cache-miss $0,14/M, cache-hit $0,0028/M (50× goedkoper), output $0,28/M, GEEN tijd-pricing. FIX: (a) `main.py` `ai_summary_usage` logt nu de cache-splitsing + `deepseek_created`; (b) migratie `20260711214500` — `cost_config` + `deepseek_eur_per_1k_cache_hit_tokens` (€0,000002576/1k, numeric(18,10) want scale-6 rondt 16% af), `deepseek_peak_multiplier`(1,0) + `deepseek_peak_windows_utc`(NULL) = tijd-tarief config-driven, piekuren NOOIT hardcoded. Echte kost = hit×hit_rate+miss×miss_rate+out×out_rate, ×multiplier binnen venster. VERIFICATIE (echte DeepSeek-calls): call1 0 hit/533 miss; herhaalde call2 512 hit/21 miss → echte kost €0,000030 vs naïef tokens×miss-rate €0,000095 = **3,15× overschatting weggenomen**; hit+miss=prompt_tokens reconcilieert; DB-persistentie rijkere JSON rolled-back bevestigd (hit=512 miss=21 created=… gelezen); py_compile OK. Eerdere "2× piek medio-juli"-caveat NIET bevestigd op officiële pagina → vervangen door config-hook (multiplier 1,0). DOCS: unit-economics.md, ADR-054 (A-verificatie + B-fix), ADR-004 (peak-caveat herzien), database-schema.md (cost_config-kolommen + ai_summary_usage-shape). Geen frontend geraakt (backend Python + migratie + docs). LIVE NOG TE CHECKEN: één echte prod-samenvatting → ai_summary_usage bevat cache-splitsing + deepseek_created. | gewijzigd: backend/main.py, supabase/migrations/20260711214500_deepseek_cache_and_peak_cost_config.sql (nieuw), docs/wiki/business/unit-economics.md, docs/wiki/decisions/054-cost-usage-capture-layer.md, docs/wiki/decisions/004-deepseek-v3.md, docs/wiki/architecture/database-schema.md
+---
+[2026-07-11 23:20] Blok C — zero-downtime deploy-hygiëne. **API-service cutover nu health-gated in-repo:** nieuw `backend/railway.json` met `deploy.healthcheckPath="/health"` + `healthcheckTimeout=300` → Railway wacht op `GET /health`=200 vóór verkeer-omschakeling (geen request-gap). Bevestigd: de api-service bouwt uit de `/backend` root (deployment.md:174) → de file wordt gepakt. `/health` (main.py:253) is unauthenticated + statisch (geen DB/Redis-dep) → probe nooit flaky. Strikt veiliger dan geen-config (wachten i.p.v. blind omschakelen); kan een lopende deploy niet breken. Verificatie via read-only Railway-CLI kon de dashboard-setting niet lezen → daarom in-repo config (durable, survivet service-hercreatie) + dashboard-alternatief gedocumenteerd. **Vercel:** bevestigd al atomic/zero-downtime by design (immutable builds, instant alias-switch) — geen config nodig. **WERKREGEL gedocumenteerd (deployment.md + priorities.md 1.34):** een deploy naar de **worker** doodt elke lopende job (geen graceful drain); watchdog re-enqueuet interrupted/stuck jobs pas bij de 2-min cron-pass → niet pushen terwijl actieve jobs lopen. NIEUW roadmap-item **1.34** (post-launch): graceful worker-drain (SIGTERM → geen nieuwe jobs, lopende afronden) + watchdog-resume-latency verkleinen; API-service is al zero-downtime, dit betreft alleen de worker. LIVE NOG TE CHECKEN: bij de volgende api-deploy tonen de Railway-deploy-logs een healthcheck-stap vóór "Active". | gewijzigd: backend/railway.json (nieuw), docs/wiki/operations/deployment.md, docs/wiki/roadmap/priorities.md
 
 - deployment.md + ADR-004: DeepSeek account runs on contact@indxr.ai; key set as
   DEEPSEEK_API_KEY on Railway. Verified env-only — sole reader os.getenv at
@@ -8078,4 +8080,42 @@ Changed: docs/LOG.md
 docs/wiki/business/unit-economics.md
 docs/wiki/decisions/004-deepseek-v3.md
 docs/wiki/operations/deployment.md
+---
+[2026-07-11 22:56] commit: feat(cost): DeepSeek real per-summary cost (cache split + config-driven peak)
+
+Logging cost as tokens × one stored (cache-miss) rate is wrong whenever DeepSeek
+deviates. The chat-completions response returns the cache split
+(prompt_cache_hit_tokens / prompt_cache_miss_tokens; hit+miss = prompt_tokens) and
+a server-side UTC `created`, but no monetary cost and no peak flag.
+
+BLOK B fix:
+- main.py: ai_summary_usage now logs prompt_cache_hit_tokens, prompt_cache_miss_tokens
+  and deepseek_created, so cost is reconstructable per cache tier + call time.
+- migration 20260711214500: cost_config gains deepseek_eur_per_1k_cache_hit_tokens
+  (numeric(18,10) — scale-6 would round the tiny hit rate 16%), deepseek_peak_multiplier
+  (default 1.0) and deepseek_peak_windows_utc (jsonb). Peak hours live in config, never
+  hardcoded. Official pricing shows no time-based pricing (verified 2026-07-11) so
+  multiplier=1.0; activating it is a config row, not a deploy.
+
+Verified with real DeepSeek calls: a repeat call returned 512 cache-hit / 21 cache-miss
+tokens -> real cost EUR 0.000030 vs naive tokens*flat EUR 0.000095 (3.15x overstatement
+removed); hit+miss reconciles to prompt_tokens; DB persistence of the richer JSON proven
+(rolled back). py_compile OK.
+
+BLOK A (verification, no code): live-capture of 3 test jobs confirmed against the DB
+(proxy_bytes, assemblyai_model, ai_summary_usage all populated). daily_cost_counters was
+empty but that is NOT a gap — the caption bump only fires on a cache-MISS; the test video
+was served from the Redis cache (zero Decodo egress, correctly nothing to count). RPC +
+grants + byte measurement all proven correct. Diagnosis in ADR-054.
+
+Docs: unit-economics.md, ADR-054, ADR-004 (peak caveat revised), database-schema.md.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/business/unit-economics.md
+docs/wiki/decisions/004-deepseek-v3.md
+docs/wiki/decisions/054-cost-usage-capture-layer.md
+supabase/migrations/20260711214500_deepseek_cache_and_peak_cost_config.sql
 ---
