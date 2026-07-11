@@ -8143,3 +8143,40 @@ docs/wiki/roadmap/priorities.md
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 ---
+[2026-07-11 23:59] commit: fix(deploy): revert railway.json healthcheck — it broke api+worker deploys
+
+BLOK C's backend/railway.json healthcheckPath=/health put every deploy since
+2026-07-11 23:00 on FAILED for BOTH services (confirmed via railway deployment list):
+- api: app starts, but Railway's healthcheck probe cannot reach /health (uvicorn binds
+  hardcoded --port 8000; Railway probes $PORT/IPv6) -> deploy FAILED + shutdown.
+- worker: shares the /backend root so the same railway.json, but has no HTTP server ->
+  healthcheck can never pass. Railway kept the prior healthy deploy running, masking it.
+
+Both services were stuck on the 22:56 (BLOK B) deploy. Removing the file restores
+Railway's default container-start cutover (the long-working behavior). Health-gated
+cutover deferred: needs uvicorn on $PORT + an api-only healthcheck (dashboard), never a
+healthcheck on the portless worker. deployment.md updated with the full post-mortem.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/railway.json
+docs/LOG.md
+docs/wiki/operations/deployment.md
+---
+[2026-07-12 00:02] commit: fix(hooks): stop the docs/LOG.md post-commit loop (fold append via amend)
+
+The local .git/hooks/post-commit appended a 'commit:' summary to the tracked
+docs/LOG.md AFTER each commit, leaving a permanent 'M docs/LOG.md' that re-triggered
+on the next commit — a self-perpetuating dirty tree every session.
+
+Fix: the hook now `git add docs/LOG.md && git commit --amend --no-edit` to fold the
+append into the same commit, so the tree is clean afterwards. A recursion guard
+(INDXR_LOG_HOOK env) makes the amend's re-fired post-commit a no-op -> exactly one
+amend, no runaway. Verified in a sandbox repo: clean tree after each commit, correct
+commit count, LOG entries intact. Tracked canonical copy + install note under
+scripts/git-hooks/ (since .git/hooks is not version-controlled).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+scripts/git-hooks/README.md
+scripts/git-hooks/post-commit
+---

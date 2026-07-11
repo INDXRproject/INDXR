@@ -1,0 +1,28 @@
+#!/bin/bash
+# INDXR post-commit hook — appends a one-line commit summary to docs/LOG.md.
+#
+# It FOLDS that append into the just-made commit via `git commit --amend` so the working
+# tree stays clean afterwards. The old version appended without committing, which left a
+# permanent 'M docs/LOG.md' that re-triggered on the next commit — a self-perpetuating loop.
+#
+# Recursion guard: the amend below re-fires post-commit; the exported INDXR_LOG_HOOK makes
+# that inner invocation a no-op, so exactly one amend happens per commit (no runaway loop).
+#
+# This file is the tracked canonical copy. Install it with:
+#   cp scripts/git-hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
+[ -n "$INDXR_LOG_HOOK" ] && exit 0
+export INDXR_LOG_HOOK=1
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+CHANGED_FILES=$(git diff-tree --no-commit-id -r --name-only HEAD)
+COMMIT_MSG=$(git log -1 --pretty=%B)
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
+
+{
+  echo "[$TIMESTAMP] commit: $COMMIT_MSG"
+  echo "Changed: $CHANGED_FILES"
+  echo "---"
+} >> "$REPO_ROOT/docs/LOG.md"
+
+git -C "$REPO_ROOT" add docs/LOG.md
+git -C "$REPO_ROOT" commit --amend --no-edit --no-verify >/dev/null 2>&1
