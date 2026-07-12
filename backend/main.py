@@ -455,6 +455,18 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 logger.warning(f"Caption cache write error: {type(cache_write_err).__name__}: {cache_write_err}")
 
         # ── Master cache write (fire-and-forget) ─────────────────────────────
+        # force_refresh=True → UPSERT (not insert-only). Reasons:
+        #  (1) Self-healing: a stale/wrong-content row (e.g. a pre-fix Albanian
+        #      transcript stored under language='en') is overwritten the moment a
+        #      correct extraction runs, instead of a 409 duplicate-key that silently
+        #      leaves the bad row immortal (which made the Napoleon leak un-fixable
+        #      by retry).
+        #  (2) 90-day refresh actually works: the read expires a row after
+        #      CAPTION_REFRESH_DAYS, but insert-only could never update
+        #      fetched_from_provider_at → an expired row would re-run the full
+        #      cascade on every request forever. Upsert refreshes the timestamp.
+        # This write only fires on a cache MISS, so overwriting with fresh content
+        # is exactly the intended behaviour.
         if result.get('transcript'):
             lang = normalize_language_code(result.get('language')) or 'en'
             duration_sec = result.get('duration') or 0
@@ -465,6 +477,7 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 transcript_data=result['transcript'],
                 duration_seconds=int(duration_sec),
                 source_method='caption_extraction',
+                force_refresh=True,
                 title=result.get('title'),
                 channel=result.get('channel'),
             ))

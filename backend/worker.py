@@ -291,7 +291,10 @@ async def _process_caption_video(
     )
     transcript_id = t.data[0]['id']
 
-    # Best-effort master cache write (fire-and-forget, never blocks user flow)
+    # Best-effort master cache write (fire-and-forget, never blocks user flow).
+    # force_refresh=True → UPSERT: self-heals a stale/wrong-content row and lets the
+    # 90-day caption refresh actually update fetched_from_provider_at (insert-only
+    # would 409 and leave a bad row immortal). Matches the single-video path in main.py.
     lang = normalize_language_code(extract_result.get('language')) or 'en'
     asyncio.create_task(master_transcripts_write(
         video_id=video_id,
@@ -300,6 +303,7 @@ async def _process_caption_video(
         transcript_data=transcript,
         duration_seconds=duration,
         source_method='caption_extraction',
+        force_refresh=True,
         title=extract_result.get('title'),
         channel=extract_result.get('channel'),
     ))

@@ -8382,3 +8382,21 @@ docs/wiki/roadmap/priorities.md
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 ---
+[2026-07-12 23:08] commit: fix(cache): caption master-write self-heals via upsert (force_refresh=True)
+
+The caption master_transcripts write was insert-only, so once a row existed it
+could NEVER be updated: a pre-fix wrong-content row (Napoleon: Albanian stored
+under language='en') survived every re-extraction as a 409 duplicate-key, making
+the language leak un-fixable by retry/redeploy. Insert-only also broke the 90-day
+refresh — an expired row re-ran the full cascade on every request but could never
+update fetched_from_provider_at.
+
+force_refresh=True makes the write an UPSERT on (video_id,language,transcription_model),
+so a correct extraction overwrites stale/wrong content and refreshes the timestamp.
+The write only fires on a cache MISS, so overwriting with fresh content is intended.
+Applied to both the single-video path (main.py) and the playlist path (worker.py).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+---
