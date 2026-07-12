@@ -8377,3 +8377,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-12 22:49] commit: docs(lessons): SECURITY DEFINER read-RPC met user-id-param = cross-user leak → forceer auth.uid()
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+---
