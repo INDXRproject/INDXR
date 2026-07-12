@@ -143,7 +143,7 @@ SECURITY DEFINER-RPC's bypassen RLS — hun **EXECUTE-grant** is dus de enige to
 |---|---|---|
 | `add_credits`, `reserve_credits`, `settle_credits`, `refund_credits`, `refund_credits_flat`, `update_playlist_video_progress` | **service_role only** | credit-muterend; alleen de Python-backend (of de service-role Stripe-webhook) roept ze aan |
 | `deduct_credits_atomic` | `authenticated` + `service_role` | RAG-export server-action trekt de **eigen** credits van de user af (geen exploit); backend gebruikt service_role |
-| `claim_welcome_reward` | `authenticated` + `service_role` | server-action; 1× per user (`welcome_reward_claimed`-guard) |
+| `claim_welcome_reward` | `authenticated` + `service_role` | server-action; 1× per account (`welcome_reward_claimed`) **én** 1× per canoniek e-mailadres (`normalize_email`-dedup, migratie 20260712220428) |
 | `get_user_credits` | `authenticated` + `service_role` (anon+PUBLIC verwijderd) | read-only; `auth.uid()` forceert eigen id voor authenticated callers, service_role mag `p_user_id` (zie hieronder) |
 | `submit_support_ticket` | `authenticated` + `service_role` | was al gelockt (geen anon/PUBLIC) |
 
@@ -217,3 +217,23 @@ Supabase email verificatie is **uitgeschakeld** tijdens development. Checklist i
 ## Wegwerpemails
 
 `src/utils/disposable-email.ts` filtert bekende wegwerp-email providers bij registratie om spam-accounts te voorkomen.
+
+## Welkomst-credits anti-abuse (canoniek-e-mail-dedup)
+
+De 25 welkomst-credits waren misbruikbaar via de Gmail-alias-truc: `naam+test1@`, `naam+test2@`,
+`na.am@` … wijzen naar dezelfde inbox (Gmail negeert alles na `+` en negeert puntjes), maar Supabase
+Auth ziet ze als losse accounts → elk kreeg een eigen 25-credit-grant (~€0,60 echte kost elk).
+Feitelijk aangetoond: `contact+test1@indxr.ai` naast `contact@indxr.ai`, elk met eigen grant.
+
+**Fix (migratie `20260712220428`, grant-level):** `claim_welcome_reward` normaliseert het e-mailadres
+via `normalize_email(text)` (strip `+tag`; voor `gmail.com`/`googlemail.com` ook puntjes uit het
+local-part + domein-canonicalisatie) en verleent de grant **max één keer per canoniek adres**
+(`pg_advisory_xact_lock` op het canonieke adres = race-veilig). Aliassen van een reeds-beloond adres
+worden geweigerd maar blijven geldige accounts (inloggen + gratis captions). Bewust grant-level i.p.v.
+signup-block: breekt geen bestaande accounts en geen legitieme `+addressing`-gebruikers. De RPC blijft
+`authenticated`+`service_role`-only (zie RPC EXECUTE-tabel hierboven). Detail + credit-flow in
+[credit-system.md](credit-system.md#welcome-reward).
+
+**Eerlijke, geaccepteerde grens:** dit stopt de `+`/puntjes-truc, **niet** tien écht verschillende
+mailadressen — inherent aan een gratis-instapmodel zonder betaalmuur. Zwaardere lagen
+(device-fingerprint / betaalmethode-vereiste, ADR-024) zijn bewust **niet** nu gebouwd → backlog.

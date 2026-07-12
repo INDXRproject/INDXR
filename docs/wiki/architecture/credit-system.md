@@ -200,13 +200,34 @@ De frontend (`PlaylistAvailabilitySummary.tsx`) spiegelt deze logica:
 ### Welcome Reward
 
 ```
-1. Gebruiker registreert
-2. Frontend roept claimWelcomeRewardAction() aan (Server Action)
-3. Defense-in-depth check:
-   a. Controleer of er al een 'Welcome reward' entry bestaat
-   b. Roep claim_welcome_reward RPC aan (atomisch idempotent)
-4. +25 credits toegevoegd
+1. Gebruiker registreert → onboarding
+2. updateProfileAction (onboarding-voltooiing) roept claim_welcome_reward RPC aan
+3. RPC-guards (atomisch, FOR UPDATE-lock):
+   a. welcome_reward_claimed (per-account boolean) → 1× per account
+   b. Canoniek-e-mail-dedup → 1× per CANONIEK adres (zie hieronder)
+4. +25 credits + welkomstbericht (alleen als beide guards doorlaten)
 ```
+
+**Anti-abuse: canoniek-e-mail-dedup (migratie `20260712220428_welcome_reward_canonical_email_dedup`).**
+Zonder deze laag kon één Gmail-user via `naam+test1@`, `naam+test2@`, `na.am@` … oneindig "nieuwe"
+accounts maken (Gmail negeert alles na `+` en negeert puntjes) → oneindig 25 gratis credits
+(~€0,60 echte kost elk). Feitelijk aangetoond: `contact+test1@indxr.ai` kreeg een volwaardige
+eigen grant naast `contact@indxr.ai`.
+
+`claim_welcome_reward` normaliseert nu het e-mailadres via `normalize_email(text)` — strip `+tag`,
+en voor `gmail.com`/`googlemail.com` de puntjes uit het local-part (+ domein-canonicalisatie) — en
+verleent de welkomst-grant **max één keer per canoniek adres**. Aliassen van een reeds-beloond adres
+worden geweigerd (`{"success":false,"error":"Welcome reward already claimed for this email"}`), maar
+het account blijft geldig: inloggen + gratis captions werken, alleen de eenmalige grant wordt
+gededupt. `pg_advisory_xact_lock` op het canonieke adres maakt concurrent grants race-veilig.
+Bewust op **grant-niveau** (niet signup-block): breekt geen bestaande accounts en geen legitieme
+`+addressing`-gebruikers. Geverifieerd (rolled-back DB-test): fresh signup → 25 cr ✓; `+alias` → 0 cr,
+0 welcome-txns, profiel als claimed gemarkeerd ✓.
+
+**Eerlijke, geaccepteerde grens:** normalisatie stopt de `+`/puntjes-truc, **niet** tien écht
+verschillende mailadressen. Dat is inherent aan een gratis-instapmodel zonder betaalmuur. Een
+zwaardere laag (device-fingerprint / betaalmethode-vereiste, ADR-024) is bewust **niet** nu gebouwd
+→ [backlog](../roadmap/backlog.md). Zie ook [auth-and-security.md](auth-and-security.md).
 
 ---
 
