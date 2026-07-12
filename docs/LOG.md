@@ -8490,3 +8490,8 @@ docs/wiki/architecture/credit-system.md
 docs/wiki/roadmap/backlog.md
 supabase/migrations/20260712220428_welcome_reward_canonical_email_dedup.sql
 ---
+[2026-07-13 00:13] commit: docs(lessons): gratis per-account grants dedup op canoniek e-mailadres (grant-level, race-veilig)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+---
