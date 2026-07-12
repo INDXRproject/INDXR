@@ -470,6 +470,9 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
 - [ ] **2.10 — Broadcast e-mail house-style templates** (post-launch)
     De admin-broadcast-e-mail (zie `apps/app/src/lib/mail.ts` `sendBroadcastEmails`) heeft bij launch een functionele maar kale plain-text unsubscribe-footer. Post-launch: e-mails opmaken in INDXR house-style — branded HTML-template, consistent met `send.indxr.ai`.
 
+- [ ] **2.11 — Admin-brede job-indicator** (post-launch)
+    Er is nu alleen een **per-account** `ActiveJobsIndicator` — geen admin-overzicht van **álle** lopende transcriptie/playlist-jobs over alle users heen. Nodig om de werkregel *"niet naar `master` pushen terwijl er actieve jobs lopen"* (zie de werkregel bij "Nieuw geïdentificeerd (2026-07-09)" hierboven — een worker-deploy doodt elke lopende job) betrouwbaar te maken zodra er meer verkeer is: bij één actieve gebruiker volstaat de per-account-indicator, maar bij schaal moet een admin in één blik álle niet-terminale `transcription_jobs` + `playlist_extraction_jobs` kunnen zien vóór een deploy. Trigger: zodra het jobvolume groeit voorbij handmatig overzicht.
+
 ---
 
 ## Fase 3 — Schaalbaarheidsfase (3–12 maanden post-launch)
