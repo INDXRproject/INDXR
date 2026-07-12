@@ -287,7 +287,9 @@ Gebruikt in: `apps/app/src/app/api/support/submit/route.ts`
 ---
 
 ### `get_user_credits(p_user_id UUID)`
-Geeft creditsaldo en playlist-quota terug.
+Geeft creditsaldo en playlist-quota terug. **SECURITY DEFINER.**
+
+**Toegang (sinds migratie `20260712204359_get_user_credits_own_only`):** een `authenticated` caller leest **alleen zijn eigen** saldo — de functie forceert `v_target := auth.uid()` en negeert `p_user_id`. Alleen `service_role` (Python-backend/admin, `auth.uid()` IS NULL) mag een andere user lezen via `p_user_id`. `anon`+`PUBLIC` hebben geen `EXECUTE`. Dit dicht het pre-launch privacy-lek waarbij een user andermans saldo kon opvragen — zie [auth-and-security.md](auth-and-security.md#rpc-execute-privileges-2026-07-11-adr-054).
 
 **Returns:**
 ```json

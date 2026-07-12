@@ -144,12 +144,24 @@ SECURITY DEFINER-RPC's bypassen RLS — hun **EXECUTE-grant** is dus de enige to
 | `add_credits`, `reserve_credits`, `settle_credits`, `refund_credits`, `refund_credits_flat`, `update_playlist_video_progress` | **service_role only** | credit-muterend; alleen de Python-backend (of de service-role Stripe-webhook) roept ze aan |
 | `deduct_credits_atomic` | `authenticated` + `service_role` | RAG-export server-action trekt de **eigen** credits van de user af (geen exploit); backend gebruikt service_role |
 | `claim_welcome_reward` | `authenticated` + `service_role` | server-action; 1× per user (`welcome_reward_claimed`-guard) |
-| `get_user_credits` | ACL ongemoeid (anon+authenticated) | read-only; geen balans-mutatie |
+| `get_user_credits` | `authenticated` + `service_role` (anon+PUBLIC verwijderd) | read-only; `auth.uid()` forceert eigen id voor authenticated callers, service_role mag `p_user_id` (zie hieronder) |
 | `submit_support_ticket` | `authenticated` + `service_role` | was al gelockt (geen anon/PUBLIC) |
 
 Alle SECURITY DEFINER-credit-RPC's hebben nu `search_path` gepind (`public, pg_temp`) tegen search_path-hijacking. **Regel:** een nieuwe credit-MUTERENDE RPC krijgt standaard **service_role-only** EXECUTE; alleen een RPC die de eigen data van de aanroepende user muteert (of read-only is) mag `authenticated` behouden — verifieer per RPC tegen de caller-map (frontend+backend grep) vóór je een grant verbreedt.
 
-**Openstaand (post-launch hardening):** `get_user_credits(p_user_id)` accepteert een willekeurige user-id → een user kan andermans saldo lezen (minor info-leak, geen credit-diefstal). Harden door `auth.uid()` te gebruiken i.p.v. de parameter.
+**Privacy-lek GEDICHT (pre-launch, 2026-07-12, migratie `20260712204359_get_user_credits_own_only`):** `get_user_credits(p_user_id)` accepteerde een willekeurige user-id → een ingelogde user kon via een directe `rpc('get_user_credits', andermans-id)`-call het creditsaldo van een **andere** user lezen (bewezen: user A las 1.339 cr van user B). Dit stond eerder ten onrechte als "post-launch hardening" — het is een privacy-lek en is vóór launch gedicht.
+
+Fix in de functie-body: een `authenticated` caller krijgt `v_target := auth.uid()` en `p_user_id` wordt genegeerd — een user leest dus **alleen zijn eigen** saldo. Alleen `service_role` (Python-backend/admin; `auth.uid()` IS NULL) mag nog een andere user lezen via `p_user_id` — dat is het bewuste service-pad. `anon` en `PUBLIC` verloren `EXECUTE` (waren ongebruikt: alle frontend-callers staan achter `if (user)` en geven de eigen `user.id` mee).
+
+Bewijs (gerolde-back SQL-simulaties tegen productie, 2026-07-12):
+
+| Scenario | Rol | Vraagt op | Resultaat |
+|---|---|---|---|
+| Pre-fix repro | authenticated A | saldo van B | **1.339** (B's saldo) — lek |
+| Post-fix (kritiek) | authenticated A | saldo van B | **1.005** (A's eigen) — dicht |
+| Eigen read | authenticated A | eigen saldo | 1.005 ✓ (frontend ongebroken) |
+| Backend-pad | service_role | saldo van B | 1.339 ✓ (Python-backend werkt) |
+| Anon | anon | saldo van B | `permission denied` ✓ |
 
 ---
 
