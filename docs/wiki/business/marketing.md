@@ -63,6 +63,16 @@ INDXR.AI richt zich op problem-aware zoekintentie: mensen die een specifiek YouT
 **Comparison pages — worden VERWIJDERD (zie [ADR-037](../decisions/037-no-comparison-pages.md)):**  
 `/alternative/downsub`, `/alternative/notegpt`, `/alternative/turboscribe`, `/alternative/tactiq`, `/alternative/happyscribe`
 
+### Differentiator: originele caption-taal (native-anchored) — hoge-intentie/lage-concurrentie hoek
+
+**Kans (geverifieerd 2026-07-12):** "YouTube geeft de verkeerde caption-taal" is een al jaren bestaand, breed gefrustreerd probleem dat Google niet oplost — YouTube's default-caption-picker kiest onbetrouwbaar tussen de (vaak tientallen) tracks op een video: origineel + machine- + community-vertalingen. Mensen zoeken hier actief op. Bestaande tools/concurrenten lossen het **niet** op: `youtubetotranscript.com` geeft voor `Bm1RhjcdJek` (Napoleon, Engelse audio) óók **Albanees** — een menselijke community-vertaling. INDXR's **native-anchored extractie** (zie [ai-pipeline.md](../architecture/ai-pipeline.md) — ankert op `info['language']` + de `-orig`-ASR-marker, nooit een `tlang=`-vertaling) levert nu wél de originele taal, met AI-transcriptie in de echte audiotaal als vangnet. → onderscheidend, hoge-intentie, lage-concurrentie.
+
+**Keyword-cluster:** `youtube transcript wrong language`, `get original language transcript youtube`, `youtube captions showing wrong language`, `youtube transcript showing translation not original`, `youtube auto captions wrong language`.
+
+**TAAK (blocked op tooling):** check deze keyword-cluster in **Google Search Console** zodra GSC live is (impressions/positie/CTR). INDXR kan GSC-data **niet** publiek/programmatisch opvragen — dit vereist geverifieerde domein-toegang (Khidr, via de GSC-property van `indxr.ai`). Pas ná GSC-data beslissen hoeveel content-gewicht deze hoek krijgt.
+
+**Al gedaan (2026-07-12):** Q&A toegevoegd op de FAQ-pagina (`apps/marketing/src/app/docs/help/faq/page.tsx`, categorie "YouTube Transcripts") — draagt FAQPage-schema. Bestaand artikel `/youtube-transcript-non-english` is een kandidaat om met deze "wrong language vs original"-hoek te verbreden. Long-form SEO-artikel staat in [backlog.md](../roadmap/backlog.md#acquisitie--marketing) (Fase-3 SEO).
+
 ---
 
 ## Conversie Funnel

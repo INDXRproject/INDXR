@@ -13,6 +13,7 @@ Functies en verbeteringen gepland voor na de launch. Geen vaste volgorde — pri
 - [ ] SEO-pagina: `/youtube-transcript-json-api`
 - [ ] SEO-pagina: `/youtube-transcript-for-ai`
 - [ ] Channel transcriptie FAQ-pagina: waarom geen directe kanaal-extractie + workaround uitleg
+- [ ] **Long-form SEO-artikel: "Why YouTube shows the wrong caption language — and how to get the original"** *(Fase-3 SEO)* — problem-first: YouTube's caption-picker kiest onbetrouwbaar tussen origineel + machine-/community-vertalingen; bestaande tools (bv. youtubetotranscript.com) geven de vertaling (Napoleon `Bm1RhjcdJek` → Albanees). Leg uit hoe INDXR's native-anchored extractie de originele taal pakt, met AI-transcriptie als vangnet. Linkt naar `/transcribe`. Keyword-cluster + differentiator gedocumenteerd in [marketing.md](../business/marketing.md#differentiator-originele-caption-taal-native-anchored); prioriteit/omvang bepalen ná GSC-data. Kandidaat om te bundelen met het bestaande `/youtube-transcript-non-english`-artikel.
 - [ ] Referral program: 5 credits referrer + 5 credits referee (abuse-preventie ontwerpen)
 
 ---

@@ -70,6 +70,11 @@ const faqCategories: FAQCategory[] = [
         answer:
           "Yes. After extracting a transcript, click Export and select SRT. See our <a href='/youtube-srt-download'>SRT download guide</a> for more information.",
       },
+      {
+        question: "Why do I sometimes get captions in the wrong language — and how does INDXR get the original?",
+        answer:
+          "A single YouTube video often carries dozens of caption tracks — the original plus machine and community translations — and YouTube's default picker doesn't reliably return the one that matches the audio. That's why many tools hand you a translation, sometimes in a language nobody in the video is even speaking. INDXR is built to give you the <em>original</em> track instead: it detects the video's actual spoken language and anchors on that, so you get the native captions rather than an accidental translation. When a video has no usable original caption track, you can force <a href='/audio-to-text'>AI transcription</a>, which transcribes the real audio in its own language. It won't be flawless on every upload — some videos simply don't expose a clean original track — so if you hit one where the language still looks off, <a href='/contact'>send us a support ticket</a> and we'll take a look.",
+      },
     ],
   },
   {
