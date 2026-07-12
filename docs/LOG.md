@@ -8495,3 +8495,13 @@ supabase/migrations/20260712220428_welcome_reward_canonical_email_dedup.sql
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 ---
+[2026-07-13 00:26] commit: docs(roadmap): leg pre-launch Content/FAQ realiteit-audit vast (feitelijk rechttrekken, geen redesign)
+
+Scan alle user-facing content (landing/pricing/FAQ/Docs/Articles) en corrigeer claims die niet
+meer kloppen met de gebouwde realiteit (pricing/Scenario B, credit- en reserveer-model, native-
+anchored taalfix, storage-cap, welkomst-credits via inbox, gratis-caption-kostmodel). Inclusief
+het bestaande taal-Q&A-item. Scope: feitelijk, geen herschrijf (dat is Fase-3).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/priorities.md
+---
