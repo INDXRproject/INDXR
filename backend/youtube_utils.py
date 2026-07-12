@@ -261,6 +261,36 @@ async def extract_via_youtube_transcript_api(
         return None
 
 
+class _CountingYoutubeDL(yt_dlp.YoutubeDL):
+    """YoutubeDL that tallies the decompressed bytes of every HTTP response it reads, so the
+    yt-dlp caption route can report its FULL proxied Decodo egress — the metadata/watch-page +
+    player-API fetches during extract_info (~1–2 MB) — not just the separately-downloaded VTT
+    (~100 KB). Same decompressed-body convention as the step-1 requests.Session hook
+    (len(content)). Content-Length is unreliable here (the YouTube responses are chunked → no
+    Content-Length header, measured 0), so we tee .read() instead of summing headers."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.egress_read = 0
+
+    def urlopen(self, req):
+        resp = super().urlopen(req)
+        _orig_read = resp.read
+
+        def _counting_read(amt=None):
+            data = _orig_read(amt)
+            self.egress_read += len(data)
+            return data
+
+        try:
+            resp.read = _counting_read
+        except Exception:
+            # If a handler's Response type forbids attribute assignment, its bytes go uncounted.
+            # Verified against the live urllib handler that assignment works (Napoleon repro).
+            logger.warning("[YT-DLP] could not instrument response for egress counting")
+        return resp
+
+
 async def extract_with_ytdlp(
     video_id: str,
     use_proxy: bool = True,
@@ -315,7 +345,7 @@ async def extract_with_ytdlp(
             logger.info("Proxy disabled — extracting captions directly")
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with _CountingYoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
 
             subtitles = None
@@ -449,7 +479,10 @@ async def extract_with_ytdlp(
                 'language': language,
                 'language_detected': language_detected,
                 'upload_date': iso_date,
-                'proxy_bytes': caption_bytes,
+                # FULL proxied egress: yt-dlp's metadata/watch-page fetches (ydl.egress_read) +
+                # the VTT download (caption_bytes). Both decompressed-body bytes → 100% measured,
+                # symmetric with the step-1 route (no more ~100 KB-only under-count).
+                'proxy_bytes': caption_bytes + ydl.egress_read,
             }
 
     except MembersOnlyVideoError:

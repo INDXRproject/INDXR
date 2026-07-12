@@ -8312,3 +8312,30 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/operations/deployment.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-12 02:08] commit: feat(capture): measure yt-dlp's FULL proxied egress (metadata + VTT) — caption cost 100%
+
+The yt-dlp caption route measured only the VTT download (~120 KB), but yt-dlp's extract_info
+pulls the metadata/player-API through the same Decodo proxy (~1.4 MB) to find the tracks —
+uncounted. Same cost category step 1 already measures fully → the yt-dlp route under-counted
+free-caption cost ~12x.
+
+Fix: _CountingYoutubeDL subclasses yt_dlp.YoutubeDL and overrides urlopen to tee response.read(),
+summing the decompressed body of every HTTP response (same len(content) convention as the step-1
+requests.Session hook). proxy_bytes = ydl.egress_read + caption_bytes. Content-Length was 0
+(chunked) so header-summation is unreliable; .read()-tee is the correct method.
+
+Proven (fresh proxied extraction, Napoleon): metadata 1,407,573 B + VTT ~118 KB = 1,525,617 B
+(was ~120 KB). extract_info still returns valid data.
+
+Completeness (quantified, not hand-waved): yt-dlp routes ALL extractor HTTP through one path
+(urlopen), now 100% counted, plus the httpx VTT — so all proxied (Decodo-billed) egress is
+covered. The only theoretical escape is the node/ejs subprocess, which does compute on the
+already-fetched player JS (no own YouTube fetch) and wouldn't inherit the proxy anyway (=not
+Decodo cost). Per-extraction Decodo caption egress is now 100% measured on both routes.
+
+ADR-054: caption-cost model updated — asymmetry closed.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/youtube_utils.py
+docs/wiki/decisions/054-cost-usage-capture-layer.md
+---
