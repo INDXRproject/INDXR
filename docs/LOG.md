@@ -8400,3 +8400,20 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/main.py
 backend/worker.py
 ---
+[2026-07-12 23:19] commit: fix(cache): master-cache caption HIT 400'd non-English videos — language_detected must be bool
+
+ExtractResponse.language_detected is Optional[bool] (True = runtime-detected via
+lingua, False = known from source). The master-cache HIT path and its Redis backfill
+set it to mc.get("language") — a language STRING ('ar', 'ja', ...). Pydantic rejected
+the string, so every caption master-cache hit whose Redis entry was absent 400'd the
+whole request (surfaced on Arabic jKz9GLqhuPo during verification). Pre-existing since
+b666048 (master cache read, 2026-05-01); unrelated to the language-selection fix.
+
+Set language_detected=False on both the hit response and the Redis backfill (cached
+language is authoritative, not runtime-detected). Existing Redis entries poisoned with a
+string self-heal: the failed Redis hit falls through to the now-correct master read,
+which re-backfills Redis with the bool.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+---

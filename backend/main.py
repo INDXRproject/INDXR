@@ -354,7 +354,11 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                             "video_url": f"https://www.youtube.com/watch?v={video_id}",
                             "duration": mc.get("duration_seconds"),
                             "language": mc.get("language"),
-                            "language_detected": mc.get("language"),
+                            # language_detected is a BOOL (was the language runtime-detected?).
+                            # A cached hit's language is authoritative/known → False. Storing the
+                            # language STRING here (old bug) made the next Redis hit fail
+                            # ExtractResponse validation and 400 the whole request.
+                            "language_detected": False,
                         }
                         await redis.set(cache_key, json.dumps(backfill), ex=_CAPTION_CACHE_TTL)
                     except Exception:
@@ -367,7 +371,10 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                     duration=pre_meta.get("duration") or mc.get("duration_seconds"),
                     channel=pre_meta.get("channel"),
                     language=mc.get("language"),
-                    language_detected=mc.get("language"),
+                    # BOOL field: cached language is known/authoritative → False (not
+                    # runtime-detected). Passing the language string here 400'd every
+                    # caption master-cache hit (e.g. Arabic jKz9GLqhuPo).
+                    language_detected=False,
                 )
 
         # ── Cascade step 1: youtube-transcript-api ───────────────────────────
