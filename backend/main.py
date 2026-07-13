@@ -259,6 +259,29 @@ async def health_check():
         "version": "1.0.0"
     }
 
+async def _log_caption_event(user_id, video_id, proxy_bytes, cache_hit, credits_used=0, success=True):
+    """BLOK A: schrijf één per-caption event-rij voor een INGELOGDE user (usage_logs).
+    De RPC snapshot't had_paid + is_internal server-side. Anoniem (user_id None) → no-op:
+    die captions tellen in daily_cost_counters (bump_caption_proxy_bytes), niet per-rij.
+    Standalone captions kosten 0 credits (credits_used=0); playlist geeft 1 door voor betaalde video's."""
+    if not user_id:
+        return
+    try:
+        _sb = get_supabase_client()
+        await asyncio.to_thread(
+            lambda: _sb.rpc('log_caption_usage', {
+                'p_user_id': user_id,
+                'p_video_id': video_id,
+                'p_proxy_bytes': int(proxy_bytes or 0),
+                'p_cache_hit': bool(cache_hit),
+                'p_credits_used': int(credits_used or 0),
+                'p_success': bool(success),
+            }).execute()
+        )
+    except Exception as e:
+        logger.warning(f"[caption-usage] log failed for {video_id}: {e}")
+
+
 @app.post("/api/extract/youtube", response_model=ExtractResponse)
 async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(verify_backend_secret)):
     """Extract transcript from YouTube video using yt-dlp."""
@@ -290,6 +313,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                     cached_lang = result.get('language') or 'unknown'
                     track_event("backend", "caption_cache_hit", {"video_id": video_id, "lang": cached_lang})
                     logger.info(f"Caption cache HIT: {video_id}")
+                    # BLOK A: cache-hit → 0 egress, maar wél een per-user rij (funnel-inzicht).
+                    await _log_caption_event(request.user_id, video_id, 0, cache_hit=True)
                     transcript = [
                         TranscriptItem(
                             text=item['text'],
@@ -341,6 +366,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             if mc is not None:
                 logger.info(f"master_transcripts HIT (caption): {video_id} lang={normalised_lang}")
                 track_event("backend", "master_cache_hit", {"video_id": video_id, "source": "caption"})
+                # BLOK A: master-cache hit → 0 egress, per-user rij (funnel-inzicht).
+                await _log_caption_event(request.user_id, video_id, 0, cache_hit=True)
                 mc_transcript = [
                     TranscriptItem(text=s["text"], offset=s["offset"], duration=s["duration"])
                     for s in mc["transcript"]
@@ -423,25 +450,32 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
         # result can be a dict (success) or list (empty/failure)
         if isinstance(result, list) or not result:
             logger.warning(f"No captions found for {video_id}")
+            # BLOK A: mislukte caption (ingelogd) — bytes onbekend op dit pad (leeg/list-result),
+            # log 0 met success=false zodat de rij het event registreert (egress hier ~metadata-only).
+            await _log_caption_event(request.user_id, video_id, 0, cache_hit=False, success=False)
             return ExtractResponse(
                 success=False,
                 error="No captions found for this video",
                 error_type="no_captions"
             )
 
-        # Aggregate the free-caption Decodo egress (day-grain counter; NO per-extraction row).
-        # Post-cascade → covers BOTH routes now that step 1 (youtube-transcript-api) also returns
-        # proxy_bytes: step 1 (video page + timedtext) and step 2/3 (yt-dlp VTT) are both measured.
-        # This is the cache-MISS path — a Redis/master cache hit returns earlier and incurs no proxy cost.
+        # Decodo egress van de cache-MISS caption (step 1: video page + timedtext; step 2/3: yt-dlp VTT).
+        # BLOK A/D-splitsing:
+        #   • INGELOGD  → per-user usage_logs-rij (log_caption_usage). credits_used=0 (standalone captions
+        #                 zijn gratis) → deze rijen vormen de free-funnel-OPEX per scope, niet COR.
+        #   • ANONIEM   → day-grain daily_cost_counters (bump_caption_proxy_bytes), geen per-rij.
+        # Een cache-hit retourneert eerder → geen egress → geen dubbeltelling.
         cap_bytes = result.get('proxy_bytes') or 0
-        if cap_bytes:
+        if request.user_id:
+            await _log_caption_event(request.user_id, video_id, cap_bytes, cache_hit=False)
+        elif cap_bytes:
             try:
                 _cap_sb = get_supabase_client()
                 await asyncio.to_thread(
                     lambda: _cap_sb.rpc('bump_caption_proxy_bytes', {'p_bytes': cap_bytes}).execute()
                 )
             except Exception as _bump_err:
-                logger.warning(f"[caption-bytes] bump failed for {video_id}: {_bump_err}")
+                logger.warning(f"[caption-bytes] anon bump failed for {video_id}: {_bump_err}")
 
         transcript = [
             TranscriptItem(

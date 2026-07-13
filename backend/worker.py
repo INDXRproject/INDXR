@@ -126,6 +126,26 @@ async def run_whisper_job(
         logger.warning(f"← run_whisper_job ✗ (error_type={result.get('error_type')})")
 
 
+async def _log_caption_event(user_id: str, video_id: str, proxy_bytes: int, cache_hit: bool,
+                             credits_used: int = 0, success: bool = True) -> None:
+    """BLOK A: per-caption event-rij voor de PLAYLIST-route (altijd ingelogd). credits_used=1 voor
+    betaalde video's, 0 voor gratis (eerste 3) → gratis = free-funnel-OPEX, betaald = echte caption-COR.
+    De RPC snapshot't had_paid + is_internal server-side. Nooit blokkerend (best-effort)."""
+    try:
+        await asyncio.to_thread(
+            lambda: get_supabase_client().rpc('log_caption_usage', {
+                'p_user_id': user_id,
+                'p_video_id': video_id,
+                'p_proxy_bytes': int(proxy_bytes or 0),
+                'p_cache_hit': bool(cache_hit),
+                'p_credits_used': int(credits_used or 0),
+                'p_success': bool(success),
+            }).execute()
+        )
+    except Exception as e:
+        logger.warning(f"[caption-usage] playlist log failed for {video_id}: {e}")
+
+
 async def _process_caption_video(
     supabase,
     user_id: str,
@@ -191,6 +211,8 @@ async def _process_caption_video(
             )
             transcript_id = t.data[0]["id"]
             credit_amount = 0 if is_free else 1
+            # BLOK A: cache-hit → 0 egress, per-user rij (credits_used onderscheidt gratis/betaald).
+            await _log_caption_event(user_id, video_id, 0, cache_hit=True, credits_used=credit_amount)
             return True, transcript_id, None, credit_amount
 
     # Cascade step 1: youtube-transcript-api (faster, no yt-dlp overhead).
@@ -253,19 +275,18 @@ async def _process_caption_video(
             caption_model = "youtube_captions_rotated"
 
     if not isinstance(extract_result, dict) or 'transcript' not in extract_result:
+        # BLOK A: mislukte playlist-caption (ingelogd) — bytes onbekend hier, log 0/success=false.
+        await _log_caption_event(user_id, video_id, 0, cache_hit=False,
+                                 credits_used=(0 if is_free else 1), success=False)
         return False, None, 'no_captions', 0
 
-    # Aggregate the free-caption Decodo egress from the PLAYLIST route too (day-grain counter).
-    # Post-cascade → both routes measured: step 1 (youtube-transcript-api, video page + timedtext)
-    # and step 2/3 (yt-dlp VTT) each return 'proxy_bytes'. A cache-hit yields none → no double-count.
+    # Decodo egress van de cache-MISS playlist-caption (step 1: video page + timedtext; step 2/3: yt-dlp VTT).
+    # BLOK A/D: playlist-captions zijn ALTIJD ingelogd → per-user usage_logs-rij, NIET daily_cost_counters.
+    # credits_used=1 (betaald) → echte caption-COR; 0 (gratis eerste 3) → free-funnel-OPEX. Cache-hit
+    # retourneert eerder → geen egress → geen dubbeltelling.
     _cap_bytes = extract_result.get('proxy_bytes') or 0
-    if _cap_bytes:
-        try:
-            await asyncio.to_thread(
-                lambda: get_supabase_client().rpc('bump_caption_proxy_bytes', {'p_bytes': _cap_bytes}).execute()
-            )
-        except Exception as _bump_err:
-            logger.warning(f"[caption-bytes] playlist bump failed for {video_id}: {_bump_err}")
+    await _log_caption_event(user_id, video_id, _cap_bytes, cache_hit=False,
+                             credits_used=(0 if is_free else 1), success=True)
 
     transcript = extract_result['transcript']
     title_str = extract_result.get('title') or video_id

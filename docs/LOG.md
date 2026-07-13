@@ -8690,3 +8690,26 @@ gerevoked. Geverifieerd: trigger vuurt nog (postrevoke+test → is_internal=true
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: supabase/migrations/20260713143435_lock_flag_internal_fn.sql
 ---
+[2026-07-14 00:24] precompact: context compaction triggered
+[2026-07-14 00:32] commit: feat(cost/BLOK A): per-caption usage_logs voor ingelogde users
+
+Elke caption door een INGELOGDE user (standalone main.py + playlist worker.py) schrijft
+nu één usage_logs-rij: user_id, video_id, proxy_bytes (volle precisie), had_paid_at_time
+(snapshot), is_internal_at_time (snapshot), cache_hit, credits_used (0 gratis / 1 betaalde
+playlist-caption), success. Snapshots server-side in SECURITY DEFINER RPC log_caption_usage
+(REVOKE anon+authenticated, GRANT service_role — geverifieerd: alleen postgres+service_role).
+
+Anoniem (geen user_id) → ongewijzigd in daily_cost_counters (bump_caption_proxy_bytes);
+worden bewust NIET per-rij gelogd (free-funnel-OPEX, aggregaat). daily_cost_counters is
+hiermee de ANONIEME-only caption-teller geworden (basis voor Blok D-splitsing).
+
+Migratie 20260713222920: usage_logs +4 kolommen + partial index + log_caption_usage.
+Geverifieerd reversibel (BEGIN/ROLLBACK): paid-user→had_paid=true, cache-hit→bytes=0,
+paid-playlist→credits_used=1, anon→no-op (geen rij).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+backend/worker.py
+docs/LOG.md
+supabase/migrations/20260713222920_usage_logs_per_caption_event.sql
+---
