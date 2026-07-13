@@ -355,3 +355,17 @@ Een user mag maximaal **3** gelijktijdige jobs draaien. De cap is financieel-kri
 
 - **Backend (`main.py`):** `_count_active_jobs(supabase, user_id)` telt niet-terminale, verse jobs over `transcription_jobs` (`pending/downloading/transcribing/saving`) + `playlist_extraction_jobs` (`running/retry_pending`), met de dedup-versheidsfilter (`created_at` <30m OF `last_heartbeat_at` <10m) zodat zombie/stale jobs niet meetellen. `interrupted` is een watchdog-herstelstaat → bewust NIET geteld. De check draait in `/api/transcribe/whisper` (ná dedup, vóór job-insert + `reserve_credits`) en in `/api/playlist/extract` (vóór job-insert + reserve). Bij `count >= 3` → **HTTP 429** `{code: "too_many_jobs"}`; de Next.js-routes forwarden status + `error` door. Geldt ook voor retry / Retry-all (zelfde endpoint).
 - **Frontend (`ActiveJobsIndicator`):** toont het werkelijke aantal via dezelfde filter, geteld met de browser-Supabase-client onder RLS (twee count-queries). Vervangt de oude sessionStorage-teller die twee gelijktijdige same-type jobs als "1" telde. **Houd de statuslijsten in sync met `_count_active_jobs`** (zie LESSONS: active-job filter).
+
+---
+
+## GELD-blok / money-model (admin, etappe 1) — ADR-055
+
+Het admin-dashboard toont een volledige P&L-keten uit één auditeerbare RPC. Interne/test-accounts worden uit **élk** cijfer gefilterd.
+
+- **`product_type`-stempel** (`credit_transactions.product_type`): leaf-types `ai_transcription / ai_summary / rag / caption` die credits consumeren. **`playlist` is GEEN leaf** — een playlist is een composiet (`playlist_id IS NOT NULL`) over caption + ai_transcription. Gestempeld zonder RPC-signature-wijziging: `settle_credits`→`'ai_transcription'`, `update_playlist_video_progress`→`'caption'`, `deduct_credits_atomic`→`p_metadata->>'product_type'` (caller: summary='ai_summary', legacy AssemblyAI='ai_transcription', RAG='rag'). Historische rijen eenmalig gebackfilld via reason-mapping; reserveringen/refunds bewust NULL.
+- **`profiles.is_internal`**: interne/test-accounts, uitgesloten van alle geldcijfers. Uitbreidbaar via `UPDATE profiles SET is_internal=true WHERE id=…`.
+- **Revenue = purchased-only, granted-first**: alleen Stripe-aankopen dragen omzet; verbruik van *granted* credits = acquisitiekost (OPEX). Bij gepoolde credits: verbruikt-purchased = `LEAST(purchased, GREATEST(0, consumed−granted))`. Recognized = verbruikt-purchased × €/credit; Deferred = rest-purchased × €/credit.
+- **`opex_expenses(period, category, channel, eur)`**: losse ads/marketing + periodieke opex, los van `cost_config` (tarieven). CAC-basis etappe 2.
+- **`admin_geld_summary()`** (SECURITY DEFINER, **service_role-only**): geeft beide scopes (external=echt, internal=test) + tarieven + globale OPEX. COR-per-type uit job-tabellen (AssemblyAI-minuten + Decodo-egress gemeten; **caption-COR geschat** — playlist-egress niet per-video gemeten; RAG=€0). Balans altijd uit `user_credits` (niet purchased−consumed afgeleid).
+
+**Toestand bij oplevering (2026-07-13):** ná filter is de echte externe economie €0 (pre-revenue) — alle gemeten activiteit stond op interne accounts. Het GELD-blok toont dit eerlijk + een intern/test-panel als bewijs dat de berekening werkt.
