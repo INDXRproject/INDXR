@@ -257,6 +257,29 @@ Whisper-pad gebruikt nog steeds `deduct_credits_atomic`, met idempotency via de 
 
 ---
 
+## Kost-capture (COR) — caption-egress & storage (ADR-057)
+
+Credits = wat de **user** betaalt. Daarnaast meet de backend de **werkelijke kost** (COR) zodat het money-model sluit. Zie [ADR-057](../decisions/057-cost-model-close.md) voor de volledige sluit-test.
+
+**Caption Decodo-egress — twee bronnen, geen overlap:**
+
+| Wie | Waar gemeten | Money-model-regel |
+|-----|--------------|-------------------|
+| **Ingelogd** (standalone + playlist) | Per-rij in `usage_logs` via `log_caption_usage` (`proxy_bytes`, `had_paid_at_time`, `is_internal_at_time`, `cache_hit`, `credits_used`) | `credits_used>0` → **echte** caption-COR; `credits_used=0` → free-funnel-OPEX (per scope intern/extern) |
+| **Anoniem** | Dag-aggregaat in `daily_cost_counters` (`bump_caption_proxy_bytes`) | free-funnel-OPEX (globaal) |
+
+- **Cache-hits** (Redis/master) schrijven `proxy_bytes=0` → tellen $0 (geen overcounting).
+- Caption-COR is **gemeten**, niet meer geschat uit de dagteller (`cor_caption_estimated=false`).
+- Standalone captions kosten altijd 0 credits; playlist-captions 1 credit (behalve gratis-3) — `credits_used` draagt dat onderscheid.
+
+**Whisper-egress:** `transcription_jobs.proxy_bytes`, nu ook op **mislukte** jobs (egress opgehangen aan de download-exception) en **gesommeerd over alle retry-pogingen** (`audio_utils`).
+
+**Storage-COR (R2):** `max(0, GB − 10) × $0,015 × usd_eur_rate` op de externe `user_credits.library_bytes`-footprint. Free tier (10 GB) is account-globaal → één globale COR-regel. R2-egress = €0. Nu ~€0.
+
+**Playlist (Blok F, bevestigt ADR-010):** een AI-transcriptie-video wordt **per minuut** belast (geen vlakke 1-credit playlist-kost, geen gratis-3-korting op whisper); caption- en whisper-stroom zijn **per video exclusief** (`use_whisper_ids`-lidmaatschap) → DB-overlap = 0.
+
+---
+
 ## Paid User Status
 
 **⚠️ Gedeeltelijk geïmplementeerd.** De `isPremium`-check in API routes werkt via `total_credits_purchased > 0` (uit de `get_user_credits` RPC). Een apart `has_ever_purchased` veld in `profiles` en een `isPaidUser` boolean in AuthContext bestaan **nog niet** in de code.

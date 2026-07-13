@@ -8765,3 +8765,25 @@ apps/app/src/app/admin/finance/FinanceView.tsx
 supabase/migrations/20260713223654_cost_config_r2_storage_rate.sql
 supabase/migrations/20260713223907_geld_summary_caption_split_and_storage.sql
 ---
+[2026-07-14 00:45] cost/sluit-model: BLOK A-F — money-model gesloten. A: per-caption usage_logs voor ingelogde users (log_caption_usage RPC, snapshots had_paid/is_internal, service_role-only); anon→daily_cost_counters. B: egress op mislukte jobs (exception.proxy_bytes → pipeline persist). C: som egress alle retry-pogingen (audio_utils). D: caption dubbeltelling weg — echte COR uit usage_logs i.p.v. dagteller-schatting, cache-hits=0. E: R2 storage-COR-regel (max(0,GB-10)×$0,015×fx). F: playlist per-minuut voor whisper (bevestigd). Sluit-test geverifieerd: buckets=24.677.421B = onafhankelijk totaal, 0 overlap/gap. | gewijzigd: backend/main.py, backend/worker.py, backend/audio_utils.py, backend/transcription_pipeline.py, apps/app/src/app/admin/adminTypes.ts, apps/app/src/app/admin/finance/FinanceView.tsx, supabase/migrations/{20260713222920,20260713223654,20260713223907}, docs/wiki/decisions/057-cost-model-close.md, docs/wiki/INDEX.md, docs/wiki/architecture/credit-system.md
+[2026-07-14 00:59] commit: docs(cost/BLOK F): ADR-057 money-model-sluit + playlist-kostlogica + sluit-test
+
+ADR-057 (money-model close): documenteert Blok A-F + de geverifieerde sluit-test
+(Decodo-egress partitioneert exact: Σ buckets 24.677.421 B == onafhankelijk totaal,
+0 overlap/gap). INDEX.md-beslissingstabel bijgewerkt.
+
+credit-system.md: nieuwe kost-capture-sectie (caption-egress ingelogd usage_logs vs
+anoniem daily_cost_counters; cache-hit=0; whisper incl. mislukt + retry-som; R2 storage-COR).
+BLOK F bevestigd + gedocumenteerd: AI-transcriptie-playlist-video = per minuut (geen vlakke
+1-credit, geen gratis-3 op whisper); caption/whisper per video exclusief → DB-overlap 0.
+
+LESSONS: aggregaat-teller nooit twee rollen (OPEX én COR-basis); splitbare kost hoort op
+per-event rijen met snapshots; egress capturen op mislukte ops + over alle retries.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/credit-system.md
+docs/wiki/decisions/057-cost-model-close.md
+---
