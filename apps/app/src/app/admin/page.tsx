@@ -1,31 +1,45 @@
+import Link from "next/link"
 import { createAdminClient } from "@indxr/shared/utils/supabase/admin"
-import { PROCESSING_METHODS } from "@indxr/shared/types/transcript"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@indxr/shared/components/ui/table"
-import { GeldBlock, type GeldSummary } from "./GeldBlock"
+import { eur, pct, type GeldSummary, type GrowthSummary, type OperationsSummary } from "./adminTypes"
 
-function MetricCard({
-  label,
-  value,
-  sub,
+// A block summary card linking to its full tab: one headline + two supporting stats.
+function BlockCard({
+  href, title, headline, headlineSub, stats,
 }: {
-  label: string
-  value: string | number
-  sub?: string
+  href: string
+  title: string
+  headline: string
+  headlineSub: string
+  stats: { label: string; value: string }[]
 }) {
   return (
-    <div className="rounded-lg border bg-surface p-4 space-y-1">
-      <p className="text-xs text-fg-muted uppercase tracking-wide">
-        {label}
-      </p>
-      <p className="text-2xl font-bold">{value}</p>
-      {sub && <p className="text-xs text-fg-muted">{sub}</p>}
+    <Link
+      href={href}
+      className="group rounded-xl border bg-surface p-5 transition-colors hover:border-strong hover:bg-surface-elevated"
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">{title}</span>
+        <span className="text-fg-subtle transition-transform group-hover:translate-x-0.5">→</span>
+      </div>
+      <p className="mt-3 text-3xl font-bold tabular-nums text-fg-strong">{headline}</p>
+      <p className="text-xs text-fg-muted">{headlineSub}</p>
+      <div className="mt-4 flex gap-6 border-t pt-3">
+        {stats.map((s) => (
+          <div key={s.label}>
+            <p className="text-sm font-semibold tabular-nums">{s.value}</p>
+            <p className="text-[11px] text-fg-muted">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </Link>
+  )
+}
+
+function Total({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border bg-surface px-4 py-3">
+      <p className="text-lg font-bold tabular-nums">{value}</p>
+      <p className="text-xs text-fg-muted">{label}</p>
     </div>
   )
 }
@@ -33,274 +47,87 @@ function MetricCard({
 export default async function AdminOverviewPage() {
   const admin = createAdminClient()
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-
-  // Count total users from auth.users — profiles table may be missing rows
-  // for users created without triggering the profile trigger.
-  // The SDK's TypeScript type doesn't expose `total`, so we fetch a large page and count.
-  const { data: authUsersAll } = await admin.auth.admin.listUsers({ perPage: 1000 })
-  const totalUsers = authUsersAll?.users?.length ?? 0
-
   const [
-    { count: totalTranscripts },
-    { data: activeUsers7dData },
-    { data: recentTranscripts },
-    { count: newUsers7d },
-    { data: purchaseTransactions },
-    { count: whisperCount },
-    { data: allTranscriptUsers },
     { data: geldRaw },
+    { data: growthRaw },
+    { data: opsRaw },
+    { count: totalTranscripts },
+    { data: authUsers },
   ] = await Promise.all([
-    admin.from("transcripts").select("*", { count: "exact", head: true }),
-    // Fetch user_ids for distinct active user count
-    admin
-      .from("transcripts")
-      .select("user_id")
-      .gte("created_at", sevenDaysAgo),
-    admin
-      .from("transcripts")
-      .select("id, user_id, title, processing_method, created_at")
-      .order("created_at", { ascending: false })
-      .limit(20),
-    // New users in last 7 days
-    admin
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", sevenDaysAgo),
-    // All credit purchases (for revenue + paying users)
-    admin
-      .from("credit_transactions")
-      .select("user_id, metadata")
-      .eq("type", "credit"),
-    // Whisper transcript count — beide waarden: 'whisper_ai' (legacy frontend) en 'assemblyai' (backend)
-    admin
-      .from("transcripts")
-      .select("*", { count: "exact", head: true })
-      .in("processing_method", [PROCESSING_METHODS.WHISPER_LEGACY, PROCESSING_METHODS.ASSEMBLYAI]),
-    // All transcript user_ids for top users calc
-    admin.from("transcripts").select("user_id, credits_used, created_at"),
-    // GELD money-model (interne accounts uitgesloten in de external-scope)
     admin.rpc("admin_geld_summary"),
+    admin.rpc("admin_growth_summary"),
+    admin.rpc("admin_operations_summary"),
+    admin.from("transcripts").select("*", { count: "exact", head: true }),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
 
   const geld = geldRaw as GeldSummary | null
+  const growth = growthRaw as GrowthSummary | null
+  const ops = opsRaw as OperationsSummary | null
 
-  // Distinct active users in last 7 days
-  const activeUsers7d = new Set(activeUsers7dData?.map((r) => r.user_id)).size
-
-  // --- Derived metrics (global = external + internal, uit de auditeerbare geld-RPC) ---
-  // Balans uit user_credits (gezaghebbend), niet purchased−consumed afgeleid.
-  const totalCreditsPurchased = geld ? geld.external.purchased_cr + geld.internal.purchased_cr : 0
-  const totalCreditsGranted = geld ? geld.external.granted_cr + geld.internal.granted_cr : 0
-  const totalCreditsConsumed = geld ? geld.external.consumed_cr + geld.internal.consumed_cr : 0
-  const totalCreditsBalance = geld ? geld.external.balance_cr + geld.internal.balance_cr : 0
-
-  // Paying users: distinct user_ids with a Stripe purchase
-  const payingUserIds = new Set(
-    (purchaseTransactions ?? [])
-      .filter((tx) => tx.metadata?.stripe_session_id)
-      .map((tx) => tx.user_id)
-  )
-  const payingUsers = payingUserIds.size
-  const conversionRate =
-    totalUsers && totalUsers > 0
-      ? ((payingUsers / totalUsers) * 100).toFixed(1)
-      : "0.0"
-
-  const whisperPct =
-    totalTranscripts && totalTranscripts > 0 && whisperCount != null
-      ? ((whisperCount / totalTranscripts) * 100).toFixed(1)
-      : "0.0"
-
-  // --- Top 10 users by transcript count ---
-  const userTranscriptMap: Record<string, { count: number; creditsUsed: number; lastActive: string }> = {}
-  for (const t of allTranscriptUsers ?? []) {
-    if (!userTranscriptMap[t.user_id]) {
-      userTranscriptMap[t.user_id] = { count: 0, creditsUsed: 0, lastActive: t.created_at }
-    }
-    userTranscriptMap[t.user_id].count++
-    userTranscriptMap[t.user_id].creditsUsed += t.credits_used ?? 0
-    if (t.created_at > userTranscriptMap[t.user_id].lastActive) {
-      userTranscriptMap[t.user_id].lastActive = t.created_at
-    }
-  }
-
-  const topUserIds = Object.entries(userTranscriptMap)
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 10)
-    .map(([id]) => id)
-
-  // Fetch emails for top users + recent transcripts in one pass
-  const allUserIds = [...new Set([
-    ...topUserIds,
-    ...(recentTranscripts?.map((t) => t.user_id) ?? []),
-  ])]
-
-  const emailMap: Record<string, string> = {}
-  await Promise.all(
-    allUserIds.map(async (id) => {
-      const { data } = await admin.auth.admin.getUserById(id)
-      if (data.user?.email) emailMap[id] = data.user.email
-    })
-  )
+  const totalUsers = authUsers?.users?.length ?? 0
+  const balance = geld ? geld.external.balance_cr + geld.internal.balance_cr : 0
+  const preRevenue = geld ? geld.external.cash_in_gross === 0 && geld.external.consumed_cr === 0 : true
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Overview</h1>
-        <p className="text-fg-muted text-sm">
-          Platform metrics and recent activity
-        </p>
+        <p className="text-sm text-fg-muted">Control center summary</p>
       </div>
 
-      {/* GELD — money-model (ETAPPE 1). Interne accounts uitgesloten. */}
-      {geld && <GeldBlock data={geld} />}
-
-      {/* Row 1 — Credit-boekhouding (globaal, alle users) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <MetricCard
-          label="Credits Purchased"
-          value={totalCreditsPurchased.toLocaleString()}
-          sub="via Stripe"
-        />
-        <MetricCard
-          label="Credits Granted"
-          value={totalCreditsGranted.toLocaleString()}
-          sub="gratis toegekend"
-        />
-        <MetricCard
-          label="Credits Consumed"
-          value={totalCreditsConsumed.toLocaleString()}
-          sub="per product_type"
-        />
-        <MetricCard
-          label="Credits Balance"
-          value={totalCreditsBalance.toLocaleString()}
-          sub="uit user_credits (bron)"
-        />
-        <MetricCard label="Total Transcripts" value={totalTranscripts ?? 0} />
-      </div>
-
-      {/* Row 2 — Users & funnel (globaal) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <MetricCard
-          label="Total Users"
-          value={totalUsers ?? 0}
-          sub={totalUsers >= 1000 ? "max 1000 getoond" : undefined}
-        />
-        <MetricCard
-          label="Active 7d"
-          value={activeUsers7d ?? 0}
-          sub="met transcriptie"
-        />
-        <MetricCard label="New Users (7d)" value={newUsers7d ?? 0} />
-        <MetricCard
-          label="Paying Users"
-          value={payingUsers}
-          sub={`of ${totalUsers ?? 0} total`}
-        />
-        <MetricCard
-          label="Conversion"
-          value={`${conversionRate}%`}
-          sub="free → paid"
-        />
-        <MetricCard
-          label="Whisper Usage"
-          value={`${whisperPct}%`}
-          sub={`${whisperCount ?? 0} of ${totalTranscripts ?? 0}`}
-        />
-      </div>
-
-      {/* Recent Transcripts */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3">Recent Transcripts</h2>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentTranscripts?.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="text-center text-fg-muted py-8"
-                  >
-                    No transcripts yet
-                  </TableCell>
-                </TableRow>
-              )}
-              {recentTranscripts?.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell className="text-xs text-fg-muted max-w-[180px] truncate">
-                    {emailMap[t.user_id] ?? t.user_id.slice(0, 8) + "…"}
-                  </TableCell>
-                  <TableCell className="max-w-[260px] truncate">
-                    {t.title ?? "Untitled"}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs bg-surface-elevated px-1.5 py-0.5 rounded">
-                      {t.processing_method ?? "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-xs text-fg-muted">
-                    {new Date(t.created_at).toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      {/* Top Users */}
-      {topUserIds.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Top Users</h2>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Transcripts</TableHead>
-                  <TableHead>Credits Used</TableHead>
-                  <TableHead>Last Active</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {topUserIds.map((userId, i) => {
-                  const stats = userTranscriptMap[userId]
-                  return (
-                    <TableRow key={userId}>
-                      <TableCell className="text-xs text-fg-muted w-8">
-                        {i + 1}
-                      </TableCell>
-                      <TableCell className="text-xs max-w-[220px] truncate">
-                        {emailMap[userId] ?? userId.slice(0, 8) + "…"}
-                      </TableCell>
-                      <TableCell className="text-xs font-mono font-semibold">
-                        {stats.count}
-                      </TableCell>
-                      <TableCell className="text-xs font-mono">
-                        {stats.creditsUsed}
-                      </TableCell>
-                      <TableCell className="text-xs text-fg-muted">
-                        {new Date(stats.lastActive).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
+      {preRevenue && (
+        <div className="rounded-xl border border-warning-border bg-warning-subtle/40 px-4 py-3 text-sm">
+          <span className="font-semibold">Pre-revenue.</span> The real (external) economy is €0 — all
+          measured activity so far is internal testing. Figures below reflect real users only.
         </div>
       )}
+
+      <div className="grid gap-3 lg:grid-cols-3">
+        {geld && (
+          <BlockCard
+            href="/admin/finance"
+            title="Finance"
+            headline={eur(geld.external.recognized_revenue)}
+            headlineSub="recognized revenue (real)"
+            stats={[
+              { label: "cash in", value: eur(geld.external.cash_in_gross) },
+              { label: "deferred", value: eur(geld.external.deferred_revenue) },
+            ]}
+          />
+        )}
+        {growth && (
+          <BlockCard
+            href="/admin/growth"
+            title="Growth"
+            headline={growth.external_total.toLocaleString()}
+            headlineSub="external signups"
+            stats={[
+              { label: "paying", value: growth.monetization.paying.toLocaleString() },
+              { label: "conversion", value: pct(growth.monetization.conversion) },
+            ]}
+          />
+        )}
+        {ops && (
+          <BlockCard
+            href="/admin/operations"
+            title="Operations"
+            headline={pct(ops.success_rate)}
+            headlineSub="job success rate"
+            stats={[
+              { label: "jobs", value: ops.jobs.total.toLocaleString() },
+              { label: "in flight", value: ops.jobs.in_flight.toLocaleString() },
+            ]}
+          />
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Total label="Total users" value={totalUsers.toLocaleString()} />
+        <Total label="Total transcripts" value={(totalTranscripts ?? 0).toLocaleString()} />
+        <Total label="Credits in circulation" value={balance.toLocaleString()} />
+        <Total label="Internal accounts" value={(geld?.counts.internal_profiles ?? 0).toLocaleString()} />
+      </div>
     </div>
   )
 }

@@ -8611,3 +8611,44 @@ capacity 1.9s+89.2s. GEEN railway.json.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: supabase/migrations/20260713141556_admin_growth_ops_and_autoflag.sql
 ---
+[2026-07-13 16:27] commit: feat(admin): redesign — nav tabs, Finance/Growth/Operations blocks, thin Overview
+
+- AdminNav client component: 8 tabs (Overview·Finance·Growth·Operations·Users·Transcripts·
+  Support·Announcements) met active-state highlight. Credits + Paid Users van nav gehaald
+  (data leeft in Finance/Growth). Rename tickets→support, broadcast→announcements (page-routes
+  + headings; API-routes /api/admin/tickets|broadcast onveranderd, fetch-URLs intact).
+- Finance: top-down P&L-keten (Cash in → −VAT → Revenue met recognized|deferred split-balk →
+  −COR met per-type badge-balk + real/estimated split → Gross profit+marge → −OPEX (uitklap) →
+  Net profit+marge). Zichtbare operator-connectors tussen regels. Test/intern achter Switch
+  (default dicht). Deferred nu expliciet zichtbaar als obligation.
+- Growth: acquisition→activation→monetization→retention funnel + CAC/LTV/LTV:CAC-kaarten,
+  nette lege staat pre-launch.
+- Operations: success-rate, error-donut (inline SVG, dynamische error-types), capaciteit
+  (queue/wachttijd/verwerkingstijd) — alle jobs (systeem-health).
+- Overview: dun — 3 block-summary-kaarten (linken naar tabs) + platform-totalen + pre-revenue
+  banner. Recent Transcripts/Top Users/7d-vanity/GeldBlock verwijderd.
+- adminTypes.ts: gedeelde types + formatters. Alles Engels (NL/EN-mix weg). GeldBlock.tsx
+  verwijderd (vervangen door FinanceView).
+
+Geverifieerd: pnpm build:app groen, alle 5 nieuwe routes in manifest (finance/growth/
+operations/support/announcements). GEEN railway.json.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/AdminNav.tsx
+apps/app/src/app/admin/GeldBlock.tsx
+apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/announcements/BroadcastComposer.tsx
+apps/app/src/app/admin/announcements/page.tsx
+apps/app/src/app/admin/broadcast/BroadcastComposer.tsx
+apps/app/src/app/admin/broadcast/page.tsx
+apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/page.tsx
+apps/app/src/app/admin/growth/page.tsx
+apps/app/src/app/admin/layout.tsx
+apps/app/src/app/admin/operations/page.tsx
+apps/app/src/app/admin/page.tsx
+apps/app/src/app/admin/support/TicketsTable.tsx
+apps/app/src/app/admin/support/page.tsx
+apps/app/src/app/admin/tickets/TicketsTable.tsx
+apps/app/src/app/admin/tickets/page.tsx
+---

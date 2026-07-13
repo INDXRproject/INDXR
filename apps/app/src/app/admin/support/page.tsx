@@ -53,7 +53,7 @@ export default async function AdminTicketsPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-fg">Tickets</h1>
+        <h1 className="text-xl font-semibold text-fg">Support</h1>
         <span className="text-sm text-fg-muted">{enriched.length} total</span>
       </div>
       <TicketsTable initialTickets={enriched} initialRepliesByTicket={repliesByTicket} />
