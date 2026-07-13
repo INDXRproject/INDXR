@@ -100,19 +100,22 @@ def deduct_credits(
     user_id: str,
     amount: int,
     reason: str,
-    metadata: Optional[Dict] = None
+    metadata: Optional[Dict] = None,
+    product_type: Optional[str] = None
 ) -> Dict:
     """
     Atomically deduct credits from user account.
-    
+
     Uses PostgreSQL function with row-level locking to prevent race conditions.
-    
+
     Args:
         user_id: User UUID
         amount: Number of credits to deduct
         reason: Reason for deduction (e.g., "Whisper transcription")
         metadata: Optional metadata dict (e.g., video_id, duration)
-        
+        product_type: COR-stempel voor het GELD-dashboard (ai_transcription/ai_summary/rag/caption).
+                      deduct_credits_atomic leest dit uit p_metadata->>'product_type'.
+
     Returns:
         Dict with keys:
             - success (bool): Whether deduction succeeded
@@ -122,13 +125,17 @@ def deduct_credits(
     """
     try:
         supabase = get_supabase_client()
-        
+
+        rpc_metadata = dict(metadata or {})
+        if product_type is not None:
+            rpc_metadata['product_type'] = product_type
+
         # Call atomic deduction function
         response = supabase.rpc('deduct_credits_atomic', {
             'p_user_id': user_id,
             'p_amount': amount,
             'p_reason': reason,
-            'p_metadata': metadata or {}
+            'p_metadata': rpc_metadata
         }).execute()
         
         if response.data:

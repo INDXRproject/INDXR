@@ -8523,3 +8523,21 @@ Changed: supabase/migrations/20260713131349_geld_product_type_stamp.sql
 supabase/migrations/20260713131613_geld_is_internal_flag.sql
 supabase/migrations/20260713131621_geld_opex_expenses.sql
 ---
+[2026-07-13 15:20] commit: feat(geld): stempel product_type in deduct_credits_atomic-callers
+
+deduct_credits-wrapper krijgt product_type-param (geïnjecteerd in p_metadata):
+- AI summary (main.py)            -> 'ai_summary'
+- legacy AssemblyAI-deducts (pipeline, cache-hit + normaal) -> 'ai_transcription'
+- RAG single + bulk export (rag-export.ts) -> 'rag' in p_metadata
+
+settle_credits/update_playlist_video_progress stempelen zelf (ai_transcription/caption),
+dus geen caller-wijziging daar. Reservering-flow (settle) al gedekt.
+
+Geverifieerd: py_compile groen op 3 backend-files; pnpm build:app groen (shared getypecheckt).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/credit_manager.py
+backend/main.py
+backend/transcription_pipeline.py
+packages/shared/src/actions/rag-export.ts
+---

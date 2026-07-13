@@ -35,7 +35,7 @@ export async function deductRagExportCreditsAction(
     p_user_id: user.id,
     p_amount: cost,
     p_reason: 'RAG JSON Export',
-    p_metadata: { duration_seconds: durationSeconds },
+    p_metadata: { duration_seconds: durationSeconds, product_type: 'rag' },
   })
 
   if (error) return { success: false, error: error.message }
@@ -111,7 +111,7 @@ export async function bulkDeductRagExportCreditsAction(
     p_user_id: user.id,
     p_amount: totalCost,
     p_reason: 'Bulk RAG JSON Export',
-    p_metadata: { transcript_count: newExports.length },
+    p_metadata: { transcript_count: newExports.length, product_type: 'rag' },
   })
 
   if (error) return { success: false, error: error.message }

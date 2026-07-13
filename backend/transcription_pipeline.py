@@ -334,6 +334,7 @@ async def do_assemblyai_transcription(
                             'video_id': video_id,
                             'job_id': job_id,
                         },
+                        product_type='ai_transcription',
                     )
                     if not deduction_result.get('success'):
                         await _update_job(status="error", error_message="Credit deduction failed")
@@ -499,6 +500,7 @@ async def do_assemblyai_transcription(
                     'video_id': video_id,
                     'job_id': job_id,
                 },
+                product_type='ai_transcription',
             )
             if not deduction_result.get('success'):
                 logger.error(f"[pipeline] Credit deduction failed: {deduction_result.get('error')}")

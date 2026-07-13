@@ -1053,7 +1053,8 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             user_id=request.user_id,
             amount=3,
             reason="AI Summarization",
-            metadata={"transcript_id": request.transcript_id}
+            metadata={"transcript_id": request.transcript_id},
+            product_type="ai_summary"
         )
         if not deduction_result.get('success'):
             logger.error(f"Credit deduction failed: {deduction_result.get('error')}")
