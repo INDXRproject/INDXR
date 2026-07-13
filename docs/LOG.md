@@ -8652,3 +8652,19 @@ apps/app/src/app/admin/support/page.tsx
 apps/app/src/app/admin/tickets/TicketsTable.tsx
 apps/app/src/app/admin/tickets/page.tsx
 ---
+[2026-07-13 16:32] commit: feat(admin): internal toggle in Users + new grant-reason enum
+
+- Mark internal/external per-user toggle (nieuwe /api/admin/toggle-internal route + button +
+  'internal'-badge). Users-query haalt nu is_internal op. Reversibel geverifieerd: mbelabas
+  extern markeren trekt €6.98 direct de echte economie in; rollback schoon (extern nu €0).
+- Grant-reason enum: Testing/Bug report/Billing/Feedback/Goodwill (gekoppeld aan ticketsoorten
+  + goodwill). Welcome + Refund blijven automatisch, geen handmatige keuze. Route-validatie mee.
+
+Geverifieerd: pnpm build:app groen. GEEN railway.json.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/users/UsersTable.tsx
+apps/app/src/app/admin/users/page.tsx
+apps/app/src/app/api/admin/add-credits/route.ts
+apps/app/src/app/api/admin/toggle-internal/route.ts
+---

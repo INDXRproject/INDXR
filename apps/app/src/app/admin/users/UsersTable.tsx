@@ -31,6 +31,7 @@ interface UserRow {
   joined: string
   lastActive: string | null
   suspended: boolean
+  isInternal: boolean
 }
 
 interface TranscriptDetail {
@@ -50,8 +51,9 @@ interface TransactionDetail {
 
 type Status = { type: "success" | "error"; message: string }
 
-// Grant-reden-enum voor het GELD-dashboard (given credits per reason).
-const GRANT_REASONS = ["Testing", "Welcome", "Refund", "Goodwill"] as const
+// Manual grant-reason enum (Welcome + Refund happen automatically, not here).
+// Aligned with the support-ticket categories + free-form goodwill.
+const GRANT_REASONS = ["Testing", "Bug report", "Billing", "Feedback", "Goodwill"] as const
 type GrantReason = (typeof GRANT_REASONS)[number]
 
 function StatusBanner({
@@ -350,6 +352,32 @@ function UserRowItem({
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [suspending, setSuspending] = useState(false)
   const [isSuspended, setIsSuspended] = useState(user.suspended)
+  const [flagging, setFlagging] = useState(false)
+  const [isInternal, setIsInternal] = useState(user.isInternal)
+
+  async function toggleInternal() {
+    setFlagging(true)
+    try {
+      const res = await fetch("/api/admin/toggle-internal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, isInternal: !isInternal }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setIsInternal(!isInternal)
+      onStatus({
+        type: "success",
+        message: !isInternal
+          ? `${user.email} marked internal — excluded from real economy`
+          : `${user.email} marked external — counts in real economy`,
+      })
+    } catch (err: unknown) {
+      onStatus({ type: "error", message: err instanceof Error ? err.message : "Failed to update flag" })
+    } finally {
+      setFlagging(false)
+    }
+  }
 
   async function toggleSuspend() {
     setSuspending(true)
@@ -397,12 +425,19 @@ function UserRowItem({
             : "—"}
         </TableCell>
         <TableCell>
-          <Badge
-            variant={isSuspended ? "destructive" : "secondary"}
-            className="text-xs"
-          >
-            {isSuspended ? "suspended" : "active"}
-          </Badge>
+          <div className="flex flex-col items-start gap-1">
+            <Badge
+              variant={isSuspended ? "destructive" : "secondary"}
+              className="text-xs"
+            >
+              {isSuspended ? "suspended" : "active"}
+            </Badge>
+            {isInternal && (
+              <span className="inline-flex items-center rounded-full bg-warning-subtle px-2 py-0.5 text-[10px] font-medium text-warning">
+                internal
+              </span>
+            )}
+          </div>
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-1 flex-wrap min-w-[280px]">
@@ -430,6 +465,15 @@ function UserRowItem({
               disabled={suspending}
             >
               {isSuspended ? "Unsuspend" : "Suspend"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs"
+              onClick={toggleInternal}
+              disabled={flagging}
+            >
+              {isInternal ? "Mark external" : "Mark internal"}
             </Button>
             <Button
               size="sm"

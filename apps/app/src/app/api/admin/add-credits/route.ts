@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 })
   }
 
-  // Grant-reden-enum voor het GELD-dashboard (given credits per reason).
-  const GRANT_REASONS = ["Testing", "Welcome", "Refund", "Goodwill"]
+  // Manual grant-reason enum (Welcome + Refund are automatic elsewhere, not admin grants).
+  const GRANT_REASONS = ["Testing", "Bug report", "Billing", "Feedback", "Goodwill"]
   const category = GRANT_REASONS.includes(reasonCategory) ? reasonCategory : "Testing"
   const cleanNote = typeof note === "string" ? note.trim() : ""
   const reasonText = cleanNote ? `${category}: ${cleanNote}` : category
