@@ -8594,3 +8594,20 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 supabase/migrations/20260713134059_geld_lock_summary_rpc.sql
 ---
+[2026-07-13 16:17] commit: feat(admin): auto-flag test-accounts + growth/operations RPCs
+
+- flag_internal_test_account() BEFORE INSERT trigger op profiles: @indxr-test.com + elk
+  +test-adres -> is_internal=true bij aanmaak. Reversibel geverifieerd (probe+test1/indxr-test
+  =true, realuser=false), rollback schoon.
+- admin_growth_summary(): acquisitie/activatie/monetisatie/retentie, externe users only,
+  CAC+LTV placeholders. admin_operations_summary(): job-outcomes, success-rate, error-type-
+  verdeling (dynamisch), capaciteit (queue/wachttijd/verwerkingstijd), ALLE jobs (systeem-health).
+- ACL: REVOKE anon+authenticated, GRANT service_role (LESSONS 2026-07-13). Geverifieerd
+  anon/auth=false, svc=true.
+
+Geverifieerd tegen echte DB: growth external=1 (pre-launch leeg), ops 209 jobs/88% success/
+capacity 1.9s+89.2s. GEEN railway.json.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260713141556_admin_growth_ops_and_autoflag.sql
+---
