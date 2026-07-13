@@ -10,17 +10,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  const { userId, amount, reason } = await req.json()
+  const { userId, amount, reasonCategory, note } = await req.json()
   if (!userId || !amount || typeof amount !== "number" || amount <= 0) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 })
   }
+
+  // Grant-reden-enum voor het GELD-dashboard (given credits per reason).
+  const GRANT_REASONS = ["Testing", "Welcome", "Refund", "Goodwill"]
+  const category = GRANT_REASONS.includes(reasonCategory) ? reasonCategory : "Testing"
+  const cleanNote = typeof note === "string" ? note.trim() : ""
+  const reasonText = cleanNote ? `${category}: ${cleanNote}` : category
 
   const admin = createAdminClient()
   const { data, error } = await admin.rpc("add_credits", {
     p_user_id: userId,
     p_amount: amount,
-    p_reason: reason ?? "Admin credit grant",
-    p_metadata: { granted_by: user.id },
+    p_reason: reasonText,
+    p_metadata: { granted_by: user.id, grant_reason: category },
     p_kind: "grant",
   })
 

@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@indxr/shared/components/ui/table"
+import { GeldBlock, type GeldSummary } from "./GeldBlock"
 
 function MetricCard({
   label,
@@ -42,20 +43,15 @@ export default async function AdminOverviewPage() {
 
   const [
     { count: totalTranscripts },
-    { data: creditsPurchasedData },
-    { data: creditsConsumedData },
     { data: activeUsers7dData },
     { data: recentTranscripts },
     { count: newUsers7d },
     { data: purchaseTransactions },
     { count: whisperCount },
     { data: allTranscriptUsers },
+    { data: geldRaw },
   ] = await Promise.all([
     admin.from("transcripts").select("*", { count: "exact", head: true }),
-    // Purchased = credit-toevoegingen behalve refunds (kind='refund'); NULL-kind blijft meetellen.
-    admin.from("credit_transactions").select("amount").eq("type", "credit").or("kind.is.null,kind.neq.refund"),
-    // Consumed = werkelijk verbruik = kind='settlement' (niet SUM type='debit' -> dubbeltelling na activering).
-    admin.from("credit_transactions").select("amount").eq("kind", "settlement"),
     // Fetch user_ids for distinct active user count
     admin
       .from("transcripts")
@@ -83,22 +79,21 @@ export default async function AdminOverviewPage() {
       .in("processing_method", [PROCESSING_METHODS.WHISPER_LEGACY, PROCESSING_METHODS.ASSEMBLYAI]),
     // All transcript user_ids for top users calc
     admin.from("transcripts").select("user_id, credits_used, created_at"),
+    // GELD money-model (interne accounts uitgesloten in de external-scope)
+    admin.rpc("admin_geld_summary"),
   ])
+
+  const geld = geldRaw as GeldSummary | null
 
   // Distinct active users in last 7 days
   const activeUsers7d = new Set(activeUsers7dData?.map((r) => r.user_id)).size
 
-  // --- Derived metrics ---
-  const totalCreditsPurchased =
-    creditsPurchasedData?.reduce((sum, r) => sum + (r.amount ?? 0), 0) ?? 0
-  const totalCreditsConsumed =
-    creditsConsumedData?.reduce((sum, r) => sum + (r.amount ?? 0), 0) ?? 0
-
-  // Revenue: sum amount_paid from Stripe purchase metadata
-  const revenue = (purchaseTransactions ?? []).reduce((sum, tx) => {
-    const paid = parseFloat(tx.metadata?.amount_paid ?? "0") || 0
-    return sum + paid
-  }, 0)
+  // --- Derived metrics (global = external + internal, uit de auditeerbare geld-RPC) ---
+  // Balans uit user_credits (gezaghebbend), niet purchased−consumed afgeleid.
+  const totalCreditsPurchased = geld ? geld.external.purchased_cr + geld.internal.purchased_cr : 0
+  const totalCreditsGranted = geld ? geld.external.granted_cr + geld.internal.granted_cr : 0
+  const totalCreditsConsumed = geld ? geld.external.consumed_cr + geld.internal.consumed_cr : 0
+  const totalCreditsBalance = geld ? geld.external.balance_cr + geld.internal.balance_cr : 0
 
   // Paying users: distinct user_ids with a Stripe purchase
   const payingUserIds = new Set(
@@ -158,32 +153,47 @@ export default async function AdminOverviewPage() {
         </p>
       </div>
 
-      {/* Row 1 — Core metrics */}
+      {/* GELD — money-model (ETAPPE 1). Interne accounts uitgesloten. */}
+      {geld && <GeldBlock data={geld} />}
+
+      {/* Row 1 — Credit-boekhouding (globaal, alle users) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <MetricCard label="Total Users" value={totalUsers ?? 0} />
-        <MetricCard label="Total Transcripts" value={totalTranscripts ?? 0} />
         <MetricCard
           label="Credits Purchased"
           value={totalCreditsPurchased.toLocaleString()}
+          sub="via Stripe"
+        />
+        <MetricCard
+          label="Credits Granted"
+          value={totalCreditsGranted.toLocaleString()}
+          sub="gratis toegekend"
         />
         <MetricCard
           label="Credits Consumed"
           value={totalCreditsConsumed.toLocaleString()}
+          sub="per product_type"
         />
-        <MetricCard label="Active (7d)" value={activeUsers7d ?? 0} />
+        <MetricCard
+          label="Credits Balance"
+          value={totalCreditsBalance.toLocaleString()}
+          sub="uit user_credits (bron)"
+        />
+        <MetricCard label="Total Transcripts" value={totalTranscripts ?? 0} />
       </div>
 
-      {/* Row 2 — Business metrics */}
+      {/* Row 2 — Users & funnel (globaal) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <MetricCard
-          label="Revenue"
-          value={`€${revenue.toFixed(2)}`}
-          sub="from Stripe purchases"
+          label="Total Users"
+          value={totalUsers ?? 0}
+          sub={totalUsers >= 1000 ? "max 1000 getoond" : undefined}
         />
         <MetricCard
-          label="New Users (7d)"
-          value={newUsers7d ?? 0}
+          label="Active 7d"
+          value={activeUsers7d ?? 0}
+          sub="met transcriptie"
         />
+        <MetricCard label="New Users (7d)" value={newUsers7d ?? 0} />
         <MetricCard
           label="Paying Users"
           value={payingUsers}
@@ -198,11 +208,6 @@ export default async function AdminOverviewPage() {
           label="Whisper Usage"
           value={`${whisperPct}%`}
           sub={`${whisperCount ?? 0} of ${totalTranscripts ?? 0}`}
-        />
-        <MetricCard
-          label="Credits Balance"
-          value={(totalCreditsPurchased - totalCreditsConsumed).toLocaleString()}
-          sub="across all users"
         />
       </div>
 

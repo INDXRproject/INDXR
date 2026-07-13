@@ -8541,3 +8541,31 @@ backend/main.py
 backend/transcription_pipeline.py
 packages/shared/src/actions/rag-export.ts
 ---
+[2026-07-13 15:37] commit: feat(geld): ETAPPE 1 GELD-blok — money-model dashboard + correctie-fixes
+
+- admin_geld_summary() RPC (SECURITY DEFINER, service_role): auditeerbare single-bron.
+  Interne accounts uitgesloten (external-scope). Revenue = purchased-only, granted-first.
+  COR/product_type uit job-tabellen; caption-COR geschat (playlist-egress niet per-video
+  gemeten). OPEX = infra + ads + gratis-caption-funnel + granted-delivery (acquisitiekost).
+- GeldBlock.tsx: volledige P&L-keten (Cash in→Revenue→COR→Brutowinst→OPEX→Nettowinst),
+  per-type COR-badges (sky/indigo/teal/violet), 'geschat'-labels, pre-revenue-banner,
+  intern/test-panel (bewijs met/zonder filter). Geen toasts, inline.
+- add-credits reason-enum (Testing/Welcome/Refund/Goodwill) + note → grant_reason in metadata.
+- Overview-fixes: Balance uit user_credits (niet purchased−consumed), Purchased/Granted split,
+  Consumed per product_type, Active-7d verduidelijkt, Total-Users 1000-cap-noot, misleidende
+  Revenue-card (telde interne test-aankopen) verwijderd → GELD-blok is de omzet-waarheid.
+- Transcripts method-filter: opties matchten geen enkele DB-waarde → nu youtube_captions/
+  assemblyai/whisper_ai.
+
+Geverifieerd tegen echte DB (admin_geld_summary()): extern €0 (pre-revenue, alle activiteit
+intern); intern/test €6.98 bruto, COR €23.26 (€20.21 AI-transcriptie gemeten + €3.05 caption
+geschat), recognized €0 (granted-first), deferred €6.98. pnpm build:app groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/GeldBlock.tsx
+apps/app/src/app/admin/page.tsx
+apps/app/src/app/admin/transcripts/page.tsx
+apps/app/src/app/admin/users/UsersTable.tsx
+apps/app/src/app/api/admin/add-credits/route.ts
+supabase/migrations/20260713132947_geld_summary_rpc.sql
+---

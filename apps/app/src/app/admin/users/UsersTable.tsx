@@ -50,6 +50,10 @@ interface TransactionDetail {
 
 type Status = { type: "success" | "error"; message: string }
 
+// Grant-reden-enum voor het GELD-dashboard (given credits per reason).
+const GRANT_REASONS = ["Testing", "Welcome", "Refund", "Goodwill"] as const
+type GrantReason = (typeof GRANT_REASONS)[number]
+
 function StatusBanner({
   status,
   onDismiss,
@@ -91,7 +95,8 @@ function AddCreditsModal({
   onBalanceUpdate: (userId: string, amount: number) => void
 }) {
   const [amount, setAmount] = useState("")
-  const [reason, setReason] = useState("")
+  const [category, setCategory] = useState<GrantReason>("Testing")
+  const [note, setNote] = useState("")
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit() {
@@ -108,15 +113,17 @@ function AddCreditsModal({
         body: JSON.stringify({
           userId: user.id,
           amount: num,
-          reason: reason || "Admin credit grant",
+          reasonCategory: category,
+          note: note.trim() || undefined,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       onBalanceUpdate(user.id, num)
-      onStatus({ type: "success", message: `Added ${num} credits to ${user.email}` })
+      onStatus({ type: "success", message: `Added ${num} credits to ${user.email} (${category})` })
       setAmount("")
-      setReason("")
+      setNote("")
+      setCategory("Testing")
       onClose()
     } catch (err: unknown) {
       onStatus({ type: "error", message: err instanceof Error ? err.message : "Failed to add credits" })
@@ -146,10 +153,22 @@ function AddCreditsModal({
           </div>
           <div className="space-y-1">
             <Label>Reason</Label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as GrantReason)}
+              className="w-full rounded-md border bg-surface px-3 py-2 text-sm"
+            >
+              {GRANT_REASONS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Note <span className="text-fg-muted font-normal">(optional)</span></Label>
             <Input
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Admin credit grant"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="e.g. compensation for failed job"
             />
           </div>
         </div>
