@@ -8583,3 +8583,14 @@ docs/wiki/INDEX.md
 docs/wiki/architecture/credit-system.md
 docs/wiki/decisions/055-money-model-geld-block.md
 ---
+[2026-07-13 15:41] commit: fix(geld): lock admin_geld_summary — REVOKE anon+authenticated (data-leak dicht)
+
+Supabase kent nieuwe public-functies auto-EXECUTE toe aan anon+authenticated; REVOKE FROM
+PUBLIC ving dit niet. admin_geld_summary() (volledig money-model incl. interne data) was via
+/rest/v1/rpc aanroepbaar door élke user. Fix: expliciet REVOKE FROM anon, authenticated.
+Geverifieerd: has_function_privilege anon/auth=false, service_role=true. + LESSONS-regel.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+supabase/migrations/20260713134059_geld_lock_summary_rpc.sql
+---
