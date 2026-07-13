@@ -8505,3 +8505,21 @@ het bestaande taal-Q&A-item. Scope: feitelijk, geen herschrijf (dat is Fase-3).
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/priorities.md
 ---
+[2026-07-13 15:09] precompact: context compaction triggered
+[2026-07-13 15:17] commit: feat(geld): DB-fundament etappe 1 — product_type-stempel, is_internal-vlag, opex_expenses
+
+- product_type-kolom op credit_transactions (leaf: ai_transcription/ai_summary/rag/caption;
+  playlist=composiet via playlist_id). Historische backfill via reason-mapping.
+- settle_credits/update_playlist_video_progress/deduct_credits_atomic stempelen product_type
+  ZONDER signature-wijziging (CREATE OR REPLACE; ACL/GRANTs intact).
+- is_internal-vlag op profiles + seed 5 interne accounts (Khidr + CC test).
+- opex_expenses(period,category,channel,eur) — CAC-basis etappe 2, los van cost_config.
+
+Geverifieerd: backfill-verdeling klopt (reserveringen/refunds terecht NULL), ACL ongewijzigd
+(service_role + authenticated), is_internal 5/8 profielen, alle 3 RPCs stempelen product_type.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260713131349_geld_product_type_stamp.sql
+supabase/migrations/20260713131613_geld_is_internal_flag.sql
+supabase/migrations/20260713131621_geld_opex_expenses.sql
+---
