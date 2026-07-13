@@ -369,3 +369,5 @@ Het admin-dashboard toont een volledige P&L-keten uit één auditeerbare RPC. In
 - **`admin_geld_summary()`** (SECURITY DEFINER, **service_role-only**): geeft beide scopes (external=echt, internal=test) + tarieven + globale OPEX. COR-per-type uit job-tabellen (AssemblyAI-minuten + Decodo-egress gemeten; **caption-COR geschat** — playlist-egress niet per-video gemeten; RAG=€0). Balans altijd uit `user_credits` (niet purchased−consumed afgeleid).
 
 **Toestand bij oplevering (2026-07-13):** ná filter is de echte externe economie €0 (pre-revenue) — alle gemeten activiteit stond op interne accounts. Het GELD-blok toont dit eerlijk + een intern/test-panel als bewijs dat de berekening werkt.
+
+**Admin herontwerp (ADR-056):** test-accounts worden nu **automatisch** intern geflagd bij aanmaak (BEFORE INSERT-trigger: `@indxr-test.com` + elk `+test`-adres), plus een handmatige "Mark internal/external"-toggle in de Users-tabel. Handmatige grant-redenen: Testing / Bug report / Billing / Feedback / Goodwill (Welcome + Refund gebeuren automatisch). Groei/systeem-cijfers: `admin_growth_summary()` (funnel, externe users) + `admin_operations_summary()` (job-health, alle jobs).

@@ -92,6 +92,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [053-on-demand-invoicing.md](decisions/053-on-demand-invoicing.md) | On-demand BTW-facturen voor afgeronde Checkout-betalingen: Customer→Invoice→inclusive item→finalize→paid_out_of_band, één Customer per user, koppeling aan originele betaling, geen fee op sales zonder factuurbehoefte |
 | [054-cost-usage-capture-layer.md](decisions/054-cost-usage-capture-layer.md) | Cost/usage capture-laag + `cost_config` runtime tarief-tabel: per-job Decodo-bytes/AssemblyAI-model/DeepSeek-tokens, Stripe netto (fee+BTW+settlement), credit-`kind`-stempel, per-user `library_bytes`-meter, acquisitie-bron bij signup |
 | [055-money-model-geld-block.md](decisions/055-money-model-geld-block.md) | Money-model & GELD-blok (admin etappe 1): `product_type`-stempel (leaf, playlist=composiet), `is_internal`-filter op élk cijfer, revenue=purchased-only + granted-first, `opex_expenses`, auditeerbare `admin_geld_summary()` RPC |
+| [056-admin-control-center-redesign.md](decisions/056-admin-control-center-redesign.md) | Admin herontwerp: tabs (Overview/Finance/Growth/Operations/…), Finance top-down P&L (recognized\|deferred + real\|estimated splits), Growth-funnel + CAC/LTV, Operations systeem-health, auto-flag test-accounts (`+test`/`@indxr-test.com`) + `admin_growth_summary()`/`admin_operations_summary()` |
 
 ---
 
