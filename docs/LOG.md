@@ -8682,3 +8682,11 @@ docs/wiki/INDEX.md
 docs/wiki/architecture/credit-system.md
 docs/wiki/decisions/056-admin-control-center-redesign.md
 ---
+[2026-07-13 16:35] commit: fix(admin): lock flag_internal_test_account (REVOKE anon+authenticated)
+
+Advisor-hygiëne (LESSONS 2026-07-13): trigger-func kreeg auto-EXECUTE. Onschadelijk maar
+gerevoked. Geverifieerd: trigger vuurt nog (postrevoke+test → is_internal=true), rollback schoon.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260713143435_lock_flag_internal_fn.sql
+---
