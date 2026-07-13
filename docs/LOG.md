@@ -8713,3 +8713,24 @@ backend/worker.py
 docs/LOG.md
 supabase/migrations/20260713222920_usage_logs_per_caption_event.sql
 ---
+[2026-07-14 00:35] commit: feat(cost/BLOK B+C): egress op mislukte jobs + som van alle retry-pogingen
+
+BLOK C (audio_utils): extract_youtube_audio sommeert nu de Decodo-egress van ÁLLE
+download-pogingen i.p.v. enkel de geslaagde. Elke mislukte poging trok al bytes over de
+proxy (partial download) — die worden na de mislukte poging op disk gemeten
+(_measure_partial_egress) en opgeteld. Geverifieerd: 3× partial(40k)=120k; en mixed
+partial(30k)+full(500k)=530k.
+
+BLOK B (transcription_pipeline): een mislukte download logde 0 bytes ondanks verbruikte
+egress (25/25 error-jobs = 0 bytes). audio_utils hangt de gesommeerde bytes nu op de
+exception (final_err.proxy_bytes); de pipeline leest getattr(e,'proxy_bytes',0) en
+persisteert het op de mislukte job (ook op de members_only-tak). Geen clobber: de
+success-tak schreef proxy_bytes nooit op een error-job.
+
+Timeout-tak (heartbeat-wrapper) kan de egress niet kennen (thread loopt door) → 0,
+gedocumenteerd. Geverifieerd met gesimuleerde yt-dlp-failures (monkeypatch).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/audio_utils.py
+backend/transcription_pipeline.py
+---

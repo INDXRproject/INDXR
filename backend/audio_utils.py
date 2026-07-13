@@ -174,6 +174,22 @@ def extract_youtube_audio(
     last_error = None
     video_title = video_id
     channel = None
+    # BLOK C: sommeer de Decodo-egress van ÁLLE pogingen (niet enkel de geslaagde). Een mislukte
+    # 1e/2e poging heeft al bytes over de proxy getrokken (partial download) — die kosten waren echt.
+    cumulative_bytes = 0
+
+    def _measure_partial_egress() -> int:
+        """Som de bytes van de (partial) downloadbestanden van de zojuist mislukte poging.
+        De cleanup aan het begin van de VOLGENDE poging verwijdert ze, dus meet nu."""
+        total = 0
+        for partial in glob.glob(f"{base_output_path}.*"):
+            if partial.endswith('.ogg'):
+                continue
+            try:
+                total += os.path.getsize(partial)
+            except OSError:
+                pass
+        return total
 
     for attempt in range(1, max_attempts + 1):
         # Rotate proxy session on each attempt: proxy_urls[attempt-1] takes
@@ -214,6 +230,7 @@ def extract_youtube_audio(
 
             raw_path = raw_files[0]
             raw_size_bytes = os.path.getsize(raw_path)  # pre-ffmpeg = true Decodo egress (persisted per job)
+            cumulative_bytes += raw_size_bytes  # BLOK C: tel deze (geslaagde) download bij de eerdere pogingen op
             raw_size = raw_size_bytes / 1024 / 1024
             logger.info(f"[YT-DLP-AUDIO] downloaded: {raw_path} ({raw_size:.2f}MB)")
 
@@ -238,11 +255,13 @@ def extract_youtube_audio(
             final_size = os.path.getsize(final_output_path) / 1024 / 1024
             logger.info(f"[YT-DLP-AUDIO] conversion done: {raw_size:.2f}MB → {final_size:.2f}MB ogg")
 
-            return final_output_path, video_title, channel, raw_size_bytes
+            return final_output_path, video_title, channel, cumulative_bytes
 
         except Exception as e:
             last_error = e
             error_str = str(e).lower()
+            # BLOK C: reken de egress van DEZE mislukte poging mee (partial download op disk).
+            cumulative_bytes += _measure_partial_egress()
 
             if any(kw in error_str for kw in MEMBERS_ONLY_KEYWORDS):
                 logger.warning(f"[YT-DLP-AUDIO] members-only detected: {video_id}")
@@ -271,8 +290,12 @@ def extract_youtube_audio(
             else:
                 break
 
-    logger.error(f"[YT-DLP-AUDIO final_fail attempts={attempt} video={video_id}] {last_error}")
-    raise Exception(f"Failed to extract audio from YouTube: {str(last_error)}")
+    logger.error(f"[YT-DLP-AUDIO final_fail attempts={attempt} video={video_id} egress={cumulative_bytes}B] {last_error}")
+    # BLOK B+C: geef de gesommeerde egress mee op de exception zodat de pipeline 'm alsnog op de
+    # (mislukte) job kan persisteren — de proxy-kost was echt, ook al faalde de download.
+    final_err = Exception(f"Failed to extract audio from YouTube: {str(last_error)}")
+    final_err.proxy_bytes = cumulative_bytes
+    raise final_err
 
 
 

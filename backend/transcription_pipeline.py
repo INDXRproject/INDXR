@@ -430,8 +430,12 @@ async def do_assemblyai_transcription(
                 return {"success": False, "error_type": "members_only", "credit_cost": 0}
             except Exception as e:
                 error_msg = str(e)
+                # BLOK B: de download consumeerde Decodo-egress ook al faalde 'ie. audio_utils hangt de
+                # gesommeerde bytes (alle pogingen) op de exception → persisteer ze op de mislukte job,
+                # anders logt een error-job 0 bytes ondanks verbruikte proxy-kost.
+                err_bytes = getattr(e, 'proxy_bytes', 0) or 0
                 if any(kw in error_msg.lower() for kw in MEMBERS_ONLY_KEYWORDS):
-                    await _update_job(status="error", error_message="members_only")
+                    await _update_job(status="error", error_message="members_only", proxy_bytes=err_bytes)
                     return {"success": False, "error_type": "members_only", "credit_cost": 0}
                 error_type = _classify_download_error(error_msg, video_id=video_id, job_id=job_id)
                 # bot_detection/timeout/members_only zijn verwachte operationele uitkomsten, geen bugs.
@@ -448,7 +452,7 @@ async def do_assemblyai_transcription(
                     'video_id': video_id, 'source_type': 'youtube',
                     'error_type': error_type, 'error_message': error_msg,
                 })
-                await _update_job(status="error", error_message=error_msg, error_type=error_type)
+                await _update_job(status="error", error_message=error_msg, error_type=error_type, proxy_bytes=err_bytes)
                 return {"success": False, "error_type": error_type, "error_message": error_msg, "credit_cost": 0}
 
         # ── Step 2: Validate ──────────────────────────────────────────────────
