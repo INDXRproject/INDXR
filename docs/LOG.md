@@ -8734,3 +8734,34 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/audio_utils.py
 backend/transcription_pipeline.py
 ---
+[2026-07-14 00:50] commit: feat(cost/BLOK D+E): caption dubbeltelling opgeheven + R2 storage-COR-regel
+
+BLOK D — geen euro dubbel geteld:
+• daily_cost_counters = ALLEEN anonieme captions (funnel-OPEX, globaal). Ingelogde captions
+  (Blok A) komen uit usage_logs → credits_used>0 = ECHTE caption-COR (gemeten egress, niet
+  meer geschat uit de dagteller × verbruikte credits); credits_used=0 = free-funnel-OPEX per
+  scope. De oude schatting (v_cons_cap × gem. dagteller-kost) telde de dagteller-egress twee
+  keer (als funnel-OPEX én als COR-basis) én paste 'm toe op ALLE credits incl. cache-hits.
+• cache-hits hebben proxy_bytes=0 → tellen $0 (geen cache-hit-overcounting meer).
+• cor_caption_estimated=false (nu ECHT gemeten). caption_segments (free-loggedin/paid-after/
+  paid-caption) toegevoegd per scope voor free→paid-inzicht.
+
+BLOK E — storage-COR (R2) als eigen regel:
+• cost_config +r2_usd_per_gb_month ($0,015) +r2_free_gb (10). Storage-COR =
+  max(0, GB-10) × $0,015 × usd_eur_rate. Free tier account-globaal → één globale regel op
+  externe footprint. Nu €0 (extern 122 KB < 10 GB; de ~0,2 GB is intern/test, uitgesloten).
+  R2 egress altijd €0.
+
+Frontend: adminTypes + FinanceView tonen R2-storage COR-chip, gesplitste funnel (anon-globaal
+vs ingelogd-per-scope), COR incl. storage in gross profit. App-build groen (exit 0).
+Geverifieerd: RPC draait, ACL {postgres,service_role} (anon/authenticated geweerd),
+rates+cor_storage+segments correct.
+
+Migraties: 20260713223654 (R2-rate), 20260713223907 (geld-RPC split+storage).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/finance/FinanceView.tsx
+supabase/migrations/20260713223654_cost_config_r2_storage_rate.sql
+supabase/migrations/20260713223907_geld_summary_caption_split_and_storage.sql
+---

@@ -18,19 +18,40 @@ export interface GeldScope {
   cor_caption_estimated: boolean
   cor_against_revenue: number
   granted_delivery_cost: number
+  funnel_free_caption_cost: number
+  caption_segments: {
+    free_loggedin: { count: number; bytes: number }
+    paid_after: { count: number; bytes: number }
+    paid_caption: { count: number; bytes: number }
+  }
   gross_profit: number
   gross_margin: number | null
 }
 
 export interface GeldSummary {
-  rates: { decodo_eur_per_gb: number; assemblyai_eur_per_min: number; fixed_monthly_infra_eur: number }
+  rates: {
+    decodo_eur_per_gb: number
+    assemblyai_eur_per_min: number
+    fixed_monthly_infra_eur: number
+    r2_usd_per_gb_month: number
+    r2_free_gb: number
+    usd_eur_rate: number
+  }
   counts: { external_profiles: number; internal_profiles: number }
   opex_global: {
     infra_monthly: number
     ads: number
-    funnel_free_captions: number
-    funnel_caption_count: number
-    funnel_estimated: boolean
+    funnel_free_captions_anon: number
+    funnel_caption_count_anon: number
+    funnel_measured: boolean
+  }
+  cor_storage: {
+    external_bytes: number
+    internal_bytes: number
+    external_gb: number
+    free_gb: number
+    eur: number
+    note: string
   }
   external: GeldScope
   internal: GeldScope

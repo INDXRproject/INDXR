@@ -61,7 +61,9 @@ function Op({ text }: { text: string }) {
   )
 }
 
-function PnL({ scope, opex }: { scope: GeldScope; opex: GeldSummary["opex_global"] }) {
+function PnL({
+  scope, opex, storageCor,
+}: { scope: GeldScope; opex: GeldSummary["opex_global"]; storageCor: number }) {
   const [opexOpen, setOpexOpen] = useState(false)
 
   // Estimated COR on the deferred (unconsumed purchased) credits — projection, labelled as such.
@@ -69,9 +71,15 @@ function PnL({ scope, opex }: { scope: GeldScope; opex: GeldSummary["opex_global
   const deferredCr = Math.max(0, scope.purchased_cr - scope.consumed_purchased_cr)
   const estCorDeferred = deferredCr * avgCostPerCr
 
+  // Storage is a global COR line (R2 free tier is account-level) — folded into effective COR.
+  const corEff = scope.cor_against_revenue + storageCor
+  const grossProfit = scope.recognized_revenue - corEff
+  const grossMargin = scope.recognized_revenue > 0 ? grossProfit / scope.recognized_revenue : null
+
   const opexTotal =
-    opex.infra_monthly + opex.ads + opex.funnel_free_captions + scope.granted_delivery_cost
-  const netProfit = scope.gross_profit - opexTotal
+    opex.infra_monthly + opex.ads + opex.funnel_free_captions_anon +
+    scope.funnel_free_caption_cost + scope.granted_delivery_cost
+  const netProfit = grossProfit - opexTotal
   const netMargin = scope.recognized_revenue > 0 ? netProfit / scope.recognized_revenue : null
 
   return (
@@ -103,15 +111,16 @@ function PnL({ scope, opex }: { scope: GeldScope; opex: GeldSummary["opex_global
         </div>
       </Line>
 
-      <Op text={`− COR ${eur(scope.cor_against_revenue, true)}`} />
+      <Op text={`− COR ${eur(corEff, true)}`} />
 
-      <Line label="Cost of revenue" value={eur(scope.cor_against_revenue, true)} accent="cost">
+      <Line label="Cost of revenue" value={eur(corEff, true)} accent="cost">
         <SplitBar
           segments={[
             { value: scope.cor.ai_transcription, cls: TYPE_META.ai_transcription.bar, title: "AI transcription" },
             { value: scope.cor.caption, cls: TYPE_META.caption.bar, title: "Auto-captions" },
             { value: scope.cor.ai_summary, cls: TYPE_META.ai_summary.bar, title: "AI summary" },
             { value: scope.cor.rag, cls: TYPE_META.rag.bar, title: "RAG" },
+            { value: storageCor, cls: "bg-fg-muted", title: "R2 storage" },
           ]}
         />
         <div className="flex flex-wrap gap-1.5">
@@ -123,13 +132,16 @@ function PnL({ scope, opex }: { scope: GeldScope; opex: GeldSummary["opex_global
               {TYPE_META[k].label} {eur(scope.cor[k], true)}
             </span>
           ))}
+          <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[10px] font-medium text-fg-muted">
+            R2 storage {eur(storageCor, true)}
+          </span>
         </div>
         <p className="text-xs text-fg-muted">
-          Real (delivered): <span className="font-semibold text-fg">{eur(scope.cor_against_revenue, true)}</span>
+          Real (delivered): <span className="font-semibold text-fg">{eur(corEff, true)}</span>
           {" · "}
           <span className="rounded bg-warning-subtle px-1 text-warning">est.</span> on deferred:{" "}
           <span className="font-semibold text-fg">{eur(estCorDeferred, true)}</span>
-          {" · caption cost estimated"}
+          {" · caption & storage measured"}
         </p>
       </Line>
 
@@ -139,11 +151,11 @@ function PnL({ scope, opex }: { scope: GeldScope; opex: GeldSummary["opex_global
 
       <Line
         label="Gross profit"
-        value={eur(scope.gross_profit)}
-        marginLabel={`margin ${pct(scope.gross_margin)}`}
+        value={eur(grossProfit)}
+        marginLabel={`margin ${pct(grossMargin)}`}
         accent="profit"
       >
-        <p className="text-xs text-fg-muted">Recognized revenue − real cost of revenue</p>
+        <p className="text-xs text-fg-muted">Recognized revenue − real cost of revenue (incl. storage)</p>
       </Line>
 
       <Op text={`− OPEX ${eur(opexTotal)}`} />
@@ -160,9 +172,12 @@ function PnL({ scope, opex }: { scope: GeldScope; opex: GeldSummary["opex_global
             <span>Infra (fixed): <span className="font-semibold text-fg">{eur(opex.infra_monthly)}</span> / mo</span>
             <span>Ads / marketing: <span className="font-semibold text-fg">{eur(opex.ads)}</span></span>
             <span>
-              Free-caption funnel:{" "}
-              <span className="font-semibold text-fg">{eur(opex.funnel_free_captions, true)}</span>{" "}
-              <span className="rounded bg-warning-subtle px-1 text-warning">est.</span>
+              Free-caption funnel · logged-in:{" "}
+              <span className="font-semibold text-fg">{eur(scope.funnel_free_caption_cost, true)}</span>
+            </span>
+            <span>
+              Free-caption funnel · anon (global):{" "}
+              <span className="font-semibold text-fg">{eur(opex.funnel_free_captions_anon, true)}</span>
             </span>
             <span>Granted-credit delivery: <span className="font-semibold text-fg">{eur(scope.granted_delivery_cost, true)}</span></span>
           </div>
@@ -214,7 +229,7 @@ export function FinanceView({ data }: { data: GeldSummary }) {
       )}
 
       <div className="max-w-xl">
-        <PnL scope={ext} opex={data.opex_global} />
+        <PnL scope={ext} opex={data.opex_global} storageCor={data.cor_storage.eur} />
       </div>
 
       {showTest && (
@@ -222,7 +237,7 @@ export function FinanceView({ data }: { data: GeldSummary }) {
           <p className="mb-3 text-xs font-medium uppercase tracking-wider text-fg-muted">
             Internal / test traffic — excluded from the real economy
           </p>
-          <PnL scope={data.internal} opex={data.opex_global} />
+          <PnL scope={data.internal} opex={data.opex_global} storageCor={0} />
         </div>
       )}
     </div>
