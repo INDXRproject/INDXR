@@ -9021,3 +9021,14 @@ backend/worker.py
 docs/LOG.md
 supabase/migrations/20260714224448_log_caption_usage_source_param.sql
 ---
+[2026-07-15 00:52] commit: docs(priorities): noteer 1.38 — onboarding-gate laat checkout-intent vallen
+
+Geïdentificeerd tijdens pricing-funnel-taak: loginAction + auth/callback
+redirecten un-onboarded users onvoorwaardelijk naar /onboarding vóór het
+next-doel, en onboarding-completion gaat hardcoded naar /dashboard. Nieuwe
+signups verliezen zo het gekozen pakket. Bestaande users: funnel werkt volledig
+(geverifieerd). Buiten scope van de knop-taak — genoteerd voor follow-up.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/priorities.md
+---
