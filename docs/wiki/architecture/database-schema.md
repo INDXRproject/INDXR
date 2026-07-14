@@ -425,6 +425,30 @@ Migraties `20260711100000`–`20260711100500`. Doel: kost-inputs per job/aankoop
 
 ---
 
+## Finance-tab capture + accrual (2026-07-15, ADR-059/060)
+
+Migraties `20260714222523`–`20260714230120`. Periode-gebonden Finance-view + onherstelbare snapshot. Zie [ADR-059](../decisions/059-finance-snapshot-and-live-overlay.md) + [ADR-060](../decisions/060-accrual-cost-model-and-stripe-fee.md).
+
+### Nieuwe tabellen
+- **`finance_daily_snapshot`** — PK `(snapshot_date, scope)` (`scope ∈ external|internal`). Bevroren MEASURED-cijfers per Amsterdam-dag: flows (`cash_in`, `vat`, `revenue_delivered`, `stripe_fee`, `cor_*` ×5, `opex_funnel_loggedin/anon`, `opex_goodwill`, `net_profit_measured`, `credits_sold/consumed`) + stocks (`deferred_balance`, `outstanding_free_credits`, `storage_bytes`). Alles `numeric`. RLS aan, geen policies (service-role only). Gevuld door pg_cron 02:00 UTC.
+- **`finance_settings`** — key/value config (`deferred_window_days` 30/60/90, `deferred_cost_overrides`). RLS aan, geen policies.
+
+### Nieuwe kolommen
+- **`credit_transactions.had_paid_at_time` / `is_internal_at_time`** (boolean, nullable) — point-in-time snapshot op ELKE debit via BEFORE INSERT-trigger `stamp_credit_debit_point_in_time` (B2, mirror van `usage_logs`; dekt alle 4 debit-paden zonder gelockte RPC te raken). Historische rijen NULL. Hot-path-index `idx_credit_transactions_user_type (user_id, type)`.
+- **`transcription_jobs.cache_hit`** (boolean default false) — master-cache-hit → COR=0, credits wél gesettled (B2b, gezet in `transcription_pipeline.py`).
+- **`transcription_jobs.source_kind`** (CHECK single|playlist|upload) + **`playlist_id`** (uuid) — bron-vlag bij aanmaak (B3, voedt Operations). Forward-only.
+- **`usage_logs.source`** (CHECK single|playlist default single) — caption-herkomst (B3).
+- **`opex_expenses`** — accrual-model: `amount`, `spread` (evenly|single), `recurrence` (none|monthly), `effective_from`, `effective_to` (NULL=lopend), `description`. Oude `eur`/`period` blijven (admin_geld_summary leest nog `sum(eur)`).
+
+### Nieuwe/gewijzigde functies
+- **`_geld_scope(p_internal, p_from, p_to)`** — range-aware (defaults -inf/+inf → byte-identiek aan oud). FLOWS op `[from,to)`, STOCKS/recognitie cumulatief-`<to`.
+- **`snapshot_finance_day(p_day)`** — idempotente dag-snapshot (DST-aware Amsterdam-daggrens). pg_cron-job `finance-daily-snapshot`.
+- **`opex_accrual(from,to)`** — snijdt entered-reeksen door de periode (jsonb: total/by_category/lines).
+- **`admin_finance_summary(from,to)`** — live periode-RPC per scope: flows/stocks + bankbrug + cache-savings + deferred-schatting + honest `vat_computed` + entered-accrual (external-only). Alle nieuw: SECURITY DEFINER, REVOKE anon/authenticated, GRANT service_role.
+- **`log_caption_usage(...,p_source)`** — 7e DEFAULT-param voor `usage_logs.source`.
+
+---
+
 ## Legacy en Undocumented Tabellen
 
 De volgende tabellen bestaan in de productie-DB (en in de baseline), maar zijn niet actief in de huidige codebase. Ze zijn **niet** verwijderd bij de baseline-squash — data aanraken is post-launch werk.

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="nl"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INDXR — Finance (mockup v7)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="finance-tab-mockup_files/css2_xBIu.css" rel="stylesheet">
+<style>
+:root{
+  --bg-base: oklch(0.985 0.006 85); --bg-surface: oklch(1 0 0); --bg-sunk: oklch(0.968 0.008 85);
+  --border: oklch(0.912 0.009 85); --border-soft: oklch(0.94 0.008 85); --border-strong: oklch(0.83 0.012 85);
+  --text: oklch(0.30 0.02 70); --text-muted: oklch(0.54 0.02 75); --text-faint: oklch(0.67 0.014 78);
+  --accent: oklch(0.70 0.145 62); --accent-soft: oklch(0.95 0.04 72); --accent-mid: oklch(0.86 0.08 68);
+  --success: oklch(0.60 0.13 150); --neg: oklch(0.60 0.15 30);
+  --sky: oklch(0.66 0.13 235); --indigo: oklch(0.58 0.16 268); --violet: oklch(0.60 0.17 298); --teal: oklch(0.64 0.10 188); --amberchip: oklch(0.74 0.11 70);
+  --radius: 14px; --radius-sm: 9px;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg-base: oklch(0.185 0.012 75); --bg-surface: oklch(0.232 0.014 75); --bg-sunk: oklch(0.205 0.012 75);
+  --border: oklch(0.31 0.014 75); --border-soft: oklch(0.27 0.013 75); --border-strong: oklch(0.42 0.016 75);
+  --text: oklch(0.94 0.012 80); --text-muted: oklch(0.73 0.014 78); --text-faint: oklch(0.585 0.014 78);
+  --accent: oklch(0.77 0.14 68); --accent-soft: oklch(0.33 0.05 68); --accent-mid: oklch(0.5 0.09 68);
+  --success: oklch(0.74 0.14 152); --neg: oklch(0.70 0.15 32);
+  --sky: oklch(0.72 0.12 235); --indigo: oklch(0.70 0.14 268); --violet: oklch(0.72 0.15 298); --teal: oklch(0.74 0.09 188); --amberchip: oklch(0.79 0.11 70);
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-base);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+.wrap{max-width:940px;margin:0 auto;padding:0 24px 80px;}
+
+.adminbar{border-bottom:1px solid var(--border);background:var(--bg-surface);}
+.adminbar .inner{max-width:940px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:20px;height:54px;}
+.brand{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;}
+.brand .dot{width:9px;height:9px;background:var(--accent);border-radius:2px;transform:rotate(45deg);}
+.navlinks{display:flex;gap:1px;overflow:auto;}
+.navlinks a{padding:6px 12px;border-radius:var(--radius-sm);color:var(--text-muted);text-decoration:none;font-size:13px;white-space:nowrap;}
+.navlinks a.active{background:var(--accent-soft);color:var(--text);font-weight:600;}
+.phold{font-size:10px;color:var(--text-faint);border:1px dashed var(--border-strong);border-radius:5px;padding:1px 6px;white-space:nowrap;}
+
+.controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:28px 0 8px;}
+.periods{display:inline-flex;background:var(--bg-sunk);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;gap:2px;}
+.periods button{border:0;background:transparent;color:var(--text-muted);font:inherit;font-size:13px;padding:6px 14px;border-radius:6px;cursor:pointer;}
+.periods button.on{background:var(--bg-surface);color:var(--text);font-weight:600;box-shadow:0 1px 2px oklch(0 0 0/.05);}
+.nav{display:inline-flex;align-items:center;gap:8px;margin-left:12px;}
+.arrow{width:28px;height:28px;border:1px solid var(--border);background:var(--bg-surface);border-radius:7px;color:var(--text-muted);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.arrow[disabled]{opacity:.35;}
+.range{font-size:13px;font-weight:500;} .range .todate{color:var(--text-faint);font-weight:400;}
+.rctl{display:flex;align-items:center;gap:14px;}
+.upd{font-size:12px;color:var(--text-faint);display:inline-flex;align-items:center;gap:6px;}
+.refresh{border:0;background:transparent;color:var(--text-muted);font-size:13px;cursor:pointer;padding:2px 4px;border-radius:5px;line-height:1;}
+.toggle{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text-muted);}
+.track{width:34px;height:19px;border-radius:20px;background:var(--border-strong);position:relative;}
+.track::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--bg-surface);}
+.gear{width:32px;height:32px;border:1px solid var(--border);background:var(--bg-surface);border-radius:8px;color:var(--text-muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.cmp{font-size:12px;color:var(--text-faint);margin:0 0 22px 4px;}
+
+.hero{display:grid;grid-template-columns:1fr 1.28fr;gap:16px;margin-bottom:30px;}
+.hcell{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;}
+.label{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;font-weight:500;}
+.big{font-size:40px;font-weight:600;letter-spacing:-.025em;line-height:1;}
+.mid{font-size:30px;font-weight:600;letter-spacing:-.015em;line-height:1;}
+.sub{font-size:12.5px;color:var(--text-muted);margin-top:11px;}
+.pos{color:var(--success);}
+.delta{font-size:12px;color:var(--text-faint);margin-top:7px;} .delta b{color:var(--success);font-weight:600;}
+.bar{display:flex;height:9px;border-radius:6px;overflow:hidden;margin:16px 0 9px;}
+.bar .d{background:var(--accent);} .bar .f{background:var(--accent-mid);}
+.barleg{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);}
+.barleg .dt{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;}
+.barleg b{color:var(--text);font-weight:600;}
+
+.sec{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);margin:0 0 13px;font-weight:600;}
+
+.stmt{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.line{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:16px;padding:16px 24px;border-top:1px solid var(--border-soft);}
+.line:first-child{border-top:0;}
+.lname{font-weight:500;font-size:14.5px;}
+.lname .h{display:block;font-size:12px;color:var(--text-faint);font-weight:400;margin-top:3px;}
+.lval{font-size:18px;font-weight:600;text-align:right;letter-spacing:-.01em;}
+.lval.neg{color:var(--neg);}
+.lval .m{display:block;font-size:12px;color:var(--text-faint);font-weight:400;margin-top:3px;letter-spacing:0;}
+.tot{background:var(--bg-sunk);} .tot .lname{font-weight:600;}
+.net{background:var(--accent-soft);} .net .lval{color:var(--success);}
+.caret{color:var(--text-faint);font-size:10px;margin-right:8px;display:inline-block;transition:.15s;}
+details[open] .caret{transform:rotate(90deg);}
+details > summary{list-style:none;cursor:pointer;} details > summary::-webkit-details-marker{display:none;}
+summary .line{border-top:1px solid var(--border-soft);}
+
+.bd{padding:4px 24px 18px;background:var(--bg-sunk);border-top:1px solid var(--border-soft);}
+.bdhead,.bdrow{display:grid;grid-template-columns:1fr 104px 96px 92px;gap:18px;align-items:center;}
+.bdhead{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);padding:8px 0 10px;}
+.bdhead span:not(:first-child){text-align:right;}
+.bdrow{padding:11px 0;border-top:1px solid var(--border-soft);font-size:13px;}
+.method{display:flex;flex-direction:column;gap:5px;}
+.badge{font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:20px;color:#fff;white-space:nowrap;align-self:flex-start;}
+.b-cap{background:var(--sky);} .b-tr{background:var(--indigo);} .b-sum{background:var(--violet);} .b-rag{background:var(--teal);} .b-sto{background:var(--amberchip);color:oklch(0.24 0.03 70);}
+.csub{font-size:11px;color:var(--success);}
+.n{text-align:right;color:var(--text-muted);} .n.strong{color:var(--text);font-weight:500;}
+.bdnote{font-size:11.5px;color:var(--text-faint);margin-top:14px;padding-top:12px;border-top:1px dashed var(--border);line-height:1.5;}
+
+/* opex: category | source | cost */
+.bd.opex .bdhead,.bd.opex .bdrow{grid-template-columns:1fr 108px 120px;}
+.ename{display:flex;flex-direction:column;gap:4px;}
+.ehint{font-size:11px;color:var(--text-faint);}
+.src{font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--border-strong);color:var(--text-faint);justify-self:end;white-space:nowrap;}
+.src.auto{border-style:dashed;}
+.manage{margin-top:14px;}
+.mbtn{border:1px solid var(--border-strong);background:var(--bg-surface);color:var(--text-muted);font:inherit;font-size:12.5px;padding:7px 14px;border-radius:8px;cursor:pointer;}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;}
+.card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;}
+.card.owe{background:var(--bg-sunk);}
+.card h3{margin:0 0 2px;font-size:13.5px;font-weight:600;}
+.card .cs{font-size:11.5px;color:var(--text-faint);margin-bottom:15px;}
+.rl{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--border-soft);font-size:13px;}
+.rl:first-of-type{border-top:0;}
+.rl .k{color:var(--text-muted);} .rl .v{font-weight:600;}
+.rl.s2{font-size:12.5px;} .rl.s2 .k{padding-left:16px;color:var(--text-faint);} .rl.s2 .v{font-weight:500;color:var(--text-muted);}
+.owe .amt{font-size:30px;font-weight:600;letter-spacing:-.02em;margin:2px 0 4px;}
+.owe .lead{font-size:12.5px;color:var(--text-muted);margin-bottom:14px;}
+.memo{font-size:11.5px;color:var(--text-faint);margin-top:14px;padding-top:12px;border-top:1px solid var(--border);line-height:1.55;}
+
+.trend{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-top:22px;}
+.th{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;}
+.trend h3{margin:0;font-size:13.5px;font-weight:600;} .ts{font-size:11.5px;color:var(--text-faint);margin-top:3px;}
+.gran{display:flex;gap:2px;margin:0 0 14px;}
+.gran button{border:0;background:transparent;color:var(--text-faint);font:inherit;font-size:11.5px;padding:4px 9px;border-radius:6px;cursor:pointer;}
+.gran button.on{background:var(--bg-sunk);color:var(--text);font-weight:600;}
+.plot{height:104px;border:1px dashed var(--border-strong);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-size:12px;}
+
+/* ===== screen 2: settings ===== */
+.screen2{margin-top:56px;padding-top:40px;border-top:2px dashed var(--border-strong);}
+.slabel{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;font-weight:600;}
+.panel{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.ptop{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.ptop h3{margin:0 0 3px;font-size:15px;font-weight:600;}
+.ptop p{margin:0;font-size:12.5px;color:var(--text-muted);max-width:520px;}
+.pacts{display:flex;gap:8px;}
+.pbtn{border:1px solid var(--border-strong);background:var(--bg-surface);color:var(--text);font:inherit;font-size:12.5px;padding:7px 13px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+.pbtn.primary{background:var(--accent);border-color:var(--accent);color:oklch(0.24 0.03 70);font-weight:600;}
+.tabs{display:flex;gap:2px;padding:12px 22px 0;border-bottom:1px solid var(--border);}
+.tabs button{border:0;background:transparent;color:var(--text-muted);font:inherit;font-size:13px;padding:8px 12px;border-bottom:2px solid transparent;cursor:pointer;}
+.tabs button.on{color:var(--text);font-weight:600;border-bottom-color:var(--accent);}
+.ehead,.erow{display:grid;grid-template-columns:1.5fr 96px 128px 100px 84px 64px;gap:14px;align-items:center;padding:0 22px;}
+.ehead{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);padding-top:14px;padding-bottom:10px;}
+.erow{padding-top:12px;padding-bottom:12px;border-top:1px solid var(--border-soft);font-size:13px;}
+.erow .amt2{text-align:right;font-weight:500;}
+.cat{display:flex;flex-direction:column;gap:3px;}
+.cat b{font-weight:500;} .cat span{font-size:11px;color:var(--text-faint);}
+.pill{font-size:10.5px;padding:2px 8px;border-radius:20px;background:var(--bg-sunk);border:1px solid var(--border);color:var(--text-muted);justify-self:start;white-space:nowrap;}
+.acts{display:flex;gap:5px;justify-content:flex-end;}
+.iact{border:1px solid var(--border);background:var(--bg-surface);color:var(--text-muted);border-radius:6px;width:26px;height:26px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.iact.del:hover{color:var(--neg);border-color:var(--neg);}
+.pfoot{padding:14px 22px 18px;font-size:11.5px;color:var(--text-faint);border-top:1px solid var(--border);line-height:1.55;background:var(--bg-sunk);}
+@media(max-width:820px){ .hero{grid-template-columns:1fr;} .cards{grid-template-columns:1fr;} .ehead,.erow{grid-template-columns:1fr 90px 70px;} .ehead span:nth-child(n+4),.erow > *:nth-child(n+4){display:none;} }
+</style>
+</head>
+<body>
+<div class="adminbar"><div class="inner">
+  <div class="brand"><span class="dot"></span>INDXR admin</div>
+  <nav class="navlinks"><a href="#">Overview</a><a href="#" class="active">Finance</a><a href="#">Growth</a><a href="#">Operations</a><a href="#">Users</a><a href="#">Transcripts</a><a href="#">Support</a><a href="#">Announcements</a></nav>
+  <span class="phold">nav = placeholder · use real admin nav + logo</span>
+</div></div>
+
+<div class="wrap">
+  <div class="controls">
+    <div style="display:flex;align-items:center;flex-wrap:wrap;">
+      <div class="periods"><button>Week</button><button class="on">Month</button><button>Quarter</button><button>Year</button><button>Custom</button></div>
+      <div class="nav"><button class="arrow">‹</button><span class="range mono">1 – 14 Jul 2026 <span class="todate">· to date</span></span><button class="arrow" disabled="disabled">›</button></div>
+    </div>
+    <div class="rctl">
+      <span class="upd">Live · updated 14:32 <button class="refresh" title="Refresh">↻</button></span>
+      <label class="toggle"><span>Include test / internal</span><span class="track"></span></label>
+      <button class="gear" title="Finance settings">⚙</button>
+    </div>
+  </div>
+  <p class="cmp">Compared with 1 – 14 Jun, the same 14 days of last month.</p>
+
+  <div class="hero">
+    <div class="hcell">
+      <div class="label">Net profit</div>
+      <div class="big mono pos">€1.045,00</div>
+      <div class="sub">Kept this period · 52,4% margin on delivered</div>
+      <div class="delta"><b>+18,4%</b> vs 1 – 14 Jun</div>
+    </div>
+    <div class="hcell">
+      <div class="label">Revenue this period (ex-VAT)</div>
+      <div class="mid mono">€3.322,26</div>
+      <div class="bar"><div class="d" style="flex:1993"></div><div class="f" style="flex:1329"></div></div>
+      <div class="barleg">
+        <span><span class="dt" style="background:var(--accent)"></span>delivered <b>€1.993,36</b></span>
+        <span><span class="dt" style="background:var(--accent-mid)"></span>deferred <b>€1.328,90</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">Income statement</div>
+  <div class="stmt">
+    <div class="line">
+      <div class="lname">Revenue<span class="h">credits consumed this period</span></div>
+      <div class="lval mono">€1.993,36</div>
+    </div>
+
+    <details open="">
+      <summary>
+        <div class="line">
+          <div class="lname"><span class="caret">▸</span>Cost of revenue<span class="h">cost to deliver them</span></div>
+          <div class="lval neg mono">−€637,88</div>
+        </div>
+      </summary>
+      <div class="bd">
+        <div class="bdhead"><span>Method</span><span>Cost</span><span>Credits</span><span>€ / credit</span></div>
+        <div class="bdrow">
+          <div class="method"><span class="badge b-tr">AI transcription</span><span class="csub">34% from cache · saved €310</span></div>
+          <div class="n strong mono">€600,00</div><div class="n mono">89.500</div><div class="n mono">€0,0067</div>
+        </div>
+        <div class="bdrow">
+          <div class="method"><span class="badge b-cap">Auto-captions</span><span class="csub">41% from cache · saved €12</span></div>
+          <div class="n strong mono">€18,00</div><div class="n mono">3.600</div><div class="n mono">€0,0050</div>
+        </div>
+        <div class="bdrow">
+          <div class="method"><span class="badge b-sum">AI summary</span></div>
+          <div class="n strong mono">€5,00</div><div class="n mono">900</div><div class="n mono">€0,0056</div>
+        </div>
+        <div class="bdrow">
+          <div class="method"><span class="badge b-rag">RAG export</span></div>
+          <div class="n strong mono">€0,00</div><div class="n mono">1.400</div><div class="n mono">€0,0000</div>
+        </div>
+        <div class="bdrow">
+          <div class="method"><span class="badge b-sto">Storage (R2)</span></div>
+          <div class="n strong mono">€14,88</div><div class="n mono">—</div><div class="n mono">—</div>
+        </div>
+        <div class="bdnote">Playlists spend credits through these same 
+methods, so they have no separate line. Credits by source — single, 
+playlist, upload — lives in Operations.</div>
+      </div>
+    </details>
+
+    <div class="line tot">
+      <div class="lname">Gross profit</div>
+      <div class="lval mono pos">€1.355,48<span class="m">68,0% margin</span></div>
+    </div>
+
+    <details open="">
+      <summary>
+        <div class="line">
+          <div class="lname"><span class="caret">▸</span>Operating expenses</div>
+          <div class="lval neg mono">−€310,48</div>
+        </div>
+      </summary>
+      <div class="bd opex">
+        <div class="bdhead"><span>Category</span><span>Source</span><span>Cost</span></div>
+        <div class="bdrow">
+          <div class="ename"><b>Infrastructure</b><span class="ehint">€300,00 / month · 14 of 31 days</span></div>
+          <span class="src">entered</span>
+          <div class="n strong mono">€135,48</div>
+        </div>
+        <div class="bdrow">
+          <div class="ename"><b>Ads</b><span class="ehint">Google Ads · daily spend, 1 – 14 Jul</span></div>
+          <span class="src">entered</span>
+          <div class="n strong mono">€120,00</div>
+        </div>
+        <div class="bdrow">
+          <div class="ename"><b>Free-caption funnel — logged-in</b><span class="ehint">measured per day</span></div>
+          <span class="src auto">measured</span>
+          <div class="n strong mono">€22,00</div>
+        </div>
+        <div class="bdrow">
+          <div class="ename"><b>Free-caption funnel — anonymous</b><span class="ehint">measured per day</span></div>
+          <span class="src auto">measured</span>
+          <div class="n strong mono">€28,00</div>
+        </div>
+        <div class="bdrow">
+          <div class="ename"><b>Goodwill — granted credits used</b><span class="ehint">measured per day</span></div>
+          <span class="src auto">measured</span>
+          <div class="n strong mono">€5,00</div>
+        </div>
+        <div class="manage"><button class="mbtn">Manage expenses →</button></div>
+        <div class="bdnote">Entered costs carry their own dates and are 
+sliced to the period you're viewing — a €300/month bill shows as 14/31 
+here. Measured costs come from actual daily usage.</div>
+      </div>
+    </details>
+
+    <div class="line net">
+      <div class="lname">Net profit</div>
+      <div class="lval mono">€1.045,00<span class="m">52,4% margin</span></div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h3>Where the cash sits</h3>
+      <div class="cs">from bank to statement</div>
+      <div class="rl"><span class="k">Cash in (incl. VAT)</span><span class="v mono">€4.000,00</span></div>
+      <div class="rl"><span class="k">VAT — owed to the tax office</span><span class="v mono" style="color:var(--neg)">−€677,74</span></div>
+      <div class="rl"><span class="k">Revenue (ex-VAT)</span><span class="v mono">€3.322,26</span></div>
+      <div class="rl s2"><span class="k">delivered → in the statement</span><span class="v mono">€1.993,36</span></div>
+      <div class="rl s2"><span class="k">deferred → owed in service</span><span class="v mono">€1.328,90</span></div>
+    </div>
+    <div class="card owe">
+      <h3>Deferred — service you still owe</h3>
+      <div class="cs">a liability, not profit yet</div>
+      <div class="amt mono">€1.328,90</div>
+      <div class="lead">Prepaid credits, not yet used. They turn into profit as they're consumed — but delivering them still costs money.</div>
+      <div class="rl"><span class="k">future cost to deliver (~32%)</span><span class="v mono">~€426</span></div>
+      <div class="rl"><span class="k">future gross when consumed</span><span class="v mono">~€903</span></div>
+      <div class="memo">Credits never expire, so this liability is 
+long-lived. Unused credits become revenue only later, once there's data 
+they'll stay unused.</div>
+    </div>
+  </div>
+
+  <div class="trend">
+    <div class="th">
+      <div><h3>Trend</h3><div class="ts">frozen every night, automatically</div></div>
+      <div class="periods"><button class="on" style="font-size:12px">Revenue</button><button style="font-size:12px">Delivered ⁄ deferred</button><button style="font-size:12px">Net profit</button></div>
+    </div>
+    <div class="gran"><button class="on">Day</button><button>Week</button><button>Month</button><button>Quarter</button><button>Year</button></div>
+    <div class="plot">Last 15 days — the line begins at the first nightly freeze</div>
+  </div>
+
+  <!-- ============ SCREEN 2 ============ -->
+  <div class="screen2">
+    <div class="slabel">Second screen — opens from ⚙ or “Manage expenses”</div>
+    <div class="panel">
+      <div class="ptop">
+        <div>
+          <h3>Finance settings — Expenses</h3>
+          <p>Each cost carries its own dates. The dashboard slices them 
+into whatever period you're viewing, so you enter a bill once, not per 
+view.</p>
+        </div>
+        <div class="pacts">
+          <button class="pbtn">Import CSV</button>
+          <button class="pbtn primary">＋ Add expense</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="on">Expenses</button><button>Tariffs</button><button>Deferred mix</button>
+      </div>
+
+      <div class="ehead"><span>Cost</span><span>Amount</span><span>Period</span><span>Spread</span><span>Repeats</span><span></span></div>
+
+      <div class="erow">
+        <div class="cat"><b>Railway</b><span>Infrastructure</span></div>
+        <div class="amt2 mono">€150,00</div>
+        <div class="mono" style="font-size:12px;color:var(--text-muted)">1 – 31 Jul</div>
+        <span class="pill">evenly</span>
+        <span class="pill">monthly</span>
+        <div class="acts"><button class="iact">✎</button><button class="iact del">✕</button></div>
+      </div>
+      <div class="erow">
+        <div class="cat"><b>Vercel</b><span>Infrastructure</span></div>
+        <div class="amt2 mono">€80,00</div>
+        <div class="mono" style="font-size:12px;color:var(--text-muted)">1 – 31 Jul</div>
+        <span class="pill">evenly</span><span class="pill">monthly</span>
+        <div class="acts"><button class="iact">✎</button><button class="iact del">✕</button></div>
+      </div>
+      <div class="erow">
+        <div class="cat"><b>Supabase Pro</b><span>Infrastructure</span></div>
+        <div class="amt2 mono">€25,00</div>
+        <div class="mono" style="font-size:12px;color:var(--text-muted)">1 – 31 Jul</div>
+        <span class="pill">evenly</span><span class="pill">monthly</span>
+        <div class="acts"><button class="iact">✎</button><button class="iact del">✕</button></div>
+      </div>
+      <div class="erow">
+        <div class="cat"><b>Upstash + domain</b><span>Infrastructure</span></div>
+        <div class="amt2 mono">€45,00</div>
+        <div class="mono" style="font-size:12px;color:var(--text-muted)">1 – 31 Jul</div>
+        <span class="pill">evenly</span><span class="pill">monthly</span>
+        <div class="acts"><button class="iact">✎</button><button class="iact del">✕</button></div>
+      </div>
+      <div class="erow">
+        <div class="cat"><b>Google Ads</b><span>Ads · 14 daily rows from CSV</span></div>
+        <div class="amt2 mono">€120,00</div>
+        <div class="mono" style="font-size:12px;color:var(--text-muted)">1 – 14 Jul</div>
+        <span class="pill">per day</span>
+        <span class="pill">—</span>
+        <div class="acts"><button class="iact">✎</button><button class="iact del">✕</button></div>
+      </div>
+      <div class="erow">
+        <div class="cat"><b>Logo design</b><span>One-off</span></div>
+        <div class="amt2 mono">€200,00</div>
+        <div class="mono" style="font-size:12px;color:var(--text-muted)">3 Jul</div>
+        <span class="pill">single day</span>
+        <span class="pill">—</span>
+        <div class="acts"><button class="iact">✎</button><button class="iact del">✕</button></div>
+      </div>
+
+      <div class="pfoot">Funnel and goodwill costs aren't listed here — 
+they're measured from real daily usage and can't be edited. “Repeats 
+monthly” rolls a bill forward on its own, so Railway doesn't need 
+re-entering every month. CSV import expects a date and an amount column —
+ useful for ad spend, which swings per day.</div>
+    </div>
+  </div>
+
+</div>
+
+
+</body></html>
