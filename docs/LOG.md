@@ -8888,3 +8888,20 @@ packages/shared/src/actions/rag-export.ts
 packages/shared/src/components/TranscriptCard.tsx
 packages/shared/src/lib/pricing.ts
 ---
+[2026-07-14 22:30] taak: stripeLookupKey sync met live Stripe — Khidr hernoemde de Stripe-lookup_keys naar plus_1000/power_3000; pricing.ts bijgewerkt (was plus_1300/power_3100), LOOKUP_KEY-NOOT herschreven (mirror nu in sync, "bewust niet hernoemd"-rationale vervallen). ADR-058 correctie-noot (geen nieuwe ADR) + business/pricing.md bijgewerkt. Grep: geen live refs naar oude keys meer (alleen LOG/dated history). Build groen. | gewijzigd: packages/shared/src/lib/pricing.ts, docs/wiki/decisions/058-round-prices-card-layout-rag.md, docs/wiki/business/pricing.md
+---
+[2026-07-14 22:27] commit: fix(pricing): sync stripeLookupKey met live Stripe (plus_1000 / power_3000)
+
+Khidr hernoemde de live Stripe-lookup_keys naar plus_1000 en power_3000 (2026-07-14).
+De ADR-058-aanname 'Stripe blijft ongewijzigd' — waarop 'plus_1300/power_3100 bewust
+niet hernoemd' rustte — geldt niet meer. pricing.ts overgenomen: mirror weer in sync,
+inconsistentie opgeheven. LOOKUP_KEY-NOOT herschreven. ADR-058 correctie-noot (geen
+nieuwe ADR) + business/pricing.md bijgewerkt. Keys worden nergens in code gelezen
+(checkout=inline price_data); grep bevestigt geen live refs naar oude keys. Build groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/business/pricing.md
+docs/wiki/decisions/058-round-prices-card-layout-rag.md
+packages/shared/src/lib/pricing.ts
+---

@@ -181,7 +181,7 @@ Caption-extractie (los): 0 credits — altijd gratis
 
 Geïmplementeerd als **Checkout Sessions** (niet Payment Links):
 - **Prijs komt uit `pricing.ts`.** De checkout-route bouwt een **inline `price_data`** met `unit_amount = pkg.priceEur * 100` (cents) — er wordt géén vooraf-aangemaakt Stripe Price-object of `lookup_key` gebruikt. De webhook grant credits uit `session.metadata.credits` (= `pkg.credits`). Deploy van de nieuwe `priceEur`-waarden wijzigt dus direct het afgerekende bedrag.
-- `stripeLookupKey` / `stripeProductId` in `pricing.ts` worden **nergens in de code gelezen** — ze mirrorren alleen de live Stripe-producten. **`plus_1300` / `power_3100` bevatten nog het oude creditaantal (nu 1.000/3.000): bewust niet hernoemd** (bekende, gedocumenteerde inconsistentie — hernoemen kan alléén samen met een Stripe-side lookup_key-transfer, en Stripe wordt door Khidr beheerd). Zie ADR-058.
+- `stripeLookupKey` / `stripeProductId` in `pricing.ts` worden **nergens in de code gelezen** — ze mirrorren alleen de live Stripe-producten. **Gesynchroniseerd 2026-07-14:** Khidr hernoemde de Stripe-lookup_keys naar `plus_1000` / `power_3000`; `pricing.ts` is overgenomen → de mirror is weer in sync (de eerdere "bewust niet hernoemd"-inconsistentie is opgeheven). Zie ADR-058 (correctie-noot).
 - `mode: 'payment'` (eenmalig), `billing_address_collection: 'required'` (EU-factuurverplichting).
 - Integration- + settlement-currency: **EUR**; internationale valuta via **Adaptive Pricing**.
 - **Stripe Tax** aan, categorie `txcd_10000000`, prijzen inclusief, OSS.

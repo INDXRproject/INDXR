@@ -24,10 +24,9 @@ export interface PricingPackage {
 // LOOKUP_KEY-NOOT (Stripe-reconciliatie): `stripeLookupKey` en `stripeProductId` worden
 // NERGENS in de code gelezen — checkout gebruikt inline `price_data` (unit_amount = priceEur*100)
 // en de webhook grant `metadata.credits`. De keys hieronder MIRRORREN uitsluitend de live Stripe
-// Price-objecten. `plus_1300`/`power_3100` bevatten nog het OUDE creditaantal (nu 1.000/3.000):
-// bewust NIET hernoemd, want de key mirror't een Stripe-Price die alleen Khidr wijzigt — pricing.ts
-// eenzijdig hernoemen zou de mirror desyncen zonder functioneel voordeel. Bekende, gedocumenteerde
-// inconsistentie (ADR-058). Hernoemen kan alléén samen met een Stripe-side lookup_key-transfer.
+// Price-objecten en zijn daarmee IN SYNC: Khidr heeft de Stripe-lookup_keys op 2026-07-14
+// hernoemd naar `plus_1000`/`power_3000`, en die zijn hier overgenomen. De eerdere ADR-058-
+// rationale ("bewust niet hernoemd i.v.m. Stripe-mirror") is daarmee vervallen — de mirror klopt weer.
 export const PACKAGES: PricingPackage[] = [
   {
     id: "try",
@@ -66,8 +65,7 @@ export const PACKAGES: PricingPackage[] = [
     mostPopular: true,
     prominent: true,
     stripeProductId: "prod_UrNoFwMCKp8OOB",
-    // Historische suffix (1.000 credits nu) — zie LOOKUP_KEY-NOOT boven.
-    stripeLookupKey: "plus_1300",
+    stripeLookupKey: "plus_1000",
   },
   {
     id: "power",
@@ -80,8 +78,7 @@ export const PACKAGES: PricingPackage[] = [
     mostPopular: false,
     prominent: true,
     stripeProductId: "prod_UrNpeuGzIiVMf5",
-    // Historische suffix (3.000 credits nu) — zie LOOKUP_KEY-NOOT boven.
-    stripeLookupKey: "power_3100",
+    stripeLookupKey: "power_3000",
   },
 ]
 
