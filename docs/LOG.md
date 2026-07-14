@@ -8925,3 +8925,31 @@ Changed: docs/LOG.md
 docs/wiki/decisions/058-round-prices-card-layout-rag.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-14 23:35] taak: pakket-afbeelding op Stripe-betaalpagina | 4 webp's verplaatst root public/packages → apps/app/public/packages (enige door app-deploy geserveerde public); image-veld toegevoegd aan pricing.ts (source of truth); checkout-route voegt product_data.images=[${appUrl}${pkg.image}] toe (absolute https via bestaande NEXT_PUBLIC_APP_URL). Prijs/currency/unit_amount/metadata.credits/webhook ongewijzigd. Build groen (2/2). | gewijzigd: packages/shared/src/lib/pricing.ts, apps/app/src/app/api/stripe/checkout/route.ts, apps/app/public/packages/*.webp, docs/wiki/business/pricing.md
+[2026-07-14 23:32] commit: feat(checkout): pakket-afbeelding op Stripe-betaalpagina via product_data.images
+
+De 4 webp-pakketafbeeldingen verplaatst van de niet-geserveerde root
+public/packages/ naar apps/app/public/packages/ — de enige public-map die de
+app-deployment (app.indxr.ai) daadwerkelijk serveert.
+
+pricing.ts krijgt een `image`-veld per pakket (relatief pad, single source of
+truth). De checkout-route stelt daaruit een absolute https-URL samen met de
+bestaande NEXT_PUBLIC_APP_URL-var en zet die op product_data.images — Stripe
+rendert de afbeelding naast het line-item. Geen hardcoded paden in de route.
+
+Financieel-kritieke velden ONGEWIJZIGD: unit_amount, currency, metadata.credits
+en de webhook blijven exact zoals ze waren. Enige toevoeging is de images-array.
+
+Build groen (2/2 turbo tasks).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/public/packages/plus-1000.webp
+apps/app/public/packages/power-3000.webp
+apps/app/public/packages/starter-400.webp
+apps/app/public/packages/try-100.webp
+apps/app/src/app/api/stripe/checkout/route.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/business/pricing.md
+packages/shared/src/lib/pricing.ts
+---

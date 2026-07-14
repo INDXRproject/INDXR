@@ -55,6 +55,9 @@ export async function POST(req: Request) {
             product_data: {
               name: `${pkg.name} Package`,
               description: `${pkg.credits} Transcript Credits`,
+              // Absolute https-URL naar de pakket-afbeelding (pad uit pricing.ts).
+              // Stripe rendert dit naast het line-item; localhost/relatief werkt niet.
+              images: [`${appUrl}${pkg.image}`],
             },
             unit_amount: Math.round(pkg.priceEur * 100), // cents, derived from pricing.ts
           },

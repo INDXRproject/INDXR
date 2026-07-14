@@ -11,6 +11,11 @@ export interface PricingPackage {
   description: string // klant-gerichte omschrijving, in lijn met de Stripe-producten
   mostPopular: boolean
   prominent: boolean // true voor Starter/Plus/Power, false voor Try (secondary strip)
+  // Pad (relatief t.o.v. de app-public root) naar de pakket-afbeelding die op de
+  // Stripe-betaalpagina naast het line-item verschijnt. Wordt door de checkout-route
+  // met NEXT_PUBLIC_APP_URL tot een absolute https-URL samengesteld (Stripe rendert
+  // geen localhost/relatieve URL's). Bestand: apps/app/public/packages/.
+  image: string
   // Live Stripe koppeling (one-off prices, EUR, BTW-inclusief). credits MOET exact
   // gelijk zijn aan de Stripe price-metadata `credits` (meervoud) van dit product.
   stripeProductId: string
@@ -38,6 +43,7 @@ export const PACKAGES: PricingPackage[] = [
       "100 credits to try INDXR on your own videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports for vector databases (1 credit per 10 minutes of video). Extracting existing YouTube captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: false,
+    image: "/packages/try-100.webp",
     stripeProductId: "prod_UrNkT2na9l2iPA",
     stripeLookupKey: "try_100",
   },
@@ -51,6 +57,7 @@ export const PACKAGES: PricingPackage[] = [
       "400 credits for regular use. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: true,
+    image: "/packages/starter-400.webp",
     stripeProductId: "prod_UrNnnbtllIVRtd",
     stripeLookupKey: "starter_400",
   },
@@ -64,6 +71,7 @@ export const PACKAGES: PricingPackage[] = [
       "1,000 credits — the sweet spot for regular transcription. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: true,
     prominent: true,
+    image: "/packages/plus-1000.webp",
     stripeProductId: "prod_UrNoFwMCKp8OOB",
     stripeLookupKey: "plus_1000",
   },
@@ -77,6 +85,7 @@ export const PACKAGES: PricingPackage[] = [
       "3,000 credits at our lowest price per credit, for people who process a lot of long videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: true,
+    image: "/packages/power-3000.webp",
     stripeProductId: "prod_UrNpeuGzIiVMf5",
     stripeLookupKey: "power_3000",
   },
