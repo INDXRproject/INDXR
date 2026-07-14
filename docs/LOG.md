@@ -8905,3 +8905,23 @@ docs/wiki/business/pricing.md
 docs/wiki/decisions/058-round-prices-card-layout-rag.md
 packages/shared/src/lib/pricing.ts
 ---
+[2026-07-14 23:05] taak: docs — ADR-058 end-to-end-verificatie openstaand vastgelegd. priorities.md (Pre-launch testen): blokkerende taak toegevoegd (testaankoop per tier bevestigt inline price_data → checkout → webhook metadata.credits → add_credits: €5→100/€15→400/€25→1000/€60→3000; groene deploys ≠ bewijs). ADR-058: Stripe-zijde gemarkeerd als voltooid (4 producten €5/€15/€25/€60, credits-metadata 100/400/1000/3000, descriptions 1cr/10min, productafbeeldingen) + Status/Consequenties expliciet "e2e-verificatie open, niet als opgelost markeren". Geen code. | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/decisions/058-round-prices-card-layout-rag.md
+---
+[2026-07-14 22:40] commit: docs(adr-058): Stripe-zijde voltooid, e2e webhook-grant-verificatie nog open
+
+priorities.md (Pre-launch testen): blokkerende taak — testaankoop per tier via
+@indxr-test.com bevestigt inline price_data → checkout → webhook metadata.credits →
+add_credits (EUR5->100 / EUR15->400 / EUR25->1000 / EUR60->3000). Groene deploys +
+gesynchroniseerde pricing.ts zijn geen bewijs; webhook-grant niet geverifieerd sinds
+de prijswijziging van 14-07-2026.
+
+ADR-058: Stripe-zijde gemarkeerd als voltooid (4 producten op de ronde prijzen,
+credits-metadata, descriptions 1cr/10min, productafbeeldingen); Status + Consequenties
+expliciet 'e2e-verificatie open — niet als opgelost markeren' met verwijzing naar
+priorities.md. Documentatie-only.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/decisions/058-round-prices-card-layout-rag.md
+docs/wiki/roadmap/priorities.md
+---
