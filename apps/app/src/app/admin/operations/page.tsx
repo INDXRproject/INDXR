@@ -85,7 +85,11 @@ export default async function AdminOperationsPage() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="Success rate" value={pct(o.success_rate)} sub={`${o.jobs.complete} of ${o.jobs.complete + o.jobs.error} finished`} />
         <Metric label="Failed" value={o.jobs.error.toLocaleString()} sub="terminal errors" />
-        <Metric label="In flight" value={o.jobs.in_flight.toLocaleString()} sub="currently processing" />
+        <Metric
+          label="In flight"
+          value={o.jobs.in_flight.toLocaleString()}
+          sub={o.jobs.stuck > 0 ? `currently processing · ${o.jobs.stuck} stuck` : "currently processing"}
+        />
         <Metric label="Playlist jobs" value={`${o.playlist.complete}/${o.playlist.total}`} sub={`${o.retries.playlist_retried} retried`} />
       </div>
 

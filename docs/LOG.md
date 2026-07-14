@@ -8787,3 +8787,29 @@ docs/wiki/INDEX.md
 docs/wiki/architecture/credit-system.md
 docs/wiki/decisions/057-cost-model-close.md
 ---
+[2026-07-14 13:05] verify+fix: live-test-capture geverifieerd (Blok A) + stuck in-flight-teller gefixt (Blok B). A: usage_logs-rijen p-G6dZw3k_U kloppen (inkof free→had_paid=false/miss 1.673.834B; mbelabas paid→had_paid=true/cache_hit=true/0B); failed whisper wNCk6lWz4bQ (522 proxy) → transcription_jobs-rij met proxy_bytes=0 GESCHREVEN (25 pre-Blok-B error-jobs=NULL, deze=0 → Blok B werkt); sluit-test sluit nog (Σ=onafhankelijk totaal=204.322.372B). B: Operations in_flight/queue telden een dode legacy 'downloading'-job (2026-04-24, NULL heartbeat, credit-schoon) zonder staleness-guard → "1 in flight" bleef hangen. Fix: staleness-guard + aparte 'stuck'-teller in admin_operations_summary (NULL-heartbeat COALESCE→-infinity); zombie getermineerd (status=error/stale_abandoned, guard: credit-schoon). Nu in_flight=0, stuck=0. Frontend ActiveJobsIndicator had de guard al (geverifieerd 0). | gewijzigd: supabase/migrations/{20260714125449,20260714125540}, apps/app/src/app/admin/adminTypes.ts, apps/app/src/app/admin/operations/page.tsx, docs/*, transcription_jobs (1 rij data-hygiëne)
+[2026-07-14 15:04] commit: fix(admin/BLOK B): stuck "in flight"-teller — staleness-guard + zombie-cleanup
+
+Operations-tab toonde "1 in flight" sinds gisteren: admin_operations_summary telde in_flight
++ queue_depth ZONDER staleness-guard → een dode legacy 'downloading'-job (2026-04-24, NULL
+heartbeat, credit-schoon: reserved=0/deducted=false) bleef eeuwig meetellen. De Operations-tab
+(nieuw, ADR-056 gisteren) bracht 'm pas aan het licht — vandaar "sinds gisteren".
+
+Fix (2 migraties): staleness-guard (vers = created <30m OF heartbeat <10m) op in_flight +
+queue_depth, plus aparte 'stuck'-teller zodat dode jobs ZICHTBAAR blijven i.p.v. stil verborgen.
+NULL-heartbeat-partitiebug (rij viel uit in_flight ÉN stuck) gefixt met COALESCE→-infinity.
+De echte zombie getermineerd (status=error/stale_abandoned) — guard: alleen credit-schone
+jobs, de watchdog bezit reserved-jobs (ADR-050). Resultaat: in_flight=0, stuck=0, total sluit
+(215). Frontend ActiveJobsIndicator had de guard al (geverifieerd: 0 voor inkof).
+
+Frontend: adminTypes +jobs.stuck; operations-page toont "N stuck" in de In-flight-metric.
+App-build groen (exit 0).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/operations/page.tsx
+docs/LESSONS.md
+docs/LOG.md
+supabase/migrations/20260714125449_operations_in_flight_staleness_guard.sql
+supabase/migrations/20260714125540_operations_stuck_null_heartbeat_fix.sql
+---

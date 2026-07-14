@@ -66,7 +66,7 @@ export interface GrowthSummary {
 }
 
 export interface OperationsSummary {
-  jobs: { total: number; complete: number; error: number; in_flight: number }
+  jobs: { total: number; complete: number; error: number; in_flight: number; stuck: number }
   success_rate: number | null
   error_types: Record<string, number>
   retries: { playlist_retried: number; watchdog: number }
