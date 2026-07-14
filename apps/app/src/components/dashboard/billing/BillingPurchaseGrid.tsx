@@ -1,24 +1,16 @@
 "use client"
 
-import { useState } from "react"
-import { PricingCard } from "@indxr/shared/components/ui/pricing-card"
+import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "next/navigation"
+import { PricingTiers, pricingCtaClassName } from "@indxr/shared/components/pricing/PricingTiers"
 import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
-import { PACKAGES, formatEur, CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
-
-// Tier-onafhankelijke capabilities (gelden voor alle betaalde tiers). Geen
-// verzonnen per-tier perks — credits/prijzen/tarieven komen dynamisch uit pricing.ts.
-const PLAYLIST_RATE = CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS
-const FEATURES = [
-  `AI transcription (${CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min)`,
-  `Playlist & batch processing (first ${FREE_TIER.PLAYLIST_FREE_VIDEOS} free, then ${PLAYLIST_RATE} credit${PLAYLIST_RATE === 1 ? "" : "s"}/video)`,
-  "RAG-ready JSON export for vector DBs",
-  "Free existing-caption extraction",
-  "All export formats · credits never expire",
-]
+import { VALID_PLAN_IDS } from "@indxr/shared/lib/pricing"
 
 export function BillingPurchaseGrid() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const autoStarted = useRef(false)
 
   const handlePurchase = async (plan: string) => {
     setCheckoutError(null)
@@ -26,9 +18,7 @@ export function BillingPurchaseGrid() {
       setLoadingPlan(plan)
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan }),
       })
 
@@ -49,8 +39,20 @@ export function BillingPurchaseGrid() {
     }
   }
 
+  // Auto-checkout wanneer we hier landen vanaf de marketing-koopknop
+  // (app.indxr.ai/dashboard/billing?checkout=<plan>). Eén keer, alleen voor een geldig plan.
+  useEffect(() => {
+    if (autoStarted.current) return
+    const plan = searchParams.get('checkout')
+    if (plan && VALID_PLAN_IDS.has(plan)) {
+      autoStarted.current = true
+      handlePurchase(plan)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mt-8">
       {checkoutError && (
         <FeedbackCard
           variant="error"
@@ -58,22 +60,17 @@ export function BillingPurchaseGrid() {
           onDismiss={() => setCheckoutError(null)}
         />
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start mt-8">
-        {PACKAGES.map((pkg) => (
-          <PricingCard
-            key={pkg.id}
-            name={pkg.name}
-            price={formatEur(pkg.priceEur)}
-            credits={pkg.credits}
-            label={pkg.mostPopular ? "Most Popular" : undefined}
-            featured={pkg.mostPopular}
-            description={pkg.description}
-            ctaLabel={loadingPlan === pkg.id ? 'Redirecting...' : 'Buy Now'}
-            features={FEATURES}
-            onSelect={() => handlePurchase(pkg.id)}
-          />
-        ))}
-      </div>
+      <PricingTiers
+        renderCta={(pkg, opts) => (
+          <button
+            onClick={() => handlePurchase(pkg.id)}
+            disabled={loadingPlan === pkg.id}
+            className={pricingCtaClassName(pkg.mostPopular, opts?.compact)}
+          >
+            {loadingPlan === pkg.id ? 'Redirecting…' : `Buy ${pkg.name}`}
+          </button>
+        )}
+      />
     </div>
   )
 }

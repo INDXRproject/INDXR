@@ -8953,3 +8953,45 @@ docs/LOG.md
 docs/wiki/business/pricing.md
 packages/shared/src/lib/pricing.ts
 ---
+[2026-07-15 00:17] precompact: context compaction triggered
+[2026-07-15 01:05] taak: pricing 2 oppervlakken uniform + koopknoppen werkend in alle auth-states | root cause: marketing BuyButton deed relatieve fetch('/api/stripe/checkout') → 404 op marketing-host (route zit alleen op app) → dode knop bij ingelogde users. Fix: gedeelde PricingTiers.tsx (3 prominent + Try-strip + pakket-afbeelding, renderCta-prop); marketing-knop navigeert top-level naar app-billing?checkout=<plan> (ingelogd direct, uitgelogd via login?next); app BillingPurchaseGrid auto-checkout op ?checkout=. Checkout-route ONGEWIJZIGD. Images gekopieerd naar apps/marketing/public/packages/. 4 orphan-componenten verwijderd. Build groen (2/2). | gewijzigd: packages/shared/src/components/pricing/PricingTiers.tsx (nieuw), packages/shared/src/lib/pricing.ts, apps/marketing/src/components/pricing/BuyButton.tsx, apps/marketing/src/app/pricing/page.tsx, apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx, apps/marketing/public/packages/*.webp, docs/wiki/business/pricing.md
+[2026-07-15 00:38] commit: fix(pricing): koopknoppen werkend in alle auth-states + gedeeld kaart-design (2 oppervlakken)
+
+Root cause dode marketing-koopknop (ingelogd): de knop deed een relatieve
+fetch('/api/stripe/checkout') → op de marketing-host resolvet dat naar
+indxr.ai/api/stripe/checkout, maar die route bestaat alléén op de app-host →
+404 → dode knop. (Cookie is .indxr.ai-breed, dus getUser() sloeg de
+login-redirect over en liep in de 404-fetch.)
+
+Fix: marketing-knop navigeert top-level naar app.indxr.ai/dashboard/billing?checkout=<plan>
+(ingelogd direct; uitgelogd via login?next=<app-billing-url>). BillingPurchaseGrid
+start automatisch de checkout bij ?checkout=<plan>. Zo werkt de knop in beide
+auth-states en blijft de checkout-POST same-origin (Supabase-cookie is SameSite=Lax,
+reist niet mee op cross-origin fetch — alleen top-level navigatie).
+
+Design: nieuwe gedeelde packages/shared/.../PricingTiers.tsx (3 prominente kaarten
+Starter/Plus/Power + Try-strip, pakket-afbeelding, alles uit pricing.ts) met de actie
+als renderCta-prop. App-billing gebruikt nu hetzelfde design als marketing. Images
+gekopieerd naar apps/marketing/public/packages/. 4 orphan-componenten verwijderd.
+
+Checkout-route (unit_amount/currency/metadata.credits/images/webhook) ONGEWIJZIGD.
+Build groen (2/2).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
+apps/marketing/public/packages/plus-1000.webp
+apps/marketing/public/packages/power-3000.webp
+apps/marketing/public/packages/starter-400.webp
+apps/marketing/public/packages/try-100.webp
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/components/pricing/BuyButton.tsx
+apps/marketing/src/components/pricing/PricingTierCard.tsx
+apps/marketing/src/components/pricing/PricingTierGrid.tsx
+apps/marketing/src/components/pricing/SecondaryTierStrip.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/business/pricing.md
+packages/shared/src/components/pricing/PricingTiers.tsx
+packages/shared/src/components/ui/pricing-card.tsx
+packages/shared/src/lib/pricing.ts
+---

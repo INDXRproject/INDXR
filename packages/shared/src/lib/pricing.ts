@@ -91,6 +91,10 @@ export const PACKAGES: PricingPackage[] = [
   },
 ]
 
+// Geldige plan-ID's — voor client-side guards (bv. auto-checkout via ?checkout=).
+// De checkout-route valideert zelf óók server-side; dit is een defensieve extra.
+export const VALID_PLAN_IDS: ReadonlySet<string> = new Set(PACKAGES.map((p) => p.id))
+
 // Credit costs per action — wijzig HIER om credit-economics aan te passen.
 export const CREDIT_COSTS = {
   AI_TRANSCRIPTION_PER_MIN: 1,

@@ -4,8 +4,8 @@ import { JsonLd } from "@/components/seo/JsonLd"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { PricingHero } from "@/components/pricing/PricingHero"
 import { AlwaysFreeBlock } from "@/components/pricing/AlwaysFreeBlock"
-import { PricingTierGrid } from "@/components/pricing/PricingTierGrid"
-import { SecondaryTierStrip } from "@/components/pricing/SecondaryTierStrip"
+import { PricingTiers } from "@indxr/shared/components/pricing/PricingTiers"
+import { BuyButton } from "@/components/pricing/BuyButton"
 import { CreditCostTable } from "@/components/pricing/CreditCostTable"
 import { TrustRowCards } from "@/components/pricing/TrustRowCards"
 import { VatLine } from "@/components/pricing/VatLine"
@@ -110,11 +110,13 @@ export default function PricingPage() {
           {/* Section 3 — Always-free disclosure */}
           <AlwaysFreeBlock />
 
-          {/* Section 4 — 3 main tier cards (Starter / Plus★ / Power), Plus = Recommended */}
-          <PricingTierGrid />
-
-          {/* Section 5 — Try as a smaller, secondary intro option */}
-          <SecondaryTierStrip />
+          {/* Section 4+5 — 3 main tier cards (Starter / Plus★ / Power) + Try secondary strip.
+              Gedeelde presentatie met app-billing; CTA = auth-aware marketing BuyButton. */}
+          <PricingTiers
+            renderCta={(pkg, opts) => (
+              <BuyButton pkg={pkg} featured={pkg.mostPopular} compact={opts?.compact} />
+            )}
+          />
 
           {/* Section 6 — Credit-cost table with tier toggle */}
           <CreditCostTable />
