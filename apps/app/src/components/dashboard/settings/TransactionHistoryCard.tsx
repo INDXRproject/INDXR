@@ -11,6 +11,7 @@ import {
 } from "@indxr/shared/components/ui/table"
 import { useState } from "react"
 import { Button } from "@indxr/shared/components/ui/button"
+import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
 
 function timeAgo(dateString: string) {
     const date = new Date(dateString)
@@ -53,7 +54,10 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
         {/* Credits Display */}
         <div className="mb-6 p-4 bg-surface-elevated/50 rounded-lg border border-border flex items-center justify-between">
             <span className="text-sm text-fg-muted">Current Balance</span>
-            <span className="text-2xl font-semibold text-fg">{credits} credits</span>
+            <span className="flex items-center gap-2 text-2xl font-semibold text-fg">
+              <HexagonCreditIcon className="size-6" />
+              {credits} credits
+            </span>
         </div>
 
         {/* Responsive Table Container */}

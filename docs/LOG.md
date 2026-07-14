@@ -8825,3 +8825,26 @@ EOF2
 git log --oneline -3
 Changed: docs/wiki/roadmap/priorities.md
 ---
+[2026-07-14 17:45] taak: credit-icon swap → gouden munt-asset (credit-coin.png) | HexagonCreditIcon rendert nu <img src=/credit-coin.png> i.p.v. inline SVG (één swap dekt topbar-pill + sidebar-teller, size-classes behouden = geen layout-shift); asset naar apps/app/public/; coin toegevoegd naast "Current Balance" op Account (had geen icon). Build groen (2/2). | gewijzigd: packages/shared/src/components/icons/HexagonCreditIcon.tsx, apps/app/src/components/dashboard/settings/TransactionHistoryCard.tsx, apps/app/public/credit-coin.png, docs/wiki/design/system.md
+[2026-07-14 17:40] commit: feat(design): swap credit-icon naar gouden munt-asset (credit-coin.png)
+
+HexagonCreditIcon rendert nu het gouden munt-PNG (128×128 transparant,
+munt met hexagon-mark) i.p.v. de inline amber SVG. Eén swap in de gedeelde
+component dekt beide callsites — topbar-pill (rechtsboven) en sidebar-teller
+(linksonder) — met behoud van hun size-classes (size-5 / h-4 w-4), dus geen
+layout-shift. Asset in apps/app/public/ (enige host die de icon importeert).
+
+Coin tegelijk toegevoegd naast "Current Balance" op de Account-pagina
+(TransactionHistoryCard) — die had voorheen géén icon; vereist door de
+verificatie-lijst. Billing-balans, Home-balans, transactie-rijen en
+pricing/checkout tonen credits nog als platte tekst (nooit deze icon gehad).
+
+Build groen (2/2 turbo tasks).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/public/credit-coin.png
+apps/app/src/components/dashboard/settings/TransactionHistoryCard.tsx
+docs/LOG.md
+docs/wiki/design/system.md
+packages/shared/src/components/icons/HexagonCreditIcon.tsx
+---

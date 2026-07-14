@@ -162,6 +162,8 @@ Elk design-besluit wordt getoetst aan deze zeven. Bij twijfel: terug naar `wiki/
 
 **Geïmplementeerd (2026-07-03):** `HexagonCreditIcon` in `packages/shared/src/components/icons/`, amber-gevuld hexagon, vervangt lucide `CircleDollarSign` in `AppTopbar.tsx` en `app-sidebar.tsx`. Zelfde map bevat `HexagonPattern` (tessellerende honeycomb-achtergrond, parametriseerbaar via `size`-prop) en `HexagonEmptyState` (hexagon + play-glyph voor empty states).
 
+**Icon-swap (2026-07-14):** `HexagonCreditIcon` rendert nu het gouden munt-asset (`/credit-coin.png`, 128×128 transparant PNG, munt met hexagon-mark) i.p.v. de inline SVG — één swap in de gedeelde component dekt beide callsites (topbar-pill rechtsboven + sidebar-teller linksonder) met behoud van hun size-classes (geen layout-shift). Asset staat in `apps/app/public/` (enige host die de icon importeert). Tegelijk toegevoegd naast "Current Balance" op de Account-pagina (`TransactionHistoryCard.tsx`) — die had voorheen géén icon. Billing-pagina, Home-balans, transactie-rijen en pricing/checkout tonen credits nog steeds als platte tekst (nooit deze icon gehad — buiten scope van de swap). `PlaylistAvailabilitySummary` gebruikt lucide `Coins` als kost-waarschuwing (andere semantiek — niet geraakt).
+
 **Beauty patterns:** Zie §5 voor surface-by-surface map.
 
 ---
