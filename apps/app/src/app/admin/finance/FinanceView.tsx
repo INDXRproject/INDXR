@@ -1,50 +1,73 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState, useMemo, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import { Switch } from "@indxr/shared/components/ui/switch"
-import { eur, pct, TYPE_META, type GeldScope, type GeldSummary } from "../adminTypes"
+import { eur, pct, TYPE_META } from "../adminTypes"
+import type { FinanceSummary, FinanceScope, SnapshotRow, ExpenseRow, CostConfigRow } from "./financeTypes"
+import { shiftAnchor, type PeriodKind } from "./periods"
+import { accrualForRange } from "./accrual"
+import { FinanceSettings } from "./SettingsDialog"
 
-const CONNECT = "before:absolute before:left-1/2 before:-top-3 before:h-3 before:w-px before:bg-border"
+interface PeriodProp {
+  kind: PeriodKind
+  from: string
+  to: string
+  label: string
+  toDate: boolean
+  anchorISO: string
+}
 
-// Proportional segmented bar. Falls back to a muted track when the total is 0.
+interface Props {
+  summary: FinanceSummary
+  comparison: FinanceSummary | null
+  snapshots: SnapshotRow[]
+  expenses: ExpenseRow[]
+  costConfig: CostConfigRow | null
+  deferredWindowDays: number
+  period: PeriodProp
+  generatedAt: string
+}
+
+const KINDS: { key: PeriodKind; label: string }[] = [
+  { key: "week", label: "Week" },
+  { key: "month", label: "Month" },
+  { key: "quarter", label: "Quarter" },
+  { key: "year", label: "Year" },
+]
+
+function delta(cur: number, prev: number): { txt: string; up: boolean } | null {
+  if (prev === 0) return null
+  const d = (cur - prev) / Math.abs(prev)
+  return { txt: `${d >= 0 ? "+" : ""}${(d * 100).toFixed(0)}%`, up: d >= 0 }
+}
+
+// Proportional segmented bar.
 function SplitBar({ segments }: { segments: { value: number; cls: string; title: string }[] }) {
   const total = segments.reduce((s, x) => s + x.value, 0)
-  if (total <= 0) {
-    return <div className="h-2.5 w-full rounded-full bg-surface-sunken" />
-  }
+  if (total <= 0) return <div className="h-2.5 w-full rounded-full bg-surface-sunken" />
   return (
     <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-sunken">
       {segments.map((s, i) =>
-        s.value > 0 ? (
-          <div key={i} className={s.cls} style={{ width: `${(s.value / total) * 100}%` }} title={s.title} />
-        ) : null
+        s.value > 0 ? <div key={i} className={s.cls} style={{ width: `${(s.value / total) * 100}%` }} title={s.title} /> : null,
       )}
     </div>
   )
 }
 
-function Line({
-  label, value, marginLabel, accent, children,
-}: {
-  label: string
-  value: string
-  marginLabel?: string
-  accent?: "in" | "cost" | "profit"
-  children?: ReactNode
-}) {
-  const valueColor =
-    accent === "in" ? "text-success" : accent === "cost" ? "text-error" : "text-fg-strong"
+function StatementLine({
+  label, value, accent, marginLabel, children,
+}: { label: string; value: string; accent?: "in" | "cost" | "profit"; marginLabel?: string; children?: ReactNode }) {
+  const color = accent === "in" ? "text-success" : accent === "cost" ? "text-error" : "text-fg-strong"
   return (
     <div className="rounded-xl border bg-surface p-5">
       <div className="flex items-baseline justify-between gap-4">
         <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">{label}</span>
         <div className="flex items-baseline gap-2">
           {marginLabel && (
-            <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-fg-muted">
-              {marginLabel}
-            </span>
+            <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-fg-muted">{marginLabel}</span>
           )}
-          <span className={`text-2xl font-bold tabular-nums ${valueColor}`}>{value}</span>
+          <span className={`text-2xl font-bold tabular-nums ${color}`}>{value}</span>
         </div>
       </div>
       {children && <div className="mt-3 space-y-2">{children}</div>}
@@ -52,192 +75,333 @@ function Line({
   )
 }
 
-// Operator connector between two P&L lines (e.g. "− VAT €0.00").
 function Op({ text }: { text: string }) {
   return (
-    <div className={`relative flex justify-center py-2 ${CONNECT}`}>
+    <div className="relative flex justify-center py-2 before:absolute before:left-1/2 before:-top-3 before:h-3 before:w-px before:bg-border">
       <span className="rounded-full border bg-bg px-2.5 py-0.5 text-[11px] text-fg-muted">{text}</span>
     </div>
   )
 }
 
-function PnL({
-  scope, opex, storageCor,
-}: { scope: GeldScope; opex: GeldSummary["opex_global"]; storageCor: number }) {
+function IncomeStatement({ s }: { s: FinanceScope }) {
+  const [corOpen, setCorOpen] = useState(false)
   const [opexOpen, setOpexOpen] = useState(false)
-
-  // Estimated COR on the deferred (unconsumed purchased) credits — projection, labelled as such.
-  const avgCostPerCr = scope.consumed_cr > 0 ? scope.cor.total / scope.consumed_cr : 0
-  const deferredCr = Math.max(0, scope.purchased_cr - scope.consumed_purchased_cr)
-  const estCorDeferred = deferredCr * avgCostPerCr
-
-  // Storage is a global COR line (R2 free tier is account-level) — folded into effective COR.
-  const corEff = scope.cor_against_revenue + storageCor
-  const grossProfit = scope.recognized_revenue - corEff
-  const grossMargin = scope.recognized_revenue > 0 ? grossProfit / scope.recognized_revenue : null
-
-  const opexTotal =
-    opex.infra_monthly + opex.ads + opex.funnel_free_captions_anon +
-    scope.funnel_free_caption_cost + scope.granted_delivery_cost
-  const netProfit = grossProfit - opexTotal
-  const netMargin = scope.recognized_revenue > 0 ? netProfit / scope.recognized_revenue : null
+  const cor = s.cor
+  const opexTotal = s.measured_opex.total + s.entered_opex_total
+  const aiCache = s.cache_savings.ai_transcription
+  const capCache = s.cache_savings.caption
 
   return (
     <div>
-      <Line label="Cash in · incl. VAT" value={eur(scope.cash_in_gross)} accent="in">
+      <StatementLine label="Revenue · delivered (ex-VAT)" value={eur(s.revenue_delivered)} accent="in">
         <p className="text-xs text-fg-muted">
-          Gross received via Stripe · {scope.purchased_cr.toLocaleString()} credits purchased
+          Recognised on consumption · deferred obligation {eur(s.deferred_balance)} held separately
         </p>
-      </Line>
+      </StatementLine>
 
-      <Op text={`− VAT ${scope.vat_known ? eur(scope.vat) : "(unknown, 0 assumed)"}`} />
+      <Op text={`− COR ${eur(cor.against_revenue, true)}`} />
 
-      <Line label="Revenue · excl. VAT" value={eur(scope.revenue_net)}>
-        <SplitBar
-          segments={[
-            { value: scope.recognized_revenue, cls: "bg-success", title: "Recognized" },
-            { value: scope.deferred_revenue, cls: "bg-warning", title: "Deferred" },
-          ]}
-        />
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-          <span className="text-fg">
-            <span className="mr-1 inline-block h-2 w-2 rounded-full bg-success align-middle" />
-            Recognized (delivered) <span className="font-semibold">{eur(scope.recognized_revenue)}</span>
-          </span>
-          <span className="text-fg">
-            <span className="mr-1 inline-block h-2 w-2 rounded-full bg-warning align-middle" />
-            Deferred (obligation) <span className="font-semibold">{eur(scope.deferred_revenue)}</span>
-          </span>
-        </div>
-      </Line>
-
-      <Op text={`− COR ${eur(corEff, true)}`} />
-
-      <Line label="Cost of revenue" value={eur(corEff, true)} accent="cost">
-        <SplitBar
-          segments={[
-            { value: scope.cor.ai_transcription, cls: TYPE_META.ai_transcription.bar, title: "AI transcription" },
-            { value: scope.cor.caption, cls: TYPE_META.caption.bar, title: "Auto-captions" },
-            { value: scope.cor.ai_summary, cls: TYPE_META.ai_summary.bar, title: "AI summary" },
-            { value: scope.cor.rag, cls: TYPE_META.rag.bar, title: "RAG" },
-            { value: storageCor, cls: "bg-fg-muted", title: "R2 storage" },
-          ]}
-        />
-        <div className="flex flex-wrap gap-1.5">
-          {(["ai_transcription", "caption", "ai_summary", "rag"] as const).map((k) => (
-            <span
-              key={k}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_META[k].bg} ${TYPE_META[k].text}`}
-            >
-              {TYPE_META[k].label} {eur(scope.cor[k], true)}
+      <StatementLine label="Cost of revenue" value={eur(cor.against_revenue, true)} accent="cost">
+        <SplitBar segments={[
+          { value: cor.ai_transcription, cls: TYPE_META.ai_transcription.bar, title: "AI transcription" },
+          { value: cor.caption, cls: TYPE_META.caption.bar, title: "Auto-captions" },
+          { value: cor.ai_summary, cls: TYPE_META.ai_summary.bar, title: "AI summary" },
+          { value: cor.rag, cls: TYPE_META.rag.bar, title: "RAG" },
+          { value: cor.storage, cls: "bg-warning", title: "Storage" },
+        ]} />
+        <button onClick={() => setCorOpen((v) => !v)} className="text-xs text-accent hover:underline">
+          {corOpen ? "Hide breakdown" : "Show breakdown per method"}
+        </button>
+        {corOpen && (
+          <div className="grid gap-1.5 text-xs sm:grid-cols-2">
+            {(["ai_transcription", "caption", "ai_summary", "rag"] as const).map((k) => (
+              <span key={k} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${TYPE_META[k].bg} ${TYPE_META[k].text} w-fit`}>
+                {TYPE_META[k].label} {eur(cor[k], true)}
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-1 rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning w-fit">
+              Storage {eur(cor.storage, true)}
             </span>
-          ))}
-          <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[10px] font-medium text-fg-muted">
-            R2 storage {eur(storageCor, true)}
-          </span>
-        </div>
-        <p className="text-xs text-fg-muted">
-          Real (delivered): <span className="font-semibold text-fg">{eur(corEff, true)}</span>
-          {" · "}
-          <span className="rounded bg-warning-subtle px-1 text-warning">est.</span> on deferred:{" "}
-          <span className="font-semibold text-fg">{eur(estCorDeferred, true)}</span>
-          {" · caption & storage measured"}
-        </p>
-      </Line>
+            {/* cache savings only on AI-transcription + auto-captions (both really flagged) */}
+            {aiCache.total_jobs > 0 && (
+              <span className="text-fg-muted">
+                AI transcription: <span className="font-semibold text-fg">{pct(aiCache.pct)}</span> from cache · saved {eur(aiCache.saved_eur, true)}
+              </span>
+            )}
+            {capCache.total_count > 0 && (
+              <span className="text-fg-muted">
+                Auto-captions: <span className="font-semibold text-fg">{pct(capCache.pct)}</span> from cache · saved {eur(capCache.saved_eur, true)}
+              </span>
+            )}
+          </div>
+        )}
+      </StatementLine>
 
-      <div className="relative py-2">
-        <div className="absolute left-1/2 -top-1 h-1 w-px bg-border" />
-      </div>
+      <div className="relative py-2"><div className="absolute left-1/2 -top-1 h-1 w-px bg-border" /></div>
 
-      <Line
-        label="Gross profit"
-        value={eur(grossProfit)}
-        marginLabel={`margin ${pct(grossMargin)}`}
-        accent="profit"
-      >
-        <p className="text-xs text-fg-muted">Recognized revenue − real cost of revenue (incl. storage)</p>
-      </Line>
+      <StatementLine label="Gross profit" value={eur(s.gross_profit)} accent="profit" marginLabel={`margin ${pct(s.gross_margin)}`}>
+        <p className="text-xs text-fg-muted">Delivered revenue − cost of revenue (incl. storage)</p>
+      </StatementLine>
 
       <Op text={`− OPEX ${eur(opexTotal)}`} />
 
-      <Line label="Operating expenses" value={eur(opexTotal)} accent="cost">
-        <button
-          onClick={() => setOpexOpen((v) => !v)}
-          className="text-xs text-accent hover:underline"
-        >
+      <StatementLine label="Operating expenses" value={eur(opexTotal)} accent="cost">
+        <button onClick={() => setOpexOpen((v) => !v)} className="text-xs text-accent hover:underline">
           {opexOpen ? "Hide breakdown" : "Show breakdown"}
         </button>
         {opexOpen && (
-          <div className="grid gap-1 text-xs text-fg-muted sm:grid-cols-2">
-            <span>Infra (fixed): <span className="font-semibold text-fg">{eur(opex.infra_monthly)}</span> / mo</span>
-            <span>Ads / marketing: <span className="font-semibold text-fg">{eur(opex.ads)}</span></span>
-            <span>
-              Free-caption funnel · logged-in:{" "}
-              <span className="font-semibold text-fg">{eur(scope.funnel_free_caption_cost, true)}</span>
-            </span>
-            <span>
-              Free-caption funnel · anon (global):{" "}
-              <span className="font-semibold text-fg">{eur(opex.funnel_free_captions_anon, true)}</span>
-            </span>
-            <span>Granted-credit delivery: <span className="font-semibold text-fg">{eur(scope.granted_delivery_cost, true)}</span></span>
+          <div className="space-y-1 text-xs text-fg-muted">
+            <div className="flex justify-between">
+              <span>Payment processing <span className="rounded bg-surface-sunken px-1 text-[10px]">measured</span></span>
+              <span className="font-semibold text-fg">{eur(s.measured_opex.stripe_fee)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Granted-credit delivery (goodwill) <span className="rounded bg-surface-sunken px-1 text-[10px]">measured</span></span>
+              <span className="font-semibold text-fg">{eur(s.measured_opex.goodwill, true)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Free-caption funnel · logged-in <span className="rounded bg-surface-sunken px-1 text-[10px]">measured</span></span>
+              <span className="font-semibold text-fg">{eur(s.measured_opex.funnel_loggedin, true)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Free-caption funnel · anon <span className="rounded bg-surface-sunken px-1 text-[10px]">measured</span></span>
+              <span className="font-semibold text-fg">{eur(s.measured_opex.funnel_anon, true)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-1">
+              <span>Entered (infra / ads / one-off) <span className="rounded bg-accent-subtle px-1 text-[10px] text-accent">entered</span></span>
+              <span className="font-semibold text-fg">{eur(s.entered_opex_total)}</span>
+            </div>
           </div>
         )}
-      </Line>
+      </StatementLine>
 
-      <div className="relative py-2">
-        <div className="absolute left-1/2 -top-1 h-1 w-px bg-border" />
-      </div>
+      <div className="relative py-2"><div className="absolute left-1/2 -top-1 h-1 w-px bg-border" /></div>
 
-      <Line
-        label="Net profit"
-        value={eur(netProfit)}
-        marginLabel={`margin ${pct(netMargin)}`}
-        accent="profit"
-      >
+      <StatementLine label="Net profit" value={eur(s.net_profit)} accent="profit" marginLabel={`margin ${pct(s.net_margin)}`}>
         <p className="text-xs text-fg-muted">Gross profit − operating expenses</p>
-      </Line>
+      </StatementLine>
     </div>
   )
 }
 
-export function FinanceView({ data }: { data: GeldSummary }) {
+function BankBridge({ s }: { s: FinanceScope }) {
+  const b = s.bank
+  return (
+    <div className="rounded-xl border bg-surface p-5">
+      <h3 className="text-sm font-semibold">Where the cash sits</h3>
+      <p className="mb-3 text-xs text-fg-muted">What actually lands in the bank, and what's owed on it.</p>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between"><span className="text-fg-muted">Charged to customers</span><span className="font-semibold tabular-nums">{eur(b.charged)}</span></div>
+        <div className="flex justify-between"><span className="text-fg-muted">− Stripe fee</span><span className="font-semibold tabular-nums text-error">{eur(b.stripe_fee)}</span></div>
+        <div className="flex justify-between border-t pt-2"><span className="font-medium">= Settled to your bank</span><span className="font-bold tabular-nums">{eur(b.net_settlement > 0 ? b.net_settlement : b.settled_computed)}</span></div>
+        <div className="mt-3 space-y-1 rounded-lg bg-surface-sunken p-3 text-xs">
+          <div className="flex justify-between"><span className="text-fg-muted">VAT (owed to tax office)</span><span className="tabular-nums">{s.vat_computed ? eur(b.vat_owed) : "not computed"}</span></div>
+          <div className="flex justify-between"><span className="text-fg-muted">Revenue ex-VAT (delivered + deferred)</span><span className="tabular-nums">{eur(b.revenue_ex_vat)}</span></div>
+        </div>
+        {!s.vat_computed && b.charged > 0 && (
+          <p className="text-[11px] text-warning">⚠ VAT not computed on these sales (Stripe automatic_tax off) — see finance notes.</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function DeferredCard({ s }: { s: FinanceScope }) {
+  const d = s.deferred
+  return (
+    <div className="rounded-xl border bg-surface p-5">
+      <h3 className="text-sm font-semibold">Deferred</h3>
+      <p className="mb-3 text-xs text-fg-muted">Revenue collected but not yet delivered.</p>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between"><span className="text-fg-muted">Balance (ex-VAT)</span><span className="font-semibold tabular-nums">{eur(d.balance)}</span></div>
+        <div className="flex justify-between"><span className="text-fg-muted">Credits outstanding</span><span className="tabular-nums">{d.credits.toLocaleString()}</span></div>
+        <div className="flex justify-between"><span className="text-fg-muted">Est. cost to deliver <span className="rounded bg-warning-subtle px-1 text-[10px] text-warning">est</span></span><span className="tabular-nums">{eur(d.est_future_cost)}</span></div>
+        <div className="flex justify-between border-t pt-2"><span className="font-medium">Est. future gross</span><span className="font-bold tabular-nums">{eur(d.est_future_gross)}</span></div>
+        <p className="text-[11px] text-fg-subtle">Based on the last {d.window_days} days' usage mix.</p>
+      </div>
+    </div>
+  )
+}
+
+// Trend from frozen snapshots + live entered-OPEX overlay.
+function Trend({ snapshots, scope, expenses }: { snapshots: SnapshotRow[]; scope: "external" | "internal"; expenses: ExpenseRow[] }) {
+  const [metric, setMetric] = useState<"revenue" | "net" | "split">("revenue")
+  const rows = snapshots.filter((r) => r.scope === scope)
+  if (rows.length < 2) {
+    return (
+      <div className="rounded-xl border bg-surface p-5">
+        <h3 className="text-sm font-semibold">Trend</h3>
+        <p className="mt-2 text-xs text-fg-muted">
+          Measured figures are frozen nightly · entered costs update live. The trend fills in as nightly
+          snapshots accumulate ({rows.length} day{rows.length === 1 ? "" : "s"} so far).
+        </p>
+      </div>
+    )
+  }
+  // per-day: measured net − live entered accrual for that day
+  const bars = rows.map((r) => {
+    const from = r.snapshot_date
+    const to = new Date(Date.parse(from + "T00:00:00Z") + 86400000).toISOString().slice(0, 10)
+    const entered = scope === "external" ? accrualForRange(expenses, from, to) : 0
+    const net = r.net_profit_measured - entered
+    const val = metric === "revenue" ? r.revenue_delivered : metric === "net" ? net : r.revenue_delivered
+    return { date: from, val, revenue: r.revenue_delivered, deferred: r.deferred_balance, net }
+  })
+  const max = Math.max(1, ...bars.map((b) => Math.abs(b.val)))
+  return (
+    <div className="rounded-xl border bg-surface p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Trend</h3>
+        <div className="flex gap-0.5 rounded-lg bg-surface-sunken p-0.5 text-xs">
+          {(["revenue", "net", "split"] as const).map((m) => (
+            <button key={m} onClick={() => setMetric(m)}
+              className={`rounded-md px-2 py-1 ${metric === m ? "bg-surface font-medium text-fg" : "text-fg-muted"}`}>
+              {m === "revenue" ? "Revenue" : m === "net" ? "Net profit" : "Delivered/deferred"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex h-32 items-end gap-1">
+        {bars.map((b) => (
+          <div key={b.date} className="flex flex-1 flex-col items-center gap-1" title={`${b.date}: ${eur(b.val)}`}>
+            <div className="flex w-full items-end justify-center" style={{ height: "100%" }}>
+              <div className={`w-full rounded-t ${b.val >= 0 ? "bg-accent" : "bg-error"}`}
+                style={{ height: `${(Math.abs(b.val) / max) * 100}%`, minHeight: b.val !== 0 ? "2px" : "0" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[11px] text-fg-subtle">
+        Measured figures frozen nightly · entered costs update live (historical net can shift after an expense edit — intended).
+      </p>
+    </div>
+  )
+}
+
+function PeriodPicker({ period }: { period: PeriodProp }) {
+  const router = useRouter()
+  const go = (params: Record<string, string>) => {
+    const q = new URLSearchParams(params)
+    router.push(`/admin/finance?${q.toString()}`)
+  }
+  const setKind = (kind: PeriodKind) => go({ period: kind })
+  const nav = (dir: -1 | 1) => {
+    if (period.kind === "custom") return
+    const anchor = new Date(period.anchorISO + "T00:00:00Z")
+    const next = shiftAnchor(period.kind, anchor, dir)
+    if (dir === 1 && next > new Date()) return // cap at running period
+    go({ period: period.kind, anchor: next.toISOString().slice(0, 10) })
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex gap-0.5 rounded-lg bg-surface-sunken p-0.5 text-sm">
+        {KINDS.map((k) => (
+          <button key={k.key} onClick={() => setKind(k.key)}
+            className={`rounded-md px-3 py-1 ${period.kind === k.key ? "bg-surface font-medium text-fg" : "text-fg-muted hover:text-fg"}`}>
+            {k.label}
+          </button>
+        ))}
+      </div>
+      {period.kind !== "custom" && (
+        <div className="flex items-center gap-1">
+          <button onClick={() => nav(-1)} className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated" aria-label="Previous period">←</button>
+          <span className="min-w-[8rem] text-center text-sm font-medium">{period.label}{period.toDate ? " · to date" : ""}</span>
+          <button onClick={() => nav(1)} disabled={period.toDate}
+            className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated disabled:opacity-40" aria-label="Next period">→</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function FinanceView(props: Props) {
+  const { summary, comparison, snapshots, expenses, costConfig, deferredWindowDays, period, generatedAt } = props
+  const router = useRouter()
   const [showTest, setShowTest] = useState(false)
-  const ext = data.external
-  const preRevenue = ext.cash_in_gross === 0 && ext.consumed_cr === 0
+  const scope: FinanceScope = summary.external
+  const cmp = comparison?.external ?? null
+  const netDelta = cmp ? delta(scope.net_profit, cmp.net_profit) : null
+  const revDelta = cmp ? delta(scope.revenue_delivered, cmp.revenue_delivered) : null
+  const updated = useMemo(() => new Date(generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), [generatedAt])
 
   return (
     <div className="space-y-6">
+      {/* header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Finance</h1>
-          <p className="text-sm text-fg-muted">
-            Real economy · {data.counts.internal_profiles} internal/test accounts excluded from every figure
-          </p>
+          <p className="text-sm text-fg-muted">Real economy · internal/test accounts excluded</p>
         </div>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-xs text-fg-muted">
+            <span className="inline-block h-2 w-2 rounded-full bg-success" /> Live · updated {updated}
+          </span>
+          <button onClick={() => router.refresh()} className="rounded-md border px-2.5 py-1 text-sm hover:bg-surface-elevated">Refresh</button>
+          <FinanceSettings expenses={expenses} costConfig={costConfig} deferredWindowDays={deferredWindowDays} enteredLines={summary.entered_opex.lines} />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <PeriodPicker period={period} />
         <label className="flex items-center gap-2 text-sm text-fg-muted">
           <Switch checked={showTest} onCheckedChange={setShowTest} />
-          Show internal / test traffic
+          Show internal / test
         </label>
       </div>
 
-      {preRevenue && (
-        <div className="rounded-xl border border-warning-border bg-warning-subtle/40 px-4 py-3 text-sm">
-          <span className="font-semibold">Pre-revenue.</span> All measured activity so far is on
-          internal/test accounts. The real external economy is currently €0 — the chain below shows the
-          structure and populates as real users arrive.
+      {/* hero */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border bg-surface p-5">
+          <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">Net profit</span>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="text-3xl font-bold tabular-nums text-fg-strong">{eur(scope.net_profit)}</span>
+            {netDelta && <span className={`text-sm font-medium ${netDelta.up ? "text-success" : "text-error"}`}>{netDelta.txt}</span>}
+          </div>
+          <p className="mt-1 text-xs text-fg-muted">vs same elapsed days last period</p>
         </div>
-      )}
-
-      <div className="max-w-xl">
-        <PnL scope={ext} opex={data.opex_global} storageCor={data.cor_storage.eur} />
+        <div className="rounded-xl border bg-surface p-5">
+          <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">Revenue</span>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="text-3xl font-bold tabular-nums text-fg-strong">{eur(scope.revenue_delivered + scope.deferred_balance)}</span>
+            {revDelta && <span className={`text-sm font-medium ${revDelta.up ? "text-success" : "text-error"}`}>{revDelta.txt}</span>}
+          </div>
+          <div className="mt-2">
+            <SplitBar segments={[
+              { value: scope.revenue_delivered, cls: "bg-success", title: "Delivered" },
+              { value: scope.deferred_balance, cls: "bg-warning", title: "Deferred" },
+            ]} />
+            <div className="mt-1 flex gap-4 text-[11px] text-fg-muted">
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-success align-middle" />Delivered {eur(scope.revenue_delivered)}</span>
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-warning align-middle" />Deferred {eur(scope.deferred_balance)}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* income statement + cards */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <IncomeStatement s={scope} />
+        <div className="space-y-4">
+          <BankBridge s={scope} />
+          <DeferredCard s={scope} />
+        </div>
+      </div>
+
+      <Trend snapshots={snapshots} scope="external" expenses={expenses} />
+
       {showTest && (
-        <div className="max-w-xl rounded-xl border border-dashed bg-surface-sunken p-4">
+        <div className="rounded-xl border border-dashed bg-surface-sunken p-4">
           <p className="mb-3 text-xs font-medium uppercase tracking-wider text-fg-muted">
-            Internal / test traffic — excluded from the real economy
+            Internal / test traffic — excluded from the real economy (entered costs shown once on external only)
           </p>
-          <PnL scope={data.internal} opex={data.opex_global} storageCor={0} />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <IncomeStatement s={summary.internal} />
+            <div className="space-y-4">
+              <BankBridge s={summary.internal} />
+              <DeferredCard s={summary.internal} />
+            </div>
+          </div>
+          <div className="mt-4"><Trend snapshots={snapshots} scope="internal" expenses={expenses} /></div>
         </div>
       )}
     </div>
