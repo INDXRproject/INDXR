@@ -8813,3 +8813,15 @@ docs/LOG.md
 supabase/migrations/20260714125449_operations_in_flight_staleness_guard.sql
 supabase/migrations/20260714125540_operations_stuck_null_heartbeat_fix.sql
 ---
+[2026-07-14 15:04] commit: docs(BLOK C): noteer 2 punten in priorities.md (1.36 + 1.37)
+
+1.36 — Arabische (RTL/non-Latijns) transcript-naamgeving raar bij bulk-download (~100 txt);
+onderzoek export-filename-sanitisatie/encoding. Cosmetisch, geen blocker.
+1.37 — "Cache savings"-Finance-cijfer afleidbaar uit usage_logs.cache_hit + proxy_bytes=0
+(ADR-057): marge-winst (credits altijd normaal afgerekend, alleen KOST €0). Ontwerp: Claude Desktop.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+EOF2
+git log --oneline -3
+Changed: docs/wiki/roadmap/priorities.md
+---
