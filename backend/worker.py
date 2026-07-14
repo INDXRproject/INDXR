@@ -130,7 +130,8 @@ async def _log_caption_event(user_id: str, video_id: str, proxy_bytes: int, cach
                              credits_used: int = 0, success: bool = True) -> None:
     """BLOK A: per-caption event-rij voor de PLAYLIST-route (altijd ingelogd). credits_used=1 voor
     betaalde video's, 0 voor gratis (eerste 3) → gratis = free-funnel-OPEX, betaald = echte caption-COR.
-    De RPC snapshot't had_paid + is_internal server-side. Nooit blokkerend (best-effort)."""
+    De RPC snapshot't had_paid + is_internal server-side. Nooit blokkerend (best-effort).
+    B3: bron altijd 'playlist' (deze helper is exclusief de playlist-route)."""
     try:
         await asyncio.to_thread(
             lambda: get_supabase_client().rpc('log_caption_usage', {
@@ -140,6 +141,7 @@ async def _log_caption_event(user_id: str, video_id: str, proxy_bytes: int, cach
                 'p_cache_hit': bool(cache_hit),
                 'p_credits_used': int(credits_used or 0),
                 'p_success': bool(success),
+                'p_source': 'playlist',
             }).execute()
         )
     except Exception as e:
@@ -461,6 +463,9 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
                         'status': 'pending',
                         'source_type': 'youtube',
                         'video_url': f'https://www.youtube.com/watch?v={video_id}',
+                        # B3: playlist-whisper job → bron-vlag + playlist-verwijzing bij aanmaak.
+                        'source_kind': 'playlist',
+                        'playlist_id': playlist_id,
                     }, on_conflict='id', ignore_duplicates=True).execute()
                 )
             except Exception as upsert_err:
@@ -709,6 +714,9 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
                             'status': 'pending',
                             'source_type': 'youtube',
                             'video_url': f'https://www.youtube.com/watch?v={video_id}',
+                            # B3: playlist-whisper (retry-pad) → bron-vlag + playlist-verwijzing bij aanmaak.
+                            'source_kind': 'playlist',
+                            'playlist_id': playlist_id,
                         }, on_conflict='id', ignore_duplicates=True).execute()
                     )
                 except Exception as upsert_err:

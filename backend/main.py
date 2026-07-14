@@ -259,11 +259,12 @@ async def health_check():
         "version": "1.0.0"
     }
 
-async def _log_caption_event(user_id, video_id, proxy_bytes, cache_hit, credits_used=0, success=True):
+async def _log_caption_event(user_id, video_id, proxy_bytes, cache_hit, credits_used=0, success=True, source='single'):
     """BLOK A: schrijf één per-caption event-rij voor een INGELOGDE user (usage_logs).
     De RPC snapshot't had_paid + is_internal server-side. Anoniem (user_id None) → no-op:
     die captions tellen in daily_cost_counters (bump_caption_proxy_bytes), niet per-rij.
-    Standalone captions kosten 0 credits (credits_used=0); playlist geeft 1 door voor betaalde video's."""
+    Standalone captions kosten 0 credits (credits_used=0); playlist geeft 1 door voor betaalde video's.
+    B3: source ('single'|'playlist') voedt Operations."""
     if not user_id:
         return
     try:
@@ -276,6 +277,7 @@ async def _log_caption_event(user_id, video_id, proxy_bytes, cache_hit, credits_
                 'p_cache_hit': bool(cache_hit),
                 'p_credits_used': int(credits_used or 0),
                 'p_success': bool(success),
+                'p_source': source if source in ('single', 'playlist') else 'single',
             }).execute()
         )
     except Exception as e:
@@ -932,6 +934,8 @@ async def transcribe_with_whisper(
         'source_type': source_type,
         'file_size_bytes': file_size_bytes,
         'file_format': file_format,
+        # B3: bron-vlag bij aanmaak (voedt Operations). Losse job → upload of single.
+        'source_kind': 'upload' if source_type == 'upload' else 'single',
     }).execute()
 
     # ADR-050 fase 1 — reserveer het geschatte bedrag bij job-start (flag-gated, default OFF).

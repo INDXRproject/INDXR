@@ -373,6 +373,7 @@ async def do_assemblyai_transcription(
                     status="complete",
                     transcript_id=transcript_id,
                     credits_cost=credit_cost,
+                    cache_hit=True,  # B2b: master-cache-hit → COR=0 (geen AssemblyAI/proxy), credits wél gesettled
                 )
                 credits_deducted = False  # success — no refund
                 if reservation_mode and credit_cost > 0:

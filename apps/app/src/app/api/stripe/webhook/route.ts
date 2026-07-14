@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/nextjs'
 import { stripe } from '@/lib/stripe'
 import Stripe from 'stripe'
 import { createAdminClient } from '@indxr/shared/utils/supabase/admin'
+import { captureStripeFees } from '@/lib/stripe-fees'
 
 export const runtime = 'nodejs';
 
@@ -79,19 +80,10 @@ export async function POST(req: Request) {
         ? session.payment_intent
         : session.payment_intent?.id
       if (piId) {
-        const pi = await stripe.paymentIntents.retrieve(piId, {
-          expand: ['latest_charge.balance_transaction'],
-        })
-        purchaseMeta.payment_intent_id = pi.id
-        const charge = pi.latest_charge as Stripe.Charge | null
-        const bt = charge?.balance_transaction
-        if (bt && typeof bt !== 'string') {
-          // fee/net are in the SETTLEMENT currency's minor units (settlement_currency records which).
-          purchaseMeta.stripe_fee = bt.fee / 100
-          purchaseMeta.net_settlement = bt.net / 100
-          purchaseMeta.settlement_currency = bt.currency
-          purchaseMeta.balance_transaction_id = bt.id
-        }
+        // B4: Stripe's EIGEN fee_details + betaalmethode + net settlement (geen hardcoded rates).
+        // De balance_transaction is soms nog niet settled → fee-velden ontbreken dan; het reconcile-pad
+        // (/api/admin/reconcile-stripe-fees) vult ze later alsnog aan. amount_tax blijft altijd bewaard.
+        Object.assign(purchaseMeta, await captureStripeFees(piId))
       }
     } catch (feeErr) {
       const msg = feeErr instanceof Error ? feeErr.message : 'unknown'
