@@ -94,6 +94,7 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 | [055-money-model-geld-block.md](decisions/055-money-model-geld-block.md) | Money-model & GELD-blok (admin etappe 1): `product_type`-stempel (leaf, playlist=composiet), `is_internal`-filter op élk cijfer, revenue=purchased-only + granted-first, `opex_expenses`, auditeerbare `admin_geld_summary()` RPC |
 | [056-admin-control-center-redesign.md](decisions/056-admin-control-center-redesign.md) | Admin herontwerp: tabs (Overview/Finance/Growth/Operations/…), Finance top-down P&L (recognized\|deferred + real\|estimated splits), Growth-funnel + CAC/LTV, Operations systeem-health, auto-flag test-accounts (`+test`/`@indxr-test.com`) + `admin_growth_summary()`/`admin_operations_summary()` |
 | [057-cost-model-close.md](decisions/057-cost-model-close.md) | Money-model sluiten (Blok A–F): per-caption `usage_logs` voor ingelogden + snapshots, egress op mislukte jobs, som van retry-egress, caption dubbeltelling weg (echte COR i.p.v. dagteller-schatting), R2 storage-COR-regel, playlist per-minuut voor whisper — sluit-test geverifieerd |
+| [058-round-prices-card-layout-rag.md](decisions/058-round-prices-card-layout-rag.md) | Ronde prijzen (Try €5 / Starter €15 / Plus €25 / Power €60), 3-tier card-layout met Plus center-stage + "Recommended" + Try als kleinere instap, RAG 1cr/10min — ihsaan (geen ,99-trucs) + kwaliteitssignaal; supersedet ADR-052 |
 
 ---
 

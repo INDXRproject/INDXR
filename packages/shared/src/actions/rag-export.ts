@@ -29,7 +29,7 @@ export async function deductRagExportCreditsAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Not authenticated' }
 
-  const cost = Math.max(1, Math.ceil(durationSeconds / 900))
+  const cost = Math.max(1, Math.ceil(durationSeconds / 600))
 
   const { data, error } = await supabase.rpc('deduct_credits_atomic', {
     p_user_id: user.id,
@@ -102,7 +102,7 @@ export async function bulkDeductRagExportCreditsAction(
 
   const itemsWithCost = newExports.map(item => ({
     ...item,
-    cost: Math.max(1, Math.ceil(item.durationSeconds / 900)),
+    cost: Math.max(1, Math.ceil(item.durationSeconds / 600)),
   }))
   const totalCost = itemsWithCost.reduce((sum, item) => sum + item.cost, 0)
 

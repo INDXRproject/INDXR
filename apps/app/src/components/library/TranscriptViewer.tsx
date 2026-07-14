@@ -346,7 +346,7 @@ export function TranscriptViewer({
     (transcript.length > 0
       ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
       : 0);
-  const ragCost = Math.max(1, Math.ceil(derivedDuration / 900));
+  const ragCost = Math.max(1, Math.ceil(derivedDuration / 600));
 
   // Mark as viewed on mount if not already viewed
   useEffect(() => {

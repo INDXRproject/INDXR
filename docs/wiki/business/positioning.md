@@ -52,21 +52,28 @@ INDXR is bewust **niet gratis** voor betaalde features: welcome credits + gratis
 
 ### Concurrentie-analyse AI-transcriptie (2026-07, per minuut)
 
-INDXR's AI-transcriptie kost **€0,035/min (Try) → €0,016/min (Power)** — 1 credit/min, dus per-minuut = prijs-per-credit per tier.
+INDXR's AI-transcriptie kost **€0,050/min (Try) → €0,020/min (Power)** — 1 credit/min bij ronde prijzen ([ADR-058](../decisions/058-round-prices-card-layout-rag.md)), dus per-minuut = prijs-per-credit per tier.
 
-| Aanbieder | Prijs/min | Type |
-|-----------|-----------|------|
-| **INDXR** | **€0,035 → €0,016** | GUI + RAG + playlist + gratis captions |
-| Rev / Temi | ~$0,25/min | UI-transcriptie |
-| Happy Scribe | ~€0,20/min | UI-transcriptie |
-| Algemene AI-transcriptiemarkt | $0,10–0,50/min | UI |
-| Deepgram (kale API) | ~$0,0043/min | API, geen GUI |
-| VexaScribe e.d. (bulk/self-host) | < INDXR | API/self-host, geen GUI |
+| Aanbieder | Prijs/min | Model | Type |
+|-----------|-----------|-------|------|
+| **INDXR** | **€0,050 → €0,020** | Pay-per-use, credits verlopen nooit | GUI + RAG + playlist + gratis captions |
+| Rev / Temi | ~$0,25/min | Pay-per-use | UI-transcriptie |
+| Sonix (pay-as-you-go) | ~$10/uur ≈ $0,167/min | PAYG | UI-transcriptie |
+| Sonix (abonnement) | ~$5/uur ≈ $0,083/min | Maandcommitment | UI-transcriptie |
+| Happy Scribe | ~€0,20/min | Pay-per-use / sub | UI-transcriptie |
+| Descript / Otter / Notta | maandabonnement (uren vervallen) | Maandcommitment | UI-transcriptie |
+| Deepgram (kale API) | ~$0,0043/min | PAYG | API, geen GUI |
 
-**Conclusie (concurrentie-analyse bevestigt):**
-- INDXR zit **fors ónder de UI-concurrenten** (Rev/Temi/Happy Scribe, 5–15×) én onder de algemene AI-transcriptiemarkt.
-- INDXR is **duurder dan kale API's/self-hosted** (Deepgram, VexaScribe-bulk) — maar die missen GUI, RAG-export, playlist-batch, gratis caption-extractie en de bibliotheekfunctie. Dat is de bewuste waarde-premie.
-- **Prijs niet verlagen.** De prijs is goed/onder de markt. Het openstaande punt is puur **presentatie**: de per-minuut/per-uur-weergave beter framen met deze concurrentie-context — dat is **redesign-werk** (zie [roadmap/backlog.md → Redesign](../roadmap/backlog.md)), geen prijswijziging.
+**Conclusie (herzien 2026-07-14 — vervangt "prijs niet verlagen, presentatie-vraag"):**
+
+INDXR positioneert als **de flexibele, eerlijke tussenweg**:
+
+- **Goedkoper dan de GUI-concurrenten.** Zelfs de goedkoopste tier — **Power, €0,020/min** — blijft **~6,6× onder Sonix** (PAYG) en **~10× onder Rev**. Tegen Rev/Temi/Happy Scribe zit INDXR structureel 5–15× lager, mét GUI, RAG-export, playlist-batch, gratis caption-extractie en bibliotheek.
+- **Flexibeler dan de abonnementen** (Otter/Notta/Descript): **niets vervalt** en er is **geen maandcommitment**. Je koopt credits eenmalig en gebruikt ze wanneer je wil.
+
+**Never-expire + pay-per-use = premie-rechtvaardiging, geen korting.** Flexibiliteit wordt in de markt *apart beprijsd*: **Sonix rekent zelf een 2× premie voor pay-as-you-go** ($10/uur PAYG vs. $5/uur op abonnement). Dat is marktbewijs dat "gebruik wanneer je wil, geen commitment" een betaalbare eigenschap is — geen weggevertje. INDXR levert díe flexibiliteit (nooit-verval + geen maandkosten) én blijft ver onder de GUI-concurrenten. De nooit-verval-belofte is dus een **waarde-premie die we mogen claimen**, niet iets waarvoor we moeten afprijzen.
+
+- INDXR is duurder dan kale API's/self-hosted (Deepgram) — die missen GUI, RAG-export, playlist-batch, gratis captions en bibliotheek. Bewuste waarde-premie.
 
 Vs. ChatGPT/handmatig: omslachtig, geen bibliotheek, geen playlist/RAG.
 

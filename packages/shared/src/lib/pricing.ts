@@ -17,16 +17,26 @@ export interface PricingPackage {
   stripeLookupKey: string
 }
 
-// 4-tier model — zie ADR-052. Credits matchen 1-op-1 de live Stripe price-metadata `credits`.
+// 4-tier model met RONDE prijzen — zie ADR-058 (supersedet ADR-052).
+// Ronde prijzen zijn een bewuste keuze (ihsaan: geen ,99-charm-trucs; ronde bedragen
+// signaleren kwaliteit/vertrouwen). Credits matchen 1-op-1 de live Stripe price-metadata `credits`.
+//
+// LOOKUP_KEY-NOOT (Stripe-reconciliatie): `stripeLookupKey` en `stripeProductId` worden
+// NERGENS in de code gelezen — checkout gebruikt inline `price_data` (unit_amount = priceEur*100)
+// en de webhook grant `metadata.credits`. De keys hieronder MIRRORREN uitsluitend de live Stripe
+// Price-objecten. `plus_1300`/`power_3100` bevatten nog het OUDE creditaantal (nu 1.000/3.000):
+// bewust NIET hernoemd, want de key mirror't een Stripe-Price die alleen Khidr wijzigt — pricing.ts
+// eenzijdig hernoemen zou de mirror desyncen zonder functioneel voordeel. Bekende, gedocumenteerde
+// inconsistentie (ADR-058). Hernoemen kan alléén samen met een Stripe-side lookup_key-transfer.
 export const PACKAGES: PricingPackage[] = [
   {
     id: "try",
     name: "Try",
-    priceEur: 3.49,
+    priceEur: 5,
     credits: 100,
     audience: "Try it on your own videos",
     description:
-      "100 credits to try INDXR on your own videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports for vector databases (1 credit per 15 minutes of video). Extracting existing YouTube captions is always free. Credits never expire.",
+      "100 credits to try INDXR on your own videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports for vector databases (1 credit per 10 minutes of video). Extracting existing YouTube captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: false,
     stripeProductId: "prod_UrNkT2na9l2iPA",
@@ -35,11 +45,11 @@ export const PACKAGES: PricingPackage[] = [
   {
     id: "starter",
     name: "Starter",
-    priceEur: 9.99,
+    priceEur: 15,
     credits: 400,
     audience: "Occasional use",
     description:
-      "400 credits for regular use. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 15 minutes of video). Extracting existing captions is always free. Credits never expire.",
+      "400 credits for regular use. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: true,
     stripeProductId: "prod_UrNnnbtllIVRtd",
@@ -48,27 +58,29 @@ export const PACKAGES: PricingPackage[] = [
   {
     id: "plus",
     name: "Plus",
-    priceEur: 24.99,
-    credits: 1300,
+    priceEur: 25,
+    credits: 1000,
     audience: "Regular transcription — best value",
     description:
-      "1,300 credits — the sweet spot for regular transcription. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 15 minutes of video). Extracting existing captions is always free. Credits never expire.",
+      "1,000 credits — the sweet spot for regular transcription. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: true,
     prominent: true,
     stripeProductId: "prod_UrNoFwMCKp8OOB",
+    // Historische suffix (1.000 credits nu) — zie LOOKUP_KEY-NOOT boven.
     stripeLookupKey: "plus_1300",
   },
   {
     id: "power",
     name: "Power",
-    priceEur: 49.99,
-    credits: 3100,
+    priceEur: 60,
+    credits: 3000,
     audience: "High volume, lowest price per credit",
     description:
-      "3,100 credits at our lowest price per credit, for people who process a lot of long videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 15 minutes of video). Extracting existing captions is always free. Credits never expire.",
+      "3,000 credits at our lowest price per credit, for people who process a lot of long videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: true,
     stripeProductId: "prod_UrNpeuGzIiVMf5",
+    // Historische suffix (3.000 credits nu) — zie LOOKUP_KEY-NOOT boven.
     stripeLookupKey: "power_3100",
   },
 ]
@@ -78,7 +90,7 @@ export const CREDIT_COSTS = {
   AI_TRANSCRIPTION_PER_MIN: 1,
   PLAYLIST_VIDEO_AUTO_CAPTIONS: 1, // per video voorbij eerste 3 free
   AI_SUMMARY: 3,
-  RAG_JSON_PER_15MIN: 1,
+  RAG_JSON_PER_10MIN: 1, // 1 credit per 10 min video (ADR-058, was per 15 min); formule ⌈duur/600⌉ min 1
   SINGLE_VIDEO_AUTO_CAPTIONS: 0, // altijd gratis
 } as const
 
@@ -132,7 +144,7 @@ export function cheapestPackage(): PricingPackage {
   return PACKAGES.reduce((lo, p) => (p.priceEur < lo.priceEur ? p : lo))
 }
 
-// "€3.49 / 100 credits" voor een specifieke tier.
+// "€5.00 / 100 credits" voor een specifieke tier.
 export function tierPriceCredits(id: PricingPackage["id"]): string {
   const p = getPackage(id)
   return `${formatEur(p.priceEur)} / ${p.credits.toLocaleString()} credits`

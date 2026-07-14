@@ -8848,3 +8848,43 @@ docs/LOG.md
 docs/wiki/design/system.md
 packages/shared/src/components/icons/HexagonCreditIcon.tsx
 ---
+[2026-07-14 20:13] taak: prijsherziening naar ronde bedragen (Try €5/100 · Starter €15/400 · Plus €25/1000 · Power €60/3000) + pricing-cards herontwerp (3 hoofdkaarten, Plus center-stage "Recommended", Try als kleinere instap eronder) + RAG-export 1cr/15min→1cr/10min (/900→/600 op 5 plekken) | ADR-058 supersedet ADR-052; Stripe ONAANGEROERD (checkout=inline price_data, lookup_key decoratief → plus_1300/power_3100 bewust behouden + gedocumenteerd) | build groen | gewijzigd: packages/shared/src/lib/pricing.ts, actions/rag-export.ts, components/TranscriptCard.tsx, apps/app/library/{TranscriptList,TranscriptViewer}.tsx, apps/marketing/pricing/{page,PricingTierCard,SecondaryTierStrip,CreditCostTable}, articles/{youtube-transcript-for-rag,youtube-transcript-json,youtube-channel-knowledge-base}, docs/wiki/{business/pricing.md,positioning.md,marketing.md,architecture/pricing-source-of-truth.md,INDEX.md,decisions/058-round-prices-card-layout-rag.md}
+---
+[2026-07-14 20:14] commit: feat(pricing): ronde prijzen (€5/€15/€25/€60) + 3-tier card-layout + RAG 1cr/10min
+
+Prijsherziening naar ronde bedragen (ihsaan: geen ,99-trucs; kwaliteitssignaal):
+Try €5/100 · Starter €15/400 · Plus €25/1000 · Power €60/3000. Per-credit
+volume-ladder −25%/−33%/−20%. Pricing-cards: 3 hoofdkaarten met Plus center-stage
++ badge 'Recommended' (i.p.v. onverifieerbaar 'Most popular'), Try als kleinere
+instap-optie eronder. RAG-export 1cr/15min → 1cr/10min (/900→/600 op 5 code-plekken
++ alle klant-gerichte teksten/tabellen). ADR-058 supersedet ADR-052.
+
+Stripe ONAANGEROERD: checkout gebruikt inline price_data (unit_amount=priceEur*100),
+webhook grant metadata.credits; stripeLookupKey/stripeProductId worden nergens in de
+code gelezen. plus_1300/power_3100 dragen nog het oude creditaantal — bewust NIET
+hernoemd (mirror van live Stripe Price die alleen Khidr wijzigt), gedocumenteerd als
+bekende inconsistentie in pricing.ts + ADR-058.
+
+Geen hardcoded prijzen/credits buiten pricing.ts (grep-geverifieerd). Build groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/components/pricing/CreditCostTable.tsx
+apps/marketing/src/components/pricing/PricingTierCard.tsx
+apps/marketing/src/components/pricing/SecondaryTierStrip.tsx
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/pricing-source-of-truth.md
+docs/wiki/business/marketing.md
+docs/wiki/business/positioning.md
+docs/wiki/business/pricing.md
+docs/wiki/decisions/058-round-prices-card-layout-rag.md
+packages/shared/src/actions/rag-export.ts
+packages/shared/src/components/TranscriptCard.tsx
+packages/shared/src/lib/pricing.ts
+---

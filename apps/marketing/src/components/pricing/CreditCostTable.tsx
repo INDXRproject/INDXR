@@ -12,8 +12,8 @@ const TASKS = [
   { name: "AI Transcription, 1 hour", credits: 60 },
   { name: "Playlist, 20 videos (auto-captions)", credits: 17 }, // 20 - 3 free
   { name: "AI Summary", credits: CREDIT_COSTS.AI_SUMMARY },
-  { name: "RAG JSON export, 1-hour video", credits: 4 },
-  { name: "1-hour AI Transcription + RAG JSON", credits: 64 },
+  { name: "RAG JSON export, 1-hour video", credits: 6 }, // 60 min / 10
+  { name: "1-hour AI Transcription + RAG JSON", credits: 66 }, // 60 + 6
 ]
 
 function formatCost(credits: number, pkg: PricingPackage): string {

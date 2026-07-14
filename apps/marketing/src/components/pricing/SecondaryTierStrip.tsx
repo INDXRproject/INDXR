@@ -1,6 +1,6 @@
-// Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
-// Renders the non-prominent tier(s) (currently Try) as compact secondary cards
-// under the prominent tiers.
+// Renders the non-prominent tier(s) (currently Try) as a smaller, clearly-secondary
+// intro option UNDER the three main cards — for people who want to test the waters first.
+// Deliberately not presented as an equal fourth card (ADR-058: Try = de-risk intro).
 
 import { PACKAGES, formatEur } from "@indxr/shared/lib/pricing"
 import { BuyButton } from "@/components/pricing/BuyButton"
@@ -9,19 +9,26 @@ export function SecondaryTierStrip() {
   const secondaryPackages = PACKAGES.filter((p) => !p.prominent)
 
   return (
-    <div className="mt-6 flex flex-col sm:flex-row items-stretch justify-center gap-4 max-w-2xl mx-auto">
+    <div className="mt-8 max-w-md mx-auto">
+      <p className="text-center text-xs text-[var(--fg-muted)] mb-3">
+        Just want to try it on a single project first?
+      </p>
       {secondaryPackages.map((pkg) => (
         <div
           key={pkg.id}
-          className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-3"
+          className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] p-4 flex items-center justify-between gap-4"
         >
-          <div>
-            <h4 className="font-semibold text-[var(--fg)]">{pkg.name}</h4>
-            <p className="text-2xl font-bold text-[var(--fg)]">{formatEur(pkg.priceEur)}</p>
-            <p className="text-sm text-[var(--fg-muted)]">{pkg.credits.toLocaleString()} credits</p>
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold text-[var(--fg)]">
+              {pkg.name} · {formatEur(pkg.priceEur)}
+            </h4>
+            <p className="text-xs text-[var(--fg-muted)]">
+              {pkg.credits.toLocaleString()} credits — {pkg.audience}
+            </p>
           </div>
-          <p className="text-xs text-[var(--fg-subtle)] flex-1">{pkg.audience}</p>
-          <BuyButton pkg={pkg} />
+          <div className="shrink-0">
+            <BuyButton pkg={pkg} className="!w-auto px-4 py-2 text-xs" />
+          </div>
         </div>
       ))}
     </div>

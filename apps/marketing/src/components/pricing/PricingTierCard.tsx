@@ -11,16 +11,18 @@ export function PricingTierCard({ pkg }: PricingTierCardProps) {
   const ppc = pricePerCredit(pkg)
   const hourCost = costInTier(60, pkg)
 
+  // `mostPopular` is de interne vlag voor de aanbevolen/center-stage tier (Plus). De badge
+  // toont bewust "Recommended" i.p.v. "Most popular" — een eerlijke, verifieerbare claim (ADR-058).
   const card = (
     <div className={`relative rounded-xl border p-6 flex flex-col h-full ${
       pkg.mostPopular
-        ? "border-[var(--accent)] shadow-sm"
-        : "border-[var(--border)]"
-    } ${pkg.prominent ? "" : "bg-[var(--surface)]"}`}>
+        ? "border-[var(--accent)] bg-[var(--accent-subtle)] shadow-md ring-1 ring-[var(--accent)] sm:-translate-y-2"
+        : "border-[var(--border)] bg-[var(--surface)]"
+    }`}>
       {pkg.mostPopular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="px-3 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent)] text-[var(--fg-on-accent)]">
-            Most Popular
+            Recommended
           </span>
         </div>
       )}

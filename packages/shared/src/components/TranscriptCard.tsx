@@ -92,7 +92,7 @@ export function TranscriptCard({
       ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
       : 0);
 
-  const ragCost = Math.max(1, Math.ceil(derivedDuration / 900));
+  const ragCost = Math.max(1, Math.ceil(derivedDuration / 600));
   const ragDurationMin = Math.ceil(derivedDuration / 60);
   const [ragSelectedChunkSize, setRagSelectedChunkSize] = useState<30 | 60 | 90 | 120>(
     (profile?.rag_chunk_size ?? 60) as 30 | 60 | 90 | 120
@@ -476,7 +476,7 @@ export function TranscriptCard({
               <span className="font-semibold text-fg">{ragCost} credit{ragCost !== 1 ? 's' : ''}</span>
             </div>
             <p className="text-xs text-fg-muted">
-              {ragDurationMin} min video · 1 credit per 15 min
+              {ragDurationMin} min video · 1 credit per 10 min
             </p>
             <div className="flex items-center justify-between text-sm pt-1 border-t border-border/50">
               <span className="text-fg-muted">Your balance</span>

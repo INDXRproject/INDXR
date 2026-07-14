@@ -31,17 +31,17 @@ Alle **getoonde** prijzen en euro-kostenvoorbeelden in klant-gerichte content (a
 | Helper | Levert | Gebruik |
 |--------|--------|---------|
 | `cheapestPackage()` | goedkoopste tier | "Starting at €X" (teaser, pricing-metadata) |
-| `tierPriceCredits(id)` | `"€3.49 / 100 credits"` | tier inline noemen (bv. Try in pricing-FAQ) |
-| `creditCostEur(credits, pkg?)` | `"€1.15"` | euro-kost van N credits (default anker = Plus) — kostentabellen |
-| `creditCostPhrase(credits, pkg?)` | `"~€1.15 at Plus pricing"` | voorbeeld-frase in prozaïsche tekst |
-| `anchorPerCreditText()` | `"€0.019/credit"` | prijs-per-credit voorbeeld |
+| `tierPriceCredits(id)` | `"€5.00 / 100 credits"` | tier inline noemen (bv. Try in pricing-FAQ) |
+| `creditCostEur(credits, pkg?)` | `"€1.25"` | euro-kost van N credits (default anker = Plus) — kostentabellen |
+| `creditCostPhrase(credits, pkg?)` | `"~€1.25 at Plus pricing"` | voorbeeld-frase in prozaïsche tekst |
+| `anchorPerCreditText()` | `"€0.025/credit"` | prijs-per-credit voorbeeld |
 | `getAnchorPackage()` / `ANCHOR_TIER_ID` | Plus-tier | ankertier voor alle euro-voorbeelden |
 
 **Conventies:**
 - **Credits-first.** Credit-aantallen (stabiel bij repricing) staan als tekst; euro-bedragen worden altijd berekend.
-- **Ankertier = Plus** (`ANCHOR_TIER_ID = "plus"`, €24,99/1.300). Alle "at Plus pricing"-voorbeelden komen hier vandaan. Repricing van Plus herrekent elk voorbeeld.
-- **Geen "Basic"/"Pro" meer** — die tiers bestaan niet (ADR-052). Oude twee-koloms kostentabellen ("Cost at Basic" + "Cost at Plus") zijn gereduceerd tot één berekende Plus-kolom.
-- **Credit-RATES** ("1 credit per minute", "3 credits per summary", "1 credit / 15 min") staan als proza — dat zijn stabiele productconstanten uit `CREDIT_COSTS`, geen prijzen; ze wijzigen niet bij repricing.
+- **Ankertier = Plus** (`ANCHOR_TIER_ID = "plus"`, €25/1.000 — ronde prijzen, ADR-058). Alle "at Plus pricing"-voorbeelden komen hier vandaan. Repricing van Plus herrekent elk voorbeeld.
+- **Geen "Basic"/"Pro" meer** — die tiers bestaan niet (ADR-052/058). Oude twee-koloms kostentabellen ("Cost at Basic" + "Cost at Plus") zijn gereduceerd tot één berekende Plus-kolom.
+- **Credit-RATES** ("1 credit per minute", "3 credits per summary", "1 credit / 10 min") staan als proza — dat zijn stabiele productconstanten uit `CREDIT_COSTS`, geen prijzen; ze wijzigen niet bij repricing. (RAG-rate = 1 cr / 10 min sinds ADR-058.)
 
 **Vind elke pricing-plek met één grep:**
 ```bash

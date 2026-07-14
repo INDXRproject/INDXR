@@ -147,8 +147,8 @@ export default function YouTubeChannelKnowledgeBasePage() {
       <ul>
         <li>50 videos × 30 minutes × 1 credit/minute = <strong>1,500 credits</strong></li>
         <li>At {getAnchorPackage().name} pricing ({anchorPerCreditText()}): <strong>{creditCostEur(1500)}</strong></li>
-        <li>RAG JSON export: 1,500 minutes ÷ 15 minutes per credit = <strong>100 more credits</strong></li>
-        <li>Total: <strong>1,600 credits = ~{creditCostEur(1600)}</strong></li>
+        <li>RAG JSON export: 1,500 minutes ÷ 10 minutes per credit = <strong>150 more credits</strong></li>
+        <li>Total: <strong>1,650 credits = ~{creditCostEur(1650)}</strong></li>
       </ul>
 
       <p>

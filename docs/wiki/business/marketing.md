@@ -75,6 +75,18 @@ INDXR.AI richt zich op problem-aware zoekintentie: mensen die een specifiek YouT
 
 ---
 
+### SRT als funnel-haak (noteren voor latere SEO/copy-fase — niet nu bouwen)
+
+**Kans:** YouTube auto-captions halen slechts **60–70% nauwkeurigheid** — ~1 op de 3 woorden fout, oplopend tot **~67% fout op vakjargon** en **~45% fout op eigennamen**. INDXR's **AI-transcriptie (~99%)** levert een directe, nauwkeurige **SRT-export**.
+
+**Positionering:** frame **"accurate 99%-SRT inbegrepen"** als reden om via INDXR te transcriberen — **geen aparte prijslijn**. SRT is meerwaarde bij het betaalde AI-transcriptieproduct (de pay-funnel): auto-caption-SRT is gratis maar onnauwkeurig; wie een bruikbare, publiceerbare SRT wil, transcribeert met AI (1 cr/min).
+
+**Onderbouwing voor copy:** **WCAG-AA vereist ≥99% accuracy** op prerecorded content — auto-captions halen dat bij lange na niet; INDXR's AI-transcriptie wel. Dit is een harde, citeerbare accessibility-grond.
+
+**Status:** copy/SEO-notitie voor Fase-3 — niet nu bouwen. Sluit aan op de "Nauwkeurigheid"-copy-anchor hieronder.
+
+---
+
 ## Conversie Funnel
 
 ### Anonieme gebruiker

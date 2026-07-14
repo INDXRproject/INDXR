@@ -1,8 +1,19 @@
 # Pricing
 
-**Herzien: 2026-07-09.** 4-tier-model, BTW-inclusief, worst-case-geprijsd. Vervangt het 5-tier-model (Try/Basic/Plus/Pro/Power). Zie [ADR-052](../decisions/052-pricing-restructure-4-tiers.md) voor de volledige rationale; [ADR-012](../decisions/012-pricing-tiers.md) is hierdoor superseded.
+**Herzien: 2026-07-14.** 4-tier-model met **ronde prijzen**, BTW-inclusief, worst-case-geprijsd. Vervangt het ,99-prijsmodel (Try €3,49 … Power €49,99). Zie [ADR-058](../decisions/058-round-prices-card-layout-rag.md) voor de volledige rationale; [ADR-052](../decisions/052-pricing-restructure-4-tiers.md) is hierdoor superseded (dat superseedde op zijn beurt [ADR-012](../decisions/012-pricing-tiers.md)).
 
-INDXR.AI verkoopt credits als **eenmalige** aankopen (geen abonnement). **Credits verlopen nooit** — dit is een bewust *ihsaan*-principe (geen verval-druk, geen "use it or lose it"). Behoud dit; het is een expliciet verkoopargument.
+INDXR.AI verkoopt credits als **eenmalige** aankopen (geen abonnement). **Credits verlopen nooit** — een bewust *ihsaan*-principe (geen verval-druk, geen "use it or lose it"). Behoud dit; het is een expliciet verkoopargument én de premie-rechtvaardiging (zie [positioning.md](positioning.md)).
+
+---
+
+## Waarom ronde prijzen (ihsaan + kwaliteitssignaal)
+
+De overstap van `,99`-charmeprijzen naar **ronde bedragen** (€5 / €15 / €25 / €60) is een bewuste keuze op twee gronden:
+
+1. **Ihsaan — geen psychologische trucs.** Charm-pricing (`,99`) is een manipulatieve nudge die net-onder-de-drempel-suggereert. Dat past niet bij een eerlijk product. Ronde prijzen zijn transparant: wat je ziet is wat je betaalt.
+2. **Kwaliteitssignaal / vertrouwen.** Het charm-effect is in de literatuur **klein en fragiel** en biedt géén kwaliteitsvoordeel; ronde prijzen worden juist geassocieerd met een serieus, premium, betrouwbaar product (en met producten die "op gevoel/kwaliteit" gekocht worden i.p.v. puur op deal-jacht). Voor een SaaS dat op nauwkeurigheid en betrouwbaarheid concurreert, is dat het juiste signaal.
+
+Netto-effect op de marge is verwaarloosbaar (zie matrix) — het is een positionerings- en principe-keuze, geen omzet-optimalisatie.
 
 ---
 
@@ -12,29 +23,41 @@ Alle prijzen zijn **BTW-inclusief** (EU B2C, 21% NL-tarief als referentie; OSS r
 
 | Tier | Prijs (incl. BTW) | Credits | Bruto €/cr | Netto €/cr (÷1,21) | UI-rol |
 |------|-------------------|---------|-----------|--------------------|--------|
-| **Test** | €3,49 | 100 | €0,03490 | €0,02884 | Instap / "even proberen" |
-| **Starter** | €9,99 | 400 | €0,02498 | €0,02064 | Primaire kaart |
-| **Plus** ★ | €24,99 | 1.300 | €0,01922 | €0,01589 | **Anker** (featured, "Meest populair") |
-| **Power** | €49,99 | 3.100 | €0,01613 | €0,01333 | Volume / zware gebruikers |
+| **Try** | €5 | 100 | €0,05000 | €0,04132 | Instap-optie (kleiner, onder de 3 kaarten) |
+| **Starter** | €15 | 400 | €0,03750 | €0,03099 | Hoofdkaart (links) |
+| **Plus** ★ | €25 | 1.000 | €0,02500 | €0,02066 | **Anker** (center-stage, badge "Recommended") |
+| **Power** | €60 | 3.000 | €0,02000 | €0,01653 | Hoofdkaart (rechts) |
 
-★ = center-stage anker in de UI.
+★ = center-stage anker in de UI. De tier heet **Try** (live Stripe-product + `pricing.ts` `name`), niet "Test".
 
 **BTW is doorstroom, geen marge.** De klant betaalt de lijstprijs incl. BTW; wij dragen de BTW af. De **netto omzet = prijs ÷ 1,21**. Alle marge-/winstberekeningen hieronder rekenen op de **netto** €/cr, nooit op de bruto lijstprijs. Input-BTW is verwaarloosbaar: onze zwaarste leveranciers (AssemblyAI, Decodo) zijn US-bedrijven → **reverse-charge**, geen NL-input-BTW om te verrekenen.
+
+### Kortingsstructuur (volume-ladder per credit)
+
+De €/credit daalt trapsgewijs — elke grotere tier is goedkoper per credit dan de vorige:
+
+| Stap | €/cr-korting t.o.v. vorige tier |
+|------|--------------------------------|
+| Starter vs Try | **−25 %** (€0,0375 vs €0,05) |
+| Plus vs Starter | **−33 %** (€0,025 vs €0,0375) |
+| Power vs Plus | **−20 %** (€0,020 vs €0,025) |
+
+Cumulatief is Power **−60 %** per credit t.o.v. Try (€0,020 vs €0,050). Dit is een échte volume-beloning, niet een tijdelijke "sale" — de prijzen zijn stabiel (zie Kortingsbeleid voor het aparte campagne-kortingsplafond van −20 %).
 
 ---
 
 ## Kostenbasis (juli 2026)
 
-Geprijsd tegen **worst-case**, niet gemiddeld — zo blijft elke tier winstgevend ook op de duurste video's en met korting.
+Geprijsd tegen **worst-case**, niet gemiddeld — zo blijft elke tier winstgevend ook op de duurste video's en met korting. Kosten zijn onafhankelijk van de prijs en dus **ongewijzigd** t.o.v. het vorige model.
 
 | Component | Kost/credit | Bron / aanname |
 |-----------|-------------|----------------|
-| AssemblyAI (Universal-3.5 Pro) | €0,0031/cr | Transcriptie-minuut; 1 cr = 1 min |
+| AssemblyAI (Universal-3 Pro) | €0,0031/cr | Transcriptie-minuut; 1 cr = 1 min |
 | Decodo (residentiële proxy, PAYG) | ~€0,0034/cr | ~1 MB/min-schatting; varieert per video |
 | **Marginaal — realistisch** | **~€0,0065/cr** | = **€0,65 / 100 cr** |
 | **Marginaal — worst-case** | **~€0,010/cr** | = **€1,00 / 100 cr** (grote/zware audio, ongunstige proxy-route) |
 
-> De proxy-kost is de grootste variabele en de minst voorspelbare (bytes per video verschillen sterk). Daarom: worst-case als ontwerpbasis. Per-job meten blijft nodig zodra de capture-laag er is (zie known-issues — launch-blocker).
+> De proxy-kost is de grootste variabele en de minst voorspelbare (bytes per video verschillen sterk). Daarom: worst-case als ontwerpbasis. Per-job meten gebeurt inmiddels via de capture-laag ([ADR-054](../decisions/054-cost-usage-capture-layer.md)).
 
 ### Vaste infra bij launch (~€70–90/maand)
 
@@ -57,23 +80,35 @@ Netto omzet per 100 cr = (bruto €/cr ÷ 1,21) × 100. Winst = netto omzet − 
 
 | Tier | Netto omzet /100cr | **Realistisch** (−€0,65) | idem **−20%** | **Worst-case** (−€1,00) | idem **−20%** |
 |------|--------------------|--------------------------|---------------|-------------------------|---------------|
-| Test | €2,884 | +€2,234 | +€1,657 | +€1,884 | +€1,307 |
-| Starter | €2,064 | +€1,414 | +€1,001 | +€1,064 | +€0,651 |
-| Plus | €1,589 | +€0,939 | +€0,621 | +€0,589 | +€0,271 |
-| Power | €1,333 | +€0,683 | +€0,416 | +€0,333 | **+€0,066** |
+| Try | €4,132 | +€3,482 | +€2,656 | +€3,132 | +€2,306 |
+| Starter | €3,099 | +€2,449 | +€1,829 | +€2,099 | +€1,479 |
+| Plus | €2,066 | +€1,416 | +€1,003 | +€1,066 | +€0,653 |
+| Power | €1,653 | +€1,003 | +€0,672 | +€0,653 | **+€0,322** |
 
-**Kernclaim:** elke tier houdt winst in **élk** scenario — óók de duurste tier (Power), tegen worst-case kost, mét de maximale korting. Power worst-case −20% = **+€0,07/100cr**, de dunste cel in de hele matrix en nog steeds positief. Dat is de bewuste ontwerpvloer.
+**Kernclaim:** elke tier houdt winst in **élk** scenario — óók de duurste tier (Power), tegen worst-case kost, mét de maximale korting. Power worst-case −20% = **+€0,32/100cr**, de dunste cel in de matrix en ruim positief (bijna 5× de vorige €0,07-vloer — de ronde prijzen tillen elke marge op).
 
-Netto-marge% op lijstprijs, worst-case kost: Test ~65% · Starter ~52% · Plus ~37% · Power ~25%. Op realistische kost: ~78% / ~69% / ~59% / ~51%.
+Netto-marge% op netto omzet, worst-case kost: Try ~76% · Starter ~68% · Plus ~52% · Power ~40%. Op realistische kost: ~84% / ~79% / ~69% / ~61%.
 
 ---
 
-## Kortingsbeleid
+## Pricing-card structuur (UI)
 
-- **Maximaal −20%**, **uniform over alle tiers**. Nooit dieper.
-- **Zeldzaam** ingezet (gerichte campagne, win-back). **Stabiele prijs is de norm** — geen permanente "sale"-sfeer.
-- −20% is veilig by design: in élk scenario blijft de winst positief (zie matrix; Power worst-case −20% = +€0,07/100cr).
-- **Geen −30%.** Elke −30%-referentie in oudere docs is achterhaald en moet weg.
+De `/pricing`-pagina toont de tiers als **één vergelijking + een aparte instap**:
+
+- **Drie hoofdkaarten naast elkaar:** Starter (links) · **Plus (midden)** · Power (rechts). Ze lezen als één keuze-set.
+- **Plus = center-stage anker:** visueel verhoogd/gevuld/geaccentueerd (accent-subtle vulling, accent-ring, elevatie, lichte lift) met badge **"Recommended"**. Bewust géén "Most popular" — die claim is (pre-launch) niet verifieerbaar; "Recommended" is eerlijk. Drie zichtbare tiers = de veilige zone tegen keuze-overload; het centrale, benadrukte middenkaartje benut het center-stage-effect.
+- **Try = kleinere instap-optie onder de drie kaarten:** compacte, subtielere kaart met kleiner kopje en de lead-in "Just want to try it on a single project first?" — een de-risk-patroon voor twijfelaars, duidelijk secundair, niet gelijkwaardig aan de drie hoofdkaarten.
+
+Bron: `apps/marketing/src/components/pricing/{PricingTierGrid,PricingTierCard,SecondaryTierStrip}.tsx`. De vlag `mostPopular` in `pricing.ts` stuurt de "Recommended"-highlight (interne naam behouden; alleen de UI-tekst is "Recommended").
+
+---
+
+## Kortingsbeleid (campagnes)
+
+- **Maximaal −20%**, **uniform over alle tiers**. Nooit dieper. (Dit staat los van de structurele volume-ladder hierboven.)
+- **Zeldzaam** ingezet (gerichte campagne, win-back). **Stabiele prijs is de norm** — geen permanente "sale"-sfeer (past bij ronde prijzen + ihsaan).
+- −20% is veilig by design: in élk scenario blijft de winst positief (zie matrix; Power worst-case −20% = +€0,32/100cr).
+- **Geen −30%.** Elke −30%-referentie in oudere docs is achterhaald.
 
 ---
 
@@ -90,7 +125,7 @@ Netto-marge% op lijstprijs, worst-case kost: Test ~65% · Starter ~52% · Plus ~
 - **Categorie:** "General – Electronically Supplied Services" (`txcd_10000000`).
 - **Prijzen zijn inclusief** belasting ingesteld — de klant ziet de all-in prijs.
 - **Stripe Tax OSS** (One-Stop-Shop) regelt automatisch het **per-land-BTW-tarief** binnen de EU; wij dragen via één OSS-aangifte af.
-- BTW blijft **doorstroom** (zie boven): netto omzet = lijstprijs ÷ (1 + lokaal tarief). De marges hierboven gebruiken 21% als conservatieve referentie.
+- BTW blijft **doorstroom**: netto omzet = lijstprijs ÷ (1 + lokaal tarief). De marges hierboven gebruiken 21% als conservatieve referentie.
 
 ---
 
@@ -101,17 +136,20 @@ AI-transcriptie:        ⌈video_duur_seconden / 60⌉ credits, minimum 1   (1 c
 Playlist (auto-caption): 1 credit per video, ná de eerste 3 gratis
 Playlist (Whisper-video): ⌈duur / 60⌉ credits, min 1, GEEN gratis-korting
 AI-samenvatting:         3 credits flat
-RAG JSON-export:         ⌈video_duur_seconden / 900⌉ credits, min 1 (1 cr / 15 min), eerste 3 exports gratis
+RAG JSON-export:         ⌈video_duur_seconden / 600⌉ credits, min 1 (1 cr / 10 min), eerste 3 exports gratis
 Caption-extractie (los): 0 credits — altijd gratis
 ```
+
+**RAG-tarief herzien 2026-07-14: 1 cr / 10 min** (was 1 cr / 15 min) — [ADR-058](../decisions/058-round-prices-card-layout-rag.md). Formule `⌈duur/600⌉`.
 
 | Video-duur | AI-transcriptie (cr) | RAG-export (cr) |
 |-----------|----------------------|-----------------|
 | 0–1 min | 1 | 1 |
 | 5 min | 5 | 1 |
-| 15 min | 15 | 1 |
-| 30 min | 30 | 2 |
-| 1 uur | 60 | 4 |
+| 10 min | 10 | 1 |
+| 15 min | 15 | 2 |
+| 30 min | 30 | 3 |
+| 1 uur | 60 | 6 |
 
 **Caption-extractie van één video is gratis** (~90% van video's heeft YouTube-captions), ook anoniem (10/dag). **Eerste 3 playlist-video's altijd gratis** (auto-captions, gelabeld "FREE" in UI).
 
@@ -121,10 +159,10 @@ Caption-extractie (los): 0 credits — altijd gratis
 
 | Tier | Credits | AI-transcriptie | Playlist-video's (captions) | AI-samenvattingen (3cr) |
 |------|---------|-----------------|-----------------------------|--------------------------|
-| Test | 100 | ~1,7 uur | 100 | 33 |
+| Try | 100 | ~1,7 uur | 100 | 33 |
 | Starter | 400 | ~6,7 uur | 400 | 133 |
-| Plus | 1.300 | ~21,7 uur | 1.300 | 433 |
-| Power | 3.100 | ~51,7 uur | 3.100 | 1.033 |
+| Plus | 1.000 | ~16,7 uur | 1.000 | 333 |
+| Power | 3.000 | ~50 uur | 3.000 | 1.000 |
 
 ---
 
@@ -142,12 +180,13 @@ Caption-extractie (los): 0 credits — altijd gratis
 ## Stripe-configuratie
 
 Geïmplementeerd als **Checkout Sessions** (niet Payment Links):
-- Server-side prijs in `PACKAGES` (`checkout/route.ts`) — client stuurt alleen de pakket-naam.
+- **Prijs komt uit `pricing.ts`.** De checkout-route bouwt een **inline `price_data`** met `unit_amount = pkg.priceEur * 100` (cents) — er wordt géén vooraf-aangemaakt Stripe Price-object of `lookup_key` gebruikt. De webhook grant credits uit `session.metadata.credits` (= `pkg.credits`). Deploy van de nieuwe `priceEur`-waarden wijzigt dus direct het afgerekende bedrag.
+- `stripeLookupKey` / `stripeProductId` in `pricing.ts` worden **nergens in de code gelezen** — ze mirrorren alleen de live Stripe-producten. **`plus_1300` / `power_3100` bevatten nog het oude creditaantal (nu 1.000/3.000): bewust niet hernoemd** (bekende, gedocumenteerde inconsistentie — hernoemen kan alléén samen met een Stripe-side lookup_key-transfer, en Stripe wordt door Khidr beheerd). Zie ADR-058.
 - `mode: 'payment'` (eenmalig), `billing_address_collection: 'required'` (EU-factuurverplichting).
 - Integration- + settlement-currency: **EUR**; internationale valuta via **Adaptive Pricing**.
 - **Stripe Tax** aan, categorie `txcd_10000000`, prijzen inclusief, OSS.
 
-> ⚠️ **Sync-taak (apart, niet deze documentatie-taak):** `PACKAGES` in `checkout/route.ts` **en** `packages/shared/src/lib/pricing.ts` bevatten nog het oude 5-tier-model (Try €2,49/150cr … Power €49,99/6000cr) en moeten worden vervangen door de 4 tiers hierboven vóór Stripe live-mode. De Stripe-producten worden in live mode toch opnieuw aangemaakt — stel de nieuwe prijspunten daar in één keer correct in. Zie ADR-052 (consequenties) en priorities 1.13.
+> ⚠️ **Stripe-side actie (Khidr, buiten deze code-taak):** de live Stripe-productprijzen aanpassen naar €5 / €15 / €25 / €60 en de price-metadata `credits` naar 100 / 400 / 1.000 / 3.000. Optioneel de `lookup_key`s naar `plus_1000` / `power_3000` transferren (dan óók in `pricing.ts` bijwerken). Deze code-taak raakt Stripe niet aan.
 
 ---
 
@@ -156,18 +195,18 @@ Geïmplementeerd als **Checkout Sessions** (niet Payment Links):
 | Angle | Copy |
 |-------|------|
 | Tijdsbesparing | "Extract een 50-video playlist in 60 seconden. Handmatig? Dat is 3+ uur kopiëren." |
-| Per-unit framing | "Een uur AI-transcriptie kost minder dan €1 op Power." |
+| Per-unit framing | "Een uur AI-transcriptie ≈ €1,20 op Power." |
 | No-subscription | "Koop credits eenmalig. Gebruik wanneer je wil. Ze verlopen nooit." |
 | Nauwkeurigheid | "YouTube auto-captions: ~60% nauwkeurig. Onze AI-transcriptie: ~99%." |
 | No-extension | "Werkt in elke browser. Geen extensie. Plak een URL, krijg een transcript." |
 | Anchoring | "Een VA zou €50+ rekenen voor hetzelfde werk." |
 
-Effectieve **bruto** prijs per minuut AI-transcriptie (= bruto €/cr, want 1 cr = 1 min): Test €0,035 · Starter €0,025 · Plus €0,019 · Power €0,016. Gebruik Plus/Power voor "vanaf"-copy.
+Effectieve **bruto** prijs per minuut AI-transcriptie (= bruto €/cr, want 1 cr = 1 min): Try €0,050 · Starter €0,0375 · Plus €0,025 · Power €0,020. Gebruik Plus/Power voor "vanaf"-copy.
 
 ---
 
 ## Openstaande vragen
 
-1. **Storage-upgrades:** library-visibility-upgrades met credits of aparte Stripe-aankoop? (Otter.ai-model, ADR-020-toekomstig.)
-2. **Referral:** "5+5 credits" waarschijnlijke structuur; wegwerp-email-abuse nog uit te werken.
-3. **Rate limiting:** momenteel no-op in productie (Upstash vars verwijderd) — configureren vóór tier-gebaseerde limits. Zie priorities C.3.2 / 1.19.
+1. **Storage-upgrades:** library-visibility-upgrades met credits of aparte Stripe-aankoop? (`library_bytes_cap` bestaat als meter, niet gehandhaafd — [ADR-054](../decisions/054-cost-usage-capture-layer.md).)
+2. **Referral:** "5+5 credits" waarschijnlijke structuur; canoniek-e-mail-dedup al aanwezig op grant-niveau.
+3. **Rate limiting:** momenteel no-op in productie (Upstash vars verwijderd) — configureren vóór tier-gebaseerde limits.

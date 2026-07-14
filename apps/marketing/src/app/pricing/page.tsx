@@ -39,7 +39,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Is RAG JSON export included in the standard price?",
-    answer: "RAG JSON export costs 1 credit per 15 minutes of video (minimum 1 credit) on top of extraction costs. The first 3 RAG exports are free.",
+    answer: "RAG JSON export costs 1 credit per 10 minutes of video (minimum 1 credit) on top of extraction costs. The first 3 RAG exports are free.",
   },
   {
     question: "Can I get a refund?",
@@ -110,10 +110,10 @@ export default function PricingPage() {
           {/* Section 3 — Always-free disclosure */}
           <AlwaysFreeBlock />
 
-          {/* Section 4 — 3 prominent tier cards */}
+          {/* Section 4 — 3 main tier cards (Starter / Plus★ / Power), Plus = Recommended */}
           <PricingTierGrid />
 
-          {/* Section 5 — Secondary tiers (Try + Power) */}
+          {/* Section 5 — Try as a smaller, secondary intro option */}
           <SecondaryTierStrip />
 
           {/* Section 6 — Credit-cost table with tier toggle */}

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Is standard JSON always free?",
-    a: "Yes. Caption-based extraction is free, and the standard JSON export adds no credit cost on top. You pay only for AI Transcription (1 credit/min) and RAG JSON (1 credit/15 min).",
+    a: "Yes. Caption-based extraction is free, and the standard JSON export adds no credit cost on top. You pay only for AI Transcription (1 credit/min) and RAG JSON (1 credit/10 min).",
   },
   {
     q: "Does this work for audio files I upload myself?",
@@ -324,7 +324,7 @@ export default function YouTubeTranscriptJsonPage() {
       </p>
 
       <p>
-        <strong>Cost: 1 credit per 15 minutes of video, minimum 1 credit.</strong>
+        <strong>Cost: 1 credit per 10 minutes of video, minimum 1 credit.</strong>
       </p>
 
       <table>
@@ -335,11 +335,12 @@ export default function YouTubeTranscriptJsonPage() {
           </tr>
         </thead>
         <tbody>
-          <tr><td>0–15 min</td><td>1 credit</td></tr>
-          <tr><td>16–30 min</td><td>2 credits</td></tr>
-          <tr><td>31–60 min</td><td>4 credits</td></tr>
-          <tr><td>61–120 min</td><td>8 credits</td></tr>
-          <tr><td>2+ hours</td><td>1 credit per 15 min</td></tr>
+          <tr><td>0–10 min</td><td>1 credit</td></tr>
+          <tr><td>11–20 min</td><td>2 credits</td></tr>
+          <tr><td>21–30 min</td><td>3 credits</td></tr>
+          <tr><td>31–60 min</td><td>6 credits</td></tr>
+          <tr><td>61–120 min</td><td>12 credits</td></tr>
+          <tr><td>2+ hours</td><td>1 credit per 10 min</td></tr>
         </tbody>
       </table>
 

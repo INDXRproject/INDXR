@@ -359,7 +359,7 @@ for i in range(0, len(vectors), 100):
       <h2>Pricing</h2>
 
       <p>
-        RAG JSON export: 1 credit per 15 minutes of video, minimum 1.
+        RAG JSON export: 1 credit per 10 minutes of video, minimum 1.
       </p>
 
       <table>
@@ -370,11 +370,12 @@ for i in range(0, len(vectors), 100):
           </tr>
         </thead>
         <tbody>
-          <tr><td>0–15 min</td><td>1 credit</td></tr>
-          <tr><td>16–30 min</td><td>2 credits</td></tr>
-          <tr><td>31–60 min</td><td>4 credits</td></tr>
-          <tr><td>1h56min (Karpathy GPT)</td><td>8 credits</td></tr>
-          <tr><td>2h49min (Joe Rogan Snowden)</td><td>12 credits</td></tr>
+          <tr><td>0–10 min</td><td>1 credit</td></tr>
+          <tr><td>11–20 min</td><td>2 credits</td></tr>
+          <tr><td>21–30 min</td><td>3 credits</td></tr>
+          <tr><td>31–60 min</td><td>6 credits</td></tr>
+          <tr><td>1h56min (Karpathy GPT)</td><td>12 credits</td></tr>
+          <tr><td>2h49min (Joe Rogan Snowden)</td><td>17 credits</td></tr>
         </tbody>
       </table>
 

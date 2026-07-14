@@ -384,7 +384,7 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
         const ragExports = (t.rag_exports as object[] | null) ?? [];
         const alreadyExported = ragExports.length > 0;
         const duration = (t.duration as number) ?? 0;
-        const cost = alreadyExported ? 0 : Math.max(1, Math.ceil(duration / 900));
+        const cost = alreadyExported ? 0 : Math.max(1, Math.ceil(duration / 600));
         return { id: t.id as string, title: (t.title as string) || `Video ${t.id}`, duration, alreadyExported, cost };
       });
 
