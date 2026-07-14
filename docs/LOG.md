@@ -9032,3 +9032,27 @@ signups verliezen zo het gekozen pakket. Bestaande users: funnel werkt volledig
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/priorities.md
 ---
+[2026-07-15 12:30] taak: Stripe checkout → Dashboard-gestuurde betaalmethoden | payment_method_types:["card"] verwijderd (blokkeerde iDEAL). Geen pmc meegegeven → Stripe gebruikt account-Default config (dynamic PM). Geverifieerd: sessie €25/EUR → ["card","bancontact","eps","ideal","klarna","link","amazon_pay"] (iDEAL present). metadata.credits intact. price_data/webhook/tax/adaptive ongewijzigd. Build groen (2/2). | gewijzigd: apps/app/src/app/api/stripe/checkout/route.ts, docs/wiki/business/pricing.md
+[2026-07-15 01:02] commit: fix(checkout): dynamic payment methods → iDEAL/Dashboard-gestuurd (verwijder card-only)
+
+De Checkout Session had payment_method_types:["card"] hardcoded — dat OVERSCHRIJFT
+de Stripe Dashboard payment method configuration en blokkeert bank-redirects zoals
+iDEAL (kaart-rail-methodes als Apple Pay/Link kwamen er wél doorheen, wat de bug
+maskeerde). Array verwijderd; er wordt géén payment_method_configuration meegegeven,
+dus Stripe gebruikt de account-Default config → dynamic payment methods, Dashboard
+is leidend. Een methode toevoegen = voortaan alleen een Dashboard-toggle.
+
+Geverifieerd (test key, €25/EUR, spiegelt de route): payment_method_types →
+["card","bancontact","eps","ideal","klarna","link","amazon_pay"] met iDEAL enabled
+in de Default config; één Default config (parent=null), dus geen conflicterende pmc.
+metadata.credits ("1000") intact. price_data/webhook/Stripe Tax/Adaptive Pricing
+ongewijzigd.
+
+Build groen (2/2).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/stripe/checkout/route.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/business/pricing.md
+---

@@ -40,7 +40,12 @@ export async function POST(req: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      // GEEN payment_method_types en GEEN payment_method_configuration meegeven:
+      // dan gebruikt Checkout Stripe's dynamic payment methods → de in het Dashboard
+      // geactiveerde methodes (default config pmc_1StnuTRrwT3Uo6wS…) zijn leidend.
+      // Een hardcoded array (bv. ["card"]) OVERSCHRIJFT de Dashboard-config en blokkeert
+      // bank-redirects zoals iDEAL (kaart-rail-methodes als Apple Pay/Link komen er wél
+      // doorheen). Een methode toevoegen = voortaan alleen een Dashboard-toggle, geen code.
       billing_address_collection: "required",
       customer: customerId,
       // Bewaar het bij checkout ingevoerde adres + (bedrijfs)naam op de Customer, zodat
