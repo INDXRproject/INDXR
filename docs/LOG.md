@@ -9185,3 +9185,32 @@ docs/wiki/decisions/061-chronological-revenue-recognition.md
 supabase/migrations/20260715101920_chronological_recognition.sql
 supabase/migrations/20260715102400_admin_finance_summary_cor_reconcile.sql
 ---
+[2026-07-15 15:10] taak: recognitie cross-user-pooling fix (financieel kritiek, vervolg P1) | `_recognize_asof(p_users uuid[])` pooldde granted-first OVER users heen (één gedeeld granted_bal + één FIFO-lot-array voor de samengevoegde stream) → user A's ongebruikte grant at user B's erkende omzet op. Bewezen A/B reversibel tegen echte _geld_scope(false): A grant 25 (verbruikt niets) + B koopt 400 @ €15 en verbruikt 400 → VÓÓR recognized €14,06 / deferred €0,94 / purchased_share 0,9375 (fout, vergiftigt COR-splitsing) → NÁ per-user fix recognized €15,00 / deferred €0,00 / share 1,0 / purch_consumed 400; direct _recognize_asof: A-alleen 0, B-alleen €15,00. Cross-user snapshot-onaantastbaarheid: B koopt+verbruikt 10 jul, A grant 14 jul → recognized as-of 11 jul blijft €15,00 (én as-of 15 jul). Fix = buiten-loop PER USER (eigen granted_bal + eigen FIFO-lots), som pas daarna over scope. ADR-061 uitgebreid (per-user expliciet + reden) + LESSONS-regel (test recognitie altijd met ≥2 users). | gewijzigd: supabase/migrations/20260715140000_recognize_asof_per_user.sql (nieuw), docs/wiki/decisions/061-chronological-revenue-recognition.md, docs/wiki/architecture/credit-system.md, docs/LESSONS.md
+[2026-07-15 12:53] commit: fix(finance): recognitie per-user — verhelp cross-user granted-first pooling (financieel kritiek)
+
+_recognize_asof(p_users uuid[]) voegde alle users' events samen in één stream met
+één gedeeld granted_bal + één FIFO-lot-array → user A's ongebruikte grant trok af
+van user B's erkende omzet (granted-first pooldde over portemonnees heen). Granted-first
+is per-wallet-logica.
+
+Bewezen A/B reversibel tegen de echte _geld_scope(false):
+- A: grant 25, verbruikt niets. B: koopt 400 @ net €15, verbruikt 400.
+- VÓÓR: recognized €14,06 · deferred €0,94 · purchased_share 0,9375 (fout — vergiftigt
+  ook de COR-splitsing against_revenue vs goodwill).
+- NÁ (per-user): recognized €15,00 · deferred €0,00 · purchased_share 1,0 · purch_cons 400.
+- Direct: A-alleen recognized 0, B-alleen €15,00.
+- Cross-user snapshot-onaantastbaarheid: B koopt+verbruikt 10 jul, A grant 14 jul →
+  recognized as-of 11 jul blijft €15,00 (én as-of 15 jul).
+
+Fix = buiten-loop PER USER (eigen granted_bal + eigen FIFO purchase-lots), pas daarna
+sommeren over de scope. ADR-061 uitgebreid + LESSONS-regel (test recognitie met ≥2 users).
+
+Migratie via Supabase MCP.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/credit-system.md
+docs/wiki/decisions/061-chronological-revenue-recognition.md
+supabase/migrations/20260715140000_recognize_asof_per_user.sql
+---

@@ -2,7 +2,7 @@
 
 **Status:** Geaccepteerd
 **Datum:** 2026-07-15
-**Gerelateerde code:** `supabase/migrations/20260715101920_chronological_recognition.sql`, `supabase/migrations/20260715102400_admin_finance_summary_cor_reconcile.sql`, `apps/app/src/app/admin/finance/FinanceView.tsx`
+**Gerelateerde code:** `supabase/migrations/20260715101920_chronological_recognition.sql`, `supabase/migrations/20260715102400_admin_finance_summary_cor_reconcile.sql`, `supabase/migrations/20260715140000_recognize_asof_per_user.sql`, `apps/app/src/app/admin/finance/FinanceView.tsx`
 
 ## Context
 
@@ -23,7 +23,9 @@ Vervang cumulatieve pooling door **chronologische pooling**: simuleer de event-s
 
 Geïmplementeerd als helper `_recognize_asof(p_users uuid[], p_to timestamptz)` (SECURITY DEFINER, `REVOKE anon+authenticated`), die de stream `< p_to` afspeelt en `{recognized, purchased_consumed, deferred, purchased_cr, purchased_net, granted_cr, consumed_cr}` teruggeeft. `_geld_scope` roept 'm aan voor `p_to` en `p_from`; periode-recognized = `rec_to − rec_from`, deferred/consumed_purchased = stock as-of `to`. **Invariant:** `recognized + deferred = purchased_net`.
 
-**Een grant van vandaag raakt het verleden niet.** Een grant met `created_at` ná een historisch `p_to` valt buiten `_recognize_asof(..., p_to)` (strikt `< p_to`) → reeds bevroren snapshots verschuiven niet.
+**Recognitie is PER-USER, niet per-scope** (migratie `20260715140000`, financieel kritiek). `_recognize_asof` loopt met een **buiten-loop over elke user afzonderlijk**: elke user heeft zijn eigen `granted_bal` en zijn eigen FIFO purchase-lots; pas ná die per-user-simulatie wordt over de scope gesommeerd. Reden: **granted-first is een eigenschap van een individuele creditportemonnee, niet van de scope.** De gratis credits van user A mogen nooit het verbruik van user B compenseren. De eerste implementatie voegde alle users' events samen in één stream met één gedeeld `granted_bal` → user A's ongebruikte grant trok af van user B's erkende omzet (cross-user pooling). Dit vergiftigde óók `purchased_share` (= `purchased_consumed / consumed`) en dus de COR-splitsing (`against_revenue` vs `granted_delivery_cost`). Bewezen A/B: A grant 25 (verbruikt niets), B koopt 400 @ €15 en verbruikt 400 → **vóór:** recognized €14,06 / share 0,9375 (fout); **ná:** recognized €15,00 / share 1,0 (B's volle waarde, A raakt niets).
+
+**Een grant van vandaag raakt het verleden niet** — ook cross-user. Een grant met `created_at` ná een historisch `p_to` valt buiten `_recognize_asof(..., p_to)` (strikt `< p_to`), en de per-user-scheiding zorgt dat een latere registratie/grant van een *andere* user een bevroren dag niet verschuift. Bewezen: B koopt+verbruikt 10 jul, A grant 14 jul → recognized as-of 11 jul blijft €15,00 (zowel as-of 11 als 15 jul).
 
 ## Rationale
 
