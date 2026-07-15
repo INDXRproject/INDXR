@@ -9246,3 +9246,34 @@ docs/STATUS.md
 docs/wiki/architecture/auth-and-security.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-15 12:58] precompact: context compaction triggered
+[2026-07-15 16:30] taak: provenance-doc Finance-tab (geen code) | docs/wiki/architecture/finance-number-provenance.md: elk getoond getal (hero, income statement, COR-regel + elke methode-rij, gross/net profit, elke OPEX-rij, marges, bankbrug, deferred-kaart, cache-savings, delta's, trend) met formule/bron/driver/tijdstoewijzing/scope/aannames — geschreven tegen de LIVE functiecode (pg_get_functiondef: _geld_scope, _recognize_asof, admin_finance_summary, opex_accrual, snapshot_finance_day) + frontend (FinanceView/accrual/periods/page). Bevindingen: (1) NIEUW pooling-klasse-risico open: cor_against_revenue = scope_COR × scope-gemiddelde purchased_share (moet Σ_user user_COR×user_share) → COR verschuift onterecht tussen omzet/goodwill bij gemengde users; recognized/deferred zelf zijn wél per-user (ADR-061). (2) Revenue-hero telt flow(delivered)+stock(deferred) en de delta ernaast rekent op delivered alléén — mismatch. (3) status BTW: checkout-sessie mist automatic_tax/tax_behavior/tax_code, factuurroute heeft ze wél (txcd_10000000) → amount_tax structureel 0, "not computed"; fix = sessie idem factuur, gevolgen Adaptive Pricing/OSS-registraties benoemd. (4) status AI-summary-COR: geattribueerd op transcripts.created_at i.p.v. ai_summary-debit-moment (code ≠ plan B1) → summary van oude/geregeneereerde transcript landt op bevroren dag. Geen code gewijzigd. | gewijzigd: docs/wiki/architecture/finance-number-provenance.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
+[2026-07-15 13:17] commit: docs(finance): provenance van elk Finance-tab-getal (tegen live functiecode)
+
+docs/wiki/architecture/finance-number-provenance.md — voor elk getoond getal:
+naam · formule (gewone taal) · bron (tabel/kolom/tarief) · driver+eenheid ·
+tijdstoewijzing (flow/stock) · scope (per-user vs aggregaat) · aannames/zwakke plekken.
+Geschreven tegen pg_get_functiondef (_geld_scope, _recognize_asof,
+admin_finance_summary, opex_accrual, snapshot_finance_day) + FinanceView/accrual/
+periods/page — niet tegen ADR-teksten.
+
+Bevindingen (alleen gerapporteerd, niet gefixt):
+- OPEN pooling-klasse-risico: cor_against_revenue = scope_COR × scope-gemiddelde
+  purchased_share (hoort Σ_user user_COR × user_share) → COR verschuift onterecht
+  tussen omzet en goodwill bij gemengde users. recognized/deferred zelf zijn wél
+  per-user (ADR-061).
+- Revenue-hero telt flow(delivered)+stock(deferred); de delta rekent op delivered
+  alléén — inconsistente basis.
+- BTW: checkout-sessie mist automatic_tax/tax_behavior/tax_code; factuurroute heeft
+  ze wél → amount_tax structureel 0. Fix + gevolgen (Adaptive Pricing, OSS-registraties)
+  beschreven, niets gewijzigd.
+- AI-summary-COR op transcripts.created_at i.p.v. het summary-run-moment (code wijkt
+  af van plan B1) → landt op mogelijk bevroren dag; regenerate verschuift history.
+
+Geen code- of migratiewijzigingen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/finance-number-provenance.md
+---

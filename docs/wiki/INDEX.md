@@ -127,6 +127,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | [sitemap-audit-2026-05.md](architecture/sitemap-audit-2026-05.md) | Volledige sitemap audit (2026-05): routes, componenten, metadata, inconsistenties — input voor research/design/implementatie |
 | [overview.md](architecture/overview.md) | High-level architectuur met request flows en tech stack |
 | [credit-system.md](architecture/credit-system.md) | Volledige credit flow: koop → deductie → refund |
+| [finance-number-provenance.md](architecture/finance-number-provenance.md) | **Herkomst van ELK Finance-tab-getal**: formule/bron/driver/tijdstoewijzing/scope/aannames per getal, tegen de live functiecode. Markeert geschat vs gemeten, onzichtbare drivers, en pooling-klasse-risico's (o.a. open: COR-splitsing op scope-gemiddelde share). Incl. status BTW (checkout mist automatic_tax) + AI-summary-COR (op transcripts.created_at i.p.v. run-moment) |
 | [ai-pipeline.md](architecture/ai-pipeline.md) | YouTube → captions → AssemblyAI → DeepSeek; model info |
 | [playlist-engine.md](architecture/playlist-engine.md) | Async job systeem voor playlist extractie |
 | [auth-and-security.md](architecture/auth-and-security.md) | Auth, RLS, rate limiting, account suspension |
