@@ -4,6 +4,17 @@
 
 **Geschreven tegen de werkelijke functiecode** (opgehaald via `pg_get_functiondef` op 2026-07-15) en de frontend-bestanden — niet tegen ADR-teksten. Waar de code afwijkt van een ADR, is de code de waarheid en wordt het verschil expliciet gemeld.
 
+> **UPDATE 2026-07-15 — COR pooling + Stripe-fee GEFIXT (deploy live, ADR-063).**
+> - **`cor_against_revenue` is niet langer gepoold** (§2.2/§2.3/§2.12): `_geld_scope` rekent nu
+>   `Σ_user (user_period_COR × user_period_share)` per methode, met een **periode**-share (niet meer een
+>   all-time-share op periode-COR). De 🔴 pooling-klasse hieronder is dáármee gesloten voor COR/goodwill.
+>   Bewezen (A/B, tegengestelde profielen): oude formule €5,005/€5,005 → nieuw €0,01 against / €10 goodwill.
+> - **Stripe-fee is COR, niet OPEX** (§2.14 → verplaatst): fee wordt per aankoop-lot gedefereerd
+>   (`recognized_fee` op verbruikte gekochte credits, `deferred_fee` op de rest) en is revenue-matched —
+>   géén share, géén goodwill-deel. Bewezen (2 tiers): €1,25 fee → €0,76 recognized / €0,49 deferred.
+> - **`deferred.credits` is nu de echte som van lot-restanten** (§4.2), niet meer teruggerekend uit een
+>   blended €/credit. Bewezen (Try+Plus): echt 700 vs blended 641,7.
+
 **Legenda:**
 - 🟢 **gemeten** — komt uit werkelijk vastgelegde data (bytes, minuten, tokens, transacties).
 - 🟡 **geschat** — een aanname of extrapolatie zit in de berekening.
@@ -34,8 +45,8 @@ snapshot_finance_day() [pg_cron 02:00 UTC]                   ← vult finance_da
 3. **Bron:** `admin_finance_summary` → `v_net`. Onderdelen: `_geld_scope` (revenue, COR, goodwill) + `opex_accrual` (entered) + Stripe-fee uit `credit_transactions.metadata`.
 4. **Driver:** samengesteld — geen enkele driver; het is het sluitstuk van de hele keten. 👁️
 5. **Tijdstoewijzing:** flow over `[from,to)`. Optelbaar.
-6. **Scope:** per scope (external default, internal bij toggle). Samengesteld uit onderdelen met eigen scope-eigenschappen (zie hieronder). 🔴 erft het pooling-risico van `cor_against_revenue` (§2.3).
-7. **Aannames/zwakke plekken:** zo betrouwbaar als zijn zwakste term — met name `cor_against_revenue` (scope-gemiddelde share, §2.3) en de Stripe-fee (kan nog niet-gereconcilieerd €0 zijn, §3.2).
+6. **Scope:** per scope (external default, internal bij toggle). Samengesteld uit onderdelen met eigen scope-eigenschappen (zie hieronder). `cor_against_revenue` is nu ✅ per-user (§2.2, ADR-063) — het pooling-risico op deze term is gesloten.
+7. **Aannames/zwakke plekken:** zo betrouwbaar als zijn zwakste term. De Stripe-fee zit nu in COR (revenue-matched, §2.14) en kan nog niet-gereconcilieerd €0 zijn tot reconcile draait. De F1-fix verplaatst kosten tussen COR en goodwill (beide binnen net) — het netto-effect op net_profit is de fee-defer (`deferred_fee` wordt niet meer direct als OPEX afgeboekt).
 
 ### 1.2 Net profit — delta vs vorige periode
 1. **Naam:** het `+X%`/`−X%` naast Net profit.
@@ -82,21 +93,21 @@ Zelfde mechaniek als §1.2, maar `delta(revenue_delivered_now, revenue_delivered
 
 ### 2.2 Cost of revenue (COR-regel)
 1. **Naam:** "Cost of revenue".
-2. **Formule:** `cor_against_revenue = (cor_ai + cor_caption + cor_ai_summary + cor_rag) × purchased_share + cor_storage`. In gewone taal: het deel van de leverkosten dat aan betaalde (erkende) omzet is toe te rekenen; het granted-deel gaat naar OPEX (goodwill).
-3. **Bron:** `_geld_scope` (`v_cor_rev`) + storage uit `admin_finance_summary` (`v_cor_sto`).
-4. **Driver:** AssemblyAI-minuten + Decodo-bytes + DeepSeek-tokens + opslag-GB, × tarieven, × share. 👁️ (drivers niet in UI).
-5. **Tijdstoewijzing:** COR-termen zijn flows op elk hun eigen event-tijdstip (§2.4–2.7); `purchased_share` is een **stock**-ratio (as-of `to`). Een periode-flow × een cumulatieve share.
-6. **Scope:** 🔴 **pooling-risico.** `purchased_share = Σ_user purchased_consumed / Σ_user consumed` (scope-gemiddelde) wordt toegepast op de **scope-totale** COR. Correct zou zijn: `Σ_user (user_COR × user_share)`. Als dure (granted-zware) en goedkope (purchased-zware) users in één scope zitten, verschuift dit COR onterecht tussen omzet en goodwill. Voorbeeld: user A verbruikt 100 granted credits voor €10 COR (share 0), user B 100 purchased voor €0,01 (share 1) → juist: against-revenue €0,01 / goodwill €10; deze formule: share 0,5 → against-revenue €5,00 / goodwill €5,00. **Dezelfde klasse als de opgeloste recognitie-bug, nu in de COR-splitsing.** Alleen gerapporteerd.
-7. **Aannames/zwakke plekken:** naast §6: storage wordt **volledig** tegen omzet geboekt (share niet toegepast) terwijl er deferred credits openstaan — een aanname. Caption-COR-nauwkeurigheid hangt af van gevulde `proxy_bytes` (§2.5).
+2. **Formule:** `cor_against_revenue = Σ_user Σ_methode (user_period_cor_methode × user_period_share) + cor_storage + recognized_fee`. In gewone taal: het deel van de leverkosten dat aan betaalde (erkende) omzet is toe te rekenen — nu **per user** opgeteld, niet meer via één scope-brede share; plus storage en de gedefereerd-herkende Stripe-fee. Het granted-deel gaat naar OPEX (goodwill).
+3. **Bron:** `_geld_scope` (`v_cor_rev` = `v_ar_ai + v_ar_cap + v_ar_sum + v_recognized_fee`) + storage uit `admin_finance_summary` (`v_cor_sto`). De per-user COR-per-methode komt uit een `GROUP BY user_id`-query over `transcription_jobs`/`usage_logs`/`transcripts`; de per-user share uit `_recognize_asof.by_user` (`rec_to − rec_from`, periode).
+4. **Driver:** AssemblyAI-minuten + Decodo-bytes + DeepSeek-tokens + opslag-GB, × tarieven, × per-user-share. 👁️ (drivers niet in UI).
+5. **Tijdstoewijzing:** COR-termen zijn flows op elk hun eigen event-tijdstip (§2.4–2.7); de per-user share is óók **periode**-scoped (`by_user` as-of `to` minus as-of `from`) — flow × flow, niet meer flow × all-time-stock.
+6. **Scope:** ✅ **per-user** (ADR-063, migratie `20260715163500`). `Σ_user (user_COR × user_share)`, elke user zijn eigen periode-share. Was de 🔴 pooling-bug: user A verbruikt 100 granted credits voor €10 COR (share 0), user B 100 purchased voor €0,01 (share 1) → nu juist: against-revenue €0,01 / goodwill €10 (oude gepoolde formule gaf share 0,5 → €5,00/€5,00). Bewezen met reversibele A/B-test.
+7. **Aannames/zwakke plekken:** storage wordt **volledig** tegen omzet geboekt (geen share) terwijl er deferred credits openstaan — een aanname. `recognized_fee` is revenue-matched (geen share, geen goodwill — granted credits dragen geen fee). **NULL-valkuil (opgelost, zie LESSONS 2026-07-15):** de per-user COR-subqueries wrappen elke `sum()` in `COALESCE(...,0)`; zonder dat werd `sum(dur)*rate + sum(bytes)*rate` NULL zodra `proxy_bytes` volledig NULL was voor een user, wat diens duur-kost stil liet vallen. Caption-COR-nauwkeurigheid hangt af van gevulde `proxy_bytes` (§2.5).
 
-### 2.3 COR-tabel — per methode: Cost
-1. **Naam:** kolom "Cost" per rij (AI transcription / Auto-captions / AI summary / RAG / Storage).
-2. **Formule:** `against_revenue_by_method[k] = cor[k] × purchased_share` (storage: volle `cor_storage`). Sommeert per constructie tot de COR-regel (§2.2).
-3. **Bron:** `admin_finance_summary` `cor.against_revenue_by_method`.
-4. **Driver:** per methode het volume × tarief (zie §2.4–2.8), × share.
-5. **Tijdstoewijzing:** flow (methode-event-tijd) × stock-share.
-6. **Scope:** 🔴 erft §2.2 (scope-gemiddelde share op scope-totaal per methode).
-7. **Aannames/zwakke plekken:** idem §2.2. Bij `share=0` (huidige data) tonen alle rijen €0,00 en staat de volle levering als goodwill in OPEX — correct maar oogt leeg.
+### 2.3 COR-tabel — per methode: Cost (optie ii, volle kost)
+1. **Naam:** kolommen "Cost / Credits / € per credit" per rij (AI transcription / Auto-captions / AI summary / RAG / Storage), plus de rij "Total measured COR".
+2. **Formule (Aanvulling 3, Khidr's keuze):** de tabel toont de **VOLLE kost** per methode zodat de rij vermenigvuldigt. `Cost = cor[k]` (volle gemeten COR), `Credits = consumed_by_type[k]` (alle verbruikte credits), `€/credit = cor[k] / credits` → `Credits × €/credit = Cost`. De against-revenue/goodwill-splitsing staat als **aparte regel eronder** ("of which against revenue €X · goodwill €Y"), niet in de kolommen. De Stripe-fee heeft een eigen regel (recognised/deferred).
+3. **Bron:** `admin_finance_summary` `cor.<k>` (volle kost) + `cor.against_revenue_by_method` (voor de split-regel) + `cor.payment_fee` (fee-regel).
+4. **Driver:** per methode het volume × tarief (zie §2.4–2.8). De rij is nu zelf-consistent (kolommen vermenigvuldigen).
+5. **Tijdstoewijzing:** flow (methode-event-tijd); de split-regel eronder gebruikt de per-user against (§2.2).
+6. **Scope:** volle kost = aggregaat (pure kostensom, §2.4–2.8). De split-regel eronder is ✅ per-user (§2.2).
+7. **Aannames/zwakke plekken:** de drie populaties die vroeger in één rij botsten (against-Cost × alle-credits × volle-€/credit) zijn ontkoppeld: de tabel toont nu één consistente populatie (volle kost), de splitsing is een losse regel. Storage-rij heeft geen per-credit-eenheid ("—").
 
 ### 2.4 COR-driver: AI transcription
 1. **Naam:** onder "AI transcription" (Cost/Credits/€ per credit).
@@ -165,8 +176,8 @@ Zelfde mechaniek als §1.2, maar `delta(revenue_delivered_now, revenue_delivered
 
 ### 2.11 Operating expenses (OPEX-regel)
 1. **Naam:** "Operating expenses".
-2. **Formule:** `measured_opex.total + (external ? entered_opex_total : 0)`, met `measured_opex.total = goodwill + funnel_loggedin + funnel_anon + stripe_fee`.
-3. **Bron:** `_geld_scope` (goodwill, funnel_loggedin) + `admin_finance_summary` (funnel_anon, stripe_fee) + `opex_accrual` (entered).
+2. **Formule:** `measured_opex.total + (external ? entered_opex_total : 0)`, met `measured_opex.total = goodwill + funnel_loggedin + funnel_anon + radar_fee`. **Stripe-fee zit hier NIET meer in** — die is COR geworden (§2.14, ADR-063).
+3. **Bron:** `_geld_scope` (goodwill, funnel_loggedin) + `admin_finance_summary` (funnel_anon, radar_fee) + `opex_accrual` (entered).
 4. **Driver:** samengesteld (bytes, fee, ingevoerde bedragen). 👁️
 5. **Tijdstoewijzing:** measured = flows; entered = accrual over `[from_d,to_d)`.
 6. **Scope:** measured per scope; entered **alleen external** (dubbeltelling voorkomen).
@@ -174,12 +185,12 @@ Zelfde mechaniek als §1.2, maar `delta(revenue_delivered_now, revenue_delivered
 
 ### 2.12 OPEX-rij: Goodwill — granted credits used
 1. **Naam:** "Goodwill — granted credits used".
-2. **Formule:** `granted_delivery_cost = (cor_ai + cor_caption + cor_ai_summary + cor_rag) × (1 − purchased_share)`. De leverkosten van gratis verbruikte credits.
-3. **Bron:** `_geld_scope` `v_granted_deliv`.
-4. **Driver:** dezelfde COR-drivers × (1−share). 👁️
-5. **Tijdstoewijzing:** flow × stock-share.
-6. **Scope:** 🔴 **pooling-risico** — spiegelbeeld van §2.2 (scope-gemiddelde `1−share` op scope-totale COR). Dezelfde vertekening.
-7. **Aannames/zwakke plekken:** sluit per constructie met de COR-regel (`against_revenue + goodwill = volle COR` excl. storage), maar de split-verhouding zelf is de scope-benadering.
+2. **Formule:** `granted_delivery_cost = Σ_user Σ_methode (user_period_cor_methode × (1 − user_period_share))`. De leverkosten van gratis verbruikte credits, per user.
+3. **Bron:** `_geld_scope` `v_granted_deliv` (= `v_goodwill`, de per-user som).
+4. **Driver:** dezelfde COR-drivers × (1−user_share). 👁️
+5. **Tijdstoewijzing:** flow × periode-share (per user).
+6. **Scope:** ✅ **per-user** — spiegelbeeld van §2.2, nu correct. Sluit per constructie: `Σ_user(user_cor×share) + Σ_user(user_cor×(1−share)) = Σ_user user_cor = volle COR` (excl. storage/fee). Bewezen: A/B-test goodwill €10 (A's volle COR, share 0).
+7. **Aannames/zwakke plekken:** de fee draagt geen goodwill-deel (granted credits kosten geen Stripe-fee); goodwill dekt alleen de leverkosten (AssemblyAI/Decodo/DeepSeek/opslag).
 
 ### 2.13 OPEX-rijen: Free-caption funnel (logged-in / anonymous)
 1. **Naam:** "Free-caption funnel — logged-in" / "— anonymous".
@@ -192,14 +203,14 @@ Zelfde mechaniek als §1.2, maar `delta(revenue_delivered_now, revenue_delivered
 6. **Scope:** logged-in per scope (via `is_internal_at_time`); anon alleen external (anonieme users hebben geen `is_internal`). Aggregaat — correct.
 7. **Aannames/zwakke plekken:** anon draait op dag-grain (`day`), de rest op timestamptz — kleine dag-randverschillen. Anon-teller is globaal (geen scope-splitsing mogelijk).
 
-### 2.14 OPEX-rij: Payment processing (Stripe-fee)
-1. **Naam:** "Payment processing" (alleen getoond als fee > 0).
-2. **Formule:** `stripe_fee = Σ metadata.stripe_fee` over distinct `stripe_session_id` van aankopen in de periode.
-3. **Bron:** `credit_transactions.metadata.stripe_fee` (via `balance_transaction.fee` — géén hardcoded rates; ADR-060).
-4. **Driver:** aantal betaalde charges + fee per charge (👁️).
-5. **Tijdstoewijzing:** flow op `credit_transactions.created_at` (≈ verkoopdatum). **Nooit COR** (fee valt bij de sale).
-6. **Scope:** aggregaat per scope (join op `profiles.is_internal`). Correct.
-7. **Aannames/zwakke plekken:** 🟡 de `balance_transaction` settle't async → een net-verkochte charge kan nog `stripe_fee=0` hebben tot het reconcile-pad (`/api/admin/reconcile-stripe-fees`) draait. De on-demand **invoicing-fee** zit hier NIET in (out-of-band factuur, ADR-053) → hoort als aparte **entered**-regel, niet stilzwijgend €0.
+### 2.14 COR-component: Payment processing (Stripe-fee) — verplaatst van OPEX naar COR
+1. **Naam:** "Payment processing (Stripe)" — nu een **COR**-regel onder de COR-tabel (§2.3), niet meer een OPEX-rij.
+2. **Formule (ADR-063, F22):** de fee wordt **per aankoop-lot** gedefereerd. Per lot `fee_pc = stripe_fee / amount`; bij FIFO-consumptie van gekochte credits `recognized_fee += verbruikt × fee_pc`; het restant van elk lot → `deferred_fee`. `recognized_fee` telt in `cor_against_revenue` (§2.2); `deferred_fee` staat in de Deferred-kaart (§4.x). `purchased_fee = recognized_fee + deferred_fee` = de totale fee van de lots.
+3. **Bron:** `_recognize_asof` (`recognized_fee`, `deferred_fee`, `purchased_fee` — per-user, uit `metadata.stripe_fee` per lot). `by_type` uit `credit_transactions.metadata.fee_details`.
+4. **Driver:** fee per charge (👁️), toegewezen naar rato van verbruikte vs. openstaande gekochte credits.
+5. **Tijdstoewijzing:** ✅ **revenue-matched** — de fee valt boekhoudkundig bij het verbruik van de gekochte credits (net als de omzet), niet meer volledig bij de sale. Timing-valkuil van F22 opgelost: de fee defert mee met de deferred omzet.
+6. **Scope:** per-user (via `_recognize_asof`), gesommeerd per scope. **Géén share, géén goodwill** — granted credits dragen geen fee.
+7. **Aannames/zwakke plekken:** 🟡 de `balance_transaction` settle't async → een net-verkochte charge kan nog `stripe_fee=0` hebben tot het reconcile-pad (`/api/admin/reconcile-stripe-fees`) draait; dan is de recognized/deferred fee voor die charge tijdelijk 0. De on-demand **invoicing-fee** zit hier NIET in (out-of-band factuur, ADR-053) → hoort als aparte **entered**-regel. **Let op:** de bankkaart (§3.2) toont nog de **volle cash-fee** bij verkoop (`bank.stripe_fee`) — dat is bewust: de bank-brug laat de echte kasstroom zien (fee valt cash bij de sale), terwijl de P&L de fee revenue-matcht. Twee verschillende vragen, twee getallen.
 
 ### 2.14b OPEX-rij: Fraud screening (Radar)
 1. **Naam:** "Fraud screening (Radar)" (alleen getoond als `radar.screens > 0`).
@@ -283,12 +294,21 @@ Zelfde bron/scope als §2.14 (`bank.stripe_fee = Σ metadata.stripe_fee`). 🟡 
 
 ### 4.2 Credits outstanding
 1. **Naam:** "Credits outstanding".
-2. **Formule:** `deferred.credits = round(deferred_balance / per_credit_net)`, met `per_credit_net = purchased_net / purchased_cr` (as-of `to`, blended over alle aankopen).
-3. **Bron:** `_geld_scope` (`v_defer_credits`, `v_per_credit_net`).
-4. **Driver:** deferred €-saldo ÷ gemiddelde €/credit.
-5. **Tijdstoewijzing:** stock.
-6. **Scope:** 🟡 **scope-blended** — `per_credit_net` is scope-breed (Σ net / Σ credits), terwijl `deferred_balance` per-user is opgebouwd. Bij verschillende pakketprijzen per user is de teruggerekende credit-count een benadering.
-7. **Aannames/zwakke plekken:** afronding op hele credits; blended €/credit.
+2. **Formule (F1b, ADR-063):** `deferred.credits = Σ lot_rem` — de **echte som van onverbruikte credits per aankoop-lot**, direct uit de FIFO-lus. Niet meer teruggerekend uit een blended €/credit.
+3. **Bron:** `_recognize_asof` (`deferred_credits`), doorgegeven via `_geld_scope`/`admin_finance_summary`.
+4. **Driver:** de resterende credits van elk nog-niet-volledig-verbruikt aankoop-lot.
+5. **Tijdstoewijzing:** stock (as-of `to`).
+6. **Scope:** ✅ **per-user** — elke user zijn eigen lot-restanten, gesommeerd. Geen blending meer.
+7. **Aannames/zwakke plekken:** exact (hele credits per lot, geen afronding/blending). Bewezen (Try 100 + Plus 1000, 400 verbruikt): echt 700 vs. de oude blended terugrekening 641,7 — een 8,3%-fout bij twee tiers die nu weg is.
+
+### 4.2b Deferred Stripe fee
+1. **Naam:** "Deferred Stripe fee".
+2. **Formule:** `deferred.deferred_fee = Σ lot_rem × lot_fee_pc` — de fee op de nog-onverbruikte gekochte credits (spiegel van `recognized_fee`, §2.14). `recognized_fee + deferred_fee = purchased_fee`.
+3. **Bron:** `_recognize_asof` (`deferred_fee`), via `admin_finance_summary` `deferred.deferred_fee`.
+4. **Driver:** openstaande gekochte credits × fee/credit per lot.
+5. **Tijdstoewijzing:** stock (as-of `to`).
+6. **Scope:** ✅ per-user gesommeerd.
+7. **Aannames/zwakke plekken:** wordt herkend (naar COR) zodra die credits verbruikt worden; tot dan een uitgestelde kost naast de deferred omzet.
 
 ### 4.3 Est. cost to deliver
 1. **Naam:** "Est. cost to deliver" (badge "est").
@@ -325,7 +345,7 @@ Zelfde bron/scope als §2.14 (`bank.stripe_fee = Σ metadata.stripe_fee`). 🟡 
 4. **Driver:** dagsnapshot-waarden + ingevoerde kosten. 👁️ (onderliggende drivers zitten in de snapshot-kolommen, niet in de balk).
 5. **Tijdstoewijzing:** snapshot = bevroren flow per Amsterdam-dag (`snapshot_finance_day`, pg_cron 02:00 UTC); entered = **live** overlay (niet bevroren). Daarom kan historische net verschuiven na een expense-edit (ADR-059, bedoeld).
 6. **Scope:** per gekozen scope (external/internal); entered alleen external.
-7. **Aannames/zwakke plekken:** `net_profit_measured` in de snapshot bevat GEEN entered-OPEX (die komt live erover) — de balk trekt entered dus apart af. `snapshot.revenue_delivered` is de recognitie zoals berekend op de snapshot-dag; door de per-user recognitie-fix zijn snapshots vanaf de fix-datum correct, oudere snapshots dragen de oude (mogelijk cross-user-pooled) waarde tot ze opnieuw gedraaid worden. 🔴 (historische snapshotrijen van vóór ADR-061).
+7. **Aannames/zwakke plekken:** `net_profit_measured` in de snapshot bevat GEEN entered-OPEX (die komt live erover) — de balk trekt entered dus apart af. `snapshot.revenue_delivered` is de recognitie zoals berekend op de snapshot-dag; door de per-user recognitie-fix zijn snapshots vanaf de fix-datum correct, oudere snapshots dragen de oude (mogelijk cross-user-pooled) waarde tot ze opnieuw gedraaid worden. 🔴 (historische snapshotrijen van vóór ADR-061). **Model-divergentie (open, follow-up F-item):** `snapshot_finance_day` berekent zijn `net_profit_measured` nog met het **oude model** — volle gemeten COR (niet against-revenue) **en de volle Stripe-fee bij de sale** (niet gedefereerd, ADR-063). De live-tab (`admin_finance_summary`) gebruikt against-revenue + fee-defer. De Trend-net wijkt daardoor af van de headline-net met (o.a.) `deferred_fee`. De snapshotfunctie leest alle `_geld_scope`-keys die nog bestaan → geen crash, maar de net-definitie moet nog gelijkgetrokken worden.
 
 ### 5.2 Trend lege staat
 Bij < 2 snapshotrijen: tekst i.p.v. grafiek. Geen getal.
@@ -338,9 +358,9 @@ Bij < 2 snapshotrijen: tekst i.p.v. grafiek. Geen getal.
 | Getal | Status | Toelichting |
 |---|---|---|
 | `recognized_revenue`, `deferred_revenue`, `purchased_consumed` | ✅ opgelost | per-user via `_recognize_asof` (ADR-061). |
-| `cor_against_revenue` (§2.2), per-methode Cost (§2.3), `granted_delivery_cost`/goodwill (§2.12) | 🔴 **open** | scope-gemiddelde `purchased_share` toegepast op scope-totale COR. Correct zou `Σ_user user_COR × user_share` zijn. Verschuift COR tussen omzet en goodwill zodra dure-granted en goedkope-purchased users samen in één scope zitten. |
+| `cor_against_revenue` (§2.2), per-methode split (§2.3), `granted_delivery_cost`/goodwill (§2.12) | ✅ **opgelost** | `Σ_user (user_period_COR × user_period_share)`, per-user periode-share (ADR-063, migratie `20260715163500`). Bewezen A/B: €0,01 against / €10 goodwill. |
+| `deferred.credits` (§4.2) | ✅ **opgelost** | echte som van lot-restanten (`Σ lot_rem`), niet meer blended teruggerekend (ADR-063). |
 | `est_future_cost` / `est_future_gross` (§4.3–4.4) | 🟡 benadering | scope-breed `avg_cpc` op de openstaande credits. |
-| `deferred.credits` (§4.2) | 🟡 benadering | scope-blended `per_credit_net`. |
 | overige COR-drivers, funnels, fee, cash, vat | ✅ ok | pure kostensommen — geen per-wallet-logica vereist. |
 
 ### 6.2 Geschat vs gemeten

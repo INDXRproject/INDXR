@@ -116,8 +116,11 @@ function Src({ kind }: { kind: "measured" | "entered" }) {
 
 const COR_METHODS = ["ai_transcription", "caption", "ai_summary", "rag"] as const
 
-// COR breakdown drawn as a 4-column table (Method · Cost · Credits · €/credit) — per the mockup.
-// Cost = against-revenue portion per method (Σ == the COR line above); €/credit = true gross unit cost.
+// COR breakdown drawn as a 4-column table (Method · Cost · Credits · €/credit).
+// Option (ii): Cost = FULL cost per method (cor[k]), Credits = all consumed credits of that method,
+// €/credit = Cost/Credits → the row MULTIPLIES (Credits × €/credit = Cost). The against-revenue/goodwill
+// split is a SEPARATE line beneath, not baked into the columns. The Stripe fee (COR, F22) is its own line:
+// recognised now (in cost of revenue) · deferred (held in the Deferred card).
 function CorTable({ s }: { s: FinanceScope }) {
   const cor = s.cor
   const aiCache = s.cache_savings.ai_transcription
@@ -126,6 +129,12 @@ function CorTable({ s }: { s: FinanceScope }) {
     ai_transcription: aiCache.total_jobs > 0 ? `${pct(aiCache.pct)} from cache · saved ${eur(aiCache.saved_eur, true)}` : null,
     caption: capCache.total_count > 0 ? `${pct(capCache.pct)} from cache · saved ${eur(capCache.saved_eur, true)}` : null,
   }
+  const abm = cor.against_revenue_by_method
+  // Against-revenue of the usage methods + storage (NOT the fee — the fee has its own recognised/deferred line).
+  const usageAgainst = abm.ai_transcription + abm.caption + abm.ai_summary + abm.rag + abm.storage
+  // Goodwill = full measured COR that was NOT matched to paid revenue (granted-credit delivery). Booked in OPEX.
+  const goodwill = cor.measured_total - usageAgainst
+  const fee = cor.payment_fee
   return (
     <div className="mt-1 rounded-lg border bg-surface-sunken/40">
       <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-5 border-b px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
@@ -140,7 +149,7 @@ function CorTable({ s }: { s: FinanceScope }) {
               <span className={`w-fit rounded-full px-2 py-0.5 font-medium ${TYPE_META[k].bg} ${TYPE_META[k].text}`}>{TYPE_META[k].label}</span>
               {cacheSub[k] && <span className="text-[11px] text-fg-subtle">{cacheSub[k]}</span>}
             </div>
-            <span className="text-right font-semibold tabular-nums text-fg">{eur(cor.against_revenue_by_method[k], true)}</span>
+            <span className="text-right font-semibold tabular-nums text-fg">{eur(cor[k], true)}</span>
             <span className="text-right tabular-nums text-fg-muted">{credits.toLocaleString()}</span>
             <span className="text-right tabular-nums text-fg-muted">{credits > 0 ? eur(unit, true) : "—"}</span>
           </div>
@@ -149,10 +158,29 @@ function CorTable({ s }: { s: FinanceScope }) {
       {/* storage — a quiet row, no per-credit unit */}
       <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
         <span className="w-fit rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning-fg">Storage (R2)</span>
-        <span className="text-right font-semibold tabular-nums text-fg">{eur(cor.against_revenue_by_method.storage, true)}</span>
+        <span className="text-right font-semibold tabular-nums text-fg">{eur(cor.storage, true)}</span>
         <span className="text-right tabular-nums text-fg-muted">—</span>
         <span className="text-right tabular-nums text-fg-muted">—</span>
       </div>
+      {/* Total FULL measured COR — this is what the rows sum to (Σ Cost). */}
+      <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 border-t px-3 py-2 text-xs">
+        <span className="font-semibold text-fg">Total measured COR</span>
+        <span className="text-right font-bold tabular-nums text-fg">{eur(cor.measured_total, true)}</span>
+        <span className="text-right tabular-nums text-fg-subtle">—</span>
+        <span className="text-right tabular-nums text-fg-subtle">—</span>
+      </div>
+      {/* The split: full COR bridges to against-revenue (in Cost of revenue) + goodwill (in Operating expenses). */}
+      <div className="border-t px-3 py-2 text-[11px] text-fg-muted">
+        of which <span className="font-medium text-fg">against revenue {eur(usageAgainst, true)}</span> (in cost of revenue) ·{" "}
+        <span className="font-medium text-fg">goodwill {eur(goodwill, true)}</span> (granted credits → operating expenses)
+      </div>
+      {/* Stripe fee — COR, revenue-matched (F22). Recognised part is inside Cost of revenue; deferred part is held. */}
+      {fee.purchased > 0 && (
+        <div className="border-t px-3 py-2 text-[11px] text-fg-muted">
+          <span className="font-medium text-fg">Payment processing (Stripe) {eur(fee.recognized, true)}</span> recognised (in cost of revenue) ·{" "}
+          {eur(fee.deferred, true)} deferred · {eur(fee.purchased, true)} paid at sale
+        </div>
+      )}
       <p className="border-t px-3 py-2 text-[11px] text-fg-subtle">
         Playlists spend credits through these same methods, so they have no separate line. Credits by source lives in Operations.
       </p>
@@ -164,14 +192,8 @@ function CorTable({ s }: { s: FinanceScope }) {
 // not an unexplained gap between the COR line and its breakdown.
 function OpexTable({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
   const m = s.measured_opex
-  // fee_details per component uit Stripe zelf (geen hardcoded rates) — bv. "processing €0,64 · currency €0,03".
-  const feeParts = Object.entries(m.stripe_fee_by_type ?? {})
-  const FEE_LABEL: Record<string, string> = { stripe_fee: "processing", tax: "tax on fee", currency_conversion: "currency" }
-  const feeHint = feeParts.length
-    ? feeParts.map(([t, v]) => `${FEE_LABEL[t] ?? t} ${eur(v, true)}`).join(" · ")
-    : "Stripe fee · at sale"
   const measuredRows: { name: string; hint?: string; cost: number }[] = []
-  if (m.stripe_fee > 0) measuredRows.push({ name: "Payment processing", hint: feeHint, cost: m.stripe_fee })
+  // Stripe fee is NOT here anymore — it moved to COR (F22), shown in the COR breakdown as recognised/deferred.
   // Radar screent élke poging (successful+declined+blocked) à €rate; gratis t/m free_until. Driver zichtbaar.
   const rd = m.radar
   if (rd && rd.screens > 0) {
@@ -386,6 +408,7 @@ function DeferredCard({ s }: { s: FinanceScope }) {
       <div className="space-y-2 text-sm">
         <div className="flex justify-between"><span className="text-fg-muted">Balance (ex-VAT)</span><span className="font-semibold tabular-nums">{eur(d.balance)}</span></div>
         <div className="flex justify-between"><span className="text-fg-muted">Credits outstanding</span><span className="tabular-nums">{d.credits.toLocaleString()}</span></div>
+        <div className="flex justify-between"><span className="text-fg-muted">Deferred Stripe fee</span><span className="tabular-nums">{eur(d.deferred_fee)}</span></div>
         <div className="flex justify-between"><span className="text-fg-muted">Est. cost to deliver <span className="rounded bg-warning-subtle px-1 text-[10px] text-warning">est</span></span><span className="tabular-nums">{eur(d.est_future_cost)}</span></div>
         <div className="flex justify-between border-t pt-2"><span className="font-medium">Est. future gross</span><span className="font-bold tabular-nums">{eur(d.est_future_gross)}</span></div>
         <p className="text-[11px] text-fg-subtle">Based on the last {d.window_days} days' usage mix.</p>

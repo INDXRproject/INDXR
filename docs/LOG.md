@@ -9452,3 +9452,49 @@ af van Moneybird (dashboard=stuur, Moneybird=fiscale waarheid).
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/priorities.md
 ---
+[2026-07-15 22:04] precompact: context compaction triggered
+[2026-07-15 23:30] taak: COR F1 (per-user attributie) + F22 (Stripe-fee → gedefereerd COR) + F1b (echte deferred_credits) + COR-tabel volle kost (ADR-063) | gewijzigd: supabase/migrations/20260715163000_recognize_asof_peruser_fee_deferredcredits.sql, 20260715163500_geld_scope_peruser_cor_and_fee.sql, 20260715164000_admin_finance_summary_fee_to_cor.sql, apps/app/src/app/admin/finance/financeTypes.ts, FinanceView.tsx, docs/wiki/decisions/063-*, docs/wiki/architecture/finance-number-provenance.md, docs/wiki/INDEX.md, docs/LESSONS.md, docs/wiki/roadmap/priorities.md
+[2026-07-15 22:27] commit: feat(finance): per-user COR + Stripe-fee als gedefereerd COR (ADR-063)
+
+F1 — cor_against_revenue was gepoold (scope-brede all-time share op scope-COR).
+Nu Σ_user(user_period_COR × user_period_share), periode-share niet all-time.
+Sluit dezelfde pooling-klasse als ADR-061, nu in de COR-splitsing.
+Bewezen A/B (tegengestelde profielen): €0,01 against / €10 goodwill
+(oude formule €5,005/€5,005) + periode-share-test (feb granted → €0 against).
+
+F22 — Stripe-fee van OPEX naar COR, defert per lot in _recognize_asof
+(recognized_fee/deferred_fee, revenue-matched: geen share, geen goodwill).
+Bankkaart houdt de volle cash-fee (bank.stripe_fee). Bewezen 2 tiers:
+€1,25 → €0,76 recognized / €0,49 deferred.
+
+F1b — deferred.credits = echte Σ lot_rem i.p.v. blended terugrekening.
+Bewezen Try+Plus: 700 echt vs 641,7 blended (8,3% fout bij 2 tiers).
+
+COR-tabel = volle kost (rij vermenigvuldigt) + aparte against/goodwill-splitregel
++ fee-regel (recognised/deferred). measured_opex zonder stripe_fee; Deferred-kaart
+met deferred_fee.
+
+NULL-COALESCE-valkuil op per-user sum() opgelost (80 prod-jobs proxy_bytes=NULL
+lieten anders €10,92 duur-kost stil vallen) — LESSONS.
+
+Regressie all-time internal exact: cor.against_revenue €0,7803 (ai 0,3608 + fee
+0,4192), goodwill €20,9219, against_revenue_by_method telt op tot against_revenue,
+deferred.credits 69 + deferred_fee €0,22. Advisors schoon (RPCs blijven revoked).
+Build app groen.
+
+Open follow-up (F5b): snapshot_finance_day net-model nog op volle COR + volle
+fee-bij-sale — geen crash, wel Trend/headline-divergentie.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/decisions/063-per-user-cor-and-stripe-fee-cor.md
+docs/wiki/roadmap/priorities.md
+supabase/migrations/20260715194951_recognize_asof_peruser_fee_deferredcredits.sql
+supabase/migrations/20260715195426_geld_scope_peruser_cor_and_fee.sql
+supabase/migrations/20260715200451_admin_finance_summary_fee_to_cor.sql
+---

@@ -8,13 +8,23 @@ export interface FinanceCor {
   storage: number
   measured_total: number
   against_revenue: number
-  // per-method against-revenue (gross × purchased_share); sums to against_revenue → COR table reconciles.
+  // Stripe fee is COR (F22): purchased at sale, deferred per lot, recognised on consumption (revenue-matched).
+  // recognized == the fee portion already inside against_revenue; deferred sits in the Deferred card.
+  payment_fee: {
+    recognized: number
+    deferred: number
+    purchased: number
+    by_type: Record<string, number>
+  }
+  // Per-method against-revenue (Σ_user user_period_cor × user_period_share) — per-user, NOT pooled (F1).
+  // Sums to against_revenue (incl. payment_fee = recognized fee) → the split line under the COR table reconciles.
   against_revenue_by_method: {
     ai_transcription: number
     caption: number
     ai_summary: number
     rag: number
     storage: number
+    payment_fee: number
   }
 }
 
@@ -47,8 +57,6 @@ export interface FinanceScope {
     goodwill: number
     funnel_loggedin: number
     funnel_anon: number
-    stripe_fee: number
-    stripe_fee_by_type: Record<string, number>
     radar_fee: number
     radar: {
       screens: number
@@ -80,6 +88,7 @@ export interface FinanceScope {
   deferred: {
     balance: number
     credits: number
+    deferred_fee: number
     est_future_cost: number
     est_future_gross: number
     window_days: number
