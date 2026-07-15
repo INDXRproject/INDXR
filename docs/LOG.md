@@ -9598,3 +9598,19 @@ docs/wiki/architecture/finance-audit.md
 docs/wiki/architecture/finance-number-provenance.md
 supabase/migrations/20260715213746_finance_audit_fixes_deferred_radar.sql
 ---
+[2026-07-16 09:30] finance-deel-A decimalen-regressie: €/credit-kolom toont nu ALTIJD de echte bronprijs op 8 decimalen (vaste breedte), nooit de <€0,01-vlag. Die vlag hoort alleen in COST. Gevolg: caption €0.00001246 vs ai_summary €0.00006667 (5,3×) weer zichtbaar; AI €0.00334882 × 3.091 = €10,35 narekenbaar. RAG €0.00000000. corCost (COST-kolom) ongewijzigd. | gewijzigd: apps/app/src/app/admin/finance/FinanceView.tsx, docs/LOG.md
+[2026-07-16 00:07] commit: fix(finance): €/credit toont echte bronprijs (8 dec), <€0,01-vlag alleen in COST
+
+Regressie op de vorige taak: de <€0,01-vlag stond ook in de €/credit-kolom,
+waardoor die onleesbaar werd — ai_summary €0.0001 vs caption <€0.01 terwijl ze
+factor 5 schelen. €/credit is de bronprijs en mag klein zijn; toont nu altijd het
+echte getal op 8 decimalen (vaste breedte via tabular-nums), nooit een vlag.
+Alleen "geen credits → —". De <€0,01-vlag blijft in COST (corCost, ongewijzigd).
+
+Zichtbaar verschil hersteld: caption €0.00001246 vs ai_summary €0.00006667;
+AI €0.00334882 × 3.091 = €10,35 narekenbaar; RAG €0.00000000.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+docs/LOG.md
+---

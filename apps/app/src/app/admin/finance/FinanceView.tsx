@@ -54,13 +54,13 @@ function corCost(n: number): string {
   if (n < 0.005) return "<€0.01"
   return eur(n)
 }
-// €/credit: a readable figure, or "<€0.01" if it would render as €0.0000. Genuine zero stays "€0.00"; no credits → "—".
+// €/credit: ALWAYS the real bron-price at 8 decimals (fixed width via tabular-nums), never a flag. This is the
+// source price — it may legitimately be tiny, and the difference between e.g. €0.00001246 (caption) and
+// €0.00006667 (ai_summary) must stay visible. Only "no credits → —" (there is no price to show). The "<€0.01"
+// flag belongs ONLY in the COST column.
 function corUnit(credits: number, cost: number): string {
   if (credits === 0) return "—"
-  const u = cost / credits
-  if (u === 0) return eur(0)
-  if (u < 0.00005) return "<€0.01"
-  return eur(u, true)
+  return `€${(cost / credits).toFixed(8)}`
 }
 
 // Same EU member-state list as admin_finance_summary (v_eu). EL = Greece alt-code. GB absent (Brexit).
