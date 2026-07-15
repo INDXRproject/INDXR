@@ -9130,3 +9130,18 @@ apps/marketing/src/app/signup/page.tsx
 packages/shared/src/actions/auth-actions.ts
 packages/shared/src/lib/safe-redirect.ts
 ---
+[2026-07-15 12:19] precompact: context compaction triggered
+[2026-07-15 13:30] taak: fix 1.38 onboarding-gate laat checkout-intent vallen (herclassificatie: blocker) | doel gethread door hele nieuwe-user-flow: loginAction + signupAction(emailRedirectTo) + loginWithGoogleAction(OAuth) → /auth/callback?next → /onboarding?next → onboarding-completion honoreert next; login/signup next-doorgifte; open-redirect-guard packages/shared/lib/safe-redirect.ts. Prod-verificatie vers account: pricing→Plus→login→onboarding→billing?checkout=plus→Stripe Plus €25 (cs_live). Regressie ge-onboarde users OK. test1 teruggezet naar onboarding_completed=false; wegwerp-testaccount verwijderd. Niet aangeraakt: checkout-route/pricing.ts/PricingTiers/webhook. Build groen (2/2). commit b1f5903. | gewijzigd: packages/shared/src/lib/safe-redirect.ts (nieuw), packages/shared/src/actions/auth-actions.ts, apps/marketing/src/app/auth/callback/route.ts, apps/marketing/src/app/onboarding/page.tsx, apps/marketing/src/app/login/page.tsx, apps/marketing/src/app/signup/page.tsx
+[2026-07-15 12:26] commit: docs: 1.38 opgelost (onboarding-gate threading) — priorities/pricing/LESSONS/LOG
+
+Verificatiebewijs vastgelegd: nieuwe-user-funnel pricing → login → onboarding →
+billing?checkout=plus → Stripe Plus €25 (prod, cs_live). 1.38 afgevinkt als
+opgelost (was blocker). Pricing-wiki + LESSONS (thread next door hele auth-flow +
+onboarding-gate valkuil) bijgewerkt.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/business/pricing.md
+docs/wiki/roadmap/priorities.md
+---
