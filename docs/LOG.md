@@ -9326,3 +9326,41 @@ supabase/migrations/20260715122214_geld_scope_settlement_vat_flag.sql
 supabase/migrations/20260715122324_admin_finance_summary_settlement_fee_breakdown.sql
 supabase/migrations/20260715122517_geld_scope_vat_measured_null_fix.sql
 ---
+[2026-07-15 16:52] precompact: context compaction triggered
+[2026-07-15 17:20] taak: Finance — één BTW-bron + landuitsplitsing + backfill-mechaniek. `_sale_vat(m)->{vat,status}` als enige BTW-bron (tax_status='complete' → invoice_tax → unknown), aangeroepen door _geld_scope (vat+measured+vat_by_country) én _recognize_asof (net_lot) — fix: invoice_tax werd measured maar niet in net afgetrokken (omzet 21% te hoog). Per-land VAT-buckets NL/OSS/outside/unknown (expliciete EU-lidstatenlijst, GB=outside/Brexit). Dood `vat_known` verwijderd. Backfill van tax_status/customer_country/invoice_tax via gedeelde extractSessionTax in reconcile-pad (live-key vereist → admin-trigger, geen aankoop). Provenance §7: USD-simulatie was verzonnen+onmogelijk → P4 "rekenkundig geverifieerd, e2e open tot niet-EUR-sale"; US-B2C=€0 correct, UK-B2C=20% NETP openstaand. Bewezen 3 sales/2 users (vóór/ná) + buckets + advisors schoon. | gewijzigd: supabase/migrations/20260715143821_sale_vat_single_source.sql, 20260715143915_geld_scope_sale_vat_and_country.sql, 20260715144310_admin_finance_summary_vat_buckets.sql, apps/app/src/lib/stripe-fees.ts, apps/app/src/app/api/stripe/webhook/route.ts, apps/app/src/app/api/admin/reconcile-stripe-fees/route.ts, apps/app/src/app/admin/finance/{FinanceView.tsx,financeTypes.ts}, apps/app/src/app/admin/adminTypes.ts, docs/wiki/architecture/finance-number-provenance.md, docs/LESSONS.md
+[2026-07-15 16:58] commit: feat(finance): één BTW-bron (_sale_vat) + per-land VAT-buckets + backfill-mechaniek
+
+Eén BTW-bron `_sale_vat(m)->{vat,status}` (tax_status='complete' → invoice_tax →
+unknown), aangeroepen door élke lezer: _geld_scope (vat + measured + vat_by_country)
+én _recognize_asof (net_lot). Bugfix: invoice_tax maakte een sale measured=true maar
+werd níét in net_lot afgetrokken → omzet 21% te hoog bij een invoice-only sale.
+
+Per-land VAT-buckets NL (eigen aangifte) / OSS (overige EU) / outside (€0) / unknown,
+via expliciete EU-lidstatenlijst in admin_finance_summary; GB=outside (Brexit).
+"not computed" weg: som over measured, aparte regel voor unknown. Dood `vat_known`
+verwijderd (werd nergens gerenderd).
+
+Backfill van tax_status/customer_country/invoice_tax via gedeelde extractSessionTax
+(webhook + reconcile schrijven identieke velden); reconcile dumpt de sessiestructuur
+voor pad-verificatie. Live Stripe-key vereist → admin triggert reconcile (geen aankoop).
+
+Provenance §7: USD-simulatie was verzonnen én onmogelijk (US-B2C betaalt geen EU-BTW).
+P4 → "rekenkundig geverifieerd; e2e open tot een niet-EUR-sale". US-B2C=€0 correct,
+UK-B2C=20% UK VAT (HMRC NETP) openstaande verplichting.
+
+Bewezen: 3 synthetische sales / 2 users (vóór/ná), buckets, advisors schoon.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+apps/app/src/app/api/admin/reconcile-stripe-fees/route.ts
+apps/app/src/app/api/stripe/webhook/route.ts
+apps/app/src/lib/stripe-fees.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/finance-number-provenance.md
+supabase/migrations/20260715143821_sale_vat_single_source.sql
+supabase/migrations/20260715143915_geld_scope_sale_vat_and_country.sql
+supabase/migrations/20260715144310_admin_finance_summary_vat_buckets.sql
+---

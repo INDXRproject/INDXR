@@ -28,6 +28,10 @@ export interface FinanceScope {
   vat: number
   vat_computed: boolean
   vat_unmeasured: { count: number; gross: number }
+  // per-land VAT (country ISO-2 of "??" voor onbekend)
+  vat_by_country: Record<string, { vat: number; gross: number; count: number; unknown_vat: boolean; rate_implied: number | null }>
+  // gebucket voor de aangiftes: nl (eigen btw) · oss (overige EU) · outside (buiten EU-scope, €0) · unknown
+  vat_buckets: Partial<Record<"nl" | "oss" | "outside" | "unknown", { vat: number; gross: number; count: number }>>
   revenue_delivered: number
   deferred_balance: number
   credits_sold: number

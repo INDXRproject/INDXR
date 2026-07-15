@@ -3,7 +3,6 @@
 export interface GeldScope {
   cash_in_gross: number
   vat: number
-  vat_known: boolean
   revenue_net: number
   purchased_cr: number
   granted_cr: number

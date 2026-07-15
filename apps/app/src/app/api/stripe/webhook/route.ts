@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/nextjs'
 import { stripe } from '@/lib/stripe'
 import Stripe from 'stripe'
 import { createAdminClient } from '@indxr/shared/utils/supabase/admin'
-import { captureStripeFees } from '@/lib/stripe-fees'
+import { captureStripeFees, extractSessionTax } from '@/lib/stripe-fees'
 
 export const runtime = 'nodejs';
 
@@ -72,16 +72,10 @@ export async function POST(req: Request) {
       currency: session.currency, // presentment-valuta
     }
     try {
-      // BTW (tax) portion — pricing is BTW-inclusive (ADR-052/053), so this is the tax within amount_paid.
-      const amountTax = session.total_details?.amount_tax
-      if (amountTax != null) purchaseMeta.amount_tax = amountTax / 100
-      // tax_status = 'complete' bewijst dat automatic_tax daadwerkelijk BTW heeft berekend op deze sale
-      // (ook een legitieme 0 bij US/verlegd). Zonder 'complete' is de BTW ONBEKEND, niet "geen BTW" —
-      // het dashboard markeert die sales apart i.p.v. stilzwijgend BTW-inclusieve omzet te tonen.
-      if (session.automatic_tax?.status) purchaseMeta.tax_status = session.automatic_tax.status
-      // Factuuradres-land bepaalt het OSS-tarief en is wat de OSS-aangifte nodig heeft. Per aankoop vast.
-      const custCountry = session.customer_details?.address?.country
-      if (custCountry) purchaseMeta.customer_country = custCountry
+      // BTW + tax_status + factuuradres-land uit de GEDEELDE extractor (zelfde velden als reconcile).
+      // tax_status='complete' bewijst dat automatic_tax echt BTW berekende (ook een legitieme 0 bij US/verlegd);
+      // zonder 'complete' is de BTW ONBEKEND, niet "geen BTW" — het dashboard markeert die sales apart.
+      Object.assign(purchaseMeta, extractSessionTax(session))
 
       const piId = typeof session.payment_intent === 'string'
         ? session.payment_intent

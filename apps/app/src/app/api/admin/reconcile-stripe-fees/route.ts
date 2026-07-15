@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { createAdminClient } from "@indxr/shared/utils/supabase/admin"
 import { stripe } from "@/lib/stripe"
-import { captureStripeFees, resolvePaymentIntentId } from "@/lib/stripe-fees"
+import { captureStripeFees, resolvePaymentIntentId, extractSessionTax } from "@/lib/stripe-fees"
 
 export const runtime = "nodejs"
 
@@ -54,23 +54,45 @@ export async function POST(req: NextRequest) {
       }
       const fees = await captureStripeFees(piId)
 
-      // Deel A-bewijs: haal de Checkout Session op om te tonen dat de SESSIE zelf geen tax berekent
-      // (automatic_tax uit → total_details.amount_tax = 0). Bevestigt dat het amount_tax=0-gat een
-      // CAPTURE-config-kwestie is (automatic_tax staat uit op de session), niet een webhook-bug.
+      // BTW/land-backfill uit de Checkout Session (gedeelde extractie, zelfde velden als de webhook) +
+      // rauwe structuur-dump zodat de optional-chaining-paden geverifieerd kunnen worden (Punt 4).
       let sessionAutomaticTax: string | null = null
       let sessionAmountTax: number | null = null
+      let sessionTax: Record<string, unknown> = {}
+      let sessionStructure: Record<string, unknown> = {}
       try {
         if (meta.stripe_session_id) {
           const sess = await stripe.checkout.sessions.retrieve(String(meta.stripe_session_id), {
-            expand: ["total_details"],
+            expand: ["total_details", "customer_details"],
           })
           sessionAutomaticTax = sess.automatic_tax?.status ?? null
           sessionAmountTax = sess.total_details?.amount_tax != null ? sess.total_details.amount_tax / 100 : null
+          sessionTax = { ...extractSessionTax(sess) }
+          sessionStructure = {
+            automatic_tax: sess.automatic_tax ?? null,
+            customer_details_address: sess.customer_details?.address ?? null,
+            currency: sess.currency,
+          }
         }
       } catch { /* session retrieve best-effort */ }
 
-      // fee-velden mergen in de bestaande metadata (audit-backfill; amount/type onaangeroerd).
-      const merged = { ...meta, ...fees }
+      // invoice_tax uit de bestaande Invoice (enige plek met echte BTW voor pre-automatic_tax sales).
+      // Let op: de invoice draait op session.currency (invoice/route.ts) → invoice_tax staat in die valuta;
+      // voor alle bestaande sales EUR. Nieuwere Stripe-API: total_taxes[] i.p.v. tax.
+      let invoiceTax: number | null = null
+      try {
+        if (meta.invoice_id) {
+          const invAny = await stripe.invoices.retrieve(String(meta.invoice_id)) as unknown as
+            { tax?: number | null; total_taxes?: { amount?: number }[] | null; currency?: string }
+          const minor = invAny.tax != null ? invAny.tax
+            : Array.isArray(invAny.total_taxes) ? invAny.total_taxes.reduce((s, t) => s + (t.amount ?? 0), 0)
+            : null
+          invoiceTax = minor != null ? minor / 100 : null
+        }
+      } catch { /* invoice retrieve best-effort */ }
+
+      // fee-velden + BTW/land-backfill mergen in de bestaande metadata (audit-backfill; amount/type onaangeroerd).
+      const merged = { ...meta, ...fees, ...sessionTax, ...(invoiceTax != null ? { invoice_tax: invoiceTax } : {}) }
       const { error: upErr } = await admin
         .from("credit_transactions")
         .update({ metadata: merged })
@@ -93,9 +115,14 @@ export async function POST(req: NextRequest) {
         amount_paid: amountPaid,
         amount_tax: amountTax,
         vat_computed: amountTax != null && amountTax > 0,
-        // Deel A: session-niveau tax-config (bewijs dat de sessie geen tax berekent).
+        // Deel A / Punt 4: session-niveau tax-config + rauwe structuur (verifieer optional-chaining-paden).
         session_automatic_tax: sessionAutomaticTax,
         session_amount_tax: sessionAmountTax,
+        session_structure: sessionStructure,
+        // Punt 5: wat de backfill schreef.
+        backfilled_tax_status: sessionTax.tax_status ?? null,
+        backfilled_customer_country: sessionTax.customer_country ?? null,
+        backfilled_invoice_tax: invoiceTax,
         stripe_fee_total: fees.stripe_fee ?? null,
         fee_details: fees.fee_details ?? [],
         fee_details_sum: Number(feeSum.toFixed(4)),

@@ -254,17 +254,28 @@ function BankBridge({ s }: { s: FinanceScope }) {
         <div className="flex justify-between"><span className="text-fg-muted">Charged to customers <span className="text-fg-subtle">(settlement €)</span></span><span className="font-semibold tabular-nums">{eur(b.charged)}</span></div>
         <div className="flex justify-between"><span className="text-fg-muted">− Stripe fee</span><span className="font-semibold tabular-nums text-error">{eur(b.stripe_fee)}</span></div>
         <div className="flex justify-between border-t pt-2"><span className="font-medium">= Settled to your bank</span><span className="font-bold tabular-nums">{eur(b.net_settlement > 0 ? b.net_settlement : b.settled_computed)}</span></div>
-        <div className="mt-3 space-y-1 rounded-lg bg-surface-sunken p-3 text-xs">
-          <div className="flex justify-between"><span className="text-fg-muted">VAT (owed to tax office)</span><span className="tabular-nums">{s.vat_computed ? eur(b.vat_owed) : "not computed"}</span></div>
-          <div className="flex justify-between"><span className="text-fg-muted">Revenue ex-VAT (delivered + deferred)</span><span className="tabular-nums">{eur(b.revenue_ex_vat)}</span></div>
+        <div className="mt-3 space-y-1.5 rounded-lg bg-surface-sunken p-3 text-xs">
+          <div className="flex justify-between font-medium"><span>VAT owed <span className="font-normal text-fg-subtle">(measured)</span></span><span className="tabular-nums">{eur(b.vat_owed)}</span></div>
+          {(["nl", "oss", "outside"] as const).map((k) => {
+            const bk = s.vat_buckets[k]
+            if (!bk || bk.count === 0) return null
+            const label = k === "nl" ? "NL — own VAT return" : k === "oss" ? "Other EU — OSS" : "Outside EU — €0 (customer's country)"
+            return (
+              <div key={k} className="flex justify-between pl-3 text-fg-muted">
+                <span>{label} <span className="text-fg-subtle">· {bk.count}</span></span>
+                <span className="tabular-nums">{eur(bk.vat)}</span>
+              </div>
+            )
+          })}
+          <div className="flex justify-between border-t pt-1.5"><span className="text-fg-muted">Revenue ex-VAT (delivered + deferred)</span><span className="tabular-nums">{eur(b.revenue_ex_vat)}</span></div>
         </div>
         {s.payment_methods.length > 0 && (
           <p className="text-[11px] text-fg-subtle">via {s.payment_methods.join(", ")}</p>
         )}
-        {s.vat_unmeasured.count > 0 && (
+        {s.vat_buckets.unknown && s.vat_buckets.unknown.count > 0 && (
           <p className="text-[11px] text-warning">
-            ⚠ {s.vat_unmeasured.count} sale{s.vat_unmeasured.count === 1 ? "" : "s"} ({eur(s.vat_unmeasured.gross)}) without measured VAT —
-            revenue for those may be up to ~21% overstated (VAT not separated). New sales carry Stripe-computed VAT.
+            ⚠ {s.vat_buckets.unknown.count} sale{s.vat_buckets.unknown.count === 1 ? "" : "s"} ({eur(s.vat_buckets.unknown.gross)}) with VAT not measured —
+            excluded from the VAT above; revenue for those may be up to ~21% overstated until backfilled from Stripe.
           </p>
         )}
       </div>

@@ -71,6 +71,24 @@ export async function captureStripeFees(piId: string): Promise<StripeFeeCapture>
   return out
 }
 
+export interface SessionTaxCapture {
+  amount_tax?: number // BTW binnen amount_paid (presentment-valuta)
+  tax_status?: string // automatic_tax.status — 'complete' = BTW echt gemeten (ook een legitieme 0)
+  customer_country?: string // factuuradres-land → OSS-tarief + aangifte
+}
+
+// Gedeelde extractie van de BTW-/land-velden uit een Checkout Session. ÉÉN plek zodat webhook (event-session)
+// én reconcile (opgehaalde session) exact dezelfde velden schrijven — geen asymmetrisch capture-pad.
+export function extractSessionTax(session: Stripe.Checkout.Session): SessionTaxCapture {
+  const out: SessionTaxCapture = {}
+  const amountTax = session.total_details?.amount_tax
+  if (amountTax != null) out.amount_tax = amountTax / 100
+  if (session.automatic_tax?.status) out.tax_status = session.automatic_tax.status
+  const country = session.customer_details?.address?.country
+  if (country) out.customer_country = country
+  return out
+}
+
 // Bepaal de PaymentIntent-id uit purchase-metadata; val terug op de Checkout Session als die ontbreekt
 // (oudere sales legden payment_intent_id nog niet vast).
 export async function resolvePaymentIntentId(

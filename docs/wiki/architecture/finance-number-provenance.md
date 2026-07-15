@@ -352,16 +352,38 @@ AssemblyAI-minuten, proxy-bytes (transcriptie én caption), DeepSeek-tokens, ops
 
 ## Sectie 7 — Status BTW
 
-> **UPDATE 2026-07-15 — GEFIXT IN CODE (deploy live; live-sale-verificatie openstaand).**
-> De Checkout Session draait nu `automatic_tax:{enabled:true}` + line-item `tax_behavior:'inclusive'` +
-> `product_data.tax_code:'txcd_10000000'` (`checkout/route.ts`). De webhook legt `tax_status`
-> (= `session.automatic_tax.status`) en `customer_country` vast. Bewezen compatibel met Adaptive Pricing
-> ([Stripe-doc](https://docs.stripe.com/tax/checkout/adaptive-pricing): tax op integratievaluta EUR, dan
-> omreken). **P&L rekent nu in settlement-EUR** (zie §2.1/§3.1): `net = settlement_amount − amount_tax ×
-> exchange_rate`. Sales zónder gemeten BTW (`tax_status≠'complete'` én geen `invoice_tax`) worden apart
-> geteld (`vat_unmeasured {count,gross}`) en in de bankkaart gewaarschuwd i.p.v. stil BTW-inclusieve omzet.
-> **Openstaand:** één live testsale ná deploy die `session.automatic_tax.status='complete'` +
-> `total_details.amount_tax>0` toont, matchend met de €0,61 die de factuur al geeft.
+> **UPDATE 2026-07-15 — GEFIXT IN CODE (deploy live).**
+> - **Checkout rekent BTW.** `checkout/route.ts`: `automatic_tax:{enabled:true}` + line-item
+>   `tax_behavior:'inclusive'` + `product_data.tax_code:'txcd_10000000'`. Live geverifieerd op
+>   checkout.stripe.com: DE €2,39 (19%) · NL/BE €2,60 (21%) · IT €2,70 (22%) · IE €2,80 (23%) · UK €0 ·
+>   US "enter address" — totaal blijft overal €15, tarief komt uit het factuuradres. Adaptive Pricing
+>   compatibel ([Stripe-doc](https://docs.stripe.com/tax/checkout/adaptive-pricing)).
+> - **Eén BTW-bron.** `_sale_vat(m)` beslist per sale de BTW én de meet-status: `tax_status='complete'`
+>   → `amount_tax × exchange_rate` (ook een gemeten 0); anders `invoice_tax`; anders `unknown`. `_geld_scope`
+>   (vat + measured + `vat_by_country`) én `_recognize_asof` (net_lot) roepen dezelfde functie aan — geen
+>   enkele lezer bouwt nog zijn eigen BTW-expressie. Bewezen (3 sales, 2 users): een sale met alleen
+>   `invoice_tax` telt die BTW nu óók in het net_lot af (was: measured=true maar omzet BTW-inclusief).
+> - **Per-land VAT-blok** (`vat_buckets`): NL (eigen btw-aangifte) · overige EU (OSS/Unieregeling) ·
+>   buiten EU-scope (€0) · onbekend land (apart, niet bij NL). Expliciete EU-lidstatenlijst in SQL; GB
+>   valt in "outside" (Brexit). "not computed" is weg: de bankkaart toont de som over **measured**, met
+>   een eigen regel voor de onbekende sales (count + gross).
+> - **P&L in settlement-EUR** (§2.1/§3.1): `net = settlement_amount − _sale_vat(m).vat`.
+> - **Dood veld `vat_known` verwijderd** (werd nergens gerenderd; `vat_measured_all`/`vat_unmeasured` dragen
+>   nu de meet-status).
+>
+> **P4-status genuanceerd (eerlijk):** de eerdere "USD-simulatie" was een **verzonnen én onmogelijk**
+> scenario — een US-particulier betaalt geen EU-BTW, dus die €1,60 VAT kan niet bestaan. De settlement-
+> valuta-**rekenregel** is daarmee **rekenkundig geverifieerd** (charged = settlement, net = settlement − vat,
+> sluit), maar **end-to-end open tot een echte niet-EUR-sale**. Fiscale grondslag (bron: Belastingdienst,
+> *digitale diensten*): digitale diensten aan **particulieren** zijn belast in het **land van de klant** →
+> **US-B2C = buiten EU-btw-scope, €0 is correct en volledig**. **UK-B2C = 20% UK VAT verschuldigd vanaf de
+> eerste verkoop** (HMRC NETP-regime, geen drempel voor niet-gevestigde verkopers) — een **openstaande
+> verplichting**, geen codeprobleem; de landguard volgt in een aparte taak.
+>
+> **Live-key-constraint:** de 2 bestaande sessions ophalen (Punt 4) en de backfill (Punt 5) vereisen de
+> **live** Stripe-key (lokaal is alleen `sk_test`). De mechaniek staat in `reconcile-stripe-fees` (dumpt de
+> sessiestructuur + backf't `tax_status`/`customer_country`/`invoice_tax` via de gedeelde `extractSessionTax`);
+> de admin triggert `POST /api/admin/reconcile-stripe-fees` één keer (geen aankoop) → verwacht `unknown → 0`.
 
 **Oorspronkelijke bevinding (bevestigd uit de code — de asymmetrie was echt):**
 
