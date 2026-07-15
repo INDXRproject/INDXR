@@ -138,7 +138,7 @@
 - [x] **Suspended User Enforcement**: `profiles.suspended` boolean checked on all write-path API routes
 - [x] **Welcome Bonus Double-Claim Prevention**: Atomic `claim_welcome_reward` RPC + server-side pre-check
 - [x] **Playwright E2E Test Suite**: 29 tests across 4 spec files; global setup auto-tops-up test accounts to ≥ 50 credits; metrics logged per run
-- [ ] **Email Verification**: Re-enable (currently disabled for testing)
+- [x] **Email Verification**: Already ON (`mailer_autoconfirm=false`, verified 2026-07-15). Remaining: custom SMTP (built-in mailer is `rate_limit_email_sent=2`/hour) — see priorities 1.30
 - [ ] **Stripe Go-Live**: Switch to live keys, verify webhook in production; fill in `STRIPE_WEBHOOK_SECRET` in Vercel (currently empty)
 - [ ] **Database Backups**: Document Supabase PITR settings
 - [ ] **Rate Limiting**: Configure Upstash Redis (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` in Vercel) — currently disabled, app falls back to `noopLimiter`
@@ -264,7 +264,7 @@ Ideas validated but not prioritized:
 
 **Infrastructure & Go-Live**
 - [ ] Stripe live keys — switch from test to live, verify webhook, fill `STRIPE_WEBHOOK_SECRET` in Vercel
-- [ ] Email verification — re-enable in Supabase (currently disabled for testing)
+- [x] Email verification — already ON in Supabase (`mailer_autoconfirm=false`, verified 2026-07-15); remaining work is custom SMTP (priorities 1.30)
 - [ ] Configure Upstash Redis for rate limiting (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` in Vercel)
 - [ ] Add `BACKEND_API_SECRET` shared header between Vercel and Railway
 - [ ] Go live 🚀

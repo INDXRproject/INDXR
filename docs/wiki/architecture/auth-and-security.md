@@ -210,7 +210,7 @@ Vereist in Railway environment variables.
 
 ## Email Verificatie
 
-Supabase email verificatie is **uitgeschakeld** tijdens development. Checklist item voor productie: re-enablen in Supabase Dashboard → Auth → Settings.
+Supabase email verificatie staat **AAN** (`mailer_autoconfirm=false` — geverifieerd 2026-07-15 via Management API `/config/auth`). Nieuwe email/password-signups gebruiken de **PKCE**-flow: de verificatielink (`.../auth/v1/verify?token=…&type=signup&redirect_to=…`) redirect na klik naar `/auth/callback?code=…&next=…`, waar `exchangeCodeForSession` de sessie zet. De redirect-URL-allowlist accepteert query-strings via `https://indxr.ai/**`, dus een `redirect_to` met `?next=<billing target>` blijft intact (E2E-geverifieerd: nieuwe-koper-funnel signup → verify → onboarding → billing → Stripe). De ingebouwde mailer heeft `rate_limit_email_sent=2`/uur (geen custom SMTP — zie priorities 1.30).
 
 ---
 

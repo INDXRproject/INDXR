@@ -293,7 +293,7 @@ Als ze verschijnen: `git rm -r --cached <path>`
 - `STRIPE_WEBHOOK_SECRET` altijd instellen in productie — zonder verificatie is webhook onveilig
 
 ### Supabase
-- **Email verificatie is uitgeschakeld** (development) — re-enablen voor productie
+- **Email verificatie staat AAN** (`mailer_autoconfirm=false`, geverifieerd 2026-07-15 via Management API). Nieuwe email/password-signups zijn PKCE en moeten de verificatielink klikken → `/auth/callback?code=…` → sessie. LET OP: de ingebouwde mailer heeft `rate_limit_email_sent=2`/uur (geen custom SMTP) — zie 1.30. **Nieuwe signups met `@indxr-test.com` worden door Supabase geweigerd** ("Email address invalid"); gebruik `@indxr.ai` (of een echt domein met MX) voor E2E-signup-tests, of maak accounts admin-side aan (`admin.createUser` met `email_confirm:true` accepteert `@indxr-test.com`).
 - RLS verificeren op alle 6 tabellen voor launch
 - Database backups nog niet geconfigureerd
 

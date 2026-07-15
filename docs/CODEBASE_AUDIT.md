@@ -286,7 +286,7 @@ Beschreven in credit-system.md wiki, maar Stripe webhook zet dit veld niet.
 `UPSTASH_REDIS_REST_URL` + token niet geconfigureerd lokaal → noop limiter actief.
 
 ### Supabase email verificatie
-Uitgeschakeld voor development — moet re-enabled worden voor productie.
+Staat AAN (`mailer_autoconfirm=false`, geverifieerd 2026-07-15). Resterend werk: custom SMTP (ingebouwde mailer `rate_limit_email_sent=2`/uur) — priorities 1.30.
 
 ### `LOG_LEVEL=WARNING` in Railway
 Staat in pre-launch checklist, waarschijnlijk nog op INFO.

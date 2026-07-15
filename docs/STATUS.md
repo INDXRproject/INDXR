@@ -295,7 +295,7 @@ The project uses a neutral utility skin (April 2025) replacing the previous Star
 
 **Supabase Security:**
 - [x] `playlist_extraction_jobs` table migration applied (Phase R)
-- [ ] Re-enable email verification (currently disabled — must enable before launch)
+- [x] Email verification is ON (`mailer_autoconfirm=false`, verified 2026-07-15); remaining: custom SMTP (built-in mailer `rate_limit_email_sent=2`/hour) — priorities 1.30
 - [ ] Test OAuth redirect URLs on production domain
 - [ ] Backup database before launch
 
@@ -318,7 +318,7 @@ The project uses a neutral utility skin (April 2025) replacing the previous Star
 
 ## 🎯 IMMEDIATE PRIORITIES
 
-1. **Email Verification** — Re-enable before launch
+1. **Email Verification** — Already ON (verified 2026-07-15); remaining is custom SMTP (priorities 1.30)
 2. **Stripe Go-Live** — Switch to live keys, verify webhooks
 3. **Database Backup** — Document PITR settings
 4. **UI Redesign** — Planned post-launch, not a blocker

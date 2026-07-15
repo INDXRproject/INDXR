@@ -9214,3 +9214,35 @@ docs/wiki/architecture/credit-system.md
 docs/wiki/decisions/061-chronological-revenue-recognition.md
 supabase/migrations/20260715140000_recognize_asof_per_user.sql
 ---
+[2026-07-15 15:00] taak: verifieer e-mailverificatie-tak nieuwe-koper-funnel (TEST, geen fix). Allowlist gelezen (indxr.ai/**, app.indxr.ai/**, indxr.ai/auth/callback, app.indxr.ai/dashboard/settings?reset=true). Bevinding: generateLink(signup) = non-PKCE implicit → viel door /auth/callback (vals-positief (b)); echte signups zijn PKCE (flow_state s256). Faithful PKCE-test (echte form-signup @indxr.ai → confirmation_token uit auth.users via Management-API SQL → echte verify-link geklikt in zelfde browser): UITKOMST (a) next OVERLEEFT → /auth/callback?code=&next → /onboarding?next → billing?checkout=plus → Stripe Plus €25 (cs_live). Allowlist accepteert query-string redirectTo (redirect_to==passed). GEEN code-wijziging nodig. Docs gecorrigeerd: email-verificatie staat AAN (mailer_autoconfirm=false) op 7 plekken (CLAUDE.md, auth-and-security, priorities 1.19, ROADMAP ×2, STATUS ×2, CODEBASE_AUDIT). Vastgelegd: @indxr-test.com geweigerd voor public signup, @indxr.ai werkt. rate_limit_email_sent tijdelijk 2→100 voor de test, teruggezet naar 2 (geverifieerd). Testaccounts opgeruimd. | gewijzigd: CLAUDE.md, docs/wiki/architecture/auth-and-security.md, docs/wiki/roadmap/priorities.md, docs/ROADMAP.md, docs/STATUS.md, docs/CODEBASE_AUDIT.md, docs/LESSONS.md, docs/LOG.md
+[2026-07-15 12:58] commit: docs: verifieer e-mailverificatie-tak nieuwe-koper-funnel — GROEN (geen fix nodig)
+
+TEST-taak (geen code-wijziging). Bevindingen:
+- Redirect-allowlist ACCEPTEERT de query-string redirectTo (https://indxr.ai/**
+  matcht ?next=…). generateLink-embedded redirect_to == doorgegeven waarde.
+- generateLink(signup) = NON-PKCE implicit → viel door /auth/callback (die ?code=
+  verwacht) → vals-positief (b). Echte @supabase/ssr-signups zijn PKCE (flow_state
+  s256). Faithful PKCE-test (echte form-signup @indxr.ai → confirmation_token uit
+  auth.users via Management-API → echte verify-link geklikt in zelfde browser):
+  UITKOMST (a) next OVERLEEFT → /auth/callback?code=&next → /onboarding?next →
+  billing?checkout=plus → Stripe Plus €25 (cs_live). Funnel GROEN.
+
+Docs gecorrigeerd: e-mailverificatie staat AAN (mailer_autoconfirm=false,
+geverifieerd) i.p.v. "uitgeschakeld" — op 7 plekken. Vastgelegd: Supabase weigert
+@indxr-test.com voor public signup; @indxr.ai (of admin.createUser) werkt voor
+E2E. Mailer-limiet rate_limit_email_sent=2/uur (custom SMTP = 1.30).
+
+Config: rate_limit_email_sent tijdelijk 2→100 voor de test, teruggezet naar 2
+(geverifieerd). Testaccounts opgeruimd. Geen wijziging aan checkout-route/
+pricing.ts/PricingTiers/webhook/Stripe-config.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: CLAUDE.md
+docs/CODEBASE_AUDIT.md
+docs/LESSONS.md
+docs/LOG.md
+docs/ROADMAP.md
+docs/STATUS.md
+docs/wiki/architecture/auth-and-security.md
+docs/wiki/roadmap/priorities.md
+---

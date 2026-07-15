@@ -168,7 +168,7 @@ Reden voor deze volgorde: ARQ-queue is fundament voor 1.6 t/m 1.10. yt-dlp casca
     - Supabase database backups configureren in Supabase Dashboard
         > **Risico — Railway single-point-of-failure** (bron: Railway-postmortems): 5 grote incidenten sinds nov 2025. Tijdens de **mei-2026 outage** waren database-backups **ontoegankelijk voor de duur van het incident** en trof het **alle klanten ongeacht plan**; de **feb-2026 postmortem** noemde "strak gekoppelde systemen met grote blast radius" als terugkerend patroon. Implicatie: (a) Supabase-backups moeten **los van Railway** staan (Supabase Pro, onafhankelijke backups) zodat een Railway-incident onze recovery-optie niet meesleurt; (b) dit **versterkt de VPS-migratie-rationale** (zie 3.3) op termijn — minder afhankelijkheid van één strak-gekoppelde provider.
     - Upstash Redis rate limiting activeren in `src/lib/ratelimit.ts` (nu no-op tijdens testfase)
-    - Supabase email-verificatie aanzetten (uitgeschakeld tijdens dev)
+    - ~~Supabase email-verificatie aanzetten~~ — **staat AL AAN** (`mailer_autoconfirm=false`, geverifieerd 2026-07-15). Resterend werk zit in 1.30 (custom SMTP; ingebouwde mailer = `rate_limit_email_sent=2`/uur).
     - **check-wiki.sh stop-hook loop** — de post-commit-hook her-appendt de commit-message aan `docs/LOG.md` bij elke commit (self-perpetuating), waardoor de working tree na elke commit opnieuw vervuilt; de stop-hook faalt bovendien intermitterend. Opruimen: de auto-append-loop stoppen of de hook-logica corrigeren zodat de working tree niet elke commit vuil wordt.
 
 - [ ] **1.19b — Error messaging audit + AI-suggestie differentiatie** (1 dag)
