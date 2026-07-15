@@ -6,13 +6,16 @@ import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@indxr/shared/components/ui/select"
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { updateProfileAction } from "@indxr/shared/actions/auth-actions"
 import { appHref } from "@indxr/shared/lib/cross-host-links"
+import { safeAppRedirect } from "@indxr/shared/lib/safe-redirect"
 import { CheckCircle2, Circle } from "lucide-react"
 
 export default function OnboardingPage() {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
   const [username, setUsername] = useState("")
   const [role, setRole] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -43,7 +46,9 @@ export default function OnboardingPage() {
         setError(result.error)
         setIsSubmitting(false)
       } else {
-        window.location.href = appHref('/dashboard')
+        // Honoreer het door de auth-flow gethread checkout-doel (bv. billing?checkout=plus);
+        // ongeldig/ontbrekend → gewone dashboard-landing. Open-redirect-guard via safeAppRedirect.
+        window.location.href = safeAppRedirect(searchParams.get('next')) ?? appHref('/dashboard')
       }
     } catch (err) {
       console.error(err)

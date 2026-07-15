@@ -132,6 +132,7 @@ export default function LoginPage() {
             {/* OAuth Buttons */}
             <div className="grid grid-cols-2 gap-4">
               <form action={loginWithGoogleAction}>
+                {nextParam && <input type="hidden" name="next" value={nextParam} />}
                 <Button
                   type="submit"
                   variant="outline"
@@ -157,7 +158,10 @@ export default function LoginPage() {
         <CardFooter>
           <div className="mt-4 text-center text-sm text-fg-muted w-full">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline text-fg hover:text-accent">
+            <Link
+              href={nextParam ? `/signup?next=${encodeURIComponent(nextParam)}` : "/signup"}
+              className="underline text-fg hover:text-accent"
+            >
               Sign up
             </Link>
           </div>

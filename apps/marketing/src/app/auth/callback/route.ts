@@ -2,6 +2,7 @@ import { createClient } from '@indxr/shared/utils/supabase/server'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { isDisposableEmail } from '@indxr/shared/utils/disposable-email'
+import { safeAppRedirect } from '@indxr/shared/lib/safe-redirect'
 
 const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3000'
@@ -63,20 +64,18 @@ export async function GET(request: Request) {
         .eq('id', user?.id)
         .single()
 
+      // Valideer het checkout-doel één keer (open-redirect-guard).
+      const safeNext = safeAppRedirect(requestUrl.searchParams.get('next'))
+
       if (!profile || !profile.onboarding_completed) {
-        return NextResponse.redirect(`${MARKETING_URL}/onboarding`)
+        // Thread het doel dóór de onboarding-gate i.p.v. het te laten vallen.
+        return NextResponse.redirect(
+          safeNext ? `${MARKETING_URL}/onboarding?next=${encodeURIComponent(safeNext)}` : `${MARKETING_URL}/onboarding`
+        )
       }
 
-      const next = requestUrl.searchParams.get('next')
-      if (next) {
-        try {
-          const nextUrl = new URL(next)
-          if (nextUrl.host === new URL(APP_URL).host) {
-            return NextResponse.redirect(nextUrl)
-          }
-        } catch {
-          // invalid URL — fallthrough to default
-        }
+      if (safeNext) {
+        return NextResponse.redirect(safeNext)
       }
 
       return NextResponse.redirect(`${APP_URL}/dashboard`)

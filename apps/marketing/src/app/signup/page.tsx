@@ -8,13 +8,15 @@ import { Card, CardContent } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
 import { useState } from "react"
 import { validatePassword } from "@indxr/shared/utils/validation"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { signupAction, loginWithGoogleAction } from "@indxr/shared/actions/auth-actions"
 import { Alert, AlertDescription } from "@indxr/shared/components/ui/alert"
 
 export default function SignupPage() {
   const router = useRouter()
-  
+  const searchParams = useSearchParams()
+  const nextParam = searchParams?.get('next')
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,6 +40,10 @@ export default function SignupPage() {
       const formData = new FormData()
       formData.append('email', email)
       formData.append('password', password)
+      // Thread het checkout-doel mee → belandt in de e-mailverificatie-link
+      // (emailRedirectTo → /auth/callback?next=…) zodat de user na verificatie +
+      // onboarding op billing landt i.p.v. /dashboard.
+      if (nextParam) formData.append('redirectTo', nextParam)
 
       // Call Server Action
       const result = await signupAction(null, formData)
@@ -46,7 +52,9 @@ export default function SignupPage() {
         setError(result.error)
         setIsSubmitting(false)
       } else {
-        router.push('/login?message=Check your email to verify your account')
+        const q = new URLSearchParams({ message: 'Check your email to verify your account' })
+        if (nextParam) q.set('next', nextParam)
+        router.push(`/login?${q.toString()}`)
       }
     } catch (err) {
       console.error(err)
@@ -74,8 +82,9 @@ export default function SignupPage() {
         {/* OAuth buttons */}
         <div className="space-y-3 mb-6">
           <form action={loginWithGoogleAction}>
-            <Button 
-                variant="outline" 
+            {nextParam && <input type="hidden" name="next" value={nextParam} />}
+            <Button
+                variant="outline"
                 className="w-full h-11 gap-3 font-medium"
                 type="submit"
             >
@@ -176,7 +185,7 @@ export default function SignupPage() {
         {/* Log in link */}
         <p className="text-center text-sm text-fg-muted mt-6">
             Already have an account?{" "}
-            <Link href="/login" className="text-accent hover:text-accent/90 font-medium hover:underline transition-all">
+            <Link href={nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"} className="text-accent hover:text-accent/90 font-medium hover:underline transition-all">
             Log in
             </Link>
         </p>

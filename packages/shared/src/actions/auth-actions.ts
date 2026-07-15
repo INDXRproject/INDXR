@@ -5,6 +5,7 @@ import { limiters, getClientIp } from '../lib/ratelimit'
 import { headers, cookies } from 'next/headers'
 import { isDisposableEmail } from '../utils/disposable-email'
 import { redirect } from 'next/navigation'
+import { safeAppRedirect } from '../lib/safe-redirect'
 
 // Read the first-touch acquisition cookie (set client-side by AcquisitionCapture on the marketing
 // landing) and shape it into signUp user_metadata → copied to profiles by the acquisition trigger.
@@ -65,7 +66,11 @@ export async function loginAction(prevState: unknown, formData: FormData) {
     .single()
 
   if (!profile || !profile.onboarding_completed) {
-     redirect('/onboarding')
+     // Thread het checkout-doel dóór de onboarding-gate: onboarding-completion
+     // brengt de user daar naartoe i.p.v. hardcoded /dashboard. Ongeldig/ontbrekend
+     // doel → gewone /onboarding (valt daarna terug op /dashboard).
+     const safeNext = safeAppRedirect(rawRedirectTo)
+     redirect(safeNext ? `/onboarding?next=${encodeURIComponent(safeNext)}` : '/onboarding')
   }
 
   // 4. Resolve and validate the post-login redirect target.
@@ -97,6 +102,7 @@ export async function loginAction(prevState: unknown, formData: FormData) {
 export async function signupAction(prevState: unknown, formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const rawRedirectTo = formData.get('redirectTo') as string
 
   // 1. Rate Limiting Check
   const headersList = await headers()
@@ -127,11 +133,15 @@ export async function signupAction(prevState: unknown, formData: FormData) {
   // acquisition trigger can persist it onto profiles (utm/referrer/source per channel).
   const acquisition = await readAcquisitionMetadata()
 
+  // Thread het checkout-doel via de e-mailverificatie-link → callback → onboarding.
+  const safeNext = safeAppRedirect(rawRedirectTo)
+  const callbackUrl = `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback`,
+      emailRedirectTo: callbackUrl,
       data: acquisition,
     },
   })
@@ -145,7 +155,7 @@ export async function signupAction(prevState: unknown, formData: FormData) {
   return { success: true }
 }
 
-export async function loginWithGoogleAction(_formData: FormData) {
+export async function loginWithGoogleAction(formData: FormData) {
   // 1. Rate Limiting Check
   const headersList = await headers()
   const req = {
@@ -161,11 +171,15 @@ export async function loginWithGoogleAction(_formData: FormData) {
 
   const supabase = await createClient()
 
+  // Thread het checkout-doel via de OAuth-callback → onboarding.
+  const safeNext = safeAppRedirect(formData?.get('next') as string)
+  const callbackUrl = `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
+
   // 2. Init OAuth
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback`,
+      redirectTo: callbackUrl,
     },
   })
 

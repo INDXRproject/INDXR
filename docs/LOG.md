@@ -9099,3 +9099,34 @@ docs/wiki/decisions/060-accrual-cost-model-and-stripe-fee.md
 docs/wiki/design/finance-tab-mockup.html
 docs/wiki/design/finance-tab-mockup_files/css2_xBIu.css
 ---
+[2026-07-15 12:01] commit: fix(auth): thread checkout-intent door de onboarding-gate (nieuwe-user-funnel)
+
+Root cause (priorities 1.38): loginAction + auth/callback redirecten users met
+onboarding_completed=false onvoorwaardelijk naar /onboarding, vóór ze het
+next/redirectTo-doel honoreren; onboarding-completion ging hardcoded naar
+${APP}/dashboard. Netto: een nieuwe signup die op een pakket klikte, verloor
+het gekozen pakket. Pre-launch is elke koper een nieuwe signup → 100% geraakt.
+
+Fix: thread het doel door de hele nieuwe-user-flow.
+- loginAction: onboarding-incomplete → /onboarding?next=<doel>.
+- signupAction + loginWithGoogleAction: doel in emailRedirectTo/OAuth redirectTo
+  → /auth/callback?next=<doel> (verificatie staat AAN, mailer_autoconfirm=false).
+- auth/callback: onboarding-incomplete → /onboarding?next=<doel>.
+- onboarding-completion: honoreert next i.p.v. hardcoded /dashboard.
+- login+signup pagina's: next doorgeven aan de signup-link, Google-form en
+  post-signup redirect zodat het doel de hele funnel overleeft.
+- Open-redirect-guard gecentraliseerd in packages/shared/lib/safe-redirect.ts:
+  alleen app.indxr.ai/localhost; ongeldig/ontbrekend → /dashboard.
+
+Bestaande ge-onboarde users: ongewijzigd (login → direct doel/dashboard).
+Niet aangeraakt: checkout-route, pricing.ts, PricingTiers.tsx, webhook.
+Build groen (2/2).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/auth/callback/route.ts
+apps/marketing/src/app/login/page.tsx
+apps/marketing/src/app/onboarding/page.tsx
+apps/marketing/src/app/signup/page.tsx
+packages/shared/src/actions/auth-actions.ts
+packages/shared/src/lib/safe-redirect.ts
+---
