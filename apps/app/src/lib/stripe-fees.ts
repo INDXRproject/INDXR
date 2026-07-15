@@ -15,15 +15,22 @@ export interface StripeFeeDetail {
 
 export interface StripeFeeCapture {
   payment_intent_id?: string
-  stripe_fee?: number // total, leidend (balance_transaction.fee)
-  net_settlement?: number // balance_transaction.net
+  stripe_fee?: number // total, leidend (balance_transaction.fee), in settlement-valuta
+  net_settlement?: number // balance_transaction.net, settlement-valuta
+  settlement_amount?: number // balance_transaction.amount — BRUTO in settlement-valuta (EUR). ÉÉN P&L-bron.
   settlement_currency?: string
+  exchange_rate?: number // balance_transaction.exchange_rate — presentment × rate = settlement (EUR)
   balance_transaction_id?: string
+  balance_transaction_status?: string // pending | available
+  available_on?: string // ISO — wanneer het geld op de bank beschikbaar komt ("verkocht" ≠ "beschikbaar")
   fee_details?: StripeFeeDetail[]
   payment_method?: string // charge.payment_method_details.type (card/ideal/…) — forward-only dimensie
+  card_country?: string // waar de klant bankiert — verklaart internationale-kaartfee
+  card_brand?: string // visa/mastercard/… — samen met funding verklaart de premium
+  card_funding?: string // credit/debit/prepaid — 1,5% vs 1,9% premium
 }
 
-// Haal fee/net/fee_details/betaalmethode uit de charge van een PaymentIntent.
+// Haal fee/net/fee_details/betaalmethode + valuta-/kaart-dimensies uit de charge van een PaymentIntent.
 // De balance_transaction settle't async → kan bij checkout.session.completed nog ontbreken; dan blijven
 // de fee-velden weg (backfillbaar via het reconcile-pad). Alleen de PI-id wordt altijd teruggegeven.
 export async function captureStripeFees(piId: string): Promise<StripeFeeCapture> {
@@ -33,17 +40,27 @@ export async function captureStripeFees(piId: string): Promise<StripeFeeCapture>
   const out: StripeFeeCapture = { payment_intent_id: pi.id }
 
   const charge = pi.latest_charge as Stripe.Charge | null
-  if (charge?.payment_method_details?.type) {
-    out.payment_method = charge.payment_method_details.type
+  const pmd = charge?.payment_method_details
+  if (pmd?.type) out.payment_method = pmd.type
+  // Kaart-dimensies (alleen bij kaartbetaling aanwezig) — forward-only, verklaren de fee-hoogte.
+  if (pmd?.card) {
+    if (pmd.card.country) out.card_country = pmd.card.country
+    if (pmd.card.brand) out.card_brand = pmd.card.brand
+    if (pmd.card.funding) out.card_funding = pmd.card.funding
   }
 
   const bt = charge?.balance_transaction
   if (bt && typeof bt !== 'string') {
-    // fee/net staan in de minor units van de SETTLEMENT-valuta (settlement_currency legt vast welke).
+    // fee/net/amount staan in de minor units van de SETTLEMENT-valuta (settlement_currency legt vast welke).
+    // settlement_amount = het BRUTO bedrag in EUR (presentment × exchange_rate) → de enige P&L-brutobron.
     out.stripe_fee = bt.fee / 100
     out.net_settlement = bt.net / 100
+    out.settlement_amount = bt.amount / 100
     out.settlement_currency = bt.currency
     out.balance_transaction_id = bt.id
+    out.balance_transaction_status = bt.status
+    if (bt.exchange_rate != null) out.exchange_rate = bt.exchange_rate
+    if (bt.available_on != null) out.available_on = new Date(bt.available_on * 1000).toISOString()
     out.fee_details = (bt.fee_details || []).map((fd) => ({
       type: fd.type,
       amount: fd.amount / 100,

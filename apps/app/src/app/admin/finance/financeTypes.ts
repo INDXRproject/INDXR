@@ -27,6 +27,7 @@ export interface FinanceScope {
   cash_in: number
   vat: number
   vat_computed: boolean
+  vat_unmeasured: { count: number; gross: number }
   revenue_delivered: number
   deferred_balance: number
   credits_sold: number
@@ -34,6 +35,7 @@ export interface FinanceScope {
   consumed_by_type: { ai_transcription: number; caption: number; ai_summary: number; rag: number }
   purchased_share: number
   balance_cr: number
+  payment_methods: string[]
   cor: FinanceCor
   gross_profit: number
   gross_margin: number | null
@@ -42,6 +44,7 @@ export interface FinanceScope {
     funnel_loggedin: number
     funnel_anon: number
     stripe_fee: number
+    stripe_fee_by_type: Record<string, number>
     total: number
   }
   entered_opex_total: number

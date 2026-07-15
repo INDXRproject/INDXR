@@ -134,11 +134,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invoice created but no link available' }, { status: 502 })
     }
 
-    // URL cachen in de transactie-metadata (service-role: geen user-UPDATE-policy).
+    // De door Stripe Tax berekende BTW op de factuur (minor units). Voor sales van vóór automatic_tax-op-
+    // checkout is dit de ENIGE plek met echte BTW — vastleggen zodat het dashboard die sale niet langer als
+    // "BTW onbekend" hoeft te markeren. (Geen verzonnen 21%; dit is Stripe's cijfer.) Nieuwere Stripe-API
+    // heeft `invoice.tax` vervangen door `total_taxes[]`; beide defensief lezen.
+    const inv = finalized as unknown as { tax?: number | null; total_taxes?: { amount?: number }[] | null }
+    const invoiceTaxMinor = inv.tax != null
+      ? inv.tax
+      : Array.isArray(inv.total_taxes)
+        ? inv.total_taxes.reduce((sum, t) => sum + (t.amount ?? 0), 0)
+        : null
+    const invoiceTax = invoiceTaxMinor != null ? invoiceTaxMinor / 100 : null
+
+    // URL + echte factuur-BTW cachen in de transactie-metadata (service-role: geen user-UPDATE-policy).
     const admin = createAdminClient()
     await admin
       .from('credit_transactions')
-      .update({ metadata: { ...metadata, invoice_url: invoiceUrl, invoice_id: invoice.id } })
+      .update({ metadata: { ...metadata, invoice_url: invoiceUrl, invoice_id: invoice.id,
+        ...(invoiceTax != null ? { invoice_tax: invoiceTax } : {}) } })
       .eq('id', tx.id)
 
     return NextResponse.json({ invoice_url: invoiceUrl })

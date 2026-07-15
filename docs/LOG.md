@@ -9277,3 +9277,52 @@ Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/architecture/finance-number-provenance.md
 ---
+[2026-07-15 18:00] taak: BTW-gat dichten + Stripe-velden vangen (financieel kritiek) | P1 automatic_tax op Checkout Session (checkout/route.ts: automatic_tax enabled + tax_behavior inclusive + product tax_code txcd_10000000); Adaptive Pricing bewezen compatibel (Stripe-doc: tax op integratievaluta EUR → omreken). P2 BTW-onbekend≠0: tax_status capture + vat_unmeasured {count,gross} + bankkaart-waarschuwing (bewezen count=2/€6,98 op historische sales, vat_computed=false); recognitie NIET met verzonnen 21% gebackfilld. P3 velden gevangen (stripe-fees.ts + webhook + invoice): exchange_rate, settlement_amount, customer_country (factuuradres), card_country/brand/funding, available_on, bt_status, invoice_tax. P4 één valutabron: alle P&L in settlement-EUR (net = settlement_amount − amount_tax×exchange_rate; charged=settlement_amount) — bewezen met gesimuleerde USD-sale (recognized €7,60, charged €9,20 niet $10, sluit charged−vat=rev_exvat). P5 UI: fee_details per component in Payment-processing-regel + betaalmethode in bankkaart (fee_by_type {stripe_fee:0,64}, methods [card]). P6 fee_details van beide echte sales: GEEN type='tax'-regel → BTW op Stripe-fee verlegd (0%), correct voor NL-BTW-nummer. Bug onderweg gevangen+gefixt: `measured` NULL-boolean sloeg unmeasured-sales over in FILTER-teller (COALESCE-fix). Build app groen. OPENSTAAND: live testsale ná deploy (amount_tax>0 matchend €0,61) + de 4 nieuwe velden gevuld. | gewijzigd: apps/app/src/app/api/stripe/checkout/route.ts, apps/app/src/lib/stripe-fees.ts, apps/app/src/app/api/stripe/webhook/route.ts, apps/app/src/app/api/stripe/invoice/route.ts, apps/app/src/app/admin/finance/FinanceView.tsx, financeTypes.ts, 4× supabase/migrations/2026071512*.sql, docs/wiki/architecture/finance-number-provenance.md, docs/LESSONS.md
+[2026-07-15 14:35] commit: feat(finance): BTW op checkout + settlement-valuta P&L + Stripe-velden vangen (financieel kritiek)
+
+P1 automatic_tax op de Checkout Session (checkout/route.ts): automatic_tax enabled +
+line-item tax_behavior 'inclusive' + product tax_code txcd_10000000 — spiegelt de
+factuurroute. Adaptive Pricing bewezen compatibel (Stripe-doc: tax op integratievaluta EUR,
+dan omreken). Was: session.total_details.amount_tax = 0 → omzet ~21% te hoog.
+
+P2 BTW-onbekend ≠ 0: webhook legt tax_status vast; _geld_scope telt sales zonder gemeten
+BTW (tax_status≠complete én geen invoice_tax) als vat_unmeasured {count,gross}; bankkaart
+waarschuwt met exact aantal + gross i.p.v. stil BTW-inclusieve omzet. Geen verzonnen 21%.
+Bewezen: 2 historische sales / €6,98 geflagd, vat_computed=false.
+
+P3 ontbrekende velden gevangen (stripe-fees.ts + webhook + invoice, forward-only per aankoop):
+exchange_rate, settlement_amount, customer_country (factuuradres → OSS-tarief), card_country,
+card_brand, card_funding, available_on, balance_transaction_status, invoice_tax.
+
+P4 één valutabron: alle P&L-bedragen in settlement-EUR uit de balance_transaction. Net ex-BTW
+= settlement_amount − amount_tax × exchange_rate; bank charged = settlement_amount. Presentment
+(amount_paid/currency) alleen als info. Bewezen met gesimuleerde USD-sale: recognized €7,60,
+charged €9,20 (niet $10,00), sluit charged − vat = revenue_ex_vat.
+
+P5 UI: fee_details per component in de "Payment processing"-OPEX-regel + betaalmethode in de
+bankkaart (data bewezen: stripe_fee_by_type {stripe_fee:0,64}, payment_methods [card]).
+
+P6 (uit bestaande data): fee_details van beide echte sales heeft GEEN type='tax'-regel →
+Stripe rekent geen BTW op hun eigen fee (verlegd, 0%) — correct voor NL-ondernemer met BTW-nr.
+
+Onderweg gevangen+gefixt: `measured` was een NULL-boolean → count(*) FILTER (WHERE NOT
+measured) sloeg de unmeasured-sales stil over (count=0 i.p.v. 2). COALESCE-fix.
+
+Build app groen. Migraties via Supabase MCP. OPENSTAAND: live testsale ná deploy die
+automatic_tax.status='complete' + amount_tax>0 (matchend €0,61) toont + de 4 nieuwe velden gevuld.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+apps/app/src/app/api/stripe/checkout/route.ts
+apps/app/src/app/api/stripe/invoice/route.ts
+apps/app/src/app/api/stripe/webhook/route.ts
+apps/app/src/lib/stripe-fees.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/finance-number-provenance.md
+supabase/migrations/20260715122111_finance_settlement_currency_and_vat_flag.sql
+supabase/migrations/20260715122214_geld_scope_settlement_vat_flag.sql
+supabase/migrations/20260715122324_admin_finance_summary_settlement_fee_breakdown.sql
+supabase/migrations/20260715122517_geld_scope_vat_measured_null_fix.sql
+---

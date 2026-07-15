@@ -148,8 +148,14 @@ function CorTable({ s }: { s: FinanceScope }) {
 // not an unexplained gap between the COR line and its breakdown.
 function OpexTable({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
   const m = s.measured_opex
+  // fee_details per component uit Stripe zelf (geen hardcoded rates) — bv. "processing €0,64 · currency €0,03".
+  const feeParts = Object.entries(m.stripe_fee_by_type ?? {})
+  const FEE_LABEL: Record<string, string> = { stripe_fee: "processing", tax: "tax on fee", currency_conversion: "currency" }
+  const feeHint = feeParts.length
+    ? feeParts.map(([t, v]) => `${FEE_LABEL[t] ?? t} ${eur(v, true)}`).join(" · ")
+    : "Stripe fee · at sale"
   const measuredRows: { name: string; hint?: string; cost: number }[] = []
-  if (m.stripe_fee > 0) measuredRows.push({ name: "Payment processing", hint: "Stripe fee · at sale", cost: m.stripe_fee })
+  if (m.stripe_fee > 0) measuredRows.push({ name: "Payment processing", hint: feeHint, cost: m.stripe_fee })
   measuredRows.push({ name: "Goodwill — granted credits used", hint: "delivery of granted credits", cost: m.goodwill })
   measuredRows.push({ name: "Free-caption funnel — logged-in", hint: "measured per day", cost: m.funnel_loggedin })
   measuredRows.push({ name: "Free-caption funnel — anonymous", hint: "measured per day", cost: m.funnel_anon })
@@ -245,15 +251,21 @@ function BankBridge({ s }: { s: FinanceScope }) {
       <h3 className="text-sm font-semibold">Where the cash sits</h3>
       <p className="mb-3 text-xs text-fg-muted">What actually lands in the bank, and what's owed on it.</p>
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between"><span className="text-fg-muted">Charged to customers</span><span className="font-semibold tabular-nums">{eur(b.charged)}</span></div>
+        <div className="flex justify-between"><span className="text-fg-muted">Charged to customers <span className="text-fg-subtle">(settlement €)</span></span><span className="font-semibold tabular-nums">{eur(b.charged)}</span></div>
         <div className="flex justify-between"><span className="text-fg-muted">− Stripe fee</span><span className="font-semibold tabular-nums text-error">{eur(b.stripe_fee)}</span></div>
         <div className="flex justify-between border-t pt-2"><span className="font-medium">= Settled to your bank</span><span className="font-bold tabular-nums">{eur(b.net_settlement > 0 ? b.net_settlement : b.settled_computed)}</span></div>
         <div className="mt-3 space-y-1 rounded-lg bg-surface-sunken p-3 text-xs">
           <div className="flex justify-between"><span className="text-fg-muted">VAT (owed to tax office)</span><span className="tabular-nums">{s.vat_computed ? eur(b.vat_owed) : "not computed"}</span></div>
           <div className="flex justify-between"><span className="text-fg-muted">Revenue ex-VAT (delivered + deferred)</span><span className="tabular-nums">{eur(b.revenue_ex_vat)}</span></div>
         </div>
-        {!s.vat_computed && b.charged > 0 && (
-          <p className="text-[11px] text-warning">⚠ VAT not computed on these sales (Stripe automatic_tax off) — see finance notes.</p>
+        {s.payment_methods.length > 0 && (
+          <p className="text-[11px] text-fg-subtle">via {s.payment_methods.join(", ")}</p>
+        )}
+        {s.vat_unmeasured.count > 0 && (
+          <p className="text-[11px] text-warning">
+            ⚠ {s.vat_unmeasured.count} sale{s.vat_unmeasured.count === 1 ? "" : "s"} ({eur(s.vat_unmeasured.gross)}) without measured VAT —
+            revenue for those may be up to ~21% overstated (VAT not separated). New sales carry Stripe-computed VAT.
+          </p>
         )}
       </div>
     </div>

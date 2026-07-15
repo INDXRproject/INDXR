@@ -68,13 +68,20 @@ export async function POST(req: Request) {
     // synchronously; when absent the fee fields are simply omitted (backfillable from Stripe later).
     const purchaseMeta: Record<string, unknown> = {
       stripe_session_id: session.id,
-      amount_paid: amountPaid,
-      currency: session.currency,
+      amount_paid: amountPaid, // presentment (klant-valuta); P&L rekent op settlement_amount (EUR)
+      currency: session.currency, // presentment-valuta
     }
     try {
       // BTW (tax) portion — pricing is BTW-inclusive (ADR-052/053), so this is the tax within amount_paid.
       const amountTax = session.total_details?.amount_tax
       if (amountTax != null) purchaseMeta.amount_tax = amountTax / 100
+      // tax_status = 'complete' bewijst dat automatic_tax daadwerkelijk BTW heeft berekend op deze sale
+      // (ook een legitieme 0 bij US/verlegd). Zonder 'complete' is de BTW ONBEKEND, niet "geen BTW" —
+      // het dashboard markeert die sales apart i.p.v. stilzwijgend BTW-inclusieve omzet te tonen.
+      if (session.automatic_tax?.status) purchaseMeta.tax_status = session.automatic_tax.status
+      // Factuuradres-land bepaalt het OSS-tarief en is wat de OSS-aangifte nodig heeft. Per aankoop vast.
+      const custCountry = session.customer_details?.address?.country
+      if (custCountry) purchaseMeta.customer_country = custCountry
 
       const piId = typeof session.payment_intent === 'string'
         ? session.payment_intent

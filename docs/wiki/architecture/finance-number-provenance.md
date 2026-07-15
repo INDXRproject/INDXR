@@ -78,7 +78,7 @@ Zelfde mechaniek als §1.2, maar `delta(revenue_delivered_now, revenue_delivered
 4. **Driver:** verbruikte gekochte credits × €/credit per lot. Credits deels zichtbaar (§2.x consumed_by_type); de lot-prijzen niet. 👁️
 5. **Tijdstoewijzing:** flow op `credit_transactions.created_at`. Optelbaar. Volgorde binnen gelijk tijdstip: credits vóór debits, dan `id`.
 6. **Scope:** ✅ **per-user** — elke user eigen `granted_bal` + eigen FIFO-lots, daarna gesommeerd (ADR-061, migratie `20260715140000`). Dit was de pooling-bug; nu correct.
-7. **Aannames/zwakke plekken:** verbruik boven het eigen beschikbare saldo wordt genegeerd (kan geen niet-bestaande aankoop erkennen). €/credit hangt af van correct vastgelegde `amount_paid`/`amount_tax` — bij `amount_tax=0` (nu altijd, zie §7) is €/credit = het volle betaalde bedrag / credits, dus recognized is **BTW-inclusief te hoog** zolang de BTW niet wordt vastgelegd.
+7. **Aannames/zwakke plekken:** verbruik boven het eigen beschikbare saldo wordt genegeerd. €/credit sinds 2026-07-15 in **settlement-EUR**: `net_lot = settlement_amount − amount_tax × exchange_rate` (fallback `amount_paid − amount_tax` voor bestaande EUR-sales). Sales zonder gemeten BTW (`tax_status≠'complete'`) missen de BTW-aftrek → recognized voor díe sales is nog BTW-inclusief te hoog; dat wordt niet verzwegen maar geteld in `vat_unmeasured` en gewaarschuwd (§3.4).
 
 ### 2.2 Cost of revenue (COR-regel)
 1. **Naam:** "Cost of revenue".
@@ -221,13 +221,13 @@ Zelfde getal als §1.1; marge `net_margin = net_profit / recognized_revenue`. Kl
 ## Sectie 3 — Kaart "Where the cash sits"
 
 ### 3.1 Charged to customers
-1. **Naam:** "Charged to customers".
-2. **Formule:** `bank.charged = Σ metadata.amount_paid` over distinct `stripe_session_id` in de periode.
-3. **Bron:** `credit_transactions.metadata.amount_paid`.
-4. **Driver:** aantal sales × betaald bedrag (👁️ aantal niet los getoond).
+1. **Naam:** "Charged to customers (settlement €)".
+2. **Formule:** `bank.charged = Σ COALESCE(settlement_amount, amount_paid)` over distinct `stripe_session_id` in de periode. Sinds 2026-07-15 in **settlement-EUR** (P4): `settlement_amount = balance_transaction.amount` (presentment × exchange_rate). Presentment (`amount_paid`+`currency`) blijft als info bewaard.
+3. **Bron:** `credit_transactions.metadata.settlement_amount` (fallback `amount_paid`).
+4. **Driver:** aantal sales × settlement-bedrag (👁️ aantal niet los getoond).
 5. **Tijdstoewijzing:** flow op `created_at` (verkoopdatum).
 6. **Scope:** aggregaat per scope. Correct (som van charges).
-7. **Aannames/zwakke plekken:** BTW-inclusief bedrag (Adaptive Pricing / prijs uit `pricing.ts`).
+7. **Aannames/zwakke plekken:** één valutabron (EUR) — voorkomt dat een USD-sale presentment-dollars van settlement-euro's aftrekt (bewezen met gesimuleerde USD-sale). BTW-inclusief bruto (Adaptive Pricing / prijs uit `pricing.ts`).
 
 ### 3.2 − Stripe fee
 Zelfde bron/scope als §2.14 (`bank.stripe_fee = Σ metadata.stripe_fee`). 🟡 kan €0 zijn vóór reconcile.
@@ -248,7 +248,7 @@ Zelfde bron/scope als §2.14 (`bank.stripe_fee = Σ metadata.stripe_fee`). 🟡 
 4. **Driver:** BTW per sale (👁️).
 5. **Tijdstoewijzing:** flow (verkoopdatum).
 6. **Scope:** aggregaat per scope.
-7. **Aannames/zwakke plekken:** 🔴🟡 **structureel "not computed"** — de Checkout Session berekent geen tax (§7), dus `amount_tax` is altijd 0 en `vat_computed` altijd false. De UI toont dit eerlijk als "not computed", maar de OSS-aangifte is uit deze data niet te bouwen.
+7. **Aannames/zwakke plekken:** sinds 2026-07-15 rekent de Checkout Session BTW (§7). `vat_owed = Σ amount_tax × exchange_rate` (settlement-EUR). `vat_computed = (vat_unmeasured_count = 0)` — false zodra er sales zonder gemeten BTW in de periode zitten; dan toont de UI "not computed" plus een waarschuwing met exact aantal + gross (`vat_unmeasured`). Historische 2 sales blijven onbekend tot ze een `invoice_tax` krijgen; nieuwe sales dragen Stripe's berekende BTW.
 
 ### 3.5 Revenue (ex-VAT)
 1. **Naam:** "Revenue ex-VAT (delivered + deferred)".
@@ -350,9 +350,20 @@ AssemblyAI-minuten, proxy-bytes (transcriptie én caption), DeepSeek-tokens, ops
 
 ---
 
-## Sectie 7 — Status BTW (rapport, niet fixen)
+## Sectie 7 — Status BTW
 
-**Bevestigd uit de code — de asymmetrie is echt:**
+> **UPDATE 2026-07-15 — GEFIXT IN CODE (deploy live; live-sale-verificatie openstaand).**
+> De Checkout Session draait nu `automatic_tax:{enabled:true}` + line-item `tax_behavior:'inclusive'` +
+> `product_data.tax_code:'txcd_10000000'` (`checkout/route.ts`). De webhook legt `tax_status`
+> (= `session.automatic_tax.status`) en `customer_country` vast. Bewezen compatibel met Adaptive Pricing
+> ([Stripe-doc](https://docs.stripe.com/tax/checkout/adaptive-pricing): tax op integratievaluta EUR, dan
+> omreken). **P&L rekent nu in settlement-EUR** (zie §2.1/§3.1): `net = settlement_amount − amount_tax ×
+> exchange_rate`. Sales zónder gemeten BTW (`tax_status≠'complete'` én geen `invoice_tax`) worden apart
+> geteld (`vat_unmeasured {count,gross}`) en in de bankkaart gewaarschuwd i.p.v. stil BTW-inclusieve omzet.
+> **Openstaand:** één live testsale ná deploy die `session.automatic_tax.status='complete'` +
+> `total_details.amount_tax>0` toont, matchend met de €0,61 die de factuur al geeft.
+
+**Oorspronkelijke bevinding (bevestigd uit de code — de asymmetrie was echt):**
 
 - **Checkout Session** (`apps/app/src/app/api/stripe/checkout/route.ts:41–80`): de sessie wordt aangemaakt **zonder** `automatic_tax`, **zonder** `tax_behavior`, **zonder** `tax_code` op `price_data`. Alleen `billing_address_collection:'required'`, `customer_update:{address,name}`, `tax_id_collection:{enabled:true}`. Gevolg: `session.total_details.amount_tax = 0`.
 - **Webhook** (`apps/app/src/app/api/stripe/webhook/route.ts:76–77`): leest `session.total_details.amount_tax` correct en schrijft `metadata.amount_tax = amountTax/100` — maar die waarde is 0. Geen webhook-bug; de sessie levert niets aan.

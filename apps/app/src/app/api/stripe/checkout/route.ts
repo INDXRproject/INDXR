@@ -49,10 +49,15 @@ export async function POST(req: Request) {
       billing_address_collection: "required",
       customer: customerId,
       // Bewaar het bij checkout ingevoerde adres + (bedrijfs)naam op de Customer, zodat
-      // Stripe Tax de BTW correct kan berekenen op de on-demand factuur.
+      // Stripe Tax de BTW correct kan berekenen op de sessie én de on-demand factuur.
       customer_update: { address: "auto", name: "auto" },
       // B2B: laat klanten hun BTW-nummer opgeven → verschijnt op de factuur + reverse charge.
       tax_id_collection: { enabled: true },
+      // BTW OP DE SESSIE ZELF (spiegelt de factuurroute): Stripe Tax rekent nu op checkout, zodat
+      // session.total_details.amount_tax de echte BTW draagt (was 0 → omzet ~21% te hoog). OSS-tarief
+      // volgt uit het klant-factuuradres (NL 21% / DE 19% / …); US = geen EU-BTW; EU-B2B met geldig
+      // BTW-nummer = 0% verlegd. Werkt samen met Adaptive Pricing (tax op integratievaluta EUR, dan omreken).
+      automatic_tax: { enabled: true },
       line_items: [
         {
           price_data: {
@@ -63,8 +68,13 @@ export async function POST(req: Request) {
               // Absolute https-URL naar de pakket-afbeelding (pad uit pricing.ts).
               // Stripe rendert dit naast het line-item; localhost/relatief werkt niet.
               images: [`${appUrl}${pkg.image}`],
+              // Electronically Supplied Services — zelfde tax_code als de factuurroute.
+              tax_code: "txcd_10000000",
             },
             unit_amount: Math.round(pkg.priceEur * 100), // cents, derived from pricing.ts
+            // EXPLICIET inclusief — prijzen uit pricing.ts zijn BTW-inclusief (ADR-052). Niet op de
+            // account-default ('inferred_by_currency') vertrouwen: die sluit BTW uit bij USD/CAD.
+            tax_behavior: "inclusive",
           },
           quantity: 1,
         },
