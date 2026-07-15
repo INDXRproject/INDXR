@@ -42,19 +42,6 @@ function delta(cur: number, prev: number): { txt: string; up: boolean } | null {
   return { txt: `${d >= 0 ? "+" : ""}${(d * 100).toFixed(0)}%`, up: d >= 0 }
 }
 
-// Proportional segmented bar.
-function SplitBar({ segments }: { segments: { value: number; cls: string; title: string }[] }) {
-  const total = segments.reduce((s, x) => s + x.value, 0)
-  if (total <= 0) return <div className="h-2.5 w-full rounded-full bg-surface-sunken" />
-  return (
-    <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-sunken">
-      {segments.map((s, i) =>
-        s.value > 0 ? <div key={i} className={s.cls} style={{ width: `${(s.value / total) * 100}%` }} title={s.title} /> : null,
-      )}
-    </div>
-  )
-}
-
 // Green is reserved for POSITIVE profit only. Revenue is neutral; costs are red; profit is sign-coloured.
 function profitTone(n: number): string {
   return n > 0 ? "text-success" : n < 0 ? "text-error" : "text-fg-strong"
@@ -295,25 +282,32 @@ function BankBridge({ s }: { s: FinanceScope }) {
     <div className="rounded-xl border bg-surface p-5">
       <h3 className="text-sm font-semibold">Where the cash sits</h3>
       <p className="mb-3 text-xs text-fg-muted">What actually lands in the bank, and what's owed on it.</p>
+      {/* VAT first: that money was never ours. Then fee. Two independent deductions from the same gross —
+          not a chain. Every intermediate number (ex-VAT, Yours to keep) genuinely exists on-screen. */}
       <div className="space-y-2 text-sm">
         <div className="flex justify-between"><span className="text-fg-muted">Charged to customers <span className="text-fg-subtle">(settlement €)</span></span><span className="font-semibold tabular-nums">{eur(b.charged)}</span></div>
+        <div className="flex justify-between"><span className="text-fg-muted">− VAT <span className="text-fg-subtle">(owed to tax office)</span></span><span className="font-semibold tabular-nums text-error">{eur(b.vat_owed)}</span></div>
+        {/* per-land VAT breakdown stays directly under the VAT line */}
+        {(["nl", "oss", "outside"] as const).map((k) => {
+          const bk = s.vat_buckets[k]
+          if (!bk || bk.count === 0) return null
+          const label = k === "nl" ? "NL — own VAT return" : k === "oss" ? "Other EU — OSS" : "Outside EU — €0 (customer's country)"
+          return (
+            <div key={k} className="flex justify-between pl-3 text-xs text-fg-muted">
+              <span>{label} <span className="text-fg-subtle">· {bk.count}</span></span>
+              <span className="tabular-nums">{eur(bk.vat)}</span>
+            </div>
+          )
+        })}
+        <div className="flex justify-between border-t pt-2"><span className="font-medium">= Revenue ex-VAT</span><span className="font-semibold tabular-nums">{eur(b.revenue_ex_vat)}</span></div>
         <div className="flex justify-between"><span className="text-fg-muted">− Stripe fee</span><span className="font-semibold tabular-nums text-error">{eur(b.stripe_fee)}</span></div>
-        <div className="flex justify-between border-t pt-2"><span className="font-medium">= Settled to your bank</span><span className="font-bold tabular-nums">{eur(b.net_settlement > 0 ? b.net_settlement : b.settled_computed)}</span></div>
-        <div className="mt-3 space-y-1.5 rounded-lg bg-surface-sunken p-3 text-xs">
-          <div className="flex justify-between font-medium"><span>VAT owed <span className="font-normal text-fg-subtle">(measured)</span></span><span className="tabular-nums">{eur(b.vat_owed)}</span></div>
-          {(["nl", "oss", "outside"] as const).map((k) => {
-            const bk = s.vat_buckets[k]
-            if (!bk || bk.count === 0) return null
-            const label = k === "nl" ? "NL — own VAT return" : k === "oss" ? "Other EU — OSS" : "Outside EU — €0 (customer's country)"
-            return (
-              <div key={k} className="flex justify-between pl-3 text-fg-muted">
-                <span>{label} <span className="text-fg-subtle">· {bk.count}</span></span>
-                <span className="tabular-nums">{eur(bk.vat)}</span>
-              </div>
-            )
-          })}
-          <div className="flex justify-between border-t pt-1.5"><span className="text-fg-muted">Revenue ex-VAT (delivered + deferred)</span><span className="tabular-nums">{eur(b.revenue_ex_vat)}</span></div>
+        <div className="flex justify-between border-t pt-2"><span className="font-medium">= Yours to keep</span><span className="font-bold tabular-nums">{eur(b.revenue_ex_vat - b.stripe_fee)}</span></div>
+        {/* Settled = the bank statement (charged − fee). The gap vs "Yours to keep" is the VAT reserved on it. */}
+        <div className="mt-3 flex justify-between rounded-lg bg-surface-sunken p-3 text-xs">
+          <span className="text-fg-muted">Settled to your bank <span className="text-fg-subtle">(bank statement)</span></span>
+          <span className="font-medium tabular-nums">{eur(b.net_settlement > 0 ? b.net_settlement : b.settled_computed)}</span>
         </div>
+        <p className="text-[11px] text-fg-subtle">of which {eur(b.vat_owed)} is not yet yours (VAT held for the tax office)</p>
         {s.payment_methods.length > 0 && (
           <p className="text-[11px] text-fg-subtle">via {s.payment_methods.join(", ")}</p>
         )}
@@ -568,18 +562,16 @@ export function FinanceView(props: Props) {
         <div className="rounded-xl border bg-surface p-5">
           <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">Revenue</span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-3xl font-bold tabular-nums text-fg-strong">{eur(scope.revenue_delivered + scope.deferred_balance)}</span>
+            <span className="text-3xl font-bold tabular-nums text-fg-strong">{eur(scope.revenue_delivered)}</span>
             {revDelta && <span className={`text-sm font-medium ${revDelta.up ? "text-accent" : "text-error"}`}>{revDelta.txt}</span>}
           </div>
-          <div className="mt-2">
-            <SplitBar segments={[
-              { value: scope.revenue_delivered, cls: "bg-accent", title: "Delivered" },
-              { value: scope.deferred_balance, cls: "bg-accent/40", title: "Deferred" },
-            ]} />
-            <div className="mt-1 flex gap-4 text-[11px] text-fg-muted">
-              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent align-middle" />Delivered {eur(scope.revenue_delivered)}</span>
-              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent/40 align-middle" />Deferred {eur(scope.deferred_balance)}</span>
-            </div>
+          <p className="mt-1 text-xs text-fg-muted">delivered this period · vs same elapsed days last period</p>
+          {/* Deferred is a stock (stand-now), not part of this period's flow — shown as a standing, never summed into the hero. */}
+          <div className="mt-3 flex items-center justify-between rounded-lg bg-surface-sunken px-3 py-2">
+            <span className="flex items-center gap-1.5 text-[11px] text-fg-muted">
+              <span className="inline-block h-2 w-2 rounded-full bg-accent/40" />Deferred obligation · held now
+            </span>
+            <span className="text-xs font-semibold tabular-nums text-fg">{eur(scope.deferred_balance)}</span>
           </div>
         </div>
       </div>

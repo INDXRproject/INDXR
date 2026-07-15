@@ -57,26 +57,26 @@ snapshot_finance_day() [pg_cron 02:00 UTC]                   ← vult finance_da
 6. **Scope:** zelfde scope als de tab.
 7. **Aannames/zwakke plekken:** bij `net_prev = 0` (pre-revenue, nu het geval) verschijnt er niets — geen "+∞". Deelt door de vorige waarde, dus een kleine vorige periode geeft grote procenten.
 
-### 1.3 Revenue (groot getal)
+### 1.3 Revenue (groot getal) — ✅ F4 (2026-07-15)
 1. **Naam:** "Revenue".
-2. **Formule:** `revenue_delivered + deferred_balance`. In gewone taal: alle ex-BTW omzetwaarde van verkochte credits — het al geleverde deel plus het nog-verschuldigde deel.
-3. **Bron:** `admin_finance_summary` block `revenue_delivered` + `deferred_balance` (beide uit `_geld_scope`).
+2. **Formule:** `revenue_delivered` (alléén). In gewone taal: de ex-BTW omzet die déze periode geleverd (erkend) is. **Was** `revenue_delivered + deferred_balance` (flow + stock) — flow/stock-menging opgeheven in F4.
+3. **Bron:** `admin_finance_summary` block `revenue_delivered` (uit `_geld_scope`).
 4. **Driver:** gekochte credits × €/credit. Credits zichtbaar elders (credits_sold), €/credit niet. 👁️
-5. **Tijdstoewijzing:** **gemengd** — `revenue_delivered` is een flow over `[from,to)`, `deferred_balance` is een **stock** (as-of `to`, cumulatief). Deze twee optellen mengt flow + stock (zie zwakke plek).
+5. **Tijdstoewijzing:** flow over `[from,to)`. Optelbaar. Sluit nu aan op de delta (§1.4), die op hetzelfde flow-getal rekent.
 6. **Scope:** per-user gesommeerd (via `_recognize_asof`).
-7. **Aannames/zwakke plekken:** het optellen van een periode-flow (delivered) en een cumulatieve stock (deferred) tot één "Revenue" is conceptueel scheef: bij een korte periode is delivered klein maar deferred het hele openstaande saldo. **Bovendien:** de delta ernaast (1.4) rekent op `revenue_delivered` alléén, niet op dit gecombineerde getal — mismatch.
+7. **Aannames/zwakke plekken:** geen flow/stock-menging meer. Deferred staat als aparte stand-nu (§1.5), niet in dit getal.
 
 ### 1.4 Revenue — delta
-Zelfde mechaniek als §1.2, maar `delta(revenue_delivered_now, revenue_delivered_prev)` — **let op:** op `revenue_delivered`, terwijl het getoonde getal (§1.3) `revenue_delivered + deferred_balance` is. De procent hoort dus niet bij het getal erboven. 🟡 zwakke plek (inconsistente basis).
+Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev)`. Sinds F4 rekent de delta op **hetzelfde** flow-getal dat erboven staat (§1.3 = `revenue_delivered`) — de eerdere basis-mismatch is opgeheven. ✅
 
-### 1.5 Delivered / deferred balk + labels
-1. **Naam:** "Delivered €X" / "Deferred €Y" met gekleurde balk (amber / lichter amber).
-2. **Formule:** balksegmenten `revenue_delivered` en `deferred_balance`, breedte naar rato (`SplitBar`).
-3. **Bron:** idem §1.3.
-4. **Driver:** €-waarden zelf.
-5. **Tijdstoewijzing:** delivered = flow; deferred = stock. (Zelfde meng-caveat.)
+### 1.5 Deferred obligation · held now
+1. **Naam:** "Deferred obligation · held now €Y".
+2. **Formule:** `deferred_balance`, getoond als losstaande stand-nu-regel (sunken box), **niet** als proportioneel balksegment naast delivered. De oude `SplitBar` (delivered/deferred-segmenten die één balk vulden → suggereerde een som) is verwijderd in F4.
+3. **Bron:** `admin_finance_summary` block `deferred_balance`.
+4. **Driver:** €-waarde zelf.
+5. **Tijdstoewijzing:** stock (as-of `to`, cumulatief) — bewust apart van de flow-hero.
 6. **Scope:** per-user gesommeerd.
-7. **Aannames/zwakke plekken:** zie §1.3.
+7. **Aannames/zwakke plekken:** geen — de stand-nu is expliciet als stock gelabeld en wordt nergens bij de flow opgeteld.
 
 ---
 
@@ -238,7 +238,9 @@ Zelfde getal als §1.1; marge `net_margin = net_profit / recognized_revenue`. Kl
 
 ---
 
-## Sectie 3 — Kaart "Where the cash sits"
+## Sectie 3 — Kaart "Where the cash sits" — ✅ F4 (2026-07-15)
+
+**Volgorde-fix F4:** de kaart is BTW-eerst geherordend en toont nu twee onafhankelijke aftrekkingen van hetzelfde bruto (jij↔fiscus, jij↔Stripe) i.p.v. een valse keten. Nieuwe volgorde op scherm: Charged → − VAT → = Revenue ex-VAT → − Stripe fee → = **Yours to keep**; daaronder los "Settled to your bank" (bankafschrift). De formules zijn ongewijzigd — alleen de weergave/volgorde en de nieuwe afgeleide "Yours to keep"-regel. De per-land VAT-uitsplitsing (nl/oss/outside) staat nu direct onder de VAT-regel.
 
 ### 3.1 Charged to customers
 1. **Naam:** "Charged to customers (settlement €)".
@@ -249,35 +251,44 @@ Zelfde getal als §1.1; marge `net_margin = net_profit / recognized_revenue`. Kl
 6. **Scope:** aggregaat per scope. Correct (som van charges).
 7. **Aannames/zwakke plekken:** één valutabron (EUR) — voorkomt dat een USD-sale presentment-dollars van settlement-euro's aftrekt (bewezen met gesimuleerde USD-sale). BTW-inclusief bruto (Adaptive Pricing / prijs uit `pricing.ts`).
 
-### 3.2 − Stripe fee
-Zelfde bron/scope als §2.14 (`bank.stripe_fee = Σ metadata.stripe_fee`). 🟡 kan €0 zijn vóór reconcile.
-
-### 3.3 = Settled to your bank
-1. **Naam:** "= Settled to your bank".
-2. **Formule:** `net_settlement > 0 ? net_settlement : (charged − fee)`. In gewone taal: wat er echt op de bank landt; als Stripe's `net` bekend is gebruik die, anders reken charged − fee.
-3. **Bron:** `metadata.net_settlement` (uit `balance_transaction.net`) met fallback `charged − fee`.
-4. **Driver:** charges + fees (👁️).
-5. **Tijdstoewijzing:** flow (verkoopdatum).
-6. **Scope:** aggregaat per scope.
-7. **Aannames/zwakke plekken:** fallback `charged − fee` klopt alleen als fee bekend is; bij niet-gereconcilieerde fee=0 toont settled = charged (te hoog).
-
-### 3.4 VAT — owed to the tax office
-1. **Naam:** "VAT (owed to tax office)".
-2. **Formule:** getoond als `vat_computed ? vat_owed : "not computed"`, met `vat_owed = Σ metadata.amount_tax` en `vat_computed = bool_or(amount_tax > 0)`.
+### 3.2 − VAT (owed to tax office)
+1. **Naam:** "− VAT (owed to tax office)". Met de per-land uitsplitsing (nl/oss/outside) er direct onder.
+2. **Formule:** `vat_owed = Σ metadata.amount_tax × exchange_rate` (settlement-EUR).
 3. **Bron:** `credit_transactions.metadata.amount_tax` (uit `session.total_details.amount_tax`).
 4. **Driver:** BTW per sale (👁️).
 5. **Tijdstoewijzing:** flow (verkoopdatum).
 6. **Scope:** aggregaat per scope.
-7. **Aannames/zwakke plekken:** sinds 2026-07-15 rekent de Checkout Session BTW (§7). `vat_owed = Σ amount_tax × exchange_rate` (settlement-EUR). `vat_computed = (vat_unmeasured_count = 0)` — false zodra er sales zonder gemeten BTW in de periode zitten; dan toont de UI "not computed" plus een waarschuwing met exact aantal + gross (`vat_unmeasured`). Historische 2 sales blijven onbekend tot ze een `invoice_tax` krijgen; nieuwe sales dragen Stripe's berekende BTW.
+7. **Aannames/zwakke plekken:** BTW eerst omdat dat geld nooit van ons was. Sinds 2026-07-15 rekent de Checkout Session BTW (§7). Sales zonder gemeten BTW verschijnen in de `vat_unmeasured`-waarschuwing onderaan de kaart (exact aantal + gross); historische 2 sales blijven onbekend tot ze een `invoice_tax` krijgen.
 
-### 3.5 Revenue (ex-VAT)
-1. **Naam:** "Revenue ex-VAT (delivered + deferred)".
-2. **Formule:** `bank.revenue_ex_vat = charged − vat`.
-3. **Bron:** §3.1 + §3.4.
+### 3.3 = Revenue ex-VAT
+1. **Naam:** "= Revenue ex-VAT".
+2. **Formule:** `bank.revenue_ex_vat = charged − vat` — een echte aftrekking op scherm (§3.1 − §3.2).
+3. **Bron:** §3.1 + §3.2.
 4. **Driver:** charges − BTW.
 5. **Tijdstoewijzing:** flow.
 6. **Scope:** aggregaat per scope.
-7. **Aannames/zwakke plekken:** zolang `vat=0` is `revenue_ex_vat = charged` — inclusief de niet-afgezonderde BTW. Wordt pas juist als §7 is opgelost.
+7. **Aannames/zwakke plekken:** wat overblijft nadat de fiscus z'n deel heeft — dít is de omzet, en hier gaat de fee vanaf.
+
+### 3.4 − Stripe fee
+Zelfde bron/scope als §2.14 (`bank.stripe_fee = Σ metadata.stripe_fee`). 🟡 kan €0 zijn vóór reconcile. Onafhankelijke aftrekking van hetzelfde bruto — geen vervolg op de VAT-aftrek.
+
+### 3.5 = Yours to keep (nieuw, F4)
+1. **Naam:** "= Yours to keep".
+2. **Formule:** `revenue_ex_vat − stripe_fee` (§3.3 − §3.4), inline in `FinanceView.tsx` berekend — geen nieuw RPC-veld.
+3. **Bron:** afgeleid van §3.3 + §3.4.
+4. **Driver:** omzet − fee.
+5. **Tijdstoewijzing:** flow.
+6. **Scope:** aggregaat per scope.
+7. **Aannames/zwakke plekken:** het enige getal dat volledig van ons is; stond vóór F4 nergens in het dashboard. 🟡 volgt de fee: bij niet-gereconcilieerde fee=0 is Yours to keep = revenue_ex_vat (te hoog).
+
+### 3.6 Settled to your bank (losse regel)
+1. **Naam:** "Settled to your bank (bank statement)", met sub-note "of which €X is not yet yours (VAT held for the tax office)".
+2. **Formule:** `net_settlement > 0 ? net_settlement : (charged − fee)`. In gewone taal: wat er echt op de bank landt; als Stripe's `net` bekend is gebruik die, anders reken charged − fee. De sub-note toont `vat_owed` als het gereserveerde, nog-niet-eigen deel.
+3. **Bron:** `metadata.net_settlement` (uit `balance_transaction.net`) met fallback `charged − fee`.
+4. **Driver:** charges + fees (👁️).
+5. **Tijdstoewijzing:** flow (verkoopdatum).
+6. **Scope:** aggregaat per scope.
+7. **Aannames/zwakke plekken:** bewust een losse regel (bankafschrift), niet het sluitstuk van de keten — de spanning "er staat meer op de rekening dan van ons is" (het gereserveerde BTW-deel) is precies wat deze regel hoort te tonen. Fallback `charged − fee` klopt alleen als fee bekend is; bij fee=0 toont settled = charged (te hoog).
 
 ---
 

@@ -9498,3 +9498,28 @@ supabase/migrations/20260715194951_recognize_asof_peruser_fee_deferredcredits.sq
 supabase/migrations/20260715195426_geld_scope_peruser_cor_and_fee.sql
 supabase/migrations/20260715200451_admin_finance_summary_fee_to_cor.sql
 ---
+[2026-07-15 21:10] F4 revenue-weergave: hero = flow (revenue_delivered) i.p.v. flow+stock, deferred als aparte stand-nu-regel (SplitBar verwijderd), delta rekent nu op hetzelfde getal. Bankkaart "Where the cash sits" BTW-eerst geherordend (Charged → −VAT → =Revenue ex-VAT → −Stripe fee → =Yours to keep) + losse "Settled to your bank"-regel met VAT-reservenote. Per-land VAT onder de VAT-regel. Alleen weergave. Geverifieerd live internal scope (juli 2026): 6,98/1,22/5,76/0,64/5,12/6,34 exact via admin_finance_summary RPC. Build groen. | gewijzigd: apps/app/src/app/admin/finance/FinanceView.tsx, docs/wiki/architecture/finance-number-provenance.md, docs/wiki/roadmap/priorities.md, docs/LOG.md
+[2026-07-15 22:47] commit: feat(finance): F4 — hero = periode-omzet (flow), bankkaart BTW-eerst + Yours to keep
+
+Hero "Revenue" toonde revenue_delivered + deferred_balance (flow+stock)
+terwijl de delta ernaast op revenue_delivered alléén rekende — headline en
+delta hoorden bij verschillende getallen. Nu: hero = revenue_delivered (flow),
+delta op hetzelfde getal, deferred als losse stand-nu-regel. Proportionele
+SplitBar (die een som suggereerde) verwijderd.
+
+Bankkaart "Where the cash sits": Revenue ex-VAT stond onder Settled to your
+bank → suggereerde een aftrekking die niet bestaat. Herordend BTW-eerst
+(twee onafhankelijke aftrekkingen van hetzelfde bruto, geen keten):
+Charged → −VAT → =Revenue ex-VAT → −Stripe fee → =Yours to keep; daaronder
+losse Settled-regel met "not yet yours"-note. Per-land VAT onder de VAT-regel.
+Yours to keep (revenue_ex_vat − stripe_fee) stond nergens; nu zichtbaar.
+
+Alleen weergave — geen formules, geen nieuwe capture. Geverifieerd tegen live
+internal scope (juli 2026): 6,98 / 1,22 / 5,76 / 0,64 / 5,12 / 6,34 exact.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+docs/LOG.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/roadmap/priorities.md
+---
