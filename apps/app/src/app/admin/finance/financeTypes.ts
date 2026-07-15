@@ -89,8 +89,10 @@ export interface FinanceScope {
     balance: number
     credits: number
     deferred_fee: number
-    est_future_cost: number
-    est_future_gross: number
+    // null when est_data_sufficient=false (no recent consumption to base a rate on — "insufficient data", not €0)
+    est_future_cost: number | null
+    est_future_gross: number | null
+    est_data_sufficient: boolean
     window_days: number
   }
   storage_bytes: number

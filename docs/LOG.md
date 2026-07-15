@@ -9561,3 +9561,40 @@ apps/marketing/public/packages/power-3000.webp
 apps/marketing/public/packages/starter-400.webp
 apps/marketing/public/packages/try-100.webp
 ---
+[2026-07-15 22:30] finance-audit-fixes: 7 bevindingen weggewerkt + 1 doc-fout gecorrigeerd (finance-audit.md 16cd6fc). Migratie 20260715213746 (admin_finance_summary): est_future_gross trekt nu deferred Stripe fee af (1,82→1,59); est_cost 0-verbruik → NULL/est_data_sufficient=false ("insufficient data" i.p.v. €0); Radar successful+failed screen-telling filtert is_internal (externe screens 2→0). FinanceView.tsx: DeferredCard insufficient-data + hint; CorTable corCost/corUnit (round-only-at-render, "<€0,01", geen 0,0000); RAG-rij expliciete ~€0-aanname-hint; RevenueByRegion NL-bucket geen dubbele landregel. periods.ts: afgeronde periode vergelijkt hele vorige periode (compareTo=prev.fullTo) i.p.v. prev.from+elapsed. vat_owed 1,22 = som facturen (€0,61×2), correct — "±1ct"-bevinding ingetrokken. Punt 8 gerapporteerd: 602 caption-credits = playlist-captions 1cr/video (602/602 playlist_id). Invarianten (net/gross/bank/cor) ongewijzigd geverifieerd; build groen. Nieuwe tally 29 JA / 0 NEE / 2 weet-niet. | gewijzigd: supabase/migrations/20260715213746_*.sql, apps/app/src/app/admin/finance/{FinanceView.tsx,financeTypes.ts,periods.ts}, docs/wiki/architecture/{finance-audit.md,finance-number-provenance.md}, docs/LESSONS.md, docs/LOG.md
+[2026-07-15 23:51] commit: fix(finance): finance-audit-bevindingen wegwerken (deferred, radar, delta, COR-weergave)
+
+Bron: finance-audit.md (16cd6fc). Migratie 20260715213746 + FinanceView/periods.
+
+1. est_future_gross trekt nu de deferred Stripe fee af (COR sinds ADR-063):
+   balance − est_cost − deferred_fee (1,82 → 1,59).
+2. est_cost bij 0 verbruik in de laatste window_days → NULL + est_data_sufficient=false;
+   UI toont "insufficient data" i.p.v. €0 (gratis-levering-claim). (2b: blended rate IS de
+   methode-mix-gewogen eenheidskost — algebraïsch identiek; hint expliciet gemaakt.)
+3. Radar successful+failed screen-telling filtert nu is_internal → interne testsales
+   lekken niet meer in de externe scope (externe screens 2 → 0, geverifieerd).
+4. RAG-COR (hard 0) is nu een EXPLICIETE aanname in de UI-hint (reshape zonder externe
+   API-call), niet een gemeten €0.
+5. Delta bij afgeronde periodes vergelijkt de HELE vorige periode (compareTo=prev.fullTo)
+   i.p.v. prev.from+elapsed (bewezen: mrt→hele feb, Q1→heel Q4; lopend ongewijzigd).
+6. COR-tabel: afronden alleen bij render (corCost/corUnit) — "<€0,01" i.p.v. misleidende
+   0,00/0,0000; volle precisie in de bron.
+7. Revenue-by-region: NL-bucket toont geen dubbele landregel meer.
+
+Ingetrokken: "vat_owed 1,22 vs 1,21" — €1,22 = som van de facturen (€0,61×2), correct.
+Punt 8 gerapporteerd (geen fix): 602 caption-credits = playlist-captions à 1cr/video (602/602
+dragen playlist_id); losse caption-extractie = 0 cr. Prijsregel vastgelegd in provenance.
+
+Invarianten (net_profit −7,02 · gross 2,99 · goodwill 9,9983 · bank · cor_against 0,7803)
+ongewijzigd geverifieerd na migratie. Build groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+apps/app/src/app/admin/finance/periods.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/finance-audit.md
+docs/wiki/architecture/finance-number-provenance.md
+supabase/migrations/20260715213746_finance_audit_fixes_deferred_radar.sql
+---

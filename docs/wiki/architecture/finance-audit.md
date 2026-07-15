@@ -6,17 +6,17 @@
 
 **Peildatum:** 2026-07-15 20:55 UTC. **Scope:** internal (test) — daar zit alle activiteit; de externe/"echte economie" is momenteel leeg (0 sales, zie §0). **Twee vensters:** juli-2026 = lopende maand (`2026-07-01 00:00` → `now()`, 14 dagen) en all-time (`2020-01-01` → `now()`).
 
----
+> **STATUS-UPDATE 2026-07-15 (na fix-taak).** Alle 4 NEE's + 1 doc-fout weggewerkt (migratie `20260715213746_finance_audit_fixes_deferred_radar` + `FinanceView.tsx`/`periods.ts`). De "vat_owed 1,22 vs 1,21"-bevinding is **ingetrokken**: elke factuur toont €0,61, de afdracht is de **som van de facturen** (€1,22), geen herberekening over het totaal — §7.1 gecorrigeerd. De rekensommen hieronder zijn de originele diagnose; per sectie staat "→ GEFIXT" met het nieuwe gedrag.
 
-## Tally
+## Tally (na fixes)
 
 | Verdict | Aantal | Items |
 |---|---|---|
-| **JA** | 25 | net_profit · revenue (hero) · hero-delta · deferred_balance · deferred credits · COR ai_transcription/caption/ai_summary/storage · cor_against_revenue · goodwill · gross_profit · gross_margin · OPEX goodwill/funnel_anon/radar_fee/entered · charged · stripe_fee · net_settlement · yours_to_keep · vat_owed · vat per bucket · revenue per regio · cache (ai) |
-| **NEE** | 4 | **est_cost_to_deliver** · **est_future_gross** · **COR rag** (kost hard 0) · **payment_attempts/radar screen-count** (scope-lek) |
-| **WEET NIET** | 2 | OPEX funnel_loggedin · cache savings (caption) |
+| **JA** | 29 | net_profit · revenue (hero) · hero-delta (incl. afgeronde periodes, GEFIXT) · deferred_balance · deferred credits · **est_cost_to_deliver** (GEFIXT) · **est_future_gross** (GEFIXT) · COR ai_transcription/caption/ai_summary/**rag** (GEFIXT: expliciete aanname)/storage · cor_against_revenue · goodwill · gross_profit · gross_margin · OPEX goodwill/funnel_anon/**radar screen-count** (GEFIXT)/entered · charged · stripe_fee · net_settlement · yours_to_keep · vat_owed · vat per bucket · revenue per regio · cache (ai) |
+| **NEE** | 0 | — (alle 4 weggewerkt) |
+| **WEET NIET** | 2 | OPEX funnel_loggedin · cache savings (caption) — beide laag-materieel, niet onafhankelijk her-afgeleid |
 
-De twee "verdachte" getallen uit de opdracht staan als eerste (§1 hero-delta, §2 est_*). De rest volgt de UI-volgorde.
+*Oorspronkelijke tally (diagnose 16cd6fc): 25 JA / 4 NEE / 2 weet-niet.* De twee "verdachte" getallen uit de opdracht staan als eerste (§1 hero-delta, §2 est_*). De rest volgt de UI-volgorde. Punt 8 (caption-COR = playlist-captions) → §12.
 
 ---
 
@@ -52,7 +52,7 @@ compareTo: new Date(prev.from.getTime() + elapsed),  // same elapsed days
 
 **Twee kanttekeningen (geen weerlegging van het bovenstaande):**
 1. *Nu rendert er niets.* `prev=0` (juni had 0 recognized/net) → `delta()` geeft `null`. Op 15 juli staat er dus géén percentage naast de hero. Correct gedrag, maar het getal is momenteel afwezig, niet fout.
-2. *Afgeronde periodes zijn wél scheef.* Voor een **niet-lopende** periode is `elapsed = volle maandlengte`; `prev.from + elapsed` schiet dan over de kortere/langere vorige maand heen. Voorbeeld: een afgeronde maand van 31 dagen vergelijkt tegen `prev.from + 31 d` — bij een vorige maand van 30 dagen valt de laatste dag ín de maand daarna. Dat is **niet** het month-to-date-geval dat F11 en de opdracht noemen, maar het is een reële, aparte scheefheid → **WEET NIET/NEE** specifiek voor afgeronde-periode-navigatie.
+2. *Afgeronde periodes waren wél scheef.* Voor een **niet-lopende** periode was `elapsed = volle maandlengte`; `prev.from + elapsed` schoot dan over de kortere/langere vorige maand heen. → **GEFIXT** (`periods.ts`): een afgeronde periode vergelijkt nu met de **hele** vorige periode (`compareTo = prev.fullTo`), ongeacht lengte; lopend (to-date) blijft `prev.from + elapsed`. Bewezen: afgeronde maart → OUD `compareTo=04 mrt` (3 maartdagen als februari) → NIEUW `01 mrt` (hele feb vs hele mrt); afgerond Q1-2026 → OUD `30 dec` (2 Q4-dagen weg) → NIEUW `01 jan` (heel Q4 92 d vs heel Q1 90 d); lopende maand ongewijzigd (`15 jun`).
 
 ---
 
@@ -77,7 +77,15 @@ v_est_future_cost := v_defer_credits * v_avg_cpc;
 
 2. **"Usage mix" is een gemengd tarief, niet de mix van de deferred credits.** De rekensom is één **blended €/credit** over álle methodes samen (`ΣCOR / Σcredits`), niet de methode-samenstelling van de 69 openstaande credits. Het venster is nu 85% AI-transcriptie (5360/6321 cr; `cor.total` is voor ~99,9% AI: 15,95/15,96). Blended = 0,00252/cr, terwijl AI-transcriptie in werkelijkheid ~0,00335/cr kost (10,3512/3091) en captions ~0. Gaan de 69 credits naar AI → **onderschatting**; gaan ze naar captions → **overschatting**. De teller telt bovendien alleen **cache-miss**-kosten en **granted-credit-verbruik** mee (goodwill), terwijl de deferred credits **gekochte** credits zijn — een tarief uit een andere populatie.
 
-Het getoonde 0,17 is daarom een plausibele-maar-toevallige waarde; de schatter zelf is niet betrouwbaar. (Geen voorstel — alleen de bevinding.)
+Het getoonde 0,17 was daarom een plausibele-maar-toevallige waarde.
+
+**→ GEFIXT** (migratie `20260715213746` + DeferredCard):
+- **(1) 0-verbruik:** `v_recent_cons=0` ⇒ `est_future_cost=NULL`, `est_future_gross=NULL`, nieuwe vlag `est_data_sufficient=false`. De UI toont dan **"insufficient data"** i.p.v. €0 — precies bij een stille maand na launch.
+- **(2) mix:** beslist en gemotiveerd — de blended €/credit **is** de methode-mix-gewogen per-methode-eenheidskost: `Σcor_m/Σcredits = Σ(mix_m × unit_m)`, algebraïsch identiek, dus er is géén ander "eerlijk" tarief te berekenen zonder de toekomstige mix te kennen (die we niet hebben). De openstaande credits hebben zelf geen methode. De hint zegt nu expliciet: *"assumes the same method mix + cache rate as the last N days"*. Populatie granted-vs-purchased verandert de **per-methode-eenheidskost niet** (een minuut AI kost hetzelfde ongeacht bron), alleen de mix — en de recente consumptie is ons enige mix-signaal.
+- **(1 & extra) fee ontbrak** — zie §9. `est_future_gross` trekt nu ook de deferred Stripe fee af.
+- **Nieuwe live waarde:** `est_future_cost ≈ 0,17–0,18` (wiebelt met het schuivende venster: consumed_cr 6321→6266 in 44 min toen goedkope credits van de vensterrand vielen → tarief omhoog → 0,18; illustreert waarom het een *estimate* blijft). `est_future_gross = 1,99 − 0,1757 − 0,2208 = 1,59`.
+
+**KLOPT? nu JA** (schatting, expliciet gelabeld; 0-data afgevangen; fee meegenomen).
 
 ---
 
@@ -107,10 +115,12 @@ Het getoonde 0,17 is daarom een plausibele-maar-toevallige waarde; de schatter z
 | ai_transcription | 10,3512 | 3091 | 0,00335 | **JA** — `182245 s/60×0,00322 + 190.865.465 B/1e9×2,99 = 9,7805 + 0,5707 = 10,3512`; credits = debits ai (3091) ✓ |
 | caption | 0,0075 | 602 | 0,0000125 | **JA** — paid-caption proxy-bytes × 2,99/GB; credits 602 ✓ |
 | ai_summary | 0,0008 | 12 | 0,0000667 | **JA** — deepseek tokens × tarief; credits 12 ✓ |
-| **rag** | **0,0000** | **55** | **0** | **NEE** — `_geld_scope` zet `v_cor_rag := 0` **hard**. 55 credits RAG geleverd, kost **nooit gemeten** → €/credit=0 is een gat, geen echte 0. |
+| **rag** | **0,0000** | **55** | **0** | was **NEE** → **GEFIXT** (aanname). `_geld_scope` zet `v_cor_rag := 0` bewust: RAG is een reshape van een bestaand transcript zonder externe API-call → marginale kost ≈ €0. Nu **expliciet als aanname** in de UI-hint ("assumed ~€0 · reshape of existing transcript, no external API call"), niet als gemeten €0. Verschijnt er wél meetbare compute/egress → meten. |
 | storage (R2) | 0 (intern) | — | — | **JA** — intern geforceerd 0; extern `GREATEST(0, GB−10)×0,015×0,92×(dagen/maanddagen)`, live 122 KB < 10 GB → 0 ✓ |
 
 All-time cost ai_transcription 21,2748 = `385790 s/60×0,00322 + 190.865.465 B/1e9×2,99 = 20,7041 + 0,5707` ✓. (Merk op: bytes all-time = juli — proxy_bytes wordt niet op elk AI-pad gepersisteerd; duur wél.)
+
+**COR-tabel weergave-afronding — GEFIXT (audit-punt 6).** Bron/berekening blijven volledige precisie; afronden gebeurt **alleen bij render** (`corCost`/`corUnit` in `FinanceView.tsx`). Cost: 2 decimalen; een waarde >0 die naar €0,00 zou afronden toont **"<€0,01"** (echte 0 blijft €0,00). €/credit: leesbaar getal (4 dec voor <€0,01) of **"<€0,01"**, nooit "€0,0000". Materiële rij blijft narekenbaar (AI: €10,35 · 3.091 · €0,0033); immateriële rij (caption: €0,01 · 602 · "<€0,01") toont "niet nul, verwaarloosbaar" zonder een misleidende 0,00.
 
 ### 4.2 "Total measured COR" — **JA**
 `measured_total = ai+cap+sum+rag+storage = 10,3512+0,0075+0,0008+0+0 = 10,3595` ✓ (juli); all-time 21,2831.
@@ -145,7 +155,7 @@ UI: `goodwill = measured_total − usageAgainst`. `usageAgainst = 0,3608+0,0003+
 | **Goodwill — granted credits used** | 9,9983 | **JA** — = measured_total − usageAgainst (§4.5) |
 | **Free-caption funnel — logged-in** | 0,0092 | **WEET NIET** — `v_cap_free_bytes(credits_used=0, internal, logged-in)/1e9×2,99`; laag-materieel, niet apart her-afgeleid |
 | **Free-caption funnel — anonymous** | 0 intern / **0,0278** extern | **JA** — extern uit `daily_cost_counters.caption_proxy_bytes/1e9×2,99`; intern geforceerd 0 |
-| **Fraud screening (Radar)** | 0 intern / 0 extern | **JA** (waarde) — `billable×rate`; `free_until 2026-08-15` ⇒ billable 0 ⇒ €0. Maar de **screen-telling** is fout, zie §9 |
+| **Fraud screening (Radar)** | 0 intern / 0 extern | **JA** (waarde) — `billable×rate`; `free_until 2026-08-15` ⇒ billable 0 ⇒ €0. De **screen-telling** was fout (§11) → **GEFIXT** |
 | **Entered OPEX-regels** | geen | **JA** — `opex_expenses` leeg; `entered_opex.lines=[]`, total 0; intern toont sowieso 0 (`isExternal`-gate) |
 
 `measured_opex.total (juli) = 9,9983 + 0,0092 + 0 + 0 = 10,0075` ✓.
@@ -159,16 +169,16 @@ Alle bedragen = 2 sales × per-sale, distinct op `stripe_session_id`, internal u
 | NAAM | FORMULE | LIVE | KLOPT? |
 |---|---|---|---|
 | Charged to customers | `Σ COALESCE(settlement_amount, amount_paid)` | 6,98 | **JA** — `settlement_amount` is **null** → fallback `amount_paid` 3,49×2=6,98. EUR-sale, dus presentment=settlement. *Label "settlement €" is hier eigenlijk presentment.* |
-| − VAT (owed to tax office) | `Σ _sale_vat(m).vat` | 1,22 | **JA (±1 ct)** — zie §7.1 |
+| − VAT (owed to tax office) | `Σ _sale_vat(m).vat` | 1,22 | **JA** — zie §7.1 |
 | = Revenue ex-VAT | `charged − vat` | 5,76 | **JA** — 6,98 − 1,22 |
 | − Stripe fee | `Σ metadata.stripe_fee` | 0,64 | **JA** — 0,32×2 |
 | = Yours to keep | `revenue_ex_vat − stripe_fee` (inline tsx) | 5,12 | **JA** — 5,76 − 0,64 |
 | Settled to your bank | `net_settlement>0 ? net_settlement : charged−fee` | 6,34 | **JA** — `net_settlement` 3,17×2=6,34 = `charged−fee` (beide paden gelijk) |
 
-### 7.1 vat_owed — de rekensom achter "±1 ct"
-`_sale_vat`: als `tax_status='complete'` → `amount_tax×exchange_rate`; **elif `metadata ? 'invoice_tax'`** → `invoice_tax` (status *measured*); else unknown. Live per sale: `amount_tax=0`, maar **`invoice_tax=0,61`** aanwezig ⇒ `vat=0,61`, measured. `Σ = 1,22`. **Twee noten (getal blijft verdedigbaar):**
-- **Basis ≠ Stripe Tax.** De provenance-doc zegt "sinds 2026-07-15 rekent de Checkout Session BTW". In werkelijkheid is `amount_tax=0` en komt de BTW uit een **reconcile-veld `invoice_tax`** (21%-uitname). Correct bedrag (NL 21% inclusief op €3,49 = €0,6057), maar niet de gedocumenteerde bron.
-- **Per-sale-afronding.** `invoice_tax` is per sale afgerond: `0,61×2 = 1,22`, terwijl de zuivere aggregatie `6,98×21/121 = 1,2114 → 1,21` is. Het dashboard toont dus **1,22** waar 1,21 "exacter" is; navenant is Revenue ex-VAT 5,76 i.p.v. 5,7686. Immaterieel, maar het is een echte 1-cent-discrepantie.
+### 7.1 vat_owed — €1,22 is correct (bevinding "±1 ct" INGETROKKEN)
+`_sale_vat`: als `tax_status='complete'` → `amount_tax×exchange_rate`; **elif `metadata ? 'invoice_tax'`** → `invoice_tax` (status *measured*); else unknown. Live per sale: `amount_tax=0`, maar **`invoice_tax=0,61`** aanwezig ⇒ `vat=0,61`, measured. `Σ = 1,22`.
+
+**Ingetrokken:** de eerdere "1,22 vs 1,21"-bevinding was **onjuist**. Elke factuur toont €0,61 BTW; de af te dragen BTW is de **som van de facturen** (€0,61 + €0,61 = €1,22), niet een 21%-herberekening over het bruto-totaal (`6,98×21/121 = 1,2114`). Die aggregatie-benadering is juist verkeerd — de fiscus krijgt wat er per factuur staat. **€1,22 is correct.** Navenant klopt Revenue ex-VAT = 6,98 − 1,22 = 5,76 exact. (Enige overgebleven noot, géén discrepantie: de BTW-bron is het reconcile-veld `invoice_tax`, niet Stripe's `amount_tax` dat 0 is — een provenance-doc-detail, geen fout in het getal.)
 
 ---
 
@@ -176,6 +186,7 @@ Alle bedragen = 2 sales × per-sale, distinct op `stripe_session_id`, internal u
 
 **VAT per bucket — JA:** buckets uit `vat_by_country` via de EU-lijst. Live alleen `nl`: `{vat 1,22, gross 6,98, count 2}`. Geen oss/outside/unknown. `rate_implied = 1,22/(6,98−1,22) = 0,2118` ✓.
 **Revenue by region — JA:** `RevenueByRegion` groepeert NL/EU/Intl; net = gross − vat. Live NL: `6,98 − 1,22 = 5,76` net, 2 sales. Geen geblokkeerde landen (GB/CH) aanwezig → Radar-guard-indicator OK.
+**Dubbel NL-label — GEFIXT (audit-punt 7):** "Netherlands · 2 · €5,76" stond dubbel (bucket-label + land-rij). De per-land-uitsplitsing rendert nu alleen voor buckets die **meerdere** landen kunnen bevatten (EU/Intl); de NL-bucket is per definitie één land → geen land-rij meer.
 
 ---
 
@@ -186,8 +197,8 @@ Alle bedragen = 2 sales × per-sale, distinct op `stripe_session_id`, internal u
 | Balance (ex-VAT) | 1,99 | **JA** — 69 × 0,0288 (FIFO-rest) |
 | Credits outstanding | 69 | **JA** — 200 gekocht − 131 verbruikt-uit-lot |
 | Deferred Stripe fee | 0,22 | **JA** — 69 × 0,0032 = 0,2208 |
-| Est. cost to deliver | 0,17 | **NEE** — §2 |
-| Est. future gross | 1,82 | **NEE** — §2 |
+| Est. cost to deliver | ~0,17–0,18 | was **NEE** → **GEFIXT** (§2): 0-data ⇒ "insufficient data" i.p.v. €0 |
+| Est. future gross | **1,59** (was 1,82) | was **NEE** → **GEFIXT** (§2 + audit-punt 1): trekt nu óók de deferred Stripe fee af. `1,99 − 0,1757 − 0,2208 = 1,59`. *(De opdracht noemde 1,60 uit afgeronde displaywaarden 1,99−0,17−0,22; met volle precisie in de bron — audit-punt 6 — is het 1,59.)* |
 
 ---
 
@@ -198,19 +209,30 @@ Alle bedragen = 2 sales × per-sale, distinct op `stripe_session_id`, internal u
 
 ---
 
-## §11 — payment_attempts / Radar screen-count — **NEE**
+## §11 — payment_attempts / Radar screen-count — was **NEE** → **GEFIXT**
 
 **NAAM** Radar-hint in OPEX: "`{screens}` screened (`{successful}` ok · `{declined}` declined · `{blocked}` blocked) × €rate".
-**FORMULE** `v_scr_succ = count(DISTINCT stripe_session_id) FROM credit_transactions WHERE type='credit' AND …` **zonder `JOIN profiles`/`is_internal`-filter**; `v_scr_fail…` uit `payment_attempts`. Alleen berekend in de `v_internal=false`-tak.
-**LIVE** `payment_attempts` is **leeg** (0 rijen). Externe scope toont toch `screens=2, successful=2, billable=0, fee=0`.
-**KLOPT? NEE** — die 2 "successful screens" zijn de **2 internal-test-aankopen**: de screen-teller filtert niet op `is_internal`, dus interne testsales lekken in de **externe** Radar-telling. Nu €0 (gratis t/m 2026-08-15), maar ná die datum zou de externe scope Radar-fee rekenen over interne testverkopen. `radar_fee` (het €-getal) is toevallig 0 en dus "JA", maar de **telling eronder is fout**. Failed-screens dragen 0 bij omdat `payment_attempts` leeg is (geen echte mislukte-poging-registratie aanwezig).
+**FORMULE (was)** `v_scr_succ = count(DISTINCT stripe_session_id) FROM credit_transactions WHERE type='credit' AND …` **zonder `JOIN profiles`/`is_internal`-filter**; `v_scr_fail…` uit `payment_attempts`. Alleen berekend in de `v_internal=false`-tak.
+**DIAGNOSE** `payment_attempts` is leeg (0 rijen), maar de externe scope toonde toch `screens=2, successful=2` — de 2 **internal-test-aankopen** lekten in de externe Radar-telling omdat de teller niet op `is_internal` filterde. €0 nu (gratis t/m 2026-08-15), maar ná die datum zou de externe scope Radar-fee rekenen over interne testverkopen.
+**→ GEFIXT** (migratie `20260715213746`): de successful-screen-query joint nu `JOIN profiles pr ON pr.id=ct.user_id AND NOT pr.is_internal`; de failed-screen-query op `payment_attempts` sluit interne profielen uit via `LEFT JOIN profiles` (null user_id = anoniem = extern → behouden). **Geverifieerd:** externe `radar.screens` ging van `2` → **`0`**, `successful` `2` → `0`. Alle interne invarianten (net_profit, gross, bank, cor) ongewijzigd.
+
+---
+
+## §12 — Rapport-punt 8: de 602 caption-COR-credits (geen fix, alleen bevinding)
+
+**Vraag:** zijn de 602 caption-credits playlist-captions (1 credit/video), terwijl losse caption-extractie 0 credits kost?
+**Antwoord: JA.** Bewijs uit `credit_transactions` (internal debits, `product_type='caption'`):
+- **Juli: 602/602 caption-credits dragen een `playlist_id`** in `metadata` (`jul_with_playlist = jul_total = 602`). Alle `amount=1`, `kind='settlement'`.
+- All-time 881: 737 met `playlist_id`; de resterende 144 (april-18, één job `551c832e…`) dragen `job_id`+`video_id` i.p.v. `playlist_id` — **ook** playlist-per-video-captions, alleen ouder metadata-schema. Alle `amount=1`.
+- Distinct amounts = `[1]` → nooit 0, nooit >1. Losse caption-extractie schrijft **geen** debit (0 credits, conform CLAUDE.md).
+
+**Prijsregel (nu vastgelegd in provenance):** playlist-caption = **1 credit/video**; losse caption-extractie = 0 credits. De caption-COR-rij (§4.1) is dus te lezen als proxy-bytes van betaalde playlist-video-captions; de €0,0075 kost hoort bij die 602 playlist-video's (cache-misses).
 
 ---
 
 ## Wat NIET geverifieerd is (eerlijkheidshalve)
 
-- **funnel_loggedin (0,0092)** en **cache caption saved (0,0055)**: laag-materieel, niet onafhankelijk her-afgeleid → WEET NIET.
-- **Afgeronde-periode-delta** (§1 noot 2): reële scheefheid, maar buiten het month-to-date-geval van de opdracht; niet met live data uitgerekend (juni/juli hebben geen bruikbare afgeronde-periode-data).
+- **funnel_loggedin (0,0092)** en **cache caption saved (0,0055)**: laag-materieel, niet onafhankelijk her-afgeleid → WEET NIET (ongewijzigd).
 - **proxy_bytes op AI all-time** = juli-waarde: duidt erop dat bytes niet op elk AI-pad gepersisteerd worden (bekend, zie 1.24). Raakt cor.ai all-time (duur wél volledig).
 
-*Peildatum data: 2026-07-15 20:55 UTC. Alle "LIVE"-waarden komen uit `admin_finance_summary` / brontabellen op dat moment.*
+*Peildatum diagnose: 2026-07-15 20:55 UTC. Fixes + herverificatie: 2026-07-15 ~21:40 UTC (migratie `20260715213746`, `FinanceView.tsx`, `periods.ts`).*

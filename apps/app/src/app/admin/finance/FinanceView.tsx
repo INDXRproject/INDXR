@@ -47,6 +47,22 @@ function profitTone(n: number): string {
   return n > 0 ? "text-success" : n < 0 ? "text-error" : "text-fg-strong"
 }
 
+// COR-table display: round ONLY at render, never in the source. Cost at 2 decimals; a value that is >0 but
+// rounds to 0.00 shows "<€0.01" (never a misleading "€0.00"). A genuine zero stays "€0.00".
+function corCost(n: number): string {
+  if (n === 0) return eur(0)
+  if (n < 0.005) return "<€0.01"
+  return eur(n)
+}
+// €/credit: a readable figure, or "<€0.01" if it would render as €0.0000. Genuine zero stays "€0.00"; no credits → "—".
+function corUnit(credits: number, cost: number): string {
+  if (credits === 0) return "—"
+  const u = cost / credits
+  if (u === 0) return eur(0)
+  if (u < 0.00005) return "<€0.01"
+  return eur(u, true)
+}
+
 // Same EU member-state list as admin_finance_summary (v_eu). EL = Greece alt-code. GB absent (Brexit).
 const EU_MEMBERS = new Set([
   "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "EL", "HU", "IE",
@@ -115,6 +131,9 @@ function CorTable({ s }: { s: FinanceScope }) {
   const cacheSub: Partial<Record<(typeof COR_METHODS)[number], string | null>> = {
     ai_transcription: aiCache.total_jobs > 0 ? `${pct(aiCache.pct)} from cache · saved ${eur(aiCache.saved_eur, true)}` : null,
     caption: capCache.total_count > 0 ? `${pct(capCache.pct)} from cache · saved ${eur(capCache.saved_eur, true)}` : null,
+    // RAG cost is an explicit ASSUMPTION, not a measured €0: RAG reshapes an existing transcript with no
+    // external API call, so marginal cost ≈ €0. If a measurable compute/egress cost appears, measure it.
+    rag: "assumed ~€0 · reshape of existing transcript, no external API call",
   }
   const abm = cor.against_revenue_by_method
   // Against-revenue of the usage methods + storage (NOT the fee — the fee has its own recognised/deferred line).
@@ -129,30 +148,29 @@ function CorTable({ s }: { s: FinanceScope }) {
       </div>
       {COR_METHODS.map((k) => {
         const credits = s.consumed_by_type[k]
-        const unit = credits > 0 ? cor[k] / credits : 0
         return (
           <div key={k} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
             <div className="flex flex-col gap-0.5">
               <span className={`w-fit rounded-full px-2 py-0.5 font-medium ${TYPE_META[k].bg} ${TYPE_META[k].text}`}>{TYPE_META[k].label}</span>
               {cacheSub[k] && <span className="text-[11px] text-fg-subtle">{cacheSub[k]}</span>}
             </div>
-            <span className="text-right font-semibold tabular-nums text-fg">{eur(cor[k], true)}</span>
+            <span className="text-right font-semibold tabular-nums text-fg">{corCost(cor[k])}</span>
             <span className="text-right tabular-nums text-fg-muted">{credits.toLocaleString()}</span>
-            <span className="text-right tabular-nums text-fg-muted">{credits > 0 ? eur(unit, true) : "—"}</span>
+            <span className="text-right tabular-nums text-fg-muted">{corUnit(credits, cor[k])}</span>
           </div>
         )
       })}
       {/* storage — a quiet row, no per-credit unit */}
       <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
         <span className="w-fit rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning-fg">Storage (R2)</span>
-        <span className="text-right font-semibold tabular-nums text-fg">{eur(cor.storage, true)}</span>
+        <span className="text-right font-semibold tabular-nums text-fg">{corCost(cor.storage)}</span>
         <span className="text-right tabular-nums text-fg-muted">—</span>
         <span className="text-right tabular-nums text-fg-muted">—</span>
       </div>
       {/* Total FULL measured COR — this is what the rows sum to (Σ Cost). */}
       <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 border-t px-3 py-2 text-xs">
         <span className="font-semibold text-fg">Total measured COR</span>
-        <span className="text-right font-bold tabular-nums text-fg">{eur(cor.measured_total, true)}</span>
+        <span className="text-right font-bold tabular-nums text-fg">{corCost(cor.measured_total)}</span>
         <span className="text-right tabular-nums text-fg-subtle">—</span>
         <span className="text-right tabular-nums text-fg-subtle">—</span>
       </div>
@@ -370,17 +388,21 @@ function RevenueByRegion({ s }: { s: FinanceScope }) {
                 <div className="text-[11px] text-fg-subtle">
                   gross {eur(b.gross)} − VAT {eur(b.vat)} = net {eur(net)}
                 </div>
-                <div className="mt-1 space-y-0.5 pl-3">
-                  {b.rows.map((r) => (
-                    <div key={r.code} className="flex justify-between text-[11px] text-fg-muted">
-                      <span>
-                        {countryName(r.code)} <span className="text-fg-subtle">· {r.count}</span>
-                        {r.unknownVat && <span className="ml-1 text-warning">⚠ vat unknown</span>}
-                      </span>
-                      <span className="tabular-nums">{eur(r.gross - r.vat)}</span>
-                    </div>
-                  ))}
-                </div>
+                {/* Per-country breakdown only where the bucket can hold >1 country. The NL bucket is
+                    definitionally single-country, so its row would just duplicate the bucket label. */}
+                {k !== "nl" && (
+                  <div className="mt-1 space-y-0.5 pl-3">
+                    {b.rows.map((r) => (
+                      <div key={r.code} className="flex justify-between text-[11px] text-fg-muted">
+                        <span>
+                          {countryName(r.code)} <span className="text-fg-subtle">· {r.count}</span>
+                          {r.unknownVat && <span className="ml-1 text-warning">⚠ vat unknown</span>}
+                        </span>
+                        <span className="tabular-nums">{eur(r.gross - r.vat)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}
@@ -395,6 +417,10 @@ function RevenueByRegion({ s }: { s: FinanceScope }) {
 
 function DeferredCard({ s }: { s: FinanceScope }) {
   const d = s.deferred
+  // Insufficient data: no consumption in the last window_days → no rate to base a delivery-cost estimate on.
+  // Show "insufficient data" rather than €0 (which would falsely claim delivery is free — worst exactly during
+  // a quiet month post-launch).
+  const insufficient = !d.est_data_sufficient
   return (
     <div className="rounded-xl border bg-surface p-5">
       <h3 className="text-sm font-semibold">Deferred</h3>
@@ -402,10 +428,16 @@ function DeferredCard({ s }: { s: FinanceScope }) {
       <div className="space-y-2 text-sm">
         <div className="flex justify-between"><span className="text-fg-muted">Balance (ex-VAT)</span><span className="font-semibold tabular-nums">{eur(d.balance)}</span></div>
         <div className="flex justify-between"><span className="text-fg-muted">Credits outstanding</span><span className="tabular-nums">{d.credits.toLocaleString()}</span></div>
-        <div className="flex justify-between"><span className="text-fg-muted">Deferred Stripe fee</span><span className="tabular-nums">{eur(d.deferred_fee)}</span></div>
-        <div className="flex justify-between"><span className="text-fg-muted">Est. cost to deliver <span className="rounded bg-warning-subtle px-1 text-[10px] text-warning">est</span></span><span className="tabular-nums">{eur(d.est_future_cost)}</span></div>
-        <div className="flex justify-between border-t pt-2"><span className="font-medium">Est. future gross</span><span className="font-bold tabular-nums">{eur(d.est_future_gross)}</span></div>
-        <p className="text-[11px] text-fg-subtle">Based on the last {d.window_days} days' usage mix.</p>
+        <div className="flex justify-between"><span className="text-fg-muted">− Deferred Stripe fee</span><span className="tabular-nums text-error">{eur(d.deferred_fee)}</span></div>
+        <div className="flex justify-between"><span className="text-fg-muted">− Est. cost to deliver <span className="rounded bg-warning-subtle px-1 text-[10px] text-warning">est</span></span>
+          <span className="tabular-nums">{insufficient || d.est_future_cost === null ? "—" : eur(d.est_future_cost)}</span></div>
+        <div className="flex justify-between border-t pt-2"><span className="font-medium">Est. future gross</span>
+          <span className="font-bold tabular-nums">{insufficient || d.est_future_gross === null ? "insufficient data" : eur(d.est_future_gross)}</span></div>
+        {insufficient ? (
+          <p className="text-[11px] text-warning">No consumption in the last {d.window_days} days — can't estimate a delivery cost yet.</p>
+        ) : (
+          <p className="text-[11px] text-fg-subtle">Gross = balance − deferred fee − est. cost. Cost assumes the same method mix + cache rate as the last {d.window_days} days.</p>
+        )}
       </div>
     </div>
   )

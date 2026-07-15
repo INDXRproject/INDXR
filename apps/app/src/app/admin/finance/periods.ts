@@ -97,11 +97,17 @@ export function makePeriod(kind: PeriodKind, anchor: Date, now: Date, customTo?:
       : kind === "quarter" ? addMonthsUTC(from, -3)
       : new Date(Date.UTC(from.getUTCFullYear() - 1, 0, 1))
   const prev = bounds(kind, prevAnchor)
+  // Running (to-date): compare the SAME elapsed span in the previous period (month-to-date vs 1st→same day).
+  // Completed: compare the WHOLE previous period regardless of length — a full 31-day March against a full
+  // 28-day February, a 92-day Q4 against a 90-day Q1. Using prev.from + elapsed would spill the current
+  // period's extra days into the previous one (March 31d → 1 Feb + 31d = 1 Feb–3 Mar, three March days
+  // counted as February). Whole-vs-whole avoids that.
+  const compareTo = running ? new Date(prev.from.getTime() + elapsed) : prev.fullTo
   return {
     kind, from, to, fullTo, toDate: running,
     label: labelFor(kind, from),
     compareFrom: prev.from,
-    compareTo: new Date(prev.from.getTime() + elapsed), // same elapsed days
+    compareTo,
   }
 }
 

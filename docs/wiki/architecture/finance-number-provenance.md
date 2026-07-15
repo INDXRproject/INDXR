@@ -121,6 +121,7 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 ### 2.5 COR-driver: Auto-captions
 1. **Naam:** "Auto-captions".
 2. **Formule:** `cor_caption = (Σ proxy_bytes waar credits_used>0 / 1e9) × decodo_eur_per_gb`. Credits = `consumed_by_type.caption`; €/credit = `cor_caption / credits`.
+   **Prijsregel (geverifieerd 2026-07-15, audit-punt 8):** de caption-**credits** (`consumed_by_type.caption`) zijn **playlist-captions à 1 credit/video** — losse caption-extractie kost **0 credits** en schrijft geen debit. Bewijs: alle caption-debits hebben `amount=1`, `kind='settlement'`, en `metadata.playlist_id` (juli: 602/602; oudere rijen dragen `job_id`+`video_id` i.p.v. `playlist_id`, ook playlist). De COR-rij (bytes) en de credits (playlist-video-count) meten dus hetzelfde caption-verkeer vanaf twee kanten.
 3. **Bron:** `usage_logs` waar `extraction_type='caption' AND success AND is_internal_at_time=scope`, filter `credits_used>0`.
 4. **Driver:** Decodo caption-egress-bytes (👁️) + caption-credits (zichtbaar).
 5. **Tijdstoewijzing:** flow op `usage_logs.created_at`. 🟢 klopt.
@@ -214,8 +215,8 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 
 ### 2.14b OPEX-rij: Fraud screening (Radar)
 1. **Naam:** "Fraud screening (Radar)" (alleen getoond als `radar.screens > 0`).
-2. **Formule:** `radar_fee = billable_screens × cfg.radar_eur_per_screen`, waarbij `screens = geslaagde charges (credit_transactions) + gescreende mislukte pogingen (payment_attempts.screened)` en `billable = screens met datum ≥ cfg.radar_free_until` (free-trial-pogingen tellen niet).
-3. **Bron:** `payment_attempts` (mislukt/geblokkeerd, gelogd op `charge.failed`) + `credit_transactions` (geslaagd); tarief uit `cost_config.radar_eur_per_screen` (RfFT standaard-pricing €0,02) + `radar_free_until` (2026-08-15).
+2. **Formule:** `radar_fee = billable_screens × cfg.radar_eur_per_screen`, waarbij `screens = geslaagde charges (credit_transactions) + gescreende mislukte pogingen (payment_attempts.screened)` en `billable = screens met datum ≥ cfg.radar_free_until` (free-trial-pogingen tellen niet). **Alleen externe scope; interne testverkopen uitgesloten** (✅ audit-fix 2026-07-15): de successful-screen-telling joint `profiles ... AND NOT is_internal`, de failed-screen-telling `LEFT JOIN profiles` met `NOT COALESCE(is_internal,false)` (null user = anoniem = extern → behouden). Vóór de fix lekten interne testsales als "successful screens" in de externe scope (2 → 0 na fix).
+3. **Bron:** `payment_attempts` (mislukt/geblokkeerd, gelogd op `charge.failed`, `is_internal` uitgesloten) + `credit_transactions` (geslaagd, `is_internal` uitgesloten); tarief uit `cost_config.radar_eur_per_screen` (RfFT standaard-pricing €0,02) + `radar_free_until` (2026-08-15).
 4. **Driver:** aantal gescreende pogingen, uitgesplitst `successful · declined · blocked`, × tarief — **volledig zichtbaar** in de hint (bv. "12 screened (9 ok · 2 declined · 1 blocked) × €0,02 · free until 2026-08-15").
 5. **Tijdstoewijzing:** flow op poging-/verkoopdatum. **Nooit COR** (fraudekost valt bij de poging, niet bij levering).
 6. **Scope:** business-wide → **alleen external** (geblokkeerde/mislukte pogingen zijn niet aan een user te koppelen; toggle mag niet dubbeltellen). Internal = €0.
@@ -321,23 +322,23 @@ Zelfde bron/scope als §2.14 (`bank.stripe_fee = Σ metadata.stripe_fee`). 🟡 
 6. **Scope:** ✅ per-user gesommeerd.
 7. **Aannames/zwakke plekken:** wordt herkend (naar COR) zodra die credits verbruikt worden; tot dan een uitgestelde kost naast de deferred omzet.
 
-### 4.3 Est. cost to deliver
+### 4.3 Est. cost to deliver — ✅ audit-fix (2026-07-15)
 1. **Naam:** "Est. cost to deliver" (badge "est").
-2. **Formule:** `est_future_cost = deferred.credits × avg_cpc`, met `avg_cpc = recent_cor_total / recent_consumed` over de laatste `window_days` (default 90) — de recente gemiddelde kost per credit.
+2. **Formule:** `est_future_cost = deferred.credits × avg_cpc`, met `avg_cpc = recent_cor_total / recent_consumed` over de laatste `window_days` (default 90). **Sufficiency-guard:** bij `recent_consumed = 0` (en openstaande credits > 0) → `avg_cpc = NULL`, `est_future_cost = NULL`, vlag `est_data_sufficient = false` → UI toont **"insufficient data"**, NIET €0. (Was: `ELSE 0` → claimde gratis levering bij een stille maand.)
 3. **Bron:** `admin_finance_summary` roept `_geld_scope(scope, to − window, to)` → `cor.total` en `consumed_cr`.
 4. **Driver:** recente COR ÷ recent verbruik × openstaande credits (👁️).
 5. **Tijdstoewijzing:** stock (openstaande credits) × recente-flow-ratio.
-6. **Scope:** 🔴🟡 **aggregaat** — `avg_cpc` is scope-breed over het recente venster; mengt alle users' verbruiksmix. Als de openstaande credits een andere mix hebben dan het recente scope-gemiddelde, is de schatting scheef.
-7. **Aannames/zwakke plekken:** expliciet een **schatting**. Bij geen recent verbruik → `avg_cpc = 0` → €0 kostenschatting.
+6. **Scope:** aggregaat over het recente venster. **Beslist (audit-punt 2b):** de blended €/credit **is** de methode-mix-gewogen per-methode-eenheidskost — `Σcor_m/Σcredits = Σ(mix_m × unit_m)` — dus algebraïsch identiek aan "methode-mix"; de openstaande credits hebben zelf geen methode, en de recente consumptie is het enige mix-signaal. Granted-vs-purchased verandert de eenheidskost niet (een minuut AI kost hetzelfde), alleen de mix.
+7. **Aannames/zwakke plekken:** expliciet een **schatting** — de UI-hint zegt nu "assumes the same method mix + cache rate as the last N days". Wiebelt met het schuivende venster (goedkope credits vallen van de rand → tarief omhoog).
 
-### 4.4 Est. future gross
+### 4.4 Est. future gross — ✅ audit-fix (2026-07-15)
 1. **Naam:** "Est. future gross".
-2. **Formule:** `est_future_gross = deferred_balance − est_future_cost`.
-3. **Bron:** §4.1 − §4.3.
+2. **Formule:** `est_future_gross = deferred_balance − est_future_cost − deferred_fee`. **De deferred Stripe fee wordt nu óók afgetrokken** (fee is COR sinds ADR-063); was `deferred_balance − est_future_cost`. `NULL` als `est_data_sufficient = false`.
+3. **Bron:** §4.1 − §4.3 − deferred_fee (§4.2).
 4. **Driver:** afgeleid.
 5. **Tijdstoewijzing:** stock.
 6. **Scope:** erft §4.3.
-7. **Aannames/zwakke plekken:** schatting (erft §4.3).
+7. **Aannames/zwakke plekken:** schatting (erft §4.3). Live: `1,99 − 0,1757 − 0,2208 = 1,59`.
 
 ### 4.5 "last N days" / window
 `deferred.window_days` uit `finance_settings.deferred_window_days` (default 90). Config, geen berekening.
