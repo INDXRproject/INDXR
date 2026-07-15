@@ -9549,3 +9549,15 @@ Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/architecture/finance-audit.md
 ---
+[2026-07-15 23:13] commit: assets: transparante pakket-afbeeldingen (rembg-segmentatie, hexagons intact)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/public/packages/plus-1000.webp
+apps/app/public/packages/power-3000.webp
+apps/app/public/packages/starter-400.webp
+apps/app/public/packages/try-100.webp
+apps/marketing/public/packages/plus-1000.webp
+apps/marketing/public/packages/power-3000.webp
+apps/marketing/public/packages/starter-400.webp
+apps/marketing/public/packages/try-100.webp
+---
