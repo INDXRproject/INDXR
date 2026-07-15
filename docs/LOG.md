@@ -9440,3 +9440,15 @@ Settled suggereert een aftrekking die er niet is. Beslist: BTW-eerst-volgorde
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/priorities.md
 ---
+[2026-07-15 21:13] commit: docs(roadmap): F22 — Stripe fee hoort in COR (mee-deferren per lot), niet OPEX
+
+Payment processing is nu measured OPEX → gross margin 95,5% negeert 9–11%
+transactiekosten (fictie). SaaS-praktijk = COR ("gaat fee naar 0 als omzet naar 0?").
+Timing-valkuil: fee valt bij aankoop, COR bij verbruik → moet mee-deferren per lot
+(purchased_fee in _recognize_asof, recognized_fee). Effect live: marge 95,5%→84,4%,
+per tier verschillend (F16). Samenhang met F1 (per-lot, niet gepoold). Wijkt bewust
+af van Moneybird (dashboard=stuur, Moneybird=fiscale waarheid).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/priorities.md
+---
