@@ -9327,6 +9327,7 @@ supabase/migrations/20260715122324_admin_finance_summary_settlement_fee_breakdow
 supabase/migrations/20260715122517_geld_scope_vat_measured_null_fix.sql
 ---
 [2026-07-15 16:52] precompact: context compaction triggered
+[2026-07-15 18:30] taak: Finance — reconcile-guard per veld + Revenue-per-regio + betaalpogingen loggen + Radar-kosten + markt-scope ADR + jurisdictie-tabel + FAQ (7 punten). P1: reconcile skipt nu per veld (needFees/needSession/needInvoice), rapporteert per sale wat wél/niet bijgewerkt is → BTW/land-backfill vuurt nu ook op sales mét fees. P2: RevenueByRegion-kaart (NL/Other EU/International, landen bij naam = landguard-detectie). P3: payment_attempts-tabel + webhook charge.failed (rijk, screened) + payment_intent.payment_failed (charge-loos); Radar-block draagt outcome+rule op charge.failed, NIET op PI-event (Stripe-docs geverifieerd). P4: cost_config.radar_eur_per_screen(0.02)+radar_free_until(15-8); admin_finance_summary radar-OPEX "Fraud screening (Radar)" driver×tarief, external-only; bewezen screens=5/billable=2/fee=0.04. P5: ADR-062 markt-scope+guard (letterlijke Radar-regel). P6: tax-jurisdictions.md (CH=WERELDomzet ESTV-geverifieerd, GB NETP £0). P7: FAQ "Why can't I buy from my country". Advisors schoon (payment_attempts RLS-no-policy=intentioneel service-role). | gewijzigd: apps/app/src/app/api/admin/reconcile-stripe-fees/route.ts, apps/app/src/app/api/stripe/webhook/route.ts, apps/app/src/app/admin/finance/{FinanceView.tsx,financeTypes.ts}, supabase/migrations/20260715151000_payment_attempts_and_radar_rate.sql, 20260715151100_admin_finance_summary_radar_opex.sql, apps/marketing/src/app/docs/help/faq/page.tsx, docs/wiki/decisions/062-market-scope-and-country-guard.md, docs/wiki/business/tax-jurisdictions.md, docs/wiki/architecture/finance-number-provenance.md, docs/wiki/INDEX.md, docs/LESSONS.md
 [2026-07-15 17:20] taak: Finance — één BTW-bron + landuitsplitsing + backfill-mechaniek. `_sale_vat(m)->{vat,status}` als enige BTW-bron (tax_status='complete' → invoice_tax → unknown), aangeroepen door _geld_scope (vat+measured+vat_by_country) én _recognize_asof (net_lot) — fix: invoice_tax werd measured maar niet in net afgetrokken (omzet 21% te hoog). Per-land VAT-buckets NL/OSS/outside/unknown (expliciete EU-lidstatenlijst, GB=outside/Brexit). Dood `vat_known` verwijderd. Backfill van tax_status/customer_country/invoice_tax via gedeelde extractSessionTax in reconcile-pad (live-key vereist → admin-trigger, geen aankoop). Provenance §7: USD-simulatie was verzonnen+onmogelijk → P4 "rekenkundig geverifieerd, e2e open tot niet-EUR-sale"; US-B2C=€0 correct, UK-B2C=20% NETP openstaand. Bewezen 3 sales/2 users (vóór/ná) + buckets + advisors schoon. | gewijzigd: supabase/migrations/20260715143821_sale_vat_single_source.sql, 20260715143915_geld_scope_sale_vat_and_country.sql, 20260715144310_admin_finance_summary_vat_buckets.sql, apps/app/src/lib/stripe-fees.ts, apps/app/src/app/api/stripe/webhook/route.ts, apps/app/src/app/api/admin/reconcile-stripe-fees/route.ts, apps/app/src/app/admin/finance/{FinanceView.tsx,financeTypes.ts}, apps/app/src/app/admin/adminTypes.ts, docs/wiki/architecture/finance-number-provenance.md, docs/LESSONS.md
 [2026-07-15 16:58] commit: feat(finance): één BTW-bron (_sale_vat) + per-land VAT-buckets + backfill-mechaniek
 
@@ -9363,4 +9364,53 @@ docs/wiki/architecture/finance-number-provenance.md
 supabase/migrations/20260715143821_sale_vat_single_source.sql
 supabase/migrations/20260715143915_geld_scope_sale_vat_and_country.sql
 supabase/migrations/20260715144310_admin_finance_summary_vat_buckets.sql
+---
+[2026-07-15 18:09] commit: feat(finance): reconcile per-field + revenue-by-region + payment-attempt log + Radar OPEX + market-scope
+
+Zeven-punts markt-scope + fraud-guard taak.
+
+P1 — reconcile-guard per veld i.p.v. per sale. De route skipte een sale zodra
+fee_details bestond; de BTW/land-backfill erachter vuurde daardoor nooit (beide oude
+sales geskipt, backfill deed niets). Nu bepaalt elk veld zelf of het ontbreekt
+(needFees/needSession/needInvoice) en rapporteert de route per sale wat wél/niet is
+bijgewerkt.
+
+P2 — Revenue-by-region kaart (NL / Other EU / International, gross−vat=net + count),
+landen BIJ NAAM onder elke bucket: dat is de detectie dat de Radar-landguard nog werkt.
+
+P3 — payment_attempts-tabel + webhook charge.failed (rijk, outcome+rule inline,
+screened=true) + payment_intent.payment_failed (charge-loos, screened=false). Stripe-
+docs geverifieerd: een block MAAKT een failed charge → outcome+rule staan op
+charge.failed, NIET op het PI-event.
+
+P4 — cost_config.radar_eur_per_screen (0.02, RfFT standaard-pricing) + radar_free_until
+(2026-08-15). admin_finance_summary: measured OPEX "Fraud screening (Radar)" =
+billable_screens × tarief (successful+declined+blocked), external-only. Bewezen
+screens=5 / billable=2 / fee=0.04.
+
+P5 — ADR-062 markt-scope + guard (letterlijke Radar-regeltekst, billing_address_country,
+geen EU-landen, blocklist, geen webhook/frontend-guard).
+
+P6 — docs/wiki/business/tax-jurisdictions.md. CH-drempel = WERELDOMZET (ESTV geverifieerd,
+Art. 10 MWSTG), triggert rond ~CHF 100k globale omzet. GB = NETP £0 vanaf sale 1 (HMRC).
+
+P7 — FAQ "Why can't I buy from my country?" in docs/help/faq.
+
+Advisors schoon (payment_attempts RLS-no-policy = intentioneel service-role, als
+cost_config). Beide apps build groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+apps/app/src/app/api/admin/reconcile-stripe-fees/route.ts
+apps/app/src/app/api/stripe/webhook/route.ts
+apps/marketing/src/app/docs/help/faq/page.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/business/tax-jurisdictions.md
+docs/wiki/decisions/062-market-scope-and-country-guard.md
+supabase/migrations/20260715151000_payment_attempts_and_radar_rate.sql
+supabase/migrations/20260715151100_admin_finance_summary_radar_opex.sql
 ---

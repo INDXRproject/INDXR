@@ -95,6 +95,11 @@ const faqCategories: FAQCategory[] = [
         answer:
           "Credits are used for AI transcription (1 credit per minute) and AI summarization (3 credits per summary). Your credit balance is shown in your dashboard. View packages on our <a href='/pricing'>pricing page</a>.",
       },
+      {
+        question: "Why can't I buy from my country?",
+        answer:
+          "We're VAT-registered in the Netherlands and through the EU's One Stop Shop, which covers the EU. A few countries — including the UK and Switzerland — require a separate local VAT registration from the very first sale, with no minimum. Until we do that properly, we'd rather not sell to you than sell to you incorrectly. If you want access from your country, <a href='/contact'>email us</a> — enough interest and we'll register.",
+      },
     ],
   },
   {

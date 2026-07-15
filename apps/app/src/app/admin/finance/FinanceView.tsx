@@ -60,6 +60,22 @@ function profitTone(n: number): string {
   return n > 0 ? "text-success" : n < 0 ? "text-error" : "text-fg-strong"
 }
 
+// Same EU member-state list as admin_finance_summary (v_eu). EL = Greece alt-code. GB absent (Brexit).
+const EU_MEMBERS = new Set([
+  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "EL", "HU", "IE",
+  "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+])
+const REGION_NAMES =
+  typeof Intl !== "undefined" && "DisplayNames" in Intl ? new Intl.DisplayNames(["en"], { type: "region" }) : null
+function countryName(code: string): string {
+  if (code === "??") return "Unknown country"
+  try {
+    return REGION_NAMES?.of(code) ?? code
+  } catch {
+    return code
+  }
+}
+
 function StatementLine({
   label, value, accent, num, marginLabel, children,
 }: { label: string; value: string; accent?: "in" | "cost" | "profit"; num?: number; marginLabel?: string; children?: ReactNode }) {
@@ -156,6 +172,13 @@ function OpexTable({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLi
     : "Stripe fee · at sale"
   const measuredRows: { name: string; hint?: string; cost: number }[] = []
   if (m.stripe_fee > 0) measuredRows.push({ name: "Payment processing", hint: feeHint, cost: m.stripe_fee })
+  // Radar screent élke poging (successful+declined+blocked) à €rate; gratis t/m free_until. Driver zichtbaar.
+  const rd = m.radar
+  if (rd && rd.screens > 0) {
+    const trial = rd.free_until && rd.billable < rd.screens ? ` · free until ${rd.free_until}` : ""
+    const radarHint = `${rd.screens} screened (${rd.successful} ok · ${rd.declined} declined · ${rd.blocked} blocked) × ${eur(rd.rate, true)}${trial}`
+    measuredRows.push({ name: "Fraud screening (Radar)", hint: radarHint, cost: m.radar_fee })
+  }
   measuredRows.push({ name: "Goodwill — granted credits used", hint: "delivery of granted credits", cost: m.goodwill })
   measuredRows.push({ name: "Free-caption funnel — logged-in", hint: "measured per day", cost: m.funnel_loggedin })
   measuredRows.push({ name: "Free-caption funnel — anonymous", hint: "measured per day", cost: m.funnel_anon })
@@ -279,6 +302,77 @@ function BankBridge({ s }: { s: FinanceScope }) {
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+// Revenue split by region — the counterpart to the VAT buckets. Under VAT, "outside EU" is always €0
+// and empty; under Revenue it's the biggest number we have (a US €15 sale nets €15, an NL €12.40).
+// Countries are listed BY NAME under each bucket: that is our only detection that the Radar country-block
+// still works — if 'GB' (or any blocked country) shows up here, the guard stopped blocking.
+function RevenueByRegion({ s }: { s: FinanceScope }) {
+  type Row = { code: string; gross: number; vat: number; count: number; unknownVat: boolean }
+  type Bucket = { gross: number; vat: number; count: number; rows: Row[] }
+  const empty = (): Bucket => ({ gross: 0, vat: 0, count: 0, rows: [] })
+  const buckets: Record<"nl" | "eu" | "intl", Bucket> = { nl: empty(), eu: empty(), intl: empty() }
+
+  for (const [code, v] of Object.entries(s.vat_by_country)) {
+    const key = code === "NL" ? "nl" : EU_MEMBERS.has(code) ? "eu" : "intl"
+    const b = buckets[key]
+    b.gross += v.gross
+    b.vat += v.vat
+    b.count += v.count
+    b.rows.push({ code, gross: v.gross, vat: v.vat, count: v.count, unknownVat: v.unknown_vat })
+  }
+  for (const b of Object.values(buckets)) b.rows.sort((a, z) => z.gross - a.gross)
+
+  const meta: Record<"nl" | "eu" | "intl", string> = {
+    nl: "Netherlands",
+    eu: "Other EU",
+    intl: "International",
+  }
+  const anyRows = buckets.nl.count + buckets.eu.count + buckets.intl.count > 0
+
+  return (
+    <div className="rounded-xl border bg-surface p-5">
+      <h3 className="text-sm font-semibold">Revenue by region</h3>
+      <p className="mb-3 text-xs text-fg-muted">Net after VAT, by customer country. Same price, different take-home.</p>
+      {!anyRows ? (
+        <p className="text-xs text-fg-subtle">No sales in this period.</p>
+      ) : (
+        <div className="space-y-3 text-sm">
+          {(["nl", "eu", "intl"] as const).map((k) => {
+            const b = buckets[k]
+            if (b.count === 0) return null
+            const net = b.gross - b.vat
+            return (
+              <div key={k}>
+                <div className="flex justify-between font-medium">
+                  <span>{meta[k]} <span className="font-normal text-fg-subtle">· {b.count}</span></span>
+                  <span className="tabular-nums">{eur(net)}</span>
+                </div>
+                <div className="text-[11px] text-fg-subtle">
+                  gross {eur(b.gross)} − VAT {eur(b.vat)} = net {eur(net)}
+                </div>
+                <div className="mt-1 space-y-0.5 pl-3">
+                  {b.rows.map((r) => (
+                    <div key={r.code} className="flex justify-between text-[11px] text-fg-muted">
+                      <span>
+                        {countryName(r.code)} <span className="text-fg-subtle">· {r.count}</span>
+                        {r.unknownVat && <span className="ml-1 text-warning">⚠ vat unknown</span>}
+                      </span>
+                      <span className="tabular-nums">{eur(r.gross - r.vat)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+          <p className="border-t pt-2 text-[11px] text-fg-subtle">
+            Blocked countries (GB, CH, …) should never appear here — if one does, the Stripe Radar guard is off.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -471,6 +565,7 @@ export function FinanceView(props: Props) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <IncomeStatement s={scope} enteredLines={summary.entered_opex.lines} isExternal={isExternal} />
         <div className="space-y-4">
+          <RevenueByRegion s={scope} />
           <BankBridge s={scope} />
           <DeferredCard s={scope} />
         </div>

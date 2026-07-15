@@ -47,6 +47,90 @@ export async function POST(req: Request) {
     }
   }
 
+  // ── Mislukte/geblokkeerde pogingen loggen (kostendriver + landguard-detectie) ──────────────
+  // Radar-block MAAKT een failed Charge → charge.failed draagt `outcome` (incl. outcome.rule) INLINE;
+  // payment_intent.payment_failed draagt dat NIET (outcome zou een charge-retrieve vergen). Daarom:
+  //   charge.failed              → rijke rij, screened=true (Radar heeft echt gescreend)
+  //   payment_intent.payment_failed → alleen als er GEEN charge is (pre-charge failure), screened=false
+  // Best-effort: nooit een non-200 op een logfout (anders retryt Stripe eindeloos).
+  if (event.type === 'charge.failed') {
+    const charge = event.data.object as Stripe.Charge
+    try {
+      const admin = createAdminClient()
+      const outcome = charge.outcome
+      // De Radar-rule is in de webhook een bare ID; expanded een object {id, predicate}. Geen SDK-type → lokale shape.
+      const asRule = (r: unknown): { id?: string; predicate?: string | null } | null =>
+        r && typeof r === 'object' ? (r as { id?: string; predicate?: string | null }) : null
+      let rulePredicate: string | null = null
+      let ruleId: string | null =
+        outcome && typeof outcome.rule === 'string' ? outcome.rule
+        : asRule(outcome?.rule)?.id ?? null
+      const inlineRule = asRule(outcome?.rule)
+      if (inlineRule) {
+        rulePredicate = inlineRule.predicate ?? null
+      } else if (ruleId) {
+        // predicate zit niet in de webhook-payload → best-effort expand voor de leesbare regeltekst.
+        try {
+          const full = await stripe.charges.retrieve(charge.id, { expand: ['outcome.rule'] })
+          const r = asRule(full.outcome?.rule)
+          if (r) { ruleId = r.id ?? ruleId; rulePredicate = r.predicate ?? null }
+        } catch { /* expand best-effort */ }
+      }
+      await admin.from('payment_attempts').upsert({
+        occurred_at: new Date(charge.created * 1000).toISOString(),
+        stripe_charge_id: charge.id,
+        stripe_payment_intent_id: typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id ?? null,
+        outcome_type: outcome?.type ?? null,
+        outcome_reason: outcome?.reason ?? null,
+        outcome_rule: ruleId,
+        outcome_rule_predicate: rulePredicate,
+        risk_level: outcome?.risk_level ?? null,
+        billing_address_country: charge.billing_details?.address?.country ?? null,
+        payment_method_type: charge.payment_method_details?.type ?? null,
+        decline_code: charge.failure_code ?? null,
+        amount: charge.amount != null ? charge.amount / 100 : null,
+        currency: charge.currency ?? null,
+        screened: true,
+        user_id: (charge.metadata?.userId as string | undefined) ?? null,
+        raw: { outcome: outcome ?? null, failure_message: charge.failure_message ?? null },
+      }, { onConflict: 'stripe_charge_id' })
+    } catch (e) {
+      Sentry.captureException(e, { level: 'warning', tags: { route: 'api/stripe/webhook', step: 'charge_failed_log' }, extra: { charge_id: charge.id } })
+    }
+    return new NextResponse(null, { status: 200 })
+  }
+
+  if (event.type === 'payment_intent.payment_failed') {
+    const pi = event.data.object as Stripe.PaymentIntent
+    const lpe = pi.last_payment_error
+    // Charge bestaat al → charge.failed heeft (rijker) gelogd; niet dubbel loggen.
+    const hasCharge = lpe?.charge != null
+    if (!hasCharge) {
+      try {
+        const admin = createAdminClient()
+        const pm = lpe?.payment_method
+        await admin.from('payment_attempts').insert({
+          occurred_at: new Date(event.created * 1000).toISOString(),
+          stripe_charge_id: null,
+          stripe_payment_intent_id: pi.id,
+          outcome_type: null, // geen charge → geen Radar-outcome
+          outcome_reason: lpe?.code ?? null,
+          decline_code: lpe?.decline_code ?? null,
+          billing_address_country: pm?.billing_details?.address?.country ?? null,
+          payment_method_type: pm?.type ?? null,
+          amount: pi.amount != null ? pi.amount / 100 : null,
+          currency: pi.currency ?? null,
+          screened: false, // pre-charge failure → niet door Radar gescreend, telt niet in de Radar-fee
+          user_id: (pi.metadata?.userId as string | undefined) ?? null,
+          raw: { last_payment_error: lpe ? { code: lpe.code, decline_code: lpe.decline_code, message: lpe.message } : null },
+        })
+      } catch (e) {
+        Sentry.captureException(e, { level: 'warning', tags: { route: 'api/stripe/webhook', step: 'pi_failed_log' }, extra: { pi_id: pi.id } })
+      }
+    }
+    return new NextResponse(null, { status: 200 })
+  }
+
   const session = event.data.object as Stripe.Checkout.Session
 
   if (event.type === 'checkout.session.completed') {

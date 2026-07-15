@@ -201,6 +201,15 @@ Zelfde mechaniek als §1.2, maar `delta(revenue_delivered_now, revenue_delivered
 6. **Scope:** aggregaat per scope (join op `profiles.is_internal`). Correct.
 7. **Aannames/zwakke plekken:** 🟡 de `balance_transaction` settle't async → een net-verkochte charge kan nog `stripe_fee=0` hebben tot het reconcile-pad (`/api/admin/reconcile-stripe-fees`) draait. De on-demand **invoicing-fee** zit hier NIET in (out-of-band factuur, ADR-053) → hoort als aparte **entered**-regel, niet stilzwijgend €0.
 
+### 2.14b OPEX-rij: Fraud screening (Radar)
+1. **Naam:** "Fraud screening (Radar)" (alleen getoond als `radar.screens > 0`).
+2. **Formule:** `radar_fee = billable_screens × cfg.radar_eur_per_screen`, waarbij `screens = geslaagde charges (credit_transactions) + gescreende mislukte pogingen (payment_attempts.screened)` en `billable = screens met datum ≥ cfg.radar_free_until` (free-trial-pogingen tellen niet).
+3. **Bron:** `payment_attempts` (mislukt/geblokkeerd, gelogd op `charge.failed`) + `credit_transactions` (geslaagd); tarief uit `cost_config.radar_eur_per_screen` (RfFT standaard-pricing €0,02) + `radar_free_until` (2026-08-15).
+4. **Driver:** aantal gescreende pogingen, uitgesplitst `successful · declined · blocked`, × tarief — **volledig zichtbaar** in de hint (bv. "12 screened (9 ok · 2 declined · 1 blocked) × €0,02 · free until 2026-08-15").
+5. **Tijdstoewijzing:** flow op poging-/verkoopdatum. **Nooit COR** (fraudekost valt bij de poging, niet bij levering).
+6. **Scope:** business-wide → **alleen external** (geblokkeerde/mislukte pogingen zijn niet aan een user te koppelen; toggle mag niet dubbeltellen). Internal = €0.
+7. **Aannames/zwakke plekken:** 🟡 de `radar_free_until` (2026-08-15) is een door de eigenaar opgegeven free-trial-einddatum, geen gemeten waarde. **Controlemogelijkheid (niet gebouwd):** reconcileerbaar tegen Stripe's **Fees report** (Reports → All Fees), die data toont **96u** na balans-impact — daar staan de echte Radar-per-screen-fees. Base-Radar-ML is gratis; de €0,02 is het Radar-for-Fraud-Teams standaard-pricing-tarief (custom rules vereisen RfFT). Detectie dat de landguard werkt: `blocked`-pogingen verschijnen hier én landen-bij-naam in Revenue-by-region (ADR-062).
+
 ### 2.15 OPEX-rijen: entered (infra / ads / eenmalig)
 1. **Naam:** de ingevoerde categorieën (bv. "Infrastructure", "Ads") met hint "€300 / month · 14 of 31 days".
 2. **Formule (`opex_accrual`):**

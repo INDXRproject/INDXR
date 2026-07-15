@@ -49,6 +49,17 @@ export interface FinanceScope {
     funnel_anon: number
     stripe_fee: number
     stripe_fee_by_type: Record<string, number>
+    radar_fee: number
+    radar: {
+      screens: number
+      billable: number
+      successful: number
+      declined: number
+      blocked: number
+      rate: number
+      free_until: string | null
+      fee: number
+    }
     total: number
   }
   entered_opex_total: number
