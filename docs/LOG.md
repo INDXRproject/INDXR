@@ -9431,3 +9431,12 @@ dashboard — post-money-model follow-up":
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/priorities.md
 ---
+[2026-07-15 21:07] commit: docs(roadmap): F4 uitbreiden — bankkaart "Where the cash sits" (BTW-eerst-volgorde + Yours to keep)
+
+Zelfde flow/stock-foutklasse als de hero zit in de bankkaart: Revenue ex-VAT onder
+Settled suggereert een aftrekking die er niet is. Beslist: BTW-eerst-volgorde
+(charged − VAT = revenue ex-VAT − fee = Yours to keep), Settled als los bankafschrift.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/priorities.md
+---
