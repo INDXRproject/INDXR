@@ -8,6 +8,14 @@ export interface FinanceCor {
   storage: number
   measured_total: number
   against_revenue: number
+  // per-method against-revenue (gross × purchased_share); sums to against_revenue → COR table reconciles.
+  against_revenue_by_method: {
+    ai_transcription: number
+    caption: number
+    ai_summary: number
+    rag: number
+    storage: number
+  }
 }
 
 export interface CacheSaving {
@@ -23,6 +31,8 @@ export interface FinanceScope {
   deferred_balance: number
   credits_sold: number
   credits_consumed: number
+  consumed_by_type: { ai_transcription: number; caption: number; ai_summary: number; rag: number }
+  purchased_share: number
   balance_cr: number
   cor: FinanceCor
   gross_profit: number

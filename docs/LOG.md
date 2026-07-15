@@ -9145,3 +9145,43 @@ docs/LOG.md
 docs/wiki/business/pricing.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-15 14:20] taak: Finance-tab 5 verfijnpunten | P1 chronologische omzet-recognitie (ADR-061): retroactieve-clawback-bug (grant ná verbruik at erkende omzet op) bewezen reversibel (recognized €2,50→€0,00) → vervangen door FIFO purchase-lots + granted-first per verbruiksmoment (`_recognize_asof`), ná-fix bewijs recognized €2,50→€2,50 (blijft) + snapshot-onaantastbaarheid (as-of 11 jul blijft €2,50 ondanks grant 14 jul); advisors schoon; `admin_geld_summary` bewust niet-byte-identiek (correctheids-fix, enige caller admin/page.tsx). P2 COR-regel sluit met breakdown: `admin_finance_summary` exposeert per-method `against_revenue_by_method` (gross×share) + `purchased_share` + `consumed_by_type` → Σ breakdown == COR-regel (bewezen share=0 én share=0,5: gross €0,0322 → line €0,0161 == Σ €0,0161, goodwill €0,0161 = granted-helft), granted-levering zichtbaar als goodwill-regel in OPEX. P3 COR-breakdown = 4-koloms tabel (Method·Cost·Credits·€/credit) met cache-subregel, OPEX-tabel (Category·Source·Cost). P4 kleur: delivered/deferred = amber-accent (accent / accent/40), geen groen; net/gross profit sign-gekleurd (groen alleen positief, rood negatief); revenue neutraal. P5 test/intern-toggle wisselt scope IN PLAATS (één scope tegelijk, quiet header-badge), tweede kopie eronder verwijderd. Build app groen. | gewijzigd: supabase/migrations/20260715101920_chronological_recognition.sql (nieuw), supabase/migrations/20260715102400_admin_finance_summary_cor_reconcile.sql (nieuw), apps/app/src/app/admin/finance/FinanceView.tsx, apps/app/src/app/admin/finance/financeTypes.ts, docs/wiki/decisions/061-chronological-revenue-recognition.md (nieuw), docs/wiki/INDEX.md, docs/LESSONS.md
+[2026-07-15 12:39] commit: feat(finance): chronologische omzet-recognitie (fix clawback) + COR-tabel sluit + kleur/scope-toggle
+
+5 verfijnpunten op de Finance-tab:
+
+P1 — CHRONOLOGISCHE RECOGNITIE (ADR-061, financieel kritiek). De cumulatieve
+granted-first pooling had een retroactieve clawback: een goodwill-grant NÁ
+aankoop+verbruik verlaagde de al-erkende omzet zonder refund. Bewezen reversibel
+(recognized €2,50→€0,00). Vervangen door FIFO purchase-lots + granted-first per
+verbruiksmoment (`_recognize_asof`); ná-fix blijft recognized €2,50→€2,50 en een
+grant van vandaag raakt het verleden/bevroren snapshots niet. `admin_geld_summary`
+verandert bewust (correctheids-fix, enige caller admin/page.tsx).
+
+P2 — COR-REGEL SLUIT MET BREAKDOWN. `admin_finance_summary` exposeert per-method
+`against_revenue_by_method` (gross×share) + `purchased_share` + `consumed_by_type`;
+Σ breakdown == COR-regel (bewezen share=0 én 0,5), granted-levering zichtbaar als
+goodwill-regel in OPEX i.p.v. onverklaarde gap.
+
+P3 — COR-breakdown = 4-koloms tabel (Method·Cost·Credits·€/credit) + cache-subregel;
+OPEX = tabel (Category·Source·Cost).
+
+P4 — kleur: delivered/deferred = amber-accent (accent / accent/40), geen groen;
+net/gross profit sign-gekleurd (groen alleen positief, rood negatief); revenue neutraal.
+
+P5 — test/intern-toggle wisselt scope IN PLAATS (één scope tegelijk, quiet header-badge);
+de tweede kopie eronder is weg.
+
+Migraties via Supabase MCP; build app groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/credit-system.md
+docs/wiki/decisions/061-chronological-revenue-recognition.md
+supabase/migrations/20260715101920_chronological_recognition.sql
+supabase/migrations/20260715102400_admin_finance_summary_cor_reconcile.sql
+---

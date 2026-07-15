@@ -4,7 +4,7 @@ import { useState, useMemo, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { Switch } from "@indxr/shared/components/ui/switch"
 import { eur, pct, TYPE_META } from "../adminTypes"
-import type { FinanceSummary, FinanceScope, SnapshotRow, ExpenseRow, CostConfigRow } from "./financeTypes"
+import type { FinanceSummary, FinanceScope, SnapshotRow, ExpenseRow, CostConfigRow, EnteredOpexLine } from "./financeTypes"
 import { shiftAnchor, type PeriodKind } from "./periods"
 import { accrualForRange } from "./accrual"
 import { FinanceSettings } from "./SettingsDialog"
@@ -55,10 +55,18 @@ function SplitBar({ segments }: { segments: { value: number; cls: string; title:
   )
 }
 
+// Green is reserved for POSITIVE profit only. Revenue is neutral; costs are red; profit is sign-coloured.
+function profitTone(n: number): string {
+  return n > 0 ? "text-success" : n < 0 ? "text-error" : "text-fg-strong"
+}
+
 function StatementLine({
-  label, value, accent, marginLabel, children,
-}: { label: string; value: string; accent?: "in" | "cost" | "profit"; marginLabel?: string; children?: ReactNode }) {
-  const color = accent === "in" ? "text-success" : accent === "cost" ? "text-error" : "text-fg-strong"
+  label, value, accent, num, marginLabel, children,
+}: { label: string; value: string; accent?: "in" | "cost" | "profit"; num?: number; marginLabel?: string; children?: ReactNode }) {
+  const color =
+    accent === "cost" ? "text-error"
+    : accent === "profit" ? profitTone(num ?? 0)
+    : "text-fg-strong"
   return (
     <div className="rounded-xl border bg-surface p-5">
       <div className="flex items-baseline justify-between gap-4">
@@ -83,13 +91,111 @@ function Op({ text }: { text: string }) {
   )
 }
 
-function IncomeStatement({ s }: { s: FinanceScope }) {
-  const [corOpen, setCorOpen] = useState(false)
-  const [opexOpen, setOpexOpen] = useState(false)
+// A source pill: "measured" (auto) vs "entered" (Khidr).
+function Src({ kind }: { kind: "measured" | "entered" }) {
+  return kind === "entered"
+    ? <span className="rounded bg-accent-subtle px-1.5 py-0.5 text-[10px] font-medium text-accent-fg">entered</span>
+    : <span className="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">measured</span>
+}
+
+const COR_METHODS = ["ai_transcription", "caption", "ai_summary", "rag"] as const
+
+// COR breakdown drawn as a 4-column table (Method · Cost · Credits · €/credit) — per the mockup.
+// Cost = against-revenue portion per method (Σ == the COR line above); €/credit = true gross unit cost.
+function CorTable({ s }: { s: FinanceScope }) {
   const cor = s.cor
-  const opexTotal = s.measured_opex.total + s.entered_opex_total
   const aiCache = s.cache_savings.ai_transcription
   const capCache = s.cache_savings.caption
+  const cacheSub: Partial<Record<(typeof COR_METHODS)[number], string | null>> = {
+    ai_transcription: aiCache.total_jobs > 0 ? `${pct(aiCache.pct)} from cache · saved ${eur(aiCache.saved_eur, true)}` : null,
+    caption: capCache.total_count > 0 ? `${pct(capCache.pct)} from cache · saved ${eur(capCache.saved_eur, true)}` : null,
+  }
+  return (
+    <div className="mt-1 rounded-lg border bg-surface-sunken/40">
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-5 border-b px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
+        <span>Method</span><span className="text-right">Cost</span><span className="text-right">Credits</span><span className="text-right">€ / credit</span>
+      </div>
+      {COR_METHODS.map((k) => {
+        const credits = s.consumed_by_type[k]
+        const unit = credits > 0 ? cor[k] / credits : 0
+        return (
+          <div key={k} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
+            <div className="flex flex-col gap-0.5">
+              <span className={`w-fit rounded-full px-2 py-0.5 font-medium ${TYPE_META[k].bg} ${TYPE_META[k].text}`}>{TYPE_META[k].label}</span>
+              {cacheSub[k] && <span className="text-[11px] text-fg-subtle">{cacheSub[k]}</span>}
+            </div>
+            <span className="text-right font-semibold tabular-nums text-fg">{eur(cor.against_revenue_by_method[k], true)}</span>
+            <span className="text-right tabular-nums text-fg-muted">{credits.toLocaleString()}</span>
+            <span className="text-right tabular-nums text-fg-muted">{credits > 0 ? eur(unit, true) : "—"}</span>
+          </div>
+        )
+      })}
+      {/* storage — a quiet row, no per-credit unit */}
+      <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
+        <span className="w-fit rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning-fg">Storage (R2)</span>
+        <span className="text-right font-semibold tabular-nums text-fg">{eur(cor.against_revenue_by_method.storage, true)}</span>
+        <span className="text-right tabular-nums text-fg-muted">—</span>
+        <span className="text-right tabular-nums text-fg-muted">—</span>
+      </div>
+      <p className="border-t px-3 py-2 text-[11px] text-fg-subtle">
+        Playlists spend credits through these same methods, so they have no separate line. Credits by source lives in Operations.
+      </p>
+    </div>
+  )
+}
+
+// OPEX drawn as a table (Category · Source · Cost). Goodwill (granted-credit delivery) is a visible row here,
+// not an unexplained gap between the COR line and its breakdown.
+function OpexTable({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
+  const m = s.measured_opex
+  const measuredRows: { name: string; hint?: string; cost: number }[] = []
+  if (m.stripe_fee > 0) measuredRows.push({ name: "Payment processing", hint: "Stripe fee · at sale", cost: m.stripe_fee })
+  measuredRows.push({ name: "Goodwill — granted credits used", hint: "delivery of granted credits", cost: m.goodwill })
+  measuredRows.push({ name: "Free-caption funnel — logged-in", hint: "measured per day", cost: m.funnel_loggedin })
+  measuredRows.push({ name: "Free-caption funnel — anonymous", hint: "measured per day", cost: m.funnel_anon })
+
+  return (
+    <div className="mt-1 rounded-lg border bg-surface-sunken/40">
+      <div className="grid grid-cols-[1fr_auto_auto] gap-x-5 border-b px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
+        <span>Category</span><span className="text-center">Source</span><span className="text-right">Cost</span>
+      </div>
+      {isExternal && enteredLines.map((l) => {
+        const hint = l.recurrence === "monthly"
+          ? `${eur(l.amount)} / month · ${l.days_applied} of ${l.days_total} days`
+          : l.description || `${l.days_applied} day${l.days_applied === 1 ? "" : "s"}`
+        return (
+          <div key={l.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium capitalize text-fg">{l.category}</span>
+              <span className="text-[11px] text-fg-subtle">{hint}</span>
+            </div>
+            <span className="text-center"><Src kind="entered" /></span>
+            <span className="text-right font-semibold tabular-nums text-fg">{eur(l.period_amount)}</span>
+          </div>
+        )
+      })}
+      {measuredRows.map((r) => (
+        <div key={r.name} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-medium text-fg">{r.name}</span>
+            {r.hint && <span className="text-[11px] text-fg-subtle">{r.hint}</span>}
+          </div>
+          <span className="text-center"><Src kind="measured" /></span>
+          <span className="text-right font-semibold tabular-nums text-fg">{eur(r.cost, true)}</span>
+        </div>
+      ))}
+      <p className="border-t px-3 py-2 text-[11px] text-fg-subtle">
+        Entered costs carry their own dates, sliced to the period. Measured costs come from actual daily usage.
+      </p>
+    </div>
+  )
+}
+
+function IncomeStatement({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
+  const [corOpen, setCorOpen] = useState(true)
+  const [opexOpen, setOpexOpen] = useState(true)
+  const cor = s.cor
+  const opexTotal = s.measured_opex.total + (isExternal ? s.entered_opex_total : 0)
 
   return (
     <div>
@@ -102,44 +208,15 @@ function IncomeStatement({ s }: { s: FinanceScope }) {
       <Op text={`− COR ${eur(cor.against_revenue, true)}`} />
 
       <StatementLine label="Cost of revenue" value={eur(cor.against_revenue, true)} accent="cost">
-        <SplitBar segments={[
-          { value: cor.ai_transcription, cls: TYPE_META.ai_transcription.bar, title: "AI transcription" },
-          { value: cor.caption, cls: TYPE_META.caption.bar, title: "Auto-captions" },
-          { value: cor.ai_summary, cls: TYPE_META.ai_summary.bar, title: "AI summary" },
-          { value: cor.rag, cls: TYPE_META.rag.bar, title: "RAG" },
-          { value: cor.storage, cls: "bg-warning", title: "Storage" },
-        ]} />
         <button onClick={() => setCorOpen((v) => !v)} className="text-xs text-accent hover:underline">
           {corOpen ? "Hide breakdown" : "Show breakdown per method"}
         </button>
-        {corOpen && (
-          <div className="grid gap-1.5 text-xs sm:grid-cols-2">
-            {(["ai_transcription", "caption", "ai_summary", "rag"] as const).map((k) => (
-              <span key={k} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${TYPE_META[k].bg} ${TYPE_META[k].text} w-fit`}>
-                {TYPE_META[k].label} {eur(cor[k], true)}
-              </span>
-            ))}
-            <span className="inline-flex items-center gap-1 rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning w-fit">
-              Storage {eur(cor.storage, true)}
-            </span>
-            {/* cache savings only on AI-transcription + auto-captions (both really flagged) */}
-            {aiCache.total_jobs > 0 && (
-              <span className="text-fg-muted">
-                AI transcription: <span className="font-semibold text-fg">{pct(aiCache.pct)}</span> from cache · saved {eur(aiCache.saved_eur, true)}
-              </span>
-            )}
-            {capCache.total_count > 0 && (
-              <span className="text-fg-muted">
-                Auto-captions: <span className="font-semibold text-fg">{pct(capCache.pct)}</span> from cache · saved {eur(capCache.saved_eur, true)}
-              </span>
-            )}
-          </div>
-        )}
+        {corOpen && <CorTable s={s} />}
       </StatementLine>
 
       <div className="relative py-2"><div className="absolute left-1/2 -top-1 h-1 w-px bg-border" /></div>
 
-      <StatementLine label="Gross profit" value={eur(s.gross_profit)} accent="profit" marginLabel={`margin ${pct(s.gross_margin)}`}>
+      <StatementLine label="Gross profit" value={eur(s.gross_profit)} accent="profit" num={s.gross_profit} marginLabel={`margin ${pct(s.gross_margin)}`}>
         <p className="text-xs text-fg-muted">Delivered revenue − cost of revenue (incl. storage)</p>
       </StatementLine>
 
@@ -149,35 +226,12 @@ function IncomeStatement({ s }: { s: FinanceScope }) {
         <button onClick={() => setOpexOpen((v) => !v)} className="text-xs text-accent hover:underline">
           {opexOpen ? "Hide breakdown" : "Show breakdown"}
         </button>
-        {opexOpen && (
-          <div className="space-y-1 text-xs text-fg-muted">
-            <div className="flex justify-between">
-              <span>Payment processing <span className="rounded bg-surface-sunken px-1 text-[10px]">measured</span></span>
-              <span className="font-semibold text-fg">{eur(s.measured_opex.stripe_fee)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Granted-credit delivery (goodwill) <span className="rounded bg-surface-sunken px-1 text-[10px]">measured</span></span>
-              <span className="font-semibold text-fg">{eur(s.measured_opex.goodwill, true)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Free-caption funnel · logged-in <span className="rounded bg-surface-sunken px-1 text-[10px]">measured</span></span>
-              <span className="font-semibold text-fg">{eur(s.measured_opex.funnel_loggedin, true)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Free-caption funnel · anon <span className="rounded bg-surface-sunken px-1 text-[10px]">measured</span></span>
-              <span className="font-semibold text-fg">{eur(s.measured_opex.funnel_anon, true)}</span>
-            </div>
-            <div className="flex justify-between border-t pt-1">
-              <span>Entered (infra / ads / one-off) <span className="rounded bg-accent-subtle px-1 text-[10px] text-accent">entered</span></span>
-              <span className="font-semibold text-fg">{eur(s.entered_opex_total)}</span>
-            </div>
-          </div>
-        )}
+        {opexOpen && <OpexTable s={s} enteredLines={enteredLines} isExternal={isExternal} />}
       </StatementLine>
 
       <div className="relative py-2"><div className="absolute left-1/2 -top-1 h-1 w-px bg-border" /></div>
 
-      <StatementLine label="Net profit" value={eur(s.net_profit)} accent="profit" marginLabel={`margin ${pct(s.net_margin)}`}>
+      <StatementLine label="Net profit" value={eur(s.net_profit)} accent="profit" num={s.net_profit} marginLabel={`margin ${pct(s.net_margin)}`}>
         <p className="text-xs text-fg-muted">Gross profit − operating expenses</p>
       </StatementLine>
     </div>
@@ -318,8 +372,11 @@ export function FinanceView(props: Props) {
   const { summary, comparison, snapshots, expenses, costConfig, deferredWindowDays, period, generatedAt } = props
   const router = useRouter()
   const [showTest, setShowTest] = useState(false)
-  const scope: FinanceScope = summary.external
-  const cmp = comparison?.external ?? null
+  // In-place scope swap: the whole view shows ONE scope at a time, figures swap in place.
+  const isExternal = !showTest
+  const scopeKey: "external" | "internal" = isExternal ? "external" : "internal"
+  const scope: FinanceScope = summary[scopeKey]
+  const cmp = comparison?.[scopeKey] ?? null
   const netDelta = cmp ? delta(scope.net_profit, cmp.net_profit) : null
   const revDelta = cmp ? delta(scope.revenue_delivered, cmp.revenue_delivered) : null
   const updated = useMemo(() => new Date(generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), [generatedAt])
@@ -329,12 +386,21 @@ export function FinanceView(props: Props) {
       {/* header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Finance</h1>
-          <p className="text-sm text-fg-muted">Real economy · internal/test accounts excluded</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">Finance</h1>
+            {!isExternal && (
+              <span className="rounded-full border border-warning-border bg-warning-subtle px-2 py-0.5 text-[11px] font-medium text-warning-fg">
+                internal / test scope
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-fg-muted">
+            {isExternal ? "Real economy · internal/test accounts excluded" : "Test traffic only · not the real economy · entered costs excluded"}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 text-xs text-fg-muted">
-            <span className="inline-block h-2 w-2 rounded-full bg-success" /> Live · updated {updated}
+            <span className="inline-block h-2 w-2 rounded-full bg-accent" /> Live · updated {updated}
           </span>
           <button onClick={() => router.refresh()} className="rounded-md border px-2.5 py-1 text-sm hover:bg-surface-elevated">Refresh</button>
           <FinanceSettings expenses={expenses} costConfig={costConfig} deferredWindowDays={deferredWindowDays} enteredLines={summary.entered_opex.lines} />
@@ -354,8 +420,8 @@ export function FinanceView(props: Props) {
         <div className="rounded-xl border bg-surface p-5">
           <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">Net profit</span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-3xl font-bold tabular-nums text-fg-strong">{eur(scope.net_profit)}</span>
-            {netDelta && <span className={`text-sm font-medium ${netDelta.up ? "text-success" : "text-error"}`}>{netDelta.txt}</span>}
+            <span className={`text-3xl font-bold tabular-nums ${profitTone(scope.net_profit)}`}>{eur(scope.net_profit)}</span>
+            {netDelta && <span className={`text-sm font-medium ${netDelta.up ? "text-accent" : "text-error"}`}>{netDelta.txt}</span>}
           </div>
           <p className="mt-1 text-xs text-fg-muted">vs same elapsed days last period</p>
         </div>
@@ -363,47 +429,31 @@ export function FinanceView(props: Props) {
           <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">Revenue</span>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-3xl font-bold tabular-nums text-fg-strong">{eur(scope.revenue_delivered + scope.deferred_balance)}</span>
-            {revDelta && <span className={`text-sm font-medium ${revDelta.up ? "text-success" : "text-error"}`}>{revDelta.txt}</span>}
+            {revDelta && <span className={`text-sm font-medium ${revDelta.up ? "text-accent" : "text-error"}`}>{revDelta.txt}</span>}
           </div>
           <div className="mt-2">
             <SplitBar segments={[
-              { value: scope.revenue_delivered, cls: "bg-success", title: "Delivered" },
-              { value: scope.deferred_balance, cls: "bg-warning", title: "Deferred" },
+              { value: scope.revenue_delivered, cls: "bg-accent", title: "Delivered" },
+              { value: scope.deferred_balance, cls: "bg-accent/40", title: "Deferred" },
             ]} />
             <div className="mt-1 flex gap-4 text-[11px] text-fg-muted">
-              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-success align-middle" />Delivered {eur(scope.revenue_delivered)}</span>
-              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-warning align-middle" />Deferred {eur(scope.deferred_balance)}</span>
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent align-middle" />Delivered {eur(scope.revenue_delivered)}</span>
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent/40 align-middle" />Deferred {eur(scope.deferred_balance)}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* income statement + cards */}
+      {/* income statement + cards — one scope in place */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <IncomeStatement s={scope} />
+        <IncomeStatement s={scope} enteredLines={summary.entered_opex.lines} isExternal={isExternal} />
         <div className="space-y-4">
           <BankBridge s={scope} />
           <DeferredCard s={scope} />
         </div>
       </div>
 
-      <Trend snapshots={snapshots} scope="external" expenses={expenses} />
-
-      {showTest && (
-        <div className="rounded-xl border border-dashed bg-surface-sunken p-4">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wider text-fg-muted">
-            Internal / test traffic — excluded from the real economy (entered costs shown once on external only)
-          </p>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <IncomeStatement s={summary.internal} />
-            <div className="space-y-4">
-              <BankBridge s={summary.internal} />
-              <DeferredCard s={summary.internal} />
-            </div>
-          </div>
-          <div className="mt-4"><Trend snapshots={snapshots} scope="internal" expenses={expenses} /></div>
-        </div>
-      )}
+      <Trend snapshots={snapshots} scope={scopeKey} expenses={expenses} />
     </div>
   )
 }
