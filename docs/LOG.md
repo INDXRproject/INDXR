@@ -9523,3 +9523,29 @@ docs/LOG.md
 docs/wiki/architecture/finance-number-provenance.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-15 22:05] finance-audit: read-only audit van elk /admin/finance-getal → nieuw docs/wiki/architecture/finance-audit.md (naast provenance). Per getal: letterlijke formule + live waarde (internal juli+all-time) + verdict JA/NEE/weet-niet mét rekensom. Tally 25 JA / 4 NEE / 2 weet-niet. NEE: est_cost_to_deliver + est_future_gross (avg_cpc=0 bij 0-verbruik → gratis levering; blended tarief ≠ deferred-mix), COR rag (v_cor_rag hard 0), Radar screen-count (geen is_internal-filter → interne sales lekken in externe scope). Verdacht #1 (hero-delta): LABEL klopt, F11 stale voor month-to-date (compareTo=prev.from+elapsed, beide vensters 14d 20:55) — caveat afgeronde periodes. vat_owed 1,22 via reconcile-veld invoice_tax (Stripe amount_tax=0), 1-ct per-sale-afronding vs 1,21 aggregaat. Externe/echte-economie-scope leeg. Geen fixes. | gewijzigd: docs/wiki/architecture/finance-audit.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
+[2026-07-15 23:05] commit: docs(finance): finance-audit.md — klopt elk Finance-getal? (read-only)
+
+Per getal in /admin/finance: letterlijke formule (pg_get_functiondef / tsx),
+live waarde (internal scope, juli-2026 + all-time), en verdict JA/NEE/weet-niet
+mét de rekensom die het aantoont. Naast provenance (wat de code doet) zegt dit
+of het antwoord klopt.
+
+Tally: 25 JA / 4 NEE / 2 weet-niet.
+NEE: est_cost_to_deliver + est_future_gross (avg_cpc=0 bij 0-verbruik → claimt
+gratis levering; blended tarief i.p.v. deferred-mix), COR rag (v_cor_rag hard 0),
+Radar screen-count (geen is_internal-filter → interne testsales lekken in de
+externe scope).
+
+Verdacht #1 (hero-delta): het LABEL "vs same elapsed days" klopt — beide vensters
+14d 20:55:40 (compareTo=prev.from+elapsed); F11 is stale voor month-to-date.
+Verdacht #2 (est_*): basis breekt bij 0-verbruik. Extra: vat_owed komt uit
+reconcile-veld invoice_tax (Stripe amount_tax=0) met 1-ct per-sale-afronding.
+
+Geen migraties, geen code, geen fixes.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/finance-audit.md
+---
