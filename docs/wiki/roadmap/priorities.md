@@ -314,6 +314,54 @@ Vier items die tot nu toe buiten de PVA vielen. Alleen *wat* + launch-relevantie
 - [ ] **1.37 — "Cache savings"-cijfer in Finance (model-toevoeging)** — **Finance-ontwerp (Claude Desktop), niet-blocker**
   De `usage_logs.cache_hit`-vlag + `proxy_bytes=0` (ADR-057, Blok A) maken het mogelijk een **cache-besparing** af te leiden = wat cache-hits ons bespaard hebben (gem. kost-per-type × credits/omvang van cache-hit-jobs t.o.v. wat een miss zou hebben gekost). **Belangrijk principe:** credits worden bij een cache-hit **ALTIJD normaal afgerekend** (geen hiaten voor de user) — alleen de **KOST** is €0, dus het effect is **hogere marge**, niet minder omzet. Alleen *wat* hier: een aparte Finance-regel/kaart die deze marge-winst toont; het ontwerp werkt Claude Desktop uit. Launch-relevantie: **nice-to-have analytics**, geen blocker. (Gepland 2026-07-14.)
 
+### Finance & dashboard — post-money-model follow-up (genoteerd 2026-07-15)
+
+Openstaande punten na de money-model-/BTW-/markt-scope-sessies (ADR-055 t/m ADR-062). De revenue/VAT-keten sluit en is geverifieerd (zie status onderaan); dit zijn de resterende **formulefouten** (zelfde klasse als de gefixte cross-user pooling-bug, ADR-061), **dashboard-periode**-beslissingen, en **driver-zichtbaarheid**. Bron-detail: `docs/wiki/architecture/finance-number-provenance.md`. Elk formule-item is **financieel-kritiek** → bewijzen met ≥2 users vóór fix.
+
+**FINANCE — formulefouten (zelfde klasse als de gefixte pooling-bug)**
+
+- [ ] **F1 — COR-pooling: `cor_against_revenue` gebruikt scope-gemiddelde share i.p.v. per-user.** Nu: `cor_against_revenue = scope_COR × scope-gemiddelde purchased_share` (in `_geld_scope` / `admin_finance_summary`). Moet zijn: `Σ_user(user_COR × user_share)` — dezelfde per-user-sommatie die ADR-061 voor recognitie invoerde, maar de COR-attributie is nog gepoold. Provenance §2.2. **Synthetisch bewijs (≥2 users):** A (100 granted, €10 COR, share 0) + B (100 purchased, €0,01 COR, share 1) → juist = €0,01 tegen omzet / €10 goodwill; de gepoolde formule geeft €5,00/€5,00. Raakt `against_revenue`, `against_revenue_by_method`, goodwill, gross, net. **Toets tegen ECHTE data (internal scope, juli 2026, live gezien):** COR-tabel toont AI-transcription COST €0,17 · CREDITS 3.091 · €/CREDIT €0,0033 → 3.091 × 0,0033 = €10,36 ≈ €0,17 (against-revenue) + €10,19 (goodwill in OPEX). De rij **vermenigvuldigt dus niet**: COST toont het against-revenue-deel, CREDITS toont álle verbruikte credits. Bovendien €0,17/€10,36 = 1,64% terwijl de gepoolde share 131/3.760 = 3,48% is → zoek uit of 1,64% de correcte per-user-berekening is of juist de poolingfout. Geen synthetisch geval — echte data.
+- [ ] **F2 — AI-summary-COR valt op `transcripts.created_at` i.p.v. het moment waarop de samenvatting draaide** (code wijkt af van plan B1). Gevolg: een summary van september landt in een al bevroren juli-dag en telt nooit mee; een regenerate herschrijft historische COR. Fix: attribueer de summary-COR op het `ai_summary`-debit-tijdstip (join naar de tokens), niet op de transcript-aanmaakdatum. Provenance §2 (ai_summary COR-rij).
+- [ ] **F3 — Storage-COR prorateert de HUIDIGE `library_bytes` over historische periodes.** `admin_finance_summary` neemt de actuele `user_credits.library_bytes` en snijdt die pro rata op elk periodevenster → elke terugblik is fout, en fouter naarmate de bibliotheek groeit. Fix: storage-COR moet de bytes-stand *in* die periode gebruiken (snapshot-gebaseerd), niet de stand-nu.
+- [ ] **F4 — Hero "Revenue" mengt flow en stock.** De hero toont `revenue_delivered + deferred_balance` (flow + stock), terwijl de delta ernaast op `revenue_delivered` alléén rekent. **Beslist:** hero wordt **periode-omzet** (flow), met een balk eronder die **deferred als stand-nu** toont, en de delta op hetzelfde (flow-)getal. `FinanceView.tsx` hero-blok.
+- [ ] **F5 — Oude snapshots dragen pre-ADR-061 gepoolde recognitie.** `finance_daily_snapshot`-rijen van vóór de chronologische-recognitie-fix bevatten de oude gepoolde `revenue_delivered`/`net`. De trend leest die bevroren rijen → historische trend is deels op de oude formule. Overweeg: her-snapshotten van de betrokken dagen ná F1/F2/F3, of markeren vanaf welke datum de snapshots ADR-061-conform zijn.
+
+**FINANCE — kleiner**
+
+- [ ] **F6 — `cor_caption_estimated` staat hardcoded `false`** in `_geld_scope` (regel ~151). Sinds ADR-057 is caption-COR echt gemeten (per-caption `usage_logs`), dus de vlag hoort weg of dynamisch — nu is het een dode aanname in de output.
+- [ ] **F7 — Invoicing-fee (0,4%, out-of-band) hoort als entered-regel.** De on-demand factuur wordt via `pay(paid_out_of_band:true)` betaald → **geen charge/balance_transaction** → deze Stripe-invoicing-fee zit **niet** in `fee_details` (ADR-053/060). Hoort als **entered** OPEX-regel (maandelijkse Stripe-billing), niet stilzwijgend €0. Aantal invoiced-purchases als sanity-check op het ingevoerde bedrag.
+- [ ] **F8 — `cor_rag=0` staat als aanname in de UI-hint.** RAG-COR is 0 in `_geld_scope`; zolang dat een aanname is (geen gemeten RAG-kost) moet de UI-hint dat eerlijk tonen i.p.v. het als €0-feit te presenteren.
+
+**DASHBOARD — periodes (beslist, nog niet gebouwd)**
+
+- [ ] **F9 — Default = "This month": 1e van de maand t/m NU, inclusief vandaag, live.** Niet tot gisteren — dit is geen trendtool maar een "wat is er gebeurd en klopt het"-tool; een sale om 14:00 hoort om 14:01 zichtbaar te zijn. (Onderscheid met de nachtelijke snapshots/trend blijft: tab = live `admin_finance_summary`, trend = bevroren snapshots.)
+- [ ] **F10 — Presets:** This month · Last month · This quarter · Last quarter · This year · All time · Custom. **Kwartaal staat erbij omdat het de OSS-aangiftecyclus is.**
+- [ ] **F11 — Delta vergelijkt met DEZELFDE periode-lengte:** month-to-date vs 1e t/m dezelfde dag vorige maand. Anders wordt 15 dagen tegen 31 dagen afgezet en is elk percentage onzin. (Bestaande `comparison`-call moet op gelijk-aantal-verstreken-dagen mikken.)
+- [ ] **F12 — Weeknummers in de datepicker.** Overal, ook Finance.
+- [ ] **F13 — `business_start_date` (2026-01-01) in `finance_settings`.** "All time" begint daar; de datepicker laat niets eerder toe. De maanden vóór launch tonen dan wat ze zijn: €0 omzet, X kosten, negatief resultaat — dat is de echte P&L.
+- [ ] **F14 — Aanloopkosten met terugwerkende kracht als entered lines in `opex_accrual`** (domein, Vercel, Railway, Supabase vanaf jan 2026). Khidr levert de bedragen. Voer ze in als entered-regels met `effective_from` in het verleden zodat de pre-launch-P&L klopt.
+
+**DRIVERS ZICHTBAAR (punt 7 van de oorspronkelijke lijst)**
+
+- [ ] **F15 — Alles is gemeten, niets afleesbaar.** AssemblyAI-minuten, proxy-bytes, DeepSeek-tokens, opslag-bytes, aantal sales, lot-€/credit — allemaal gecaptured, nergens getoond als **driver × tarief = bedrag**. De COR-tabel doet het qua vorm goed (Method · Cost · Credits · €/credit) maar de kolommen **vermenigvuldigen niet** (zie F1); de OPEX-tabel toont alleen een euro (behalve de sinds 2026-07-15 toegevoegde Radar- en fee_details-hints). Zonder driver × tarief is geen getal te controleren. Maak per COR- en OPEX-regel de onderliggende driver + tarief zichtbaar.
+- [ ] **F16 — Gevangen maar nergens gebruikt: `card_country` / `card_brand` / `card_funding` / `available_on` / `balance_transaction_status`** (fee- + cashflow-drivers). Ook: de reconcile-route berekent al **`drag_pct_of_charge`** en **`drag_pct_of_revenue_ex_vat`** per sale (live gezien: 9,17% van de charge, 11,11% van de omzet ex-BTW op een Try-sale van €3,49 — de vaste €0,25 slaat hard aan op kleine bedragen; op Plus €25 is dat ~2,5%). Die getallen bestaan al en gaan nergens heen. **Effectieve Stripe-drag per tier, dynamisch uit de Stripe-data, hoort zichtbaar te zijn** — het is een pricing-signaal, niet een curiositeit.
+- [ ] **F17 — DeepSeek-balans + alert.** De DeepSeek-console toont saldo en kosten per model; wij meten de tokens al (met cache-split) maar niet het saldo. Uitlezen + waarschuwing onder ~$5 in het admin-dashboard, naast de bestaande Decodo-auto-refill-logica.
+
+**NA FINANCE**
+
+- [ ] **F18 — Per-user segmentatie (betaald / gratis / anoniem) door het hele dashboard** — nu is bijna alles aggregaat. Pas oppakken als de omzetketen klopt (na F1–F5).
+- [ ] **F19 — Growth: definities + testcases met ≥2 users op papier vóór er een mockup komt.** Dezelfde foutklasse zit daar (conversieratio = cohort vs momentopname).
+- [ ] **F20 — Operations** (dashboard/observability van de operationele kant — na Finance).
+
+**NOTITIE**
+
+- [ ] **F21 — Radar free trial loopt tot 2026-08-15; daarna €0,02 per gescreende poging.** `cost_config.radar_free_until` staat er al op → **controleren dat de OPEX-regel "Fraud screening (Radar)" op 16 augustus daadwerkelijk begint te tellen** (billable_screens = pogingen met datum ≥ free_until × tarief). Reconcileerbaar tegen Stripe's Fees report (Reports → All Fees, 96u vertraging). Zie ADR-062 + provenance §2.14b.
+
+**STATUS — money-model/BTW/markt-scope afgerond deze sessies (ter referentie):**
+- Revenue/VAT-keten dicht en geverifieerd tegen live data (internal scope, juli 2026): charged €6,98 − fee €0,64 = settled €6,34; charged − VAT €1,22 = revenue ex-VAT €5,76 = delivered €3,77 + deferred €1,99. Per-credit ex-BTW €0,0288 loopt door de hele keten (deferred 69 cr × €0,0288 = €1,99). Backfill 2/2 sales measured via `invoice_tax` (`tax_status` null = correct; die sales dateren van vóór de automatic_tax-fix van 15 juli).
+- `_sale_vat` als enige BTW-bron, per-land buckets (NL/OSS/outside/unknown), revenue-per-regio, landguard live via Radar, betaalpogingen gelogd (`charge.failed` + `payment_intent.payment_failed` geabonneerd), Radar-kosten als driver × tarief. ADR-062, `tax-jurisdictions.md`, FAQ live, provenance §7 herschreven.
+- Khidr-side afgerond: iDEAL aan, betaalmethoden opgeschoond, "I'll file taxes myself" aangeklikt, Radar-regel live, webhook-events uitgebreid.
+
 ### Pre-launch — buiten code (parallel uit te voeren)
 
 - [ ] Google Search Console: domein verifiëren, sitemap indienen

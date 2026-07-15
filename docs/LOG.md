@@ -9414,3 +9414,20 @@ docs/wiki/decisions/062-market-scope-and-country-guard.md
 supabase/migrations/20260715151000_payment_attempts_and_radar_rate.sql
 supabase/migrations/20260715151100_admin_finance_summary_radar_opex.sql
 ---
+[2026-07-15 21:03] commit: docs(roadmap): finance formule-correcties + dashboard-periodes + driver-zichtbaarheid (F1–F21)
+
+Openstaande punten na de money-model/BTW/markt-scope-sessies vastgelegd in
+priorities.md vóór context-reset — geen code. Nieuwe gegroepeerde sectie "Finance &
+dashboard — post-money-model follow-up":
+- Formulefouten F1–F5 (COR-pooling per-user i.p.v. gepoold, ai-summary-COR op verkeerd
+  moment, storage-COR prorata op stand-nu, hero flow/stock-mix, oude snapshots pre-ADR-061)
+- Kleiner F6–F8 (cor_caption_estimated hardcoded, invoicing-fee entered, cor_rag=0 hint)
+- Dashboard-periodes F9–F14 (This month live default, presets incl. kwartaal=OSS,
+  gelijk-lengte delta, weeknummers, business_start_date, aanloopkosten entered)
+- Drivers F15–F17 (driver×tarief zichtbaar, Stripe-drag per tier, DeepSeek-saldo-alert)
+- Na finance F18–F20 + notitie F21 (Radar-fee begint 16 aug — verifiëren)
+- Status money-model/BTW/markt-scope afgerond.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/priorities.md
+---
