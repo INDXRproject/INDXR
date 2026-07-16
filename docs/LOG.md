@@ -9614,3 +9614,40 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/app/admin/finance/FinanceView.tsx
 docs/LOG.md
 ---
+[2026-07-16 11:47] precompact: context compaction triggered
+
+[2026-07-16 12:30] Deel B F5b+F2: snapshot_finance_day net → ADR-063 (revdel − cor_against_revenue(usage-share+recognized_fee+storage) − (goodwill+funnels+radar)); entered blijft live-overlay (net_profit_measured = net vóór entered). Bewijs 3 dag-cases (07-13 gelijk / 07-11 +0.32 deferred fee / 07-14 −0.4192 recognized fee), nieuw net == live per-dag. Snapshot clean-start: alle 12 rijen (6 oud + 6 test) DELETE, geen backfill; Trend leest MIN(snapshot_date) per scope (niet hardcoded), leeg tot cron 02:00 UTC. F2: ai_summary_usage_log (insert-only, RLS) + backend-INSERT per run; _geld_scope leest summary-COR uit de log op generated_at (scope-totaal + per-user CTE); 2 summaries gebackfilld. Bewijs: maand-invariant identiek (0.000800), per-dag COR verschuift 07-09→07-11; synthetisch 2 users×2 periodes: cross-period shift + regenerate telt beide runs (0.0003612 vs 0.0001806). Build groen. | gewijzigd: supabase/migrations/20260716095301_f5b_snapshot_net_adr063.sql, 20260716095631_f2_ai_summary_usage_log.sql, 20260716095807_f2_geld_scope_summary_from_log.sql, apps/app/src/app/admin/finance/FinanceView.tsx, backend/main.py, docs/LOG.md
+[2026-07-16 12:12] commit: feat(finance): F5b snapshot net → ADR-063 + clean-start + F2 AI-summary tokenlog
+
+F5b: snapshot_finance_day net now mirrors admin_finance_summary (ADR-063):
+revdel − cor_against_revenue (usage-share + recognized_fee + storage)
+− (goodwill + funnels + radar). The old model booked the FULL Stripe fee at
+sale and the FULL usage COR (goodwill inside), diverging from the headline by
+the deferred fee. Entered-OPEX stays a live overlay (editable rows apply
+retroactively) — column deliberately named net_profit_measured (net BEFORE
+entered); the Trend subtracts entered live. Radar folded in for parity.
+Proven on 3 day-cases: 07-13 equal (no sale/no consumption), 07-11 +0.32
+(full fee deferred), 07-14 −0.4192 (recognized fee); new net == live per-day.
+
+Clean-start: all snapshot rows were old-model internal test noise → DELETE'd
+(no backfill; snapshot_finance_day(d) can always rebuild a past window). The
+cron writes tonight's row with the new model. Trend reads MIN(snapshot_date)
+per scope (never hardcoded) and shows the real empty state until then.
+
+F2: AI-summary COR moved from transcripts.ai_summary_usage (UPDATE'd in place
+on regenerate → N runs book 1×; attributed to transcript birth) to a new
+insert-only ai_summary_usage_log (RLS, one row per DeepSeek call, keyed on
+generated_at). Backend appends a log row per run; _geld_scope reads summary-COR
+from the log on generated_at (scope-total + per-user CTE). 2 existing summaries
+backfilled. Month invariant identical (0.000800); per-day COR shifts 07-09→07-11;
+synthetic 2-user/2-period test: cross-period shift + regenerate counts both runs
+(0.0003612 vs 0.0001806). Build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+backend/main.py
+docs/LOG.md
+supabase/migrations/20260716095301_f5b_snapshot_net_adr063.sql
+supabase/migrations/20260716095631_f2_ai_summary_usage_log.sql
+supabase/migrations/20260716095807_f2_geld_scope_summary_from_log.sql
+---

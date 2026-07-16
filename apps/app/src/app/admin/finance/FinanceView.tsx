@@ -447,13 +447,18 @@ function DeferredCard({ s }: { s: FinanceScope }) {
 function Trend({ snapshots, scope, expenses }: { snapshots: SnapshotRow[]; scope: "external" | "internal"; expenses: ExpenseRow[] }) {
   const [metric, setMetric] = useState<"revenue" | "net" | "split">("revenue")
   const rows = snapshots.filter((r) => r.scope === scope)
+  // Real start date, derived from the data — never hardcoded. The nightly cron (02:00 UTC) writes yesterday;
+  // after a clean-start DELETE the series is empty until the next run, so this reflects reality either way.
+  const startDate = rows.reduce<string | null>((min, r) => (!min || r.snapshot_date < min ? r.snapshot_date : min), null)
   if (rows.length < 2) {
     return (
       <div className="rounded-xl border bg-surface p-5">
         <h3 className="text-sm font-semibold">Trend</h3>
         <p className="mt-2 text-xs text-fg-muted">
-          Measured figures are frozen nightly · entered costs update live. The trend fills in as nightly
-          snapshots accumulate ({rows.length} day{rows.length === 1 ? "" : "s"} so far).
+          Measured figures are frozen nightly · entered costs update live.{" "}
+          {startDate
+            ? `One day recorded so far (${startDate}); the trend fills in as the nightly snapshot accumulates more.`
+            : "No snapshots recorded yet — the nightly snapshot (02:00 UTC) writes the first day; the trend starts from there."}
         </p>
       </div>
     )
@@ -492,7 +497,7 @@ function Trend({ snapshots, scope, expenses }: { snapshots: SnapshotRow[]; scope
         ))}
       </div>
       <p className="mt-2 text-[11px] text-fg-subtle">
-        Measured figures frozen nightly · entered costs update live (historical net can shift after an expense edit — intended).
+        Data from {startDate} · measured figures frozen nightly · entered costs update live (historical net can shift after an expense edit — intended).
       </p>
     </div>
   )

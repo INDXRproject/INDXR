@@ -1208,6 +1208,24 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             }).eq('id', request.transcript_id).execute()
             if not update_resp.data:
                 logger.warning(f"Could not confirm transcript update for {request.transcript_id}")
+
+            # F2: per-run token log (insert-only) — the authoritative AI-summary COR source. transcripts.ai_summary_usage
+            # is UPDATE'd in place on regenerate (only the last run survives) and is read on transcripts.created_at, so it
+            # both under-books COR (N runs → 1×) and misattributes it to transcript birth. Each run appends an immutable
+            # log row keyed on generated_at instead; _geld_scope reads COR from here. Non-fatal: never fail the user's
+            # summary over a cost-accounting write.
+            try:
+                supabase.table('ai_summary_usage_log').insert({
+                    "transcript_id": request.transcript_id,
+                    "user_id": request.user_id,
+                    "generated_at": ai_summary_usage["generated_at"],
+                    "model": ai_summary_usage["model"],
+                    "prompt_tokens": usage.get("prompt_tokens") or 0,
+                    "completion_tokens": usage.get("completion_tokens") or 0,
+                    "cache_hit_tokens": usage.get("prompt_cache_hit_tokens") or 0,
+                }).execute()
+            except Exception as log_err:
+                logger.warning(f"ai_summary_usage_log insert failed for {request.transcript_id}: {log_err}")
                 
             logger.info(f"Summary generated and saved for {request.transcript_id}")
 
