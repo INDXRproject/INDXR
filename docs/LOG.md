@@ -9678,3 +9678,25 @@ RLS advisor findings.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: supabase/migrations/20260716115500_f3_daily_library_bytes.sql
 ---
+
+[2026-07-16 13:40] Deel B docs: ADR-064 (snapshot clean-start + entered-live-overlay) aangemaakt + INDEX-tabel bijgewerkt. Roadmap F2/F3/F5/F5b afgevinkt met resolutie + reden. Provenance §2.2/§2.6/§2.8/§5.1/§6.2/§8 bijgewerkt (AI-summary op generated_at via ai_summary_usage_log; storage per-user + byte-serie + storage_approx; net_profit_measured ≠ volle net). LESSONS: DML-CTE-snapshot-leesvalkuil, auth.users-trigger bij synthetische users, storage account-vrije-tier per-user-share, meting-vóór-formule. database-schema: ai_summary_usage_log + daily_library_bytes toegevoegd. | gewijzigd: docs/wiki/decisions/064-snapshot-clean-start-and-entered-overlay.md, docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md, docs/wiki/architecture/finance-number-provenance.md, docs/wiki/architecture/database-schema.md, docs/LESSONS.md, docs/LOG.md
+[2026-07-16 12:32] commit: docs(finance): ADR-064 + provenance/roadmap/schema for F5b·F5·F2·F3
+
+ADR-064 (snapshot clean-start + entered-OPEX live-overlay). INDEX decisions
+table updated. Roadmap F2/F3/F5/F5b checked off with resolution + reason.
+Provenance §2.2/2.6/2.8/5.1/6.2/8: AI-summary COR on generated_at via
+ai_summary_usage_log; storage per-user + byte-series + storage_approx;
+net_profit_measured ≠ full net (entered live overlay); clean-start start-date.
+LESSONS: DML-CTE read pitfall, auth.users trigger on synthetic users, storage
+account-free-tier per-user share, measurement-before-formula. database-schema:
+ai_summary_usage_log + daily_library_bytes documented.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/decisions/064-snapshot-clean-start-and-entered-overlay.md
+docs/wiki/roadmap/priorities.md
+---

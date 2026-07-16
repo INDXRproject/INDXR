@@ -93,12 +93,12 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 
 ### 2.2 Cost of revenue (COR-regel)
 1. **Naam:** "Cost of revenue".
-2. **Formule:** `cor_against_revenue = Σ_user Σ_methode (user_period_cor_methode × user_period_share) + cor_storage + recognized_fee`. In gewone taal: het deel van de leverkosten dat aan betaalde (erkende) omzet is toe te rekenen — nu **per user** opgeteld, niet meer via één scope-brede share; plus storage en de gedefereerd-herkende Stripe-fee. Het granted-deel gaat naar OPEX (goodwill).
-3. **Bron:** `_geld_scope` (`v_cor_rev` = `v_ar_ai + v_ar_cap + v_ar_sum + v_recognized_fee`) + storage uit `admin_finance_summary` (`v_cor_sto`). De per-user COR-per-methode komt uit een `GROUP BY user_id`-query over `transcription_jobs`/`usage_logs`/`transcripts`; de per-user share uit `_recognize_asof.by_user` (`rec_to − rec_from`, periode).
+2. **Formule:** `cor_against_revenue = Σ_user Σ_methode (user_period_cor_methode × user_period_share) + recognized_fee`, waarbij `methode` nu óók **storage** omvat (F3, 2026-07-16). In gewone taal: het deel van de leverkosten dat aan betaalde (erkende) omzet is toe te rekenen — **per user** opgeteld (incl. storage per byte-aandeel × share), plus de gedefereerd-herkende Stripe-fee. Het granted-deel gaat naar OPEX (goodwill).
+3. **Bron:** `_geld_scope` (`v_cor_rev` = `v_ar_ai + v_ar_cap + v_ar_sum + v_ar_sto + v_recognized_fee`). De per-user COR-per-methode komt uit een `GROUP BY user_id`-query over `transcription_jobs`/`usage_logs`/`ai_summary_usage_log`; per-user storage = `cor_storage_totaal × user_bytes/total_bytes` (§2.8); de per-user share uit `_recognize_asof.by_user` (`rec_to − rec_from`, periode). `admin_finance_summary` leest storage sinds F3 uit `_geld_scope` (niet meer flat toegevoegd).
 4. **Driver:** AssemblyAI-minuten + Decodo-bytes + DeepSeek-tokens + opslag-GB, × tarieven, × per-user-share. 👁️ (drivers niet in UI).
 5. **Tijdstoewijzing:** COR-termen zijn flows op elk hun eigen event-tijdstip (§2.4–2.7); de per-user share is óók **periode**-scoped (`by_user` as-of `to` minus as-of `from`) — flow × flow, niet meer flow × all-time-stock.
 6. **Scope:** ✅ **per-user** (ADR-063, migratie `20260715163500`). `Σ_user (user_COR × user_share)`, elke user zijn eigen periode-share. Was de 🔴 pooling-bug: user A verbruikt 100 granted credits voor €10 COR (share 0), user B 100 purchased voor €0,01 (share 1) → nu juist: against-revenue €0,01 / goodwill €10 (oude gepoolde formule gaf share 0,5 → €5,00/€5,00). Bewezen met reversibele A/B-test.
-7. **Aannames/zwakke plekken:** storage wordt **volledig** tegen omzet geboekt (geen share) terwijl er deferred credits openstaan — een aanname. `recognized_fee` is revenue-matched (geen share, geen goodwill — granted credits dragen geen fee). **NULL-valkuil (opgelost, zie LESSONS 2026-07-15):** de per-user COR-subqueries wrappen elke `sum()` in `COALESCE(...,0)`; zonder dat werd `sum(dur)*rate + sum(bytes)*rate` NULL zodra `proxy_bytes` volledig NULL was voor een user, wat diens duur-kost stil liet vallen. Caption-COR-nauwkeurigheid hangt af van gevulde `proxy_bytes` (§2.5).
+7. **Aannames/zwakke plekken:** ✅ storage wordt sinds F3 **per user** geattribueerd (byte-aandeel × share), niet meer flat volledig tegen omzet — het gratis-gebruikers-deel valt nu correct in goodwill. `recognized_fee` is revenue-matched (geen share, geen goodwill — granted credits dragen geen fee). **NULL-valkuil (opgelost, zie LESSONS 2026-07-15):** de per-user COR-subqueries wrappen elke `sum()` in `COALESCE(...,0)`; zonder dat werd `sum(dur)*rate + sum(bytes)*rate` NULL zodra `proxy_bytes` volledig NULL was voor een user, wat diens duur-kost stil liet vallen. Caption-COR-nauwkeurigheid hangt af van gevulde `proxy_bytes` (§2.5).
 
 ### 2.3 COR-tabel — per methode: Cost (optie ii, volle kost)
 1. **Naam:** kolommen "Cost / Credits / € per credit" per rij (AI transcription / Auto-captions / AI summary / RAG / Storage), plus de rij "Total measured COR".
@@ -131,11 +131,11 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 ### 2.6 COR-driver: AI summary
 1. **Naam:** "AI summary".
 2. **Formule:** `cor_ai_summary = (max(prompt_tokens − cache_hit_tokens,0)/1000) × deepseek_eur_per_1k_input_tokens + (cache_hit_tokens/1000) × deepseek_eur_per_1k_cache_hit_tokens + (completion_tokens/1000) × deepseek_eur_per_1k_output_tokens`.
-3. **Bron:** `transcripts.ai_summary_usage` (jsonb: `prompt_tokens`, `completion_tokens`, `prompt_cache_hit_tokens`) waar `ai_summary_usage IS NOT NULL`.
+3. **Bron:** ✅ **`ai_summary_usage_log`** (insert-only per-run tokenlog: `prompt_tokens`, `completion_tokens`, `cache_hit_tokens`, `generated_at`) — sinds F2 (2026-07-16, ADR-064). `transcripts.ai_summary_usage` blijft bestaan als transcript-eigen record maar is **niet meer de COR-bron** (en wordt door de UI niet gelezen — geverifieerd).
 4. **Driver:** DeepSeek-tokens (👁️).
-5. **Tijdstoewijzing:** 🔴🟡 flow op **`transcripts.created_at`**, NIET op het moment waarop de samenvatting draaide. Zie **§8** — dit is het bevestigde attributie-probleem: een later gedraaide of geregenereerde samenvatting valt op de transcript-datum (mogelijk een al bevroren dag).
-6. **Scope:** aggregaat (kostensom). Correct qua pooling.
-7. **Aannames/zwakke plekken:** regenerate overschrijft `ai_summary_usage` → historische COR verschuift; summary van een oud transcript telt nooit mee in de al-gedraaide snapshot. Zie §8.
+5. **Tijdstoewijzing:** ✅ flow op **`generated_at`** (het moment waarop de samenvatting draaide) — niet meer op `transcripts.created_at`. Zie **§8** (opgelost). Zowel het scope-totaal als de per-user CTE lezen de log op `generated_at`.
+6. **Scope:** aggregaat (kostensom) + per-user CTE (§2.2). Correct qua pooling.
+7. **Aannames/zwakke plekken:** ✅ regenerate is niet langer destructief voor de COR — elke run is een aparte, onveranderlijke logrij op zijn eigen `generated_at`, dus 2 runs tellen 2× (i.p.v. de in-place-overschrijving die run 1 wegtelde). Zie §8.
 
 ### 2.7 COR-driver: RAG export
 1. **Naam:** "RAG export".
@@ -148,11 +148,11 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 
 ### 2.8 COR-driver: Storage (R2)
 1. **Naam:** "Storage (R2)".
-2. **Formule:** `cor_storage = max(0, GB − r2_free_gb) × r2_usd_per_gb_month × usd_eur_rate × (dagen_in_periode / dagen_in_maand)`, met `GB = Σ user_credits.library_bytes / 1e9` over externe users. Credits/€per-credit = "—".
-3. **Bron:** `user_credits.library_bytes` (alleen externe users), `cost_config` R2-tarieven.
+2. **Formule:** `cor_storage = max(0, GB − r2_free_gb) × r2_usd_per_gb_month × usd_eur_rate × (dagen_in_periode / dagen_in_maand)`, met `GB = Σ bytes / 1e9` over externe users. Sinds F3 (2026-07-16, ADR-064) berekend **in `_geld_scope`** (niet meer flat in `admin_finance_summary`) en **per-user geattribueerd**: elk user-slice = `cor_storage_totaal × user_bytes/total_bytes`, gesplitst against-revenue (× share) vs goodwill (× 1−share), net als §2.4–2.6. Credits/€per-credit = "—".
+3. **Bron:** byte-**serie** `daily_library_bytes` (per nacht per-user weggeschreven door `snapshot_finance_day`) als die het venster-begin dekt (`min(day) ≤ from`); anders terugval op `user_credits.library_bytes` (stand-nu) met `storage_approx=true`. `cost_config` R2-tarieven. De R2-gratis-tier (10 GB) is account-niveau; per-user attributie gebeurt op byte-aandeel ná de vrije-tier-aftrek.
 4. **Driver:** opgeslagen bytes (👁️, wel als `storage_bytes` in de block maar niet in de COR-tabel getoond).
-5. **Tijdstoewijzing:** 🟡 **stock geprorateerd naar flow** — huidige `library_bytes` (as-of nu) × (periodedagen/maanddagen). Gebruikt de HUIDIGE opslagstand, niet de stand tijdens de periode.
-6. **Scope:** alleen external; bij internal is storage 0. Aggregaat over externe library — correct.
+5. **Tijdstoewijzing:** ✅ leest de **periode-stand** uit de byte-serie wanneer beschikbaar; tot dan stand-nu **met zichtbare `storage_approx`-markering** in de UI (Storage-rij) — geen stille stand-nu-voor-historie meer. De serie start bij de eerste cron-nacht na F3; oudere vensters blijven `approx` tot de serie ze dekt.
+6. **Scope:** alleen external; bij internal is storage 0. Per-user over externe library — correct. **Impact nu = €0** (externe lib 122 KB « 10 GB gratis); de meting is gebouwd zodat de attributie klopt zodra de bibliotheek groeit, niet omdat het nu telt.
 7. **Aannames/zwakke plekken:** proratering veronderstelt constante opslag over de maand; backfill van oude periodes gebruikt de huidige bytes (niet reconstrueerbaar). Volledig tegen omzet (geen share) — zie §2.2.
 
 ### 2.9 Cache-subregel (AI transcription / Auto-captions)
@@ -355,12 +355,12 @@ Zelfde bron/scope als §2.14 (`bank.stripe_fee = Σ metadata.stripe_fee`). 🟡 
    - Split: `snapshot.revenue_delivered` (zelfde bron; segmentatie delivered/deferred).
 3. **Bron:** tabel `finance_daily_snapshot` (bevroren, per `snapshot_date`+`scope`), plus **live** entered-overlay via `accrualForRange` (JS-spiegel van `opex_accrual`) over `expenses`.
 4. **Driver:** dagsnapshot-waarden + ingevoerde kosten. 👁️ (onderliggende drivers zitten in de snapshot-kolommen, niet in de balk).
-5. **Tijdstoewijzing:** snapshot = bevroren flow per Amsterdam-dag (`snapshot_finance_day`, pg_cron 02:00 UTC); entered = **live** overlay (niet bevroren). Daarom kan historische net verschuiven na een expense-edit (ADR-059, bedoeld).
+5. **Tijdstoewijzing:** snapshot = bevroren flow per Amsterdam-dag (`snapshot_finance_day`, pg_cron 02:00 UTC); entered = **live** overlay (niet bevroren). Daarom kan historische net verschuiven na een expense-edit (ADR-059/064, bedoeld).
 6. **Scope:** per gekozen scope (external/internal); entered alleen external.
-7. **Aannames/zwakke plekken:** `net_profit_measured` in de snapshot bevat GEEN entered-OPEX (die komt live erover) — de balk trekt entered dus apart af. `snapshot.revenue_delivered` is de recognitie zoals berekend op de snapshot-dag; door de per-user recognitie-fix zijn snapshots vanaf de fix-datum correct, oudere snapshots dragen de oude (mogelijk cross-user-pooled) waarde tot ze opnieuw gedraaid worden. 🔴 (historische snapshotrijen van vóór ADR-061). **Model-divergentie (open, follow-up F-item):** `snapshot_finance_day` berekent zijn `net_profit_measured` nog met het **oude model** — volle gemeten COR (niet against-revenue) **en de volle Stripe-fee bij de sale** (niet gedefereerd, ADR-063). De live-tab (`admin_finance_summary`) gebruikt against-revenue + fee-defer. De Trend-net wijkt daardoor af van de headline-net met (o.a.) `deferred_fee`. De snapshotfunctie leest alle `_geld_scope`-keys die nog bestaan → geen crash, maar de net-definitie moet nog gelijkgetrokken worden.
+7. **Aannames/zwakke plekken:** ✅ **Model gelijkgetrokken (F5b, ADR-064):** `net_profit_measured` = `revenue_delivered − cor_against_revenue (usage-share + recognized_fee + per-user storage) − (goodwill + funnels + radar)` — identiek aan `admin_finance_summary` mínus de entered-overlay. **`net_profit_measured` ≠ de volle net:** de kolom is bewust "measured" (net **vóór** entered); de volle net = `net_profit_measured − entered_live`. Entered blijft een **live-overlay** (niet bevriezen — bewerkbare regels werken retroactief door); daarom heet de kolom zo en trekt de balk entered apart af. Borging: headline-net (measured − entered_live) == Trend-net → het label liegt niet. **Clean-start (F5, ADR-064):** de oude snapshotrijen (pre-ADR-063 internal testruis) zijn `DELETE`'d; er is géén backfill. De Trend leest `MIN(snapshot_date)` **per scope** (niet hardcoded) en toont de echte startdatum; de serie groeit vanaf de eerste cron-run na de fix. Backfillen kan altijd (`snapshot_finance_day(d)` is range-aware) — de aanloop-P&L komt uit de **live** `_geld_scope`, niet uit de Trend.
 
 ### 5.2 Trend lege staat
-Bij < 2 snapshotrijen: tekst i.p.v. grafiek. Geen getal.
+Bij < 2 snapshotrijen: tekst i.p.v. grafiek, met de **echte startdatum** uit `MIN(snapshot_date)` (of "nog geen snapshots — de nachtelijke cron schrijft de eerste dag") — nooit gehardcode. Geen getal.
 
 ---
 
@@ -380,11 +380,11 @@ Bij < 2 snapshotrijen: tekst i.p.v. grafiek. Geen getal.
 |---|---|
 | COR ai/caption/summary/rag-drivers, cache-pct, charged, fee, vat, recognized, deferred | 🟢 gemeten (mits onderliggende kolommen gevuld) |
 | `saved_eur` (cache, §2.9) | 🟡 contrafeitelijke schatting |
-| `cor_storage` (§2.8) | 🟡 stock geprorateerd, huidige bytes |
+| `cor_storage` (§2.8) | 🟢 byte-serie (`daily_library_bytes`) / 🟡 `storage_approx` tot de serie het venster dekt; per-user geattribueerd (F3) |
 | `est_future_cost`/`est_future_gross` (§4.3–4.4) | 🟡 schatting |
 | `cor_rag` = 0 (§2.7) | 🟡 aanname |
 | `vat` / `vat_owed` (§3.4) | 🔴 niet berekend (structureel 0, §7) |
-| `cor_ai_summary` tijdstoewijzing (§2.6) | 🟡 verkeerde datum (§8) |
+| `cor_ai_summary` tijdstoewijzing (§2.6) | 🟢 op `generated_at` via `ai_summary_usage_log` (F2, §8 opgelost) |
 
 ### 6.3 Onzichtbare drivers (volume niet afleesbaar in UI) — 👁️
 AssemblyAI-minuten, proxy-bytes (transcriptie én caption), DeepSeek-tokens, opslag-bytes (wel in block `storage_bytes`, niet in de COR-tabel), aantal sales achter charged/fee/vat, lot-€/credit achter recognized/deferred. **Wel** zichtbaar: credits per methode (COR-tabel), cache-pct (subregel), entered bedrag+datums (OPEX-hint).
@@ -446,20 +446,12 @@ AssemblyAI-minuten, proxy-bytes (transcriptie én caption), DeepSeek-tokens, ops
 
 ---
 
-## Sectie 8 — Status AI-summary-COR-attributie (rapport, niet fixen)
+## Sectie 8 — AI-summary-COR-attributie ✅ OPGELOST (F2, 2026-07-16, ADR-064)
 
-**Bevestigd uit de code:** in `_geld_scope` leest het COR-summary-blok:
-```
-FROM public.transcripts
-WHERE ai_summary_usage IS NOT NULL AND user_id = ANY(users)
-  AND created_at >= p_from AND created_at < p_to
-```
-De DeepSeek-COR valt dus op **`transcripts.created_at`** — het moment waarop het transcript is aangemaakt — niet op het moment waarop de samenvatting draaide.
+**Was:** `_geld_scope` las het COR-summary-blok uit `transcripts` op `created_at` → de DeepSeek-COR viel op **transcript-aanmaak**, niet op het moment dat de samenvatting draaide. Twee gevolgen: (1) een later/geregenereerde samenvatting landde op de (mogelijk al bevroren) transcript-dag; (2) regenerate UPDATE't `transcripts.ai_summary_usage` in-place → historische COR verschoof met terugwerkende kracht en 2 runs telden als 1×.
 
-**Wat er misgaat:**
-- Een samenvatting die **later** draait dan het transcript (user vat een oud transcript samen, of regenereert) krijgt zijn COR toegewezen aan de **transcript-datum**. Draait die samenvatting in september op een juli-transcript, dan landt de kost in juli — een dag die de nachtelijke snapshot **al bevroren** heeft → de kost telt nooit mee in de snapshot, en in de live-tab valt hij in de juli-periode i.p.v. september.
-- **Regenerate overschrijft** `transcripts.ai_summary_usage` → de historische COR van die transcript-dag verandert met terugwerkende kracht (live-tab), terwijl de snapshot de oude waarde vasthoudt → drift tussen tab en trend.
+**Nu:** nieuwe insert-only **`ai_summary_usage_log`** (RLS; kolommen `transcript_id`, `user_id`, `generated_at`, `model`, `prompt_tokens`, `completion_tokens`, `cache_hit_tokens`). De backend appendt één rij per DeepSeek-call (`backend/main.py`, na de transcript-update; non-fataal). `_geld_scope` leest de summary-COR uit de log op **`generated_at`** — zowel het scope-totaal als de per-user CTE. De 2 bestaande summaries zijn gebackfilld uit hun `ai_summary_usage.generated_at`.
 
-**Afwijking van het plan:** het oorspronkelijke plan (Deel B1) schreef expliciet voor om AI-summary-COR te attribueren op **de `ai_summary`-debit-`created_at`** (join naar `transcripts.ai_summary_usage` voor de tokens). De code doet dit **niet** — hij gebruikt `transcripts.created_at`. **Code ≠ plan; de code is hier de waarheid en dit is de discrepantie.**
+**Waarom een tabel i.p.v. `COALESCE(generated_at, created_at)` op de transcript-rij:** de transcript houdt maar één (laatste) run vast; `COALESCE` verplaatst alleen dat ene record. De log is de enige bron die **elke** run afzonderlijk bewaart → regenerate telt beide runs, elk op zijn eigen datum.
 
-**Fix (nog niet gebouwd):** attribueer de summary-COR op het tijdstip van de `ai_summary`-debit in `credit_transactions` (`type='debit' AND product_type='ai_summary'`), en haal de tokens via de transcript erbij. Dan valt de kost op het moment dat DeepSeek daadwerkelijk draaide, en een regenerate wordt een nieuw event op zijn eigen datum i.p.v. een retroactieve overschrijving. Caveat uit het plan blijft: als tokens alleen op de transcript-rij staan (en regenerate overschrijft), is een aparte per-run-tokenlog nodig om regenerate-COR volledig honest te maken.
+**Bewijs (F2):** maand-invariant identiek (0,000800) vóór/ná; per-dag COR verschuift van 07-09 (created) naar 07-11 (generated); synthetisch 2 users × 2 periodes: cross-period shift (kost van een periode-1-transcript valt in periode 2) + regenerate telt beide runs (0,0003612 vs 0,0001806 = 2×). `transcripts.ai_summary_usage` blijft bestaan (transcript-eigen record, niet door UI gelezen), maar is niet meer de COR-bron.
