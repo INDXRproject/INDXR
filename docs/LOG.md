@@ -9751,3 +9751,36 @@ supabase/migrations/20260716104934_drop_transcripts_ai_summary_usage.sql
 supabase/migrations/20260716115500_f3_daily_library_bytes.sql
 supabase/migrations/20260716130000_opex_accrual_yearly_recurrence.sql
 ---
+[2026-07-16 14:40] F15 finance-UI drivers zichtbaar + vaste kolommen + hints opgeschoond (alleen weergave) | migratie 20260716140000_finance_cor_drivers_visible.sql voegt additief `drivers`-object + DeepSeek-tarieven aan admin_finance_summary/_geld_scope toe (geen getal wijzigt: internal COR €10.3595 / net −7.03 byte-voor-byte gelijk, ACL anon/auth=false behouden); COR- en OPEX-tabel krijgen vaste kolombreedtes (tabular-nums, rechts uitgelijnd) + `driver × tarief = bedrag`-subregel per rij (AI-transcriptie min×€/min+GB×€/GB, captions GB×€/GB, AI-summary tokens×€/1k, storage GB-boven-free of free-tier-verklaring, goodwill credits×~€/credit, funnel GB×€/GB); geschrapt: de "playlists"-voetregel (algemene toelichting, verklaarde geen tabelgetal); behouden: against/goodwill-split, Stripe-fee-regel, RAG-aanname (verklaart €0), cache-subregel | gewijzigd: supabase/migrations/20260716140000_finance_cor_drivers_visible.sql, apps/app/src/app/admin/finance/{financeTypes.ts,FinanceView.tsx}, docs/wiki/architecture/{finance-number-provenance.md,database-schema.md}
+[2026-07-16 13:41] commit: feat(finance): F15 drivers visible + fixed COR/OPEX columns + hint cleanup (display-only)
+
+Finance-tabellen leesbaar/narekenbaar maken — alleen weergave, geen formules.
+
+1. Vaste kolommen: COR- en OPEX-tabel krijgen vaste kolombreedtes
+   (grid-cols met rem-tracks) + tabular-nums + rechts uitgelijnd. Cost/Credits/
+   €per-credit staan op een vaste x-positie ongeacht celinhoud ("€10.35" vs
+   "<€0.01" schuiven niet meer).
+
+2. Hints opgeschoond: de "playlists"-voetregel onder de COR-tabel geschrapt
+   (algemene toelichting, verklaarde geen tabelgetal). Behouden: against/goodwill-
+   split, Stripe-fee-regel, RAG-aanname (verklaart de €0), cache-subregel.
+
+3. Drivers zichtbaar (F15, de kern): elke kostenregel toont nu driver × tarief =
+   bedrag als sub-regel — AI-transcriptie (min×€/min + GB×€/GB), captions (GB×€/GB),
+   AI-summary (tokens×€/1k), storage (GB-boven-free × tarieven × dagen/maand, of
+   free-tier-verklaring bij €0). OPEX idem: goodwill (credits×~€/credit),
+   funnel (GB×€/GB); Radar toonde al screens×tarief.
+
+Migratie 20260716140000 voegt puur additief een `drivers`-object + de drie
+DeepSeek-token-tarieven aan _geld_scope/admin_finance_summary toe — de volumes
+waren al gemeten maar gingen nergens heen. Geen getal wijzigt: internal COR
+€10.3595 / net −7.03 byte-identiek vóór/na; ACL anon/auth=false behouden.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/finance-number-provenance.md
+supabase/migrations/20260716140000_finance_cor_drivers_visible.sql
+---

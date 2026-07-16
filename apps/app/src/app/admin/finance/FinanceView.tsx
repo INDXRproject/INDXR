@@ -63,6 +63,44 @@ function corUnit(credits: number, cost: number): string {
   return `€${(cost / credits).toFixed(8)}`
 }
 
+// F15 — drivers. Rates live in cost_config; drivers are measured. Each cost row shows driver × rate = amount
+// so a human can recompute it without opening the code. That is the reason this table exists.
+type Rates = FinanceSummary["rates"]
+
+function fmtNum(n: number, dp: number): string {
+  return n.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp })
+}
+// A tariff shown with just enough precision to stay exact (€2.99, €0.00322/min, €0.000129/1k).
+function rate(n: number | null): string {
+  if (n == null) return "€0"
+  if (Math.abs(n) >= 1) return `€${n.toFixed(2)}`
+  return `€${Number(n.toPrecision(3))}`
+}
+
+// The measured driver behind a COR method, as an expression. null → no driver (nothing consumed, or RAG).
+function corDriver(k: (typeof COR_METHODS)[number], s: FinanceScope, r: Rates): string | null {
+  const d = s.drivers
+  if (k === "ai_transcription") {
+    const t = d.ai_transcription
+    const parts = [`${fmtNum(t.audio_seconds / 60, 1)} min × ${rate(r.assemblyai_eur_per_min)}/min`]
+    if (t.proxy_bytes > 0) parts.push(`${fmtNum(t.proxy_bytes / 1e9, 2)} GB × ${rate(r.decodo_eur_per_gb)}/GB`)
+    return t.audio_seconds > 0 || t.proxy_bytes > 0 ? parts.join(" + ") : null
+  }
+  if (k === "caption") {
+    if (d.caption.proxy_bytes === 0) return null
+    return `${fmtNum(d.caption.proxy_bytes / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB`
+  }
+  if (k === "ai_summary") {
+    const a = d.ai_summary
+    if (a.input_tokens === 0 && a.output_tokens === 0) return null
+    const parts = [`${fmtNum(Math.max(a.input_tokens - a.cache_tokens, 0), 0)} in × ${rate(r.deepseek_eur_per_1k_input_tokens)}/1k`]
+    if (a.cache_tokens > 0) parts.push(`${fmtNum(a.cache_tokens, 0)} cache × ${rate(r.deepseek_eur_per_1k_cache_hit_tokens)}/1k`)
+    parts.push(`${fmtNum(a.output_tokens, 0)} out × ${rate(r.deepseek_eur_per_1k_output_tokens)}/1k`)
+    return parts.join(" + ")
+  }
+  return null
+}
+
 // Same EU member-state list as admin_finance_summary (v_eu). EL = Greece alt-code. GB absent (Brexit).
 const EU_MEMBERS = new Set([
   "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "EL", "HU", "IE",
@@ -124,16 +162,17 @@ const COR_METHODS = ["ai_transcription", "caption", "ai_summary", "rag"] as cons
 // €/credit = Cost/Credits → the row MULTIPLIES (Credits × €/credit = Cost). The against-revenue/goodwill
 // split is a SEPARATE line beneath, not baked into the columns. The Stripe fee (COR, F22) is its own line:
 // recognised now (in cost of revenue) · deferred (held in the Deferred card).
-function CorTable({ s }: { s: FinanceScope }) {
+// Fixed column grid so COST · CREDITS · €/CREDIT never shift with content — a column stays at the same
+// x-position regardless of what a cell holds. Numbers right-aligned, tabular-nums.
+const COR_GRID = "grid grid-cols-[minmax(0,1fr)_5.5rem_5rem_7rem] gap-x-4"
+
+function CorTable({ s, r }: { s: FinanceScope; r: Rates }) {
   const cor = s.cor
   const aiCache = s.cache_savings.ai_transcription
   const capCache = s.cache_savings.caption
   const cacheSub: Partial<Record<(typeof COR_METHODS)[number], string | null>> = {
     ai_transcription: aiCache.total_jobs > 0 ? `${pct(aiCache.pct)} from cache · saved ${eur(aiCache.saved_eur, true)}` : null,
     caption: capCache.total_count > 0 ? `${pct(capCache.pct)} from cache · saved ${eur(capCache.saved_eur, true)}` : null,
-    // RAG cost is an explicit ASSUMPTION, not a measured €0: RAG reshapes an existing transcript with no
-    // external API call, so marginal cost ≈ €0. If a measurable compute/egress cost appears, measure it.
-    rag: "assumed ~€0 · reshape of existing transcript, no external API call",
   }
   const abm = cor.against_revenue_by_method
   // Against-revenue of the usage methods + storage (NOT the fee — the fee has its own recognised/deferred line).
@@ -141,17 +180,24 @@ function CorTable({ s }: { s: FinanceScope }) {
   // Goodwill = full measured COR that was NOT matched to paid revenue (granted-credit delivery). Booked in OPEX.
   const goodwill = cor.measured_total - usageAgainst
   const fee = cor.payment_fee
+  const stor = s.drivers.storage
+  const storBillable = Math.max(stor.gb - stor.free_gb, 0)
   return (
     <div className="mt-1 rounded-lg border bg-surface-sunken/40">
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-5 border-b px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
+      <div className={`${COR_GRID} border-b px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-subtle`}>
         <span>Method</span><span className="text-right">Cost</span><span className="text-right">Credits</span><span className="text-right">€ / credit</span>
       </div>
       {COR_METHODS.map((k) => {
         const credits = s.consumed_by_type[k]
+        // Driver × rate = amount. RAG has no external call, so instead of a driver it carries its assumption.
+        const driver = corDriver(k, s, r)
+        const ragNote = k === "rag" ? "assumed ~€0 · reshape of existing transcript, no external API call" : null
         return (
-          <div key={k} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
-            <div className="flex flex-col gap-0.5">
+          <div key={k} className={`${COR_GRID} items-center px-3 py-2 text-xs`}>
+            <div className="flex min-w-0 flex-col gap-0.5">
               <span className={`w-fit rounded-full px-2 py-0.5 font-medium ${TYPE_META[k].bg} ${TYPE_META[k].text}`}>{TYPE_META[k].label}</span>
+              {driver && <span className="text-[11px] tabular-nums text-fg-subtle">{driver} = {corCost(cor[k])}</span>}
+              {ragNote && <span className="text-[11px] text-fg-subtle">{ragNote}</span>}
               {cacheSub[k] && <span className="text-[11px] text-fg-subtle">{cacheSub[k]}</span>}
             </div>
             <span className="text-right font-semibold tabular-nums text-fg">{corCost(cor[k])}</span>
@@ -160,12 +206,17 @@ function CorTable({ s }: { s: FinanceScope }) {
           </div>
         )
       })}
-      {/* storage — a quiet row, no per-credit unit */}
-      <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
-        <div className="flex flex-col gap-0.5">
+      {/* storage — a quiet row, no per-credit unit. Driver explains the amount (incl. the €0 free-tier case). */}
+      <div className={`${COR_GRID} items-center px-3 py-2 text-xs`}>
+        <div className="flex min-w-0 flex-col gap-0.5">
           <span className="w-fit rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning-fg">Storage (R2)</span>
-          {/* F3: storage prorates a byte-stand over the window. Before the per-user byte series (daily_library_bytes)
-              spans this period, it falls back to the CURRENT library size — flag it as an approximation. */}
+          <span className="text-[11px] tabular-nums text-fg-subtle">
+            {storBillable > 0
+              ? `${fmtNum(storBillable, 2)} GB over ${fmtNum(stor.free_gb, 0)} × ${rate(r.r2_usd_per_gb_month)}/GB·mo × ${r.usd_eur_rate ?? 1} €/$ × ${stor.days_win}/${stor.days_month} days = ${corCost(cor.storage)}`
+              : `${fmtNum(stor.gb, 2)} GB stored · within ${fmtNum(stor.free_gb, 0)} GB free tier = ${corCost(cor.storage)}`}
+          </span>
+          {/* F3: before the per-user byte series (daily_library_bytes) spans this period, storage prorates the
+              CURRENT library size instead — flag it as an approximation. */}
           {s.storage_approx && (
             <span className="text-[11px] text-warning-fg" title="No per-user byte history for this period yet — prorated from the current library size (daily_library_bytes fills in nightly).">
               ≈ approx · from current library size
@@ -177,13 +228,13 @@ function CorTable({ s }: { s: FinanceScope }) {
         <span className="text-right tabular-nums text-fg-muted">—</span>
       </div>
       {/* Total FULL measured COR — this is what the rows sum to (Σ Cost). */}
-      <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 border-t px-3 py-2 text-xs">
+      <div className={`${COR_GRID} items-center border-t px-3 py-2 text-xs`}>
         <span className="font-semibold text-fg">Total measured COR</span>
         <span className="text-right font-bold tabular-nums text-fg">{corCost(cor.measured_total)}</span>
         <span className="text-right tabular-nums text-fg-subtle">—</span>
         <span className="text-right tabular-nums text-fg-subtle">—</span>
       </div>
-      {/* The split: full COR bridges to against-revenue (in Cost of revenue) + goodwill (in Operating expenses). */}
+      {/* The split: full COR bridges to against-revenue (= the Cost of revenue figure above) + goodwill (an OPEX row). */}
       <div className="border-t px-3 py-2 text-[11px] text-fg-muted">
         of which <span className="font-medium text-fg">against revenue {eur(usageAgainst, true)}</span> (in cost of revenue) ·{" "}
         <span className="font-medium text-fg">goodwill {eur(goodwill, true)}</span> (granted credits → operating expenses)
@@ -195,42 +246,58 @@ function CorTable({ s }: { s: FinanceScope }) {
           {eur(fee.deferred, true)} deferred · {eur(fee.purchased, true)} paid at sale
         </div>
       )}
-      <p className="border-t px-3 py-2 text-[11px] text-fg-subtle">
-        Playlists spend credits through these same methods, so they have no separate line. Credits by source lives in Operations.
-      </p>
     </div>
   )
 }
 
 // OPEX drawn as a table (Category · Source · Cost). Goodwill (granted-credit delivery) is a visible row here,
 // not an unexplained gap between the COR line and its breakdown.
-function OpexTable({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
+const OPEX_GRID = "grid grid-cols-[minmax(0,1fr)_5rem_6.5rem] gap-x-4"
+
+function OpexTable({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rates; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
   const m = s.measured_opex
+  const dv = s.drivers
   const measuredRows: { name: string; hint?: string; cost: number }[] = []
   // Stripe fee is NOT here anymore — it moved to COR (F22), shown in the COR breakdown as recognised/deferred.
-  // Radar screent élke poging (successful+declined+blocked) à €rate; gratis t/m free_until. Driver zichtbaar.
+  // Radar screens every attempt (successful+declined+blocked) at €rate; free through free_until. driver × rate.
   const rd = m.radar
   if (rd && rd.screens > 0) {
     const trial = rd.free_until && rd.billable < rd.screens ? ` · free until ${rd.free_until}` : ""
-    const radarHint = `${rd.screens} screened (${rd.successful} ok · ${rd.declined} declined · ${rd.blocked} blocked) × ${eur(rd.rate, true)}${trial}`
+    const radarHint = `${rd.billable} billable of ${rd.screens} screened (${rd.successful} ok · ${rd.declined} declined · ${rd.blocked} blocked) × ${rate(rd.rate)}${trial}`
     measuredRows.push({ name: "Fraud screening (Radar)", hint: radarHint, cost: m.radar_fee })
   }
-  measuredRows.push({ name: "Goodwill — granted credits used", hint: "delivery of granted credits", cost: m.goodwill })
-  measuredRows.push({ name: "Free-caption funnel — logged-in", hint: "measured per day", cost: m.funnel_loggedin })
-  measuredRows.push({ name: "Free-caption funnel — anonymous", hint: "measured per day", cost: m.funnel_anon })
+  // Goodwill = granted credits delivered at their blended delivery cost. Funnels = free-caption bytes × Decodo rate.
+  const gwCr = dv.goodwill.granted_credits
+  measuredRows.push({
+    name: "Goodwill — granted credits used",
+    hint: gwCr > 0 ? `${fmtNum(gwCr, 0)} granted credits × ~${rate(m.goodwill / gwCr)}/credit` : "no granted credits used this period",
+    cost: m.goodwill,
+  })
+  measuredRows.push({
+    name: "Free-caption funnel — logged-in",
+    hint: `${fmtNum(dv.funnel_loggedin.proxy_bytes / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB`,
+    cost: m.funnel_loggedin,
+  })
+  measuredRows.push({
+    name: "Free-caption funnel — anonymous",
+    hint: `${fmtNum(dv.funnel_anon.proxy_bytes / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB`,
+    cost: m.funnel_anon,
+  })
 
   return (
     <div className="mt-1 rounded-lg border bg-surface-sunken/40">
-      <div className="grid grid-cols-[1fr_auto_auto] gap-x-5 border-b px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
+      <div className={`${OPEX_GRID} border-b px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-subtle`}>
         <span>Category</span><span className="text-center">Source</span><span className="text-right">Cost</span>
       </div>
       {isExternal && enteredLines.map((l) => {
         const hint = l.recurrence === "monthly"
           ? `${eur(l.amount)} / month · ${l.days_applied} of ${l.days_total} days`
+          : l.recurrence === "yearly"
+          ? `${eur(l.amount)} / year · ${l.days_applied} of ${l.days_total} days`
           : l.description || `${l.days_applied} day${l.days_applied === 1 ? "" : "s"}`
         return (
-          <div key={l.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
-            <div className="flex flex-col gap-0.5">
+          <div key={l.id} className={`${OPEX_GRID} items-center px-3 py-2 text-xs`}>
+            <div className="flex min-w-0 flex-col gap-0.5">
               <span className="font-medium capitalize text-fg">{l.category}</span>
               <span className="text-[11px] text-fg-subtle">{hint}</span>
             </div>
@@ -239,14 +306,14 @@ function OpexTable({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLi
           </div>
         )
       })}
-      {measuredRows.map((r) => (
-        <div key={r.name} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
-          <div className="flex flex-col gap-0.5">
-            <span className="font-medium text-fg">{r.name}</span>
-            {r.hint && <span className="text-[11px] text-fg-subtle">{r.hint}</span>}
+      {measuredRows.map((row) => (
+        <div key={row.name} className={`${OPEX_GRID} items-center px-3 py-2 text-xs`}>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="font-medium text-fg">{row.name}</span>
+            {row.hint && <span className="text-[11px] text-fg-subtle">{row.hint}</span>}
           </div>
           <span className="text-center"><Src kind="measured" /></span>
-          <span className="text-right font-semibold tabular-nums text-fg">{eur(r.cost, true)}</span>
+          <span className="text-right font-semibold tabular-nums text-fg">{eur(row.cost, true)}</span>
         </div>
       ))}
       <p className="border-t px-3 py-2 text-[11px] text-fg-subtle">
@@ -256,7 +323,7 @@ function OpexTable({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLi
   )
 }
 
-function IncomeStatement({ s, enteredLines, isExternal }: { s: FinanceScope; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
+function IncomeStatement({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rates; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
   const [corOpen, setCorOpen] = useState(true)
   const [opexOpen, setOpexOpen] = useState(true)
   const cor = s.cor
@@ -276,7 +343,7 @@ function IncomeStatement({ s, enteredLines, isExternal }: { s: FinanceScope; ent
         <button onClick={() => setCorOpen((v) => !v)} className="text-xs text-accent hover:underline">
           {corOpen ? "Hide breakdown" : "Show breakdown per method"}
         </button>
-        {corOpen && <CorTable s={s} />}
+        {corOpen && <CorTable s={s} r={r} />}
       </StatementLine>
 
       <div className="relative py-2"><div className="absolute left-1/2 -top-1 h-1 w-px bg-border" /></div>
@@ -291,7 +358,7 @@ function IncomeStatement({ s, enteredLines, isExternal }: { s: FinanceScope; ent
         <button onClick={() => setOpexOpen((v) => !v)} className="text-xs text-accent hover:underline">
           {opexOpen ? "Hide breakdown" : "Show breakdown"}
         </button>
-        {opexOpen && <OpexTable s={s} enteredLines={enteredLines} isExternal={isExternal} />}
+        {opexOpen && <OpexTable s={s} r={r} enteredLines={enteredLines} isExternal={isExternal} />}
       </StatementLine>
 
       <div className="relative py-2"><div className="absolute left-1/2 -top-1 h-1 w-px bg-border" /></div>
@@ -624,7 +691,7 @@ export function FinanceView(props: Props) {
 
       {/* income statement + cards — one scope in place */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <IncomeStatement s={scope} enteredLines={summary.entered_opex.lines} isExternal={isExternal} />
+        <IncomeStatement s={scope} r={summary.rates} enteredLines={summary.entered_opex.lines} isExternal={isExternal} />
         <div className="space-y-4">
           <RevenueByRegion s={scope} />
           <BankBridge s={scope} />

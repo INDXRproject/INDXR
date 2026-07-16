@@ -99,6 +99,19 @@ export interface FinanceScope {
   // F3: true when storage COR is prorated from the CURRENT library size (no per-user byte series covering
   // this period yet). The nightly snapshot fills daily_library_bytes; once it spans a window this flips false.
   storage_approx: boolean
+  // F15: measured drivers behind each COR/OPEX row, so the UI can render "driver × rate = amount".
+  // Every value here is already measured (used to compute the cost above) — it just wasn't surfaced.
+  drivers: FinanceDrivers
+}
+
+export interface FinanceDrivers {
+  ai_transcription: { audio_seconds: number; proxy_bytes: number }
+  caption: { proxy_bytes: number }
+  ai_summary: { input_tokens: number; cache_tokens: number; output_tokens: number }
+  storage: { gb: number; free_gb: number; days_win: number; days_month: number }
+  funnel_loggedin: { proxy_bytes: number }
+  funnel_anon: { proxy_bytes: number }
+  goodwill: { granted_credits: number }
 }
 
 export interface EnteredOpexLine {
@@ -120,9 +133,12 @@ export interface FinanceSummary {
   rates: {
     decodo_eur_per_gb: number
     assemblyai_eur_per_min: number
-    r2_usd_per_gb_month: number
-    r2_free_gb: number
-    usd_eur_rate: number
+    deepseek_eur_per_1k_input_tokens: number
+    deepseek_eur_per_1k_output_tokens: number
+    deepseek_eur_per_1k_cache_hit_tokens: number
+    r2_usd_per_gb_month: number | null
+    r2_free_gb: number | null
+    usd_eur_rate: number | null
   }
   entered_opex: { total: number; by_category: Record<string, number>; lines: EnteredOpexLine[] }
   external: FinanceScope

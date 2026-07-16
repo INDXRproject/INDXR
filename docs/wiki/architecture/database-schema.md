@@ -443,10 +443,10 @@ Migraties `20260714222523`–`20260714230120`. Periode-gebonden Finance-view + o
 - **`opex_expenses`** — accrual-model: `amount`, `spread` (evenly|single), `recurrence` (none|monthly), `effective_from`, `effective_to` (NULL=lopend), `description`. Oude `eur`/`period` blijven (admin_geld_summary leest nog `sum(eur)`).
 
 ### Nieuwe/gewijzigde functies
-- **`_geld_scope(p_internal, p_from, p_to)`** — range-aware (defaults -inf/+inf → byte-identiek aan oud). FLOWS op `[from,to)`, STOCKS/recognitie cumulatief-`<to`.
+- **`_geld_scope(p_internal, p_from, p_to)`** — range-aware (defaults -inf/+inf → byte-identiek aan oud). FLOWS op `[from,to)`, STOCKS/recognitie cumulatief-`<to`. **F15 (2026-07-16):** retourneert extra `drivers`-object (`ai_transcription.audio_seconds/proxy_bytes`, `caption.proxy_bytes`, `ai_summary.input/cache/output_tokens`, `storage.gb/free_gb/days_win/days_month`, `funnel_loggedin.proxy_bytes`) — de al-gemeten volumes achter elke COR-regel, puur additief (geen getal wijzigt).
 - **`snapshot_finance_day(p_day)`** — idempotente dag-snapshot (DST-aware Amsterdam-daggrens). pg_cron-job `finance-daily-snapshot`.
 - **`opex_accrual(from,to)`** — snijdt entered-reeksen door de periode (jsonb: total/by_category/lines).
-- **`admin_finance_summary(from,to)`** — live periode-RPC per scope: flows/stocks + bankbrug + cache-savings + deferred-schatting + honest `vat_computed` + entered-accrual (external-only). Alle nieuw: SECURITY DEFINER, REVOKE anon/authenticated, GRANT service_role.
+- **`admin_finance_summary(from,to)`** — live periode-RPC per scope: flows/stocks + bankbrug + cache-savings + deferred-schatting + honest `vat_computed` + entered-accrual (external-only). Alle nieuw: SECURITY DEFINER, REVOKE anon/authenticated, GRANT service_role. **F15 (2026-07-16):** bubbelt `_geld_scope.drivers` per scope door, aangevuld met `funnel_anon.proxy_bytes` (uit `daily_cost_counters`) + `goodwill.granted_credits` (verbruikt − purchased-verbruikt); top-level `rates` bevat nu ook de drie DeepSeek-token-tarieven. Puur additief voor de UI-driverweergave (`driver × tarief = bedrag`).
 - **`log_caption_usage(...,p_source)`** — 7e DEFAULT-param voor `usage_logs.source`.
 
 ---

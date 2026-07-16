@@ -104,7 +104,7 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 1. **Naam:** kolommen "Cost / Credits / € per credit" per rij (AI transcription / Auto-captions / AI summary / RAG / Storage), plus de rij "Total measured COR".
 2. **Formule (Aanvulling 3, Khidr's keuze):** de tabel toont de **VOLLE kost** per methode zodat de rij vermenigvuldigt. `Cost = cor[k]` (volle gemeten COR), `Credits = consumed_by_type[k]` (alle verbruikte credits), `€/credit = cor[k] / credits` → `Credits × €/credit = Cost`. De against-revenue/goodwill-splitsing staat als **aparte regel eronder** ("of which against revenue €X · goodwill €Y"), niet in de kolommen. De Stripe-fee heeft een eigen regel (recognised/deferred).
 3. **Bron:** `admin_finance_summary` `cor.<k>` (volle kost) + `cor.against_revenue_by_method` (voor de split-regel) + `cor.payment_fee` (fee-regel).
-4. **Driver:** per methode het volume × tarief (zie §2.4–2.8). De rij is nu zelf-consistent (kolommen vermenigvuldigen).
+4. **Driver:** per methode het volume × tarief (zie §2.4–2.8). ✅ **Sinds F15 (2026-07-16) getoond als sub-regel** `driver × tarief = bedrag` onder elke methode-badge, zodat de rij narekenbaar is zonder de code te openen. Vaste kolombreedtes (`grid-cols-[minmax(0,1fr)_5.5rem_5rem_7rem]`) + `tabular-nums` → Cost/Credits/€per-credit staan op een vaste x-positie ongeacht de celinhoud. De verwijderde-in-F15 "playlists"-voetregel (algemene toelichting, verklaarde geen tabelgetal) is geschrapt; de against/goodwill-split, de Stripe-fee-regel en de RAG-aanname (verklaart de €0) blijven.
 5. **Tijdstoewijzing:** flow (methode-event-tijd); de split-regel eronder gebruikt de per-user against (§2.2).
 6. **Scope:** volle kost = aggregaat (pure kostensom, §2.4–2.8). De split-regel eronder is ✅ per-user (§2.2).
 7. **Aannames/zwakke plekken:** de drie populaties die vroeger in één rij botsten (against-Cost × alle-credits × volle-€/credit) zijn ontkoppeld: de tabel toont nu één consistente populatie (volle kost), de splitsing is een losse regel. Storage-rij heeft geen per-credit-eenheid ("—").
@@ -113,7 +113,7 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 1. **Naam:** onder "AI transcription" (Cost/Credits/€ per credit).
 2. **Formule:** `cor_ai = (Σ duration_seconds / 60) × assemblyai_eur_per_min + (Σ proxy_bytes / 1e9) × decodo_eur_per_gb`. Credits-kolom = `consumed_by_type.ai_transcription`; €/credit = `cor_ai / credits`.
 3. **Bron:** `transcription_jobs` (`duration_seconds`, `proxy_bytes`) waar `status='complete' AND cache_hit=false`; tarieven uit `cost_config`.
-4. **Driver:** AssemblyAI-minuten + proxy-bytes (👁️ niet in UI) + verbruikte credits (zichtbaar in Credits-kolom).
+4. **Driver:** AssemblyAI-minuten + proxy-bytes + verbruikte credits. ✅ **Zichtbaar sinds F15** (2026-07-16): de COR-rij toont `X min × €/min + Z GB × €/GB = €bedrag` (min = `audio_seconds/60`, GB = `proxy_bytes/1e9`), narekenbaar tegen `cost_config`. Drivers komen uit `admin_finance_summary` `<scope>.drivers.ai_transcription` (`audio_seconds`, `proxy_bytes`).
 5. **Tijdstoewijzing:** flow op `transcription_jobs.created_at`. 🟢 klopt (job draait ~bij creatie).
 6. **Scope:** aggregaat (Σ over scope-users via `user_id = ANY(users)`). Correct: het is een pure kostensom, geen per-wallet-logica.
 7. **Aannames/zwakke plekken:** `cache_hit=true`-jobs → COR 0 (bewust; master-cache-hit betaalt geen AssemblyAI/proxy). Nauwkeurig mits `duration_seconds`/`proxy_bytes` gevuld zijn.
@@ -123,7 +123,7 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 2. **Formule:** `cor_caption = (Σ proxy_bytes waar credits_used>0 / 1e9) × decodo_eur_per_gb`. Credits = `consumed_by_type.caption`; €/credit = `cor_caption / credits`.
    **Prijsregel (geverifieerd 2026-07-15, audit-punt 8):** de caption-**credits** (`consumed_by_type.caption`) zijn **playlist-captions à 1 credit/video** — losse caption-extractie kost **0 credits** en schrijft geen debit. Bewijs: alle caption-debits hebben `amount=1`, `kind='settlement'`, en `metadata.playlist_id` (juli: 602/602; oudere rijen dragen `job_id`+`video_id` i.p.v. `playlist_id`, ook playlist). De COR-rij (bytes) en de credits (playlist-video-count) meten dus hetzelfde caption-verkeer vanaf twee kanten.
 3. **Bron:** `usage_logs` waar `extraction_type='caption' AND success AND is_internal_at_time=scope`, filter `credits_used>0`.
-4. **Driver:** Decodo caption-egress-bytes (👁️) + caption-credits (zichtbaar).
+4. **Driver:** Decodo caption-egress-bytes + caption-credits. ✅ **Zichtbaar sinds F15**: rij toont `Z GB × €/GB = €bedrag` (`drivers.caption.proxy_bytes/1e9`).
 5. **Tijdstoewijzing:** flow op `usage_logs.created_at`. 🟢 klopt.
 6. **Scope:** aggregaat op `is_internal_at_time` (point-in-time stempel). Correct (kostensom).
 7. **Aannames/zwakke plekken:** `cor_caption_estimated` staat **hardcoded `false`** in de code — het getal presenteert zich als gemeten. Dat klopt alleen zolang `proxy_bytes` op élk caption-event (incl. playlist) echt gemeten is; oudere/niet-geïnstrumenteerde rijen met `proxy_bytes=0` verlagen de COR stilzwijgend. 🟡 (label zegt "gemeten", nauwkeurigheid afhankelijk van instrumentatie).
@@ -132,7 +132,7 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 1. **Naam:** "AI summary".
 2. **Formule:** `cor_ai_summary = (max(prompt_tokens − cache_hit_tokens,0)/1000) × deepseek_eur_per_1k_input_tokens + (cache_hit_tokens/1000) × deepseek_eur_per_1k_cache_hit_tokens + (completion_tokens/1000) × deepseek_eur_per_1k_output_tokens`.
 3. **Bron:** ✅ **`ai_summary_usage_log`** (insert-only per-run tokenlog: `prompt_tokens`, `completion_tokens`, `cache_hit_tokens`, `generated_at`) — sinds F2 (2026-07-16, ADR-064). `transcripts.ai_summary_usage` blijft bestaan als transcript-eigen record maar is **niet meer de COR-bron** (en wordt door de UI niet gelezen — geverifieerd).
-4. **Driver:** DeepSeek-tokens (👁️).
+4. **Driver:** DeepSeek-tokens. ✅ **Zichtbaar sinds F15**: rij toont `N in × €/1k [+ cache] + N out × €/1k = €bedrag` (`drivers.ai_summary.input_tokens/cache_tokens/output_tokens`; de drie DeepSeek-tarieven staan sinds F15 ook in `rates`).
 5. **Tijdstoewijzing:** ✅ flow op **`generated_at`** (het moment waarop de samenvatting draaide) — niet meer op `transcripts.created_at`. Zie **§8** (opgelost). Zowel het scope-totaal als de per-user CTE lezen de log op `generated_at`.
 6. **Scope:** aggregaat (kostensom) + per-user CTE (§2.2). Correct qua pooling.
 7. **Aannames/zwakke plekken:** ✅ regenerate is niet langer destructief voor de COR — elke run is een aparte, onveranderlijke logrij op zijn eigen `generated_at`, dus 2 runs tellen 2× (i.p.v. de in-place-overschrijving die run 1 wegtelde). Zie §8.
@@ -150,7 +150,7 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 1. **Naam:** "Storage (R2)".
 2. **Formule:** `cor_storage = max(0, GB − r2_free_gb) × r2_usd_per_gb_month × usd_eur_rate × (dagen_in_periode / dagen_in_maand)`, met `GB = Σ bytes / 1e9` over externe users. Sinds F3 (2026-07-16, ADR-064) berekend **in `_geld_scope`** (niet meer flat in `admin_finance_summary`) en **per-user geattribueerd**: elk user-slice = `cor_storage_totaal × user_bytes/total_bytes`, gesplitst against-revenue (× share) vs goodwill (× 1−share), net als §2.4–2.6. Credits/€per-credit = "—".
 3. **Bron:** byte-**serie** `daily_library_bytes` (per nacht per-user weggeschreven door `snapshot_finance_day`) als die het venster-begin dekt (`min(day) ≤ from`); anders terugval op `user_credits.library_bytes` (stand-nu) met `storage_approx=true`. `cost_config` R2-tarieven. De R2-gratis-tier (10 GB) is account-niveau; per-user attributie gebeurt op byte-aandeel ná de vrije-tier-aftrek.
-4. **Driver:** opgeslagen bytes (👁️, wel als `storage_bytes` in de block maar niet in de COR-tabel getoond).
+4. **Driver:** opgeslagen bytes. ✅ **Zichtbaar sinds F15**: rij toont `G GB boven free_gb × €/GB·mo × usd_eur × dagen/maand = €bedrag`, of bij ≤ free-tier `G GB · within N GB free tier = €0` — dit verklaart de veelvoorkomende €0. Drivers uit `drivers.storage` (`gb`, `free_gb`, `days_win`, `days_month`).
 5. **Tijdstoewijzing:** ✅ leest de **periode-stand** uit de byte-serie wanneer beschikbaar; tot dan stand-nu **met zichtbare `storage_approx`-markering** in de UI (Storage-rij) — geen stille stand-nu-voor-historie meer. De serie start bij de eerste cron-nacht na F3; oudere vensters blijven `approx` tot de serie ze dekt.
 6. **Scope:** alleen external; bij internal is storage 0. Per-user over externe library — correct. **Impact nu = €0** (externe lib 122 KB « 10 GB gratis); de meting is gebouwd zodat de attributie klopt zodra de bibliotheek groeit, niet omdat het nu telt.
 7. **Aannames/zwakke plekken:** proratering veronderstelt constante opslag over de maand; backfill van oude periodes gebruikt de huidige bytes (niet reconstrueerbaar). Volledig tegen omzet (geen share) — zie §2.2.
@@ -188,7 +188,7 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 1. **Naam:** "Goodwill — granted credits used".
 2. **Formule:** `granted_delivery_cost = Σ_user Σ_methode (user_period_cor_methode × (1 − user_period_share))`. De leverkosten van gratis verbruikte credits, per user.
 3. **Bron:** `_geld_scope` `v_granted_deliv` (= `v_goodwill`, de per-user som).
-4. **Driver:** dezelfde COR-drivers × (1−user_share). 👁️
+4. **Driver:** dezelfde COR-drivers × (1−user_share). ✅ **Zichtbaar sinds F15**: OPEX-rij toont `N granted credits × ~€/credit` (N = `drivers.goodwill.granted_credits` = verbruikt − purchased-verbruikt; €/credit = `goodwill / N`, gemengd tarief, daarom `~`).
 5. **Tijdstoewijzing:** flow × periode-share (per user).
 6. **Scope:** ✅ **per-user** — spiegelbeeld van §2.2, nu correct. Sluit per constructie: `Σ_user(user_cor×share) + Σ_user(user_cor×(1−share)) = Σ_user user_cor = volle COR` (excl. storage/fee). Bewezen: A/B-test goodwill €10 (A's volle COR, share 0).
 7. **Aannames/zwakke plekken:** de fee draagt geen goodwill-deel (granted credits kosten geen Stripe-fee); goodwill dekt alleen de leverkosten (AssemblyAI/Decodo/DeepSeek/opslag).
@@ -199,7 +199,7 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
    - logged-in: `funnel_free_caption_cost = (Σ proxy_bytes waar credits_used=0 / 1e9) × decodo_eur_per_gb` (uit `usage_logs`, per scope).
    - anonymous: `(Σ daily_cost_counters.caption_proxy_bytes / 1e9) × decodo_eur_per_gb` (alleen external).
 3. **Bron:** `usage_logs` (logged-in gratis captions) resp. `daily_cost_counters` (anonieme captions, geen user).
-4. **Driver:** gratis caption-egress-bytes (👁️).
+4. **Driver:** gratis caption-egress-bytes. ✅ **Zichtbaar sinds F15**: beide rijen tonen `Z GB × €/GB` (`drivers.funnel_loggedin.proxy_bytes` resp. `drivers.funnel_anon.proxy_bytes`, ÷1e9). Anon-bytes komen uit `daily_cost_counters`, in `admin_finance_summary` aan `drivers` toegevoegd.
 5. **Tijdstoewijzing:** logged-in = flow op `usage_logs.created_at`; anon = flow op `daily_cost_counters.day` (Amsterdam-dag).
 6. **Scope:** logged-in per scope (via `is_internal_at_time`); anon alleen external (anonieme users hebben geen `is_internal`). Aggregaat — correct.
 7. **Aannames/zwakke plekken:** anon draait op dag-grain (`day`), de rest op timestamptz — kleine dag-randverschillen. Anon-teller is globaal (geen scope-splitsing mogelijk).
@@ -388,7 +388,8 @@ Bij < 2 snapshotrijen: tekst i.p.v. grafiek, met de **echte startdatum** uit `MI
 | `cor_ai_summary` tijdstoewijzing (§2.6) | 🟢 op `generated_at` via `ai_summary_usage_log` (F2, §8 opgelost) |
 
 ### 6.3 Onzichtbare drivers (volume niet afleesbaar in UI) — 👁️
-AssemblyAI-minuten, proxy-bytes (transcriptie én caption), DeepSeek-tokens, opslag-bytes (wel in block `storage_bytes`, niet in de COR-tabel), aantal sales achter charged/fee/vat, lot-€/credit achter recognized/deferred. **Wel** zichtbaar: credits per methode (COR-tabel), cache-pct (subregel), entered bedrag+datums (OPEX-hint).
+✅ **F15 (2026-07-16) heeft de COR- én OPEX-driver-volumes zichtbaar gemaakt** als `driver × tarief = bedrag` per rij: AssemblyAI-minuten, proxy-bytes (transcriptie én caption), DeepSeek-tokens, opslag-GB (incl. free-tier-verklaring), goodwill granted-credits, en de free-caption-funnel-bytes (logged-in + anon). Bron: `admin_finance_summary` `<scope>.drivers` + de tarieven in `rates` (incl. de drie DeepSeek-token-tarieven).
+**Nog onzichtbaar:** aantal sales achter charged/fee/vat (§3.x), lot-€/credit achter recognized/deferred (§4.x), Deferred est.-drivers (§4.3). **Wel** zichtbaar gebleven: credits per methode (COR-tabel), cache-pct (subregel), entered bedrag+datums (OPEX-hint).
 
 ---
 
