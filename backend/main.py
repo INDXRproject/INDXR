@@ -22,7 +22,7 @@ from upstash_redis.asyncio import Redis as UpstashRedis
 
 import yt_dlp
 from master_cache import master_transcripts_read, master_transcripts_write
-from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp
+from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp, _CountingYoutubeDL
 from transcription_pipeline import run_whisper_reservation_aware
 from language_utils import normalize_language_code
 
@@ -92,7 +92,8 @@ from credit_manager import (
     add_credits,
     reserve_credits,
     RESERVATION_ENABLED,
-    get_supabase_client
+    get_supabase_client,
+    record_proxy_bytes,
 )
 
 # Setup logging
@@ -636,11 +637,14 @@ async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_ba
     
     import time
     start_time = time.time()
-    
+
+    # F18: _CountingYoutubeDL tallies the proxied Decodo egress of this scrape. Recorded in `finally`
+    # so the bytes count even when extract_info raises — this call spends proxy regardless of outcome.
+    _pl_ydl = _CountingYoutubeDL(ydl_opts)
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with _pl_ydl as ydl:
             info = ydl.extract_info(request.videoIdOrUrl, download=False)
-            
+
             duration = time.time() - start_time
             logger.info(f"yt-dlp fetched in {duration:.2f} seconds")
             
@@ -685,6 +689,8 @@ async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_ba
             success=False,
             error="Failed to fetch playlist information"
         )
+    finally:
+        record_proxy_bytes("playlist_info", getattr(_pl_ydl, "egress_read", 0))
 
 @app.get("/api/video/metadata/{video_id}")
 async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_secret)):
@@ -712,8 +718,11 @@ async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_sec
     if proxy_url:
         ydl_opts['proxy'] = proxy_url
 
+    # F18: count the proxied Decodo egress of this metadata scrape (recorded in `finally`, so it counts
+    # even when extract_info raises). Uncounted before — this call spends proxy on every fallback.
+    _md_ydl = _CountingYoutubeDL(ydl_opts)
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with _md_ydl as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
 
             return {
@@ -731,6 +740,8 @@ async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_sec
             scope.set_tag("cascade_step", "step2_yt-dlp")
         sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=404, detail=f"Failed to fetch video metadata: {str(e)}")
+    finally:
+        record_proxy_bytes("metadata", getattr(_md_ydl, "egress_read", 0))
 
 
 def _cleanup_tmp(path: Optional[str]) -> None:

@@ -179,6 +179,10 @@ async def extract_via_youtube_transcript_api(
     fetch (video page + timedtext), so the free-caption cost is measured like the yt-dlp route.
     """
     logger.info(f"[YT-API] attempting {video_id} (native-anchored; lang_pref={lang_pref!r} not used for steering)")
+    # F18: accumulate this session's proxied egress; on failure (return None → cascade continues) the
+    # bytes still spent over the proxy are recorded as 'caption_failed' overhead in the finally.
+    _egress = {"bytes": 0}
+    _delivered = False
     try:
         import requests
         from youtube_transcript_api import (
@@ -200,7 +204,6 @@ async def extract_via_youtube_transcript_api(
         # response hook sums len(response.content) — same decompressed-body convention as the
         # yt-dlp VTT route (caption_bytes) — closing the step-1 capture gap (previously proxied
         # but never counted). The library applies proxy_config (proxies + 429-retries) to it.
-        _egress = {"bytes": 0}
         _http_client = requests.Session()
         _http_client.hooks["response"].append(
             lambda r, *a, **k: _egress.__setitem__("bytes", _egress["bytes"] + len(r.content))
@@ -231,6 +234,7 @@ async def extract_via_youtube_transcript_api(
         ]
 
         logger.info(f"[YT-API] success for {video_id} native={native!r} lang={fetched.language_code} generated={chosen.is_generated} proxy_bytes={_egress['bytes']}")
+        _delivered = True  # success → proxy_bytes logged to usage_logs by the caller (not overhead)
         return {
             "transcript": transcript,
             "language": fetched.language_code,
@@ -259,6 +263,10 @@ async def extract_via_youtube_transcript_api(
     except Exception as e:
         logger.warning(f"[YT-API] {video_id}: unexpected {type(e).__name__}: {e}")
         return None
+    finally:
+        if not _delivered and _egress["bytes"] > 0:
+            from credit_manager import record_proxy_bytes
+            record_proxy_bytes("caption_failed", _egress["bytes"])
 
 
 class _CountingYoutubeDL(yt_dlp.YoutubeDL):
@@ -344,8 +352,13 @@ async def extract_with_ytdlp(
         else:
             logger.info("Proxy disabled — extracting captions directly")
 
+    # F18: track whether we delivered a transcript. On any non-success exit (no native track, no VTT,
+    # tlang= rejection, block, or raise) the extract_info egress (~1–2 MB) still went through the proxy
+    # but is NOT logged to usage_logs → record it as 'caption_failed' proxy overhead in the finally.
+    _ydl = _CountingYoutubeDL(ydl_opts)
+    _delivered = False
     try:
-        with _CountingYoutubeDL(ydl_opts) as ydl:
+        with _ydl as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
 
             subtitles = None
@@ -470,6 +483,7 @@ async def extract_with_ytdlp(
             iso_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}" if raw_date else None
 
             logger.info(f"{log_prefix} success for {video_id} lang={language}")
+            _delivered = True  # success → proxy_bytes are logged to usage_logs by the caller (not overhead)
             return {
                 'transcript': transcript,
                 'title': info.get('title'),
@@ -503,3 +517,8 @@ async def extract_with_ytdlp(
             level="error",
         )
         raise
+    finally:
+        if not _delivered:
+            # Lazy import (mirrors master_cache) to avoid any module-load ordering coupling.
+            from credit_manager import record_proxy_bytes
+            record_proxy_bytes("caption_failed", getattr(_ydl, "egress_read", 0))

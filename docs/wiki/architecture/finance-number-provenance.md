@@ -204,6 +204,15 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 6. **Scope:** logged-in per scope (via `is_internal_at_time`); anon alleen external (anonieme users hebben geen `is_internal`). Aggregaat — correct.
 7. **Aannames/zwakke plekken:** anon draait op dag-grain (`day`), de rest op timestamptz — kleine dag-randverschillen. Anon-teller is globaal (geen scope-splitsing mogelijk).
 
+### 2.13b OPEX-rij: Proxy overhead (F18, ADR-066)
+1. **Naam:** "Proxy overhead".
+2. **Formule:** `proxy_overhead = (proxy_fail_bytes + proxy_global_bytes)/1e9 × decodo_eur_per_gb`. `proxy_fail_bytes` = `Σ transcription_jobs.proxy_bytes WHERE status<>'complete'` (per scope, via `users`-array); `proxy_global_bytes` = `Σ proxy_usage_log.bytes` (globaal, **alleen external** — niet user-toewijsbaar, net als funnel_anon).
+3. **Bron:** `transcription_jobs` (error/running-rijen dragen al proxy_bytes uit `audio_utils`) + nieuwe tabel `proxy_usage_log` (categorieën `playlist_info`/`metadata`/`caption_failed`, forward-only geschreven door `record_proxy_bytes`). Tarief uit `cost_config`.
+4. **Driver:** ✅ **zichtbaar (F15-stijl)**: `total_bytes/1e9 GB × €/GB` + bron-splitsing (failed jobs · metadata · playlist-info · caption fails) uit `drivers.proxy_overhead` (`fail_bytes`, `global_bytes`, `total_bytes`, `by_category`). Bij €0 (forward-only, nog niets gemeten) legt de hint uit wat de regel gaat bevatten.
+5. **Tijdstoewijzing:** flow — non-complete jobs op `created_at`, log op `occurred_at`.
+6. **Scope:** failed-job-deel per scope (via `users`); globale log external-only. Internal toont alleen zijn eigen failed-job-bytes.
+7. **Aannames/zwakke plekken:** **OPEX niet COR** (geen geleverde eenheid — ADR-066). **Geen dubbeltelling** met COR: `status='complete'` (COR) vs `status<>'complete'` (overhead) is een exacte partitie (`overlap=0` all-time geverifieerd); `proxy_usage_log` is fysiek apart en wordt alleen geschreven door paden die nooit `transcription_jobs`/`usage_logs` vullen (mislukte caption logt `usage_logs` mét `proxy_bytes=0`). **Ondergrens** blijft: Decodo-dashboard/API is de bovengrens (niet gewired). bgutil bestaat niet meer, geen proxy-health-check.
+
 ### 2.14 COR-component: Payment processing (Stripe-fee) — verplaatst van OPEX naar COR
 1. **Naam:** "Payment processing (Stripe)" — nu een **COR**-regel onder de COR-tabel (§2.3), niet meer een OPEX-rij.
 2. **Formule (ADR-063, F22):** de fee wordt **per aankoop-lot** gedefereerd. Per lot `fee_pc = stripe_fee / amount`; bij FIFO-consumptie van gekochte credits `recognized_fee += verbruikt × fee_pc`; het restant van elk lot → `deferred_fee`. `recognized_fee` telt in `cor_against_revenue` (§2.2); `deferred_fee` staat in de Deferred-kaart (§4.x). `purchased_fee = recognized_fee + deferred_fee` = de totale fee van de lots.

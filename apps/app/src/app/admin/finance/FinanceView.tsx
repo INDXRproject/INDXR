@@ -283,6 +283,20 @@ function OpexTable({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rat
     hint: `${fmtNum(dv.funnel_anon.proxy_bytes / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB`,
     cost: m.funnel_anon,
   })
+  // F18: proxy egress that delivered no paid unit — failed/blocked jobs + playlist-info/metadata/caption
+  // scrapes. When 0 (forward-only, none measured yet) the hint explains what the line will hold.
+  const po = dv.proxy_overhead
+  const CAT_LABEL: Record<string, string> = { metadata: "metadata", playlist_info: "playlist-info", caption_failed: "caption fails" }
+  const poParts: string[] = []
+  if (po.fail_bytes > 0) poParts.push(`${fmtNum(po.fail_bytes / 1e9, 3)} GB failed jobs`)
+  for (const [cat, b] of Object.entries(po.by_category)) poParts.push(`${fmtNum(b / 1e9, 3)} GB ${CAT_LABEL[cat] ?? cat}`)
+  measuredRows.push({
+    name: "Proxy overhead",
+    hint: po.total_bytes > 0
+      ? `${fmtNum(po.total_bytes / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB${poParts.length ? ` · ${poParts.join(" · ")}` : ""}`
+      : "proxy spent outside delivered jobs (failed jobs · playlist-info · metadata · blocked captions) — none measured yet this period",
+    cost: m.proxy_overhead,
+  })
 
   return (
     <div className="mt-1 rounded-lg border bg-surface-sunken/40">

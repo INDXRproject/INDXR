@@ -9784,3 +9784,51 @@ docs/wiki/architecture/database-schema.md
 docs/wiki/architecture/finance-number-provenance.md
 supabase/migrations/20260716140000_finance_cor_drivers_visible.sql
 ---
+[2026-07-16 16:10] F18 proxy-volledigheid: alle Decodo-bytes tellen (ADR-066) | ONGEMETEN paden nu geteld → nieuwe OPEX-regel "Proxy overhead" (bytes × decodo, driver zichtbaar F15-stijl). Nieuwe tabel proxy_usage_log (playlist_info/metadata/caption_failed, RLS geen-policies, service-role) + record_proxy_bytes (credit_manager, best-effort). Backend-hooks: main.py playlist-info + metadata → _CountingYoutubeDL + record in finally; youtube_utils extract_with_ytdlp + extract_via_youtube_transcript_api → caption-failure egress in finally (delivered-flag voorkomt dubbeltelling met usage_logs). RPC: _geld_scope geeft proxy_fail_bytes (status<>'complete', per scope); admin_finance_summary telt fail + globale log (external-only) → measured_opex.proxy_overhead + net; snapshot_finance_day + kolom opex_proxy_overhead (forward-only). LANDT IN OPEX niet COR (geen geleverde eenheid, zelfde soort als free-caption-funnel). DUBBELTELLING BEWEZEN NUL: complete(COR) vs non-complete(overhead) exacte partitie (overlap=0 all-time), proxy_usage_log fysiek apart. Verificatie: 1GB testrij → €2.99 overhead, ext_net −0.03→−3.02, weer verwijderd → baseline; ACL anon/auth=false; overhead nu €0 (forward-only, teller vult vanaf nu). bgutil weg (ADR-027) + geen health-check → gerapporteerd in known-issues. Build app groen, py_compile groen. | gewijzigd: supabase/migrations/20260716160000_f18_proxy_overhead.sql, backend/{credit_manager.py,main.py,youtube_utils.py}, apps/app/src/app/admin/finance/{financeTypes.ts,FinanceView.tsx}, docs/wiki/decisions/066-*, docs/wiki/{INDEX.md,architecture/{database-schema.md,finance-number-provenance.md},operations/known-issues.md}
+[2026-07-16 14:13] commit: feat(finance): F18 proxy overhead — count ALL Decodo egress (ADR-066)
+
+Decodo-bytes werden alleen op geslaagde levering geteld (transcription_jobs
+complete + betaalde captions). Al het overige proxy-verkeer telde nul:
+falende/geblokkeerde jobs, playlist-info- en metadata-scrapes, en de
+extract_info-egress van caption-pogingen die niets vinden.
+
+Nieuw kostenkanaal "Proxy overhead" als OPEX-regel (bytes × decodo, driver
+zichtbaar F15-stijl):
+ - nieuwe tabel proxy_usage_log (playlist_info/metadata/caption_failed, RLS
+   geen-policies, service-role) + credit_manager.record_proxy_bytes (best-effort)
+ - backend-hooks: main.py playlist-info + metadata → _CountingYoutubeDL, record
+   in finally; youtube_utils extract_with_ytdlp + transcript_api → caption-failure
+   egress in finally (delivered-flag houdt success uit de overhead-bak)
+ - _geld_scope geeft proxy_fail_bytes (status<>'complete', per scope);
+   admin_finance_summary telt fail + globale log (external-only) →
+   measured_opex.proxy_overhead + net; snapshot_finance_day + kolom
+   opex_proxy_overhead (forward-only)
+
+Landt in OPEX niet COR: dit verkeer levert geen betaalde eenheid (pre-purchase
+scrapes, gefaalde/gerefunde jobs) — zelfde soort als de free-caption-funnel.
+
+Geen dubbeltelling (bewezen): complete(COR) vs non-complete(overhead) is een
+exacte partitie (overlap=0 all-time); proxy_usage_log is fysiek apart en wordt
+alleen geschreven door paden die nooit transcription_jobs/usage_logs vullen.
+
+Verificatie: 1GB testrij → €2.99 overhead, ext_net −0.03→−3.02, weer verwijderd →
+baseline; record_proxy_bytes schrijft echt (end-to-end getest, opgeruimd); ACL
+anon/auth=false; overhead nu €0 (forward-only). Build app groen, py_compile groen.
+
+bgutil bestaat niet meer (ADR-027) + geen proxy-health-check → gerapporteerd in
+known-issues, buiten scope gelaten.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+backend/credit_manager.py
+backend/main.py
+backend/youtube_utils.py
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/decisions/066-proxy-overhead-opex.md
+docs/wiki/operations/known-issues.md
+supabase/migrations/20260716160000_f18_proxy_overhead.sql
+---

@@ -68,6 +68,9 @@ export interface FinanceScope {
       free_until: string | null
       fee: number
     }
+    // F18: proxy egress not tied to a delivered job/caption (failed jobs + playlist-info/metadata/
+    // caption-failure scrapes) × decodo rate. bytes measured, driver in drivers.proxy_overhead.
+    proxy_overhead: number
     total: number
   }
   entered_opex_total: number
@@ -112,6 +115,8 @@ export interface FinanceDrivers {
   funnel_loggedin: { proxy_bytes: number }
   funnel_anon: { proxy_bytes: number }
   goodwill: { granted_credits: number }
+  // F18: proxy overhead bytes = failed-job proxy_bytes (per scope) + global scrape log (external only).
+  proxy_overhead: { fail_bytes: number; global_bytes: number; total_bytes: number; by_category: Record<string, number> }
 }
 
 export interface EnteredOpexLine {

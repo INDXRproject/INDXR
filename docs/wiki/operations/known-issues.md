@@ -109,6 +109,10 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 - **Geen sorteertoggle op ticket-lijsten** — admin Open-filter is altijd oudste-eerst (wachtrij). User-kant is altijd nieuwste-eerst. Sorteertoggle toevoegen is niet gevraagd en voegt complexiteit zonder noodzaak.
 - **Geen realtime/WebSocket push voor de unread-dot** — de `useUnreadMessages` hook refresht op navigation en op `"indxr-messages-read"` custom event (near-real-time). Volledige WebSocket push is disproportioneel voor een support-systeem met lage berichtfrequentie. Zie ADR-008 (polling vs. WebSockets).
 
+### Docs-drift (gerapporteerd, niet gefixt)
+- **CLAUDE.md `bgutil-pot`-secties zijn stale** — bgutil is verwijderd sinds ADR-027 (yt-dlp client-rotatie); `grep "bgutil"` in `backend/` geeft 0 hits. De CLAUDE.md-blokken "bgutil-pot" en de proxy-`session_id`-Whisper-noot verwijzen naar code die niet meer bestaat. Ontdekt tijdens F18 (proxy-inventarisatie); buiten F18-scope gelaten. Idem: er is géén proxy-health-check (alleen `/health` = `{"status":"healthy"}`, geen proxy).
+- **Decodo-usage-API/dashboard niet gewired** — het Decodo-dashboard/statistics-endpoint (verbruikte GB per periode) is de bovengrens waartegen de proxy-meting (nu een ondergrens, ADR-065/066) te reconciliëren is. Reconciliatie-taak, buiten F18-scope.
+
 ---
 
 ## Kritieke TODO's (blokkeren live launch)
