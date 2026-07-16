@@ -9651,3 +9651,30 @@ supabase/migrations/20260716095301_f5b_snapshot_net_adr063.sql
 supabase/migrations/20260716095631_f2_ai_summary_usage_log.sql
 supabase/migrations/20260716095807_f2_geld_scope_summary_from_log.sql
 ---
+
+[2026-07-16 13:15] Deel B F3: storage-COR gemeten + per-user geattribueerd. Nieuwe tabel daily_library_bytes (insert-only, RLS) — snapshot_finance_day schrijft per nacht per-user externe library_bytes. _geld_scope berekent storage nu zelf (extern), per-user geattribueerd (user_bytes-share × consumption-share, net als ai/cap/sum-F1) i.p.v. flat tegen omzet; byte-bron = de dag-serie als die het venster-begin dekt, anders stand-nu met storage_approx=true. admin_finance_summary + snapshot lezen storage uit _geld_scope (flat-add verwijderd). storage_approx geëxposeerd + UI-markering op de Storage(R2)-rij. Invariant: echte data storage=€0 → int_net −7.02 / cor_ar 0.7803 / ext_net −0.03 ongewijzigd. Synthetisch (2 externe users, tegengestelde shares, A=15GB/share0, B=1GB/share1): flat 0.0267 volledig tegen omzet vs per-user 0.0017 tegen omzet + 0.0250 goodwill (reconcilieert). Byte-serie: approx→false, leest periode-stand 22GB i.p.v. stand-nu 16GB. Wegwerp-data opgeruimd, snapshot+serie leeg (clean-start). Build groen; advisors: geen nieuwe RLS-issues. | gewijzigd: supabase/migrations/20260716{115500,120000,120500,121000}*.sql, apps/app/src/app/admin/finance/{FinanceView.tsx,financeTypes.ts}, docs/LOG.md
+[2026-07-16 12:26] commit: feat(finance): F3 storage COR measured + per-user attributed
+
+Storage COR moved into _geld_scope and attributed per user (user_bytes-share
+× consumption-share), the same class as ai/caption/summary (F1). Previously
+admin_finance_summary added the FULL storage COR flat against revenue — the
+storage of free users landed against one payer. Now each user's storage slice
+splits against-revenue (× share) vs goodwill (× 1-share).
+
+Measurement: new insert-only daily_library_bytes (RLS); snapshot_finance_day
+writes per-user external library_bytes nightly. The formula reads the byte
+series when it spans the window start, else falls back to the current library
+size with storage_approx=true (surfaced as a UI marker on the Storage row) —
+no silent stand-now-for-history. admin_finance_summary + snapshot read storage
+from _geld_scope (flat add removed).
+
+Real-data invariant (storage €0): net −7.02/−0.03, cor_against_revenue 0.7803
+unchanged. Synthetic 2-user opposite-share test: flat 0.0267 all against
+revenue vs per-user 0.0017 against + 0.0250 goodwill (reconciles). Byte-series
+read: approx→false, reads the 22GB period-stand not 16GB stand-now. Throwaway
+data cleaned up; snapshot + series empty (clean-start). Build green; no new
+RLS advisor findings.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260716115500_f3_daily_library_bytes.sql
+---
