@@ -9832,3 +9832,36 @@ docs/wiki/decisions/066-proxy-overhead-opex.md
 docs/wiki/operations/known-issues.md
 supabase/migrations/20260716160000_f18_proxy_overhead.sql
 ---
+[2026-07-16 15:24] precompact: context compaction triggered
+[2026-07-16 16:00] F17 saldi + Decodo-reconciliatie (ADR-067): nachtelijke worker-cron fetch_service_metrics (02:00 UTC) → DeepSeek prepaid-saldo (Operations "External services"-kaart, alert < cost_config.deepseek_low_balance_usd) + Decodo dagverkeer (decodo_daily_usage → Finance OPEX-regel "Proxy reconciliation": billed − measured = gat, external-only, GREATEST(0,gap)). Faalgedrag expliciet: API faalt → "unavailable" + last_success_at (nooit $0), coverage_days=0 → géén gat. AssemblyAI geen API → niets gebouwd (provenance §2.13d). Nieuwe env-var DECODO_API_KEY (dashboard-token) op Railway worker-service. record_service_fetch REVOKE PUBLIC/anon/auth. Bewezen ≥2 periodes (gap 0 + €14,90). Build+py_compile groen. | gewijzigd: backend/worker.py, migratie 20260716180000, apps/app/src/app/admin/{operations/page.tsx,adminTypes.ts,finance/FinanceView.tsx,finance/financeTypes.ts}, docs (ADR-067, INDEX, database-schema, finance-number-provenance, monitoring, known-issues)
+[2026-07-16 15:30] commit: feat(finance): F17 service balances + Decodo reconciliation (ADR-067)
+
+Nightly ARQ worker cron fetch_service_metrics (02:00 UTC, keys server-side):
+- DeepSeek prepaid balance -> Operations 'External services' card, low-balance
+  alert under cost_config.deepseek_low_balance_usd (default $5, configurable).
+- Decodo daily traffic -> decodo_daily_usage -> Finance OPEX row 'Proxy
+  reconciliation' (billed - measured = gap, external-only account-level,
+  GREATEST(0,gap) for wire-vs-decompressed). AssemblyAI has no API -> nothing
+  built (documented in provenance 2.13d).
+
+Failure behaviour explicit: API fails -> 'unavailable' + last_success_at
+(never $0/stale number); coverage_days=0 -> no fabricated gap. record_service_fetch
+REVOKE PUBLIC/anon/auth. New env-var DECODO_API_KEY (dashboard token) on Railway
+worker service. Verified: tables present, ACL denies anon/auth, RPCs return
+services.deepseek + reconciliation blocks; unavailable state confirmed live.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+apps/app/src/app/admin/operations/page.tsx
+backend/worker.py
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/decisions/067-service-balances-and-decodo-reconciliation.md
+docs/wiki/operations/known-issues.md
+docs/wiki/operations/monitoring.md
+supabase/migrations/20260716180000_f17_service_metrics_decodo_reconcile.sql
+---

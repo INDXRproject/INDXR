@@ -71,6 +71,8 @@ export interface FinanceScope {
     // F18: proxy egress not tied to a delivered job/caption (failed jobs + playlist-info/metadata/
     // caption-failure scrapes) × decodo rate. bytes measured, driver in drivers.proxy_overhead.
     proxy_overhead: number
+    // F17: Decodo billed − measured gap (external scope only). 0 when reconciliation status is not 'ok'/'partial'.
+    proxy_reconciliation: number
     total: number
   }
   entered_opex_total: number
@@ -105,6 +107,21 @@ export interface FinanceScope {
   // F15: measured drivers behind each COR/OPEX row, so the UI can render "driver × rate = amount".
   // Every value here is already measured (used to compute the cost above) — it just wasn't surfaced.
   drivers: FinanceDrivers
+  // F17: Decodo billed vs our measured proxy bytes. Account-level → only the external scope carries the
+  // real comparison; internal is { status: "not_applicable" }.
+  reconciliation: FinanceReconciliation
+}
+
+export interface FinanceReconciliation {
+  status: "ok" | "partial" | "unavailable" | "not_applicable"
+  billed_bytes?: number
+  measured_bytes?: number
+  gap_bytes?: number
+  gap_cost?: number
+  coverage_days?: number
+  period_days?: number
+  last_success_at?: string | null
+  last_error?: string | null
 }
 
 export interface FinanceDrivers {

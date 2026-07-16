@@ -1444,6 +1444,103 @@ async def noop_task(ctx: dict) -> str:
     return "ok"
 
 
+def _parse_decodo_traffic(payload) -> list:
+    """Parse the Decodo v2 statistics/traffic response (grouped by day) into
+    [{day, rx, tx}]. Defensive against field-name variants — raises loudly if it
+    can't find parseable rows (→ recorded as a FAILED fetch → UI 'unavailable',
+    never a fabricated number). Validated against the live API on first real run."""
+    items = None
+    if isinstance(payload, dict):
+        for k in ("data", "results", "traffic", "items", "rows"):
+            if isinstance(payload.get(k), list):
+                items = payload[k]
+                break
+    elif isinstance(payload, list):
+        items = payload
+    if items is None:
+        raise RuntimeError(f"unexpected Decodo response shape: {type(payload).__name__}")
+    out = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        day = it.get("date") or it.get("day") or it.get("period") or it.get("timestamp")
+        if not day:
+            continue
+        rx = it.get("rx_bytes") or it.get("rx") or it.get("download_bytes") or it.get("bytes_received") or 0
+        tx = it.get("tx_bytes") or it.get("tx") or it.get("upload_bytes") or it.get("bytes_sent") or 0
+        out.append({"day": str(day)[:10], "rx": int(rx or 0), "tx": int(tx or 0)})
+    if not out:
+        raise RuntimeError("Decodo response had no parseable daily traffic rows")
+    return out
+
+
+async def fetch_service_metrics(ctx: dict) -> str:
+    """F17 nightly (02:00 UTC): DeepSeek prepaid balance (Operations low-balance alert) + Decodo billed
+    traffic (Finance reconciliation). Best-effort per service — a failure records the attempt (keeps the
+    last-good balance + last_success_at, never $0/fabricated) and moves on. AssemblyAI has no balance/usage
+    API (PAYG + auto-recharge) → nothing to fetch. All calls server-side; keys live only on this worker."""
+    import httpx
+    sb = get_supabase_client()
+
+    # ── DeepSeek prepaid balance ─────────────────────────────────────────────────
+    ds_key = os.getenv("DEEPSEEK_API_KEY")
+    try:
+        if not ds_key:
+            raise RuntimeError("DEEPSEEK_API_KEY not set")
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                "https://api.deepseek.com/user/balance",
+                headers={"Authorization": f"Bearer {ds_key}", "Accept": "application/json"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        infos = data.get("balance_infos") or []
+        usd = next((b for b in infos if b.get("currency") == "USD"), None) or (infos[0] if infos else None)
+        if not usd or usd.get("total_balance") is None:
+            raise RuntimeError("no USD balance_infos in DeepSeek response")
+        bal = float(usd["total_balance"])
+        cur = usd.get("currency") or "USD"
+        await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
+            "p_service": "deepseek", "p_ok": True, "p_balance": bal, "p_currency": cur, "p_error": None}).execute())
+        logger.info(f"[service-metrics] deepseek balance {cur} {bal}")
+    except Exception as e:
+        logger.warning(f"[service-metrics] deepseek fetch failed: {e}")
+        await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
+            "p_service": "deepseek", "p_ok": False, "p_error": str(e)[:500]}).execute())
+
+    # ── Decodo billed traffic (last 3 days grouped by day — catches late-settling data) ──
+    dc_key = os.getenv("DECODO_API_KEY")
+    try:
+        if not dc_key:
+            raise RuntimeError("DECODO_API_KEY not set")
+        today = datetime.now(timezone.utc).date()
+        body = {"startDate": (today - timedelta(days=3)).isoformat(),
+                "endDate": today.isoformat(), "groupBy": "day"}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                "https://api.decodo.com/api/v2/statistics/traffic",
+                headers={"Authorization": f"Bearer {dc_key}", "Content-Type": "application/json"},
+                json=body,
+            )
+            resp.raise_for_status()
+            rows = _parse_decodo_traffic(resp.json())
+        now_iso = datetime.now(timezone.utc).isoformat()
+        for r in rows:
+            rx, tx = r["rx"], r["tx"]
+            await asyncio.to_thread(lambda r=r, rx=rx, tx=tx: sb.table("decodo_daily_usage").upsert({
+                "day": r["day"], "rx_bytes": rx, "tx_bytes": tx, "billed_bytes": rx + tx,
+                "fetched_at": now_iso}, on_conflict="day").execute())
+        await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
+            "p_service": "decodo", "p_ok": True, "p_error": None}).execute())
+        logger.info(f"[service-metrics] decodo upserted {len(rows)} day(s)")
+    except Exception as e:
+        logger.warning(f"[service-metrics] decodo fetch failed: {e}")
+        await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
+            "p_service": "decodo", "p_ok": False, "p_error": str(e)[:500]}).execute())
+
+    return "ok"
+
+
 class WorkerSettings:
     functions = [
         noop_task,
@@ -1451,10 +1548,14 @@ class WorkerSettings:
         arq_func(process_playlist_video, keep_result=0),
         arq_func(process_playlist_retries, keep_result=0),
         watchdog_interrupted_jobs,
+        fetch_service_metrics,
     ]
     cron_jobs = [
         # Elke 2 minuten: detecteer crashed jobs en start crash-recovery.
         cron(watchdog_interrupted_jobs, minute=set(range(0, 60, 2))),
+        # F17 nightly 02:00 UTC: DeepSeek balance + Decodo billed traffic (reconciliation). One run/day —
+        # DeepSeek prepaid lasts ~a year at current burn, so hourly polling would be noise (see ADR).
+        cron(fetch_service_metrics, hour={2}, minute={0}),
     ]
     redis_settings = RedisSettings.from_dsn(
         os.getenv("ARQ_REDIS_URL") or "redis://localhost:6379"

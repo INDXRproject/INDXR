@@ -257,7 +257,8 @@ const OPEX_GRID = "grid grid-cols-[minmax(0,1fr)_5rem_6.5rem] gap-x-4"
 function OpexTable({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rates; enteredLines: EnteredOpexLine[]; isExternal: boolean }) {
   const m = s.measured_opex
   const dv = s.drivers
-  const measuredRows: { name: string; hint?: string; cost: number }[] = []
+  // costText overrides the €-rendering (used to show "—" for an unavailable reconciliation — not €0).
+  const measuredRows: { name: string; hint?: string; cost: number; costText?: string }[] = []
   // Stripe fee is NOT here anymore — it moved to COR (F22), shown in the COR breakdown as recognised/deferred.
   // Radar screens every attempt (successful+declined+blocked) at €rate; free through free_until. driver × rate.
   const rd = m.radar
@@ -297,6 +298,27 @@ function OpexTable({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rat
       : "proxy spent outside delivered jobs (failed jobs · playlist-info · metadata · blocked captions) — none measured yet this period",
     cost: m.proxy_overhead,
   })
+  // F17: Decodo reconciliation (external scope only). billed · measured · gap. 'unavailable' → cost "—"
+  // (a bill we couldn't fetch ≠ a gap of €0), never a fabricated 100% gap.
+  const rc = s.reconciliation
+  if (isExternal && rc.status !== "not_applicable") {
+    const lastOk = rc.last_success_at ? new Date(rc.last_success_at).toLocaleDateString() : null
+    if (rc.status === "unavailable") {
+      measuredRows.push({
+        name: "Proxy reconciliation (Decodo)",
+        hint: `Decodo billed unavailable${lastOk ? ` · last fetched ${lastOk}` : " · never fetched yet (nightly 02:00 UTC)"} — no gap shown until real data.`,
+        cost: 0,
+        costText: "—",
+      })
+    } else {
+      const cov = rc.status === "partial" ? ` · ${rc.coverage_days}/${rc.period_days} days covered` : ""
+      measuredRows.push({
+        name: "Proxy reconciliation (Decodo)",
+        hint: `billed ${fmtNum((rc.billed_bytes ?? 0) / 1e9, 3)} GB · measured ${fmtNum((rc.measured_bytes ?? 0) / 1e9, 3)} GB · gap ${fmtNum((rc.gap_bytes ?? 0) / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB${cov}`,
+        cost: rc.gap_cost ?? 0,
+      })
+    }
+  }
 
   return (
     <div className="mt-1 rounded-lg border bg-surface-sunken/40">
@@ -327,7 +349,7 @@ function OpexTable({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rat
             {row.hint && <span className="text-[11px] text-fg-subtle">{row.hint}</span>}
           </div>
           <span className="text-center"><Src kind="measured" /></span>
-          <span className="text-right font-semibold tabular-nums text-fg">{eur(row.cost, true)}</span>
+          <span className="text-right font-semibold tabular-nums text-fg">{row.costText ?? eur(row.cost, true)}</span>
         </div>
       ))}
       <p className="border-t px-3 py-2 text-[11px] text-fg-subtle">

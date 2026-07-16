@@ -111,7 +111,7 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 
 ### Docs-drift (gerapporteerd, niet gefixt)
 - **CLAUDE.md `bgutil-pot`-secties zijn stale** — bgutil is verwijderd sinds ADR-027 (yt-dlp client-rotatie); `grep "bgutil"` in `backend/` geeft 0 hits. De CLAUDE.md-blokken "bgutil-pot" en de proxy-`session_id`-Whisper-noot verwijzen naar code die niet meer bestaat. Ontdekt tijdens F18 (proxy-inventarisatie); buiten F18-scope gelaten. Idem: er is géén proxy-health-check (alleen `/health` = `{"status":"healthy"}`, geen proxy).
-- **Decodo-usage-API/dashboard niet gewired** — het Decodo-dashboard/statistics-endpoint (verbruikte GB per periode) is de bovengrens waartegen de proxy-meting (nu een ondergrens, ADR-065/066) te reconciliëren is. Reconciliatie-taak, buiten F18-scope.
+- ~~**Decodo-usage-API/dashboard niet gewired**~~ ✅ **Gewired (F17, ADR-067, 2026-07-16)** — `fetch_service_metrics` (worker-cron, 02:00 UTC) haalt `POST api.decodo.com/api/v2/statistics/traffic` op → `decodo_daily_usage` → Finance-reconciliatie (billed − measured). **Actie Khidr:** env-var **`DECODO_API_KEY`** (Decodo **dashboard**-token, niet de proxy-auth) op de **Railway worker-service** zetten. Zolang die leeg is blijft de reconciliatie "unavailable" (geen gat) — de rest van Finance werkt gewoon.
 
 ---
 

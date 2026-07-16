@@ -62,6 +62,41 @@ function secs(n: number | null): string {
   return n == null ? "—" : n < 60 ? `${n.toFixed(1)}s` : `${(n / 60).toFixed(1)}m`
 }
 
+// F17: external-service health. A failed/never-run fetch shows "unavailable" + when it last succeeded —
+// never a stale number as if current, never $0 (a balance that couldn't be read ≠ a balance of zero).
+function ServiceHealth({ s }: { s: OperationsSummary["services"] }) {
+  const d = s.deepseek
+  const lastOk = d.last_success_at ? new Date(d.last_success_at).toLocaleString() : null
+  const tone =
+    d.status === "low" ? "text-error" : d.status === "unavailable" ? "text-fg-muted" : "text-success"
+  const value =
+    d.status === "unavailable" || d.balance == null
+      ? "unavailable"
+      : `${d.currency === "USD" ? "$" : ""}${d.balance.toFixed(2)}${d.currency && d.currency !== "USD" ? ` ${d.currency}` : ""}`
+  return (
+    <div className="rounded-xl border bg-surface p-5">
+      <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-fg-muted">External services</h2>
+      <div className="flex items-baseline justify-between">
+        <span className="text-sm font-medium">DeepSeek balance</span>
+        <span className={`text-2xl font-bold tabular-nums ${tone}`}>{value}</span>
+      </div>
+      {d.status === "low" && (
+        <p className="mt-1 text-xs text-error">⚠ below alert threshold (${d.threshold.toFixed(2)}) — top up to avoid summaries stalling.</p>
+      )}
+      {d.status === "unavailable" ? (
+        <p className="mt-1 text-xs text-warning">
+          Couldn&apos;t fetch{lastOk ? ` — last successful read ${lastOk}` : " — never fetched yet (nightly at 02:00 UTC)"}.
+          {d.last_error ? ` (${d.last_error})` : ""}
+        </p>
+      ) : (
+        <p className="mt-1 text-[11px] text-fg-subtle">
+          Prepaid · alert under ${d.threshold.toFixed(2)}{lastOk ? ` · fetched ${lastOk}` : ""}. Decodo auto-refills &amp; AssemblyAI has no API, so neither is shown here.
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default async function AdminOperationsPage() {
   const admin = createAdminClient()
   const { data } = await admin.rpc("admin_operations_summary")
@@ -120,6 +155,8 @@ export default async function AdminOperationsPage() {
           </p>
         </div>
       </div>
+
+      <ServiceHealth s={o.services} />
     </div>
   )
 }

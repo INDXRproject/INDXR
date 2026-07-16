@@ -165,6 +165,15 @@ curl https://indxr-production.up.railway.app/health
 
 ---
 
+## Externe-service-gezondheid (F17, ADR-067)
+
+Nachtelijke ARQ-worker-cron `fetch_service_metrics` (Railway, **02:00 UTC**, naast de snapshot-cron) haalt server-side op:
+- **DeepSeek prepaid-saldo** (`GET api.deepseek.com/user/balance`, `DEEPSEEK_API_KEY`) → `service_metrics` → Operations-kaart "External services". Status `ok`/`low`/`unavailable`; alert onder `cost_config.deepseek_low_balance_usd` (default $5, instelbaar). Faalt de call → "unavailable" + tijdstip laatste geslaagde ophaling, **nooit $0/oud getal**.
+- **Decodo dagverkeer** (`POST api.decodo.com/api/v2/statistics/traffic`, **`DECODO_API_KEY`** = dashboard-token op de **worker-service**) → `decodo_daily_usage` → Finance-reconciliatie. Geen key → reconciliatie blijft "unavailable" (geen gefabriceerd gat).
+- **AssemblyAI:** geen balance/usage-API (auto-recharge PAYG) → bewust niets gebouwd (zie provenance §2.13d).
+
+Log-tag: `[service-metrics]` in Railway worker-logs.
+
 ## Wat nog ontbreekt
 
 - **Uptime monitoring:** Geen externe uptime monitor (bijv. healthchecks.io, BetterStack) — taak 1.14.
