@@ -96,13 +96,16 @@ export interface FinanceScope {
     window_days: number
   }
   storage_bytes: number
+  // F3: true when storage COR is prorated from the CURRENT library size (no per-user byte series covering
+  // this period yet). The nightly snapshot fills daily_library_bytes; once it spans a window this flips false.
+  storage_approx: boolean
 }
 
 export interface EnteredOpexLine {
   id: string
   category: string
   description: string | null
-  recurrence: "none" | "monthly"
+  recurrence: "none" | "monthly" | "yearly"
   spread: "evenly" | "single"
   effective_from: string
   effective_to: string | null
@@ -149,7 +152,7 @@ export interface ExpenseRow {
   description: string | null
   amount: number
   spread: "evenly" | "single"
-  recurrence: "none" | "monthly"
+  recurrence: "none" | "monthly" | "yearly"
   effective_from: string
   effective_to: string | null
 }

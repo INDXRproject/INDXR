@@ -226,9 +226,10 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 1. **Naam:** de ingevoerde categorieën (bv. "Infrastructure", "Ads") met hint "€300 / month · 14 of 31 days".
 2. **Formule (`opex_accrual`):**
    - `monthly` + `evenly`: dagtarief `= amount / dagen_in_kalendermaand`; regelbedrag `= overlap_dagen × dagtarief`.
-   - `none` + `evenly`: dagtarief `= amount / dagen_in_occurrence`.
-   - `single`: volledig `amount` op de ankerdag (occurrence-start) als die in `[from,to)` valt.
-3. **Bron:** `opex_expenses` (`amount`, `recurrence`, `spread`, `effective_from/to`, `category`, `description`/`note`).
+   - `yearly` + `evenly` (ADR-065): anniversary-based occurrence `[verjaardag, verjaardag+1jr)`, auto-herhaalt; dagtarief `= amount / looptijd_dagen (365/366)`; regelbedrag `= overlap_dagen × dagtarief`. Uitsmeren = matching voor een vooruitbetaling (domein).
+   - `none` + `evenly`: dagtarief `= amount / dagen_in_occurrence` (custom periode `from..to`).
+   - `single`: volledig `amount` op de ankerdag (occurrence-start / verjaardag / betaaldag) als die in `[from,to)` valt.
+3. **Bron:** `opex_expenses` (`amount`, `recurrence` ∈ `none|monthly|yearly`, `spread`, `effective_from/to`, `category`, `description`/`note`). **Guard (ADR-065):** in COR gemeten diensten (Decodo/AssemblyAI/DeepSeek/R2) horen NIET als volle OPEX-regel — `AddExpense` waarschuwt (dubbeltelling); alleen een reconciliatie-gat (factuur − gemeten).
 4. **Driver:** ingevoerd bedrag + datums + verdeelregel — **volledig zichtbaar** in de hint (bedrag + "X of Y days").
 5. **Tijdstoewijzing:** accrual, gesneden op `[from_d,to_d)` (Amsterdam-dag). Flow.
 6. **Scope:** **alleen external** (`opex_accrual` is scope-loos, wordt enkel op external opgeteld).

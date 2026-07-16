@@ -1201,10 +1201,11 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
                 "edited": False
             }
 
-            # 5. Save to Supabase (+ token usage, atomic with the summary)
+            # 5. Save the summary. Token usage is NOT stored on the transcript anymore (ADR-064/065): the
+            # authoritative per-run COR source is ai_summary_usage_log (insert below). `ai_summary_usage` is
+            # kept as a local dict only to source generated_at/model for that log row.
             update_resp = supabase.table('transcripts').update({
                 "ai_summary": ai_summary,
-                "ai_summary_usage": ai_summary_usage,
             }).eq('id', request.transcript_id).execute()
             if not update_resp.data:
                 logger.warning(f"Could not confirm transcript update for {request.transcript_id}")

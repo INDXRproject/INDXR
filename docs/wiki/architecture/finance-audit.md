@@ -12,9 +12,9 @@
 
 | Verdict | Aantal | Items |
 |---|---|---|
-| **JA** | 29 | net_profit · revenue (hero) · hero-delta (incl. afgeronde periodes, GEFIXT) · deferred_balance · deferred credits · **est_cost_to_deliver** (GEFIXT) · **est_future_gross** (GEFIXT) · COR ai_transcription/caption/ai_summary/**rag** (GEFIXT: expliciete aanname)/storage · cor_against_revenue · goodwill · gross_profit · gross_margin · OPEX goodwill/funnel_anon/**radar screen-count** (GEFIXT)/entered · charged · stripe_fee · net_settlement · yours_to_keep · vat_owed · vat per bucket · revenue per regio · cache (ai) |
+| **JA** | 31 | net_profit · revenue (hero) · hero-delta (incl. afgeronde periodes, GEFIXT) · deferred_balance · deferred credits · **est_cost_to_deliver** (GEFIXT) · **est_future_gross** (GEFIXT) · COR ai_transcription/caption/ai_summary/**rag** (GEFIXT: expliciete aanname)/storage · cor_against_revenue · goodwill · gross_profit · gross_margin · OPEX goodwill/funnel_anon/**radar screen-count** (GEFIXT)/entered · charged · stripe_fee · net_settlement · yours_to_keep · vat_owed · vat per bucket · revenue per regio · cache (ai) · **OPEX funnel_loggedin** (her-afgeleid 2026-07-16) · **cache savings (caption)** (her-afgeleid 2026-07-16) |
 | **NEE** | 0 | — (alle 4 weggewerkt) |
-| **WEET NIET** | 2 | OPEX funnel_loggedin · cache savings (caption) — beide laag-materieel, niet onafhankelijk her-afgeleid |
+| **WEET NIET** | 0 | — (de 2 laatste her-afgeleid 2026-07-16, zie §6/§10) |
 
 *Oorspronkelijke tally (diagnose 16cd6fc): 25 JA / 4 NEE / 2 weet-niet.* De twee "verdachte" getallen uit de opdracht staan als eerste (§1 hero-delta, §2 est_*). De rest volgt de UI-volgorde. Punt 8 (caption-COR = playlist-captions) → §12.
 
@@ -153,7 +153,7 @@ UI: `goodwill = measured_total − usageAgainst`. `usageAgainst = 0,3608+0,0003+
 | Regel | LIVE (intern, juli) | KLOPT? |
 |---|---|---|
 | **Goodwill — granted credits used** | 9,9983 | **JA** — = measured_total − usageAgainst (§4.5) |
-| **Free-caption funnel — logged-in** | 0,0092 | **WEET NIET** — `v_cap_free_bytes(credits_used=0, internal, logged-in)/1e9×2,99`; laag-materieel, niet apart her-afgeleid |
+| **Free-caption funnel — logged-in** | 0,0092 | **JA** (her-afgeleid 2026-07-16) — `funnel_free_caption_cost = Σ proxy_bytes(caption, success, internal, credits_used=0)/1e9 × decodo_eur_per_gb`. Onafhankelijk uit `usage_logs` gerekend: **0,009157** → rondt op **0,0092** ✓. (Het "logged-in"-label dekt álle gratis caption-bytes credits_used=0; de had_paid=false-subsegment alleen is 0,005005.) |
 | **Free-caption funnel — anonymous** | 0 intern / **0,0278** extern | **JA** — extern uit `daily_cost_counters.caption_proxy_bytes/1e9×2,99`; intern geforceerd 0 |
 | **Fraud screening (Radar)** | 0 intern / 0 extern | **JA** (waarde) — `billable×rate`; `free_until 2026-08-15` ⇒ billable 0 ⇒ €0. De **screen-telling** was fout (§11) → **GEFIXT** |
 | **Entered OPEX-regels** | geen | **JA** — `opex_expenses` leeg; `entered_opex.lines=[]`, total 0; intern toont sowieso 0 (`isExternal`-gate) |
@@ -205,7 +205,7 @@ Alle bedragen = 2 sales × per-sale, distinct op `stripe_session_id`, internal u
 ## §10 — Cache savings
 
 **ai_transcription — JA:** `saved = hit_credits × (cor_ai / miss_credits)`. Live `hit_jobs=0` → `saved=0`; `total_jobs=108` (juli). Klopt (geen hits → geen besparing).
-**caption — WEET NIET:** `saved = hit_count × avg_miss_bytes/1e9 × 2,99`. Live `hit 1 / total 4`, `saved 0,0055`. Impliceert `avg_miss ≈ 1,84 MB`; plausibel maar niet onafhankelijk her-afgeleid, en het is een heuristiek (huidige-periode-gemiddelde toegepast op de hit).
+**caption — JA (her-afgeleid 2026-07-16):** `saved = hit_count × avg_miss_bytes/1e9 × decodo_eur_per_gb`. Onafhankelijk uit `usage_logs` (caption, success, internal, juli): `hit_n=1`, `total=4`, `avg_miss_bytes=1.853.441` (≈1,85 MB) → `1 × 1.853.441/1e9 × 2,99 = 0,005542` → rondt op **0,0055** ✓. Blijft een **heuristiek** (huidige-periode-gemiddelde miss-grootte toegepast op de hit) — dezelfde klasse als cache (ai), die al JA was; het getal implementeert zijn formule correct.
 
 ---
 
@@ -232,7 +232,7 @@ Alle bedragen = 2 sales × per-sale, distinct op `stripe_session_id`, internal u
 
 ## Wat NIET geverifieerd is (eerlijkheidshalve)
 
-- **funnel_loggedin (0,0092)** en **cache caption saved (0,0055)**: laag-materieel, niet onafhankelijk her-afgeleid → WEET NIET (ongewijzigd).
-- **proxy_bytes op AI all-time** = juli-waarde: duidt erop dat bytes niet op elk AI-pad gepersisteerd worden (bekend, zie 1.24). Raakt cor.ai all-time (duur wél volledig).
+- ~~**funnel_loggedin (0,0092)** en **cache caption saved (0,0055)**~~ → **her-afgeleid 2026-07-16, beide JA** (§6/§10): 0,009157→0,0092 en 0,005542→0,0055 onafhankelijk uit `usage_logs`. De cache-caption-regel blijft een heuristiek (correct geïmplementeerd), niet een onzekerheid. Tally nu **31 JA / 0 NEE / 0 weet-niet**.
+- **proxy_bytes op AI all-time** = juli-waarde: duidt erop dat bytes niet op elk AI-pad gepersisteerd worden (bekend, zie 1.24). Raakt cor.ai all-time (duur wél volledig). **Bevestigd 2026-07-16** (Decodo-coverage-analyse, §3c van de opruim-taak / ADR-065): van 188 complete AI-jobs dragen er maar **6** proxy_bytes (capture pas sinds ADR-054); 27 error-jobs 0 bytes. De gemeten proxy is dus een **ondergrens**, niet de volle Decodo-uitgave.
 
-*Peildatum diagnose: 2026-07-15 20:55 UTC. Fixes + herverificatie: 2026-07-15 ~21:40 UTC (migratie `20260715213746`, `FinanceView.tsx`, `periods.ts`).*
+*Peildatum diagnose: 2026-07-15 20:55 UTC. Fixes + herverificatie: 2026-07-15 ~21:40 UTC (migratie `20260715213746`, `FinanceView.tsx`, `periods.ts`). Her-afleiding 2 laatste getallen + Decodo-coverage: 2026-07-16 (ADR-065).*

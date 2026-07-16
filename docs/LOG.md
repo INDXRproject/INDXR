@@ -9700,3 +9700,54 @@ docs/wiki/architecture/finance-number-provenance.md
 docs/wiki/decisions/064-snapshot-clean-start-and-entered-overlay.md
 docs/wiki/roadmap/priorities.md
 ---
+
+[2026-07-16 15:30] Opruimen + entered-OPEX-model (ADR-065). (1) transcripts.ai_summary_usage DROP COLUMN — geverifieerd dat niets de kolom leest (geen view/trigger/functie/UI; live _geld_scope leest ai_summary_usage_log); backend schrijft 'm niet meer; summary-COR ongewijzigd (0,000800). (2) finance-audit: funnel_loggedin (0,009157→0,0092) + cache-caption (0,005542→0,0055) onafhankelijk her-afgeleid → beide WEET-NIET→JA; tally 31/0/0. (3) opex_accrual recurrence='yearly' toegevoegd (anniversary-based, auto-herhaalt; default evenly=uitsmeren=matching); CHECK verruimd; UI yearly-optie + to-veld + dubbeltelling-waarschuwing (Decodo/AssemblyAI/DeepSeek/R2). Bewezen ≥2 periodes (wegwerp-rijen, geen data ingevoerd): monthly evenly mrt €14,19/apr €20; yearly evenly feb €0,92/mrt €1,02; yearly single feb €12/mrt €0; custom €30→€9. Decodo-coverage: meting = ondergrens (6/188 jobs bytes, 27 error-jobs 0) → known-issues. OOK HERSTELD: vorige turn had F3-code-migraties (geld_scope/admin/snapshot) + FinanceView/financeTypes niet gecommit — nu meegecommit. Build groen, py_compile OK. | gewijzigd: supabase/migrations/{20260716104934_drop_transcripts_ai_summary_usage,20260716130000_opex_accrual_yearly_recurrence}.sql + 3 herbenoemde F3-migraties, backend/main.py, apps/app/src/app/admin/finance/{SettingsDialog.tsx,financeTypes.ts}, apps/app/src/app/actions/finance.ts, docs/wiki/decisions/065-*, docs/wiki/INDEX.md, docs/wiki/architecture/{finance-audit,finance-number-provenance}.md, docs/wiki/operations/known-issues.md, docs/LOG.md, docs/LESSONS.md
+[2026-07-16 13:00] commit: feat(finance): ADR-065 entered-OPEX yearly + COR double-count guard; drop ai_summary_usage
+
+Cleanup + entered-OPEX model (no new COR/revenue formulas).
+
+1. DROP transcripts.ai_summary_usage — since ADR-064 the COR source is
+   ai_summary_usage_log; verified nothing reads the column (no view/trigger/
+   function/UI; live _geld_scope reads the log). Backend no longer writes it.
+   Summary-COR unchanged (0,000800 July internal).
+
+2. Audit tally: funnel_loggedin (0,009157→0,0092) and cache-caption
+   (0,005542→0,0055) independently re-derived from usage_logs → both
+   WEET-NIET→JA. Tally now 31 JA / 0 NEE / 0 weet-niet.
+
+3. Entered-OPEX model made complete (ADR-065): opex_accrual gains
+   recurrence='yearly' (anniversary-based, auto-repeats; default spread=evenly
+   = spread a prepayment over its 12-month term = matching). CHECK widened; UI
+   gains a Yearly option + a "to" (end-date) field. Covers monthly / one-off /
+   yearly / custom-period — proven across ≥2 periods with throwaway rows (no
+   real data entered). Double-count guard: AddExpense warns when a COR-measured
+   service (Decodo/AssemblyAI/DeepSeek/R2) is entered — those are measured
+   per-use in COR; only a reconciliation gap (invoice − measured) belongs here.
+   Decodo coverage is a LOWER BOUND (6/188 jobs carry proxy_bytes, 27 error
+   jobs 0, non-job traffic unmeasured) → known-issues.
+
+Also recovers the three F3 function migrations (geld_scope/admin/snapshot) and
+the FinanceView storage_approx marker that the prior F3 commit failed to stage
+(applied to the DB via MCP but missing from git). Build green; py_compile OK.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/actions/finance.ts
+apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/SettingsDialog.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+backend/main.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/finance-audit.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/decisions/065-entered-opex-model-and-cor-doublecount-guard.md
+docs/wiki/operations/known-issues.md
+supabase/migrations/20260716101400_f3_daily_library_bytes.sql
+supabase/migrations/20260716101641_f3_geld_scope_peruser_storage.sql
+supabase/migrations/20260716101941_f3_admin_finance_summary_storage_from_scope.sql
+supabase/migrations/20260716102114_f3_snapshot_storage_from_scope_and_series.sql
+supabase/migrations/20260716104934_drop_transcripts_ai_summary_usage.sql
+supabase/migrations/20260716115500_f3_daily_library_bytes.sql
+supabase/migrations/20260716130000_opex_accrual_yearly_recurrence.sql
+---

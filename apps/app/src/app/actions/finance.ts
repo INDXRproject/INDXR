@@ -23,7 +23,7 @@ export interface ExpenseInput {
   description?: string
   amount: number
   spread: "evenly" | "single"
-  recurrence: "none" | "monthly"
+  recurrence: "none" | "monthly" | "yearly"
   effective_from: string
   effective_to?: string | null
 }

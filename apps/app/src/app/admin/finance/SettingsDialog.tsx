@@ -118,7 +118,7 @@ function ExpenseItem({
           <span className="font-medium">{e.category}</span>
           {e.description && <span className="text-fg-muted"> · {e.description}</span>}
           <div className="text-xs text-fg-muted">
-            {eur(e.amount)} · {e.recurrence === "monthly" ? "monthly" : "one-off"} · {e.spread} · from {e.effective_from}
+            {eur(e.amount)} · {e.recurrence === "monthly" ? "monthly" : e.recurrence === "yearly" ? "yearly" : "one-off"} · {e.spread} · from {e.effective_from}
             {e.effective_to ? ` to ${e.effective_to}` : ""}
             {fraction && <> · <span className="text-accent">{fraction}</span></>}
           </div>
@@ -159,14 +159,19 @@ function TariffRow({ label, value, pending, onSave }: { label: string; value: nu
   )
 }
 
-function AddExpense({ onAdd, pending }: { onAdd: (inp: { category: string; description?: string; amount: number; spread: "evenly" | "single"; recurrence: "none" | "monthly"; effective_from: string; effective_to?: string | null }) => void; pending: boolean }) {
+// Services already measured per-use in COR (§3d): entering their invoice as OPEX double-counts the measured part.
+const COR_MEASURED_SERVICES = ["assemblyai", "deepseek", "decodo", "proxy", "cloudflare", " r2", "storage"]
+
+function AddExpense({ onAdd, pending }: { onAdd: (inp: { category: string; description?: string; amount: number; spread: "evenly" | "single"; recurrence: "none" | "monthly" | "yearly"; effective_from: string; effective_to?: string | null }) => void; pending: boolean }) {
   const [open, setOpen] = useState(false)
   const [category, setCategory] = useState("infra")
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
-  const [recurrence, setRecurrence] = useState<"none" | "monthly">("monthly")
+  const [recurrence, setRecurrence] = useState<"none" | "monthly" | "yearly">("monthly")
   const [spread, setSpread] = useState<"evenly" | "single">("evenly")
   const [from, setFrom] = useState(today())
+  const [to, setTo] = useState("")
+  const measuredHit = COR_MEASURED_SERVICES.find((k) => ` ${category} ${description} `.toLowerCase().includes(k))
   if (!open) return <Button size="sm" onClick={() => setOpen(true)}>＋ Add expense</Button>
   return (
     <div className="space-y-2 rounded-lg border bg-surface p-3">
@@ -174,20 +179,36 @@ function AddExpense({ onAdd, pending }: { onAdd: (inp: { category: string; descr
         <Input placeholder="Category (infra/ads/…)" value={category} onChange={(e) => setCategory(e.target.value)} />
         <Input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
         <Input type="number" step="0.01" placeholder="Amount €" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-fg-muted">from</span>
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <span className="text-xs text-fg-muted">to</span>
+          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
       </div>
+      {measuredHit && (
+        <p className="rounded-md bg-warning-subtle px-2 py-1.5 text-[11px] text-warning-fg">
+          ⚠ “{measuredHit.trim()}” is al per gebruik in COR gemeten (AssemblyAI/DeepSeek/Decodo/R2). Als OPEX invoeren telt
+          dubbel. Voer alleen het reconciliatie-gat in (factuur − gemeten), niet de volle factuur.
+        </p>
+      )}
       <div className="flex flex-wrap gap-2 text-sm">
-        <select value={recurrence} onChange={(e) => setRecurrence(e.target.value as "none" | "monthly")} className="rounded-md border bg-bg px-2 py-1">
+        <select value={recurrence} onChange={(e) => setRecurrence(e.target.value as "none" | "monthly" | "yearly")} className="rounded-md border bg-bg px-2 py-1">
           <option value="monthly">Monthly</option>
-          <option value="none">One-off</option>
+          <option value="yearly">Yearly</option>
+          <option value="none">One-off / custom period</option>
         </select>
         <select value={spread} onChange={(e) => setSpread(e.target.value as "evenly" | "single")} className="rounded-md border bg-bg px-2 py-1">
           <option value="evenly">Spread evenly</option>
           <option value="single">Single day</option>
         </select>
-        <Button size="sm" disabled={pending || !amount} onClick={() => { onAdd({ category, description, amount: Number(amount), spread, recurrence, effective_from: from }); setOpen(false); setAmount(""); setDescription("") }}>Add</Button>
+        <Button size="sm" disabled={pending || !amount} onClick={() => { onAdd({ category, description, amount: Number(amount), spread, recurrence, effective_from: from, effective_to: to || null }); setOpen(false); setAmount(""); setDescription(""); setTo("") }}>Add</Button>
         <Button size="sm" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
       </div>
+      <p className="text-[11px] text-fg-subtle">
+        Monthly/Yearly recur until the “to” date (leave empty = open-ended). One-off = single day (spread=single) or a custom
+        period from→to (spread=evenly, prorated). Yearly evenly spreads a prepayment over its 12-month term; single books it on the pay day.
+      </p>
     </div>
   )
 }

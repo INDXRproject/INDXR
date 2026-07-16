@@ -162,7 +162,16 @@ function CorTable({ s }: { s: FinanceScope }) {
       })}
       {/* storage — a quiet row, no per-credit unit */}
       <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 px-3 py-2 text-xs">
-        <span className="w-fit rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning-fg">Storage (R2)</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="w-fit rounded-full bg-warning-subtle px-2 py-0.5 font-medium text-warning-fg">Storage (R2)</span>
+          {/* F3: storage prorates a byte-stand over the window. Before the per-user byte series (daily_library_bytes)
+              spans this period, it falls back to the CURRENT library size — flag it as an approximation. */}
+          {s.storage_approx && (
+            <span className="text-[11px] text-warning-fg" title="No per-user byte history for this period yet — prorated from the current library size (daily_library_bytes fills in nightly).">
+              ≈ approx · from current library size
+            </span>
+          )}
+        </div>
         <span className="text-right font-semibold tabular-nums text-fg">{corCost(cor.storage)}</span>
         <span className="text-right tabular-nums text-fg-muted">—</span>
         <span className="text-right tabular-nums text-fg-muted">—</span>
