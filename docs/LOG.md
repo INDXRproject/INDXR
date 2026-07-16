@@ -9835,6 +9835,7 @@ supabase/migrations/20260716160000_f18_proxy_overhead.sql
 [2026-07-16 15:24] precompact: context compaction triggered
 [2026-07-16 16:00] F17 saldi + Decodo-reconciliatie (ADR-067): nachtelijke worker-cron fetch_service_metrics (02:00 UTC) → DeepSeek prepaid-saldo (Operations "External services"-kaart, alert < cost_config.deepseek_low_balance_usd) + Decodo dagverkeer (decodo_daily_usage → Finance OPEX-regel "Proxy reconciliation": billed − measured = gat, external-only, GREATEST(0,gap)). Faalgedrag expliciet: API faalt → "unavailable" + last_success_at (nooit $0), coverage_days=0 → géén gat. AssemblyAI geen API → niets gebouwd (provenance §2.13d). Nieuwe env-var DECODO_API_KEY (dashboard-token) op Railway worker-service. record_service_fetch REVOKE PUBLIC/anon/auth. Bewezen ≥2 periodes (gap 0 + €14,90). Build+py_compile groen. | gewijzigd: backend/worker.py, migratie 20260716180000, apps/app/src/app/admin/{operations/page.tsx,adminTypes.ts,finance/FinanceView.tsx,finance/financeTypes.ts}, docs (ADR-067, INDEX, database-schema, finance-number-provenance, monitoring, known-issues)
 [2026-07-16 15:30] commit: feat(finance): F17 service balances + Decodo reconciliation (ADR-067)
+[2026-07-16 16:30] F9–F14 datepicker + periodes (bediening/weergave, geen finance-formules geraakt): presets (This week/month·Last month·This/Last quarter·This year·All time·Custom) + Custom-datumrange, ISO-weeknummers ("W02 · …"), business_start_date=2026-01-01 in finance_settings (config-driven, migratie 20260716200000) → All-time-ondergrens + datepicker ←-floor (atLowerBound), delta-caption eerlijk per geval (lopend=gelijke elapsed, afgerond=hele vorige periode — F11 was al gefixt in 12c91db), Trend-vs-live-start uitgelegd in UI. F14: AddExpense-UI biedt al 4 vormen + hint verbeterd ("€300 / month · 14 of 31 days"); data-invoer blijft Khidr. Bewezen: 10/10 checks tegen echte periods.ts (6 gevraagde cases + F11-lopend + F12) + RPC all-time net −0,03 / zero-len comparison=0 (delta null). Build groen. | gewijzigd: apps/app/src/app/admin/finance/{periods.ts,page.tsx,FinanceView.tsx,SettingsDialog.tsx}, migratie 20260716200000, docs (priorities, database-schema)
 
 Nightly ARQ worker cron fetch_service_metrics (02:00 UTC, keys server-side):
 - DeepSeek prepaid balance -> Operations 'External services' card, low-balance
@@ -9864,4 +9865,36 @@ docs/wiki/decisions/067-service-balances-and-decodo-reconciliation.md
 docs/wiki/operations/known-issues.md
 docs/wiki/operations/monitoring.md
 supabase/migrations/20260716180000_f17_service_metrics_decodo_reconcile.sql
+---
+[2026-07-16 15:57] commit: feat(finance): F9-F14 datepicker presets, ISO weeks, business start floor
+
+Controls & display only — no finance formulas touched.
+
+- F9: default 'This month' is already live to-date (month/now, running -> to=now).
+- F10: named presets (This week/month, Last month, This/Last quarter, This
+  year, All time, Custom) + custom date range. Week/Month/Quarter/Year toggle +
+  arrows kept as navigation. Quarter = OSS filing cycle.
+- F11: delta caption now honest per case (running = same elapsed span; completed
+  = whole previous period; already correct in periods.ts since 12c91db).
+- F12: ISO week numbers in the picker ('W02 · 5 Jan – 11 Jan 2026').
+- F13: business_start_date=2026-01-01 in finance_settings (config-driven, not
+  hardcoded). All time starts there (live pre-launch P&L: net -0.03); left arrow
+  blocked before it (atLowerBound); custom inputs floor at it. UI explains the
+  live-statement-vs-snapshot-trend start difference.
+- F14: AddExpense already offers all four forms; per-line hint improved to
+  '€300 / month · 14 of 31 days → €X this period'. Data entry stays Khidr's.
+
+Proven: 10/10 checks against the real periods.ts (six required cases + running
+delta + ISO week); RPC all-time net -0.03, zero-length comparison -> delta null.
+Build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/SettingsDialog.tsx
+apps/app/src/app/admin/finance/page.tsx
+apps/app/src/app/admin/finance/periods.ts
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/roadmap/priorities.md
+supabase/migrations/20260716200000_finance_business_start_date.sql
 ---

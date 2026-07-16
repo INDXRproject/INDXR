@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Switch } from "@indxr/shared/components/ui/switch"
 import { eur, pct, TYPE_META } from "../adminTypes"
 import type { FinanceSummary, FinanceScope, SnapshotRow, ExpenseRow, CostConfigRow, EnteredOpexLine } from "./financeTypes"
-import { shiftAnchor, type PeriodKind } from "./periods"
+import { shiftAnchor, presets, atLowerBound, type PeriodKind } from "./periods"
 import { accrualForRange } from "./accrual"
 import { FinanceSettings } from "./SettingsDialog"
 
@@ -16,6 +16,7 @@ interface PeriodProp {
   label: string
   toDate: boolean
   anchorISO: string
+  businessStartISO: string
 }
 
 interface Props {
@@ -571,6 +572,7 @@ function Trend({ snapshots, scope, expenses }: { snapshots: SnapshotRow[]; scope
           {startDate
             ? `One day recorded so far (${startDate}); the trend fills in as the nightly snapshot accumulates more.`
             : "No snapshots recorded yet — the nightly snapshot (02:00 UTC) writes the first day; the trend starts from there."}
+          {" "}The statement above is recomputed live and can cover any range back to launch; this trend only spans days with a saved snapshot — that difference is expected, not a gap in the data.
         </p>
       </div>
     )
@@ -609,44 +611,108 @@ function Trend({ snapshots, scope, expenses }: { snapshots: SnapshotRow[]; scope
         ))}
       </div>
       <p className="mt-2 text-[11px] text-fg-subtle">
-        Data from {startDate} · measured figures frozen nightly · entered costs update live (historical net can shift after an expense edit — intended).
+        Data from {startDate} · measured figures frozen nightly · entered costs update live (historical net can shift after an expense edit — intended). The live statement above can reach back to launch even where this trend has no snapshot yet.
       </p>
     </div>
   )
 }
 
-function PeriodPicker({ period }: { period: PeriodProp }) {
+function PeriodPicker({ period, nowISO }: { period: PeriodProp; nowISO: string }) {
   const router = useRouter()
   const go = (params: Record<string, string>) => {
     const q = new URLSearchParams(params)
     router.push(`/admin/finance?${q.toString()}`)
   }
+  // `now` comes from the server (generatedAt), not new Date(), so preset matching + input bounds are identical
+  // on server and client (no hydration mismatch).
+  const now = new Date(nowISO)
+  const todayISO = nowISO.slice(0, 10)
+  const businessStart = new Date(period.businessStartISO + "T00:00:00Z")
+  const presetList = presets(now, businessStart)
+  const curFrom = period.from.slice(0, 10)
+
+  const [customOpen, setCustomOpen] = useState(period.kind === "custom")
+  const [cFrom, setCFrom] = useState(period.kind === "custom" ? curFrom : period.businessStartISO)
+  const [cTo, setCTo] = useState(
+    period.kind === "custom"
+      ? new Date(new Date(period.to).getTime() - 86400000).toISOString().slice(0, 10) // to is exclusive → show last included day
+      : todayISO,
+  )
+
   const setKind = (kind: PeriodKind) => go({ period: kind })
   const nav = (dir: -1 | 1) => {
-    if (period.kind === "custom") return
+    if (period.kind === "custom" || period.kind === "alltime") return
     const anchor = new Date(period.anchorISO + "T00:00:00Z")
     const next = shiftAnchor(period.kind, anchor, dir)
-    if (dir === 1 && next > new Date()) return // cap at running period
+    if (dir === 1 && next > now) return // cap at running period
     go({ period: period.kind, anchor: next.toISOString().slice(0, 10) })
   }
+  const applyCustom = () => {
+    // The date input is inclusive ("to 31 Mar" includes the 31st); the RPC window is [from, to) → send to+1 day.
+    const toExcl = new Date(new Date(cTo + "T00:00:00Z").getTime() + 86400000).toISOString().slice(0, 10)
+    go({ period: "custom", anchor: cFrom, to: toExcl })
+  }
+  const backBlocked = atLowerBound(period.kind, period.anchorISO, businessStart)
+  const isNavKind = period.kind !== "custom" && period.kind !== "alltime"
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex gap-0.5 rounded-lg bg-surface-sunken p-0.5 text-sm">
-        {KINDS.map((k) => (
-          <button key={k.key} onClick={() => setKind(k.key)}
-            className={`rounded-md px-3 py-1 ${period.kind === k.key ? "bg-surface font-medium text-fg" : "text-fg-muted hover:text-fg"}`}>
-            {k.label}
-          </button>
-        ))}
+    <div className="flex flex-col gap-2">
+      {/* Presets (F10) — quarter is the OSS filing cycle, not decoration. */}
+      <div className="flex flex-wrap items-center gap-1 text-sm">
+        {presetList.map((p) => {
+          const active = period.kind === p.kind && curFrom === p.matchFromISO
+          return (
+            <button key={p.key}
+              onClick={() => { setCustomOpen(false); go({ period: p.kind, ...(p.anchorISO ? { anchor: p.anchorISO } : {}) }) }}
+              className={`rounded-md border px-2.5 py-1 ${active ? "bg-accent-subtle font-medium text-accent" : "text-fg-muted hover:bg-surface-elevated"}`}>
+              {p.label}
+            </button>
+          )
+        })}
+        <button onClick={() => setCustomOpen((v) => !v)}
+          className={`rounded-md border px-2.5 py-1 ${period.kind === "custom" ? "bg-accent-subtle font-medium text-accent" : "text-fg-muted hover:bg-surface-elevated"}`}>
+          Custom
+        </button>
       </div>
-      {period.kind !== "custom" && (
-        <div className="flex items-center gap-1">
-          <button onClick={() => nav(-1)} className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated" aria-label="Previous period">←</button>
-          <span className="min-w-[8rem] text-center text-sm font-medium">{period.label}{period.toDate ? " · to date" : ""}</span>
-          <button onClick={() => nav(1)} disabled={period.toDate}
-            className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated disabled:opacity-40" aria-label="Next period">→</button>
+
+      {/* Custom range — inputs floor at the business start (F13), cap at today. */}
+      {customOpen && (
+        <div className="flex flex-wrap items-center gap-1.5 text-sm">
+          <span className="text-xs text-fg-muted">from</span>
+          <input type="date" value={cFrom} min={period.businessStartISO} max={todayISO}
+            onChange={(e) => setCFrom(e.target.value)} className="rounded-md border bg-bg px-2 py-1" />
+          <span className="text-xs text-fg-muted">to</span>
+          <input type="date" value={cTo} min={cFrom} max={todayISO}
+            onChange={(e) => setCTo(e.target.value)} className="rounded-md border bg-bg px-2 py-1" />
+          <button onClick={applyCustom} disabled={!cFrom || !cTo || cFrom > cTo}
+            className="rounded-md border px-2.5 py-1 hover:bg-surface-elevated disabled:opacity-40">Apply</button>
         </div>
       )}
+
+      {/* Kind toggle + arrows (kept as navigation). */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex gap-0.5 rounded-lg bg-surface-sunken p-0.5 text-sm">
+          {KINDS.map((k) => (
+            <button key={k.key} onClick={() => setKind(k.key)}
+              className={`rounded-md px-3 py-1 ${period.kind === k.key ? "bg-surface font-medium text-fg" : "text-fg-muted hover:text-fg"}`}>
+              {k.label}
+            </button>
+          ))}
+        </div>
+        {isNavKind && (
+          <div className="flex items-center gap-1">
+            <button onClick={() => nav(-1)} disabled={backBlocked}
+              className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated disabled:opacity-40"
+              aria-label="Previous period" title={backBlocked ? `Business starts ${period.businessStartISO}` : undefined}>←</button>
+            <span className="min-w-[8rem] text-center text-sm font-medium">{period.label}{period.toDate ? " · to date" : ""}</span>
+            <button onClick={() => nav(1)} disabled={period.toDate}
+              className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated disabled:opacity-40" aria-label="Next period">→</button>
+          </div>
+        )}
+        {period.kind === "alltime" && (
+          <span className="text-sm font-medium text-fg-muted">{period.label} · from {period.businessStartISO}</span>
+        )}
+      </div>
     </div>
   )
 }
@@ -662,6 +728,12 @@ export function FinanceView(props: Props) {
   const cmp = comparison?.[scopeKey] ?? null
   const netDelta = cmp ? delta(scope.net_profit, cmp.net_profit) : null
   const revDelta = cmp ? delta(scope.revenue_delivered, cmp.revenue_delivered) : null
+  // Delta caption honestly names what it compares: a running period is month-to-date vs the same elapsed span
+  // last period; a completed period is whole-vs-whole; all-time has no prior period.
+  const deltaCaption =
+    period.kind === "alltime" ? `since ${period.businessStartISO}`
+      : period.toDate ? "vs same elapsed days last period"
+      : "vs the whole previous period"
   const updated = useMemo(() => new Date(generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), [generatedAt])
 
   return (
@@ -691,7 +763,7 @@ export function FinanceView(props: Props) {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <PeriodPicker period={period} />
+        <PeriodPicker period={period} nowISO={generatedAt} />
         <label className="flex items-center gap-2 text-sm text-fg-muted">
           <Switch checked={showTest} onCheckedChange={setShowTest} />
           Show internal / test
@@ -706,7 +778,7 @@ export function FinanceView(props: Props) {
             <span className={`text-3xl font-bold tabular-nums ${profitTone(scope.net_profit)}`}>{eur(scope.net_profit)}</span>
             {netDelta && <span className={`text-sm font-medium ${netDelta.up ? "text-accent" : "text-error"}`}>{netDelta.txt}</span>}
           </div>
-          <p className="mt-1 text-xs text-fg-muted">vs same elapsed days last period</p>
+          <p className="mt-1 text-xs text-fg-muted">{deltaCaption}</p>
         </div>
         <div className="rounded-xl border bg-surface p-5">
           <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">Revenue</span>
@@ -714,7 +786,7 @@ export function FinanceView(props: Props) {
             <span className="text-3xl font-bold tabular-nums text-fg-strong">{eur(scope.revenue_delivered)}</span>
             {revDelta && <span className={`text-sm font-medium ${revDelta.up ? "text-accent" : "text-error"}`}>{revDelta.txt}</span>}
           </div>
-          <p className="mt-1 text-xs text-fg-muted">delivered this period · vs same elapsed days last period</p>
+          <p className="mt-1 text-xs text-fg-muted">delivered this period · {deltaCaption}</p>
           {/* Deferred is a stock (stand-now), not part of this period's flow — shown as a standing, never summed into the hero. */}
           <div className="mt-3 flex items-center justify-between rounded-lg bg-surface-sunken px-3 py-2">
             <span className="flex items-center gap-1.5 text-[11px] text-fg-muted">

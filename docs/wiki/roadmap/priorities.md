@@ -336,12 +336,12 @@ Openstaande punten na de money-model-/BTW-/markt-scope-sessies (ADR-055 t/m ADR-
 
 **DASHBOARD — periodes (beslist, nog niet gebouwd)**
 
-- [ ] **F9 — Default = "This month": 1e van de maand t/m NU, inclusief vandaag, live.** Niet tot gisteren — dit is geen trendtool maar een "wat is er gebeurd en klopt het"-tool; een sale om 14:00 hoort om 14:01 zichtbaar te zijn. (Onderscheid met de nachtelijke snapshots/trend blijft: tab = live `admin_finance_summary`, trend = bevroren snapshots.)
-- [ ] **F10 — Presets:** This month · Last month · This quarter · Last quarter · This year · All time · Custom. **Kwartaal staat erbij omdat het de OSS-aangiftecyclus is.**
-- [ ] **F11 — Delta vergelijkt met DEZELFDE periode-lengte:** month-to-date vs 1e t/m dezelfde dag vorige maand. Anders wordt 15 dagen tegen 31 dagen afgezet en is elk percentage onzin. (Bestaande `comparison`-call moet op gelijk-aantal-verstreken-dagen mikken.)
-- [ ] **F12 — Weeknummers in de datepicker.** Overal, ook Finance.
-- [ ] **F13 — `business_start_date` (2026-01-01) in `finance_settings`.** "All time" begint daar; de datepicker laat niets eerder toe. De maanden vóór launch tonen dan wat ze zijn: €0 omzet, X kosten, negatief resultaat — dat is de echte P&L.
-- [ ] **F14 — Aanloopkosten met terugwerkende kracht als entered lines in `opex_accrual`** (domein, Vercel, Railway, Supabase vanaf jan 2026). Khidr levert de bedragen. Voer ze in als entered-regels met `effective_from` in het verleden zodat de pre-launch-P&L klopt.
+- [x] **F9 — Default = "This month": 1e van de maand t/m NU, inclusief vandaag, live.** ✅ (2026-07-16) Default = `month`/anchor=now → running → `to=now`. Bewezen: op de 1e om 14:01 toont het één live deeldag (from 00:00 → to 14:01, toDate), niet leeg, niet tot gisteren.
+- [x] **F10 — Presets:** This week · This month · Last month · This quarter · Last quarter · This year · All time · Custom. ✅ (2026-07-16) `presets()` in `periods.ts`; presets-rij + Custom-datumrange in `PeriodPicker`. Week/Month/Quarter/Year-toggle + pijltjes blijven als navigatie. Kwartaal = OSS-cyclus.
+- [x] **F11 — Delta vergelijkt gelijke lengtes.** ✅ (2026-07-16) Lopend: month-to-date vs 1e→zelfde dag vorige maand (14,5d vs 14,5d bewezen). Afgerond: HELE vorige periode (was al gefixt in commit 12c91db) — bewezen maart 31d vs feb 28d (geen overlap, vensters raken op 1 mrt) én Q1 90d vs Q4 92d. Delta-caption nu eerlijk per geval.
+- [x] **F12 — Weeknummers in de datepicker.** ✅ (2026-07-16) ISO-weken via `getISOWeek`; week-label toont "W02 · 5 Jan – 11 Jan 2026".
+- [x] **F13 — `business_start_date` (2026-01-01) in `finance_settings`.** ✅ (2026-07-16) Config-driven (migratie `20260716200000`), niet hardcoded in tsx. "All time" begint daar (live P&L: pre-launch net −0,03, €0 omzet); datepicker-pijltje ← geblokkeerd vóór jan 2026 (`atLowerBound`); Custom-inputs floor op business-start. UI legt uit dat de Trend (snapshots) een latere startdatum heeft dan de live statement.
+- [~] **F14 — Aanloopkosten met terugwerkende kracht als entered lines.** UI geverifieerd (2026-07-16): `AddExpense` biedt alle vier vormen (Monthly/Yearly/One-off/custom-periode) + hint "€300 / month · 14 of 31 days → €X this period". **Data-invoer is Khidr's taak** — bedragen (domein/Vercel/Railway/Supabase vanaf jan 2026) nog in te voeren met `effective_from` in het verleden.
 
 **DRIVERS ZICHTBAAR (punt 7 van de oorspronkelijke lijst)**
 

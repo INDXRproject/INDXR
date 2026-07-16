@@ -1,6 +1,6 @@
 // Period math for the Finance calendar picker. UTC-day-aligned (admin_finance_summary localises the
 // day-grain to Europe/Amsterdam internally; the ~1h edge fuzz is immaterial at week/month/quarter/year).
-export type PeriodKind = "week" | "month" | "quarter" | "year" | "custom"
+export type PeriodKind = "week" | "month" | "quarter" | "year" | "alltime" | "custom"
 
 export interface Period {
   kind: PeriodKind
@@ -56,12 +56,24 @@ function fmt(d: Date): string {
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`
 }
 
+// ISO-8601 week number (weeks start Monday; week 1 contains the year's first Thursday).
+export function getISOWeek(d: Date): number {
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+  const dayNum = (date.getUTCDay() + 6) % 7 // Mon=0
+  date.setUTCDate(date.getUTCDate() - dayNum + 3) // Thursday of this ISO week
+  const firstThu = new Date(Date.UTC(date.getUTCFullYear(), 0, 4))
+  const firstDayNum = (firstThu.getUTCDay() + 6) % 7
+  firstThu.setUTCDate(firstThu.getUTCDate() - firstDayNum + 3)
+  return 1 + Math.round((date.getTime() - firstThu.getTime()) / (7 * DAY))
+}
+
 function labelFor(kind: PeriodKind, from: Date): string {
   const y = from.getUTCFullYear()
   switch (kind) {
     case "week": {
       const end = new Date(from.getTime() + 6 * DAY)
-      return `${fmt(from)} – ${fmt(end)} ${y}`
+      // ISO week number shown in the picker (F12) — "W02 · 6 Jan – 12 Jan 2026".
+      return `W${String(getISOWeek(from)).padStart(2, "0")} · ${fmt(from)} – ${fmt(end)} ${y}`
     }
     case "month":
       return `${MONTHS[from.getUTCMonth()]} ${y}`
@@ -75,7 +87,17 @@ function labelFor(kind: PeriodKind, from: Date): string {
 }
 
 // Build a Period from a kind + an anchor date inside it, relative to `now`.
-export function makePeriod(kind: PeriodKind, anchor: Date, now: Date, customTo?: Date): Period {
+export function makePeriod(kind: PeriodKind, anchor: Date, now: Date, customTo?: Date, businessStart?: Date): Period {
+  if (kind === "alltime") {
+    // From the configured business start (F13) through now — a live to-date window. No prior period exists
+    // before launch, so the comparison window is zero-length → delta() returns null (no misleading %).
+    const from = businessStart ?? new Date(Date.UTC(now.getUTCFullYear(), 0, 1))
+    return {
+      kind, from, to: now, fullTo: now, toDate: true,
+      label: "All time",
+      compareFrom: from, compareTo: from,
+    }
+  }
   if (kind === "custom") {
     const from = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), anchor.getUTCDate()))
     const to = customTo ?? now
@@ -124,4 +146,40 @@ export function shiftAnchor(kind: PeriodKind, anchor: Date, dir: -1 | 1): Date {
 
 export function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10)
+}
+
+// Named presets (F10). Each maps to a (kind, anchor) the picker navigates to; `matchFromISO` is the period
+// start it produces, used to highlight the active preset. Quarter is here as the OSS filing cycle, not decoration.
+export interface Preset {
+  key: string
+  label: string
+  kind: PeriodKind
+  anchorISO?: string // omitted for "this X" presets (anchor defaults to now); set for "last X" + all-time
+  matchFromISO: string
+}
+export function presets(now: Date, businessStart: Date): Preset[] {
+  const iso = (d: Date) => d.toISOString().slice(0, 10)
+  const weekStart = startOfUTCWeek(now)
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+  const lastMonth = addMonthsUTC(monthStart, -1)
+  const qStart = startOfQuarterUTC(now)
+  const lastQ = addMonthsUTC(qStart, -3)
+  const yearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1))
+  return [
+    { key: "this-week", label: "This week", kind: "week", matchFromISO: iso(weekStart) },
+    { key: "this-month", label: "This month", kind: "month", matchFromISO: iso(monthStart) },
+    { key: "last-month", label: "Last month", kind: "month", anchorISO: iso(lastMonth), matchFromISO: iso(lastMonth) },
+    { key: "this-quarter", label: "This quarter", kind: "quarter", matchFromISO: iso(qStart) },
+    { key: "last-quarter", label: "Last quarter", kind: "quarter", anchorISO: iso(lastQ), matchFromISO: iso(lastQ) },
+    { key: "this-year", label: "This year", kind: "year", matchFromISO: iso(yearStart) },
+    { key: "all-time", label: "All time", kind: "alltime", matchFromISO: iso(businessStart) },
+  ]
+}
+
+// True when stepping back would start a period BEFORE the business start → the ← arrow is blocked there (F13).
+export function atLowerBound(kind: PeriodKind, anchorISO: string, businessStart: Date): boolean {
+  if (kind === "custom" || kind === "alltime") return true
+  const anchor = new Date(anchorISO + "T00:00:00Z")
+  const prev = shiftAnchor(kind, anchor, -1)
+  return bounds(kind, prev).from < businessStart
 }

@@ -5,7 +5,7 @@ import type { FinanceSummary, SnapshotRow, ExpenseRow, CostConfigRow } from "./f
 
 export const dynamic = "force-dynamic"
 
-const KINDS = new Set(["week", "month", "quarter", "year", "custom"])
+const KINDS = new Set(["week", "month", "quarter", "year", "alltime", "custom"])
 
 export default async function AdminFinancePage({
   searchParams,
@@ -17,10 +17,17 @@ export default async function AdminFinancePage({
   const now = new Date()
   const anchor = sp.anchor ? new Date(sp.anchor + "T00:00:00Z") : now
   const customTo = sp.to ? new Date(sp.to + "T00:00:00Z") : undefined
-  const period = makePeriod(kind, anchor, now, customTo)
 
   const admin = createAdminClient()
-  const [curRes, cmpRes, snapRes, expRes, cfgRes, setRes] = await Promise.all([
+  // Read finance_settings FIRST — the business start (F13) defines the "All time" lower bound, which feeds the
+  // summary RPC's p_from, so the period must be built before the summary/comparison calls.
+  const { data: setData } = await admin.from("finance_settings").select("key,value")
+  const settings = Object.fromEntries((setData ?? []).map((s) => [s.key, s.value]))
+  const businessStartISO = typeof settings.business_start_date === "string" ? settings.business_start_date : "2026-01-01"
+  const businessStart = new Date(businessStartISO + "T00:00:00Z")
+  const period = makePeriod(kind, anchor, now, customTo, businessStart)
+
+  const [curRes, cmpRes, snapRes, expRes, cfgRes] = await Promise.all([
     admin.rpc("admin_finance_summary", { p_from: period.from.toISOString(), p_to: period.to.toISOString() }),
     admin.rpc("admin_finance_summary", { p_from: period.compareFrom.toISOString(), p_to: period.compareTo.toISOString() }),
     admin.from("finance_daily_snapshot").select(
@@ -32,7 +39,6 @@ export default async function AdminFinancePage({
     admin.from("cost_config").select(
       "id,decodo_eur_per_gb,assemblyai_eur_per_min,deepseek_eur_per_1k_input_tokens,deepseek_eur_per_1k_output_tokens,deepseek_eur_per_1k_cache_hit_tokens,r2_usd_per_gb_month,usd_eur_rate",
     ).order("effective_from", { ascending: false }).limit(1).single(),
-    admin.from("finance_settings").select("key,value"),
   ])
 
   const summary = curRes.data as FinanceSummary | null
@@ -49,7 +55,6 @@ export default async function AdminFinancePage({
     amount: Number(r.amount ?? 0), spread: r.spread ?? "single", recurrence: r.recurrence ?? "none",
     effective_from: r.effective_from, effective_to: r.effective_to,
   }))
-  const settings = Object.fromEntries((setRes.data ?? []).map((s) => [s.key, s.value]))
 
   return (
     <FinanceView
@@ -62,6 +67,7 @@ export default async function AdminFinancePage({
       period={{
         kind: period.kind, from: period.from.toISOString(), to: period.to.toISOString(),
         label: period.label, toDate: period.toDate, anchorISO: anchor.toISOString().slice(0, 10),
+        businessStartISO,
       }}
       generatedAt={now.toISOString()}
     />

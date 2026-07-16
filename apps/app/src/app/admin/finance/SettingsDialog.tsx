@@ -45,7 +45,10 @@ export function FinanceSettings({
   }
   const fraction = (id: string) => {
     const l = enteredLines.find((x) => x.id === id)
-    return l ? `${l.days_applied} of ${l.days_total} days · ${eur(l.period_amount)} this period` : null
+    if (!l) return null
+    // "€300 / month · 14 of 31 days → €135.48 this period" — rate, the slice applied, and the prorated result.
+    const unit = l.recurrence === "monthly" ? "month" : l.recurrence === "yearly" ? "year" : "period"
+    return `${eur(l.amount)} / ${unit} · ${l.days_applied} of ${l.days_total} days → ${eur(l.period_amount)} this period`
   }
 
   return (
