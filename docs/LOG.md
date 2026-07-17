@@ -10001,3 +10001,15 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 public/credit-coin.png
 ---
+[2026-07-17 12:15] commit: docs(lessons): correct credit-coin finding — icon was never broken in prod
+
+Follow-up verification showed the premise was wrong. app.indxr.ai serves
+/credit-coin.png from apps/app/public/credit-coin.png, tracked since e0e7e29 —
+curl -I https://app.indxr.ai/credit-coin.png returns 200. The untracked file was
+repo-root public/credit-coin.png, a directory neither Next app serves. My
+'404 in prod' claim across four reports was never verified with a production
+fetch. Corrected the LESSONS entry accordingly.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+---
