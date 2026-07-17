@@ -30,13 +30,6 @@ interface Props {
   generatedAt: string
 }
 
-const KINDS: { key: PeriodKind; label: string }[] = [
-  { key: "week", label: "Week" },
-  { key: "month", label: "Month" },
-  { key: "quarter", label: "Quarter" },
-  { key: "year", label: "Year" },
-]
-
 function delta(cur: number, prev: number): { txt: string; up: boolean } | null {
   if (prev === 0) return null
   const d = (cur - prev) / Math.abs(prev)
@@ -563,15 +556,13 @@ function Trend({ snapshots, scope, expenses }: { snapshots: SnapshotRow[]; scope
   // Real start date, derived from the data — never hardcoded. The nightly cron (02:00 UTC) writes yesterday;
   // after a clean-start DELETE the series is empty until the next run, so this reflects reality either way.
   const startDate = rows.reduce<string | null>((min, r) => (!min || r.snapshot_date < min ? r.snapshot_date : min), null)
-  if (rows.length < 2) {
+  // Only truly empty (zero snapshots) shows text-only; a single day renders as one point, ≥2 as the series.
+  if (rows.length === 0) {
     return (
       <div className="rounded-xl border bg-surface p-5">
         <h3 className="text-sm font-semibold">Trend</h3>
         <p className="mt-2 text-xs text-fg-muted">
-          Measured figures are frozen nightly · entered costs update live.{" "}
-          {startDate
-            ? `One day recorded so far (${startDate}); the trend fills in as the nightly snapshot accumulates more.`
-            : "No snapshots recorded yet — the nightly snapshot (02:00 UTC) writes the first day; the trend starts from there."}
+          Measured figures are frozen nightly · entered costs update live. No snapshots recorded yet — the nightly snapshot (02:00 UTC) writes the first day; the trend starts from there.
           {" "}The statement above is recomputed live and can cover any range back to launch; this trend only spans days with a saved snapshot — that difference is expected, not a gap in the data.
         </p>
       </div>
@@ -600,9 +591,9 @@ function Trend({ snapshots, scope, expenses }: { snapshots: SnapshotRow[]; scope
           ))}
         </div>
       </div>
-      <div className="flex h-32 items-end gap-1">
+      <div className={`flex h-32 items-end gap-1 ${bars.length === 1 ? "justify-center" : ""}`}>
         {bars.map((b) => (
-          <div key={b.date} className="flex flex-1 flex-col items-center gap-1" title={`${b.date}: ${eur(b.val)}`}>
+          <div key={b.date} className={`flex flex-col items-center gap-1 ${bars.length === 1 ? "w-16" : "flex-1"}`} title={`${b.date}: ${eur(b.val)}`}>
             <div className="flex w-full items-end justify-center" style={{ height: "100%" }}>
               <div className={`w-full rounded-t ${b.val >= 0 ? "bg-accent" : "bg-error"}`}
                 style={{ height: `${(Math.abs(b.val) / max) * 100}%`, minHeight: b.val !== 0 ? "2px" : "0" }} />
@@ -610,6 +601,9 @@ function Trend({ snapshots, scope, expenses }: { snapshots: SnapshotRow[]; scope
           </div>
         ))}
       </div>
+      {bars.length === 1 && (
+        <p className="mt-2 text-center text-[11px] text-fg-subtle">One day recorded ({startDate}) — a line appears once a second nightly snapshot lands.</p>
+      )}
       <p className="mt-2 text-[11px] text-fg-subtle">
         Data from {startDate} · measured figures frozen nightly · entered costs update live (historical net can shift after an expense edit — intended). The live statement above can reach back to launch even where this trend has no snapshot yet.
       </p>
@@ -639,7 +633,6 @@ function PeriodPicker({ period, nowISO }: { period: PeriodProp; nowISO: string }
       : todayISO,
   )
 
-  const setKind = (kind: PeriodKind) => go({ period: kind })
   const nav = (dir: -1 | 1) => {
     if (period.kind === "custom" || period.kind === "alltime") return
     const anchor = new Date(period.anchorISO + "T00:00:00Z")
@@ -689,30 +682,21 @@ function PeriodPicker({ period, nowISO }: { period: PeriodProp; nowISO: string }
         </div>
       )}
 
-      {/* Kind toggle + arrows (kept as navigation). */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex gap-0.5 rounded-lg bg-surface-sunken p-0.5 text-sm">
-          {KINDS.map((k) => (
-            <button key={k.key} onClick={() => setKind(k.key)}
-              className={`rounded-md px-3 py-1 ${period.kind === k.key ? "bg-surface font-medium text-fg" : "text-fg-muted hover:text-fg"}`}>
-              {k.label}
-            </button>
-          ))}
+      {/* Arrows scroll within the active preset's unit (e.g. "This month" + ← = previous month). No second
+          unit-toggle row — the preset already sets the unit. The label says which period you're on. */}
+      {isNavKind && (
+        <div className="flex items-center gap-1">
+          <button onClick={() => nav(-1)} disabled={backBlocked}
+            className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated disabled:opacity-40"
+            aria-label="Previous period" title={backBlocked ? `Business starts ${period.businessStartISO}` : undefined}>←</button>
+          <span className="min-w-[8rem] text-center text-sm font-medium">{period.label}{period.toDate ? " · to date" : ""}</span>
+          <button onClick={() => nav(1)} disabled={period.toDate}
+            className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated disabled:opacity-40" aria-label="Next period">→</button>
         </div>
-        {isNavKind && (
-          <div className="flex items-center gap-1">
-            <button onClick={() => nav(-1)} disabled={backBlocked}
-              className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated disabled:opacity-40"
-              aria-label="Previous period" title={backBlocked ? `Business starts ${period.businessStartISO}` : undefined}>←</button>
-            <span className="min-w-[8rem] text-center text-sm font-medium">{period.label}{period.toDate ? " · to date" : ""}</span>
-            <button onClick={() => nav(1)} disabled={period.toDate}
-              className="rounded-md border px-2 py-1 text-sm hover:bg-surface-elevated disabled:opacity-40" aria-label="Next period">→</button>
-          </div>
-        )}
-        {period.kind === "alltime" && (
-          <span className="text-sm font-medium text-fg-muted">{period.label} · from {period.businessStartISO}</span>
-        )}
-      </div>
+      )}
+      {period.kind === "alltime" && (
+        <span className="text-sm font-medium text-fg-muted">{period.label} · from {period.businessStartISO}</span>
+      )}
     </div>
   )
 }
