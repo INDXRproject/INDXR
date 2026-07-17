@@ -9989,3 +9989,15 @@ docs/LOG.md
 docs/wiki/architecture/finance-audit.md
 supabase/migrations/20260717100000_reconcile_covered_days.sql
 ---
+[2026-07-17 12:11] commit: fix(assets): track public/credit-coin.png (was untracked → 404 in prod)
+
+The credit-coin icon (used by HexagonCreditIcon in the topbar, sidebar, and
+transaction history) was never git-added when created on 14 Jul — no ignore rule
+touches it (git check-ignore is clean; .gitignore has no asset pattern), it was a
+plain staging oversight. Locally it rendered because the file is on disk; in
+production /credit-coin.png 404'd because the deploy only ships what git tracks.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+public/credit-coin.png
+---
