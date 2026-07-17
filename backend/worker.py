@@ -1532,14 +1532,24 @@ async def fetch_service_metrics(ctx: dict) -> str:
             resp.raise_for_status()
             rows = _parse_decodo_traffic(resp.json())
         now_iso = datetime.now(timezone.utc).isoformat()
-        for r in rows:
-            rx, tx = r["rx"], r["tx"]
-            await asyncio.to_thread(lambda r=r, rx=rx, tx=tx: sb.table("decodo_daily_usage").upsert({
-                "day": r["day"], "rx_bytes": rx, "tx_bytes": tx, "billed_bytes": rx + tx,
+        by_day = {r["day"]: (r["rx"], r["tx"]) for r in rows}
+        # Write a row for EVERY COMPLETE day in the fetched window — 0 bytes when Decodo reported no traffic —
+        # so downstream "a row exists" == "this day is covered". Without this, a no-traffic day (Decodo returns
+        # nothing) is indistinguishable from a never-fetched day, and the reconciliation would measure our bytes
+        # over the full period against billed over only the returned days → a false negative gap.
+        # TODAY is deliberately excluded: it is still accumulating and Decodo's same-day aggregation lags our
+        # real-time measurement, so counting it makes measured > billed (a spurious negative gap). The 3-day
+        # re-fetch window writes each day the night after it completes, by which point both sides are final.
+        today = now_dt.date()
+        write_days = [(today - timedelta(days=n)).isoformat() for n in range(3, 0, -1)]  # today-3 .. today-1
+        for d in write_days:
+            rx, tx = by_day.get(d, (0, 0))
+            await asyncio.to_thread(lambda d=d, rx=rx, tx=tx: sb.table("decodo_daily_usage").upsert({
+                "day": d, "rx_bytes": rx, "tx_bytes": tx, "billed_bytes": rx + tx,
                 "fetched_at": now_iso}, on_conflict="day").execute())
         await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
             "p_service": "decodo", "p_ok": True, "p_error": None}).execute())
-        logger.info(f"[service-metrics] decodo upserted {len(rows)} day(s)")
+        logger.info(f"[service-metrics] decodo wrote {len(write_days)} day(s), {len(rows)} with traffic")
     except Exception as e:
         logger.warning(f"[service-metrics] decodo fetch failed: {e}")
         await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {

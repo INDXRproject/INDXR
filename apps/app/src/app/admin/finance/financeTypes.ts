@@ -120,6 +120,7 @@ export interface FinanceReconciliation {
   gap_cost?: number
   coverage_days?: number
   period_days?: number
+  data_from?: string | null // earliest Decodo-covered day → "Decodo data starts <date>"
   last_success_at?: string | null
   last_error?: string | null
 }

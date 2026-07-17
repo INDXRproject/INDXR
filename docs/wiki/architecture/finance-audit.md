@@ -236,3 +236,29 @@ Alle bedragen = 2 sales × per-sale, distinct op `stripe_session_id`, internal u
 - **proxy_bytes op AI all-time** = juli-waarde: duidt erop dat bytes niet op elk AI-pad gepersisteerd worden (bekend, zie 1.24). Raakt cor.ai all-time (duur wél volledig). **Bevestigd 2026-07-16** (Decodo-coverage-analyse, §3c van de opruim-taak / ADR-065): van 188 complete AI-jobs dragen er maar **6** proxy_bytes (capture pas sinds ADR-054); 27 error-jobs 0 bytes. De gemeten proxy is dus een **ondergrens**, niet de volle Decodo-uitgave.
 
 *Peildatum diagnose: 2026-07-15 20:55 UTC. Fixes + herverificatie: 2026-07-15 ~21:40 UTC (migratie `20260715213746`, `FinanceView.tsx`, `periods.ts`). Her-afleiding 2 laatste getallen + Decodo-coverage: 2026-07-16 (ADR-065).*
+
+---
+
+## §13 — Laatste finance-taak (2026-07-17): reconciliatie-venster, F6, F7, asset
+
+### 13.1 Proxy-reconciliatie toonde een negatief gat (−0,025 GB) — GEFIXT
+**Oorzaak:** `admin_finance_summary` mat onze proxy-bytes over de **volle gekozen periode** (16 dagen) maar vergeleek met billed die alleen bestond voor de **gefetchte dagen** (14 + 16). 16 dagen meten vs 2 dagen factureren → measured > billed → vals negatief gat. De 14–18-juli-test klopte toevallig omdat daar de vensters bijna gelijk waren — een test op één gunstig venster betrapt dit niet.
+
+**Fix (migratie `20260717100000` + `backend/worker.py`):**
+1. Measured beperkt tot de **gedekte dagen** (dagen mét een `decodo_daily_usage`-rij), via een `v_cov_day_arr` day-membership-filter op alle vier de meetbronnen. Billed én measured spannen nu dezelfde dagen.
+2. Worker schrijft voor **élke complete dag** in het fetch-venster een rij (0 bytes als Decodo niets teruggaf) → "rij bestaat" = "dag gedekt", geen ambiguïteit meer tussen "geen verkeer" (15 jul, billed=0) en "nooit gefetcht". **Vandaag wordt bewust NIET geschreven** (nog aan het aggregeren; Decodo's same-day-telling loopt achter op onze real-time meting → zou measured>billed geven).
+3. `data_from` (vroegste Decodo-dag) toegevoegd aan de reconciliatie-jsonb; UI toont "gap over N of M days · Decodo data starts 14 Jul".
+
+**Bewezen ≥2 vensters** (peildatum 2026-07-17):
+- **A [14→17), volledig binnen dekking:** status `ok` (3/3), billed 185,09 MB · measured 184,93 MB · **gap +164 KB** (positief, €0,0005).
+- **B "This month" [01→18), buiten dekking:** status `partial` (3/17), **zelfde** billed/measured, **gap +164 KB** (positief). Geen negatief getal meer.
+
+### 13.2 F6 — `cor_caption_estimated` (verdict: dode vlag, waarde toevallig correct)
+De vlag stond hard op `false`. Onderzoek: (a) **niets rendert 'm** — alleen de `GeldScope`-type declareert 'm; geen enkele `.tsx` leest 'm. (b) **Caption-COR is feitelijk volledig gemeten:** 0 non-cache geslaagde caption-rijen missen `proxy_bytes`; de enige 0-byte-rij is een **legitieme cache-hit** (`cache_hit=true`, `credits_used=0`, internal). Dus de COR is geen ondergrens en `false` is toevallig juist.
+**Verdict (b):** dode vlag → **type-veld verwijderd** uit `GeldScope`. De grote financiële `_geld_scope`-RPC is NIET herschreven enkel om een inerte, ongelezen, toevallig-correcte constante te droppen (risico > baat). Als de vlag ooit herleeft: **data-afgeleid maken** (`EXISTS(non-cache success caption met NULL/0 proxy_bytes)`), nooit een constante.
+
+### 13.3 F7 — Stripe invoicing-fee (verdict: fee is €0, niets bouwen)
+Tarief geverifieerd tegen Stripe: **0,4% per betaalde factuur, gecapt op $2** (Invoicing Starter; Plus = 0,5% cap $2). MAAR: onze on-demand facturen worden aangemaakt met **`pay(paid_out_of_band: true)`** (ADR-053, `api/stripe/invoice/route.ts:128`). Stripe rekent de invoicing-fee **niet** op facturen die buiten Stripe betaald zijn ("not charged for invoices paid outside Stripe"). → **De fee is €0.** Een gemeten OPEX-regel bouwen zou een spookkost boeken. `invoice_id` staat wél in `credit_transactions.metadata` (dus in principe meetbaar), maar er is niets te meten. ADR-060's entered-regel-voorziening blijft staan voor als Stripe ooit wél een invoicing-fee op de Fees report toont (96u vertraging).
+
+### 13.4 credit-coin.png (rapport, geen actie)
+`public/credit-coin.png` (128×128 RGBA PNG, 19 KB, gemaakt 14 jul, **nooit in git**) wordt gebruikt door `HexagonCreditIcon.tsx` (`src="/credit-coin.png"`) → gerenderd in AppTopbar, app-sidebar en TransactionHistoryCard. Het is dus een **product-asset** die momenteel in productie een 404 geeft (het credit-icoon in de topbar/sidebar is stuk). Aanbeveling: committen. Niet zelf gedaan — Khidr beslist.

@@ -14,7 +14,6 @@ export interface GeldScope {
   deferred_revenue: number
   consumed_by_type: { ai_transcription: number; caption: number; ai_summary: number; rag: number }
   cor: { ai_transcription: number; caption: number; ai_summary: number; rag: number; total: number }
-  cor_caption_estimated: boolean
   cor_against_revenue: number
   granted_delivery_cost: number
   funnel_free_caption_cost: number

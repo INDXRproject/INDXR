@@ -305,10 +305,14 @@ function OpexTable({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rat
         costText: "—",
       })
     } else {
-      const cov = rc.status === "partial" ? ` · ${rc.coverage_days}/${rc.period_days} days covered` : ""
+      // billed and measured are compared over the SAME days (the covered days) — a period wider than the
+      // fetched days no longer inflates measured. State the coverage honestly so a 3-of-17-day gap isn't
+      // read as a claim about the whole month.
+      const dataFrom = rc.data_from ? new Date(rc.data_from + "T00:00:00Z").toLocaleDateString(undefined, { day: "numeric", month: "short" }) : null
+      const cov = `gap over ${rc.coverage_days} of ${rc.period_days} days${dataFrom ? ` · Decodo data starts ${dataFrom}` : ""}`
       measuredRows.push({
         name: "Proxy reconciliation (Decodo)",
-        hint: `billed ${fmtNum((rc.billed_bytes ?? 0) / 1e9, 3)} GB · measured ${fmtNum((rc.measured_bytes ?? 0) / 1e9, 3)} GB · gap ${fmtNum((rc.gap_bytes ?? 0) / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB${cov}`,
+        hint: `billed ${fmtNum((rc.billed_bytes ?? 0) / 1e9, 3)} GB · measured ${fmtNum((rc.measured_bytes ?? 0) / 1e9, 3)} GB · gap ${fmtNum((rc.gap_bytes ?? 0) / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB · ${cov}`,
         cost: rc.gap_cost ?? 0,
       })
     }
