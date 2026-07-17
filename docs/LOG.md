@@ -9836,6 +9836,7 @@ supabase/migrations/20260716160000_f18_proxy_overhead.sql
 [2026-07-16 16:00] F17 saldi + Decodo-reconciliatie (ADR-067): nachtelijke worker-cron fetch_service_metrics (02:00 UTC) → DeepSeek prepaid-saldo (Operations "External services"-kaart, alert < cost_config.deepseek_low_balance_usd) + Decodo dagverkeer (decodo_daily_usage → Finance OPEX-regel "Proxy reconciliation": billed − measured = gat, external-only, GREATEST(0,gap)). Faalgedrag expliciet: API faalt → "unavailable" + last_success_at (nooit $0), coverage_days=0 → géén gat. AssemblyAI geen API → niets gebouwd (provenance §2.13d). Nieuwe env-var DECODO_API_KEY (dashboard-token) op Railway worker-service. record_service_fetch REVOKE PUBLIC/anon/auth. Bewezen ≥2 periodes (gap 0 + €14,90). Build+py_compile groen. | gewijzigd: backend/worker.py, migratie 20260716180000, apps/app/src/app/admin/{operations/page.tsx,adminTypes.ts,finance/FinanceView.tsx,finance/financeTypes.ts}, docs (ADR-067, INDEX, database-schema, finance-number-provenance, monitoring, known-issues)
 [2026-07-16 15:30] commit: feat(finance): F17 service balances + Decodo reconciliation (ADR-067)
 [2026-07-17 10:50] Follow-up datepicker/cron: (pt1 investigatie) fetch_service_metrics DRAAIT wél (ARQ-cron ok, worker op 7b67be6) — bewezen via service_metrics.last_attempt_at 02:00 UTC. DeepSeek faalde op ontbrekende key (Khidr nu gezet → geverifieerd $9.99 via railway run). Decodo faalt 401/400: Bearer-prefix ipv rauwe key + mist proxyType + datum Y-m-d H:i:s + parser leest 'key' niet — bewezen werkende request (200), fix GERAPPORTEERD niet toegepast (pt1 report-first). (pt3) Trend toont nu 1 dag als centraal punt ipv alleen tekst; lijn vanaf 2. (pt4) dubbele Week/Month/Quarter/Year-toggle verwijderd — alleen presets + pijltjes-binnen-eenheid. LESSONS: env-var-deploy-target + externe-API-contract-verifiëren. Build groen. | gewijzigd: apps/app/src/app/admin/finance/FinanceView.tsx, docs (LESSONS, known-issues, priorities)
+[2026-07-17 11:20] Decodo-reconciliatie gefixt (4 F17-bugs in backend/worker.py): auth rauwe key ipv Bearer, body proxyType=residential_proxies, datums Y-m-d H:i:s, parser leest dag-veld 'key'. Live geverifieerd (railway run -s worker): HTTP 200, decodo_daily_usage = 14 jul 184,2 MB + 16 jul 0,87 MB = 185,09 MB (= metadata.totals.total_rx_tx). Reconciliatie [14→18 jul]: billed 185,09 MB · measured 184,93 MB (transcription_jobs 175,5 + usage_logs-captions 9,46 + proxy_usage_log 0) · gap 164 KB = 0,089% → F18 compleet, geen lekkend pad (residu = per-request wire-overhead). LESSONS: api-contract-is-hypothese-tot-echte-call. py_compile groen. | gewijzigd: backend/worker.py, docs (LESSONS, known-issues)
 [2026-07-16 16:30] F9–F14 datepicker + periodes (bediening/weergave, geen finance-formules geraakt): presets (This week/month·Last month·This/Last quarter·This year·All time·Custom) + Custom-datumrange, ISO-weeknummers ("W02 · …"), business_start_date=2026-01-01 in finance_settings (config-driven, migratie 20260716200000) → All-time-ondergrens + datepicker ←-floor (atLowerBound), delta-caption eerlijk per geval (lopend=gelijke elapsed, afgerond=hele vorige periode — F11 was al gefixt in 12c91db), Trend-vs-live-start uitgelegd in UI. F14: AddExpense-UI biedt al 4 vormen + hint verbeterd ("€300 / month · 14 of 31 days"); data-invoer blijft Khidr. Bewezen: 10/10 checks tegen echte periods.ts (6 gevraagde cases + F11-lopend + F12) + RPC all-time net −0,03 / zero-len comparison=0 (delta null). Build groen. | gewijzigd: apps/app/src/app/admin/finance/{periods.ts,page.tsx,FinanceView.tsx,SettingsDialog.tsx}, migratie 20260716200000, docs (priorities, database-schema)
 
 Nightly ARQ worker cron fetch_service_metrics (02:00 UTC, keys server-side):
@@ -9925,4 +9926,27 @@ docs/LESSONS.md
 docs/LOG.md
 docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-07-17 11:05] commit: fix(finance): Decodo statistics API call — correct auth, body, dates, parser
+
+The F17 Decodo integration had four wrong assumptions, all now corrected and
+live-verified against the real API (HTTP 200):
+- auth: raw key in Authorization (no 'Bearer ' prefix) — Bearer → 401
+- body: add required proxyType='residential_proxies'
+- dates: 'Y-m-d H:i:s' not 'Y-m-d' — date-only → 400 'Invalid data provided'
+- parser: read the day field 'key' (rows are {key, rx_bytes, tx_bytes})
+
+Live result (railway run -s worker): decodo_daily_usage filled — 14 Jul 184.2 MB
++ 16 Jul 0.87 MB = 185.09 MB, matching metadata.totals.total_rx_tx.
+
+Reconciliation [14→18 Jul]: billed 185.09 MB · measured 184.93 MB · gap 164 KB
+(0.089%). Measured = transcription_jobs 175.5 MB + usage_logs captions 9.46 MB +
+proxy_usage_log 0. F18 is complete — ~99.9% captured; the residual is per-request
+wire overhead (Decodo bills wire bytes, yt-dlp reports payload).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/worker.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/operations/known-issues.md
 ---

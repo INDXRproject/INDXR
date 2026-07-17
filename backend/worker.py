@@ -1445,10 +1445,10 @@ async def noop_task(ctx: dict) -> str:
 
 
 def _parse_decodo_traffic(payload) -> list:
-    """Parse the Decodo v2 statistics/traffic response (grouped by day) into
-    [{day, rx, tx}]. Defensive against field-name variants — raises loudly if it
-    can't find parseable rows (→ recorded as a FAILED fetch → UI 'unavailable',
-    never a fabricated number). Validated against the live API on first real run."""
+    """Parse the Decodo v2 statistics/traffic response (grouped by day) into [{day, rx, tx}].
+    Live-verified shape: top-level {metadata, data}, each data row {"key": "2026-07-16 00:00:00",
+    "rx_bytes": N, "tx_bytes": N, "rx_tx_bytes": N, "requests": N}. Raises loudly if it can't find
+    parseable rows (→ recorded as a FAILED fetch → UI 'unavailable', never a fabricated number)."""
     items = None
     if isinstance(payload, dict):
         for k in ("data", "results", "traffic", "items", "rows"):
@@ -1463,7 +1463,8 @@ def _parse_decodo_traffic(payload) -> list:
     for it in items:
         if not isinstance(it, dict):
             continue
-        day = it.get("date") or it.get("day") or it.get("period") or it.get("timestamp")
+        # Decodo names the grouped day "key" ("Y-m-d H:i:s"); keep the fallbacks defensive.
+        day = it.get("key") or it.get("date") or it.get("day") or it.get("period") or it.get("timestamp")
         if not day:
             continue
         rx = it.get("rx_bytes") or it.get("rx") or it.get("download_bytes") or it.get("bytes_received") or 0
@@ -1513,13 +1514,19 @@ async def fetch_service_metrics(ctx: dict) -> str:
     try:
         if not dc_key:
             raise RuntimeError("DECODO_API_KEY not set")
-        today = datetime.now(timezone.utc).date()
-        body = {"startDate": (today - timedelta(days=3)).isoformat(),
-                "endDate": today.isoformat(), "groupBy": "day"}
+        # Live-verified contract (all four were wrong in the first F17 draft): auth = the RAW key (no
+        # "Bearer "); body needs proxyType="residential_proxies"; dates must be "Y-m-d H:i:s" (not date-only).
+        now_dt = datetime.now(timezone.utc)
+        body = {
+            "proxyType": "residential_proxies",
+            "startDate": (now_dt - timedelta(days=3)).strftime("%Y-%m-%d 00:00:00"),
+            "endDate": now_dt.strftime("%Y-%m-%d %H:%M:%S"),
+            "groupBy": "day",
+        }
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
                 "https://api.decodo.com/api/v2/statistics/traffic",
-                headers={"Authorization": f"Bearer {dc_key}", "Content-Type": "application/json"},
+                headers={"Authorization": dc_key, "Content-Type": "application/json", "Accept": "application/json"},
                 json=body,
             )
             resp.raise_for_status()
