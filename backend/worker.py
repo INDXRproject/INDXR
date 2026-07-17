@@ -14,7 +14,7 @@ import logging
 import os
 import urllib.parse
 import uuid as _uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from typing import Optional
 
 import posthog
@@ -1517,9 +1517,26 @@ async def fetch_service_metrics(ctx: dict) -> str:
         # Live-verified contract (all four were wrong in the first F17 draft): auth = the RAW key (no
         # "Bearer "); body needs proxyType="residential_proxies"; dates must be "Y-m-d H:i:s" (not date-only).
         now_dt = datetime.now(timezone.utc)
+        today = now_dt.date()
+        # Watermark pattern (not a fixed N-day window): resume from the last day we already have, minus a 1-day
+        # lookback. The lookback has a measured basis — Decodo registers traffic in ~1s and doesn't revise within
+        # 3h (see nightly-jobs.md B); 1 day is ample slack and the day-keyed upsert makes the overlap free. Effect:
+        # a multi-night worker outage can't create a permanent gap — the next run pulls every missing day back to
+        # the watermark. Empty table → fall back to business_start_date (config), never a hardcoded date.
+        wm = sb.table("decodo_daily_usage").select("day").order("day", desc=True).limit(1).execute()
+        if wm.data:
+            watermark = date.fromisoformat(str(wm.data[0]["day"])[:10])
+        else:
+            bs = sb.table("finance_settings").select("value").eq("key", "business_start_date").limit(1).execute()
+            watermark = date.fromisoformat(str(bs.data[0]["value"])[:10]) if bs.data else date(2026, 1, 1)
+        start_day = watermark - timedelta(days=1)
+        # Cap the span: Decodo's statistics API returns at most 100 day-items; a >90-day catch-up is an extreme
+        # outage that needs manual backfill anyway. Bound it so one run can't build a request Decodo truncates.
+        if (today - start_day).days > 90:
+            start_day = today - timedelta(days=90)
         body = {
             "proxyType": "residential_proxies",
-            "startDate": (now_dt - timedelta(days=3)).strftime("%Y-%m-%d 00:00:00"),
+            "startDate": start_day.strftime("%Y-%m-%d 00:00:00"),
             "endDate": now_dt.strftime("%Y-%m-%d %H:%M:%S"),
             "groupBy": "day",
         }
@@ -1533,23 +1550,24 @@ async def fetch_service_metrics(ctx: dict) -> str:
             rows = _parse_decodo_traffic(resp.json())
         now_iso = datetime.now(timezone.utc).isoformat()
         by_day = {r["day"]: (r["rx"], r["tx"]) for r in rows}
-        # Write a row for EVERY COMPLETE day in the fetched window — 0 bytes when Decodo reported no traffic —
-        # so downstream "a row exists" == "this day is covered". Without this, a no-traffic day (Decodo returns
-        # nothing) is indistinguishable from a never-fetched day, and the reconciliation would measure our bytes
-        # over the full period against billed over only the returned days → a false negative gap.
-        # TODAY is deliberately excluded: it is still accumulating and Decodo's same-day aggregation lags our
-        # real-time measurement, so counting it makes measured > billed (a spurious negative gap). The 3-day
-        # re-fetch window writes each day the night after it completes, by which point both sides are final.
-        today = now_dt.date()
-        write_days = [(today - timedelta(days=n)).isoformat() for n in range(3, 0, -1)]  # today-3 .. today-1
-        for d in write_days:
-            rx, tx = by_day.get(d, (0, 0))
-            await asyncio.to_thread(lambda d=d, rx=rx, tx=tx: sb.table("decodo_daily_usage").upsert({
-                "day": d, "rx_bytes": rx, "tx_bytes": tx, "billed_bytes": rx + tx,
+        # Write a row for EVERY day in [start_day, today] INCLUSIVE — 0 bytes when Decodo reported no traffic —
+        # so downstream "a row exists" == "this day is covered". Without a per-day row, a no-traffic day (Decodo
+        # returns nothing) is indistinguishable from a never-fetched day.
+        # TODAY is now INCLUDED: the measured delay is ~1s with no revision in 3h, so today's number is reliable
+        # almost immediately. If something does trail in, the 1-day-lookback re-write on the next run corrects it.
+        write_days = []
+        d = start_day
+        while d <= today:
+            write_days.append(d.isoformat())
+            d += timedelta(days=1)
+        for dd in write_days:
+            rx, tx = by_day.get(dd, (0, 0))
+            await asyncio.to_thread(lambda dd=dd, rx=rx, tx=tx: sb.table("decodo_daily_usage").upsert({
+                "day": dd, "rx_bytes": rx, "tx_bytes": tx, "billed_bytes": rx + tx,
                 "fetched_at": now_iso}, on_conflict="day").execute())
         await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
             "p_service": "decodo", "p_ok": True, "p_error": None}).execute())
-        logger.info(f"[service-metrics] decodo wrote {len(write_days)} day(s), {len(rows)} with traffic")
+        logger.info(f"[service-metrics] decodo watermark {start_day}→{today}, wrote {len(write_days)} day(s), {len(rows)} with traffic")
     except Exception as e:
         logger.warning(f"[service-metrics] decodo fetch failed: {e}")
         await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {

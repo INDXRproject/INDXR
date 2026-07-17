@@ -73,6 +73,8 @@ export interface FinanceScope {
     proxy_overhead: number
     // F17: Decodo billed − measured gap (external scope only). 0 when reconciliation status is not 'ok'/'partial'.
     proxy_reconciliation: number
+    // Decodo-billed cost on days before proxy measurement began (external only) — billed IS the cost, no gap.
+    proxy_historical: number
     total: number
   }
   entered_opex_total: number
@@ -113,14 +115,18 @@ export interface FinanceScope {
 }
 
 export interface FinanceReconciliation {
-  status: "ok" | "partial" | "unavailable" | "not_applicable"
-  billed_bytes?: number
+  // "unverified_only": every Decodo-covered day in the period predates proxy measurement → billed is the cost.
+  status: "ok" | "partial" | "unavailable" | "not_applicable" | "unverified_only"
+  billed_bytes?: number       // verified days only (>= measured_from)
   measured_bytes?: number
   gap_bytes?: number
   gap_cost?: number
-  coverage_days?: number
-  period_days?: number
-  data_from?: string | null // earliest Decodo-covered day → "Decodo data starts <date>"
+  coverage_days?: number      // verified covered days
+  period_days?: number        // length of the verified sub-window
+  data_from?: string | null   // earliest Decodo-covered day → "Decodo data starts <date>"
+  measured_from?: string | null // boundary: days before this are billed-only (no measurement)
+  unverified_billed_bytes?: number // Decodo-billed on days before measurement began
+  unverified_cost?: number    // unverified_billed_bytes × rate — a real cost with no gap possible
   last_success_at?: string | null
   last_error?: string | null
 }

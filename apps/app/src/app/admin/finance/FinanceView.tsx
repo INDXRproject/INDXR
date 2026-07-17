@@ -292,9 +292,11 @@ function OpexTable({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rat
       : "proxy spent outside delivered jobs (failed jobs · playlist-info · metadata · blocked captions) — none measured yet this period",
     cost: m.proxy_overhead,
   })
-  // F17: Decodo reconciliation (external scope only). billed · measured · gap. 'unavailable' → cost "—"
-  // (a bill we couldn't fetch ≠ a gap of €0), never a fabricated 100% gap.
+  // F17: Decodo reconciliation (external scope only). Two distinct rows:
+  //  · verified days (>= measured_from): billed vs measured = gap (~wire overhead). 'unavailable' → "—".
+  //  · days before measurement began: billed IS the cost (no gap possible) — a separate honest line, not €0.
   const rc = s.reconciliation
+  const shortDate = (d?: string | null) => (d ? new Date(d + "T00:00:00Z").toLocaleDateString(undefined, { day: "numeric", month: "short" }) : null)
   if (isExternal && rc.status !== "not_applicable") {
     const lastOk = rc.last_success_at ? new Date(rc.last_success_at).toLocaleDateString() : null
     if (rc.status === "unavailable") {
@@ -304,16 +306,22 @@ function OpexTable({ s, r, enteredLines, isExternal }: { s: FinanceScope; r: Rat
         cost: 0,
         costText: "—",
       })
-    } else {
-      // billed and measured are compared over the SAME days (the covered days) — a period wider than the
-      // fetched days no longer inflates measured. State the coverage honestly so a 3-of-17-day gap isn't
-      // read as a claim about the whole month.
-      const dataFrom = rc.data_from ? new Date(rc.data_from + "T00:00:00Z").toLocaleDateString(undefined, { day: "numeric", month: "short" }) : null
-      const cov = `gap over ${rc.coverage_days} of ${rc.period_days} days${dataFrom ? ` · Decodo data starts ${dataFrom}` : ""}`
+    } else if (rc.status === "ok" || rc.status === "partial") {
+      // billed and measured compared over the SAME (verified) days — a wider period no longer inflates measured.
+      const cov = `gap over ${rc.coverage_days} of ${rc.period_days} days${shortDate(rc.data_from) ? ` · Decodo data starts ${shortDate(rc.data_from)}` : ""}`
       measuredRows.push({
         name: "Proxy reconciliation (Decodo)",
         hint: `billed ${fmtNum((rc.billed_bytes ?? 0) / 1e9, 3)} GB · measured ${fmtNum((rc.measured_bytes ?? 0) / 1e9, 3)} GB · gap ${fmtNum((rc.gap_bytes ?? 0) / 1e9, 3)} GB × ${rate(r.decodo_eur_per_gb)}/GB · ${cov}`,
         cost: rc.gap_cost ?? 0,
+      })
+    }
+    // Historical proxy before measurement began: real Decodo spend with no measurement to reconcile against.
+    if ((rc.unverified_billed_bytes ?? 0) > 0) {
+      const mf = shortDate(rc.measured_from)
+      measuredRows.push({
+        name: "Historical proxy (Decodo, unverified)",
+        hint: `${fmtNum((rc.unverified_billed_bytes ?? 0) / 1e9, 3)} GB billed × ${rate(r.decodo_eur_per_gb)}/GB — before we measured proxy${mf ? ` (measurement starts ${mf})` : ""}. Decodo's figure IS the cost; no gap possible.`,
+        cost: rc.unverified_cost ?? 0,
       })
     }
   }

@@ -40,12 +40,16 @@ def get_supabase_client() -> Client:
     return _supabase_client
 
 
-def record_proxy_bytes(category: str, byte_count: int) -> None:
+def record_proxy_bytes(category: str, byte_count: int, is_internal: bool = False) -> None:
     """F18: log Decodo proxy egress that is NOT tied to a delivered job/caption — the traffic that
     otherwise counts nothing: playlist-info scrapes, video-metadata scrapes, and the extract_info
     egress of caption attempts that find nothing/get blocked. Lands as the 'Proxy overhead' OPEX line
     (bytes × decodo_eur_per_gb). Disjoint from transcription_jobs.proxy_bytes (complete jobs → COR)
     and usage_logs.proxy_bytes (successful captions), so no double count.
+
+    is_internal=True marks test/non-customer egress (e.g. a delay measurement) so it stays out of the
+    EXTERNAL proxy-overhead OPEX (booked in internal instead); the account-level reconciliation still
+    counts it since Decodo billed it. Real extraction paths leave it False.
 
     Best-effort and synchronous: never raises (a failed log must never break extraction), skips 0.
     category: 'playlist_info' | 'metadata' | 'caption_failed'."""
@@ -54,7 +58,7 @@ def record_proxy_bytes(category: str, byte_count: int) -> None:
         if n <= 0:
             return
         get_supabase_client().table("proxy_usage_log").insert(
-            {"category": category, "bytes": n}
+            {"category": category, "bytes": n, "is_internal": is_internal}
         ).execute()
     except Exception as e:
         logger.warning(f"[proxy-overhead] record failed ({category}): {e}")

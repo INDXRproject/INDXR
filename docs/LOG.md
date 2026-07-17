@@ -9833,6 +9833,7 @@ docs/wiki/operations/known-issues.md
 supabase/migrations/20260716160000_f18_proxy_overhead.sql
 ---
 [2026-07-16 15:24] precompact: context compaction triggered
+[2026-07-17 20:30] Decodo watermark + backfill + vandaag + test-internal + snapshot-catchup (6 punten): (1) worker.py Decodo-fetch = watermark (MAX(day)−1 lookback, cap 90d, empty→business_start) i.p.v. vast 3-daags venster → geen permanent gat meer. (2) vandaag telt mee (gemeten delay ~1s/geen revisie). (3) historische backfill 21 apr–nu (88 rijen, 4,75 GB; Decodo-horizon = 21 apr, 35 dagen <100-limiet, geen chunking). Reconciliatie split op proxy_measured_from=2026-07-11: verified days→gap(~wire), days ervoor→"proxy_historical" OPEX (billed IS de kost, geen gat). All-time unverified €13,46. Bewezen 3 vensters (This month gap +7MB/2,9%, All time idem, May unverified_only €0,68). (4) proxy_usage_log.is_internal-vlag; delay_test→internal → uit external OPEX (€0,092 weg), in internal, geen 30MB-gat (measured account-level telt 'm mee=billed). record_proxy_bytes(is_internal=). snapshot idem NOT is_internal. (5) snapshot_finance_catchup(7) vult gemiste nachten (max 7, ≥16 jul floor), pg_cron omgezet. Bewezen (geen gat→[], sim yesterday=20→[17-20]). (6) wiki nightly-jobs watermark + LESSONS ophaalvenster. Build+py_compile groen. | gewijzigd: backend/{worker.py,credit_manager.py}, migraties 20260717(proxy_internal, reconcile_verified_unverified, snapshot_catchup), apps/app/src/app/admin/finance/{FinanceView.tsx,financeTypes.ts}, docs (nightly-jobs, LESSONS, database-schema, finance-number-provenance, LOG)
 [2026-07-16 16:00] F17 saldi + Decodo-reconciliatie (ADR-067): nachtelijke worker-cron fetch_service_metrics (02:00 UTC) → DeepSeek prepaid-saldo (Operations "External services"-kaart, alert < cost_config.deepseek_low_balance_usd) + Decodo dagverkeer (decodo_daily_usage → Finance OPEX-regel "Proxy reconciliation": billed − measured = gat, external-only, GREATEST(0,gap)). Faalgedrag expliciet: API faalt → "unavailable" + last_success_at (nooit $0), coverage_days=0 → géén gat. AssemblyAI geen API → niets gebouwd (provenance §2.13d). Nieuwe env-var DECODO_API_KEY (dashboard-token) op Railway worker-service. record_service_fetch REVOKE PUBLIC/anon/auth. Bewezen ≥2 periodes (gap 0 + €14,90). Build+py_compile groen. | gewijzigd: backend/worker.py, migratie 20260716180000, apps/app/src/app/admin/{operations/page.tsx,adminTypes.ts,finance/FinanceView.tsx,finance/financeTypes.ts}, docs (ADR-067, INDEX, database-schema, finance-number-provenance, monitoring, known-issues)
 [2026-07-16 15:30] commit: feat(finance): F17 service balances + Decodo reconciliation (ADR-067)
 [2026-07-17 10:50] Follow-up datepicker/cron: (pt1 investigatie) fetch_service_metrics DRAAIT wél (ARQ-cron ok, worker op 7b67be6) — bewezen via service_metrics.last_attempt_at 02:00 UTC. DeepSeek faalde op ontbrekende key (Khidr nu gezet → geverifieerd $9.99 via railway run). Decodo faalt 401/400: Bearer-prefix ipv rauwe key + mist proxyType + datum Y-m-d H:i:s + parser leest 'key' niet — bewezen werkende request (200), fix GERAPPORTEERD niet toegepast (pt1 report-first). (pt3) Trend toont nu 1 dag als centraal punt ipv alleen tekst; lijn vanaf 2. (pt4) dubbele Week/Month/Quarter/Year-toggle verwijderd — alleen presets + pijltjes-binnen-eenheid. LESSONS: env-var-deploy-target + externe-API-contract-verifiëren. Build groen. | gewijzigd: apps/app/src/app/admin/finance/FinanceView.tsx, docs (LESSONS, known-issues, priorities)
@@ -10032,4 +10033,52 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/architecture/nightly-jobs.md
+---
+[2026-07-17 20:15] commit: feat(finance): Decodo watermark + historical backfill + verified/unverified split + test-internal + snapshot catch-up
+
+Built on the measured facts (81abb35: ~1s registration, no revision in 3h).
+
+1. WATERMARK (worker.py): the Decodo fetch resumes from MAX(day)-1 lookback
+   instead of a fixed 3-day window (empty table -> business_start_date). A
+   multi-night outage can no longer leave a permanent gap; the next run pulls
+   everything back to the watermark. Span capped at 90 days.
+
+2. TODAY COUNTS: today is now written and reconciled (delay ~1s, no revision);
+   the 1-day lookback re-writes it next night if anything trails in.
+
+3. HISTORICAL BACKFILL to Decodo's horizon (2026-04-21; probed startDate=Jan-01
+   -> 35 traffic-days < 100-item limit, no chunking). 88 rows, 4.75 GB total.
+   Reconciliation now splits at finance_settings.proxy_measured_from (2026-07-11):
+   days >= boundary reconcile (gap ~wire overhead); days before have no
+   measurement -> billed IS the cost, shown as 'Historical proxy (unverified)'
+   OPEX (not a 100% gap, not EUR0). All-time unverified = EUR13.46.
+
+4. TEST TRAFFIC INTERNAL: proxy_usage_log.is_internal; the delay-test row ->
+   internal, so it leaves the external proxy-overhead OPEX (EUR0.09 removed) and
+   lands in internal. Account-level measured still counts it, so no fake 30 MB
+   gap. record_proxy_bytes(is_internal=). snapshot_finance_day filters NOT
+   is_internal too.
+
+5. SNAPSHOT CATCH-UP: pg_cron now calls snapshot_finance_catchup(7) — fills
+   missed nights (< 2 scope rows) most-recent-first, max 7/run, floored at the
+   clean-start series origin. Idempotent.
+
+Verified >=2 windows each: reconciliation This month gap +7.05 MB (2.9%, positive)
+/ All time same + EUR13.46 unverified / May unverified_only EUR0.68; external
+proxy-overhead EUR0 vs internal EUR0.092; catch-up empty when no gap, sim fills
+forward days only. Build + py_compile green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+backend/credit_manager.py
+backend/worker.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/architecture/nightly-jobs.md
+supabase/migrations/20260717140000_proxy_usage_log_internal_and_measured_from.sql
+supabase/migrations/20260717150000_reconcile_verified_unverified_and_internal_proxy.sql
+supabase/migrations/20260717160000_snapshot_catchup_and_internal_proxy_filter.sql
 ---

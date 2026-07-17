@@ -35,7 +35,7 @@ Om 02:00 UTC (= 03:00 CET / 04:00 CEST) is de Amsterdamse datum al de nieuwe dag
 - `net_profit_measured` = `revenue_delivered − cor_against_revenue − (goodwill + funnel_ll + funnel_anon + radar_fee + proxy_overhead)`. **Let op:** entered-OPEX zit hier NIET in — de snapshot is measured-only; de Finance-tab legt entered als live-overlay eroverheen (ADR-064).
 - Schrijft daarnaast per nacht `daily_library_bytes` (day, user_id, `library_bytes` stand-nu) voor elke externe user (`ON CONFLICT DO UPDATE`) — de per-user opslag-serie voor storage-COR.
 
-**Als hij een nacht niet draait:** die dag wordt **nooit automatisch ingehaald** — de cron doet altijd alleen "gisteren". Resultaat: een **permanent gat** in `finance_daily_snapshot` voor die datum (de Trend mist die dag). Herstel kan alleen handmatig: `SELECT snapshot_finance_day('YYYY-MM-DD')`. De live Finance-statement heeft er geen last van (die herberekent elke periode via `admin_finance_summary`); alleen de bevroren Trend-reeks houdt het gat.
+**Als hij een nacht niet draait (sinds 2026-07-17: zelf-herstellend):** de pg_cron roept nu `snapshot_finance_catchup(7)` aan i.p.v. `snapshot_finance_day()` direct. Die vult **elke ontbrekende dag** tussen de reeks-start en gisteren die < 2 scope-rijen heeft, meest-recente eerst, **max 7 per run** (N=7: één run blijft ruim binnen een seconde, en een uitval > 7 dagen is een groot incident dat handmatige aandacht verdient i.p.v. een stille weken-inhaal die de volgende nacht overlapt). Idempotent (`ON CONFLICT DO UPDATE`), dus inhalen is gratis. **Grens:** nooit vóór de bestaande reeks-start (`MIN(snapshot_date)` = 16 juli, bewuste schone start ADR-064) — alleen voorwaartse gaten. Handmatige backfill van een specifieke dag blijft `SELECT snapshot_finance_day('YYYY-MM-DD')`. De live Finance-statement had sowieso geen last van gaten (herberekent elke periode via `admin_finance_summary`).
 
 **Als hij twee keer draait voor dezelfde dag:** **idempotent** — `INSERT ... ON CONFLICT (snapshot_date, scope) DO UPDATE SET <alle velden>=EXCLUDED..., created_at=now()`. Overschrijft met herberekende waarden, geen dubbele rij, geen dubbeltelling. Twee runs met dezelfde inputs geven dezelfde rij.
 
@@ -51,21 +51,23 @@ Draait om 02:00 in de tijdzone van het worker-proces = **UTC** op Railway (empir
 
 **DeepSeek-tak:** `GET https://api.deepseek.com/user/balance` (Bearer `DEEPSEEK_API_KEY`) → prepaid-saldo → `record_service_fetch('deepseek', ok, balance, currency)` → Operations "External services"-kaart. Faalt de call → alleen `last_attempt_at`/`last_error` (laatst-goede saldo blijft staan). Eén run/dag volstaat: het prepaid-saldo gaat ~een jaar mee.
 
-**Decodo-tak — welk venster:** een **glijdend 3-daags venster** (niet vast, niet alleen-gisteren). De regel die start/eind bepaalt (`backend/worker.py`):
+**Decodo-tak — welk venster (watermark, sinds 2026-07-17):** géén vast N-daags venster meer, maar een **high-water-mark**. De worker hervat vanaf de laatste dag die we al hebben, minus 1 dag lookback (`backend/worker.py`):
 ```
-now_dt = datetime.now(timezone.utc)
-body = {"proxyType": "residential_proxies",
-        "startDate": (now_dt - timedelta(days=3)).strftime("%Y-%m-%d 00:00:00"),
-        "endDate":   now_dt.strftime("%Y-%m-%d %H:%M:%S"),
-        "groupBy": "day"}
+watermark  = MAX(day) uit decodo_daily_usage   (leeg → business_start_date uit finance_settings)
+start_day  = watermark − 1 dag                 (lookback, gecapt op 90 dagen span)
+startDate  = start_day 00:00:00 ;  endDate = now   (Y-m-d H:i:s)
+→ schrijf een rij voor ELKE dag in [start_day, vandaag] INCLUSIEF, upsert on_conflict="day",
+  0 bytes als Decodo die dag niets teruggaf.
 ```
-Dus opgevraagd worden 4 kalenderdagen (vandaag−3 t/m nu). **Geschreven** worden alleen de **complete** dagen `vandaag−3, vandaag−2, vandaag−1` — voor élke daarvan een `decodo_daily_usage`-rij, met 0 bytes als Decodo niets teruggaf (Decodo geeft alleen dagen mét verkeer terug). **Vandaag wordt bewust NIET geschreven** (loopt nog; Decodo's same-day-aggregatie loopt achter op onze real-time meting → zou measured > billed geven).
+De watermark schuift impliciet mee met `MAX(day)` — geen aparte kolom. **Lookback = 1 dag**, met gemeten onderbouwing: de Decodo-registratie-delay is ~1 s en er is geen revisie binnen 3 u (sectie B), dus 1 dag is ruime slack en de day-keyed upsert maakt de overlap gratis. De 90-dagen-cap begrenst één run na een extreme uitval (Decodo's API geeft max 100 dag-items terug).
 
-**Waarom "Decodo data starts 14 Jul":** dat is `min(day)` in `decodo_daily_usage`, en dat volgt uit **onze venster-keuze**, niet uit een Decodo-horizon. De eerste geslaagde fetch draaide op 2026-07-17; het 3-daagse venster reikte toen tot 14 juli, dus 14 juli is de vroegste geschreven dag. De Decodo-API kijkt verder terug (een `startDate` van bv. 1 juli levert die dagen ook) — we kiezen simpelweg 3 dagen, forward-only, zonder backfill van eerdere dagen.
+**Vandaag telt mee.** De gemeten delay (~1 s, geen revisie) rechtvaardigt het; de 1-daags-lookback herschrijft vandaag de volgende nacht, dus als er iets naloopt corrigeert het zichzelf.
 
-**Groeit de dekking elke nacht:** ja, met **één nieuwe dag per nacht** aan de voorkant. Elke run (her)schrijft `vandaag−3/−2/−1`; de net-voltooide `vandaag−1` is nieuwe dekking, de andere twee zijn herschrijvingen. Hij blijft dus niet op dezelfde dagen hangen. De achterkant (dagen vóór de eerste fetch, d.w.z. vóór ~14 juli) wordt nooit gebackfilld.
+**Gat kan niet ontstaan.** Ligt de worker meerdere nachten plat, dan is `MAX(day)` de laatste geschreven dag; de volgende run haalt vanaf `watermark − 1` alles op tot nu. Geen permanent gat (in tegenstelling tot de oude vaste-venster-versie, waar dag 4 na 4 nachten uitval voorgoed weg was).
 
-**Overschrijven of overslaan bij een al-opgehaalde dag:** **overschrijven** — `upsert(..., on_conflict="day")`. Een dag D wordt (her)schreven op de nachten D+1, D+2, D+3 (zolang hij binnen het 3-daagse schrijfvenster valt) en daarna **bevroren**. Gevolg voor revisies: als Decodo zijn cijfer voor bv. 16 juli **binnen ~3 dagen** bijstelt, pikken wij dat op (de her-fetch overschrijft); stelt Decodo het **later dan 3 dagen** bij, dan niet meer (16 juli is dan al uit het venster).
+**Overschrijven/revisie:** `upsert(on_conflict="day")` → **overschrijven**. Omdat de watermark maar 1 dag teruggaat, wordt een dag normaal op 2 nachten (de dag zelf + de volgende) herschreven; een Decodo-revisie binnen die tijd wordt opgepikt, daarna bevroren. Gezien de gemeten nul-revisie is dat ruim voldoende.
+
+**Historische backfill (eenmalig, 2026-07-17):** Decodo bewaart data terug tot **2026-04-21** (geprobeerd met `startDate=2026-01-01` → 35 dagen mét verkeer, earliest 21 apr; `total_items=35` < API-limiet 100 → geen chunking nodig). Een eenmalige backfill schreef alle dagen 21 apr–nu (88 rijen, 4,75 GB totaal ≈ €14,20). Daarna houdt de watermark de voorrand bij.
 
 ---
 
