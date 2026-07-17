@@ -19,6 +19,9 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 **...de AI/transcriptie pipeline begrijpt:**
 → [AI Pipeline](architecture/ai-pipeline.md) → [001 Python Backend](decisions/001-python-backend.md) → [002 YouTube Captions](decisions/002-youtube-captions.md)
 
+**...wilt weten wat er 's nachts draait (crons):**
+→ [Nachtelijke jobs](architecture/nightly-jobs.md) — `snapshot_finance_day` (pg_cron) + `fetch_service_metrics` (ARQ), beide 02:00 UTC, feitelijk beschreven + gemeten Decodo-delay
+
 **...pricing of business wilt begrijpen:**
 → [Pricing](business/pricing.md) → [Positionering](business/positioning.md) → [052 Pricing Restructure (4 tiers)](decisions/052-pricing-restructure-4-tiers.md)
 
