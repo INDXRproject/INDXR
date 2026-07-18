@@ -5,6 +5,7 @@ import { DeveloperExportsCard } from "@/components/dashboard/settings/DeveloperE
 import { EmailNotificationsToggle } from "@/components/dashboard/settings/EmailNotificationsToggle"
 import { MarketingOptOutToggle } from "@/components/dashboard/settings/MarketingOptOutToggle"
 import { LibraryPageSizeSelect } from "@/components/dashboard/settings/LibraryPageSizeSelect"
+import { DeleteAccountCard } from "@/components/dashboard/settings/DeleteAccountCard"
 import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
 
 export default async function SettingsPage() {
@@ -73,6 +74,11 @@ export default async function SettingsPage() {
 
         {/* Developer Exports */}
         <DeveloperExportsCard initialChunkSize={chunkSize} />
+
+        {/* Danger zone — gescheiden onderaan, weg van credits/accountoverzicht */}
+        <div className="pt-4 mt-4 border-t border-error/20">
+          <DeleteAccountCard />
+        </div>
       </div>
     </div>
   )

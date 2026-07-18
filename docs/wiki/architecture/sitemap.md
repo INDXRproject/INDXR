@@ -178,7 +178,7 @@ Auth-guard: `dashboard/layout.tsx` — redirect `/login` als geen user; redirect
 | `/dashboard/billing/success` | CLIENT | — | Succesmelding na aankoop (geen auth-guard) |
 | `/dashboard/billing/cancel` | CLIENT | — | Annuleringsmelding (geen auth-guard) |
 | `/dashboard/account` | SERVER | Account | Profiel + transactiehistorie + Sentry feedback |
-| `/dashboard/settings` | SERVER | Settings | Beveiliging, thema, developer exports |
+| `/dashboard/settings` | SERVER | Settings | Beveiliging, thema, e-mailvoorkeuren, developer exports, **Danger zone: self-service account-verwijdering** (`DeleteAccountCard` → `POST /api/account/delete`, typ-DELETE-bevestiging, logt uit) |
 
 ### Admin (eigen layout, ADMIN_EMAIL vereist)
 
@@ -294,6 +294,7 @@ Gedefinieerd in `next.config.ts` → `async redirects()`. Totaal: 23 regels.
 | `/api/stripe/checkout` | POST | Stripe Checkout Session aanmaken |
 | `/api/stripe/webhook` | POST | Stripe webhook (credits toewijzen) |
 | `/api/ai/summarize` | POST | AI samenvatting (DeepSeek) |
+| `/api/account/delete` | POST | Self-service account-verwijdering — verwijdert **uitsluitend de sessie-user** (id uit sessie, niet uit body) via `admin.auth.admin.deleteUser` → cascade + IP-scrub-trigger |
 | `/api/admin/*` | GET/POST | Admin CRUD operaties |
 
 ---

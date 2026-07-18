@@ -10254,3 +10254,30 @@ apps/marketing/next.config.ts
 docs/LOG.md
 packages/shared/src/providers/PostHogProvider.tsx
 ---
+[2026-07-18 19:40] self-service account-verwijdering (pre-launch): nieuwe user-scoped route POST /api/account/delete (verwijdert UITSLUITEND de sessie-user — id uit getUser(), nooit uit body; service-role deleteUser → cascade + IP-scrub-trigger 20260718173000, geen nieuwe migratie) + DeleteAccountCard danger-zone onderaan /dashboard/settings (typ-DELETE-bevestiging via AlertDialog, logt uit → /login). Echte test (wegwerp-account, via de knop): auth.users 1→0, profiles→0, usage_logs-rij blijft met ip_address NULL, PII-anti-join=0. sitemap.md bijgewerkt (settings-rij was aanwezig, niet ontbrekend — beschrijving + delete-actie + API-route toegevoegd). | gewijzigd: apps/app/src/app/api/account/delete/route.ts, apps/app/src/components/dashboard/settings/DeleteAccountCard.tsx, apps/app/src/app/dashboard/settings/page.tsx, docs/wiki/architecture/sitemap.md, docs/LOG.md
+[2026-07-18 22:42] commit: feat(account): self-service account deletion (pre-launch, GDPR)
+
+Maakt de privacy-belofte "delete from your settings" waar — was admin-only.
+
+- Nieuwe route POST /api/account/delete: verwijdert UITSLUITEND de ingelogde
+  sessie-user. Het id komt uit de gevalideerde sessie (getUser()), NOOIT uit de
+  request-body -> een user kan alleen zichzelf wissen. Service-role (server-only)
+  roept admin.auth.admin.deleteUser(user.id) aan -> bestaande ON DELETE CASCADE +
+  de BEFORE DELETE-trigger (usage_logs.ip_address NULL) + payment_attempts CASCADE
+  (migratie 20260718173000). Geen nieuwe migratie. Sessie wordt uitgelogd.
+- DeleteAccountCard: danger-zone onderaan /dashboard/settings, gescheiden van
+  credits/accountoverzicht. Onomkeerbaar -> AlertDialog met verplichte "DELETE"-
+  bevestiging; na succes uitloggen + redirect naar /login. FeedbackCard voor errors.
+- Wiki: sitemap.md settings-rij + API-routetabel bijgewerkt (de settings-route was
+  al aanwezig in sitemap.md, niet ontbrekend zoals aangenomen -> discrepantie gemeld).
+
+Echte test (wegwerp-account, verwijderd via de knop): auth.users 1->0, profiles->0,
+usage_logs-rij blijft met ip_address NULL, PII-anti-join 0 herleidbare velden.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/account/delete/route.ts
+apps/app/src/app/dashboard/settings/page.tsx
+apps/app/src/components/dashboard/settings/DeleteAccountCard.tsx
+docs/LOG.md
+docs/wiki/architecture/sitemap.md
+---
