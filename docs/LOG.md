@@ -9833,6 +9833,7 @@ docs/wiki/operations/known-issues.md
 supabase/migrations/20260716160000_f18_proxy_overhead.sql
 ---
 [2026-07-16 15:24] precompact: context compaction triggered
+[2026-07-18 09:00] Finance afronden (docs-only, geen code): (1) dekkingscheck 13 punten → ALLE 13 gedocumenteerd, geen gaten (landguard-regeltekst staat letterlijk in ADR-062 L15-18; _sale_vat-hiërarchie in provenance §Eén-BTW-bron; ai_summary_usage-drop-reden in ADR-065 §1; etc.). (2) Nieuw overzichtsdoc architecture/finance-map.md: elk UI-getal → functie → tabellen/kolommen → cost_config-tarief → ADR (Hero/Income statement/Bank/Trend/Operations tabellen + redesign-waarschuwingen). (3) Open punten naar priorities.md (F23 est_cost-venster instelbaar, F24 UI-redesign, F25 business_start vs Decodo-horizon doc, F26 vaste kosten Khidr, F27 per-user=Growth, AssemblyAI-blinde-vlek). INDEX + finance-map gelinkt. | gewijzigd: docs/wiki/architecture/finance-map.md (nieuw), docs/wiki/INDEX.md, docs/wiki/roadmap/priorities.md, docs/LOG.md
 [2026-07-17 20:30] Decodo watermark + backfill + vandaag + test-internal + snapshot-catchup (6 punten): (1) worker.py Decodo-fetch = watermark (MAX(day)−1 lookback, cap 90d, empty→business_start) i.p.v. vast 3-daags venster → geen permanent gat meer. (2) vandaag telt mee (gemeten delay ~1s/geen revisie). (3) historische backfill 21 apr–nu (88 rijen, 4,75 GB; Decodo-horizon = 21 apr, 35 dagen <100-limiet, geen chunking). Reconciliatie split op proxy_measured_from=2026-07-11: verified days→gap(~wire), days ervoor→"proxy_historical" OPEX (billed IS de kost, geen gat). All-time unverified €13,46. Bewezen 3 vensters (This month gap +7MB/2,9%, All time idem, May unverified_only €0,68). (4) proxy_usage_log.is_internal-vlag; delay_test→internal → uit external OPEX (€0,092 weg), in internal, geen 30MB-gat (measured account-level telt 'm mee=billed). record_proxy_bytes(is_internal=). snapshot idem NOT is_internal. (5) snapshot_finance_catchup(7) vult gemiste nachten (max 7, ≥16 jul floor), pg_cron omgezet. Bewezen (geen gat→[], sim yesterday=20→[17-20]). (6) wiki nightly-jobs watermark + LESSONS ophaalvenster. Build+py_compile groen. | gewijzigd: backend/{worker.py,credit_manager.py}, migraties 20260717(proxy_internal, reconcile_verified_unverified, snapshot_catchup), apps/app/src/app/admin/finance/{FinanceView.tsx,financeTypes.ts}, docs (nightly-jobs, LESSONS, database-schema, finance-number-provenance, LOG)
 [2026-07-16 16:00] F17 saldi + Decodo-reconciliatie (ADR-067): nachtelijke worker-cron fetch_service_metrics (02:00 UTC) → DeepSeek prepaid-saldo (Operations "External services"-kaart, alert < cost_config.deepseek_low_balance_usd) + Decodo dagverkeer (decodo_daily_usage → Finance OPEX-regel "Proxy reconciliation": billed − measured = gat, external-only, GREATEST(0,gap)). Faalgedrag expliciet: API faalt → "unavailable" + last_success_at (nooit $0), coverage_days=0 → géén gat. AssemblyAI geen API → niets gebouwd (provenance §2.13d). Nieuwe env-var DECODO_API_KEY (dashboard-token) op Railway worker-service. record_service_fetch REVOKE PUBLIC/anon/auth. Bewezen ≥2 periodes (gap 0 + €14,90). Build+py_compile groen. | gewijzigd: backend/worker.py, migratie 20260716180000, apps/app/src/app/admin/{operations/page.tsx,adminTypes.ts,finance/FinanceView.tsx,finance/financeTypes.ts}, docs (ADR-067, INDEX, database-schema, finance-number-provenance, monitoring, known-issues)
 [2026-07-16 15:30] commit: feat(finance): F17 service balances + Decodo reconciliation (ADR-067)
@@ -10081,4 +10082,24 @@ docs/wiki/architecture/nightly-jobs.md
 supabase/migrations/20260717140000_proxy_usage_log_internal_and_measured_from.sql
 supabase/migrations/20260717150000_reconcile_verified_unverified_and_internal_proxy.sql
 supabase/migrations/20260717160000_snapshot_catchup_and_internal_proxy_filter.sql
+---
+[2026-07-18 14:48] commit: docs(finance): finance-map + coverage verification + open points
+
+Finance wrap-up before Growth (docs only, no code):
+- Verified all 13 build-items from this week are documented; none missing
+  (landguard literal rule is in ADR-062, _sale_vat hierarchy in provenance,
+  ai_summary_usage drop reason in ADR-065, watermark/verified-unverified/
+  is_internal/catch-up in nightly-jobs + provenance, etc.).
+- New architecture/finance-map.md: the redesign map — every UI number ->
+  computing function -> tables/columns -> cost_config rate -> ADR, in one table,
+  with what-you-touch-if-you-move-a-row warnings. Linked from INDEX.
+- Open points parked in priorities.md (F23 est_cost window configurable, F24 UI
+  redesign, F25 business_start vs Decodo horizon note, F26 fixed costs for Khidr,
+  F27 per-user = Growth, AssemblyAI blind spot).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/finance-map.md
+docs/wiki/roadmap/priorities.md
 ---

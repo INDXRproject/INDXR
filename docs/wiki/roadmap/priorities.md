@@ -364,6 +364,14 @@ Openstaande punten na de money-model-/BTW-/markt-scope-sessies (ADR-055 t/m ADR-
 - `_sale_vat` als enige BTW-bron, per-land buckets (NL/OSS/outside/unknown), revenue-per-regio, landguard live via Radar, betaalpogingen gelogd (`charge.failed` + `payment_intent.payment_failed` geabonneerd), Radar-kosten als driver × tarief. ADR-062, `tax-jurisdictions.md`, FAQ live, provenance §7 herschreven.
 - Khidr-side afgerond: iDEAL aan, betaalmethoden opgeschoond, "I'll file taxes myself" aangeklikt, Radar-regel live, webhook-events uitgebreid.
 
+**OPEN NA FINANCE-AFRONDING (genoteerd 2026-07-18, vóór Growth) — Finance is functioneel klaar; dit zijn de resterende punten zodat ze niet in een chat blijven hangen. Kaart voor een redesign: `docs/wiki/architecture/finance-map.md`.**
+- [ ] **F23 — `est_cost_to_deliver` 90-dagen-venster instelbaar maken.** Beslist: 30/90/custom in `finance_settings` (nu hardcoded `deferred_window_days`, al deels config maar het venster-getal zelf is een aanname). **Reden:** het is een venster-aanname net als het oude Decodo-3-dagen-venster — die horen instelbaar of gemeten-onderbouwd. **Geen urgentie:** telt pas bij live verkeer. Zelfde klasse als de watermark-les (LESSONS 2026-07-17 "ophaalvenster is een aanname").
+- [ ] **F24 — Redesign Finance-UI (eigen taak, geen bugfix).** Het settings-tandwiel roept meer vragen op dan het beantwoordt; de "Historical proxy (unverified)"-regel staat correct geplaatst maar oogt rommelig tussen de driver-regels; de tabel-hints zijn per taak aangegroeid (inconsistente stijl). De cijfers/formules kloppen (finance-map + provenance) — dit is puur presentatie. Bouw op de finance-map, niet op giswerk.
+- [ ] **F25 — `business_start_date` (1 jan) vs Decodo-horizon (21 apr) documenteren in de UI.** "All time" proxy-kosten beginnen op 21 apr omdat Decodo geen data daarvóór heeft — **geen bug** (Decodo's horizon), maar het kan verrassen. Al vastgelegd in `finance-map.md` + `nightly-jobs.md`; overweeg een korte UI-noot bij de reconciliatie-regel. Geen formule-werk.
+- [ ] **F26 — Vaste kosten invoeren (Khidr, geen code).** Vercel/Railway/Supabase/domein nog niet als entered-OPEX-regels ingevoerd (`AddExpense`, model dekt maandelijks/jaarlijks — ADR-065). Bedragen levert Khidr; `effective_from` in het verleden voor de pre-launch-P&L.
+- [ ] **F27 — Per-user segmentatie = Growth, niet Finance.** Nice-to-have voor Finance, kern voor Growth. **Geen capture-werk** (alles is al gemeten) — alleen een filter-/segment-view. Hoort bij F18/Growth.
+- [ ] **AssemblyAI saldo-blinde-vlek** — geen balance-API (auto-recharge PAYG), bewust niets gebouwd. Al vastgelegd in ADR-067 + provenance §2.13d. Alleen hier genoemd voor volledigheid; geen actie.
+
 ### Pre-launch — buiten code (parallel uit te voeren)
 
 - [ ] Google Search Console: domein verifiëren, sitemap indienen
