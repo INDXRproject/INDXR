@@ -10197,3 +10197,8 @@ packages/shared/src/contexts/AuthContext.tsx
 packages/shared/src/providers/PostHogProvider.tsx
 supabase/migrations/20260718173000_privacy_delete_cleanup.sql
 ---
+[2026-07-18 17:44] commit: docs(lessons): PostHog-js dropt events in headless (_is_bot) — verifieer config/before_send direct
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+---
