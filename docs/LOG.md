@@ -10119,3 +10119,24 @@ Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/business/content-sitemap.md
 ---
+[2026-07-18 15:35] etappe A afronding content-sitemap: 7 leesbaarheids-/structuurwijzigingen — boomstructuur bovenaan, docs↔artikel-rolverdeling-tabel (optie 1: gescheiden + kruislinks, artikel=bron), troubleshooting-hub herpositioneerd naar bundelhub, status/changelog/use-cases naar post-launch-lijst, laag-2 getrimd tot echte gaten (refund-besluit) + 1 tech fix-item (/contact submit), groei-regel aangescherpt met nu-beslissingen. READ-ONLY op content. | gewijzigd: docs/wiki/business/content-sitemap.md, docs/LOG.md
+[2026-07-18 16:00] commit: docs(content): content-sitemap definitief — boom + docs↔artikel-rolverdeling + post-launch-split
+
+Etappe A afronding (7 wijzigingen):
+1. Boomstructuur bovenaan — groepering in één blik zichtbaar vóór de tabellen.
+2. Docs↔artikel-rolverdeling-tabel (optie 1): docs = kale spec, artikel = verhaal/bron,
+   kruisgelinkt; hub verwijst alleen. Voorkomt duplicate content bij C→F.
+3. Troubleshooting-hub herpositioneerd: leeg → geplande bundelhub naar de artikelen.
+4. Status/uptime + changelog naar apart post-launch-lijstje (met reden + vorm).
+5. Use-case-landings uit 'ontbrekend' → post-launch/bewust-niet (ADR-038).
+6. Losse placeholder-waarschuwingen uit laag 2 (we lopen alles na in C→F); alleen
+   het echte tech-fix-item blijft: /contact-submit werkt niet.
+7. Groei-regel aangescherpt met de nu-beslissingen (format→spec+artikel, troubleshooting
+   →artikel+hub-link, status/changelog/use-cases→post-launch).
+
+READ-ONLY op content — alleen de map gecorrigeerd en leesbaar gemaakt.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/business/content-sitemap.md
+---
