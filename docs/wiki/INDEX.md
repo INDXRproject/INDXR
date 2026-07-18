@@ -150,6 +150,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 
 | Bestand | Onderwerp |
 |---------|-----------|
+| [privacy-facts.md](business/privacy-facts.md) | **Geverifieerde privacy-feiten vóór het beleid** (etappe B): PostHog niet-cookieless + US-host, account-delete cascade-matrix, wat na delete achterblijft (usage_logs `ip_address`, payment_attempts). Read-only diagnose tegen live code + `pg_constraint`. |
 | [content-sitemap.md](business/content-sitemap.md) | **De kaart van álle user-facing content** (marketing + app): per pagina doel/claims/status, gegroepeerd naar functie, FAQ gecategoriseerd + kritische blik (ontbrekend/schrapbaar/groei-regel). Basis vóór GDPR- en waarheids-pagina. |
 | [pricing.md](business/pricing.md) | 5-tier model, credit formule, marges, marketing copy |
 | [unit-economics.md](business/unit-economics.md) | Geverifieerde kostenbasis: AssemblyAI + Decodo per credit, vaste infra, prijs-rationale |

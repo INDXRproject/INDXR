@@ -10140,3 +10140,22 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/business/content-sitemap.md
 ---
+[2026-07-18 16:05] etappe B voorbereiding — privacy-feiten geverifieerd (READ-ONLY): PostHog draait maar is NIET cookieless (default localStorage+cookie, persistente distinct_id, identify met e-mail, US-host, geen GA); account-delete cascadet alles behalve usage_logs (SET NULL — behoudt ip_address = niet echt geanonimiseerd) en payment_attempts (geen FK); master_transcripts blijft maar is video-gekeyed/niet-persoonlijk; alleen admin-side delete. Bevindingen in notitie. | gewijzigd: docs/wiki/business/privacy-facts.md, docs/wiki/INDEX.md, docs/LOG.md
+[2026-07-18 16:43] commit: docs(privacy): geverifieerde privacy-feiten vóór beleid (etappe B)
+
+READ-ONLY diagnose tegen live code + DB (geen fixes):
+- PostHog draait (beide layouts + webhook), maar is NIET cookieless: default
+  persistence localStorage+cookie, persistente distinct_id, identify() met e-mail,
+  US-host (us.i.posthog.com). Geen GA/gtag. → 'cookieless, no cross-session' klopt niet.
+- Account-delete: alles CASCADE behalve usage_logs (SET NULL — behoudt ip_address,
+  dus niet echt geanonimiseerd) en payment_attempts (geen FK). master_transcripts
+  blijft maar is video-gekeyed/niet-persoonlijk. Alleen admin-side delete, geen self-serve.
+  → 'can't be linked to you' is overclaim (ip_address blijft).
+
+Feitenbasis voor het schrijven van het privacy-beleid.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/business/privacy-facts.md
+---
