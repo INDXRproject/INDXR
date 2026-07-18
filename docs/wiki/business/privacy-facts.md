@@ -51,4 +51,33 @@
 
 ---
 
-*Geen fixes uitgevoerd — dit is de feitenbasis voor etappe B (beleid schrijven).*
+*Diagnose-deel hierboven = de pre-fix staat (READ-ONLY). Onderstaande addendum = de doorgevoerde fix.*
+
+---
+
+## Addendum 2026-07-18 — fixes doorgevoerd (Fase B)
+
+De twee gaten zijn gedicht; het product klopt nu met de voorgenomen belofte.
+
+### PostHog → EU + cookieless (zie ADR-023 addendum)
+- `persistence: 'memory'` (cookieless — **live geverifieerd**: 0 cookies/localStorage/sessionStorage), `api_host` → EU via env, `disable_session_recording: true`, e-mail uit `identify()`, `$ip` genulld via `before_send` (**live geverifieerd**: IP `203.0.113.5` → `null`), server-side `disableGeoip: true`.
+- **Belofte "cookieless analytics, EU-hosted, geen tracking over sessies" = nu waar** (EU-host afhankelijk van de env-var die Khidr op EU zet + US-instance opzegt).
+
+### Account-delete → alles wat identificeert is weg (migratie `20260718173000_privacy_delete_cleanup`)
+- **BEFORE DELETE-trigger op `auth.users`** nult `usage_logs.ip_address` vóór de user weg is (vangt élk delete-pad, ook een toekomstig self-service pad).
+- **`payment_attempts`** kreeg een echte `ON DELETE CASCADE`-FK → rijen mét user_id verdwijnen (rauwe Stripe-payload + billing_country).
+- **Bewijs (wegwerp-user):** na delete → `usage_logs`-rij blijft maar `ip_address` NULL + `user_id` NULL; `payment_attempts` weg; `profiles`/`auth.users` weg; `master_transcripts` onaangeroerd (755→755). PII-anti-join = 0 herleidbare velden.
+- **Belofte "we delete everything that identifies you; anonymized statistics may remain" = nu waar.**
+
+### Correctie op A3 (R2) t.o.v. de diagnose hierboven
+- Er zijn **geen per-user R2-objecten**. De per-user `transcripts`-rij bewaart alle content **in Postgres** (`transcript`/`edited_content`/`ai_summary`/`rag_exports` jsonb) → CASCADE-verwijderd. R2 bevat alléén de **gedeelde, video-gekeyede master-cache** (`transcripts/{video_id}__{lang}__{model}.json`, bucket `indxr-transcripts`, geen `user_id`/PII). **R2-purge bij delete is dus niet nodig** — er staat niets persoonlijks. Audio komt **nooit in R2** (lokale temp-file, `os.unlink`/`os.remove` na de job; geen 24u-lifecycle want niet gepersisteerd).
+
+### Bewust behouden (de "geanonimiseerde statistiek die mag blijven" — voor het beleid)
+- **`usage_logs`-rijen** ná scrub: `user_id` NULL + `ip_address` NULL, alleen gedrags-metadata (video_id, type, credits, timestamp).
+- **`master_transcripts`** (video-gekeyed, geen PII) + de bevroren **`finance_daily_snapshot`** (geaggregeerd, geen per-user PII).
+
+### Subverwerkers voor het privacy-beleid (1.18)
+- **PostHog (EU)** — product-analytics, nu cookieless/IP-loos/geen replay.
+- **Sentry** — error tracking; **kan IP's en (bij replay) DOM bevatten** → moet in de subverwerkers-alinea.
+- Stripe (betaling), Supabase (EU, auth+DB), Cloudflare R2 (transcript-cache), AssemblyAI (audio-transcriptie — ontvangt geüploade audio), DeepSeek (AI-samenvatting), Decodo (proxy), Railway/Vercel (hosting).
+- **Crisp** is (nog) niet in de code aanwezig → **niet noemen** tot het er is.

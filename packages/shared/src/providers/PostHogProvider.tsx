@@ -7,11 +7,23 @@ import { useEffect } from 'react'
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+      // EU instance (https://eu.i.posthog.com) — data blijft in de EU. Gezet via env.
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-      person_profiles: 'identified_only', // or 'always' if you want anonymous users too
-      capture_pageview: false, // We manually handle pageviews if using Next.js router events, but for App Router default is okay-ish. actually manual is better for SPA.
-      // For App Router, we usually let posthog auto-capture or use a pageview component.
-      // Let's stick to default auto capture for simplicity unless we need precise route change tracking.
+      person_profiles: 'identified_only',
+      // Cookieless: in-memory persistence zet géén cookie/localStorage device-id →
+      // geen herkenning over sessies heen. Privacy-by-design (roadmap 1.32).
+      persistence: 'memory',
+      capture_pageview: false,
+      // Geen session replay — records DOM/inputs, botst met cookieless/privacy.
+      disable_session_recording: true,
+      // IP nooit opslaan: expliciet $ip=null → PostHog-ingestion slaat geen IP op en
+      // doet geen GeoIP. In-code (robuuster dan de org-level toggle).
+      before_send: (event) => {
+        if (event && event.properties) {
+          event.properties.$ip = null
+        }
+        return event
+      },
     })
   }, [])
 

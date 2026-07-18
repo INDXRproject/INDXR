@@ -484,7 +484,7 @@ function UserRowItem({
               Delete
             </Button>
             <a
-              href={`https://app.posthog.com/project/${process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID}/persons/${user.id}`}
+              href={`https://eu.posthog.com/project/${process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID}/persons/${user.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-fg-muted hover:text-fg px-1"

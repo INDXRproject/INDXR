@@ -125,10 +125,9 @@ export function AuthProvider({
       setUser(prev => prev?.id === newUser?.id ? prev : newUser)
       
       if (session?.user) {
-        // Identify in PostHog
+        // Identify in PostHog — alleen het pseudonieme user.id; geen e-mail/PII in het profiel.
         posthog.identify(session.user.id, {
-            email: session.user.email,
-            source: session.user.app_metadata.provider, // 'google', 'email', etc.
+            source: session.user.app_metadata.provider, // 'google', 'email', etc. (geen PII)
             created_at: session.user.created_at
         });
         fetchCredits(session.user.id)

@@ -163,3 +163,25 @@ Deze paden zijn beschikbaar omdat alle gekozen tools open formats hebben (PostHo
 **Wat NIET in deze stack zit:**
 - **Datadog, New Relic, SigNoz Cloud** — te duur voor solo-bootstrap (~€190+/mnd minimum), premature voor deze schaal
 - **Volledige APM voorbij Sentry Performance** — Sentry's tracesSampleRate 0.1 is voldoende voor launch; full APM is een Fase 3-overweging
+
+---
+
+## Addendum 2026-07-18: PostHog privacy-by-design (roadmap 1.32)
+
+**Aanleiding:** het privacy-beleid gaat "cookieless analytics, EU-hosted, geen tracking over sessies" claimen. Diagnose (`business/privacy-facts.md`, commit 0d5a6f1) toonde dat PostHog toen US-hosted, niet-cookieless (localStorage+cookie), met e-mail in `identify()` en zónder IP-onderdrukking draaide. Deze fix maakt het product waar aan de belofte. Geen data-migratie — de US-instance bevatte alleen pre-launch testverkeer (schone start op EU).
+
+**Config-keuzes (in `packages/shared/src/providers/PostHogProvider.tsx`), geverifieerd in een live browser:**
+
+| Keuze | Instelling | Waarom |
+|---|---|---|
+| **EU-host** | `api_host` → `https://eu.i.posthog.com` (via `NEXT_PUBLIC_POSTHOG_HOST`) | Data blijft in de EU (AVG). Eén env-var stuurt zowel client als de server-side `posthog-node` in de Stripe-webhook. |
+| **Cookieless** | `persistence: 'memory'` | Geen cookie/localStorage device-id → geen herkenning over sessies. Geverifieerd: 0 PostHog cookies/localStorage/sessionStorage. Maakt cookie-consent voor analytics overbodig (1.18). |
+| **Geen session replay** | `disable_session_recording: true` | Vervangt de field-masking uit 1.32: geen DOM-opname = geen PII-lek, sterker dan `maskAllInputs`. |
+| **Geen PII in profiel** | `identify(user.id, { source, created_at })` — e-mail verwijderd | Alleen pseudoniem `user.id`; `source`/`created_at` zijn geen persoonsgegeven. |
+| **Geen IP** | `before_send` zet `event.properties.$ip = null` | In-code (robuuster dan de org-level toggle). Geverifieerd: input-IP `203.0.113.5` → output `null`. Server-side: `disableGeoip: true`. |
+
+**Admin-deeplinks** (`admin/users`, `admin/paid-users`) → `eu.posthog.com`.
+
+**Ongewijzigd:** GA4 blijft zoals besloten (alleen bij Google-Ads-launch, niet pre-launch). **Sentry** blijft actief — let op: **Sentry is óók een subverwerker** die IP's en (bij replay) DOM kan bevatten; die hoort in de subverwerkers-alinea van het privacy-beleid (1.18). Crisp is (nog) niet in de code aanwezig → niet noemen in het beleid tot het er is.
+
+**Khidr-actie:** verse EU-projectkey aanmaken op `eu.posthog.com`, `NEXT_PUBLIC_POSTHOG_KEY`/`_HOST`/`_PROJECT_ID` op Vercel (beide projecten) + lokaal zetten, en de **US-instance opzeggen zodra de EU-instance events ontvangt**.

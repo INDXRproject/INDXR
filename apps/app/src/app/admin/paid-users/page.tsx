@@ -209,7 +209,7 @@ export default async function AdminPaidUsersPage({
                       </Link>
                       {posthogProjectId && (
                         <a
-                          href={`https://app.posthog.com/project/${posthogProjectId}/persons/${userId}`}
+                          href={`https://eu.posthog.com/project/${posthogProjectId}/persons/${userId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-fg-muted hover:text-fg"

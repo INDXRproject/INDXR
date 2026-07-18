@@ -10159,3 +10159,41 @@ Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/business/privacy-facts.md
 ---
+[2026-07-18 17:40] privacy-by-design (roadmap 1.32) Fase B: PostHog EU+cookieless + delete-cleanup. PostHogProvider: persistence:'memory' (cookieless), api_host→EU via env, disable_session_recording, before_send nult $ip; identify zonder e-mail; webhook posthog-node disableGeoip; admin-deeplinks→eu.posthog.com. Migratie 20260718173000: BEFORE DELETE-trigger op auth.users nult usage_logs.ip_address + payment_attempts ON DELETE CASCADE. Wegwerp-user-test: ip+user_id genulld, payment_attempts weg, master-cache onaangeroerd, PII-anti-join=0. Live geverifieerd: 0 posthog cookies/localStorage, before_send IP→null. Build 2/2 groen. Khidr: EU-key op Vercel + US-instance opzeggen. | gewijzigd: PostHogProvider.tsx, AuthContext.tsx, webhook/route.ts, UsersTable.tsx, paid-users/page.tsx, migratie, ADR-023, priorities.md, privacy-facts.md
+[2026-07-18 17:41] commit: feat(privacy): PostHog EU+cookieless + account-delete PII-scrub (roadmap 1.32)
+
+Maakt de belofte "cookieless analytics, EU-hosted, we delete everything that
+identifies you" waar.
+
+PostHog (privacy-by-design, live geverifieerd):
+- persistence memory -> cookieless (0 cookies/localStorage/sessionStorage in browser)
+- api_host -> EU via env (NEXT_PUBLIC_POSTHOG_HOST)
+- disable_session_recording true (vervangt field-masking 1.32)
+- identify() zonder e-mail (alleen pseudoniem user.id)
+- before_send nult de IP-property (geverifieerd: 203.0.113.5 -> null); webhook posthog-node disableGeoip
+- admin-deeplinks -> eu.posthog.com
+
+Account-delete (migratie 20260718173000_privacy_delete_cleanup):
+- BEFORE DELETE-trigger op auth.users nult usage_logs.ip_address (elk delete-pad, ook self-service later)
+- payment_attempts krijgt ON DELETE CASCADE-FK naar auth.users
+- Wegwerp-user-bewijs: na delete ip+user_id NULL, payment_attempts weg, master-cache 755->755, PII-anti-join=0
+- Bewust behouden: master-cache (video-gekeyed) + finance_daily_snapshot (geaggregeerd)
+- SECURITY DEFINER-functie: REVOKE EXECUTE FROM anon/authenticated (geverifieerd false)
+
+Docs: ADR-023 privacy-addendum, priorities 1.32 done + F28 (dashboard-embed=Growth),
+privacy-facts addendum (fix + R2-correctie: geen per-user R2-objecten + subverwerkers incl. Sentry).
+
+Khidr-actie: verse EU-projectkey op Vercel + lokaal; US-instance opzeggen zodra EU events ontvangt.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/paid-users/page.tsx
+apps/app/src/app/admin/users/UsersTable.tsx
+apps/app/src/app/api/stripe/webhook/route.ts
+docs/LOG.md
+docs/wiki/business/privacy-facts.md
+docs/wiki/decisions/023-observability-stack.md
+docs/wiki/roadmap/priorities.md
+packages/shared/src/contexts/AuthContext.tsx
+packages/shared/src/providers/PostHogProvider.tsx
+supabase/migrations/20260718173000_privacy_delete_cleanup.sql
+---

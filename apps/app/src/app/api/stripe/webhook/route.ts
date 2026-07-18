@@ -204,7 +204,7 @@ export async function POST(req: Request) {
     const { PostHog } = require('posthog-node')
     const client = new PostHog(
         process.env.NEXT_PUBLIC_POSTHOG_KEY!,
-        { host: process.env.NEXT_PUBLIC_POSTHOG_HOST }
+        { host: process.env.NEXT_PUBLIC_POSTHOG_HOST, disableGeoip: true }
     )
 
     client.capture({
