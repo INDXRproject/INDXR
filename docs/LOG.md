@@ -10226,3 +10226,31 @@ docs/LESSONS.md
 docs/LOG.md
 packages/shared/src/providers/PostHogProvider.tsx
 ---
+[2026-07-18 19:05] PostHog first-party reverse proxy + DNT (beide apps): rewrites() in beide next.config.ts (/ingest/static+array → eu-assets.i.posthog.com, /ingest/* → eu.i.posthog.com via NEXT_PUBLIC_POSTHOG_HOST-target met EU-fallback) + skipTrailingSlashRedirect; PostHogProvider api_host=/ingest, ui_host=eu.posthog.com, respect_dnt=true. Vorm geverifieerd tegen posthog.com/docs/advanced/proxy/nextjs. Live: /ingest/flags/ 200 + /ingest/static/array.js 200 first-party, 0 directe posthog.com-requests; DNT aan → has_opted_out_capturing=true (geen capture-events). | gewijzigd: apps/marketing/next.config.ts, apps/app/next.config.ts, packages/shared/src/providers/PostHogProvider.tsx, docs/LOG.md
+[2026-07-18 22:31] commit: feat(analytics): PostHog first-party reverse proxy (EU) + Do-Not-Track
+
+Events via ons eigen domein routen (adblockers herkennen ze niet als tracker ->
+datavolledigheid) en de bewuste weigering respecteren via DNT/GPC.
+
+- Beide next.config.ts: rewrites() met first-party /ingest-pad, vorm geverifieerd
+  tegen posthog.com/docs/advanced/proxy/nextjs:
+    /ingest/static/:path* -> https://eu-assets.i.posthog.com/static/:path*
+    /ingest/array/:path*  -> https://eu-assets.i.posthog.com/array/:path*
+    /ingest/:path*        -> ${NEXT_PUBLIC_POSTHOG_HOST || https://eu.i.posthog.com}/:path*
+  + skipTrailingSlashRedirect: true (ingestion-endpoints als /e/ gebruiken trailing slash).
+  Bestaande redirects() ongemoeid. De EU-fallback-env voedt de rewrite-target, niet api_host.
+
+- PostHogProvider: api_host: '/ingest' (first-party), ui_host: 'https://eu.posthog.com'
+  (dashboard/toolbar-UI), respect_dnt: true (DNT/GPC -> niet meten). Alleen de init geraakt.
+
+Live geverifieerd (schone browser, geen adblocker):
+- /ingest/flags/ -> 200 en /ingest/static/array.js -> 200 (first-party, localhost),
+  0 directe posthog.com-requests vanuit de browser.
+- Do-Not-Track aan -> has_opted_out_capturing() = true -> capture() no-op, geen events.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/next.config.ts
+apps/marketing/next.config.ts
+docs/LOG.md
+packages/shared/src/providers/PostHogProvider.tsx
+---

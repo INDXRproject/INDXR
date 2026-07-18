@@ -7,9 +7,14 @@ import { useEffect } from 'react'
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      // EU instance (https://eu.i.posthog.com) — data blijft in de EU. Gezet via env.
-      // Expliciete EU-fallback: een lege env-var mag NIET stil naar de SDK-US-default vallen.
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
+      // First-party reverse proxy: events gaan via ons eigen domein (/ingest → EU, zie
+      // beide next.config.ts). Adblockers herkennen dit niet als tracker → datavolledigheid.
+      // De EU-fallback-env voedt de rewrite-TARGET in next.config, niet dit pad.
+      api_host: '/ingest',
+      // ui_host = de echte EU-UI, zodat dashboard/toolbar-links kloppen (het proxy-pad is geen UI).
+      ui_host: 'https://eu.posthog.com',
+      // Do-Not-Track / GPC respecteren: wie tracking bewust weigert wordt niet gemeten.
+      respect_dnt: true,
       person_profiles: 'identified_only',
       // Cookieless: in-memory persistence zet géén cookie/localStorage device-id →
       // geen herkenning over sessies heen. Privacy-by-design (roadmap 1.32).
