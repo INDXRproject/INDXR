@@ -150,6 +150,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 
 | Bestand | Onderwerp |
 |---------|-----------|
+| [content-sitemap.md](business/content-sitemap.md) | **De kaart van álle user-facing content** (marketing + app): per pagina doel/claims/status, gegroepeerd naar functie, FAQ gecategoriseerd + kritische blik (ontbrekend/schrapbaar/groei-regel). Basis vóór GDPR- en waarheids-pagina. |
 | [pricing.md](business/pricing.md) | 5-tier model, credit formule, marges, marketing copy |
 | [unit-economics.md](business/unit-economics.md) | Geverifieerde kostenbasis: AssemblyAI + Decodo per credit, vaste infra, prijs-rationale |
 | [positioning.md](business/positioning.md) | Marktpositie, doelgroep, onderscheid t.o.v. concurrenten |

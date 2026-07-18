@@ -10103,3 +10103,19 @@ docs/wiki/INDEX.md
 docs/wiki/architecture/finance-map.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-18 15:10] etappe A content-sitemap: kaart van álle user-facing content (marketing + app) opgeleverd — 7 functionele groepen, per pagina doel/claims/status, FAQ gecategoriseerd, 18 artikelen + docs + app-copy tegen de echte routes gemapt; kritische blik (ontbrekend/schrapbaar/groei-regel) + discrepanties vs sitemap.md (2026-05-03). READ-ONLY: geen content herschreven/route toegevoegd. | gewijzigd: docs/wiki/business/content-sitemap.md, docs/wiki/INDEX.md, docs/LOG.md
+[2026-07-18 15:10] commit: docs(content): content-sitemap — kaart van alle user-facing content + kritische blik
+
+Etappe A: één document dat álle user-facing pagina's van indxr.ai (marketing)
+en app.indxr.ai (app-copy) inventariseert, gegroepeerd naar functie, met per
+pagina doel + belangrijkste claims + status. FAQ apart gecategoriseerd. Laag 2
+(oordeel) strikt gescheiden: ontbrekende pagina's, schrapbaar/dubbel/kapot,
+groei-regel voor toekomstige pagina's. Discrepanties vs sitemap.md (2026-05-03)
+genoteerd (routes winnen). READ-ONLY — geen content herschreven of route
+toegevoegd/verwijderd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/business/content-sitemap.md
+---
