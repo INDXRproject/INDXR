@@ -8,7 +8,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
       // EU instance (https://eu.i.posthog.com) — data blijft in de EU. Gezet via env.
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+      // Expliciete EU-fallback: een lege env-var mag NIET stil naar de SDK-US-default vallen.
+      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
       person_profiles: 'identified_only',
       // Cookieless: in-memory persistence zet géén cookie/localStorage device-id →
       // geen herkenning over sessies heen. Privacy-by-design (roadmap 1.32).

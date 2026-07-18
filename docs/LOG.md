@@ -10202,3 +10202,27 @@ supabase/migrations/20260718173000_privacy_delete_cleanup.sql
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 ---
+[2026-07-18 18:20] data-residency EU: (1) AssemblyAI-client base_url → api.eu.assemblyai.com (eu-west-1) — geverifieerd met echte call: POST /v2/transcript 200, id b3ba2809…, GET 200 job=processing. (2) PostHog expliciete EU-fallback (|| eu.i.posthog.com) in PostHogProvider + webhook posthog-node, zodat lege env-var niet stil naar SDK-US-default valt. LESSONS bijgewerkt. | gewijzigd: backend/assemblyai_client.py, packages/shared/src/providers/PostHogProvider.tsx, apps/app/src/app/api/stripe/webhook/route.ts, docs/LESSONS.md, docs/LOG.md
+[2026-07-18 22:14] commit: feat(data-residency): AssemblyAI EU-endpoint + PostHog expliciete EU-fallback
+
+Data-residency EU-West-1 sluitend maken.
+
+- AssemblyAI: aai.settings.base_url -> https://api.eu.assemblyai.com (was SDK-default
+  https://api.assemblyai.com = US). Async transcriptie draait nu in de EU.
+  Geverifieerd met een echte call (Railway-key): POST /v2/transcript -> 200,
+  id b3ba2809-ae7a-435b-8d2d-3013649768f3, GET -> 200, job status = processing.
+
+- PostHog: expliciete EU-fallback op api_host/host in PostHogProvider en de
+  posthog-node-init in de Stripe-webhook: `NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com'`.
+  Voorkomt dat een lege/ontbrekende env-var stil terugvalt op de SDK-US-default
+  (https://us.i.posthog.com) -> GDPR-transfer-risico. Alleen de init-regels aangeraakt.
+
+LESSONS bijgewerkt met de lege-host -> US-default valkuil + EU-fallback-regel.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/stripe/webhook/route.ts
+backend/assemblyai_client.py
+docs/LESSONS.md
+docs/LOG.md
+packages/shared/src/providers/PostHogProvider.tsx
+---

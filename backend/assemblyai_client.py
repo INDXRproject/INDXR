@@ -5,6 +5,8 @@ import logging
 logger = logging.getLogger("indxr-backend")
 
 aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
+# EU-endpoint (eu-west-1) voor data-residency — alle async transcriptie draait in de EU.
+aai.settings.base_url = "https://api.eu.assemblyai.com"
 
 def transcribe_with_assemblyai(audio_path: str) -> dict:
     """
