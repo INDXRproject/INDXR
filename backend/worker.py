@@ -1476,38 +1476,12 @@ def _parse_decodo_traffic(payload) -> list:
 
 
 async def fetch_service_metrics(ctx: dict) -> str:
-    """F17 nightly (02:00 UTC): DeepSeek prepaid balance (Operations low-balance alert) + Decodo billed
-    traffic (Finance reconciliation). Best-effort per service — a failure records the attempt (keeps the
-    last-good balance + last_success_at, never $0/fabricated) and moves on. AssemblyAI has no balance/usage
-    API (PAYG + auto-recharge) → nothing to fetch. All calls server-side; keys live only on this worker."""
+    """F17 nightly (02:00 UTC): Decodo billed traffic (Finance reconciliation). Best-effort — a failure
+    records the attempt (keeps last_success_at, never a fabricated number) and moves on. The DeepSeek
+    prepaid-balance poll was removed when the AI-summary provider moved to the AssemblyAI EU LLM Gateway
+    (ADR-068); AssemblyAI is PAYG with no balance API → nothing to fetch. All keys live only on this worker."""
     import httpx
     sb = get_supabase_client()
-
-    # ── DeepSeek prepaid balance ─────────────────────────────────────────────────
-    ds_key = os.getenv("DEEPSEEK_API_KEY")
-    try:
-        if not ds_key:
-            raise RuntimeError("DEEPSEEK_API_KEY not set")
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
-                "https://api.deepseek.com/user/balance",
-                headers={"Authorization": f"Bearer {ds_key}", "Accept": "application/json"},
-            )
-            resp.raise_for_status()
-            data = resp.json()
-        infos = data.get("balance_infos") or []
-        usd = next((b for b in infos if b.get("currency") == "USD"), None) or (infos[0] if infos else None)
-        if not usd or usd.get("total_balance") is None:
-            raise RuntimeError("no USD balance_infos in DeepSeek response")
-        bal = float(usd["total_balance"])
-        cur = usd.get("currency") or "USD"
-        await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
-            "p_service": "deepseek", "p_ok": True, "p_balance": bal, "p_currency": cur, "p_error": None}).execute())
-        logger.info(f"[service-metrics] deepseek balance {cur} {bal}")
-    except Exception as e:
-        logger.warning(f"[service-metrics] deepseek fetch failed: {e}")
-        await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
-            "p_service": "deepseek", "p_ok": False, "p_error": str(e)[:500]}).execute())
 
     # ── Decodo billed traffic (last 3 days grouped by day — catches late-settling data) ──
     dc_key = os.getenv("DECODO_API_KEY")
@@ -1588,8 +1562,8 @@ class WorkerSettings:
     cron_jobs = [
         # Elke 2 minuten: detecteer crashed jobs en start crash-recovery.
         cron(watchdog_interrupted_jobs, minute=set(range(0, 60, 2))),
-        # F17 nightly 02:00 UTC: DeepSeek balance + Decodo billed traffic (reconciliation). One run/day —
-        # DeepSeek prepaid lasts ~a year at current burn, so hourly polling would be noise (see ADR).
+        # F17 nightly 02:00 UTC: Decodo billed traffic (Finance reconciliation). One run/day is enough —
+        # Decodo settles within hours and the day-keyed upsert makes overlap free (see nightly-jobs.md).
         cron(fetch_service_metrics, hour={2}, minute={0}),
     ]
     redis_settings = RedisSettings.from_dsn(

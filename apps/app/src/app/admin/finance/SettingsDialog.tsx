@@ -17,9 +17,8 @@ import {
 const TARIFFS: { field: keyof CostConfigRow; label: string }[] = [
   { field: "decodo_eur_per_gb", label: "Decodo €/GB" },
   { field: "assemblyai_eur_per_min", label: "AssemblyAI €/min" },
-  { field: "deepseek_eur_per_1k_input_tokens", label: "DeepSeek €/1k input" },
-  { field: "deepseek_eur_per_1k_output_tokens", label: "DeepSeek €/1k output" },
-  { field: "deepseek_eur_per_1k_cache_hit_tokens", label: "DeepSeek €/1k cache-hit" },
+  { field: "assemblyai_llm_usd_per_1m_input_tokens", label: "AI-summary $/1M input" },
+  { field: "assemblyai_llm_usd_per_1m_output_tokens", label: "AI-summary $/1M output" },
   { field: "r2_usd_per_gb_month", label: "R2 $/GB·month" },
   { field: "usd_eur_rate", label: "USD→EUR rate" },
 ]
@@ -163,7 +162,7 @@ function TariffRow({ label, value, pending, onSave }: { label: string; value: nu
 }
 
 // Services already measured per-use in COR (§3d): entering their invoice as OPEX double-counts the measured part.
-const COR_MEASURED_SERVICES = ["assemblyai", "deepseek", "decodo", "proxy", "cloudflare", " r2", "storage"]
+const COR_MEASURED_SERVICES = ["assemblyai", "decodo", "proxy", "cloudflare", " r2", "storage"]
 
 function AddExpense({ onAdd, pending }: { onAdd: (inp: { category: string; description?: string; amount: number; spread: "evenly" | "single"; recurrence: "none" | "monthly" | "yearly"; effective_from: string; effective_to?: string | null }) => void; pending: boolean }) {
   const [open, setOpen] = useState(false)
@@ -191,7 +190,7 @@ function AddExpense({ onAdd, pending }: { onAdd: (inp: { category: string; descr
       </div>
       {measuredHit && (
         <p className="rounded-md bg-warning-subtle px-2 py-1.5 text-[11px] text-warning-fg">
-          ⚠ “{measuredHit.trim()}” is al per gebruik in COR gemeten (AssemblyAI/DeepSeek/Decodo/R2). Als OPEX invoeren telt
+          ⚠ “{measuredHit.trim()}” is al per gebruik in COR gemeten (AssemblyAI/Decodo/R2). Als OPEX invoeren telt
           dubbel. Voer alleen het reconciliatie-gat in (factuur − gemeten), niet de volle factuur.
         </p>
       )}

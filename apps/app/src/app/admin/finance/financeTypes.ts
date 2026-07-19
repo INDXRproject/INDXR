@@ -162,9 +162,8 @@ export interface FinanceSummary {
   rates: {
     decodo_eur_per_gb: number
     assemblyai_eur_per_min: number
-    deepseek_eur_per_1k_input_tokens: number
-    deepseek_eur_per_1k_output_tokens: number
-    deepseek_eur_per_1k_cache_hit_tokens: number
+    assemblyai_llm_usd_per_1m_input_tokens: number
+    assemblyai_llm_usd_per_1m_output_tokens: number
     r2_usd_per_gb_month: number | null
     r2_free_gb: number | null
     usd_eur_rate: number | null
@@ -207,9 +206,8 @@ export interface CostConfigRow {
   id: string
   decodo_eur_per_gb: number
   assemblyai_eur_per_min: number
-  deepseek_eur_per_1k_input_tokens: number
-  deepseek_eur_per_1k_output_tokens: number
-  deepseek_eur_per_1k_cache_hit_tokens: number | null
+  assemblyai_llm_usd_per_1m_input_tokens: number
+  assemblyai_llm_usd_per_1m_output_tokens: number
   r2_usd_per_gb_month: number | null
   usd_eur_rate: number | null
 }

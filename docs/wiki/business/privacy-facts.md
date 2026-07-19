@@ -79,5 +79,5 @@ De twee gaten zijn gedicht; het product klopt nu met de voorgenomen belofte.
 ### Subverwerkers voor het privacy-beleid (1.18)
 - **PostHog (EU)** — product-analytics, nu cookieless/IP-loos/geen replay.
 - **Sentry** — error tracking; **kan IP's en (bij replay) DOM bevatten** → moet in de subverwerkers-alinea.
-- Stripe (betaling), Supabase (EU, auth+DB), Cloudflare R2 (transcript-cache), AssemblyAI (audio-transcriptie — ontvangt geüploade audio), DeepSeek (AI-samenvatting), Decodo (proxy), Railway/Vercel (hosting).
+- Stripe (betaling), Supabase (EU, auth+DB), Cloudflare R2 (transcript-cache), AssemblyAI (audio-transcriptie **én** AI-samenvatting via de EU LLM Gateway `gemini-2.5-flash` — EU-resident, DPA/SCC, ADR-068), Decodo (proxy), Railway/Vercel (hosting). **DeepSeek is verwijderd** (China, geen DPA/SCC — was onrechtmatig voor EU-persoonsgegevens).
 - **Crisp** is (nog) niet in de code aanwezig → **niet noemen** tot het er is.

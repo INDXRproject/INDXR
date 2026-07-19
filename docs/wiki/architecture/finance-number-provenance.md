@@ -33,7 +33,7 @@ FinanceView.tsx: accrualForRange()                           ← trend-overlay e
 snapshot_finance_day() [pg_cron 02:00 UTC]                   ← vult finance_daily_snapshot nachtelijk
 ```
 
-**Tarieven** (alle uit `cost_config`, laatste rij op `effective_from DESC`): `assemblyai_eur_per_min`, `decodo_eur_per_gb`, `deepseek_eur_per_1k_input_tokens`, `deepseek_eur_per_1k_output_tokens`, `deepseek_eur_per_1k_cache_hit_tokens`, `r2_usd_per_gb_month`, `r2_free_gb`, `usd_eur_rate`.
+**Tarieven** (alle uit `cost_config`, laatste rij op `effective_from DESC`): `assemblyai_eur_per_min`, `decodo_eur_per_gb`, `assemblyai_llm_usd_per_1m_input_tokens`, `assemblyai_llm_usd_per_1m_output_tokens` (AI-summary, USD/1M via FX — ADR-068), `r2_usd_per_gb_month`, `r2_free_gb`, `usd_eur_rate`.
 
 ---
 
@@ -130,9 +130,9 @@ Zelfde mechaniek als §1.2, `delta(revenue_delivered_now, revenue_delivered_prev
 
 ### 2.6 COR-driver: AI summary
 1. **Naam:** "AI summary".
-2. **Formule:** `cor_ai_summary = (max(prompt_tokens − cache_hit_tokens,0)/1000) × deepseek_eur_per_1k_input_tokens + (cache_hit_tokens/1000) × deepseek_eur_per_1k_cache_hit_tokens + (completion_tokens/1000) × deepseek_eur_per_1k_output_tokens`.
+2. **Formule (ADR-068):** `cor_ai_summary = (prompt_tokens/1e6) × assemblyai_llm_usd_per_1m_input_tokens × usd_eur_rate + (completion_tokens/1e6) × assemblyai_llm_usd_per_1m_output_tokens × usd_eur_rate` (gemini-2.5-flash via de EU LLM Gateway; geen prompt-cache-tier).
 3. **Bron:** ✅ **`ai_summary_usage_log`** (insert-only per-run tokenlog: `prompt_tokens`, `completion_tokens`, `cache_hit_tokens`, `generated_at`) — sinds F2 (2026-07-16, ADR-064). `transcripts.ai_summary_usage` blijft bestaan als transcript-eigen record maar is **niet meer de COR-bron** (en wordt door de UI niet gelezen — geverifieerd).
-4. **Driver:** DeepSeek-tokens. ✅ **Zichtbaar sinds F15**: rij toont `N in × €/1k [+ cache] + N out × €/1k = €bedrag` (`drivers.ai_summary.input_tokens/cache_tokens/output_tokens`; de drie DeepSeek-tarieven staan sinds F15 ook in `rates`).
+4. **Driver:** LLM-gateway-tokens (gemini-2.5-flash). Rij toont `N in × €/1M + N out × €/1M = €bedrag` (`drivers.ai_summary.input_tokens/output_tokens`; de twee `assemblyai_llm_usd_per_1m_*`-tarieven staan in `rates`). ADR-068.
 5. **Tijdstoewijzing:** ✅ flow op **`generated_at`** (het moment waarop de samenvatting draaide) — niet meer op `transcripts.created_at`. Zie **§8** (opgelost). Zowel het scope-totaal als de per-user CTE lezen de log op `generated_at`.
 6. **Scope:** aggregaat (kostensom) + per-user CTE (§2.2). Correct qua pooling.
 7. **Aannames/zwakke plekken:** ✅ regenerate is niet langer destructief voor de COR — elke run is een aparte, onveranderlijke logrij op zijn eigen `generated_at`, dus 2 runs tellen 2× (i.p.v. de in-place-overschrijving die run 1 wegtelde). Zie §8.

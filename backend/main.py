@@ -1078,9 +1078,16 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         "available_credits": None,
     })
 
+# AI-summary via the AssemblyAI EU LLM Gateway (OpenAI-compatible, EU data-residency) — ADR-068.
+# DeepSeek (China, no DPA/SCC) was unlawful for EU personal data; the gateway keeps processing in the EU.
+LLM_GATEWAY_URL = "https://llm-gateway.eu.assemblyai.com/v1/chat/completions"
+SUMMARY_MODEL_PRIMARY = "gemini-2.5-flash"
+SUMMARY_MODEL_FALLBACK = "claude-haiku-4-5-20251001"
+
+
 @app.post("/api/summarize", response_model=SummarizeResponse)
 async def summarize_transcript(request: SummarizeRequest, _: None = Depends(verify_backend_secret)):
-    """Summarize transcript using DeepSeek V3 chat model."""
+    """Summarize transcript using the AssemblyAI EU LLM Gateway (Gemini Flash, Haiku fallback)."""
     try:
         # 1. Check balance
         try:
@@ -1136,15 +1143,17 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             add_credits(request.user_id, 3, "AI Summarization Refund (Empty text)", kind='refund')
             return SummarizeResponse(success=False, error="Transcript is empty")
             
-        # 4. Call DeepSeek API
-        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if not deepseek_api_key:
-            add_credits(request.user_id, 3, "AI Summarization Refund (DeepSeek API key missing)", kind='refund')
-            return SummarizeResponse(success=False, error="DeepSeek API key not configured")
+        # 4. Call the AssemblyAI EU LLM Gateway (OpenAI-compatible)
+        assemblyai_api_key = os.getenv("ASSEMBLYAI_API_KEY")
+        if not assemblyai_api_key:
+            add_credits(request.user_id, 3, "AI Summarization Refund (LLM Gateway API key missing)", kind='refund')
+            return SummarizeResponse(success=False, error="LLM Gateway API key not configured")
             
-        deepseek_url = "https://api.deepseek.com/chat/completions"
+        # AssemblyAI gateway auth: raw API key in `authorization` (no "Bearer"). ZDR TODO: true
+        # zero-data-retention needs an executed BAA + the header/project setting confirmed with
+        # AssemblyAI (Khidr); EU-residency (this endpoint) + AssemblyAI DPA/SCCs already make it lawful.
         headers = {
-            "Authorization": f"Bearer {deepseek_api_key}",
+            "authorization": assemblyai_api_key,
             "Content-Type": "application/json"
         }
         
@@ -1154,9 +1163,8 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             "Let the length be determined by the content."
         )
         
-        # TODO: model selector - future BYOK feature
         data = {
-            "model": "deepseek-v4-flash",  # was 'deepseek-chat' (deprecated 2026-07-24); chat routed here anyway
+            "model": SUMMARY_MODEL_PRIMARY,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Transcript:\\n{full_text}"}
@@ -1170,39 +1178,38 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
         
         try:
             with httpx.Client(timeout=120.0) as client:
-                logger.info(f"Calling DeepSeek API for transcript {request.transcript_id}")
-                ds_resp = client.post(deepseek_url, headers=headers, json=data)
+                logger.info(f"Calling LLM Gateway ({data['model']}) for transcript {request.transcript_id}")
+                gw_resp = client.post(LLM_GATEWAY_URL, headers=headers, json=data)
+                # One fallback to the Haiku-class model on gateway failure.
+                if gw_resp.status_code != 200:
+                    logger.warning(f"LLM Gateway {data['model']} -> {gw_resp.status_code}; falling back to {SUMMARY_MODEL_FALLBACK}")
+                    data["model"] = SUMMARY_MODEL_FALLBACK
+                    gw_resp = client.post(LLM_GATEWAY_URL, headers=headers, json=data)
             
-            if ds_resp.status_code != 200:
-                logger.error(f"DeepSeek API error: {ds_resp.status_code} {ds_resp.text}")
-                add_credits(request.user_id, 3, "AI Summarization Refund (DeepSeek API Error)", kind='refund')
+            if gw_resp.status_code != 200:
+                logger.error(f"LLM Gateway error: {gw_resp.status_code} {gw_resp.text[:500]}")
+                add_credits(request.user_id, 3, "AI Summarization Refund (LLM Gateway Error)", kind='refund')
                 return SummarizeResponse(success=False, error="Failed to generate summary")
                 
-            result_json = ds_resp.json()
+            result_json = gw_resp.json()
             content = result_json['choices'][0]['message']['content']
-            summary_data = json.loads(content)
+            # Gemini/Claude via the gateway may wrap JSON in ```json ... ``` fences — strip before parse.
+            _s = (content or "").strip()
+            if _s.startswith("```"):
+                _s = _s[3:]
+                if _s[:4].lower() == "json":
+                    _s = _s[4:]
+                if _s.rstrip().endswith("```"):
+                    _s = _s.rstrip()[:-3]
+            summary_data = json.loads(_s.strip())
 
-            # DeepSeek token usage — captured per summary so the REAL cost is reconstructable
-            # (billing stays a flat 3 credits; this is cost-accounting only). Logging the raw
-            # tokens against one stored (cache-miss) rate would be WRONG whenever DeepSeek deviates,
-            # so we log the two things that actually vary the price and let cost_config carry the rates:
-            #   - prompt_cache_hit_tokens / prompt_cache_miss_tokens: DeepSeek prices cache-hit input
-            #     ~50× cheaper than cache-miss ($0.0028/M vs $0.14/M). Real input cost =
-            #     hit*cache_hit_rate + miss*cache_miss_rate (prompt_tokens = hit + miss).
-            #   - deepseek_created: DeepSeek's server-side UTC epoch for this call — the authoritative
-            #     timestamp to test against cost_config.deepseek_peak_windows_utc (peak_multiplier).
-            #     The response returns no monetary cost and no peak flag, so time-pricing is recomputed
-            #     from this timestamp + config (peak hours live in config, never hardcoded here).
+            # OpenAI-compatible usage → the real per-summary COR source (ai_summary_usage_log). Billing
+            # stays a flat 3 credits; this is cost-accounting only. No prompt-cache tier on the gateway's
+            # Gemini/Claude models (prompt_tokens_details.cached_tokens = 0) → cache_hit_tokens = 0.
             usage = result_json.get('usage') or {}
             ai_summary_usage = {
-                "prompt_tokens": usage.get("prompt_tokens"),
-                "completion_tokens": usage.get("completion_tokens"),
-                "total_tokens": usage.get("total_tokens"),
-                "prompt_cache_hit_tokens": usage.get("prompt_cache_hit_tokens"),
-                "prompt_cache_miss_tokens": usage.get("prompt_cache_miss_tokens"),
                 "model": data["model"],
                 "generated_at": datetime.now(timezone.utc).isoformat(),
-                "deepseek_created": result_json.get("created"),
             }
 
             ai_summary = {
@@ -1234,7 +1241,7 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
                     "model": ai_summary_usage["model"],
                     "prompt_tokens": usage.get("prompt_tokens") or 0,
                     "completion_tokens": usage.get("completion_tokens") or 0,
-                    "cache_hit_tokens": usage.get("prompt_cache_hit_tokens") or 0,
+                    "cache_hit_tokens": 0,  # no prompt-cache tier on the LLM Gateway
                 }).execute()
             except Exception as log_err:
                 logger.warning(f"ai_summary_usage_log insert failed for {request.transcript_id}: {log_err}")
@@ -1251,11 +1258,11 @@ async def summarize_transcript(request: SummarizeRequest, _: None = Depends(veri
             return SummarizeResponse(success=True, summary=ai_summary)
             
         except Exception as e:
-            logger.error(f"DeepSeek call exception: {type(e).__name__}: {e}")
+            logger.error(f"LLM Gateway call exception: {type(e).__name__}: {e}")
             add_credits(request.user_id, 3, f"AI Summarization Refund ({type(e).__name__})", kind='refund')
             with sentry_sdk.push_scope() as scope:
                 scope.set_tag("endpoint", "summarize_transcript")
-                scope.set_tag("step", "deepseek_api_call")
+                scope.set_tag("step", "llm_gateway_call")
                 scope.set_tag("user_id", request.user_id)
                 scope.set_tag("transcript_id", request.transcript_id)
             sentry_sdk.capture_exception(e)

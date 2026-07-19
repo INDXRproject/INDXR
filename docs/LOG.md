@@ -10281,3 +10281,58 @@ apps/app/src/components/dashboard/settings/DeleteAccountCard.tsx
 docs/LOG.md
 docs/wiki/architecture/sitemap.md
 ---
+[2026-07-19 12:00] AI-summary DeepSeek→AssemblyAI EU LLM Gateway (ADR-068) + echte summary-COR + DeepSeek-cleanup. backend/main.py: gateway-call (gemini-2.5-flash, haiku fallback, fence-strip, ASSEMBLYAI_API_KEY, EU-endpoint), prijs blijft 3 credits. Migraties 20260719120000-122000: nieuwe cost_config-tarieven (USD/1M in-region 0,33/2,75, FX via usd_eur_rate), _geld_scope + admin_finance_summary + admin_operations_summary in-place gerepoint (DO-block token-substitutie + guard), deepseek_* kolommen gedropt (geen readers). Finance-UI + Operations-widget + worker DeepSeek-balanspoll opgeruimd. Live geverifieerd: summary OK, log gemini-2.5-flash 103/184 tok, COR €0,000497 (FX 0,92) per-user gewogen, credit=3, audit-lijn ai_summary JA (31/0/0). Khidr: DEEPSEEK_API_KEY uit Railway/Vercel; ZDR-BAA vervolg. | gewijzigd: backend/main.py, backend/worker.py, 5 migraties, admin/finance/*, operations/page.tsx, adminTypes.ts, docs
+[2026-07-19 11:47] commit: feat(ai,finance): AI-summary DeepSeek -> AssemblyAI EU LLM Gateway + real summary-COR (ADR-068)
+
+DeepSeek (China, no DPA/SCC) was unlawful for EU personal data. Move the AI-summary to
+EU-resident processing on the AssemblyAI EU LLM Gateway; book the real (small) token cost
+as summary-COR; clean up all orphaned DeepSeek plumbing.
+
+Provider swap (backend/main.py):
+- llm-gateway.eu.assemblyai.com/v1/chat/completions (OpenAI-compatible), reuse ASSEMBLYAI_API_KEY
+  (authorization header, no Bearer). Primary gemini-2.5-flash, fallback claude-haiku-4-5.
+- Same prompt/output; strip ```json fences before parse. Price UNCHANGED (3 credits).
+- ZDR not sent (no documented per-call header; needs BAA -> Khidr follow-up). EU-residency +
+  AssemblyAI DPA/SCC carry lawfulness.
+
+Finance COR (migrations 20260719120000-122000):
+- New cost_config USD/1M rate columns; FX (usd_eur_rate) applied at query time (R2 pattern).
+  EU in-region gemini-2.5-flash = $0.33 in / $2.75 out per 1M (global 0.30/2.50 + 10% in-region).
+- _geld_scope + admin_finance_summary + admin_operations_summary repointed via in-place DO-block
+  token substitution on the live bodies (+ guard), so revenue/_sale_vat/vat_by_country/recognition
+  cannot drift. Dropped all deepseek_* cost_config columns (verified: no reader).
+- Finance UI + Operations DeepSeek-balance widget + worker DeepSeek balance-poll removed (Decodo kept).
+
+Verified live (throwaway summary): gemini-2.5-flash, 103 in / 184 out tokens, COR EUR 0.000497
+(FX 0.92), per-user weighted (against-revenue != full COR, not scope-averaged), credit deducted 3,
+audit line ai_summary JA (tally 31/0/0 holds). Test data cleaned up.
+
+Khidr follow-ups: remove dead DEEPSEEK_API_KEY from Railway/Vercel; execute BAA + confirm ZDR
+header/setting with AssemblyAI. gemini-2.5-flash deprecates ~2026-10-16 -> update model before then.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/actions/finance.ts
+apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/SettingsDialog.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+apps/app/src/app/admin/finance/page.tsx
+apps/app/src/app/admin/operations/page.tsx
+backend/main.py
+backend/worker.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/finance-audit.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/business/privacy-facts.md
+docs/wiki/decisions/067-service-balances-and-decodo-reconciliation.md
+docs/wiki/decisions/068-ai-summary-eu-llm-gateway.md
+supabase/migrations/20260719120000_assemblyai_llm_summary_rate.sql
+supabase/migrations/20260719120500_geld_scope_summary_assemblyai_rate.sql
+supabase/migrations/20260719121000_admin_finance_summary_llm_rate.sql
+supabase/migrations/20260719121500_admin_operations_summary_drop_deepseek.sql
+supabase/migrations/20260719122000_drop_deepseek_cost_config_columns.sql
+---

@@ -114,7 +114,7 @@ Het getoonde 0,17 was daarom een plausibele-maar-toevallige waarde.
 |---|---|---|---|---|
 | ai_transcription | 10,3512 | 3091 | 0,00335 | **JA** — `182245 s/60×0,00322 + 190.865.465 B/1e9×2,99 = 9,7805 + 0,5707 = 10,3512`; credits = debits ai (3091) ✓ |
 | caption | 0,0075 | 602 | 0,0000125 | **JA** — paid-caption proxy-bytes × 2,99/GB; credits 602 ✓ |
-| ai_summary | 0,0008 | 12 | 0,0000667 | **JA** — deepseek tokens × tarief; credits 12 ✓ |
+| ai_summary | 0,0032 | 12 | 0,000267 | **JA** — gemini-2.5-flash tokens × AssemblyAI-LLM-tarief ($0,33/$2,75 per 1M) × FX 0,92 (ADR-068, was DeepSeek 0,0008); credits 12 ✓ |
 | **rag** | **0,0000** | **55** | **0** | was **NEE** → **GEFIXT** (aanname). `_geld_scope` zet `v_cor_rag := 0` bewust: RAG is een reshape van een bestaand transcript zonder externe API-call → marginale kost ≈ €0. Nu **expliciet als aanname** in de UI-hint ("assumed ~€0 · reshape of existing transcript, no external API call"), niet als gemeten €0. Verschijnt er wél meetbare compute/egress → meten. |
 | storage (R2) | 0 (intern) | — | — | **JA** — intern geforceerd 0; extern `GREATEST(0, GB−10)×0,015×0,92×(dagen/maanddagen)`, live 122 KB < 10 GB → 0 ✓ |
 

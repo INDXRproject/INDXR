@@ -70,18 +70,6 @@ export interface OperationsSummary {
   retries: { playlist_retried: number; watchdog: number }
   capacity: { queue_depth_now: number; avg_queue_wait_sec: number | null; avg_processing_sec: number | null }
   playlist: { total: number; complete: number }
-  // F17: external-service health. Only DeepSeek has an alert-worthy (prepaid) balance; Decodo auto-refills
-  // and AssemblyAI has no API, so neither is polled here.
-  services: {
-    deepseek: {
-      balance: number | null
-      currency: string | null
-      threshold: number
-      status: "ok" | "low" | "unavailable"
-      last_success_at: string | null
-      last_error: string | null
-    }
-  }
 }
 
 // Shared formatters.

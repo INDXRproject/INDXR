@@ -87,9 +87,9 @@ function corDriver(k: (typeof COR_METHODS)[number], s: FinanceScope, r: Rates): 
   if (k === "ai_summary") {
     const a = d.ai_summary
     if (a.input_tokens === 0 && a.output_tokens === 0) return null
-    const parts = [`${fmtNum(Math.max(a.input_tokens - a.cache_tokens, 0), 0)} in × ${rate(r.deepseek_eur_per_1k_input_tokens)}/1k`]
-    if (a.cache_tokens > 0) parts.push(`${fmtNum(a.cache_tokens, 0)} cache × ${rate(r.deepseek_eur_per_1k_cache_hit_tokens)}/1k`)
-    parts.push(`${fmtNum(a.output_tokens, 0)} out × ${rate(r.deepseek_eur_per_1k_output_tokens)}/1k`)
+    const fx = r.usd_eur_rate ?? 1
+    const parts = [`${fmtNum(a.input_tokens, 0)} in × ${rate(r.assemblyai_llm_usd_per_1m_input_tokens * fx)}/1M`]
+    parts.push(`${fmtNum(a.output_tokens, 0)} out × ${rate(r.assemblyai_llm_usd_per_1m_output_tokens * fx)}/1M`)
     return parts.join(" + ")
   }
   return null

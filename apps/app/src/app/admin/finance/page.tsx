@@ -37,7 +37,7 @@ export default async function AdminFinancePage({
       "id,category,description,note,amount,spread,recurrence,effective_from,effective_to",
     ).order("effective_from", { ascending: false }),
     admin.from("cost_config").select(
-      "id,decodo_eur_per_gb,assemblyai_eur_per_min,deepseek_eur_per_1k_input_tokens,deepseek_eur_per_1k_output_tokens,deepseek_eur_per_1k_cache_hit_tokens,r2_usd_per_gb_month,usd_eur_rate",
+      "id,decodo_eur_per_gb,assemblyai_eur_per_min,assemblyai_llm_usd_per_1m_input_tokens,assemblyai_llm_usd_per_1m_output_tokens,r2_usd_per_gb_month,usd_eur_rate",
     ).order("effective_from", { ascending: false }).limit(1).single(),
   ])
 

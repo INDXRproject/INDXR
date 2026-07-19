@@ -4,7 +4,7 @@
 
 INDXR.AI heeft twee AI-pipelines:
 1. **Transcript extractie** — YouTube captions of audio-transcriptie
-2. **AI samenvatting** — DeepSeek V3 op bestaand transcript
+2. **AI samenvatting** — AssemblyAI EU LLM Gateway (gemini-2.5-flash) op bestaand transcript
 
 ---
 
@@ -138,11 +138,11 @@ Frontend
                  ├─ deduct_credits_atomic(user_id, 3, "AI Summarization")
                  ├─ Haal transcript op uit Supabase
                  ├─ Combineer alle {text} velden tot volledige tekst
-                 ├─ POST naar DeepSeek API:
-                 │    model: "deepseek-v4-flash"  (was "deepseek-chat", deprecated 2026-07-24)
-                 │    response_format: {"type": "json_object"}
-                 │    timeout: 120s
-                 ├─ Parse JSON: {text, action_points}
+                 ├─ POST naar AssemblyAI EU LLM Gateway (ADR-068):
+                 │    llm-gateway.eu.assemblyai.com/v1/chat/completions
+                 │    model: "gemini-2.5-flash" (fallback "claude-haiku-4-5-20251001")
+                 │    response_format: {"type": "json_object"}; timeout: 120s
+                 ├─ Strip ```json-fences, parse JSON: {text, action_points}
                  ├─ Sla op als ai_summary JSONB in transcripts tabel:
                  │    {text, action_points, generated_at, edited: false}
                  └─ Bij ELKE fout: add_credits(user_id, 3, "Refund: ...")

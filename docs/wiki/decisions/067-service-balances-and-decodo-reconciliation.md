@@ -42,3 +42,9 @@ Fase-A-onderzoek per dienst (endpoint / key / frequentie):
 - **Best-effort per dienst:** een DeepSeek-fout blokkeert de Decodo-fetch niet en omgekeerd.
 - Reconciliatie bewezen met ≥2 periodes (synthetisch): dag met billed=measured → gap 0 → €0; dag met billed 5 GB vs measured 15,5 MB → gap 4,984 GB × tarief → €14,90. Synthetische rijen daarna opgeruimd.
 - `record_service_fetch` is `SECURITY DEFINER` → `REVOKE EXECUTE FROM PUBLIC, anon, authenticated` + re-GRANT `service_role` (LESSONS 2026-07-13: default PUBLIC-grant, `REVOKE FROM anon` alleen is niet genoeg). Geverifieerd anon/auth = false.
+
+---
+
+## Update 2026-07-19 (ADR-068): DeepSeek-saldo-monitoring verwijderd
+
+De DeepSeek prepaid-balans-poll (binnen `fetch_service_metrics`) en de Operations "External services / DeepSeek balance"-widget uit deze ADR zijn **verwijderd** toen de AI-summary-provider naar de AssemblyAI EU LLM Gateway ging (ADR-068). AssemblyAI is PAYG met auto-recharge en heeft **geen balance-API** → er is geen vervangende saldo-widget. Wat uit deze ADR blijft: de **Decodo**-dagverkeer-reconciliatie (dezelfde `fetch_service_metrics`-cron, 02:00 UTC) en de `service_metrics`/`record_service_fetch`-infra (nu alleen door Decodo geschreven). `cost_config.deepseek_low_balance_usd` is mee-gedropt.
