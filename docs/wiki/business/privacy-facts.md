@@ -81,3 +81,22 @@ De twee gaten zijn gedicht; het product klopt nu met de voorgenomen belofte.
 - **Sentry** — error tracking; **kan IP's en (bij replay) DOM bevatten** → moet in de subverwerkers-alinea.
 - Stripe (betaling), Supabase (EU, auth+DB), Cloudflare R2 (transcript-cache), AssemblyAI (audio-transcriptie **én** AI-samenvatting via de EU LLM Gateway `gemini-2.5-flash` — EU-resident, DPA/SCC, ADR-068), Decodo (proxy), Railway/Vercel (hosting). **DeepSeek is verwijderd** (China, geen DPA/SCC — was onrechtmatig voor EU-persoonsgegevens).
 - **Crisp** is (nog) niet in de code aanwezig → **niet noemen** tot het er is.
+
+---
+
+## Addendum 2026-07-19 — Sentry PII/replay-scrubbing + backend-telemetrie EU (privacy-hardening)
+
+**Sentry blijft fouten vangen, zonder PII** (scrubben, geen uitschakelen). Geverifieerd: een testfout behoudt de exception (message/stacktrace), alle PII eruit.
+- **Client (beide apps):** `sendDefaultPii: false`, `beforeSend: scrubSentryEvent` (verwijdert user-e-mail/IP/username, cookies, auth/token/secret-headers, request-body). **Session Replay UIT** voor launch: `replaysSessionSampleRate: 0` + `replaysOnErrorSampleRate: 0` + `replayIntegration()` verwijderd → geen replay-payload (kan gevoelige scherminhoud vastleggen; later evt. terug mét volledige masking).
+- **Server + edge (Next.js, beide apps):** `sendDefaultPii: false` + dezelfde `beforeSend`-scrub.
+- **Backend (Python `sentry_sdk`, `main.py` + `worker.py`):** `send_default_pii=False` + `before_send=sentry_scrub` (`backend/sentry_scrub.py`) — verwijdert user-e-mail/IP, cookies, auth-headers en de request-body. Geverifieerd: exception behouden, PII weg.
+- Gedeelde scrubber: `packages/shared/src/lib/sentry-scrub.ts` (client/server/edge) + `backend/sentry_scrub.py` (Python).
+
+**Backend-PostHog EU-hardening** (was hardgecodeerd `app.posthog.com` = US, negeerde de env die Khidr net op EU zette): nu `posthog.host = os.getenv("POSTHOG_HOST", "https://eu.i.posthog.com")` (expliciete EU-fallback — lege env valt nooit stil naar de SDK-US-default) + `posthog.disable_geoip = True` (geen IP/geo) in alle drie de init-plekken (`main.py`, `worker.py`, `transcription_pipeline.py`). Geen e-mail/PII in capture. Geverifieerd op de echte Railway-config: host = `eu.i.posthog.com`, `disable_geoip = True`. Mirrort de client-side EU-fix.
+
+**Subverwerker-status voor het beleid:**
+- **BAA niet nodig** (dat is HIPAA — n.v.t. voor een YouTube-transcript-SaaS zonder gezondheidsgegevens). De AVG-grondslag is EU-residency + DPA/SCC's van de subverwerkers.
+- **ZDR** (AssemblyAI LLM Gateway) blijft **uitgesteld** — vereist een uitgevoerde overeenkomst + niet-publiek-gedocumenteerde header; EU-residency + DPA dragen de rechtmatigheid (ADR-068).
+- **Beslissing:** het privacy-beleid noemt **onze eigen bewaartermijnen** (wat wij bewaren/verwijderen); partner-specifieke details (welke subverwerker wat hoe lang bewaart) blijven **intern** (subverwerkerslijst hierboven) i.p.v. in het publieke beleid — houdt het beleid leesbaar en onderhoudbaar zonder per-partner-drift.
+
+**Sluit de Sentry-PII/replay-control** waar de LIA (Legitimate Interest Assessment) op leunt. *(Let op: dit is niet roadmap-item 1.31 — dat is Sentry noise-filtering; zie priorities.md.)*

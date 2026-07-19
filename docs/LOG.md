@@ -10336,3 +10336,48 @@ supabase/migrations/20260719121000_admin_finance_summary_llm_rate.sql
 supabase/migrations/20260719121500_admin_operations_summary_drop_deepseek.sql
 supabase/migrations/20260719122000_drop_deepseek_cost_config_columns.sql
 ---
+[2026-07-19 14:30] privacy-hardening: Sentry PII/replay-scrubbing + backend-PostHog EU. Sentry: sendDefaultPii:false + beforeSend-scrub op alle 6 JS-configs (client/server/edge × 2 apps) + Session Replay uit (rates 0, replayIntegration weg); backend send_default_pii=False + before_send (main.py+worker.py); gedeelde scrubbers packages/shared/src/lib/sentry-scrub.ts + backend/sentry_scrub.py. Backend-PostHog (main/worker/transcription_pipeline): host uit env met EU-fallback (was hardcoded app.posthog.com=US) + disable_geoip=True. Geverifieerd: scrub houdt exception, strippt email/IP/auth-headers/body (JS+Py); echte Railway-config host=eu.i.posthog.com, geoip uit, Sentry before_send set + pii False; build 2/2. DISCREPANTIE: taak noemde "1.31" maar priorities 1.31=noise-filtering (niet gedaan) — niet als done gemarkeerd, wel genoteerd. | gewijzigd: 6 sentry-configs, sentry-scrub.ts, backend/sentry_scrub.py, main.py, worker.py, transcription_pipeline.py, docs
+[2026-07-19 12:19] commit: feat(privacy): Sentry PII/replay scrubbing + backend-PostHog EU hardening
+
+Sentry keeps catching errors, but without PII (scrub, not disable). Backend telemetry gets the
+same EU + no-PII hardening the client-side already had.
+
+Sentry:
+- All 6 JS configs (client/server/edge x 2 apps): sendDefaultPii: false + beforeSend: scrubSentryEvent
+  (strips user email/IP/username, cookies, auth/token/secret headers, request body).
+- Client: Session Replay OFF for launch (replaysSessionSampleRate 0 + replaysOnErrorSampleRate 0,
+  replayIntegration removed) -> no replay payload.
+- Python backend (main.py + worker.py): send_default_pii=False + before_send=sentry_scrub.
+- Shared scrubbers: packages/shared/src/lib/sentry-scrub.ts (generic, dependency-free) + backend/sentry_scrub.py.
+
+Backend PostHog (main.py, worker.py, transcription_pipeline.py): host was HARDCODED to
+app.posthog.com (US) and ignored the env Khidr set to EU. Now os.getenv("POSTHOG_HOST",
+"https://eu.i.posthog.com") (explicit EU fallback, never the SDK US default) + disable_geoip=True.
+
+Verified: JS+Py scrub keep the exception, strip email/IP/auth-headers/body; real Railway config
+resolves PostHog host=eu.i.posthog.com + disable_geoip=True, Sentry before_send set + send_default_pii
+False; build 2/2 green.
+
+Note: task referenced "roadmap 1.31" but that item is Sentry NOISE-filtering (still open) — this is
+PII/replay-scrubbing (the LIA control), tracked in privacy-facts.md; 1.31 checkbox left unticked.
+known-issues: gemini-2.5-flash deprecation ~2026-10-16; Vercel API-route Sentry blind spot (#17604,
+already documented). BAA n/a (HIPAA); ZDR deferred.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/sentry.client.config.ts
+apps/app/sentry.edge.config.ts
+apps/app/sentry.server.config.ts
+apps/marketing/sentry.client.config.ts
+apps/marketing/sentry.edge.config.ts
+apps/marketing/sentry.server.config.ts
+backend/main.py
+backend/sentry_scrub.py
+backend/transcription_pipeline.py
+backend/worker.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/business/privacy-facts.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+packages/shared/src/lib/sentry-scrub.ts
+---

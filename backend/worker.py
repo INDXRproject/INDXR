@@ -61,14 +61,19 @@ logger.setLevel(logging.INFO)
 # Force root logger to INFO — zelfde Sentry-override probleem als main.py.
 logging.getLogger().setLevel(logging.INFO)
 
+from sentry_scrub import sentry_scrub
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN_BACKEND"),
     traces_sample_rate=0.1,
     environment=os.getenv("RAILWAY_ENVIRONMENT", "development"),
+    send_default_pii=False,   # never attach user IP / cookies / body by default
+    before_send=sentry_scrub, # scrub email/IP/auth-headers/body before send (errors stay)
 )
 
 posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
-posthog.host = "https://app.posthog.com"
+# EU host with an explicit EU-fallback — a missing env must never fall back to the SDK's US default.
+posthog.host = os.getenv("POSTHOG_HOST", "https://eu.i.posthog.com")
+posthog.disable_geoip = True  # no IP-based geo enrichment on server-side events
 
 
 def _track_event(distinct_id: str, event: str, properties: Optional[dict] = None) -> None:

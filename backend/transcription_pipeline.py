@@ -51,7 +51,9 @@ _lingua_detector = (
 )
 
 posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
-posthog.host = "https://app.posthog.com"
+# EU host with an explicit EU-fallback — a missing env must never fall back to the SDK's US default.
+posthog.host = os.getenv("POSTHOG_HOST", "https://eu.i.posthog.com")
+posthog.disable_geoip = True  # no IP-based geo enrichment on server-side events
 
 
 async def _heartbeat_loop(heartbeat_fn, interval: int = 60) -> None:

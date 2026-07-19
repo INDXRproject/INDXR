@@ -31,7 +31,9 @@ load_dotenv()
 
 # Initialize PostHog
 posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
-posthog.host = "https://app.posthog.com"
+# EU host with an explicit EU-fallback — a missing env must never fall back to the SDK's US default.
+posthog.host = os.getenv("POSTHOG_HOST", "https://eu.i.posthog.com")
+posthog.disable_geoip = True  # no IP-based geo enrichment on server-side events
 
 
 # Fase 4 stale-detectie: running jobs zonder heartbeat-update > 5 min worden 'interrupted'.
@@ -112,12 +114,15 @@ logging.getLogger().setLevel(logging.INFO)
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.httpx import HttpxIntegration
+from sentry_scrub import sentry_scrub
 
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN_BACKEND"),
     traces_sample_rate=0.1,
     integrations=[FastApiIntegration(), HttpxIntegration()],
     environment=os.getenv("RAILWAY_ENVIRONMENT", "development"),
+    send_default_pii=False,   # never attach user IP / cookies / body by default
+    before_send=sentry_scrub, # scrub email/IP/auth-headers/body before send (errors stay)
 )
 
 @asynccontextmanager

@@ -549,3 +549,13 @@ Highlights:
 - Channel extractie (queue-architectuur vereist)
 - Gamification: XP, levels 1–20, credit reward chests
 - Branding: Scrivr, Vellum, Monkr, Quillr — niet besloten
+
+---
+
+## AI-summary model-deprecatie: gemini-2.5-flash ~2026-10-16 (ADR-068)
+
+De AI-samenvatting draait sinds ADR-068 op `gemini-2.5-flash` via de AssemblyAI EU LLM Gateway. Google deprecieert **gemini-2.5-flash rond 2026-10-16**. **Actie vóór die datum:** het model-constant `SUMMARY_MODEL_PRIMARY` in `backend/main.py` bijwerken (bijv. naar `gemini-3.5-flash`) en het bijbehorende tarief in `cost_config.assemblyai_llm_usd_per_1m_{input,output}_tokens` meebewegen (verifieer de nieuwe prijs op de AssemblyAI-pricing-page, in-region EU = global + ~10%). Geen code-blocker nu; de Haiku-fallback (`claude-haiku-4-5-20251001`) vangt een plotselinge uitval op. Cross-ref: ADR-068.
+
+## Sentry: server-side Vercel API-routes blijven een blinde vlek (#17604)
+
+Zie de sectie hierboven (`Sentry.captureException()` in Vercel API-routes arriveert niet). Blijft een **bewust niet-opgelost** gat (Sentry GitHub #17604, closed-as-not-planned). De 2026-07-19 privacy-hardening raakt dit niet — die scrubt PII uit de events die wél aankomen (client + Next-server/edge + Python-backend); de Vercel-API-route-capture zelf is een aparte, upstream-beperking.
