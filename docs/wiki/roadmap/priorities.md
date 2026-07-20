@@ -557,6 +557,12 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
 ## Fase 3 — Schaalbaarheidsfase (3–12 maanden post-launch)
 
 - [ ] **3.1 — Volledige visuele redesign** met Claude Design (vervangt 1.20 cosmetische polish)
+
+    **UX-observaties dashboard-shell (Khidr, 2026-07-20) — meenemen in de redesign.** Bron-feiten + regels in [content/product-truth.md](../content/product-truth.md) §5. Zie ook de bestaande mobiel-credits-taak (regel 418) en F24 (Finance-UI).
+    - [ ] **(a) Dubbele credits-teller in de sidebar — weg.** De top-navbar volstaat. De credits-teller staat nu driedubbel uit dezelfde bron (topbar `AppTopbar.tsx:64-71`, sidebar-footer "Credits coin" `app-sidebar.tsx:664-679`, Home `HomeCreditsBalance.tsx:13`). Verwijder de sidebar-variant; houd topbar (+ Home-stat) aan.
+    - [ ] **(b) Storage-indicator uit de sidebar → naar Library (primair) + compacte stat op Home.** Nu enkel in de sidebar (`app-sidebar.tsx:616-625`), dus op mobiel onbereikbaar. Verplaats naar de Library-pagina als primaire plek, met een compacte stat op Home. Houd credits én storage mobiel-bereikbaar.
+    - [ ] **(c) Mobiel: collections zijn niet bereikbaar zonder sidebar.** CRUD zit volledig in de desktop-sidebar (`app-sidebar.tsx:198-292`); de mobiele bottom-nav (`MobileTabBar.tsx`) heeft geen Collections, en de Library-pagina toont collections niet zelf (leest alleen `?collection=`). **De Library-pagina moet collections zélf tonen** (kiezen/aanmaken/beheren), zodat mobiel volwaardig is.
+    - **Gekoppeld (aparte build):** betaalde storage-uitbreiding (**+100 MB / 100 cr / cap 500 MB, config-driven**) staat open — NIET gebouwd (geen code; de 500 MB-cap is nu enkel een afgeleide weergave zonder enforcement, zie product-truth §5). Koppelen aan deze redesign.
 - [ ] **3.2 — API en yt-dlp/worker echt splitsen als services**
     Trigger: 100+ DAU.
 - [ ] **3.3 — VPS-migratie van Python werklasten naar Hetzner**

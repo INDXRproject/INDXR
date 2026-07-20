@@ -161,6 +161,14 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 
 ---
 
+## Content (`content/`)
+
+| Bestand | Onderwerp |
+|---------|-----------|
+| [product-truth.md](content/product-truth.md) | **Code-geverifieerde bron van waarheid voor de content-herschrijf**: pricing, creditmodel + reserve-model, live features, export-formaten, storage-cap, en de volledige modelnaam-inventaris (live vs stale in content). Elk feit met `bestand:regel`. |
+
+---
+
 ## Operationeel (`operations/`)
 
 | Bestand | Onderwerp |

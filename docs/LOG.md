@@ -10547,3 +10547,37 @@ Changed: docs/LOG.md
 docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-20 23:59] docs: product-truth.md aangemaakt (docs/wiki/content/) — code-geverifieerde bron van waarheid voor content-herschrijf: pricing (Try €5/100·Starter €15/400·Plus €25/1.000·Power €60/3.000, BTW-incl, credits-never-expire, welcome=25), creditmodel (caption gratis, AI-transcr 1cr/min ceil(dur/60), summary 3cr, playlist eerste-3-gratis + whisper-in-playlist per-min zonder korting, RAG 1cr/10min, overige exports gratis), reserve-/hold-model (ADR-050 default aan), features live, exports, storage-cap 500MB=alleen-weergave. Modelnamen-inventaris: live transcr=universal-3-pro (fallback universal-2), summary=gemini-2.5-flash via EU LLM Gateway (fallback claude-haiku-4-5); ALLE content zegt nog fout "DeepSeek V3" + Universal-2/3-drift → centraliseren aanbevolen. Afwijking gevonden: pricing-source-of-truth.md:63 stale (oude ADR-052-getallen); draaiende billing-UI wél in sync (rendert uit pricing.ts). priorities.md redesign-sectie: UX-observaties (a) dubbele credits-teller weg, (b) storage→Library+Home, (c) mobiel collections in Library-pagina + betaalde storage-uitbreiding als aparte build. Geen code gewijzigd. | gewijzigd: docs/wiki/content/product-truth.md, docs/wiki/roadmap/priorities.md, docs/LOG.md
+---
+[2026-07-20 23:46] commit: docs(content): product-truth.md — code-verified source of truth for content rewrite
+
+Read-only inventory (no code changed). New docs/wiki/content/product-truth.md
+captures the hard, current facts about what INDXR.AI does and costs, each with
+file:line source, as the basis for rewriting overview/landing/articles.
+
+- Pricing (pricing.ts): Try €5/100 · Starter €15/400 · Plus €25/1.000 ·
+  Power €60/3.000, VAT-incl, credits-never-expire, welcome=25, playlist-first-3-free.
+  Running billing UI is IN SYNC (renders from pricing.ts); the stale numbers live
+  in wiki pricing-source-of-truth.md:63 (old ADR-052 values) — flagged.
+- Credit model: caption free, AI-transcription 1cr/min (ceil(dur/60)), summary 3cr,
+  playlist first-3-free + whisper-in-playlist per-minute (no discount), RAG 1cr/10min,
+  all other exports free. Reserve/hold model (ADR-050, default on). "First 3 RAG
+  exports free" is NOT in code (dead constant); real rule = per-transcript re-download.
+- Model names: live transcription=universal-3-pro (fallback universal-2), summary=
+  gemini-2.5-flash via AssemblyAI EU LLM Gateway (fallback claude-haiku-4-5). ALL
+  user-facing content still says "DeepSeek V3" (stale) + Universal-2/3 drift —
+  full location list + centralization recommendation.
+- Storage cap 500 MB is display-only (derived from character_count, no enforcement);
+  paid storage expansion NOT built.
+
+priorities.md redesign section: UX observations (a) drop duplicate sidebar credits
+counter, (b) storage → Library + Home, (c) mobile collections in Library page;
+paid storage expansion (+100 MB / 100 cr / cap 500 MB, config-driven) noted as
+separate build tied to the redesign. INDEX.md + LOG.md updated. Docs-only.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/content/product-truth.md
+docs/wiki/roadmap/priorities.md
+---
