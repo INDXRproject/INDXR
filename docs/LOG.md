@@ -10531,3 +10531,19 @@ docs/wiki/architecture/auth-and-security.md
 docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
 ---
+
+[2026-07-20 16:00] 1.30 auth-mail AFGEROND: Khidr koppelde Resend-SMTP (smtp.resend.com, no-reply@send.indxr.ai, 30/u) + templates live; E2E-geverifieerd (confirm+reset aan via Resend Logs 200, verify->onboarding, welcome-credits pas na verificatie, reset-redirect ok). Docs bijgewerkt: priorities 1.30 [x], known-issues SMTP-item [x] | gewijzigd: docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md
+[2026-07-20 23:13] commit: docs(auth-mail): mark 1.30 custom-SMTP done — E2E-verified 2026-07-20
+
+Khidr koppelde Resend-SMTP (smtp.resend.com, sender no-reply@send.indxr.ai,
+rate-limit 30/u) en plakte de gebrande confirm/reset-templates live. E2E
+bewezen: signup-confirm + password-reset kwamen aan via Resend (Logs /emails
+200), logo laadt, verify -> onboarding, 25 welcome-credits pas na verificatie,
+reset-redirect naar /dashboard/settings?reset=true. priorities.md 1.30 [x],
+known-issues SMTP-item [x]. Docs-only, geen build/deploy.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+---
