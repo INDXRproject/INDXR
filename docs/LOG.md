@@ -10505,3 +10505,29 @@ docs/wiki/business/unit-economics.md
 docs/wiki/operations/known-issues.md
 supabase/migrations/20260720130000_decodo_egress_rate_4usd.sql
 ---
+
+[2026-07-20 14:30] 1.30 auth-mail Fase 1+2: diagnose (transactioneel/broadcast gescheiden, verificatie AAN, welcome-credits al ná verificatie) + gebrande confirm/reset-templates geleverd in docs/email-templates/ (Management-API-token afwezig → Khidr plakt in dashboard; SMTP-koppeling + E2E blijven Khidr) | gewijzigd: docs/email-templates/{confirm-signup.html,reset-password.html,README.md}, docs/wiki/roadmap/priorities.md, docs/wiki/operations/known-issues.md, docs/wiki/architecture/auth-and-security.md
+[2026-07-20 18:40] commit: feat(auth-mail): branded confirm/reset auth-email templates + 1.30 diagnose
+
+Fase 1 (diagnose): transactionele auth-mail (GoTrue-ingebouwde mailer) is
+volledig gescheiden van de Resend-API broadcast/support-mail in mail.ts;
+e-mailverificatie staat AAN; welcome-credits worden al ná verificatie
+toegekend (claim_welcome_reward bij onboarding-afronding). Auth-SMTP-config
+is niet via de Supabase-MCP leesbaar → dashboard-check bij Khidr.
+
+Fase 2 (code): gebrande confirm-signup + reset-password templates in de
+send.indxr.ai-huisstijl, versiebeheerd in docs/email-templates/. E-mail-safe
+tabel-layout, inline styles, {{ .ConfirmationURL }} exact behouden (PKCE-link).
+Geen Management-API-token beschikbaar → niet live gezet; Khidr plakt ze in
+Supabase Auth -> Emails (instructies in README). Geen credit-/onboarding-/
+pricing-code aangeraakt. SMTP-koppeling + E2E inbox-test blijven Khidr.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/email-templates/README.md
+docs/email-templates/confirm-signup.html
+docs/email-templates/reset-password.html
+docs/wiki/architecture/auth-and-security.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+---

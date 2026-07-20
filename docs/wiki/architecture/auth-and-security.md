@@ -212,6 +212,8 @@ Vereist in Railway environment variables.
 
 Supabase email verificatie staat **AAN** (`mailer_autoconfirm=false` — geverifieerd 2026-07-15 via Management API `/config/auth`). Nieuwe email/password-signups gebruiken de **PKCE**-flow: de verificatielink (`.../auth/v1/verify?token=…&type=signup&redirect_to=…`) redirect na klik naar `/auth/callback?code=…&next=…`, waar `exchangeCodeForSession` de sessie zet. De redirect-URL-allowlist accepteert query-strings via `https://indxr.ai/**`, dus een `redirect_to` met `?next=<billing target>` blijft intact (E2E-geverifieerd: nieuwe-koper-funnel signup → verify → onboarding → billing → Stripe). De ingebouwde mailer heeft `rate_limit_email_sent=2`/uur (geen custom SMTP — zie priorities 1.30).
 
+**Gebrande auth-mail-templates** (confirm signup + reset password) staan versiebeheerd in `docs/email-templates/` in de `send.indxr.ai`-huisstijl; `{{ .ConfirmationURL }}` is de PKCE-verify-link en moet exact behouden blijven. De live-kopie leeft in het Supabase-dashboard (Auth → Emails) — plak opnieuw bij wijziging. Magic-link is niet in gebruik (geen `signInWithOtp`) en blijft Supabase-default.
+
 ---
 
 ## Wegwerpemails
