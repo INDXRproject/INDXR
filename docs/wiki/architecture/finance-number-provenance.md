@@ -33,7 +33,7 @@ FinanceView.tsx: accrualForRange()                           ← trend-overlay e
 snapshot_finance_day() [pg_cron 02:00 UTC]                   ← vult finance_daily_snapshot nachtelijk
 ```
 
-**Tarieven** (alle uit `cost_config`, laatste rij op `effective_from DESC`): `assemblyai_eur_per_min`, `decodo_eur_per_gb`, `assemblyai_llm_usd_per_1m_input_tokens`, `assemblyai_llm_usd_per_1m_output_tokens` (AI-summary, USD/1M via FX — ADR-068), `r2_usd_per_gb_month`, `r2_free_gb`, `usd_eur_rate`.
+**Tarieven** (alle uit `cost_config`, laatste rij op `effective_from DESC`): `assemblyai_eur_per_min`, `decodo_eur_per_gb` (**€3,68/GB per 2026-07-20** = Decodo PAYG $4,00 × 0,92; was €2,99 = $3,25; migratie `20260720130000` — direct in EUR toegepast, géén FX bij query), `assemblyai_llm_usd_per_1m_input_tokens`, `assemblyai_llm_usd_per_1m_output_tokens` (AI-summary, USD/1M via FX — ADR-068), `r2_usd_per_gb_month`, `r2_free_gb`, `usd_eur_rate`.
 
 ---
 

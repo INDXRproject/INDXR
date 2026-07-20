@@ -53,8 +53,8 @@ Geprijsd tegen **worst-case**, niet gemiddeld — zo blijft elke tier winstgeven
 | Component | Kost/credit | Bron / aanname |
 |-----------|-------------|----------------|
 | AssemblyAI (Universal-3 Pro) | €0,0031/cr | Transcriptie-minuut; 1 cr = 1 min |
-| Decodo (residentiële proxy, PAYG) | ~€0,0034/cr | ~1 MB/min-schatting; varieert per video |
-| **Marginaal — realistisch** | **~€0,0065/cr** | = **€0,65 / 100 cr** |
+| Decodo (residentiële proxy, PAYG) | ~€0,0042/cr | ~1 MB/min-schatting; varieert per video (PAYG $4,00/GB per 2026-07-20; was $3,25) |
+| **Marginaal — realistisch** | **~€0,0073/cr** | = **€0,73 / 100 cr** |
 | **Marginaal — worst-case** | **~€0,010/cr** | = **€1,00 / 100 cr** (grote/zware audio, ongunstige proxy-route) |
 
 > De proxy-kost is de grootste variabele en de minst voorspelbare (bytes per video verschillen sterk). Daarom: worst-case als ontwerpbasis. Per-job meten gebeurt inmiddels via de capture-laag ([ADR-054](../decisions/054-cost-usage-capture-layer.md)).

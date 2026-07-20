@@ -532,7 +532,7 @@ Geen externe service die alarmeert bij downtime.
 
 ## Decodo-proxy-COR is een ondergrens, geen volledige uitgave (ADR-065)
 
-`cor_ai`/`cor_caption` meten proxy-bytes per **geslaagde/complete** job. De werkelijke Decodo-uitgave (PAYG $3,50/GB) is hoger:
+`cor_ai`/`cor_caption` meten proxy-bytes per **geslaagde/complete** job. De werkelijke Decodo-uitgave (PAYG **$4,00/GB**, bijgewerkt 2026-07-20 — was hier abusievelijk $3,50 vermeld; `cost_config` hield $3,25) is hoger:
 - van 188 complete AI-jobs dragen er **6** proxy_bytes (capture pas sinds ADR-054/2026-07-11 → 182 pre-instrumentatie = 0);
 - **27 error-jobs** verbruikten proxy maar dragen 0 bytes;
 - niet-job-verkeer (bgutil PO-token-fetches, playlist `/info`, health checks, retries) wordt **niet** gemeten.

@@ -14,8 +14,8 @@
 | Component | Tarief (geverifieerd) | Kost per credit (EUR) |
 |---|---|---|
 | **AssemblyAI** Universal-3.5 Pro | **$0,21/uur** = $0,0035/min | **~€0,0031** |
-| **Decodo** residentiële proxy (PAYG) | **$3,25/GB**, ~1 MB/min (conservatief) | **~€0,0034** |
-| **Marginaal — realistisch** | — | **~€0,0065/cr** (= €0,65/100cr) |
+| **Decodo** residentiële proxy (PAYG) | **$4,00/GB** (bijgewerkt 2026-07-20; was $3,25), ~1 MB/min (conservatief) | **~€0,0042** |
+| **Marginaal — realistisch** | — | **~€0,0073/cr** (= €0,73/100cr) |
 | **Marginaal — worst-case (pricing-basis)** | zware audio / ongunstige proxy-route | **~€0,010/cr** (= €1,00/100cr) |
 | *Optimistische ondergrens (1 meting, 0,73 MB/min)* | — | *~€0,0054/cr* |
 
@@ -24,8 +24,8 @@
 - ⚠️ **Free-tier bijna op** ($23,57 resterend op 2026-07-06). **Reken vanaf nu met volle pay-as-you-go** — de free-tier is geen buffer meer voor launch-volume.
 
 ### Decodo proxy
-- Pay-as-you-go **$3,25/GB**.
-- **Gemeten** (254-min video `JuU8cbz8TYI`): **185,51 MB** download over 254 min = **0,73 MB/min** → $3,25 × (185,51/1024) = **$0,589 voor de hele video** = **~$0,0023/min**.
+- Pay-as-you-go **$4,00/GB** (bijgewerkt 2026-07-20; was $3,25/GB → `cost_config.decodo_eur_per_gb` €2,99, nu €3,68 = $4,00 × 0,92).
+- **Gemeten** (254-min video `JuU8cbz8TYI`): **185,51 MB** download over 254 min = **0,73 MB/min** → $4,00 × (185,51/1024) = **$0,72 voor de hele video** = **~$0,0029/min**.
 
 ### DeepSeek (AI-samenvatting) — aparte kostenpost
 

@@ -6,6 +6,8 @@
 
 **Peildatum:** 2026-07-15 20:55 UTC. **Scope:** internal (test) — daar zit alle activiteit; de externe/"echte economie" is momenteel leeg (0 sales, zie §0). **Twee vensters:** juli-2026 = lopende maand (`2026-07-01 00:00` → `now()`, 14 dagen) en all-time (`2020-01-01` → `now()`).
 
+> **RATE-UPDATE 2026-07-20.** `cost_config.decodo_eur_per_gb` is bijgewerkt van **€2,99 → €3,68/GB** (Decodo PAYG-prijs $3,25 → $4,00/GB × 0,92; migratie `20260720130000`). De proxy-COR-formules hieronder (`× decodo_eur_per_gb`) zijn **ongewijzigd en blijven geverifieerd** — alleen de rate-input is hoger, dus de proxy-COR is ~23% gestegen. De gedateerde her-afgeleide voorbeelden (`× 2,99`, "her-afgeleid 2026-07-16") zijn **historische snapshots** tegen de toenmalige rate; ze zijn niet herrekend. De tally blijft **31/0/0** (elk getal implementeert nog steeds correct zijn formule; de engine draait groen met de nieuwe rate).
+>
 > **STATUS-UPDATE 2026-07-15 (na fix-taak).** Alle 4 NEE's + 1 doc-fout weggewerkt (migratie `20260715213746_finance_audit_fixes_deferred_radar` + `FinanceView.tsx`/`periods.ts`). De "vat_owed 1,22 vs 1,21"-bevinding is **ingetrokken**: elke factuur toont €0,61, de afdracht is de **som van de facturen** (€1,22), geen herberekening over het totaal — §7.1 gecorrigeerd. De rekensommen hieronder zijn de originele diagnose; per sectie staat "→ GEFIXT" met het nieuwe gedrag.
 
 ## Tally (na fixes)

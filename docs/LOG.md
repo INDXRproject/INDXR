@@ -10469,3 +10469,39 @@ docs/wiki/roadmap/priorities.md
 packages/shared/src/lib/legal.ts
 supabase/migrations/20260720120000_terms_acceptances.sql
 ---
+[2026-07-20 15:13] taak: Decodo proxy-egress-COR-rate $3,25->$4,00/GB corrigeren — cost_config.decodo_eur_per_gb EUR2,99->EUR3,68 (x0,92), migratie 20260720130000 (count 101->102); rate stroomt door _geld_scope/admin_finance_summary (rates.decodo_eur_per_gb=3,68); playlist-proxy-COR EUR0,4951->EUR0,6094 (+23%); audit 31/0/0 intact; wiki-rate-vermeldingen bijgewerkt. NB: config hield $3,25 (niet $3,50 zoals opdracht aannam) -> correctie is +23% niet ~13% | gewijzigd: supabase/migrations/20260720130000_decodo_egress_rate_4usd.sql, docs/wiki (known-issues, unit-economics, pricing, database-schema, finance-audit, finance-number-provenance), docs/LOG.md
+[2026-07-20 15:13] commit: fix(finance): Decodo proxy-egress COR rate $3.25 -> $4.00/GB
+
+The Decodo PAYG price is now $4.00/GB; cost_config held decodo_eur_per_gb = EUR2.99 (= $3.25 x
+usd_eur_rate 0.92), so proxy-COR was booked too low. Corrected to EUR3.68 (= $4.00 x 0.92) via
+migration 20260720130000 (single-row cost_config UPDATE; count 101->102).
+
+The column is stored in EUR and applied directly (no query-time FX) by _geld_scope,
+snapshot_finance_day, admin_finance_summary, admin_geld_summary — they read it from cost_config,
+so the value update propagates with no function/DDL change. _sale_vat, vat_by_country, and
+revenue/VAT recognition untouched.
+
+Discrepancy surfaced: the task assumed the old rate was $3.50, but the config actually held $3.25
+(the $3.50 was a stray PAYG mention in known-issues). So the real correction is +23% on proxy-COR,
+not the ~13% the task estimated.
+
+Verified: live admin_finance_summary.rates.decodo_eur_per_gb = 3.68 and _geld_scope runs green
+with a populated COR block; a recent playlist (165,585,004 proxy bytes = 0.1656 GB) recomputes
+EUR0.4951 -> EUR0.6094 (+EUR0.1143, +23.08%). Audit chain stays 31/0/0 (formulas unchanged, engine
+green with the new rate).
+
+Wiki updated with date/reason: known-issues ($3.50->$4.00), unit-economics + pricing (rate + per-cr
+EUR0.0034->EUR0.0042, realistic marginal EUR0.0065->EUR0.0073), database-schema seed note, and dated
+notes in finance-audit + finance-number-provenance. Historical ADRs (017 provider pricing table, 052
+cost-basis) left as dated records.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/architecture/finance-audit.md
+docs/wiki/architecture/finance-number-provenance.md
+docs/wiki/business/pricing.md
+docs/wiki/business/unit-economics.md
+docs/wiki/operations/known-issues.md
+supabase/migrations/20260720130000_decodo_egress_rate_4usd.sql
+---
