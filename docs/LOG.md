@@ -10430,3 +10430,42 @@ docs/LOG.md
 docs/wiki/business/privacy-facts.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-20 15:00] taak: verplicht Terms+Privacy-acceptatie-vinkje bij checkout (ADR-069) — server-side gate (400 zonder termsAccepted) + RLS-tabel terms_acceptances + session.metadata.termsVersion; migratie 20260720120000 (count 100->101); gate + RLS + record lokaal geverifieerd | gewijzigd: apps/app/src/app/api/stripe/checkout/route.ts, apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx, packages/shared/src/lib/legal.ts, supabase/migrations/20260720120000_terms_acceptances.sql, docs (ADR-069, INDEX, priorities, privacy-facts)
+[2026-07-20 15:00] commit: feat(legal): mandatory Terms+Privacy acceptance at checkout (ADR-069)
+
+Terms and Privacy must be accepted AND reachable before payment (incorporation), and §7
+(loss of the 14-day withdrawal right on first credit use) must rest on an accepted contract.
+
+- Required checkbox before pay: "I agree to the Terms of Service and Privacy Policy" with
+  /terms and /privacy as clickable links (marketing host, new tab). No waiver text in the box
+  — that lives in the Terms (§7), incorporated by reference.
+- Server-side gate: checkout route returns 400 "Terms acceptance required" without
+  termsAccepted:true, so neither a direct POST nor the marketing deep-link auto-checkout can
+  bypass it. The deep-link no longer silently redirects to payment; it prompts for consent first.
+- Accountability record: new RLS table terms_acceptances (user_id, accepted_at, terms_version=
+  LEGAL_VERSION, documents{terms,privacy}, stripe_session_id, plan) + session.metadata.termsVersion
+  as a durable payment-linked copy. ON DELETE CASCADE keeps the account-deletion promise.
+
+Chosen over Stripe's consent_collection.terms_of_service: that supports only a single ToS URL
+and a fixed label — it can't show a second clickable Privacy Policy link (verified vs current
+Stripe docs). Migration 20260720120000 (count 100->101, RLS on, 2 policies).
+
+Verified locally: without checkbox -> 400 (real authenticated session); RLS accepts only
+own-user inserts and rejects a forged user_id (42501); the record carries user + timestamp +
+terms_version + documents + stripe_session_id. No finance RPC/cost_config/credit path touched ->
+audit chain stays 31/0/0. pricing.ts, inline price_data, and credit grant/deduct untouched.
+
+Docs: ADR-069 + INDEX; priorities consent item marked done (with a residual legal-review note);
+privacy-facts + LOG.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/stripe/checkout/route.ts
+apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/business/privacy-facts.md
+docs/wiki/decisions/069-terms-acceptance-at-checkout.md
+docs/wiki/roadmap/priorities.md
+packages/shared/src/lib/legal.ts
+supabase/migrations/20260720120000_terms_acceptances.sql
+---

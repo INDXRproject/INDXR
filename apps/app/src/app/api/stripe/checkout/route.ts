@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { PACKAGES, getPackage, PricingPackage } from "@indxr/shared/lib/pricing"
+import { LEGAL_VERSION } from "@indxr/shared/lib/legal"
 import { getOrCreateStripeCustomer } from "@/lib/stripe-customer"
 
 // Validate plan ID against known packages
@@ -26,10 +27,17 @@ export async function POST(req: Request) {
       return new NextResponse("Account suspended. Contact support@indxr.ai", { status: 403 })
     }
 
-    const { plan } = await req.json()
+    const { plan, termsAccepted } = await req.json()
 
     if (!plan || !VALID_IDS.has(plan)) {
       return new NextResponse("Invalid plan", { status: 400 })
+    }
+
+    // Legal gate: no purchase without accepting the Terms + Privacy Policy first. Enforced
+    // server-side so a direct POST (or the marketing deep-link auto-checkout) can't bypass the
+    // in-app checkbox. This is what §7's loss-of-withdrawal-right rests on.
+    if (termsAccepted !== true) {
+      return new NextResponse("Terms acceptance required", { status: 400 })
     }
 
     const pkg: PricingPackage = getPackage(plan)
@@ -82,12 +90,28 @@ export async function POST(req: Request) {
       metadata: {
         userId: user.id,
         credits: pkg.credits.toString(),
+        // Durable copy of the accepted legal-doc version, tied to the payment on Stripe's side.
+        termsVersion: LEGAL_VERSION,
       },
       // Geen automatische factuur op elke sale — facturen worden on-demand aangemaakt
       // vanuit de account-betaalhistorie (api/stripe/invoice). Zie backlog voor de eigen generator.
       success_url: `${appUrl}/dashboard/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/dashboard/billing/cancel`,
     })
+
+    // Record the acceptance (accountability): who, when (default now()), which legal version, and
+    // the Stripe session it belongs to. Insert failure is logged but does NOT block the purchase —
+    // the accepted version is also on session.metadata.termsVersion as a durable backup, and the
+    // pay/credit path must not fail on an audit-log write.
+    const { error: consentErr } = await supabase.from("terms_acceptances").insert({
+      user_id: user.id,
+      terms_version: LEGAL_VERSION,
+      stripe_session_id: session.id,
+      plan,
+    })
+    if (consentErr) {
+      console.error("[TERMS_ACCEPTANCE]", consentErr)
+    }
 
     return NextResponse.json({ url: session.url })
   } catch (error) {
