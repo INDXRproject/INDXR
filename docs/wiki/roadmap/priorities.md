@@ -374,6 +374,11 @@ Openstaande punten na de money-model-/BTW-/markt-scope-sessies (ADR-055 t/m ADR-
 - [ ] **F28 — PostHog-analytics *dashboard embedden* in Operations/Growth = Growth-werk, niet nu.** Bij de privacy-fix (1.32) bewust NIET gedaan. Reden: een embedded analytics-dashboard is Growth-scope en hoort achter **F19** (definities + testcases met ≥2 users op papier vóór de mockup) — dezelfde foutklasse als conversieratio cohort-vs-momentopname. De bestaande per-user **deeplinks** (1.17) blijven; alleen het inbedden van grafieken wacht op de Growth-definitietaak.
 - [ ] **AssemblyAI saldo-blinde-vlek** — geen balance-API (auto-recharge PAYG), bewust niets gebouwd. Al vastgelegd in ADR-067 + provenance §2.13d. Alleen hier genoemd voor volledigheid; geen actie.
 
+### Pre-launch — legal / consent (genoteerd 2026-07-20, bij publicatie Terms v1)
+
+- [ ] **Checkout-consent-checkbox voor §7 (herroepingsverlies)** — de Terms (`/terms` §7) stellen dat je bij het gebruiken van een credit ons **vraagt direct te beginnen** en daarmee je 14-daagse herroepingsrecht op die aankoop verliest. Juridisch (EU Consumer Rights Directive, art. 16(m) / NL art. 6:230p BW) is dat pas waterdicht als de koper dit **expliciet vóór de aankoop** bevestigt én erkent dat het herroepingsrecht vervalt. **Vereist vóór launch:** een verplichte consent-checkbox in de Stripe-checkout-flow ("Ik ga akkoord met directe uitvoering en begrijp dat ik mijn herroepingsrecht verlies zodra ik een credit gebruik") + bewijs van instemming vastleggen. Zonder deze checkbox is de non-refund-clausule in §7 aanvechtbaar.
+- [ ] **Ingelogde app-users hebben geen route naar legal/docs** — vanuit `app.indxr.ai` (ingelogd) is er nu **geen navigatie** naar `/docs`, `/articles`, `/privacy`, `/terms` (die leven op de marketing-host). Meenemen in de app-redesign: footer/menu-links naar deze pagina's, **incl. een bij-checkout bereikbare `/terms`-link** (koppelt aan de consent-checkbox hierboven — de koper moet de Terms kunnen inzien op het moment van aankoop).
+
 ### Pre-launch — buiten code (parallel uit te voeren)
 
 - [ ] Google Search Console: domein verifiëren, sitemap indienen

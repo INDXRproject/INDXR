@@ -10406,3 +10406,27 @@ Changed: apps/marketing/src/app/privacy/page.tsx
 docs/LOG.md
 docs/wiki/business/privacy-facts.md
 ---
+[2026-07-20 14:30] taak: Terms of Service v1 live op /terms (marketing) — volledige tekst, 14 secties, Last updated 2026-07-20, KvK 98828762 + adres in tekst, footer-link bestond al; priorities-noten (checkout-consent §7 + app-legal-navigatie) | gewijzigd: apps/marketing/src/app/terms/page.tsx, docs/wiki/business/privacy-facts.md, docs/wiki/roadmap/priorities.md
+[2026-07-20 14:30] commit: feat(legal): publish Terms of Service v1 on /terms
+
+Replaces the [KHIDR] stub with the full ToS text (14 sections, Who we are -> Contact).
+Last updated: 2026-07-20. Layout matches /privacy verbatim (container/max-w-2xl,
+prose-content sections, Footer, accent mailto links to support@indxr.ai) — no new styling.
+Footer already links /terms, so no footer change.
+
+KvK 98828762 and the §14 registered address (Oranjeplein 9, 3331XM Zwijndrecht) were
+already filled in the supplied text — no open placeholders.
+
+priorities.md (pre-launch legal): (a) a checkout consent-checkbox is required to make §7
+(loss of withdrawal right on first credit use) legally watertight; (b) logged-in app users
+have no route to /docs, /articles, /privacy, /terms — fold into the redesign, incl. a
+/terms link reachable at checkout.
+
+Docs: privacy-facts.md terms note (v1 published) + LOG.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/terms/page.tsx
+docs/LOG.md
+docs/wiki/business/privacy-facts.md
+docs/wiki/roadmap/priorities.md
+---

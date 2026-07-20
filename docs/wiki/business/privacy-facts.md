@@ -109,3 +109,9 @@ De volledige v3-beleidstekst staat live op `apps/marketing/src/app/privacy/page.
 
 - **Controller:** Tiny Web Ventures, **KvK 98828762**, Nederland. *(KvK-nummer kwam uit de aangeleverde v3-tekst — het staat **nergens in de codebase** (grep op `kvk`/nummer/`tiny web`/company-constants = 0 hits), dus niet onafhankelijk uit code geverifieerd.)*
 - **Kern-claims** (consistent met de addenda hierboven): cookieless/IP-loze EU-analytics + Do-Not-Track; transcripts nooit gelezen/verkocht/getraind; AssemblyAI EU voor transcriptie **én** AI-samenvatting, audio niet voor training; self-service account-delete; audio nooit opgeslagen; transcript-cache los van persoon; betaalrecords 7 jaar (NL fiscaal); SCC's voor niet-EU-subverwerkers; contact `privacy@indxr.ai`.
+
+---
+
+## Addendum 2026-07-20 — Terms of Service v1 gepubliceerd op `/terms`
+
+Volledige ToS-tekst live op `apps/marketing/src/app/terms/page.tsx` (was `[KHIDR]`-stub met lege genummerde secties). **Last updated: 2026-07-20.** Layout identiek aan `/privacy` (`container … max-w-2xl`, `prose-content`-secties, `<Footer/>`, accent-`mailto`-links naar `support@indxr.ai`); geen nieuwe styling. Footer linkte `/terms` al → geen wijziging. 14 secties (Who we are → Contact). §14-adres was in de aangeleverde tekst al ingevuld (Oranjeplein 9, 3331XM Zwijndrecht) — geen open placeholders. **Openstaand (priorities.md, pre-launch legal):** §7 (herroepingsverlies) vereist een checkout-consent-checkbox om waterdicht te zijn; ingelogde app-users hebben nog geen route naar `/terms`/`/privacy`/`/docs`.
