@@ -10381,3 +10381,28 @@ docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
 packages/shared/src/lib/sentry-scrub.ts
 ---
+[2026-07-20 13:39] precompact: context compaction triggered
+[2026-07-20 13:45] taak: Privacy Policy v3 live op /privacy (marketing) — v3-tekst, Last updated 2026-07-20, KvK 98828762 (uit tekst, niet in code), footer-link bestond al | gewijzigd: apps/marketing/src/app/privacy/page.tsx, docs/wiki/business/privacy-facts.md
+[2026-07-20 13:45] commit: feat(legal): publish Privacy Policy v3 on /privacy
+
+Replaces the [KHIDR] stub (empty numbered sections) with the full v3 policy text.
+Last updated: 2026-07-20. Layout copied verbatim from the existing stub (container/
+max-w-2xl, prose-content sections, Footer) — no new styling. Footer already links
+/privacy, so no footer change.
+
+Controller: Tiny Web Ventures, KvK 98828762 (from the supplied v3 text — the number
+appears nowhere in the codebase, so it is not independently code-verified).
+
+Content matches the shipped privacy hardening: cookieless/IP-less EU analytics + DNT,
+transcripts never read/sold/trained, AssemblyAI EU for transcription AND the AI summary
+(audio not used for training), self-service account delete, audio never stored, per-video
+transcript cache decoupled from the person, 7-year payment records (NL tax), SCCs for
+non-EU subprocessors, contact privacy@indxr.ai.
+
+Docs: privacy-facts.md addendum (v3 published) + LOG.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/privacy/page.tsx
+docs/LOG.md
+docs/wiki/business/privacy-facts.md
+---

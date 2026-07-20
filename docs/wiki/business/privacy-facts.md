@@ -100,3 +100,12 @@ De twee gaten zijn gedicht; het product klopt nu met de voorgenomen belofte.
 - **Beslissing:** het privacy-beleid noemt **onze eigen bewaartermijnen** (wat wij bewaren/verwijderen); partner-specifieke details (welke subverwerker wat hoe lang bewaart) blijven **intern** (subverwerkerslijst hierboven) i.p.v. in het publieke beleid — houdt het beleid leesbaar en onderhoudbaar zonder per-partner-drift.
 
 **Sluit de Sentry-PII/replay-control** waar de LIA (Legitimate Interest Assessment) op leunt. *(Let op: dit is niet roadmap-item 1.31 — dat is Sentry noise-filtering; zie priorities.md.)*
+
+---
+
+## Addendum 2026-07-20 — Privacy Policy v3 gepubliceerd op `/privacy`
+
+De volledige v3-beleidstekst staat live op `apps/marketing/src/app/privacy/page.tsx` (was een `[KHIDR]`-stub met genummerde lege secties). **Last updated: 2026-07-20.** Layout ongewijzigd overgenomen van de bestaande stub (`container … max-w-2xl`, `prose-content`-secties, `<Footer/>`); geen nieuwe styling. Footer linkte `/privacy` al (`packages/shared/src/components/Footer.tsx`) → geen wijziging.
+
+- **Controller:** Tiny Web Ventures, **KvK 98828762**, Nederland. *(KvK-nummer kwam uit de aangeleverde v3-tekst — het staat **nergens in de codebase** (grep op `kvk`/nummer/`tiny web`/company-constants = 0 hits), dus niet onafhankelijk uit code geverifieerd.)*
+- **Kern-claims** (consistent met de addenda hierboven): cookieless/IP-loze EU-analytics + Do-Not-Track; transcripts nooit gelezen/verkocht/getraind; AssemblyAI EU voor transcriptie **én** AI-samenvatting, audio niet voor training; self-service account-delete; audio nooit opgeslagen; transcript-cache los van persoon; betaalrecords 7 jaar (NL fiscaal); SCC's voor niet-EU-subverwerkers; contact `privacy@indxr.ai`.
