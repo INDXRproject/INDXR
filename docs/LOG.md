@@ -10928,3 +10928,59 @@ Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/content/docs-page-contract.md
 ---
+[2026-07-23 00:30] ADR-073 docs-shell scaffold af (marketing, alleen layout/nav). STRUCTUUR: /docs/help/how-to + troubleshooting verwijderd (308→/articles), /docs/help/faq→/docs/faq (git mv, 308), Help-sectie uit docs-config, FAQ top-level onder Getting started; 2 dakloze FAQ-antwoorden verhuisd (VAT→credits-and-billing "Where you can buy" verbatim; dedup→overview 1 zin) + uit FAQ verwijderd; 6 redirect-ketens rechtgetrokken naar één hop (/faq, /docs/credits, /docs/accuracy/*, /docs/languages, /docs/api); sitemap + content-sitemap-boom + 2 troubleshooting-hub-passages bijgewerkt. COMPONENTEN (server, bestaande tokens): SourcesBlock (uitgever+wat+link+verifiedAgainst, null bij leeg), DocsFigure (verplicht caption+alt, aspect-ratio-placeholder), DocsCallout (3 varianten costs-credits/careful/requires-account, max 1 per sectie), DocsTable+DocsCodeBlock (mobiel: horizontaal scrollen met zichtbare affordance, één aanpak overal). Dichtheid docs vs artikelen vastgelegd (page-structures/docs-vs-articles-density.md); reference-doc.md template bijgewerkt (SourcesBlock+DocsFigure in sectie-volgorde, callout-regel, mobiele conventie, Footer=layout). Noindex preview /docs/component-preview. Build 2/2 groen; help-routes weg uit server-build, /docs/faq+preview aanwezig; geen dode /docs/help-links. | gewijzigd: 5 nieuwe componenten, docs/faq (verplaatst), credits-and-billing, overview, docs-config, sitemap, next.config, component-preview, reference-doc.md, docs-vs-articles-density.md, content-sitemap.md, ADR-073, INDEX, LOG
+[2026-07-22 16:42] commit: feat(docs): scaffold docs shell — Help removal, FAQ top-level, contract components (ADR-073)
+
+Layout/nav only, no content written.
+
+STRUCTURE
+- Removed /docs/help/how-to + /docs/help/troubleshooting → 308 to /articles.
+- Moved /docs/help/faq → /docs/faq (308); Help section out of docs-config, FAQ
+  top-level. Two orphaned FAQ answers rehoused (text moved, not rewritten): VAT-scope
+  → credits-and-billing ("Where you can buy"); dedup/"sometimes instant" → overview
+  (one sentence). Both removed from the FAQ.
+- Straightened six redirect chains to one hop (/faq, /docs/credits,
+  /docs/accuracy/{auto-captions,ai-transcription}, /docs/languages, /docs/api) — they
+  pointed at now-removed intermediate routes.
+- sitemap + content-sitemap tree + the two troubleshooting-hub passages updated.
+
+COMPONENTS (server, existing tokens only)
+- SourcesBlock (publisher + what it backs + link + verifiedAgainst; null when empty).
+- DocsFigure (required caption + alt; fixed aspect-ratio placeholder so layout doesn't
+  shift when screenshots land; caption says what it shows).
+- DocsCallout — exactly three variants (costs-credits / careful / requires-account);
+  rule: a callout exists only if missing it costs money, data or time; max one/section.
+- DocsTable + DocsCodeBlock — one mobile approach everywhere: horizontal scroll with a
+  visible affordance, never overflowing the viewport.
+
+DENSITY + TEMPLATE
+- docs-vs-articles-density.md (docs denser/narrower via shared components; articles
+  untouched). reference-doc.md updated: SourcesBlock + DocsFigure in the section order,
+  the callout rule, the mobile table/code convention, Footer = layout-provided.
+- /docs/component-preview: noindex, un-navigated internal reference for the new pieces.
+
+Build 2/2 green; help routes gone from the server build; no dead /docs/help links.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/next.config.ts
+apps/marketing/src/app/docs/account-and-data/credits-and-billing/page.tsx
+apps/marketing/src/app/docs/component-preview/page.tsx
+apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/app/docs/help/faq/page.tsx
+apps/marketing/src/app/docs/help/how-to/page.tsx
+apps/marketing/src/app/docs/help/troubleshooting/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/overview/page.tsx
+apps/marketing/src/app/sitemap.ts
+apps/marketing/src/components/docs/DocsCallout.tsx
+apps/marketing/src/components/docs/DocsCodeBlock.tsx
+apps/marketing/src/components/docs/DocsFigure.tsx
+apps/marketing/src/components/docs/DocsTable.tsx
+apps/marketing/src/components/docs/SourcesBlock.tsx
+apps/marketing/src/lib/docs-config.ts
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/page-structures/docs-vs-articles-density.md
+docs/wiki/architecture/page-structures/reference-doc.md
+docs/wiki/business/content-sitemap.md
+docs/wiki/decisions/073-docs-shell-scaffold-and-help-removal.md
+---

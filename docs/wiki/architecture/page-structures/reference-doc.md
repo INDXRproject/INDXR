@@ -32,15 +32,22 @@ Paginatitel. Authoritative, no framing ("YouTube Transcript Export Formats" niet
 40–60 woorden. De AI-citation slot. Schrijf als een Wikipedia-lede: onderwerp, definitie, context. Geen marketing.
 
 ### Sectie 6 — Body
-Tabellen, lijsten, parameter-blocks, scanbare H2-H3 hiërarchie. Geen marketing-CTAs.
+Tabellen, lijsten, parameter-blocks, scanbare H2-H3 hiërarchie (elke H2/H3 via `AnchorHeading`). Geen marketing-CTAs.
+- **Tabellen:** altijd via `DocsTable`. Mobiele degradatie (project-breed, één aanpak): **horizontaal scrollen met zichtbare affordance** (`min-w` forceert scroll, mobiele hint-regel, dunne scrollbar) — niet stapelen naar definitielijsten.
+- **Codeblokken:** altijd via `DocsCodeBlock` — `overflow-x-auto` met zichtbare scrollbar, nooit overflow buiten de viewport.
+- **Figuren:** via `DocsFigure`, alleen wanneer een screenshot iets toont dat tekst niet kan (gerenderde output, UI-state). **Verplicht** bijschrift + alt; het reserveert ruimte via een vaste aspect-ratio zodat de layout niet verspringt als de afbeelding later landt. Bijschrift zegt wát de figuur aantoont, niet wat het is. Nooit decoratief.
 
-### Sectie 7 — EdgeCasesCallout (optioneel)
-Subtiel afgebakend block voor grensgevallen, "what happens if…" scenarios, uitzonderingen. Weglaten als er geen zinvolle edge cases zijn.
+### Sectie 7 — Callouts (`DocsCallout`, optioneel)
+Exact **drie** varianten: `costs-credits` · `careful` · `requires-account`. **Regel:** een callout bestaat alleen als het missen ervan de lezer **geld, data of tijd** kost — anders is het een alinea. **Max één per sectie.** (Vervangt de oude losse EdgeCasesCallout-conventie.)
 
-### Sectie 8 — RelatedTopicsList
-"See also" — 3-5 links naar verwante reference docs.
+### Sectie 8 — SourcesBlock (`SourcesBlock`)
+Vóór RelatedTopicsList. Per bron: uitgever + wat het onderbouwt + link. **Elke externe feitelijke claim** (taal-tellingen, WER-tiers, subtitle-standaarden, vector-DB-compat) heeft hier een bron. **SPEC-pagina's** voegen een `verifiedAgainst`-coderegel toe (het bestand waaruit de spec is gedestilleerd). Rendert niets als er geen bronnen zijn.
 
-### Sectie 9 — Footer
+### Sectie 9 — RelatedTopicsList
+"See also" — 3-5 links naar verwante reference docs + het artikel dat het verhaal draagt (docs↔artikel-rolverdeling).
+
+### Sectie 10 — Footer
+Geleverd door de **root-layout** (`apps/marketing/src/app/layout.tsx`) — pagina's renderen zélf géén `<Footer/>` (dubbele-footer-fix, commit adedcbd).
 
 ---
 
@@ -55,6 +62,13 @@ Subtiel afgebakend block voor grensgevallen, "what happens if…" scenarios, uit
 | RelatedTopicsList | `src/components/docs/RelatedTopicsList.tsx` | "See also" link cluster | Server |
 | AnchorHeading | `src/components/docs/AnchorHeading.tsx` | H2/H3 met click-to-copy anchor | Client |
 | InPageTOC | `src/components/docs/InPageTOC.tsx` | Sticky scroll-spy TOC (>300 woorden) | Client |
+| DocsTable | `src/components/docs/DocsTable.tsx` | Tabel + mobiele horizontale-scroll-degradatie | Server |
+| DocsCodeBlock | `src/components/docs/DocsCodeBlock.tsx` | Codeblok, horizontaal scrollbaar | Server |
+| DocsCallout | `src/components/docs/DocsCallout.tsx` | 3 varianten: costs-credits / careful / requires-account | Server |
+| DocsFigure | `src/components/docs/DocsFigure.tsx` | Figuur-slot, verplicht bijschrift+alt, aspect-ratio-placeholder | Server |
+| SourcesBlock | `src/components/docs/SourcesBlock.tsx` | Bronnen (extern + verified-against), boven RelatedTopicsList | Server |
+
+**Dichtheid:** docs ≠ artikelen — zie [docs-vs-articles-density.md](docs-vs-articles-density.md). `ReferenceTable` uit de oude lijst is vervangen door `DocsTable`.
 
 ---
 

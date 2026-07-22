@@ -19,6 +19,7 @@ export const docsConfig: DocsConfig = {
       label: "Getting started",
       pages: [
         { href: "/docs/getting-started", label: "Quickstart" },
+        { href: "/docs/faq", label: "FAQ" },
       ],
     },
     {
@@ -42,14 +43,6 @@ export const docsConfig: DocsConfig = {
       pages: [
         { href: "/docs/account-and-data/credits-and-billing", label: "Credits and billing" },
         { href: "/docs/account-and-data/data-handling", label: "How we handle your data" },
-      ],
-    },
-    {
-      label: "Help",
-      pages: [
-        { href: "/docs/help/how-to", label: "How-to guides" },
-        { href: "/docs/help/troubleshooting", label: "Troubleshooting" },
-        { href: "/docs/help/faq", label: "FAQ" },
       ],
     },
   ],

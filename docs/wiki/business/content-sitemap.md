@@ -29,12 +29,12 @@ indxr.ai/  ── marketing (publiek)
 ├─ 3 Product-documentatie  /docs/*     (DocsShell — kale referentie-specs)
 │    /docs                            hub
 │    /docs/getting-started            quickstart
+│    /docs/faq                        FAQ (top-level, ADR-073)
 │    /docs/how-indxr-works/
-│        overview · credits · limits · api · languages
-│        accuracy/  (+ auto-captions · ai-transcription)
+│        overview · accuracy (Accuracy and languages) · summaries · limits
 │        export-formats/  (+ txt · markdown · csv · srt · vtt · json)
 │    /docs/account-and-data/  credits-and-billing · data-handling
-│    /docs/help/  faq · how-to · troubleshooting(→ bundelhub, zie punt 3)
+│    (help/ verwijderd — how-to + troubleshooting → 308 /articles, faq → /docs/faq — ADR-073)
 │
 ├─ 4 Funnel-content / SEO  /articles/*  (het verhaal + use-case = de bron)
 │    /articles                        index (4 categorieën)
@@ -101,10 +101,10 @@ Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/do
 | Limits | `…/limits` | Rate/size/duur-limieten (absorbeert `api`, ADR-072). | Nu wél concrete getallen (ADR-071): AI-transcriptie ≤10u, playlist ≤500/job, rate limits; captions geen duur-cap; geen publieke REST API. | placeholder (thin) |
 | Credits & billing | `/docs/account-and-data/credits-and-billing` | Credits + billing in detail. | Captions 0cr; AI 1cr/min; summary 3cr; one-time packages (verwijst naar /pricing); nooit verlopen; **auto-refund bij mislukte AI-operatie**. Twee `KHIDR:` TODO-secties. | live (2 stubs) |
 | Data handling | `/docs/account-and-data/data-handling` | Data-retentie/verwerking. | On-demand; **"uploaded audio deleted within 24 hours"**; transcripts in library. | placeholder |
-| How-to hub | `/docs/help/how-to` | How-to gidsen. | "Guides coming soon." | placeholder |
-| Troubleshooting hub | `/docs/help/troubleshooting` | **Geplande bundelhub** die de bestaande troubleshooting-artikelen indexeert en ernaar doorlinkt. | Verwijst naar: `not-available`, `non-english`, `without-extension` + de video-werkt-niet-gevallen `age-restricted`, `members-only`. Hub = doorverwijzing; de **artikelen dragen de inhoud** (zie [Docs ↔ artikel](#docs--artikel--rolverdeling)). | placeholder (te bundelen) |
+| ~~How-to hub~~ | *verwijderd (ADR-073)* | — | 308 → `/articles` (Workflows dekt dit). | verwijderd |
+| ~~Troubleshooting hub~~ | *verwijderd (ADR-073)* | — | 308 → `/articles` (de 5 artikelen + `/articles`-index dragen dit). | verwijderd |
 
-#### FAQ — apart & gecategoriseerd (`/docs/help/faq`, status: live)
+#### FAQ — apart & gecategoriseerd (`/docs/faq`, top-level sinds ADR-073, status: live)
 
 Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · YouTube Transcripts · Pricing & Credits · Technical*). Hier hergegroepeerd naar thema:
 
@@ -208,7 +208,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 | **RAG-JSON** | `…/export-formats/json` (RAG-deel) — chunk-schema (90–120s, `deep_link`, overlap) | `youtube-transcript-for-rag` (primair) + `chunk-…-for-rag` / `…-vector-database` (deep dives) |
 | **Talen** | `…/languages` — 67 captions / 99+ AI, auto-detect (kaal) | `youtube-transcript-non-english` — `tlang=en`-verhaal, model-routing |
 | **Formaten-overzicht** | `…/export-formats` (hub) — **alleen** overzichtstabel + doorverwijzing | `/articles` (categorie *Export Formats*) — de losse verhalen |
-| **Troubleshooting** | `/docs/help/troubleshooting` (hub) — **alleen** index + doorlink | `not-available` · `non-english` · `without-extension` · `age-restricted` · `members-only` |
+| **Troubleshooting** | *(geen docs-hub meer — ADR-073)* de **`/articles`-index** (categorie Troubleshooting) is de index | `not-available` · `non-english` · `without-extension` · `age-restricted` · `members-only` |
 
 *Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (Accuracy and languages), `limits`, `summaries`, `data-handling`. *Credits:* `/pricing` + `/docs/account-and-data/credits-and-billing` dragen dit — de dubbele `…/how-indxr-works/credits` is **verwijderd** (301 → credits-and-billing, ADR-072).
 
@@ -243,7 +243,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 
 **De nu-beslissingen (zodat toekomstige pagina's automatisch in het stramien vallen):**
 - **Nieuw format of onderwerp** → een **docs-spec (kaal)** + een **artikel (verhaal)**, kruisgelinkt; **het artikel is de bron**, de spec wordt eruit gedestilleerd. Nooit twee artikelen. Zie [Docs ↔ artikel](#docs--artikel--rolverdeling).
-- **Nieuwe troubleshooting** → een **artikel**, plus een doorlink vanuit de troubleshooting-**hub** (`/docs/help/troubleshooting`). De hub verwijst, het artikel draagt.
+- **Nieuwe troubleshooting** → een **artikel**, gecategoriseerd onder Troubleshooting op de **`/articles`-index** (die is de index; de oude docs-hub `/docs/help/troubleshooting` is verwijderd → 308 `/articles`, ADR-073). Het artikel draagt.
 - **Formaten-/troubleshooting-hub** blijft *overzicht + doorverwijzing* — nooit een derde inhoudsplek.
 - **Status, changelog, use-case-landings** → **post-launch / bewust niet-nu** (zie hieronder), niet in de pre-launch-map aanplakken.
 

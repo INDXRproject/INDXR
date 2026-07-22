@@ -51,6 +51,11 @@ export default function DocsCreditsAndBillingPage() {
             Credits are purchased in one-time packages — no subscriptions. See the <a href="/pricing">pricing page</a> for current packages.
           </p>
 
+          <h2>Where you can buy</h2>
+          <p>
+            We&apos;re VAT-registered in the Netherlands and through the EU&apos;s One Stop Shop, which covers the EU. A few countries — including the UK and Switzerland — require a separate local VAT registration from the very first sale, with no minimum. Until we do that properly, we&apos;d rather not sell to you than sell to you incorrectly. If you want access from your country, <a href="/contact">email us</a> — enough interest and we&apos;ll register.
+          </p>
+
           <h2>Credits never expire</h2>
           <p>
             Purchased credits stay in your account until you use them.

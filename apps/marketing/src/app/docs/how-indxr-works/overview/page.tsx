@@ -74,6 +74,10 @@ export default function DocsOverviewPage() {
           Either way the transcript lands in your library, where it stays and can be edited. From there
           you export it in whichever format you need, as often as you need.
         </p>
+        <p className={P}>
+          If the same video has already been processed, INDXR serves the saved result instead of
+          re-processing the audio — you get the exact same transcript, just faster.
+        </p>
 
         <AnchorHeading as="h2">Captions or transcription</AnchorHeading>
         <p className={P}>

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     description:
       "Answers to common questions about downloading YouTube transcripts, extracting subtitles, and AI transcription.",
     type: "website",
-    url: "https://indxr.ai/docs/help/faq",
+    url: "https://indxr.ai/docs/faq",
   },
 }
 
@@ -94,11 +94,6 @@ const faqCategories: FAQCategory[] = [
         answer:
           "Credits are used for AI transcription (1 credit per minute) and AI summarization (3 credits per summary). Your credit balance is shown in your dashboard. View packages on our <a href='/pricing'>pricing page</a>.",
       },
-      {
-        question: "Why can't I buy from my country?",
-        answer:
-          "We're VAT-registered in the Netherlands and through the EU's One Stop Shop, which covers the EU. A few countries — including the UK and Switzerland — require a separate local VAT registration from the very first sale, with no minimum. Until we do that properly, we'd rather not sell to you than sell to you incorrectly. If you want access from your country, <a href='/contact'>email us</a> — enough interest and we'll register.",
-      },
     ],
   },
   {
@@ -113,11 +108,6 @@ const faqCategories: FAQCategory[] = [
         question: "How long does transcript extraction take?",
         answer:
           "For videos with existing YouTube captions, extraction is nearly instant (1-3 seconds). For AI transcription, processing time is roughly 1-2 minutes per 10 minutes of audio.",
-      },
-      {
-        question: "Why does a transcript sometimes appear almost instantly?",
-        answer:
-          "Sometimes a transcript appears in just a few seconds. That happens when the same video has already been processed before — we serve the saved result instead of re-processing the audio. You get the exact same transcript, just faster. Caption extraction is fast by default; the nearly-instant case applies mainly to AI transcription that has already been completed once for that video.",
       },
     ],
   },

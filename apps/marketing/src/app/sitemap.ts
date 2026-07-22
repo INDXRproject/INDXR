@@ -33,10 +33,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Account & data
     { route: "/docs/account-and-data/credits-and-billing", priority: 0.5 },
     { route: "/docs/account-and-data/data-handling", priority: 0.5 },
-    // Help
-    { route: "/docs/help/faq", priority: 0.6 },
-    { route: "/docs/help/how-to", priority: 0.5 },
-    { route: "/docs/help/troubleshooting", priority: 0.5 },
+    // FAQ (promoted to top-level, ADR-073; how-to + troubleshooting removed → /articles)
+    { route: "/docs/faq", priority: 0.6 },
   ];
 
   const articlesPages = [
