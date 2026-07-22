@@ -123,7 +123,7 @@ export default function LandingPage() {
           <HowItWorksBlock
             number={5}
             heading="Output: build with it"
-            description="RAG-optimized JSON with 30-second chunks, deep-linked timestamps, and metadata. Drop it into LangChain, LlamaIndex, or any vector database. No preprocessing needed."
+            description="RAG-optimized JSON with sentence-aligned chunks (60 seconds by default, adjustable), deep-linked timestamps, and metadata. Drop it into LangChain, LlamaIndex, or any vector database. No preprocessing needed."
             audience="Developers, RAG builders"
             mockup={
               <MacbookMockupFrame label="RAG JSON export">

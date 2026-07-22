@@ -1,5 +1,4 @@
-// Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
-// Copy and real numbers to be written by Khidr.
+import Link from "next/link"
 
 interface TrustPoint {
   label: string
@@ -7,11 +6,15 @@ interface TrustPoint {
 }
 
 const trustPoints: TrustPoint[] = [
-  { label: "EU-hosted", detail: "Supabase eu-west-1" },
-  { label: "Audio deleted after transcription", detail: "R2 storage purged on job complete" },
+  { label: "EU-hosted", detail: "Supabase, eu-west-1" },
+  { label: "Audio deleted after transcription", detail: "Uploads aren't kept once your transcript is made" },
   { label: "Stripe-secured payments", detail: "No card data touches our servers" },
 ]
 
+// Hero stat = a measured speed figure we can stand behind (median across 200+ real
+// AI-transcription runs, ~5% of audio length — see product-truth §6.4). The old
+// "99.4% accuracy" line had no recorded measurement and was removed; accuracy is now
+// told honestly, per language, on the accuracy page.
 export function StatsFromTesting() {
   return (
     <div className="w-full py-16 border-b border-[var(--border)]">
@@ -19,13 +22,17 @@ export function StatsFromTesting() {
         {/* Hero stat */}
         <div className="text-center mb-12">
           <p className="text-sm font-semibold uppercase tracking-widest text-[var(--fg-muted)] mb-4">
-            From our testing
+            From our own runs
           </p>
           <p className="text-4xl sm:text-5xl font-bold text-[var(--fg)] mb-3">
-            99.4% accuracy
+            An hour of audio in minutes
           </p>
           <p className="text-[var(--fg-subtle)] max-w-xl mx-auto">
-            Tested on 800+ minutes of academic and conversational audio. AI transcription on benchmark data.
+            Across 200+ real transcriptions, AI transcription took roughly 5% of the audio&apos;s
+            length — most hour-long videos finish in a few minutes. Accuracy depends on the language:{" "}
+            <Link href="/docs/reference/accuracy" className="text-[var(--accent)] hover:underline">
+              see the accuracy page
+            </Link>.
           </p>
         </div>
 

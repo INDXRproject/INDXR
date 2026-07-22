@@ -11608,3 +11608,37 @@ apps/marketing/src/components/content/templates/ArticleTemplate.tsx
 apps/marketing/src/components/content/templates/ToolPageTemplate.tsx
 apps/marketing/src/components/content/templates/TutorialTemplate.tsx
 ---
+[2026-07-23 01:32] commit: fix(content): night-run phase 4a + 5 — remove unverifiable accuracy claims, fix chunk default
+
+The "99.4% accuracy" figure has no recorded measurement (the StatsFromTesting
+component even carried a "numbers to be written by Khidr" TODO). Removed everywhere
+it appeared on live pages; accuracy is now told honestly, per language, from
+AssemblyAI's published WER bands.
+
+Phase 4a — /docs/reference/accuracy (rewritten):
+- Dropped the "~99.4% word-level accuracy" line. Now states plainly that we don't
+  publish a single headline figure because it wouldn't predict your video.
+- Added the four WER bands WITH representative languages, verified 2026-07-23 against
+  AssemblyAI's supported-languages page (18 langs on Universal-3.5 Pro, 99 on
+  Universal-2). Framed the model chain as a language router, not a fault fallback.
+- Added a proper SourcesBlock (AssemblyAI URL + verifiedAgainst models.ts /
+  assemblyai_client.py). Trimmed See-also to the max-3 rule (hub + limits + the
+  non-english article).
+
+Phase 5 (homepage/free-tool text only — hero visuals untouched, Khidr owns those):
+- StatsFromTesting hero: "99.4% accuracy / tested on 800+ minutes" → a measured SPEED
+  claim we can stand behind (median across 200+ real runs ≈ 5% of audio length; hour
+  ≈ a few minutes, product-truth §6.4) + a link to the accuracy page. Softened the
+  "audio deleted" sub-detail off the unverified "R2 purged on job complete" mechanism.
+- Homepage RAG block: "30-second chunks" → "sentence-aligned chunks (60 seconds by
+  default, adjustable)" — 60 is the real default (product-truth §2).
+- /transcribe audio card: removed "99.4% accuracy on benchmark data".
+
+Both apps build green. Verified live post-deploy in the night report.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/reference/accuracy/page.tsx
+apps/marketing/src/app/page.tsx
+apps/marketing/src/app/transcribe/page.tsx
+apps/marketing/src/components/marketing/StatsFromTesting.tsx
+---

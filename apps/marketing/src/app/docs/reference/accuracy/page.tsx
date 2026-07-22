@@ -3,6 +3,7 @@ import { DocsShell } from "@/components/docs/DocsShell"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
+import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
@@ -56,48 +57,73 @@ export default function DocsAccuracyPage() {
         <AnchorHeading as="h2">AI transcription</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           AI transcription reads the audio itself and writes the transcript from scratch, with
-          punctuation, capitalisation and real sentences. It runs on {transcriptionModelName()}. In
-          internal benchmarks on clean English YouTube audio, our highest-quality model reaches around
-          99.4% word-level accuracy; results vary with audio quality, speaker count and language.
+          punctuation, capitalisation and real sentences. It runs on {transcriptionModelName()}, and it
+          handles names, jargon and accented speech far better than automatic captions do. It is still
+          speech recognition, though, so it is not flawless: poor audio, people talking over each other,
+          and less widely spoken languages all lower the result. How accurate it is in practice depends
+          mostly on the language — see the bands below.
+        </p>
+        <p className="text-[var(--fg-muted)] text-sm mt-2">
+          We don&apos;t publish a single headline accuracy figure for INDXR, because a number measured on
+          clean English audio wouldn&apos;t tell you what to expect on your video. The per-language bands
+          from AssemblyAI below are the honest guide.
         </p>
 
-        <AnchorHeading as="h2">Supported languages</AnchorHeading>
+        <AnchorHeading as="h2">Which languages, and how accurate</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          For AI transcription, INDXR automatically uses the best model for your video&apos;s language.
-          Our highest-quality model, {transcriptionModelName()}, natively covers 18 languages; a
-          broader model covers 99 languages for everything else, and the language is detected
-          automatically. Caption extraction works for any language YouTube provides captions for.
+          For AI transcription, INDXR automatically uses the best model for your video&apos;s language —
+          it is a language router, not a fault fallback. {transcriptionModelName()} natively covers 18
+          languages; a broader model, Universal-2, covers 99, and the language is detected automatically.
+          Caption extraction works for any language YouTube provides captions for.
         </p>
-
-        <AnchorHeading as="h3">Accuracy by language</AnchorHeading>
-        <p className="text-[var(--fg-subtle)] leading-relaxed">
-          AssemblyAI groups supported languages by expected word error rate (WER), the share of words
-          transcribed incorrectly — lower is better:
+        <p className="text-[var(--fg-subtle)] leading-relaxed mt-4">
+          AssemblyAI reports accuracy per language as an expected word error rate (WER) — the share of
+          words transcribed incorrectly, so lower is better — grouped into four bands:
         </p>
-        <ul className="list-disc pl-5 space-y-1 text-[var(--fg-subtle)] mt-2">
-          <li><strong>≤ 10%</strong> — excellent</li>
-          <li><strong>10–25%</strong> — good</li>
-          <li><strong>25–50%</strong> — fair</li>
-          <li><strong>&gt; 50%</strong> — limited</li>
+        <ul className="space-y-2 text-[var(--fg-subtle)] mt-3">
+          <li>
+            <strong className="text-[var(--fg)]">≤ 10% (high)</strong> — English, Spanish, French,
+            German, Dutch, Italian, Portuguese, Japanese, Russian, Swedish, Turkish, Ukrainian, Polish,
+            Indonesian, Catalan.
+          </li>
+          <li>
+            <strong className="text-[var(--fg)]">10–25% (good)</strong> — including Arabic, Mandarin
+            Chinese, Hindi, Korean, Danish, Greek, Hebrew, Vietnamese, Thai, Finnish, Norwegian.
+          </li>
+          <li>
+            <strong className="text-[var(--fg)]">25–50% (moderate)</strong> — including Persian,
+            Tamil, Marathi, Swahili, Icelandic, Welsh, Kazakh.
+          </li>
+          <li>
+            <strong className="text-[var(--fg)]">&gt; 50% (limited)</strong> — including Bengali,
+            Gujarati, Telugu, Kannada, Malayalam, Nepali, Burmese.
+          </li>
         </ul>
         <p className="text-[var(--fg-muted)] text-sm mt-3">
-          Source:{" "}
-          <a
-            href="https://www.assemblyai.com/docs/supported-languages"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[var(--accent)] hover:underline"
-          >
-            AssemblyAI — supported languages
-          </a>
+          The lists show representative languages; AssemblyAI&apos;s page has the complete breakdown, and
+          these bands can change as their models improve.
         </p>
+
+        <SourcesBlock
+          sources={[
+            {
+              publisher: "AssemblyAI — supported languages",
+              supports: "18 languages on Universal-3.5 Pro, 99 on Universal-2, and the four WER accuracy bands with their languages (verified 2026-07-23)",
+              href: "https://www.assemblyai.com/docs/supported-languages",
+            },
+            {
+              publisher: "INDXR (own code)",
+              supports: "the transcription model name and the language-router chain (best model per detected language, not a fault fallback)",
+              verifiedAgainst: "packages/shared/src/lib/models.ts; backend/assemblyai_client.py:24-28",
+            },
+          ]}
+        />
 
         <RelatedTopicsList
           topics={[
-            { label: "Overview", href: "/docs/how-indxr-works" },
-            { label: "Export formats", href: "/docs/reference/export-formats" },
+            { label: "How INDXR works", href: "/docs/how-indxr-works" },
             { label: "Limits", href: "/docs/reference/limits" },
-            { label: "Credits", href: "/docs/account/credits" },
+            { label: "Article: Non-English transcripts", href: "/articles/youtube-transcript-non-english" },
           ]}
         />
       </DocsShell>
