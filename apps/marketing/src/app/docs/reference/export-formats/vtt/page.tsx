@@ -37,7 +37,7 @@ export default function DocsVttPage() {
     "@type": "TechArticle",
     headline: "VTT subtitle export",
     description: metadata.description,
-    url: "https://indxr.ai/docs/how-indxr-works/export-formats/vtt",
+    url: "https://indxr.ai/docs/reference/export-formats/vtt",
   }
 
   return (
@@ -47,7 +47,7 @@ export default function DocsVttPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
             { label: "VTT" },
           ]}
         />
@@ -64,7 +64,7 @@ export default function DocsVttPage() {
           VTT uses a <strong>dot</strong> before the milliseconds: <code>HH:MM:SS.mmm</code> (SRT uses a
           comma). The file always opens with <code>WEBVTT</code>; the <code>NOTE</code> block is added
           when a title or language is known. Cue text uses the same re-segmentation and ~42-character
-          line wrapping as <a className="text-[var(--accent)] hover:underline" href="/docs/how-indxr-works/export-formats/srt">SRT</a>.
+          line wrapping as <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/srt">SRT</a>.
         </p>
         <DocsCodeBlock>{vttSample}</DocsCodeBlock>
 
@@ -76,8 +76,8 @@ export default function DocsVttPage() {
         />
         <RelatedTopicsList
           topics={[
-            { label: "All export formats", href: "/docs/how-indxr-works/export-formats" },
-            { label: "SRT", href: "/docs/how-indxr-works/export-formats/srt" },
+            { label: "All export formats", href: "/docs/reference/export-formats" },
+            { label: "SRT", href: "/docs/reference/export-formats/srt" },
             { label: "Article: YouTube SRT download", href: "/articles/youtube-srt-download" },
           ]}
         />

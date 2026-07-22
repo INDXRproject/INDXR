@@ -35,11 +35,11 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "What languages are supported?",
-    answer: `[placeholder — Khidr writes: auto-caption extraction supports 67 languages (any YouTube supports). For AI transcription, INDXR automatically uses the best model for the language — our highest-quality model, ${transcriptionModelName()}, for supported languages, with broad coverage across 99+ languages and automatic detection. See /docs/how-indxr-works/accuracy.]`,
+    answer: `[placeholder — Khidr writes: auto-caption extraction supports 67 languages (any YouTube supports). For AI transcription, INDXR automatically uses the best model for the language — our highest-quality model, ${transcriptionModelName()}, for supported languages, with broad coverage across 99+ languages and automatic detection. See /docs/reference/accuracy.]`,
   },
   {
     question: "What export formats can I get?",
-    answer: "[placeholder — Khidr writes: TXT (free, no account), Markdown, CSV, SRT, VTT, JSON, RAG-optimized JSON (all require free account). See /docs/how-indxr-works/export-formats.]",
+    answer: "[placeholder — Khidr writes: TXT (free, no account), Markdown, CSV, SRT, VTT, JSON, RAG-optimized JSON (all require free account). See /docs/reference/export-formats.]",
   },
 ]
 

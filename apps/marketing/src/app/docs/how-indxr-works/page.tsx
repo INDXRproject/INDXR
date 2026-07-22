@@ -31,7 +31,7 @@ export default function DocsOverviewPage() {
     "@type": "TechArticle",
     headline: "How INDXR works",
     description,
-    url: "https://indxr.ai/docs/how-indxr-works/overview",
+    url: "https://indxr.ai/docs/how-indxr-works",
   }
 
   return (
@@ -41,8 +41,8 @@ export default function DocsOverviewPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Using INDXR", href: "/docs" },
-            { label: "Overview" },
+            { label: "Getting started", href: "/docs" },
+            { label: "How INDXR works" },
           ]}
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">How INDXR works</h1>
@@ -121,7 +121,7 @@ export default function DocsOverviewPage() {
         </p>
         <p className={P}>
           See:{" "}
-          <Link href="/docs/how-indxr-works/accuracy" className="text-[var(--accent)] hover:underline">
+          <Link href="/docs/reference/accuracy" className="text-[var(--accent)] hover:underline">
             Accuracy and languages
           </Link>
         </p>
@@ -155,35 +155,35 @@ export default function DocsOverviewPage() {
         <p className={P}>Seven formats. Six of them free, however often you export them.</p>
         <ul className="space-y-3 mb-4 text-[var(--fg-subtle)] leading-relaxed">
           <li>
-            <Link href="/docs/how-indxr-works/export-formats/txt" className="font-semibold text-[var(--accent)] hover:underline">Plain text</Link>
+            <Link href="/docs/reference/export-formats/txt" className="font-semibold text-[var(--accent)] hover:underline">Plain text</Link>
             {" "}— the transcript as continuous text, with or without timestamps. The only format
             available without an account.
           </li>
           <li>
-            <Link href="/docs/how-indxr-works/export-formats/markdown" className="font-semibold text-[var(--accent)] hover:underline">Markdown</Link>
+            <Link href="/docs/reference/export-formats/markdown" className="font-semibold text-[var(--accent)] hover:underline">Markdown</Link>
             {" "}— with or without timestamps, and with a frontmatter block carrying the video&apos;s
             title, URL, date and duration, so it drops straight into Obsidian, Notion or Logseq and
             stays linked to its source.
           </li>
           <li>
-            <Link href="/docs/how-indxr-works/export-formats/csv" className="font-semibold text-[var(--accent)] hover:underline">CSV</Link>
+            <Link href="/docs/reference/export-formats/csv" className="font-semibold text-[var(--accent)] hover:underline">CSV</Link>
             {" "}— one row per segment with start, end, duration and word count, for spreadsheets and
             text analysis.
           </li>
           <li>
-            <Link href="/docs/how-indxr-works/export-formats/srt" className="font-semibold text-[var(--accent)] hover:underline">SRT</Link>
+            <Link href="/docs/reference/export-formats/srt" className="font-semibold text-[var(--accent)] hover:underline">SRT</Link>
             {" "}and{" "}
-            <Link href="/docs/how-indxr-works/export-formats/vtt" className="font-semibold text-[var(--accent)] hover:underline">VTT</Link>
+            <Link href="/docs/reference/export-formats/vtt" className="font-semibold text-[var(--accent)] hover:underline">VTT</Link>
             {" "}— subtitle files, re-cut to broadcast line lengths instead of dumped as raw caption
             blocks, so they load cleanly into editors and players.
           </li>
           <li>
-            <Link href="/docs/how-indxr-works/export-formats/json" className="font-semibold text-[var(--accent)] hover:underline">JSON</Link>
+            <Link href="/docs/reference/export-formats/json" className="font-semibold text-[var(--accent)] hover:underline">JSON</Link>
             {" "}— the segments as they are, with a metadata wrapper. Take this when you want to handle
             the chunking and indexing yourself.
           </li>
           <li>
-            <Link href="/docs/how-indxr-works/export-formats/json" className="font-semibold text-[var(--accent)] hover:underline">RAG JSON</Link>
+            <Link href="/docs/reference/export-formats/json" className="font-semibold text-[var(--accent)] hover:underline">RAG JSON</Link>
             {" "}— the transcript already chunked and prepared for a vector database, so you can ask
             questions of your own material. This is the one format that costs credits: {ragPer10} per
             10 minutes of transcript. Downloading an export you&apos;ve already generated is free.
@@ -191,7 +191,7 @@ export default function DocsOverviewPage() {
         </ul>
         <p className={P}>
           See:{" "}
-          <Link href="/docs/how-indxr-works/export-formats" className="text-[var(--accent)] hover:underline">
+          <Link href="/docs/reference/export-formats" className="text-[var(--accent)] hover:underline">
             Export formats
           </Link>
         </p>
@@ -216,7 +216,7 @@ export default function DocsOverviewPage() {
         </p>
         <p className={P}>
           See:{" "}
-          <Link href="/docs/getting-started" className="text-[var(--accent)] hover:underline">
+          <Link href="/docs/quickstart" className="text-[var(--accent)] hover:underline">
             Getting started
           </Link>
         </p>
@@ -229,7 +229,7 @@ export default function DocsOverviewPage() {
         </p>
         <p className={P}>
           See:{" "}
-          <Link href="/docs/how-indxr-works/summaries" className="text-[var(--accent)] hover:underline">
+          <Link href="/docs/guides/summaries" className="text-[var(--accent)] hover:underline">
             Summaries
           </Link>
         </p>
@@ -248,9 +248,9 @@ export default function DocsOverviewPage() {
 
         <RelatedTopicsList
           topics={[
-            { label: "Accuracy and languages", href: "/docs/how-indxr-works/accuracy" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
-            { label: "Limits", href: "/docs/how-indxr-works/limits" },
+            { label: "Accuracy and languages", href: "/docs/reference/accuracy" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
+            { label: "Limits", href: "/docs/reference/limits" },
             { label: "Credits", href: "/docs/account/credits" },
           ]}
         />

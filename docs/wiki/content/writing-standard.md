@@ -163,6 +163,20 @@ Neem de live graaf + de twee correcties. **[live implementatie; batch-3b §4.3; 
 - **Tweede persoon "you", informeel, Engels.** Directe, korte werkwoorden (Transcribe, Open, Export, Save). Eerlijk over beperkingen. Volledige zinnen in empty/error-states. Geen onvertaalbare idiomen ("let's go", "we're cooking"). **INDXR is een tool, geen persona** — geen zachte "AI-assistent"-toon, geen speelse Notion-error-toon. **[batch-3a §2.4, §4.3; batch-3b §6.1; de-facto in alle huidige content]**
 - **Status:** dit is een **vastgelegde keuze** (consistentie met bestaande content + de research-voice-regels), **maar er is geen tone-of-voice-onderzoek in de wiki** → **[TE VERIFIËREN]** (extern toetsen: formaliteit, aanspreekvorm, of "you" past bij de doelgroep en de internationale markten). Aanspreekvorm/formaliteit is nergens formeel onderzocht — alleen een incidentele informele "je" in NL-voorbeeldcopy (batch-3b §7.1).
 
+### C11b — Schrijfstijl per categorie (Diátaxis) — *ADR-075*
+De docs zijn ingedeeld naar wat de lezer komt doen (Getting started / Guides / Reference / Account).
+De opening is voor élk paginatype gelijk; het middenstuk verschilt per categorie.
+
+- **Opwarming (elke pagina, ongeacht type):**
+  - Eerste zin: **wat het is, in gewone taal, zonder jargon.**
+  - Daarna 2–4 zinnen: **wanneer/waarom** gebruik je dit. Pas dán de details.
+  - Een vakterm bij eerste gebruik in een halve zin uitgelegd ("SubRip, het ondertitelformaat dat vrijwel elke videospeler leest").
+  - Korte alinea's — niet meer dan drie zinnen achter elkaar zonder lucht. De oude spec-pagina's die meteen de diepte in duiken (SRT: definitie → milliseconden) zijn de anti-vorm.
+- **Guides (doen):** beschrijf **wat de lezer doet, in de volgorde waarin hij het doet.** Genummerde stappen waar er stappen zijn. Herhaal geen specs — link door naar reference.
+- **Reference (opzoeken):** beschrijf **wat iets is** — velden, waarden, grenzen. Geen verhaal, geen stappen — maar wél die opwarming van twee zinnen. Voor het verhaal linkt reference naar het artikel.
+- **Answer-first geldt óók per H2** (zie C1). Koppen zeggen wat er staat, geen categorienamen ("Notes"/"Details" → wat er staat).
+- **SEE ALSO: maximaal drie links, elk met een reden** — de hub of het bovenliggende onderwerp, het naaste verwante onderwerp (SRT↔VTT, JSON↔RAG JSON), en het artikel dat het verhaal draagt. Geen willekeurige vierde link.
+
 ### C12 — Crawlers & technische SEO (voor wanneer de schrijfronde raakt aan robots/sitemap)
 - **robots.txt** allowlist staat; overweeg `Google-Extended` + `anthropic-ai` expliciet toe te voegen (nu default-allow). **[masterplan :649; §B; TE VERIFIËREN — crawler-landschap wijzigt snel]**
 - **llms.txt**: **VERWIJDERD** (ADR-039, geverifieerd 2026-07-23 — geen bewezen lever, INDXR heeft geen publieke API, bestanden logen over de prijs). Niet opnieuw toevoegen. **[A5; beslist]**

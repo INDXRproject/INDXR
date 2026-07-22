@@ -10,27 +10,29 @@
 
 ## DEEL 1 — Huidige staat (routes winnen van de sitemap)
 
-19 user-facing route-bestanden onder `apps/marketing/src/app/docs/**` (`page.tsx`) — vier categorieën
-in gebruiksvolgorde (ADR-074) — plus `component-preview` (dev). Sidebar uit
+20 user-facing route-bestanden onder `apps/marketing/src/app/docs/**` (`page.tsx`) — Diátaxis, vier
+categorieën naar leesintentie (ADR-075) — plus `component-preview` (dev). Sidebar uit
 `apps/marketing/src/lib/docs-config.ts`. Status uit de code (skeleton = alleen breadcrumb + H1 +
 `DefinitionLeadOpening` + `RelatedTopicsList`; placeholder = `[Placeholder …]`/`[KHIDR: …]`).
 
 | # | Categorie | Route | Status (code) | Artikel-tegenhanger |
 |---|-----------|-------|---------------|---------------------|
 | 1 | — | `/docs` (hub) | live | — |
-| 2 | Start here | `/docs/getting-started` | live | — |
-| 3 | Start here | `/docs/faq` | **live** (volle FAQ) | — |
-| 4 | Using INDXR | `/docs/how-indxr-works/overview` | **live (ADR-072)** | — |
-| 5 | Using INDXR | `/docs/how-indxr-works/accuracy` ("Accuracy and languages") | live (skeleton+merge) | `youtube-transcript-non-english` |
-| 6 | Using INDXR | `/docs/using-indxr/playlists` | **skeleton (ADR-074, nieuw)** | `youtube-playlist-transcript` · `bulk-youtube-transcript` |
-| 7 | Using INDXR | `/docs/using-indxr/your-library` | **skeleton (ADR-074, nieuw)** | — |
-| 8 | Using INDXR | `/docs/how-indxr-works/summaries` | live (skeleton, ADR-072) | — |
-| 9 | Exports | `/docs/how-indxr-works/export-formats` (hub) | live | `/articles` (Export Formats) |
-| 10-15 | Exports | `…/export-formats/{txt,markdown,csv,srt,vtt,json}` | live (ADR-073-batch) | de format-artikelen |
-| 16 | Account | `/docs/account/credits` | **live stub (ADR-074, split)** | `/pricing` |
-| 17 | Account | `/docs/account/billing` | **live stub (ADR-074, split)** | `/pricing` |
-| 18 | Account | `/docs/account/settings` | **skeleton (ADR-074, nieuw)** | — |
-| 19 | Account | `/docs/how-indxr-works/limits` | live (thin) | — |
+| 2 | Getting started | `/docs/quickstart` | live | — |
+| 3 | Getting started | `/docs/how-indxr-works` | **live (ADR-072)** | — |
+| 4 | Getting started | `/docs/faq` | **live** (volle FAQ) | — |
+| 5 | Guides | `/docs/guides/single-video` | **live (ADR-075, nieuw)** | `youtube-to-text` |
+| 6 | Guides | `/docs/guides/playlists` | **live (ADR-075, geschreven)** | `youtube-playlist-transcript` · `bulk-youtube-transcript` |
+| 7 | Guides | `/docs/guides/uploads` | **live (ADR-075, nieuw)** | `audio-to-text` |
+| 8 | Guides | `/docs/guides/library` | **live (ADR-075, geschreven)** | — |
+| 9 | Guides | `/docs/guides/summaries` | **live (ADR-075, geschreven)** | — |
+| 10 | Reference | `/docs/reference/export-formats` (hub) | **live (ADR-075, herschreven)** | `/articles` (Export Formats) |
+| 11-16 | Reference | `…/reference/export-formats/{txt,markdown,csv,srt,vtt,json}` | live (ADR-073-batch) | de format-artikelen |
+| 17 | Reference | `/docs/reference/accuracy` ("Accuracy and languages") | live (skeleton+merge) | `youtube-transcript-non-english` |
+| 18 | Reference | `/docs/reference/limits` | live (thin) | — |
+| 19 | Account | `/docs/account/credits` | live stub (KHIDR) | `/pricing` |
+| 20 | Account | `/docs/account/billing` | live stub (KHIDR) | `/pricing` |
+| 21 | Account | `/docs/account/settings` | **live (ADR-075, geschreven)** | — |
 
 **Verwijderd:** `account-and-data/credits-and-billing` (→ split), `account-and-data/data-handling`
 (→ 308 `/privacy`), `help/*` (ADR-073). Alle 308 in `next.config.ts` — één hop, geen ketens
@@ -66,7 +68,7 @@ Regel: **eigen pagina alleen bij aparte zoekintentie (SEO) óf aparte gebruikers
 
 Geen fundamentele **oneens** met de drie beslissingen — ze snijden hout; de bovenstaande 3 zijn uitvoerings-consequenties.
 
-**Eindset na ADR-073 = 16 routes.** **Na ADR-074 = 19 user-facing routes** (4 categorieën): hub · getting-started · faq · overview · accuracy · using-indxr/playlists · using-indxr/your-library · summaries · export-formats(+txt/markdown/csv/srt/vtt/json) · account/credits · account/billing · account/settings · limits.
+**Eindset na ADR-075 = 21 user-facing routes** (Diátaxis): hub · quickstart · how-indxr-works · faq · guides/{single-video,playlists,uploads,library,summaries} · reference/{export-formats(+txt/markdown/csv/srt/vtt/json),accuracy,limits} · account/{credits,billing,settings}.
 
 ---
 
@@ -84,7 +86,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `docs-config.ts`, `FeaturedDocsGrid.tsx`, `DocsCategorySection.tsx`. **NB:** `FeaturedDocsGrid` verwees eerder naar het verwijderde `…/credits` — is al gecorrigeerd naar `credits-and-billing` (ADR-072); bij faq-move ook de card/category-lijst nalopen.
 - **Type:** structureel.
 
-### /docs/getting-started
+### /docs/quickstart
 - **BEZIT:** de exacte eerste-keer-flow (plak URL → transcript → export); anoniem vs account; "eerste transcript in ~3 min".
 - **HERHAALT NIET:** format-details (→ export-formats), credit-tarieven (→ credits-and-billing), accuraatheid (→ accuracy).
 - **LINKT:** `overview` (waarom/hoe), `export-formats` (wat eruit komt), `credits-and-billing` (kosten).
@@ -94,7 +96,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** free-tool-flow `packages/shared/src/components/free-tool/{VideoTab,PlaylistTab,AudioTab}.tsx`; anon-gating `packages/shared/src/components/TranscriptCard.tsx` (`requireAuth`, TXT-vrij). Getallen (welcome 25) uit `pricing.ts` `FREE_TIER`.
 - **Type:** SPEC (flow uit de UI-componenten).
 
-### /docs/how-indxr-works/overview — *al geschreven (ADR-072)*
+### /docs/how-indxr-works — *al geschreven (ADR-072)*
 - **BEZIT:** de kaart — captions-vs-transcriptie-keuze, account-verschil, wat-eruit-komt op hoog niveau, library, summaries, credits (één alinea elk).
 - **HERHAALT NIET:** exacte format-velden (→ per-format specs), WER/talen (→ accuracy), harde limieten (→ limits), billing-detail (→ credits-and-billing).
 - **LINKT:** alle how-indxr-works-siblings (het is de nav-spil).
@@ -104,7 +106,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** al geschreven; getallen `pricing.ts`, model `models.ts`.
 - **Type:** ARGUMENT (positioneert de keuze) — al gedaan.
 
-### /docs/how-indxr-works/accuracy ("Accuracy and languages")
+### /docs/reference/accuracy ("Accuracy and languages")
 - **BEZIT:** hoe accuraat elke methode is; WER-tier-indeling per taal (≤10/10-25/25-50/>50%); 18 talen (Universal-3.5 Pro) / 99 (Universal-2); captions = bron-afhankelijk.
 - **HERHAALT NIET:** het `tlang=en`-verhaal en de per-taal-routing-anekdote (→ artikel `youtube-transcript-non-english`); credit-kosten.
 - **LINKT:** artikel `youtube-transcript-non-english` (het taal-verhaal); `overview`; `limits`.
@@ -114,7 +116,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `packages/shared/src/lib/models.ts` (`transcriptionModelName()`, chain); AssemblyAI-docs voor 18/99 + WER. Artikel `non-english` voor het verhaal.
 - **Type:** ARGUMENT (interpreteert accuraatheid + vergelijkt methoden) — Claude schrijft.
 
-### /docs/how-indxr-works/export-formats (hub)
+### /docs/reference/export-formats (hub)
 - **BEZIT:** overzichtstabel van de 7 formaten (naam · anoniem-of-account · gratis-of-credits · "waarvoor") + doorverwijzing naar de 6 spec-pagina's en de Export-Formats-artikelen.
 - **HERHAALT NIET:** de velden/timestamp-vorm per format (→ de spec-pagina's). **Geen derde inhoudsplek.**
 - **LINKT:** de 6 format-specs; `/articles` (categorie Export Formats); `credits-and-billing` (RAG-kost).
@@ -124,7 +126,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `packages/shared/src/utils/formatTranscript.ts` (de 7 formaten), `pricing.ts` `CREDIT_COSTS` (RAG 1/10min), anon-gating `TranscriptCard.tsx`.
 - **Type:** SPEC (index uit code).
 
-### /docs/how-indxr-works/export-formats/txt
+### /docs/reference/export-formats/txt
 - **BEZIT:** de twee TXT-varianten (met/zonder timestamps), `[HH:MM:SS]`-vorm, paragraaf-modus, "enige anoniem-beschikbare format".
 - **HERHAALT NIET:** waarom-plain-text / no-account-hoek (→ artikel `youtube-to-text`).
 - **LINKT:** artikel `youtube-to-text`; hub `export-formats`.
@@ -134,7 +136,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `formatTranscript.ts` → `generateTxt` (regel 247), `createParagraphMode` (51), `formatHHMMSS` (42). Artikel `youtube-to-text` (verhaal).
 - **Type:** SPEC.
 
-### /docs/how-indxr-works/export-formats/markdown
+### /docs/reference/export-formats/markdown
 - **BEZIT:** exacte YAML-frontmatter-keys (titel/URL/datum/duur), timestamps-variant, paragraaf-split-regel (>5s).
 - **HERHAALT NIET:** Obsidian/Notion-use-case-verhaal (→ artikelen `youtube-transcript-markdown` + `youtube-transcript-obsidian`).
 - **LINKT:** artikel `youtube-transcript-markdown` (+ `-obsidian` als workflow); hub.
@@ -144,7 +146,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `formatTranscript.ts` → `generateMarkdown` (407), `buildYamlFrontmatter` (474). Artikelen markdown/obsidian.
 - **Type:** SPEC.
 
-### /docs/how-indxr-works/export-formats/csv
+### /docs/reference/export-formats/csv
 - **BEZIT:** exacte kolomnamen (`segment_index,start,end,duration,text,word_count`), UTF-8 BOM, dat video-metadata NIET in de CSV zit.
 - **HERHAALT NIET:** pandas/Sheets/Voyant-use-case (→ artikel `youtube-transcript-csv`).
 - **LINKT:** artikel `youtube-transcript-csv`; hub.
@@ -154,7 +156,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `formatTranscript.ts` → `generateCsv` (202). Artikel `youtube-transcript-csv`.
 - **Type:** SPEC.
 
-### /docs/how-indxr-works/export-formats/srt
+### /docs/reference/export-formats/srt
 - **BEZIT:** `HH:MM:SS,mmm`-timestamp, index-nummering, resegmentatie-regel (3–7s, ≤42 chars/regel).
 - **HERHAALT NIET:** resegmentatie-verhaal + editor-compatibiliteit (→ artikel `youtube-srt-download`).
 - **LINKT:** artikel `youtube-srt-download`; sibling `vtt`; hub.
@@ -164,7 +166,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `formatTranscript.ts` → `generateSrt` (167), `formatSrtTimestamp` (24), `resegmentTranscript` (92). Artikel `youtube-srt-download`.
 - **Type:** SPEC.
 
-### /docs/how-indxr-works/export-formats/vtt
+### /docs/reference/export-formats/vtt
 - **BEZIT:** `WEBVTT`-header, `HH:MM:SS.mmm` (punt, niet komma), zelfde resegmentatie.
 - **HERHAALT NIET:** het resegmentatie-verhaal (gedeeld met SRT → artikel `youtube-srt-download`).
 - **LINKT:** artikel `youtube-srt-download` (dekt SRT **én** VTT); sibling `srt`; hub.
@@ -174,7 +176,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `formatTranscript.ts` → `generateVtt` (181), `formatVttTimestamp` (33), `resegmentTranscript` (92). Artikel `youtube-srt-download`.
 - **Type:** SPEC.
 
-### /docs/how-indxr-works/export-formats/json
+### /docs/reference/export-formats/json
 - **BEZIT:** twee dingen die alleen hier samenkomen — (a) **standaard-JSON**-schema (segmenten + metadata-wrapper, gratis) en (b) **RAG-JSON**-schema (chunks 90–120s, sentence-snap, `deep_link` per chunk, overlap, 1cr/10min).
 - **HERHAALT NIET:** de RAG-pipeline-use-cases + chunking-onderzoek (→ artikelen `youtube-transcript-json`, `youtube-transcript-for-rag`, en de deep-dives `chunk-…-for-rag`/`…-vector-database`).
 - **LINKT:** artikelen `youtube-transcript-json` (standaard) + `youtube-transcript-for-rag` (RAG) + de twee deep-dives; `credits-and-billing` (RAG-kost).
@@ -184,7 +186,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `formatTranscript.ts` → `buildRagJson` (516), `buildRagChunks` (283); RAG-kost `pricing.ts` `CREDIT_COSTS.RAG_JSON_PER_10MIN`. Artikelen json/for-rag/deep-dives.
 - **Type:** SPEC.
 
-### /docs/how-indxr-works/summaries
+### /docs/guides/summaries
 - **BEZIT:** 3-credit-flat summary (ongeacht lengte), summary-vorm (overzicht + action points), opgeslagen bij het transcript, bewerkbaar met **origineel behouden**.
 - **HERHAALT NIET:** algemene credit-uitleg (→ credits-and-billing); accuraatheid (→ accuracy).
 - **LINKT:** `credits-and-billing`; `overview`.
@@ -194,7 +196,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `apps/app/src/components/library/AiSummaryView.tsx` (action_points regel 23, `edited_html`/origineel 27+89, `ai_summary`-persist 95); prijs `pricing.ts` `CREDIT_COSTS.AI_SUMMARY`; model `backend/main.py` `SUMMARY_MODEL_PRIMARY` (gemini-2.5-flash, ADR-068). **Geen artikel** (zie DEEL 4 — gat).
 - **Type:** SPEC.
 
-### /docs/how-indxr-works/limits
+### /docs/reference/limits
 - **BEZIT:** de harde getallen — AI-transcriptie **≤10 uur**, playlist **≤500/job**, **3** gelijktijdige jobs, upload **500MB** + geaccepteerde formaten, rate limits (anon **10/24u**, gratis **50/1u**), captions **geen duur-cap**, **geen publieke REST API**.
 - **HERHAALT NIET:** credit-tarieven (→ credits-and-billing); accuraatheid (→ accuracy).
 - **LINKT:** `credits-and-billing`; artikelen `bulk-`/`playlist-` (playlist-cap-context).

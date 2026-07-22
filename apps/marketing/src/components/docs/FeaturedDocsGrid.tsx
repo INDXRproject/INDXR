@@ -11,12 +11,12 @@ interface FeaturedDoc {
 const featuredDocs: FeaturedDoc[] = [
   {
     label: "Quickstart",
-    href: "/docs/getting-started",
+    href: "/docs/quickstart",
     description: "Get your first transcript in under 3 minutes.",
   },
   {
     label: "How INDXR works",
-    href: "/docs/how-indxr-works/overview",
+    href: "/docs/how-indxr-works",
     description: "A high-level overview of the extraction and transcription pipeline.",
   },
   {
@@ -26,7 +26,7 @@ const featuredDocs: FeaturedDoc[] = [
   },
   {
     label: "Export formats",
-    href: "/docs/how-indxr-works/export-formats",
+    href: "/docs/reference/export-formats",
     description: "TXT, Markdown, CSV, SRT, VTT, JSON, and RAG JSON — when to use each.",
   },
 ]

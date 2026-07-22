@@ -15,31 +15,33 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { route: "/signup", priority: 0.5 },
   ];
 
-  // Docs — 4 categories following order of use (ADR-074).
+  // Docs — Diátaxis: 4 categories by what the reader comes to do (ADR-075).
   const docsPages = [
     { route: "/docs", priority: 0.7 },
-    // Start here
-    { route: "/docs/getting-started", priority: 0.7 },
+    // Getting started
+    { route: "/docs/quickstart", priority: 0.7 },
+    { route: "/docs/how-indxr-works", priority: 0.6 },
     { route: "/docs/faq", priority: 0.6 },
-    // Using INDXR
-    { route: "/docs/how-indxr-works/overview", priority: 0.6 },
-    { route: "/docs/how-indxr-works/accuracy", priority: 0.5 },
-    { route: "/docs/using-indxr/playlists", priority: 0.5 },
-    { route: "/docs/using-indxr/your-library", priority: 0.5 },
-    { route: "/docs/how-indxr-works/summaries", priority: 0.5 },
-    // Exports
-    { route: "/docs/how-indxr-works/export-formats", priority: 0.6 },
-    { route: "/docs/how-indxr-works/export-formats/txt", priority: 0.5 },
-    { route: "/docs/how-indxr-works/export-formats/markdown", priority: 0.5 },
-    { route: "/docs/how-indxr-works/export-formats/csv", priority: 0.5 },
-    { route: "/docs/how-indxr-works/export-formats/srt", priority: 0.5 },
-    { route: "/docs/how-indxr-works/export-formats/vtt", priority: 0.5 },
-    { route: "/docs/how-indxr-works/export-formats/json", priority: 0.5 },
+    // Guides
+    { route: "/docs/guides/single-video", priority: 0.6 },
+    { route: "/docs/guides/playlists", priority: 0.5 },
+    { route: "/docs/guides/uploads", priority: 0.6 },
+    { route: "/docs/guides/library", priority: 0.5 },
+    { route: "/docs/guides/summaries", priority: 0.5 },
+    // Reference
+    { route: "/docs/reference/export-formats", priority: 0.6 },
+    { route: "/docs/reference/export-formats/txt", priority: 0.5 },
+    { route: "/docs/reference/export-formats/markdown", priority: 0.5 },
+    { route: "/docs/reference/export-formats/csv", priority: 0.5 },
+    { route: "/docs/reference/export-formats/srt", priority: 0.5 },
+    { route: "/docs/reference/export-formats/vtt", priority: 0.5 },
+    { route: "/docs/reference/export-formats/json", priority: 0.5 },
+    { route: "/docs/reference/accuracy", priority: 0.5 },
+    { route: "/docs/reference/limits", priority: 0.5 },
     // Account
     { route: "/docs/account/credits", priority: 0.5 },
     { route: "/docs/account/billing", priority: 0.5 },
     { route: "/docs/account/settings", priority: 0.5 },
-    { route: "/docs/how-indxr-works/limits", priority: 0.5 },
   ];
 
   const articlesPages = [

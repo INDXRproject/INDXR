@@ -61,7 +61,7 @@ export default function DocsCreditsPage() {
         <RelatedTopicsList
           topics={[
             { label: "Billing and invoices", href: "/docs/account/billing" },
-            { label: "How INDXR works", href: "/docs/how-indxr-works/overview" },
+            { label: "How INDXR works", href: "/docs/how-indxr-works" },
             { label: "Pricing", href: "/pricing" },
           ]}
         />

@@ -21,78 +21,14 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
+    // Pre-launch: never submitted to Search Console, no external inbound links. All redirects
+    // from our own restructures were dead weight and are removed (ADR-075). Internal links point
+    // straight at the real route. Only two rules survive:
+    //   1. cross-host: /account/credits → the app's account page (functional, not a doc move)
+    //   2. /faq → /docs/faq (a short URL people type)
     return [
-      // Docs restructure: how-indxr-works 15 → 11 pages (ADR-072)
-      { source: '/docs/how-indxr-works/credits', destination: '/docs/account/credits', permanent: true },
-      { source: '/docs/how-indxr-works/accuracy/auto-captions', destination: '/docs/how-indxr-works/accuracy', permanent: true },
-      { source: '/docs/how-indxr-works/accuracy/ai-transcription', destination: '/docs/how-indxr-works/accuracy', permanent: true },
-      { source: '/docs/how-indxr-works/languages', destination: '/docs/how-indxr-works/accuracy', permanent: true },
-      { source: '/docs/how-indxr-works/api', destination: '/docs/how-indxr-works/limits', permanent: true },
-
-      // Docs restructure: Help section removed, FAQ promoted to /docs/faq (ADR-073)
-      { source: '/docs/help/how-to', destination: '/articles', permanent: true },
-      { source: '/docs/help/troubleshooting', destination: '/articles', permanent: true },
-      { source: '/docs/help/faq', destination: '/docs/faq', permanent: true },
-
-      // Legacy URL cleanup
-      { source: '/faq', destination: '/docs/faq', permanent: true },
       { source: '/account/credits', destination: `${APP_URL}/dashboard/account`, permanent: true },
-      { source: '/how-it-works', destination: '/', permanent: true },
-
-      // Renamed routes
-      { source: '/youtube-transcript-generator', destination: '/transcribe', permanent: true },
-      { source: '/support', destination: '/contact', permanent: true },
-
-      // Articles migration (top-level SEO → /articles/*)
-      { source: '/youtube-transcript-not-available', destination: '/articles/youtube-transcript-not-available', permanent: true },
-      { source: '/youtube-age-restricted-transcript', destination: '/articles/youtube-age-restricted-transcript', permanent: true },
-      { source: '/youtube-members-only-transcript', destination: '/articles/youtube-members-only-transcript', permanent: true },
-      { source: '/youtube-transcript-non-english', destination: '/articles/youtube-transcript-non-english', permanent: true },
-      { source: '/youtube-transcript-without-extension', destination: '/articles/youtube-transcript-without-extension', permanent: true },
-      { source: '/bulk-youtube-transcript', destination: '/articles/bulk-youtube-transcript', permanent: true },
-      { source: '/youtube-playlist-transcript', destination: '/articles/youtube-playlist-transcript', permanent: true },
-      { source: '/audio-to-text', destination: '/articles/audio-to-text', permanent: true },
-      { source: '/youtube-to-text', destination: '/articles/youtube-to-text', permanent: true },
-      { source: '/youtube-transcript-markdown', destination: '/articles/youtube-transcript-markdown', permanent: true },
-      { source: '/youtube-transcript-csv', destination: '/articles/youtube-transcript-csv', permanent: true },
-      { source: '/youtube-srt-download', destination: '/articles/youtube-srt-download', permanent: true },
-      { source: '/youtube-transcript-json', destination: '/articles/youtube-transcript-json', permanent: true },
-      { source: '/youtube-transcript-for-rag', destination: '/articles/youtube-transcript-for-rag', permanent: true },
-      { source: '/youtube-transcript-obsidian', destination: '/articles/youtube-transcript-obsidian', permanent: true },
-      { source: '/blog/chunk-youtube-transcripts-for-rag', destination: '/articles/chunk-youtube-transcripts-for-rag', permanent: true },
-      { source: '/blog/youtube-channel-knowledge-base', destination: '/articles/youtube-channel-knowledge-base', permanent: true },
-      { source: '/blog/youtube-transcripts-vector-database', destination: '/articles/youtube-transcripts-vector-database', permanent: true },
-
-      // Docs URL hernesting (2026-05-04 — flat → categorical). Targets that were later
-      // removed (ADR-072/073) now point straight at the final route — one hop, no chain.
-      { source: '/docs/credits', destination: '/docs/account/credits', permanent: true },
-      { source: '/docs/accuracy', destination: '/docs/how-indxr-works/accuracy', permanent: true },
-      { source: '/docs/accuracy/auto-captions', destination: '/docs/how-indxr-works/accuracy', permanent: true },
-      { source: '/docs/accuracy/ai-transcription', destination: '/docs/how-indxr-works/accuracy', permanent: true },
-      { source: '/docs/export-formats', destination: '/docs/how-indxr-works/export-formats', permanent: true },
-      { source: '/docs/export-formats/txt', destination: '/docs/how-indxr-works/export-formats/txt', permanent: true },
-      { source: '/docs/export-formats/markdown', destination: '/docs/how-indxr-works/export-formats/markdown', permanent: true },
-      { source: '/docs/export-formats/csv', destination: '/docs/how-indxr-works/export-formats/csv', permanent: true },
-      { source: '/docs/export-formats/srt', destination: '/docs/how-indxr-works/export-formats/srt', permanent: true },
-      { source: '/docs/export-formats/vtt', destination: '/docs/how-indxr-works/export-formats/vtt', permanent: true },
-      { source: '/docs/export-formats/json', destination: '/docs/how-indxr-works/export-formats/json', permanent: true },
-      { source: '/docs/languages', destination: '/docs/how-indxr-works/accuracy', permanent: true },
-      { source: '/docs/limits', destination: '/docs/how-indxr-works/limits', permanent: true },
-      { source: '/docs/api', destination: '/docs/how-indxr-works/limits', permanent: true },
-      { source: '/docs/account', destination: '/docs/account/credits', permanent: true },
-      { source: '/docs/privacy-handling', destination: '/privacy', permanent: true },
-      // ADR-073 cleanup: these legacy flat paths pointed at /docs/help/* which is now removed.
-      // Flattened straight to the final target. `/docs/faq` is now a REAL page, so it must NOT be
-      // a redirect source — the old `/docs/faq → /docs/help/faq` rule caused an infinite loop
-      // (with `/docs/help/faq → /docs/faq`) and is deleted.
-      { source: '/docs/how-to', destination: '/articles', permanent: true },
-      { source: '/docs/troubleshooting', destination: '/articles', permanent: true },
-
-      // Docs restructure (ADR-074): 4 categories following order of use. credits-and-billing
-      // split into Credits + Billing; data-handling removed (duplicated /privacy). Old routes
-      // point straight at the final destination — one hop, no chain.
-      { source: '/docs/account-and-data/credits-and-billing', destination: '/docs/account/credits', permanent: true },
-      { source: '/docs/account-and-data/data-handling', destination: '/privacy', permanent: true },
+      { source: '/faq', destination: '/docs/faq', permanent: true },
     ]
   },
   images: {

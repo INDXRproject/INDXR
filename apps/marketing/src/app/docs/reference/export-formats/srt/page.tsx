@@ -31,7 +31,7 @@ export default function DocsSrtPage() {
     "@type": "TechArticle",
     headline: "SRT subtitle export",
     description: metadata.description,
-    url: "https://indxr.ai/docs/how-indxr-works/export-formats/srt",
+    url: "https://indxr.ai/docs/reference/export-formats/srt",
   }
 
   return (
@@ -41,7 +41,7 @@ export default function DocsSrtPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
             { label: "SRT" },
           ]}
         />
@@ -76,8 +76,8 @@ export default function DocsSrtPage() {
         />
         <RelatedTopicsList
           topics={[
-            { label: "All export formats", href: "/docs/how-indxr-works/export-formats" },
-            { label: "VTT", href: "/docs/how-indxr-works/export-formats/vtt" },
+            { label: "All export formats", href: "/docs/reference/export-formats" },
+            { label: "VTT", href: "/docs/reference/export-formats/vtt" },
             { label: "Article: YouTube SRT download", href: "/articles/youtube-srt-download" },
           ]}
         />

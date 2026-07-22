@@ -36,7 +36,7 @@ export default function DocsCsvPage() {
     "@type": "TechArticle",
     headline: "CSV export",
     description: metadata.description,
-    url: "https://indxr.ai/docs/how-indxr-works/export-formats/csv",
+    url: "https://indxr.ai/docs/reference/export-formats/csv",
   }
 
   return (
@@ -46,7 +46,7 @@ export default function DocsCsvPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
             { label: "CSV" },
           ]}
         />
@@ -91,8 +91,8 @@ export default function DocsCsvPage() {
         />
         <RelatedTopicsList
           topics={[
-            { label: "All export formats", href: "/docs/how-indxr-works/export-formats" },
-            { label: "JSON / RAG JSON", href: "/docs/how-indxr-works/export-formats/json" },
+            { label: "All export formats", href: "/docs/reference/export-formats" },
+            { label: "JSON / RAG JSON", href: "/docs/reference/export-formats/json" },
             { label: "Article: YouTube transcript to CSV", href: "/articles/youtube-transcript-csv" },
           ]}
         />

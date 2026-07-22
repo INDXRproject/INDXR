@@ -11191,3 +11191,102 @@ docs/wiki/strategy/principles.md
 [2026-07-22 21:04] commit: chore: remove PreCompact/SessionStart hooks (broke compaction with relative path)
 Changed: .claude/settings.json
 ---
+
+[2026-07-22 22:30] taak: docs → Diátaxis (ADR-075) + 6 pagina's + redirects tot 2 regels
+- DEEL 1: git mv naar 4 categorieën naar leesintentie (Getting started/Guides/Reference/Account).
+  quickstart, guides/{playlists,library,summaries}, reference/{export-formats+6,accuracy,limits},
+  how-indxr-works (map→1 pagina). Nieuw: guides/single-video, guides/uploads.
+- DEEL 2: redirects()-tabel van 51 → 2 regels (cross-host app + /faq→/docs/faq). Pre-launch, geen
+  externe links, geen Search Console → eigen-herstructurering-redirects zijn ballast.
+- DEEL 3: alle /docs-verwijzingen bijgewerkt (docs-config, breadcrumbs label+href, RelatedTopicsList,
+  hub FeaturedDocsGrid + intro's, sitemap.ts, Footer.tsx, transcribe inline, JSON-LD url: per pagina).
+- DEEL 4: 6 pagina's uit code geschreven (single-video, uploads, playlists, library, summaries,
+  settings) + export-formats-hub herschreven (per-formaat alinea + tabel, "Notes"→"Cost and access").
+  Toegankelijke opening; getallen uit pricing.ts/models.ts; SourcesBlock met file:line.
+- DEEL 5: ADR-075; sitemap.md/content-sitemap/docs-page-contract/writing-standard §C11b + INDEX + LOG.
+- Build marketing groen; JSON-LD url ↔ route match 20/20.
+
+Changed: apps/marketing/src/app/docs/** (git mv + 6 pages), docs-config.ts, sitemap.ts, next.config.ts,
+docs/page.tsx, FeaturedDocsGrid.tsx, transcribe/page.tsx, packages/shared/src/components/Footer.tsx;
+docs/wiki/{decisions/075,INDEX,strategy/principles,architecture/sitemap,business/content-sitemap,
+content/docs-page-contract,content/writing-standard}.md
+---
+[2026-07-22 21:54] commit: feat(docs): restructure to Diátaxis + write 6 pages, strip redirects to 2 (ADR-075)
+
+DEEL 1 — new structure, categorised by what the reader comes to do (learn / do /
+look up / account): Getting started · Guides · Reference · Account. URLs mirror
+the category (git mv): quickstart, guides/{playlists,library,summaries},
+reference/{export-formats+6,accuracy,limits}, and how-indxr-works (the overview
+folder becomes one page). Two new guides: guides/single-video, guides/uploads.
+
+DEEL 2 — redirects() cut from 51 rules to 2: the cross-host app rule and
+/faq→/docs/faq. Pre-launch, never submitted to Search Console, no external inbound
+links, so the restructure redirects were dead weight. Internal links point straight
+at the real route.
+
+DEEL 3 — every /docs reference updated: docs-config, breadcrumbs (label + href),
+RelatedTopicsList, the hub (FeaturedDocsGrid + category intros), sitemap.ts, the
+shared Footer, transcribe inline mentions, and the JSON-LD url: field on every page
+(verified 20/20 match their route).
+
+DEEL 4 — six pages written from the code, each claim traceable to file:line via
+SourcesBlock: guides/single-video, guides/uploads, guides/playlists, guides/library,
+guides/summaries, account/settings. The export-formats hub is rewritten from a
+table + "Notes" into a per-format paragraph (what it is / when to use / the pitfall)
+with read-more links, comparison table below. Accessible opening on every page;
+numbers from pricing.ts / models.ts.
+
+DEEL 5 — ADR-075; sitemap.md, content-sitemap, docs-page-contract updated;
+writing-standard §C11b (style per category); INDEX; LOG. Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/next.config.ts
+apps/marketing/src/app/docs/account/credits/page.tsx
+apps/marketing/src/app/docs/account/settings/page.tsx
+apps/marketing/src/app/docs/component-preview/page.tsx
+apps/marketing/src/app/docs/getting-started/page.tsx
+apps/marketing/src/app/docs/guides/library/page.tsx
+apps/marketing/src/app/docs/guides/playlists/page.tsx
+apps/marketing/src/app/docs/guides/single-video/page.tsx
+apps/marketing/src/app/docs/guides/summaries/page.tsx
+apps/marketing/src/app/docs/guides/uploads/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/accuracy/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/csv/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/json/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/markdown/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/srt/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/txt/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/vtt/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/limits/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/overview/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/summaries/page.tsx
+apps/marketing/src/app/docs/page.tsx
+apps/marketing/src/app/docs/quickstart/page.tsx
+apps/marketing/src/app/docs/reference/accuracy/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/csv/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/json/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/markdown/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/srt/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/txt/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/vtt/page.tsx
+apps/marketing/src/app/docs/reference/limits/page.tsx
+apps/marketing/src/app/docs/using-indxr/playlists/page.tsx
+apps/marketing/src/app/docs/using-indxr/your-library/page.tsx
+apps/marketing/src/app/sitemap.ts
+apps/marketing/src/app/transcribe/page.tsx
+apps/marketing/src/components/docs/FeaturedDocsGrid.tsx
+apps/marketing/src/lib/docs-config.ts
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/page-structures/docs-hub.md
+docs/wiki/architecture/sitemap.md
+docs/wiki/business/content-sitemap.md
+docs/wiki/content/docs-page-contract.md
+docs/wiki/content/writing-standard.md
+docs/wiki/decisions/075-docs-diataxis-structure.md
+docs/wiki/strategy/principles.md
+packages/shared/src/components/Footer.tsx
+---

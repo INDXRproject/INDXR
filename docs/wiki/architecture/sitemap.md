@@ -55,65 +55,58 @@ De INDXR.AI site is ingedeeld in drie lagen met duidelijke URL-grenzen en verant
 ## Laag 2A — Productdocumentatie (`indxr.ai/docs/*`)
 
 Alle doc-routes renderen via `DocsShell` — sidebar via `src/lib/docs-config.ts`.
-**Bijgewerkt:** 2026-07-22 (ADR-074 — vier categorieën in gebruiksvolgorde; ADR-072/073 verwerkt).
-Canonieke redirect-bron blijft `apps/marketing/next.config.ts` (`async redirects()`).
+**Bijgewerkt:** 2026-07-22 (ADR-075 — Diátaxis: ingedeeld naar wat de lezer komt doen).
+URL's weerspiegelen de categorie. Redirect-bron = `apps/marketing/next.config.ts` (nu 2 regels).
 
-De vier sidebar-categorieën volgen de gebruiksvolgorde: **Start here → Using INDXR → Exports →
-Account**. URL's blijven stabiel waar de pagina al bestond; alleen split/nieuw/verwijderd verandert
-van pad (categorie ≠ URL-prefix — de sidebar groepeert, de URL blijft waar hij was).
+De vier categorieën volgen de **intentie** van de lezer: **Getting started (leren) → Guides (doen) →
+Reference (opzoeken) → Account**.
 
-### Hub & Start here
+### Getting started
 
 | Route | Type | Status | Beschrijving |
 |-------|------|--------|--------------|
-| `/docs` | SERVER | Live | Hub: DocsHubHero + FeaturedDocsGrid + 4× DocsCategorySection (met per-pagina one-liner) |
-| `/docs/getting-started` | SERVER | Live (Tutorial layout) | "Quickstart" — HowTo JSON-LD |
+| `/docs` | SERVER | Live | Hub: DocsHubHero + FeaturedDocsGrid + 4× DocsCategorySection |
+| `/docs/quickstart` | SERVER | Live (Tutorial layout) | "Quickstart" — HowTo JSON-LD (verhuisd van getting-started) |
+| `/docs/how-indxr-works` | SERVER | Live | "How INDXR works" (was how-indxr-works/overview; map werd één pagina) |
 | `/docs/faq` | SERVER | Live | "FAQ" — korte antwoorden + link naar de bezittende doc |
 
-### Using INDXR
+### Guides (doen)
 
 | Route | Type | Status | Beschrijving |
 |-------|------|--------|--------------|
-| `/docs/how-indxr-works/overview` | SERVER | Live | "Overview" |
-| `/docs/how-indxr-works/accuracy` | SERVER | Live | "Accuracy and languages" |
-| `/docs/using-indxr/playlists` | SERVER | Live (skeleton) | "Playlists" — nieuw |
-| `/docs/using-indxr/your-library` | SERVER | Live (skeleton) | "Your library" — nieuw |
-| `/docs/how-indxr-works/summaries` | SERVER | Live | "Summaries" |
+| `/docs/guides/single-video` | SERVER | Live | "Single video" — **nieuw** (plakken → captions, AI-toggle, restricties) |
+| `/docs/guides/playlists` | SERVER | Live | "Playlists" (verhuisd van using-indxr) |
+| `/docs/guides/uploads` | SERVER | Live | "Audio & video uploads" — **nieuw** (formaten, 500 MB, 10 u, kost) |
+| `/docs/guides/library` | SERVER | Live | "Library" (verhuisd van using-indxr/your-library) |
+| `/docs/guides/summaries` | SERVER | Live | "Summaries" (verhuisd van how-indxr-works) |
 
-### Exports
+### Reference (opzoeken)
 
 | Route | Type | Status | Beschrijving |
 |-------|------|--------|--------------|
-| `/docs/how-indxr-works/export-formats` | SERVER | Live | "Export formats" hub |
-| `/docs/how-indxr-works/export-formats/{txt,markdown,csv,srt,vtt,json}` | SERVER | Live | Per-formaat spec (JSON-pagina bevat RAG-chunkgrootte-presets 30/60/90/120s) |
+| `/docs/reference/export-formats` | SERVER | Live | "Export formats" hub (herschreven: per-formaat alinea + tabel) |
+| `/docs/reference/export-formats/{txt,markdown,csv,srt,vtt,json}` | SERVER | Live | Per-formaat spec (JSON-pagina bevat RAG-chunkpresets 30/60/90/120s) |
+| `/docs/reference/accuracy` | SERVER | Live | "Accuracy and languages" (verhuisd) |
+| `/docs/reference/limits` | SERVER | Live | "Limits" (verhuisd) |
 
 ### Account
 
 | Route | Type | Status | Beschrijving |
 |-------|------|--------|--------------|
-| `/docs/account/credits` | SERVER | Live | "Credits" — gesplitst uit credits-and-billing (kosten, reserve-model, refunds) |
-| `/docs/account/billing` | SERVER | Live | "Billing and invoices" — gesplitst (kopen, facturen, VAT-scope) |
-| `/docs/account/settings` | SERVER | Live (skeleton) | "Settings" — nieuw (RAG-chunkgrootte, e-mail, account verwijderen → /privacy) |
-| `/docs/how-indxr-works/limits` | SERVER | Live | "Limits" |
+| `/docs/account/credits` | SERVER | Live | "Credits" — kosten, reserve-model, refunds (KHIDR-stub) |
+| `/docs/account/billing` | SERVER | Live | "Billing and invoices" — kopen, facturen, VAT-scope (KHIDR-stub) |
+| `/docs/account/settings` | SERVER | Live | "Settings" — herschreven (e-mail, paginagrootte, RAG-chunkgrootte, account verwijderen → /privacy) |
 
-**Verwijderd:** `/docs/account-and-data/credits-and-billing` (gesplitst) en
-`/docs/account-and-data/data-handling` (dubbeling met `/privacy`).
+### Redirects (canoniek in `next.config.ts` — nu exact 2 regels)
 
-### Redirects (docs — canoniek in `next.config.ts`)
+Pre-launch, nooit bij Search Console ingediend, geen externe inkomende links → alle redirects uit
+eigen herstructureringen zijn **verwijderd** (ADR-075). Interne links wijzen direct naar de echte
+route. Alleen deze twee blijven:
 
-Restructure ADR-074 (bovenop de bestaande ADR-072/073-regels — één hop, geen ketens):
-
-| Van | Naar | Type |
-|-----|------|------|
-| `/docs/account-and-data/credits-and-billing` | `/docs/account/credits` | 308 |
-| `/docs/account-and-data/data-handling` | `/privacy` | 308 |
-| `/docs/how-indxr-works/credits` · `/docs/credits` · `/docs/account` | `/docs/account/credits` | 308 |
-| `/docs/privacy-handling` | `/privacy` | 308 |
-| `/docs/how-indxr-works/accuracy/{auto-captions,ai-transcription}` · `/docs/languages` · `/docs/accuracy*` | `/docs/how-indxr-works/accuracy` | 308 |
-| `/docs/how-indxr-works/api` · `/docs/limits` · `/docs/api` | `/docs/how-indxr-works/limits` | 308 |
-| `/docs/export-formats/*` | `/docs/how-indxr-works/export-formats/*` | 308 |
-| `/docs/help/faq` · `/faq` | `/docs/faq` | 308 |
-| `/docs/help/{how-to,troubleshooting}` · `/docs/{how-to,troubleshooting}` | `/articles` | 308 |
+| Van | Naar | Type | Reden |
+|-----|------|------|-------|
+| `/account/credits` | `${APP_URL}/dashboard/account` | 308 | cross-host (functioneel, geen doc-move) |
+| `/faq` | `/docs/faq` | 308 | korte URL die mensen intypen |
 
 ---
 

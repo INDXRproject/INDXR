@@ -25,10 +25,10 @@ Compact H1 + één zin subhead. Geen uitgebreide marketing-tekst.
 ### Sectie 3 — FeaturedDocsGrid
 
 4 prominente cards (anticipatory selection op basis van verwachte user-need pre-launch):
-- Quickstart (`/docs/getting-started`)
-- How INDXR works — Overview (`/docs/how-indxr-works/overview`)
+- Quickstart (`/docs/quickstart`)
+- How INDXR works — Overview (`/docs/how-indxr-works`)
 - How credits work (`/docs/how-indxr-works/credits`)
-- Export formats (`/docs/how-indxr-works/export-formats`)
+- Export formats (`/docs/reference/export-formats`)
 
 ### Sectie 4 — DocsCategorySection (4×)
 

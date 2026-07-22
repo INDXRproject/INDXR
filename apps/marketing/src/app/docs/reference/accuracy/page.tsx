@@ -20,7 +20,7 @@ export default function DocsAccuracyPage() {
     "@type": "TechArticle",
     headline: "Accuracy and languages",
     description: accDescription,
-    url: "https://indxr.ai/docs/how-indxr-works/accuracy",
+    url: "https://indxr.ai/docs/reference/accuracy",
   }
 
   return (
@@ -30,7 +30,7 @@ export default function DocsAccuracyPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Using INDXR", href: "/docs" },
+            { label: "Reference", href: "/docs" },
             { label: "Accuracy and languages" },
           ]}
         />
@@ -93,9 +93,9 @@ export default function DocsAccuracyPage() {
 
         <RelatedTopicsList
           topics={[
-            { label: "Overview", href: "/docs/how-indxr-works/overview" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
-            { label: "Limits", href: "/docs/how-indxr-works/limits" },
+            { label: "Overview", href: "/docs/how-indxr-works" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
+            { label: "Limits", href: "/docs/reference/limits" },
             { label: "Credits", href: "/docs/account/credits" },
           ]}
         />

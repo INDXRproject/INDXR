@@ -76,7 +76,7 @@ export default function DocsJsonPage() {
     "@type": "TechArticle",
     headline: "JSON and RAG JSON export",
     description: metadata.description,
-    url: "https://indxr.ai/docs/how-indxr-works/export-formats/json",
+    url: "https://indxr.ai/docs/reference/export-formats/json",
   }
 
   return (
@@ -86,7 +86,7 @@ export default function DocsJsonPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
             { label: "JSON / RAG JSON" },
           ]}
         />
@@ -170,7 +170,7 @@ export default function DocsJsonPage() {
         />
         <RelatedTopicsList
           topics={[
-            { label: "All export formats", href: "/docs/how-indxr-works/export-formats" },
+            { label: "All export formats", href: "/docs/reference/export-formats" },
             { label: "Credits", href: "/docs/account/credits" },
             { label: "Article: YouTube transcript JSON", href: "/articles/youtube-transcript-json" },
             { label: "Article: YouTube transcripts for RAG", href: "/articles/youtube-transcript-for-rag" },

@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 }
 
 const categoryIntros: Record<string, string> = {
-  "Start here": "New to INDXR? Begin here.",
-  "Using INDXR": "Extract, transcribe, and manage your transcripts.",
-  "Exports": "Every download format, and when to use each.",
-  "Account": "Credits, billing, settings, and limits.",
+  "Getting started": "New to INDXR? Learn what it does and get your first transcript.",
+  "Guides": "Step-by-step for each way of getting a transcript.",
+  "Reference": "Formats, accuracy, and limits — the exact details.",
+  "Account": "Credits, billing, and your settings.",
 }
 
 const collectionPageSchema = {

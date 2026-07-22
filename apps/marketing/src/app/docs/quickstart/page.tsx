@@ -56,7 +56,8 @@ export default function GettingStartedPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Getting started" },
+            { label: "Getting started", href: "/docs" },
+            { label: "Quickstart" },
           ]}
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Get your first transcript in 3 minutes</h1>
@@ -104,8 +105,8 @@ export default function GettingStartedPage() {
           steps={[
             { label: "Sign up for 25 free credits", href: "/signup", description: "Unlock playlists, AI transcription, all export formats, and your transcript library." },
             { label: "Credits", href: "/docs/account/credits", description: "Understand what uses credits and what's always free." },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats", description: "Markdown, CSV, SRT, VTT, JSON — when to use each." },
-            { label: "How INDXR works", href: "/docs/how-indxr-works/overview", description: "A technical overview of the extraction pipeline." },
+            { label: "Export formats", href: "/docs/reference/export-formats", description: "Markdown, CSV, SRT, VTT, JSON — when to use each." },
+            { label: "How INDXR works", href: "/docs/how-indxr-works", description: "A technical overview of the extraction pipeline." },
           ]}
         />
       </DocsShell>

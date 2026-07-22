@@ -42,7 +42,7 @@ export default function DocsMarkdownPage() {
     "@type": "TechArticle",
     headline: "Markdown export",
     description: metadata.description,
-    url: "https://indxr.ai/docs/how-indxr-works/export-formats/markdown",
+    url: "https://indxr.ai/docs/reference/export-formats/markdown",
   }
 
   return (
@@ -52,7 +52,7 @@ export default function DocsMarkdownPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
             { label: "Markdown" },
           ]}
         />
@@ -106,8 +106,8 @@ export default function DocsMarkdownPage() {
         />
         <RelatedTopicsList
           topics={[
-            { label: "All export formats", href: "/docs/how-indxr-works/export-formats" },
-            { label: "Plain text (TXT)", href: "/docs/how-indxr-works/export-formats/txt" },
+            { label: "All export formats", href: "/docs/reference/export-formats" },
+            { label: "Plain text (TXT)", href: "/docs/reference/export-formats/txt" },
             { label: "Article: YouTube transcript to Markdown", href: "/articles/youtube-transcript-markdown" },
             { label: "Article: Obsidian workflow", href: "/articles/youtube-transcript-obsidian" },
           ]}

@@ -84,8 +84,8 @@ export default function DocsComponentPreviewPage() {
 
       <RelatedTopicsList
         topics={[
-          { label: "Overview", href: "/docs/how-indxr-works/overview" },
-          { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
+          { label: "Overview", href: "/docs/how-indxr-works" },
+          { label: "Export formats", href: "/docs/reference/export-formats" },
         ]}
       />
     </DocsShell>

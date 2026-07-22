@@ -27,14 +27,14 @@ indxr.ai/  ── marketing (publiek)
 │    /transcribe                      3-tab gratis tool (video/playlist/audio)
 │
 ├─ 3 Product-documentatie  /docs/*     (DocsShell — kale referentie-specs)
-│    /docs                            hub (4 categorieën, ADR-074)
-│    Start here:   getting-started (Quickstart) · faq (FAQ)
-│    Using INDXR:  how-indxr-works/overview · …/accuracy · using-indxr/playlists*
-│                  · using-indxr/your-library* · how-indxr-works/summaries
-│    Exports:      how-indxr-works/export-formats/  (+ txt · markdown · csv · srt · vtt · json)
-│    Account:      account/credits* · account/billing* · account/settings* · how-indxr-works/limits
-│    (* = nieuw/gesplitst, ADR-074. account-and-data/ verwijderd: credits-and-billing gesplitst →
-│     credits+billing; data-handling → 308 /privacy. help/ weg — ADR-073. Categorie ≠ URL-prefix.)
+│    /docs                            hub (Diátaxis, 4 categorieën, ADR-075)
+│    Getting started: quickstart · how-indxr-works · faq
+│    Guides:          guides/single-video* · guides/playlists · guides/uploads*
+│                     · guides/library · guides/summaries
+│    Reference:       reference/export-formats/ (+ txt·markdown·csv·srt·vtt·json)
+│                     · reference/accuracy · reference/limits
+│    Account:         account/credits · account/billing · account/settings
+│    (* = nieuw, ADR-075. URL's weerspiegelen de categorie; redirects teruggebracht tot 2 regels.)
 │
 ├─ 4 Funnel-content / SEO  /articles/*  (het verhaal + use-case = de bron)
 │    /articles                        index (4 categorieën)
@@ -82,14 +82,14 @@ app.indxr.ai/  ── app (auth vereist)
 
 ### Groep 3 — Product-documentatie (`indxr.ai/docs/*`)
 
-Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/docs-config.ts`). De sidebar volgt **vier categorieën in gebruiksvolgorde** (ADR-074): Start here / Using INDXR / Exports / Account — categorie ≠ URL-prefix, bestaande URL's blijven stabiel. ADR-072: `how-indxr-works` 15→11 (`credits` weg, `accuracy`-subs+`languages`→`accuracy`, `api`→`limits`, nieuwe `summaries`). ADR-074: `credits-and-billing` gesplitst → `account/credits` + `account/billing`; `data-handling` verwijderd → 308 `/privacy`; nieuw `using-indxr/playlists`, `using-indxr/your-library`, `account/settings` (skeletons). Volledig uitgebouwd: `getting-started`, `overview`, `faq` + de export-format-specs. De rest is scaffold/skeleton. Redirects canoniek in `next.config.ts` (308, geen ketens).
+Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/docs-config.ts`). De sidebar volgt **Diátaxis** (ADR-075): **Getting started (leren) / Guides (doen) / Reference (opzoeken) / Account** — URL's weerspiegelen de categorie. ADR-075 verhuisde de pagina's (quickstart, `guides/*`, `reference/*`, `how-indxr-works` als één pagina) en voegde twee guides toe (`single-video`, `uploads`). Volledig geschreven: `quickstart`, `how-indxr-works`, `faq`, de 5 guides, `account/settings`, de export-format-specs + herschreven hub. `account/credits`/`billing` dragen nog `KHIDR`-stubs; `reference/accuracy`/`limits` zijn dun. **Redirects teruggebracht tot 2 regels** (pre-launch, geen externe links — ADR-075); interne links wijzen direct naar de echte route.
 
 | Pagina | Route | Doel (1 zin) | Belangrijkste claims | Status |
 |---|---|---|---|---|
 | Docs hub | `/docs` | Navigatiehub naar alle doc-categorieën. | Geen eigen productclaims; category-intro's. | live |
-| Getting started | `/docs/getting-started` | Quickstart naar eerste transcript. | Geen account voor single-video; captions "2–3 sec"; anoniem = Copy/TXT gratis; "Sign up to unlock MD/CSV/SRT/VTT/JSON"; geen captions → AI 1cr/min + account; **"Sign up for 25 free credits"**. | live |
-| Overview | `/docs/how-indxr-works/overview` | High-level pipeline-uitleg. | **VOLLEDIG geschreven** (ADR-072): captions-of-transcriptie, account-verschil, 7 formaten (6 gratis), library, summaries, credits — getallen uit `pricing.ts`. "Seven formats. Six of them free" (clash met export-formats opgelost). | live |
-| Accuracy and languages | `/docs/how-indxr-works/accuracy` | Nauwkeurigheid + talen (samengevoegd, ADR-072: absorbeert auto-captions + ai-transcription + languages). | Auto-captions (bron-afhankelijk) vs AI (`transcriptionModelName()`, ~99.4% clean English); 18 talen U3.5 Pro / 99 U2; **WER-tiers ≤10/10-25/25-50/>50%** (bron: AssemblyAI). | live (skeleton+merge) |
+| Getting started | `/docs/quickstart` | Quickstart naar eerste transcript. | Geen account voor single-video; captions "2–3 sec"; anoniem = Copy/TXT gratis; "Sign up to unlock MD/CSV/SRT/VTT/JSON"; geen captions → AI 1cr/min + account; **"Sign up for 25 free credits"**. | live |
+| Overview | `/docs/how-indxr-works` | High-level pipeline-uitleg. | **VOLLEDIG geschreven** (ADR-072): captions-of-transcriptie, account-verschil, 7 formaten (6 gratis), library, summaries, credits — getallen uit `pricing.ts`. "Seven formats. Six of them free" (clash met export-formats opgelost). | live |
+| Accuracy and languages | `/docs/reference/accuracy` | Nauwkeurigheid + talen (samengevoegd, ADR-072: absorbeert auto-captions + ai-transcription + languages). | Auto-captions (bron-afhankelijk) vs AI (`transcriptionModelName()`, ~99.4% clean English); 18 talen U3.5 Pro / 99 U2; **WER-tiers ≤10/10-25/25-50/>50%** (bron: AssemblyAI). | live (skeleton+merge) |
 | Export formats (hub) | `…/export-formats` | Overzicht formaten. | **"seven formats"** (2 TXT-varianten apart geteld) → botst met overview. | placeholder |
 | Export — txt | `…/export-formats/txt` | TXT-spec. | `[HH:MM:SS]`; "TXT is the only format available to anonymous users". | placeholder |
 | Export — markdown | `…/export-formats/markdown` | Markdown-spec. | YAML-frontmatter (titel/URL/datum/duur); Obsidian/Notion/Logseq. | placeholder |
@@ -101,8 +101,8 @@ Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/do
 | Limits | `…/limits` | Rate/size/duur-limieten (absorbeert `api`, ADR-072). | Nu wél concrete getallen (ADR-071): AI-transcriptie ≤10u, playlist ≤500/job, rate limits; captions geen duur-cap; geen publieke REST API. | placeholder (thin) |
 | Credits | `/docs/account/credits` | Credit-kosten, reserve-model, refunds (gesplitst uit credits-and-billing, ADR-074). | Captions 0cr; AI 1cr/min; summary 3cr; nooit verlopen; **auto-refund bij mislukte AI-operatie**. `KHIDR:` TODO-secties. | live (stub) |
 | Billing and invoices | `/docs/account/billing` | Kopen, facturen, aankoophistorie, VAT-scope (gesplitst, ADR-074; bevat het VAT-antwoord uit de FAQ). | One-time packages (verwijst naar /pricing); VAT NL+OSS, UK/CH aparte registratie. `KHIDR:` TODO. | live (stub) |
-| Playlists | `/docs/using-indxr/playlists` | Playlist-job (nieuw, ADR-074). | Per-video keuze; eerste 3 captions gratis; credits vooraf gereserveerd, ongebruikt terug; draait door na tab-sluit; ≤500/job. | live (skeleton) |
-| Your library | `/docs/using-indxr/your-library` | Bibliotheek (nieuw, ADR-074). | Transcripten bewaard; bewerkbaar met origineel behouden; collecties; zoeken; verwijderen. | live (skeleton) |
+| Playlists | `/docs/guides/playlists` | Playlist-job (nieuw, ADR-074). | Per-video keuze; eerste 3 captions gratis; credits vooraf gereserveerd, ongebruikt terug; draait door na tab-sluit; ≤500/job. | live (skeleton) |
+| Your library | `/docs/guides/library` | Bibliotheek (nieuw, ADR-074). | Transcripten bewaard; bewerkbaar met origineel behouden; collecties; zoeken; verwijderen. | live (skeleton) |
 | Settings | `/docs/account/settings` | Voorkeuren (nieuw, ADR-074). | RAG-chunkgrootte 30/60/90/120s (standaard 60); e-mailvoorkeuren; account verwijderen → /privacy. | live (skeleton) |
 | ~~Data handling~~ | *verwijderd (ADR-074)* | Dubbeling met `/privacy`. | 308 → `/privacy`; FAQ-vraag "What happens to my audio and transcripts?" + link. | verwijderd |
 | ~~How-to hub~~ | *verwijderd (ADR-073)* | — | 308 → `/articles` (Workflows dekt dit). | verwijderd |
@@ -214,7 +214,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 | **Formaten-overzicht** | `…/export-formats` (hub) — **alleen** overzichtstabel + doorverwijzing | `/articles` (categorie *Export Formats*) — de losse verhalen |
 | **Troubleshooting** | *(geen docs-hub meer — ADR-073)* de **`/articles`-index** (categorie Troubleshooting) is de index | `not-available` · `non-english` · `without-extension` · `age-restricted` · `members-only` |
 
-*Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (Accuracy and languages), `limits`, `summaries`, `using-indxr/playlists`, `using-indxr/your-library`, `account/settings`. *Data-retentie:* geen aparte docs-pagina meer — `/privacy` draagt dit (ADR-074). *Credits:* `/pricing` + `/docs/account/credits` dragen dit — de dubbele `…/how-indxr-works/credits` is **verwijderd** (308 → `account/credits`).
+*Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (Accuracy and languages), `limits`, `summaries`, `guides/playlists`, `guides/library`, `account/settings`. *Data-retentie:* geen aparte docs-pagina meer — `/privacy` draagt dit (ADR-074). *Credits:* `/pricing` + `/docs/account/credits` dragen dit — de dubbele `…/how-indxr-works/credits` is **verwijderd** (308 → `account/credits`).
 
 ---
 

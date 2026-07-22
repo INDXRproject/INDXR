@@ -81,7 +81,8 @@ Alle SEO-content (huidige 18 top-level pagina's + 3 blog-artikelen) gaat naar `/
 
 ## 6. Categorische docs structuur
 
-> **⚠ Vervangen door ADR-072/073/074 en de docs-restructure-taak (2026-07-22).** De hieronder
+> **⚠ Vervangen door ADR-072/073/074/075 en de docs-restructure-taken (2026-07-22).** De actuele
+> indeling is Diátaxis (Getting started / Guides / Reference / Account, ADR-075). De hieronder
 > beschreven structuur (flat reference + `/docs/how-to/*` + `/docs/troubleshooting/*`) is niet
 > meer actueel: how-to/troubleshooting zijn verhuisd naar `/articles/*` en de docs volgen nu vier
 > categorieën in gebruiksvolgorde (Start here / Using INDXR / Exports / Account). Bron van waarheid =

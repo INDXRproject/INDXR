@@ -31,7 +31,7 @@ export default function DocsTxtPage() {
     "@type": "TechArticle",
     headline: "Plain text (TXT) export",
     description: metadata.description,
-    url: "https://indxr.ai/docs/how-indxr-works/export-formats/txt",
+    url: "https://indxr.ai/docs/reference/export-formats/txt",
   }
 
   return (
@@ -41,7 +41,7 @@ export default function DocsTxtPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
             { label: "Plain text (TXT)" },
           ]}
         />
@@ -80,8 +80,8 @@ export default function DocsTxtPage() {
         />
         <RelatedTopicsList
           topics={[
-            { label: "All export formats", href: "/docs/how-indxr-works/export-formats" },
-            { label: "Markdown", href: "/docs/how-indxr-works/export-formats/markdown" },
+            { label: "All export formats", href: "/docs/reference/export-formats" },
+            { label: "Markdown", href: "/docs/reference/export-formats/markdown" },
             { label: "Article: YouTube to text", href: "/articles/youtube-to-text" },
           ]}
         />

@@ -20,7 +20,7 @@ export default function DocsLimitsPage() {
     "@type": "TechArticle",
     headline: "Limits",
     description: metadata.description,
-    url: "https://indxr.ai/docs/how-indxr-works/limits",
+    url: "https://indxr.ai/docs/reference/limits",
   }
 
   return (
@@ -30,7 +30,7 @@ export default function DocsLimitsPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Account", href: "/docs" },
+            { label: "Reference", href: "/docs" },
             { label: "Limits" },
           ]}
         />
@@ -81,7 +81,7 @@ export default function DocsLimitsPage() {
         <AnchorHeading as="h2">No public API</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           INDXR is a web app — there is no public REST API. Everything runs through the interface; the
-          export formats (including <a className="text-[var(--accent)] hover:underline" href="/docs/how-indxr-works/export-formats/json">JSON and RAG JSON</a>) are how you get the data out programmatically.
+          export formats (including <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/json">JSON and RAG JSON</a>) are how you get the data out programmatically.
         </p>
 
         <SourcesBlock
@@ -92,9 +92,9 @@ export default function DocsLimitsPage() {
         />
         <RelatedTopicsList
           topics={[
-            { label: "Overview", href: "/docs/how-indxr-works/overview" },
+            { label: "Overview", href: "/docs/how-indxr-works" },
             { label: "Credits", href: "/docs/account/credits" },
-            { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
+            { label: "Export formats", href: "/docs/reference/export-formats" },
           ]}
         />
       </DocsShell>
