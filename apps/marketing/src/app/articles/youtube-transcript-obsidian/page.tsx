@@ -64,6 +64,7 @@ const sources = [
 export default function YouTubeTranscriptObsidianPage() {
   return (
     <ToolPageTemplate
+      category="Workflows"
       title="YouTube Transcript to Obsidian — Works When Plugins Break"
       metaDescription="YTranscript and Obsidian Web Clipper break when YouTube updates its UI. INDXR.AI exports transcripts as Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp links — server-side, no plugin required."
       publishedAt="2026-04-16"

@@ -44,6 +44,7 @@ const faqs = [
 export default function YouTubeToTextPage() {
   return (
     <ToolPageTemplate
+      category="Export Formats"
       title="YouTube to text — what you actually get"
       metaDescription="Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — six export formats, nine output options."
       publishedAt="2026-04-16"

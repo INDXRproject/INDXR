@@ -39,6 +39,7 @@ const sources = [
 export default function YouTubeTranscriptCsvPage() {
   return (
     <ToolPageTemplate
+      category="Export Formats"
       title="Download YouTube Transcripts as CSV — Spreadsheet-Ready Data"
       metaDescription="Export YouTube transcripts as CSV with segment index, start and end timestamps, text, and word count. UTF-8 BOM for Excel compatibility."
       publishedAt="2026-04-16"

@@ -38,6 +38,15 @@ const articles = [
 
 const categories = Array.from(new Set(articles.map((a) => a.category)))
 
+// Per-category accent token — same mapping as the article banners, so the index
+// and the article headers read as one system.
+const CATEGORY_TOKEN: Record<string, string> = {
+  "Troubleshooting": "--warning",
+  "Export Formats": "--accent",
+  "Workflows": "--success",
+  "Deep Dives": "--violet",
+}
+
 export default function ArticlesPage() {
   return (
     <>
@@ -49,28 +58,39 @@ export default function ArticlesPage() {
           Guides, tutorials, and reference on YouTube transcripts — formats, workflows, troubleshooting, and AI transcription.
         </p>
 
-        <div className="space-y-12">
-          {categories.map((category) => (
-            <section key={category}>
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-[var(--fg-muted)] mb-4">
-                {category}
-              </h2>
-              <ul className="space-y-3.5">
-                {articles
-                  .filter((a) => a.category === category)
-                  .map((article) => (
-                    <li key={article.href}>
-                      <Link href={article.href} className="group block">
-                        <span className="text-sm font-medium text-[var(--fg)] group-hover:text-[var(--accent)] transition-colors">
-                          {article.label}
-                        </span>
-                        <span className="block text-sm text-[var(--fg-muted)]">{article.description}</span>
-                      </Link>
-                    </li>
-                  ))}
-              </ul>
-            </section>
-          ))}
+        <div className="space-y-14">
+          {categories.map((category) => {
+            const color = `var(${CATEGORY_TOKEN[category] ?? "--accent"})`
+            return (
+              <section key={category}>
+                {/* Coloured eyebrow + hairline gives each category clear visual separation. */}
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color }}>
+                    {category}
+                  </h2>
+                  <span className="h-px flex-1 bg-[var(--border)]" />
+                </div>
+                <ul className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+                  {articles
+                    .filter((a) => a.category === category)
+                    .map((article) => (
+                      <li key={article.href}>
+                        <Link
+                          href={article.href}
+                          className="group block rounded-lg -mx-3 px-3 py-2.5 hover:bg-[var(--surface)] transition-colors"
+                        >
+                          <span className="block text-sm font-medium text-[var(--fg)] group-hover:text-[var(--accent)] transition-colors">
+                            {article.label}
+                          </span>
+                          <span className="block text-sm text-[var(--fg-muted)] leading-snug mt-0.5">{article.description}</span>
+                        </Link>
+                      </li>
+                    ))}
+                </ul>
+              </section>
+            )
+          })}
         </div>
       </main>
     </>

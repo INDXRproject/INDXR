@@ -11563,3 +11563,48 @@ apps/marketing/src/app/signup/layout.tsx
 apps/marketing/src/app/terms/page.tsx
 apps/marketing/src/app/transcribe/layout.tsx
 ---
+[2026-07-23 01:26] commit: feat(marketing): night-run phase 3 — article banner (hexagon SVG) + articles index geleding
+
+- New ArticleBanner component: a calm honeycomb field (inline SVG, masked to fade
+  left) + a soft corner wash + the title as text. No logo. All colour from OKLCH
+  tokens, so light/dark are automatic. Per-category accent, all existing tokens:
+  Troubleshooting → --warning, Export Formats → --accent, Workflows → --success,
+  Deep Dives → --violet. Built as SVG in a component, not image files (per brief).
+  DECISION: kept the banner (restrained enough — low-opacity texture, one accent,
+  generous padding, title stays legible via the left mask). Not dropped.
+- Wired category into the 3 content templates (Article/Tool/Tutorial) as an optional
+  prop; renders the banner when present, falls back to the plain H1 otherwise (no
+  regression). Tagged all 18 article pages with their category (map = /articles index).
+- /articles index: coloured per-category eyebrow (same accent mapping) + dot + hairline
+  rule for clear geleding, two-column aligned list with breathing room and hover cards.
+  (/docs four-block alignment was already fixed via CSS columns earlier.)
+
+Both apps build green. NOTE (night report): the "one shared skeleton for every docs
+page/article" audit, DocsFigure slot fills, and a full mobile sweep are only partially
+addressed here — templates + DocsShell already impose most of the skeleton.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/chunk-youtube-transcripts-for-rag/page.tsx
+apps/marketing/src/app/articles/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-members-only-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-csv/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-markdown/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-not-available/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-obsidian/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
+apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
+apps/marketing/src/components/content/ArticleBanner.tsx
+apps/marketing/src/components/content/templates/ArticleTemplate.tsx
+apps/marketing/src/components/content/templates/ToolPageTemplate.tsx
+apps/marketing/src/components/content/templates/TutorialTemplate.tsx
+---

@@ -61,6 +61,7 @@ const sources = [
 export default function YouTubeTranscriptJsonPage() {
   return (
     <ToolPageTemplate
+      category="Export Formats"
       title="YouTube Transcript JSON Export — What You Actually Get"
       metaDescription="Export YouTube transcripts as structured JSON with video metadata, start/end timestamps, and channel info. Free for captioned videos. Real schema, real output, no surprises."
       publishedAt="2026-04-16"

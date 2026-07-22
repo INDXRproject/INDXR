@@ -49,6 +49,7 @@ const sources = [
 export default function AudioToTextPage() {
   return (
     <ToolPageTemplate
+      category="Workflows"
       title="Audio File to Text — Upload Any Audio, Get a Transcript"
       metaDescription={`Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by ${transcriptionModelName()}.`}
       publishedAt="2026-04-16"

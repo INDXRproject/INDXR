@@ -53,6 +53,7 @@ const sources = [
 export default function YouTubeTranscriptMarkdownPage() {
   return (
     <ToolPageTemplate
+      category="Export Formats"
       title="YouTube Transcript to Markdown — Obsidian, Notion & Blog Ready"
       metaDescription="Export YouTube transcripts as clean Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp deep links. Works when Obsidian plugins break. No extension required."
       publishedAt="2026-04-16"

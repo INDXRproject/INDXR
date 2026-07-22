@@ -37,6 +37,7 @@ const faqs = [
 export default function BulkYouTubeTranscriptPage() {
   return (
     <ToolPageTemplate
+      category="Workflows"
       title="Bulk YouTube Transcript Downloader — Extract Entire Playlists at Once"
       metaDescription="Download transcripts from entire YouTube playlists in one extraction. First 3 auto-caption videos free. Real-time progress. Export as TXT, Markdown, SRT, JSON, or RAG-ready ZIP."
       publishedAt="2026-04-16"

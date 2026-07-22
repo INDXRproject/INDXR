@@ -95,6 +95,7 @@ const steps = [
 export default function ChunkYouTubeTranscriptsForRAGPage() {
   return (
     <TutorialTemplate
+      category="Deep Dives"
       title="How to Chunk YouTube Transcripts for RAG (and Why 30 Seconds Is Wrong)"
       metaDescription="The chunk size you pick matters more than your embedding model. Research-backed guide covering optimal sizes, overlap, sentence-boundary snapping, and why 30 seconds is wrong."
       publishedAt="2026-04-16"

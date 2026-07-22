@@ -45,6 +45,7 @@ const sources = [
 export default function YouTubeAgeRestrictedTranscriptPage() {
   return (
     <ArticleTemplate
+      category="Troubleshooting"
       title="YouTube Age-Restricted Video Transcript — What's Possible"
       metaDescription="Age-restricted YouTube videos need authentication to access. Here's why standard transcript tools fail, what INDXR.AI shows you, and the audio upload workaround for videos you can legitimately watch."
       publishedAt="2026-04-16"

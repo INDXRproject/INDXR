@@ -44,6 +44,7 @@ const sources = [
 export default function YouTubeTranscriptWithoutExtensionPage() {
   return (
     <ArticleTemplate
+      category="Troubleshooting"
       title="Get YouTube Transcripts Without a Chrome Extension"
       metaDescription="Chrome extensions for YouTube transcripts break when YouTube updates its UI. INDXR.AI works in any browser without installation — paste a URL, get a transcript instantly."
       publishedAt="2026-04-16"
