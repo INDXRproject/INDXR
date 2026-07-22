@@ -60,10 +60,11 @@ export default function DocsOverviewPage() {
           instead, you switch that on before extracting.
         </p>
         <p className={P}>
-          <strong>A playlist.</strong> INDXR loads the videos and shows you what each one offers: which
-          have captions, which don&apos;t, and which can&apos;t be processed at all. You pick per video
-          whether to take the captions or transcribe, and the first {freeVideos} caption extractions
-          are free. The job then keeps running after you close the tab, and finished transcripts appear
+          <strong>A playlist.</strong> INDXR loads the videos it can reach and lists them. Nothing is
+          checked ahead of time — for each video you pick whether to take the free captions or transcribe
+          the audio, and the first {freeVideos} caption extractions are free. If a video turns out to have
+          no captions or can&apos;t be reached, it&apos;s skipped while the job runs and the credits held
+          for it come back. The job keeps running after you close the tab, and finished transcripts appear
           in your library as they complete.
         </p>
         <p className={P}>

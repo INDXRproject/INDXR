@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Settings, LogOut } from "lucide-react"
+import { User, Settings, LogOut, BookOpen, Newspaper, Shield, Scale } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import {
   DropdownMenu,
@@ -43,6 +43,33 @@ export function AvatarDropdown() {
           <a href="/dashboard/settings" className="flex items-center gap-2 cursor-pointer">
             <Settings className="h-4 w-4" />
             Settings
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {/* Cross-host to the marketing site (docs/articles/legal live there); new tab keeps the
+            app session open. */}
+        <DropdownMenuItem asChild>
+          <a href={marketingHref("/docs")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+            <BookOpen className="h-4 w-4" />
+            Docs
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href={marketingHref("/articles")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+            <Newspaper className="h-4 w-4" />
+            Articles
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href={marketingHref("/privacy")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+            <Shield className="h-4 w-4" />
+            Privacy
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href={marketingHref("/terms")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+            <Scale className="h-4 w-4" />
+            Terms
           </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

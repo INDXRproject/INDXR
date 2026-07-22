@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { DocsHubHero } from "@/components/docs/DocsHubHero"
-import { FeaturedDocsGrid } from "@/components/docs/FeaturedDocsGrid"
 import { DocsCategorySection } from "@/components/docs/DocsCategorySection"
 import { docsConfig } from "@/lib/docs-config"
 
@@ -35,8 +34,10 @@ export default function DocsPage() {
       <div className="min-h-screen bg-[var(--bg)] pt-16">
         <div className="max-w-4xl mx-auto px-4 pb-16">
           <DocsHubHero />
-          <FeaturedDocsGrid />
-          <div className="grid sm:grid-cols-2 gap-8">
+          {/* CSS multi-column (not a 2-col grid): blocks flow and balance by height so the
+              short categories don't leave a gap beside the tall one. break-inside-avoid on each
+              section keeps a block intact within one column. */}
+          <div className="columns-1 sm:columns-2 gap-8">
             {docsConfig.sections.map((section) => (
               <DocsCategorySection
                 key={section.label}

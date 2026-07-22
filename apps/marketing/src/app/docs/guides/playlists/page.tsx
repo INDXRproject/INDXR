@@ -53,7 +53,7 @@ export default function DocsPlaylistsPage() {
           The flow is four steps, and you decide the cost before anything is charged.
         </p>
         <ol className="list-decimal pl-5 space-y-1.5 text-[var(--fg-subtle)] leading-relaxed">
-          <li>Paste the playlist URL. INDXR lists the videos it can reach; any that are private, members-only, or deleted are marked unavailable and left out.</li>
+          <li>Paste the playlist URL. INDXR lists the videos it can reach; any that YouTube doesn&apos;t return — private or deleted — are counted as unavailable and left out.</li>
           <li>For each video, choose how it&apos;s transcribed — free auto-captions, or AI transcription (which uses credits). Nothing is checked ahead of time.</li>
           <li>Review the total, then start. Credits are reserved up front for the whole job. If a video turns out to have no captions or can&apos;t be reached, it&apos;s skipped during extraction and the credits held for it come back.</li>
           <li>Let it run. The job continues in the background — you can close the tab and the transcripts appear in your <a className="text-[var(--accent)] hover:underline" href="/docs/guides/library">library</a> as they finish.</li>
