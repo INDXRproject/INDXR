@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Footer } from "@indxr/shared/components/Footer"
 import { DocsShell } from "@/components/docs/DocsShell"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 
@@ -19,7 +18,6 @@ export default function DocsTroubleshootingPage() {
           Troubleshooting guides coming soon — check back as we add content.
         </p>
       </DocsShell>
-      <Footer />
     </>
   )
 }

@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Footer } from "@indxr/shared/components/Footer"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
@@ -48,7 +47,6 @@ export default function AboutPage() {
           </p>
         </section>
       </main>
-      <Footer />
     </>
   )
 }

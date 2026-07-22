@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Footer } from "@indxr/shared/components/Footer"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { DocsHubHero } from "@/components/docs/DocsHubHero"
 import { FeaturedDocsGrid } from "@/components/docs/FeaturedDocsGrid"
@@ -46,7 +45,6 @@ export default function DocsPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   )
 }

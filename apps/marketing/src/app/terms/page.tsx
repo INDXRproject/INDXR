@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Footer } from "@indxr/shared/components/Footer"
 
 export const metadata: Metadata = {
   title: "Terms of Service — INDXR.AI",
@@ -197,7 +196,6 @@ export default function TermsPage() {
           </section>
         </div>
       </main>
-      <Footer />
     </>
   )
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@indxr/shared/components/ui/button"
-import { Footer } from "@indxr/shared/components/Footer"
 import { ArrowRight } from "lucide-react"
 import { DocsShell } from "@/components/docs/DocsShell"
 
@@ -204,7 +203,6 @@ export default function DocsFaqPage() {
           </div>
         </article>
       </DocsShell>
-      <Footer />
     </>
   )
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Footer } from "@indxr/shared/components/Footer"
 
 export const metadata: Metadata = {
   title: "Articles — YouTube Transcript Guides & Tutorials | INDXR.AI",
@@ -72,7 +71,6 @@ export default function ArticlesPage() {
           ))}
         </div>
       </main>
-      <Footer />
     </>
   )
 }

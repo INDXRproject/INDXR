@@ -3,7 +3,6 @@ import { DocsShell } from "@/components/docs/DocsShell"
 import { appHref } from "@indxr/shared/lib/cross-host-links"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
-import { Footer } from "@indxr/shared/components/Footer"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
@@ -72,7 +71,6 @@ export default function DocsCreditsAndBillingPage() {
           ]}
         />
       </DocsShell>
-      <Footer />
     </>
   )
 }

@@ -6,7 +6,6 @@
 import { useState } from "react"
 import { HelpCircle, Lightbulb, Send, CheckCircle } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
-import { Footer } from "@indxr/shared/components/Footer"
 import { appHref } from "@indxr/shared/lib/cross-host-links"
 
 type Category = "help" | "feedback"
@@ -166,7 +165,6 @@ export default function SupportPage() {
           )}
         </div>
       </div>
-      <Footer />
     </>
   )
 }

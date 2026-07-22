@@ -9,7 +9,6 @@ import { PlaylistTab } from "@indxr/shared/components/free-tool/PlaylistTab"
 import { AudioTab } from "@indxr/shared/components/free-tool/AudioTab"
 import { TranscriptItem } from "@indxr/shared/components/TranscriptCard"
 import { TranscriptMetadata } from "@indxr/shared/types/transcript"
-import { Footer } from "@indxr/shared/components/Footer"
 import { MicroTrustRow } from "@/components/marketing/MicroTrustRow"
 import { FrictionConversionCard } from "@/components/marketing/FrictionConversionCard"
 import { PricingTeaserBlock } from "@/components/marketing/PricingTeaserBlock"
@@ -204,7 +203,6 @@ export default function FreeToolPage() {
         secondaryHref="/transcribe"
       />
 
-      <Footer />
     </>
   )
 }

@@ -10850,3 +10850,55 @@ docs/wiki/business/content-sitemap.md
 docs/wiki/content/product-truth.md
 docs/wiki/decisions/072-docs-how-indxr-works-restructure.md
 ---
+[2026-07-22 21:00] docs-shell afmaken + site-brede dubbele-footer fix (marketing, layout/nav only). (1) "Articles →"-link uit docs-sidebar-kop + mobiele rij verwijderd (redundant, staat in top-navbar). (2) InPageTOC gebouwd (nieuw `components/docs/InPageTOC.tsx`): sticky scroll-spy rechterkolom, IntersectionObserver-active-highlight, gevoed door AnchorHeadings (`#docs-content h2/h3[id]`), `xl+`-only, verbergt bij <2 headings — vult de lege rechterhelft. (3) Mobile pass: `DocsMobileNav.tsx` (Sheet-drawer via menu-icoon) opent de volledige DocsSidebar op mobiel; DocsShell mobiele nav-rij herzien; header-offset klopt smal. (4) Dubbele footer site-breed: root-layout rendert 1 + 26 pagina's renderden er zelf 1 (=2 live op overview/pricing/articles). Fix op één plek: layout-`<Footer/>` is de bron; per-pagina `<Footer/>` + import uit alle 26 verwijderd (de andere 23 pagina's, incl. losse artikelen/auth, leunden al op de layout). Build 2/2 groen. Docs: reference-doc.md status (InPageTOC gebouwd + mobile pass). | gewijzigd: DocsShell.tsx, InPageTOC.tsx (nieuw), DocsMobileNav.tsx (nieuw), 26× page.tsx (footer weg), reference-doc.md, LOG.md
+[2026-07-22 16:04] commit: feat(docs): InPageTOC + mobile nav drawer + site-wide single-footer fix
+
+Layout/nav only, no content changes.
+
+1. Removed the redundant "Articles →" link from the docs sidebar head and mobile
+   row (Articles is already in the top navbar).
+2. InPageTOC (new): sticky scroll-spy "On this page" TOC in the right rail, fed by
+   the existing AnchorHeadings (#docs-content h2/h3[id]) via IntersectionObserver;
+   shown on xl+, hidden below, and self-hides on pages with <2 headings.
+3. Mobile pass: DocsMobileNav (new) opens the full docs sidebar in a left Sheet
+   drawer via a menu icon — the sidebar is otherwise unreachable on mobile.
+4. Double footer (site-wide): the root layout renders <Footer/> and 26 pages also
+   rendered their own (= 2 live on overview/pricing/articles). Fixed in one place:
+   the layout is the single source; removed the per-page <Footer/> + import from all
+   26. The other 23 pages (individual articles, auth) already relied on the layout.
+
+Build 2/2 green. reference-doc.md status updated (InPageTOC built, mobile pass done).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/about/page.tsx
+apps/marketing/src/app/articles/page.tsx
+apps/marketing/src/app/contact/page.tsx
+apps/marketing/src/app/docs/account-and-data/credits-and-billing/page.tsx
+apps/marketing/src/app/docs/account-and-data/data-handling/page.tsx
+apps/marketing/src/app/docs/getting-started/page.tsx
+apps/marketing/src/app/docs/help/faq/page.tsx
+apps/marketing/src/app/docs/help/how-to/page.tsx
+apps/marketing/src/app/docs/help/troubleshooting/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/accuracy/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/csv/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/json/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/markdown/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/srt/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/txt/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/vtt/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/limits/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/overview/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/summaries/page.tsx
+apps/marketing/src/app/docs/page.tsx
+apps/marketing/src/app/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/app/privacy/page.tsx
+apps/marketing/src/app/terms/page.tsx
+apps/marketing/src/app/transcribe/page.tsx
+apps/marketing/src/components/docs/DocsMobileNav.tsx
+apps/marketing/src/components/docs/DocsShell.tsx
+apps/marketing/src/components/docs/InPageTOC.tsx
+docs/LOG.md
+docs/wiki/architecture/page-structures/reference-doc.md
+---

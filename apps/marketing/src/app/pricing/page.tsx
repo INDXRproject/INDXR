@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Footer } from "@indxr/shared/components/Footer"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { PricingHero } from "@/components/pricing/PricingHero"
@@ -136,8 +135,6 @@ export default function PricingPage() {
         </div>
       </div>
 
-      {/* Section 10 — Footer */}
-      <Footer />
     </>
   )
 }

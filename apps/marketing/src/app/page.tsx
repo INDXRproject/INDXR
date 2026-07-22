@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { Footer } from "@indxr/shared/components/Footer"
 import { HeroImage } from "@/components/marketing/HeroImage"
 import { HowItWorksBlock } from "@/components/marketing/HowItWorksBlock"
 import { MacbookMockupFrame } from "@/components/marketing/MacbookMockupFrame"
@@ -151,8 +150,6 @@ export default function LandingPage() {
       {/* Section 7 — Closing CTA */}
       <ClosingCTASection />
 
-      {/* Section 8 — Footer */}
-      <Footer />
     </>
   )
 }

@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Footer } from "@indxr/shared/components/Footer"
 
 export const metadata: Metadata = {
   title: "Privacy Policy — INDXR.AI",
@@ -162,7 +161,6 @@ export default function PrivacyPage() {
           </section>
         </div>
       </main>
-      <Footer />
     </>
   )
 }

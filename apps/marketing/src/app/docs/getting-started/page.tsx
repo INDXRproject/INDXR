@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Footer } from "@indxr/shared/components/Footer"
 import { DocsShell } from "@/components/docs/DocsShell"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { TutorialOpening } from "@/components/docs/TutorialOpening"
@@ -110,7 +109,6 @@ export default function GettingStartedPage() {
           ]}
         />
       </DocsShell>
-      <Footer />
     </>
   )
 }

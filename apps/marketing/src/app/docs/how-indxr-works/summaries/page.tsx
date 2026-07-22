@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Footer } from "@indxr/shared/components/Footer"
 import { DocsShell } from "@/components/docs/DocsShell"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
@@ -66,7 +65,6 @@ export default function DocsSummariesPage() {
           ]}
         />
       </DocsShell>
-      <Footer />
     </>
   )
 }

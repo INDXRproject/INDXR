@@ -90,6 +90,7 @@ Pass later.
 
 - [x] Wiki documentatie (deze file)
 - [x] Skeleton implementatie
+- [x] **InPageTOC gebouwd** (2026-07-22, ADR-072) — sticky scroll-spy rechterkolom, gevoed door de AnchorHeadings (`#docs-content h2/h3[id]`), zichtbaar op `xl+`, verborgen daaronder; verbergt zichzelf bij <2 headings.
+- [x] **Mobile pass gedaan** (2026-07-22, ADR-072) — docs-sidebar bereikbaar op mobiel via `DocsMobileNav` (Sheet-drawer, menu-icoon) in de mobiele nav-rij; header-offset (`pt-16`) klopt op smalle schermen.
 - [ ] Claude Design rondje
 - [ ] Content writing (DefinitionLeadOpening per pagina)
-- [ ] Mobile pass
