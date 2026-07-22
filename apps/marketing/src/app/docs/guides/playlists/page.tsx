@@ -53,9 +53,9 @@ export default function DocsPlaylistsPage() {
           The flow is four steps, and you decide the cost before anything is charged.
         </p>
         <ol className="list-decimal pl-5 space-y-1.5 text-[var(--fg-subtle)] leading-relaxed">
-          <li>Paste the playlist URL. INDXR runs an availability check on every video and marks each one as <strong>has captions</strong>, <strong>needs AI</strong>, or <strong>unavailable</strong>.</li>
-          <li>Choose per video: take the free captions, or switch that video to AI transcription. Unavailable videos are skipped.</li>
-          <li>Review the credit estimate, then start. Credits are reserved up front for the whole job.</li>
+          <li>Paste the playlist URL. INDXR lists the videos it can reach; any that are private, members-only, or deleted are marked unavailable and left out.</li>
+          <li>For each video, choose how it&apos;s transcribed — free auto-captions, or AI transcription (which uses credits). Nothing is checked ahead of time.</li>
+          <li>Review the total, then start. Credits are reserved up front for the whole job. If a video turns out to have no captions or can&apos;t be reached, it&apos;s skipped during extraction and the credits held for it come back.</li>
           <li>Let it run. The job continues in the background — you can close the tab and the transcripts appear in your <a className="text-[var(--accent)] hover:underline" href="/docs/guides/library">library</a> as they finish.</li>
         </ol>
 
@@ -80,8 +80,9 @@ export default function DocsPlaylistsPage() {
 
         <SourcesBlock
           sources={[
-            { publisher: "INDXR (own code)", supports: "per-video availability check (has captions / needs AI / unavailable)", verifiedAgainst: "apps/app/src/app/api/check-playlist-availability/route.ts (route.ts:9,64-74)" },
-            { publisher: "INDXR (own code)", supports: "first-3-free, per-video and per-minute cost, 500-video cap and ≥50 warning", verifiedAgainst: "backend/worker.py:431; backend/main.py:780,1340-1344; packages/shared/src/components/PlaylistManager.tsx:354,381; packages/shared/src/lib/pricing.ts" },
+            { publisher: "INDXR (own code)", supports: "unavailable videos come from the playlist fetch (not a per-video check); the review screen only lets you pick captions vs AI", verifiedAgainst: "backend/main.py:684 + backend/youtube_client.py:119 (unavailable_count); packages/shared/src/components/PlaylistManager.tsx:253 (handleCheckAvailability — no check)" },
+            { publisher: "INDXR (own code)", supports: "a video that can't be transcribed is skipped and its reserved credits are returned", verifiedAgainst: "backend/worker.py:288,520-521,543-548 (no_captions/members_only skip + reservation refund)" },
+            { publisher: "INDXR (own code)", supports: "first-3-free, per-video and per-minute cost, 500-video cap and ≥50 warning", verifiedAgainst: "backend/worker.py:431; backend/main.py:780,1340-1344; packages/shared/src/components/PlaylistManager.tsx; packages/shared/src/lib/pricing.ts" },
             { publisher: "INDXR (own code)", supports: "reserve up front, settle per video, refund the unused remainder; runs in background", verifiedAgainst: "backend/credit_manager.py:242-331 (reserve/settle/refund_credits); backend/main.py:1410-1442" },
           ]}
         />

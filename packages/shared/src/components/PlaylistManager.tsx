@@ -306,7 +306,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       setShowAvailabilityModal(true);
 
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to check availability";
+      const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
       setInlineError(message);
       onError(message);
     } finally {
@@ -621,6 +621,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
           results={availabilityResults}
           summary={availabilitySummary}
           userCredits={credits}
+          unavailableCount={missingCount}
           existingDuplicates={existingDuplicates} // <--- Added this line
           onProceed={handleProceedWithExtraction}
           onCancel={() => {
@@ -675,12 +676,12 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                     {isCheckingAvailability ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Checking...
+                        Preparing…
                       </>
                     ) : (
                       <>
                         <Search className="h-4 w-4 mr-2" />
-                        Check Availability
+                        Review extraction
                       </>
                     )}
                   </Button>

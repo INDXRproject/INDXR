@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Coins, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Coins, Info, XCircle } from "lucide-react";
 import Image from "next/image";
 import { marketingHref } from "../lib/cross-host-links";
 import { useState } from "react";
@@ -28,12 +28,15 @@ interface PlaylistAvailabilitySummaryProps {
   results: VideoAvailability[]
   summary?: AvailabilitySummary // Mark as optional and keep for backward compat if needed, but not used now
   userCredits: number | null
+  // Real count of videos the playlist fetch (yt-dlp) could not resolve — private, members-only,
+  // or deleted. These were already excluded from the selection; shown here for context.
+  unavailableCount: number
   existingDuplicates: Record<string, Array<{ transcriptId: string; processingMethod: string }>>
   onProceed: (results: VideoAvailability[], duplicateAction?: 'replace' | 'reset') => void
   onCancel: () => void
 }
 
-export function PlaylistAvailabilitySummary({ results, userCredits, existingDuplicates, onProceed, onCancel }: PlaylistAvailabilitySummaryProps) {
+export function PlaylistAvailabilitySummary({ results, userCredits, unavailableCount, existingDuplicates, onProceed, onCancel }: PlaylistAvailabilitySummaryProps) {
   const [expandedSection, setExpandedSection] = useState<'captions' | 'unavailable' | null>('unavailable')
 
   const isDuplicateForStatus = (videoId: string, status: string): boolean => {
@@ -125,8 +128,8 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
     <div className="bg-surface border border-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500 my-6 shadow-lg">
       <div className="p-6 border-b border-border bg-surface-elevated/30 flex justify-between items-center">
         <div>
-           <h3 className="text-lg font-semibold text-fg mb-1">Availability Breakdown</h3>
-           <p className="text-sm text-fg-muted">Review extraction details before proceeding</p>
+           <h3 className="text-lg font-semibold text-fg mb-1">Before you start</h3>
+           <p className="text-sm text-fg-muted">Choose how each video is transcribed, and see what it costs.</p>
         </div>
         
         {/* Global Whisper Toggle */}
@@ -148,10 +151,10 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
           <div className="p-4 rounded-xl bg-success-subtle border border-success/20">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="h-5 w-5 text-success" />
-              <span className="font-semibold text-success-fg dark:text-success">Free</span>
+              <span className="font-semibold text-success-fg dark:text-success">Using free auto-captions</span>
             </div>
             <div className="text-3xl font-bold text-fg mb-1">{currentSummary.hasCaptions}</div>
-            <div className="text-sm text-fg-muted">videos with auto-captions</div>
+            <div className="text-sm text-fg-muted">videos</div>
           </div>
 
           {/* Needs Whisper */}
@@ -170,9 +173,18 @@ export function PlaylistAvailabilitySummary({ results, userCredits, existingDupl
               <XCircle className="h-5 w-5 text-error" />
               <span className="font-semibold text-error-fg dark:text-error-fg">Unavailable</span>
             </div>
-            <div className="text-3xl font-bold text-fg mb-1">{currentSummary.unavailable}</div>
-            <div className="text-sm text-fg-muted">videos will be skipped</div>
+            <div className="text-3xl font-bold text-fg mb-1">{unavailableCount}</div>
+            <div className="text-sm text-fg-muted">private, members-only, or deleted — not included</div>
           </div>
+        </div>
+
+        <div className="flex items-start gap-2 text-xs text-fg-muted bg-surface-elevated/30 border border-border rounded-lg px-3 py-2">
+          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            Nothing is checked in advance. If a video turns out to have no captions, or is private or
+            members-only, it&apos;s skipped during extraction with a note — and any credits held for it
+            are returned to your balance.
+          </span>
         </div>
 
         {/* Detailed Breakdown */}

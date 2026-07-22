@@ -11380,3 +11380,35 @@ packages/shared/src/components/TranscriptCard.tsx
 packages/shared/src/contexts/AuthContext.tsx
 packages/shared/src/lib/pricing.ts
 ---
+
+[2026-07-23 00:00] taak: playlist "Check Availability"-scherm ontdaan van valse pre-check-suggestie (ADR-076) — het scherm controleerde niets (zette alles op has_captions/0), dus hernoemd naar wat het is: een keuze-/kostenscherm ("Review extraction" knop, "Before you start" kaart, "Using free auto-captions" groen vak). Rode Unavailable-teller nu gevuld met het echte getal uit de playlist-fetch (playlist.unavailable_count, yt-dlp: private/members-only/deleted) via nieuwe prop unavailableCount i.p.v. de altijd-0. Nieuw Info-vak legt uit dat niets vooraf gecheckt wordt en credits terugkomen bij skip. Dode route check-playlist-availability (÷8-schatting, geen source-aanroeper) verwijderd uit beide apps. Docs playlists-pagina + SourcesBlock herschreven (verwijst nu naar echte code: playlist-fetch unavailable_count + worker skip/refund). Reservering/afrekening/teruggave ONAANGERAAKT. pnpm build 2/2 groen. | gewijzigd: packages/shared/src/components/PlaylistManager.tsx, packages/shared/src/components/PlaylistAvailabilitySummary.tsx, apps/marketing/src/app/docs/guides/playlists/page.tsx, docs/wiki/INDEX.md, docs/wiki/decisions/076-no-playlist-precheck.md; verwijderd: apps/app/src/app/api/check-playlist-availability/route.ts, apps/marketing/src/app/api/check-playlist-availability/route.ts
+---
+[2026-07-23 00:19] commit: refactor(playlist): drop false pre-check suggestion, rename review screen (ADR-076)
+
+Het "Check Availability"-scherm controleerde niets — het zette elke video optimistisch
+op has_captions/0 en toonde het scherm na een cosmetische delay. Hernoemd naar wat het
+feitelijk is: de laatste keuze-/kostenstap vóór de start.
+
+- Microcopy: "Check Availability" -> "Review extraction", "Availability Breakdown" ->
+  "Before you start", "Free" -> "Using free auto-captions".
+- Rode Unavailable-teller nu gevuld met het echte getal uit de playlist-fetch
+  (playlist.unavailable_count, yt-dlp: private/members-only/deleted) via nieuwe prop
+  unavailableCount, i.p.v. de altijd-0 uit de niet-controlerende stap.
+- Nieuw Info-vak: niets wordt vooraf gecheckt; een video zonder captions/onbereikbaar
+  wordt tijdens extractie overgeslagen en de gereserveerde credits komen terug.
+- Dode route check-playlist-availability (÷8-schatting, geen source-aanroeper)
+  verwijderd uit beide apps.
+- Docs playlists-pagina + SourcesBlock herschreven naar de echte code.
+
+Reservering/afrekening/teruggave onaangeraakt. pnpm build 2/2 groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/check-playlist-availability/route.ts
+apps/marketing/src/app/api/check-playlist-availability/route.ts
+apps/marketing/src/app/docs/guides/playlists/page.tsx
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/076-no-playlist-precheck.md
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/PlaylistManager.tsx
+---
