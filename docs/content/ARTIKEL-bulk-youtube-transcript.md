@@ -73,14 +73,14 @@ Every format is available in bulk:
 
 ## Playlist Size and Limits
 
-INDXR.AI handles playlists reliably in batches of up to 100 videos. For larger playlists, extract in batches — all results accumulate in the same library automatically. YouTube playlists can contain up to 5,000 videos; batch extraction in groups of 50–100 is the practical approach for large archives.
+INDXR.AI processes up to 500 videos per job. For larger playlists, split into batches of up to 500 videos — all results accumulate in the same library automatically. YouTube playlists can be larger, but INDXR processes up to 500 videos per job — split larger playlists into batches of 500 for large archives.
 
 ---
 
 ## Frequently Asked Questions
 
 **Is there a limit on how many videos I can extract?**
-No hard limit — extract as many as you have credits for. We recommend batches of up to 100 videos for reliable operation. Larger playlists can be broken into multiple extractions; all results go to the same library.
+INDXR.AI processes up to 500 videos per job. Larger playlists can be broken into multiple extractions of up to 500 videos each; all results go to the same library.
 
 **What happens if some videos fail?**
 Failures are shown in the completion screen with specific error types — bot detection, timeout, age-restricted, members-only. Videos that fail due to temporary issues (bot detection, timeouts) are automatically retried once. For persistent failures, you can extract individual videos separately.

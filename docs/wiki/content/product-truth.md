@@ -116,7 +116,7 @@ YouTube's auto-vertaalde tracks worden vermeden door tracks te kiezen waarvan de
 ## 4. Modelnamen — huidige waarheid + centralisatie-voorbereiding
 
 ### Live modellen (ground truth uit code) — bijgewerkt 2026-07-22 (ADR-070)
-- **Transcriptie (`speech_models` naar AssemblyAI):** chain **`["universal-3-5-pro", "universal-3-pro", "universal-2"]`** — `backend/assemblyai_client.py:19`. EU-endpoint `https://api.eu.assemblyai.com` (`:9`). Het feitelijk gedraaide model wordt teruggelezen via `speech_model_used` en opgeslagen in `transcription_jobs.assemblyai_model` (`:32`). Geen `nano`/`best`/`slam-1`.
+- **Transcriptie (`speech_models` naar AssemblyAI):** chain **`["universal-3-5-pro", "universal-2"]`** met `language_detection=True` — `backend/assemblyai_client.py:24-28` (ADR-071; `universal-3-pro` verwijderd — onbereikbaar want zijn 6 native talen ⊂ de 18 van 3.5 Pro). EU-endpoint `https://api.eu.assemblyai.com` (`:9`). Het feitelijk gedraaide model wordt teruggelezen via `speech_model_used` en opgeslagen in `transcription_jobs.assemblyai_model`. Geen `nano`/`best`/`slam-1`.
 - **`speech_models` is een TAAL-ROUTER, geen error-fallback.** AssemblyAI kiest het beste gevraagde model dat de gedetecteerde taal native dekt. Empirisch geverifieerd 2026-07-22 tegen de EU-endpoint met de Railway-key: **Engels → `universal-3-5-pro`, Arabisch → `universal-3-5-pro`** (Universal-3.5 Pro dekt Arabisch native — anders dan Universal-3 Pro, dat native maar 6 talen doet — EN/ES/PT/FR/DE/IT — en Arabisch naar Universal-2 stuurde). Talen die 3.5/3 Pro niet native dekken gaan naar Universal-2 (99 talen).
 - **AssemblyAI model-ids gebruiken streepjes:** `universal-3-5-pro` (NIET `universal-3.5-pro` — dat geeft een API-fout). Ids: `universal-2`, `universal-3-pro`, `universal-3-5-pro`.
 - **Per-model COR-tarief (ADR-070):** Universal-2 = **$0,15/uur**; Universal-3 Pro & Universal-3.5 Pro = **$0,21/uur**. GEEN EU-premie op speech-to-text (EU-prijs = US-prijs — anders dan de LLM Gateway, die 10% in-region-premie heeft). Tarieven in `cost_config` (USD opgeslagen, `usd_eur_rate` bij query); COR wordt **per run** berekend op basis van het vastgelegde effectieve model (`transcription_jobs.assemblyai_model`), nooit scope-gemiddeld. Legacy runs zonder model (pre-capture, NULL) → gedocumenteerde fallback $0,21/uur. Rate-helper: `public.assemblyai_stt_eur_per_min(model)`; gebruikt in `_geld_scope`. Zie [ADR-070](../decisions/070-per-model-stt-cor.md).
@@ -150,7 +150,7 @@ Bij een model-upgrade: wijzig `models.ts` (en de statische mirrors), niet ~30 lo
 **BUILT / LIVE:**
 - Alle 4 pricing-tiers + welcome-credits (25) + playlist-eerste-3-gratis.
 - Alle 7 export-formaten + anoniem-TXT-only-gating.
-- Caption-extractie (native-anchored), AI-transcriptie (chain `universal-3-5-pro`→`universal-3-pro`→`universal-2`, taal-router), AI-summary (`gemini-2.5-flash` via EU-gateway), playlist-batch, Tiptap-editor, library, collections (desktop-CRUD).
+- Caption-extractie (native-anchored), AI-transcriptie (chain `universal-3-5-pro`→`universal-2`, taal-router, ADR-071), AI-summary (`gemini-2.5-flash` via EU-gateway), playlist-batch, Tiptap-editor, library, collections (desktop-CRUD).
 - Reserve-/hold-creditmodel (default aan).
 - **Storage-indicator = 500 MB** — maar **alléén weergave** (zie hieronder).
 
@@ -180,16 +180,15 @@ Harde input-/limietfeiten uit de **code + eigen DB-meting**, als grondslag voor 
 - **Vercel 4,5MB-limiet omzeild:** de browser POST het bestand **direct naar Railway** via XHR naar `NEXT_PUBLIC_AUDIO_UPLOAD_URL` (`AudioTab.tsx:349,355,363`) — de Vercel-`/api/transcribe/whisper`-route wordt alleen voor het YouTube-pad gebruikt. Dus de 500 MB is een **eigen check** (client + Railway), niet de Vercel-body-limiet.
 - **(niet een cap):** >25 MB → audio wordt naar 12 kbps mono gecomprimeerd vóór AssemblyAI (`transcription_pipeline.py:534`, `audio_utils.py:347/362/377`) — downstream-compressie, geen weigering.
 
-### 6.2 Duur (video/audio) — **geen limiet in code**
-- **AI-transcriptie:** **geen max-duur.** Duur wordt alleen gebruikt voor credit-kost (`transcription_pipeline.py:483`, `main.py:885`) en schatting (`audio_utils.py:35-77`) — geen `duration >`-weigering in `main.py`/`audio_utils.py`/`transcription_pipeline.py`/`assemblyai_client.py`. Comments over "~5 uur binnen 25MB" (`audio_utils.py:237,377`) zijn bitrate-notities, geen afgedwongen cap.
-- **Caption-extractie:** **geen max-duur.** `youtube_client.py:85` leest duur alleen als metadata; geen lengte-weigering. (Geverifieerd: geen enkele duur-cap in code voor beide paden.)
+### 6.2 Duur (video/audio) — AI-transcriptie **10 uur** (afgedwongen, ADR-071)
+- **AI-transcriptie: max 10 uur** (`MAX_TRANSCRIPTION_SECONDS=36000`, `main.py`). Boven 10u → **422 `duration_exceeds_max`**, **vóór** de credit-reservering (YouTube via metadata-duur; upload via server-side probe). Reden: AssemblyAI's harde plafond is 10u audio (+ 5 GB — gedekt door de 500 MB-upload-cap). Een user raakt hier nooit credits aan kwijt (check zit vóór `reserve_credits`).
+- **Caption-extractie: geen duur-cap** (bewust — `youtube_client.py:85` leest duur alleen als metadata).
 
-### 6.3 Playlist — max video's & channel-URL's
-- **Backend-cap = 500 video's**, maar alleen bij **enumeratie**: `youtube_client.py:30` (`max_results=500`) + yt-dlp-fallback `'playlist_items': '1-500'` (`main.py:627`). YouTube API pagineert 50/req.
-- **De extract-route dwingt GÉÉN max af op het aantal video's:** Zod is `video_ids: z.array(...).min(1)` **zonder `.max()`** (`apps/app/src/app/api/playlist/extract/route.ts:11`); de backend weigert alleen een lege lijst (`main.py:1319-1320`). De 500-cap bijt dus bij *ophalen* (`playlist/info`), niet bij *indienen*.
-- **Frontend: geen harde cap** — `PlaylistManager.tsx:208` selecteert standaard de **eerste 10** (`slice(0,10)`), puur een default-vinkje, geen maximum.
-- **Concurrency-cap = 3 gelijktijdige jobs** per user (`MAX_CONCURRENT_JOBS=3`, `main.py:761`, afgedwongen `:1323-1327`) — niet een playlist-grootte-cap.
-- **Channel-URL's:** **geen expliciete channel-detectie.** `validateYouTubeUrl` (`packages/shared/src/utils/youtube.ts:21-46`) kent alleen `NON_YOUTUBE`/`VALID_PLAYLIST`/video/`MALFORMED` — géén `CHANNEL`-type. Een `youtube.com/@naam` heeft geen `list=` en geen 11-teken video-id → valt door naar **`MALFORMED`** en wordt generiek geweigerd ("Please enter a valid YouTube Playlist URL", `PlaylistManager.tsx:147-149`). Dus channel-URL's worden geweigerd, maar **incidenteel als malformed**, niet via een channel-specifieke regel.
+### 6.3 Playlist — max video's & channel-URL's (afgedwongen, ADR-071)
+- **Harde cap = 500 video's/job**, nu **afgedwongen op de extract-route** (`MAX_PLAYLIST_VIDEOS=500`): backend **422 `too_many_videos`** vóór job-rij + reservering (`main.py`), + Next.js Zod `.max(500)` (`apps/app/src/app/api/playlist/extract/route.ts`) als snelle client-gate. (Voorheen bat 500 alleen bij enumeratie — `youtube_client.py:30`, `main.py` yt-dlp `'1-500'` — terwijl indienen onbegrensd was.)
+- **Waarschuwing (niet-blokkerend) vanaf 50 geselecteerde video's** (`PlaylistManager`): "duurt ~M min; je kunt de tab sluiten". Drempel op basis van gemeten ~10,6 s/video (JRE-run, §DEEL 0-meting: 462 video's → 81,4 min). Default-selectie blijft 10.
+- **Concurrency-cap = 3 gelijktijdige jobs** per user (`MAX_CONCURRENT_JOBS=3`, `main.py`) — aparte cap.
+- **Channel-URL's: expliciet gedetecteerd** (ADR-071). `validateYouTubeUrl` (`packages/shared/src/utils/youtube.ts`) kent nu type **`CHANNEL`** (`/@handle`, `/channel/`, `/c/`, `/user/`) → de UI toont een bruikbare melding die naar playlists wijst. Geen credits, geen job (client-side).
 
 ### 6.4 Verwerkingsduur — gemeten (eigen DB)
 Bron: `transcription_jobs` (`processing_time_seconds`), **216 echte AI-transcriptie-runs**, `status='complete' AND cache_hit=false`, 2026-04-13 → 2026-07-20. (Steekproef is grotendeels intern testverkeer, maar dit zijn echte latency-metingen.)
@@ -206,11 +205,12 @@ Bron: `transcription_jobs` (`processing_time_seconds`), **216 echte AI-transcrip
 - **Cache-hit (dedup, master-cache):** effectief **instant** (0 verwerkingstijd) — bekende video's worden niet opnieuw getranscribeerd.
 - **Caption-extractie: NIET gemeten.** `usage_logs` heeft **geen** latency-/processing-kolom (alleen `created_at`, `extraction_type`, `success`, `proxy_bytes`, …). Caption-extractie is synchroon (geen job-rij met start/eind). → **Er is geen code-/DB-bron voor een gemeten caption-mediaan.** (Anekdotisch is captions "instant/enkele seconden" want geen audio-download+model-run, maar dat is **niet gemeten** — niet als cijfer claimen.)
 
-### 6.5 Talen — "67 captions / 99+ AI" is een **onbevestigde content-claim**
-- **Geen taal-lijst of -telling in code/config.** `backend/language_utils.py` bevat alleen `normalize_language_code()` (`:22`) die naar de `langcodes`-library delegeert (`:11`) — geen array, geen telling; noch `67` noch `99` staat erin. Repo-brede grep vond geen taal-array buiten marketing-proza (en third-party `venv`-packages).
-- **"67"** staat **uitsluitend in marketing-proza** (o.a. `articles/youtube-transcript-not-available/page.tsx`, `transcribe/page.tsx:39` (placeholder), `articles/youtube-to-text/page.tsx`, `youtube-transcript-without-extension/page.tsx`) — **nergens in code/config**.
-- **"99+"** staat in proza + drie hardcoded code-strings/comments: `packages/shared/src/lib/models.ts:37` (UI-copy-literal in `transcriptionRouterPhrase`), `models.ts:12` (comment), `assemblyai_client.py:16` (comment) — **geen** ervan is afgeleid van een echte taallijst.
-- → Behandel **67 en 99+ als onbevestigde claims** (geen code-grondslag). Wat wél code-waar is: taal-router kiest het beste model per gedetecteerde taal (ADR-070); native-anchored caption-selectie via `-orig`-tracks (§3).
+### 6.5 Talen — gedocumenteerde getallen (AssemblyAI), niet zelf-geteld
+Er is **geen taallijst/telling in onze code** (`backend/language_utils.py` normaliseert alleen codes via `langcodes`); gebruik daarom **AssemblyAI's gedocumenteerde getallen** als bron. Bron: https://www.assemblyai.com/docs/supported-languages
+- **AI-transcriptie:** **Universal-3.5 Pro dekt 18 talen**; **Universal-2 dekt 99 talen** (de router kiest per gedetecteerde taal het beste model, ADR-070/071). Claim dus niet "één model doet 99 talen op topkwaliteit".
+- **Accuracy** volgens AssemblyAI's WER-indeling per taal: **≤10%** (uitstekend) / **10–25%** (goed) / **25–50%** (redelijk) / **>50%** (beperkt). Gebruik deze tiers op de accuracy-pagina i.p.v. één percentage over alle talen.
+- **Captions:** "**elke taal waarvoor YouTube captions levert**" — het eerdere getal **67 heeft geen grondslag en is geschrapt**.
+- Wat wél code-waar is: native-anchored caption-selectie via `-orig`-tracks (§3).
 
 ### 6.6 Anoniem vs. ingelogd — afgedwongen door code
 - **Export-formaten** (`packages/shared/src/components/TranscriptCard.tsx`): anoniem = **alleen TXT** (plain `:130`, timestamps `:135`) + kopiëren (`:101`). Achter login: Markdown (`:143`), MD+timestamps (`:152`), JSON (`:161`), CSV (`:191`), SRT (`:199`), VTT (`:205`), RAG (`:220`) — via `requireAuth()` (`:122-128`). **Let op: dit is een client-side gate** (bestanden worden in de browser gegenereerd) — geen server-afdwinging van formaat.
@@ -235,8 +235,12 @@ Bron: `packages/shared/src/lib/ratelimit.ts:32-37`.
 - **login/signup-limiters** worden apart gebruikt in auth-acties (`packages/shared/src/actions/auth-actions.ts:41,114,166,258`).
 - **No-op fallback:** zonder `UPSTASH_REDIS_REST_URL` + `_TOKEN` zijn **alle** limiters uitgeschakeld (`noopLimiter` → altijd success, `ratelimit.ts:7-18`). Alleen bindend als beide env-vars gezet zijn.
 
-### Punten zonder code-antwoord (expliciet)
-1. **Caption-extractie verwerkingsduur** — niet gemeten (geen latency-kolom in `usage_logs`); geen cijfer-claim mogelijk.
-2. **Max video/audio-duur** — bestaat niet in code (voor captions én AI). "Geen limiet" is het antwoord, niet een gat.
-3. **Talen 67/99+** — geen code-grondslag; onbevestigde content-claim.
-4. **Playlist-max op de extract-route** — niet afgedwongen; de 500 geldt alleen bij enumeratie, frontend heeft geen harde cap.
+### Opgelost sinds ADR-071 (waren eerder "geen code-antwoord")
+1. **Caption-verwerkingsduur** — nu gemeten via `usage_logs.duration_ms` (server-side, cache-hit én miss). Nog geen productie-mediaan (verzamelt vanaf deploy); AI-transcriptie-mediaan staat in §6.4.
+2. **Max AI-transcriptie-duur** — nu afgedwongen op **10 uur** (§6.2). Captions bewust ongelimiteerd.
+3. **Playlist-max op de extract-route** — nu afgedwongen op **500/job** (§6.3).
+4. **Channel-URL's** — nu expliciet gedetecteerd (§6.3).
+
+### Blijft zonder code-antwoord
+- **Talen-telling** — komt niet uit onze code; gebruik AssemblyAI's gedocumenteerde 18/99 (§6.5).
+- **Per-fase AI-job-timing / gecategoriseerde faalredenen / export-formaat-per-download** — bewust niet gebouwd (ADR-071, proportionaliteit; export-logging zou een extra request per download kosten).

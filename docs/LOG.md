@@ -10730,3 +10730,63 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 docs/wiki/content/product-truth.md
 ---
+[2026-07-22 17:00] ADR-071 limieten+instrumentatie+chain. DEEL0 (read-only): JRE-playlist c23cc227 = 462 video's, 449 ok/13 fail (97,2%), doorlooptijd 81,4 min (~10,6 s/video), 1 watchdog-reap schoon afgerond; proxy-egress niet gemeten (playlist-caption schrijft geen usage_logs, predateert F18); geen stuck-running jobs. DEEL1: usage_logs.duration_ms + log_caption_usage(p_duration_ms) (migratie 20260722115615), _log_caption_event meet server-side latency op 4 call-sites; geverifieerd (duration_ms=4321 gelogd+opgeruimd); RPC service_role-only. DEEL2: AI-transcriptie >10u → 422 vóór reservering (YouTube+upload), captions geen cap. DEEL3: playlist-cap 500/job afgedwongen op extract-route (backend 422 vóór reservering + Zod .max(500)); niet-blokkerende waarschuwing ≥50 video's (drempel gemotiveerd door DEEL0 ~10,6s/video → 50≈9min). DEEL4: validateYouTubeUrl kent nu CHANNEL-type (/@,/channel/,/c/,/user/) + frontend-melding. DEEL5: chain → ["universal-3-5-pro","universal-2"]+language_detection (universal-3-pro onbereikbaar, verwijderd; COR-tarief blijft); geverifieerd effectief universal-3-5-pro. Finance onaangeraakt: reconciliatie 29,0101=29,0101, audit 31/0/0 intact. Content: playlist-capaciteit overal → 500/job (was ≤100/5.000); taalclaims → 18/99 + WER-tiers, captions "elke taal met YouTube-captions" (67 geschrapt). Docs: ADR-071, product-truth §4/§6, LESSONS. | gewijzigd: backend/main.py, backend/assemblyai_client.py, packages/shared/src/utils/youtube.ts, apps/app/src/app/api/playlist/extract/route.ts, PlaylistManager/VideoTab/AudioTab, supabase/migrations/20260722115615_caption_latency.sql, docs (ADR-071, product-truth, INDEX, LESSONS, LOG) + content-fixes
+[2026-07-22 14:05] commit: feat(limits): duration/playlist/channel caps + caption latency + model-chain cleanup (ADR-071)
+
+DEEL 0 (read-only): JRE playlist c23cc227 = 462 videos, 449 ok / 13 failed
+(97.2%), 81.4 min elapsed (~10.6 s/video), 1 clean watchdog reap; proxy egress
+not measured (playlist captions don't write usage_logs, predate F18); no stuck
+jobs. This sets the DEEL 3 warning threshold.
+
+DEEL 1 — caption latency: usage_logs.duration_ms + log_caption_usage(p_duration_ms)
+(migration 20260722115615). _log_caption_event measures server-side latency at all
+4 call sites (cache-hit + miss). No PII; RPC service_role-only. Verified end-to-end.
+
+DEEL 2 — duration cap: AI transcription > 10h -> 422 duration_exceeds_max BEFORE
+any credit reservation (YouTube via metadata, upload via server probe). Captions
+uncapped. Covers AssemblyAI's 10h/5GB ceiling (5GB covered by the 500MB upload cap).
+
+DEEL 3 — playlist cap: MAX_PLAYLIST_VIDEOS=500 enforced on the extract route
+(backend 422 too_many_videos before job row + reservation; Next.js Zod .max(500)).
+Non-blocking warning at >=50 selected videos (~M min estimate); hard-cap block at
+>500. Threshold motivated by the measured ~10.6 s/video.
+
+DEEL 4 — channel URLs: validateYouTubeUrl now returns CHANNEL for /@handle,
+/channel/, /c/, /user/; VideoTab + PlaylistManager show a playlist-pointing message.
+No credits, no job.
+
+DEEL 5 — model chain: ["universal-3-5-pro","universal-2"] + language_detection.
+universal-3-pro removed (its 6 native languages are a subset of 3.5 Pro's 18 -> could
+never be selected). universal-3-pro COR rate kept for historical runs. Verified the
+effective model is still universal-3-5-pro.
+
+Credit-safe: both caps sit before reserve_credits (verified). Finance untouched:
+reconciliation 29.0101=29.0101, audit 31/0/0 intact (no finance fn changed;
+duration_ms read by no COR calc). Content corrected: playlist capacity -> 500/job
+everywhere (was <=100 / 5,000); language claims -> 18 (Universal-3.5 Pro) / 99
+(Universal-2) + WER tiers, captions "any language YouTube provides captions for"
+(the 67 figure had no basis, removed).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/playlist/extract/route.ts
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+backend/assemblyai_client.py
+backend/main.py
+docs/LESSONS.md
+docs/LOG.md
+docs/content/ARTIKEL-alternative-downsub.md
+docs/content/ARTIKEL-alternative-turboscribe.md
+docs/content/ARTIKEL-blog-youtube-channel-knowledge-base.md
+docs/content/ARTIKEL-bulk-youtube-transcript.md
+docs/content/ARTIKEL-youtube-playlist-transcript.md
+docs/wiki/INDEX.md
+docs/wiki/content/product-truth.md
+docs/wiki/decisions/071-limits-instrumentation-and-model-chain.md
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/utils/youtube.ts
+supabase/migrations/20260722115615_caption_latency.sql
+---

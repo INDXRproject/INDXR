@@ -76,7 +76,7 @@ For AI pipelines, RAG JSON export is available per video or in bulk, with a merg
 
 ## Playlist Size and Practical Limits
 
-INDXR.AI processes playlists in batches. For reliable results, we recommend batches of up to 100 videos. YouTube playlists can be much larger — for playlists over 100 videos, extract in batches and all results accumulate in the same library.
+INDXR.AI processes up to 500 videos per job. YouTube playlists can be larger — for playlists over 500 videos, split into batches of 500 and all results accumulate in the same library.
 
 Processing time scales with content: a playlist of 20 short videos (5 minutes each) finishes faster than 20 hour-long lectures. AI Transcription adds processing time per video. The real-time progress tracker shows you exactly where the job stands at all times.
 
@@ -91,7 +91,7 @@ No — and this is important to understand. The first three videos are free only
 The extraction job continues on INDXR.AI's servers. When you return to the playlist page, a recovery banner shows you the current job status and lets you resume monitoring. Videos that completed before the disconnect are already in your library. That said, staying on the page while the job runs is the recommended approach — you can respond to errors faster and monitor progress directly.
 
 **Can I extract transcripts for an entire YouTube channel?**
-INDXR.AI doesn't accept channel URLs directly. The workaround: create a playlist from the channel's videos in YouTube Studio or use YouTube's playlist feature, then extract that playlist URL. This covers any subset of a channel's content in batches of up to 100 videos.
+INDXR.AI doesn't accept channel URLs directly. The workaround: create a playlist from the channel's videos in YouTube Studio or use YouTube's playlist feature, then extract that playlist URL. This covers any subset of a channel's content — up to 500 videos per job.
 
 **What if some videos in the playlist are already in my library?**
 They're detected before extraction starts and excluded from the job by default. You won't be charged for videos you already have. The pre-extraction screen shows exactly which videos are new and which already exist, with links to the existing transcripts.

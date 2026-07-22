@@ -3,11 +3,12 @@
  * Handles various formats: watch v=ID, youtu.be/ID, playlist?list=ID, mobile, etc.
  */
 
-export type YouTubeUrlType = 
-  | 'VALID_VIDEO' 
-  | 'VALID_PLAYLIST' 
-  | 'PLAYLIST_IN_VIDEO' 
-  | 'MALFORMED' 
+export type YouTubeUrlType =
+  | 'VALID_VIDEO'
+  | 'VALID_PLAYLIST'
+  | 'PLAYLIST_IN_VIDEO'
+  | 'CHANNEL'
+  | 'MALFORMED'
   | 'NON_YOUTUBE';
 
 export interface ValidationResult {
@@ -27,7 +28,14 @@ export function validateYouTubeUrl(url: string, expectedTab: 'video' | 'playlist
 
   // 2. Identify if it's a playlist
   const isPlaylist = url.includes('list=') || url.includes('/playlist');
-  
+
+  // 2b. Channel URL (/@handle, /channel/, /c/, /user/) — INDXR extracts videos/playlists,
+  // not whole channels. Detect explicitly so we can point the user at playlists instead of
+  // failing as a generic "malformed" URL (ADR-071, DEEL 4). A channel URL that also carries
+  // a ?list= is treated as the playlist it points to.
+  const isChannel = /youtube\.com\/(?:@[^/?#\s]+|channel\/|c\/|user\/)/i.test(url);
+  if (isChannel && !isPlaylist) return { type: 'CHANNEL' };
+
   // 3. Extract IDs
   const videoId = extractVideoId(url);
   const playlistId = extractPlaylistId(url);

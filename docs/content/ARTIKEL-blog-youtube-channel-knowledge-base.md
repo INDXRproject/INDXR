@@ -243,7 +243,7 @@ A simple update workflow: extract the channel playlist weekly or monthly, INDXR.
 ## Frequently Asked Questions
 
 **How many videos can a single INDXR.AI extraction handle?**
-We recommend batches of up to 100 videos for reliable results. For larger channels, extract in batches and all results accumulate in the same library. The largest test we've completed: 19 videos, 783 minutes of total audio, completed in under 19 minutes.
+INDXR.AI processes up to 500 videos per job. For larger channels, split into batches of up to 500 videos and all results accumulate in the same library. The largest test we've completed: 19 videos, 783 minutes of total audio, completed in under 19 minutes.
 
 **Is auto-caption quality good enough for a knowledge base?**
 For retrieval purposes, auto-captions are often sufficient — keyword matching and semantic similarity work with unpunctuated text. For use cases where the retrieved text will be shown to users or read directly, AI transcription produces more readable output with proper sentence boundaries, which also improves chunk coherence. See [YouTube Transcripts for RAG Pipelines](/youtube-transcript-for-rag) for a detailed quality comparison.

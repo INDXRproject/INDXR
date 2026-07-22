@@ -472,7 +472,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setIsPlaylistUrl(validation.type === 'PLAYLIST_IN_VIDEO')
 
     // Clear validation-only errors when URL changes
-    if (error && ['NON_YOUTUBE', 'MALFORMED', 'PLAYLIST_IN_VIDEO'].includes(error.type || '')) {
+    if (error && ['NON_YOUTUBE', 'MALFORMED', 'PLAYLIST_IN_VIDEO', 'CHANNEL'].includes(error.type || '')) {
       setError(null)
     }
   }
@@ -494,6 +494,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           break
         case 'MALFORMED':
           message = "This doesn't look like a valid YouTube link. Please check and try again."
+          break
+        case 'CHANNEL':
+          message = "INDXR extracts videos and playlists, not entire channels. Create a playlist from the channel's videos (YouTube Studio or a public playlist) and paste that playlist URL — or paste a single video URL."
           break
       }
       setError({ message, type: validation.type })
@@ -1249,6 +1252,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                      Buy Credits →
                    </Button>
                  </a>
+               </div>
+             ) : error?.type === 'CHANNEL' ? (
+               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
+                 <div>
+                   <p className="text-sm font-medium text-error">This is a channel URL</p>
+                   <p className="text-sm text-error/80 mt-0.5">{error.message}</p>
+                 </div>
                </div>
              ) : isAlreadyProcessing && loading && whisperStatus !== 'idle' ? (
                <div className="flex flex-col gap-2 w-full">

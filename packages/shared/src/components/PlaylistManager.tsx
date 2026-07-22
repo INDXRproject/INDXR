@@ -149,6 +149,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       let message = "Please enter a valid YouTube Playlist URL";
       if (validation.type === 'NON_YOUTUBE') message = "Please enter a valid YouTube URL";
       if (validation.type === 'MALFORMED') message = "This doesn't look like a valid YouTube link. Please check and try again.";
+      if (validation.type === 'CHANNEL') message = "INDXR extracts videos and playlists, not entire channels. Create a playlist from the channel's videos (YouTube Studio or a public playlist) and paste that playlist URL — or paste a single video URL.";
       onError(message);
       return;
     }
@@ -345,6 +346,14 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   // Real count from the backend: playlist items that could not be resolved to a
   // playable video (private/members-only/deleted). Not a cap-driven subtraction.
   const missingCount = playlist?.unavailable_count ?? 0;
+
+  // ADR-071: server caps a single playlist job at 500 videos. Warn early (>=50) so
+  // users know large jobs run in the background, and block submit past the hard cap
+  // so they get immediate feedback instead of waiting on a server 4xx.
+  const selectedCount = selectedIds.size;
+  const isOverHardCap = selectedCount > 500;
+  const isLargeJob = selectedCount >= 50 && !isOverHardCap;
+  const estimatedMinutes = Math.max(1, Math.round(selectedCount * 11 / 60));
 
   return (
     <div className="space-y-6">
@@ -660,7 +669,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
               <div className="flex gap-2">
                   <Button
                     onClick={handleCheckAvailability}
-                    disabled={isCheckingAvailability || selectedIds.size === 0}
+                    disabled={isCheckingAvailability || selectedIds.size === 0 || isOverHardCap}
                     className="px-6 shadow-lg shadow-primary/20"
                   >
                     {isCheckingAvailability ? (
@@ -678,6 +687,20 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
               </div>
             )}
           </div>
+
+          {!hasExtracted && isOverHardCap && (
+            <div className="px-6 py-2 bg-error/10 border-b border-border flex items-center gap-2 text-error text-xs font-medium">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <span>You&apos;ve selected {selectedCount} videos. INDXR processes up to 500 per job — deselect some, or split into batches of 500.</span>
+            </div>
+          )}
+
+          {!hasExtracted && isLargeJob && (
+            <div className="px-6 py-2 bg-amber-500/10 border-b border-border flex items-center gap-2 text-warning-fg dark:text-amber-500 text-xs font-medium">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <span>Extracting {selectedCount} videos may take a while (~{estimatedMinutes} min). You can close this tab — extraction continues in the background and appears in your library.</span>
+            </div>
+          )}
 
           {missingCount > 0 && (
             <div className="px-6 py-2 bg-amber-500/10 border-b border-border flex items-center gap-2 text-warning-fg dark:text-amber-500 text-xs font-medium">

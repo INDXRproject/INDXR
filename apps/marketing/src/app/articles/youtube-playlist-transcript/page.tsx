@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: "Can I extract transcripts for an entire YouTube channel?",
-    a: "INDXR.AI doesn't accept channel URLs directly. The workaround: create a playlist from the channel's videos in YouTube Studio or use YouTube's playlist feature, then extract that playlist URL. This covers any subset of a channel's content in batches of up to 100 videos.",
+    a: "INDXR.AI doesn't accept channel URLs directly. The workaround: create a playlist from the channel's videos in YouTube Studio or use YouTube's playlist feature, then extract that playlist URL. This covers any subset of a channel's content — up to 500 videos per job.",
   },
   {
     q: "What if some videos in the playlist are already in my library?",
@@ -154,8 +154,8 @@ export default function YouTubePlaylistTranscriptPage() {
       <h2>Playlist Size and Practical Limits</h2>
 
       <p>
-        INDXR.AI processes playlists reliably in batches of up to 100 videos. For larger playlists, extract
-        in batches — all results accumulate in the same library. Processing time scales with content: a
+        INDXR.AI processes up to 500 videos per job. For larger playlists, split into batches of up to
+        500 videos — all results accumulate in the same library. Processing time scales with content: a
         playlist of 20 short videos finishes faster than 20 hour-long lectures. The real-time progress
         tracker shows you exactly where the job stands at all times.
       </p>

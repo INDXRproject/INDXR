@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Is there a limit on how many videos I can extract?",
-    a: "No hard limit — extract as many as you have credits for. We recommend batches of up to 100 videos for reliable operation. Larger playlists can be broken into multiple extractions; all results go to the same library.",
+    a: "INDXR.AI processes up to 500 videos per job. Larger playlists can be broken into multiple extractions of up to 500 videos each; all results go to the same library.",
   },
   {
     q: "What happens if some videos fail?",
@@ -152,10 +152,10 @@ export default function BulkYouTubeTranscriptPage() {
       <h2>Playlist Size and Limits</h2>
 
       <p>
-        INDXR.AI handles playlists reliably in batches of up to 100 videos. For larger playlists, extract
-        in batches — all results accumulate in the same library automatically. YouTube playlists can
-        contain up to 5,000 videos; batch extraction in groups of 50–100 is the practical approach for
-        large archives.
+        INDXR.AI processes up to 500 videos per job. For larger playlists, split into batches of up to
+        500 videos — all results accumulate in the same library automatically. YouTube playlists can be
+        larger, but INDXR processes up to 500 videos per job — split larger playlists into batches of
+        500 for large archives.
       </p>
 
       <p>

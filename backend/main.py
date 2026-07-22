@@ -265,12 +265,14 @@ async def health_check():
         "version": "1.0.0"
     }
 
-async def _log_caption_event(user_id, video_id, proxy_bytes, cache_hit, credits_used=0, success=True, source='single'):
+async def _log_caption_event(user_id, video_id, proxy_bytes, cache_hit, credits_used=0, success=True, source='single', duration_ms=None):
     """BLOK A: schrijf één per-caption event-rij voor een INGELOGDE user (usage_logs).
     De RPC snapshot't had_paid + is_internal server-side. Anoniem (user_id None) → no-op:
     die captions tellen in daily_cost_counters (bump_caption_proxy_bytes), niet per-rij.
     Standalone captions kosten 0 credits (credits_used=0); playlist geeft 1 door voor betaalde video's.
-    B3: source ('single'|'playlist') voedt Operations."""
+    B3: source ('single'|'playlist') voedt Operations.
+    ADR-071: duration_ms = server-side gemeten extractie-latency (cache-hit én miss), voor de
+    limits/overview-docs. Geen PII."""
     if not user_id:
         return
     try:
@@ -284,6 +286,7 @@ async def _log_caption_event(user_id, video_id, proxy_bytes, cache_hit, credits_
                 'p_credits_used': int(credits_used or 0),
                 'p_success': bool(success),
                 'p_source': source if source in ('single', 'playlist') else 'single',
+                'p_duration_ms': int(duration_ms) if duration_ms is not None else None,
             }).execute()
         )
     except Exception as e:
@@ -293,6 +296,7 @@ async def _log_caption_event(user_id, video_id, proxy_bytes, cache_hit, credits_
 @app.post("/api/extract/youtube", response_model=ExtractResponse)
 async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(verify_backend_secret)):
     """Extract transcript from YouTube video using yt-dlp."""
+    _t0 = time.monotonic()  # ADR-071: server-side caption-extractie-latency
     try:
         video_id = extract_video_id(request.videoIdOrUrl)
 
@@ -322,7 +326,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                     track_event("backend", "caption_cache_hit", {"video_id": video_id, "lang": cached_lang})
                     logger.info(f"Caption cache HIT: {video_id}")
                     # BLOK A: cache-hit → 0 egress, maar wél een per-user rij (funnel-inzicht).
-                    await _log_caption_event(request.user_id, video_id, 0, cache_hit=True)
+                    await _log_caption_event(request.user_id, video_id, 0, cache_hit=True,
+                                             duration_ms=int((time.monotonic() - _t0) * 1000))
                     transcript = [
                         TranscriptItem(
                             text=item['text'],
@@ -375,7 +380,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 logger.info(f"master_transcripts HIT (caption): {video_id} lang={normalised_lang}")
                 track_event("backend", "master_cache_hit", {"video_id": video_id, "source": "caption"})
                 # BLOK A: master-cache hit → 0 egress, per-user rij (funnel-inzicht).
-                await _log_caption_event(request.user_id, video_id, 0, cache_hit=True)
+                await _log_caption_event(request.user_id, video_id, 0, cache_hit=True,
+                                         duration_ms=int((time.monotonic() - _t0) * 1000))
                 mc_transcript = [
                     TranscriptItem(text=s["text"], offset=s["offset"], duration=s["duration"])
                     for s in mc["transcript"]
@@ -460,7 +466,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             logger.warning(f"No captions found for {video_id}")
             # BLOK A: mislukte caption (ingelogd) — bytes onbekend op dit pad (leeg/list-result),
             # log 0 met success=false zodat de rij het event registreert (egress hier ~metadata-only).
-            await _log_caption_event(request.user_id, video_id, 0, cache_hit=False, success=False)
+            await _log_caption_event(request.user_id, video_id, 0, cache_hit=False, success=False,
+                                     duration_ms=int((time.monotonic() - _t0) * 1000))
             return ExtractResponse(
                 success=False,
                 error="No captions found for this video",
@@ -475,7 +482,8 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
         # Een cache-hit retourneert eerder → geen egress → geen dubbeltelling.
         cap_bytes = result.get('proxy_bytes') or 0
         if request.user_id:
-            await _log_caption_event(request.user_id, video_id, cap_bytes, cache_hit=False)
+            await _log_caption_event(request.user_id, video_id, cap_bytes, cache_hit=False,
+                                     duration_ms=int((time.monotonic() - _t0) * 1000))
         elif cap_bytes:
             try:
                 _cap_sb = get_supabase_client()
@@ -760,6 +768,17 @@ def _cleanup_tmp(path: Optional[str]) -> None:
 
 MAX_CONCURRENT_JOBS = 3
 
+# ADR-071 — AssemblyAI hard ceiling is 10 hours of audio (and 5 GB). Above 10h the provider
+# fails the job, so AI transcription is rejected above this BEFORE any credit reservation.
+# The 5 GB byte limit is covered by the 500 MB upload cap + this 10h duration cap (10h at even
+# 128 kbps ≈ 0.6 GB). Caption extraction has NO duration cap.
+MAX_TRANSCRIPTION_SECONDS = 10 * 3600  # 36000
+
+# ADR-071 — hard cap on videos per playlist extraction job, enforced on the extract route
+# BEFORE the job row + reservation (previously 500 only bit at enumeration; extraction was
+# unbounded). Mirrors the 500-item enumeration cap in youtube_client / yt-dlp.
+MAX_PLAYLIST_VIDEOS = 500
+
 def _count_active_jobs(supabase, user_id: str) -> int:
     """
     Tel de daadwerkelijk lopende jobs van een user over transcription_jobs +
@@ -883,6 +902,24 @@ async def transcribe_with_whisper(
     else:
         # YouTube: de browser stuurt de duur (metadata) mee vóór reserve.
         estimated_cost = calculate_credit_cost(duration) if duration and duration > 0 else 1
+
+    # ADR-071 — DEEL 2: weiger audio boven AssemblyAI's 10-uurs-plafond VÓÓR enige reservering,
+    # zodat een user hier nooit credits aan kwijt kan raken. Duur-bron: YouTube-metadata
+    # (form-veld) of de server-side upload-probe. Bij een onbekende upload-duur (size_fallback,
+    # known_duration None) valt de pipeline terug op zijn eigen probe en refundt bij falen.
+    _eff_dur = known_duration if source_type == "upload" else duration
+    if _eff_dur and _eff_dur > MAX_TRANSCRIPTION_SECONDS:
+        _cleanup_tmp(upload_tmp_path)
+        return JSONResponse(status_code=422, content={
+            "error": (
+                f"This audio is {_eff_dur/3600:.1f} hours long. AI transcription supports up to "
+                f"10 hours per file. Caption extraction has no length limit — try that instead, "
+                f"or split the audio into shorter parts."
+            ),
+            "code": "duration_exceeds_max",
+            "max_hours": 10,
+            "duration_hours": round(_eff_dur/3600, 1),
+        })
 
     try:
         current_balance = await asyncio.to_thread(check_user_balance, user_id)
@@ -1317,6 +1354,21 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
     """
     if not request.video_ids:
         return JSONResponse(status_code=400, content={"error": "video_ids must not be empty"})
+
+    # ADR-071 — DEEL 3: cap videos per job BEFORE the job row + reservation. Previously 500 only
+    # bit at enumeration (playlist/info) while extraction was unbounded. Credit-safe: rejected
+    # before any reserve_credits call.
+    if len(request.video_ids) > MAX_PLAYLIST_VIDEOS:
+        return JSONResponse(status_code=422, content={
+            "error": (
+                f"This playlist has {len(request.video_ids)} videos selected. INDXR processes up to "
+                f"{MAX_PLAYLIST_VIDEOS} videos per job. Select fewer videos, or split the playlist "
+                f"into batches of {MAX_PLAYLIST_VIDEOS}."
+            ),
+            "code": "too_many_videos",
+            "max_videos": MAX_PLAYLIST_VIDEOS,
+            "selected_videos": len(request.video_ids),
+        })
 
     supabase = get_supabase_client()
 

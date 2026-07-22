@@ -53,7 +53,7 @@ DownSub's output is always a subtitle file. INDXR.AI's output is whatever format
 
 **Searchable library.** DownSub has no account system. Every file you download disappears when you close the tab. INDXR.AI stores all your transcripts in a searchable library with a rich-text editor. A lecture from three months ago can be re-exported in a different format in 10 seconds.
 
-**Playlist and bulk extraction.** DownSub processes one URL at a time. INDXR.AI extracts entire playlists in a single background job — up to 100 videos, with the first three caption videos free (AI-transcription videos are always 1 credit/minute, no per-video discount).
+**Playlist and bulk extraction.** DownSub processes one URL at a time. INDXR.AI extracts entire playlists in a single background job — up to 500 videos per job, with the first three caption videos free (AI-transcription videos are always 1 credit/minute, no per-video discount).
 
 ---
 

@@ -12,17 +12,20 @@ def transcribe_with_assemblyai(audio_path: str) -> dict:
     """
     Transcribe audio file using AssemblyAI's highest-quality model available for the
     detected language. speech_models is a LANGUAGE ROUTER, not an error-fallback list:
-    Universal-3.5 Pro / Universal-3 Pro cover a subset of languages natively; any other
-    language is served by Universal-2 (99 languages). We list 3.5 Pro first so every
-    language it supports (incl. Arabic — verified 2026-07-22) runs on the best model,
-    3 Pro next, then Universal-2 as the broad-coverage router. Valid AssemblyAI ids use
-    dashes: "universal-3-5-pro" (NOT "universal-3.5-pro"). All three share the EU endpoint.
+    Universal-3.5 Pro covers 18 languages natively; any other language is served by
+    Universal-2 (99 languages). Chain = ["universal-3-5-pro", "universal-2"] per
+    AssemblyAI's own recommendation. universal-3-pro is intentionally omitted: its 6
+    native languages are all a subset of Universal-3.5 Pro's 18, so with 3.5 Pro listed
+    first it could never be selected (ADR-071). language_detection MUST be on so the
+    router can pick per detected language. Valid AssemblyAI ids use dashes:
+    "universal-3-5-pro" (NOT "universal-3.5-pro"). Both share the EU endpoint.
     Returns dict matching existing whisper_client format:
     { 'success': bool, 'transcript': [...], 'duration': float, 'model': str }
     """
     try:
         config = aai.TranscriptionConfig(
-            speech_models=["universal-3-5-pro", "universal-3-pro", "universal-2"],
+            speech_models=["universal-3-5-pro", "universal-2"],
+            language_detection=True,
             punctuate=True,
             format_text=True,
         )

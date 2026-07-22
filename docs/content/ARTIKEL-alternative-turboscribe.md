@@ -45,7 +45,7 @@ INDXR.AI checks caption availability first. If auto-captions exist, extraction i
 |---|---|---|
 | Audio file upload | ✅ | ✅ |
 | YouTube URL (single video) | ✅ (one at a time) | ✅ |
-| YouTube playlist / bulk | ❌ | ✅ (up to 100 videos) |
+| YouTube playlist / bulk | ❌ | ✅ (up to 500 videos per job) |
 | Free auto-caption extraction | ❌ (all videos billed) | ✅ (free for captioned videos) |
 | Resegmented SRT (professional timing) | ❌ | ✅ |
 | Markdown export (Obsidian/Notion) | ❌ | ✅ |

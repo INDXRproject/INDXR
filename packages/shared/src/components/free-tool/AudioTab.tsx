@@ -19,6 +19,10 @@ import { TranscriptionProgress } from "../transcription/TranscriptionProgress"
 import { BackgroundJobNotice } from "../BackgroundJobNotice"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
+// ADR-071 — DEEL 4: mirrors the server's AssemblyAI cap (backend/main.py MAX_TRANSCRIPTION_SECONDS).
+// Client-side check blocks submit immediately using the duration already measured via
+// getAudioDuration, instead of waiting on the server's 422 (duration_exceeds_max).
+const MAX_AUDIO_DURATION_SECONDS = 10 * 3600
 
 interface AudioTabProps {
   onTranscriptLoaded?: (transcript: TranscriptItem[], metadata: TranscriptMetadata) => void
@@ -325,6 +329,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   const handleTranscribe = async () => {
     if (!file || !user) return
+    if (audioDuration !== null && audioDuration > MAX_AUDIO_DURATION_SECONDS) return
 
     setIsTranscribing(true)
     setWhisperStatus('pending')
@@ -426,7 +431,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     ? (audioDuration ? calculateCredits(audioDuration) : Math.ceil((file.size / (1024 * 1024)) / 10) || 1)
     : 0
   const hasEnoughCredits = credits !== null && credits >= estimatedCredits
-  const canTranscribe = file && user && hasEnoughCredits && !isTranscribing && !isUploading
+  const isOverDurationCap = audioDuration !== null && audioDuration > MAX_AUDIO_DURATION_SECONDS
+  const canTranscribe = file && user && hasEnoughCredits && !isTranscribing && !isUploading && !isOverDurationCap
 
   return (
     <div className="mt-8 space-y-6">
@@ -573,6 +579,16 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       <p className="text-xs text-fg-muted">
         1 credit per minute of audio. Minimum 1 credit.
       </p>
+
+      {/* Duration cap — AssemblyAI supports up to 10 hours per file (ADR-071 DEEL 4) */}
+      {file && !transcript && isOverDurationCap && audioDuration !== null && (
+        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span className="flex-1">
+            This audio is {(audioDuration / 3600).toFixed(1)} hours long. AI transcription supports up to 10 hours per file. Split it into shorter parts.
+          </span>
+        </div>
+      )}
 
       {/* Credit Cost Preview */}
       {file && !transcript && (
