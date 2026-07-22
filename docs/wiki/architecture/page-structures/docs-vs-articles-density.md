@@ -6,7 +6,7 @@ Docs en artikelen delen de tokens (kleuren, fonts, radii) maar **niet de dichthe
 
 | Dimensie | Docs (`/docs/*`, reference-doc) | Artikelen (`/articles/*`) |
 |---|---|---|
-| **Regellengte (measure)** | smaller — content in `max-w-3xl` binnen de DocsShell (`DocsShell.tsx`), naast een sidebar + rechter TOC. | breder — de artikel-templates lopen ruimer, gecentreerd, zonder sidebar. |
+| **Regellengte (measure)** | smaller — content in **`max-w-2xl` (~70–75ch)** binnen de DocsShell (`DocsShell.tsx`), naast een sidebar + rechter TOC. *(Gecorrigeerd 2026-07-23 van `max-w-3xl`/~90ch naar de research-leesmaat 65–75ch — batch-3b §6.2.)* | breder — **60–70ch**, `1.5–1.75` line-height (batch-3b §6.2); artikel-templates lopen ruimer, gecentreerd, zonder sidebar. |
 | **Regelafstand** | compact — `leading-relaxed` op alinea's, korte alinea's, veel lijsten/tabellen. | ruimer — grotere verticale ritmes tussen alinea's. |
 | **Koppenschaal** | ingetogen — `AnchorHeading` h2 = `text-xl`, h3 = `text-base` (compact, scanbaar). | groter/expressiever in de artikel-templates. |
 | **Beeld** | alleen functioneel via `DocsFigure` (toont wat tekst niet kan). | verhalend/illustratief toegestaan. |

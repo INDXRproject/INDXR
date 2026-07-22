@@ -1,6 +1,8 @@
 import { JsonLd } from "@/components/seo/JsonLd"
 import { AuthorCard } from "@/components/content/AuthorCard"
 import type { Author } from "@/lib/authors"
+import { reactNodeToText } from "@/lib/reactNodeToText"
+import { articlesBreadcrumb } from "@/lib/breadcrumbSchema"
 
 interface TutorialTemplateProps {
   title: string
@@ -43,15 +45,20 @@ export function TutorialTemplate({
         url: "https://indxr.ai",
       },
     },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: faqs.map(({ q, a }) => ({
-        "@type": "Question",
-        name: q,
-        acceptedAnswer: { "@type": "Answer", text: a },
-      })),
-    },
+    articlesBreadcrumb(title),
+    ...(faqs.length > 0
+      ? [
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs.map(({ q, a }) => ({
+              "@type": "Question",
+              name: q,
+              acceptedAnswer: { "@type": "Answer", text: reactNodeToText(a) },
+            })),
+          },
+        ]
+      : []),
   ]
 
   if (steps && steps.length > 0) {

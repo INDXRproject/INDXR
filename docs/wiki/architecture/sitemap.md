@@ -304,7 +304,7 @@ Gedefinieerd in `next.config.ts` → `async redirects()`. Totaal: 23 regels.
 | Bestand | URL | Status |
 |---------|-----|--------|
 | `public/robots.txt` | `/robots.txt` | Live |
-| `public/llms.txt` | `/llms.txt` | Live (prijzen gesynchroniseerd 2026-05-03) |
+| ~~`public/llms.txt`~~ | ~~`/llms.txt`~~ | **VERWIJDERD 2026-07-23** (ADR-039 herzien — geen bewezen lever, INDXR heeft geen publieke API) |
 | `public/site.webmanifest` | `/site.webmanifest` | Live |
 | `src/app/sitemap.ts` | `/sitemap.xml` | Live (bijgewerkt 2026-05-03, Werksessie B) |
 
@@ -319,4 +319,4 @@ Gedefinieerd in `next.config.ts` → `async redirects()`. Totaal: 23 regels.
 - **Auth flows** blijven op marketing domain (`indxr.ai/login` etc.) — niet naar `app.indxr.ai` (ADR-036)
 - **Subdomain split** (`app.indxr.ai`) is Werksessie C — niet nu (ADR-034)
 - **Changelog** — niet pre-launch bouwen (beslissing 2026-04-30)
-- **llms.txt** — low-priority, geen AI-citation lever (onderzoek 2026-05-03, ADR-039); behouden maar niet uitbreiden
+- **llms.txt** — **VERWIJDERD 2026-07-23** (ADR-039 herzien na externe verificatie: geen bewezen AI-citation lever, Google steunt het niet, INDXR heeft geen publieke API, bestanden logen over de prijs)

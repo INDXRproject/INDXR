@@ -41,10 +41,10 @@ Elke plek waar de bronnen elkaar tegenspreken, met citaat, bron, en wat geldt.
 - **design/system.md:488**: *"Single `<Banner>` component met `intent="error"|"warning"|"info"`. Pushen, niet overlay."* — **intentie-gebaseerd**, app-oppervlak (dashboard); + harde **NO-TOASTS**-regel (`:457`); + badge-families `--info`/`--violet` (`:113`).
 - **WAT GELDT:** geen hard conflict — **twee oppervlakken**: `DocsCallout` = content (docs/marketing, doel-semantiek), `<Banner>` = app-state (intentie-semantiek). Beide respecteren NO-TOASTS. **Regels:** gebruik in content **alleen** `DocsCallout`; gebruik het app-`Banner` nooit in gepubliceerde content. `costs-credits` deelt het accent-token, `careful` deelt het warning-token — dus geen nieuwe kleuren. **Gat (te melden):** de componenten-inventaris in `design/system.md:623` (Banner/Card/Button/EmptyState/…) noemt de **docs-componenten niet** (DocsCallout/DocsFigure/SourcesBlock/DocsTable/DocsCodeBlock leven in page-structures). Documentatie-gat, geen conflict.
 
-### A5 — llms.txt: prioriteit (masterplan ↔ ADR-039/principles) — *ADR wint*
+### A5 — llms.txt: VERWIJDERD ✅ geverifieerd 2026-07-23 (was: masterplan ↔ ADR-039)
 - **Masterplan**: llms.txt = kerndifferentiator, *"Geen enkele concurrent heeft dit … eerste in de niche"* (`:575`, `:772`).
-- **principles.md §7 / ADR-039** (mei 2026): *"llms.txt geen bewezen AI-citation lever … emerging standard zonder bewezen ROI"* (`principles.md:101`).
-- **WAT GELDT:** **ADR-039 wint** (nieuwer, expliciet): llms.txt = **low-priority**, geen schrijf-inspanning waard vóór launch. **Maar:** de bestaande drie `llms.txt` zijn *feitelijk fout* (oude 5-tier-prijzen) en moeten hoe dan ook gelijkgetrokken worden met `pricing.ts` (§B2). De vraag "verder investeren in llms.txt" = **[TE VERIFIËREN]** (omstreden aanbeveling — expliciet door de taak gemarkeerd).
+- **Externe verificatie (2026-07-23):** Google steunt het niet (Mueller: vergelijkbaar met de dode meta-keywords-tag); Google's AI-gids van 15 juni 2026 zegt dat zulke bestanden niet nodig zijn voor Search incl. de generatieve functies; ~97% van de bestanden wordt nooit opgehaald; enige echte afnemers zijn coding-agents die API-docs lezen — **INDXR heeft geen publieke API**. Bovendien stonden de drie bestanden op oude 5-tier-prijzen (logen over het product).
+- **WAT GELDT (beslist):** **llms.txt volledig verwijderd** — alle drie de bestanden + referenties. Zie [ADR-039](../decisions/039-llms-txt-low-priority.md) (herzien). Niet meer [TE VERIFIËREN].
 
 ### A6 — Docs-structuur (principles.md §6 ↔ ADR-072/073) — *ADR wint*
 - **principles.md §6**: *"`/docs/how-to/[slug]` … `/docs/troubleshooting/[slug]` … **Geen derde niveau van nesting (bijv. `/docs/export-formats/markdown`)**"* (`:82-92`).
@@ -76,7 +76,7 @@ Het masterplan langsgelopen tegen de live code.
 | SEO-element (masterplan) | Status | Bewijs / detail |
 |---|---|---|
 | **robots.txt AI-crawler-allowlist** | **LIVE** | ClaudeBot/ClaudeSearchBot/Claude-User/GPTBot/OAI-SearchBot/ChatGPT-User/PerplexityBot/Googlebot/Bingbot = `Allow`; CCBot + Meta-ExternalAgent = `Disallow`. **Gat:** `Google-Extended` en `anthropic-ai` staan er **niet** (vallen onder `*` = default-allow). |
-| **llms.txt** | **HALF / STALE** | 3 bestanden; app-kopieën identiek, `public/llms.txt` wijkt af (feature-tekst). **Alle drie oude 5-tier-prijzen** (Try €2.49/150 · Basic €5.99 · Plus €11.99 · Pro €24.99 · Power €49.99) — Basic/Pro bestaan niet meer. Hoogste-impact feitfout. (ADR-039: low-priority — maar fout moet weg.) |
+| **llms.txt** | **VERWIJDERD** (2026-07-23) | Stond op oude 5-tier-prijzen (loog over het product). Extern getoetst: geen bewezen lever, INDXR heeft geen publieke API → verwijderd (alle 3 bestanden + referenties). Zie A5/ADR-039. |
 | **Gesegmenteerde sitemap** | **NEVER** (single volstaat) | Eén platte `sitemap.ts`, **46 URL's**, `priority` per route, `lastModified: new Date()` (build-tijd, geen echte mtimes), `changeFrequency: monthly`. Masterplan wilde `sitemap-pages/features/comparisons/blog.xml`. Voor 46 URL's is segmentatie onnodig — **[TE VERIFIËREN]** of het ooit nodig is (Google adviseert pas bij duizenden URL's). |
 | **Bing-indiening / IndexNow** | **NEVER** | 0 hits voor IndexNow-key, `msvalidate`, BingSiteAuth. Alleen Bingbot in robots. Masterplan-claim "Bing = ChatGPT web index" = **[TE VERIFIËREN]**. |
 | **JsonLd-component + schema per pagina** | **LIVE** (goed) | `JsonLd.tsx` rendert schema-arrays. Docs=TechArticle+CollectionPage+BreadcrumbList; tool-artikelen=SoftwareApplication+Offer+FAQPage; Article/Tutorial=Article+Person+Organization+FAQPage(+HowTo); pricing=Product+AggregateOffer+FAQPage (data-afgeleid uit `PACKAGES` → blijft correct); about=Organization. **Gaten:** geen BreadcrumbList op de 18 artikelen; FAQPage-antwoord dropt ReactNode → `""`. |
@@ -92,8 +92,8 @@ Het masterplan langsgelopen tegen de live code.
 
 Per regel: **[BRON]** en of het een **beslissing** of **aanname** is. `[TE VERIFIËREN]` = extern te toetsen.
 
-### C1 — Paginaopening (answer-first)
-- Open met het **antwoord in de eerste zin**, dan pas de uitwerking. **[batch-3a §4.5; masterplan :393; beslissing]**
+### C1 — Paginaopening (answer-first) ✅ geverifieerd 2026-07-23
+- Open met het **antwoord in de eerste zin**, dan pas de uitwerking. Extern bevestigd (2026-07-23) als het enige masterplan-element dat de toets doorstaat — AI-systemen halen uit heldere, direct-antwoordende inhoud, niet uit markup. **[batch-3a §4.5; verificatie 2026-07-23; beslissing]**
 - Docs: een **DefinitionLeadOpening van 40–60 woorden** met het antwoord vooraan (Wikipedia-lede: onderwerp → definitie → context, geen marketing). **[reference-doc.md:31-32; beslissing]**
 - Artikelen: de antwoordzin bovenaan, daarna het verhaal/use-case.
 - Het "eerste 25 woorden voor featured snippet"-doel is een streven, geen harde limiet. **[masterplan :393; TE VERIFIËREN]**
@@ -103,9 +103,9 @@ Per regel: **[BRON]** en of het een **beslissing** of **aanname** is. `[TE VERIF
 - Docs: `InPageTOC` (rechts, xl+) verschijnt automatisch bij ≥2 koppen. **[ADR-072]**
 - Titels autoritair, geen framing ("YouTube Transcript Export Formats", niet "A guide to…"). **[reference-doc.md:29; beslissing]**
 
-### C3 — FAQ-plaatsing
+### C3 — FAQ-plaatsing ✅ geverifieerd 2026-07-23
 - **Docs reference pages: geen inline FAQ.** **[reference-doc.md:86; beslissing — zie A1]**
-- **Artikelen + homepage + pricing: een FAQ-sectie mét FAQPage-schema mag**, mits de antwoorden page-specifiek zijn. **[masterplan; live templates; beslissing]**
+- **Artikelen + homepage + pricing: een FAQ-sectie mét FAQPage-schema mag**, mits de antwoorden page-specifiek en écht Q&A zijn. **Nooit FAQ/FAQPage toevoegen om AI-zichtbaarheid te winnen** (rich result gedeprecieerd 7-mei-2026; niet vereist voor AI Overviews; Bing gebruikt het nog). **[verificatie 2026-07-23; live templates; beslissing]**
 - `/docs/faq` = korte antwoorden + link naar de bezittende doc. **[ADR-073]**
 - **Geen antwoord staat woordelijk op twee pagina's** (single-source, geen duplicate content). **[content-sitemap; beslissing]**
 
@@ -159,9 +159,9 @@ Neem de live graaf + de twee correcties. **[live implementatie; batch-3b §4.3; 
 - **Tweede persoon "you", informeel, Engels.** Directe, korte werkwoorden (Transcribe, Open, Export, Save). Eerlijk over beperkingen. Volledige zinnen in empty/error-states. Geen onvertaalbare idiomen ("let's go", "we're cooking"). **INDXR is een tool, geen persona** — geen zachte "AI-assistent"-toon, geen speelse Notion-error-toon. **[batch-3a §2.4, §4.3; batch-3b §6.1; de-facto in alle huidige content]**
 - **Status:** dit is een **vastgelegde keuze** (consistentie met bestaande content + de research-voice-regels), **maar er is geen tone-of-voice-onderzoek in de wiki** → **[TE VERIFIËREN]** (extern toetsen: formaliteit, aanspreekvorm, of "you" past bij de doelgroep en de internationale markten). Aanspreekvorm/formaliteit is nergens formeel onderzocht — alleen een incidentele informele "je" in NL-voorbeeldcopy (batch-3b §7.1).
 
-### C12 — Crawlers & technische SEO (voor wanneer de schrijfronde raakt aan robots/llms/sitemap)
+### C12 — Crawlers & technische SEO (voor wanneer de schrijfronde raakt aan robots/sitemap)
 - **robots.txt** allowlist staat; overweeg `Google-Extended` + `anthropic-ai` expliciet toe te voegen (nu default-allow). **[masterplan :649; §B; TE VERIFIËREN — crawler-landschap wijzigt snel]**
-- **llms.txt**: low-priority (ADR-039), maar **prijzen gelijktrekken met `pricing.ts`** (nu 5-tier fout). Verder investeren = **[TE VERIFIËREN]**.
+- **llms.txt**: **VERWIJDERD** (ADR-039, geverifieerd 2026-07-23 — geen bewezen lever, INDXR heeft geen publieke API, bestanden logen over de prijs). Niet opnieuw toevoegen. **[A5; beslist]**
 - **Sitemap** blijft één bestand (46 URL's); segmentatie onnodig. **[TE VERIFIËREN of ooit nodig]**
 - **Bing/IndexNow** niet gebouwd; waarde = **[TE VERIFIËREN]**.
 
@@ -171,9 +171,12 @@ Neem de live graaf + de twee correcties. **[live implementatie; batch-3b §4.3; 
 
 Ruimhartig gemarkeerd; alles hieronder rust op een aanname of op SEO-claims van ~april 2026 of eerder, in een snel bewegend AI-SEO-landschap.
 
-1. **llms.txt als AI-citation-lever** — masterplan zegt kerndifferentiator; ADR-039 zegt onbewezen. Omstreden aanbeveling. (C7/A5/C12)
-2. **FAQPage-schema als AI-Overview/PAA-trigger** — masterplan-claim 2026-04. (A1/C3)
-3. **Answer-first "eerste 25 woorden" voor featured snippets** — SERP-tactiek 2026-04. (C1/A8)
+**✅ GEVERIFIEERD 2026-07-23 (nu beslissingen, niet meer open):**
+- **llms.txt** → **VERWIJDEREN** (geen bewezen lever; Google/Mueller ≈ meta-keywords; AI-gids 15-jun-2026 "niet nodig"; ~97% nooit opgehaald; enige afnemer = coding-agents met API-docs, INDXR heeft geen API; bestanden logen over de prijs). Zie A5/ADR-039.
+- **FAQPage-schema** → **behouden waar de content écht Q&A is; nooit toevoegen om AI-zichtbaarheid**. Rich result gedeprecieerd 7-mei-2026; Google's AI-gids 15-mei-2026: structured data niet vereist voor AI Overviews/AI Mode; geen leverancier bevestigt FAQ-schema als citatiesignaal; Bing gebruikt het nog. "Geen inline FAQ in docs" blijft. Zie A1/C3.
+- **Answer-first** → **blijft** (het enige masterplan-element dat de toets doorstaat — AI-systemen halen uit heldere, direct-antwoordende inhoud, niet uit markup). Zie C1/A8.
+
+**Nog open [TE VERIFIËREN]:**
 4. **robots AI-crawler-allowlist-specifics** — welke bots citaties helpen; wel/niet `Google-Extended`/`anthropic-ai` blokkeren. (C12/B)
 5. **Bing-indiening = ChatGPT-web-index** + IndexNow-waarde. (C12/B)
 6. **Sitemap-segmentatie** — of ooit nodig onder duizenden URL's. (C12/B)

@@ -93,9 +93,11 @@ Productdocumentatie is georganiseerd als flat reference met twee subfolders:
 
 ---
 
-## 7. llms.txt — low-priority
+## 7. llms.txt — VERWIJDERD (herzien 2026-07-23)
 
-Er is een `public/llms.txt` aanwezig, maar uitbreiding hiervan is niet prioriteit.
+> **Update 2026-07-23:** llms.txt is **volledig verwijderd** na externe verificatie ([ADR-039](../decisions/039-llms-txt-low-priority.md) herzien): geen bewezen AI-citation lever, Google steunt het niet, INDXR heeft geen publieke API, en de bestanden stonden op oude 5-tier-prijzen. De onderstaande "low-priority"-tekst is historisch.
+
+Er was een `public/llms.txt` aanwezig, maar uitbreiding hiervan was niet prioriteit.
 
 **Waarom?**  
 Onderzoek (mei 2026) toont aan dat llms.txt geen bewezen AI-citation lever is. De meeste LLMs gebruiken de standaard sitemap en geïndexeerde content. llms.txt is een emerging standard zonder bewezen ROI voor een pre-launch product.

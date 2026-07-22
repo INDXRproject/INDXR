@@ -139,7 +139,7 @@ De modelnamen leven nu op **één** centrale plek, analoog aan `pricing.ts`:
 - `TRANSCRIPTION_MODEL` (`displayName: "Universal-3.5 Pro"`, `vendor: "AssemblyAI"`, `chain`) + helpers `transcriptionModelName()` → `"AssemblyAI Universal-3.5 Pro"` en `transcriptionRouterPhrase()` (eerlijke taal-router-frasering).
 - `SUMMARY_MODEL` (`displayName: "Gemini 2.5 Flash"`, `gateway: "AssemblyAI EU LLM Gateway"`) + `summaryModelName()` / `summaryGenericPhrase()` ("our AI summarization, processed in the EU").
 
-**Alle `.tsx`-content** (marketing-pagina's, articles, docs) put uit deze constante — geen hardcoded modelstrings meer. **Statische mirrors** (`docs/content/ARTIKEL-*.md`, `*/public/llms.txt`) kunnen geen TS importeren en dragen de display-namen letterlijk; houd die bij de hand gelijk aan `models.ts`.
+**Alle `.tsx`-content** (marketing-pagina's, articles, docs) put uit deze constante — geen hardcoded modelstrings meer. **Statische mirrors** (`docs/content/ARTIKEL-*.md`) kunnen geen TS importeren en dragen de display-namen letterlijk; houd die bij de hand gelijk aan `models.ts`. *(De `llms.txt`-bestanden zijn verwijderd — ADR-039, 2026-07-23.)*
 
 Bij een model-upgrade: wijzig `models.ts` (en de statische mirrors), niet ~30 losse `.tsx`-plekken. Naamregel: **punt in proza** ("Universal-3.5 Pro"), **streepjes in code/ids** ("universal-3-5-pro"). Eerlijke claim: we kiezen automatisch het beste model voor de taal — geen "één model doet alle 99 talen op topkwaliteit" (alleen EN + AR geverifieerd).
 

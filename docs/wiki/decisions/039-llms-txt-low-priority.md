@@ -1,35 +1,30 @@
-# Beslissing 039: llms.txt — low-priority, niet uitbreiden
+# Beslissing 039: llms.txt — VERWIJDERD (was: low-priority)
 
-**Status:** Geaccepteerd  
-**Datum:** 2026-05-03  
-**Gerelateerde code:** `public/llms.txt`
+**Status:** Geaccepteerd — **herzien 2026-07-23 (na externe verificatie): llms.txt volledig verwijderd**
+**Oorspronkelijke datum:** 2026-05-03 · **Herziening:** 2026-07-23
+**Gerelateerde code:** ~~`public/llms.txt`, `apps/marketing/public/llms.txt`, `apps/app/public/llms.txt`~~ (alle drie verwijderd, ADR-074-verificatie)
 
 ---
 
 ## Context
 
-`public/llms.txt` bestaat als statisch bestand. Het is een emerging standard die AI-assistenten en LLMs helpt een site te begrijpen. Onderzoek (mei 2026) toont aan dat de standaard geen bewezen ROI heeft voor AI-citaties op dit moment.
+`llms.txt` bestond als statisch bestand (drie kopieën). Het is een *emerging standard* die AI-assistenten zou helpen een site te begrijpen. De oorspronkelijke beslissing (mei 2026) hield het "low-priority, niet uitbreiden, correct houden".
 
----
+## Beslissing (herzien 2026-07-23)
 
-## Beslissing
+**Verwijder llms.txt volledig** — alle drie de bestanden (`public/`, `apps/marketing/public/`, `apps/app/public/`) en elke verwijzing ernaar in robots.txt, sitemap, docs en de wiki.
 
-llms.txt blijft aanwezig maar is low-priority. We breiden het niet uit, bouwen geen automatische generator, en optimaliseren de content er niet voor. Onderhoud beperkt zich tot correctheidscheck (prijzen, routes) bij grote wijzigingen.
+## Rationale (externe verificatie, 2026-07-23)
 
----
+- **Google steunt het niet.** John Mueller vergeleek llms.txt met de al lang dode **meta-keywords-tag**. Google's AI-gids van **15 juni 2026** stelt expliciet dat zulke bestanden **niet nodig** zijn voor Search, inclusief de generatieve functies.
+- **~97% van de llms.txt-bestanden wordt nooit opgehaald** door LLM-crawlers — geen aantoonbaar effect.
+- **De enige aantoonbare afnemers zijn coding-agents die API-docs lezen.** INDXR heeft **geen publieke REST API** → die use case bestaat hier niet.
+- **De bestanden lógen over het product:** ze stonden op de oude 5-tier-prijzen (Basic/Pro bestaan niet meer) — actief onjuist t.o.v. `pricing.ts`.
 
-## Rationale
-
-- Meeste LLMs gebruiken standaard sitemap en geïndexeerde content — llms.txt heeft geen bewezen extra effect
-- Pre-launch engineering-capaciteit is schaars
-- Bestand is correct gehouden (prijzen gesynchroniseerd 2026-05-03, verouderde routes gecorrigeerd)
-
-Overwogen alternatieven: volledig uitbreiden met per-pagina llms.txt (geen bewezen ROI), verwijderen (verlies eventuele toekomstige voordelen bij spec-adoptie).
-
----
+Netto: nul bewezen upside, reële downside (verkeerde prijzen naar buiten). Verwijderen is strikt beter dan onderhouden.
 
 ## Consequenties
 
-- Geen engineering effort aan llms.txt
-- Bestand blijft correct na elke grote wijziging (prijzen, routes)
-- Herzien wanneer: bewijs dat llms.txt direct bijdraagt aan AI-citaties in ChatGPT Search, Perplexity of vergelijkbare tools, of significante update aan de llms.txt spec
+- Drie bestanden + referenties weg. robots.txt/sitemap noemden llms.txt al niet (niets aan te passen daar). Geen enkele marketing- of docs-pagina verwees ernaar.
+- De eerdere "low-priority maar correct houden"-stance vervalt.
+- Herzien wanneer: de spec ná deze datum aantoonbaar een AI-citation-lever wordt bij grote engines — onwaarschijnlijk gezien Google's positie.

@@ -265,13 +265,8 @@ De template (`page-structures/reference-doc.md`) noemt `AnchorHeading`, `InPageT
 - Contract-koppeling: de **FIGUUR-SLOTS** hierboven leveren per pagina de plek + het bijschrift + de alt-tekst; de schrijfronde maakt alleen de afbeelding.
 - **Statusnoot:** neem beide op in de "Componentenlijst" + "Sectie-volgorde" van `reference-doc.md` (Sectie 7.5 Figuren binnen de body; Sectie 8.5 Sources vóór RelatedTopicsList).
 
-### 4.4 llms.txt — reflecteert de oude structuur
-Drie bestanden: `public/llms.txt`, `apps/marketing/public/llms.txt`, `apps/app/public/llms.txt`. De twee `apps`-versies zijn **identiek**; **`public/llms.txt` wijkt af** (andere md5) → eerst **consolideren tot één canonieke inhoud** (of één bron + build-copy).
-
-Nodig aan te passen (feitelijk fout t.o.v. de code):
-- **Pricing-blok is stale (oud 5-tier ,99-model):** "Try €2.49/150 · Basic €5.99/500 · Plus €11.99/1.200 · Pro €24.99/2.800 · Power €49.99/6.000". Werkelijk (ADR-058, `pricing.ts`): **Try €5/100 · Starter €15/400 · Plus €25/1.000 · Power €60/3.000**. Vervangen door de 4 tiers; idealiter uit `pricing.ts` gegenereerd i.p.v. hardcoded (llms.txt is statisch — dan minstens handmatig gelijktrekken + in de single-source-checklist opnemen).
-- **Structuur-referenties:** "Key pages" verwijst naar `/docs/getting-started` + `/docs/how-indxr-works/overview` (bestaan nog — ok). Voeg de nieuwe ankers toe waar zinvol (`/docs/how-indxr-works/accuracy`, `…/summaries`, `…/limits`) en verwijder niets dat naar verwijderde routes wijst (geen van de huidige links doet dat, maar na de faq-move: als llms.txt ooit `/docs/help/faq` noemt → `/docs/faq`). *(Huidige llms.txt noemt geen help-routes.)*
-- **Model-naam:** de `apps`-versies zijn al correct ("language router … AssemblyAI Universal-3.5 Pro"); **verifieer `public/llms.txt`** op dezelfde regel (kan nog "Universal-3" zeggen).
+### 4.4 llms.txt — VERWIJDERD (2026-07-23)
+De drie `llms.txt`-bestanden zijn **verwijderd** (ADR-039 herzien na externe verificatie: geen bewezen AI-citation lever; Google steunt het niet (Mueller ≈ meta-keywords); enige echte afnemer = coding-agents met API-docs en INDXR heeft **geen publieke API**; de bestanden stonden bovendien op oude 5-tier-prijzen en logen over het product). Niet opnieuw toevoegen. Zie [content/writing-standard.md §A5](./writing-standard.md).
 - **Consistentie-eis:** na consolidatie moeten de 3 paden byte-identiek zijn (of via één build-stap gevuld), zodat ze niet opnieuw uiteenlopen.
 
 ---
@@ -280,4 +275,4 @@ Nodig aan te passen (feitelijk fout t.o.v. de code):
 - **16 routes** (na DEEL 2). Schrap `help/how-to` + `help/troubleshooting` (308 → `/articles`), verplaats `help/faq` → `/docs/faq`; `Help`-sidebarsectie verdwijnt.
 - Elke pagina heeft nu een **BEZIT/HERHAALT-NIET-grens** + **BRONMATERIAAL** (exacte functie/bestand voor SPEC-pagina's) → geen giswerk, geen overlap.
 - **SPEC-pagina's** (CC schrijft uit code): alle export-formats + hub, summaries, limits, credits-and-billing, data-handling, getting-started, faq. **ARGUMENT-pagina's** (Claude): overview (klaar), accuracy.
-- **Vóór de schrijfronde beslissen:** refund-beleid (launch-blocker); VAT-scope + dedup-antwoord een houder geven; `SourcesBlock` + `DocsFigure` aan de template toevoegen; llms.txt consolideren + pricing-blok bijwerken.
+- **Vóór de schrijfronde beslissen:** refund-beleid (launch-blocker); VAT-scope + dedup-antwoord een houder geven; `SourcesBlock` + `DocsFigure` aan de template toevoegen. *(llms.txt is verwijderd — ADR-039, zie §4.4.)*

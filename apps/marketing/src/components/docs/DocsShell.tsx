@@ -45,7 +45,10 @@ export function DocsShell({ children }: DocsShellProps) {
 
         {/* Content + right on-this-page TOC */}
         <div className="flex gap-10 px-6 py-8">
-          <div id="docs-content" className="min-w-0 flex-1 max-w-3xl">
+          {/* max-w-2xl ≈ 42rem ≈ ~70–75ch — the docs reading measure per batch-3b research
+              (denser than the old max-w-3xl/~90ch); wide enough that DocsTable (min-w-36rem)
+              doesn't scroll on desktop. */}
+          <div id="docs-content" className="min-w-0 flex-1 max-w-2xl">
             {children}
           </div>
           <aside className="hidden xl:block w-56 shrink-0">
