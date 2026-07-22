@@ -11642,3 +11642,31 @@ apps/marketing/src/app/page.tsx
 apps/marketing/src/app/transcribe/page.tsx
 apps/marketing/src/components/marketing/StatsFromTesting.tsx
 ---
+[2026-07-23 01:36] commit: docs(account): night-run phase 4b — write credits + billing pages (were KHIDR stubs)
+
+Both pages were live placeholders with KHIDR TODO markers and hardcoded numbers.
+Rewritten to the docs contract (DefinitionLeadOpening, AnchorHeadings, DocsCallout,
+SourcesBlock, See-also ≤3), with every credit number rendered from pricing.ts
+(CREDIT_COSTS/FREE_TIER) instead of hardcoded prose.
+
+- Credits: what costs credits (caption 0, AI 1/min, summary 3, RAG 1/10min, playlist
+  first-3-free then 1/video, AI-in-playlist per minute), the reserve→settle→refund
+  model (ADR-050, balance dips then recovers — "shown number is the most you pay"),
+  auto-refund on failed AI work, never expire. Verified against pricing.ts +
+  credit_manager.py.
+- Billing: one-time packages via Stripe, VAT-inclusive, credits within ~a minute;
+  invoices + purchase history on the Account page; VAT country scope (NL + EU OSS,
+  UK/CH blocked until local registration, per ADR-062). Verified against the checkout
+  route + PACKAGES + ADR-062.
+
+DELIBERATELY LEFT TO KHIDR (see night report): the purchase-refund POLICY itself is a
+launch-blocker decision (content-sitemap §Laag2). Both pages point to /terms for it
+rather than invent a policy. The auto-refund-on-failure MECHANISM is code-true and is
+documented.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/account/billing/page.tsx
+apps/marketing/src/app/docs/account/credits/page.tsx
+---
