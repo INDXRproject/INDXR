@@ -10,13 +10,19 @@ aai.settings.base_url = "https://api.eu.assemblyai.com"
 
 def transcribe_with_assemblyai(audio_path: str) -> dict:
     """
-    Transcribe audio file using AssemblyAI Universal-3 Pro.
+    Transcribe audio file using AssemblyAI's highest-quality model available for the
+    detected language. speech_models is a LANGUAGE ROUTER, not an error-fallback list:
+    Universal-3.5 Pro / Universal-3 Pro cover a subset of languages natively; any other
+    language is served by Universal-2 (99 languages). We list 3.5 Pro first so every
+    language it supports (incl. Arabic — verified 2026-07-22) runs on the best model,
+    3 Pro next, then Universal-2 as the broad-coverage router. Valid AssemblyAI ids use
+    dashes: "universal-3-5-pro" (NOT "universal-3.5-pro"). All three share the EU endpoint.
     Returns dict matching existing whisper_client format:
-    { 'success': bool, 'transcript': [...], 'duration': float, 'error': str }
+    { 'success': bool, 'transcript': [...], 'duration': float, 'model': str }
     """
     try:
         config = aai.TranscriptionConfig(
-            speech_models=["universal-3-pro", "universal-2"],
+            speech_models=["universal-3-5-pro", "universal-3-pro", "universal-2"],
             punctuate=True,
             format_text=True,
         )
@@ -27,8 +33,10 @@ def transcribe_with_assemblyai(audio_path: str) -> dict:
         if transcript.status == aai.TranscriptStatus.error:
             return {'success': False, 'error': transcript.error}
 
-        # Effective model AssemblyAI actually ran (speech_models config is a preference list with
-        # fallback). Captured per job for cost accounting (transcription_jobs.assemblyai_model).
+        # Effective model AssemblyAI actually ran (the language router picks one of the
+        # requested speech_models for the detected language). Captured per job for per-model
+        # cost accounting — transcription_jobs.assemblyai_model drives the COR rate (ADR-070):
+        # universal-2 = $0.15/hr, universal-3-pro / universal-3-5-pro = $0.21/hr.
         model_used = getattr(transcript, 'speech_model_used', None)
 
         # Convert AssemblyAI words to ~5 second segments matching our format

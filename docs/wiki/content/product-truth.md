@@ -115,8 +115,11 @@ YouTube's auto-vertaalde tracks worden vermeden door tracks te kiezen waarvan de
 
 ## 4. Modelnamen — huidige waarheid + centralisatie-voorbereiding
 
-### Live modellen (ground truth uit code)
-- **Transcriptie (`speech_model` naar AssemblyAI):** primair **`universal-3-pro`**, fallback **`universal-2`** — `backend/assemblyai_client.py:19` (`speech_models=["universal-3-pro", "universal-2"]`). EU-endpoint `https://api.eu.assemblyai.com` (`:9`). Het feitelijk gedraaide model wordt teruggelezen via `speech_model_used` (`:32`). Geen `nano`/`best`/`slam-1`.
+### Live modellen (ground truth uit code) — bijgewerkt 2026-07-22 (ADR-070)
+- **Transcriptie (`speech_models` naar AssemblyAI):** chain **`["universal-3-5-pro", "universal-3-pro", "universal-2"]`** — `backend/assemblyai_client.py:19`. EU-endpoint `https://api.eu.assemblyai.com` (`:9`). Het feitelijk gedraaide model wordt teruggelezen via `speech_model_used` en opgeslagen in `transcription_jobs.assemblyai_model` (`:32`). Geen `nano`/`best`/`slam-1`.
+- **`speech_models` is een TAAL-ROUTER, geen error-fallback.** AssemblyAI kiest het beste gevraagde model dat de gedetecteerde taal native dekt. Empirisch geverifieerd 2026-07-22 tegen de EU-endpoint met de Railway-key: **Engels → `universal-3-5-pro`, Arabisch → `universal-3-5-pro`** (Universal-3.5 Pro dekt Arabisch native — anders dan Universal-3 Pro, dat native maar 6 talen doet — EN/ES/PT/FR/DE/IT — en Arabisch naar Universal-2 stuurde). Talen die 3.5/3 Pro niet native dekken gaan naar Universal-2 (99 talen).
+- **AssemblyAI model-ids gebruiken streepjes:** `universal-3-5-pro` (NIET `universal-3.5-pro` — dat geeft een API-fout). Ids: `universal-2`, `universal-3-pro`, `universal-3-5-pro`.
+- **Per-model COR-tarief (ADR-070):** Universal-2 = **$0,15/uur**; Universal-3 Pro & Universal-3.5 Pro = **$0,21/uur**. GEEN EU-premie op speech-to-text (EU-prijs = US-prijs — anders dan de LLM Gateway, die 10% in-region-premie heeft). Tarieven in `cost_config` (USD opgeslagen, `usd_eur_rate` bij query); COR wordt **per run** berekend op basis van het vastgelegde effectieve model (`transcription_jobs.assemblyai_model`), nooit scope-gemiddeld. Legacy runs zonder model (pre-capture, NULL) → gedocumenteerde fallback $0,21/uur. Rate-helper: `public.assemblyai_stt_eur_per_min(model)`; gebruikt in `_geld_scope`. Zie [ADR-070](../decisions/070-per-model-stt-cor.md).
 - **AI-summary:** primair **`gemini-2.5-flash`**, fallback **`claude-haiku-4-5-20251001`**, via de **AssemblyAI EU LLM Gateway** `https://llm-gateway.eu.assemblyai.com/v1/chat/completions` — `backend/main.py:1088-1090`. **DeepSeek (`deepseek-chat`) is de OUDE provider** (ADR-068) en wordt **niet meer aangeroepen**; alleen nog in comments/docs.
 - **Backend-anker (code):** `backend/master_cache.py:34` `CURRENT_PRODUCTION_AI_MODEL = "assemblyai_universal_3"` — dichtstbijzijnde bestaande "centrale" constante, maar **content is er niet aan gekoppeld**.
 
@@ -130,7 +133,7 @@ YouTube's auto-vertaalde tracks worden vermeden door tracks te kiezen waarvan de
 3. **Correcte "Universal-3 Pro"-plekken** (rendered `.tsx`, ter referentie voor consistentie): `articles/audio-to-text/page.tsx:10,24,36,42,51,102,113`; `articles/youtube-transcript-json/page.tsx:28,42,170`; `articles/youtube-transcript-markdown/page.tsx:16`; `articles/youtube-transcript-obsidian/page.tsx:27`; `articles/youtube-age-restricted-transcript/page.tsx:24,123,154`; `articles/youtube-members-only-transcript/page.tsx:95`; `articles/youtube-srt-download/page.tsx:162`; `articles/youtube-transcript-without-extension/page.tsx:107`; `articles/chunk-youtube-transcripts-for-rag/page.tsx:69`; `articles/youtube-transcript-not-available/page.tsx:31,49`; `articles/youtube-transcript-non-english/page.tsx:38,113,185`. (Plus de `docs/content/ARTIKEL-*.md`-spiegels — zie de losse inventaris in de commit-samenvatting.)
 
 ### Aanbeveling voor de herschrijf (centralisatie)
-Content moet verwijzen naar **"ons hoogste-kwaliteit model"** met de versienaam op **één** centrale plek (bv. een content-constante die "Universal-3 Pro" levert, analoog aan hoe `pricing.ts` alle prijzen levert). Dan:
+Content moet verwijzen naar **"ons hoogste-kwaliteit model"** met de versienaam op **één** centrale plek (bv. een content-constante die de huidige naam levert — nu **Universal-3.5 Pro**, sinds ADR-070 — analoog aan hoe `pricing.ts` alle prijzen levert). Dan:
 - één wijziging bij een model-upgrade i.p.v. ~30 losse edits;
 - geen "Universal-2"/"Universal-3"/"Universal-3 Pro"-drift meer;
 - de AI-summary-modelnaam idem centraal (nu overal fout op "DeepSeek").
@@ -142,7 +145,7 @@ Content moet verwijzen naar **"ons hoogste-kwaliteit model"** met de versienaam 
 **BUILT / LIVE:**
 - Alle 4 pricing-tiers + welcome-credits (25) + playlist-eerste-3-gratis.
 - Alle 7 export-formaten + anoniem-TXT-only-gating.
-- Caption-extractie (native-anchored), AI-transcriptie (`universal-3-pro`), AI-summary (`gemini-2.5-flash` via EU-gateway), playlist-batch, Tiptap-editor, library, collections (desktop-CRUD).
+- Caption-extractie (native-anchored), AI-transcriptie (chain `universal-3-5-pro`→`universal-3-pro`→`universal-2`, taal-router), AI-summary (`gemini-2.5-flash` via EU-gateway), playlist-batch, Tiptap-editor, library, collections (desktop-CRUD).
 - Reserve-/hold-creditmodel (default aan).
 - **Storage-indicator = 500 MB** — maar **alléén weergave** (zie hieronder).
 

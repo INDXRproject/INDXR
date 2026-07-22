@@ -10581,3 +10581,44 @@ docs/wiki/INDEX.md
 docs/wiki/content/product-truth.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-07-22 12:30] ADR-070 per-model STT-COR + Universal-3.5 Pro chain | DEEL1 empirisch (EU-endpoint, Railway-key): Engels+Arabisch → effectief `universal-3-5-pro` (3.5 Pro dekt Arabisch native, routet NIET naar Universal-2; model-id met streepjes). DEEL2 chain → `["universal-3-5-pro","universal-3-pro","universal-2"]` (assemblyai_client.py), 1 call geverifieerd. DEEL3 migratie `20260722101609_per_model_stt_cor.sql`: cost_config per-model USD/uur-kolommen (U2 $0,15; U3/U3.5 Pro $0,21; geen EU-premie op STT), rate-helper `assemblyai_stt_eur_per_min()` (REVOKE anon/auth), `_geld_scope` COR per effectief model op beide plekken (nooit scope-gemiddeld), NULL-legacy → fallback $0,21. COR-delta all-time €30,2940→€28,9977 (−€1,2962); Arabische playlist (U2, 23,48u) €4,5369→€3,2406 (−28,6%). Onafhankelijke cross-check exact gelijk; reconciliatie (against+goodwill=Σmethode-COR) 29,0101=29,0101 intact; helper anon/auth=false; geen nieuwe security-advisor. Alleen COR — omzet/BTW niet geraakt. Docs: ADR-070, product-truth §4, LESSONS. | gewijzigd: backend/assemblyai_client.py, supabase/migrations/20260722101609_per_model_stt_cor.sql, docs/wiki/decisions/070-per-model-stt-cor.md, docs/wiki/content/product-truth.md, docs/wiki/architecture/database-schema.md, docs/wiki/INDEX.md, docs/LESSONS.md, docs/LOG.md
+[2026-07-22 12:20] commit: feat(finance): per-model AssemblyAI STT COR + Universal-3.5 Pro chain (ADR-070)
+
+Static transcription COR rate ($0.21/hr) over-booked Universal-2 runs (real
+$0.15/hr). speech_models is a language router; the effective model is recorded
+per job. Compute COR per run from transcription_jobs.assemblyai_model.
+
+DEEL 1 (empirical, EU endpoint, Railway key): English + Arabic both resolve to
+universal-3-5-pro — Universal-3.5 Pro covers Arabic natively (does NOT route to
+Universal-2, unlike Universal-3 Pro's 6-language native set). Valid id uses
+dashes: universal-3-5-pro.
+
+DEEL 2: speech_models -> ["universal-3-5-pro","universal-3-pro","universal-2"]
+(assemblyai_client.py). Verified one English call yields universal-3-5-pro.
+
+DEEL 3 (migration 20260722101609_per_model_stt_cor.sql):
+- cost_config per-model USD/hr columns (U2 $0.15; U3 Pro & U3.5 Pro $0.21; NO EU
+  premium on STT), FX via usd_eur_rate at query.
+- helper assemblyai_stt_eur_per_min(model) (STABLE SECURITY DEFINER, revoked from
+  anon/authenticated, granted service_role) — single source for the mapping.
+- _geld_scope resolves STT COR per run on BOTH sites (scope total + per-user
+  against-revenue), never scope-averaged. NULL/legacy -> documented $0.21 fallback.
+
+Verified: COR all-time EUR30.2940 -> EUR28.9977 (-EUR1.2962); Arabic playlist
+(universal-2, 23.48h) EUR4.5369 -> EUR3.2406 (-28.6%). Independent raw-row
+cross-check equals function output exactly. Reconciliation intact:
+(against_revenue - fee) + goodwill == sum(method COR) = 29.0101 = 29.0101.
+Helper not anon/auth-executable; no new security advisor. COR only — _sale_vat(),
+vat_by_country and revenue/VAT recognition untouched. Historical snapshots not
+backfilled (ADR-064); forward-only.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/assemblyai_client.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/content/product-truth.md
+docs/wiki/decisions/070-per-model-stt-cor.md
+supabase/migrations/20260722101609_per_model_stt_cor.sql
+---
