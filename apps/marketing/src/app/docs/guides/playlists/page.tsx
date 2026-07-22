@@ -14,6 +14,7 @@ const perVideo = CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/guides/playlists" },
   title: "Transcribe a playlist — INDXR.AI Docs",
   description:
     "Turn a whole YouTube playlist into transcripts in one job. Choose per video whether to use captions or AI, the first three auto-caption videos are free, credits are reserved up front and the unused part is returned, and the job keeps running after you close the tab. Up to 500 videos per job.",

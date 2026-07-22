@@ -9,6 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/account/settings" },
   title: "Settings — INDXR.AI Docs",
   description:
     "Your settings cover the theme, email preferences, how many transcripts show per library page, the default RAG chunk size (30, 60, 90 or 120 seconds, default 60), and deleting your account. Each setting and its options, explained.",

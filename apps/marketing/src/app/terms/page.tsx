@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms of Service — INDXR.AI",
   description: "INDXR.AI terms of service. Acceptable use, refund policy, and your rights as a user.",
 }

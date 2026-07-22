@@ -11,6 +11,7 @@ import { VatLine } from "@/components/pricing/VatLine"
 import { PACKAGES, tierPriceCredits } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/pricing" },
   title: "Pricing — INDXR.AI",
   description: `YouTube transcript extraction and AI transcription credits. Starting at €${PACKAGES[0].priceEur.toFixed(2)} — pay-per-use, no subscription, VAT included. Credits never expire.`,
 }

@@ -19,6 +19,7 @@ const description =
   "INDXR.AI turns YouTube videos, playlists, and audio or video files you upload into text you can use — plain text, Markdown, CSV, subtitles, JSON, or RAG JSON. You choose how the text is produced: extract a video's existing captions, or have the audio transcribed. Everything you extract is saved and stays editable."
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/how-indxr-works" },
   title: "How INDXR Works — INDXR.AI Docs",
   description,
 }

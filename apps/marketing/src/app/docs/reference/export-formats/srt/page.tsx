@@ -9,6 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/reference/export-formats/srt" },
   title: "SRT Subtitle Export — INDXR.AI Docs",
   description:
     "INDXR exports SubRip (.srt) subtitles: numbered cues with HH:MM:SS,mmm timestamps, re-segmented into readable blocks and wrapped to ~42 characters per line so they load cleanly into editors and players.",

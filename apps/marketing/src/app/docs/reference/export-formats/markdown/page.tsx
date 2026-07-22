@@ -11,6 +11,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/reference/export-formats/markdown" },
   title: "Markdown Export — INDXR.AI Docs",
   description:
     "INDXR exports transcripts as Markdown with a YAML frontmatter block (title, url, channel, published, duration, language, transcript_source, created, type, tags) and optional timestamp headings that deep-link back to the video.",

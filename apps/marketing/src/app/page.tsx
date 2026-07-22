@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { HeroImage } from "@/components/marketing/HeroImage"
@@ -9,6 +10,10 @@ import { StatsFromTesting } from "@/components/marketing/StatsFromTesting"
 import { TestimonialPlaceholder } from "@/components/marketing/TestimonialPlaceholder"
 import { PricingTeaserBlock } from "@/components/marketing/PricingTeaserBlock"
 import { ClosingCTASection } from "@/components/marketing/ClosingCTASection"
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+}
 
 export default function LandingPage() {
   return (

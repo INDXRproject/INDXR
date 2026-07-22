@@ -8,6 +8,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/guides/library" },
   title: "Your library — INDXR.AI Docs",
   description:
     "Every transcript you make while signed in is saved to your library. You can edit a transcript without losing the original, group transcripts into collections, search by title, delete what you don't need, and see how much space your library uses.",

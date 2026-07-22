@@ -6,6 +6,7 @@ import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-transcript-json" },
   title: "YouTube Transcript JSON Export — What You Actually Get | INDXR.AI",
   description:
     "Export YouTube transcripts as structured JSON with video metadata, start/end timestamps, and channel info. Free for captioned videos. Real schema, real output, no surprises.",

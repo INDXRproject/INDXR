@@ -14,6 +14,7 @@ import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/reference/export-formats/json" },
   title: "JSON & RAG JSON Export — INDXR.AI Docs",
   description:
     "INDXR exports transcripts as standard JSON (raw segments with a metadata wrapper, free) and RAG-optimized JSON (chunked, with token estimates and per-chunk deep links for vector databases).",

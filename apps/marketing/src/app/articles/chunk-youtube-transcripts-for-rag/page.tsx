@@ -5,6 +5,7 @@ import { AUTHORS } from "@/lib/authors"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/chunk-youtube-transcripts-for-rag" },
   title: "How to Chunk YouTube Transcripts for RAG — Research-Backed Guide | INDXR.AI",
   description:
     "The chunk size you pick matters more than your embedding model. Research-backed guide covering optimal sizes, overlap, sentence-boundary snapping, and why 30 seconds is wrong.",

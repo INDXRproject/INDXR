@@ -9,6 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/reference/export-formats/txt" },
   title: "Plain Text (TXT) Export — INDXR.AI Docs",
   description:
     "INDXR exports a transcript as plain text in two variants: continuous paragraphs, or one line per segment prefixed with an HH:MM:SS timestamp. TXT is the only format available without an account.",

@@ -5,6 +5,7 @@ import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-transcripts-vector-database" },
   title: "YouTube Transcripts to Vector Database — Python Pipeline Guide | INDXR.AI",
   description:
     "Step-by-step guide to building a semantic search system over YouTube video content. Extract transcripts, generate embeddings, store in Pinecone or ChromaDB, and query with natural language.",

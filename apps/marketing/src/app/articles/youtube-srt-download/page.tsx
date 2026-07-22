@@ -6,6 +6,7 @@ import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-srt-download" },
   title: "YouTube SRT Download — Resegmented for Video Editors | INDXR.AI",
   description:
     "Download YouTube subtitles as SRT or VTT with professional timing — 3–7 second segments, 42 characters per line. Free for videos with captions. AI transcription for videos without.",

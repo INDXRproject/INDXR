@@ -9,6 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/reference/export-formats/vtt" },
   title: "VTT Subtitle Export — INDXR.AI Docs",
   description:
     "INDXR exports WebVTT (.vtt) subtitles: a WEBVTT header, an optional NOTE block with title and language, and cues with HH:MM:SS.mmm timestamps — the web-native subtitle format for HTML5 video.",

@@ -5,6 +5,7 @@ import { AUTHORS } from "@/lib/authors"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-transcript-not-available" },
   title: "YouTube Transcript Not Available? Here's Why and How to Fix It | INDXR.AI",
   description:
     "YouTube transcripts missing or not showing? We cover every reason — from creator settings to unsupported languages — and show you how to get the text anyway, even without captions.",

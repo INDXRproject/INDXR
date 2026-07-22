@@ -6,6 +6,7 @@ import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-members-only-transcript" },
   title: "YouTube Members-Only Transcript — What's Possible and What Isn't | INDXR.AI",
   description:
     "Members-only YouTube videos are access-restricted by design. Here's exactly what you can and can't do to get a transcript — including a legitimate workaround using audio upload.",

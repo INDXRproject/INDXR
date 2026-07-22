@@ -13,6 +13,7 @@ import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/reference/export-formats" },
   title: "Export Formats — INDXR.AI Docs",
   description:
     "INDXR exports every transcript in seven formats — plain text, Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON. This page explains what each one is for; each format has its own spec page.",

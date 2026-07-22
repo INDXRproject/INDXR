@@ -12,6 +12,7 @@ import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/guides/single-video" },
   title: "Transcribe a single video — INDXR.AI Docs",
   description:
     "Paste one YouTube link and get its transcript. INDXR pulls the video's captions in seconds — no account needed for plain text — and can transcribe the audio with AI when a video has no captions.",

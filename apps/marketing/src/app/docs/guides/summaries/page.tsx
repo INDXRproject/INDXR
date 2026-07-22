@@ -13,6 +13,7 @@ import { summaryModelName } from "@indxr/shared/lib/models"
 const summaryCost = CREDIT_COSTS.AI_SUMMARY
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/guides/summaries" },
   title: "Summaries — INDXR.AI Docs",
   description:
     "Turn a transcript into an AI summary with key points. A summary costs a flat 3 credits regardless of the video's length, is saved alongside the transcript, can be edited without losing the AI's version, and can be regenerated — which replaces the current summary.",

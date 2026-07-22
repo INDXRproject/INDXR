@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react"
 import { DocsShell } from "@/components/docs/DocsShell"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/faq" },
   title: "YouTube Transcript FAQ — INDXR.AI",
   description:
     "Answers to common questions about downloading YouTube transcripts, extracting subtitles as SRT files, transcribing playlists in bulk, and using AI to transcribe videos without captions.",

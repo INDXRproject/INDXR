@@ -5,6 +5,7 @@ import { DocsCategorySection } from "@/components/docs/DocsCategorySection"
 import { docsConfig } from "@/lib/docs-config"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs" },
   title: "Documentation — INDXR.AI",
   description: "Everything you need to get started with INDXR — from your first transcript to advanced export and RAG workflows.",
   robots: { index: true, follow: true },

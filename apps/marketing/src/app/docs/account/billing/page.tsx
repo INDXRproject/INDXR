@@ -5,6 +5,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/account/billing" },
   title: "Billing and Invoices — INDXR.AI Docs",
   description: "How to buy credits, find your invoices and purchase history, and which countries we can sell to under our VAT registration.",
   robots: { index: true, follow: true },

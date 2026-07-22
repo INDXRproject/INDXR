@@ -5,6 +5,7 @@ import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-channel-knowledge-base" },
   title: "YouTube Channel Knowledge Base — Transcribe, Index & Search | INDXR.AI",
   description:
     "Extract transcripts from an entire YouTube channel, embed them in a vector database, and build a semantic search system over months or years of video content. Step-by-step guide.",

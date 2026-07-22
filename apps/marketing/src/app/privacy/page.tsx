@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "Privacy Policy — INDXR.AI",
   description: "INDXR.AI privacy policy. What data we collect, how we use it, your rights under GDPR, and how to contact us.",
 }

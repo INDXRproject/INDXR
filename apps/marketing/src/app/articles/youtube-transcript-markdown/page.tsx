@@ -6,6 +6,7 @@ import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-transcript-markdown" },
   title: "YouTube Transcript to Markdown — Obsidian, Notion & Blog Ready | INDXR.AI",
   description:
     "Export YouTube transcripts as clean Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp deep links. Works when Obsidian plugins break. No extension required.",

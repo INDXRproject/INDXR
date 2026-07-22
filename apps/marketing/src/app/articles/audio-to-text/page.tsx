@@ -6,6 +6,7 @@ import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/audio-to-text" },
   title: "Audio File to Text — Upload MP3, MP4, WAV & More | INDXR.AI",
   description:
     `Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by ${transcriptionModelName()}.`,

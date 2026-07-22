@@ -6,6 +6,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/account/credits" },
   title: "Credits — INDXR.AI Docs",
   description: "Learn how credits work in INDXR — what costs credits, the reserve model, why credits never expire, and how refunds work.",
   robots: { index: true, follow: true },

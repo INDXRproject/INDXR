@@ -5,6 +5,7 @@ import { AUTHORS } from "@/lib/authors"
 import { creditCostPhrase } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-playlist-transcript" },
   title: "YouTube Playlist Transcript Extractor — Batch Download in Minutes | INDXR.AI",
   description:
     "Extract transcripts from entire YouTube playlists in one job. First 3 auto-caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats.",

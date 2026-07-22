@@ -12,6 +12,7 @@ import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/guides/uploads" },
   title: "Audio & video uploads — INDXR.AI Docs",
   description:
     "Upload an audio or video file you already have and INDXR transcribes it with AI. Nine formats, up to 500 MB and 10 hours per file, 1 credit per minute. The file is deleted from the server as soon as it is processed.",

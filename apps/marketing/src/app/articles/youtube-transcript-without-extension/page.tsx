@@ -5,6 +5,7 @@ import { AUTHORS } from "@/lib/authors"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-transcript-without-extension" },
   title: "YouTube Transcript Without a Chrome Extension — Works in Any Browser | INDXR.AI",
   description:
     "Chrome extensions for YouTube transcripts break when YouTube updates its UI. INDXR.AI works in any browser without installation — paste a URL, get a transcript instantly.",

@@ -11485,3 +11485,81 @@ apps/app/src/components/app-sidebar.tsx
 packages/shared/src/components/PlaylistAvailabilitySummary.tsx
 packages/shared/src/components/free-tool/AudioTab.tsx
 ---
+[2026-07-23 01:18] commit: feat(seo): night-run phase 2 — self-canonicals, robots policy, remove dead preview page
+
+Indexation foundation:
+- Self-referencing canonical on every public page. Injected alternates.canonical
+  into the 44 static-metadata pages (docs + articles + pricing/about/privacy/terms),
+  added a metadata export to the home server component, added canonical to the
+  transcribe layout, and created minimal canonical-carrying layouts for the three
+  client pages (contact/login/signup). Route set = the sitemap (authoritative).
+  metadataBase stays https://indxr.ai (the one canonical domain form).
+- robots.txt rewritten: AI fetch/search crawlers kept explicitly allowed
+  (OAI-SearchBot, ChatGPT-User, Claude-SearchBot [was misspelled "ClaudeSearchBot"],
+  Claude-User, PerplexityBot, Perplexity-User). AI training crawlers allowed BY
+  DOCUMENTED CHOICE (GPTBot, ClaudeBot, anthropic-ai, Google-Extended, CCBot —
+  CCBot flipped from Disallow). Meta-ExternalAgent stays blocked (deliberate, noted).
+- Removed /docs/component-preview (internal dev preview, proven unused: not in
+  sitemap, docs-config, or any import/build reference) — a preview page has no
+  place in production.
+
+Redirect graph verified (unchanged): exactly 2 rules (/account/credits → app
+account, /faq → /docs/faq), both single-hop, destinations exist, neither source
+is in the sitemap. 404: no custom not-found and no catch-all page route, so
+Next.js returns a real 404 status (verified live post-deploy in the night report).
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/public/robots.txt
+apps/marketing/src/app/about/page.tsx
+apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/chunk-youtube-transcripts-for-rag/page.tsx
+apps/marketing/src/app/articles/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-members-only-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-csv/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-markdown/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-not-available/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-obsidian/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
+apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
+apps/marketing/src/app/contact/layout.tsx
+apps/marketing/src/app/docs/account/billing/page.tsx
+apps/marketing/src/app/docs/account/credits/page.tsx
+apps/marketing/src/app/docs/account/settings/page.tsx
+apps/marketing/src/app/docs/component-preview/page.tsx
+apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/app/docs/guides/library/page.tsx
+apps/marketing/src/app/docs/guides/playlists/page.tsx
+apps/marketing/src/app/docs/guides/single-video/page.tsx
+apps/marketing/src/app/docs/guides/summaries/page.tsx
+apps/marketing/src/app/docs/guides/uploads/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/page.tsx
+apps/marketing/src/app/docs/page.tsx
+apps/marketing/src/app/docs/quickstart/page.tsx
+apps/marketing/src/app/docs/reference/accuracy/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/csv/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/json/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/markdown/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/srt/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/txt/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/vtt/page.tsx
+apps/marketing/src/app/docs/reference/limits/page.tsx
+apps/marketing/src/app/login/layout.tsx
+apps/marketing/src/app/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/app/privacy/page.tsx
+apps/marketing/src/app/signup/layout.tsx
+apps/marketing/src/app/terms/page.tsx
+apps/marketing/src/app/transcribe/layout.tsx
+---

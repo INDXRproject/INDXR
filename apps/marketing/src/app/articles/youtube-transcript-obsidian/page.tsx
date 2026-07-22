@@ -5,6 +5,7 @@ import { AUTHORS } from "@/lib/authors"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-transcript-obsidian" },
   title: "YouTube Transcript to Obsidian — Works When Plugins Break | INDXR.AI",
   description:
     "YTranscript and Obsidian Web Clipper break when YouTube updates its UI. INDXR.AI exports transcripts as Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp links — server-side, no plugin required.",

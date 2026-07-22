@@ -9,6 +9,7 @@ import { NextStepsBlock } from "@/components/docs/NextStepsBlock"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/quickstart" },
   title: "Quickstart — INDXR.AI Docs",
   description: "Get your first YouTube transcript in under 3 minutes. No account required for single videos.",
   robots: { index: true, follow: true },

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/about" },
   title: "About INDXR.AI — YouTube Transcript Tool",
   description: "INDXR.AI is a YouTube transcript extraction tool. Extract captions instantly, transcribe audio with AI, and export to any format.",
 }

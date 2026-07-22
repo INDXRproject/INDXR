@@ -10,6 +10,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/reference/export-formats/csv" },
   title: "CSV Export — INDXR.AI Docs",
   description:
     "INDXR exports transcripts as CSV: one row per segment with segment_index, start_time, end_time, duration, word_count and text, preceded by # metadata comment lines, with a UTF-8 BOM for Excel.",

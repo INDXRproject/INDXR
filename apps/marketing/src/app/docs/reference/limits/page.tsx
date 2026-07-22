@@ -9,6 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/docs/reference/limits" },
   title: "Limits — INDXR.AI Docs",
   description:
     "The hard limits INDXR enforces: AI transcription up to 10 hours per file, uploads up to 500 MB, playlists up to 500 videos per job, 3 concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.",

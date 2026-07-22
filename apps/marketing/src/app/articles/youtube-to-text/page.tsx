@@ -4,6 +4,7 @@ import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplat
 import { AUTHORS } from "@/lib/authors"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-to-text" },
   title: "YouTube to text — what you actually get | INDXR.AI",
   description:
     "Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — six export formats, nine output options.",

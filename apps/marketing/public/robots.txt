@@ -1,41 +1,64 @@
+# INDXR.AI robots policy
+#
+# Default: allow crawling of all public pages; keep the app, API and private
+# areas out. /transcribe (the public free tool) is intentionally crawlable.
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /dashboard/
 Disallow: /admin/
-Disallow: /transcribe/
 Disallow: /library/
 
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: ClaudeSearchBot
-Allow: /
-
-User-agent: Claude-User
-Allow: /
-
-User-agent: GPTBot
-Allow: /
-
+# ── AI answer / fetch crawlers — KEEP ALLOWED ───────────────────────────────
+# These fetch pages to answer user questions and to build search indexes that
+# feed AI assistants. Blocking them = invisible inside that assistant, so they
+# stay allowed on purpose.
 User-agent: OAI-SearchBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
 
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
 User-agent: PerplexityBot
 Allow: /
 
+User-agent: Perplexity-User
+Allow: /
+
+# ── AI training crawlers — ALLOWED BY CHOICE ────────────────────────────────
+# These may use pages for model training. We deliberately allow them: the
+# content is public marketing/docs, and presence in training corpora helps
+# assistants describe INDXR correctly. Revisit if that trade-off changes.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# ── Traditional search engines ──────────────────────────────────────────────
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
-User-agent: CCBot
-Disallow: /
-
+# Meta's AI crawler stays blocked — not among the assistants we care to appear
+# in, and it offers no reciprocal discovery value. Deliberate.
 User-agent: Meta-ExternalAgent
 Disallow: /
 

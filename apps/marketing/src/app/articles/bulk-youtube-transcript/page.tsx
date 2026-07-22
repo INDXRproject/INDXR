@@ -5,6 +5,7 @@ import { AUTHORS } from "@/lib/authors"
 import { creditCostPhrase } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/bulk-youtube-transcript" },
   title: "Bulk YouTube Transcript Download — Entire Playlists in One Job | INDXR.AI",
   description:
     "Download transcripts from entire YouTube playlists in one extraction. First 3 auto-caption videos free. Real-time progress. Export as TXT, Markdown, SRT, JSON, or RAG-ready ZIP.",

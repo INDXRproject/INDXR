@@ -6,6 +6,7 @@ import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/sha
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/articles/youtube-age-restricted-transcript" },
   title: "YouTube Age-Restricted Video Transcript — Options and Workarounds | INDXR.AI",
   description:
     "Age-restricted YouTube videos need authentication to access. Here's why standard transcript tools fail, what INDXR.AI shows you, and the audio upload workaround for videos you can legitimately watch.",
