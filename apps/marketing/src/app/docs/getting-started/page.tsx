@@ -104,7 +104,7 @@ export default function GettingStartedPage() {
         <NextStepsBlock
           steps={[
             { label: "Sign up for 25 free credits", href: "/signup", description: "Unlock playlists, AI transcription, all export formats, and your transcript library." },
-            { label: "How credits work", href: "/docs/how-indxr-works/credits", description: "Understand what uses credits and what's always free." },
+            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing", description: "Understand what uses credits and what's always free." },
             { label: "Export formats", href: "/docs/how-indxr-works/export-formats", description: "Markdown, CSV, SRT, VTT, JSON — when to use each." },
             { label: "How INDXR works", href: "/docs/how-indxr-works/overview", description: "A technical overview of the extraction pipeline." },
           ]}

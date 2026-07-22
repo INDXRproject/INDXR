@@ -22,6 +22,13 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Docs restructure: how-indxr-works 15 → 11 pages (ADR-072)
+      { source: '/docs/how-indxr-works/credits', destination: '/docs/account-and-data/credits-and-billing', permanent: true },
+      { source: '/docs/how-indxr-works/accuracy/auto-captions', destination: '/docs/how-indxr-works/accuracy', permanent: true },
+      { source: '/docs/how-indxr-works/accuracy/ai-transcription', destination: '/docs/how-indxr-works/accuracy', permanent: true },
+      { source: '/docs/how-indxr-works/languages', destination: '/docs/how-indxr-works/accuracy', permanent: true },
+      { source: '/docs/how-indxr-works/api', destination: '/docs/how-indxr-works/limits', permanent: true },
+
       // Legacy URL cleanup
       { source: '/faq', destination: '/docs/help/faq', permanent: true },
       { source: '/account/credits', destination: `${APP_URL}/dashboard/account`, permanent: true },

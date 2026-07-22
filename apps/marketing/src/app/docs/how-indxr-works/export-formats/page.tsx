@@ -41,7 +41,7 @@ export default function DocsExportFormatsPage() {
             { label: "Plain text", href: "/docs/how-indxr-works/export-formats/txt" },
             { label: "SRT", href: "/docs/how-indxr-works/export-formats/srt" },
             { label: "RAG JSON", href: "/docs/how-indxr-works/export-formats/json" },
-            { label: "How credits work", href: "/docs/how-indxr-works/credits" },
+            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
           ]}
         />
       </DocsShell>

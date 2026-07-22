@@ -39,7 +39,7 @@ export default function DocsExportJsonPage() {
         <RelatedTopicsList
           topics={[
             { label: "Export formats overview", href: "/docs/how-indxr-works/export-formats" },
-            { label: "How credits work", href: "/docs/how-indxr-works/credits" },
+            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
             { label: "RAG article", href: "/articles/youtube-transcript-for-rag" },
           ]}
         />

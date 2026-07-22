@@ -20,10 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { route: "/docs/getting-started", priority: 0.7 },
     // How INDXR works
     { route: "/docs/how-indxr-works/overview", priority: 0.6 },
-    { route: "/docs/how-indxr-works/credits", priority: 0.6 },
     { route: "/docs/how-indxr-works/accuracy", priority: 0.5 },
-    { route: "/docs/how-indxr-works/accuracy/auto-captions", priority: 0.5 },
-    { route: "/docs/how-indxr-works/accuracy/ai-transcription", priority: 0.5 },
     { route: "/docs/how-indxr-works/export-formats", priority: 0.6 },
     { route: "/docs/how-indxr-works/export-formats/txt", priority: 0.5 },
     { route: "/docs/how-indxr-works/export-formats/markdown", priority: 0.5 },
@@ -31,9 +28,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { route: "/docs/how-indxr-works/export-formats/srt", priority: 0.5 },
     { route: "/docs/how-indxr-works/export-formats/vtt", priority: 0.5 },
     { route: "/docs/how-indxr-works/export-formats/json", priority: 0.5 },
-    { route: "/docs/how-indxr-works/languages", priority: 0.5 },
+    { route: "/docs/how-indxr-works/summaries", priority: 0.5 },
     { route: "/docs/how-indxr-works/limits", priority: 0.5 },
-    { route: "/docs/how-indxr-works/api", priority: 0.4 },
     // Account & data
     { route: "/docs/account-and-data/credits-and-billing", priority: 0.5 },
     { route: "/docs/account-and-data/data-handling", priority: 0.5 },

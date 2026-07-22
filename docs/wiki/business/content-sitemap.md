@@ -82,17 +82,14 @@ app.indxr.ai/  ── app (auth vereist)
 
 ### Groep 3 — Product-documentatie (`indxr.ai/docs/*`)
 
-Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/docs-config.ts`). **Bijna alle `how-indxr-works/*`-pagina's zijn scaffolds**: één substantiële lead-zin + letterlijk `[Placeholder — content coming soon]`. De claim leeft in die lead-zin en in de SEO-metadata/JSON-LD. Alleen `getting-started`, `credits-and-billing` en `faq` zijn volledig uitgebouwd.
+Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/docs-config.ts`). **`how-indxr-works` is 15 → 11 pagina's** (ADR-072): `credits` weg (→ credits-and-billing), `accuracy/auto-captions`+`accuracy/ai-transcription`+`languages` samengevoegd in **`accuracy` ("Accuracy and languages")**, `api` op in `limits`, nieuwe **`summaries`**. Volledig uitgebouwd: `getting-started`, `credits-and-billing`, `faq`, **`overview`** (ADR-072). De rest is nog scaffold (lead-zin + `[Placeholder]`). Elke verwijderde route heeft een 301 in `next.config.ts`.
 
 | Pagina | Route | Doel (1 zin) | Belangrijkste claims | Status |
 |---|---|---|---|---|
 | Docs hub | `/docs` | Navigatiehub naar alle doc-categorieën. | Geen eigen productclaims; category-intro's. | live |
 | Getting started | `/docs/getting-started` | Quickstart naar eerste transcript. | Geen account voor single-video; captions "2–3 sec"; anoniem = Copy/TXT gratis; "Sign up to unlock MD/CSV/SRT/VTT/JSON"; geen captions → AI 1cr/min + account; **"Sign up for 25 free credits"**. | live |
-| Overview | `/docs/how-indxr-works/overview` | High-level pipeline-uitleg. | Auto-captions waar beschikbaar, anders AssemblyAI; **"six formats"** (⚠ botst met export-formats "seven"). | placeholder |
-| Credits | `/docs/how-indxr-works/credits` | Credit-eenheid uitleggen. | Captions 0cr; **AI 1cr/min (min 1); AI-summary 3cr**; "credits never expire". | placeholder |
-| Accuracy (hub) | `/docs/how-indxr-works/accuracy` | Nauwkeurigheid twee methoden. | Auto-captions vs AI; **"AssemblyAI Universal-3, 99.4% word accuracy op clean English"**. | placeholder |
-| Accuracy — auto-captions | `…/accuracy/auto-captions` | Caption-nauwkeurigheid. | Verbatim van creator/YouTube-ASR; hangt af van bron, niet INDXR. | placeholder |
-| Accuracy — AI | `…/accuracy/ai-transcription` | AI-nauwkeurigheid. | Universal-3, "99.4% word-level", varieert per audio/taal. | placeholder |
+| Overview | `/docs/how-indxr-works/overview` | High-level pipeline-uitleg. | **VOLLEDIG geschreven** (ADR-072): captions-of-transcriptie, account-verschil, 7 formaten (6 gratis), library, summaries, credits — getallen uit `pricing.ts`. "Seven formats. Six of them free" (clash met export-formats opgelost). | live |
+| Accuracy and languages | `/docs/how-indxr-works/accuracy` | Nauwkeurigheid + talen (samengevoegd, ADR-072: absorbeert auto-captions + ai-transcription + languages). | Auto-captions (bron-afhankelijk) vs AI (`transcriptionModelName()`, ~99.4% clean English); 18 talen U3.5 Pro / 99 U2; **WER-tiers ≤10/10-25/25-50/>50%** (bron: AssemblyAI). | live (skeleton+merge) |
 | Export formats (hub) | `…/export-formats` | Overzicht formaten. | **"seven formats"** (2 TXT-varianten apart geteld) → botst met overview. | placeholder |
 | Export — txt | `…/export-formats/txt` | TXT-spec. | `[HH:MM:SS]`; "TXT is the only format available to anonymous users". | placeholder |
 | Export — markdown | `…/export-formats/markdown` | Markdown-spec. | YAML-frontmatter (titel/URL/datum/duur); Obsidian/Notion/Logseq. | placeholder |
@@ -100,9 +97,8 @@ Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/do
 | Export — srt | `…/export-formats/srt` | SRT-spec. | `HH:MM:SS,mmm`; VLC/YouTube/Resolve. | placeholder |
 | Export — vtt | `…/export-formats/vtt` | VTT-spec. | `WEBVTT`-header; HTML5/Mux/Cloudflare Stream. | placeholder |
 | Export — json | `…/export-formats/json` | RAG-JSON-spec. | **90–120s chunks**, sentence-snap, `deep_link` per chunk; LangChain/LlamaIndex/Pinecone/Chroma/Weaviate/Qdrant. | placeholder |
-| Languages | `…/languages` | Ondersteunde talen. | Captions "any language met YouTube auto-captions"; AI "99+ languages"; auto-detect. | placeholder |
-| Limits | `…/limits` | Rate/size/duur-limieten. | **Geen enkel concreet getal** — alleen kwalitatief ("rate-limited", "file-size limit"). Captions "no video-length limit". | placeholder (thin) |
-| API | `…/api` | API-beschikbaarheid. | **"INDXR does not currently offer a public REST API"** — alleen web-interface. | placeholder |
+| Summaries | `…/summaries` | AI-samenvatting (ADR-072, nieuw). | 3 credits flat (uit `pricing.ts`), ongeacht lengte; opgeslagen bij transcript; bewerkbaar met origineel behouden. | live (skeleton) |
+| Limits | `…/limits` | Rate/size/duur-limieten (absorbeert `api`, ADR-072). | Nu wél concrete getallen (ADR-071): AI-transcriptie ≤10u, playlist ≤500/job, rate limits; captions geen duur-cap; geen publieke REST API. | placeholder (thin) |
 | Credits & billing | `/docs/account-and-data/credits-and-billing` | Credits + billing in detail. | Captions 0cr; AI 1cr/min; summary 3cr; one-time packages (verwijst naar /pricing); nooit verlopen; **auto-refund bij mislukte AI-operatie**. Twee `KHIDR:` TODO-secties. | live (2 stubs) |
 | Data handling | `/docs/account-and-data/data-handling` | Data-retentie/verwerking. | On-demand; **"uploaded audio deleted within 24 hours"**; transcripts in library. | placeholder |
 | How-to hub | `/docs/help/how-to` | How-to gidsen. | "Guides coming soon." | placeholder |
@@ -214,7 +210,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 | **Formaten-overzicht** | `…/export-formats` (hub) — **alleen** overzichtstabel + doorverwijzing | `/articles` (categorie *Export Formats*) — de losse verhalen |
 | **Troubleshooting** | `/docs/help/troubleshooting` (hub) — **alleen** index + doorlink | `not-available` · `non-english` · `without-extension` · `age-restricted` · `members-only` |
 
-*Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (+ subs), `limits`, `api`, `data-handling`. *Credits:* `/pricing` + `/docs/account-and-data/credits-and-billing` dragen dit; de placeholder `…/how-indxr-works/credits` is de dubbeling om op te lossen (zie Laag 2).
+*Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (Accuracy and languages), `limits`, `summaries`, `data-handling`. *Credits:* `/pricing` + `/docs/account-and-data/credits-and-billing` dragen dit — de dubbele `…/how-indxr-works/credits` is **verwijderd** (301 → credits-and-billing, ADR-072).
 
 ---
 

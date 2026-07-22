@@ -38,7 +38,7 @@ export default function DocsLimitsPage() {
         <p className="text-[var(--fg-muted)] text-sm">[Placeholder — content coming soon]</p>
         <RelatedTopicsList
           topics={[
-            { label: "How credits work", href: "/docs/how-indxr-works/credits" },
+            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
             { label: "Account and billing", href: "/docs/account-and-data/credits-and-billing" },
           ]}
         />

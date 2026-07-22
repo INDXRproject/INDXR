@@ -20,8 +20,8 @@ const featuredDocs: FeaturedDoc[] = [
     description: "A high-level overview of the extraction and transcription pipeline.",
   },
   {
-    label: "How credits work",
-    href: "/docs/how-indxr-works/credits",
+    label: "Credits and billing",
+    href: "/docs/account-and-data/credits-and-billing",
     description: "What costs credits, what doesn't, and how to buy more.",
   },
   {

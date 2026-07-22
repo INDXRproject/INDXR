@@ -10790,3 +10790,63 @@ packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/utils/youtube.ts
 supabase/migrations/20260722115615_caption_latency.sql
 ---
+[2026-07-22 19:30] ADR-072 docs how-indxr-works 15→11 + Overview + header-fix (marketing-app). STRUCTUUR: credits weg (301→credits-and-billing), accuracy/auto-captions+accuracy/ai-transcription+languages samengevoegd in accuracy="Accuracy and languages" (301's→accuracy), api op in limits (301→limits), nieuwe summaries; export-formats+6 kids ongewijzigd. docs-config/sitemap/FeaturedDocsGrid ("How credits work"→"Credits and billing") + 5×301 in next.config; alle interne links naar verwijderde routes rechtgetrokken (export-formats/limits/json/getting-started/credits-and-billing/transcribe) — grep dead-links=0. OVERVIEW: volledige tekst geplaatst (reference-template, nieuwe AnchorHeading-component op élke H2/H3, getallen uit pricing.ts/models.ts). VERIFY-vóór-plaatsing tegen code: summary 3cr flat + bewerkbaar met origineel behouden (ai_summary.edited_html naast .html) ✓; library origineel nooit overschreven (edited_content) + collections/search/delete ✓; 6 export-formats/* routes resolven, RAG JSON→json ✓; anon TXT plain+timestamps gratis ✓ (caveat 10/dag anti-abuse rate-limit gerapporteerd); playlist-flow per-video-availability + eerste-3-caption-gratis ✓. HEADER-fix (DocsShell): oorzaak = fixed marketing-header (h-16) zonder offset → overlap; fix pt-16 + sidebar top-16 + dubbele breadcrumb (shell+pagina) weg (per-pagina DocsBreadcrumb met JSON-LD blijft) + /articles-nav toegevoegd (desktop sidebar-kop + mobiele rij). Build 2/2 groen; 11 how-indxr-works-pagina's in server-build, verwijderde 5 weg. Gerapporteerd niet-gefixt (buiten scope): site-breed dubbele <Footer/> (layout + per-pagina), transcribe FAQ "67 talen"-placeholder (Khidr). Docs: ADR-072, product-truth, content-sitemap, INDEX. | gewijzigd: docs-config.ts, sitemap.ts, next.config.ts, DocsShell/FeaturedDocsGrid/AnchorHeading.tsx, overview/accuracy/summaries + 6 link-fixes, docs
+[2026-07-22 15:48] commit: feat(docs): how-indxr-works 15→11 + Overview content + DocsShell header fix (ADR-072)
+
+STRUCTURE (docs-config + sitemap + 5x 301 in next.config):
+- credits removed -> 301 to /docs/account-and-data/credits-and-billing
+- accuracy/auto-captions + accuracy/ai-transcription + languages merged into
+  accuracy ("Accuracy and languages") -> 301s to accuracy
+- api absorbed into limits -> 301 to limits
+- summaries created (new). export-formats + 6 children unchanged.
+FeaturedDocsGrid "How credits work" -> "Credits and billing". All internal links
+to removed routes fixed (export-formats/limits/json/getting-started/
+credits-and-billing/transcribe); grep for dead links = 0.
+
+OVERVIEW: full provided text placed via the reference-doc template. New
+AnchorHeading component (client, click-to-copy, scroll-mt) on every H2/H3. Volatile
+numbers (welcome credits, 1cr/min, 3cr summary, 1cr/10min RAG, first-3-free) render
+from pricing.ts constants — not hardcoded. Verified against code before placing:
+summary 3cr flat + editable with original preserved; library original never
+overwritten + collections/search/delete; 6 export-formats routes resolve, RAG JSON
+-> json; anon TXT plain+timestamps free; playlist per-video availability +
+first-3-caption free. (Caveat reported: anon has a 10/day anti-abuse rate limit.)
+
+HEADER FIX (DocsShell): the fixed marketing header (h-16, transparent until scroll)
+had no offset, so it overlapped the sidebar title + breadcrumb; also a DOUBLE
+breadcrumb (shell + per-page). Fix: pt-16 + sidebar top-16 h-[calc(100vh-4rem)];
+removed the shell breadcrumb (per-page DocsBreadcrumb kept — carries JSON-LD). Added
+/articles nav (desktop sidebar head + mobile row).
+
+Build 2/2 green; 11 how-indxr-works pages in the server build, removed 5 gone.
+Reported not fixed (out of header/nav scope): site-wide double <Footer/>
+(layout + per-page); transcribe FAQ "67 languages" placeholder (Khidr's rewrite).
+No backend/finance/pricing-logic touched.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/next.config.ts
+apps/marketing/src/app/docs/account-and-data/credits-and-billing/page.tsx
+apps/marketing/src/app/docs/getting-started/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/accuracy/ai-transcription/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/accuracy/auto-captions/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/accuracy/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/api/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/credits/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/json/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/languages/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/limits/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/overview/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/summaries/page.tsx
+apps/marketing/src/app/sitemap.ts
+apps/marketing/src/app/transcribe/page.tsx
+apps/marketing/src/components/docs/AnchorHeading.tsx
+apps/marketing/src/components/docs/DocsShell.tsx
+apps/marketing/src/components/docs/FeaturedDocsGrid.tsx
+apps/marketing/src/lib/docs-config.ts
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/business/content-sitemap.md
+docs/wiki/content/product-truth.md
+docs/wiki/decisions/072-docs-how-indxr-works-restructure.md
+---

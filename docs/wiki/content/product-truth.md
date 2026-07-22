@@ -244,3 +244,13 @@ Bron: `packages/shared/src/lib/ratelimit.ts:32-37`.
 ### Blijft zonder code-antwoord
 - **Talen-telling** — komt niet uit onze code; gebruik AssemblyAI's gedocumenteerde 18/99 (§6.5).
 - **Per-fase AI-job-timing / gecategoriseerde faalredenen / export-formaat-per-download** — bewust niet gebouwd (ADR-071, proportionaliteit; export-logging zou een extra request per download kosten).
+
+---
+
+## 7. Docs-structuur (how-indxr-works) — ADR-072 (2026-07-22)
+
+De `/docs/how-indxr-works`-sectie is **15 → 11 pagina's**: `credits` weg (301 → `/docs/account-and-data/credits-and-billing`), `accuracy/auto-captions` + `accuracy/ai-transcription` + `languages` samengevoegd in **`accuracy` ("Accuracy and languages")**, `api` op in `limits`, nieuwe **`summaries`**. De 11: overview · accuracy · export-formats (+txt/markdown/csv/srt/vtt/json) · summaries · limits.
+
+- **Overview** (`/docs/how-indxr-works/overview`) is nu volledig geschreven; volatiele getallen (welcome-credits, 1cr/min, 3cr summary, 1cr/10min RAG, gratis-3) renderen uit `pricing.ts` (`CREDIT_COSTS`/`FREE_TIER`) via de nieuwe `AnchorHeading`-component (anchor op élke H2/H3).
+- **DocsShell-header** gerepareerd: de fixed marketing-header (`h-16`) kreeg geen offset → overlap met sidebar-titel + breadcrumb; fix = `pt-16` + sidebar `top-16`, en de **dubbele breadcrumb** (shell rende er zelf één náást de per-pagina `DocsBreadcrumb`) is opgeheven (shell-breadcrumb weg, per-pagina blijft — draagt JSON-LD). `/articles`-nav toegevoegd.
+- Elke verwijderde route heeft een **301** in `next.config.ts`.

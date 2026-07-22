@@ -25,10 +25,7 @@ export const docsConfig: DocsConfig = {
       label: "How INDXR works",
       pages: [
         { href: "/docs/how-indxr-works/overview", label: "Overview" },
-        { href: "/docs/how-indxr-works/credits", label: "How credits work" },
-        { href: "/docs/how-indxr-works/accuracy", label: "Accuracy" },
-        { href: "/docs/how-indxr-works/accuracy/auto-captions", label: "Auto-captions", indent: 1 },
-        { href: "/docs/how-indxr-works/accuracy/ai-transcription", label: "AI transcription", indent: 1 },
+        { href: "/docs/how-indxr-works/accuracy", label: "Accuracy and languages" },
         { href: "/docs/how-indxr-works/export-formats", label: "Export formats" },
         { href: "/docs/how-indxr-works/export-formats/txt", label: "Plain text (TXT)", indent: 1 },
         { href: "/docs/how-indxr-works/export-formats/markdown", label: "Markdown", indent: 1 },
@@ -36,9 +33,8 @@ export const docsConfig: DocsConfig = {
         { href: "/docs/how-indxr-works/export-formats/srt", label: "SRT subtitles", indent: 1 },
         { href: "/docs/how-indxr-works/export-formats/vtt", label: "VTT subtitles", indent: 1 },
         { href: "/docs/how-indxr-works/export-formats/json", label: "JSON / RAG JSON", indent: 1 },
-        { href: "/docs/how-indxr-works/languages", label: "Supported languages" },
+        { href: "/docs/how-indxr-works/summaries", label: "Summaries" },
         { href: "/docs/how-indxr-works/limits", label: "Limits" },
-        { href: "/docs/how-indxr-works/api", label: "API" },
       ],
     },
     {
