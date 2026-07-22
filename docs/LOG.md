@@ -10700,3 +10700,33 @@ docs/wiki/content/product-truth.md
 packages/shared/src/lib/models.ts
 public/llms.txt
 ---
+[2026-07-22 15:30] product-truth.md §6 "Inputs & limieten — geverifieerd" toegevoegd (read-only inventaris, code+DB, per feit bron:regel). Upload: client accept .mp3/.wav/.m4a/.ogg/.flac/.mp4/.mpeg/.mpga/.webm (AudioTab.tsx:521) + server SUPPORTED_FORMATS (audio_utils.py:18), extensie-only geen MIME; video-containers mp4/webm/mpeg geaccepteerd, mov/avi/mkv niet; max 500MB (client+Railway 413, main.py:864-869), Vercel-4.5MB omzeild via direct-to-Railway XHR (NEXT_PUBLIC_AUDIO_UPLOAD_URL). Duur: GEEN cap (captions én AI). Playlist: backend enumeratie-cap 500 (youtube_client.py:30/main.py:627), extract-route zonder .max() (geen indien-cap), frontend default-select-10, concurrency 3; channel-URL's geen expliciete detectie → vallen door als MALFORMED. Tijd (gemeten, 216 AI-runs): mediaan verwerking ~4-10% van audio (30-60min→100s, 60+→278s), cache-hit instant; caption-latency NIET gemeten (geen kolom in usage_logs). Talen: 67/99+ = onbevestigde content-claim (geen taallijst/telling in code; language_utils.py normaliseert alleen). Anon vs ingelogd: anon=TXT-only export + geen playlist/upload/opslag; caption auth-optioneel; caption niet onbeperkt voor free (50/u), premium bypass rate-limiter maar 3-job-concurrency. Rate limits (ratelimit.ts): anon 10/24u/IP, free 50/1u/user, login 10/15m, signup 5/1u, premium bypass; noop zonder Upstash-env. Geen code-antwoord: caption-latency, max-duur (bestaat niet), talen-grondslag, playlist-indien-cap. Docs-only, geen build. | gewijzigd: docs/wiki/content/product-truth.md, docs/LOG.md
+[2026-07-22 13:33] commit: docs(product-truth): add verified "Inputs & limieten" section (code + DB)
+
+Read-only inventory feeding the overview + limits docs pages with code/DB-verified
+facts (per fact file:line), replacing content-claim guesses.
+
+- Upload: client accept + server SUPPORTED_FORMATS (extension-only, no MIME); video
+  containers mp4/webm/mpeg accepted, mov/avi/mkv rejected; 500MB cap (client + Railway
+  413), Vercel 4.5MB bypassed via direct-to-Railway XHR.
+- Duration: NO cap in code (captions or AI).
+- Playlist: backend enumeration cap 500; extract route has no .max() (no submit cap);
+  frontend default-selects 10; concurrency 3; channel URLs rejected only incidentally
+  as MALFORMED (no channel detection).
+- Time: measured from transcription_jobs (216 AI runs) — median processing ~4–10% of
+  audio length; cache hits instant. Caption latency NOT measured (no column in
+  usage_logs) — stated explicitly.
+- Languages: "67 / 99+" is an unconfirmed content claim (no language list/count in
+  code; language_utils.py only normalizes codes).
+- Anon vs logged-in: anon = TXT-only export, no playlist/upload/save; caption
+  extraction auth-optional but rate-limited (not unlimited for free tier).
+- Rate limits (ratelimit.ts): anon 10/24h/IP, free 50/1h/user, login 10/15m, signup
+  5/1h, premium bypass; no-op without Upstash env.
+
+No-code-answer points flagged: caption latency, max duration (none exists), language
+basis, playlist submit-cap. Docs-only.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/content/product-truth.md
+---

@@ -164,3 +164,79 @@ Bij een model-upgrade: wijzig `models.ts` (en de statische mirrors), niet ~30 lo
 - **Credits-teller staat driedubbel**, alle uit dezelfde bron `useAuth().credits`: topbar (`apps/app/src/components/AppTopbar.tsx:64-71`), sidebar-footer "Credits coin" (`app-sidebar.tsx:664-679`), en Home (`apps/app/src/components/dashboard/HomeCreditsBalance.tsx:13`).
 - **Storage-indicator: alleen in de sidebar** (`app-sidebar.tsx:616-625`) — niet in de topbar, en op mobiel onbereikbaar (sidebar is `hidden md:flex`, `apps/app/src/app/dashboard/layout.tsx:40-43`).
 - **Collections: CRUD zit volledig in de desktop-sidebar** (`app-sidebar.tsx:198-292`). De Library-pagina leest alleen `?collection=` uit de URL en toont een filter-chip (`library/page.tsx:36,79,237-248`) — **geen eigen collection-kiezer/aanmaker**. De mobiele bottom-nav heeft 4 tabs (Home/Transcribe/Library/Messages, `MobileTabBar.tsx:17-22`) — **geen Collections**. Op mobiel is een collectie alleen bereikbaar als de URL al `?collection=` draagt.
+
+---
+
+## 6. Inputs & limieten — geverifieerd (2026-07-22)
+
+Harde input-/limietfeiten uit de **code + eigen DB-meting**, als grondslag voor de docs-pagina's *overview* + *limits* (die staan nu op content-claims — het auditobject). Per feit de bron; waar de code niets afdwingt of niets meet, staat dat expliciet.
+
+### 6.1 Audio-upload — accepteert & cap
+- **Client `accept`-attribuut:** `.mp3,.wav,.m4a,.ogg,.flac,.mp4,.mpeg,.mpga,.webm` (`packages/shared/src/components/free-tool/AudioTab.tsx:521`). Client-side extensie-check op dezelfde lijst (`AudioTab.tsx:263-270`) — **alleen bestandsnaam-extensie, geen MIME/content-type**. UI-label: "max 500MB" (`AudioTab.tsx:567`).
+- **Server-side validatie:** `SUPPORTED_FORMATS = {.mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm,.ogg,.flac}` (`backend/audio_utils.py:18`), afgedwongen in `validate_audio_file` (`audio_utils.py:302-342`, aangeroepen `transcription_pipeline.py:462`) — **eveneens alleen extensie** (`os.path.splitext`), geen content-inspectie. Het upload-endpoint zelf (`backend/main.py:798`) doet géén extensie-check; valkuil: bij onbekende/ontbrekende extensie krijgt het temp-bestand default-suffix `.mp3` (`main.py:875`) → passeert dan de check ongeacht echte inhoud.
+- **Preflight-route** (`apps/app/src/app/api/transcribe/preflight/route.ts:12-14`) doet **alleen** auth + suspended + rate-limit, **geen** type/size-check.
+- **Video vs audio:** **video-containers `.mp4`/`.webm`/`.mpeg`/`.mpga` worden geaccepteerd** (staan in beide lijsten); `.mov`/`.avi`/`.mkv` worden geweigerd. De code behandelt alles als "audio" voor AssemblyAI; er is geen audio-only-beperking.
+- **Max bestandsgrootte = 500 MB**, op drie plekken: client (`AudioTab.tsx:273-278`), backend-endpoint → **HTTP 413** (`main.py:864-869`), en `MAX_FILE_SIZE_MB=500`/`MAX_FILE_SIZE_BYTES` (`audio_utils.py:19-20`, opnieuw afgedwongen `:328-330`).
+- **Vercel 4,5MB-limiet omzeild:** de browser POST het bestand **direct naar Railway** via XHR naar `NEXT_PUBLIC_AUDIO_UPLOAD_URL` (`AudioTab.tsx:349,355,363`) — de Vercel-`/api/transcribe/whisper`-route wordt alleen voor het YouTube-pad gebruikt. Dus de 500 MB is een **eigen check** (client + Railway), niet de Vercel-body-limiet.
+- **(niet een cap):** >25 MB → audio wordt naar 12 kbps mono gecomprimeerd vóór AssemblyAI (`transcription_pipeline.py:534`, `audio_utils.py:347/362/377`) — downstream-compressie, geen weigering.
+
+### 6.2 Duur (video/audio) — **geen limiet in code**
+- **AI-transcriptie:** **geen max-duur.** Duur wordt alleen gebruikt voor credit-kost (`transcription_pipeline.py:483`, `main.py:885`) en schatting (`audio_utils.py:35-77`) — geen `duration >`-weigering in `main.py`/`audio_utils.py`/`transcription_pipeline.py`/`assemblyai_client.py`. Comments over "~5 uur binnen 25MB" (`audio_utils.py:237,377`) zijn bitrate-notities, geen afgedwongen cap.
+- **Caption-extractie:** **geen max-duur.** `youtube_client.py:85` leest duur alleen als metadata; geen lengte-weigering. (Geverifieerd: geen enkele duur-cap in code voor beide paden.)
+
+### 6.3 Playlist — max video's & channel-URL's
+- **Backend-cap = 500 video's**, maar alleen bij **enumeratie**: `youtube_client.py:30` (`max_results=500`) + yt-dlp-fallback `'playlist_items': '1-500'` (`main.py:627`). YouTube API pagineert 50/req.
+- **De extract-route dwingt GÉÉN max af op het aantal video's:** Zod is `video_ids: z.array(...).min(1)` **zonder `.max()`** (`apps/app/src/app/api/playlist/extract/route.ts:11`); de backend weigert alleen een lege lijst (`main.py:1319-1320`). De 500-cap bijt dus bij *ophalen* (`playlist/info`), niet bij *indienen*.
+- **Frontend: geen harde cap** — `PlaylistManager.tsx:208` selecteert standaard de **eerste 10** (`slice(0,10)`), puur een default-vinkje, geen maximum.
+- **Concurrency-cap = 3 gelijktijdige jobs** per user (`MAX_CONCURRENT_JOBS=3`, `main.py:761`, afgedwongen `:1323-1327`) — niet een playlist-grootte-cap.
+- **Channel-URL's:** **geen expliciete channel-detectie.** `validateYouTubeUrl` (`packages/shared/src/utils/youtube.ts:21-46`) kent alleen `NON_YOUTUBE`/`VALID_PLAYLIST`/video/`MALFORMED` — géén `CHANNEL`-type. Een `youtube.com/@naam` heeft geen `list=` en geen 11-teken video-id → valt door naar **`MALFORMED`** en wordt generiek geweigerd ("Please enter a valid YouTube Playlist URL", `PlaylistManager.tsx:147-149`). Dus channel-URL's worden geweigerd, maar **incidenteel als malformed**, niet via een channel-specifieke regel.
+
+### 6.4 Verwerkingsduur — gemeten (eigen DB)
+Bron: `transcription_jobs` (`processing_time_seconds`), **216 echte AI-transcriptie-runs**, `status='complete' AND cache_hit=false`, 2026-04-13 → 2026-07-20. (Steekproef is grotendeels intern testverkeer, maar dit zijn echte latency-metingen.)
+
+| Audio-duur | n | Mediaan verwerkingstijd | IQR (p25–p75) | Min–Max | Mediaan-ratio (verwerking ÷ audio) |
+|-----------|---|-------------------------|---------------|---------|-----------------------------------|
+| <5 min | 16 | **24 s** | 18–28 s | 7–38 s | ~0,10 |
+| 5–15 min | 45 | **33 s** | 26–50 s | 11–139 s | ~0,06 |
+| 15–30 min | 63 | **65 s** | 44–102 s | 14–399 s | ~0,05 |
+| 30–60 min | 68 | **100 s** | 65–178 s | 42–589 s | ~0,05 |
+| 60+ min | 24 | **278 s** | 110–475 s | 27–653 s | ~0,04 |
+
+- **Vuistregel:** AI-transcriptie kost ~**4–10% van de audio-lengte** (mediaan) — bv. een uur video ≈ **1,5–3 min** verwerking, met een lange staart (uitschieters tot ~11 min bij lange video's).
+- **Cache-hit (dedup, master-cache):** effectief **instant** (0 verwerkingstijd) — bekende video's worden niet opnieuw getranscribeerd.
+- **Caption-extractie: NIET gemeten.** `usage_logs` heeft **geen** latency-/processing-kolom (alleen `created_at`, `extraction_type`, `success`, `proxy_bytes`, …). Caption-extractie is synchroon (geen job-rij met start/eind). → **Er is geen code-/DB-bron voor een gemeten caption-mediaan.** (Anekdotisch is captions "instant/enkele seconden" want geen audio-download+model-run, maar dat is **niet gemeten** — niet als cijfer claimen.)
+
+### 6.5 Talen — "67 captions / 99+ AI" is een **onbevestigde content-claim**
+- **Geen taal-lijst of -telling in code/config.** `backend/language_utils.py` bevat alleen `normalize_language_code()` (`:22`) die naar de `langcodes`-library delegeert (`:11`) — geen array, geen telling; noch `67` noch `99` staat erin. Repo-brede grep vond geen taal-array buiten marketing-proza (en third-party `venv`-packages).
+- **"67"** staat **uitsluitend in marketing-proza** (o.a. `articles/youtube-transcript-not-available/page.tsx`, `transcribe/page.tsx:39` (placeholder), `articles/youtube-to-text/page.tsx`, `youtube-transcript-without-extension/page.tsx`) — **nergens in code/config**.
+- **"99+"** staat in proza + drie hardcoded code-strings/comments: `packages/shared/src/lib/models.ts:37` (UI-copy-literal in `transcriptionRouterPhrase`), `models.ts:12` (comment), `assemblyai_client.py:16` (comment) — **geen** ervan is afgeleid van een echte taallijst.
+- → Behandel **67 en 99+ als onbevestigde claims** (geen code-grondslag). Wat wél code-waar is: taal-router kiest het beste model per gedetecteerde taal (ADR-070); native-anchored caption-selectie via `-orig`-tracks (§3).
+
+### 6.6 Anoniem vs. ingelogd — afgedwongen door code
+- **Export-formaten** (`packages/shared/src/components/TranscriptCard.tsx`): anoniem = **alleen TXT** (plain `:130`, timestamps `:135`) + kopiëren (`:101`). Achter login: Markdown (`:143`), MD+timestamps (`:152`), JSON (`:161`), CSV (`:191`), SRT (`:199`), VTT (`:205`), RAG (`:220`) — via `requireAuth()` (`:122-128`). **Let op: dit is een client-side gate** (bestanden worden in de browser gegenereerd) — geen server-afdwinging van formaat.
+- **Playlist:** **login vereist**, hard **401** server-side (`api/playlist/extract/route.ts:31-38`) + friction-card frontend. Anoniem kan geen playlist draaien.
+- **Upload:** **login vereist**, frontend-blok (`AudioTab.tsx:219-231,327`) + preflight **401** (`api/transcribe/preflight/route.ts:18-25`).
+- **Library/opslag:** opslaan is **login-only** (anonieme resultaten worden niet bewaard; card zegt "Sign up free to save it", `TranscriptCard.tsx:250-254`). De **500 MB-storage-indicator is display-only** (`app-sidebar.tsx:165-169,621-625`) — **geen** blokkering bij overschrijding (§5).
+- **Caption-extractie:** auth **optioneel** (`api/extract/route.ts:20-21`) — anoniem mag, mits binnen de rate-limit.
+- **Is caption-extractie "onbeperkt" voor ingelogden?** **Nee voor gratis users:** 50/uur (free-tier rate-limit). **Premium** (heeft ooit credits gekocht) **omzeilt de rate-limiter** (`ratelimit.ts:57-67`) maar valt onder de **3-gelijktijdige-jobs**-cap. Dus "onbeperkt" klopt alleen ruwweg voor betalende users, en zelfs dan met een concurrency-plafond.
+
+### 6.7 Rate limits (Upstash sliding window) — echte waarden
+Bron: `packages/shared/src/lib/ratelimit.ts:32-37`.
+
+| Tier | Limiet | Venster | Sleutel | Bron |
+|------|--------|---------|---------|------|
+| anonymous | **10** req | **24 h** | per IP | `ratelimit.ts:33` |
+| free (ingelogd, geen aankoop) | **50** req | **1 h** | per userId | `ratelimit.ts:34` |
+| login (auth-actie) | 10 req | 15 m | — | `ratelimit.ts:35` |
+| signup (auth-actie) | 5 req | 1 h | — | `ratelimit.ts:36` |
+| **premium** (ooit gekocht) | **bypass** (`remaining 999999`) | — | — | `ratelimit.ts:57-67` |
+
+- **`checkRateLimit()` kiest op identiteit, niet op actie:** dezelfde free/anon-bucket geldt gedeeld over alle beschermde routes — caption-extract (`api/extract/route.ts:47`, marketing idem), preflight (`:49`), whisper (`:44`), playlist-extract (`:60`). **Geen aparte summarize-/upload-limiter.**
+- **login/signup-limiters** worden apart gebruikt in auth-acties (`packages/shared/src/actions/auth-actions.ts:41,114,166,258`).
+- **No-op fallback:** zonder `UPSTASH_REDIS_REST_URL` + `_TOKEN` zijn **alle** limiters uitgeschakeld (`noopLimiter` → altijd success, `ratelimit.ts:7-18`). Alleen bindend als beide env-vars gezet zijn.
+
+### Punten zonder code-antwoord (expliciet)
+1. **Caption-extractie verwerkingsduur** — niet gemeten (geen latency-kolom in `usage_logs`); geen cijfer-claim mogelijk.
+2. **Max video/audio-duur** — bestaat niet in code (voor captions én AI). "Geen limiet" is het antwoord, niet een gat.
+3. **Talen 67/99+** — geen code-grondslag; onbevestigde content-claim.
+4. **Playlist-max op de extract-route** — niet afgedwongen; de 500 geldt alleen bij enumeratie, frontend heeft geen harde cap.
