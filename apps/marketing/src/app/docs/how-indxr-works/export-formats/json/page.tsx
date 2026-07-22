@@ -4,6 +4,7 @@ import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
+import { DocsTable } from "@/components/docs/DocsTable"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
@@ -129,6 +130,29 @@ export default function DocsJsonPage() {
           chunk 1 — that is the overlap.
         </p>
 
+        <AnchorHeading as="h3">Chunk size presets</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          You choose the target chunk length when you export — 30, 60, 90 or 120 seconds. Sixty
+          seconds is the default. Shorter chunks are tighter and better for pulling exact quotes;
+          longer chunks keep more surrounding context per vector. Your preferred size is remembered in{" "}
+          <a className="text-[var(--accent)] hover:underline" href="/docs/account/settings">Settings</a>.
+        </p>
+        <DocsTable>
+          <thead>
+            <tr>
+              <th>Preset</th>
+              <th>Chunk length</th>
+              <th>Approx. tokens</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Quote</td><td>30s</td><td>~100 tokens</td></tr>
+            <tr><td>Balanced (default)</td><td>60s</td><td>~200 tokens</td></tr>
+            <tr><td>Precise</td><td>90s</td><td>~300 tokens</td></tr>
+            <tr><td>Context</td><td>120s</td><td>~390 tokens</td></tr>
+          </tbody>
+        </DocsTable>
+
         <DocsCallout variant="costs-credits">
           RAG JSON costs {ragPer10} credit per 10 minutes of transcript (minimum 1). Standard JSON and
           the other formats are free. Re-downloading a transcript you already exported to RAG JSON is
@@ -140,13 +164,14 @@ export default function DocsJsonPage() {
         <SourcesBlock
           sources={[
             { publisher: "INDXR (own code)", supports: "RAG JSON schema, chunking, overlap, deep links, token estimate", verifiedAgainst: "packages/shared/src/utils/formatTranscript.ts (buildRagJson, buildRagChunks)" },
+            { publisher: "INDXR (own code)", supports: "chunk-size presets (30/60/90/120s, default 60) and token estimates", verifiedAgainst: "apps/app/src/components/library/RagExportView.tsx + dashboard/settings/DeveloperExportsCard.tsx (CHUNK_OPTIONS)" },
             { publisher: "LangChain / Pinecone / ChromaDB / Weaviate / Qdrant", supports: "the vector databases the chunk shape targets", href: "https://python.langchain.com/docs/how_to/document_loader_json/" },
           ]}
         />
         <RelatedTopicsList
           topics={[
             { label: "All export formats", href: "/docs/how-indxr-works/export-formats" },
-            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
+            { label: "Credits", href: "/docs/account/credits" },
             { label: "Article: YouTube transcript JSON", href: "/articles/youtube-transcript-json" },
             { label: "Article: YouTube transcripts for RAG", href: "/articles/youtube-transcript-for-rag" },
           ]}

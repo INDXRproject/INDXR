@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 }
 
 const categoryIntros: Record<string, string> = {
-  "Getting started": "New to INDXR? Start here.",
-  "How INDXR works": "Understand extraction, accuracy, credits, and export formats.",
-  "Account & data": "Credits, billing, and how your data is handled.",
-  "Help": "FAQ, how-to guides, and troubleshooting.",
+  "Start here": "New to INDXR? Begin here.",
+  "Using INDXR": "Extract, transcribe, and manage your transcripts.",
+  "Exports": "Every download format, and when to use each.",
+  "Account": "Credits, billing, settings, and limits.",
 }
 
 const collectionPageSchema = {
@@ -30,7 +30,9 @@ export default function DocsPage() {
   return (
     <>
       <JsonLd schemas={[collectionPageSchema]} />
-      <div className="min-h-screen bg-[var(--bg)]">
+      {/* pt-16 clears the fixed marketing header (h-16), matching DocsShell — without it the
+          hub H1 renders under the header (the bug that was already fixed on the docs pages). */}
+      <div className="min-h-screen bg-[var(--bg)] pt-16">
         <div className="max-w-4xl mx-auto px-4 pb-16">
           <DocsHubHero />
           <FeaturedDocsGrid />

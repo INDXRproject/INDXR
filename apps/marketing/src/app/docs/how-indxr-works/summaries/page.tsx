@@ -30,7 +30,7 @@ export default function DocsSummariesPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "How INDXR works", href: "/docs/how-indxr-works/overview" },
+            { label: "Using INDXR", href: "/docs" },
             { label: "Summaries" },
           ]}
         />
@@ -60,7 +60,7 @@ export default function DocsSummariesPage() {
         <RelatedTopicsList
           topics={[
             { label: "Overview", href: "/docs/how-indxr-works/overview" },
-            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
+            { label: "Credits", href: "/docs/account/credits" },
             { label: "Accuracy and languages", href: "/docs/how-indxr-works/accuracy" },
           ]}
         />

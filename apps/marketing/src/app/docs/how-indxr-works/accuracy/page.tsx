@@ -30,7 +30,7 @@ export default function DocsAccuracyPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "How INDXR works", href: "/docs/how-indxr-works/overview" },
+            { label: "Using INDXR", href: "/docs" },
             { label: "Accuracy and languages" },
           ]}
         />
@@ -96,7 +96,7 @@ export default function DocsAccuracyPage() {
             { label: "Overview", href: "/docs/how-indxr-works/overview" },
             { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
             { label: "Limits", href: "/docs/how-indxr-works/limits" },
-            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
+            { label: "Credits", href: "/docs/account/credits" },
           ]}
         />
       </DocsShell>

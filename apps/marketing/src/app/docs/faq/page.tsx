@@ -109,6 +109,11 @@ const faqCategories: FAQCategory[] = [
         answer:
           "For videos with existing YouTube captions, extraction is nearly instant (1-3 seconds). For AI transcription, processing time is roughly 1-2 minutes per 10 minutes of audio.",
       },
+      {
+        question: "What happens to my audio and transcripts?",
+        answer:
+          "Extracted transcripts are saved to your library until you delete them. Audio files you upload for AI transcription are deleted from our servers within 24 hours. For the full detail on what we store and for how long, see our <a href='/privacy'>privacy policy</a>.",
+      },
     ],
   },
 ]

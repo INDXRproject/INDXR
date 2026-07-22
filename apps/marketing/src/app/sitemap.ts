@@ -15,12 +15,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { route: "/signup", priority: 0.5 },
   ];
 
+  // Docs — 4 categories following order of use (ADR-074).
   const docsPages = [
     { route: "/docs", priority: 0.7 },
+    // Start here
     { route: "/docs/getting-started", priority: 0.7 },
-    // How INDXR works
+    { route: "/docs/faq", priority: 0.6 },
+    // Using INDXR
     { route: "/docs/how-indxr-works/overview", priority: 0.6 },
     { route: "/docs/how-indxr-works/accuracy", priority: 0.5 },
+    { route: "/docs/using-indxr/playlists", priority: 0.5 },
+    { route: "/docs/using-indxr/your-library", priority: 0.5 },
+    { route: "/docs/how-indxr-works/summaries", priority: 0.5 },
+    // Exports
     { route: "/docs/how-indxr-works/export-formats", priority: 0.6 },
     { route: "/docs/how-indxr-works/export-formats/txt", priority: 0.5 },
     { route: "/docs/how-indxr-works/export-formats/markdown", priority: 0.5 },
@@ -28,13 +35,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { route: "/docs/how-indxr-works/export-formats/srt", priority: 0.5 },
     { route: "/docs/how-indxr-works/export-formats/vtt", priority: 0.5 },
     { route: "/docs/how-indxr-works/export-formats/json", priority: 0.5 },
-    { route: "/docs/how-indxr-works/summaries", priority: 0.5 },
+    // Account
+    { route: "/docs/account/credits", priority: 0.5 },
+    { route: "/docs/account/billing", priority: 0.5 },
+    { route: "/docs/account/settings", priority: 0.5 },
     { route: "/docs/how-indxr-works/limits", priority: 0.5 },
-    // Account & data
-    { route: "/docs/account-and-data/credits-and-billing", priority: 0.5 },
-    { route: "/docs/account-and-data/data-handling", priority: 0.5 },
-    // FAQ (promoted to top-level, ADR-073; how-to + troubleshooting removed → /articles)
-    { route: "/docs/faq", priority: 0.6 },
   ];
 
   const articlesPages = [

@@ -27,14 +27,14 @@ indxr.ai/  ── marketing (publiek)
 │    /transcribe                      3-tab gratis tool (video/playlist/audio)
 │
 ├─ 3 Product-documentatie  /docs/*     (DocsShell — kale referentie-specs)
-│    /docs                            hub
-│    /docs/getting-started            quickstart
-│    /docs/faq                        FAQ (top-level, ADR-073)
-│    /docs/how-indxr-works/
-│        overview · accuracy (Accuracy and languages) · summaries · limits
-│        export-formats/  (+ txt · markdown · csv · srt · vtt · json)
-│    /docs/account-and-data/  credits-and-billing · data-handling
-│    (help/ verwijderd — how-to + troubleshooting → 308 /articles, faq → /docs/faq — ADR-073)
+│    /docs                            hub (4 categorieën, ADR-074)
+│    Start here:   getting-started (Quickstart) · faq (FAQ)
+│    Using INDXR:  how-indxr-works/overview · …/accuracy · using-indxr/playlists*
+│                  · using-indxr/your-library* · how-indxr-works/summaries
+│    Exports:      how-indxr-works/export-formats/  (+ txt · markdown · csv · srt · vtt · json)
+│    Account:      account/credits* · account/billing* · account/settings* · how-indxr-works/limits
+│    (* = nieuw/gesplitst, ADR-074. account-and-data/ verwijderd: credits-and-billing gesplitst →
+│     credits+billing; data-handling → 308 /privacy. help/ weg — ADR-073. Categorie ≠ URL-prefix.)
 │
 ├─ 4 Funnel-content / SEO  /articles/*  (het verhaal + use-case = de bron)
 │    /articles                        index (4 categorieën)
@@ -82,7 +82,7 @@ app.indxr.ai/  ── app (auth vereist)
 
 ### Groep 3 — Product-documentatie (`indxr.ai/docs/*`)
 
-Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/docs-config.ts`). **`how-indxr-works` is 15 → 11 pagina's** (ADR-072): `credits` weg (→ credits-and-billing), `accuracy/auto-captions`+`accuracy/ai-transcription`+`languages` samengevoegd in **`accuracy` ("Accuracy and languages")**, `api` op in `limits`, nieuwe **`summaries`**. Volledig uitgebouwd: `getting-started`, `credits-and-billing`, `faq`, **`overview`** (ADR-072). De rest is nog scaffold (lead-zin + `[Placeholder]`). Elke verwijderde route heeft een 301 in `next.config.ts`.
+Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/docs-config.ts`). De sidebar volgt **vier categorieën in gebruiksvolgorde** (ADR-074): Start here / Using INDXR / Exports / Account — categorie ≠ URL-prefix, bestaande URL's blijven stabiel. ADR-072: `how-indxr-works` 15→11 (`credits` weg, `accuracy`-subs+`languages`→`accuracy`, `api`→`limits`, nieuwe `summaries`). ADR-074: `credits-and-billing` gesplitst → `account/credits` + `account/billing`; `data-handling` verwijderd → 308 `/privacy`; nieuw `using-indxr/playlists`, `using-indxr/your-library`, `account/settings` (skeletons). Volledig uitgebouwd: `getting-started`, `overview`, `faq` + de export-format-specs. De rest is scaffold/skeleton. Redirects canoniek in `next.config.ts` (308, geen ketens).
 
 | Pagina | Route | Doel (1 zin) | Belangrijkste claims | Status |
 |---|---|---|---|---|
@@ -99,8 +99,12 @@ Alle doc-routes renderen via `DocsShell` (sidebar uit `apps/marketing/src/lib/do
 | Export — json | `…/export-formats/json` | RAG-JSON-spec. | **90–120s chunks**, sentence-snap, `deep_link` per chunk; LangChain/LlamaIndex/Pinecone/Chroma/Weaviate/Qdrant. | placeholder |
 | Summaries | `…/summaries` | AI-samenvatting (ADR-072, nieuw). | 3 credits flat (uit `pricing.ts`), ongeacht lengte; opgeslagen bij transcript; bewerkbaar met origineel behouden. | live (skeleton) |
 | Limits | `…/limits` | Rate/size/duur-limieten (absorbeert `api`, ADR-072). | Nu wél concrete getallen (ADR-071): AI-transcriptie ≤10u, playlist ≤500/job, rate limits; captions geen duur-cap; geen publieke REST API. | placeholder (thin) |
-| Credits & billing | `/docs/account-and-data/credits-and-billing` | Credits + billing in detail. | Captions 0cr; AI 1cr/min; summary 3cr; one-time packages (verwijst naar /pricing); nooit verlopen; **auto-refund bij mislukte AI-operatie**. Twee `KHIDR:` TODO-secties. | live (2 stubs) |
-| Data handling | `/docs/account-and-data/data-handling` | Data-retentie/verwerking. | On-demand; **"uploaded audio deleted within 24 hours"**; transcripts in library. | placeholder |
+| Credits | `/docs/account/credits` | Credit-kosten, reserve-model, refunds (gesplitst uit credits-and-billing, ADR-074). | Captions 0cr; AI 1cr/min; summary 3cr; nooit verlopen; **auto-refund bij mislukte AI-operatie**. `KHIDR:` TODO-secties. | live (stub) |
+| Billing and invoices | `/docs/account/billing` | Kopen, facturen, aankoophistorie, VAT-scope (gesplitst, ADR-074; bevat het VAT-antwoord uit de FAQ). | One-time packages (verwijst naar /pricing); VAT NL+OSS, UK/CH aparte registratie. `KHIDR:` TODO. | live (stub) |
+| Playlists | `/docs/using-indxr/playlists` | Playlist-job (nieuw, ADR-074). | Per-video keuze; eerste 3 captions gratis; credits vooraf gereserveerd, ongebruikt terug; draait door na tab-sluit; ≤500/job. | live (skeleton) |
+| Your library | `/docs/using-indxr/your-library` | Bibliotheek (nieuw, ADR-074). | Transcripten bewaard; bewerkbaar met origineel behouden; collecties; zoeken; verwijderen. | live (skeleton) |
+| Settings | `/docs/account/settings` | Voorkeuren (nieuw, ADR-074). | RAG-chunkgrootte 30/60/90/120s (standaard 60); e-mailvoorkeuren; account verwijderen → /privacy. | live (skeleton) |
+| ~~Data handling~~ | *verwijderd (ADR-074)* | Dubbeling met `/privacy`. | 308 → `/privacy`; FAQ-vraag "What happens to my audio and transcripts?" + link. | verwijderd |
 | ~~How-to hub~~ | *verwijderd (ADR-073)* | — | 308 → `/articles` (Workflows dekt dit). | verwijderd |
 | ~~Troubleshooting hub~~ | *verwijderd (ADR-073)* | — | 308 → `/articles` (de 5 artikelen + `/articles`-index dragen dit). | verwijderd |
 
@@ -210,7 +214,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 | **Formaten-overzicht** | `…/export-formats` (hub) — **alleen** overzichtstabel + doorverwijzing | `/articles` (categorie *Export Formats*) — de losse verhalen |
 | **Troubleshooting** | *(geen docs-hub meer — ADR-073)* de **`/articles`-index** (categorie Troubleshooting) is de index | `not-available` · `non-english` · `without-extension` · `age-restricted` · `members-only` |
 
-*Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (Accuracy and languages), `limits`, `summaries`, `data-handling`. *Credits:* `/pricing` + `/docs/account-and-data/credits-and-billing` dragen dit — de dubbele `…/how-indxr-works/credits` is **verwijderd** (301 → credits-and-billing, ADR-072).
+*Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (Accuracy and languages), `limits`, `summaries`, `using-indxr/playlists`, `using-indxr/your-library`, `account/settings`. *Data-retentie:* geen aparte docs-pagina meer — `/privacy` draagt dit (ADR-074). *Credits:* `/pricing` + `/docs/account/credits` dragen dit — de dubbele `…/how-indxr-works/credits` is **verwijderd** (308 → `account/credits`).
 
 ---
 

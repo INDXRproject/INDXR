@@ -13,14 +13,16 @@ export function DocsCategorySection({ section, intro }: DocsCategorySectionProps
     <div className="mb-8">
       <h2 className="text-base font-semibold text-[var(--fg)] mb-1">{section.label}</h2>
       {intro && <p className="text-sm text-[var(--fg-muted)] mb-3">{intro}</p>}
-      <ul className="space-y-1.5">
+      <ul className="space-y-2.5">
         {section.pages.map((page) => (
           <li key={page.href} style={{ paddingLeft: `${(page.indent ?? 0) * 16}px` }}>
-            <Link
-              href={page.href}
-              className="text-sm text-[var(--fg-muted)] hover:text-[var(--accent)] transition-colors"
-            >
-              {page.label}
+            <Link href={page.href} className="group block">
+              <span className="text-sm font-medium text-[var(--fg)] group-hover:text-[var(--accent)] transition-colors">
+                {page.label}
+              </span>
+              {page.description && (
+                <span className="block text-sm text-[var(--fg-muted)]">{page.description}</span>
+              )}
             </Link>
           </li>
         ))}

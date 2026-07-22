@@ -11104,3 +11104,87 @@ docs/wiki/decisions/039-llms-txt-low-priority.md
 docs/wiki/strategy/principles.md
 public/llms.txt
 ---
+
+[2026-07-22 16:10] taak: docs-structuur — 4 categorieën (ADR-074), overzichtspagina's, wiki-opschoning
+- DEEL 1 (structuur): docs-config → 4 categorieën in gebruiksvolgorde (Start here / Using INDXR /
+  Exports / Account). Nieuw (skeleton): using-indxr/playlists, using-indxr/your-library,
+  account/settings. Gesplitst: credits-and-billing → account/credits + account/billing (tekst
+  verplaatst, niet herschreven). Verwijderd: account-and-data/data-handling → 308 /privacy + FAQ-
+  vraag. RAG-chunkpresets op JSON-pagina (30/60/90/120s standaard 60, uit code — NIET 30/60/120).
+  sitemap.ts + next.config redirects (2 nieuwe 308's, 3 her-getarget; graaf: 0 loops/0 ketens/51 regels).
+- DEEL 2 (overzicht): /docs header-offset-fix (pt-16) + per-pagina one-liner (DocsCategorySection);
+  /articles per-artikel one-liner uit eigen metadata-description.
+- DEEL 3 (wiki): principles §6 superseded-noot; sitemap.md herschreven naar nieuwe structuur;
+  INDXR-SITEMAP + sitemap-audit-2026-05 gearchiveerd; writing-standard §C (answer-first per H2,
+  specifieke koppen, sidebar-label-conventie, max-w-2xl definitief); priorities.md pre-launch
+  (artikel-kruislinks etappe D/E, robots.txt AI-crawlers, Search Console + Bing).
+- DEEL 4: ADR-074; content-sitemap + docs-page-contract bijgewerkt; INDEX ADR-tabel + sitemap-flag.
+  Build beide apps groen (turbo 2/2).
+
+Changed: apps/marketing/src/lib/docs-config.ts, src/app/docs/{page,faq,using-indxr/playlists,
+using-indxr/your-library,account/credits,account/billing,account/settings,how-indxr-works/*}/page.tsx,
+src/app/articles/page.tsx, src/app/sitemap.ts, next.config.ts, src/components/docs/{DocsCategorySection,
+FeaturedDocsGrid}.tsx (del account-and-data/{credits-and-billing,data-handling}); docs/wiki/{decisions/074,
+INDEX,strategy/principles,architecture/sitemap,architecture/sitemap-audit-2026-05,business/{content-sitemap,
+INDXR-SITEMAP},content/{writing-standard,docs-page-contract},roadmap/priorities}.md
+---
+[2026-07-22 18:50] commit: feat(docs): restructure docs into 4 usage-order categories (ADR-074)
+
+DEEL 1 — structure. docs-config.ts → four categories following order of use:
+Start here / Using INDXR / Exports / Account. New skeleton pages (breadcrumb +
+H1 + DefinitionLeadOpening + RelatedTopicsList): using-indxr/playlists,
+using-indxr/your-library, account/settings. Split credits-and-billing into
+account/credits (costs, reserve model, refunds) + account/billing (buying,
+invoices, VAT) — text moved, not rewritten. Removed data-handling → 308 /privacy
++ one FAQ entry. JSON page documents the real RAG chunk presets (30/60/90/120s,
+default 60 — from RagExportView/DeveloperExportsCard, not the assumed 30/60/120).
+sitemap.ts + next.config redirects updated (2 new 308s, 3 re-targeted; graph:
+0 loops, 0 chains). Existing URLs kept stable (category != URL prefix).
+
+DEEL 2 — overview pages. /docs: header-offset fix (pt-16, the bug already fixed
+on the doc pages) + one-line description per page in the category lists.
+/articles: one-line description per article from its own metadata description.
+
+DEEL 3 — wiki cleanup. principles.md §6 superseded note; sitemap.md rewritten to
+the new structure; INDXR-SITEMAP + sitemap-audit-2026-05 archived; writing-standard
+§C additions (answer-first per H2 section, specific headings, sidebar-label
+convention, max-w-2xl closed); priorities.md pre-launch items (article cross-links
+for stage D/E, robots.txt AI crawlers, Search Console + Bing).
+
+DEEL 4 — ADR-074; content-sitemap + docs-page-contract updated; INDEX. Both apps
+build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/next.config.ts
+apps/marketing/src/app/articles/page.tsx
+apps/marketing/src/app/docs/account-and-data/credits-and-billing/page.tsx
+apps/marketing/src/app/docs/account-and-data/data-handling/page.tsx
+apps/marketing/src/app/docs/account/billing/page.tsx
+apps/marketing/src/app/docs/account/credits/page.tsx
+apps/marketing/src/app/docs/account/settings/page.tsx
+apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/app/docs/getting-started/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/accuracy/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/json/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/export-formats/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/limits/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/overview/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/summaries/page.tsx
+apps/marketing/src/app/docs/page.tsx
+apps/marketing/src/app/docs/using-indxr/playlists/page.tsx
+apps/marketing/src/app/docs/using-indxr/your-library/page.tsx
+apps/marketing/src/app/sitemap.ts
+apps/marketing/src/components/docs/DocsCategorySection.tsx
+apps/marketing/src/components/docs/FeaturedDocsGrid.tsx
+apps/marketing/src/lib/docs-config.ts
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/sitemap-audit-2026-05.md
+docs/wiki/architecture/sitemap.md
+docs/wiki/business/content-sitemap.md
+docs/wiki/content/docs-page-contract.md
+docs/wiki/content/writing-standard.md
+docs/wiki/decisions/074-docs-structure-4-categories.md
+docs/wiki/roadmap/priorities.md
+docs/wiki/strategy/principles.md
+---

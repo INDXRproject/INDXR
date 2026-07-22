@@ -96,12 +96,15 @@ Per regel: **[BRON]** en of het een **beslissing** of **aanname** is. `[TE VERIF
 - Open met het **antwoord in de eerste zin**, dan pas de uitwerking. Extern bevestigd (2026-07-23) als het enige masterplan-element dat de toets doorstaat — AI-systemen halen uit heldere, direct-antwoordende inhoud, niet uit markup. **[batch-3a §4.5; verificatie 2026-07-23; beslissing]**
 - Docs: een **DefinitionLeadOpening van 40–60 woorden** met het antwoord vooraan (Wikipedia-lede: onderwerp → definitie → context, geen marketing). **[reference-doc.md:31-32; beslissing]**
 - Artikelen: de antwoordzin bovenaan, daarna het verhaal/use-case.
+- **Answer-first geldt óók per H2-sectie**, niet alleen bovenaan de pagina: elke sectie opent met haar eigen antwoord en moet los te lezen zijn voor wie er via een ankerlink binnenkomt (deep-link uit een zoekmachine/AI-citaat landt midden op de pagina). **[ADR-074; beslissing]**
 - Het "eerste 25 woorden voor featured snippet"-doel is een streven, geen harde limiet. **[masterplan :393; TE VERIFIËREN]**
 
 ### C2 — Koppenstructuur & anchors
 - Scanbare H2/H3-hiërarchie; **elke H2/H3 via `AnchorHeading`** (click-to-copy anchor, voedt de InPageTOC). **[reference-doc.md §6; beslissing]**
 - Docs: `InPageTOC` (rechts, xl+) verschijnt automatisch bij ≥2 koppen. **[ADR-072]**
 - Titels autoritair, geen framing ("YouTube Transcript Export Formats", niet "A guide to…"). **[reference-doc.md:29; beslissing]**
+- **Koppen zijn specifiek, geen vage labels** — een kop zegt wát er staat, niet een categorienaam. "Notes" → "Wat het `#`-metablok betekent"; "Output" → "Voorbeeld: een SRT-cue". **[ADR-074; beslissing]**
+- **Sidebar-labels zijn zelfstandige naamwoorden in zinshoofdletters**, onderling consistent: "Data handling", niet "How we handle your data"; "Credits", niet "How credits work". Kort, scanbaar, parallel. **[ADR-074; beslissing]**
 
 ### C3 — FAQ-plaatsing ✅ geverifieerd 2026-07-23
 - **Docs reference pages: geen inline FAQ.** **[reference-doc.md:86; beslissing — zie A1]**
@@ -154,6 +157,7 @@ Neem de live graaf + de twee correcties. **[live implementatie; batch-3b §4.3; 
 - **Artikelen** = ruimer: één kolom, **60–70ch**, line-height **1.5–1.75**, related-footer, optionele hero. Verhaal + use-case + conversie. **[batch-3b §6.2; beslissing]**
 - Drop cap toegestaan als *één* Itqan-moment in long-form docs-artikelen; niet op elke kop. **[batch-3b §5.3; beslissing]**
 - Een docs-pagina die als artikel begint te lezen staat op het verkeerde oppervlak → inkorten tot spec of naar een artikel verplaatsen. **[docs-vs-articles-density.md; content-sitemap]**
+- **De regelbreedte-discussie is gesloten: `max-w-2xl` (~70 tekens) blijft** — de docs-leesmaat, gezet op de contentkolom in `DocsShell`. Niet heropenen zonder nieuwe research. **[ADR-074; batch-3b §4.3]**
 
 ### C11 — Toon & aanspreekvorm
 - **Tweede persoon "you", informeel, Engels.** Directe, korte werkwoorden (Transcribe, Open, Export, Save). Eerlijk over beperkingen. Volledige zinnen in empty/error-states. Geen onvertaalbare idiomen ("let's go", "we're cooking"). **INDXR is een tool, geen persona** — geen zachte "AI-assistent"-toon, geen speelse Notion-error-toon. **[batch-3a §2.4, §4.3; batch-3b §6.1; de-facto in alle huidige content]**

@@ -10,33 +10,32 @@
 
 ## DEEL 1 — Huidige staat (routes winnen van de sitemap)
 
-18 route-bestanden onder `apps/marketing/src/app/docs/**` (`page.tsx`), sidebar uit `apps/marketing/src/lib/docs-config.ts`. Status uit de code (placeholder = bevat `[Placeholder — content coming soon]` / `Guides coming soon` / `[KHIDR: …]`).
+19 user-facing route-bestanden onder `apps/marketing/src/app/docs/**` (`page.tsx`) — vier categorieën
+in gebruiksvolgorde (ADR-074) — plus `component-preview` (dev). Sidebar uit
+`apps/marketing/src/lib/docs-config.ts`. Status uit de code (skeleton = alleen breadcrumb + H1 +
+`DefinitionLeadOpening` + `RelatedTopicsList`; placeholder = `[Placeholder …]`/`[KHIDR: …]`).
 
-| # | Route | Status (code) | Artikel-tegenhanger |
-|---|-------|---------------|---------------------|
-| 1 | `/docs` (hub) | live | — |
-| 2 | `/docs/getting-started` | live | — |
-| 3 | `/docs/how-indxr-works/overview` | **live (ADR-072)** | — |
-| 4 | `/docs/how-indxr-works/accuracy` ("Accuracy and languages") | live (skeleton+merge, ADR-072) | `youtube-transcript-non-english` (taal-routing) |
-| 5 | `/docs/how-indxr-works/export-formats` (hub) | placeholder | `/articles` (categorie Export Formats) |
-| 6 | `…/export-formats/txt` | placeholder | `youtube-to-text` |
-| 7 | `…/export-formats/markdown` | placeholder | `youtube-transcript-markdown` (+ `-obsidian`) |
-| 8 | `…/export-formats/csv` | placeholder | `youtube-transcript-csv` |
-| 9 | `…/export-formats/srt` | placeholder | `youtube-srt-download` |
-| 10 | `…/export-formats/vtt` | placeholder | `youtube-srt-download` (gedeeld) |
-| 11 | `…/export-formats/json` | placeholder | `youtube-transcript-json` + `youtube-transcript-for-rag` |
-| 12 | `…/summaries` | live (skeleton, ADR-072) | — (geen) |
-| 13 | `…/limits` | placeholder (thin) | — (geen) |
-| 14 | `/docs/account-and-data/credits-and-billing` | live (2 `KHIDR`-stubs) | `/pricing` (niet /articles) |
-| 15 | `/docs/account-and-data/data-handling` | placeholder | — (privacy-facts) |
-| 16 | `/docs/help/how-to` | placeholder ("Guides coming soon") | `/articles` (Workflows) |
-| 17 | `/docs/help/troubleshooting` | placeholder (bundelhub) | 5 Troubleshooting-artikelen |
-| 18 | `/docs/help/faq` | **live** (volle FAQ, 4 built-in labels) | — |
+| # | Categorie | Route | Status (code) | Artikel-tegenhanger |
+|---|-----------|-------|---------------|---------------------|
+| 1 | — | `/docs` (hub) | live | — |
+| 2 | Start here | `/docs/getting-started` | live | — |
+| 3 | Start here | `/docs/faq` | **live** (volle FAQ) | — |
+| 4 | Using INDXR | `/docs/how-indxr-works/overview` | **live (ADR-072)** | — |
+| 5 | Using INDXR | `/docs/how-indxr-works/accuracy` ("Accuracy and languages") | live (skeleton+merge) | `youtube-transcript-non-english` |
+| 6 | Using INDXR | `/docs/using-indxr/playlists` | **skeleton (ADR-074, nieuw)** | `youtube-playlist-transcript` · `bulk-youtube-transcript` |
+| 7 | Using INDXR | `/docs/using-indxr/your-library` | **skeleton (ADR-074, nieuw)** | — |
+| 8 | Using INDXR | `/docs/how-indxr-works/summaries` | live (skeleton, ADR-072) | — |
+| 9 | Exports | `/docs/how-indxr-works/export-formats` (hub) | live | `/articles` (Export Formats) |
+| 10-15 | Exports | `…/export-formats/{txt,markdown,csv,srt,vtt,json}` | live (ADR-073-batch) | de format-artikelen |
+| 16 | Account | `/docs/account/credits` | **live stub (ADR-074, split)** | `/pricing` |
+| 17 | Account | `/docs/account/billing` | **live stub (ADR-074, split)** | `/pricing` |
+| 18 | Account | `/docs/account/settings` | **skeleton (ADR-074, nieuw)** | — |
+| 19 | Account | `/docs/how-indxr-works/limits` | live (thin) | — |
 
-**Afwijkingen sitemap ↔ werkelijkheid (routes winnen):**
-- De sitemap-boom (regel 32-37) noemt nog de **oude 15-pagina-structuur** (`credits · api · languages · accuracy/{auto-captions,ai-transcription}`). Die routes bestaan **niet meer** (ADR-072, 308-redirects in `next.config.ts:26-30`). De sitemap-**tabel** (regel 85-101) is wél al bijgewerkt; de boom bovenin niet. → boom in content-sitemap corrigeren.
-- **Redirect-ketens (pre-existing, buiten scope, melden):** `next.config.ts:62-64` bevat oude bare-slug-redirects, o.a. `/docs/accuracy/auto-captions → /docs/how-indxr-works/accuracy/auto-captions` — dat **doel is zelf verwijderd** en 308't dóór naar `…/accuracy`. Twee-staps-redirect; opruimen bij de schrijfronde (rechtstreeks naar het eindpunt laten wijzen).
-- `credits-and-billing` staat in de sitemap als "live (2 stubs)"; de placeholder-grep markeert 'm als placeholder door de `KHIDR`-stubs. Beide kloppen: romp is er, twee secties zijn stub.
+**Verwijderd:** `account-and-data/credits-and-billing` (→ split), `account-and-data/data-handling`
+(→ 308 `/privacy`), `help/*` (ADR-073). Alle 308 in `next.config.ts` — één hop, geen ketens
+(graaf-geverifieerd 2026-07-22). De JSON-export-pagina documenteert de RAG-chunkpresets
+(30/60/90/120s, standaard 60 — uit `RagExportView.tsx`/`DeveloperExportsCard.tsx`).
 
 ---
 
@@ -54,8 +53,8 @@ Regel: **eigen pagina alleen bij aparte zoekintentie (SEO) óf aparte gebruikers
 | `export-formats/{txt,markdown,csv,srt,vtt,json}` | **HOUDEN (6×)** | Elk format = **aparte spec** (andere velden/timestamp-vorm) én aparte zoekintentie ("srt format", "csv columns"). SRT vs VTT zijn genoeg verschillend (`,mmm` vs `.mmm`, `WEBVTT`-header) om apart te blijven; ze **delen** wél het bron-artikel. Voorwaarde: elke pagina blijft kaal (velden + 1 voorbeeld), anders → sectie op de hub. |
 | `summaries` | **HOUDEN** | Aparte taak (3-credit summary). Nieuw, geen andere houder. |
 | `limits` | **HOUDEN** | Aparte taak: "wat zijn de grenzen". Absorbeert `api` al (ADR-072). Geen artikel bezit de harde getallen. |
-| `credits-and-billing` | **HOUDEN** | Aparte taak: billing-detail. Draagt het credit-mechanisme; `/pricing` draagt de pakketten (geen dubbeling: prijzen renderen uit `pricing.ts` op beide). |
-| `data-handling` | **HOUDEN** | Aparte taak: retentie/dataverwerking. Bron = `privacy-facts.md` + code (24u audio-delete, EU-host). Overlap met `/privacy` = juridische tekst daar, feitenspec hier. |
+| `credits-and-billing` | **GESPLITST (ADR-074)** → `account/credits` (kosten/reserve/refunds) + `account/billing` (kopen/facturen/VAT). Twee vragen, twee momenten; `/pricing` draagt de pakketten. |
+| `data-handling` | **VERWIJDERD (ADR-074)** → 308 `/privacy`. Was placeholder-dubbeling; `/privacy` beantwoordt de vraag al in gewone taal. Eén FAQ-vraag ("What happens to my audio and transcripts?") + link vervangt de vindbaarheid. |
 | **`help/how-to`** | **SCHRAPPEN → 308 `/articles`** ✓ | Dupliceert de **Workflows**-categorie op `/articles` (bulk/playlist/audio-to-text/obsidian). "Guides coming soon" = leeg. Geen unieke inhoud. |
 | **`help/troubleshooting`** | **SCHRAPPEN → 308 `/articles`** ✓ | Pure index; de 5 Troubleshooting-artikelen dragen de inhoud en de `/articles`-index categoriseert ze al. Hub = redundant met `/articles`. |
 | **`help/faq`** | **VERPLAATSEN → `/docs/faq`** ✓ | Map met één pagina is overbodig. Nieuwe rol: kort antwoord + link naar de doc die het onderwerp bezit — geen unieke informatie. |
@@ -67,7 +66,7 @@ Regel: **eigen pagina alleen bij aparte zoekintentie (SEO) óf aparte gebruikers
 
 Geen fundamentele **oneens** met de drie beslissingen — ze snijden hout; de bovenstaande 3 zijn uitvoerings-consequenties.
 
-**Eindset na DEEL 2 = 16 routes:** hub · getting-started · overview · accuracy · export-formats(+txt/markdown/csv/srt/vtt/json) · summaries · limits · credits-and-billing · data-handling · faq (op `/docs/faq`).
+**Eindset na ADR-073 = 16 routes.** **Na ADR-074 = 19 user-facing routes** (4 categorieën): hub · getting-started · faq · overview · accuracy · using-indxr/playlists · using-indxr/your-library · summaries · export-formats(+txt/markdown/csv/srt/vtt/json) · account/credits · account/billing · account/settings · limits.
 
 ---
 
@@ -205,25 +204,22 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRONMATERIAAL:** `backend/main.py` (`MAX_TRANSCRIPTION_SECONDS` r.775, `MAX_PLAYLIST_VIDEOS` r.780, `MAX_CONCURRENT_JOBS` r.769); `packages/shared/src/lib/ratelimit.ts` (anon r.33, free r.34); `backend/audio_utils.py` (`SUPPORTED_FORMATS`, `MAX_FILE_SIZE_MB=500`). Absorbeert het oude `api`-feit (geen REST API).
 - **Type:** SPEC.
 
-### /docs/account-and-data/credits-and-billing
-- **BEZIT:** hoe credits werken (1cr=1min, caption 0, summary 3, RAG 1/10min, playlist 3-gratis-dan-1), reserve-/refund-mechanisme, **auto-refund bij mislukte AI-operatie**, "nooit verlopen", one-time packages (verwijst naar `/pricing`), **welke landen niet kunnen kopen (VAT-scope)** — nieuw thuis voor het FAQ-antwoord (DEEL 2 nuance).
-- **HERHAALT NIET:** de pakket-**kaarten/prijzen** (die bezit `/pricing`; hier alleen mechanisme + link).
-- **LINKT:** `/pricing`; `limits`; `summaries`.
-- **BRON:** eigen code.
-- **FIGUUR-SLOTS:** (1) het credits-saldo + koop-CTA op de billing-pagina. **Bijschrift:** "Your credit balance and top-up options." **Alt:** "Billing page showing the current credit balance and buy-credits buttons." (optioneel)
-- **SCHEMA:** `TechArticle`.
-- **BRONMATERIAAL:** `pricing.ts` (`PACKAGES`, `CREDIT_COSTS`, `FREE_TIER`); `backend/credit_manager.py` (`calculate_credit_cost`, reserve/settle/refund). VAT-scope: `docs/wiki/decisions/062-market-scope-and-country-guard.md` + `business/tax-jurisdictions.md`.
-- **Type:** SPEC (met 2 huidige `KHIDR`-stubs in te vullen).
+### /docs/account/credits (gesplitst uit credits-and-billing, ADR-074)
+- **BEZIT:** hoe credits werken (1cr=1min, caption 0, summary 3, RAG 1/10min, playlist 3-gratis-dan-1), reserve-/refund-mechanisme, **auto-refund bij mislukte AI-operatie**, "nooit verlopen".
+- **HERHAALT NIET:** kopen/facturen/VAT (→ `account/billing`); pakket-prijzen (→ `/pricing`).
+- **LINKT:** `account/billing`; `/pricing`; `limits`.
+- **BRONMATERIAAL:** `pricing.ts` (`PACKAGES`, `CREDIT_COSTS`, `FREE_TIER`); `backend/credit_manager.py` (`calculate_credit_cost`, reserve/settle/refund).
+- **SCHEMA:** `TechArticle`. **Type:** SPEC (`KHIDR`-stub in te vullen).
 
-### /docs/account-and-data/data-handling
-- **BEZIT:** dataverwerking/retentie — **audio verwijderd binnen 24u**, EU-hosting (Supabase eu-west-1), transcripts in library, wat na account-delete achterblijft.
-- **HERHAALT NIET:** de juridische GDPR-tekst (→ `/privacy`); dat is beleid, dit is de feitenspec.
-- **LINKT:** `/privacy`; `limits`.
-- **BRON:** eigen code + `business/privacy-facts.md`.
-- **FIGUUR-SLOTS:** geen.
-- **SCHEMA:** `TechArticle`.
-- **BRONMATERIAAL:** `business/privacy-facts.md` (PostHog-host, delete-cascade-matrix, wat achterblijft); audio-delete-pad in `backend/`. Deels ARGUMENT (privacy-houding) maar overwegend SPEC.
-- **Type:** SPEC (met privacy-facts als bron).
+### /docs/account/billing (gesplitst uit credits-and-billing, ADR-074)
+- **BEZIT:** credits kopen (one-time packages → `/pricing`), facturen + aankoophistorie (Account-pagina), **welke landen niet kunnen kopen (VAT-scope)** — thuis voor het FAQ-VAT-antwoord.
+- **HERHAALT NIET:** het credit-mechanisme (→ `account/credits`); de pakket-kaarten (→ `/pricing`).
+- **LINKT:** `account/credits`; `/pricing`.
+- **BRONMATERIAAL:** Stripe-checkout + `PACKAGES`; VAT-scope: `decisions/062-market-scope-and-country-guard.md` + `business/tax-jurisdictions.md`.
+- **SCHEMA:** `TechArticle`. **Type:** SPEC (`KHIDR`-stub in te vullen).
+
+### ~~/docs/account-and-data/data-handling~~ — VERWIJDERD (ADR-074)
+- Dubbeling met `/privacy` → 308 `/privacy`. De feitenspec (24u audio-delete, EU-hosting, delete-cascade) leeft in `/privacy`; één FAQ-vraag ("What happens to my audio and transcripts?") + link vervangt de vindbaarheid. Bron voor die FAQ/`/privacy`: `business/privacy-facts.md`.
 
 ### /docs/faq (verplaatst van /docs/help/faq)
 - **BEZIT:** **korte antwoorden + link naar de bezittende doc.** Géén unieke informatie (na de rolwijziging). `FAQPage`-schema blijft de waarde (rich result).

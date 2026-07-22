@@ -6,18 +6,18 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 export const metadata: Metadata = {
-  title: "Credits and Billing — INDXR.AI Docs",
-  description: "Learn how credits work in INDXR — how they are charged, how to buy more, and how refunds work.",
+  title: "Credits — INDXR.AI Docs",
+  description: "Learn how credits work in INDXR — what costs credits, the reserve model, why credits never expire, and how refunds work.",
   robots: { index: true, follow: true },
 }
 
-export default function DocsCreditsAndBillingPage() {
+export default function DocsCreditsPage() {
   const techArticleSchema = {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    headline: "Credits and Billing",
-    description: "Learn how credits work in INDXR — how they are charged, how to buy more, and how refunds work.",
-    url: "https://indxr.ai/docs/account-and-data/credits-and-billing",
+    headline: "Credits",
+    description: "Learn how credits work in INDXR — what costs credits, the reserve model, why credits never expire, and how refunds work.",
+    url: "https://indxr.ai/docs/account/credits",
   }
 
   return (
@@ -27,14 +27,14 @@ export default function DocsCreditsAndBillingPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "Account & data", href: "/docs/account-and-data/credits-and-billing" },
-            { label: "Credits and billing" },
+            { label: "Account", href: "/docs" },
+            { label: "Credits" },
           ]}
         />
         <article className="prose prose-neutral max-w-none">
-          <h1>Credits and billing</h1>
+          <h1>Credits</h1>
 
-          {/* KHIDR: schrijf final copy voor credits & billing docs pagina */}
+          {/* KHIDR: schrijf final copy voor credits docs pagina */}
           <p className="lead text-[var(--fg-subtle)]">
             INDXR uses a credit system for AI transcription and AI summarization. Caption extraction is always free.
           </p>
@@ -46,16 +46,6 @@ export default function DocsCreditsAndBillingPage() {
             <li><strong>AI summarization</strong> — 3 credits per summary.</li>
           </ul>
 
-          <h2>Buying credits</h2>
-          <p>
-            Credits are purchased in one-time packages — no subscriptions. See the <a href="/pricing">pricing page</a> for current packages.
-          </p>
-
-          <h2>Where you can buy</h2>
-          <p>
-            We&apos;re VAT-registered in the Netherlands and through the EU&apos;s One Stop Shop, which covers the EU. A few countries — including the UK and Switzerland — require a separate local VAT registration from the very first sale, with no minimum. Until we do that properly, we&apos;d rather not sell to you than sell to you incorrectly. If you want access from your country, <a href="/contact">email us</a> — enough interest and we&apos;ll register.
-          </p>
-
           <h2>Credits never expire</h2>
           <p>
             Purchased credits stay in your account until you use them.
@@ -66,13 +56,13 @@ export default function DocsCreditsAndBillingPage() {
             If an AI transcription or summarization fails, your credits are automatically refunded. You will see a &quot;Refund&quot; entry in your transaction history on the <a href={appHref('/dashboard/account')}>Account page</a>.
           </p>
 
-          {/* KHIDR: voeg credit transaction history uitleg toe */}
+          {/* KHIDR: voeg credit transaction history + reserve-model uitleg toe */}
         </article>
         <RelatedTopicsList
           topics={[
+            { label: "Billing and invoices", href: "/docs/account/billing" },
             { label: "How INDXR works", href: "/docs/how-indxr-works/overview" },
             { label: "Pricing", href: "/pricing" },
-            { label: "Data handling", href: "/docs/account-and-data/data-handling" },
           ]}
         />
       </DocsShell>

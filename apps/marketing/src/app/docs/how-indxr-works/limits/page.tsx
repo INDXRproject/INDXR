@@ -30,7 +30,7 @@ export default function DocsLimitsPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "How INDXR works", href: "/docs/how-indxr-works/overview" },
+            { label: "Account", href: "/docs" },
             { label: "Limits" },
           ]}
         />
@@ -93,7 +93,7 @@ export default function DocsLimitsPage() {
         <RelatedTopicsList
           topics={[
             { label: "Overview", href: "/docs/how-indxr-works/overview" },
-            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
+            { label: "Credits", href: "/docs/account/credits" },
             { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
           ]}
         />

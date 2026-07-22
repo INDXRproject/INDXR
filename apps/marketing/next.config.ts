@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // Docs restructure: how-indxr-works 15 → 11 pages (ADR-072)
-      { source: '/docs/how-indxr-works/credits', destination: '/docs/account-and-data/credits-and-billing', permanent: true },
+      { source: '/docs/how-indxr-works/credits', destination: '/docs/account/credits', permanent: true },
       { source: '/docs/how-indxr-works/accuracy/auto-captions', destination: '/docs/how-indxr-works/accuracy', permanent: true },
       { source: '/docs/how-indxr-works/accuracy/ai-transcription', destination: '/docs/how-indxr-works/accuracy', permanent: true },
       { source: '/docs/how-indxr-works/languages', destination: '/docs/how-indxr-works/accuracy', permanent: true },
@@ -65,7 +65,7 @@ const nextConfig: NextConfig = {
 
       // Docs URL hernesting (2026-05-04 — flat → categorical). Targets that were later
       // removed (ADR-072/073) now point straight at the final route — one hop, no chain.
-      { source: '/docs/credits', destination: '/docs/account-and-data/credits-and-billing', permanent: true },
+      { source: '/docs/credits', destination: '/docs/account/credits', permanent: true },
       { source: '/docs/accuracy', destination: '/docs/how-indxr-works/accuracy', permanent: true },
       { source: '/docs/accuracy/auto-captions', destination: '/docs/how-indxr-works/accuracy', permanent: true },
       { source: '/docs/accuracy/ai-transcription', destination: '/docs/how-indxr-works/accuracy', permanent: true },
@@ -79,14 +79,20 @@ const nextConfig: NextConfig = {
       { source: '/docs/languages', destination: '/docs/how-indxr-works/accuracy', permanent: true },
       { source: '/docs/limits', destination: '/docs/how-indxr-works/limits', permanent: true },
       { source: '/docs/api', destination: '/docs/how-indxr-works/limits', permanent: true },
-      { source: '/docs/account', destination: '/docs/account-and-data/credits-and-billing', permanent: true },
-      { source: '/docs/privacy-handling', destination: '/docs/account-and-data/data-handling', permanent: true },
+      { source: '/docs/account', destination: '/docs/account/credits', permanent: true },
+      { source: '/docs/privacy-handling', destination: '/privacy', permanent: true },
       // ADR-073 cleanup: these legacy flat paths pointed at /docs/help/* which is now removed.
       // Flattened straight to the final target. `/docs/faq` is now a REAL page, so it must NOT be
       // a redirect source — the old `/docs/faq → /docs/help/faq` rule caused an infinite loop
       // (with `/docs/help/faq → /docs/faq`) and is deleted.
       { source: '/docs/how-to', destination: '/articles', permanent: true },
       { source: '/docs/troubleshooting', destination: '/articles', permanent: true },
+
+      // Docs restructure (ADR-074): 4 categories following order of use. credits-and-billing
+      // split into Credits + Billing; data-handling removed (duplicated /privacy). Old routes
+      // point straight at the final destination — one hop, no chain.
+      { source: '/docs/account-and-data/credits-and-billing', destination: '/docs/account/credits', permanent: true },
+      { source: '/docs/account-and-data/data-handling', destination: '/privacy', permanent: true },
     ]
   },
   images: {

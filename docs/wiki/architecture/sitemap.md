@@ -55,79 +55,65 @@ De INDXR.AI site is ingedeeld in drie lagen met duidelijke URL-grenzen en verant
 ## Laag 2A — Productdocumentatie (`indxr.ai/docs/*`)
 
 Alle doc-routes renderen via `DocsShell` — sidebar via `src/lib/docs-config.ts`.
-**Bijgewerkt:** 2026-05-04 (Batch 1, page-type 4 — hernest van flat naar categorische structuur)
+**Bijgewerkt:** 2026-07-22 (ADR-074 — vier categorieën in gebruiksvolgorde; ADR-072/073 verwerkt).
+Canonieke redirect-bron blijft `apps/marketing/next.config.ts` (`async redirects()`).
 
-### Hub
+De vier sidebar-categorieën volgen de gebruiksvolgorde: **Start here → Using INDXR → Exports →
+Account**. URL's blijven stabiel waar de pagina al bestond; alleen split/nieuw/verwijderd verandert
+van pad (categorie ≠ URL-prefix — de sidebar groepeert, de URL blijft waar hij was).
 
-| Route | Type | Status | Beschrijving |
-|-------|------|--------|--------------|
-| `/docs` | SERVER | Live | Hub: DocsHubHero + FeaturedDocsGrid + 4× DocsCategorySection |
-
-### Getting started
-
-| Route | Type | Status | Beschrijving |
-|-------|------|--------|--------------|
-| `/docs/getting-started` | SERVER | Live (Tutorial layout) | Quickstart — HowTo JSON-LD |
-
-### How INDXR works
+### Hub & Start here
 
 | Route | Type | Status | Beschrijving |
 |-------|------|--------|--------------|
-| `/docs/how-indxr-works/overview` | SERVER | Live (scaffold) | High-level overzicht van het product |
-| `/docs/how-indxr-works/credits` | SERVER | Live (scaffold) | Credits systeem |
-| `/docs/how-indxr-works/accuracy` | SERVER | Live (scaffold) | Nauwkeurigheid hub |
-| `/docs/how-indxr-works/accuracy/auto-captions` | SERVER | Live (scaffold) | Auto-captions nauwkeurigheid |
-| `/docs/how-indxr-works/accuracy/ai-transcription` | SERVER | Live (scaffold) | AI transcriptie nauwkeurigheid |
-| `/docs/how-indxr-works/export-formats` | SERVER | Live (scaffold) | Export-formaten hub |
-| `/docs/how-indxr-works/export-formats/txt` | SERVER | Live (scaffold) | TXT export |
-| `/docs/how-indxr-works/export-formats/markdown` | SERVER | Live (scaffold) | Markdown export |
-| `/docs/how-indxr-works/export-formats/csv` | SERVER | Live (scaffold) | CSV export |
-| `/docs/how-indxr-works/export-formats/srt` | SERVER | Live (scaffold) | SRT export |
-| `/docs/how-indxr-works/export-formats/vtt` | SERVER | Live (scaffold) | VTT export |
-| `/docs/how-indxr-works/export-formats/json` | SERVER | Live (scaffold) | JSON/RAG export |
-| `/docs/how-indxr-works/languages` | SERVER | Live (scaffold) | Ondersteunde talen |
-| `/docs/how-indxr-works/limits` | SERVER | Live (scaffold) | Rate limits en bestandslimieten |
-| `/docs/how-indxr-works/api` | SERVER | Live (scaffold) | API referentie |
+| `/docs` | SERVER | Live | Hub: DocsHubHero + FeaturedDocsGrid + 4× DocsCategorySection (met per-pagina one-liner) |
+| `/docs/getting-started` | SERVER | Live (Tutorial layout) | "Quickstart" — HowTo JSON-LD |
+| `/docs/faq` | SERVER | Live | "FAQ" — korte antwoorden + link naar de bezittende doc |
 
-### Account & data
+### Using INDXR
 
 | Route | Type | Status | Beschrijving |
 |-------|------|--------|--------------|
-| `/docs/account-and-data/credits-and-billing` | SERVER | Live | Credits en billing (verhuisd van /docs/account) |
-| `/docs/account-and-data/data-handling` | SERVER | Live (scaffold) | Hoe data verwerkt wordt (verhuisd van /docs/privacy-handling) |
+| `/docs/how-indxr-works/overview` | SERVER | Live | "Overview" |
+| `/docs/how-indxr-works/accuracy` | SERVER | Live | "Accuracy and languages" |
+| `/docs/using-indxr/playlists` | SERVER | Live (skeleton) | "Playlists" — nieuw |
+| `/docs/using-indxr/your-library` | SERVER | Live (skeleton) | "Your library" — nieuw |
+| `/docs/how-indxr-works/summaries` | SERVER | Live | "Summaries" |
 
-### Help
+### Exports
 
 | Route | Type | Status | Beschrijving |
 |-------|------|--------|--------------|
-| `/docs/help/faq` | SERVER | Live | Veelgestelde vragen (verhuisd van /docs/faq) |
-| `/docs/help/how-to` | SERVER | Live (scaffold) | How-to handleidingen hub |
-| `/docs/help/troubleshooting` | SERVER | Live (scaffold) | Probleemoplossing hub |
+| `/docs/how-indxr-works/export-formats` | SERVER | Live | "Export formats" hub |
+| `/docs/how-indxr-works/export-formats/{txt,markdown,csv,srt,vtt,json}` | SERVER | Live | Per-formaat spec (JSON-pagina bevat RAG-chunkgrootte-presets 30/60/90/120s) |
 
-### Redirects (docs hernesting 2026-05-04)
+### Account
+
+| Route | Type | Status | Beschrijving |
+|-------|------|--------|--------------|
+| `/docs/account/credits` | SERVER | Live | "Credits" — gesplitst uit credits-and-billing (kosten, reserve-model, refunds) |
+| `/docs/account/billing` | SERVER | Live | "Billing and invoices" — gesplitst (kopen, facturen, VAT-scope) |
+| `/docs/account/settings` | SERVER | Live (skeleton) | "Settings" — nieuw (RAG-chunkgrootte, e-mail, account verwijderen → /privacy) |
+| `/docs/how-indxr-works/limits` | SERVER | Live | "Limits" |
+
+**Verwijderd:** `/docs/account-and-data/credits-and-billing` (gesplitst) en
+`/docs/account-and-data/data-handling` (dubbeling met `/privacy`).
+
+### Redirects (docs — canoniek in `next.config.ts`)
+
+Restructure ADR-074 (bovenop de bestaande ADR-072/073-regels — één hop, geen ketens):
 
 | Van | Naar | Type |
 |-----|------|------|
-| `/faq` | `/docs/help/faq` | 308 |
-| `/docs/credits` | `/docs/how-indxr-works/credits` | 308 |
-| `/docs/accuracy` | `/docs/how-indxr-works/accuracy` | 308 |
-| `/docs/accuracy/auto-captions` | `/docs/how-indxr-works/accuracy/auto-captions` | 308 |
-| `/docs/accuracy/ai-transcription` | `/docs/how-indxr-works/accuracy/ai-transcription` | 308 |
-| `/docs/export-formats` | `/docs/how-indxr-works/export-formats` | 308 |
-| `/docs/export-formats/txt` | `/docs/how-indxr-works/export-formats/txt` | 308 |
-| `/docs/export-formats/markdown` | `/docs/how-indxr-works/export-formats/markdown` | 308 |
-| `/docs/export-formats/csv` | `/docs/how-indxr-works/export-formats/csv` | 308 |
-| `/docs/export-formats/srt` | `/docs/how-indxr-works/export-formats/srt` | 308 |
-| `/docs/export-formats/vtt` | `/docs/how-indxr-works/export-formats/vtt` | 308 |
-| `/docs/export-formats/json` | `/docs/how-indxr-works/export-formats/json` | 308 |
-| `/docs/languages` | `/docs/how-indxr-works/languages` | 308 |
-| `/docs/limits` | `/docs/how-indxr-works/limits` | 308 |
-| `/docs/api` | `/docs/how-indxr-works/api` | 308 |
-| `/docs/account` | `/docs/account-and-data/credits-and-billing` | 308 |
-| `/docs/privacy-handling` | `/docs/account-and-data/data-handling` | 308 |
-| `/docs/how-to` | `/docs/help/how-to` | 308 |
-| `/docs/troubleshooting` | `/docs/help/troubleshooting` | 308 |
-| `/docs/faq` | `/docs/help/faq` | 308 |
+| `/docs/account-and-data/credits-and-billing` | `/docs/account/credits` | 308 |
+| `/docs/account-and-data/data-handling` | `/privacy` | 308 |
+| `/docs/how-indxr-works/credits` · `/docs/credits` · `/docs/account` | `/docs/account/credits` | 308 |
+| `/docs/privacy-handling` | `/privacy` | 308 |
+| `/docs/how-indxr-works/accuracy/{auto-captions,ai-transcription}` · `/docs/languages` · `/docs/accuracy*` | `/docs/how-indxr-works/accuracy` | 308 |
+| `/docs/how-indxr-works/api` · `/docs/limits` · `/docs/api` | `/docs/how-indxr-works/limits` | 308 |
+| `/docs/export-formats/*` | `/docs/how-indxr-works/export-formats/*` | 308 |
+| `/docs/help/faq` · `/faq` | `/docs/faq` | 308 |
+| `/docs/help/{how-to,troubleshooting}` · `/docs/{how-to,troubleshooting}` | `/articles` | 308 |
 
 ---
 

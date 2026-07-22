@@ -41,7 +41,7 @@ export default function DocsOverviewPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "How INDXR works", href: "/docs/how-indxr-works/overview" },
+            { label: "Using INDXR", href: "/docs" },
             { label: "Overview" },
           ]}
         />
@@ -241,8 +241,8 @@ export default function DocsOverviewPage() {
         </p>
         <p className={P}>
           See:{" "}
-          <Link href="/docs/account-and-data/credits-and-billing" className="text-[var(--accent)] hover:underline">
-            Credits and billing
+          <Link href="/docs/account/credits" className="text-[var(--accent)] hover:underline">
+            Credits
           </Link>
         </p>
 
@@ -251,7 +251,7 @@ export default function DocsOverviewPage() {
             { label: "Accuracy and languages", href: "/docs/how-indxr-works/accuracy" },
             { label: "Export formats", href: "/docs/how-indxr-works/export-formats" },
             { label: "Limits", href: "/docs/how-indxr-works/limits" },
-            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
+            { label: "Credits", href: "/docs/account/credits" },
           ]}
         />
       </DocsShell>

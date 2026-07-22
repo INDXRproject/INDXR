@@ -36,7 +36,7 @@ export default function DocsExportFormatsPage() {
         <DocsBreadcrumb
           items={[
             { label: "Docs", href: "/docs" },
-            { label: "How INDXR works", href: "/docs/how-indxr-works/overview" },
+            { label: "Exports", href: "/docs" },
             { label: "Export formats" },
           ]}
         />
@@ -132,7 +132,7 @@ export default function DocsExportFormatsPage() {
             { label: "Plain text (TXT)", href: "/docs/how-indxr-works/export-formats/txt" },
             { label: "Markdown", href: "/docs/how-indxr-works/export-formats/markdown" },
             { label: "JSON / RAG JSON", href: "/docs/how-indxr-works/export-formats/json" },
-            { label: "Credits and billing", href: "/docs/account-and-data/credits-and-billing" },
+            { label: "Credits", href: "/docs/account/credits" },
             { label: "Article: YouTube to text", href: "/articles/youtube-to-text" },
           ]}
         />

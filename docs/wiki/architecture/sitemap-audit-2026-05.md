@@ -1,5 +1,10 @@
 # Sitemap Audit — INDXR.AI V2
 
+> **⚠️ GEARCHIVEERD — punt-in-tijd-audit (2026-05-03).** Vervangen door de doorlopende bron van
+> waarheid `architecture/sitemap.md` (bijgewerkt voor ADR-072/073/074) en `content/content-sitemap.md`.
+> Dit is een momentopname van de codebase op 2026-05-03; niet meer bijwerken en niet als actuele
+> routestructuur gebruiken. Blijft staan als historisch record (writing-standard §E).
+
 **Datum:** 2026-05-03  
 **Bron van waarheid:** codebase (`src/app/`)  
 **Methode:** directe inspectie van alle route-bestanden, componenten, en configuratiebestanden  

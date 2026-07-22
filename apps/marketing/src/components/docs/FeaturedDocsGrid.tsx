@@ -20,9 +20,9 @@ const featuredDocs: FeaturedDoc[] = [
     description: "A high-level overview of the extraction and transcription pipeline.",
   },
   {
-    label: "Credits and billing",
-    href: "/docs/account-and-data/credits-and-billing",
-    description: "What costs credits, what doesn't, and how to buy more.",
+    label: "Credits",
+    href: "/docs/account/credits",
+    description: "What costs credits, what doesn't, and how refunds work.",
   },
   {
     label: "Export formats",
