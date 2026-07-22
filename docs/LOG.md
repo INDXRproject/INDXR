@@ -10984,3 +10984,26 @@ docs/wiki/architecture/page-structures/reference-doc.md
 docs/wiki/business/content-sitemap.md
 docs/wiki/decisions/073-docs-shell-scaffold-and-help-removal.md
 ---
+[2026-07-23 01:30] fix(redirects): /docs/faq redirect-loop + volledige next.config-audit. Oorzaak: legacy mei-hernesting `/docs/faq → /docs/help/faq` botste met ADR-073 `/docs/help/faq → /docs/faq` = infinite loop; /docs/faq is nu een echte pagina (mag geen redirect-bron zijn) → regel verwijderd. Volledige graaf-audit van alle 49 regels: ook 2 ketens gevonden (`/docs/how-to`→/docs/help/how-to→/articles, `/docs/troubleshooting`→…→/articles) — beide platgeslagen naar één hop (→/articles). Statische audit: 0 loops, 0 ketens>1hop, 0 bronnen-die-echte-pagina-zijn, alle bestemmingen bestaan, sitemap.ts bevat uitsluitend 200-URL's (geen redirect-bronnen). Build 2/2 groen. LESSONS-regel toegevoegd (herstructurering herziet bestaande tabel niet). | gewijzigd: apps/marketing/next.config.ts, docs/LESSONS.md, docs/LOG.md
+[2026-07-22 17:02] commit: fix(redirects): break /docs/faq loop + flatten the whole redirect table
+
+/docs/faq showed an infinite redirect loop in production: the legacy 2026-05-04
+hernesting rule `/docs/faq → /docs/help/faq` collided with the ADR-073 rule
+`/docs/help/faq → /docs/faq`. /docs/faq is now a real page, so it must never be a
+redirect source — that rule is deleted.
+
+Full graph audit of all redirects (not just this task's rules): also found two
+2-hop chains, `/docs/how-to → /docs/help/how-to → /articles` and
+`/docs/troubleshooting → /docs/help/troubleshooting → /articles`, because their
+intermediate target was removed. Both flattened to one hop (→ /articles).
+
+Static audit now: 0 loops, 0 chains >1 hop, no source is a real page, every
+destination exists, and sitemap.ts contains only 200 URLs (no redirect sources).
+Build 2/2 green. Added a LESSONS entry: a restructure kept adding redirect rules
+without reviewing the existing table as a whole.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/next.config.ts
+docs/LESSONS.md
+docs/LOG.md
+---

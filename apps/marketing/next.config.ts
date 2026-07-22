@@ -81,9 +81,12 @@ const nextConfig: NextConfig = {
       { source: '/docs/api', destination: '/docs/how-indxr-works/limits', permanent: true },
       { source: '/docs/account', destination: '/docs/account-and-data/credits-and-billing', permanent: true },
       { source: '/docs/privacy-handling', destination: '/docs/account-and-data/data-handling', permanent: true },
-      { source: '/docs/how-to', destination: '/docs/help/how-to', permanent: true },
-      { source: '/docs/troubleshooting', destination: '/docs/help/troubleshooting', permanent: true },
-      { source: '/docs/faq', destination: '/docs/help/faq', permanent: true },
+      // ADR-073 cleanup: these legacy flat paths pointed at /docs/help/* which is now removed.
+      // Flattened straight to the final target. `/docs/faq` is now a REAL page, so it must NOT be
+      // a redirect source — the old `/docs/faq → /docs/help/faq` rule caused an infinite loop
+      // (with `/docs/help/faq → /docs/faq`) and is deleted.
+      { source: '/docs/how-to', destination: '/articles', permanent: true },
+      { source: '/docs/troubleshooting', destination: '/articles', permanent: true },
     ]
   },
   images: {
