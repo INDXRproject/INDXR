@@ -11670,3 +11670,22 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/app/docs/account/billing/page.tsx
 apps/marketing/src/app/docs/account/credits/page.tsx
 ---
+
+[2026-07-23 02:00] nachtrun (9 fasen): fase 1-3 + 4a/4b + 5-kernclaims + 8-verificatie afgemaakt & live geverifieerd; 4-volledig/6/7 bewust deferred. Zie docs/wiki/roadmap/nachtrapport-2026-07-23.md (per fase: commit, beslissingen, weggelaten claims, Khidr-follow-ups). ADR-077 (indexatie-fundament). Commits: bf42df0 c2a3c03 68e868c e6512d5 03b3d7c | gewijzigd: nachtrapport-2026-07-23.md, decisions/077, INDEX.md, LOG.md
+---
+[2026-07-23 01:42] commit: docs(roadmap): night-run report + ADR-077 (indexation foundation)
+
+- nachtrapport-2026-07-23.md: per-phase account of the nine-phase night run —
+  what was done (commit hashes), decisions and why, the list of claims removed or
+  not written because they couldn't be substantiated (the truth-rule list), what was
+  deliberately skipped, and what remains for Khidr (Search Console + Bing, welcome-
+  message merge, refund policy, /contact fix, the large content phases 4-full/6/7).
+- ADR-077: self-canonicals + robots crawler policy + article banner (the lasting
+  decisions from phase 2-3). INDEX + LOG updated.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/077-indexation-foundation.md
+docs/wiki/roadmap/nachtrapport-2026-07-23.md
+---
