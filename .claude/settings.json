@@ -1,25 +1,5 @@
 {
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '## Recent activity' && tail -15 docs/LOG.md && echo '## Current branch' && git branch --show-current && echo '## Changed since last commit' && git diff --name-only HEAD"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"[$(date '+%Y-%m-%d %H:%M')] precompact: context compaction triggered\" >> docs/LOG.md"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [

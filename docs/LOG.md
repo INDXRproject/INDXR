@@ -11188,3 +11188,6 @@ docs/wiki/decisions/074-docs-structure-4-categories.md
 docs/wiki/roadmap/priorities.md
 docs/wiki/strategy/principles.md
 ---
+[2026-07-22 21:04] commit: chore: remove PreCompact/SessionStart hooks (broke compaction with relative path)
+Changed: .claude/settings.json
+---
