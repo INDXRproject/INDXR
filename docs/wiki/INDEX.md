@@ -138,8 +138,8 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | Bestand | Onderwerp |
 |---------|-----------|
 | [pricing-source-of-truth.md](architecture/pricing-source-of-truth.md) | **`src/lib/pricing.ts` is de enige bron voor PACKAGES, CREDIT_COSTS, FREE_TIER** |
-| [sitemap.md](architecture/sitemap.md) | **Routestructuur, navigatie, redirects — post-refactor bron van waarheid** |
-| [sitemap-audit-2026-05.md](architecture/sitemap-audit-2026-05.md) | Volledige sitemap audit (2026-05): routes, componenten, metadata, inconsistenties — input voor research/design/implementatie |
+| [sitemap.md](architecture/sitemap.md) | **Bron van waarheid — routestructuur/redirects/nav.** ⚠ Bijwerken voor ADR-072/073 (nog niet gedaan). Zie [writing-standard §E](content/writing-standard.md) voor de rolverdeling van de vier sitemap-docs. |
+| [sitemap-audit-2026-05.md](architecture/sitemap-audit-2026-05.md) | *Archiveerbaar* — point-in-time audit (mei-2026), historisch. Zie [writing-standard §E](content/writing-standard.md). |
 | [overview.md](architecture/overview.md) | High-level architectuur met request flows en tech stack |
 | [credit-system.md](architecture/credit-system.md) | Volledige credit flow: koop → deductie → refund |
 | [finance-map.md](architecture/finance-map.md) | **De kaart voor een redesign:** elk UI-getal → functie die het berekent → tabellen/kolommen → tarief uit `cost_config` → ADR. Eén tabel; wat raak je als je een regel verplaatst. Wijst door naar provenance (waarom) en nightly-jobs (crons) |
@@ -157,7 +157,8 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | Bestand | Onderwerp |
 |---------|-----------|
 | [privacy-facts.md](business/privacy-facts.md) | **Geverifieerde privacy-feiten vóór het beleid** (etappe B): PostHog niet-cookieless + US-host, account-delete cascade-matrix, wat na delete achterblijft (usage_logs `ip_address`, payment_attempts). Read-only diagnose tegen live code + `pg_constraint`. |
-| [content-sitemap.md](business/content-sitemap.md) | **De kaart van álle user-facing content** (marketing + app): per pagina doel/claims/status, gegroepeerd naar functie, FAQ gecategoriseerd + kritische blik (ontbrekend/schrapbaar/groei-regel). Basis vóór GDPR- en waarheids-pagina. |
+| [content-sitemap.md](business/content-sitemap.md) | **Bron van waarheid — content-map** (marketing + app): per pagina doel/claims/status, docs↔artikel-rolverdeling, groei-regel, single-source-regel. Actief onderhouden (ADR-072/073). |
+| [INDXR-SITEMAP.md](business/INDXR-SITEMAP.md) | *Masterplan 2026-04-15.* Routes **vervangen** (2026-05-03, zie architecture/sitemap.md); **SEO-/content-strategie vervangen** door [content/writing-standard.md](content/writing-standard.md) (2026-07-23). Archiveerbaar — bewaard voor historische context. |
 | [pricing.md](business/pricing.md) | 5-tier model, credit formule, marges, marketing copy |
 | [unit-economics.md](business/unit-economics.md) | Geverifieerde kostenbasis: AssemblyAI + Decodo per credit, vaste infra, prijs-rationale |
 | [positioning.md](business/positioning.md) | Marktpositie, doelgroep, onderscheid t.o.v. concurrenten |
@@ -171,6 +172,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 |---------|-----------|
 | [product-truth.md](content/product-truth.md) | **Code-geverifieerde bron van waarheid voor de content-herschrijf**: pricing, creditmodel + reserve-model, live features, export-formaten, storage-cap, en de volledige modelnaam-inventaris (live vs stale in content). Elk feit met `bestand:regel`. |
 | [docs-page-contract.md](content/docs-page-contract.md) | **Paginacontract voor /docs** vóór de schrijfronde: huidige routes (live/placeholder), per-pagina houden/samenvoegen/schrappen-oordeel, en per overgebleven pagina het contract (BEZIT / HERHAALT-NIET / LINKT / BRON / FIGUUR-SLOTS / SCHEMA / BRONMATERIAAL, SPEC vs ARGUMENT). Plus template- en llms.txt-gaten. |
+| [writing-standard.md](content/writing-standard.md) | **DE bron voor het schrijven van content** — één standaard i.p.v. vier tegensprekende docs. Conflictenregister (FAQ/schema/dichtheid/callouts/llms.txt/docs-structuur), implementatie-audit (LIVE/HALF/NEVER van de SEO-elementen), de schrijfregels (opening/koppen/FAQ/schema/interne-links/bronnen/figuren/callouts/dichtheid/toon), een `[TE VERIFIËREN]`-lijst voor externe toetsing, en het wiki-opschoonvoorstel. Vervangt de SEO-strategie in INDXR-SITEMAP.md. |
 
 ---
 

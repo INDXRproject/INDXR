@@ -11007,3 +11007,33 @@ Changed: apps/marketing/next.config.ts
 docs/LESSONS.md
 docs/LOG.md
 ---
+[2026-07-23 03:00] content/writing-standard.md aangemaakt (read-only synthese, niets geïmplementeerd) — één schrijfstandaard i.p.v. vier tegensprekende docs; blokkeerde de schrijfronde. §A conflictenregister (9 conflicten met citaat+bron+wat-geldt): FAQ-strategie (docs geen inline-FAQ, artikelen/marketing wél FAQPage, /docs/faq = kort+link), schema-toewijzing (live graaf + BreadcrumbList op artikelen toevoegen + FAQPage-antwoord-string-bug), dichtheid (batch-3b research wint: 60-70ch/1.5-1.75; mijn max-w-3xl te breed), callouts (DocsCallout content vs app-Banner intent, geen conflict), llms.txt-prioriteit (ADR-039 wint van masterplan), docs-structuur (ADR-072/073 wint van principles §6), verouderde masterplan-feiten (7 formaten/Universal-3.5 Pro/4-tier/1cr-10min), answer-first (25w vs 40-60w verenigd), Workflows-categorie. §B implementatie-audit (robots LIVE, llms.txt HALF/STALE 5-tier, sitemap single/geen-segmentatie, JsonLd LIVE met 2 gaten, Bing/IndexNow NEVER, interne links HALF — artikelen zijn link-eiland, FAQPage LIVE). §C de schrijfregels (opening/koppen/FAQ/interne-links/bronnen/schema/feiten-single-source/figuren/callouts/dichtheid/toon). §C11 toon: "you"/informeel vastgelegd mét [TE VERIFIËREN] (geen tone-onderzoek). §D 10 [TE VERIFIËREN]-regels (llms.txt, FAQPage-trigger, 25w-snippet, crawler-allowlist, Bing-index, sitemap-segmentatie, toon, schema-ranking, dichtheidsgetallen, slug-neutraliteit). §E wiki-opschoonvoorstel: content-sitemap=content-truth, architecture/sitemap.md=route-truth (bijwerken), INDXR-SITEMAP=archiveerbaar, sitemap-audit-2026-05=archiveren. INDEX bijgewerkt (writing-standard + 4 sitemap-docs gelabeld). Docs-only. | gewijzigd: docs/wiki/content/writing-standard.md, INDEX.md, LOG.md
+[2026-07-22 17:26] commit: docs(content): single writing standard — conflict register + SEO audit + rules
+
+Read-only synthesis, nothing implemented. One document that says what governs
+content writing, replacing four documents that contradict each other; this was
+blocking the writing round.
+
+- §A Conflict register (9 conflicts, each with quote + source + resolution): FAQ
+  strategy, schema assignment, docs-vs-articles density (batch-3b research wins),
+  callouts (DocsCallout vs app Banner), llms.txt priority (ADR-039 wins over the
+  masterplan), docs structure (ADR-072/073 wins over principles §6), stale masterplan
+  facts (7 formats / Universal-3.5 Pro / 4-tier / 1cr-10min), answer-first, Workflows.
+- §B Implementation audit (LIVE/HALF/NEVER): robots allowlist LIVE, llms.txt
+  HALF/STALE (old 5-tier pricing in all 3 files), sitemap single/unsegmented, JSON-LD
+  LIVE with 2 gaps (no BreadcrumbList on articles; FAQPage answer drops ReactNode to ""),
+  Bing/IndexNow NEVER, internal links HALF (articles are a link island), FAQPage LIVE.
+- §C The writing rules (opening/headings/FAQ/internal-links/sources/schema/facts-single-
+  source/figures/callouts/density/tone). Tone "you"/informal locked WITH [TE VERIFIËREN].
+- §D 10 [TE VERIFIËREN] rules for external validation (generously flagged — llms.txt,
+  FAQPage-as-trigger, 25-word snippet, crawler allowlist, Bing index, sitemap
+  segmentation, tone, schema ranking, density numbers, slug neutrality).
+- §E Wiki cleanup proposal for the four sitemap-like docs. INDEX.md updated.
+
+Docs-only.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/content/writing-standard.md
+---
