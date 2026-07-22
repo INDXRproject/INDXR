@@ -142,7 +142,7 @@ Not every workflow needs Markdown. Here's when each format makes sense:
 ## Frequently Asked Questions
 
 **Does the Markdown export work for videos without auto-captions?**
-Yes. Enable AI Transcription before extracting — INDXR.AI uses AssemblyAI Universal-3 Pro to transcribe the audio. The resulting Markdown is higher quality than auto-caption exports because AssemblyAI adds proper punctuation and sentence boundaries. Cost: 1 credit per minute of video.
+Yes. Enable AI Transcription before extracting — INDXR.AI uses AssemblyAI Universal-3.5 Pro to transcribe the audio. The resulting Markdown is higher quality than auto-caption exports because AssemblyAI adds proper punctuation and sentence boundaries. Cost: 1 credit per minute of video.
 
 **What's the difference between Markdown plain and Markdown with timestamps?**
 Plain Markdown outputs the transcript as continuous paragraphs with no time references — ideal for blog posts, summaries, and AI input. Markdown with timestamps adds `[HH:MM:SS]` at the start of each segment, with each timestamp on its own line — ideal for Obsidian notes where you want to jump to specific moments in the video.

@@ -64,7 +64,7 @@ The resegmentation algorithm respects sentence boundaries — it doesn't merge s
 
 About 20% of YouTube videos have no auto-generated captions — non-English content YouTube hasn't processed, videos from smaller creators, older uploads, content with poor audio quality (YouTube Help, support.google.com/youtube/answer/6373554). Basic subtitle downloaders return empty files or errors for these videos.
 
-INDXR.AI detects this upfront and offers AI Transcription as a fallback. Enable the toggle, confirm the credit cost (1 credit per minute), and the audio is transcribed by AssemblyAI Universal-3 Pro. The resulting SRT/VTT is higher quality than auto-caption output — proper punctuation, accurate word boundaries, and clean segment timing.
+INDXR.AI detects this upfront and offers AI Transcription as a fallback. Enable the toggle, confirm the credit cost (1 credit per minute), and the audio is transcribed by AssemblyAI Universal-3.5 Pro. The resulting SRT/VTT is higher quality than auto-caption output — proper punctuation, accurate word boundaries, and clean segment timing.
 
 For audio files you've already downloaded, the Audio Upload tab accepts MP3, MP4, WAV, M4A, OGG, FLAC, and WEBM files up to 500MB and produces the same resegmented SRT/VTT output.
 

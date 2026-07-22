@@ -39,7 +39,7 @@ If you can watch the video — meaning you're signed into YouTube and your accou
 
 **Step 2: Upload to INDXR.AI.** Open the [Audio Upload tab](/audio-to-text). Accepted formats: MP3, MP4, WAV, M4A, OGG, FLAC, WEBM, up to 500MB. The file is sent directly to INDXR.AI's backend — not through Vercel's size-limited proxy.
 
-**Step 3: Transcribe and export.** AssemblyAI Universal-3 Pro produces a transcript with proper punctuation and high accuracy. Export in any format — TXT, Markdown with YAML frontmatter, SRT, VTT, JSON, or RAG-optimized JSON.
+**Step 3: Transcribe and export.** INDXR.AI automatically routes the audio to the best transcription model for its language — our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise — producing a transcript with proper punctuation and high accuracy. Export in any format — TXT, Markdown with YAML frontmatter, SRT, VTT, JSON, or RAG-optimized JSON.
 
 **Cost:** 1 credit per minute of audio. A 45-minute video: 45 credits, approximately €0.54 at Plus pricing (€0.012/credit).
 
@@ -51,7 +51,7 @@ The same path works for members-only content you're paying to access, and for pr
 
 Age-restricted videos on YouTube tend to have auto-captions available alongside the age gate — but accessing those captions externally still requires passing the authentication check. For the audio upload path, you're getting AI-generated transcription rather than YouTube's captions.
 
-AssemblyAI Universal-3 Pro achieves 94–96%+ accuracy on clean audio. For content with challenging audio conditions — music, background noise, non-standard speech — accuracy varies but remains higher than YouTube's auto-captions for difficult audio. The `is_auto_generated: false` flag in JSON exports distinguishes AI-transcribed content from auto-caption sources.
+Universal-3.5 Pro, INDXR.AI's highest-quality transcription model, achieves 94–96%+ accuracy on clean audio for the languages it supports (with broad coverage across 99+ languages otherwise). For content with challenging audio conditions — music, background noise, non-standard speech — accuracy varies but remains higher than YouTube's auto-captions for difficult audio. The `is_auto_generated: false` flag in JSON exports distinguishes AI-transcribed content from auto-caption sources.
 
 ---
 
@@ -74,7 +74,7 @@ Technically possible to build, but not how INDXR.AI operates — and not somethi
 No. Age restriction is detected before any processing begins. The error card appears immediately and no credits are used.
 
 **What's the quality difference between the audio upload transcript and what YouTube's captions would have provided?**
-YouTube's auto-captions for age-restricted content are typically the same quality as for any other video — 60–95% accuracy depending on audio conditions. AssemblyAI Universal-3 Pro tends to match or exceed this, particularly for videos with clear speech. The key difference: AssemblyAI adds proper punctuation and capitalization, which YouTube's auto-captions often lack.
+YouTube's auto-captions for age-restricted content are typically the same quality as for any other video — 60–95% accuracy depending on audio conditions. INDXR.AI's AI transcription tends to match or exceed this, particularly for videos with clear speech. The key difference: AssemblyAI adds proper punctuation and capitalization, which YouTube's auto-captions often lack.
 
 **Can I transcribe an age-restricted YouTube Short?**
 Shorts follow the same rules — age-restricted Shorts require authentication. The audio upload path works the same way: download the Short's audio while logged in, upload to INDXR.AI.

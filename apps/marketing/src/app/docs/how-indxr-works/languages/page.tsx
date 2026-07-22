@@ -5,10 +5,13 @@ import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
+
+const langDescription = `INDXR supports transcript extraction in any language with YouTube auto-captions. For AI transcription, INDXR automatically uses the best model for your video's language — our highest-quality model, ${transcriptionModelName()}, for the languages it supports, with broad coverage across 99+ languages.`
 
 export const metadata: Metadata = {
   title: "Supported Languages — INDXR.AI Docs",
-  description: "INDXR supports transcript extraction in any language with YouTube auto-captions. For AI transcription, AssemblyAI Universal-3 supports 99+ languages.",
+  description: langDescription,
 }
 
 export default function DocsLanguagesPage() {
@@ -16,7 +19,7 @@ export default function DocsLanguagesPage() {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     headline: "Supported Languages",
-    description: "INDXR supports transcript extraction in any language with YouTube auto-captions. For AI transcription, AssemblyAI Universal-3 supports 99+ languages.",
+    description: langDescription,
     url: "https://indxr.ai/docs/how-indxr-works/languages",
   }
 
@@ -33,7 +36,7 @@ export default function DocsLanguagesPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Supported Languages</h1>
         <DefinitionLeadOpening>
-          INDXR supports transcript extraction in any language with YouTube auto-captions. For AI transcription, AssemblyAI Universal-3 supports 99+ languages. Language is detected automatically from the video — no selection required.
+          INDXR supports transcript extraction in any language with YouTube auto-captions. For AI transcription, INDXR automatically uses the best model for your video&apos;s language — our highest-quality model, {transcriptionModelName()}, for the languages it supports, with broad coverage across 99+ languages. Language is detected automatically from the video — no selection required.
         </DefinitionLeadOpening>
         <p className="text-[var(--fg-muted)] text-sm">[Placeholder — content coming soon]</p>
         <RelatedTopicsList

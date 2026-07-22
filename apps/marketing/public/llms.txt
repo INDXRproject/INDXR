@@ -5,7 +5,7 @@ INDXR.AI is a YouTube transcript extraction tool. It extracts captions from YouT
 ## What INDXR.AI does
 
 - Extracts YouTube auto-captions instantly (free, no account required for single videos)
-- AI transcription via AssemblyAI Universal-3 for videos without captions (1 credit/minute)
+- AI transcription via a language router that picks the best model per language, led by AssemblyAI Universal-3.5 Pro, for videos without captions (1 credit/minute)
 - Playlist batch extraction (first 3 auto-caption videos free, 1 credit/video after)
 - Audio file upload transcription (up to 500MB)
 - AI summary + action points (3 credits)

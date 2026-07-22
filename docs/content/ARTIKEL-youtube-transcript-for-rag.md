@@ -241,19 +241,20 @@ INDXR.AI shows a warning when you enable RAG JSON export on an auto-caption tran
 
 ## Pricing for RAG JSON Export
 
-RAG JSON export costs 1 credit per 15 minutes of video content (rounded up), with a minimum of 1 credit:
+RAG JSON export costs 1 credit per 10 minutes of video content (rounded up), with a minimum of 1 credit:
 
 | Video length | RAG export cost |
 |---|---|
-| 0–15 min | 1 credit |
-| 16–30 min | 2 credits |
-| 31–60 min | 4 credits |
-| 61–120 min | 8 credits |
-| 121+ min | Calculated at 1 credit / 15 min |
+| 0–10 min | 1 credit |
+| 11–20 min | 2 credits |
+| 21–30 min | 3 credits |
+| 31–60 min | up to 6 credits |
+| 61–120 min | up to 12 credits |
+| 121+ min | Calculated at 1 credit / 10 min |
 
-The first 3 RAG JSON exports are free, regardless of video length — enough to validate the format in your actual pipeline before spending credits.
+There's no free tier for RAG JSON export — it's charged from the first export based on video length (see the table above). Re-downloading a transcript you've already exported as RAG JSON is free, so once you've paid for it once, revisiting or re-downloading the output costs nothing extra.
 
-If you're combining AI Transcription with RAG export, the costs are separate: AI Transcription at 1 credit per minute, RAG export at 1 credit per 15 minutes. A 60-minute video without captions: 60 credits (AI Transcription) + 4 credits (RAG export) = 64 credits total.
+If you're combining AI Transcription with RAG export, the costs are separate: AI Transcription at 1 credit per minute, RAG export at 1 credit per 10 minutes. A 60-minute video without captions: 60 credits (AI Transcription) + 6 credits (RAG export) = 66 credits total.
 
 You can also apply RAG export to transcripts already in your library. If you transcribed a video six months ago, open it from the library and export as RAG JSON — the export uses the stored transcript data and charges only the RAG export cost, not re-transcription.
 
@@ -281,4 +282,4 @@ The default is 120-second chunks with 18-second (15%) overlap. If you need diffe
 
 ---
 
-*Try the RAG JSON export free for your first 3 videos — [extract a transcript now](/youtube-transcript-generator). No account required for auto-caption videos.*
+*[Extract a transcript now](/youtube-transcript-generator) and try the RAG JSON export — 1 credit per 10 minutes of video, with free re-downloads afterward. No account required for auto-caption videos.*

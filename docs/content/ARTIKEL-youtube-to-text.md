@@ -47,7 +47,7 @@ Auto-captions have one meaningful limitation: they lack punctuation and capitali
 
 About 20% of YouTube videos have no auto-generated captions (YouTube Help, support.google.com/youtube/answer/6373554). Common reasons: the creator disabled captions, the video is in a language YouTube doesn't process well, the audio quality was too poor for YouTube's speech recognition, or the video was uploaded before YouTube's auto-caption rollout.
 
-For these videos, INDXR.AI uses AI transcription — downloading the audio and processing it through AssemblyAI Universal-3 Pro. The result is a properly punctuated, accurate transcript in 99+ languages. Cost: 1 credit per minute of video.
+For these videos, INDXR.AI uses AI transcription — downloading the audio and automatically routing it to the best model for the detected language, led by AssemblyAI Universal-3.5 Pro, our highest-quality model. The result is a properly punctuated, accurate transcript, with broad coverage across 99+ languages. Cost: 1 credit per minute of video.
 
 You'll know before spending any credits. INDXR.AI shows you whether captions are available and the AI transcription cost for that specific video's duration before you confirm.
 
@@ -83,13 +83,13 @@ YouTube's "Show transcript" button only works when captions exist, only displays
 Auto-caption extraction works for any language YouTube supports (67 languages). AI Transcription supports 99+ languages with automatic detection — no need to specify the language.
 
 **Can I convert a whole playlist to text at once?**
-Yes. The Playlist tab accepts any YouTube playlist URL and processes all selected videos in a single job. First three auto-caption videos are free; additional auto-caption videos cost 1 credit each from video four onward.
+Yes. The Playlist tab accepts any YouTube playlist URL and processes all selected videos in a single job. First three auto-caption videos are free; additional auto-caption videos cost 1 credit each from video four onward. This free tier applies only to auto-caption videos — any video requiring AI Transcription costs 1 credit per minute with no discount, regardless of its position in the playlist.
 
 **What about YouTube Shorts?**
 Yes. Paste the Short's URL the same way as any other video. Shorts follow YouTube's standard caption system — auto-captions available for most, AI transcription available when they're not.
 
 **How accurate is AI transcription?**
-AssemblyAI Universal-3 Pro, which powers INDXR.AI's AI transcription, achieves 94–96%+ accuracy on clean audio. For challenging audio conditions — background noise, accents, overlapping speakers — accuracy varies but consistently outperforms YouTube's auto-captioning system.
+INDXR.AI's AI transcription automatically routes each video to the best model for its language — led by AssemblyAI Universal-3.5 Pro, our highest-quality model, which achieves 94–96%+ accuracy on clean audio for its supported languages, with broad coverage across 99+ languages otherwise. For challenging audio conditions — background noise, accents, overlapping speakers — accuracy varies but consistently outperforms YouTube's auto-captioning system.
 
 ---
 

@@ -379,7 +379,7 @@ for i in range(0, len(vectors), 100):
         </tbody>
       </table>
 
-      <p>First 3 exports free. Credits never expire.</p>
+      <p>Re-downloading a transcript you&apos;ve already exported is free. Credits never expire.</p>
 
       <p>
         For the standard (non-chunked) JSON format, see{" "}

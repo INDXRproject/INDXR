@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube Age-Restricted Video Transcript — Options and Workarounds | INDXR.AI",
@@ -21,7 +22,7 @@ const faqs = [
   },
   {
     q: "What's the quality difference between the audio upload transcript and what YouTube's captions would have provided?",
-    a: "YouTube's auto-captions for age-restricted content are typically the same quality as for any other video — 60–95% accuracy depending on audio conditions. AssemblyAI Universal-3 Pro tends to match or exceed this, particularly for videos with clear speech. The key difference: AssemblyAI adds proper punctuation and capitalization, which YouTube's auto-captions often lack.",
+    a: `YouTube's auto-captions for age-restricted content are typically the same quality as for any other video — 60–95% accuracy depending on audio conditions. ${transcriptionModelName()} tends to match or exceed this, particularly for videos with clear speech. The key difference: AssemblyAI adds proper punctuation and capitalization, which YouTube's auto-captions often lack.`,
   },
   {
     q: "Can I transcribe an age-restricted YouTube Short?",
@@ -120,7 +121,7 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
           through Vercel&apos;s size-limited proxy.
         </li>
         <li>
-          <strong>Transcribe and export.</strong> AssemblyAI Universal-3 Pro produces a transcript
+          <strong>Transcribe and export.</strong> {transcriptionModelName()} produces a transcript
           with proper punctuation and high accuracy. Export in any format — TXT, Markdown with YAML
           frontmatter, SRT, VTT, JSON, or RAG-optimized JSON.
         </li>
@@ -151,7 +152,7 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
       </p>
 
       <p>
-        AssemblyAI Universal-3 Pro achieves 94–96%+ accuracy on clean audio. For content with
+        {transcriptionModelName()} achieves 94–96%+ accuracy on clean audio. For content with
         challenging audio conditions — music, background noise, non-standard speech — accuracy varies
         but remains higher than YouTube&apos;s auto-captions for difficult audio. The{" "}
         <code>is_auto_generated: false</code> flag in JSON exports distinguishes AI-transcribed

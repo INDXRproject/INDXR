@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube Transcript to Obsidian — Works When Plugins Break | INDXR.AI",
@@ -24,7 +25,7 @@ const faqs = [
   },
   {
     q: "Does this work for videos without captions?",
-    a: "Yes. Enable AI Transcription before extracting. AssemblyAI Universal-3 Pro produces properly punctuated, capitalized text — significantly more readable than auto-captions in your notes. Cost: 1 credit per minute.",
+    a: `Yes. Enable AI Transcription before extracting. ${transcriptionModelName()} produces properly punctuated, capitalized text — significantly more readable than auto-captions in your notes. Cost: 1 credit per minute.`,
   },
   {
     q: "What folder structure works best?",

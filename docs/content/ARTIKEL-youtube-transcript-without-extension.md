@@ -31,7 +31,7 @@ INDXR.AI is a web application you access at indxr.ai. There's nothing to install
 
 The extraction pipeline uses yt-dlp, a maintained open-source tool that communicates with YouTube's internal data endpoints rather than scraping page HTML. When YouTube updates its frontend, yt-dlp continues working because it talks to the underlying API, not the visual layer that changes with UI redesigns.
 
-For videos without auto-captions, INDXR.AI downloads the audio through the same server-side pipeline and sends it to AssemblyAI Universal-3 Pro for transcription. This means INDXR.AI works for:
+For videos without auto-captions, INDXR.AI downloads the audio through the same server-side pipeline and routes it to the best transcription model for the video's language — AssemblyAI Universal-3.5 Pro, our highest-quality model, for supported languages, with broad coverage across 99+ languages otherwise. This means INDXR.AI works for:
 
 - Videos with auto-captions (instant, free)
 - Videos without auto-captions (AI transcription, 1 credit per minute)

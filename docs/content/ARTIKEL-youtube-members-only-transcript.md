@@ -29,7 +29,7 @@ If you have membership and can watch the video, you can get a transcript through
 
 **Step 1: Download the audio.** While logged into YouTube with your membership, use a tool that can download video audio for personal use — yt-dlp (command line), 4K Video Downloader, or similar. This works because you have legitimate access to the content.
 
-**Step 2: Upload to INDXR.AI.** Open the [Audio Upload tab](/audio-to-text) in INDXR.AI. Drag in the audio file (MP3, MP4, WAV, M4A, OGG, FLAC, or WEBM, up to 500MB). INDXR.AI sends it through AssemblyAI Universal-3 Pro for transcription.
+**Step 2: Upload to INDXR.AI.** Open the [Audio Upload tab](/audio-to-text) in INDXR.AI. Drag in the audio file (MP3, MP4, WAV, M4A, OGG, FLAC, or WEBM, up to 500MB). INDXR.AI sends it through AssemblyAI Universal-3.5 Pro for transcription.
 
 **Step 3: Export in any format.** The resulting transcript appears in your library. Export as TXT, Markdown, SRT, JSON, or any other supported format.
 

@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube SRT Download — Resegmented for Video Editors | INDXR.AI",
@@ -158,8 +159,8 @@ to understand about this topic`}</code></pre>
 
       <p>
         INDXR.AI detects this upfront and offers AI Transcription as a fallback. Enable the toggle,
-        confirm the credit cost (1 credit per minute), and the audio is transcribed by AssemblyAI
-        Universal-3 Pro. The resulting SRT/VTT is higher quality than auto-caption output — proper
+        confirm the credit cost (1 credit per minute), and the audio is transcribed by{" "}
+        {transcriptionModelName()}. The resulting SRT/VTT is higher quality than auto-caption output — proper
         punctuation, accurate word boundaries, and clean segment timing.
       </p>
 

@@ -35,7 +35,7 @@ NoteGPT also has a large existing user base and handles high volumes of videos. 
 
 **Walled garden.** NoteGPT stores your notes inside its platform. You can't easily export your history, integrate with your own note-taking system, or migrate away from the tool without losing your content. INDXR.AI's library exports in open formats that work anywhere.
 
-**No AI transcription for captionless videos.** NoteGPT summarizes by processing existing YouTube captions. If a video has no auto-captions — common for non-English content, older videos, and many educational recordings — NoteGPT either fails or returns a degraded result. INDXR.AI falls back to AssemblyAI Universal-3 Pro, which transcribes directly from audio.
+**No AI transcription for captionless videos.** NoteGPT summarizes by processing existing YouTube captions. If a video has no auto-captions — common for non-English content, older videos, and many educational recordings — NoteGPT either fails or returns a degraded result. INDXR.AI falls back to AI transcription, automatically routing to the best model for the video's language — our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise — transcribing directly from audio.
 
 ---
 
@@ -82,14 +82,14 @@ The 25 free welcome credits on signup are enough to fully test every paid featur
 
 **Use INDXR.AI if:** You need the actual transcript text, want to export it in a specific format, need to process multiple videos at once, work with videos that have no captions, or want your content to live in your own tools rather than in a third-party platform.
 
-These tools can also complement each other. Some users use INDXR.AI to extract and export transcripts, then feed those transcripts to other AI tools for summarization — NoteGPT and similar tools included. INDXR.AI's AI summary feature (DeepSeek V3, 3 credits) is available for users who want both transcript and summary in one place.
+These tools can also complement each other. Some users use INDXR.AI to extract and export transcripts, then feed those transcripts to other AI tools for summarization — NoteGPT and similar tools included. INDXR.AI's AI summary feature (Gemini 2.5 Flash via the AssemblyAI EU LLM Gateway, 3 credits) is available for users who want both transcript and summary in one place.
 
 ---
 
 ## Frequently Asked Questions
 
 **Does INDXR.AI also do AI summaries like NoteGPT?**
-Yes. INDXR.AI includes AI summary with action points, powered by DeepSeek V3. The summary costs 3 credits and is available for any transcript in your library — both auto-caption extractions and AI-transcribed videos. The key difference: you also get the full transcript, not just the summary.
+Yes. INDXR.AI includes AI summary with action points, powered by Gemini 2.5 Flash via the AssemblyAI EU LLM Gateway. The summary costs 3 credits and is available for any transcript in your library — both auto-caption extractions and AI-transcribed videos. The key difference: you also get the full transcript, not just the summary.
 
 **Can INDXR.AI import content from NoteGPT?**
 No direct import. If you have transcripts or notes in NoteGPT, you can copy the text and paste it into INDXR.AI's editor, but there's no automated migration path.

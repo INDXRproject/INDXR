@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube Members-Only Transcript — What's Possible and What Isn't | INDXR.AI",
@@ -91,8 +92,8 @@ export default function YouTubeMembersOnlyTranscriptPage() {
         <li>
           <strong>Upload to INDXR.AI.</strong> Open the{" "}
           <Link href="/audio-to-text">Audio Upload tab</Link> in INDXR.AI. Drag in the audio file
-          (MP3, MP4, WAV, M4A, OGG, FLAC, or WEBM, up to 500MB). INDXR.AI sends it through
-          AssemblyAI Universal-3 Pro for transcription.
+          (MP3, MP4, WAV, M4A, OGG, FLAC, or WEBM, up to 500MB). INDXR.AI sends it through{" "}
+          {transcriptionModelName()} for transcription.
         </li>
         <li>
           <strong>Export in any format.</strong> The resulting transcript appears in your library.

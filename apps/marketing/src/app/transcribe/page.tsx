@@ -15,6 +15,7 @@ import { FrictionConversionCard } from "@/components/marketing/FrictionConversio
 import { PricingTeaserBlock } from "@/components/marketing/PricingTeaserBlock"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { ClosingCTASection } from "@/components/marketing/ClosingCTASection"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 const faqItems: FAQItem[] = [
   {
@@ -35,7 +36,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "What languages are supported?",
-    answer: "[placeholder — Khidr writes: auto-caption extraction supports 67 languages (any YouTube supports). AI transcription via AssemblyAI Universal-3 supports 99+ languages with automatic detection. See /docs/how-indxr-works/languages.]",
+    answer: `[placeholder — Khidr writes: auto-caption extraction supports 67 languages (any YouTube supports). For AI transcription, INDXR automatically uses the best model for the language — our highest-quality model, ${transcriptionModelName()}, for supported languages, with broad coverage across 99+ languages and automatic detection. See /docs/how-indxr-works/languages.]`,
   },
   {
     question: "What export formats can I get?",

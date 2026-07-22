@@ -46,8 +46,8 @@ A channel with 50 videos averaging 30 minutes each, all processed with AI Transc
 - At Plus pricing (€0.012/credit): **€18**
 
 1,500 minutes of high-quality transcribed content for €18. Plus the RAG JSON export:
-- 1,500 minutes ÷ 15 minutes per credit = **100 credits** for RAG export
-- Total: **1,600 credits = €19.20**
+- 1,500 minutes ÷ 10 minutes per credit = **150 credits** for RAG export
+- Total: **1,650 credits = €19.80**
 
 This is a one-time extraction cost. The knowledge base persists indefinitely; adding new videos costs only the per-video transcription.
 
@@ -256,4 +256,4 @@ For no-code pipelines, n8n and Make.com both support vector database nodes (Pine
 
 ---
 
-*Start building: [extract your first playlist as RAG JSON](/youtube-transcript-for-rag). First 3 RAG exports are free.*
+*Start building: [extract your first playlist as RAG JSON](/youtube-transcript-for-rag). RAG JSON export costs 1 credit per 10 minutes of video; re-downloading an already-exported transcript is free.*

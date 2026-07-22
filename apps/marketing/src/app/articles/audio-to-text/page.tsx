@@ -3,11 +3,12 @@ import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "Audio File to Text — Upload MP3, MP4, WAV & More | INDXR.AI",
   description:
-    "Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by AssemblyAI Universal-3 Pro.",
+    `Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by ${transcriptionModelName()}.`,
 }
 
 const faqs = [
@@ -21,7 +22,7 @@ const faqs = [
   },
   {
     q: "How accurate is the transcription?",
-    a: "AssemblyAI Universal-3 Pro achieves 94–96%+ accuracy on clean recordings. For challenging audio — heavy accents, significant background noise, overlapping speakers — accuracy varies but typically outperforms YouTube's auto-captions under the same conditions.",
+    a: `${transcriptionModelName()} achieves 94–96%+ accuracy on clean recordings. For challenging audio — heavy accents, significant background noise, overlapping speakers — accuracy varies but typically outperforms YouTube's auto-captions under the same conditions.`,
   },
   {
     q: "Can I transcribe in languages other than English?",
@@ -33,13 +34,13 @@ const faqs = [
   },
   {
     q: "What's the difference between audio upload and YouTube AI Transcription?",
-    a: "The transcription pipeline is identical — both use AssemblyAI Universal-3 Pro and cost 1 credit per minute. The difference is the source: YouTube AI Transcription downloads the audio from a YouTube URL automatically, while audio upload lets you bring your own file from any source.",
+    a: `The transcription pipeline is identical — both use ${transcriptionModelName()} and cost 1 credit per minute. The difference is the source: YouTube AI Transcription downloads the audio from a YouTube URL automatically, while audio upload lets you bring your own file from any source.`,
   },
 ]
 
 const sources = [
   {
-    label: "AssemblyAI — Universal-3 Pro",
+    label: `${transcriptionModelName()} benchmarks`,
     url: "https://www.assemblyai.com/models",
   },
 ]
@@ -48,7 +49,7 @@ export default function AudioToTextPage() {
   return (
     <ToolPageTemplate
       title="Audio File to Text — Upload Any Audio, Get a Transcript"
-      metaDescription="Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by AssemblyAI Universal-3 Pro."
+      metaDescription={`Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by ${transcriptionModelName()}.`}
       publishedAt="2026-04-16"
       updatedAt="2026-04-16"
       author={AUTHORS["indxr-editorial"]}
@@ -99,7 +100,7 @@ export default function AudioToTextPage() {
       <h2>How the Transcription Works</h2>
 
       <p>
-        Once uploaded, the file is processed through AssemblyAI Universal-3 Pro — the same model used when INDXR.AI transcribes YouTube videos without captions. The model handles a wide range of audio conditions:
+        Once uploaded, the file is processed through {transcriptionModelName()} — the same model used when INDXR.AI transcribes YouTube videos without captions. The model handles a wide range of audio conditions:
       </p>
 
       <p>
@@ -110,8 +111,8 @@ export default function AudioToTextPage() {
       <p>
         <strong>Audio quality:</strong> The model is trained on real-world audio including phone
         recordings, conference recordings with background noise, and studio-quality content. YouTube&apos;s
-        auto-captions achieve 60–80% accuracy on challenging audio — AssemblyAI Universal-3 Pro
-        consistently reaches 94–96%+ on clean recordings.
+        auto-captions achieve 60–80% accuracy on challenging audio — {transcriptionModelName()}
+        {" "}consistently reaches 94–96%+ on clean recordings.
       </p>
 
       <p>

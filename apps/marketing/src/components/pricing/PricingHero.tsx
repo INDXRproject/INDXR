@@ -8,7 +8,7 @@ export function PricingHero() {
         Pay once. Use when you need it.
       </h1>
       <p className="text-xl text-[var(--fg-subtle)] max-w-2xl mx-auto">
-        Auto-caption extraction is always free. Credits apply only when you use AI transcription, playlist processing beyond the first three videos, AI summaries, or RAG JSON export.
+        Auto-caption extraction is always free. Credits apply only when you use AI transcription, playlist caption processing beyond the first three videos, AI summaries, or RAG JSON export.
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
         <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border)] bg-[var(--surface)]">

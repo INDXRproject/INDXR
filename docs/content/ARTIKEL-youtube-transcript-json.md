@@ -62,7 +62,7 @@ For any YouTube video with auto-generated captions, JSON export is free. No acco
 
 ## Option 2: AI Transcription + Standard JSON — 1 Credit Per Minute
 
-When you enable AI Transcription before extracting, INDXR.AI downloads the video audio and runs it through AssemblyAI Universal-3 Pro before exporting as JSON.
+When you enable AI Transcription before extracting, INDXR.AI downloads the video audio and runs it through AssemblyAI Universal-3.5 Pro before exporting as JSON.
 
 **What changes:**
 
@@ -154,7 +154,7 @@ A 1-hour video at Plus pricing (€0.012/credit):
 - RAG export: 4 credits = **€0.05**
 - **Total: 64 credits = €0.77**
 
-Best-quality RAG-ready JSON for a 1-hour YouTube video costs less than €1. The first 3 RAG exports are free regardless of video length — enough to validate the output in your actual pipeline before spending credits.
+Best-quality RAG-ready JSON for a 1-hour YouTube video costs less than €1. There's no free tier for RAG export, but once you've paid for an export, re-downloading it later is free — so validating the output in your pipeline doesn't cost anything beyond that initial export.
 
 ---
 

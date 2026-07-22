@@ -76,7 +76,7 @@ export function CreditCostTable() {
         </table>
       </div>
       <p className="text-xs text-[var(--fg-muted)] mt-3 text-center">
-        Playlist: first 3 videos free, then 1 credit/video. All prices VAT included.
+        Playlist: first 3 caption videos free, then 1 credit/video. AI transcription is 1 credit/min (no free videos). All prices VAT included.
       </p>
     </div>
   )

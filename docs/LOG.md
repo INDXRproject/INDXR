@@ -10622,3 +10622,81 @@ docs/wiki/content/product-truth.md
 docs/wiki/decisions/070-per-model-stt-cor.md
 supabase/migrations/20260722101609_per_model_stt_cor.sql
 ---
+[2026-07-22 14:15] content-truth fix (ADR-070/068 doorwerking): nieuwe modelnaam-constante `packages/shared/src/lib/models.ts` (TRANSCRIPTION_MODEL="Universal-3.5 Pro"/chain, SUMMARY_MODEL="Gemini 2.5 Flash"/EU LLM Gateway + helpers); 15 .tsx putten er nu uit i.p.v. hardcoded strings. (1) modelnaam gecentraliseerd — geen Universal-2/Universal-3/Universal-3-Pro-drift meer; accuraatheid/talen herschreven naar taal-router-framing (geen "1 model doet 99 talen op topkwaliteit"; alleen EN+AR geverifieerd). (2) DeepSeek→Gemini 2.5 Flash via AssemblyAI EU LLM Gateway in alle content (resteert alleen ARCHITECTURE.md:384 = Cline/DeepSeek-Chat dev-tooling, geen productmodel → bewust gelaten). (3) "eerste 3 RAG-exports gratis" (dode claim) verwijderd → 1cr/10min + gratis her-download; RAG_FREE_EXPORTS in pricing.ts is dood (0 lezers) maar NIET aangeraakt (scope: geen pricing.ts) — veilig te verwijderen in aparte change. (4) playlist "eerste 3 gratis" genuanceerd naar caption-only (AI-transcriptie 1cr/min, geen korting). Statische mirrors (docs/content/*.md, 3× llms.txt) letterlijk bijgewerkt. Build: 2/2 apps groen. Grep DeepSeek/Universal-2/Universal-3 Pro/3-free = 0 (excl. genoemde dev-tooling-regel). product-truth.md bijgewerkt (constante gedocumenteerd). Bijvangst door subagents: stale RAG-rate 15→10min in enkele mirrors rechtgezet (consistent met ADR-058). NIET gefixt (buiten scope, gerapporteerd): stale tier-prijzen in enkele mirrors/llms.txt. | gewijzigd: packages/shared/src/lib/models.ts (+15 .tsx, ~20 docs/content/*.md, 3 llms.txt, product-truth.md, LOG.md)
+[2026-07-22 12:56] commit: docs(content): centralize model names + fix 4 content-truth divergences
+
+New single source of truth for AI model names: packages/shared/src/lib/models.ts
+(TRANSCRIPTION_MODEL "Universal-3.5 Pro" + chain, SUMMARY_MODEL "Gemini 2.5 Flash"
+via AssemblyAI EU LLM Gateway, + phrase helpers). All 15 model-mentioning .tsx now
+pull from it instead of hardcoded strings.
+
+1. Model name centralized — no more Universal-2 / Universal-3 / Universal-3 Pro
+   drift. Accuracy/language copy reworded to the language-router truth: INDXR picks
+   the best model for the video's language; NOT "one model does all 99 at top
+   quality" (only EN + AR verified).
+2. DeepSeek → Gemini 2.5 Flash via the AssemblyAI EU LLM Gateway across content
+   (ADR-068). Only remaining "DeepSeek" is ARCHITECTURE.md:384 = the developer's
+   Cline/IDE tooling, not the product's summary model — intentionally left.
+3. "First 3 RAG exports free" (never existed in code) removed everywhere → 1 credit
+   per 10 min, re-downloading an already-exported transcript is free. The dead
+   RAG_FREE_EXPORTS constant in pricing.ts (0 readers) was left untouched per scope;
+   safe to delete separately.
+4. Playlist "first 3 free" nuanced to caption videos only (AI transcription is
+   1 credit/min with no per-video discount).
+
+Static mirrors (docs/content/*.md, 3x llms.txt) updated literally (can't import TS).
+Subagents also corrected a stale RAG 15->10 min rate in a few mirrors (matches
+ADR-058). Out of scope, reported not fixed: stale tier prices in some mirrors.
+
+Build: 2/2 apps green. Grep DeepSeek/Universal-2/Universal-3 Pro/"3 free" = 0
+(excl. the noted dev-tooling line). No product logic, pricing.ts, or credit
+calculations touched. product-truth.md updated to document the constant.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/public/llms.txt
+apps/marketing/public/llms.txt
+apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/chunk-youtube-transcripts-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-members-only-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-markdown/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-not-available/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-obsidian/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/accuracy/ai-transcription/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/accuracy/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/languages/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/app/transcribe/page.tsx
+apps/marketing/src/components/pricing/CreditCostTable.tsx
+apps/marketing/src/components/pricing/PricingHero.tsx
+docs/LOG.md
+docs/content/ARCHITECTURE.md
+docs/content/ARTIKEL-alternative-downsub.md
+docs/content/ARTIKEL-alternative-happyscribe.md
+docs/content/ARTIKEL-alternative-notegpt.md
+docs/content/ARTIKEL-alternative-turboscribe.md
+docs/content/ARTIKEL-audio-to-text.md
+docs/content/ARTIKEL-blog-youtube-channel-knowledge-base.md
+docs/content/ARTIKEL-blog-youtube-transcripts-vector-database.md
+docs/content/ARTIKEL-how-it-works.md
+docs/content/ARTIKEL-youtube-age-restricted-transcript.md
+docs/content/ARTIKEL-youtube-members-only-transcript.md
+docs/content/ARTIKEL-youtube-srt-download.md
+docs/content/ARTIKEL-youtube-to-text.md
+docs/content/ARTIKEL-youtube-transcript-for-rag.md
+docs/content/ARTIKEL-youtube-transcript-generator.md
+docs/content/ARTIKEL-youtube-transcript-json.md
+docs/content/ARTIKEL-youtube-transcript-markdown.md
+docs/content/ARTIKEL-youtube-transcript-not-available.md
+docs/content/ARTIKEL-youtube-transcript-without-extension.md
+docs/content/LANDING-PAGE.md
+docs/content/PRICING-PAGE.md
+docs/wiki/content/product-truth.md
+packages/shared/src/lib/models.ts
+public/llms.txt
+---

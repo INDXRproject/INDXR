@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube Transcript Without a Chrome Extension — Works in Any Browser | INDXR.AI",
@@ -104,7 +105,7 @@ export default function YouTubeTranscriptWithoutExtensionPage() {
         that changes with UI redesigns.
       </p>
 
-      <p>For videos without auto-captions, INDXR.AI downloads the audio through the same server-side pipeline and sends it to AssemblyAI Universal-3 Pro for transcription. This means INDXR.AI works for:</p>
+      <p>For videos without auto-captions, INDXR.AI downloads the audio through the same server-side pipeline and sends it to {transcriptionModelName()} for transcription. This means INDXR.AI works for:</p>
 
       <ul>
         <li>Videos with auto-captions (instant, free)</li>

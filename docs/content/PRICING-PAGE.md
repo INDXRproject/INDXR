@@ -10,7 +10,7 @@
 
 ## Pay once. Use when you need it. Credits never expire.
 
-Auto-caption extraction is always free. Credits apply only when you use AI transcription, playlist processing beyond the first three videos, AI summaries, or RAG JSON export.
+Auto-caption extraction is always free. Credits apply only when you use AI transcription, playlist processing beyond the first three auto-caption videos (AI-transcription videos are always 1 credit/minute, no per-video discount), AI summaries, or RAG JSON export.
 
 ---
 
@@ -131,7 +131,7 @@ The Starter (€2.99 / 150 credits) is available for a single project or a quick
 Yes. Audio Upload accepts MP3, MP4, WAV, M4A, OGG, FLAC, and WEBM files up to 500MB. Same AI transcription pipeline, same credit cost (1 credit per minute), same export options.
 
 **Is RAG JSON export included in the standard price?**
-RAG JSON export costs 1 credit per 15 minutes of video (minimum 1 credit) on top of extraction costs. The first 3 RAG exports are free — enough to validate the format in your own pipeline before spending credits.
+RAG JSON export costs 1 credit per 10 minutes of video on top of extraction costs. Re-downloading a transcript you've already exported is free.
 
 ---
 

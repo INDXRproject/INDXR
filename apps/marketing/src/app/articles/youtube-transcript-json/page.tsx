@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube Transcript JSON Export — What You Actually Get | INDXR.AI",
@@ -25,7 +26,7 @@ const faqs = [
   },
   {
     q: "Does AI Transcription improve accuracy for English?",
-    a: "Yes. AssemblyAI Universal-3 Pro outperforms YouTube auto-captions for accuracy, particularly with accents, fast speech, and domain-specific vocabulary. The bigger difference is punctuation — AssemblyAI adds it, auto-captions don't.",
+    a: `Yes. ${transcriptionModelName()} outperforms YouTube auto-captions for accuracy, particularly with accents, fast speech, and domain-specific vocabulary. The bigger difference is punctuation — AssemblyAI adds it, auto-captions don't.`,
   },
 ]
 
@@ -39,7 +40,7 @@ const sources = [
     url: "https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses",
   },
   {
-    label: "AssemblyAI Universal-3 Pro — speech-to-text model",
+    label: `${transcriptionModelName()} — speech-to-text model`,
     url: "https://www.assemblyai.com/universal-3",
   },
   {
@@ -167,7 +168,7 @@ export default function YouTubeTranscriptJsonPage() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          AssemblyAI Universal-3 Pro
+          {transcriptionModelName()}
         </a>
         . The output format is identical — same metadata wrapper, same segments array — but the text
         quality changes substantially.
@@ -345,7 +346,7 @@ export default function YouTubeTranscriptJsonPage() {
       </table>
 
       <p>
-        The first 3 RAG exports are free. Credits never expire.
+        Re-downloading a transcript you&apos;ve already exported is free. Credits never expire.
       </p>
 
       <h2>What You&apos;d Add Yourself</h2>

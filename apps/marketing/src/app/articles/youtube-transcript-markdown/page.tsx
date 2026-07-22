@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube Transcript to Markdown — Obsidian, Notion & Blog Ready | INDXR.AI",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Does this work for videos without auto-captions?",
-    a: `Yes. Enable AI Transcription before extracting. INDXR.AI uses AssemblyAI Universal-3 Pro, which produces properly punctuated, capitalized text — significantly more readable than auto-captions. The trade-off is cost: 1 credit per minute. For a 60-minute video, that's 60 credits, roughly ${creditCostEur(60)} at ${getAnchorPackage().name} pricing.`,
+    a: `Yes. Enable AI Transcription before extracting. INDXR.AI uses ${transcriptionModelName()}, which produces properly punctuated, capitalized text — significantly more readable than auto-captions. The trade-off is cost: 1 credit per minute. For a 60-minute video, that's 60 credits, roughly ${creditCostEur(60)} at ${getAnchorPackage().name} pricing.`,
   },
   {
     q: "What's the difference between plain and timestamps variants?",

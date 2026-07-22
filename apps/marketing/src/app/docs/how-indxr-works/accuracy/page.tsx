@@ -5,10 +5,13 @@ import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
+
+const accDescription = `INDXR offers two transcription methods with different accuracy profiles. Auto-captions from YouTube are verbatim. For AI transcription, INDXR automatically uses the best model for your video's language — our highest-quality model, ${transcriptionModelName()}, achieves 99.4% word accuracy on clean English audio.`
 
 export const metadata: Metadata = {
   title: "Transcription Accuracy — INDXR.AI Docs",
-  description: "INDXR offers two transcription methods with different accuracy profiles. Auto-captions from YouTube are verbatim. AI transcription via AssemblyAI Universal-3 achieves 99.4% word accuracy.",
+  description: accDescription,
 }
 
 export default function DocsAccuracyPage() {
@@ -16,7 +19,7 @@ export default function DocsAccuracyPage() {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     headline: "Transcription Accuracy",
-    description: "INDXR offers two transcription methods with different accuracy profiles. Auto-captions from YouTube are verbatim. AI transcription via AssemblyAI Universal-3 achieves 99.4% word accuracy.",
+    description: accDescription,
     url: "https://indxr.ai/docs/how-indxr-works/accuracy",
   }
 
@@ -33,7 +36,7 @@ export default function DocsAccuracyPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Transcription Accuracy</h1>
         <DefinitionLeadOpening>
-          INDXR offers two transcription methods with different accuracy profiles. Auto-captions from YouTube are verbatim from video creators or YouTube&apos;s own speech recognition. AI transcription via AssemblyAI Universal-3 achieves 99.4% word accuracy on clean English audio.
+          INDXR offers two transcription methods with different accuracy profiles. Auto-captions from YouTube are verbatim from video creators or YouTube&apos;s own speech recognition. For AI transcription, INDXR automatically uses the best model for your video&apos;s language — our highest-quality model, {transcriptionModelName()}, achieves 99.4% word accuracy on clean English audio.
         </DefinitionLeadOpening>
         <p className="text-[var(--fg-muted)] text-sm">[Placeholder — content coming soon]</p>
         <RelatedTopicsList

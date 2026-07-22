@@ -88,10 +88,10 @@ For users who came to TurboScribe specifically for YouTube content, INDXR.AI is 
 ## Frequently Asked Questions
 
 **Does TurboScribe handle YouTube playlists?**
-No. TurboScribe processes one YouTube URL at a time. INDXR.AI extracts entire playlists in a single background job, with the first three videos free and real-time progress tracking per video.
+No. TurboScribe processes one YouTube URL at a time. INDXR.AI extracts entire playlists in a single background job, with the first three caption videos free (AI-transcription videos are always 1 credit/minute, no per-video discount) and real-time progress tracking per video.
 
 **Is TurboScribe's transcription more accurate than INDXR.AI's?**
-Both tools use AI transcription for uploaded audio. INDXR.AI uses AssemblyAI Universal-3 Pro, which achieves 94–96%+ accuracy on clean audio. TurboScribe uses an undisclosed model (likely Whisper-based per their documentation). For YouTube auto-caption extraction, accuracy comparisons don't apply — INDXR.AI uses existing YouTube captions when available, which are free and instant.
+Both tools use AI transcription for uploaded audio. INDXR.AI automatically routes each file to the best transcription model for its detected language — our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise — reaching 94–96%+ accuracy on clean audio. TurboScribe uses an undisclosed model (likely Whisper-based per their documentation). For YouTube auto-caption extraction, accuracy comparisons don't apply — INDXR.AI uses existing YouTube captions when available, which are free and instant.
 
 **Can INDXR.AI replace TurboScribe for podcast transcription?**
 Yes. INDXR.AI's [Audio Upload](/audio-to-text) tab accepts MP3, MP4, WAV, M4A, OGG, FLAC, and WEBM files up to 500MB. The resulting transcript goes into your library, re-exportable in any format including SRT, VTT, Markdown, and RAG JSON — formats TurboScribe doesn't offer. The main TurboScribe advantage for this use case is bulk file upload (50 at a time) if you're processing large archives.

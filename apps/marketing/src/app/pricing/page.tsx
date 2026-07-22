@@ -39,7 +39,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Is RAG JSON export included in the standard price?",
-    answer: "RAG JSON export costs 1 credit per 10 minutes of video (minimum 1 credit) on top of extraction costs. The first 3 RAG exports are free.",
+    answer: "RAG JSON export costs 1 credit per 10 minutes of video (minimum 1 credit) on top of extraction costs. Re-downloading a transcript you've already exported to RAG JSON is free.",
   },
   {
     question: "Can I get a refund?",

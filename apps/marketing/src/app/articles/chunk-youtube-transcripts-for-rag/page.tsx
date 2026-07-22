@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "How to Chunk YouTube Transcripts for RAG — Research-Backed Guide | INDXR.AI",
@@ -66,7 +67,7 @@ const sources = [
 const steps = [
   {
     name: "Extract the transcript",
-    text: "Use INDXR.AI to extract the YouTube transcript. For videos with auto-captions, this is free and instant. For videos without captions or for non-English content, enable AI Transcription (AssemblyAI Universal-3 Pro, 1 credit per minute) to get punctuated output with proper sentence boundaries.",
+    text: `Use INDXR.AI to extract the YouTube transcript. For videos with auto-captions, this is free and instant. For videos without captions or for non-English content, enable AI Transcription (${transcriptionModelName()}, 1 credit per minute) to get punctuated output with proper sentence boundaries.`,
   },
   {
     name: "Choose your chunk duration",

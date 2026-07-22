@@ -369,11 +369,11 @@ At $0.02 per million tokens with `text-embedding-3-small`, embedding 100 hours o
 Yes. The RAG JSON output is model-agnostic — `text-embedding-3-large` (3072 dimensions, higher accuracy), Cohere's `embed-english-v3.0`, or Voyage AI's `voyage-3` all work. Change the model name in the embedding calls and update the Pinecone index dimension accordingly.
 
 **Does this work for non-English content?**
-Yes. Use a multilingual embedding model (`text-embedding-3-small` handles multiple languages; Cohere's `embed-multilingual-v3.0` is purpose-built for this). INDXR.AI's AI Transcription supports 99+ languages and produces properly punctuated text regardless of language.
+Yes. Use a multilingual embedding model (`text-embedding-3-small` handles multiple languages; Cohere's `embed-multilingual-v3.0` is purpose-built for this). INDXR.AI's AI Transcription automatically routes each video to the best model for its language — our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise — and produces properly punctuated text regardless of language.
 
 **What if I want to filter results by video or channel?**
 Both ChromaDB and Pinecone support metadata filtering. Add a `where` clause (ChromaDB) or `filter` (Pinecone) to restrict results: `{"channel": "AI Explained"}` or `{"video_id": "dQw4w9WgXcQ"}`.
 
 ---
 
-*Start with a free extraction: [extract any YouTube video as RAG JSON](/youtube-transcript-for-rag). First 3 RAG exports are free.*
+*Start with a free extraction: [extract any YouTube video as RAG JSON](/youtube-transcript-for-rag). RAG JSON export costs 1 credit per 10 minutes of video; re-downloading an already-exported transcript is free.*

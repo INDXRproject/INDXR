@@ -137,9 +137,9 @@ ffmpeg -i <raw_file> -vn -map_metadata -1 -ac 1 -c:a libopus -b:a 12k -applicati
 
 Converts to mono 12kbps Opus/OGG. Replaces the previous 32kbps MP3 pipeline.
 
-**Step 3 — AssemblyAI Universal-3 Pro (`assemblyai_client.py`):**
+**Step 3 — AssemblyAI Universal-3.5 Pro (`assemblyai_client.py`):**
 
-- Models: `["universal-3-pro", "universal-2"]` (fallback)
+- Language router — AssemblyAI picks the best model for the detected language. Model chain: `["universal-3-5-pro", "universal-3-pro", "universal-2"]`
 - No file size limit, no timeout constraint — SDK polls internally
 - Word-level timestamps converted to ~5-second segments matching INDXR schema
 - Truncation detection code is retained but effectively inactive (no 25MB limit)
@@ -172,13 +172,13 @@ credits = Math.ceil(duration_seconds / 600)  # 1 credit per 10 minutes, minimum 
 
 ### AI Summarization
 
-**Provider**: DeepSeek V3 (`deepseek-chat`)
+**Provider**: Gemini 2.5 Flash via the AssemblyAI EU LLM Gateway (`gemini-2.5-flash`)
 
 **Workflow**:
 1. User clicks "Summarize" on Original Transcript tab
 2. Backend verifies ≥ 1 credit balance and deducts atomically
 3. Fetches raw transcript from `transcript` column
-4. Calls DeepSeek API with structured prompt
+4. Calls the AssemblyAI EU LLM Gateway with structured prompt
 5. Returns JSON: `{ "text": "...", "action_points": ["...", "..."] }`
 6. Saves to `ai_summary` JSONB column
 7. On failure: automatic credit refund
@@ -279,7 +279,7 @@ The Dashboard uses a "Keep the Original" pattern:
 
 - **Original**: Read-only raw transcript
 - **Edited**: User-modified version (stored in `edited_content`)
-- **AI Summary**: Read-only summary from DeepSeek
+- **AI Summary**: Read-only summary from our AI summarization (processed in the EU)
 - **Edited Summary**: User-modified summary (stored in `ai_summary.edited_html`)
 
 Navigation: URL-based (`?tab=x`) for SEO and deep-linking.
@@ -362,8 +362,7 @@ ADMIN_EMAIL                     # Single admin email address — guards /admin r
 ### Backend (`.env`)
 
 ```
-ASSEMBLYAI_API_KEY      # AssemblyAI transcription
-DEEPSEEK_API_KEY        # Summarization
+ASSEMBLYAI_API_KEY      # AssemblyAI transcription + EU LLM Gateway (summarization, gemini-2.5-flash)
 PROXY_HOST              # Decodo (gate.decodo.com)
 PROXY_PORT              # 10001
 PROXY_USERNAME

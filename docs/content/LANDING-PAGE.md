@@ -107,7 +107,7 @@ One URL, one job, one library. Extract entire courses, conference archives, or r
 ✓ Videos tested: up to **214 minutes** — no truncation
 ✓ Longest playlist test: **19 videos, 783 minutes** — completed in **18:53**
 ✓ Audio upload tested: **200MB+** files processed without issues
-✓ Languages: **99+** via AssemblyAI Universal-3 Pro
+✓ Languages: **99+** — INDXR automatically routes to the best model for each language, led by AssemblyAI Universal-3.5 Pro
 ✓ Export formats: **8** — from plain TXT to RAG-optimized JSON
 
 *No reviews yet — we don't make up quotes. When users share experiences, we'll add them here.*
@@ -118,7 +118,7 @@ One URL, one job, one library. Extract entire courses, conference archives, or r
 
 **Heading:** Pay once. Use when you need it. Credits never expire.
 
-**Subheading:** Auto-caption extraction is free for every video. Credits apply only when you use AI transcription, playlist processing beyond the first three videos, AI summaries, or RAG JSON export.
+**Subheading:** Auto-caption extraction is free for every video. Credits apply only when you use AI transcription, playlist processing beyond the first three auto-caption videos (AI-transcription videos are always 1 credit/minute, no per-video discount), AI summaries, or RAG JSON export.
 
 ### Pricing tiers (3 primaire kaarten)
 
@@ -173,7 +173,7 @@ A: Not for a single video with auto-captions — paste a URL, get a transcript, 
 A: We tell you before doing anything. You'll see that captions aren't available, what AI transcription will cost for that video's length, and a button to confirm. No silent failures, no surprise charges.
 
 **Q: How is the quality of AI transcription?**
-A: We use AssemblyAI Universal-3 Pro, which achieves 94–96%+ accuracy on clean audio. More importantly: it produces properly punctuated, capitalized text — something YouTube's auto-captions don't do. For downstream use in editors, AI tools, or RAG pipelines, this distinction matters.
+A: INDXR automatically picks the best transcription model for your video's language. For supported languages, that's our highest-quality model, AssemblyAI Universal-3.5 Pro, which achieves 94–96%+ accuracy on clean audio; other languages get broad coverage across 99+ languages via the same pipeline. More importantly: it produces properly punctuated, capitalized text — something YouTube's auto-captions don't do. For downstream use in editors, AI tools, or RAG pipelines, this distinction matters.
 
 **Q: Do credits expire?**
 A: Never. Buy when you need to, use when it makes sense.

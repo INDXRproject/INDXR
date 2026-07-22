@@ -132,11 +132,16 @@ YouTube's auto-vertaalde tracks worden vermeden door tracks te kiezen waarvan de
    - "Universal-2": `apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx:34,106,184`; `docs/content/ARCHITECTURE.md:140,142`.
 3. **Correcte "Universal-3 Pro"-plekken** (rendered `.tsx`, ter referentie voor consistentie): `articles/audio-to-text/page.tsx:10,24,36,42,51,102,113`; `articles/youtube-transcript-json/page.tsx:28,42,170`; `articles/youtube-transcript-markdown/page.tsx:16`; `articles/youtube-transcript-obsidian/page.tsx:27`; `articles/youtube-age-restricted-transcript/page.tsx:24,123,154`; `articles/youtube-members-only-transcript/page.tsx:95`; `articles/youtube-srt-download/page.tsx:162`; `articles/youtube-transcript-without-extension/page.tsx:107`; `articles/chunk-youtube-transcripts-for-rag/page.tsx:69`; `articles/youtube-transcript-not-available/page.tsx:31,49`; `articles/youtube-transcript-non-english/page.tsx:38,113,185`. (Plus de `docs/content/ARTIKEL-*.md`-spiegels — zie de losse inventaris in de commit-samenvatting.)
 
-### Aanbeveling voor de herschrijf (centralisatie)
-Content moet verwijzen naar **"ons hoogste-kwaliteit model"** met de versienaam op **één** centrale plek (bv. een content-constante die de huidige naam levert — nu **Universal-3.5 Pro**, sinds ADR-070 — analoog aan hoe `pricing.ts` alle prijzen levert). Dan:
-- één wijziging bij een model-upgrade i.p.v. ~30 losse edits;
-- geen "Universal-2"/"Universal-3"/"Universal-3 Pro"-drift meer;
-- de AI-summary-modelnaam idem centraal (nu overal fout op "DeepSeek").
+### Centralisatie — GEDAAN (2026-07-22)
+De modelnamen leven nu op **één** centrale plek, analoog aan `pricing.ts`:
+
+**`packages/shared/src/lib/models.ts`** (import: `@indxr/shared/lib/models`) —
+- `TRANSCRIPTION_MODEL` (`displayName: "Universal-3.5 Pro"`, `vendor: "AssemblyAI"`, `chain`) + helpers `transcriptionModelName()` → `"AssemblyAI Universal-3.5 Pro"` en `transcriptionRouterPhrase()` (eerlijke taal-router-frasering).
+- `SUMMARY_MODEL` (`displayName: "Gemini 2.5 Flash"`, `gateway: "AssemblyAI EU LLM Gateway"`) + `summaryModelName()` / `summaryGenericPhrase()` ("our AI summarization, processed in the EU").
+
+**Alle `.tsx`-content** (marketing-pagina's, articles, docs) put uit deze constante — geen hardcoded modelstrings meer. **Statische mirrors** (`docs/content/ARTIKEL-*.md`, `*/public/llms.txt`) kunnen geen TS importeren en dragen de display-namen letterlijk; houd die bij de hand gelijk aan `models.ts`.
+
+Bij een model-upgrade: wijzig `models.ts` (en de statische mirrors), niet ~30 losse `.tsx`-plekken. Naamregel: **punt in proza** ("Universal-3.5 Pro"), **streepjes in code/ids** ("universal-3-5-pro"). Eerlijke claim: we kiezen automatisch het beste model voor de taal — geen "één model doet alle 99 talen op topkwaliteit" (alleen EN + AR geverifieerd).
 
 ---
 

@@ -94,7 +94,7 @@ INDXR.AI detects this upfront and shows you the option to enable AI Transcriptio
 For auto-caption videos: typically 2–5 seconds. For AI Transcription: approximately 1 minute per 10 minutes of video. Progress is shown in real time.
 
 **Can I use this for non-English videos?**
-Yes. Auto-caption extraction works for any language YouTube supports (67 languages). AI Transcription via AssemblyAI Universal-3 Pro supports 99+ languages with automatic detection.
+Yes. Auto-caption extraction works for any language YouTube supports (67 languages). AI Transcription automatically routes each video to the best available model for its detected language — AssemblyAI Universal-3.5 Pro, our highest-quality model, for the languages it supports, with broad coverage across 99+ languages otherwise.
 
 **Do I need to stay on the page while a video transcribes?**
 For auto-captions, it's instant — no need to wait. For AI Transcription, the job runs on INDXR.AI's servers; we recommend staying on the page to monitor progress, though the job continues if your connection drops briefly.

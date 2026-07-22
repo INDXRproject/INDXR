@@ -1,7 +1,7 @@
 # Audio File to Text — Upload Any Audio, Get a Transcript
 
 **Meta title:** Audio File to Text — Upload MP3, MP4, WAV & More | INDXR.AI
-**Meta description:** Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by AssemblyAI Universal-3 Pro.
+**Meta description:** Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by AssemblyAI Universal-3.5 Pro.
 **Slug:** /audio-to-text
 **Schema:** SoftwareApplication + FAQPage
 **Internal links:** /youtube-transcript-generator, /pricing, /youtube-transcript-not-available, /youtube-transcript-for-rag
@@ -35,11 +35,11 @@ If you need to split very large files, FFmpeg handles this cleanly: `ffmpeg -i l
 
 ## How the Transcription Works
 
-Once uploaded, the file is processed through AssemblyAI Universal-3 Pro — the same model used for YouTube AI Transcription. The model handles a wide range of audio conditions:
+Once uploaded, the file is processed through AI transcription — the same pipeline used for YouTube AI Transcription. INDXR.AI automatically detects the audio's language and routes it to the best model for that language: our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise. The pipeline handles a wide range of audio conditions:
 
-**Languages**: 99+ languages with automatic detection. You don't need to specify the language; the model identifies it from the audio. For mixed-language content, the primary language is transcribed.
+**Languages**: 99+ languages with automatic detection. You don't need to specify the language; the router identifies it from the audio and picks the best available model. For mixed-language content, the primary language is transcribed.
 
-**Audio quality**: The model is trained on real-world audio including phone recordings, conference recordings with background noise, and studio-quality content. It handles accents, overlapping speakers, and non-standard speaking styles reliably. For reference, YouTube's auto-captions achieve 60–80% accuracy on challenging audio — AssemblyAI Universal-3 Pro consistently reaches 94–96%+ on clean recordings (AssemblyAI benchmarks, assemblyai.com).
+**Audio quality**: The pipeline is trained on real-world audio including phone recordings, conference recordings with background noise, and studio-quality content. It handles accents, overlapping speakers, and non-standard speaking styles reliably. For reference, YouTube's auto-captions achieve 60–80% accuracy on challenging audio — Universal-3.5 Pro consistently reaches 94–96%+ on clean recordings (AssemblyAI benchmarks, assemblyai.com).
 
 **Punctuation**: Unlike auto-captions, AssemblyAI output includes proper punctuation and sentence boundaries. This matters for readability, for SRT/VTT timing quality, and for downstream uses like RAG export where sentence detection affects chunk quality.
 
@@ -100,16 +100,16 @@ The transcript appears in your library alongside any YouTube transcripts you've 
 Yes. MP4 and WEBM video files are supported — INDXR.AI extracts the audio track automatically. You don't need to extract audio yourself before uploading.
 
 **How accurate is the transcription?**
-AssemblyAI Universal-3 Pro achieves 94–96%+ accuracy on clean recordings. For challenging audio — heavy accents, significant background noise, overlapping speakers — accuracy varies but typically outperforms YouTube's auto-captions under the same conditions.
+INDXR.AI automatically uses the best model for the audio's language — our highest-quality model, Universal-3.5 Pro, achieves 94–96%+ accuracy on clean recordings for the languages it supports, with broad coverage across 99+ languages otherwise. For challenging audio — heavy accents, significant background noise, overlapping speakers — accuracy varies but typically outperforms YouTube's auto-captions under the same conditions.
 
 **Can I transcribe in languages other than English?**
-Yes. 99+ languages are supported with automatic detection. The transcript will be in the language spoken in the audio.
+Yes. 99+ languages are supported with automatic detection. INDXR.AI routes each file to the best model for its language — Universal-3.5 Pro for the languages it supports natively, with broad coverage across the rest. The transcript will be in the language spoken in the audio.
 
 **Does the file get stored on INDXR.AI's servers?**
 The audio file is processed and then discarded. Only the resulting transcript text is stored in your library. INDXR.AI does not retain uploaded audio files after transcription is complete.
 
 **What's the difference between audio upload and YouTube AI Transcription?**
-The transcription pipeline is identical — both use AssemblyAI Universal-3 Pro and cost 1 credit per minute. The difference is the source: YouTube AI Transcription downloads the audio from a YouTube URL automatically, while audio upload lets you bring your own file from any source.
+The transcription pipeline is identical — both route through the same language-router AI transcription (highest-quality model: AssemblyAI Universal-3.5 Pro) and cost 1 credit per minute. The difference is the source: YouTube AI Transcription downloads the audio from a YouTube URL automatically, while audio upload lets you bring your own file from any source.
 
 ---
 

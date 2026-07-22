@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube Transcripts in Non-English Languages — What Works | INDXR.AI",
@@ -31,11 +32,11 @@ const faqs = [
 
 const sources = [
   {
-    label: "AssemblyAI Universal-2 — supported languages (99+ languages)",
+    label: "AssemblyAI — supported languages (99+ languages)",
     url: "https://www.assemblyai.com/docs/speech-to-text/supported-languages",
   },
   {
-    label: "AssemblyAI Universal-3 Pro — speech-to-text model",
+    label: `${transcriptionModelName()} — speech-to-text model`,
     url: "https://www.assemblyai.com/universal-3",
   },
 ]
@@ -103,16 +104,17 @@ export default function YouTubeTranscriptNonEnglishPage() {
         >
           95 other languages
         </a>
-        , AssemblyAI&apos;s Universal-2 model transcribes the audio in the original language. For English,
-        Spanish, German, French, Portuguese, and Italian,{" "}
+        , INDXR transcribes the audio in its original language. We automatically pick the best model for
+        the detected language — our highest-quality model,{" "}
         <a
           href="https://www.assemblyai.com/universal-3"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Universal-3 Pro
-        </a>{" "}
-        is used — the higher-accuracy model.
+          {transcriptionModelName()}
+        </a>
+        , covers a growing set of languages (including Arabic), with broad coverage across 99+ languages
+        for the rest.
       </p>
 
       <p>
@@ -181,9 +183,9 @@ export default function YouTubeTranscriptNonEnglishPage() {
       </p>
 
       <p>
-        AssemblyAI Universal-2 (used for non-English languages outside the Universal-3 Pro set) has
-        comparable accuracy to Universal-3 Pro for most languages. For Arabic specifically, it handles
-        Modern Standard Arabic and many dialects reliably.
+        For Arabic specifically, our highest-quality model handles Modern Standard Arabic and many
+        dialects reliably. When a language falls outside the highest-quality model, INDXR automatically
+        uses a broad-coverage model spanning 99+ languages — so you always get original-language text.
       </p>
 
       <p>

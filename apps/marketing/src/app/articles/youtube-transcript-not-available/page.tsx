@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   title: "YouTube Transcript Not Available? Here's Why and How to Fix It | INDXR.AI",
@@ -28,7 +29,7 @@ const faqs = [
   },
   {
     q: "Does INDXR.AI work for videos in languages other than English?",
-    a: "Yes. AI Transcription via INDXR.AI uses AssemblyAI's Universal-3 model, which supports 99+ languages with automatic language detection. Auto-caption extraction also works for any language YouTube supports (67 languages).",
+    a: `Yes. AI Transcription via INDXR.AI uses ${transcriptionModelName()}; INDXR.AI automatically picks the best model for the video's language, with broad coverage across 99+ languages and automatic language detection. Auto-caption extraction also works for any language YouTube supports (67 languages).`,
   },
   {
     q: "What's the difference between captions and a transcript on YouTube?",
@@ -46,7 +47,7 @@ const sources = [
     url: "https://support.google.com/youtube/answer/6013276",
   },
   {
-    label: "AssemblyAI benchmarks — Universal-3 Pro",
+    label: `${transcriptionModelName()} benchmarks`,
     url: "https://www.assemblyai.com/benchmarks",
   },
 ]

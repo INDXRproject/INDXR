@@ -31,15 +31,15 @@ Here's exactly how each part of the system works.
 
 When YouTube has auto-generated captions for a video, INDXR.AI retrieves them via YouTube's internal API. Extraction takes a few seconds. The result is the same text you'd see if you clicked "Show transcript" on the YouTube page — but exported in a clean format, stored in your library, and available for re-export at any time.
 
-Auto-captions are free for single videos, with no daily limit for registered users. For playlists, the first three videos are always free; additional captioned videos cost 1 credit each from video four onward.
+Auto-captions are free for single videos, with no daily limit for registered users. For playlists, the first three **caption** videos are always free; additional captioned videos cost 1 credit each from video four onward. AI-transcription videos in a playlist are always 1 credit per minute, with no per-video discount regardless of position.
 
 The honest limitation: auto-generated captions lack punctuation and capitalization. They're a continuous stream of lowercase text. For reading, copy-pasting into AI tools, or quick data extraction, this is usually fine. For user-facing applications, subtitle timing, or RAG pipelines that rely on sentence detection, the quality gap matters.
 
 ### AI Transcription — 1 Credit Per Minute
 
-When a video has no auto-captions — or when you need better quality than auto-captions provide — enable the AI Transcription toggle. INDXR.AI downloads the video audio through residential proxies (to avoid YouTube's IP-blocking of cloud servers) and sends it to AssemblyAI Universal-3 Pro.
+When a video has no auto-captions — or when you need better quality than auto-captions provide — enable the AI Transcription toggle. INDXR.AI downloads the video audio through residential proxies (to avoid YouTube's IP-blocking of cloud servers) and sends it to AssemblyAI's transcription pipeline.
 
-AssemblyAI Universal-3 Pro produces transcripts with proper punctuation, accurate capitalization, and real sentence boundaries. Accuracy runs 94–96%+ on clean audio (AssemblyAI benchmarks, assemblyai.com). It supports 99+ languages with automatic detection.
+INDXR.AI automatically uses the best model for the video's language — our highest-quality model, Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise. The result includes proper punctuation, accurate capitalization, and real sentence boundaries. Accuracy runs 94–96%+ on clean audio for languages covered by Universal-3.5 Pro (AssemblyAI benchmarks, assemblyai.com).
 
 Processing time: approximately 1 minute per 10 minutes of video. A 30-minute video takes around 3 minutes. You can navigate away — the job runs as a background task on INDXR.AI's servers and the result appears in your library when complete.
 
@@ -67,7 +67,7 @@ After extraction, you choose your export format. All formats are available to re
 
 **On Markdown:** The Markdown export includes YAML frontmatter — title, source URL, channel, duration, language, type, and creation timestamp — formatted for Obsidian Dataview compatibility. Every field is queryable immediately after dropping the file into your vault.
 
-**On RAG JSON:** The RAG-optimized export merges raw transcript segments into 90–120 second chunks (~300–400 tokens), applies sentence-boundary snapping, adds 15% overlap, and attaches a deep link and flat metadata object to every chunk. This is the format that loads directly into vector databases for semantic search. Cost: 1 credit per 15 minutes of video on top of extraction costs.
+**On RAG JSON:** The RAG-optimized export merges raw transcript segments into 90–120 second chunks (~300–400 tokens), applies sentence-boundary snapping, adds 15% overlap, and attaches a deep link and flat metadata object to every chunk. This is the format that loads directly into vector databases for semantic search. Cost: 1 credit per 10 minutes of video on top of extraction costs; re-downloading an already-exported transcript is free.
 
 ---
 
@@ -79,7 +79,7 @@ From the library you can:
 
 - **Re-export in any format** — extracted something three months ago as TXT? Export it as JSON today without re-extracting.
 - **Edit in the rich-text editor** — INDXR.AI uses Tiptap, a full-featured browser-based editor. Correct errors, add formatting, annotate. Edits are stored separately from the original, so you can always revert.
-- **Generate an AI summary** — 3 credits produces a summary with key takeaways and action points, powered by DeepSeek V3. Available for any transcript in your library.
+- **Generate an AI summary** — 3 credits produces a summary with key takeaways and action points, powered by Gemini 2.5 Flash via the AssemblyAI EU LLM Gateway. Available for any transcript in your library.
 - **Organize into collections** — Group transcripts by project, course, channel, or any category that makes sense for your workflow.
 
 ---
@@ -104,7 +104,7 @@ During extraction, you see real-time progress: which video is being processed, h
 | Playlist video 4+ (auto-captions) | 1 credit per video |
 | Playlist video, AI Transcription | 1 credit per minute |
 | AI Summary | 3 credits |
-| RAG JSON export | 1 credit per 15 minutes |
+| RAG JSON export | 1 credit per 10 minutes (re-download of an already-exported transcript is free) |
 | Standard export (all other formats) | Free |
 
 Credits are purchased once and never expire. 25 free credits on signup are enough to test AI Transcription on a 25-minute video, run 8 AI summaries, or export several RAG JSON files. See [pricing](/pricing) for package details.

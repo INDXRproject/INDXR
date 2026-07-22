@@ -37,7 +37,7 @@ YouTube's automatic speech recognition needs clean, recognizable speech. Videos 
 
 Lecture recordings in echoey rooms, outdoor interviews, and music videos are common offenders. YouTube acknowledges that auto-captions "might misrepresent the spoken content due to mispronunciations, accents, dialects, or background noise."
 
-**What to do:** AI transcription handles these cases better than YouTube's built-in system. AssemblyAI's Universal-3 Pro model — which powers INDXR.AI's transcription — is trained specifically on noisy, real-world audio and performs reliably at bitrates as low as 8kbps.
+**What to do:** AI transcription handles these cases better than YouTube's built-in system. AssemblyAI's Universal-3.5 Pro model — which powers INDXR.AI's transcription for supported languages — is trained specifically on noisy, real-world audio and performs reliably at bitrates as low as 8kbps.
 
 ### Reason 4: The Language Isn't Supported
 
@@ -95,7 +95,7 @@ In these cases, the transcript doesn't exist anywhere on YouTube's servers — a
 
 Rather than relying on captions YouTube generates (or fails to generate), AI transcription downloads the video's audio directly and runs it through a speech recognition model. The result is a full transcript even when YouTube shows nothing.
 
-[INDXR.AI](/youtube-transcript-generator) does this in a few steps: paste the video URL, enable AI Transcription, confirm the credit cost (1 credit per minute), and the transcript is ready in approximately 1 minute per 10 minutes of audio. The transcription runs on AssemblyAI Universal-3 Pro, which achieves 94–96% accuracy on clean audio and handles accents, overlapping speech, and background noise significantly better than YouTube's built-in system.
+[INDXR.AI](/youtube-transcript-generator) does this in a few steps: paste the video URL, enable AI Transcription, confirm the credit cost (1 credit per minute), and the transcript is ready in approximately 1 minute per 10 minutes of audio. INDXR.AI automatically routes the audio to the best model for the video's language — AssemblyAI's Universal-3.5 Pro, our highest-quality model, for supported languages, with broad coverage across 99+ languages otherwise — achieving 94–96% accuracy on clean audio in supported languages and handling accents, overlapping speech, and background noise significantly better than YouTube's built-in system.
 
 For audio you already have — a recording, a podcast episode, a downloaded video file — the [Audio Upload](/audio-to-text) tab accepts MP3, MP4, WAV, M4A, OGG, FLAC, and WEBM files up to 500MB. The same AI pipeline applies.
 
@@ -142,7 +142,7 @@ YouTube Shorts support transcripts through the same mechanism as regular videos,
 This is a known intermittent YouTube UI bug. The caption data exists on YouTube's servers but the "Show transcript" button fails to render. Refreshing the page or clearing the browser cache resolves it in most cases.
 
 **Does INDXR.AI work for videos in languages other than English?**
-Yes. AI Transcription via INDXR.AI uses AssemblyAI's Universal-3 model, which supports 99+ languages with automatic language detection. Auto-caption extraction also works for any language YouTube supports (67 languages).
+Yes. AI Transcription via INDXR.AI automatically detects the video's language and routes it to the best available model — our highest-quality model, AssemblyAI's Universal-3.5 Pro, for supported languages, with broad coverage across 99+ languages otherwise. Auto-caption extraction also works for any language YouTube supports (67 languages).
 
 **What's the difference between captions and a transcript on YouTube?**
 Captions are the subtitles that appear synchronized with the video. A transcript is the same text presented as a plain-text document with timestamps, accessible via the "Show transcript" panel below the description. Both come from the same underlying caption track. If captions exist, the transcript exists. If there are no captions, there is no transcript.
