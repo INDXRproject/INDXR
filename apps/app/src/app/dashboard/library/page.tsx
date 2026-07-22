@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@indxr/shared/components/ui/dropdown-menu";
-import { Search, LayoutGrid, List as ListIcon, Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, LayoutGrid, List as ListIcon, Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Folder } from "lucide-react";
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { TranscriptList, Transcript } from "@/components/library/TranscriptList";
@@ -46,24 +46,39 @@ function LibraryContent() {
   const [listError, setListError]         = useState<string | null>(null);
 
   // ── Pagination ────────────────────────────────────────────────────────────
-  const [page, setPage]           = useState(1);
+  // Page lives in the URL (?page=N) so it is shareable and the browser back
+  // button steps through it. page=1 is represented by the absence of the param.
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const [pageSize, setPageSize]   = useState(DEFAULT_PAGE_SIZE);
   const [totalCount, setTotalCount] = useState(0);
+  const [jumpValue, setJumpValue] = useState("");
 
   const supabase = createClient();
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const rangeFrom  = (page - 1) * pageSize;
 
+  // Write the page into the URL, preserving the other params (collection).
+  // replace=true for transient resets (search/sort) so they don't pile up in
+  // history; push (default) for explicit paging so Back returns to the last page.
+  const goToPage = useCallback((n: number, opts?: { replace?: boolean }) => {
+    const next = Math.max(1, n);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next <= 1) params.delete("page"); else params.set("page", String(next));
+    const qs = params.toString();
+    const url = `/dashboard/library${qs ? `?${qs}` : ""}`;
+    if (opts?.replace) router.replace(url); else router.push(url);
+  }, [searchParams, router]);
+
   // Debounce the search box → server query. Reset to page 1 when the term settles.
   useEffect(() => {
-    const id = setTimeout(() => { setDebouncedSearch(searchQuery); setPage(1); }, 300);
+    const id = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      if (page !== 1) goToPage(1, { replace: true });
+    }, 300);
     return () => clearTimeout(id);
-  }, [searchQuery]);
-
-  // Switching collection resets to the first page.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setPage(1); }, [selectedCollectionId]);
+  }, [searchQuery]);
 
   // Server-side page fetch — filter (collection + search), sort and paginate
   // run over the FULL dataset in Postgres, not just the loaded rows.
@@ -104,8 +119,8 @@ function LibraryContent() {
 
   // Clamp page if deletes shrink the set below the current page.
   useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+    if (page > totalPages) goToPage(totalPages, { replace: true });
+  }, [page, totalPages, goToPage]);
 
   // Load collections + persisted page-size preference once.
   useEffect(() => {
@@ -118,7 +133,7 @@ function LibraryContent() {
       ]);
       if (colRes.data) setCollections(colRes.data);
       const size = (profRes.data as { library_page_size?: number } | null)?.library_page_size;
-      if (size && size !== pageSize) { setPageSize(size); setPage(1); }
+      if (size && size !== pageSize) setPageSize(size);
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -152,7 +167,13 @@ function LibraryContent() {
     }
   };
 
-  const handleSortChange = (v: SortBy) => { setSortBy(v); setPage(1); };
+  const handleSortChange = (v: SortBy) => { setSortBy(v); if (page !== 1) goToPage(1, { replace: true }); };
+
+  const handleJump = () => {
+    const n = parseInt(jumpValue, 10);
+    if (!Number.isNaN(n)) goToPage(Math.min(totalPages, Math.max(1, n)));
+    setJumpValue("");
+  };
 
   // Bug 4: Resolve collected name for page title display
   const selectedCollectionName = selectedCollectionId
@@ -234,6 +255,35 @@ function LibraryContent() {
           </div>
         </div>
 
+        {/* Mobile-only collections picker — the sidebar (which holds collections on desktop)
+            is hidden on mobile, so this is the only way to reach a collection on a phone. */}
+        {collections.length > 0 && (
+          <div className="md:hidden mb-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 w-full justify-between text-fg">
+                  <span className="flex items-center gap-2 truncate">
+                    <Folder className="h-4 w-4 text-fg-muted shrink-0" />
+                    {selectedCollectionName ?? "All Transcripts"}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-fg-muted rotate-90" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[calc(100vw-2rem)] max-h-[60vh] overflow-y-auto">
+                <DropdownMenuRadioGroup
+                  value={selectedCollectionId ?? "__all__"}
+                  onValueChange={(v) => router.push(v === "__all__" ? "/dashboard/library" : `/dashboard/library?collection=${v}`)}
+                >
+                  <DropdownMenuRadioItem value="__all__">All Transcripts</DropdownMenuRadioItem>
+                  {collections.map(c => (
+                    <DropdownMenuRadioItem key={c.id} value={c.id}>{c.name}</DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+
         {/* Collection filter-context bar */}
         {selectedCollectionId && (
           <div className="mb-4">
@@ -277,32 +327,64 @@ function LibraryContent() {
               collections={collections}
             />
 
-            {/* Pagination — server-side, works over the whole filtered dataset */}
+            {/* Pagination — server-side, works over the whole filtered dataset.
+                Page is URL-backed, so these are real navigations (shareable, Back works). */}
             {totalCount > pageSize && (
-              <div className="mt-5 mb-3 sm:mb-0 flex items-center justify-between gap-4 text-sm text-fg-muted">
+              <div className="mt-5 mb-3 sm:mb-0 flex items-center justify-between gap-4 text-sm text-fg-muted flex-wrap">
                 <span className="tabular-nums">
                   {rangeFrom + 1}–{Math.min(rangeFrom + pageSize, totalCount)} of {totalCount}
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8"
+                    variant="outline" size="icon" className="h-8 w-8"
                     disabled={page <= 1}
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    onClick={() => goToPage(1)}
+                    aria-label="First page"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline" size="sm" className="h-8"
+                    disabled={page <= 1}
+                    onClick={() => goToPage(page - 1)}
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" /> Previous
                   </Button>
-                  <span className="tabular-nums px-1">Page {page} / {totalPages}</span>
+                  <span className="tabular-nums px-1 whitespace-nowrap">Page {page} / {totalPages}</span>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8"
+                    variant="outline" size="sm" className="h-8"
                     disabled={page >= totalPages}
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    onClick={() => goToPage(page + 1)}
                   >
                     Next <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
+                  <Button
+                    variant="outline" size="icon" className="h-8 w-8"
+                    disabled={page >= totalPages}
+                    onClick={() => goToPage(totalPages)}
+                    aria-label="Last page"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                  {/* Direct jump — for large libraries */}
+                  {totalPages > 5 && (
+                    <div className="flex items-center gap-1 ml-1">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        value={jumpValue}
+                        onChange={e => setJumpValue(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") handleJump(); }}
+                        placeholder="Go to"
+                        className="h-8 w-20 text-sm"
+                        aria-label="Jump to page"
+                      />
+                      <Button variant="outline" size="sm" className="h-8" onClick={handleJump} disabled={!jumpValue}>
+                        Go
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

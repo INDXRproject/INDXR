@@ -11,20 +11,20 @@ const schema = z.object({
 })
 
 const RPC_ERRORS: Record<string, { status: number; message: string }> = {
-  rate_limit_exceeded: { status: 429, message: "Je kunt maximaal 5 tickets per uur indienen." },
-  transcript_not_found: { status: 400, message: "Transcript niet gevonden of niet van jou." },
-  not_authenticated:    { status: 401, message: "Niet ingelogd." },
+  rate_limit_exceeded: { status: 429, message: "You can submit up to 5 tickets per hour. Please try again later." },
+  transcript_not_found: { status: 400, message: "We couldn't find that transcript on your account." },
+  not_authenticated:    { status: 401, message: "You need to be signed in to do this." },
 }
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: "Niet ingelogd." }, { status: 401 })
+  if (!user) return NextResponse.json({ error: "You need to be signed in to do this." }, { status: 401 })
 
   const body = await req.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ongeldige invoer.", details: parsed.error.flatten() }, { status: 400 })
+    return NextResponse.json({ error: "Some of the details don't look right. Please check and try again.", details: parsed.error.flatten() }, { status: 400 })
   }
 
   const { category, subject, body: ticketBody, transcript_id } = parsed.data
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const known = Object.entries(RPC_ERRORS).find(([key]) => error.message.includes(key))
     if (known) return NextResponse.json({ error: known[1].message }, { status: known[1].status })
     console.error("[support/submit] rpc error:", error.message)
-    return NextResponse.json({ error: "Er ging iets mis. Probeer het opnieuw." }, { status: 500 })
+    return NextResponse.json({ error: "Something went wrong on our end. Please try again." }, { status: 500 })
   }
 
   // Admin notification — fail-safe, no user opt-out (this goes to contact@indxr.ai)

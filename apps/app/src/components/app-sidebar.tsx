@@ -9,8 +9,6 @@ import {
   ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2,
   PanelLeftClose, PanelLeftOpen,
 } from "lucide-react"
-import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
-import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { useUnreadMessages } from "../hooks/useUnreadMessages"
 
 import {
@@ -61,7 +59,6 @@ export function AppSidebar() {
   const router   = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { credits } = useAuth()
   const hasUnreadMessages = useUnreadMessages()
 
   // ── Collections state ──────────────────────────────────────────────────────
@@ -135,7 +132,7 @@ export function AppSidebar() {
 
     const [txRes, colRes] = await Promise.all([
       supabase.from("transcripts").select("id, collection_id, character_count").eq("user_id" as never, user.id as never),
-      supabase.from("collections").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+      supabase.from("collections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     ])
 
     if (colRes.data) setCollections(colRes.data as Collection[])
@@ -613,24 +610,6 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter>
-          {/* Transcript stats — StorageMeter */}
-          {!collapsed && (
-            <div className="px-3 pb-3 space-y-2 border-t border-border/50 pt-4 mt-2">
-              <div className="flex justify-between items-end">
-                <span className="text-xs text-fg-muted">Storage</span>
-                <span className="text-[10px] text-fg-muted">{usedMB > 0.1 ? usedMB.toFixed(1) + ' MB' : usedKB.toFixed(0) + ' KB'} / {MAX_MB} MB</span>
-              </div>
-              <Progress
-                value={storagePercentage}
-                className={cn("h-1.5", storagePercentage > 80 && "bg-error/20")}
-                style={{ "--accent-subtle": "var(--border)" } as React.CSSProperties}
-              />
-              <p className="text-[10px] text-fg-muted">
-                {transcripts.length} transcript{transcripts.length !== 1 ? "s" : ""} saved
-              </p>
-            </div>
-          )}
-
           {/* Nav guard — inline confirmation card when user tries to leave during active extraction */}
           {pendingNavHref && (
             <div className="mx-3 mb-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-in fade-in slide-in-from-bottom-2">
@@ -661,27 +640,7 @@ export function AppSidebar() {
             </div>
           )}
 
-          {/* Credits coin — persistent display above footer nav */}
-          <div className={cn(
-            "px-3 py-2 border-t border-border/50",
-          )}>
-            <Link
-              href="/dashboard/billing"
-              className={cn(
-                "flex items-center gap-2 text-sm text-fg-subtle hover:text-fg transition-colors rounded-lg px-2 py-1.5 hover:bg-surface-elevated",
-                collapsed && "justify-center px-0"
-              )}
-              title={collapsed ? `${credits ?? 0} credits` : undefined}
-            >
-              <HexagonCreditIcon className="h-4 w-4" />
-              <span className={cn("text-xs", collapsed && "hidden")}>
-                <span className="font-medium text-fg">{credits ?? 0}</span>
-                <span className="text-fg-muted ml-1">credits</span>
-              </span>
-            </Link>
-          </div>
-
-          <SidebarMenu>
+          <SidebarMenu className="border-t border-border/50 pt-1">
             {footerItems.map(item => {
               const isActive = pathname === item.url || (item.url === "/dashboard/account" && pathname?.startsWith("/dashboard/account"));
               return (

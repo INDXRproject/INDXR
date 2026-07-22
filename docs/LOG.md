@@ -11451,3 +11451,37 @@ apps/marketing/src/components/docs/DocsCategorySection.tsx
 apps/marketing/src/components/docs/FeaturedDocsGrid.tsx
 docs/LOG.md
 ---
+[2026-07-23 01:12] commit: feat(app): night-run phase 1 — library paging in URL, mobile collections, sidebar trim, truthful copy
+
+- Library pagination now lives in the URL (?page=N): shareable, browser Back
+  steps through pages. Added First/Last buttons and a direct page-jump input
+  (shown when >5 pages). Page derives from searchParams; resets are replace(),
+  explicit paging is push().
+- Collections reachable on mobile: the sidebar (which holds collections) is
+  hidden on phones, so added a md:hidden collections picker on the Library page
+  that navigates into a collection and back to All. (Full CRUD stays desktop.)
+- Sidebar collections list now newest-first (order created_at desc).
+- Removed the storage meter and the credits coin from the sidebar — both are
+  already shown in the topbar (product-truth §5, triple credit display); frees
+  the sidebar footer. Dropped now-unused useAuth/HexagonCreditIcon/Progress.
+- Truth fix: the red "Unavailable" count sublabel in PlaylistAvailabilitySummary
+  said "private, members-only, or deleted"; members-only are NOT pre-detected
+  (live-verified — they come through and fail at extraction). Now "private or
+  deleted"; the info box keeps the members-only skip-at-extraction note (true).
+- Microcopy: replaced two leftover Dutch strings with full-sentence English —
+  the AudioTab watchdog-refund notice and the user-facing /api/support/submit
+  error messages.
+
+Both apps build green.
+
+NOTE (blocked, see night report): merging the two welcome inbox messages into
+one is a database change (trigger handle_new_user_message + RPC
+claim_welcome_reward) — off-limits this run; flagged for Khidr.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/support/submit/route.ts
+apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/components/app-sidebar.tsx
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
+---

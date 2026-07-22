@@ -28,8 +28,9 @@ interface PlaylistAvailabilitySummaryProps {
   results: VideoAvailability[]
   summary?: AvailabilitySummary // Mark as optional and keep for backward compat if needed, but not used now
   userCredits: number | null
-  // Real count of videos the playlist fetch (yt-dlp) could not resolve — private, members-only,
-  // or deleted. These were already excluded from the selection; shown here for context.
+  // Real count of videos YouTube did not return from the playlist fetch — private or deleted.
+  // (Members-only videos DO come through here and only fail later, at extraction — live-verified,
+  // so they are NOT counted as unavailable.) These were already excluded; shown here for context.
   unavailableCount: number
   existingDuplicates: Record<string, Array<{ transcriptId: string; processingMethod: string }>>
   onProceed: (results: VideoAvailability[], duplicateAction?: 'replace' | 'reset') => void
@@ -174,7 +175,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
               <span className="font-semibold text-error-fg dark:text-error-fg">Unavailable</span>
             </div>
             <div className="text-3xl font-bold text-fg mb-1">{unavailableCount}</div>
-            <div className="text-sm text-fg-muted">private, members-only, or deleted — not included</div>
+            <div className="text-sm text-fg-muted">private or deleted — not included</div>
           </div>
         </div>
 
