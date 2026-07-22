@@ -1,5 +1,6 @@
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { redirect } from "next/navigation"
+import { RAG_CHUNK_DEFAULT, type RagChunkSize } from "@indxr/shared/lib/pricing"
 import { SecuritySettingsCard } from "@/components/dashboard/settings/SecuritySettingsCard"
 import { DeveloperExportsCard } from "@/components/dashboard/settings/DeveloperExportsCard"
 import { EmailNotificationsToggle } from "@/components/dashboard/settings/EmailNotificationsToggle"
@@ -20,7 +21,7 @@ export default async function SettingsPage() {
     .eq("id", user.id)
     .single()
 
-  const chunkSize = (profile?.rag_chunk_size ?? 60) as 30 | 60 | 120
+  const chunkSize = (profile?.rag_chunk_size ?? RAG_CHUNK_DEFAULT) as RagChunkSize
   const emailNotifications = profile?.email_notifications ?? true
   const libraryPageSize = (profile?.library_page_size ?? 50) as 25 | 50 | 100
   const marketingSubscribed = !(profile?.marketing_unsubscribed ?? false)

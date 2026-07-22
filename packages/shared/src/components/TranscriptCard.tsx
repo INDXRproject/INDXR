@@ -36,6 +36,7 @@ import {
 } from "./ui/dialog";
 import { cn } from "../lib/utils";
 import { marketingHref } from "../lib/cross-host-links";
+import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "../lib/pricing";
 
 export interface TranscriptItem {
   text: string;
@@ -58,12 +59,9 @@ interface TranscriptCardProps {
   transcriptId?: string;
 }
 
-const RAG_CHUNK_LABELS: Record<number, { label: string; sub: string }> = {
-  30:  { label: "Quote",    sub: "30s"  },
-  60:  { label: "Balanced", sub: "60s"  },
-  90:  { label: "Precise",  sub: "90s"  },
-  120: { label: "Context",  sub: "120s" },
-};
+const RAG_CHUNK_LABELS: Record<number, { label: string; sub: string }> = Object.fromEntries(
+  RAG_CHUNK_PRESETS.map((p) => [p.value, { label: p.label, sub: p.sub }]),
+);
 
 export function TranscriptCard({
   transcript,
@@ -94,8 +92,8 @@ export function TranscriptCard({
 
   const ragCost = Math.max(1, Math.ceil(derivedDuration / 600));
   const ragDurationMin = Math.ceil(derivedDuration / 60);
-  const [ragSelectedChunkSize, setRagSelectedChunkSize] = useState<30 | 60 | 90 | 120>(
-    (profile?.rag_chunk_size ?? 60) as 30 | 60 | 90 | 120
+  const [ragSelectedChunkSize, setRagSelectedChunkSize] = useState<RagChunkSize>(
+    (profile?.rag_chunk_size ?? RAG_CHUNK_DEFAULT) as RagChunkSize
   );
 
   const copyToClipboard = () => {
@@ -488,7 +486,7 @@ export function TranscriptCard({
             <p className="text-sm text-fg-muted">Chunk size</p>
             <div className="grid grid-cols-4 gap-2">
               {(Object.entries(RAG_CHUNK_LABELS) as [string, { label: string; sub: string }][]).map(([val, { label, sub }]) => {
-                const v = Number(val) as 30 | 60 | 90 | 120;
+                const v = Number(val) as RagChunkSize;
                 return (
                   <button
                     key={v}
@@ -510,7 +508,7 @@ export function TranscriptCard({
           </div>
 
           <a
-            href="/blog/chunk-youtube-transcripts-for-rag"
+            href={marketingHref("/articles/chunk-youtube-transcripts-for-rag")}
             target="_blank"
             rel="noopener noreferrer"
             className="block text-xs text-fg-muted hover:text-fg transition-colors"

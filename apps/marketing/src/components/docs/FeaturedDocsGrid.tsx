@@ -1,40 +1,25 @@
-// Skeleton — visual polish in Claude Design rondje na alle Batch 1 pages
+// The four featured cards on the /docs hub. Only the SELECTION of which pages to feature
+// lives here; the label + description are read from docs-config.ts, so each page has one
+// description (no separately-typed copy that can drift).
 
 import Link from "next/link"
+import { findPageInDocs } from "@/lib/docs-config"
 
-interface FeaturedDoc {
-  label: string
-  href: string
-  description: string
-}
-
-const featuredDocs: FeaturedDoc[] = [
-  {
-    label: "Quickstart",
-    href: "/docs/quickstart",
-    description: "Get your first transcript in under 3 minutes.",
-  },
-  {
-    label: "How INDXR works",
-    href: "/docs/how-indxr-works",
-    description: "A high-level overview of the extraction and transcription pipeline.",
-  },
-  {
-    label: "Credits",
-    href: "/docs/account/credits",
-    description: "What costs credits, what doesn't, and how refunds work.",
-  },
-  {
-    label: "Export formats",
-    href: "/docs/reference/export-formats",
-    description: "TXT, Markdown, CSV, SRT, VTT, JSON, and RAG JSON — when to use each.",
-  },
+const FEATURED_HREFS = [
+  "/docs/quickstart",
+  "/docs/how-indxr-works",
+  "/docs/account/credits",
+  "/docs/reference/export-formats",
 ]
 
 export function FeaturedDocsGrid() {
+  const featured = FEATURED_HREFS.map((href) => findPageInDocs(href)?.page).filter(
+    (p): p is NonNullable<typeof p> => Boolean(p),
+  )
+
   return (
     <div className="grid sm:grid-cols-2 gap-4 mb-12">
-      {featuredDocs.map((doc) => (
+      {featured.map((doc) => (
         <Link
           key={doc.href}
           href={doc.href}

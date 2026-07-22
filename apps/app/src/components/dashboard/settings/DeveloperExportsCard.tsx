@@ -3,31 +3,21 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { saveRagChunkSizeAction } from "@indxr/shared/actions/rag-export";
+import { RAG_CHUNK_PRESETS, type RagChunkSize } from "@indxr/shared/lib/pricing";
+import { marketingHref } from "@indxr/shared/lib/cross-host-links";
 
-interface ChunkOption {
-  value: 30 | 60 | 90 | 120;
-  label: string;
-  sub: string;
-  tokens: string;
-}
-
-const CHUNK_OPTIONS: ChunkOption[] = [
-  { value: 30,  label: "Quote",    sub: "30s",  tokens: "~100 tokens" },
-  { value: 60,  label: "Balanced", sub: "60s",  tokens: "~200 tokens" },
-  { value: 90,  label: "Precise",  sub: "90s",  tokens: "~300 tokens" },
-  { value: 120, label: "Context",  sub: "120s", tokens: "~390 tokens" },
-];
+const CHUNK_OPTIONS = RAG_CHUNK_PRESETS;
 
 interface DeveloperExportsCardProps {
-  initialChunkSize: 30 | 60 | 90 | 120;
+  initialChunkSize: RagChunkSize;
 }
 
 export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardProps) {
-  const [chunkSize, setChunkSize] = useState<30 | 60 | 90 | 120>(initialChunkSize);
+  const [chunkSize, setChunkSize] = useState<RagChunkSize>(initialChunkSize);
   const [saving, setSaving] = useState(false);
   const [savedValue, setSavedValue] = useState<number | null>(null);
 
-  const handleChange = async (value: 30 | 60 | 90 | 120) => {
+  const handleChange = async (value: RagChunkSize) => {
     setChunkSize(value);
     setSaving(true);
     setSavedValue(null);
@@ -85,7 +75,7 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
         <p className="text-xs text-fg-muted">
           Smaller chunks improve precision; larger chunks preserve more context per embedding.{" "}
           <a
-            href="/blog/chunk-youtube-transcripts-for-rag"
+            href={marketingHref("/articles/chunk-youtube-transcripts-for-rag")}
             className="text-accent hover:underline"
           >
             Learn about RAG chunking →

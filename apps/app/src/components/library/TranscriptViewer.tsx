@@ -70,6 +70,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 import { cn } from "@indxr/shared/lib/utils";
+import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "@indxr/shared/lib/pricing";
 import {
   generateTxt,
   generateSrt,
@@ -194,12 +195,7 @@ const SearchExtension = Extension.create<SearchOptions>({
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-const RAG_CHUNK_OPTIONS = [
-  { value: 30  as const, label: "Quote",    sub: "30s" },
-  { value: 60  as const, label: "Balanced", sub: "60s" },
-  { value: 90  as const, label: "Precise",  sub: "90s" },
-  { value: 120 as const, label: "Context",  sub: "120s" },
-];
+const RAG_CHUNK_OPTIONS = RAG_CHUNK_PRESETS;
 
 interface TranscriptViewerProps {
   id: string;
@@ -337,7 +333,7 @@ export function TranscriptViewer({
   // RAG export modal state
   const [localRagExports, setLocalRagExports] = useState<Array<{ chunk_size: number; exported_at: string; credits_spent: number }>>(ragExports ?? []);
   const [showRagModal, setShowRagModal] = useState(false);
-  const [ragSelectedChunkSize, setRagSelectedChunkSize] = useState<30 | 60 | 90 | 120>(60);
+  const [ragSelectedChunkSize, setRagSelectedChunkSize] = useState<RagChunkSize>(RAG_CHUNK_DEFAULT);
   const [ragExportLoading, setRagExportLoading] = useState(false);
   const [ragInsufficientCredits, setRagInsufficientCredits] = useState(false);
 
@@ -548,8 +544,8 @@ export function TranscriptViewer({
 
   const handleRagMenuClick = () => {
     const defaultChunk = localRagExports.length > 0
-      ? (localRagExports[localRagExports.length - 1].chunk_size as 30 | 60 | 90 | 120)
-      : ((userChunkSize ?? 60) as 30 | 60 | 90 | 120);
+      ? (localRagExports[localRagExports.length - 1].chunk_size as RagChunkSize)
+      : ((userChunkSize ?? RAG_CHUNK_DEFAULT) as RagChunkSize);
     setRagSelectedChunkSize(defaultChunk);
     setRagInsufficientCredits(false);
     setShowRagModal(true);

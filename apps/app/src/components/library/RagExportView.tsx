@@ -6,6 +6,7 @@ import { Download, Lock } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
 import { buildRagJson } from "@indxr/shared/utils/formatTranscript";
 import type { TranscriptItem } from "@indxr/shared/utils/formatTranscript";
+import { RAG_CHUNK_PRESETS, RAG_CHUNK_LABELS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "@indxr/shared/lib/pricing";
 
 // profiles.rag_chunk_size (Settings → Developer Exports) geldt als default voor de eerste
 // export vanuit TranscriptCard. In de library kiest de gebruiker per transcript zijn preset —
@@ -26,19 +27,8 @@ interface RagExportViewProps {
   ragExports: RagExport[];
 }
 
-const CHUNK_LABELS: Record<number, string> = {
-  30:  "Quote (30s)",
-  60:  "Balanced (60s)",
-  90:  "Precise (90s)",
-  120: "Context (120s)",
-};
-
-const CHUNK_OPTIONS = [
-  { value: 30  as const, label: "Quote",    sub: "30s",  tokens: "~100 tokens" },
-  { value: 60  as const, label: "Balanced", sub: "60s",  tokens: "~200 tokens" },
-  { value: 90  as const, label: "Precise",  sub: "90s",  tokens: "~300 tokens" },
-  { value: 120 as const, label: "Context",  sub: "120s", tokens: "~390 tokens" },
-];
+const CHUNK_LABELS = RAG_CHUNK_LABELS;
+const CHUNK_OPTIONS = RAG_CHUNK_PRESETS;
 
 function getRelativeTime(dateString: string): string {
   const date = new Date(dateString);
@@ -78,9 +68,9 @@ export function RagExportView({
   }
 
   const lastChunkSize = ragExports.length > 0
-    ? (ragExports[ragExports.length - 1].chunk_size as 30 | 60 | 90 | 120)
-    : 60;
-  const [selectedChunkSize, setSelectedChunkSize] = useState<30 | 60 | 90 | 120>(lastChunkSize);
+    ? (ragExports[ragExports.length - 1].chunk_size as RagChunkSize)
+    : RAG_CHUNK_DEFAULT;
+  const [selectedChunkSize, setSelectedChunkSize] = useState<RagChunkSize>(lastChunkSize);
 
   const handleDownload = (chunkSize: number) => {
     const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30) || 'transcript';

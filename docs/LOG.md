@@ -11290,3 +11290,93 @@ docs/wiki/decisions/075-docs-diataxis-structure.md
 docs/wiki/strategy/principles.md
 packages/shared/src/components/Footer.tsx
 ---
+[2026-07-22 22:39] commit: fix(docs,rag,links): sidebar SSR links, single-source RAG presets, repoint dead links
+
+Item 2 — RAG chunk size single-sourced. Proven first: picking 90 already saved,
+survived reload, and was used by the export at runtime — the settings cast
+`as 30 | 60 | 120` (and AuthContext's `rag_chunk_size: 30 | 60 | 120`) were
+TS-only lies that dropped 90 from the type while the value flowed through. The
+presets were duplicated in four places (DeveloperExportsCard, RagExportView,
+TranscriptViewer, TranscriptCard). Now one source: RAG_CHUNK_PRESETS /
+RagChunkSize / RAG_CHUNK_DEFAULT / RAG_CHUNK_LABELS in pricing.ts; every consumer
+imports it, all four values first-class.
+
+Item 3 — dead links from the redirect cleanup repointed to the real routes:
+docs/faq (5 links: /audio-to-text, /youtube-playlist-transcript, /youtube-srt-
+download, /youtube-transcript-without-extension → /articles/*), and the two
+/blog/chunk-youtube-transcripts-for-rag links (DeveloperExportsCard, TranscriptCard
+→ marketingHref('/articles/chunk-youtube-transcripts-for-rag')).
+
+Item 4 — DocsSidebar rendered only the open section's links; collapsed sections
+(Guides, Account on a Reference page) had no links in the server HTML, invisible to
+JS-less AI crawlers. Now every section's links are always in the DOM, collapsed via
+a `hidden` class.
+
+Item 5 — the /docs featured cards had separately-typed descriptions that drifted
+from docs-config; they now read label + description from docs-config (one source
+per page).
+
+Item 1 (playlist estimate) is investigated only — reported separately, no code
+change here; a LESSONS.md entry records the class.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/settings/page.tsx
+apps/app/src/components/dashboard/settings/DeveloperExportsCard.tsx
+apps/app/src/components/library/RagExportView.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/components/docs/DocsSidebar.tsx
+apps/marketing/src/components/docs/FeaturedDocsGrid.tsx
+docs/LESSONS.md
+packages/shared/src/actions/rag-export.ts
+packages/shared/src/components/TranscriptCard.tsx
+packages/shared/src/contexts/AuthContext.tsx
+packages/shared/src/lib/pricing.ts
+public/logo/X.com/indxr-x-avatar.png
+public/logo/X.com/indxr-x-banner-clean.png
+public/logo/X.com/indxr-x-banner.png
+---
+[2026-07-22 22:39] commit: fix(docs,rag,links): sidebar SSR links, single-source RAG presets, repoint dead links
+
+Item 2 — RAG chunk size single-sourced. Proven first: picking 90 already saved,
+survived reload, and was used by the export at runtime — the settings cast
+`as 30 | 60 | 120` (and AuthContext's `rag_chunk_size: 30 | 60 | 120`) were
+TS-only lies that dropped 90 from the type while the value flowed through. The
+presets were duplicated in four places (DeveloperExportsCard, RagExportView,
+TranscriptViewer, TranscriptCard). Now one source: RAG_CHUNK_PRESETS /
+RagChunkSize / RAG_CHUNK_DEFAULT / RAG_CHUNK_LABELS in pricing.ts; every consumer
+imports it, all four values first-class.
+
+Item 3 — dead links from the redirect cleanup repointed to the real routes:
+docs/faq (5 links: /audio-to-text, /youtube-playlist-transcript, /youtube-srt-
+download, /youtube-transcript-without-extension → /articles/*), and the two
+/blog/chunk-youtube-transcripts-for-rag links (DeveloperExportsCard, TranscriptCard
+→ marketingHref('/articles/chunk-youtube-transcripts-for-rag')).
+
+Item 4 — DocsSidebar rendered only the open section's links; collapsed sections
+(Guides, Account on a Reference page) had no links in the server HTML, invisible to
+JS-less AI crawlers. Now every section's links are always in the DOM, collapsed via
+a `hidden` class.
+
+Item 5 — the /docs featured cards had separately-typed descriptions that drifted
+from docs-config; they now read label + description from docs-config (one source
+per page).
+
+Item 1 (playlist estimate) is investigated only — reported separately, no code
+change here; a LESSONS.md entry records the class.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/settings/page.tsx
+apps/app/src/components/dashboard/settings/DeveloperExportsCard.tsx
+apps/app/src/components/library/RagExportView.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/components/docs/DocsSidebar.tsx
+apps/marketing/src/components/docs/FeaturedDocsGrid.tsx
+docs/LESSONS.md
+docs/LOG.md
+packages/shared/src/actions/rag-export.ts
+packages/shared/src/components/TranscriptCard.tsx
+packages/shared/src/contexts/AuthContext.tsx
+packages/shared/src/lib/pricing.ts
+---

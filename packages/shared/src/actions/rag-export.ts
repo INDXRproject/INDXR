@@ -2,8 +2,9 @@
 
 import { createClient } from "../utils/supabase/server"
 import { revalidatePath } from "next/cache"
+import type { RagChunkSize } from "../lib/pricing"
 
-export async function saveRagChunkSizeAction(chunkSize: 30 | 60 | 90 | 120) {
+export async function saveRagChunkSizeAction(chunkSize: RagChunkSize) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }

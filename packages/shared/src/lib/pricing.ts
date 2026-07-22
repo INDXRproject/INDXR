@@ -111,6 +111,26 @@ export const FREE_TIER = {
   RAG_FREE_EXPORTS: 3, // eerste 3 RAG exports gratis
 } as const
 
+// RAG JSON export — chunk-size presets. Single source of truth for both Settings
+// (Developer Exports) and the per-transcript export UI in the library. Add/change a
+// preset HERE, not in the components.
+export const RAG_CHUNK_PRESETS = [
+  { value: 30, label: "Quote", sub: "30s", tokens: "~100 tokens" },
+  { value: 60, label: "Balanced", sub: "60s", tokens: "~200 tokens" },
+  { value: 90, label: "Precise", sub: "90s", tokens: "~300 tokens" },
+  { value: 120, label: "Context", sub: "120s", tokens: "~390 tokens" },
+] as const
+
+export type RagChunkSize = (typeof RAG_CHUNK_PRESETS)[number]["value"] // 30 | 60 | 90 | 120
+export const RAG_CHUNK_DEFAULT: RagChunkSize = 60
+
+// `${label} (${sub})` per value — for compact labels (e.g. "Quote (30s)"). Keyed by plain
+// number so callers can index with a raw `chunk_size` and fall back for unknown values.
+export const RAG_CHUNK_LABELS: Record<number, string> = RAG_CHUNK_PRESETS.reduce(
+  (acc, p) => ({ ...acc, [p.value]: `${p.label} (${p.sub})` }),
+  {} as Record<number, string>,
+)
+
 // Helpers
 
 export function getPackage(id: PricingPackage["id"]): PricingPackage {

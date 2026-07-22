@@ -57,9 +57,10 @@ export function DocsSidebar() {
               />
             </button>
 
-            {isOpen && (
-              <ul className="mt-0.5 space-y-0.5">
-                {section.pages.map((page) => {
+            {/* Always render the links in the DOM (collapsed = visually hidden, not removed) so
+                AI crawlers and no-JS clients see every section's links, not just the open ones. */}
+            <ul className={cn("mt-0.5 space-y-0.5", !isOpen && "hidden")}>
+              {section.pages.map((page) => {
                   const isActive = pathname === page.href
                   const indentPx = (page.indent ?? 0) * 12
                   return (
@@ -81,7 +82,6 @@ export function DocsSidebar() {
                   )
                 })}
               </ul>
-            )}
           </div>
         )
       })}

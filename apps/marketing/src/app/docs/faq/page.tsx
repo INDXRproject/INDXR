@@ -32,7 +32,7 @@ const faqCategories: FAQCategory[] = [
       {
         question: "Does INDXR.AI work without installing a Chrome extension?",
         answer:
-          "Yes, INDXR.AI is 100% web-based. You don't need to install any browser extension, plugin, or software. Just open the website in any browser (Chrome, Firefox, Safari, Edge, or mobile browsers) and paste a YouTube URL. Learn more about our <a href='/youtube-transcript-without-extension'>extension-free approach</a>.",
+          "Yes, INDXR.AI is 100% web-based. You don't need to install any browser extension, plugin, or software. Just open the website in any browser (Chrome, Firefox, Safari, Edge, or mobile browsers) and paste a YouTube URL. Learn more about our <a href='/articles/youtube-transcript-without-extension'>extension-free approach</a>.",
       },
       {
         question: "Do I need to create an account to use INDXR.AI?",
@@ -57,22 +57,22 @@ const faqCategories: FAQCategory[] = [
       {
         question: "Can I get a transcript from a YouTube video without captions?",
         answer:
-          "Yes, using our AI transcription feature. When a video doesn't have captions, INDXR.AI can transcribe the audio using AssemblyAI. This feature uses credits (1 credit per minute of audio). Learn more about <a href='/audio-to-text'>AI transcription</a>.",
+          "Yes, using our AI transcription feature. When a video doesn't have captions, INDXR.AI can transcribe the audio using AssemblyAI. This feature uses credits (1 credit per minute of audio). Learn more about <a href='/articles/audio-to-text'>AI transcription</a>.",
       },
       {
         question: "How do I transcribe an entire YouTube playlist at once?",
         answer:
-          "Use the Playlist tab in the dashboard. Paste the playlist URL, and INDXR.AI will scan all videos. See our <a href='/youtube-playlist-transcript'>playlist extraction guide</a> for details.",
+          "Use the Playlist tab in the dashboard. Paste the playlist URL, and INDXR.AI will scan all videos. See our <a href='/articles/youtube-playlist-transcript'>playlist extraction guide</a> for details.",
       },
       {
         question: "Can I download YouTube subtitles in SRT format?",
         answer:
-          "Yes. After extracting a transcript, click Export and select SRT. See our <a href='/youtube-srt-download'>SRT download guide</a> for more information.",
+          "Yes. After extracting a transcript, click Export and select SRT. See our <a href='/articles/youtube-srt-download'>SRT download guide</a> for more information.",
       },
       {
         question: "Why do I sometimes get captions in the wrong language — and how does INDXR get the original?",
         answer:
-          "A single YouTube video often carries dozens of caption tracks — the original plus machine and community translations — and YouTube's default picker doesn't reliably return the one that matches the audio. That's why many tools hand you a translation, sometimes in a language nobody in the video is even speaking. INDXR is built to give you the <em>original</em> track instead: it detects the video's actual spoken language and anchors on that, so you get the native captions rather than an accidental translation. When a video has no usable original caption track, you can force <a href='/audio-to-text'>AI transcription</a>, which transcribes the real audio in its own language. It won't be flawless on every upload — some videos simply don't expose a clean original track — so if you hit one where the language still looks off, <a href='/contact'>send us a support ticket</a> and we'll take a look.",
+          "A single YouTube video often carries dozens of caption tracks — the original plus machine and community translations — and YouTube's default picker doesn't reliably return the one that matches the audio. That's why many tools hand you a translation, sometimes in a language nobody in the video is even speaking. INDXR is built to give you the <em>original</em> track instead: it detects the video's actual spoken language and anchors on that, so you get the native captions rather than an accidental translation. When a video has no usable original caption track, you can force <a href='/articles/audio-to-text'>AI transcription</a>, which transcribes the real audio in its own language. It won't be flawless on every upload — some videos simply don't expose a clean original track — so if you hit one where the language still looks off, <a href='/contact'>send us a support ticket</a> and we'll take a look.",
       },
     ],
   },

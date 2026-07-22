@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react"
 import { createClient } from "../utils/supabase/client"
 import { User } from "@supabase/supabase-js"
+import type { RagChunkSize } from "../lib/pricing"
 import posthog from 'posthog-js'
 
 export interface UserCredits {
@@ -17,7 +18,7 @@ export interface UserProfile {
   role: string | null
   avatar_color: string | null
   rag_export_confirmed: boolean
-  rag_chunk_size: 30 | 60 | 120
+  rag_chunk_size: RagChunkSize
 }
 
 export interface AuthContextType {
