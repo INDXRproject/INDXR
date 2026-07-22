@@ -169,6 +169,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | Bestand | Onderwerp |
 |---------|-----------|
 | [product-truth.md](content/product-truth.md) | **Code-geverifieerde bron van waarheid voor de content-herschrijf**: pricing, creditmodel + reserve-model, live features, export-formaten, storage-cap, en de volledige modelnaam-inventaris (live vs stale in content). Elk feit met `bestand:regel`. |
+| [docs-page-contract.md](content/docs-page-contract.md) | **Paginacontract voor /docs** vóór de schrijfronde: huidige routes (live/placeholder), per-pagina houden/samenvoegen/schrappen-oordeel, en per overgebleven pagina het contract (BEZIT / HERHAALT-NIET / LINKT / BRON / FIGUUR-SLOTS / SCHEMA / BRONMATERIAAL, SPEC vs ARGUMENT). Plus template- en llms.txt-gaten. |
 
 ---
 

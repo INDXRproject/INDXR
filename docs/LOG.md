@@ -10902,3 +10902,29 @@ apps/marketing/src/components/docs/InPageTOC.tsx
 docs/LOG.md
 docs/wiki/architecture/page-structures/reference-doc.md
 ---
+[2026-07-22 23:00] docs-page-contract.md aangemaakt (read-only denkwerk, niets geïmplementeerd) — één paginacontract voor /docs vóór de schrijfronde. DEEL1: 18 huidige docs-routes met live/placeholder-status + artikel-tegenhanger; sitemap-boom nog op oude 15-structuur (tabel al bijgewerkt) + redirect-keten `/docs/accuracy/auto-captions` gemeld. DEEL2: elke pagina getoetst aan "aparte zoekintentie óf aparte gebruikerstaak" → 16 routes na schrap how-to+troubleshooting (308→/articles) en faq→/docs/faq; alle drie reeds-beslist akkoord, met 3 uitvoerings-nuances (troubleshooting-hub-verwijzingen in sitemap bijwerken; faq-move vereist herverdeling van 2 dakloze antwoorden: VAT-scope→credits-and-billing, dedup→limits/overview; Help-sidebarsectie verdwijnt). DEEL3: per pagina contract (BEZIT/HERHAALT-NIET/LINKT/BRON/FIGUUR-SLOTS+bijschrift+alt/SCHEMA/BRONMATERIAAL, SPEC vs ARGUMENT) met exacte bron-functies (formatTranscript.ts generateTxt/Md/Csv/Srt/Vtt r.247/407/202/167/181, buildRagJson/Chunks 516/283; main.py MAX_* r.769/775/780; ratelimit.ts r.33-34; AiSummaryView). DEEL4: artikel-gat summaries (hoge zoekintentie), refund-beleid launch-blocker, SourcesBlock+DocsFigure-conventie voor reference-doc-template, llms.txt stale 5-tier-pricing + public/llms.txt divergent. Docs-only. | gewijzigd: docs/wiki/content/docs-page-contract.md, INDEX.md, LOG.md
+[2026-07-22 16:20] commit: docs(content): docs page-contract for /docs (read-only, pre-writing plan)
+
+One page-contract for /docs so the writing round can proceed without overlap.
+- DEEL 1: current 18 docs routes with live/placeholder status + article counterpart;
+  flags sitemap tree still on the old 15-page structure + a two-step redirect chain.
+- DEEL 2: tests each page against "separate search intent OR separate user task" →
+  16 routes after dropping help/how-to + help/troubleshooting (308 -> /articles) and
+  moving help/faq -> /docs/faq. Agrees with all three pre-decided items, with 3
+  execution nuances (troubleshooting-hub references in the sitemap must update; the
+  faq move needs two orphaned answers rehoused: VAT-scope -> credits-and-billing,
+  dedup -> limits/overview; the Help sidebar section disappears).
+- DEEL 3: per-page contract (OWNS / DOES-NOT-REPEAT / LINKS / SOURCE / FIGURE SLOTS
+  with caption+alt / SCHEMA / SOURCE MATERIAL, SPEC vs ARGUMENT) with exact source
+  functions for the SPEC pages.
+- DEEL 4: missing summaries article (high search intent), refund policy launch-blocker,
+  proposes SourcesBlock + DocsFigure conventions for the reference-doc template, and
+  the llms.txt fixes (stale 5-tier pricing, divergent public/llms.txt).
+
+Docs-only, no code or routes changed.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/content/docs-page-contract.md
+---
