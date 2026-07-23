@@ -12051,3 +12051,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 docs/wiki/content/product-truth.md
 ---
+[2026-07-23 12:08] commit: docs: night report — app-fixes 1-5 logged + the 9 FAQ answers verbatim (item 7)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
+---

@@ -419,3 +419,54 @@ is bijgewerkt naarmate ik vorderde.
 herschrijf van artikelen die al als verhaal lezen zou churn zijn; en fase 6 blijft de
 gedocumenteerde niet-dupliceren-beslissing. De feitelijke correctheid + structuur (banner,
 See-also, cross-links, sources) staan.
+
+---
+
+# APP-FIXES + OPRUIMING (vervolgronde)
+
+**1. Paginering** (`331c4c5`) — het "Go"-invoerveld vervangen door genummerde paginaknoppen met
+beknopping (‹ 1 2 3 [4] 5 … 8 ›); een enkel-gat wordt met het nummer gevuld (nooit "1 … 3").
+Paginanummer blijft in de URL.
+
+**2. Sidebar-collecties** (`0c919c0`) — de vaste 40vh-cap (restant van toen opslagmeter+credits
+eronder stonden) vervangen door flex-1/min-h-0 door de sidebar-kolom: de lijst vult nu de vrije
+ruimte en scrollt pas bij echte overloop. "+ New Collection" staat nu vast onder het scrollgebied.
+
+**3. Opslagmeter op /dashboard/account** (`278b672`) — leest de **echte** bytes
+(`user_credits.library_bytes`, trigger-onderhouden) i.p.v. de character_count-schatting; toont tegen
+**100 MB** uit één gedeelde constante (`packages/shared/src/lib/storage.ts LIBRARY_STORAGE_LIMIT_MB`).
+**Wat gebeurt er bij overschrijding: NIETS** — er is geen afdwinging; de DB-cap
+(`user_credits.library_bytes_cap`, 5 GiB) is onafgedwongen (migratie 20260711100400: "Meter only:
+NO hard block") en de 100 MB is een zachte weergave. De 5 GiB is niet verstopt: staat in de
+constanten-file (`LIBRARY_STORAGE_DB_CAP_BYTES`) + kaart-copy.
+
+**4. Welkomstberichten samengevoegd** (`2defe19`, migratie `20260723120000`, live toegepast
+104→105) — trigger `on_auth_user_created_welcome_message` + `handle_new_user_message()` gedropt;
+`claim_welcome_reward` geeft nu **één** bericht bij credit-grant, credits erin verwerkt + wegwijzer +
+`https://indxr.ai/docs/quickstart`. Credit-logica byte-identiek gereproduceerd. **Prod-getest**
+(wegwerp-user, daarna cascade-verwijderd): signup → 0 berichten/0 credits; na
+`claim_welcome_reward` → **exact 1 bericht + 25 credits**, juiste titel/body, quickstart-link aanwezig.
+
+**5. Wiki gecorrigeerd** (`211b4e9`) — product-truth §3 "geen ZIP-export" was onwaar → gecorrigeerd
+met codeverwijzing (`TranscriptList.tsx:403,469-499`). LESSONS: wiki is afgeleide, code wint bij
+conflict.
+
+---
+
+# ITEM 7 — de 9 ingevulde FAQ-antwoorden (letterlijk, voor Khidr's review)
+
+Deze verving live `[placeholder — Khidr writes: …]`-tekst (commit `bddf356`). Lees na en pas aan waar
+gewenst.
+
+**/transcribe:**
+1. *What's the difference between auto-captions and AI transcription?* — "Auto-captions are read from YouTube's subtitle track — free and instant. AI transcription uses AssemblyAI to generate a transcript from the audio when no captions exist, at 1 credit per minute."
+2. *Why would I sign up if the tool is free?* — "The free tier covers single videos with auto-captions. Signing up (free, no card) adds 25 credits, playlists, AI transcription, every export format beyond TXT, and your personal library."
+3. *What if my video doesn't have captions?* — "INDXR detects this up front and offers AI transcription instead. You see the exact credit cost before confirming — no surprise charges."
+4. *Can I extract a full playlist without an account?* — "Playlist extraction needs a free account. Signing up is free, includes 25 credits, and needs no credit card."
+5. *What languages are supported?* — "Auto-caption extraction works for any language YouTube provides captions for. For AI transcription, INDXR automatically picks the best model for the language — up to 99 languages with automatic detection, powered by {transcriptionModelName()} (renders 'AssemblyAI Universal-3.5 Pro')."
+6. *What export formats can I get?* — "TXT is free and needs no account. Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON are all available with a free account."
+
+**/pricing:**
+7. *(VAT)* — "All prices include VAT. Stripe applies the correct VAT rate for your country at checkout."
+8. *(Invoices)* — "Yes — Stripe automatically generates an invoice for every purchase, emailed to you after payment. Your purchase history is also on your account page."
+9. *(Payment methods)* — "Credit and debit cards, iDEAL, Bancontact, and the other payment methods Stripe supports in the EU."
