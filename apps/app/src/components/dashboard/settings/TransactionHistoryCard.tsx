@@ -36,7 +36,31 @@ interface Transaction {
   amount: number
   type: 'credit' | 'debit'
   reason: string
+  kind?: string | null
+  metadata?: { reserved?: number; consumed?: number; refunded?: number; total?: number; failed_count?: number } | null
   created_at: string
+}
+
+// User-facing activity label. The stored `reason` is an internal audit label and, for the
+// reserve→settle→refund ledger, was written in Dutch by the backend ("Gereserveerd … →
+// verbruikt … → … teruggestort", "AI transcriptie settlement"). We render from `kind` +
+// the structured `metadata` datacontract instead, so both existing rows and new ones read as
+// plain English, and the reservation mechanics don't leak. All other reasons are already
+// English product labels ("Playlist caption extraction", "RAG JSON Export", …) — passed through.
+function activityLabel(tx: Transaction): string {
+  const m = tx.metadata
+  if (tx.kind === 'refund' && m && typeof m.reserved === 'number') {
+    const consumed = m.consumed ?? 0
+    const refunded = m.refunded ?? 0
+    const total = m.total ?? 1
+    const failed = m.failed_count ?? 0
+    const used = `${consumed} credit${consumed === 1 ? '' : 's'} used`
+    const back = refunded >= 0 ? `${refunded} refunded` : `${Math.abs(refunded)} extra charged`
+    if (total > 1) return `Playlist (${total} videos) — ${used}, ${back}${failed > 0 ? `, ${failed} failed` : ''}`
+    return `AI transcription — ${used}, ${back}`
+  }
+  if (tx.reason === 'AI transcriptie settlement') return 'AI transcription'
+  return tx.reason
 }
 
 export function TransactionHistoryCard({ transactions, credits = 0 }: { transactions: Transaction[], credits?: number }) {
@@ -84,7 +108,7 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
                     <TableCell className="font-medium text-fg whitespace-nowrap">
                       {timeAgo(tx.created_at)}
                     </TableCell>
-                    <TableCell className="text-fg-muted min-w-[150px]">{tx.reason}</TableCell>
+                    <TableCell className="text-fg-muted min-w-[150px]">{activityLabel(tx)}</TableCell>
                     <TableCell className="text-right">
                       <span className={`flex items-center justify-end gap-1 font-mono ${
                         tx.type === 'credit' ? 'text-success' : 'text-fg-muted'

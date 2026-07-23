@@ -12790,3 +12790,30 @@ packages/shared/src/components/PageHeader.tsx
 packages/shared/src/components/SectionLabel.tsx
 packages/shared/src/components/pricing/PricingTiers.tsx
 ---
+[2026-07-24 01:39] commit: fix(credits): English, user-friendly labels in the credit activity table
+
+The activity table on /dashboard/account showed Dutch labels in an English UI —
+'AI transcriptie settlement' and 'Gereserveerd … → verbruikt … → … teruggestort
+(…/… mislukt)'. Both were written by the backend into credit_transactions.reason
+(Python settle default + the refund_credits RPC), so existing rows are Dutch.
+
+Fix (chosen: frontend mapping over backfill — no mutation of the financial audit log,
+one formatter for old + new rows, controls the wording):
+- TransactionHistoryCard renders the label from kind + the structured metadata
+  datacontract: refunds become 'AI transcription — 92 credits used, 0 refunded'
+  (playlists get the video count + failed count), settlements 'AI transcription'.
+  The reservation mechanics no longer leak. Other reasons are already English and
+  pass through unchanged.
+- Source strings made English so NEW rows are stored in English too: settle default
+  'AI transcription'; refund_credits RPC reason now 'Reserved … → used … → … refunded
+  (…/… failed)' (migration 20260724013708 — only the string literal changed; amounts,
+  balance mutation, idempotency and metadata identical). Applied; schema_migrations 106→107.
+
+Build green (app, 46 pages, exit 0).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/dashboard/settings/TransactionHistoryCard.tsx
+backend/credit_manager.py
+docs/LESSONS.md
+supabase/migrations/20260724013708_refund_reason_english.sql
+---

@@ -296,7 +296,7 @@ def settle_credits(
     job_id: str,
     playlist_id: Optional[str] = None,
     video_id: Optional[str] = None,
-    reason: str = "AI transcriptie settlement",
+    reason: str = "AI transcription",
 ) -> Dict:
     """
     Registreer het WERKELIJKE verbruik van één succesvolle whisper-video (ADR-050 fase 2).
