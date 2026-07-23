@@ -12014,3 +12014,25 @@ Changed: apps/app/src/app/dashboard/account/page.tsx
 apps/app/src/components/dashboard/account/StorageMeterCard.tsx
 packages/shared/src/lib/storage.ts
 ---
+[2026-07-23 12:06] commit: feat(db): merge the two welcome messages into one (migration, applied to prod)
+
+A new account received TWO inbox messages: 'Welcome to INDXR' (trigger
+on_auth_user_created_welcome_message, at signup — before credits even existed) and
+'25 welcome credits added' (RPC claim_welcome_reward, at onboarding). Merged into one.
+
+Migration 20260723120000 (applied via Supabase MCP apply_migration, not db push;
+count 104→105):
+- Dropped the trigger + handle_new_user_message().
+- CREATE OR REPLACE claim_welcome_reward with a single merged message at the moment
+  credits are granted: 'Welcome to INDXR — 25 free credits added 🎉' with the credits
+  worked in, a short wayfinding, and a link to https://indxr.ai/docs/quickstart (the
+  SQL equivalent of marketingHref). ALL credit-granting logic reproduced byte-identical
+  (canonical-email guard, advisory lock, 25-credit grant, audit row, once-guard).
+
+Tested on production (throwaway user, then cascade-deleted): at signup → 0 messages,
+0 credits; after claim_welcome_reward → exactly 1 message + 25 credits, correct title
+and body, /docs/quickstart link present.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: supabase/migrations/20260723120000_merge_welcome_message.sql
+---
