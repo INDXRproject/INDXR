@@ -11852,3 +11852,8 @@ Changed: apps/marketing/src/app/articles/youtube-srt-download/page.tsx
 apps/marketing/src/app/pricing/page.tsx
 apps/marketing/src/app/transcribe/page.tsx
 ---
+[2026-07-23 11:32] commit: docs: night report — article claims audit complete & live-verified
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
+---

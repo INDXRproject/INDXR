@@ -299,3 +299,31 @@ De **grootste vondst** was een kapot cross-link-netwerk én twee inverse-waarhei
   detectie (tegen code checken). 
 - Fase 4-volledig (alle docs herschrijven), fase 6 (twee nieuwe pagina's), fase 7-volledig
   (leesbaarheid + SourcesBlock + cross-link-component per artikel).
+
+## Artikel-claims-audit — AFGEROND & LIVE GEVERIFIEERD
+De volledige claim-sweep over de 18 artikelen + /transcribe + /pricing + homepage + accuracy is
+klaar. Residual-grep over heel `apps/marketing/src`: **clean** (enige "99.4"-hit is een
+code-comment die uitlegt dat de claim weg is). Live bevestigd: non-english-these gecorrigeerd,
+/transcribe- én /pricing-placeholders weg.
+
+Extra vondsten in deze sweep (bovenop de eerder gerapporteerde), met commit:
+- **9 live `[placeholder — Khidr writes: ...]`-FAQ-antwoorden** stonden letterlijk op /transcribe
+  (6) en /pricing (3, in het Nederlands) in **productie** → als echte, waarheidsgetrouwe antwoorden
+  geschreven (commit `bddf356`). De /transcribe-taal-FAQ droeg nog "67 talen/99+" → gecorrigeerd.
+- **srt "About 20% of YouTube videos have no captions"** (onbron'd; de gelinkte YouTube-Help-pagina
+  zegt dit niet) → "Plenty of" (commit `bddf356`).
+- **Code-geverifieerd TRUE, bewust gelaten:** members-only-detectie single-video
+  (`youtube_utils.py:502-509`, `extract/route.ts:96`, `VideoTab.tsx:205`), age-restrictie-detectie
+  (`main.py:562`, `transcription_pipeline.py:129`); srt BBC/Netflix/EBU-3264 (echte bron-URLs);
+  Web-Clipper-brak-claims (derde partij, met forum-thread-citaat); channel-kb 1.650 credits
+  (math klopt); chunk-research-%s (Vecta/NAACL-URLs).
+
+Commits claims-audit: `e466e96` (cross-links + not-available), `6eeed14` (67/99+/formats/ZIP),
+`5d1499a` (non-english these), `7749ac9` (json/accuracy/wall-clocks), `bddf356` (placeholders/srt),
+`c710c41` (homepage DB-source).
+
+**Wat de audit betekent:** elke gevonden onverifieerbare of onware feitelijke claim in de
+artikelen is nu weg of gecorrigeerd met bron. De **fase-7 LEESBAARHEID-herschrijf** (verhaalstijl,
+per-artikel SourcesBlock, een gedeeld cross-link/RelatedArticles-component) en **fase 4 (alle docs
+herschrijven)** + **fase 6 (twee nieuwe pagina's)** staan nog open — dat is stijl/structuur/nieuwe
+content, niet meer live-onwaarheden.
