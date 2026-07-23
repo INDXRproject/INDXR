@@ -94,8 +94,12 @@ export default function DocsJsonPage() {
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">JSON &amp; RAG JSON</h1>
         <DefinitionLeadOpening>
           INDXR exports two kinds of JSON: <strong>standard JSON</strong> — the raw segments with a
-          metadata wrapper, free — and <strong>RAG JSON</strong> — the transcript already chunked, with
-          token estimates and a per-chunk deep link, ready to embed in a vector database.
+          metadata wrapper, free — and <strong>RAG JSON</strong> — the transcript already cut into
+          short passages (chunks) for RAG (retrieval-augmented generation, where an AI answers using
+          text pulled from your own documents). Each chunk carries a token estimate (roughly how much
+          of a model&apos;s input budget its text fills) and a deep link (a YouTube URL that jumps
+          straight to that moment), ready to embed in a vector database — a store that finds passages
+          by meaning rather than exact keywords.
         </DefinitionLeadOpening>
 
         <AnchorHeading as="h2">Standard JSON (free)</AnchorHeading>

@@ -38,8 +38,10 @@ export default function DocsLimitsPage() {
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Limits</h1>
         <DefinitionLeadOpening>
           INDXR enforces a few hard limits: AI transcription up to 10 hours per file, uploads up to
-          500 MB, playlists up to 500 videos per job, and 3 jobs running at once. Caption extraction has
-          no length limit, and requests are rate-limited. There is no public REST API.
+          500 MB, playlists up to 500 videos per job (a job is one transcription or playlist run), and
+          3 jobs running at once. Caption extraction — pulling a video&apos;s existing subtitles — has
+          no length limit, and requests are rate-limited (each account can only make so many per hour).
+          There is no public REST API, the kind of programmatic interface other apps could plug into.
         </DefinitionLeadOpening>
 
         <AnchorHeading as="h2">Size &amp; length</AnchorHeading>
@@ -62,10 +64,16 @@ export default function DocsLimitsPage() {
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Audio over 10 hours is rejected before any credits are reserved — you are never charged for a
           file the provider can&apos;t process. A playlist over 500 videos is rejected the same way;
-          split it into batches of 500.
+          split it into batches of 500. &ldquo;Concurrent jobs&rdquo; means how many transcriptions or
+          extractions can run at the same time — you can have up to 3 going at once.
         </p>
 
         <AnchorHeading as="h2">Rate limits</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          A rate limit caps how many requests you can make in a set window of time, so no single user
+          can overload the service. &ldquo;Per IP&rdquo; means per network address — how visitors
+          without an account are counted.
+        </p>
         <DocsTable>
           <thead>
             <tr>
@@ -81,8 +89,9 @@ export default function DocsLimitsPage() {
 
         <AnchorHeading as="h2">No public API</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          INDXR is a web app — there is no public REST API. Everything runs through the interface; the
-          export formats (including <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/json">JSON and RAG JSON</a>) are how you get the data out programmatically.
+          INDXR is a web app — there is no public REST API, the kind of endpoint other programs could
+          call directly to automate it. Everything runs through the interface; the export formats
+          (including <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/json">JSON and RAG JSON</a>) are how you get the data out programmatically — that is, into your own scripts or tools.
         </p>
 
         <SourcesBlock

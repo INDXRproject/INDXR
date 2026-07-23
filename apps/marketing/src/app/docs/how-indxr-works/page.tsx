@@ -49,8 +49,9 @@ export default function DocsOverviewPage() {
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">How INDXR works</h1>
         <DefinitionLeadOpening>
           INDXR.AI turns YouTube videos, playlists, and audio or video files you upload into text you
-          can actually use — plain text, Markdown, CSV, subtitles, JSON, or RAG JSON for retrieval
-          systems. You choose how the text is produced: extract the captions a video already has, or
+          can actually use — plain text, Markdown, CSV, subtitles, JSON, or RAG JSON, a format prepared
+          so an AI system can answer questions from your own material. You choose how the text is
+          produced: extract the captions a video already has, or
           have the audio transcribed. Everything you extract is saved and stays editable.
         </DefinitionLeadOpening>
 

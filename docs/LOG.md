@@ -12056,3 +12056,41 @@ docs/wiki/content/product-truth.md
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 12:16] commit: docs: full per-H2 readability pass — explain assumed-knowledge terms (item 6)
+
+Read every docs page in full and judged each H2 section: does it explain its terms to
+someone who doesn't know them, or assume prior knowledge? Rewrote only where it assumed;
+facts untouched (verified — numbers/formats/costs preserved).
+
+Edited (term now glossed at first use):
+- reference/limits: 'job', 'concurrent jobs', 'rate limit / per IP', 'REST API'.
+- reference/export-formats/json: opening fired RAG/chunk/token-estimate/deep-link/vector-DB
+  at once, 'RAG' never expanded → each glossed in half a sentence.
+- reference/export-formats (hub): 'deep link' + 'embedding' glossed.
+- reference/export-formats/txt: 'segment' + HH:MM:SS spelled out.
+- account/settings: 'RAG chunk size' + 'vector database' explained (C11b's archetype term).
+- how-indxr-works: 'RAG JSON for retrieval systems' → plain 'AI answers questions from
+  your own material'.
+- guides/uploads: 'website's size limit' + retention explained.
+- guides/library: 'video ID' glossed; ALSO fixed a stale fact — the storage meter moved
+  from the sidebar to the account page (this run), page + SourcesBlock updated.
+- faq: SRT/VTT/CSV/Markdown/RAG-JSON glossed in the two format answers.
+- quickstart: 'yt-dlp' + 'AI transcription' glossed in 'what just happened'.
+
+No edits needed (already explain their terms — quotes in the night report):
+single-video, markdown, summaries.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/account/settings/page.tsx
+apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/app/docs/guides/library/page.tsx
+apps/marketing/src/app/docs/guides/uploads/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/page.tsx
+apps/marketing/src/app/docs/quickstart/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/json/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/txt/page.tsx
+apps/marketing/src/app/docs/reference/limits/page.tsx
+---

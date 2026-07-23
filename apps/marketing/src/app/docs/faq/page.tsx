@@ -28,7 +28,7 @@ const faqCategories: FAQCategory[] = [
       {
         question: "What is INDXR.AI and what can I use it for?",
         answer:
-          "INDXR.AI is a web-based tool for extracting transcripts from YouTube videos. You can use it to download captions as text files, generate subtitles in SRT or VTT format, process entire playlists at once, and transcribe videos that don't have captions using AI. Content creators use it to repurpose video content into blog posts. Researchers use it to analyze interview data. Students use it to create study notes from lecture videos.",
+          "INDXR.AI is a web-based tool for extracting transcripts from YouTube videos. You can use it to download captions as text files, generate subtitles in SRT or VTT format (the two standard subtitle-file types that video players and editors read), process entire playlists at once, and transcribe videos that don't have captions using AI. Content creators use it to repurpose video content into blog posts. Researchers use it to analyze interview data. Students use it to create study notes from lecture videos.",
       },
       {
         question: "Does INDXR.AI work without installing a Chrome extension?",
@@ -103,7 +103,7 @@ const faqCategories: FAQCategory[] = [
       {
         question: "What export formats are available?",
         answer:
-          "INDXR.AI supports: TXT (with or without timestamps), SRT, VTT, CSV, Markdown, and RAG-optimized JSON. All formats are available for both YouTube caption extraction and AI transcription.",
+          "INDXR.AI supports: TXT (plain text, with or without timestamps), SRT and VTT (subtitle files that video players and editors read), CSV (a spreadsheet table you can open in Excel or Google Sheets), Markdown (lightly formatted plain text), and RAG-optimized JSON (structured so it can be fed straight into AI search tools and chatbots). All formats are available for both YouTube caption extraction and AI transcription.",
       },
       {
         question: "How long does transcript extraction take?",

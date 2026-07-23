@@ -100,7 +100,7 @@ export default function GettingStartedPage() {
           <p>Click Copy to copy the full transcript to your clipboard, or Download to save it as a TXT file. Both are free and require no account.</p>
         </TutorialStep>
         <WhatJustHappened>
-          INDXR fetched the video&apos;s auto-captions from YouTube using yt-dlp and returned them as clean text. If the video doesn&apos;t have captions, you&apos;d see a message offering AI transcription — that uses 1 credit per minute and requires an account.
+          INDXR fetched the video&apos;s auto-captions from YouTube using yt-dlp — an open-source tool that pulls the caption track straight from the video — and returned them as clean text. If the video doesn&apos;t have captions, you&apos;d see a message offering AI transcription — a paid service that writes out the words from the audio — which uses 1 credit per minute and requires an account.
         </WhatJustHappened>
         <NextStepsBlock
           steps={[

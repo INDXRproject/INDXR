@@ -60,7 +60,8 @@ export default function DocsLibraryPage() {
 
         <AnchorHeading as="h2">Search finds a transcript by title</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Search matches on the transcript&apos;s title and video ID, not the body text. It&apos;s for
+          Search matches on the transcript&apos;s title and its video ID — the string of characters that
+          identifies a YouTube video — not the body text. It&apos;s for
           finding the right transcript quickly, not searching inside them — type a few letters of the
           title and the list narrows as you go.
         </p>
@@ -68,15 +69,17 @@ export default function DocsLibraryPage() {
         <AnchorHeading as="h2">Deleting, and how much space you use</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Delete a single transcript from its page, or select several in the list and delete them
-          together; both ask you to confirm first. A storage meter in the sidebar shows how much your
-          saved transcripts add up to, so you can see your library&apos;s footprint at a glance.
+          together; both ask you to confirm first. A storage meter on your{" "}
+          <a className="text-[var(--accent)] hover:underline" href="/docs/account/settings">account page</a>{" "}
+          shows how much your saved transcripts add up to, so you can see your library&apos;s footprint at
+          a glance.
         </p>
 
         <SourcesBlock
           sources={[
             { publisher: "INDXR (own code)", supports: "original vs edited stored separately; reset to original", verifiedAgainst: "supabase/migrations/20260630155944_baseline.sql:41,52 (transcript / edited_content); apps/app/src/components/library/TranscriptViewer.tsx:440-443,618-647" },
             { publisher: "INDXR (own code)", supports: "collections, search by title/video_id, single + bulk delete", verifiedAgainst: "supabase/migrations/20260630155944_baseline.sql:64-70 (collections); apps/app/src/app/dashboard/library/page.tsx:79-82; apps/app/src/components/library/TranscriptList.tsx:252-264,355-356" },
-            { publisher: "INDXR (own code)", supports: "sidebar storage meter", verifiedAgainst: "apps/app/src/components/app-sidebar.tsx:165-169,620-625" },
+            { publisher: "INDXR (own code)", supports: "account-page storage meter (real library_bytes)", verifiedAgainst: "apps/app/src/components/dashboard/account/StorageMeterCard.tsx; apps/app/src/app/dashboard/account/page.tsx" },
           ]}
         />
         <RelatedTopicsList

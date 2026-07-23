@@ -67,10 +67,12 @@ export default function DocsUploadsPage() {
 
         <AnchorHeading as="h2">What happens to your file</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Your file goes straight to the transcription server, not through the website&apos;s size
-          limit, so large files work. Once transcription finishes, the temporary file is deleted from
-          the server in the same step — only the transcript text is kept, in your library. There is no
-          retention window: the audio is removed as soon as it is processed.
+          Websites normally cap how big a file you can send them, which would block a large recording.
+          To avoid that, your file goes straight to the transcription server instead of passing through
+          the website — so large files work. Once transcription finishes, the temporary file (the copy
+          the server keeps only while it is working) is deleted in the same step — only the transcript
+          text is kept, in your library. Nothing is stored for later: the audio is removed as soon as it
+          is processed.
         </p>
 
         <SourcesBlock

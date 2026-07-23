@@ -49,7 +49,8 @@ export default function DocsTxtPage() {
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Plain text (TXT)</h1>
         <DefinitionLeadOpening>
           The TXT export gives you the transcript as plain text in two variants: continuous
-          paragraphs, or one line per segment prefixed with an <code>HH:MM:SS</code> timestamp. It is
+          paragraphs, or one line per segment — each short, timed chunk the transcript is split into —
+          prefixed with an <code>HH:MM:SS</code> (hours:minutes:seconds) timestamp. It is
           the only format available without an account.
         </DefinitionLeadOpening>
 

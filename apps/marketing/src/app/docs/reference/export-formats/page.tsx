@@ -85,9 +85,10 @@ export default function DocsExportFormatsPage() {
             one below. <Link className={linkClass} href="/docs/reference/export-formats/json">Read more →</Link>
           </p>
           <p>
-            <strong>RAG JSON</strong> — the transcript pre-split into overlapping chunks with deep
-            links, ready for a vector database (the store behind retrieval-augmented generation). Use it
-            when you&apos;re embedding transcripts for AI search. It&apos;s the one export that costs
+            <strong>RAG JSON</strong> — the transcript pre-split into overlapping chunks, each with a
+            deep link (a link that jumps straight to that moment in the video), ready for a vector
+            database (the store behind retrieval-augmented generation). Use it when you&apos;re loading
+            transcripts into an AI search system. It&apos;s the one export that costs
             credits. <Link className={linkClass} href="/docs/reference/export-formats/json">Read more →</Link>
           </p>
         </div>

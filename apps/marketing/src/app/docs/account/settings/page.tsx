@@ -39,8 +39,9 @@ export default function DocsSettingsPage() {
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Settings</h1>
         <DefinitionLeadOpening>
           Settings is where you adjust how INDXR looks and behaves for you. Most of it you can leave on
-          the defaults; the two worth knowing about are the RAG chunk size, if you export for a vector
-          database, and account deletion. Each setting is described below with its options.
+          the defaults; the two worth knowing about are the RAG chunk size — which only matters if you
+          export transcripts for AI-powered search — and account deletion. Each setting is described below
+          with its options.
         </DefinitionLeadOpening>
 
         <AnchorHeading as="h2">Email preferences</AnchorHeading>
@@ -59,10 +60,12 @@ export default function DocsSettingsPage() {
 
         <AnchorHeading as="h2">RAG chunk size</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          This is the default length of the chunks in a RAG JSON export — the pieces a transcript is
-          split into for a vector database. Shorter chunks are tighter and better for pulling exact
-          quotes; longer chunks keep more surrounding context per piece. The default is 60 seconds, and
-          you can override it per export.
+          This is the default length of the chunks in a RAG JSON export. RAG (retrieval-augmented
+          generation) is the technique of feeding an AI only the most relevant snippets of a text, and
+          chunks are the pieces a transcript is split into so a vector database — a store that finds text
+          by meaning rather than by exact words — can look them up. Shorter chunks are tighter and better
+          for pulling exact quotes; longer chunks keep more surrounding context per piece. The default is
+          60 seconds, and you can override it per export.
         </p>
         <DocsTable>
           <thead>
