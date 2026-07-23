@@ -12383,3 +12383,34 @@ apps/marketing/src/lib/docs-config.ts
 docs/LESSONS.md
 docs/LOG.md
 ---
+[2026-07-23 17:08] commit: feat(hero): wire mobile 4:5 art-direction variant into HeroImage
+
+The mobile hero files (already committed as assets) are now served. Each <picture>
+gets three mobile <source> rows at the top with media="(max-width: 767px)", before
+the desktop sources (first matching source wins, so order is functional):
+  1-3. mobile AVIF / WebP / JPEG  (4:5 crop; JPEG ships 430/1290, AVIF+WebP 430/860/1290)
+  4-5. desktop AVIF / WebP        (1392/2088/2784)
+  6.   img JPEG fallback          (desktop 1392/2784)
+The mobile JPEG source is needed so a phone without AVIF and WebP doesn't fall through
+to the desktop JPEG. sizes="100vw" on all sources; fetchPriority="high" on the img.
+
+Aspect-ratio is now fixed per breakpoint: aspect-[4/5] md:aspect-[1392/752] (Tailwind md
+= 768px, the same 767/768 boundary as the media queries). No layout shift: the section is
+min-h-screen and the hero is absolute inset-0 (out of flow), so its height never drives
+the section — neither at load nor when crossing the breakpoint.
+
+Width-check: the hero container is absolute inset-0 in a w-full, no-horizontal-padding
+section → full viewport width (100vw) on mobile. On a 430px phone the 1290 variant covers
+3x DPR, so 1290 stays in the srcset. No *-master.png / _alt-square-* strays remain.
+
+Docs: hero-images.md gains the mobile crop-box (1533,0,3867,2917 → 2334x2917, 4:5;
+widths 430/860/1290; breakpoint 767px). LESSONS: never git add -A with two sessions on
+one working tree — stage explicit paths, check a clean tree at task start.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/components/marketing/HeroImage.tsx
+docs/LESSONS.md
+docs/wiki/design/hero-images.md
+---

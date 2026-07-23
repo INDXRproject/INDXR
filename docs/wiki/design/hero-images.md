@@ -52,9 +52,29 @@ een `<img>` (JPEG-fallback) met `srcSet` op de breedtes en `sizes="100vw"`.
   fetchpriority verliest op het LCP-element en (b) resolutie-descriptoren (1x/2x) gebruikt i.p.v. de
   gevraagde breedte-srcset. Geen ADR nodig (dat was alleen voor de background-image-route).
 
-## Voor de mobiele varianten (nog te maken)
+## Mobiele varianten (geïmplementeerd)
 
-Gebruik dezelfde bronketen en nacht-grade. De crop-box zal anders zijn (portret/vierkanter kader),
-maar zwartpunt 9 / gamma 1.70 / randvignette blijven gelijk zodat mobiel en desktop bij elkaar
-horen. Lever opnieuw AVIF/WebP/JPEG en breid `HeroImage` uit met een `<source media="...">` of een
-aparte mobiele `<picture>`.
+Onder **767px** serveert de hero een **4:5-uitsnede** van hetzelfde beeld — art direction, geen
+resolutie-variant. Zelfde bronketen en nacht-grade (zwartpunt 9 / gamma 1.70 / randvignette blijven
+gelijk zodat mobiel en desktop bij elkaar horen).
+
+- **Mobiele crop-box:** box **(1533, 0, 3867, 2917)** op de desktopmaster → **2334×2917, ratio 4:5**.
+  Geldt ongewijzigd voor licht en donker; de bronbeelden zijn pixelgelijk.
+- **Exportbreedtes:** 430 / 860 / 1290 (1x / 2x / 3x). Bestanden `hero-{light,dark}-mobile-{430,860,1290}.{avif,webp}`
+  + JPEG-fallback op **430 / 1290** (geen 860-JPEG).
+- **Breakpoint: 767px** — media-attribuut `(max-width: 767px)` op de mobiele `<source>`-regels; de
+  aspect-ratio wisselt op dezelfde grens via `aspect-[4/5] md:aspect-[1392/752]` (Tailwind `md` = 768px).
+
+Elk `<picture>` krijgt bovenaan **drie** mobiele `<source>`-regels (AVIF → WebP → **JPEG**), vóór de
+desktop-sources. De mobiele JPEG-source is nodig omdat de `<img>`-fallback (desktop-JPEG) anders op een
+telefoon zónder AVIF én WebP de desktop-uitsnede zou serveren — kleine groep, maar dan klopt de keten.
+Volgorde binnen elk `<picture>` is functioneel: de browser pakt de eerste matchende source.
+
+**Breedte-check:** de hero-container is `absolute inset-0` in een `w-full`-sectie zonder horizontale
+padding → **volle viewport-breedte (100vw)** op mobiel. Op een 430px-toestel dekt de 1290-variant 3x
+DPR; daarom blijft 1290 in de srcset.
+
+**Geen layout shift:** de sectie is `min-h-screen` en de hero is `absolute inset-0` (uit de flow), dus
+de hoogte van de sectie hangt niet van het beeld af — noch bij het laden, noch bij het passeren van de
+768px-grens (waar de uitsnede/ratio wisselt) verschuift er iets. De `aspect-[…]`-classes leggen de
+geserveerde ratio per breakpoint vast als hint.
