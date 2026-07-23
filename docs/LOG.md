@@ -11825,3 +11825,30 @@ apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 11:30] commit: fix(content): replace 9 live placeholder FAQ answers + drop unsourced 20% stat
+
+LIVE PLACEHOLDERS rendering '[placeholder — Khidr writes: ...]' on production:
+- /transcribe: 6 FAQ answers were placeholder text (one still carried stale '67
+  languages' / '99+'). Written as real, truthful answers: captions vs AI, free vs
+  signup, no-captions flow, playlist-needs-account, languages ('any language YouTube
+  provides captions for' + 'up to 99 languages' via models.ts), export formats.
+- /pricing: 3 FAQ answers were Dutch placeholder text (VAT, invoices, payment methods)
+  → written in English, truthful (VAT-inclusive, Stripe invoices per purchase, EU
+  payment methods). No hardcoded prices — policy facts only.
+
+- youtube-srt-download: 'About 20% of YouTube videos have no auto-generated captions'
+  (unsourced stat; the linked YouTube Help page doesn't state it) → 'Plenty of'.
+
+Verified in code this pass (claims confirmed TRUE, left as-is): members-only detection
+(youtube_utils.py:502-509, extract/route.ts:96, VideoTab.tsx:205 — single-video detects
++ declines, captions are free = 0 credits) and age-restriction detection
+(main.py:562, transcription_pipeline.py:129). srt's BBC/Netflix/EBU 3264 line is properly
+sourced (real URLs). Web-Clipper-broke claims are third-party and cite a forum thread.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/app/transcribe/page.tsx
+---

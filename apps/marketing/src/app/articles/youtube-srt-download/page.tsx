@@ -146,7 +146,7 @@ to understand about this topic`}</code></pre>
       <h2>When Auto-Captions Don&apos;t Exist</h2>
 
       <p>
-        About 20% of YouTube videos have no auto-generated captions — non-English content YouTube
+        Plenty of YouTube videos have no auto-generated captions — non-English content YouTube
         hasn&apos;t processed, videos from smaller creators, older uploads, content with poor audio
         quality (
         <a

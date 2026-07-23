@@ -19,27 +19,27 @@ import { transcriptionModelName } from "@indxr/shared/lib/models"
 const faqItems: FAQItem[] = [
   {
     question: "What's the difference between auto-captions and AI transcription?",
-    answer: "[placeholder — Khidr writes: auto-captions are extracted from YouTube's subtitle track (free, instant). AI transcription uses AssemblyAI to generate a transcript from the audio when no captions exist (1 credit/minute).]",
+    answer: "Auto-captions are read from YouTube's subtitle track — free and instant. AI transcription uses AssemblyAI to generate a transcript from the audio when no captions exist, at 1 credit per minute.",
   },
   {
     question: "Why would I sign up if the tool is free?",
-    answer: "[placeholder — Khidr writes: free tier covers single videos with auto-captions. Signing up gives you 25 credits (no card needed), playlists, AI transcription, non-TXT export formats, and your personal library.]",
+    answer: "The free tier covers single videos with auto-captions. Signing up (free, no card) adds 25 credits, playlists, AI transcription, every export format beyond TXT, and your personal library.",
   },
   {
     question: "What if my video doesn't have captions?",
-    answer: "[placeholder — Khidr writes: INDXR detects this upfront and offers AI transcription. You see the exact credit cost before confirming. No surprise charges.]",
+    answer: "INDXR detects this up front and offers AI transcription instead. You see the exact credit cost before confirming — no surprise charges.",
   },
   {
     question: "Can I extract a full playlist without an account?",
-    answer: "[placeholder — Khidr writes: playlist extraction requires a free account. Signing up is free and includes 25 credits. No credit card needed.]",
+    answer: "Playlist extraction needs a free account. Signing up is free, includes 25 credits, and needs no credit card.",
   },
   {
     question: "What languages are supported?",
-    answer: `[placeholder — Khidr writes: auto-caption extraction supports 67 languages (any YouTube supports). For AI transcription, INDXR automatically uses the best model for the language — our highest-quality model, ${transcriptionModelName()}, for supported languages, with broad coverage across 99+ languages and automatic detection. See /docs/reference/accuracy.]`,
+    answer: `Auto-caption extraction works for any language YouTube provides captions for. For AI transcription, INDXR automatically picks the best model for the language — up to 99 languages with automatic detection, powered by ${transcriptionModelName()}.`,
   },
   {
     question: "What export formats can I get?",
-    answer: "[placeholder — Khidr writes: TXT (free, no account), Markdown, CSV, SRT, VTT, JSON, RAG-optimized JSON (all require free account). See /docs/reference/export-formats.]",
+    answer: "TXT is free and needs no account. Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON are all available with a free account.",
   },
 ]
 

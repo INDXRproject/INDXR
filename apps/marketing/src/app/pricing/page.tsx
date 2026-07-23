@@ -47,15 +47,15 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "How is VAT handled?",
-    answer: "[placeholder — Khidr writes: alle prijzen zijn inclusief BTW. Stripe past het correcte BTW-tarief toe op basis van je land bij afrekenening.]",
+    answer: "All prices include VAT. Stripe applies the correct VAT rate for your country at checkout.",
   },
   {
     question: "Can I get an invoice for business use?",
-    answer: "[placeholder — Khidr writes: ja, Stripe genereert automatisch een factuur op elke aankoop. Je ontvangt deze via e-mail na betaling.]",
+    answer: "Yes — Stripe automatically generates an invoice for every purchase, emailed to you after payment. Your purchase history is also on your account page.",
   },
   {
     question: "What payment methods are supported?",
-    answer: "[placeholder — Khidr writes: credit/debit cards, iDEAL, Bancontact, en andere betaalmethoden die Stripe ondersteunt in de EU.]",
+    answer: "Credit and debit cards, iDEAL, Bancontact, and the other payment methods Stripe supports in the EU.",
   },
 ]
 
