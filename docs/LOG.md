@@ -12115,3 +12115,8 @@ apps/marketing/src/app/docs/reference/accuracy/page.tsx
 apps/marketing/src/app/docs/reference/export-formats/csv/page.tsx
 apps/marketing/src/app/docs/reference/export-formats/vtt/page.tsx
 ---
+[2026-07-23 12:19] commit: docs: night report — full per-page item-6 docs-readability report (changed vs no-change + quotes)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
+---

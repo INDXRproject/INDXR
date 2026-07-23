@@ -470,3 +470,46 @@ gewenst.
 7. *(VAT)* — "All prices include VAT. Stripe applies the correct VAT rate for your country at checkout."
 8. *(Invoices)* — "Yes — Stripe automatically generates an invoice for every purchase, emailed to you after payment. Your purchase history is also on your account page."
 9. *(Payment methods)* — "Credit and debit cards, iDEAL, Bancontact, and the other payment methods Stripe supports in the EU."
+
+---
+
+# ITEM 6 — volledige docs-herschrijf, per pagina (élke pagina helemaal gelezen, per-H2 beoordeeld)
+
+Methode: elke docs-pagina volledig gelezen (niet alleen de opening) en per H2-sectie beoordeeld —
+*legt dit de term uit aan iemand die hem niet kent, of veronderstelt het voorkennis?* Herschreven
+waar het tweede geldt; feiten onaangeraakt (getallen/formaten/kosten geverifieerd behouden).
+Commits: `de42b1e` (wave 1) + `05fd156` (wave 2). Eerdere sessie: `86d82cd`/`8c98ae6` (srt/csv/vtt
+opening-warm-up), en accuracy/credits/billing waren al door mij naar het contract geschreven.
+
+**Gewijzigd (term nu uitgelegd bij eerste gebruik):**
+- `reference/limits` — "job", "concurrent jobs", "rate limit / per IP", "REST API" geglosseerd (4×).
+- `reference/export-formats/json` — opening vuurde RAG/chunk/token-estimate/deep-link/vector-DB
+  tegelijk af, "RAG" nooit uitgeschreven → elk in een halve zin uitgelegd.
+- `reference/export-formats` (hub) — "deep link" + "embedding" uitgelegd.
+- `reference/export-formats/txt` — "segment" + `HH:MM:SS` voluit.
+- `reference/export-formats/csv` — "0-based" → "counted from 0 (the first segment is 0)".
+- `reference/export-formats/vtt` — "re-segmentation" + "cue" bij eerste body-gebruik.
+- `reference/accuracy` — "AssemblyAI" geglosseerd ("the speech-recognition service INDXR uses"); géén
+  eigen accuracy-% heringevoerd.
+- `account/settings` — "RAG chunk size" + "vector database" (C11b's archetype-term).
+- `account/credits` — "RAG JSON" bij eerste gebruik.
+- `account/billing` — "Stripe", "VAT", "One Stop Shop" elk geglosseerd.
+- `how-indxr-works` — "RAG JSON for retrieval systems" → gewone taal.
+- `guides/uploads` — "website's size limit" + retentie uitgelegd.
+- `guides/library` — "video ID" geglosseerd; **plus een stale feit gefixt**: de opslagmeter verhuisde
+  deze run van de sidebar naar de account-pagina → tekst + SourcesBlock bijgewerkt.
+- `faq` — SRT/VTT/CSV/Markdown/RAG-JSON geglosseerd in de twee formaat-antwoorden.
+- `quickstart` — "yt-dlp" + "AI transcription" geglosseerd in "what just happened".
+
+**Geen wijziging nodig (legt de termen al uit — citaat van de beoordeelde passage):**
+- `guides/single-video` — "INDXR reads the captions YouTube already has — the text track that plays as subtitles".
+- `reference/export-formats/markdown` — "an optional YAML frontmatter block with the video's metadata".
+- `guides/summaries` — "turns an hour of talking into something you can read in a minute".
+- `reference/export-formats/srt` — "SRT uses a comma before the milliseconds … (the difference from VTT, which uses a dot)".
+- `guides/playlists` — al herschreven eerder deze sessie (ADR-076-ronde).
+- `/docs` (hub) — navigatiegrid, geen prozasecties om te beoordelen.
+
+**Nog steeds bekende gap (niet in scope van item 6, gemeld):** `AssemblyAI` blijft in enkele
+FAQ-/artikel-zinnen een kale merknaam waar de zin ook zonder de gloss leest ("transcribe the audio
+using AssemblyAI"); de docs-accuracy-pagina glost hem nu wél. Strengere gloss overal = smaakkeuze
+voor Khidr.
