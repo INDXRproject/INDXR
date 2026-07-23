@@ -21,6 +21,7 @@ export default function TranscribePage() {
   const [showSaveError, setShowSaveError] = useState(false)
   const [saveErrorMessage, setSaveErrorMessage] = useState("")
   const [pendingSave, setPendingSave] = useState<{ transcript: TranscriptItem[], metadata: TranscriptMetadata } | null>(null)
+  const [storageFull, setStorageFull] = useState(false)
 
   const supabase = createClient()
 
@@ -93,6 +94,16 @@ export default function TranscribePage() {
         
         error = result.error
       } else {
+        // Storage limit — block a NEW transcript when the library is at/over the cap. This is the
+        // free caption path; the paid paths (AI transcription, upload, playlist) are already blocked
+        // server-side before reservation. Editing/replacing an existing transcript (the update branch
+        // above) is never blocked, and no credits are involved here.
+        const { data: full } = await supabase.rpc('library_storage_is_full', { p_user_id: user.id })
+        if (full) {
+          setStorageFull(true)
+          return
+        }
+
         // Normal Insert
         const insertPayload: Record<string, unknown> = {
             user_id: user.id,
@@ -372,6 +383,20 @@ export default function TranscribePage() {
        </div>
 
        <ActiveJobsIndicator />
+
+       {storageFull && (
+         <div className="rounded-xl border border-error/20 bg-error-subtle px-4 py-3 flex items-start justify-between gap-3">
+           <div>
+             <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full — this transcript wasn&apos;t saved.</p>
+             <p className="text-sm text-fg-subtle mt-1">
+               You can still copy or export it above. To save new transcripts, delete some from your{" "}
+               <a href="/dashboard/library" className="text-accent hover:underline">library</a>, or buy more space on your{" "}
+               <a href="/dashboard/account" className="text-accent hover:underline">account page</a>. Your existing transcripts are safe.
+             </p>
+           </div>
+           <button onClick={() => setStorageFull(false)} className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none" aria-label="Dismiss">✕</button>
+         </div>
+       )}
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
         <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-surface-elevated h-auto rounded-xl">

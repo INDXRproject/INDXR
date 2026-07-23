@@ -12174,3 +12174,29 @@ supabase/migrations/20260723140000_library_storage_limit.sql
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 14:07] commit: fix(storage): block the FREE caption save when the library is full (the reported gap)
+
+Reported: a user already at 195 MB of 100 MB could keep making transcripts that saved
+to their library, making 'buy space' pointless. Cause: the first pass only enforced the
+PAID paths (AI transcription/upload/playlist, before reserve). The free caption path
+saves client-side via handleTranscriptLoaded and had no check — so captions leaked
+through.
+
+Fix: at the save choke point (handleTranscriptLoaded in both /transcribe pages), call
+library_storage_is_full BEFORE the NEW-transcript INSERT; if full, skip the save and show
+an inline card (no toast) — the transcript still shows so it can be copied/exported.
+Only NEW inserts are blocked; editing/replacing an existing transcript is not. No credits
+are involved on this path.
+
+Deliberately NOT a blocking INSERT trigger: it could fail an already-reserved paid insert
+on a check↔insert race → credit loss (LESSONS 2026-07-22). Paid paths stay enforced
+server-side before reserve.
+
+Verified: the one currently-full account (195.4 MiB) reports is_full=true, so its caption
+saves are now blocked. Both apps build green. ADR-078 updated with the correction.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/transcribe/page.tsx
+apps/marketing/src/app/transcribe/page.tsx
+docs/wiki/decisions/078-library-storage-limit-credit-sink.md
+---

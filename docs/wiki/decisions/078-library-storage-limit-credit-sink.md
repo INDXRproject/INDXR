@@ -45,9 +45,18 @@ credit-sink, zonder de financiële reserverings-/afrekeningsroute te raken.
 - Bestaande gebruikers boven 100 MB kunnen geen **nieuwe** transcripten meer maken tot ze er
   verwijderen of ruimte bijkopen; hun bestaande transcripten blijven onaangeroerd.
 - De limiet verschilt per gebruiker (basis + bonus) en leeft in de DB.
-- De vrije caption-save (client-side) wordt via de UI geblokkeerd bij vol; de harde server-side
-  handhaving zit op de betaalde paden (waar het geldrisico zit). Een client die de UI omzeilt kan
-  alleen zijn **eigen** library vullen (RLS) — geen geldrisico.
+- De vrije caption-save wordt geblokkeerd op het **save-choke-point** (`handleTranscriptLoaded` in
+  beide `/transcribe`-pagina's): vóór de client-side INSERT roept het `library_storage_is_full` aan
+  en slaat bij vol niet op — het transcript blijft zichtbaar (kopiëren/exporteren kan), met een
+  inline kaart (geen toast). Alléén een **nieuwe** insert wordt geblokkeerd; het bewerken/vervangen
+  van een bestaand transcript niet. De harde server-side handhaving zit op de betaalde paden (waar
+  het geldrisico zit) vóór de reservering. **Bewust geen blokkerende INSERT-trigger**: die zou een
+  al-gereserveerde betaalde insert kunnen laten falen bij een race tussen check en insert →
+  credit-verlies (LESSONS 2026-07-22). Een client die de UI omzeilt kan alleen zijn **eigen** library
+  vullen (RLS) — geen geldrisico.
+- **Correctie 2026-07-23:** in de eerste versie was de caption-save (gratis pad) NIET geblokkeerd —
+  alleen de betaalde paden. Een gebruiker die al over de limiet zat kon gewoon captions blijven
+  opslaan. Gefixt door de check op het save-choke-point (hierboven).
 - Prod-getest: op 100 MiB is de zwaarste bestaande gebruiker (204 MB) correct "full"; kopen van een
   blok deed 250→150 credits, +100 MiB bonus, cap 100→200 MiB, en zette "full" op false; onvoldoende
   saldo werd atomair geweigerd zonder mutatie.

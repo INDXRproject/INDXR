@@ -48,6 +48,7 @@ export default function FreeToolPage() {
   const [showPlaylistFriction, setShowPlaylistFriction] = useState(false)
   const [user, setUser] = useState<unknown>(null)
   const [hasMounted, setHasMounted] = useState(false)
+  const [storageFull, setStorageFull] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -76,6 +77,11 @@ export default function FreeToolPage() {
       const characterCount = transcript.reduce((acc, item) => acc + item.text.length, 0)
       const videoId = metadata.videoId || ""
       const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null
+
+      // Storage limit — block a NEW transcript when the library is full (free caption path; paid
+      // paths are blocked server-side before reserve). No credits involved here.
+      const { data: full } = await supabase.rpc("library_storage_is_full", { p_user_id: (user as { id: string }).id })
+      if (full) { setStorageFull(true); return }
 
       await supabase.from("transcripts").insert({
         user_id: (user as { id: string }).id,
@@ -106,6 +112,18 @@ export default function FreeToolPage() {
         <p className="text-[var(--fg-muted)] mb-10 text-lg max-w-2xl mx-auto">
           Extract YouTube transcripts instantly. Free for videos with captions. AI transcription for videos without. Export as TXT, Markdown, SRT, VTT, CSV, JSON, or RAG-ready. No extension needed.
         </p>
+
+        {storageFull && (
+          <div className="mb-6 text-left rounded-xl border border-[var(--error)]/20 bg-[var(--error-subtle)] px-4 py-3 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-[var(--error-fg)]">Your library is full — this transcript wasn&apos;t saved.</p>
+              <p className="text-sm text-[var(--fg-subtle)] mt-1">
+                You can still copy or export it below. To save new transcripts, delete some from your library, or buy more space on your account page. Your existing transcripts are safe.
+              </p>
+            </div>
+            <button onClick={() => setStorageFull(false)} className="text-[var(--fg-muted)] hover:text-[var(--fg)] shrink-0 text-xs leading-none" aria-label="Dismiss">✕</button>
+          </div>
+        )}
 
         <Tabs
           value={activeTab}
