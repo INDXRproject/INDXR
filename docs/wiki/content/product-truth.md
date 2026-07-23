@@ -109,7 +109,11 @@ YouTube's auto-vertaalde tracks worden vermeden door tracks te kiezen waarvan de
 | JSON (segmenten + metadata, **gratis**) | inline `JSON.stringify` | `TranscriptViewer.tsx:511-523` |
 | **RAG-JSON** (chunked, deep-links, overlap, **betaald**) | `buildRagJson` / `buildRagChunks` | `:516,:283` |
 
-**Geen** ZIP/bulk multi-file format-export voor users (de "bulk" in de app = playlist-batch + een admin-credits-CSV, niet user-facing).
+**Bulk ZIP-export bestaat WÉL** (gecorrigeerd 2026-07-23 — deze regel zei eerder "geen"; dat klopte niet tegen de code). In de **library** kun je meerdere transcripten selecteren en als **ZIP met één bestand per transcript** downloaden:
+- Vrije formaten (TXT/TXT-ts/MD/MD-ts/CSV/SRT/VTT/JSON) → `handleBatchDownload` (`apps/app/src/components/library/TranscriptList.tsx:469-499`, `BatchFormat`-type `:469`).
+- **RAG-JSON-bulk-ZIP** (betaald, per transcript afgerekend via `bulkDeductRagExportCreditsAction`) → `handleBulkRagExecute` (`TranscriptList.tsx:403-467`).
+
+Wat er **niet** is: een server-side **merged-single-file** export (één samengevoegd CSV/JSON over alle video's). Elk transcript blijft een apart bestand ín de ZIP. De ZIP komt uit de **library-multiselect**, niet uit een "playlist results page".
 
 ---
 

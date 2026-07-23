@@ -12036,3 +12036,18 @@ and body, /docs/quickstart link present.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: supabase/migrations/20260723120000_merge_welcome_message.sql
 ---
+[2026-07-23 12:07] commit: docs(wiki): correct product-truth §3 (ZIP export DOES exist) + LESSONS note
+
+product-truth §3 stated 'Geen ZIP/bulk multi-file format-export voor users' — false
+against the code. Bulk ZIP export exists via library multi-select
+(TranscriptList.tsx:403 handleBulkRagExecute, :469-499 handleBatchDownload); only a
+merged-single-file export is absent. Corrected the wiki with the code references.
+
+LESSONS: the wiki is a derived artifact that can go stale — on a wiki-vs-code conflict
+the code wins and the wiki is updated (not the reverse); verify a wiki 'fact' against
+the code before writing it into content, especially an emphatic 'no X'.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/wiki/content/product-truth.md
+---
