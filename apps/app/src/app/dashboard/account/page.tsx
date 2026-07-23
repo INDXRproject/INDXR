@@ -4,6 +4,7 @@ import { ProfileSettingsCard } from "@/components/dashboard/settings/ProfileSett
 import { TransactionHistoryCard } from "@/components/dashboard/settings/TransactionHistoryCard"
 import { PurchaseHistoryCard, PurchaseRow } from "@/components/dashboard/billing/PurchaseHistoryCard"
 import { SentryFeedbackCard } from "@/components/dashboard/settings/SentryFeedbackCard"
+import { StorageMeterCard } from "@/components/dashboard/account/StorageMeterCard"
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -25,6 +26,15 @@ export default async function AccountPage() {
     .single()
   const parsedCredits = creditsData as { credits?: number }
   const credits = parsedCredits?.credits || 0
+
+  // Real library footprint from the DB byte-meter (RLS: own row). Shown against the display
+  // limit in LIBRARY_STORAGE_LIMIT_MB — no enforcement, see StorageMeterCard.
+  const { data: ucRow } = await supabase
+    .from("user_credits")
+    .select("library_bytes")
+    .eq("user_id", user.id)
+    .single()
+  const libraryBytes = (ucRow as { library_bytes?: number } | null)?.library_bytes ?? 0
 
   // Fetch transaction history (volledige credit-ledger)
   const { data: transactions } = await supabase
@@ -57,6 +67,7 @@ export default async function AccountPage() {
             credit-ledger (balans + verbruik) — twee duidelijk gescheiden lenzen. */}
         <PurchaseHistoryCard purchases={purchases} />
         <TransactionHistoryCard transactions={transactions || []} credits={credits} />
+        <StorageMeterCard libraryBytes={libraryBytes} />
         <SentryFeedbackCard userId={user.id} email={user.email} />
       </div>
     </div>

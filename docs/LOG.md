@@ -11992,3 +11992,25 @@ Both apps build green.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/app-sidebar.tsx
 ---
+[2026-07-23 12:02] commit: feat(account): library storage meter (real bytes, 100 MB display, one constant)
+
+The storage meter was removed from the sidebar and lived nowhere. Added it to
+/dashboard/account, below the credit/transaction card. Improvements over the old one:
+- Reads the REAL byte footprint (user_credits.library_bytes, the trigger-maintained
+  octet_length total) instead of the character_count approximation.
+- Displays against 100 MB (the intended value, was 500), from a single shared constant
+  LIBRARY_STORAGE_LIMIT_MB in packages/shared/src/lib/storage.ts — so no second number
+  can drift into the UI again. The DB's real (unenforced) 5 GiB cap is surfaced in that
+  file's comment + LIBRARY_STORAGE_DB_CAP_BYTES, not hidden.
+- No enforcement built. WHAT ACTUALLY HAPPENS ON OVERFLOW: nothing — the DB
+  library_bytes_cap (5 GiB) is unenforced (migration 20260711100400: 'Meter only: NO
+  hard block'), and the 100 MB display is a soft guide. The card says so, and there is
+  no server-side quota block anywhere.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/account/page.tsx
+apps/app/src/components/dashboard/account/StorageMeterCard.tsx
+packages/shared/src/lib/storage.ts
+---
