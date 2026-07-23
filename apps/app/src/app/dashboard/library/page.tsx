@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@indxr/shared/components/ui/dropdown-menu";
-import { Search, LayoutGrid, List as ListIcon, Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Folder } from "lucide-react";
+import { Search, LayoutGrid, List as ListIcon, Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight, Folder } from "lucide-react";
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { TranscriptList, Transcript } from "@/components/library/TranscriptList";
@@ -28,6 +28,24 @@ interface Collection {
 type SortBy = "date" | "duration" | "title";
 
 const DEFAULT_PAGE_SIZE = 50;
+
+// Compact page list: first, last, current ±1, ellipses for larger gaps. A single-page
+// gap is filled with the number instead of a "…" (so we show 1 2 3, never 1 … 3).
+function paginationRange(current: number, total: number): (number | "ellipsis")[] {
+  const shown = [...new Set([1, total, current - 1, current, current + 1])]
+    .filter((p) => p >= 1 && p <= total)
+    .sort((a, b) => a - b);
+  const out: (number | "ellipsis")[] = [];
+  for (let i = 0; i < shown.length; i++) {
+    out.push(shown[i]);
+    if (i < shown.length - 1) {
+      const gap = shown[i + 1] - shown[i];
+      if (gap === 2) out.push(shown[i] + 1);
+      else if (gap > 2) out.push("ellipsis");
+    }
+  }
+  return out;
+}
 
 // Inner component reads searchParams
 function LibraryContent() {
@@ -51,7 +69,6 @@ function LibraryContent() {
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const [pageSize, setPageSize]   = useState(DEFAULT_PAGE_SIZE);
   const [totalCount, setTotalCount] = useState(0);
-  const [jumpValue, setJumpValue] = useState("");
 
   const supabase = createClient();
 
@@ -168,12 +185,6 @@ function LibraryContent() {
   };
 
   const handleSortChange = (v: SortBy) => { setSortBy(v); if (page !== 1) goToPage(1, { replace: true }); };
-
-  const handleJump = () => {
-    const n = parseInt(jumpValue, 10);
-    if (!Number.isNaN(n)) goToPage(Math.min(totalPages, Math.max(1, n)));
-    setJumpValue("");
-  };
 
   // Bug 4: Resolve collected name for page title display
   const selectedCollectionName = selectedCollectionId
@@ -334,58 +345,41 @@ function LibraryContent() {
                 <span className="tabular-nums">
                   {rangeFrom + 1}–{Math.min(rangeFrom + pageSize, totalCount)} of {totalCount}
                 </span>
-                <div className="flex items-center gap-1.5">
+                <nav className="flex items-center gap-1" aria-label="Pagination">
                   <Button
                     variant="outline" size="icon" className="h-8 w-8"
-                    disabled={page <= 1}
-                    onClick={() => goToPage(1)}
-                    aria-label="First page"
-                  >
-                    <ChevronsLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline" size="sm" className="h-8"
                     disabled={page <= 1}
                     onClick={() => goToPage(page - 1)}
+                    aria-label="Previous page"
                   >
-                    <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="tabular-nums px-1 whitespace-nowrap">Page {page} / {totalPages}</span>
-                  <Button
-                    variant="outline" size="sm" className="h-8"
-                    disabled={page >= totalPages}
-                    onClick={() => goToPage(page + 1)}
-                  >
-                    Next <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+                  {paginationRange(page, totalPages).map((item, i) =>
+                    item === "ellipsis" ? (
+                      <span key={`e${i}`} className="px-1.5 text-fg-muted select-none">…</span>
+                    ) : (
+                      <Button
+                        key={item}
+                        variant={item === page ? "default" : "outline"}
+                        size="icon"
+                        className="h-8 w-8 tabular-nums"
+                        onClick={() => goToPage(item)}
+                        aria-label={`Page ${item}`}
+                        aria-current={item === page ? "page" : undefined}
+                      >
+                        {item}
+                      </Button>
+                    )
+                  )}
                   <Button
                     variant="outline" size="icon" className="h-8 w-8"
                     disabled={page >= totalPages}
-                    onClick={() => goToPage(totalPages)}
-                    aria-label="Last page"
+                    onClick={() => goToPage(page + 1)}
+                    aria-label="Next page"
                   >
-                    <ChevronsRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
-                  {/* Direct jump — for large libraries */}
-                  {totalPages > 5 && (
-                    <div className="flex items-center gap-1 ml-1">
-                      <Input
-                        type="number"
-                        min={1}
-                        max={totalPages}
-                        value={jumpValue}
-                        onChange={e => setJumpValue(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter") handleJump(); }}
-                        placeholder="Go to"
-                        className="h-8 w-20 text-sm"
-                        aria-label="Jump to page"
-                      />
-                      <Button variant="outline" size="sm" className="h-8" onClick={handleJump} disabled={!jumpValue}>
-                        Go
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                </nav>
               </div>
             )}
           </>

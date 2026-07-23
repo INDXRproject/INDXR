@@ -11965,3 +11965,16 @@ apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 11:53] commit: feat(library): numbered pagination with truncation (‹ 1 2 3 [4] 5 … 8 ›)
+
+Replaced the 'Go to' jump input (not a common pattern, redundant at ~8 pages) with
+numbered page buttons. Current page highlighted; first/last reachable via the numbers.
+paginationRange() shows first, last, current ±1, with '…' for larger gaps and fills a
+single-page gap with the number (never '1 … 3'). Page stays URL-backed (unchanged).
+Dropped the jump state + First/Last chevron buttons; prev/next kept as ‹ ›.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/library/page.tsx
+---
