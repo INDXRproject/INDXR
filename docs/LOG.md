@@ -11689,3 +11689,17 @@ docs/wiki/INDEX.md
 docs/wiki/decisions/077-indexation-foundation.md
 docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 11:02] commit: fix(content): source homepage speed claim to the DB, not a wiki page
+
+Correction from the night-run review. The "~5% of audio length" hero claim now
+cites the actual measurement: a direct query on transcription_jobs (status=complete,
+cache_hit=false) — n=216 runs (2026-04-13→07-20), median processing/duration = 0.0536,
+p90 = 0.124. Verified 2026-07-23. Reworded "200+ real transcriptions" → "200+
+transcription runs" and "roughly 5%" → "a median of about 5%" (latency is
+model-driven, not customer-dependent; the sample is largely internal test traffic).
+The sitemap-crawl proof now reads URLs from the live sitemap.xml (49 URLs, 0 non-200,
+0 redirects), not a hand-typed list.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/components/marketing/StatsFromTesting.tsx
+---

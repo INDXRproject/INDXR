@@ -11,10 +11,14 @@ const trustPoints: TrustPoint[] = [
   { label: "Stripe-secured payments", detail: "No card data touches our servers" },
 ]
 
-// Hero stat = a measured speed figure we can stand behind (median across 200+ real
-// AI-transcription runs, ~5% of audio length — see product-truth §6.4). The old
-// "99.4% accuracy" line had no recorded measurement and was removed; accuracy is now
-// told honestly, per language, on the accuracy page.
+// Hero stat = a measured speed figure sourced from the database, not from a wiki page.
+// Verified 2026-07-23 with a direct query on transcription_jobs (status='complete',
+// cache_hit=false): n=216 completed runs (2026-04-13 → 2026-07-20), median
+// processing_time_seconds / duration_seconds = 0.0536 (~5%), p90 = 0.124. The old
+// "99.4% accuracy / 800+ minutes" line had NO recorded measurement and was removed;
+// accuracy is now told honestly, per language, on the accuracy page. Note: the sample
+// is largely internal test traffic, but processing latency is model-driven and does not
+// depend on who submitted the job — hence "transcription runs", not "customer runs".
 export function StatsFromTesting() {
   return (
     <div className="w-full py-16 border-b border-[var(--border)]">
@@ -28,8 +32,8 @@ export function StatsFromTesting() {
             An hour of audio in minutes
           </p>
           <p className="text-[var(--fg-subtle)] max-w-xl mx-auto">
-            Across 200+ real transcriptions, AI transcription took roughly 5% of the audio&apos;s
-            length — most hour-long videos finish in a few minutes. Accuracy depends on the language:{" "}
+            Across 200+ transcription runs, AI transcription took a median of about 5% of the
+            audio&apos;s length — most hour-long videos finish in a few minutes. Accuracy depends on the language:{" "}
             <Link href="/docs/reference/accuracy" className="text-[var(--accent)] hover:underline">
               see the accuracy page
             </Link>.
