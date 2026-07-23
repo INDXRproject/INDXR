@@ -40,9 +40,10 @@ export default function DocsBillingPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Billing and invoices</h1>
         <DefinitionLeadOpening>
-          You buy credits in one-time packages — there are no subscriptions and nothing recurring. Stripe
-          handles the payment and issues a proper VAT invoice, and your invoices and purchase history live
-          on your Account page. A few countries can&apos;t buy yet, because of how VAT registration works.
+          You buy credits in one-time packages — there are no subscriptions and nothing recurring. Stripe,
+          our payment processor, handles the payment and issues a proper VAT invoice — VAT being the sales
+          tax built into EU prices. Your invoices and purchase history live on your Account page. A few
+          countries can&apos;t buy yet, because of how VAT registration works.
         </DefinitionLeadOpening>
 
         <AnchorHeading as="h2">Buying credits</AnchorHeading>
@@ -65,9 +66,10 @@ export default function DocsBillingPage() {
 
         <AnchorHeading as="h2">Where you can buy</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          We&apos;re VAT-registered in the Netherlands and through the EU&apos;s One Stop Shop, which
-          covers the EU. A few countries — including the UK and Switzerland — require a separate local VAT
-          registration from the very first sale, with no minimum. Until we do that properly, we&apos;d
+          We&apos;re VAT-registered in the Netherlands and through the EU&apos;s One Stop Shop — a scheme
+          that lets one registration cover the VAT for every EU country. A few countries — including the UK
+          and Switzerland — require a separate local VAT registration from the very first sale, with no
+          minimum. Until we do that properly, we&apos;d
           rather not sell to you than sell to you incorrectly. If you want access from your country,{" "}
           <a href="/contact" className="text-[var(--accent)] hover:underline">email us</a> — enough
           interest and we&apos;ll register.

@@ -60,7 +60,7 @@ export default function DocsCreditsPage() {
           <li><strong className="text-[var(--fg)]">Caption extraction — free.</strong> Reading a video&apos;s existing captions never costs credits, with or without an account.</li>
           <li><strong className="text-[var(--fg)]">AI transcription — {perMin} credit per minute.</strong> Rounded up to the next minute, minimum {perMin}. A 12-minute video costs 12 credits.</li>
           <li><strong className="text-[var(--fg)]">AI summary — {summaryCost} credits.</strong> A flat {summaryCost} credits per summary, whatever the transcript&apos;s length.</li>
-          <li><strong className="text-[var(--fg)]">RAG JSON export — {ragPer10} credit per 10 minutes.</strong> Only the chunked RAG JSON costs credits; the plain JSON download is free. After a transcript&apos;s first RAG export, re-downloading its other chunk presets is free.</li>
+          <li><strong className="text-[var(--fg)]">RAG JSON export — {ragPer10} credit per 10 minutes.</strong> RAG JSON is the transcript split into bite-size chunks formatted for feeding into an AI search or chatbot; only this chunked export costs credits, while the plain JSON download is free. After a transcript&apos;s first RAG export, re-downloading its other chunk presets is free.</li>
           <li><strong className="text-[var(--fg)]">Playlists — first {freeVideos} caption videos free.</strong> After that, each caption video costs {perVideo} credit. A video you switch to AI transcription is billed per minute instead, with no free-video discount.</li>
         </ul>
         <p className="text-[var(--fg-muted)] text-sm mt-3">

@@ -66,8 +66,8 @@ export default function DocsVttPage() {
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           VTT uses a <strong>dot</strong> before the milliseconds: <code>HH:MM:SS.mmm</code> (SRT uses a
           comma). The file always opens with <code>WEBVTT</code>; the <code>NOTE</code> block is added
-          when a title or language is known. Cue text uses the same re-segmentation and ~42-character
-          line wrapping as <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/srt">SRT</a>.
+          when a title or language is known. Cue text uses the same re-segmentation — breaking the
+          transcript into short, subtitle-sized cues — and ~42-character line wrapping as <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/srt">SRT</a>.
         </p>
         <DocsCodeBlock>{vttSample}</DocsCodeBlock>
 

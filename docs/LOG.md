@@ -12094,3 +12094,24 @@ apps/marketing/src/app/docs/reference/export-formats/page.tsx
 apps/marketing/src/app/docs/reference/export-formats/txt/page.tsx
 apps/marketing/src/app/docs/reference/limits/page.tsx
 ---
+[2026-07-23 12:19] commit: docs: readability pass wave 2 — specs + account pages (item 6, cont.)
+
+Final docs assessed per-H2; term glosses added where a section assumed knowledge, facts
+preserved:
+- reference/export-formats/csv: '0-based' → 'counted from 0 (the first segment is 0)'.
+- reference/export-formats/vtt: 're-segmentation' + 'cue' explained at first body use.
+- reference/accuracy: 'AssemblyAI' glossed ('the speech-recognition service INDXR uses');
+  no self-reported accuracy % reintroduced.
+- account/credits: 'RAG JSON' glossed at first use.
+- account/billing: 'Stripe', 'VAT', 'One Stop Shop' each glossed at first use.
+No edits needed (already clear): reference/export-formats/srt (warm-up covered it).
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/account/billing/page.tsx
+apps/marketing/src/app/docs/account/credits/page.tsx
+apps/marketing/src/app/docs/reference/accuracy/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/csv/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/vtt/page.tsx
+---

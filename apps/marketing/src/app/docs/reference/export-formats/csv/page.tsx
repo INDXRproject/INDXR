@@ -70,7 +70,7 @@ export default function DocsCsvPage() {
             </tr>
           </thead>
           <tbody>
-            <tr><td><code>segment_index</code></td><td>0-based position of the segment</td></tr>
+            <tr><td><code>segment_index</code></td><td>Position of the segment in the transcript, counted from 0 (the first segment is 0)</td></tr>
             <tr><td><code>start_time</code></td><td>Segment start, in seconds</td></tr>
             <tr><td><code>end_time</code></td><td>Start of the next segment (or clip end for the last)</td></tr>
             <tr><td><code>duration</code></td><td>Segment duration, in seconds</td></tr>

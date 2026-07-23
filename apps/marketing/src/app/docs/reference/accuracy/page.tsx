@@ -40,8 +40,8 @@ export default function DocsAccuracyPage() {
         <DefinitionLeadOpening>
           INDXR produces text two ways — by reading a video&apos;s existing captions, or by
           transcribing the audio — and how accurate the result is depends on which you pick. At
-          AssemblyAI, accuracy is reported per language, so accuracy and language coverage are the
-          same subject.
+          AssemblyAI — the speech-recognition service INDXR uses for AI transcription — accuracy is
+          reported per language, so accuracy and language coverage are the same subject.
         </DefinitionLeadOpening>
 
         <AnchorHeading as="h2">Auto-captions</AnchorHeading>
