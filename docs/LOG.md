@@ -11931,3 +11931,20 @@ apps/marketing/src/components/content/templates/ToolPageTemplate.tsx
 apps/marketing/src/components/content/templates/TutorialTemplate.tsx
 apps/marketing/src/lib/relatedArticles.ts
 ---
+[2026-07-23 11:44] commit: fix(articles): bulk — remove false pre-check + nonexistent merged-file export
+
+Two more stale claims caught while wiring RelatedArticles:
+- 'scans every video before you commit: caption availability' — the playlist scan
+  does NOT check captions (ADR-076: it optimistically sets has_captions; the real
+  outcome shows at extraction). Reworded to list duration + dedup only, and added the
+  honest skip-plus-refund note.
+- 'Merged single file — CSV one row per segment across all videos / RAG JSON one array'
+  — no such export exists in code (TranscriptList bulk download is ZIP-of-individual-
+  files only: handleBatchDownload / handleBulkRagExecute). Removed; reworded to the
+  real library-multiselect ZIP behaviour.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+---

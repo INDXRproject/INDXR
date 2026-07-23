@@ -62,9 +62,11 @@ export default function BulkYouTubeTranscriptPage() {
       <h2>How Bulk Extraction Works</h2>
 
       <p>
-        <strong>Paste a playlist URL.</strong> INDXR.AI scans every video in the playlist before you
-        commit: caption availability, duration, and whether you&apos;ve already extracted it before. Videos
-        already in your library are flagged so you don&apos;t pay for duplicates.
+        <strong>Paste a playlist URL.</strong> INDXR.AI lists every video in the playlist before you
+        commit, with its duration and whether you&apos;ve already extracted it before. Videos already in
+        your library are flagged so you don&apos;t pay for duplicates. Nothing is checked ahead of time
+        beyond that — if a video turns out to have no captions during extraction, it&apos;s skipped and
+        the credits held for it come back.
       </p>
 
       <p>
@@ -115,15 +117,9 @@ export default function BulkYouTubeTranscriptPage() {
       <p>Every format is available in bulk:</p>
 
       <p>
-        <strong>ZIP of individual files</strong> — one file per video, consistent naming (
-        <code>video-title_video-id.ext</code>). Works for TXT, Markdown, SRT, VTT, CSV, and JSON.
-      </p>
-
-      <p>
-        <strong>Merged single file</strong> — available for CSV (one row per segment across all videos,
-        with <code>video_id</code> and <code>video_title</code> columns) and RAG JSON (one JSON array
-        across all videos). Useful for corpus analysis and building a knowledge base from an entire course
-        or channel.
+        Select the transcripts in your library and bulk-download them as a{" "}
+        <strong>ZIP with one file per video</strong>, in your chosen format — TXT, Markdown, SRT, VTT,
+        CSV, or JSON — or as a ZIP of RAG-optimized JSON files ready to load into a vector database.
       </p>
 
       <h2>Common Bulk Extraction Use Cases</h2>
