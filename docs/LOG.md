@@ -11876,3 +11876,17 @@ Changed: apps/marketing/src/app/docs/reference/export-formats/srt/page.tsx
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 11:38] commit: docs(csv,vtt): readability warm-up on the two remaining jargon-first openings (phase 4)
+
+Same C11b fix as SRT. CSV led with column names; now leads with 'turns your transcript
+into a spreadsheet ... sort, count, Excel/Sheets/pandas' then the columns. VTT led with
+'WEBVTT header'; now leads with 'web-native subtitle format ... HTML5 <track>' + when to
+use it vs SRT, then the structure. Facts unchanged. markdown/txt/json openings already
+lead with plain framing + use, left as-is.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/reference/export-formats/csv/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/vtt/page.tsx
+---

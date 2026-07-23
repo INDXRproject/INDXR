@@ -54,10 +54,12 @@ export default function DocsVttPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">VTT</h1>
         <DefinitionLeadOpening>
-          The VTT export is a WebVTT subtitle file: a required <code>WEBVTT</code> header, an optional{" "}
-          <code>NOTE</code> block carrying the title and language, then numbered cues with{" "}
-          <code>HH:MM:SS.mmm</code> time ranges. WebVTT is the web-native subtitle format for HTML5
-          <code>&lt;track&gt;</code> elements.
+          VTT is the web-native subtitle format — it&apos;s what an HTML5 video player loads for
+          on-screen captions through a <code>&lt;track&gt;</code> element. Reach for it when your video
+          plays in a browser; for a desktop editor, SRT is the sibling to use. The file starts with a
+          required <code>WEBVTT</code> header, an optional <code>NOTE</code> block carrying the title and
+          language, then numbered cues with <code>HH:MM:SS.mmm</code> time ranges — a dot before the
+          milliseconds, unlike SRT&apos;s comma.
         </DefinitionLeadOpening>
 
         <AnchorHeading as="h2">Timestamp format &amp; header</AnchorHeading>

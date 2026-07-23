@@ -53,11 +53,12 @@ export default function DocsCsvPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">CSV</h1>
         <DefinitionLeadOpening>
-          The CSV export is one row per transcript segment — <code>segment_index</code>,{" "}
-          <code>start_time</code>, <code>end_time</code>, <code>duration</code>,{" "}
-          <code>word_count</code> and <code>text</code> — preceded by <code>#</code> metadata comment
-          lines, with a UTF-8 byte-order mark so Excel opens it correctly. It is made for spreadsheets
-          and text analysis.
+          The CSV export turns your transcript into a spreadsheet — one row per segment — so you can
+          sort it, count words, filter by time, or load it into Excel, Google Sheets, or pandas. Each
+          row carries the segment&apos;s timing and text; the exact columns are{" "}
+          <code>segment_index</code>, <code>start_time</code>, <code>end_time</code>,{" "}
+          <code>duration</code>, <code>word_count</code> and <code>text</code>, with a UTF-8 byte-order
+          mark so Excel opens it correctly.
         </DefinitionLeadOpening>
 
         <AnchorHeading as="h2">Columns</AnchorHeading>
