@@ -11948,3 +11948,15 @@ Both apps build green.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
 ---
+[2026-07-23 11:46] commit: fix(articles): remove 'scan shows caption availability' from channel-kb + playlist
+
+Same false pre-check as bulk (ADR-076): the playlist review lists duration + dedup, it
+does not check caption availability ahead of time. Reworded both; channel-kb also gains
+the honest skip-plus-refund note. No caption-availability-scan claims remain in articles.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+---

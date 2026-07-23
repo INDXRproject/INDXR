@@ -67,7 +67,7 @@ export default function YouTubePlaylistTranscriptPage() {
 
       <p>
         Paste a YouTube playlist URL. Before any extraction begins, INDXR.AI fetches complete metadata for
-        every video in the list: titles, durations, caption availability, and whether you&apos;ve already
+        every video in the list: titles, durations, and whether you&apos;ve already
         extracted any of them before. You see the full picture before committing to anything.
       </p>
 

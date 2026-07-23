@@ -48,7 +48,7 @@ const steps = [
   },
   {
     name: "Extract transcripts with INDXR.AI",
-    text: "Paste the playlist URL into INDXR.AI's Playlist tab. The pre-extraction scan shows every video's caption availability, duration, and whether you've already processed it. For a knowledge base, enable AI Transcription — punctuation and accuracy matter when transcripts become your retrieval corpus. Select RAG JSON export for all videos in the batch.",
+    text: "Paste the playlist URL into INDXR.AI's Playlist tab. The review screen lists every video's duration and whether you've already processed it — captions aren't checked ahead of time, so a video that turns out to have none is simply skipped during extraction, with its credits refunded. For a knowledge base, enable AI Transcription — punctuation and accuracy matter when transcripts become your retrieval corpus. Select RAG JSON export for all videos in the batch.",
   },
   {
     name: "Understand the RAG JSON output",
@@ -137,7 +137,7 @@ export default function YouTubeChannelKnowledgeBasePage() {
       <p>
         Paste the playlist URL into INDXR.AI&apos;s{" "}
         <Link href="/articles/bulk-youtube-transcript">Playlist tab</Link>. The pre-extraction scan shows every
-        video&apos;s caption availability, duration, and whether you&apos;ve already processed it. For a channel
+        video&apos;s duration and whether you&apos;ve already processed it. For a channel
         knowledge base, AI Transcription produces punctuated, accurately capitalized text — the quality
         difference matters when these transcripts become your retrieval corpus.
       </p>
