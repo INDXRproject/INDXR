@@ -11857,3 +11857,17 @@ apps/marketing/src/app/transcribe/page.tsx
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 11:35] commit: docs(srt): apply readability warm-up to the named anti-pattern page (phase 4)
+
+Khidr named the SRT reference page as the anti-form — it jumped from definition
+straight to milliseconds. Rewrote the opening to the writing-standard C11b shape:
+plain 'what it is' (SRT = the subtitle format almost every player/editor reads) →
+'when/why' (subtitles on a video; editors listed; VTT for web) → then the exact
+timestamp syntax and re-segmentation details follow. Facts unchanged (still verified
+against formatTranscript.ts). Exemplar for the remaining reference-spec rewrites.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/reference/export-formats/srt/page.tsx
+---

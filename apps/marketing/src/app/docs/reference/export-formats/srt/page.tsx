@@ -48,11 +48,19 @@ export default function DocsSrtPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">SRT</h1>
         <DefinitionLeadOpening>
-          The SRT export is a SubRip subtitle file: numbered cues, each with a{" "}
-          <code>HH:MM:SS,mmm --&gt; HH:MM:SS,mmm</code> time range and the caption text. INDXR
-          re-segments the raw transcript into readable cues and wraps long lines, instead of dumping raw
-          caption fragments, so it loads cleanly into editors and players.
+          SRT — short for SubRip — is the subtitle format almost every video player and editor reads.
+          An SRT export turns your transcript into timed, numbered subtitle cues you can drop straight
+          into YouTube, Premiere, CapCut, DaVinci Resolve, or VLC. INDXR re-segments the transcript into
+          readable cues and wraps long lines, so you get clean subtitles instead of the raw caption
+          fragments most tools hand back.
         </DefinitionLeadOpening>
+
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          Reach for SRT when you want subtitles <em>on</em> a video — burned in during editing, or added
+          as a selectable track. If you&apos;re publishing to the web instead, its sibling{" "}
+          <a href="/docs/reference/export-formats/vtt" className="text-[var(--accent)] hover:underline">VTT</a>{" "}
+          is the HTML5 equivalent. The rest of this page is the exact shape of the file.
+        </p>
 
         <AnchorHeading as="h2">Timestamp format</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
