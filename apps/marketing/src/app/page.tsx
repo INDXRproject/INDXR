@@ -7,9 +7,9 @@ import { MacbookMockupFrame } from "@/components/marketing/MacbookMockupFrame"
 import { RemotionLoop } from "@/components/marketing/RemotionLoop"
 import { DifferentiatorStrip } from "@/components/marketing/DifferentiatorStrip"
 import { StatsFromTesting } from "@/components/marketing/StatsFromTesting"
-import { TestimonialPlaceholder } from "@/components/marketing/TestimonialPlaceholder"
 import { PricingTeaserBlock } from "@/components/marketing/PricingTeaserBlock"
 import { ClosingCTASection } from "@/components/marketing/ClosingCTASection"
+import { RAG_CHUNK_DEFAULT } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -123,7 +123,7 @@ export default function LandingPage() {
           <HowItWorksBlock
             number={5}
             heading="Output: build with it"
-            description="RAG-optimized JSON with sentence-aligned chunks (60 seconds by default, adjustable), deep-linked timestamps, and metadata. Drop it into LangChain, LlamaIndex, or any vector database. No preprocessing needed."
+            description={`RAG-optimized JSON with sentence-aligned chunks (${RAG_CHUNK_DEFAULT} seconds by default, adjustable), deep-linked timestamps, and metadata. Drop it into LangChain, LlamaIndex, or any vector database. No preprocessing needed.`}
             audience="Developers, RAG builders"
             mockup={
               <MacbookMockupFrame label="RAG JSON export">
@@ -145,9 +145,8 @@ export default function LandingPage() {
       {/* Section 4 — Differentiators */}
       <DifferentiatorStrip />
 
-      {/* Section 5 — Stats from testing + testimonial placeholder */}
+      {/* Section 5 — Stats from testing */}
       <StatsFromTesting />
-      <TestimonialPlaceholder />
 
       {/* Section 6 — Pricing teaser */}
       <PricingTeaserBlock />

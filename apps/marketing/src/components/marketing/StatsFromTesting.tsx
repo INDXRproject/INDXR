@@ -15,7 +15,7 @@ const trustPoints: TrustPoint[] = [
 // Verified 2026-07-23 with a direct query on transcription_jobs (status='complete',
 // cache_hit=false): n=216 completed runs (2026-04-13 → 2026-07-20), median
 // processing_time_seconds / duration_seconds = 0.0536 (~5%), p90 = 0.124. The old
-// "99.4% accuracy / 800+ minutes" line had NO recorded measurement and was removed;
+// unmeasured accuracy/volume marketing line had NO recorded measurement and was removed;
 // accuracy is now told honestly, per language, on the accuracy page. Note: the sample
 // is largely internal test traffic, but processing latency is model-driven and does not
 // depend on who submitted the job — hence "transcription runs", not "customer runs".

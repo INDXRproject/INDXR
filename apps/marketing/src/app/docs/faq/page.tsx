@@ -1,203 +1,198 @@
 import type { Metadata } from "next"
+import type { ReactNode } from "react"
 import Link from "next/link"
-import { Button } from "@indxr/shared/components/ui/button"
-import { ArrowRight } from "lucide-react"
 import { DocsShell } from "@/components/docs/DocsShell"
+import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
+import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
+import { AnchorHeading } from "@/components/docs/AnchorHeading"
+import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { JsonLd } from "@/components/seo/JsonLd"
+import { reactNodeToText } from "@/lib/reactNodeToText"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/faq" },
-  title: "YouTube Transcript FAQ — INDXR.AI",
+  title: "Frequently asked questions — INDXR.AI Docs",
   description:
-    "Answers to common questions about downloading YouTube transcripts, extracting subtitles as SRT files, transcribing playlists in bulk, and using AI to transcribe videos without captions.",
+    "Short answers to common questions about INDXR — captions versus AI transcription, formats, credits, languages, and what happens to your files.",
   openGraph: {
-    title: "YouTube Transcript FAQ — INDXR.AI",
+    title: "Frequently asked questions — INDXR.AI Docs",
     description:
-      "Answers to common questions about downloading YouTube transcripts, extracting subtitles, and AI transcription.",
+      "Short answers to common questions about INDXR — captions versus AI transcription, formats, credits, and privacy.",
     type: "website",
     url: "https://indxr.ai/docs/faq",
   },
 }
 
-type FAQ = { question: string; answer: string }
-type FAQCategory = { title: string; faqs: FAQ[] }
+const A = "text-[var(--accent)] hover:underline"
+const P = "text-[var(--fg-subtle)] leading-relaxed mb-4"
 
-const faqCategories: FAQCategory[] = [
+const faqs: { question: string; answer: ReactNode }[] = [
   {
-    title: "General",
-    faqs: [
-      {
-        question: "What is INDXR.AI and what can I use it for?",
-        answer:
-          "INDXR.AI is a web-based tool for extracting transcripts from YouTube videos. You can use it to download captions as text files, generate subtitles in SRT or VTT format (the two standard subtitle-file types that video players and editors read), process entire playlists at once, and transcribe videos that don't have captions using AI. Content creators use it to repurpose video content into blog posts. Researchers use it to analyze interview data. Students use it to create study notes from lecture videos.",
-      },
-      {
-        question: "Does INDXR.AI work without installing a Chrome extension?",
-        answer:
-          "Yes, INDXR.AI is 100% web-based. You don't need to install any browser extension, plugin, or software. Just open the website in any browser (Chrome, Firefox, Safari, Edge, or mobile browsers) and paste a YouTube URL. Learn more about our <a href='/articles/youtube-transcript-without-extension'>extension-free approach</a>.",
-      },
-      {
-        question: "Do I need to create an account to use INDXR.AI?",
-        answer:
-          "No account is required for basic transcript extraction from single videos. Creating a free account unlocks additional features: a personal transcript library, playlist extraction, and AI transcription.",
-      },
-      {
-        question: "Can I use transcripts I download for commercial purposes?",
-        answer:
-          "Yes, you can use transcripts for any purpose including commercial projects. However, the content of the transcript belongs to the original video creator. INDXR.AI only extracts publicly available captions — we don't grant rights to the underlying content.",
-      },
-    ],
+    question: "Do I need an account?",
+    answer: (
+      <>
+        Not for a single video. Without signing in you can extract the caption track from one video at
+        a time and take the text as a plain TXT file. Everything else — AI transcription, playlists,
+        uploads, the other six export formats, and the library that keeps your transcripts — needs a
+        free account. See <Link href="/docs/quickstart" className={A}>Get your first transcript</Link>.
+      </>
+    ),
   },
   {
-    title: "YouTube Transcripts",
-    faqs: [
-      {
-        question: "How do I download a YouTube transcript as a text file?",
-        answer:
-          "Go to the <a href='/dashboard/transcribe'>Transcribe page</a>, paste the YouTube video URL into the input field, and click Extract. Once the transcript loads, click the Export button and select TXT format.",
-      },
-      {
-        question: "Can I get a transcript from a YouTube video without captions?",
-        answer:
-          "Yes, using our AI transcription feature. When a video doesn't have captions, INDXR.AI can transcribe the audio using AssemblyAI. This feature uses credits (1 credit per minute of audio). Learn more about <a href='/articles/audio-to-text'>AI transcription</a>.",
-      },
-      {
-        question: "How do I transcribe an entire YouTube playlist at once?",
-        answer:
-          "Use the Playlist tab in the dashboard. Paste the playlist URL, and INDXR.AI will scan all videos. See our <a href='/articles/youtube-playlist-transcript'>playlist extraction guide</a> for details.",
-      },
-      {
-        question: "Can I download YouTube subtitles in SRT format?",
-        answer:
-          "Yes. After extracting a transcript, click Export and select SRT. See our <a href='/articles/youtube-srt-download'>SRT download guide</a> for more information.",
-      },
-      {
-        question: "Why do I sometimes get captions in the wrong language — and how does INDXR get the original?",
-        answer:
-          "A single YouTube video often carries dozens of caption tracks — the original plus machine and community translations — and YouTube's default picker doesn't reliably return the one that matches the audio. That's why many tools hand you a translation, sometimes in a language nobody in the video is even speaking. INDXR is built to give you the <em>original</em> track instead: it detects the video's actual spoken language and anchors on that, so you get the native captions rather than an accidental translation. When a video has no usable original caption track, you can force <a href='/articles/audio-to-text'>AI transcription</a>, which transcribes the real audio in its own language. It won't be flawless on every upload — some videos simply don't expose a clean original track — so if you hit one where the language still looks off, <a href='/contact'>send us a support ticket</a> and we'll take a look.",
-      },
-    ],
+    question: "What does it cost?",
+    answer: (
+      <>
+        Caption extraction is free, on any video, of any length. AI transcription, summaries and RAG
+        JSON are paid for with prepaid credits, and credits never expire. New accounts start with a
+        balance to try it. See <Link href="/docs/account/credits" className={A}>Credits</Link> for the
+        rates and <Link href="/pricing" className={A}>Pricing</Link> for the packages.
+      </>
+    ),
   },
   {
-    title: "Pricing & Credits",
-    faqs: [
-      {
-        question: "How much does it cost to transcribe a YouTube video?",
-        answer:
-          "Extracting transcripts from videos with existing YouTube captions costs 0 credits. For AI transcription, 1 credit = 1 minute of audio. Check our <a href='/pricing'>pricing page</a> for current packages.",
-      },
-      {
-        question: "Do my credits expire?",
-        answer:
-          "No, purchased credits never expire. Once you buy a package, those credits remain in your account until you use them.",
-      },
-      {
-        question: "How does the credit system work?",
-        answer:
-          "Credits are used for AI transcription (1 credit per minute) and AI summarization (3 credits per summary). Your credit balance is shown in your dashboard. View packages on our <a href='/pricing'>pricing page</a>.",
-      },
-    ],
+    question: "What's the difference between captions and AI transcription?",
+    answer: (
+      <>
+        Captions are the subtitle track a video already carries, usually generated by YouTube. AI
+        transcription reads the audio and writes the transcript from scratch, returning punctuation and
+        complete sentences. The choice sets the quality of everything you export afterwards. See{" "}
+        <Link href="/docs/how-indxr-works" className={A}>How INDXR works</Link>.
+      </>
+    ),
   },
   {
-    title: "Technical",
-    faqs: [
-      {
-        question: "What export formats are available?",
-        answer:
-          "INDXR.AI supports: TXT (plain text, with or without timestamps), SRT and VTT (subtitle files that video players and editors read), CSV (a spreadsheet table you can open in Excel or Google Sheets), Markdown (lightly formatted plain text), and RAG-optimized JSON (structured so it can be fed straight into AI search tools and chatbots). All formats are available for both YouTube caption extraction and AI transcription.",
-      },
-      {
-        question: "How long does transcript extraction take?",
-        answer:
-          "For videos with existing YouTube captions, extraction is nearly instant (1-3 seconds). For AI transcription, processing time is roughly 1-2 minutes per 10 minutes of audio.",
-      },
-      {
-        question: "What happens to my audio and transcripts?",
-        answer:
-          "Extracted transcripts are saved to your library until you delete them. Audio files you upload for AI transcription are deleted from our servers within 24 hours. For the full detail on what we store and for how long, see our <a href='/privacy'>privacy policy</a>.",
-      },
-    ],
+    question: "What formats can I export?",
+    answer: (
+      <>
+        Seven: TXT, Markdown, CSV, SRT, VTT, JSON and RAG JSON. TXT and Markdown each come with and
+        without timestamps, which makes nine downloads in total. Only RAG JSON costs credits, and
+        re-downloading anything you already generated is free. See{" "}
+        <Link href="/docs/reference/export-formats" className={A}>Export formats</Link>.
+      </>
+    ),
+  },
+  {
+    question: "Which languages does INDXR handle?",
+    answer: (
+      <>
+        Caption extraction works in whatever language the video&apos;s track is in, and INDXR anchors on
+        the original-language track rather than a translation. AI transcription covers a wide range of
+        languages, and how well it performs differs per language. See{" "}
+        <Link href="/docs/reference/accuracy" className={A}>Accuracy and languages</Link>.
+      </>
+    ),
+  },
+  {
+    question: "What if a video has no captions?",
+    answer: (
+      <>
+        INDXR does not check in advance whether a video carries a caption track. If the attempt comes
+        back empty, INDXR says so and offers to transcribe the audio instead. In a playlist, videos
+        without captions are skipped while the job runs and the credits held for them are returned. See{" "}
+        <Link href="/docs/guides/single-video" className={A}>Single video</Link>.
+      </>
+    ),
+  },
+  {
+    question: "Can I transcribe a whole playlist at once?",
+    answer: (
+      <>
+        Yes. INDXR lists the videos it can reach and you choose per video whether to take the captions
+        or transcribe the audio. The job keeps running after you close the tab, and finished transcripts
+        appear in your library as they complete. See{" "}
+        <Link href="/docs/guides/playlists" className={A}>Playlists</Link>.
+      </>
+    ),
+  },
+  {
+    question: "Can I upload my own audio or video files?",
+    answer: (
+      <>
+        Yes. An uploaded file has no caption track to fall back on, so uploads are always transcribed.
+        There are limits on file size and length. See{" "}
+        <Link href="/docs/guides/uploads" className={A}>Uploads</Link> and{" "}
+        <Link href="/docs/reference/limits" className={A}>Limits</Link>.
+      </>
+    ),
+  },
+  {
+    question: "What happens to my files?",
+    answer: (
+      <>
+        Audio is deleted as soon as the transcription finishes; INDXR keeps no recording of it. The
+        transcript itself stays in your library until you delete it. See{" "}
+        <Link href="/privacy" className={A}>Privacy</Link>.
+      </>
+    ),
+  },
+  {
+    question: "Is there an API?",
+    answer: (
+      <>
+        No. INDXR is a web application; there is no public REST API. See{" "}
+        <Link href="/docs/reference/limits" className={A}>Limits</Link>.
+      </>
+    ),
   },
 ]
-
-const allFaqs = faqCategories.flatMap((c) => c.faqs)
 
 export default function DocsFaqPage() {
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: allFaqs.map((faq) => ({
+    mainEntity: faqs.map((faq) => ({
       "@type": "Question",
       name: faq.question,
       acceptedAnswer: {
         "@type": "Answer",
-        text: faq.answer.replace(/<[^>]*>/g, ""),
+        text: reactNodeToText(faq.answer),
       },
     })),
   }
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
+      <JsonLd schemas={[faqSchema]} />
       <DocsShell>
-        <article>
-          <h1 className="text-3xl font-semibold text-[var(--fg)] mb-2">
-            Frequently Asked Questions
-          </h1>
-          <p className="text-[var(--fg-subtle)] mb-10">
-            Answers to common questions about transcripts, exports, and credits.
-          </p>
+        <DocsBreadcrumb
+          items={[
+            { label: "Docs", href: "/docs" },
+            { label: "Getting started", href: "/docs" },
+            { label: "FAQ" },
+          ]}
+        />
+        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Frequently asked questions</h1>
+        <DefinitionLeadOpening>
+          Short answers to the questions people ask before their first transcript. Each one points to
+          the page that carries the full answer.
+        </DefinitionLeadOpening>
 
-          {faqCategories.map((category) => (
-            <div key={category.title} className="mb-10">
-              <h2 className="text-xl font-semibold text-[var(--fg)] mb-4 pb-2 border-b border-[var(--border)]">
-                {category.title}
-              </h2>
-              <div className="space-y-3">
-                {category.faqs.map((faq, i) => (
-                  <details
-                    key={i}
-                    className="group border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)]"
-                  >
-                    <summary className="flex cursor-pointer items-center justify-between p-4 font-medium text-[var(--fg)] hover:bg-[var(--surface-elevated)] rounded-[var(--radius)] transition-colors">
-                      <span className="pr-4">{faq.question}</span>
-                      <span className="shrink-0 text-[var(--fg-muted)] group-open:rotate-180 transition-transform">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m6 9 6 6 6-6" />
-                        </svg>
-                      </span>
-                    </summary>
-                    <div className="px-4 pb-4 pt-2 text-[var(--fg-muted)] leading-relaxed text-sm">
-                      <p
-                        dangerouslySetInnerHTML={{ __html: faq.answer }}
-                        className="[&_a]:text-[var(--accent)] [&_a]:underline [&_a]:underline-offset-4"
-                      />
-                    </div>
-                  </details>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          <div className="mt-12 p-6 rounded-[var(--radius-lg)] bg-[var(--surface-elevated)] border border-[var(--border)] text-center">
-            <h2 className="text-lg font-semibold text-[var(--fg)] mb-2">Still have questions?</h2>
-            <p className="text-[var(--fg-muted)] text-sm mb-5">
-              Contact our support team or try the transcript extractor for free.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button asChild>
-                <Link href="/transcribe">
-                  Try it free <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/contact">Contact Support</Link>
-              </Button>
-            </div>
+        {faqs.map((faq) => (
+          <div key={faq.question}>
+            <AnchorHeading as="h2">{faq.question}</AnchorHeading>
+            <p className={P}>{faq.answer}</p>
           </div>
-        </article>
+        ))}
+
+        <RelatedTopicsList
+          topics={[
+            {
+              label: "Get your first transcript",
+              href: "/docs/quickstart",
+              description: "the flow from URL to export",
+            },
+            {
+              label: "How INDXR works",
+              href: "/docs/how-indxr-works",
+              description: "captions versus transcription, and why the choice carries downstream",
+            },
+            {
+              label: "Credits",
+              href: "/docs/account/credits",
+              description: "rates, reservations and refunds",
+            },
+          ]}
+        />
       </DocsShell>
     </>
   )

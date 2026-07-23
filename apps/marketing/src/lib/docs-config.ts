@@ -23,8 +23,8 @@ export const docsConfig: DocsConfig = {
     {
       label: "Getting started",
       pages: [
-        { href: "/docs/quickstart", label: "Quickstart", description: "Your first transcript in under three minutes." },
-        { href: "/docs/how-indxr-works", label: "How INDXR works", description: "How extraction and AI transcription fit together." },
+        { href: "/docs/quickstart", label: "Quickstart", description: "Your first transcript, from URL to export." },
+        { href: "/docs/how-indxr-works", label: "How INDXR works", description: "Captions or AI transcription — the choice that shapes every export." },
         { href: "/docs/faq", label: "FAQ", description: "Short answers to the most common questions." },
       ],
     },

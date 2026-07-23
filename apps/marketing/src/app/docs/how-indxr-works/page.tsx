@@ -6,25 +6,18 @@ import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
-import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
-
-// Volatile numbers render from the single source of truth (pricing.ts), never hardcoded.
-const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
-const summaryCost = CREDIT_COSTS.AI_SUMMARY
-const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
-const welcome = FREE_TIER.WELCOME_CREDITS
-const freeVideos = FREE_TIER.PLAYLIST_FREE_VIDEOS
 
 const description =
-  "INDXR.AI turns YouTube videos, playlists, and audio or video files you upload into text you can use — plain text, Markdown, CSV, subtitles, JSON, or RAG JSON. You choose how the text is produced: extract a video's existing captions, or have the audio transcribed. Everything you extract is saved and stays editable."
+  "INDXR gets text out of a video in one of two ways: it copies the caption track the video already carries, or it sends the audio to a speech recognition model and writes the transcript from scratch. Which of the two you use decides the quality of everything you export afterwards."
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/how-indxr-works" },
-  title: "How INDXR Works — INDXR.AI Docs",
+  title: "How INDXR works — INDXR.AI Docs",
   description,
 }
 
 const P = "text-[var(--fg-subtle)] leading-relaxed mb-4"
+const A = "text-[var(--accent)] hover:underline"
 
 export default function DocsOverviewPage() {
   const techArticleSchema = {
@@ -33,6 +26,7 @@ export default function DocsOverviewPage() {
     headline: "How INDXR works",
     description,
     url: "https://indxr.ai/docs/how-indxr-works",
+    dateModified: "2026-07-23",
   }
 
   return (
@@ -48,213 +42,117 @@ export default function DocsOverviewPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">How INDXR works</h1>
         <DefinitionLeadOpening>
-          INDXR.AI turns YouTube videos, playlists, and audio or video files you upload into text you
-          can actually use — plain text, Markdown, CSV, subtitles, JSON, or RAG JSON, a format prepared
-          so an AI system can answer questions from your own material. You choose how the text is
-          produced: extract the captions a video already has, or
-          have the audio transcribed. Everything you extract is saved and stays editable.
+          INDXR gets text out of a video in one of two ways: it copies the caption track the video
+          already carries, or it sends the audio to a speech recognition model and writes the
+          transcript from scratch. Which of the two you use decides the quality of everything you
+          export afterwards.
         </DefinitionLeadOpening>
-
-        <AnchorHeading as="h2">What happens when you use it</AnchorHeading>
         <p className={P}>
-          <strong>A single video.</strong> Paste the URL and the transcript comes back — INDXR reads
-          the video&apos;s existing captions, which costs nothing. If you want the audio transcribed
-          instead, you switch that on before extracting.
-        </p>
-        <p className={P}>
-          <strong>A playlist.</strong> INDXR loads the videos it can reach and lists them. Nothing is
-          checked ahead of time — for each video you pick whether to take the free captions or transcribe
-          the audio, and the first {freeVideos} caption extractions are free. If a video turns out to have
-          no captions or can&apos;t be reached, it&apos;s skipped while the job runs and the credits held
-          for it come back. The job keeps running after you close the tab, and finished transcripts appear
-          in your library as they complete.
-        </p>
-        <p className={P}>
-          <strong>An uploaded file.</strong> There are no captions to fall back on, so the audio is
-          transcribed.
-        </p>
-        <p className={P}>
-          Either way the transcript lands in your library, where it stays and can be edited. From there
-          you export it in whichever format you need, as often as you need.
-        </p>
-        <p className={P}>
-          If the same video has already been processed, INDXR serves the saved result instead of
-          re-processing the audio — you get the exact same transcript, just faster.
+          Everything else in INDXR — playlists, uploads, the library, the export formats — is built on
+          that one distinction.
         </p>
 
-        <AnchorHeading as="h2">Captions or transcription</AnchorHeading>
+        <AnchorHeading as="h2">The caption track a video already has</AnchorHeading>
         <p className={P}>
-          This is the only real decision you make, and it sets the quality of everything you export
-          afterwards.
+          Nearly every YouTube video with speech carries a caption track: the text you see when you
+          turn subtitles on. Most tracks are produced by YouTube&apos;s own speech recognition. A
+          smaller number are written or corrected by the creator, because doing it by hand takes hours.
+        </p>
+        <p className={P}>
+          INDXR reads that track directly and keeps its original timings, at no cost, on a video of any
+          length. It anchors on the original-language track, so you get what was said rather than a
+          translation.
+        </p>
+        <p className={P}>
+          Automatic tracks are speech recognition, so they get words wrong — names, brands, technical
+          terms — and they get more of them wrong when the audio is poor, when speakers talk over each
+          other, when an accent is strong, or when the language isn&apos;t English. Creator-corrected
+          tracks read cleanly. You cannot tell which kind a video carries before you extract it, and
+          INDXR does not check in advance.
         </p>
 
-        <AnchorHeading as="h3">Extracting existing captions</AnchorHeading>
+        <AnchorHeading as="h2">Transcribing the audio instead</AnchorHeading>
         <p className={P}>
-          Nearly every YouTube video with speech has a caption track — the text you see when you turn
-          subtitles on. Most are generated automatically by YouTube&apos;s speech recognition. A
-          smaller number are written or corrected by the creator, because doing it by hand takes hours
-          and few bother.
+          AI transcription ignores the caption track and reads the audio itself, writing the transcript
+          from scratch. It returns punctuation, capitalisation and complete sentences, and it handles
+          the names, jargon and accented speech that automatic captions tend to mangle. It works on any
+          video, including one that already has captions.
         </p>
         <p className={P}>
-          INDXR reads that track directly, keeps its original timings, and charges nothing for it.
+          INDXR runs transcription on AssemblyAI and selects the model that covers the detected language
+          natively. The figures per language are published on{" "}
+          <Link href="/docs/reference/accuracy" className={A}>Accuracy and languages</Link>.
         </p>
         <p className={P}>
-          Two things come with that. The automatic ones are speech recognition, so they get words wrong
-          — names, brands, technical terms, anything unexpected — and they get more of them wrong when
-          the audio is poor, when people talk over each other, when the accent is strong, or when the
-          language isn&apos;t English. And regardless of how accurate they are, captions are written to
-          be read on screen: short display lines, no punctuation, no sentence structure. That format
-          follows the text wherever you take it.
-        </p>
-
-        <AnchorHeading as="h3">Transcribing the audio</AnchorHeading>
-        <p className={P}>
-          Transcription ignores the caption track and reads the audio itself, writing the transcript
-          from scratch. You get punctuation, capitalisation and real sentences, and it handles names,
-          jargon and accented speech that automatic captions tend to mangle.
-        </p>
-        <p className={P}>
-          It&apos;s still speech recognition, so it isn&apos;t flawless, and the same things that hurt
-          captions — poor audio, overlapping speakers, a less widely spoken language — affect it too,
-          just less.
-        </p>
-        <p className={P}>
-          It runs on AssemblyAI, costs {perMin} credit per minute, and works on any video, including
-          ones that already have captions. An hour of audio is usually done in a few minutes.
-        </p>
-        <p className={P}>
-          See:{" "}
-          <Link href="/docs/reference/accuracy" className="text-[var(--accent)] hover:underline">
-            Accuracy and languages
-          </Link>
+          Transcription is the closest INDXR gets to what was actually said. It costs credits where
+          caption extraction does not; the rates are on{" "}
+          <Link href="/docs/account/credits" className={A}>Credits</Link>.
         </p>
 
-        <AnchorHeading as="h3">Why the choice sticks</AnchorHeading>
+        <AnchorHeading as="h2">What happens between the video and the transcript</AnchorHeading>
         <p className={P}>
-          Whatever you pick becomes the ceiling for every export that follows. Subtitles inherit the
-          caption&apos;s line breaks. Markdown notes inherit the missing punctuation. RAG chunks split
-          on sentence boundaries that were never marked. No export step puts back a word that was never
-          heard correctly.
+          The path is the same whichever way you start. INDXR takes a single video URL, a playlist URL,
+          or an audio or video file you upload. It fetches what it needs — the caption track, or the
+          audio — produces the transcript, and stores it in your library.
         </p>
         <p className={P}>
-          So the rule is simple: when the quality of the text matters, transcribe. When it
-          doesn&apos;t, the free captions are there.
-        </p>
-
-        <AnchorHeading as="h2">With and without an account</AnchorHeading>
-        <p className={P}>
-          Without signing in you can extract captions from single videos — as many as you like — and
-          copy or download each one as plain text. That&apos;s the quick one-off: you need the text of
-          a video, you take it, you&apos;re done. Nothing is saved.
+          Nothing is checked before a job starts. In a playlist, videos that turn out to have no
+          captions, or that cannot be reached at all, are skipped while the job runs, and the credits
+          held for them are returned. An uploaded file has no caption track to fall back on, so uploads
+          are always transcribed.
         </p>
         <p className={P}>
-          Anything more structural needs an account, which is free. It unlocks the other six export
-          formats, transcription, playlists, file uploads, and the library that keeps everything you
-          extract. New accounts get {welcome} credits — enough to try transcription, a playlist, or a
-          RAG export before spending anything.
+          Audio is deleted as soon as the transcription finishes; INDXR keeps no recording of it. If a
+          video has been transcribed before, INDXR serves the stored transcript instead of processing
+          the audio again — the same text, sooner.
         </p>
 
-        <AnchorHeading as="h2">What you get out</AnchorHeading>
-        <p className={P}>Seven formats. Six of them free, however often you export them.</p>
-        <ul className="space-y-3 mb-4 text-[var(--fg-subtle)] leading-relaxed">
-          <li>
-            <Link href="/docs/reference/export-formats/txt" className="font-semibold text-[var(--accent)] hover:underline">Plain text</Link>
-            {" "}— the transcript as continuous text, with or without timestamps. The only format
-            available without an account.
-          </li>
-          <li>
-            <Link href="/docs/reference/export-formats/markdown" className="font-semibold text-[var(--accent)] hover:underline">Markdown</Link>
-            {" "}— with or without timestamps, and with a frontmatter block carrying the video&apos;s
-            title, URL, date and duration, so it drops straight into Obsidian, Notion or Logseq and
-            stays linked to its source.
-          </li>
-          <li>
-            <Link href="/docs/reference/export-formats/csv" className="font-semibold text-[var(--accent)] hover:underline">CSV</Link>
-            {" "}— one row per segment with start, end, duration and word count, for spreadsheets and
-            text analysis.
-          </li>
-          <li>
-            <Link href="/docs/reference/export-formats/srt" className="font-semibold text-[var(--accent)] hover:underline">SRT</Link>
-            {" "}and{" "}
-            <Link href="/docs/reference/export-formats/vtt" className="font-semibold text-[var(--accent)] hover:underline">VTT</Link>
-            {" "}— subtitle files, re-cut to broadcast line lengths instead of dumped as raw caption
-            blocks, so they load cleanly into editors and players.
-          </li>
-          <li>
-            <Link href="/docs/reference/export-formats/json" className="font-semibold text-[var(--accent)] hover:underline">JSON</Link>
-            {" "}— the segments as they are, with a metadata wrapper. Take this when you want to handle
-            the chunking and indexing yourself.
-          </li>
-          <li>
-            <Link href="/docs/reference/export-formats/json" className="font-semibold text-[var(--accent)] hover:underline">RAG JSON</Link>
-            {" "}— the transcript already chunked and prepared for a vector database, so you can ask
-            questions of your own material. This is the one format that costs credits: {ragPer10} per
-            10 minutes of transcript. Downloading an export you&apos;ve already generated is free.
-          </li>
-        </ul>
+        <AnchorHeading as="h2">Why the choice sticks</AnchorHeading>
         <p className={P}>
-          See:{" "}
-          <Link href="/docs/reference/export-formats" className="text-[var(--accent)] hover:underline">
-            Export formats
-          </Link>
+          Whichever route you take becomes the ceiling for every export that follows. Subtitles inherit
+          the caption track&apos;s line breaks. Markdown notes inherit the missing punctuation. Chunks
+          for a vector database split on sentence boundaries that were never marked. No export step puts
+          back a word that was never heard correctly.
+        </p>
+        <p className={P}>
+          There is one place to raise that ceiling after the fact, and that is the transcript itself.
+          INDXR stores every transcript so you can edit it, and keeps the original alongside your edited
+          version. Correct a misheard name once and every export you make afterwards carries the
+          correction.
+        </p>
+        <p className={P}>
+          The rule follows from that. When the text is going somewhere — something you publish, quote,
+          edit, or hand to an AI — transcribe the audio. When you only need to know what was said, the
+          free caption track is enough.
         </p>
 
-        <AnchorHeading as="h2">Your library</AnchorHeading>
+        <AnchorHeading as="h2">Where the transcript goes from there</AnchorHeading>
         <p className={P}>
-          Transcripts aren&apos;t one-off downloads. Everything you extract is kept in your library, and
-          the point of it is that you can keep it in order: group transcripts into collections, keep a
-          playlist together as the set it came from, find things by searching, and delete what you no
-          longer need.
+          Every transcript INDXR produces lands in your library, stays editable, and can be exported as
+          often as you like into any of the seven formats, from plain text to subtitles to a JSON file
+          prepared for a vector database. Only the last of those costs credits.
         </p>
         <p className={P}>
-          They also stay editable, and the original is never overwritten — your edited version is stored
-          alongside it, so you keep both what came out of the video and what you made of it.
-        </p>
-        <p className={P}>
-          That matters more than it sounds. Speech recognition gets names, brands and jargon wrong, and
-          the place to fix that is once, in the transcript. Correct a speaker&apos;s name in the editor
-          and every export you make afterwards carries the correction — the subtitles, the Markdown, the
-          RAG chunks. Without a stored, editable transcript you&apos;d be making the same correction in
-          every file you&apos;d already downloaded.
-        </p>
-        <p className={P}>
-          See:{" "}
-          <Link href="/docs/quickstart" className="text-[var(--accent)] hover:underline">
-            Getting started
-          </Link>
-        </p>
-
-        <AnchorHeading as="h2">Summaries</AnchorHeading>
-        <p className={P}>
-          Any transcript can be summarised for {summaryCost} credits — a flat price, whatever the length
-          of the video. The summary is stored with the transcript and is editable the same way, with the
-          original kept alongside your edits.
-        </p>
-        <p className={P}>
-          See:{" "}
-          <Link href="/docs/guides/summaries" className="text-[var(--accent)] hover:underline">
-            Summaries
-          </Link>
-        </p>
-
-        <AnchorHeading as="h2">Credits</AnchorHeading>
-        <p className={P}>
-          Caption extraction is free. Transcription, summaries and RAG JSON use prepaid credits, which
-          never expire.
-        </p>
-        <p className={P}>
-          See:{" "}
-          <Link href="/docs/account/credits" className="text-[var(--accent)] hover:underline">
-            Credits
-          </Link>
+          A transcript can also be summarised, and the summary is stored and edited the same way.
         </p>
 
         <RelatedTopicsList
           topics={[
-            { label: "Accuracy and languages", href: "/docs/reference/accuracy" },
-            { label: "Export formats", href: "/docs/reference/export-formats" },
-            { label: "Limits", href: "/docs/reference/limits" },
-            { label: "Credits", href: "/docs/account/credits" },
+            {
+              label: "Accuracy and languages",
+              href: "/docs/reference/accuracy",
+              description: "which model runs for your language and the published figures",
+            },
+            {
+              label: "Export formats",
+              href: "/docs/reference/export-formats",
+              description: "what each of the seven files actually contains",
+            },
+            {
+              label: "Credits",
+              href: "/docs/account/credits",
+              description: "what costs credits, how reservations work, and when they come back",
+            },
           ]}
         />
       </DocsShell>

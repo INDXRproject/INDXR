@@ -12302,3 +12302,84 @@ Both apps build green.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: packages/shared/src/components/free-tool/VideoTab.tsx
 ---
+
+[2026-07-23 15:20] taak: how-indxr-works + faq herschreven (handgeschreven concept) + 4 onware regels elders
+
+Twee docs-pagina's vervangen door definitieve handgeschreven tekst (conceptpagina's, geen stappen):
+how-indxr-works (TechArticle + BreadcrumbList, dateModified 2026-07-23) en faq (FAQPage met 10 vragen
+als platte strings via reactNodeToText + BreadcrumbList). Componenten: DocsBreadcrumb, DefinitionLeadOpening,
+AnchorHeading per H2, RelatedTopicsList (met description-prop) voor See also. Geen DocsFigure/DocsCallout/
+SourcesBlock. Beide teksten noemen geen pricing-getallen (defereren naar Credits/Pricing).
+
+Vier onware regels elders in dezelfde commit:
+- docs-config.ts: quickstart-hubbeschrijving tijdclaim weg ("in under three minutes" → "from URL to export");
+  how-indxr-works-hubbeschrijving naar captions-vs-AI-scope. (Slechts ÉÉN tijdclaim gevonden, niet twee — zie rapport.)
+- StatsFromTesting.tsx: het "99.4%/800+"-blok was al uit de UI (prior commit); alleen een comment bevatte de
+  tokens nog → comment ontdaan van de verboden waarden, zodat grep 99.4/800+ = 0.
+- page.tsx (home): TestimonialPlaceholder-sectie verwijderd (placeholder in productie, ADR-044).
+- page.tsx (home): item 05 RAG-chunk rendert nu {RAG_CHUNK_DEFAULT} (=60) uit pricing.ts i.p.v. hardgecodeerd
+  "60" (stond al op 60, niet "30-second" zoals de taak stelde — zie rapport).
+
+Drie claim-verificaties tegen de code:
+- CACHE (misleidend, GERAPPORTEERD): een AI-transcriptie cache-hit rekent de VOLLE credit-kost
+  (transcription_pipeline.py:316-385, deduct_credits/settle_credits reason "…(cache hit)"). Tekst niet gewijzigd.
+- AUDIO-DELETE (correct): audio = lokale temp-file, verwijderd in de pipeline-`finally` (transcription_pipeline.py:710-713);
+  R2 slaat alleen JSON-transcripten op, geen audio; geen 24u-audio-purge.
+- FAQ no-captions (correct): VideoTab toont "No captions found…" + Enable Generate with AI (VideoTab.tsx:659,671,1207-1210).
+
+Nu 0 gebruiken (NIET verwijderd): TestimonialPlaceholder.
+
+Marketing build green (na transiënte Turbopack .tmp-race, retry groen); beide pagina's HTTP 200, FAQPage=10 vragen
+platte strings, home item05=60 uit constante, testimonial weg, hub-beschrijvingen bijgewerkt.
+Openstaand (buiten scope, gerapporteerd): grep "30-second" houdt 1 hit in een ongerelateerd artikel (retry-pause).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/how-indxr-works/page.tsx
+apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/lib/docs-config.ts
+apps/marketing/src/components/marketing/StatsFromTesting.tsx
+apps/marketing/src/app/page.tsx
+docs/LESSONS.md
+docs/LOG.md
+---
+[2026-07-23 16:54] commit: docs: hand-write how-indxr-works + faq, fix four untrue lines
+
+Replace two docs concept pages with definitive hand-written copy:
+- /docs/how-indxr-works — captions vs AI transcription and why the choice
+  shapes every export. TechArticle + BreadcrumbList, dateModified set.
+- /docs/faq — 10 short questions, each pointing to the page that owns the
+  answer. FAQPage schema with all answers as plain strings (reactNodeToText)
+  + BreadcrumbList. Components: DocsBreadcrumb, DefinitionLeadOpening,
+  AnchorHeading per H2, RelatedTopicsList for See also.
+
+Four untrue lines elsewhere:
+- docs-config hub descriptions: drop the quickstart time claim ("in under
+  three minutes" → "from URL to export"); reframe how-indxr-works to the
+  captions-vs-AI scope.
+- StatsFromTesting: the 99.4%/800+ block was already removed from the UI in a
+  prior commit; only a code comment still held the tokens — stripped so the
+  numbers appear nowhere.
+- Homepage: remove the testimonial placeholder section (ADR-044).
+- Homepage: item 05 RAG chunk size now renders from RAG_CHUNK_DEFAULT (60)
+  instead of a hardcoded literal.
+
+Verified against code (reported, text left unchanged where it conflicts):
+- Cache: an AI-transcription cache hit charges the full credit cost
+  (transcription_pipeline.py:316-385) — the "serves the stored transcript
+  instead of processing the audio again" line is misleading by that measure.
+- Audio deletion: audio is a local temp file removed in the pipeline finally
+  (transcription_pipeline.py:710-713); R2 stores only JSON, no audio — accurate.
+- No-captions offer: VideoTab surfaces "No captions found" + Generate with AI
+  (VideoTab.tsx:659,671,1207-1210) — accurate.
+
+Now unused (not deleted): TestimonialPlaceholder.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/app/docs/how-indxr-works/page.tsx
+apps/marketing/src/app/page.tsx
+apps/marketing/src/components/marketing/StatsFromTesting.tsx
+apps/marketing/src/lib/docs-config.ts
+docs/LESSONS.md
+docs/LOG.md
+---
