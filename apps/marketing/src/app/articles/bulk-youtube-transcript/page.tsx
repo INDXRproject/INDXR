@@ -147,7 +147,7 @@ export default function BulkYouTubeTranscriptPage() {
       <p>
         <strong>AI knowledge base:</strong> Extract a playlist as RAG-optimized JSON and load into a
         vector database for semantic search. See{" "}
-        <Link href="/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link> for a
+        <Link href="/articles/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link> for a
         complete implementation guide.
       </p>
 
@@ -162,7 +162,7 @@ export default function BulkYouTubeTranscriptPage() {
 
       <p>
         For the full playlist workflow including pre-extraction scanning and real-time progress tracking,
-        see <Link href="/youtube-playlist-transcript">YouTube Playlist Transcript</Link>. For credit
+        see <Link href="/articles/youtube-playlist-transcript">YouTube Playlist Transcript</Link>. For credit
         package details, see <Link href="/pricing">pricing</Link>.
       </p>
     </ToolPageTemplate>

@@ -367,8 +367,8 @@ export default function YouTubeTranscriptJsonPage() {
       <p>
         For the full RAG-optimized export with chunking, overlap configuration, and LangChain / Pinecone
         integration examples, see{" "}
-        <Link href="/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link>. For
-        audio file uploads, see <Link href="/audio-to-text">Audio Upload</Link>. For credit packages,
+        <Link href="/articles/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link>. For
+        audio file uploads, see <Link href="/articles/audio-to-text">Audio Upload</Link>. For credit packages,
         see the <Link href="/pricing">pricing page</Link>.
       </p>
     </ToolPageTemplate>

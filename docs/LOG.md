@@ -11703,3 +11703,46 @@ The sitemap-crawl proof now reads URLs from the live sitemap.xml (49 URLs, 0 non
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/components/marketing/StatsFromTesting.tsx
 ---
+[2026-07-23 11:14] commit: fix(articles): repair dead internal cross-links site-wide + not-available stale claims
+
+CROSS-LINK REPAIR (18 files): after ADR-075 removed the catch-all redirects, every
+bare-slug internal link 404'd. Live-tested: /youtube-transcript-for-rag, /audio-to-text,
+/how-it-works, /youtube-transcript-generator etc. all returned 404. Rewrote across
+apps/marketing/src:
+- bare article slugs → /articles/<slug>  (e.g. /audio-to-text → /articles/audio-to-text)
+- /how-it-works → /docs/how-indxr-works
+- /youtube-transcript-generator → /transcribe
+Zero bare dead links remain.
+
+not-available STALE CLAIMS (per-claim: file / old → new / source):
+- '67 (supported) languages' ×3 → 'the languages YouTube supports' (no number; 67 has
+  no code/source basis, product-truth §6.5). L17,80,157.
+- '99+ languages' ×2 → '99 languages' (AssemblyAI Universal-2 = 99, verified
+  supported-languages page). L33,163.
+- '9.97% WER vs 24.73% Amazon' → 'about 4-5% WER on English' — the old figures are NOT
+  on assemblyai.com/benchmarks anymore (now Universal-3.5 Pro 4.35% WER, verified
+  2026-07-23; Amazon no longer listed). L141.
+- '94.1% word accuracy on English' → 'roughly 4-5% word error rate' (same source). L325.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/chunk-youtube-transcripts-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-members-only-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-csv/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-markdown/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-not-available/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-obsidian/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
+apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
+---

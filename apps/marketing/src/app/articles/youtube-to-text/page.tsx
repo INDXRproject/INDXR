@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: "Can I convert a whole playlist to text at once?",
-    a: (<>Yes. The <Link href="/youtube-playlist-transcript">Playlist tab</Link> processes all selected videos in one job — first three auto-caption videos free, 1 credit per video from video four onward.</>),
+    a: (<>Yes. The <Link href="/articles/youtube-playlist-transcript">Playlist tab</Link> processes all selected videos in one job — first three auto-caption videos free, 1 credit per video from video four onward.</>),
   },
   {
     q: "What about YouTube Shorts?",
@@ -33,7 +33,7 @@ const faqs = [
   },
   {
     q: "How accurate is AI transcription?",
-    a: (<>AssemblyAI, which powers INDXR.AI{"'"}s AI transcription, achieves 95%+ accuracy on clean audio. No model is error-free — results vary on challenging audio. For the full breakdown, see the <Link href="/audio-to-text">audio transcription page</Link>.</>),
+    a: (<>AssemblyAI, which powers INDXR.AI{"'"}s AI transcription, achieves 95%+ accuracy on clean audio. No model is error-free — results vary on challenging audio. For the full breakdown, see the <Link href="/articles/audio-to-text">audio transcription page</Link>.</>),
   },
   {
     q: "What does the plain TXT output look like?",
@@ -212,13 +212,13 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
 
       <p>
         Beyond plain text, the same extraction produces five other formats.{" "}
-        <Link href="/youtube-transcript-markdown">Markdown</Link> adds the {"video's"}
+        <Link href="/articles/youtube-transcript-markdown">Markdown</Link> adds the {"video's"}
         metadata in the header — title, channel, URL, duration — ready to open in any
         notes app or import into Obsidian or Notion. SRT and VTT are subtitle files
         for adding captions to a video or publishing it online. CSV exports every
         segment as a spreadsheet row for analysis or bulk processing. JSON gives
         developers a structured data format with timestamps and video metadata; the{" "}
-        <Link href="/youtube-transcript-for-rag">RAG-optimized JSON variant</Link> is
+        <Link href="/articles/youtube-transcript-for-rag">RAG-optimized JSON variant</Link> is
         chunked and formatted for AI pipelines and vector databases — primarily used
         by developers building searchable archives, chatbots over specific content, or
         retrieval systems using tools like LangChain or Pinecone.
@@ -242,7 +242,7 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
           <tr><td>VTT</td><td>Subtitles for websites and online courses — Canvas, Moodle, Articulate</td></tr>
           <tr><td>CSV</td><td>Every segment as a spreadsheet row — for analysis or bulk processing</td></tr>
           <tr><td>JSON</td><td>{"Structured data with timestamps and video metadata — for developers"}</td></tr>
-          <tr><td>JSON RAG</td><td><Link href="/youtube-transcript-for-rag">Chunked and formatted for AI pipelines and vector databases</Link></td></tr>
+          <tr><td>JSON RAG</td><td><Link href="/articles/youtube-transcript-for-rag">Chunked and formatted for AI pipelines and vector databases</Link></td></tr>
         </tbody>
       </table>
 
@@ -254,9 +254,9 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
 
       <p>
         For playlists, the{" "}
-        <Link href="/youtube-playlist-transcript">Playlist tab</Link> processes all
+        <Link href="/articles/youtube-playlist-transcript">Playlist tab</Link> processes all
         selected videos in one job. For audio files from any source, the{" "}
-        <Link href="/audio-to-text">Audio Upload tab</Link> works the same way —
+        <Link href="/articles/audio-to-text">Audio Upload tab</Link> works the same way —
         upload an audio file and process it like a YouTube URL.
       </p>
 

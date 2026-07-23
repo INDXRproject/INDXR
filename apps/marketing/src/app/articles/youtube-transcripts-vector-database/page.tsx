@@ -116,7 +116,7 @@ Semantic search + LLM-generated answers with timestamp citations`}</code></pre>
         enters this pipeline. Raw YouTube transcripts require merging 2–5 second fragments, cleaning
         filler words, detecting sentence boundaries, computing token counts, and attaching metadata per
         chunk. The{" "}
-        <Link href="/youtube-transcript-for-rag">RAG JSON export</Link> delivers all of that
+        <Link href="/articles/youtube-transcript-for-rag">RAG JSON export</Link> delivers all of that
         pre-processed. We write embedding and storage code, not transcript processing code.
       </p>
 
@@ -426,7 +426,7 @@ if new_chunks:
     # Index using same batching logic above`}</code></pre>
 
       <p>
-        To start: <Link href="/youtube-transcript-for-rag">extract any YouTube video as RAG JSON</Link>.
+        To start: <Link href="/articles/youtube-transcript-for-rag">extract any YouTube video as RAG JSON</Link>.
         For the chunking research behind the 90–120 second default, see{" "}
         <Link href="/blog/chunk-youtube-transcripts-for-rag">
           How to Chunk YouTube Transcripts for RAG

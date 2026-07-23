@@ -181,7 +181,7 @@ export default function AudioToTextPage() {
         <strong>Export as RAG JSON:</strong> For podcasts, lectures, or interviews you want to make
         searchable via a vector database — enable RAG JSON export to get chunked, metadata-rich output
         ready for LangChain, LlamaIndex, or direct vector database ingestion. See{" "}
-        <Link href="/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link> for the
+        <Link href="/articles/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link> for the
         full pipeline.
       </p>
 
@@ -210,7 +210,7 @@ export default function AudioToTextPage() {
 
       <p>
         For YouTube videos (where you have a URL rather than a downloaded file), use the{" "}
-        <Link href="/youtube-transcript-generator">YouTube Transcript Generator</Link> instead — it
+        <Link href="/transcribe">YouTube Transcript Generator</Link> instead — it
         handles auto-caption extraction for free and AI transcription when captions aren&apos;t available. For
         credit packages, see the <Link href="/pricing">pricing page</Link>.
       </p>

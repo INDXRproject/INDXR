@@ -168,7 +168,7 @@ to understand about this topic`}</code></pre>
 
       <p>
         For audio files you&apos;ve already downloaded, the{" "}
-        <Link href="/audio-to-text">Audio Upload tab</Link> accepts MP3, MP4, WAV, M4A, OGG, FLAC,
+        <Link href="/articles/audio-to-text">Audio Upload tab</Link> accepts MP3, MP4, WAV, M4A, OGG, FLAC,
         and WEBM files up to 500MB and produces the same resegmented SRT/VTT output.
       </p>
 
@@ -225,8 +225,8 @@ to understand about this topic`}</code></pre>
 
       <p>
         For videos where no captions are available at all, see{" "}
-        <Link href="/youtube-transcript-not-available">YouTube Transcript Not Available</Link> for a
-        complete troubleshooting guide, or <Link href="/how-it-works">how INDXR.AI works</Link> for
+        <Link href="/articles/youtube-transcript-not-available">YouTube Transcript Not Available</Link> for a
+        complete troubleshooting guide, or <Link href="/docs/how-indxr-works">how INDXR.AI works</Link> for
         a full overview of the extraction and resegmentation pipeline.
       </p>
     </ToolPageTemplate>

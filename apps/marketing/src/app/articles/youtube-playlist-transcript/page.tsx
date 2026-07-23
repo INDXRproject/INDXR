@@ -149,7 +149,7 @@ export default function YouTubePlaylistTranscriptPage() {
       <p>
         For AI pipelines, RAG JSON export is available per video or in bulk, with a merge option that
         combines all playlist transcripts into a single JSON array. See{" "}
-        <Link href="/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link> for the
+        <Link href="/articles/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link> for the
         schema and integration examples.
       </p>
 
@@ -164,10 +164,10 @@ export default function YouTubePlaylistTranscriptPage() {
 
       <p>
         To start a playlist extraction, paste any YouTube playlist URL in the{" "}
-        <Link href="/bulk-youtube-transcript">Bulk YouTube Transcript</Link> tool or use the Playlist tab
-        on the <Link href="/youtube-transcript-generator">transcript generator</Link>. For credit costs
+        <Link href="/articles/bulk-youtube-transcript">Bulk YouTube Transcript</Link> tool or use the Playlist tab
+        on the <Link href="/transcribe">transcript generator</Link>. For credit costs
         and package options, see the <Link href="/pricing">pricing page</Link>. For a full overview of
-        the extraction pipeline, see <Link href="/how-it-works">how INDXR.AI works</Link>.
+        the extraction pipeline, see <Link href="/docs/how-indxr-works">how INDXR.AI works</Link>.
       </p>
     </ToolPageTemplate>
   )

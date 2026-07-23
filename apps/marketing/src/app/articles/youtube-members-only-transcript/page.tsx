@@ -93,7 +93,7 @@ export default function YouTubeMembersOnlyTranscriptPage() {
         </li>
         <li>
           <strong>Upload to INDXR.AI.</strong> Open the{" "}
-          <Link href="/audio-to-text">Audio Upload tab</Link> in INDXR.AI. Drag in the audio file
+          <Link href="/articles/audio-to-text">Audio Upload tab</Link> in INDXR.AI. Drag in the audio file
           (MP3, MP4, WAV, M4A, OGG, FLAC, or WEBM, up to 500MB). INDXR.AI sends it through{" "}
           {transcriptionModelName()} for transcription.
         </li>
@@ -114,7 +114,7 @@ export default function YouTubeMembersOnlyTranscriptPage() {
         Cost: 1 credit per minute of audio, minimum 1 credit. A 30-minute members-only video would
         cost 30 credits — about {creditCostEur(30)} at {getAnchorPackage().name} pricing. See the{" "}
         <Link href="/pricing">pricing page</Link> for all package options, or{" "}
-        <Link href="/how-it-works">how INDXR.AI works</Link> for an overview of the full pipeline.
+        <Link href="/docs/how-indxr-works">how INDXR.AI works</Link> for an overview of the full pipeline.
       </p>
 
       <h2>If You&apos;re a Creator With Members-Only Content</h2>
@@ -160,7 +160,7 @@ export default function YouTubeMembersOnlyTranscriptPage() {
         <li>
           <strong>Age-restricted videos</strong> — Require a signed-in YouTube account with age
           verification. See{" "}
-          <Link href="/youtube-age-restricted-transcript">
+          <Link href="/articles/youtube-age-restricted-transcript">
             YouTube Age-Restricted Transcript
           </Link>{" "}
           for what&apos;s possible.
@@ -168,7 +168,7 @@ export default function YouTubeMembersOnlyTranscriptPage() {
         <li>
           <strong>Videos without auto-captions</strong> — Not an access restriction, just a missing
           caption track. AI Transcription solves this. See{" "}
-          <Link href="/youtube-transcript-not-available">YouTube Transcript Not Available</Link>.
+          <Link href="/articles/youtube-transcript-not-available">YouTube Transcript Not Available</Link>.
         </li>
         <li>
           <strong>Private videos</strong> — No extraction possible by any external tool. If you own

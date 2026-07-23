@@ -118,7 +118,7 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
         </li>
         <li>
           <strong>Upload to INDXR.AI.</strong> Open the{" "}
-          <Link href="/audio-to-text">Audio Upload tab</Link>. Accepted formats: MP3, MP4, WAV,
+          <Link href="/articles/audio-to-text">Audio Upload tab</Link>. Accepted formats: MP3, MP4, WAV,
           M4A, OGG, FLAC, WEBM, up to 500MB. The file is sent directly to INDXR.AI&apos;s backend — not
           through Vercel&apos;s size-limited proxy.
         </li>
@@ -134,7 +134,7 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
         approximately {creditCostEur(45)} at {getAnchorPackage().name} pricing ({anchorPerCreditText()}) — see the{" "}
         <Link href="/pricing">pricing page</Link> for all packages. For a full technical overview of
         how INDXR.AI handles audio transcription, see{" "}
-        <Link href="/how-it-works">how INDXR.AI works</Link>.
+        <Link href="/docs/how-indxr-works">how INDXR.AI works</Link>.
       </p>
 
       <p>
@@ -169,13 +169,13 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
         <li>
           <strong>Members-only videos</strong> — Requires channel membership payment. Same audio
           upload path applies if you&apos;re a paying member. See{" "}
-          <Link href="/youtube-members-only-transcript">YouTube Members-Only Transcript</Link>.
+          <Link href="/articles/youtube-members-only-transcript">YouTube Members-Only Transcript</Link>.
         </li>
         <li>
           <strong>Videos without auto-captions</strong> — No access restriction, just no captions.
           AI Transcription solves this without any download step — paste the URL and INDXR.AI
           handles it. See{" "}
-          <Link href="/youtube-transcript-not-available">YouTube Transcript Not Available</Link>.
+          <Link href="/articles/youtube-transcript-not-available">YouTube Transcript Not Available</Link>.
         </li>
         <li>
           <strong>Private videos</strong> — No external access by any tool. Requires the creator to

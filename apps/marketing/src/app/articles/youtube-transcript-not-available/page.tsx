@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Does every YouTube video have a transcript?",
-    a: "No. YouTube automatically generates captions for videos in 67 supported languages when speech is detectable and audio quality is sufficient. Videos in unsupported languages, music-only content, videos with poor audio, and videos where the creator has disabled captions have no transcript. For those videos, the main options are downloading the audio and uploading it to a transcription tool, or using AI transcription directly from the URL when the video is publicly accessible. Neither works for private videos or members-only content without first obtaining the audio file.",
+    a: "No. YouTube automatically generates captions for videos in the languages it supports when speech is detectable and audio quality is sufficient. Videos in unsupported languages, music-only content, videos with poor audio, and videos where the creator has disabled captions have no transcript. For those videos, the main options are downloading the audio and uploading it to a transcription tool, or using AI transcription directly from the URL when the video is publicly accessible. Neither works for private videos or members-only content without first obtaining the audio file.",
   },
   {
     q: "How long does it take for YouTube to generate auto-captions?",
@@ -30,7 +30,7 @@ const faqs = [
   },
   {
     q: "Does INDXR.AI work for videos in languages other than English?",
-    a: `Yes. AI Transcription via INDXR.AI uses ${transcriptionModelName()}; INDXR.AI automatically picks the best model for the video's language, with broad coverage across 99+ languages and automatic language detection. Auto-caption extraction also works for any language YouTube supports (67 languages).`,
+    a: `Yes. AI Transcription via INDXR.AI uses ${transcriptionModelName()}; INDXR.AI automatically picks the best model for the video's language — up to 99 languages with automatic detection. Auto-caption extraction also works for any language YouTube provides captions for.`,
   },
   {
     q: "What's the difference between captions and a transcript on YouTube?",
@@ -77,8 +77,8 @@ export default function YouTubeTranscriptNotAvailablePage() {
 
       <p>
         Before troubleshooting, it helps to know exactly what you&apos;re dealing with. YouTube generates
-        automatic captions for videos in 67 languages when it detects speech, but the process fails
-        more often than most people expect.
+        automatic captions for videos in the languages it supports when it detects clear speech, but the
+        process fails more often than most people expect.
       </p>
 
       <h3>Reason 1: The video has no auto-captions yet</h3>
@@ -118,10 +118,10 @@ export default function YouTubeTranscriptNotAvailablePage() {
 
       <p>
         <strong>What to do:</strong>{" "}
-        <Link href="/youtube-transcript-generator">INDXR.AI</Link> can attempt AI transcription
+        <Link href="/transcribe">INDXR.AI</Link> can attempt AI transcription
         directly from the URL — this works for most publicly accessible videos. If the URL fails,
         downloading the audio separately and uploading it via the{" "}
-        <Link href="/audio-to-text">Audio Upload tab</Link> is worth trying. If the video is not
+        <Link href="/articles/audio-to-text">Audio Upload tab</Link> is worth trying. If the video is not
         publicly downloadable, there may be no reliable workaround.
       </p>
 
@@ -138,29 +138,29 @@ export default function YouTubeTranscriptNotAvailablePage() {
 
       <p>
         <strong>What to do:</strong> AI transcription generally performs better on noisy audio than{" "}
-        {"YouTube's"} system. On difficult recordings, AssemblyAI{"'"}s model achieves a 9.97% word
-        error rate versus 24.73% for Amazon Transcribe on the same{" "}
+        {"YouTube's"} automatic captions, because it reads the audio from scratch with punctuation and
+        real sentences. On English, AssemblyAI reports a word error rate of about 4–5% on its own{" "}
         <a
           href="https://www.assemblyai.com/benchmarks"
           target="_blank"
           rel="noopener noreferrer"
         >
-          benchmark
+          benchmarks
         </a>
-        . That said, on audio with extreme noise, heavily overlapping speakers, or no clear speech,
-        no transcription system produces reliable results.
+        , and English sits in its top accuracy band. That said, on audio with extreme noise, heavily
+        overlapping speakers, or no clear speech, no transcription system produces reliable results.
       </p>
 
       <h3>Reason 4: The language isn&apos;t supported</h3>
 
       <p>
-        YouTube auto-generates captions for 67 languages for long-form videos, but supports only
-        English for live streams. If the primary language of a video falls outside those 67, YouTube
-        won&apos;t generate captions regardless of audio quality.
+        YouTube auto-generates captions for a range of languages on long-form videos, but supports only
+        English for live streams. If the primary language of a video falls outside the set YouTube
+        supports, it won&apos;t generate captions regardless of audio quality.
       </p>
 
       <p>
-        <strong>What to do:</strong> AI transcription via AssemblyAI supports 99+ languages with
+        <strong>What to do:</strong> AI transcription via AssemblyAI supports 99 languages with
         automatic detection. For most videos in unsupported languages, pasting the URL and enabling
         AI Transcription will produce a transcript — though accuracy varies significantly by language.
       </p>
@@ -181,9 +181,9 @@ export default function YouTubeTranscriptNotAvailablePage() {
 
       <p>
         <strong>What to do:</strong> For age-restricted videos, see the guide on{" "}
-        <Link href="/youtube-age-restricted-transcript">YouTube age-restricted transcripts</Link> —
+        <Link href="/articles/youtube-age-restricted-transcript">YouTube age-restricted transcripts</Link> —
         there is a workaround via audio download. For members-only content, see{" "}
-        <Link href="/youtube-members-only-transcript">YouTube members-only transcripts</Link>. If
+        <Link href="/articles/youtube-members-only-transcript">YouTube members-only transcripts</Link>. If
         you are not a member and cannot obtain the audio file, there is no way to transcribe the
         video.
       </p>
@@ -198,7 +198,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
       <p>
         <strong>What to do:</strong> If you own the video, you can download the audio file from
         YouTube Studio and upload it directly to INDXR.AI&apos;s{" "}
-        <Link href="/audio-to-text">Audio Upload tool</Link>. The full transcript will be generated
+        <Link href="/articles/audio-to-text">Audio Upload tool</Link>. The full transcript will be generated
         from your file without needing the video to be public.
       </p>
 
@@ -310,7 +310,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
       </p>
 
       <p>
-        <Link href="/youtube-transcript-generator">INDXR.AI</Link> does this in a few steps: paste
+        <Link href="/transcribe">INDXR.AI</Link> does this in a few steps: paste
         the video URL, enable AI Transcription, confirm the credit cost (1 credit per minute), and
         the transcript is typically ready within a few minutes. Processing time scales with video
         length — most videos under 30 minutes complete in under two minutes. The transcription
@@ -322,15 +322,15 @@ export default function YouTubeTranscriptNotAvailablePage() {
         >
           benchmarks
         </a>{" "}
-        at 94.1% word accuracy on English speech and handles accents, overlapping speech, and
+        at roughly 4–5% word error rate on English speech, and handles accents, overlapping speech, and
         background noise significantly better than YouTube&apos;s built-in system.
       </p>
 
       <p>
         For audio you already have — a recording, a podcast episode, a downloaded video file — the{" "}
-        <Link href="/audio-to-text">Audio Upload</Link> tab accepts MP3, MP4, WAV, M4A, OGG, FLAC,
+        <Link href="/articles/audio-to-text">Audio Upload</Link> tab accepts MP3, MP4, WAV, M4A, OGG, FLAC,
         and WEBM files up to 500MB. The same AI pipeline applies; for a full technical overview see{" "}
-        <Link href="/how-it-works">how INDXR.AI works</Link>.
+        <Link href="/docs/how-indxr-works">how INDXR.AI works</Link>.
       </p>
 
       <h2>Specific scenarios</h2>

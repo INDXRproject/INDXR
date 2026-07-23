@@ -299,13 +299,13 @@ SORT created DESC`}</code></pre>
 
       <p>
         For the Obsidian-specific workflow with step-by-step instructions, see{" "}
-        <Link href="/youtube-transcript-obsidian">YouTube Transcript to Obsidian</Link>. For the
+        <Link href="/articles/youtube-transcript-obsidian">YouTube Transcript to Obsidian</Link>. For the
         RAG JSON export format, see{" "}
-        <Link href="/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link>. For
+        <Link href="/articles/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link>. For
         credit packages, see the <Link href="/pricing">pricing page</Link>. For videos that
         don&apos;t have captions, see{" "}
-        <Link href="/youtube-transcript-not-available">YouTube Transcript Not Available</Link>.{" "}
-        <Link href="/youtube-transcript-generator">Export a YouTube transcript as Markdown</Link>{" "}
+        <Link href="/articles/youtube-transcript-not-available">YouTube Transcript Not Available</Link>.{" "}
+        <Link href="/transcribe">Export a YouTube transcript as Markdown</Link>{" "}
         — free for captioned videos, no extension required.
       </p>
     </ToolPageTemplate>

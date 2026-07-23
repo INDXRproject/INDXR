@@ -199,11 +199,11 @@ df <- read_csv("transcript.csv", locale = locale(encoding = "UTF-8"))`}</code></
 
       <p>
         To extract a playlist and download as CSV, see{" "}
-        <Link href="/bulk-youtube-transcript">Bulk YouTube Transcript</Link>. For structured JSON
+        <Link href="/articles/bulk-youtube-transcript">Bulk YouTube Transcript</Link>. For structured JSON
         with full metadata wrapper, see{" "}
-        <Link href="/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For credit
+        <Link href="/articles/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For credit
         costs and packages, see the <Link href="/pricing">pricing page</Link>. For a full overview
-        of the extraction pipeline, see <Link href="/how-it-works">how INDXR.AI works</Link>.
+        of the extraction pipeline, see <Link href="/docs/how-indxr-works">how INDXR.AI works</Link>.
       </p>
     </ToolPageTemplate>
   )

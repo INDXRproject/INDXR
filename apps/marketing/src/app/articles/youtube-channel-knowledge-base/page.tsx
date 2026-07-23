@@ -135,7 +135,7 @@ export default function YouTubeChannelKnowledgeBasePage() {
 
       <p>
         Paste the playlist URL into INDXR.AI&apos;s{" "}
-        <Link href="/bulk-youtube-transcript">Playlist tab</Link>. The pre-extraction scan shows every
+        <Link href="/articles/bulk-youtube-transcript">Playlist tab</Link>. The pre-extraction scan shows every
         video&apos;s caption availability, duration, and whether you&apos;ve already processed it. For a channel
         knowledge base, AI Transcription produces punctuated, accurately capitalized text — the quality
         difference matters when these transcripts become your retrieval corpus.
@@ -161,7 +161,7 @@ export default function YouTubeChannelKnowledgeBasePage() {
       <h2>Step 3: Understand the RAG JSON Output</h2>
 
       <p>
-        Each video&apos;s <Link href="/youtube-transcript-for-rag">RAG JSON</Link> file contains 90–120 second
+        Each video&apos;s <Link href="/articles/youtube-transcript-for-rag">RAG JSON</Link> file contains 90–120 second
         chunks with everything a vector database needs:
       </p>
 

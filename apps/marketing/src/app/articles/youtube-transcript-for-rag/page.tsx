@@ -385,7 +385,7 @@ for i in range(0, len(vectors), 100):
 
       <p>
         For the standard (non-chunked) JSON format, see{" "}
-        <Link href="/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For a deep dive
+        <Link href="/articles/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For a deep dive
         into chunk size research and overlap strategy, see{" "}
         <Link href="/blog/chunk-youtube-transcripts-for-rag">
           How to Chunk YouTube Transcripts for RAG
