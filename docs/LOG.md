@@ -12169,3 +12169,8 @@ packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/lib/storage.ts
 supabase/migrations/20260723140000_library_storage_limit.sql
 ---
+[2026-07-23 13:04] commit: docs: night report — storage limit enforced + credit-sink (ADR-078)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
+---

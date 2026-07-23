@@ -513,3 +513,28 @@ opening-warm-up), en accuracy/credits/billing waren al door mij naar het contrac
 FAQ-/artikel-zinnen een kale merknaam waar de zin ook zonder de gloss leest ("transcribe the audio
 using AssemblyAI"); de docs-accuracy-pagina glost hem nu wél. Strengere gloss overal = smaakkeuze
 voor Khidr.
+
+---
+
+# OPSLAGLIMIET ECHT GEMAAKT + credit-sink (ADR-078) — commit `9393724`
+
+De account-meter toonde "195 MB van 100 MB / nothing is blocked" — een niet-limiet. Nu afgedwongen.
+
+- **Migratie `20260723140000`** (live, 105→106): `library_bytes_cap` basis → **100 MiB** (ook bestaande
+  rijen), nieuwe `library_bytes_bonus`-kolom; effectieve limiet = cap+bonus (**per-user uit de DB**).
+- **Handhaving vóór reservering** (LESSONS 2026-07-22): `is_library_full()` in de backend vóór
+  `reserve_credits` op AI-transcriptie/upload/playlist → **413 `storage_full`, geen reservering**.
+  Fail-open bij check-fout (nooit een betalende job onterecht blokkeren). Grandfather-safe: alleen
+  **nieuwe** transcripten geblokkeerd, bestaande onaangeroerd. Inline kaart (geen toast) in
+  VideoTab/AudioTab + actionable playlist-melding.
+- **Ruimte bijkopen:** **1 blok = +100 MiB voor 100 credits** (1 cr/MB), permanent.
+  `purchase_library_space` — atomair (zelfde lock als `deduct_credits_atomic`) — **service-role-only**
+  (van PUBLIC/authenticated ge-REVOKEd), via server-action met server-geverifieerde user-id (geen
+  spoofing). `product_type` NULL (geen COR); reservering/settlement onaangeroerd. Account-kaart toont
+  echte footprint + per-user cap + "Buy +100 MB — 100 credits"-knop + full-state-kaart.
+- **Verhouding-ADR:** ADR-078 (1 cr/MB, 100 MB-blokken; €2,50/100 MB op Plus-anker; zachte nudge,
+  geen winstcentrum; verdubbelt de gratis basis). Docs: `/docs/account/credits` sectie "Library
+  storage, and buying more" (credits-pagina bezit "wat kost credits").
+- **Prod-getest** (wegwerp-users, cascade-verwijderd): zwaarste echte user (204 MB) → full op 100 MiB;
+  blok kopen → 250→150 credits, +100 MiB bonus, cap 100→200 MiB, full=false; onvoldoende saldo →
+  atomaire weigering zonder mutatie. Railway 200, marketing 200, app 307; docs-sectie live.
