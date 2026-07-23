@@ -2,12 +2,14 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-to-text" },
   title: "YouTube to text — what you actually get | INDXR.AI",
   description:
     "Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — seven export formats, nine output options.",
+  ...editorialOg("youtube-to-text"),
 }
 
 const faqs = [

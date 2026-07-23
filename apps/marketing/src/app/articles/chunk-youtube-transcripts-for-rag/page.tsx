@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "How to Chunk YouTube Transcripts for RAG — Research-Backed Guide | INDXR.AI",
   description:
     "The chunk size you pick matters more than your embedding model. Research-backed guide covering optimal sizes, overlap, sentence-boundary snapping, and why 30 seconds is wrong.",
+  ...editorialOg("chunk-youtube-transcripts-for-rag"),
 }
 
 const faqs = [

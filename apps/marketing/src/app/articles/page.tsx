@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { EditorialImage } from "@/components/content/EditorialImage"
+import { editorialAlt, hasEditorialImage } from "@/lib/editorialAlts"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles" },
@@ -71,22 +73,38 @@ export default function ArticlesPage() {
                   </h2>
                   <span className="h-px flex-1 bg-[var(--border)]" />
                 </div>
-                <ul className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+                <ul className="grid gap-6 sm:grid-cols-2">
                   {articles
                     .filter((a) => a.category === category)
-                    .map((article) => (
-                      <li key={article.href}>
-                        <Link
-                          href={article.href}
-                          className="group block rounded-lg -mx-3 px-3 py-2.5 hover:bg-[var(--surface)] transition-colors"
-                        >
-                          <span className="block text-sm font-medium text-[var(--fg)] group-hover:text-[var(--accent)] transition-colors">
-                            {article.label}
-                          </span>
-                          <span className="block text-sm text-[var(--fg-muted)] leading-snug mt-0.5">{article.description}</span>
-                        </Link>
-                      </li>
-                    ))}
+                    .map((article) => {
+                      const slug = article.href.split("/").pop() ?? ""
+                      return (
+                        <li key={article.href}>
+                          <Link
+                            href={article.href}
+                            className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-colors"
+                          >
+                            {hasEditorialImage(slug) && (
+                              // Card column is ~356px (max-w-3xl, 2 cols, gap-6); 400 covers 1x, 800 covers 2x.
+                              <EditorialImage
+                                slug={slug}
+                                alt={editorialAlt(slug)}
+                                widths={[400, 800]}
+                                sizes="(min-width: 640px) 356px, 92vw"
+                                rounded="rounded-none"
+                                bordered={false}
+                              />
+                            )}
+                            <div className="p-4">
+                              <span className="block text-sm font-medium text-[var(--fg)] group-hover:text-[var(--accent)] transition-colors">
+                                {article.label}
+                              </span>
+                              <span className="block text-sm text-[var(--fg-muted)] leading-snug mt-1">{article.description}</span>
+                            </div>
+                          </Link>
+                        </li>
+                      )
+                    })}
                 </ul>
               </section>
             )

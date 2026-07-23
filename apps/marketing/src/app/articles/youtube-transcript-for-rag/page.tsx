@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "YouTube Transcripts for RAG Pipelines — Chunked JSON Export | INDXR.AI",
   description:
     "Export YouTube transcripts as RAG-optimized JSON with configurable chunk sizes, 15% overlap, per-chunk deep links, and flat metadata for Pinecone, ChromaDB, and Weaviate. Real output, tested.",
+  ...editorialOg("youtube-transcript-for-rag"),
 }
 
 const faqs = [

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "YouTube Transcript Without a Chrome Extension — Works in Any Browser | INDXR.AI",
   description:
     "Chrome extensions for YouTube transcripts break when YouTube updates its UI. INDXR.AI works in any browser without installation — paste a URL, get a transcript instantly.",
+  ...editorialOg("youtube-transcript-without-extension"),
 }
 
 const faqs = [

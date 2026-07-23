@@ -12496,3 +12496,208 @@ apps/marketing/public/hero/hero-light-mobile-860.webp
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/design/hero-images.md
 ---
+
+[2026-07-23 18:29] redesign: artikel-fotografie + docs-hexagon. Kaarten op /articles krijgen 16:9-foto (srcset 400/800), elke artikel-hero een foto (800/1440, LCP) met eyebrow+titel eronder — vervangt ArticleBanner. OG per artikel ({slug}-og.jpg, absolute URL) op alle 18. Docs krijgen een seeded hexagon-masthead (HexField, seeded op pathname, tokens, geen beeldbestand). Gedeelde primitives EditorialImage/HexField; ArticleBanner verwijderd (verweesd). Design-doc editorial-images.md + INDEX-rij. Build groen (58 pagina's, exit 0).
+Changed: apps/marketing/public/editorial/ (144), apps/marketing/src/components/content/{EditorialImage,HexField,ArticleHero}.tsx, apps/marketing/src/components/docs/DocsHexBanner.tsx, apps/marketing/src/lib/{editorialAlts,editorialMeta}.ts, apps/marketing/src/components/content/templates/{ArticleTemplate,ToolPageTemplate,TutorialTemplate}.tsx, apps/marketing/src/app/articles/**/page.tsx (18+index), apps/marketing/src/components/docs/DocsShell.tsx, docs/wiki/design/editorial-images.md, docs/wiki/INDEX.md; removed ArticleBanner.tsx
+---
+[2026-07-23 18:29] commit: feat(articles,docs): editorial photos on articles, seeded hexagon on docs
+
+Articles now carry photography and docs a generated hexagon field, sharing one 16:9
+ratio, radius and border so they read as one system.
+
+- /articles cards: 16:9 editorial photo above the text (srcset 400/800, sizes matched
+  to the ~356px card column, AVIF -> WebP -> JPEG, lazy).
+- Article hero: full-width photo (srcset 800/1440, fetchPriority high as the LCP element)
+  with the category eyebrow + title below it, replacing the hexagon ArticleBanner so the
+  photo shown on the card is also carried on the article. Falls back to a seeded hexagon
+  field when an article has no image.
+- OG/Twitter: per-article {slug}-og.jpg (1200x630, absolute URL) on all 18 articles; no
+  generic og:image existed to conflict.
+- Docs: a per-page hexagon masthead (HexField), seeded deterministically on the pathname
+  (pure PRNG, no hydration mismatch), tokens only, no image file. Rendered once in DocsShell.
+- Shared primitives EditorialImage + HexField; convention-based paths from the slug (no
+  mapping table). ArticleBanner removed (orphaned by the hero swap).
+- Docs: design/editorial-images.md (source recipe, export matrix, slug convention,
+  fallback rule) + INDEX row.
+
+Build green: marketing compiled, 58 static pages, exit 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/public/editorial/audio-to-text-1440.avif
+apps/marketing/public/editorial/audio-to-text-1440.webp
+apps/marketing/public/editorial/audio-to-text-400.avif
+apps/marketing/public/editorial/audio-to-text-400.webp
+apps/marketing/public/editorial/audio-to-text-800.avif
+apps/marketing/public/editorial/audio-to-text-800.jpg
+apps/marketing/public/editorial/audio-to-text-800.webp
+apps/marketing/public/editorial/audio-to-text-og.jpg
+apps/marketing/public/editorial/bulk-youtube-transcript-1440.avif
+apps/marketing/public/editorial/bulk-youtube-transcript-1440.webp
+apps/marketing/public/editorial/bulk-youtube-transcript-400.avif
+apps/marketing/public/editorial/bulk-youtube-transcript-400.webp
+apps/marketing/public/editorial/bulk-youtube-transcript-800.avif
+apps/marketing/public/editorial/bulk-youtube-transcript-800.jpg
+apps/marketing/public/editorial/bulk-youtube-transcript-800.webp
+apps/marketing/public/editorial/bulk-youtube-transcript-og.jpg
+apps/marketing/public/editorial/chunk-youtube-transcripts-for-rag-1440.avif
+apps/marketing/public/editorial/chunk-youtube-transcripts-for-rag-1440.webp
+apps/marketing/public/editorial/chunk-youtube-transcripts-for-rag-400.avif
+apps/marketing/public/editorial/chunk-youtube-transcripts-for-rag-400.webp
+apps/marketing/public/editorial/chunk-youtube-transcripts-for-rag-800.avif
+apps/marketing/public/editorial/chunk-youtube-transcripts-for-rag-800.jpg
+apps/marketing/public/editorial/chunk-youtube-transcripts-for-rag-800.webp
+apps/marketing/public/editorial/chunk-youtube-transcripts-for-rag-og.jpg
+apps/marketing/public/editorial/youtube-age-restricted-transcript-1440.avif
+apps/marketing/public/editorial/youtube-age-restricted-transcript-1440.webp
+apps/marketing/public/editorial/youtube-age-restricted-transcript-400.avif
+apps/marketing/public/editorial/youtube-age-restricted-transcript-400.webp
+apps/marketing/public/editorial/youtube-age-restricted-transcript-800.avif
+apps/marketing/public/editorial/youtube-age-restricted-transcript-800.jpg
+apps/marketing/public/editorial/youtube-age-restricted-transcript-800.webp
+apps/marketing/public/editorial/youtube-age-restricted-transcript-og.jpg
+apps/marketing/public/editorial/youtube-channel-knowledge-base-1440.avif
+apps/marketing/public/editorial/youtube-channel-knowledge-base-1440.webp
+apps/marketing/public/editorial/youtube-channel-knowledge-base-400.avif
+apps/marketing/public/editorial/youtube-channel-knowledge-base-400.webp
+apps/marketing/public/editorial/youtube-channel-knowledge-base-800.avif
+apps/marketing/public/editorial/youtube-channel-knowledge-base-800.jpg
+apps/marketing/public/editorial/youtube-channel-knowledge-base-800.webp
+apps/marketing/public/editorial/youtube-channel-knowledge-base-og.jpg
+apps/marketing/public/editorial/youtube-members-only-transcript-1440.avif
+apps/marketing/public/editorial/youtube-members-only-transcript-1440.webp
+apps/marketing/public/editorial/youtube-members-only-transcript-400.avif
+apps/marketing/public/editorial/youtube-members-only-transcript-400.webp
+apps/marketing/public/editorial/youtube-members-only-transcript-800.avif
+apps/marketing/public/editorial/youtube-members-only-transcript-800.jpg
+apps/marketing/public/editorial/youtube-members-only-transcript-800.webp
+apps/marketing/public/editorial/youtube-members-only-transcript-og.jpg
+apps/marketing/public/editorial/youtube-playlist-transcript-1440.avif
+apps/marketing/public/editorial/youtube-playlist-transcript-1440.webp
+apps/marketing/public/editorial/youtube-playlist-transcript-400.avif
+apps/marketing/public/editorial/youtube-playlist-transcript-400.webp
+apps/marketing/public/editorial/youtube-playlist-transcript-800.avif
+apps/marketing/public/editorial/youtube-playlist-transcript-800.jpg
+apps/marketing/public/editorial/youtube-playlist-transcript-800.webp
+apps/marketing/public/editorial/youtube-playlist-transcript-og.jpg
+apps/marketing/public/editorial/youtube-srt-download-1440.avif
+apps/marketing/public/editorial/youtube-srt-download-1440.webp
+apps/marketing/public/editorial/youtube-srt-download-400.avif
+apps/marketing/public/editorial/youtube-srt-download-400.webp
+apps/marketing/public/editorial/youtube-srt-download-800.avif
+apps/marketing/public/editorial/youtube-srt-download-800.jpg
+apps/marketing/public/editorial/youtube-srt-download-800.webp
+apps/marketing/public/editorial/youtube-srt-download-og.jpg
+apps/marketing/public/editorial/youtube-to-text-1440.avif
+apps/marketing/public/editorial/youtube-to-text-1440.webp
+apps/marketing/public/editorial/youtube-to-text-400.avif
+apps/marketing/public/editorial/youtube-to-text-400.webp
+apps/marketing/public/editorial/youtube-to-text-800.avif
+apps/marketing/public/editorial/youtube-to-text-800.jpg
+apps/marketing/public/editorial/youtube-to-text-800.webp
+apps/marketing/public/editorial/youtube-to-text-og.jpg
+apps/marketing/public/editorial/youtube-transcript-csv-1440.avif
+apps/marketing/public/editorial/youtube-transcript-csv-1440.webp
+apps/marketing/public/editorial/youtube-transcript-csv-400.avif
+apps/marketing/public/editorial/youtube-transcript-csv-400.webp
+apps/marketing/public/editorial/youtube-transcript-csv-800.avif
+apps/marketing/public/editorial/youtube-transcript-csv-800.jpg
+apps/marketing/public/editorial/youtube-transcript-csv-800.webp
+apps/marketing/public/editorial/youtube-transcript-csv-og.jpg
+apps/marketing/public/editorial/youtube-transcript-for-rag-1440.avif
+apps/marketing/public/editorial/youtube-transcript-for-rag-1440.webp
+apps/marketing/public/editorial/youtube-transcript-for-rag-400.avif
+apps/marketing/public/editorial/youtube-transcript-for-rag-400.webp
+apps/marketing/public/editorial/youtube-transcript-for-rag-800.avif
+apps/marketing/public/editorial/youtube-transcript-for-rag-800.jpg
+apps/marketing/public/editorial/youtube-transcript-for-rag-800.webp
+apps/marketing/public/editorial/youtube-transcript-for-rag-og.jpg
+apps/marketing/public/editorial/youtube-transcript-json-1440.avif
+apps/marketing/public/editorial/youtube-transcript-json-1440.webp
+apps/marketing/public/editorial/youtube-transcript-json-400.avif
+apps/marketing/public/editorial/youtube-transcript-json-400.webp
+apps/marketing/public/editorial/youtube-transcript-json-800.avif
+apps/marketing/public/editorial/youtube-transcript-json-800.jpg
+apps/marketing/public/editorial/youtube-transcript-json-800.webp
+apps/marketing/public/editorial/youtube-transcript-json-og.jpg
+apps/marketing/public/editorial/youtube-transcript-markdown-1440.avif
+apps/marketing/public/editorial/youtube-transcript-markdown-1440.webp
+apps/marketing/public/editorial/youtube-transcript-markdown-400.avif
+apps/marketing/public/editorial/youtube-transcript-markdown-400.webp
+apps/marketing/public/editorial/youtube-transcript-markdown-800.avif
+apps/marketing/public/editorial/youtube-transcript-markdown-800.jpg
+apps/marketing/public/editorial/youtube-transcript-markdown-800.webp
+apps/marketing/public/editorial/youtube-transcript-markdown-og.jpg
+apps/marketing/public/editorial/youtube-transcript-non-english-1440.avif
+apps/marketing/public/editorial/youtube-transcript-non-english-1440.webp
+apps/marketing/public/editorial/youtube-transcript-non-english-400.avif
+apps/marketing/public/editorial/youtube-transcript-non-english-400.webp
+apps/marketing/public/editorial/youtube-transcript-non-english-800.avif
+apps/marketing/public/editorial/youtube-transcript-non-english-800.jpg
+apps/marketing/public/editorial/youtube-transcript-non-english-800.webp
+apps/marketing/public/editorial/youtube-transcript-non-english-og.jpg
+apps/marketing/public/editorial/youtube-transcript-not-available-1440.avif
+apps/marketing/public/editorial/youtube-transcript-not-available-1440.webp
+apps/marketing/public/editorial/youtube-transcript-not-available-400.avif
+apps/marketing/public/editorial/youtube-transcript-not-available-400.webp
+apps/marketing/public/editorial/youtube-transcript-not-available-800.avif
+apps/marketing/public/editorial/youtube-transcript-not-available-800.jpg
+apps/marketing/public/editorial/youtube-transcript-not-available-800.webp
+apps/marketing/public/editorial/youtube-transcript-not-available-og.jpg
+apps/marketing/public/editorial/youtube-transcript-obsidian-1440.avif
+apps/marketing/public/editorial/youtube-transcript-obsidian-1440.webp
+apps/marketing/public/editorial/youtube-transcript-obsidian-400.avif
+apps/marketing/public/editorial/youtube-transcript-obsidian-400.webp
+apps/marketing/public/editorial/youtube-transcript-obsidian-800.avif
+apps/marketing/public/editorial/youtube-transcript-obsidian-800.jpg
+apps/marketing/public/editorial/youtube-transcript-obsidian-800.webp
+apps/marketing/public/editorial/youtube-transcript-obsidian-og.jpg
+apps/marketing/public/editorial/youtube-transcript-without-extension-1440.avif
+apps/marketing/public/editorial/youtube-transcript-without-extension-1440.webp
+apps/marketing/public/editorial/youtube-transcript-without-extension-400.avif
+apps/marketing/public/editorial/youtube-transcript-without-extension-400.webp
+apps/marketing/public/editorial/youtube-transcript-without-extension-800.avif
+apps/marketing/public/editorial/youtube-transcript-without-extension-800.jpg
+apps/marketing/public/editorial/youtube-transcript-without-extension-800.webp
+apps/marketing/public/editorial/youtube-transcript-without-extension-og.jpg
+apps/marketing/public/editorial/youtube-transcripts-vector-database-1440.avif
+apps/marketing/public/editorial/youtube-transcripts-vector-database-1440.webp
+apps/marketing/public/editorial/youtube-transcripts-vector-database-400.avif
+apps/marketing/public/editorial/youtube-transcripts-vector-database-400.webp
+apps/marketing/public/editorial/youtube-transcripts-vector-database-800.avif
+apps/marketing/public/editorial/youtube-transcripts-vector-database-800.jpg
+apps/marketing/public/editorial/youtube-transcripts-vector-database-800.webp
+apps/marketing/public/editorial/youtube-transcripts-vector-database-og.jpg
+apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/chunk-youtube-transcripts-for-rag/page.tsx
+apps/marketing/src/app/articles/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-members-only-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-csv/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-markdown/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-not-available/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-obsidian/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
+apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
+apps/marketing/src/components/content/ArticleBanner.tsx
+apps/marketing/src/components/content/ArticleHero.tsx
+apps/marketing/src/components/content/EditorialImage.tsx
+apps/marketing/src/components/content/HexField.tsx
+apps/marketing/src/components/content/templates/ArticleTemplate.tsx
+apps/marketing/src/components/content/templates/ToolPageTemplate.tsx
+apps/marketing/src/components/content/templates/TutorialTemplate.tsx
+apps/marketing/src/components/docs/DocsHexBanner.tsx
+apps/marketing/src/components/docs/DocsShell.tsx
+apps/marketing/src/lib/editorialAlts.ts
+apps/marketing/src/lib/editorialMeta.ts
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/design/editorial-images.md
+---

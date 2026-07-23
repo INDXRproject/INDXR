@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "YouTube Transcripts to Vector Database — Python Pipeline Guide | INDXR.AI",
   description:
     "Step-by-step guide to building a semantic search system over YouTube video content. Extract transcripts, generate embeddings, store in Pinecone or ChromaDB, and query with natural language.",
+  ...editorialOg("youtube-transcripts-vector-database"),
 }
 
 const faqs = [

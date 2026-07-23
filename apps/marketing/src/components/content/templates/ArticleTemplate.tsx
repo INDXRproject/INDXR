@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { AuthorCard } from "@/components/content/AuthorCard"
-import { ArticleBanner, type ArticleCategory } from "@/components/content/ArticleBanner"
+import { ArticleHero, type ArticleCategory } from "@/components/content/ArticleHero"
 import { RelatedArticles } from "@/components/content/RelatedArticles"
 import type { Author } from "@/lib/authors"
 import { reactNodeToText } from "@/lib/reactNodeToText"
@@ -71,13 +71,7 @@ export function ArticleTemplate({
       <JsonLd schemas={schemas} />
       <div className="container mx-auto px-6 py-8 max-w-3xl">
       <article className="max-w-3xl py-12">
-        {category ? (
-          <ArticleBanner title={title} category={category} />
-        ) : (
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fg)] mb-4">
-            {title}
-          </h1>
-        )}
+        <ArticleHero title={title} category={category} slug={slug} />
         <AuthorCard author={author} publishedAt={publishedAt} updatedAt={updatedAt} />
         <div className="mt-8 prose-content text-[var(--fg-subtle)] leading-relaxed">
           {children}

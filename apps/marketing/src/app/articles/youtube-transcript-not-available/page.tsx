@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "YouTube Transcript Not Available? Here's Why and How to Fix It | INDXR.AI",
   description:
     "YouTube transcripts missing or not showing? We cover every reason — from creator settings to unsupported languages — and show you how to get the text anyway, even without captions.",
+  ...editorialOg("youtube-transcript-not-available"),
 }
 
 const faqs = [

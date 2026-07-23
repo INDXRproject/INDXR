@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "YouTube Transcript to Obsidian — Works When Plugins Break | INDXR.AI",
   description:
     "YTranscript and Obsidian Web Clipper break when YouTube updates its UI. INDXR.AI exports transcripts as Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp links — server-side, no plugin required.",
+  ...editorialOg("youtube-transcript-obsidian"),
 }
 
 const faqs = [

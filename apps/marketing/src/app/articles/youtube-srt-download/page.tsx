@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "YouTube SRT Download — Resegmented for Video Editors | INDXR.AI",
   description:
     "Download YouTube subtitles as SRT or VTT with professional timing — 3–7 second segments, 42 characters per line. Free for videos with captions. AI transcription for videos without.",
+  ...editorialOg("youtube-srt-download"),
 }
 
 const faqs = [

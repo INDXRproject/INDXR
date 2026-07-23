@@ -229,7 +229,8 @@ Durende end-to-end **live-verificaties** met nagerekende data (onderscheiden van
 | [audit-frontend.md](design/audit-frontend.md) | Volledige frontend-inventarisatie: sitemap (47 routes), layouts, componenten, styling, dark mode, responsive, iconografie, forms, inconsistenties, vragen voor redesign |
 | [principles-v0.1-final.md](design/principles-v0.1-final.md) | Ihsan design principles V0.1 — Honest Materiality, Coherence, Geen Israf, Zuhd |
 | [system.md](design/system.md) | Design system V1.0 — OKLCH kleurenschaal, typografie, spacing, radii, shadows, motion tokens |
-| [hero-images.md](design/hero-images.md) | Homepage-hero (penthouse/woestijnstad, licht+donker): bronketen (Leonardo Lucid Origin Ultra 3840×2176 → Nano Banana Pro → 5504×3072), crop-box (52,0,5452,2917), ratio 1392/752, nacht-grade (zwartpunt 9, gamma 1.70, randvignette); AVIF/WebP/JPEG-set (1392/2088/2784) + `<picture>`-implementatie met fetchpriority. Herbruikbaar voor de nog te maken mobiele varianten |
+| [hero-images.md](design/hero-images.md) | Homepage-hero (penthouse/woestijnstad, licht+donker): bronketen (Leonardo Lucid Origin Ultra 3840×2176 → Nano Banana Pro → 5504×3072), crop-box (52,0,5452,2917), ratio 1392/752, nacht-grade (zwartpunt 9, gamma 1.70, randvignette); AVIF/WebP/JPEG-set (1392/2088/2784) + `<picture>`-implementatie met fetchpriority. Mobiele 4:5-crop-box (1465,0,3799,2917) |
+| [editorial-images.md](design/editorial-images.md) | Artikel-fotografie + docs-hexagon: Leonardo Lucid Realism / Cinematic Close-Up / Ultra / 2752×1536 (Prompt Enhance uit, Private Mode aan), twee kader-varianten; exportmatrix 400/800/1440 + og 1200×630; bestandsnaam = slug; `EditorialImage`/`ArticleHero`/`editorialOg`/`HexField`/`DocsHexBanner`; fallback naar seeded hexagon bij ontbrekend beeld |
 | [tokens.css](../../../src/app/styles/tokens.css) | Design token single source of truth — OKLCH color tokens, IBM Plex fonts, radii, shadows, motion |
 
 ---

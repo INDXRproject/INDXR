@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "YouTube Age-Restricted Video Transcript — Options and Workarounds | INDXR.AI",
   description:
     "Age-restricted YouTube videos need authentication to access. Here's why standard transcript tools fail, what INDXR.AI shows you, and the audio upload workaround for videos you can legitimately watch.",
+  ...editorialOg("youtube-age-restricted-transcript"),
 }
 
 const faqs = [

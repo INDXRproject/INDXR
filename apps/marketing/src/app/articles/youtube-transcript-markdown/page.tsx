@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "YouTube Transcript to Markdown — Obsidian, Notion & Blog Ready | INDXR.AI",
   description:
     "Export YouTube transcripts as clean Markdown with YAML frontmatter, Dataview-compatible properties, and clickable timestamp deep links. Works when Obsidian plugins break. No extension required.",
+  ...editorialOg("youtube-transcript-markdown"),
 }
 
 const faqs = [

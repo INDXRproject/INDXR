@@ -3,6 +3,7 @@ import { marketingHref } from "@indxr/shared/lib/cross-host-links"
 import { DocsSidebar } from "./DocsSidebar"
 import { DocsMobileNav } from "./DocsMobileNav"
 import { InPageTOC } from "./InPageTOC"
+import { DocsHexBanner } from "./DocsHexBanner"
 
 interface DocsShellProps {
   children: ReactNode
@@ -49,6 +50,9 @@ export function DocsShell({ children }: DocsShellProps) {
               (denser than the old max-w-3xl/~90ch); wide enough that DocsTable (min-w-36rem)
               doesn't scroll on desktop. */}
           <div id="docs-content" className="min-w-0 flex-1 max-w-2xl">
+            {/* Seeded per-page hexagon masthead — docs get no photography, but share the
+                article hero's ratio/radius so the two read as one system. */}
+            <DocsHexBanner />
             {children}
           </div>
           <aside className="hidden xl:block w-56 shrink-0">

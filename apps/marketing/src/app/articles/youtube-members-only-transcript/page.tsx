@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "YouTube Members-Only Transcript — What's Possible and What Isn't | INDXR.AI",
   description:
     "Members-only YouTube videos are access-restricted by design. Here's exactly what you can and can't do to get a transcript — including a legitimate workaround using audio upload.",
+  ...editorialOg("youtube-members-only-transcript"),
 }
 
 const faqs = [

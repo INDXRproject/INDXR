@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "YouTube Transcripts in Non-English Languages — What Works | INDXR.AI",
   description:
     "Extracting YouTube transcripts in Arabic, Spanish, Portuguese, Indonesian, or Turkish? Here's what caption extraction gives you and when AI transcription is the right choice.",
+  ...editorialOg("youtube-transcript-non-english"),
 }
 
 const faqs = [

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "YouTube Transcript JSON Export — What You Actually Get | INDXR.AI",
   description:
     "Export YouTube transcripts as structured JSON with video metadata, start/end timestamps, and channel info. Free for captioned videos. Real schema, real output, no surprises.",
+  ...editorialOg("youtube-transcript-json"),
 }
 
 const faqs = [

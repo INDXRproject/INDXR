@@ -2,12 +2,14 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcript-csv" },
   title: "Download YouTube Transcript as CSV — Spreadsheet-Ready for Research | INDXR.AI",
   description:
     "Export YouTube transcripts as CSV with segment index, start and end timestamps, text, and word count. UTF-8 BOM for Excel compatibility.",
+  ...editorialOg("youtube-transcript-csv"),
 }
 
 const faqs = [

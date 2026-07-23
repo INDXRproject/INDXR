@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostPhrase } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "YouTube Playlist Transcript Extractor — Batch Download in Minutes | INDXR.AI",
   description:
     "Extract transcripts from entire YouTube playlists in one job. First 3 auto-caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats.",
+  ...editorialOg("youtube-playlist-transcript"),
 }
 
 const faqs = [

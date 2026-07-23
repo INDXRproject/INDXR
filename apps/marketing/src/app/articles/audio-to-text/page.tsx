@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "Audio File to Text — Upload MP3, MP4, WAV & More | INDXR.AI",
   description:
     `Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by ${transcriptionModelName()}.`,
+  ...editorialOg("audio-to-text"),
 }
 
 const faqs = [

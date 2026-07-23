@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "YouTube Channel Knowledge Base — Transcribe, Index & Search | INDXR.AI",
   description:
     "Extract transcripts from an entire YouTube channel, embed them in a vector database, and build a semantic search system over months or years of video content. Step-by-step guide.",
+  ...editorialOg("youtube-channel-knowledge-base"),
 }
 
 const faqs = [
