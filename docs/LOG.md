@@ -11772,3 +11772,24 @@ apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
 apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
 apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
 ---
+[2026-07-23 11:21] commit: fix(articles): correct non-english thesis — captions return ORIGINAL language
+
+The article's central claim was FALSE against the current code: it said caption
+extraction gives you an English-translated transcript for non-English videos because
+YouTube's CDN forces tlang=en. INDXR specifically avoids that — youtube_utils.py:337
+requests native-anchored '.*-orig' tracks and :368-401 selects the original track
+('always the ORIGINAL track, never a translation'), which never carries tlang=. So
+caption extraction returns the original language whenever the video has auto-captions.
+
+Rewrote the intro, the 'What caption extraction gives you' section, two FAQ answers
+(ar-not-English, original-without-AI), and the when-to-use table to match. AI
+transcription is now positioned as the route for no-caption videos or higher accuracy,
+not as the only way to get original-language text. Source: backend/youtube_utils.py.
+Also: '95 other languages' → 'many other languages', model source URL → the verified
+supported-languages page.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+---

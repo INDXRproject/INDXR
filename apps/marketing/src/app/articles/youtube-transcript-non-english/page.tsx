@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    q: "Why does the language field say \"ar\" but the text is English?",
-    a: "The language field reflects the audio language detected from YouTube's metadata or our language detection system. The text is English because YouTube's caption delivery forces English translation at the infrastructure level. This is expected behavior, not a bug.",
+    q: "Will an Arabic video come back in Arabic, or translated to English?",
+    a: "In Arabic. Many transcript tools return English here, because YouTube's translatable caption track forces a tlang=en translation. INDXR anchors to the video's native (-orig) caption track instead, which never carries that translation, so you get the original language with 'ar' in the language field. If a video has no native track to anchor to, AI transcription will still give you the original language.",
   },
   {
     q: "Does AI Transcription work for languages with non-Latin scripts?",
@@ -23,7 +23,7 @@ const faqs = [
   },
   {
     q: "Is there a way to get original-language captions without AI Transcription?",
-    a: "Not through our current pipeline. The YouTube CDN limitation affects all tools that use the standard timedtext API. If you have a specific use case for original-language captions, AI Transcription is the reliable alternative.",
+    a: "Yes. INDXR selects the video's native caption track, so caption extraction already returns the original language whenever the video has auto-captions — no AI transcription needed. You only need AI transcription when a video has no captions, or when you want punctuation and higher accuracy.",
   },
   {
     q: "What about RAG in non-English languages?",
@@ -38,7 +38,7 @@ const sources = [
   },
   {
     label: `${transcriptionModelName()} — speech-to-text model`,
-    url: "https://www.assemblyai.com/universal-3",
+    url: "https://www.assemblyai.com/docs/supported-languages",
   },
 ]
 
@@ -55,39 +55,36 @@ export default function YouTubeTranscriptNonEnglishPage() {
       sources={sources}
     >
       <p>
-        If you&apos;re extracting transcripts from non-English YouTube videos, there&apos;s something you should
-        know upfront before you spend time on a workflow that won&apos;t give you what you expect.
+        Extracting transcripts from non-English YouTube videos works well with INDXR — but the free
+        caption route and AI transcription give you different things, and it&apos;s worth knowing which to
+        reach for.
       </p>
 
       <h2>What Caption Extraction Gives You for Non-English Videos</h2>
 
       <p>
         YouTube&apos;s auto-caption system generates captions in the video&apos;s original language. Arabic
-        videos get Arabic captions. Spanish videos get Spanish captions. That much is straightforward.
-      </p>
-
-      <p>
-        The problem is at the infrastructure level. When our system downloads captions via YouTube&apos;s
-        timedtext API, YouTube&apos;s CDN forces the output through an English translation layer — regardless
-        of what language was requested. The URL parameter <code>tlang=en</code> is appended by
-        YouTube&apos;s server, not by us, and it isn&apos;t overridable through standard API calls.
-      </p>
-
-      <p>
-        The result: you submit an Arabic video, you get an English-translated transcript. The{" "}
-        <code>language</code> field in the metadata will correctly say{" "}
-        <code>&quot;ar&quot;</code> — that&apos;s the audio language — but the text itself is the English
+        videos get Arabic captions. Spanish videos get Spanish captions. The catch that trips up most
+        transcript tools is at the delivery level: when you fetch captions through YouTube&apos;s timedtext
+        API, its CDN can force the output through an English translation layer with a{" "}
+        <code>tlang=en</code> parameter — so you ask for Arabic and get English. The{" "}
+        <code>language</code> field still reads <code>&quot;ar&quot;</code>, but the text is the English
         translation.
       </p>
 
       <p>
-        This is a YouTube infrastructure limitation, not something unique to INDXR.AI. We&apos;ve confirmed
-        the same behavior across other transcript tools including Tactiq and YouTubeToTranscript.
+        INDXR avoids this. Instead of the translatable track, it anchors to the video&apos;s native track —
+        the one YouTube marks as the original (its <code>-orig</code> track) — which never carries a{" "}
+        <code>tlang=</code> translation. So for a non-English video that has auto-captions, caption
+        extraction returns the <strong>original language</strong>, not an English translation. That&apos;s a
+        deliberate choice in how INDXR requests captions, and it&apos;s where it differs from tools that take
+        whatever the timedtext API hands back.
       </p>
 
       <p>
-        If you need the original language text, caption extraction is not the right route. AI
-        Transcription is.
+        Where caption extraction still can&apos;t help is when a video has no captions at all, or when you
+        want punctuation and clean sentences that auto-captions don&apos;t provide. For those, AI
+        Transcription is the route.
       </p>
 
       <h2>What AI Transcription Gives You</h2>
@@ -104,18 +101,18 @@ export default function YouTubeTranscriptNonEnglishPage() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          95 other languages
+          many other languages
         </a>
         , INDXR transcribes the audio in its original language. We automatically pick the best model for
         the detected language — our highest-quality model,{" "}
         <a
-          href="https://www.assemblyai.com/universal-3"
+          href="https://www.assemblyai.com/docs/supported-languages"
           target="_blank"
           rel="noopener noreferrer"
         >
           {transcriptionModelName()}
         </a>
-        , covers a growing set of languages (including Arabic), with broad coverage across 99 languages
+        , natively covers 18 languages (including Arabic), and a broader model covers up to 99 languages
         for the rest.
       </p>
 
@@ -155,12 +152,12 @@ export default function YouTubeTranscriptNonEnglishPage() {
             <td>Caption extraction (free) or AI Transcription (more accurate)</td>
           </tr>
           <tr>
-            <td>Non-English video, you want the original language text</td>
-            <td>AI Transcription</td>
+            <td>Non-English video that has captions</td>
+            <td>Caption extraction — returns the original language, free</td>
           </tr>
           <tr>
-            <td>Non-English video, English translation is fine</td>
-            <td>Caption extraction (free)</td>
+            <td>Non-English video, you want punctuation or higher accuracy</td>
+            <td>AI Transcription</td>
           </tr>
           <tr>
             <td>Video without captions, any language</td>
