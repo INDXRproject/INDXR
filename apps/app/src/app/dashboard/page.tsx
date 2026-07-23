@@ -5,6 +5,7 @@ import Link from "next/link"
 import { AudioLines, Library, Inbox, ChevronRight } from "lucide-react"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { HomeCreditsBalance } from "@/components/dashboard/HomeCreditsBalance"
+import { HomeStorageMeter } from "@/components/dashboard/HomeStorageMeter"
 
 export const metadata: Metadata = {
   title: "Home — INDXR.AI",
@@ -18,6 +19,20 @@ export default async function DashboardPage() {
 
   // Credits balance is rendered client-side via <HomeCreditsBalance /> using the
   // same live source as the topbar/sidebar (useAuth().credits).
+
+  // Library storage: real footprint + effective per-user cap (base + purchased bonus).
+  let libraryBytes = 0
+  let capBytes = 104857600 // 100 MiB base
+  if (user) {
+    const { data: uc } = await supabase
+      .from("user_credits")
+      .select("library_bytes, library_bytes_cap, library_bytes_bonus")
+      .eq("user_id", user.id)
+      .single()
+    const u = uc as { library_bytes?: number; library_bytes_cap?: number; library_bytes_bonus?: number } | null
+    libraryBytes = u?.library_bytes ?? 0
+    capBytes = (u?.library_bytes_cap ?? 104857600) + (u?.library_bytes_bonus ?? 0)
+  }
 
   // Recent inbox messages (ticket_id IS NULL = inbox only)
   let recentMessages: Array<{ id: string; title: string; body: string; read: boolean; created_at: string }> = []
@@ -73,17 +88,31 @@ export default async function DashboardPage() {
     <div className="space-y-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-semibold text-fg">Home</h1>
 
-      {/* ── Section 1: Credits balance ── */}
+      {/* ── Section 1: Credits balance + library storage ── */}
       <Card className="bg-surface border-border">
         <CardContent className="pt-6">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-sm text-fg-muted mb-1">Credits remaining</p>
-              {/* KHIDR: schrijf final copy voor credit balance card */}
-              <HomeCreditsBalance />
-              <p className="text-xs text-fg-muted mt-1">1 credit = 1 minute of AI transcription</p>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
+            {/* Credits */}
+            <div className="flex items-end justify-between gap-4 sm:flex-1">
+              <div>
+                <p className="text-sm text-fg-muted mb-1">Credits remaining</p>
+                <HomeCreditsBalance />
+                <p className="text-xs text-fg-muted mt-1">1 credit = 1 minute of AI transcription</p>
+              </div>
+              <Link href="/dashboard/billing" className="sm:hidden">
+                <Button variant="outline" size="sm">Buy more</Button>
+              </Link>
             </div>
-            <Link href="/dashboard/billing">
+
+            {/* Divider — desktop only */}
+            <div className="hidden sm:block w-px self-stretch bg-border/60" />
+
+            {/* Storage */}
+            <div className="sm:flex-1 sm:max-w-[16rem]">
+              <HomeStorageMeter libraryBytes={libraryBytes} capBytes={capBytes} />
+            </div>
+
+            <Link href="/dashboard/billing" className="hidden sm:block">
               <Button variant="outline" size="sm">Buy more</Button>
             </Link>
           </div>

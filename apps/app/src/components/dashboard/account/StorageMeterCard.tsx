@@ -15,6 +15,7 @@ export function StorageMeterCard({ libraryBytes, capBytes }: { libraryBytes: num
   const router = useRouter()
   const [buying, setBuying] = useState(false)
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null)
+  const [confirming, setConfirming] = useState(false)
 
   const MB = 1024 * 1024
   const usedMB = libraryBytes / MB
@@ -30,6 +31,7 @@ export function StorageMeterCard({ libraryBytes, capBytes }: { libraryBytes: num
     const res = await purchaseStorageAction(1)
     if (res.success) {
       setMsg({ type: "success", text: `Added ${STORAGE_BLOCK_MB} MB. Your new balance is ${res.newBalance} credits.` })
+      setConfirming(false)
       router.refresh()
     } else {
       setMsg({ type: "error", text: res.error })
@@ -71,12 +73,33 @@ export function StorageMeterCard({ libraryBytes, capBytes }: { libraryBytes: num
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button onClick={buy} disabled={buying} variant={over ? "default" : "outline"} size="sm">
-          {buying ? "Adding…" : `Buy +${STORAGE_BLOCK_MB} MB — ${STORAGE_BLOCK_COST_CREDITS} credits`}
-        </Button>
-        <span className="text-xs text-fg-muted">Extra space is permanent, like your credits.</span>
-      </div>
+      {confirming ? (
+        <div className="mt-4 rounded-lg border border-border bg-surface-elevated/40 px-4 py-3">
+          <p className="text-sm text-fg">
+            Spend <strong>{STORAGE_BLOCK_COST_CREDITS} credits</strong> for a permanent{" "}
+            <strong>+{STORAGE_BLOCK_MB} MB</strong> of library storage?
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button onClick={buy} disabled={buying} size="sm">
+              {buying ? "Adding…" : "Confirm"}
+            </Button>
+            <Button onClick={() => setConfirming(false)} disabled={buying} variant="ghost" size="sm">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button
+            onClick={() => { setMsg(null); setConfirming(true) }}
+            variant={over ? "default" : "outline"}
+            size="sm"
+          >
+            Buy +{STORAGE_BLOCK_MB} MB — {STORAGE_BLOCK_COST_CREDITS} credits
+          </Button>
+          <span className="text-xs text-fg-muted">Extra space is permanent, like your credits.</span>
+        </div>
+      )}
 
       {msg && (
         <p className={cn("text-sm mt-3", msg.type === "error" ? "text-error" : "text-success")}>{msg.text}</p>

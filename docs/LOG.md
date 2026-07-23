@@ -12200,3 +12200,22 @@ Changed: apps/app/src/app/dashboard/transcribe/page.tsx
 apps/marketing/src/app/transcribe/page.tsx
 docs/wiki/decisions/078-library-storage-limit-credit-sink.md
 ---
+[2026-07-23 14:17] commit: feat(storage): confirm step on buy-space + storage meter on Home next to credits
+
+Two follow-ups from testing:
+1. The 'Buy +100 MB — 100 credits' button spent credits on a single click. Added an
+   inline confirm ('Spend 100 credits for +100 MB?' → Confirm / Cancel) so a 100-credit
+   purchase is never accidental. No toast, no modal.
+2. Library storage now shows on Home (/dashboard) beside the credit balance: a compact
+   HomeStorageMeter (used / cap + bar, 'Manage storage' link, red 'full' state) reading
+   the real footprint + per-user cap. Responsive — on desktop it sits next to credits
+   with a divider; on mobile it stacks below, full width, and the 'Buy more' button moves
+   next to credits.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/page.tsx
+apps/app/src/components/dashboard/HomeStorageMeter.tsx
+apps/app/src/components/dashboard/account/StorageMeterCard.tsx
+---
