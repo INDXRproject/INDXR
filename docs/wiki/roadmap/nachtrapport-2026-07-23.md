@@ -355,3 +355,47 @@ content, niet meer live-onwaarheden.
   weg (zie audit hierboven). Wat rest is de **verhaal-herschrijf** + een gedeeld
   **RelatedArticles**-component (See-also ≤3 met reden) + per-artikel SourcesBlock waar externe
   bronnen zijn. Dit is stijl/structuur, geen live-onwaarheid meer.
+
+## Fase 4 — bevinding na lezen van élke docs-opening (niet aangenomen, gelezen)
+
+Ik heb de openingen van alle docs-pagina's gelezen om te bepalen wat écht een herschrijf nodig had,
+i.p.v. blind alles te herschrijven (dat zou tegen de chirurgische-wijzigingen-regel ingaan).
+**Bevinding: de meeste docs volgen de C11b-leesbaarheidsstandaard al** — ADR-075 heeft die vorm
+in juli toegepast. Bewijs (de feitelijke openingen):
+- **guides/uploads:** "Uploads let you transcribe a file you already have — a recorded call, a
+  podcast, an interview…" ✓ gewone-taal-opening + wanneer/waarom.
+- **guides/single-video:** "The single-video tab turns one YouTube link into a transcript. Paste the
+  URL…" ✓
+- **guides/summaries:** "A summary is a short AI-written overview of a transcript…" ✓
+- **reference/export-formats (hub):** "Every transcript downloads in seven formats. The right one
+  depends on what you'll do next…" ✓ (en "seven" klopt).
+- **reference/limits:** "INDXR enforces a few hard limits: AI transcription up to 10 hours per file,
+  uploads up to 500 MB, playlists up to 500 videos…" ✓ correcte getallen, gewone taal.
+- **quickstart:** tutorial-template ("Get your first transcript in 3 minutes" + stappen) ✓ action-led.
+- **how-indxr-works:** plain DefinitionLeadOpening ✓ (eerder al herschreven).
+
+**De echte gap was de reference-SPECS** die met jargon openden (de anti-vorm die Khidr noemde). Die
+zijn nu gewarmd: **srt** (`86d82cd`), **csv** + **vtt** (`8c98ae6`). markdown/txt/json openen al met
+gewone framing + gebruik (".md file … drops straight into Obsidian"; "plain text in two variants";
+"two kinds of JSON") → gelaten.
+
+**Conclusie fase 4:** grotendeels al op standaard (ADR-075); de drie jargon-eerst-specs zijn
+gerepareerd. Een volledige woord-voor-woord herschrijf van álle docs zou churn zijn op pagina's die
+de standaard al halen. Als Khidr tóch een specifieke pagina te technisch vindt: noem die pagina,
+dan herschrijf ik gericht.
+
+## Fase 7 — stijl-status (claims al klaar)
+De 18 artikelen zijn feitelijk waar (audit hierboven) én lezen al grotendeels als verhalen (bv.
+`youtube-to-text`, `non-english`, `audio-to-text` hebben een verhaal-opening + use-case). De
+cross-links zijn gerepareerd en in-body contextueel. **De resterende concrete fase-7-post** is een
+gedeeld **`RelatedArticles`-footer-component** (See-also ≤3 met reden, artikel↔artikel + artikel→docs)
+— dat bestaat nog niet als component (artikelen hebben nu wél de `sources`-sectie via de templates,
+en de banner via fase 3). Dat is de aanbevolen volgende bouwsteen; wiring over 18 artikelen is de
+resterende omvang.
+
+## Eindstand van deze hervatte run
+Het **"wrong in productie"-deel — de feitelijke onwaarheden — is volledig weg en live geverifieerd.**
+Fase 4 (docs) bleek grotendeels al op standaard; de jargon-specs zijn gerepareerd. Fase 6 is een
+gedocumenteerde niet-dupliceren-beslissing. Fase 7-claims klaar; fase-7-stijl resteert als
+`RelatedArticles`-component + optionele narratieve politoer. Alles per-commit bewaard, dit rapport
+is bijgewerkt naarmate ik vorderde.
