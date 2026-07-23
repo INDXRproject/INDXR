@@ -1,17 +1,21 @@
-// Single source of truth for the library-storage figure shown to users on the account page.
+// Library-storage figures shown to users. The EFFECTIVE per-user limit is NOT this constant —
+// it lives in the database (user_credits.library_bytes_cap + library_bytes_bonus), so it can vary
+// per user once they buy space. This constant is only the BASE every account starts with, and the
+// buy-space ratio; the account page reads the real cap from the DB.
 //
-// This is the intended DISPLAY limit (a soft guide), and it is deliberately the ONLY place the
-// number lives so a second value can't drift into the UI again (the old sidebar meter hardcoded
-// 500 MB separately).
-//
-// The database is the real counter: user_credits.library_bytes is the exact footprint
-// (octet_length of the transcript/edited_content/ai_summary/rag_exports jsonb, maintained by a
-// trigger — see migration 20260711100400_library_bytes_meter.sql). Its column
-// user_credits.library_bytes_cap defaults to 5 GiB and is a grandfather-safe, UNENFORCED cap:
-// nothing is blocked when a user exceeds either this display limit or the DB cap. If the display
-// limit and the DB cap should ever converge, change them together — this constant plus the column
-// default — so the two truths stay reconciled.
-export const LIBRARY_STORAGE_LIMIT_MB = 100
+// The real footprint counter is user_credits.library_bytes (octet_length of the
+// transcript/edited_content/ai_summary/rag_exports jsonb, trigger-maintained — migration
+// 20260711100400). The limit is ENFORCED before credit reservation (migration 20260723140000 +
+// backend is_library_full check); a full library blocks new transcripts, existing ones are kept.
 
-// The real, unenforced database cap (bytes), surfaced here so it isn't a hidden second number.
-export const LIBRARY_STORAGE_DB_CAP_BYTES = 5368709120 // 5 GiB (user_credits.library_bytes_cap default)
+// Base free storage every account starts with (100 MiB). Also the size of one purchasable block.
+export const LIBRARY_STORAGE_BASE_MB = 100
+export const BYTES_PER_MB = 1024 * 1024
+
+// Credit-sink (ADR-078): buy permanent extra space in 100 MiB blocks for 100 credits each
+// (1 credit = 1 MB). Kept in lockstep with purchase_library_space in the DB.
+export const STORAGE_BLOCK_MB = 100
+export const STORAGE_BLOCK_COST_CREDITS = 100
+
+// Deprecated alias — kept so nothing that imported the old name breaks. Prefer the DB cap.
+export const LIBRARY_STORAGE_LIMIT_MB = LIBRARY_STORAGE_BASE_MB

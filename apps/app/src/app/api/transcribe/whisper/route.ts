@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       try {
         const errorData = await response.json();
         return NextResponse.json(
-          { success: false, error: errorData.detail || errorData.error || 'Backend error' },
+          { success: false, error: errorData.detail || errorData.error || 'Backend error', code: errorData.code },
           { status: response.status }
         );
       } catch {

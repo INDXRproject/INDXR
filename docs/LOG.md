@@ -12120,3 +12120,52 @@ apps/marketing/src/app/docs/reference/export-formats/vtt/page.tsx
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 13:02] commit: feat(storage): enforce the 100 MB library limit + buy-space credit-sink (ADR-078)
+
+The account meter showed '195 MB of 100 MB / nothing is blocked' — a limit that wasn't
+one. Made it real.
+
+ENFORCEMENT (money-safe, before reservation — LESSONS 2026-07-22):
+- Migration 20260723140000 (applied, 105→106): library_bytes_cap base → 100 MiB (existing
+  rows too), new library_bytes_bonus column for bought space; effective limit = cap+bonus.
+  library_storage_is_full() helper.
+- Backend checks is_library_full() BEFORE reserve on AI transcription, upload, and playlist
+  → 413 storage_full, no reservation. Fails OPEN on check error (never blocks a paying job
+  erroneously). Grandfather-safe: only NEW transcripts blocked; existing untouched.
+- whisper + playlist routes forward the backend 'code'; VideoTab/AudioTab show an inline
+  card (no toast) saying what's wrong + what to do (delete / buy space); playlist surfaces
+  the actionable backend message.
+
+BUY-SPACE credit-sink (ADR-078):
+- 1 block = +100 MiB for 100 credits (1 credit = 1 MB), permanent. purchase_library_space()
+  deducts atomically (same lock pattern as deduct_credits_atomic) + grows library_bytes_bonus.
+  SERVICE-ROLE ONLY (revoked from PUBLIC/authenticated) — called via a server action with the
+  server-verified user id, so no client can spoof another user's id. product_type NULL (no
+  COR); label in reason. Reservation/settlement untouched.
+- Account StorageMeterCard reads the real footprint + per-user cap from the DB, shows a
+  full-state card + a 'Buy +100 MB — 100 credits' button.
+
+Per-user limit lives in the DB, not a frontend constant (storage.ts now only holds the base
++ block ratio). Docs: /docs/account/credits gains a 'Library storage, and buying more'
+section (credits page owns 'what costs credits'). ADR-078 + INDEX.
+
+PROD-TESTED (throwaway users, cascade-deleted): heaviest real user (204 MB) → full at
+100 MiB; buy 1 block → 250→150 credits, +100 MiB bonus, cap 100→200 MiB, full=false;
+insufficient credits → atomic reject, no mutation. Both apps + backend build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/actions/storage.ts
+apps/app/src/app/api/playlist/extract/route.ts
+apps/app/src/app/api/transcribe/whisper/route.ts
+apps/app/src/app/dashboard/account/page.tsx
+apps/app/src/components/dashboard/account/StorageMeterCard.tsx
+apps/marketing/src/app/docs/account/credits/page.tsx
+backend/credit_manager.py
+backend/main.py
+docs/wiki/INDEX.md
+docs/wiki/decisions/078-library-storage-limit-credit-sink.md
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/lib/storage.ts
+supabase/migrations/20260723140000_library_storage_limit.sql
+---

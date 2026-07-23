@@ -27,14 +27,16 @@ export default async function AccountPage() {
   const parsedCredits = creditsData as { credits?: number }
   const credits = parsedCredits?.credits || 0
 
-  // Real library footprint from the DB byte-meter (RLS: own row). Shown against the display
-  // limit in LIBRARY_STORAGE_LIMIT_MB — no enforcement, see StorageMeterCard.
+  // Real library footprint + the user's effective cap from the DB (RLS: own row). The limit is
+  // per-user (base 100 MiB + any purchased bonus), enforced before reservation — see StorageMeterCard.
   const { data: ucRow } = await supabase
     .from("user_credits")
-    .select("library_bytes")
+    .select("library_bytes, library_bytes_cap, library_bytes_bonus")
     .eq("user_id", user.id)
     .single()
-  const libraryBytes = (ucRow as { library_bytes?: number } | null)?.library_bytes ?? 0
+  const uc = ucRow as { library_bytes?: number; library_bytes_cap?: number; library_bytes_bonus?: number } | null
+  const libraryBytes = uc?.library_bytes ?? 0
+  const capBytes = (uc?.library_bytes_cap ?? 104857600) + (uc?.library_bytes_bonus ?? 0)
 
   // Fetch transaction history (volledige credit-ledger)
   const { data: transactions } = await supabase
@@ -67,7 +69,7 @@ export default async function AccountPage() {
             credit-ledger (balans + verbruik) — twee duidelijk gescheiden lenzen. */}
         <PurchaseHistoryCard purchases={purchases} />
         <TransactionHistoryCard transactions={transactions || []} credits={credits} />
-        <StorageMeterCard libraryBytes={libraryBytes} />
+        <StorageMeterCard libraryBytes={libraryBytes} capBytes={capBytes} />
         <SentryFeedbackCard userId={user.id} email={user.email} />
       </div>
     </div>

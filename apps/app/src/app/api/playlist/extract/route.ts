@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       const data = await response.json();
       if (!response.ok) {
         return NextResponse.json(
-          { success: false, error: data.error || 'Failed to start playlist extraction' },
+          { success: false, error: data.error || 'Failed to start playlist extraction', code: data.code },
           { status: response.status }
         );
       }

@@ -120,6 +120,20 @@ def check_user_balance(user_id: str) -> int:
         raise Exception(f"Could not check credit balance: {str(e)}")
 
 
+def is_library_full(user_id: str) -> bool:
+    """True if the user's library footprint is at/over their effective storage cap
+    (library_bytes_cap + library_bytes_bonus). Call this BEFORE reserving credits so a full
+    library never costs a user credits on a job that will be rejected (LESSONS 2026-07-22).
+    Fails OPEN (returns False) on any error — a check failure must never block a paying job."""
+    try:
+        supabase = get_supabase_client()
+        response = supabase.rpc('library_storage_is_full', {'p_user_id': user_id}).execute()
+        return bool(response.data)
+    except Exception as e:
+        logger.warning(f"[storage] is_library_full check failed for {user_id}, allowing job: {e}")
+        return False
+
+
 def deduct_credits(
     user_id: str,
     amount: int,

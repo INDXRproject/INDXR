@@ -393,6 +393,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       })
 
       if (httpStatus !== 200 && httpStatus !== 201) {
+        if (httpStatus === 413 && data.code === 'storage_full') {
+          setError('Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged.')
+          return
+        }
         if (httpStatus === 402) {
           setError(`Not enough credits — you need ${data.required_credits as number} but have ${data.available_credits as number}. Buy more at /pricing.`)
           return

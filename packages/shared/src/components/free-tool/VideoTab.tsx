@@ -746,6 +746,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (errorData.code === 'storage_full') {
+          setError({ message: "Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged." })
+          setLoading(false)
+          setWhisperStatus('idle')
+          return
+        }
         if (errorData.error === 'members_only') {
           setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
           setLoading(false)
@@ -826,6 +832,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (errorData.code === 'storage_full') {
+          setError({ message: "Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged." })
+          setLoading(false)
+          setWhisperStatus('idle')
+          return
+        }
         if (errorData.error === 'members_only') {
           setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
           setLoading(false)

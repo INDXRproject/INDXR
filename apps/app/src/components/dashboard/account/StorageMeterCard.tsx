@@ -1,18 +1,41 @@
-import { LIBRARY_STORAGE_LIMIT_MB } from "@indxr/shared/lib/storage"
-import { cn } from "@indxr/shared/lib/utils"
+"use client"
 
-// Library-storage meter for the account page. Reads the real byte footprint from the database
-// (user_credits.library_bytes) and shows it against the display limit (LIBRARY_STORAGE_LIMIT_MB).
-// It's a guide only — nothing is enforced when a user goes over (the DB cap is a separate,
-// unenforced 5 GiB). Presentational + server-safe (no hooks, plain bar).
-export function StorageMeterCard({ libraryBytes }: { libraryBytes: number }) {
-  const usedMB = libraryBytes / (1024 * 1024)
-  const limitMB = LIBRARY_STORAGE_LIMIT_MB
-  const pct = Math.min(100, Math.max(0, (usedMB / limitMB) * 100))
-  const over = usedMB > limitMB
-  const usedLabel = usedMB < 0.1
-    ? `${Math.round(libraryBytes / 1024)} KB`
-    : `${usedMB.toFixed(usedMB < 10 ? 1 : 0)} MB`
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@indxr/shared/components/ui/button"
+import { cn } from "@indxr/shared/lib/utils"
+import { STORAGE_BLOCK_MB, STORAGE_BLOCK_COST_CREDITS } from "@indxr/shared/lib/storage"
+import { purchaseStorageAction } from "@/app/actions/storage"
+
+// Library-storage meter for the account page. Shows the real footprint (user_credits.library_bytes)
+// against the user's effective cap (library_bytes_cap + library_bytes_bonus, from the DB — the limit
+// is per-user, not a frontend constant). The limit is enforced: over it, new transcripts are blocked.
+// From here a user can buy permanent extra space (a credit-sink) or delete transcripts.
+export function StorageMeterCard({ libraryBytes, capBytes }: { libraryBytes: number; capBytes: number }) {
+  const router = useRouter()
+  const [buying, setBuying] = useState(false)
+  const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null)
+
+  const MB = 1024 * 1024
+  const usedMB = libraryBytes / MB
+  const capMB = capBytes / MB
+  const pct = capMB > 0 ? Math.min(100, Math.max(0, (usedMB / capMB) * 100)) : 0
+  const over = libraryBytes >= capBytes
+  const near = pct >= 80
+  const fmt = (mb: number) => (mb < 10 ? mb.toFixed(1) : Math.round(mb).toString())
+
+  const buy = async () => {
+    setBuying(true)
+    setMsg(null)
+    const res = await purchaseStorageAction(1)
+    if (res.success) {
+      setMsg({ type: "success", text: `Added ${STORAGE_BLOCK_MB} MB. Your new balance is ${res.newBalance} credits.` })
+      router.refresh()
+    } else {
+      setMsg({ type: "error", text: res.error })
+    }
+    setBuying(false)
+  }
 
   return (
     <div className="rounded-xl border border-border bg-surface p-6">
@@ -22,20 +45,42 @@ export function StorageMeterCard({ libraryBytes }: { libraryBytes: number }) {
       </p>
 
       <div className="flex justify-between items-end mb-2">
-        <span className="text-sm font-medium text-fg tabular-nums">{usedLabel}</span>
-        <span className="text-xs text-fg-muted tabular-nums">of {limitMB} MB</span>
+        <span className="text-sm font-medium text-fg tabular-nums">{fmt(usedMB)} MB</span>
+        <span className="text-xs text-fg-muted tabular-nums">of {fmt(capMB)} MB</span>
       </div>
       <div className="h-2 w-full rounded-full bg-surface-sunken overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all", over ? "bg-warning" : "bg-accent")}
+          className={cn("h-full rounded-full transition-all", over ? "bg-error" : near ? "bg-warning" : "bg-accent")}
           style={{ width: `${pct}%` }}
         />
       </div>
 
-      <p className="text-xs text-fg-muted mt-3">
-        This is a guide, not a hard limit — nothing is blocked if you go over it, and you won&apos;t be
-        charged for storage.
-      </p>
+      {over ? (
+        <div className="mt-4 rounded-lg border border-error/20 bg-error-subtle px-4 py-3">
+          <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full.</p>
+          <p className="text-sm text-fg-subtle mt-1">
+            New transcripts are paused until you free up space. Delete some transcripts from your{" "}
+            <a href="/dashboard/library" className="text-[var(--accent)] hover:underline">library</a>, or buy
+            more room below. Your existing transcripts are safe.
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs text-fg-muted mt-3">
+          When you hit the limit, new transcripts pause until you free up space or buy more. Existing
+          transcripts are never touched.
+        </p>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button onClick={buy} disabled={buying} variant={over ? "default" : "outline"} size="sm">
+          {buying ? "Adding…" : `Buy +${STORAGE_BLOCK_MB} MB — ${STORAGE_BLOCK_COST_CREDITS} credits`}
+        </Button>
+        <span className="text-xs text-fg-muted">Extra space is permanent, like your credits.</span>
+      </div>
+
+      {msg && (
+        <p className={cn("text-sm mt-3", msg.type === "error" ? "text-error" : "text-success")}>{msg.text}</p>
+      )}
     </div>
   )
 }

@@ -88,6 +88,20 @@ export default function DocsCreditsPage() {
           <a href={appHref("/dashboard/account")} className="text-[var(--accent)] hover:underline">Account page</a>.
         </p>
 
+        <AnchorHeading as="h2">Library storage, and buying more</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          Every account gets 100 MB of library storage — the space your saved transcripts, edits,
+          summaries and exports take up. Since transcripts are text, 100 MB holds a lot. You can see how
+          much you&apos;ve used on your{" "}
+          <a href="/dashboard/account" className="text-[var(--accent)] hover:underline">Account page</a>.
+        </p>
+        <p className="text-[var(--fg-subtle)] leading-relaxed mt-3">
+          If you fill it, new transcripts pause until you free up space — your existing transcripts are
+          never touched, and no credits are charged for a paused job. You can either delete some
+          transcripts, or buy more room: <strong>100 credits adds a permanent 100 MB</strong> (1 credit
+          per MB), and bought space stays yours just like your credits.
+        </p>
+
         <AnchorHeading as="h2">Credits never expire</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Purchased credits stay in your account until you use them — there is no monthly reset and no

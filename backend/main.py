@@ -96,6 +96,7 @@ from credit_manager import (
     RESERVATION_ENABLED,
     get_supabase_client,
     record_proxy_bytes,
+    is_library_full,
 )
 
 # Setup logging
@@ -921,6 +922,16 @@ async def transcribe_with_whisper(
             "duration_hours": round(_eff_dur/3600, 1),
         })
 
+    # Storage limit — reject a NEW AI transcript when the library is already at/over the cap,
+    # BEFORE any reservation, so a full library never costs credits (LESSONS 2026-07-22).
+    # Grandfather-safe: only new work is blocked; existing transcripts are untouched.
+    if await asyncio.to_thread(is_library_full, user_id):
+        _cleanup_tmp(upload_tmp_path)
+        return JSONResponse(status_code=413, content={
+            "error": "Your library is full.",
+            "code": "storage_full",
+        })
+
     try:
         current_balance = await asyncio.to_thread(check_user_balance, user_id)
     except Exception as e:
@@ -1368,6 +1379,14 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
             "code": "too_many_videos",
             "max_videos": MAX_PLAYLIST_VIDEOS,
             "selected_videos": len(request.video_ids),
+        })
+
+    # Storage limit — reject a full library BEFORE the job row + reservation, so a full
+    # library never costs credits (LESSONS 2026-07-22). Grandfather-safe: new work only.
+    if await asyncio.to_thread(is_library_full, request.user_id):
+        return JSONResponse(status_code=413, content={
+            "error": "Your library is full. Delete some transcripts, or buy more space on your Account page, then try again.",
+            "code": "storage_full",
         })
 
     supabase = get_supabase_client()
