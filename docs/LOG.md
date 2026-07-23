@@ -12491,3 +12491,8 @@ apps/marketing/public/hero/hero-light-mobile-430.webp
 apps/marketing/public/hero/hero-light-mobile-860.avif
 apps/marketing/public/hero/hero-light-mobile-860.webp
 ---
+[2026-07-23 18:17] commit: docs(hero): update mobile crop-box to recentred box (1465,0,3799,2917)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/design/hero-images.md
+---

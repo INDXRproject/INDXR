@@ -58,8 +58,11 @@ Onder **767px** serveert de hero een **4:5-uitsnede** van hetzelfde beeld — ar
 resolutie-variant. Zelfde bronketen en nacht-grade (zwartpunt 9 / gamma 1.70 / randvignette blijven
 gelijk zodat mobiel en desktop bij elkaar horen).
 
-- **Mobiele crop-box:** box **(1533, 0, 3867, 2917)** op de desktopmaster → **2334×2917, ratio 4:5**.
-  Geldt ongewijzigd voor licht en donker; de bronbeelden zijn pixelgelijk.
+- **Mobiele crop-box:** box **(1465, 0, 3799, 2917)** op de desktopmaster → **2334×2917, ratio 4:5**.
+  Geldt ongewijzigd voor licht en donker; de bronbeelden zijn pixelgelijk. De box is uitgelijnd op
+  het **laptopscherm** (schermmidden x=2632 op de 5400-brede master), **niet** op het framemidden
+  (x=2700): op mobiel valt de raamsymmetrie buiten beeld, dus de laptop is het compositorische anker.
+  De oude box (1533, 0, 3867, 2917) legde de laptop ~68px uit het midden — vandaar de 68px-shift.
 - **Exportbreedtes:** 430 / 860 / 1290 (1x / 2x / 3x). Bestanden `hero-{light,dark}-mobile-{430,860,1290}.{avif,webp}`
   + JPEG-fallback op **430 / 1290** (geen 860-JPEG).
 - **Breakpoint: 767px** — media-attribuut `(max-width: 767px)` op de mobiele `<source>`-regels; de
