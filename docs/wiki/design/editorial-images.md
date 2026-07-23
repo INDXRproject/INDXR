@@ -142,4 +142,24 @@ de illustratie zelf, niet in de resolutie.
 - **Billing-ritme:** Credits balance (compacte regel: saldo prominent, knop ernaast), Credit
   packages en Purchase history krijgen elk een `SectionLabel` met lijn, net als `/docs`.
 
+## /dashboard (Home) — zelfde systeem
+
+`/dashboard` gebruikt nu dezelfde `PageHeader` (compact), `HexagonPattern`-achtergrondtextuur en
+`SectionLabel` als `/dashboard/billing`; alle kaarten dezelfde radius/rand/oppervlak
+(`rounded-xl border border-border bg-surface`). `SectionLabel` kreeg een optionele `action`-prop
+voor een "View all"/"Library"-link rechts van de lijn.
+
+Sectievolgorde (boven→beneden): **Credits** (saldo met het `HexagonCreditIcon`-muntje + "Buy more"
+→ `/dashboard/billing`) · **Library storage** (gedeelde `StorageMeterCard`, `headless`) ·
+**Messages** (compacte rijen, "View all") · **Recent transcripts** (5 nieuwste, "Library") ·
+**Statistics** (Total transcripts + Collections naast elkaar).
+
+**Primaire actie in de lege staat, niet in een permanente balk:** de vroegere permanente
+"Transcribe a video"-balk is verwijderd. De Transcribe-knop staat nu in de **lege staat** van
+Recent transcripts. Reden: voor wie al transcripten heeft is die balk pure ruis (de sidebar/tab-bar
+heeft Transcribe al); voor wie er nog geen heeft is de lege staat juist de plek voor de call to
+action. Op **mobiel** (sidebar ingeklapt) is die knop het enige zichtbare pad naar Transcribe, dus
+hij is groot en goed aanraakbaar. Alles wat op desktop naast elkaar staat (saldo + knop, de twee
+statistiekkaarten) stapelt op smal scherm.
+
 Zie ook: [hero-images.md](hero-images.md) voor de homepage-hero (aparte fotoketen, licht/donker).

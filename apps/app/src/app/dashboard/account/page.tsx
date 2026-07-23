@@ -4,7 +4,7 @@ import { ProfileSettingsCard } from "@/components/dashboard/settings/ProfileSett
 import { TransactionHistoryCard } from "@/components/dashboard/settings/TransactionHistoryCard"
 import { PurchaseHistoryCard, PurchaseRow } from "@/components/dashboard/billing/PurchaseHistoryCard"
 import { SentryFeedbackCard } from "@/components/dashboard/settings/SentryFeedbackCard"
-import { StorageMeterCard } from "@/components/dashboard/account/StorageMeterCard"
+import { StorageMeterCard } from "@/components/dashboard/StorageMeterCard"
 
 export default async function AccountPage() {
   const supabase = await createClient()

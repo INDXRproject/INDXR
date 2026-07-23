@@ -4,25 +4,42 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@indxr/shared/components/ui/button"
 import { cn } from "@indxr/shared/lib/utils"
-import { STORAGE_BLOCK_MB, STORAGE_BLOCK_COST_CREDITS } from "@indxr/shared/lib/storage"
+import {
+  STORAGE_BLOCK_MB,
+  STORAGE_BLOCK_COST_CREDITS,
+  LIBRARY_STORAGE_MAX_MB,
+  BYTES_PER_MB,
+} from "@indxr/shared/lib/storage"
 import { purchaseStorageAction } from "@/app/actions/storage"
 
-// Library-storage meter for the account page. Shows the real footprint (user_credits.library_bytes)
-// against the user's effective cap (library_bytes_cap + library_bytes_bonus, from the DB — the limit
-// is per-user, not a frontend constant). The limit is enforced: over it, new transcripts are blocked.
-// From here a user can buy permanent extra space (a credit-sink) or delete transcripts.
-export function StorageMeterCard({ libraryBytes, capBytes }: { libraryBytes: number; capBytes: number }) {
+// Library-storage meter + upgrade action. THE single storage purchase surface — rendered on both
+// /dashboard/account and /dashboard (the Home page passes headless so its section label supplies
+// the heading). One confirm step, one debit path (purchaseStorageAction → purchase_library_space),
+// so there is never a second implementation of the credit-deducting action.
+//
+// Reads the real footprint (user_credits.library_bytes) against the effective cap
+// (library_bytes_cap + library_bytes_bonus, from the DB). At the hard cap (500 MB) the buy button
+// is disabled with an explanation — the RPC also refuses, so no silent failure and no wasted debit.
+export function StorageMeterCard({
+  libraryBytes,
+  capBytes,
+  headless = false,
+}: {
+  libraryBytes: number
+  capBytes: number
+  headless?: boolean
+}) {
   const router = useRouter()
   const [buying, setBuying] = useState(false)
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null)
   const [confirming, setConfirming] = useState(false)
 
-  const MB = 1024 * 1024
-  const usedMB = libraryBytes / MB
-  const capMB = capBytes / MB
+  const usedMB = libraryBytes / BYTES_PER_MB
+  const capMB = capBytes / BYTES_PER_MB
   const pct = capMB > 0 ? Math.min(100, Math.max(0, (usedMB / capMB) * 100)) : 0
   const over = libraryBytes >= capBytes
   const near = pct >= 80
+  const atMax = capBytes >= LIBRARY_STORAGE_MAX_MB * BYTES_PER_MB
   const fmt = (mb: number) => (mb < 10 ? mb.toFixed(1) : Math.round(mb).toString())
 
   const buy = async () => {
@@ -41,10 +58,14 @@ export function StorageMeterCard({ libraryBytes, capBytes }: { libraryBytes: num
 
   return (
     <div className="rounded-xl border border-border bg-surface p-6">
-      <h2 className="text-lg font-semibold text-fg mb-1">Library storage</h2>
-      <p className="text-sm text-fg-muted mb-5">
-        How much space your saved transcripts, edits, summaries, and exports take up.
-      </p>
+      {!headless && (
+        <>
+          <h2 className="text-lg font-semibold text-fg mb-1">Library storage</h2>
+          <p className="text-sm text-fg-muted mb-5">
+            How much space your saved transcripts, edits, summaries, and exports take up.
+          </p>
+        </>
+      )}
 
       <div className="flex justify-between items-end mb-2">
         <span className="text-sm font-medium text-fg tabular-nums">{fmt(usedMB)} MB</span>
@@ -62,8 +83,8 @@ export function StorageMeterCard({ libraryBytes, capBytes }: { libraryBytes: num
           <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full.</p>
           <p className="text-sm text-fg-subtle mt-1">
             New transcripts are paused until you free up space. Delete some transcripts from your{" "}
-            <a href="/dashboard/library" className="text-[var(--accent)] hover:underline">library</a>, or buy
-            more room below. Your existing transcripts are safe.
+            <a href="/dashboard/library" className="text-[var(--accent)] hover:underline">library</a>
+            {atMax ? "" : ", or buy more room below"}. Your existing transcripts are safe.
           </p>
         </div>
       ) : (
@@ -73,7 +94,16 @@ export function StorageMeterCard({ libraryBytes, capBytes }: { libraryBytes: num
         </p>
       )}
 
-      {confirming ? (
+      {atMax ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button disabled variant="outline" size="sm">
+            Buy +{STORAGE_BLOCK_MB} MB — {STORAGE_BLOCK_COST_CREDITS} credits
+          </Button>
+          <span className="text-xs text-fg-muted">
+            You&apos;ve reached the maximum library storage ({LIBRARY_STORAGE_MAX_MB} MB). Delete transcripts to free space.
+          </span>
+        </div>
+      ) : confirming ? (
         <div className="mt-4 rounded-lg border border-border bg-surface-elevated/40 px-4 py-3">
           <p className="text-sm text-fg">
             Spend <strong>{STORAGE_BLOCK_COST_CREDITS} credits</strong> for a permanent{" "}

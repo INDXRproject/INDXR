@@ -60,3 +60,26 @@ credit-sink, zonder de financiële reserverings-/afrekeningsroute te raken.
 - Prod-getest: op 100 MiB is de zwaarste bestaande gebruiker (204 MB) correct "full"; kopen van een
   blok deed 250→150 credits, +100 MiB bonus, cap 100→200 MiB, en zette "full" op false; onvoldoende
   saldo werd atomair geweigerd zonder mutatie.
+
+## Aanvulling 2026-07-24 — harde bovengrens 500 MB + fysieke opslag
+
+- **Maximum:** basis 100 MB + elke upgrade +100 MB, met een **harde bovengrens van 500 MB** —
+  dus **maximaal 4 upgrades** (400 MB gekochte bonus). Afgedwongen in `purchase_library_space`
+  (migratie `20260724013956`): de RPC weigert een aankoop die `library_bytes_bonus + blok` boven
+  400 MiB zou tillen met `error='Storage limit reached'` — **vóór** de credit-aftrek, dus geen
+  stille mislukking en geen afboeking die niets oplevert. De UI (`StorageMeterCard`) disablet de
+  knop op de grens met dezelfde uitleg; de RPC blijft gezaghebbend. Constanten in lockstep:
+  `LIBRARY_STORAGE_MAX_MB=500` / `STORAGE_MAX_UPGRADES=4` (`packages/shared/src/lib/storage.ts`)
+  ↔ `v_max_bonus=419430400` in de RPC.
+- **Waar transcripten fysiek staan:** als **tekst in Postgres (Supabase)** — de JSONB-kolommen
+  `transcripts.transcript`, `.edited_content`, `.ai_summary` en `.rag_exports`. De footprint-teller
+  `user_credits.library_bytes` is de trigger-onderhouden `octet_length`-som van precies die kolommen
+  (migratie `20260711100400`). Transcripten staan **niet** in R2 — R2 (ADR-020) is voor het
+  tijdelijke audiobestand, dat ná transcriptie wordt verwijderd. Financiële betekenis: 500 MB/gebruiker
+  is 500 MB Postgres-**tekst** (comprimeert goed, ~$0,125/GB-maand DB-storage bij Supabase) — per
+  gebruiker verwaarloosbaar, maar "permanent" is wél een reële staande verplichting die met het
+  aantal betalende power-users meeschaalt. De 500 MB-grens houdt die verplichting begrensd.
+- **Gedeeld component:** `StorageMeterCard` is nu het **enige** opslag-aankoopoppervlak, gerenderd op
+  zowel `/dashboard/account` als `/dashboard` (Home geeft `headless` mee zodat het SectionLabel de
+  kop levert). Eén bevestigingsstap, één afboekpad (`purchaseStorageAction → purchase_library_space`).
+  Geen tweede implementatie van een credit-afboekende actie.

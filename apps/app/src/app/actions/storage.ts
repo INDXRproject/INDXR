@@ -30,9 +30,15 @@ export async function purchaseStorageAction(blocks: number = 1): Promise<
 
   const res = data as { success: boolean; error?: string; new_balance?: number; new_cap_bytes?: number }
   if (!res?.success) {
-    return { success: false, error: res?.error === "Insufficient credits" ? "Not enough credits." : (res?.error ?? "Purchase failed.") }
+    const friendly =
+      res?.error === "Insufficient credits" ? "Not enough credits."
+      : res?.error === "Storage limit reached" ? "You've reached the maximum library storage (500 MB)."
+      : (res?.error ?? "Purchase failed.")
+    return { success: false, error: friendly }
   }
 
+  // Both surfaces that render the storage meter must refresh their server-read cap/footprint.
   revalidatePath("/dashboard/account")
+  revalidatePath("/dashboard")
   return { success: true, newBalance: res.new_balance ?? 0, newCapBytes: res.new_cap_bytes ?? 0 }
 }

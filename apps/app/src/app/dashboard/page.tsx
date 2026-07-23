@@ -1,11 +1,14 @@
 import type { Metadata } from "next"
-import { Card, CardContent, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
-import { Button } from "@indxr/shared/components/ui/button"
 import Link from "next/link"
-import { AudioLines, Library, Inbox, ChevronRight } from "lucide-react"
+import { ChevronRight, AudioLines } from "lucide-react"
+import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
+import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
+import { PageHeader } from "@indxr/shared/components/PageHeader"
+import { SectionLabel } from "@indxr/shared/components/SectionLabel"
+import { Button } from "@indxr/shared/components/ui/button"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { HomeCreditsBalance } from "@/components/dashboard/HomeCreditsBalance"
-import { HomeStorageMeter } from "@/components/dashboard/HomeStorageMeter"
+import { StorageMeterCard } from "@/components/dashboard/StorageMeterCard"
 
 export const metadata: Metadata = {
   title: "Home — INDXR.AI",
@@ -14,11 +17,7 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
-
-  // Credits balance is rendered client-side via <HomeCreditsBalance /> using the
-  // same live source as the topbar/sidebar (useAuth().credits).
 
   // Library storage: real footprint + effective per-user cap (base + purchased bonus).
   let libraryBytes = 0
@@ -48,15 +47,15 @@ export default async function DashboardPage() {
     if (data) recentMessages = data as typeof recentMessages
   }
 
-  // Recent transcripts (3 most recent)
-  let recentTranscripts: Array<{ id: string; video_title: string | null; created_at: string }> = []
+  // Recent transcripts — the 5 most recent (column is `title`, not `video_title`).
+  let recentTranscripts: Array<{ id: string; title: string | null; created_at: string }> = []
   if (user) {
     const { data } = await supabase
       .from("transcripts")
-      .select("id, video_title, created_at")
+      .select("id, title, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(3)
+      .limit(5)
     if (data) recentTranscripts = data as typeof recentTranscripts
   }
 
@@ -84,153 +83,121 @@ export default async function DashboardPage() {
       : { month: "short", day: "numeric", year: "numeric" })
   }
 
+  const linkAction = (label: string, href: string) => (
+    <Link href={href} className="text-xs font-medium text-fg-muted hover:text-fg flex items-center gap-1 transition-colors">
+      {label} <ChevronRight className="h-3 w-3" />
+    </Link>
+  )
+
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-semibold text-fg">Home</h1>
+    <div className="relative min-h-full">
+      {/* Same very-light honeycomb texture as /dashboard/billing. */}
+      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
 
-      {/* ── Section 1: Credits balance + library storage ── */}
-      <Card className="bg-surface border-border">
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
-            {/* Credits */}
-            <div className="flex items-end justify-between gap-4 sm:flex-1">
+      <div className="relative max-w-4xl mx-auto w-full flex flex-col">
+        <PageHeader
+          compact
+          eyebrow="Dashboard"
+          title="Home"
+          lead="Your credits, storage, messages, and recent transcripts at a glance."
+        />
+
+        {/* ── Credits ── */}
+        <section className="mb-12">
+          <SectionLabel label="Credits" />
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface px-6 py-5">
+            <div className="flex items-center gap-3">
+              <HexagonCreditIcon className="size-9 shrink-0" />
               <div>
-                <p className="text-sm text-fg-muted mb-1">Credits remaining</p>
-                <HomeCreditsBalance />
-                <p className="text-xs text-fg-muted mt-1">1 credit = 1 minute of AI transcription</p>
+                <div className="flex items-baseline gap-1.5">
+                  <HomeCreditsBalance />
+                  <span className="text-sm text-fg-muted">credits</span>
+                </div>
+                <p className="text-xs text-fg-muted mt-0.5">1 credit = 1 minute of AI transcription</p>
               </div>
-              <Link href="/dashboard/billing" className="sm:hidden">
-                <Button variant="outline" size="sm">Buy more</Button>
-              </Link>
             </div>
-
-            {/* Divider — desktop only */}
-            <div className="hidden sm:block w-px self-stretch bg-border/60" />
-
-            {/* Storage */}
-            <div className="sm:flex-1 sm:max-w-[16rem]">
-              <HomeStorageMeter libraryBytes={libraryBytes} capBytes={capBytes} />
-            </div>
-
-            <Link href="/dashboard/billing" className="hidden sm:block">
+            <Link href="/dashboard/billing">
               <Button variant="outline" size="sm">Buy more</Button>
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* ── Section 2: Transcribe CTA ── */}
-      <Card className="bg-surface border-border">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded bg-accent-subtle flex items-center justify-center shrink-0">
-                <AudioLines className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <p className="font-medium text-fg">Transcribe a video</p>
-                <p className="text-sm text-fg-muted">Paste a YouTube URL to extract the transcript</p>
-              </div>
-            </div>
-            <Link href="/dashboard/transcribe" className="shrink-0">
-              <Button>Start transcribing</Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+        {/* ── Library storage ── shared meter + upgrade action (same as /dashboard/account) ── */}
+        <section className="mb-12">
+          <SectionLabel label="Library storage" />
+          <StorageMeterCard libraryBytes={libraryBytes} capBytes={capBytes} headless />
+        </section>
 
-      {/* ── Section 3: Last messages preview ── */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-medium text-fg flex items-center gap-2">
-            <Inbox className="h-4 w-4 text-fg-muted" />
-            Messages
-          </h2>
-          <Link href="/dashboard/messages" className="text-sm text-fg-muted hover:text-fg flex items-center gap-1 transition-colors">
-            View all <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
-        {recentMessages.length === 0 ? (
-          <Card className="bg-surface border-border">
-            <CardContent className="py-6 text-center">
+        {/* ── Messages ── compact notification rows ── */}
+        <section className="mb-12">
+          <SectionLabel label="Messages" action={linkAction("View all", "/dashboard/messages")} />
+          {recentMessages.length === 0 ? (
+            <div className="rounded-xl border border-border bg-surface px-4 py-6 text-center">
               <p className="text-sm text-fg-muted">No messages yet.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {recentMessages.map((msg) => (
-              <Link key={msg.id} href="/dashboard/messages">
-                <Card className={`bg-surface border-border hover:bg-surface-elevated transition-colors cursor-pointer${!msg.read ? " border-l-2 border-l-accent" : ""}`}>
-                  <CardContent className="py-3 px-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className={`text-sm truncate ${msg.read ? "font-medium text-fg" : "font-semibold text-fg"}`}>{msg.title}</p>
-                        <p className="text-xs text-fg-muted truncate mt-0.5">{msg.body}</p>
-                      </div>
-                      <span className="text-xs text-fg-muted shrink-0 mt-0.5">{formatDate(msg.created_at)}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-surface divide-y divide-border-subtle overflow-hidden">
+              {recentMessages.map((msg) => (
+                <Link
+                  key={msg.id}
+                  href="/dashboard/messages"
+                  className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-surface-elevated transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {!msg.read && <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />}
+                    <span className={`text-sm truncate ${msg.read ? "text-fg" : "font-semibold text-fg"}`}>{msg.title}</span>
+                    <span className="text-xs text-fg-muted truncate hidden sm:inline">{msg.body}</span>
+                  </div>
+                  <span className="text-xs text-fg-muted shrink-0">{formatDate(msg.created_at)}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* ── Section 4: Recent transcripts ── */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-medium text-fg flex items-center gap-2">
-            <Library className="h-4 w-4 text-fg-muted" />
-            Recent transcripts
-          </h2>
-          <Link href="/dashboard/library" className="text-sm text-fg-muted hover:text-fg flex items-center gap-1 transition-colors">
-            Library <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
-        {recentTranscripts.length === 0 ? (
-          <Card className="bg-surface border-border">
-            <CardContent className="py-6 text-center">
-              <p className="text-sm text-fg-muted">No transcripts yet — try transcribing your first video.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {recentTranscripts.map((t) => (
-              <Link key={t.id} href={`/dashboard/library/${t.id}`}>
-                <Card className="bg-surface border-border hover:bg-surface-elevated transition-colors cursor-pointer">
-                  <CardContent className="py-3 px-4 flex items-center justify-between gap-2">
-                    <p className="text-sm text-fg truncate">{t.video_title ?? "Untitled transcript"}</p>
-                    <span className="text-xs text-fg-muted shrink-0">{formatDate(t.created_at)}</span>
-                  </CardContent>
-                </Card>
+        {/* ── Recent transcripts ── */}
+        <section className="mb-12">
+          <SectionLabel label="Recent transcripts" action={linkAction("Library", "/dashboard/library")} />
+          {recentTranscripts.length === 0 ? (
+            <div className="rounded-xl border border-border bg-surface px-4 py-8 text-center">
+              <p className="text-sm text-fg-muted mb-4">No transcripts yet — transcribe your first video.</p>
+              <Link href="/dashboard/transcribe">
+                <Button className="gap-2">
+                  <AudioLines className="h-4 w-4" />
+                  Transcribe a video
+                </Button>
               </Link>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-surface divide-y divide-border-subtle overflow-hidden">
+              {recentTranscripts.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/dashboard/library/${t.id}`}
+                  className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-surface-elevated transition-colors"
+                >
+                  <span className="text-sm text-fg truncate">{t.title ?? "Untitled transcript"}</span>
+                  <span className="text-xs text-fg-muted shrink-0">{formatDate(t.created_at)}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* ── Section 5: Library statistics ── */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="bg-surface border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-fg-muted">Total transcripts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold text-fg tabular-nums">{transcriptCount}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-surface border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-fg-muted">Collections</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold text-fg tabular-nums">{collectionsCount}</p>
-            <Link href="/dashboard/library" className="text-xs text-fg-muted hover:text-fg mt-1 block transition-colors">
-              View library →
-            </Link>
-          </CardContent>
-        </Card>
+        {/* ── Statistics ── */}
+        <section>
+          <SectionLabel label="Statistics" action={linkAction("Library", "/dashboard/library")} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl border border-border bg-surface px-6 py-5">
+              <p className="text-sm font-medium text-fg-muted mb-1">Total transcripts</p>
+              <p className="text-3xl font-semibold text-fg tabular-nums">{transcriptCount}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-surface px-6 py-5">
+              <p className="text-sm font-medium text-fg-muted mb-1">Collections</p>
+              <p className="text-3xl font-semibold text-fg tabular-nums">{collectionsCount}</p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   )

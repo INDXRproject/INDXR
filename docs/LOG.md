@@ -12817,3 +12817,47 @@ backend/credit_manager.py
 docs/LESSONS.md
 supabase/migrations/20260724013708_refund_reason_english.sql
 ---
+
+[2026-07-24 01:45] dashboard-herindeling (Taak B): /dashboard gebruikt nu PageHeader (compact) + HexagonPattern-textuur + SectionLabel, zoals /dashboard/billing. Volgorde: Credits (muntje + Buy more → billing) / Library storage (gedeelde StorageMeterCard, headless) / Messages (compact) / Recent transcripts (5 nieuwste — bug gefixt: query las video_title i.p.v. title, gaf altijd leeg) / Statistics. Permanente Transcribe-balk verwijderd; CTA zit nu in de lege staat van Recent transcripts (enige mobiele pad). Storage-cap: max 500 MB (4 upgrades), afgedwongen in purchase_library_space (migratie 20260724013956, weigert vóór afboeking) + knop disabled op grens. StorageMeterCard verplaatst naar components/dashboard/ (gedeeld door account+home), headless-prop + max-cap. HomeStorageMeter verwijderd. Transcripten staan als JSONB-tekst in Postgres (transcripts.*), niet in R2. Build app groen.
+Changed: apps/app/src/app/dashboard/page.tsx, apps/app/src/components/dashboard/StorageMeterCard.tsx (verplaatst+uitgebreid), apps/app/src/app/dashboard/account/page.tsx, apps/app/src/app/actions/storage.ts, packages/shared/src/components/SectionLabel.tsx, packages/shared/src/lib/storage.ts, supabase/migrations/20260724013956_library_storage_max_cap.sql, docs/wiki/decisions/078-*.md, docs/wiki/design/editorial-images.md; removed HomeStorageMeter.tsx + account/StorageMeterCard.tsx
+---
+[2026-07-24 01:45] commit: feat(dashboard): restructure /dashboard into the presentation system
+
+/dashboard now uses the same PageHeader (compact), HexagonPattern texture and SectionLabel
+as /dashboard/billing; every card shares the rounded-xl border bg-surface treatment.
+
+- Section order: Credits (balance with the HexagonCreditIcon coin + 'Buy more' → billing,
+  so credits no longer read as buying storage) · Library storage · Messages · Recent
+  transcripts · Statistics.
+- Recent transcripts was querying a non-existent 'video_title' column, so it always showed
+  'No transcripts yet'. Fixed to 'title', 5 most recent, newest first.
+- The permanent 'Transcribe a video' bar is removed; its CTA now lives in the Recent-
+  transcripts empty state — for accounts with transcripts the bar was noise, and on mobile
+  (collapsed sidebar) that button is the only visible path to Transcribe, so it's touch-sized.
+- Library storage is the SHARED StorageMeterCard (moved to components/dashboard/), rendered
+  on both /dashboard (headless) and /dashboard/account — one confirm step, one debit path
+  (purchaseStorageAction → purchase_library_space). HomeStorageMeter removed.
+- Storage cap: hard max 500 MB (base 100 + 4 bought blocks). Enforced in
+  purchase_library_space (migration 20260724013956) BEFORE any debit — refused cleanly, no
+  silent failure, no wasted debit; the buy button disables at the cap. Constants in shared/lib.
+- SectionLabel gains an optional right-side 'action' (View all / Library links).
+
+Transcripts are stored as JSONB text in Postgres (transcripts.*), not R2 — documented in
+ADR-078 along with the cap.
+
+Build green (app, 46 pages, exit 0).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/actions/storage.ts
+apps/app/src/app/dashboard/account/page.tsx
+apps/app/src/app/dashboard/page.tsx
+apps/app/src/components/dashboard/HomeStorageMeter.tsx
+apps/app/src/components/dashboard/StorageMeterCard.tsx
+apps/app/src/components/dashboard/account/StorageMeterCard.tsx
+docs/LOG.md
+docs/wiki/decisions/078-library-storage-limit-credit-sink.md
+docs/wiki/design/editorial-images.md
+packages/shared/src/components/SectionLabel.tsx
+packages/shared/src/lib/storage.ts
+supabase/migrations/20260724013956_library_storage_max_cap.sql
+---

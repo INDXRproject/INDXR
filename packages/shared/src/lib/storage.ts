@@ -17,5 +17,11 @@ export const BYTES_PER_MB = 1024 * 1024
 export const STORAGE_BLOCK_MB = 100
 export const STORAGE_BLOCK_COST_CREDITS = 100
 
+// Hard cap: base 100 MiB + at most 4 bought blocks (400 MiB bonus) = 500 MiB total. Enforced
+// authoritatively by purchase_library_space (migration 20260724013956); the UI disables the buy
+// button at the cap. Kept in lockstep with v_max_bonus in the DB.
+export const LIBRARY_STORAGE_MAX_MB = 500
+export const STORAGE_MAX_UPGRADES = 4
+
 // Deprecated alias — kept so nothing that imported the old name breaks. Prefer the DB cap.
 export const LIBRARY_STORAGE_LIMIT_MB = LIBRARY_STORAGE_BASE_MB
