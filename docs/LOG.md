@@ -11793,3 +11793,30 @@ Both apps build green.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
 ---
+[2026-07-23 11:25] commit: fix(articles): json translation claim, unverifiable accuracy %s, test wall-clocks
+
+Per-claim (file / old → new / source):
+- youtube-transcript-json:155 'YouTube always returns the English translation via our
+  pipeline regardless of original' → INDXR anchors to the native track, returns the
+  ORIGINAL language (same false claim as non-english; youtube_utils.py:337,368-401).
+- audio-to-text + age-restricted: '94–96%+ accuracy' (unverifiable, unattributed) →
+  'roughly 4–5% word error rate on English on AssemblyAI's benchmarks' (verified
+  2026-07-23: assemblyai.com/benchmarks shows 4.35% WER; consistent framing with the
+  accuracy page). Auto-caption ranges (60–80/60–95%) → qualitative.
+- 'completed in 18 minutes and 53 seconds' / 'under 19 minutes' for 783 min of audio
+  (channel-kb, bulk, playlist): unverifiable and implausibly fast vs the measured 5.4%
+  median ratio (would be ~42 min sequential) — removed, reframed to the derivable
+  background-job capability.
+- audio-to-text '8+ hours' upload estimate → 'roughly 8 hours or more, depending on
+  bitrate' + added the real 10-hour transcription ceiling (main.py MAX_TRANSCRIPTION).
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+---

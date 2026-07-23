@@ -53,8 +53,9 @@ export default function BulkYouTubeTranscriptPage() {
       </p>
 
       <p>
-        We&apos;ve tested this at scale: 19 videos, 783 minutes of total audio, all processed by AI
-        transcription, completed in 18 minutes and 53 seconds.
+        It handles scale: a whole playlist runs as a single background job, so you can queue a large
+        batch — up to 500 videos — close the tab, and collect the transcripts from your library as each
+        one finishes.
       </p>
 
       <h2>How Bulk Extraction Works</h2>

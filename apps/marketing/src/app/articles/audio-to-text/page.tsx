@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Is there a file size limit?",
-    a: "500MB maximum per upload. This covers approximately 8+ hours of audio at typical recording bitrates. For larger files, split them first using a tool like FFmpeg or Audacity.",
+    a: "500MB maximum per upload — roughly 8 hours or more of audio, depending on the recording's bitrate. AI transcription also has a 10-hour ceiling per file. For larger or longer files, split them first using a tool like FFmpeg or Audacity.",
   },
   {
     q: "Does it work for video files as well as audio?",
@@ -23,7 +23,7 @@ const faqs = [
   },
   {
     q: "How accurate is the transcription?",
-    a: `${transcriptionModelName()} achieves 94–96%+ accuracy on clean recordings. For challenging audio — heavy accents, significant background noise, overlapping speakers — accuracy varies but typically outperforms YouTube's auto-captions under the same conditions.`,
+    a: `On AssemblyAI's own benchmarks, ${transcriptionModelName()} reaches roughly 4–5% word error rate on clean English audio. For challenging audio — heavy accents, significant background noise, overlapping speakers — accuracy varies by language and conditions, but it typically outperforms YouTube's auto-captions under the same conditions.`,
   },
   {
     q: "Can I transcribe in languages other than English?",
@@ -112,9 +112,9 @@ export default function AudioToTextPage() {
 
       <p>
         <strong>Audio quality:</strong> The model is trained on real-world audio including phone
-        recordings, conference recordings with background noise, and studio-quality content. YouTube&apos;s
-        auto-captions achieve 60–80% accuracy on challenging audio — {transcriptionModelName()}
-        {" "}consistently reaches 94–96%+ on clean recordings.
+        recordings, conference recordings with background noise, and studio-quality content. It is
+        noticeably more accurate than YouTube&apos;s auto-captions on hard audio, and on AssemblyAI&apos;s
+        benchmarks {transcriptionModelName()} reaches roughly 4–5% word error rate on clean English audio.
       </p>
 
       <p>

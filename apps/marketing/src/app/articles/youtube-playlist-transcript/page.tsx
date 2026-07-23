@@ -57,8 +57,9 @@ export default function YouTubePlaylistTranscriptPage() {
       </p>
 
       <p>
-        We&apos;ve tested playlists containing 19 videos across 13 hours of total audio — all 19 extracted
-        successfully in 18 minutes and 53 seconds.
+        A playlist of a dozen or more videos — many hours of total audio — runs as a single background
+        job. You can start it, close the tab, and the finished transcripts appear in your library as they
+        complete.
       </p>
 
       <h2>How Playlist Extraction Works</h2>

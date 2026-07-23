@@ -23,7 +23,7 @@ const faqs = [
   },
   {
     q: "What's the quality difference between the audio upload transcript and what YouTube's captions would have provided?",
-    a: `YouTube's auto-captions for age-restricted content are typically the same quality as for any other video — 60–95% accuracy depending on audio conditions. ${transcriptionModelName()} tends to match or exceed this, particularly for videos with clear speech. The key difference: AssemblyAI adds proper punctuation and capitalization, which YouTube's auto-captions often lack.`,
+    a: `YouTube's auto-captions for age-restricted content are the same quality as for any other video — their accuracy depends on the audio conditions. ${transcriptionModelName()} tends to match or exceed them, particularly for videos with clear speech. The key difference: AssemblyAI adds proper punctuation and capitalization, which YouTube's auto-captions often lack.`,
   },
   {
     q: "Can I transcribe an age-restricted YouTube Short?",
@@ -154,9 +154,10 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
       </p>
 
       <p>
-        {transcriptionModelName()} achieves 94–96%+ accuracy on clean audio. For content with
-        challenging audio conditions — music, background noise, non-standard speech — accuracy varies
-        but remains higher than YouTube&apos;s auto-captions for difficult audio. The{" "}
+        {transcriptionModelName()} reaches roughly 4–5% word error rate on clean English audio on
+        AssemblyAI&apos;s benchmarks. For content with challenging audio conditions — music, background
+        noise, non-standard speech — accuracy varies but remains higher than YouTube&apos;s auto-captions
+        for difficult audio. The{" "}
         <code>is_auto_generated: false</code> flag in JSON exports distinguishes AI-transcribed
         content from auto-caption sources.
       </p>

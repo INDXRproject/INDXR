@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "How many videos can a single INDXR.AI extraction handle?",
-    a: "INDXR.AI processes up to 500 videos per job. For larger channels, split into batches of up to 500 videos and all results accumulate in the same library. The largest test we've completed: 19 videos, 783 minutes of total audio, completed in under 19 minutes.",
+    a: "INDXR.AI processes up to 500 videos per job. For larger channels, split into batches of up to 500 videos and all results accumulate in the same library. Each job runs in the background, so you can start a large batch, close the tab, and collect the transcripts from your library as they finish.",
   },
   {
     q: "Is auto-caption quality good enough for a knowledge base?",

@@ -42,7 +42,7 @@ const sources = [
   },
   {
     label: `${transcriptionModelName()} — speech-to-text model`,
-    url: "https://www.assemblyai.com/universal-3",
+    url: "https://www.assemblyai.com/docs/supported-languages",
   },
   {
     label: "LangChain YoutubeLoader — document loader docs",
@@ -151,10 +151,12 @@ export default function YouTubeTranscriptJsonPage() {
       </p>
 
       <p>
-        <strong>For non-English videos:</strong> YouTube&apos;s captioning system always returns the
-        English translation via our extraction pipeline, regardless of the video&apos;s original
-        language. If you need the original Arabic, Turkish, Spanish, or Portuguese text, use AI
-        Transcription instead — it transcribes the actual audio in the original language.
+        <strong>For non-English videos:</strong> INDXR anchors to the video&apos;s native caption track, so
+        caption extraction returns the <strong>original language</strong> — not the English translation
+        that tools relying on YouTube&apos;s translatable track tend to get. If a video has no captions at
+        all, use AI Transcription, which reads the audio directly in the original language. See{" "}
+        <Link href="/articles/youtube-transcript-non-english">non-English transcripts</Link> for the full
+        explanation.
       </p>
 
       <p>
@@ -166,7 +168,7 @@ export default function YouTubeTranscriptJsonPage() {
       <p>
         When you enable AI Transcription, INDXR.AI downloads the video audio and runs it through{" "}
         <a
-          href="https://www.assemblyai.com/universal-3"
+          href="https://www.assemblyai.com/docs/supported-languages"
           target="_blank"
           rel="noopener noreferrer"
         >
