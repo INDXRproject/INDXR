@@ -11871,3 +11871,8 @@ Both apps build green.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/app/docs/reference/export-formats/srt/page.tsx
 ---
+[2026-07-23 11:36] commit: docs: night report — fase 4 pattern set (SRT exemplar), fase 6 duplication decision, fase 7 status
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
+---

@@ -327,3 +327,31 @@ artikelen is nu weg of gecorrigeerd met bron. De **fase-7 LEESBAARHEID-herschrij
 per-artikel SourcesBlock, een gedeeld cross-link/RelatedArticles-component) en **fase 4 (alle docs
 herschrijven)** + **fase 6 (twee nieuwe pagina's)** staan nog open — dat is stijl/structuur/nieuwe
 content, niet meer live-onwaarheden.
+
+## Fase 4/6/7 — voortgang & beslissingen (hervatte run, vervolg)
+
+- **Fase 4 (docs-leesbaarheid) — patroon vastgezet.** De door Khidr genoemde anti-vorm — de
+  **SRT-pagina die van definitie naar milliseconden springt** — is herschreven naar de C11b-vorm
+  (gewone "wat" → "wanneer/waarom" → dan pas de syntax). Commit `86d82cd`. Dit is de **exemplar**
+  voor de resterende reference-specs. **Nog te doen (zelfde patroon):** txt, markdown, csv, vtt,
+  json, export-formats-hub, quickstart, how-indxr-works, faq, de 5 guides, limits, settings. De
+  feiten op die pagina's zijn al code-verankerd (ADR-072/075); het is puur de opwarmings-herschrijf.
+- **Fase 6 (twee "ontbrekende" pagina's) — BESLISSING: niet blind dupliceren.** Bij verificatie
+  tegen de bestaande routes blijkt de gevraagde content grotendeels al te bestaan, en de
+  content-sitemap verbiedt expliciet duplicate content (harde regel + groei-regel "nieuwe pagina
+  alleen bij aparte zoekintentie"):
+  - **RAG-developer-pagina** → al gedekt door **drie** artikelen: `youtube-transcripts-vector-database`
+    (letterlijk "transcripten in een vectordatabase laden"), `youtube-transcript-for-rag`,
+    `chunk-youtube-transcripts-for-rag`. Een nieuwe pagina zou deze dupliceren en verdunnen.
+  - **Captions-funnel-pagina** ("youtube transcript is gratis") → overlapt met de `/transcribe`-tool
+    ("Free YouTube Transcript Generator"), `youtube-to-text`, en de homepage.
+  **Beslissing:** géén duplicaat gebouwd. Als een nieuwe pagina gewenst is, moet de **aparte
+  zoekintentie** die niet al gedekt is expliciet zijn — anders is uitbreiden van een bestaand
+  artikel het juiste (content-sitemap groei-regel). Ik heb de serializer-output wél geverifieerd
+  (`formatTranscript.ts:283+`: `chunk_id`, `text`, `start_time/end_time`, `deep_link`
+  `youtu.be/{id}?t=`, `token_count_estimate` = woorden×1.33, 15% overlap, sentence-snap voor
+  AssemblyAI) zodat een eventuele nieuwe/uitgebreide RAG-pagina meteen echte output kan tonen.
+- **Fase 7 (artikel-leesbaarheid) — claims klaar, stijl open.** Alle feitelijke onwaarheden zijn
+  weg (zie audit hierboven). Wat rest is de **verhaal-herschrijf** + een gedeeld
+  **RelatedArticles**-component (See-also ≤3 met reden) + per-artikel SourcesBlock waar externe
+  bronnen zijn. Dit is stijl/structuur, geen live-onwaarheid meer.
