@@ -392,66 +392,29 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           return
         }
 
-        // Check in-memory session first (instant, no network)
-        const captionsKey = `${videoId}:youtube_captions`;
-        const whisperKey = `${videoId}:whisper_ai`;
-        const sessionHasCaptions = sessionSavedKeys.current.has(captionsKey);
-        const sessionHasWhisper = sessionSavedKeys.current.has(whisperKey);
+        // Only warn about a duplicate of the METHOD you're about to run. Auto-captions and AI
+        // transcription are separate outputs — having the captions version must never block an AI
+        // run, and vice versa. The effect re-runs when the AI toggle flips (dep below).
+        const wantAi = useWhisper
+        const targetMethod = wantAi ? 'assemblyai' : 'youtube_captions'
 
-        if (sessionHasCaptions || sessionHasWhisper) {
-          // In-session hit: find the transcript ID from DB for the link
-          const method = sessionHasCaptions ? 'youtube_captions' : 'assemblyai';
-          const { data } = await supabase
-            .from('transcripts')
-            .select('id')
-            .eq('video_id', videoId)
-            .eq('processing_method', method)
-            .limit(1)
-            .maybeSingle();
-          setExistingTranscriptId(data?.id ?? null);
-          existingTranscriptIdRef.current = data?.id ?? null;
-          setExistingTranscriptMethod(method);
-          setShowDuplicateChoices(false);
-          setIsCheckingDuplicate(false);
-          return;
-        }
-
-        // DB check: look for youtube_captions first (most common)
-        const { data: captionsRow } = await supabase
+        const { data: row } = await supabase
           .from('transcripts')
           .select('id')
           .eq('video_id', videoId)
-          .eq('processing_method', 'youtube_captions')
+          .eq('processing_method', targetMethod)
           .limit(1)
           .maybeSingle();
 
-        if (captionsRow) {
-          setExistingTranscriptId(captionsRow.id);
-          existingTranscriptIdRef.current = captionsRow.id;
-          setExistingTranscriptMethod('youtube_captions');
-          setShowDuplicateChoices(false);
-          setIsCheckingDuplicate(false);
-          return;
-        }
-
-        // DB check: assemblyai
-        const { data: whisperRow } = await supabase
-          .from('transcripts')
-          .select('id')
-          .eq('video_id', videoId)
-          .eq('processing_method', 'assemblyai')
-          .limit(1)
-          .maybeSingle();
-
-        setExistingTranscriptId(whisperRow?.id ?? null);
-        existingTranscriptIdRef.current = whisperRow?.id ?? null;
-        setExistingTranscriptMethod(whisperRow ? 'assemblyai' : null);
+        setExistingTranscriptId(row?.id ?? null);
+        existingTranscriptIdRef.current = row?.id ?? null;
+        setExistingTranscriptMethod(row ? targetMethod : null);
         setShowDuplicateChoices(false);
       }
       setIsCheckingDuplicate(false)
     }, 600)
     return () => clearTimeout(timer)
-  }, [url, supabase])
+  }, [url, supabase, useWhisper])
 
   // Reset Whisper toggle when URL changes
   useEffect(() => {

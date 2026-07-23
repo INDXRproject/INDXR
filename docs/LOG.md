@@ -12278,3 +12278,27 @@ apps/marketing/src/components/docs/RelatedTopicsList.tsx
 docs/LESSONS.md
 docs/LOG.md
 ---
+[2026-07-23 14:49] commit: fix(transcribe): make single-video duplicate check method-aware (captions vs AI)
+
+Reported: having a video's auto-captions transcript in the library blocked extracting
+the SAME video with AI transcription — 'You already have this transcript… Extract anyway
+/ Cancel' — even though the AI version doesn't exist. And 'Extract anyway' re-ran captions,
+not AI.
+
+Cause: the duplicate check looked up ANY transcript for the video_id, checking captions
+first and returning, and only depended on [url] — so it never re-checked when the AI
+toggle flipped. handleExtract then blocked on that captions transcript regardless of the
+selected method.
+
+Fix: the check now looks up only the METHOD you're about to run (AI toggle → 'assemblyai',
+otherwise 'youtube_captions') and re-runs when the toggle flips (added useWhisper to the
+deps). So: captions + captions-exist → still warns (correct); AI toggled + only captions
+exist → no block, goes straight to the AI path (which then honestly reports 'not enough
+credits' if you can't afford it, instead of a false duplicate). The extract path already
+respected the toggle (useWhisperRef), so 'Extract anyway' on a real AI duplicate runs AI.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: packages/shared/src/components/free-tool/VideoTab.tsx
+---
