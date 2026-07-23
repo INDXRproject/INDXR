@@ -134,6 +134,58 @@ const faqs: { question: string; answer: ReactNode }[] = [
       </>
     ),
   },
+  {
+    question: "What is INDXR.AI?",
+    answer: (
+      <>
+        INDXR turns a YouTube video — or a whole playlist, or an audio or video file you upload — into
+        text, either by copying the captions the video already carries or by transcribing the audio.
+        From there you read it, edit it, and export it as plain text, subtitles, CSV, Markdown or JSON.
+        See <Link href="/docs/how-indxr-works" className={A}>How INDXR works</Link>.
+      </>
+    ),
+  },
+  {
+    question: "Do I need a browser extension?",
+    answer: (
+      <>
+        No. INDXR runs entirely in the browser — there is nothing to install, no extension or plugin.
+        Open the site, paste a URL, and extract. See{" "}
+        <Link href="/articles/youtube-transcript-without-extension" className={A}>Transcribe without an extension</Link>.
+      </>
+    ),
+  },
+  {
+    question: "How do I get a transcript as a plain text file?",
+    answer: (
+      <>
+        Paste the video URL, extract, and export as TXT — plain text is the one format you can download
+        without an account. See <Link href="/docs/quickstart" className={A}>Get your first transcript</Link>{" "}
+        for the full flow and <Link href="/docs/reference/export-formats" className={A}>Export formats</Link>{" "}
+        for what each file contains.
+      </>
+    ),
+  },
+  {
+    question: "How long does transcription take?",
+    answer: (
+      <>
+        Caption extraction is effectively instant — there is no audio to process. AI transcription runs
+        at a fraction of the video&apos;s length: an hour of audio is usually done in a couple of
+        minutes, and the app shows an estimate before you confirm.
+      </>
+    ),
+  },
+  {
+    question: "Can I use the transcripts commercially?",
+    answer: (
+      <>
+        The transcripts you create are yours to use, including for commercial work. INDXR doesn&apos;t
+        own or control the videos you transcribe, so the underlying content still belongs to its
+        creator. See our <Link href="/terms" className={A}>Terms</Link>.
+      </>
+    ),
+  },
 ]
 
 export default function DocsFaqPage() {

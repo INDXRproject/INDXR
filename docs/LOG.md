@@ -12414,3 +12414,54 @@ Changed: apps/marketing/src/components/marketing/HeroImage.tsx
 docs/LESSONS.md
 docs/wiki/design/hero-images.md
 ---
+
+[2026-07-23 16:10] taak: verloren FAQ-vragen terughaald op /docs/faq
+
+De vorige FAQ-herschrijving (484c7f8) verving de pagina zonder de bestaande lijst; 5 van de 15 oude
+vragen waren niet gedekt. Oude versie uit de42b1e gehaald, oud-vs-nieuw vergeleken, 5 niet-gedekte
+vragen geverifieerd en teruggezet (huidige 10 bovenaan, teruggehaalde daaronder, topisch geordend):
+What is INDXR.AI? (→ how-indxr-works) · Do I need a browser extension? (→ artikel) · How do I get a
+transcript as a plain text file? (→ quickstart + export-formats) · How long does transcription take?
+(FAQ = houder, geen docs-owner) · Can I use the transcripts commercially? (→ /terms). FAQPage-schema
+auto-afgeleid → 15 vragen == 15 H2's.
+
+Geverifieerd, niet klakkeloos overgenomen: de oude timing-claim "1-2 min per 10 min" overschat (echt
+~4-10%, uur ≈ 1,5-3 min; product-truth.md §6.4) en "captions 1-3 seconds" is niet-meetbaar (§6.4) →
+herschreven met verantwoorde bewoording. Commercieel-gebruik onderbouwd via terms:70,131. Niet
+teruggezet want al gedekt/achterhaald: o.a. "24h audio-delete" (nu direct, gedekt door de gecorrigeerde
+"What happens to my files?") en de oude 6-format-lijst (miste JSON; huidige "What formats" heeft 7).
+
+Nieuw feit-bezit: "How long does transcription take?" — de FAQ is nu de houder (geen docs-pagina bezat het).
+
+Marketing build green; /docs/faq HTTP 200, 15 vragen, schema==H2==15.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/faq/page.tsx
+docs/LOG.md
+---
+[2026-07-23 17:36] commit: docs(faq): restore five lost FAQ questions dropped in the rewrite
+
+The prior FAQ rewrite (484c7f8) was composed without the existing list, so five
+of the old fifteen questions were not covered. Retrieved the old version from
+de42b1e, mapped old-vs-new coverage, verified each fact, and restored the five
+uncovered questions (current ten kept on top in order; restored ones grouped by
+topic below):
+- What is INDXR.AI?  -> How INDXR works
+- Do I need a browser extension?  -> without-extension article
+- How do I get a transcript as a plain text file?  -> quickstart + export formats
+- How long does transcription take?  (FAQ now holds this; no docs page owned it)
+- Can I use the transcripts commercially?  -> Terms
+
+Verified, not copied blindly: the old "1-2 min per 10 min" timing overstates
+(actual ~4-10%, an hour ~1.5-3 min; product-truth.md 6.4) and "captions 1-3
+seconds" is unmeasured (6.4) -> rewritten responsibly. Commercial-use backed by
+terms:70,131. Not restored (covered/obsolete): the 24h audio-delete line (now
+immediate, covered by the corrected "What happens to my files?") and the old
+six-format list (missing JSON; current "What formats" has seven).
+
+FAQPage schema is derived from the array -> 15 questions == 15 H2s.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/faq/page.tsx
+docs/LOG.md
+---
