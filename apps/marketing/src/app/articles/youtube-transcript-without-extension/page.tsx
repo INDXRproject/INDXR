@@ -112,8 +112,8 @@ export default function YouTubeTranscriptWithoutExtensionPage() {
       <ul>
         <li>Videos with auto-captions (instant, free)</li>
         <li>Videos without auto-captions (AI transcription, 1 credit per minute)</li>
-        <li>Videos in any of the 67 languages YouTube auto-captions support</li>
-        <li>Videos in 99+ languages via AssemblyAI when auto-captions aren&apos;t available</li>
+        <li>Videos in any language YouTube auto-captions support</li>
+        <li>Videos in up to 99 languages via AssemblyAI when auto-captions aren&apos;t available</li>
       </ul>
 
       <h2>Works in Any Browser</h2>
@@ -141,9 +141,10 @@ export default function YouTubeTranscriptWithoutExtensionPage() {
       </p>
 
       <p>
-        <strong>8 export formats</strong> — TXT plain, TXT with timestamps, Markdown with YAML frontmatter
-        (for <Link href="/articles/youtube-transcript-markdown">Obsidian/Notion</Link>), SRT, VTT, CSV, JSON, and
-        <Link href="/articles/youtube-transcript-for-rag">RAG-optimized JSON</Link>.
+        <strong>Seven export formats</strong> — plain text, Markdown with YAML frontmatter
+        (for <Link href="/articles/youtube-transcript-markdown">Obsidian/Notion</Link>), CSV, SRT, VTT, JSON, and{" "}
+        <Link href="/articles/youtube-transcript-for-rag">RAG-optimized JSON</Link>. Text and Markdown also come
+        with a timestamped variant, for nine download options in total.
       </p>
 
       <p>

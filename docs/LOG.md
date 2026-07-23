@@ -11746,3 +11746,29 @@ apps/marketing/src/app/articles/youtube-transcript-obsidian/page.tsx
 apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
 apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
 ---
+[2026-07-23 11:17] commit: fix(articles): 99+→99 languages, 67→no number, format counts, ZIP location
+
+Per-claim (file / old → new / source):
+- '99+ languages' → '99 languages' across 5 articles (AssemblyAI Universal-2 = 99,
+  verified supported-languages page). audio-to-text, without-extension,
+  vector-database, youtube-to-text, non-english.
+- youtube-to-text: 'six export formats, nine output options' → 'seven ...' (7 formats:
+  TXT/MD/CSV/SRT/VTT/JSON/RAG, 9 options with TXT/MD timestamp variants —
+  formatTranscript.ts); 'all 67 languages YouTube supports' → 'any language YouTube
+  provides captions for' (67 has no basis).
+- without-extension: '8 export formats' (list double-counted TXT) → 'Seven export
+  formats ... nine download options in total'; '67 languages' → 'any language'.
+- youtube-transcript-csv: ZIP 'from the playlist results page' → 'select them in your
+  library and use the bulk download' — the bulk ZIP is library multi-select, not a
+  playlist page (verified TranscriptList.tsx:403,469-499).
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-csv/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
+apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
+---

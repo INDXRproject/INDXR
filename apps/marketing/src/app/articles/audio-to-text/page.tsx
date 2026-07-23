@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     q: "Can I transcribe in languages other than English?",
-    a: "Yes. 99+ languages are supported with automatic detection. The transcript will be in the language spoken in the audio.",
+    a: "Yes. 99 languages are supported with automatic detection. The transcript will be in the language spoken in the audio.",
   },
   {
     q: "Does the file get stored on INDXR.AI's servers?",
@@ -106,7 +106,7 @@ export default function AudioToTextPage() {
       </p>
 
       <p>
-        <strong>Languages:</strong> 99+ languages with automatic detection. You don&apos;t need to specify the
+        <strong>Languages:</strong> 99 languages with automatic detection. You don&apos;t need to specify the
         language; the model identifies it from the audio.
       </p>
 

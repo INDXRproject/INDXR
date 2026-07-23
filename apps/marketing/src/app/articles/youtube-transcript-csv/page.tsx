@@ -193,8 +193,9 @@ df <- read_csv("transcript.csv", locale = locale(encoding = "UTF-8"))`}</code></
       </p>
 
       <p>
-        For playlist extractions, each video exports as a separate CSV file. Download all files as a
-        ZIP from the playlist results page.
+        For playlist extractions, each video is saved as its own transcript. To get them all at once,
+        select them in your library and use the bulk download — every selected transcript comes back as a
+        separate CSV inside a single ZIP.
       </p>
 
       <p>

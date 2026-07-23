@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     q: "Does this work for non-English content?",
-    a: "Yes. Use a multilingual embedding model (text-embedding-3-small handles multiple languages; Cohere's embed-multilingual-v3.0 is purpose-built for this). INDXR.AI's AI Transcription supports 99+ languages and produces properly punctuated text regardless of language.",
+    a: "Yes. Use a multilingual embedding model (text-embedding-3-small handles multiple languages; Cohere's embed-multilingual-v3.0 is purpose-built for this). INDXR.AI's AI Transcription supports 99 languages and produces properly punctuated text regardless of language.",
   },
   {
     q: "What if I want to filter results by video or channel?",

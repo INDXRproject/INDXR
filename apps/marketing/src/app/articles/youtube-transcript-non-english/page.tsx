@@ -33,7 +33,7 @@ const faqs = [
 
 const sources = [
   {
-    label: "AssemblyAI — supported languages (99+ languages)",
+    label: "AssemblyAI — supported languages (99 languages)",
     url: "https://www.assemblyai.com/docs/speech-to-text/supported-languages",
   },
   {
@@ -115,7 +115,7 @@ export default function YouTubeTranscriptNonEnglishPage() {
         >
           {transcriptionModelName()}
         </a>
-        , covers a growing set of languages (including Arabic), with broad coverage across 99+ languages
+        , covers a growing set of languages (including Arabic), with broad coverage across 99 languages
         for the rest.
       </p>
 
@@ -187,7 +187,7 @@ export default function YouTubeTranscriptNonEnglishPage() {
       <p>
         For Arabic specifically, our highest-quality model handles Modern Standard Arabic and many
         dialects reliably. When a language falls outside the highest-quality model, INDXR automatically
-        uses a broad-coverage model spanning 99+ languages — so you always get original-language text.
+        uses a broad-coverage model spanning 99 languages — so you always get original-language text.
       </p>
 
       <p>

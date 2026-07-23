@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-to-text" },
   title: "YouTube to text — what you actually get | INDXR.AI",
   description:
-    "Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — six export formats, nine output options.",
+    "Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — seven export formats, nine output options.",
 }
 
 const faqs = [
@@ -17,11 +17,11 @@ const faqs = [
   },
   {
     q: "How is this different from copying YouTube's built-in transcript?",
-    a: "YouTube's transcript panel only works when captions exist, only shows text on-screen, and requires manual copying as raw fragments. INDXR.AI groups those same fragments into readable paragraphs, works when captions don't exist via AI transcription, exports in six formats with nine export options, and saves everything to a personal searchable library.",
+    a: "YouTube's transcript panel only works when captions exist, only shows text on-screen, and requires manual copying as raw fragments. INDXR.AI groups those same fragments into readable paragraphs, works when captions don't exist via AI transcription, exports in seven formats with nine export options, and saves everything to a personal searchable library.",
   },
   {
     q: "Does it work for non-English videos?",
-    a: "Auto-caption extraction works for all 67 languages YouTube supports. AI transcription covers 99+ languages with automatic detection — no need to specify the language.",
+    a: "Auto-caption extraction works for any language YouTube provides captions for. AI transcription covers 99 languages with automatic detection — no need to specify the language.",
   },
   {
     q: "Can I convert a whole playlist to text at once?",
@@ -46,7 +46,7 @@ export default function YouTubeToTextPage() {
     <ToolPageTemplate
       category="Export Formats"
       title="YouTube to text — what you actually get"
-      metaDescription="Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — six export formats, nine output options."
+      metaDescription="Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — seven export formats, nine output options."
       publishedAt="2026-04-16"
       updatedAt="2026-04-19"
       author={AUTHORS["indxr-editorial"]}
@@ -182,7 +182,7 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
           AssemblyAI
         </a>
         , one of the most accurate speech-to-text models available. The result is a
-        properly punctuated transcript in 99+ languages. {"It's"} meaningfully more
+        properly punctuated transcript in 99 languages. {"It's"} meaningfully more
         accurate than auto-captions on most content, though no model is error-free —
         challenging audio conditions, strong accents, or highly technical terminology
         will still produce some mistakes.
@@ -199,7 +199,7 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
 
       <p>
         Once a transcript exists — whether from auto-captions or AI transcription —
-        it can be exported in six file formats, with nine export options total.
+        it can be exported in seven file formats, with nine export options total.
       </p>
 
       <p>
@@ -224,7 +224,7 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
         retrieval systems using tools like LangChain or Pinecone.
       </p>
 
-      <p>Six formats, nine export options:</p>
+      <p>Seven formats, nine export options:</p>
 
       <table>
         <thead>
