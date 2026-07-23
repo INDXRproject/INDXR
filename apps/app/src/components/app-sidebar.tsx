@@ -330,9 +330,9 @@ export function AppSidebar() {
             </button>
           </div>
           
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
+          <SidebarGroup className="flex-1 min-h-0">
+            <SidebarGroupContent className="flex-1 min-h-0 flex flex-col">
+              <SidebarMenu className="flex-1 min-h-0">
 
                 {/* ── Top nav items ── */}
                 {topNavItems.map(item => {
@@ -365,7 +365,7 @@ export function AppSidebar() {
                 })}
 
                 {/* ── Library + Collections ── */}
-                <SidebarMenuItem>
+                <SidebarMenuItem className="flex-1 min-h-0 flex flex-col">
                   {/* Library row — click navigates, chevron expands */}
                   <div className="flex items-center w-full group/library">
                     <SidebarMenuButton
@@ -413,12 +413,12 @@ export function AppSidebar() {
                   {!collapsed && (
                     <div
                       className={cn(
-                        "overflow-hidden transition-all duration-200",
-                        libraryOpen ? "opacity-100" : "max-h-0 opacity-0"
+                        "flex flex-col overflow-hidden transition-all duration-200",
+                        libraryOpen ? "flex-1 min-h-0 opacity-100 mt-0.5" : "flex-none max-h-0 opacity-0"
                       )}
-                      style={libraryOpen ? { maxHeight: "40vh" } : { maxHeight: 0 }}
                     >
-                      <div className="overflow-y-auto" style={{ maxHeight: "40vh" }}>
+                      {/* Scroll region — fills the available space, scrolls only when it truly overflows */}
+                      <div className="overflow-y-auto min-h-0 flex-1">
                         <div className="pl-12 py-1 space-y-0.5">
 
                         {sidebarFeedback && (
@@ -564,8 +564,11 @@ export function AppSidebar() {
                             </div>
                           )
                         })}
+                        </div>
+                      </div>
 
-                        {/* + New Collection */}
+                      {/* + New Collection — pinned below the scroll area, always visible */}
+                      <div className="pl-12 pt-1 pb-1 shrink-0 border-t border-border/30 mt-1">
                         {creating ? (
                           <div className="px-2 py-1.5 space-y-1.5">
                             <Input
@@ -597,8 +600,6 @@ export function AppSidebar() {
                             <span>New Collection</span>
                           </button>
                         )}
-
-                        </div>
                       </div>
                     </div>
                   )}

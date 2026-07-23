@@ -11978,3 +11978,17 @@ Both apps build green.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/app/dashboard/library/page.tsx
 ---
+[2026-07-23 11:57] commit: fix(sidebar): collections list fills available space; pin New Collection below scroll
+
+The collections list was capped at a fixed 40vh — a leftover from when the storage
+meter and credits sat below it (both since removed), leaving a third of the sidebar
+empty. Threaded flex-1/min-h-0 down the sidebar column (group → group-content → menu →
+library item) so the collections region now grows to fill the freed space and only
+scrolls when it genuinely overflows. Moved '+ New Collection' out of the scroll area
+into a pinned row below it, so it's always visible.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/app-sidebar.tsx
+---
