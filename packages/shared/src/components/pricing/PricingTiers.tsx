@@ -1,18 +1,25 @@
-// Shared pricing presentation — one design for BOTH surfaces (marketing /pricing
-// en app /dashboard/billing). Driven volledig door `prominent` / `mostPopular` uit
-// pricing.ts (single source of truth). De ACTIE verschilt per oppervlak (marketing
-// = auth-aware navigatie, app = directe checkout-fetch) en wordt als `renderCta`-prop
-// ingebracht — zo delen we de kaarten zonder de knop-logica te koppelen.
+// Shared pricing presentation — one design for BOTH surfaces (marketing /pricing en app
+// /dashboard/billing). Driven volledig door `prominent` / `mostPopular` uit pricing.ts (single
+// source of truth).
 //
-// Universeel component (GEEN "use client"): rendert server-side op marketing (SSR/SEO
-// blijft intact — alleen de CTA is een client-island) én client-side op de app.
+// Two interaction models on the same cards:
+//  - cta mode (pricing): each prominent card renders its own `renderCta` button. You don't buy
+//    here yet on the app — but marketing does its auth-aware navigate.
+//  - select mode (billing): the whole card is a native radio (select-then-buy). Exactly one
+//    selected, keyboard works for free (native radios: arrows move + select, Space selects).
+//    The ToS + single buy button are injected by the parent via `betweenSlot`, between the grid
+//    and the Try strip. No per-card buy buttons in this mode.
+//
+// Universeel component (GEEN "use client"): pure/presentational, no hooks — it renders SSR on
+// marketing (SEO intact, only the CTA is a client island) én inside the app's client tree
+// (where the radio's checked/onChange come from the parent's state).
 
 import type { ReactNode } from "react"
 import { PricingPackage, PACKAGES, formatEur, pricePerCredit, costInTier } from "../../lib/pricing"
 
 /**
- * Gedeelde CTA-knop-chroom zodat beide oppervlakken visueel identieke knoppen
- * renderen (geen design-drift). Alleen de klik-actie verschilt per surface.
+ * Gedeelde CTA-knop-chroom zodat beide oppervlakken visueel identieke knoppen renderen (geen
+ * design-drift). Alleen de klik-actie verschilt per surface.
  */
 export function pricingCtaClassName(featured?: boolean, compact?: boolean): string {
   const base = compact
@@ -23,23 +30,49 @@ export function pricingCtaClassName(featured?: boolean, compact?: boolean): stri
     : `${base} border border-[var(--border)] text-[var(--fg)] hover:bg-[var(--surface-elevated)]`
 }
 
-interface PricingTiersProps {
-  // Retourneert de CTA voor één pakket. `compact` = true voor de secundaire Try-strip.
-  renderCta: (pkg: PricingPackage, opts?: { compact?: boolean }) => ReactNode
+interface Selection {
+  selectedId: string
+  onSelect: (id: string) => void
+  /** Accessible label for the radiogroup. */
+  groupLabel?: string
 }
 
-export function PricingTiers({ renderCta }: PricingTiersProps) {
+interface PricingTiersProps {
+  // Retourneert de CTA voor één pakket. In select mode alleen gebruikt voor de Try-strip.
+  renderCta: (pkg: PricingPackage, opts?: { compact?: boolean }) => ReactNode
+  // Aanwezig = select mode: prominente kaarten worden radioknoppen i.p.v. CTA-kaarten.
+  selection?: Selection
+  // Tussen de prominente grid en de Try-strip (billing: ToS-checkbox + één koopknop).
+  betweenSlot?: ReactNode
+}
+
+export function PricingTiers({ renderCta, selection, betweenSlot }: PricingTiersProps) {
   const prominent = PACKAGES.filter((p) => p.prominent)
   const secondary = PACKAGES.filter((p) => !p.prominent)
 
   return (
     <div>
       {/* 3 prominente kaarten (Starter / Plus★ / Power) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto items-start">
-        {prominent.map((pkg) => (
-          <ProminentCard key={pkg.id} pkg={pkg} cta={renderCta(pkg)} />
-        ))}
-      </div>
+      {selection ? (
+        <div
+          role="radiogroup"
+          aria-label={selection.groupLabel ?? "Choose a credit package"}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto items-start"
+        >
+          {prominent.map((pkg) => (
+            <ProminentCard key={pkg.id} pkg={pkg} selection={selection} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto items-start">
+          {prominent.map((pkg) => (
+            <ProminentCard key={pkg.id} pkg={pkg} cta={renderCta(pkg)} />
+          ))}
+        </div>
+      )}
+
+      {/* Billing injecteert hier de ToS-checkbox + één koopknop, direct onder de grid. */}
+      {betweenSlot}
 
       {/* Secundaire strip (Try) — bewust niet als gelijkwaardige vierde kaart (ADR-058) */}
       {secondary.length > 0 && (
@@ -70,28 +103,39 @@ export function PricingTiers({ renderCta }: PricingTiersProps) {
   )
 }
 
-function ProminentCard({ pkg, cta }: { pkg: PricingPackage; cta: ReactNode }) {
+// Very-light accent wash (not a saturated fill) — the recommended / selected tint in both themes.
+const TINT = "bg-[color-mix(in_oklch,var(--accent)_8%,var(--surface))]"
+const WRAP = "relative rounded-xl border p-6 flex flex-col h-full transition-colors"
+
+function stateClasses(pkg: PricingPackage, selectMode: boolean, selected: boolean): string {
+  const isPlus = pkg.mostPopular
+  if (selectMode) {
+    if (selected) {
+      return `border-[var(--accent)] ring-1 ring-[var(--accent)] ${TINT} shadow-sm ${isPlus ? "sm:-translate-y-2" : ""}`
+    }
+    // Plus keeps its permanent accent border (+ raised position) even when not selected.
+    return isPlus
+      ? "border-[var(--accent)] bg-[var(--surface)] hover:border-[var(--accent)] sm:-translate-y-2"
+      : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]"
+  }
+  // cta mode (pricing): all three cards get the accent hover; Plus is permanently recommended.
+  return isPlus
+    ? `border-[var(--accent)] ring-1 ring-[var(--accent)] ${TINT} shadow-md sm:-translate-y-2 hover:border-[var(--accent)]`
+    : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]"
+}
+
+function CardInner({ pkg }: { pkg: PricingPackage }) {
   const ppc = pricePerCredit(pkg)
   const hourCost = costInTier(60, pkg)
-
   return (
-    <div
-      className={`relative rounded-xl border p-6 flex flex-col h-full ${
-        pkg.mostPopular
-          ? "border-[var(--accent)] bg-[var(--accent-subtle)] shadow-md ring-1 ring-[var(--accent)] sm:-translate-y-2"
-          : "border-[var(--border)] bg-[var(--surface)]"
-      }`}
-    >
-      {/* `mostPopular` = interne vlag voor Plus; badge toont "Recommended" (ADR-058). */}
-      {pkg.mostPopular && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="px-3 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent)] text-[var(--fg-on-accent)]">
-            Recommended
-          </span>
-        </div>
-      )}
-
-      <img src={pkg.image} alt="" aria-hidden className="h-24 w-24 mx-auto mb-4 object-contain" />
+    <>
+      {/* Fixed illustration tile: identical size + vertical position across all three cards,
+          object-contain so nothing distorts. Neutral (no hexagon behind) — the coins are already
+          colourful cartoon illustrations (a deliberate style, not normalised to the article
+          photography), and a pattern behind them would compete; neutral is calmest in both themes. */}
+      <div className="h-28 flex items-center justify-center mb-4">
+        <img src={pkg.image} alt="" aria-hidden className="h-24 w-24 object-contain" />
+      </div>
 
       <div className="mb-4">
         <h3 className="text-xl font-semibold text-[var(--fg)] mb-1">{pkg.name}</h3>
@@ -108,7 +152,52 @@ function ProminentCard({ pkg, cta }: { pkg: PricingPackage; cta: ReactNode }) {
       </div>
 
       <p className="text-sm text-[var(--fg-subtle)] mb-6 flex-1">{pkg.audience}</p>
+    </>
+  )
+}
 
+function Badge() {
+  // `mostPopular` = interne vlag voor Plus; badge toont "Recommended" (ADR-058).
+  return (
+    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+      <span className="px-3 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent)] text-[var(--fg-on-accent)]">
+        Recommended
+      </span>
+    </div>
+  )
+}
+
+function ProminentCard({
+  pkg,
+  cta,
+  selection,
+}: {
+  pkg: PricingPackage
+  cta?: ReactNode
+  selection?: Selection
+}) {
+  if (selection) {
+    const selected = selection.selectedId === pkg.id
+    return (
+      <label
+        className={`${WRAP} ${stateClasses(pkg, true, selected)} cursor-pointer focus-within:ring-2 focus-within:ring-[var(--accent)]`}
+      >
+        <input
+          type="radio"
+          name="billing-plan"
+          className="sr-only"
+          checked={selected}
+          onChange={() => selection.onSelect(pkg.id)}
+        />
+        {pkg.mostPopular && <Badge />}
+        <CardInner pkg={pkg} />
+      </label>
+    )
+  }
+  return (
+    <div className={`${WRAP} ${stateClasses(pkg, false, false)}`}>
+      {pkg.mostPopular && <Badge />}
+      <CardInner pkg={pkg} />
       {cta}
     </div>
   )

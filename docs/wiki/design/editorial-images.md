@@ -100,4 +100,46 @@ uit de slug. Bestanden staan in `apps/marketing/public/editorial/`.
 3. Zonder beeld valt de hero terug op het seeded hexagon-veld (`HexField`, accent) en toont de
    kaart een lege surface-tegel.
 
+## Pricing & billing (zelfde systeem)
+
+`/pricing` (marketing) en `/dashboard/billing` (app) gebruiken nu **dezelfde** header,
+achtergrondtextuur en sectielabels als `/articles` en `/docs`:
+
+- **`PageHeader`** en **`SectionLabel`** staan in `packages/shared/src/components/` zodat beide
+  apps ze importeren. `PageHeader` heeft één prop `compact` — dat verkleint **alleen** de
+  bovenmarge (de app-shell heeft eigen padding, geen fixed-header-clearance nodig); opbouw en
+  typografische schaal blijven identiek. `/pricing` is nu **links** uitgelijnd (was als enige
+  gecentreerd), op `max-w-4xl` zodat de header links uitlijnt met de pakketkaarten.
+- **Achtergrondtextuur:** dezelfde `HexagonPattern` (Library, `opacity-[0.03] dark:opacity-[0.045]`)
+  op `/pricing` en `/dashboard/billing`.
+- **Kaart-hover:** alle drie de pakketkaarten (`PricingTiers`) krijgen dezelfde hover als de
+  artikelkaarten — rand naar `--accent`, korte transition. Plus houdt daarbovenop zijn permanente
+  accentrand + "Recommended"-badge. De Plus-vulling is nu een **zeer lichte** accenttint
+  (`color-mix(in oklch, var(--accent) 8%, var(--surface))`), geen verzadigd vlak.
+
+### Muntillustraties — bewuste stijlkeuze
+
+De cartooneske muntillustraties (`public/packages/{starter-400,plus-1000,power-3000,try-100}.webp`,
+elk **640×640**) blijven cartoonesk — dat is een **bewuste stijlkeuze** en wordt **niet**
+genormaliseerd naar de fotografische stijl van de artikelen. Ze zaten alleen los te zweven op
+verschillende hoogtes/groottes; opgelost met een **vaste tegel** per kaart (`h-28`, flex-center,
+`object-contain`, `h-24 w-24` illustratie), neutraal (geen hexagon erachter — de munten zijn al
+kleurrijk; een patroon zou concurreren). De bronbestanden zijn 640×640 en worden op 96px (`h-24`)
+getoond = ~6,7× de weergavegrootte, dus **niet ondergeschaald** — eventuele kartelranden zitten in
+de illustratie zelf, niet in de resolutie.
+
+### /pricing vs /dashboard/billing — het knop-onderscheid
+
+- **`/pricing`** toont de pakketten met **directe knoppen** per kaart (auth-aware marketing
+  `BuyButton`). Je koopt daar nog niet.
+- **`/dashboard/billing`** gebruikt **selecteren-dan-kopen**: de drie prominente kaarten zijn één
+  radiogroep (native radios → toetsenbord werkt: pijltjes verplaatsen + selecteren, spatie
+  selecteert), **Plus** default-geselecteerd, selected-state = accentrand + lichte tint. Onder de
+  grid staat de **ToS-checkbox** en **daaronder** één primaire koopknop die de selectie weerspiegelt
+  ("Buy Plus — …"), disabled tot de checkbox is aangevinkt — zo is ondubbelzinnig waar je akkoord op
+  geeft. **Try** blijft zijn eigen regel met eigen knop, buiten de selectie. De losse per-kaart
+  koopknoppen zijn verdwenen (via `PricingTiers` `selection`-mode + `betweenSlot`).
+- **Billing-ritme:** Credits balance (compacte regel: saldo prominent, knop ernaast), Credit
+  packages en Purchase history krijgen elk een `SectionLabel` met lijn, net als `/docs`.
+
 Zie ook: [hero-images.md](hero-images.md) voor de homepage-hero (aparte fotoketen, licht/donker).

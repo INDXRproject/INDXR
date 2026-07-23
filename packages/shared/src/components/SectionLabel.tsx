@@ -1,6 +1,7 @@
-// Section marker for the card grids (/articles, /docs): an accent dot, an uppercase label,
-// and a hairline that fills the row. Categories no longer carry their own colour — the only
-// accent is the brand accent; separation comes from the name and the whitespace.
+// Section marker for the card grids and page sections (marketing /articles, /docs, /pricing
+// and app /dashboard/billing): an accent dot, an uppercase label, and a hairline that fills
+// the row. Categories/sections carry no colour of their own — the only accent is the brand
+// accent; separation comes from the name and the whitespace.
 export function SectionLabel({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 mb-5">

@@ -1,17 +1,13 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 
+import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
+import { PageHeader } from "@indxr/shared/components/PageHeader"
+import { SectionLabel } from "@indxr/shared/components/SectionLabel"
 import { Button } from "@indxr/shared/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@indxr/shared/components/ui/card"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { BillingPurchaseGrid } from "@/components/dashboard/billing/BillingPurchaseGrid"
 import { PurchaseHistoryCard, PurchaseRow } from "@/components/dashboard/billing/PurchaseHistoryCard"
-import Link from "next/link"
 
 export default async function BillingPage() {
   const supabase = await createClient()
@@ -37,51 +33,51 @@ export default async function BillingPage() {
   const purchases = (purchaseRows as PurchaseRow[] | null) ?? []
 
   return (
-    <div className="flex max-w-4xl mx-auto w-full flex-col">
-      <div className="flex flex-col items-start gap-4 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-fg">Billing</h1>
-        <p className="text-fg-muted">Manage your credits and purchase top-ups.</p>
-      </div>
+    <div className="relative min-h-full">
+      {/* Same very-light honeycomb texture as /articles, /docs and /pricing. */}
+      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
 
-      <div className="grid gap-6">
-        {/* Credits Card */}
-        <Card className="bg-surface border-border relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-10 blur-xl rounded-full bg-accent/50 w-32 h-32 -mr-10 -mt-10" />
-          <CardHeader>
-            <CardTitle className="text-fg">Credits Balance</CardTitle>
-            <CardDescription className="text-fg-subtle">
-              Your available credits for transcription
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4">
-              <div className="flex items-end gap-2">
-                <span className="text-6xl font-bold tracking-tighter text-fg">{credits}</span>
-                <span className="text-lg text-fg-subtle font-medium mb-1">credits</span>
-              </div>
-              <Button 
-                className="w-fit bg-accent text-fg hover:bg-accent-hover active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
-                asChild
-              >
-                <Link href="#packages">Buy Credits</Link>
-              </Button>
+      <div className="relative max-w-4xl mx-auto w-full flex flex-col">
+        <PageHeader
+          compact
+          eyebrow="Account"
+          title="Billing"
+          lead="Manage your credits and buy top-ups. Pay as you go — no subscriptions, no hidden fees."
+        />
+
+        {/* Credits balance — compact row: balance prominent, button beside it (not below). */}
+        <section className="mb-12">
+          <SectionLabel label="Credits balance" />
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface px-6 py-5">
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl sm:text-5xl font-bold tracking-tight text-fg tabular-nums">{credits}</span>
+              <span className="text-sm text-fg-subtle font-medium">credits available</span>
             </div>
-          </CardContent>
-        </Card>
+            <Button
+              className="bg-accent text-fg hover:bg-accent-hover active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
+              asChild
+            >
+              <Link href="#packages">Buy credits</Link>
+            </Button>
+          </div>
+        </section>
+
+        {/* Credit packages — select-then-buy grid. */}
+        <section className="mb-12 scroll-mt-8" id="packages">
+          <SectionLabel label="Credit packages" />
+          <p className="text-sm text-fg-muted -mt-2 mb-5">
+            Pick a package, then confirm below. Credits never expire.
+          </p>
+          <BillingPurchaseGrid />
+        </section>
+
+        {/* Purchase history — own section label + line, like the other sections. */}
+        <section>
+          <SectionLabel label="Purchase history" />
+          {/* Facturen staan op /dashboard/account — hier puur het overzicht. */}
+          <PurchaseHistoryCard purchases={purchases} showInvoice={false} bare />
+        </section>
       </div>
-
-      <div className="mt-12" id="packages">
-        <h2 className="text-2xl font-bold tracking-tight text-fg mb-2">Credit Packages</h2>
-        <p className="text-fg-muted">Pay as you go. No subscriptions, no hidden fees.</p>
-
-        <BillingPurchaseGrid />
-      </div>
-
-      <div className="mt-12">
-        {/* Overzicht zonder invoice-knop — facturen staan op /dashboard/account. */}
-        <PurchaseHistoryCard purchases={purchases} showInvoice={false} />
-      </div>
-
     </div>
   )
 }

@@ -12746,3 +12746,47 @@ docs/wiki/INDEX.md
 docs/wiki/business/content-sitemap.md
 docs/wiki/design/editorial-images.md
 ---
+
+[2026-07-23 23:11] presentatie: /pricing + /dashboard/billing gelijkgetrokken met /articles+/docs. PageHeader + SectionLabel verplaatst naar packages/shared (PageHeader krijgt compact-prop voor app-shell); marketing-importers herpointed. Library HexagonPattern-textuur op pricing+billing. PricingTiers: hover op alle 3 kaarten, Plus lichte accenttint i.p.v. verzadigd vlak, vaste munttegel (h-28 flex-center object-contain, munten 640×640 = ~6.7x display, niet ondergeschaald), + select-mode (radiogroep, betweenSlot). Billing: PageHeader compact, sectielabels (Credits balance compacte regel / Credit packages / Purchase history bare), BillingPurchaseGrid = selecteren-dan-kopen (Plus default, ToS boven één koopknop, per-kaart knoppen weg, Try eigen regel). /pricing links uitgelijnd. Build beide apps groen.
+Changed: packages/shared/src/components/{PageHeader,SectionLabel}.tsx (new) + pricing/PricingTiers.tsx, apps/marketing/src/app/{pricing,articles,docs}/page.tsx, apps/marketing/src/components/pricing/PricingHero.tsx, apps/app/src/app/dashboard/billing/page.tsx, apps/app/src/components/dashboard/billing/{BillingPurchaseGrid,PurchaseHistoryCard}.tsx, docs/wiki/{design/editorial-images.md,INDEX.md}; removed marketing content/{PageHeader,SectionLabel}.tsx
+---
+[2026-07-23 23:12] commit: feat(pricing,billing): bring /pricing and billing into the presentation system
+
+Same header, texture, card treatment and section labels as /articles and /docs.
+
+- Moved PageHeader + SectionLabel to packages/shared so both apps use them; repointed the
+  marketing importers. PageHeader gains a single `compact` prop (smaller top margin for the
+  app shell; same build-up and type scale). /pricing is now left-aligned (was the only
+  centred page), width-matched to the tier cards.
+- Library HexagonPattern texture on /pricing and /dashboard/billing.
+- PricingTiers: all three cards get the accent hover (was Plus-only); Plus's saturated peach
+  fill replaced by a very light accent tint (color-mix 8%) + its permanent accent border and
+  Recommended badge; each coin sits in a fixed h-28 tile (object-contain) so the three line up.
+  Coins are 640x640 shown at 96px (~6.7x), so not undersized — jaggedness is in the artwork.
+- Billing = select-then-buy: the three cards are one native radio group (keyboard works),
+  Plus selected by default, selected = accent border + light tint; the ToS checkbox and one
+  buy button ('Buy Plus - EUR ...') sit directly under the grid, button disabled until the box
+  is ticked; per-card buy buttons removed; Try keeps its own row + button, outside the
+  selection. Billing rhythm: compact Credits-balance row (balance prominent, button beside),
+  Credit-packages and Purchase-history each under a SectionLabel (history rendered bare).
+- /pricing keeps direct per-card buttons — no purchase there.
+
+Build green: both apps compiled (marketing 58 pages, app 46), exit 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/billing/page.tsx
+apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
+apps/app/src/components/dashboard/billing/PurchaseHistoryCard.tsx
+apps/marketing/src/app/articles/page.tsx
+apps/marketing/src/app/docs/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/components/content/PageHeader.tsx
+apps/marketing/src/components/content/SectionLabel.tsx
+apps/marketing/src/components/pricing/PricingHero.tsx
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/design/editorial-images.md
+packages/shared/src/components/PageHeader.tsx
+packages/shared/src/components/SectionLabel.tsx
+packages/shared/src/components/pricing/PricingTiers.tsx
+---

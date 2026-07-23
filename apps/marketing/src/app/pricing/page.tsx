@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { PricingHero } from "@/components/pricing/PricingHero"
@@ -101,8 +102,10 @@ export default function PricingPage() {
     <>
       <JsonLd schemas={[aggregateOfferSchema, faqSchema]} />
 
-      <div className="min-h-screen bg-[var(--bg)]">
-        <div className="container px-4 sm:px-6 lg:px-8 mx-auto pb-24">
+      <div className="relative min-h-screen bg-[var(--bg)]">
+        {/* Same very-light honeycomb texture as /articles and /docs. */}
+        <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
+        <div className="relative container px-4 sm:px-6 lg:px-8 mx-auto pb-24">
 
           {/* Section 2 — Hero */}
           <PricingHero />

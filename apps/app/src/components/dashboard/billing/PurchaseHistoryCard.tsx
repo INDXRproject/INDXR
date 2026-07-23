@@ -30,7 +30,40 @@ function packageName(credits: number): string | null {
 // showInvoice=true (account): volledige betaalhistorie mét InvoiceButton (facturen horen op
 // /account thuis). showInvoice=false (billing): puur overzicht (datum, pakket, credits, bedrag),
 // geen invoice-knop. Zelfde rij-logica; alleen de knop + kop-copy verschillen.
-export function PurchaseHistoryCard({ purchases, showInvoice = true }: { purchases: PurchaseRow[]; showInvoice?: boolean }) {
+// bare=true (billing): geen Card/CardHeader — de pagina levert zelf een SectionLabel met lijn,
+// zodat billing hetzelfde sectieritme heeft als /docs. Alleen de lijst (of lege staat).
+export function PurchaseHistoryCard({ purchases, showInvoice = true, bare = false }: { purchases: PurchaseRow[]; showInvoice?: boolean; bare?: boolean }) {
+  const body =
+    purchases.length === 0 ? (
+      <p className="text-sm text-fg-muted py-4">No purchases yet.</p>
+    ) : (
+      <div className="divide-y divide-border-subtle">
+        {purchases.map((p) => {
+          const name = packageName(p.amount)
+          const paid = p.metadata?.amount_paid
+          const invoiceUrl = p.metadata?.invoice_url
+          return (
+            <div key={p.id} className="flex items-center justify-between gap-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-fg truncate">
+                  {name ? `${name} · ` : ""}{p.amount.toLocaleString()} credits
+                </p>
+                <p className="text-xs text-fg-muted">{formatDate(p.created_at)}</p>
+              </div>
+              <div className="flex items-center gap-4 shrink-0 text-right">
+                <span className="text-sm font-medium text-fg tabular-nums">
+                  {paid != null ? formatEur(paid) : "—"}
+                </span>
+                {showInvoice && <InvoiceButton transactionId={p.id} initialUrl={invoiceUrl} />}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+
+  if (bare) return body
+
   return (
     <Card className="bg-surface border-border">
       <CardHeader>
