@@ -42,6 +42,7 @@ export default function YouTubePlaylistTranscriptPage() {
   return (
     <ToolPageTemplate
       category="Workflows"
+      slug="youtube-playlist-transcript"
       title="YouTube Playlist Transcript — Extract All Videos at Once"
       metaDescription="Extract transcripts from entire YouTube playlists in one job. First 3 auto-caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats."
       publishedAt="2026-04-16"

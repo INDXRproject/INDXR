@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { AuthorCard } from "@/components/content/AuthorCard"
 import { ArticleBanner, type ArticleCategory } from "@/components/content/ArticleBanner"
+import { RelatedArticles } from "@/components/content/RelatedArticles"
 import type { Author } from "@/lib/authors"
 import { reactNodeToText } from "@/lib/reactNodeToText"
 import { articlesBreadcrumb } from "@/lib/breadcrumbSchema"
@@ -9,6 +10,7 @@ import { articlesBreadcrumb } from "@/lib/breadcrumbSchema"
 interface ToolPageTemplateProps {
   title: string
   category?: ArticleCategory
+  slug?: string
   metaDescription: string
   publishedAt: string
   updatedAt: string
@@ -21,6 +23,7 @@ interface ToolPageTemplateProps {
 export function ToolPageTemplate({
   title,
   category,
+  slug,
   metaDescription,
   publishedAt,
   updatedAt,
@@ -114,6 +117,7 @@ export function ToolPageTemplate({
             </ul>
           </section>
         )}
+        <RelatedArticles slug={slug} />
       </article>
       </div>
     </>

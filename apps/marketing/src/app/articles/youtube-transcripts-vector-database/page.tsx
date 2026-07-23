@@ -76,6 +76,7 @@ export default function YouTubeTranscriptsVectorDatabasePage() {
   return (
     <TutorialTemplate
       category="Deep Dives"
+      slug="youtube-transcripts-vector-database"
       title="YouTube Transcripts to Vector Database — A Complete Python Pipeline"
       metaDescription="Step-by-step guide to building a semantic search system over YouTube video content. Extract transcripts, generate embeddings, store in Pinecone or ChromaDB, and query with natural language."
       publishedAt="2026-04-16"

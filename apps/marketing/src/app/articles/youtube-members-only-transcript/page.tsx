@@ -41,6 +41,7 @@ export default function YouTubeMembersOnlyTranscriptPage() {
   return (
     <ArticleTemplate
       category="Troubleshooting"
+      slug="youtube-members-only-transcript"
       title="How to Get Transcripts from Members-Only YouTube Videos"
       metaDescription="Members-only YouTube videos are access-restricted by design. Here's exactly what you can and can't do to get a transcript — including a legitimate workaround using audio upload."
       publishedAt="2026-04-16"

@@ -69,6 +69,7 @@ export default function YouTubeTranscriptForRagPage() {
   return (
     <ToolPageTemplate
       category="Export Formats"
+      slug="youtube-transcript-for-rag"
       title="YouTube Transcripts for RAG Pipelines — Chunked, Metadata-Rich, Ready to Embed"
       metaDescription="Export YouTube transcripts as RAG-optimized JSON with configurable chunk sizes, 15% overlap, per-chunk deep links, and flat metadata for Pinecone, ChromaDB, and Weaviate. Real output, tested."
       publishedAt="2026-04-16"

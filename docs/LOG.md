@@ -11895,3 +11895,39 @@ apps/marketing/src/app/docs/reference/export-formats/vtt/page.tsx
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
 ---
+[2026-07-23 11:42] commit: feat(articles): RelatedArticles 'See also' footer — closes the link-island (phase 7)
+
+content-sitemap §B flagged the 18 articles as a link-island: no structured
+article→article or article→docs footer. Added a curated RelatedArticles component
+(max 3 links, each with a reason — writing-standard C4), fed by a hand-curated
+lib/relatedArticles.ts map (parent/nearest-sibling + the docs spec per article).
+Wired into all 3 templates via a slug prop; slug added to all 18 article pages.
+Renders nothing when a slug has no set, so it's safe everywhere.
+
+Both apps build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/chunk-youtube-transcripts-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
+apps/marketing/src/app/articles/youtube-members-only-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-csv/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-markdown/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-non-english/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-not-available/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-obsidian/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
+apps/marketing/src/app/articles/youtube-transcripts-vector-database/page.tsx
+apps/marketing/src/components/content/RelatedArticles.tsx
+apps/marketing/src/components/content/templates/ArticleTemplate.tsx
+apps/marketing/src/components/content/templates/ToolPageTemplate.tsx
+apps/marketing/src/components/content/templates/TutorialTemplate.tsx
+apps/marketing/src/lib/relatedArticles.ts
+---

@@ -72,6 +72,7 @@ export default function YouTubeChannelKnowledgeBasePage() {
   return (
     <TutorialTemplate
       category="Deep Dives"
+      slug="youtube-channel-knowledge-base"
       title="Turn Any YouTube Channel Into a Searchable AI Knowledge Base"
       metaDescription="Extract transcripts from an entire YouTube channel, embed them in a vector database, and build a semantic search system over months or years of video content. Step-by-step guide."
       publishedAt="2026-04-16"

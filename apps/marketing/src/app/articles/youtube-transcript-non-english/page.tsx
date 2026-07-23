@@ -46,6 +46,7 @@ export default function YouTubeTranscriptNonEnglishPage() {
   return (
     <ToolPageTemplate
       category="Troubleshooting"
+      slug="youtube-transcript-non-english"
       title="YouTube Transcripts in Non-English Languages — What Works"
       metaDescription="Extracting YouTube transcripts in Arabic, Spanish, Portuguese, Indonesian, or Turkish? Here's what caption extraction gives you and when AI transcription is the right choice."
       publishedAt="2026-04-24"

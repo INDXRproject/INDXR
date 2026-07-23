@@ -57,6 +57,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
   return (
     <ArticleTemplate
       category="Troubleshooting"
+      slug="youtube-transcript-not-available"
       title="YouTube Transcript Not Available? Here's Why — and How to Fix It"
       metaDescription="YouTube transcripts missing or not showing? We cover every reason — from creator settings to unsupported languages — and show you how to get the text anyway, even without captions."
       publishedAt="2026-04-16"

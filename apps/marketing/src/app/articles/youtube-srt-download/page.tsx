@@ -46,6 +46,7 @@ export default function YouTubeSrtDownloadPage() {
   return (
     <ToolPageTemplate
       category="Export Formats"
+      slug="youtube-srt-download"
       title="Download YouTube Subtitles as SRT or VTT — Professional Timing, Free"
       metaDescription="Download YouTube subtitles as SRT or VTT with professional timing — 3–7 second segments, 42 characters per line. Free for videos with captions. AI transcription for videos without."
       publishedAt="2026-04-16"
