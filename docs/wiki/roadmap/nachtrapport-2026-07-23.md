@@ -247,3 +247,55 @@ checklist, modelnamen via `models.ts`, en een gedeeld `RelatedArticles`-componen
 - **DocsFigure-afbeeldingen** — de opdracht zei expliciet "geen lege kaders"; de assets bestaan nog
   niet, dus geen slots geplaatst.
 - **llms.txt** — niet teruggezet (ADR-039).
+
+---
+
+# VERVOLG — hervatte run (2026-07-23, na Khidr's terugkoppeling)
+
+Khidr had gelijk: waarheidsgetrouw schrijven kost meer werk per pagina, niet onmogelijk.
+Hervat, per-pagina, commit-per-stap.
+
+## Twee correcties op eerder werk
+1. **Homepage-snelheidsclaim nu tegen de DB geverifieerd, niet de wiki.** Directe query op
+   `transcription_jobs` (status=complete, cache_hit=false): **n=216 runs (2026-04-13→07-20),
+   mediaan processing/duration = 0.0536 (~5%), p90 = 0.124**. De claim klopt en is nu naar die
+   meting gesourced; "200+ real transcriptions" → "200+ transcription runs", "roughly 5%" →
+   "a median of about 5%". Commit `c710c41`.
+2. **Sitemap-crawl leest nu de URLs uit de live `sitemap.xml`** (49 URLs, 0 non-200, 0 redirects),
+   niet een handmatig lijstje — bewijst de sitemap zelf.
+
+## Artikel-claims-audit — gevonden & gerepareerd (per claim in de commits)
+De **grootste vondst** was een kapot cross-link-netwerk én twee inverse-waarheid-claims:
+
+- **Dood cross-link-netwerk (commit `e466e96`):** na ADR-075 (redirects weg) gaven ALLE bare-slug
+  interne links 404 — live getest. Gerepareerd site-breed: bare slugs → `/articles/<slug>`,
+  `/how-it-works` → `/docs/how-indxr-works`, `/youtube-transcript-generator` → `/transcribe`.
+  0 dode bare-links over.
+- **non-english these was ONWAAR (commit `5d1499a`):** het artikel beweerde dat caption-extractie
+  je een Engelse vertaling geeft (tlang=en). De code doet het tegenovergestelde — native-anchored
+  `-orig`-selectie (`youtube_utils.py:337,368-401`, "always the ORIGINAL track, never a translation").
+  These omgedraaid: captions geven de ORIGINELE taal.
+- **json:155 zelfde inverse claim** ("English translation regardless of original") → gecorrigeerd
+  (commit `7749ac9`).
+- **"99.4% / 94.1% / 9.97% vs 24.73% Amazon" accuracy-cijfers:** niet meer op
+  assemblyai.com/benchmarks (nu Universal-3.5 Pro **4.35% WER**, geverifieerd) → vervangen door
+  "~4–5% WER op Engels (AssemblyAI benchmarks)". Commits `e466e96`, `7749ac9`.
+- **"67 talen"** → "de talen die YouTube ondersteunt" (geen grondslag). **"99+ talen"** → "99"
+  (AssemblyAI Universal-2). **"six/eight formats"** → "seven formats, nine options". Commits
+  `e466e96`, `6eeed14`.
+- **ZIP "from the playlist results page"** → "select them in your library, bulk-download" — de bulk
+  ZIP is library-multiselect (`TranscriptList.tsx:403,469-499`), niet een playlist-pagina. De ZIP
+  bestaat wél (ik had de wiki fout vertrouwd; jszip is echt in gebruik).
+- **Onverifieerbare test-wall-clock "18m53s voor 783 min audio"** (3 artikelen) → verwijderd
+  (2.4%-ratio, sneller dan de gemeten 5.4% mediaan; niet te staven) → capability-framing.
+
+**Bevestigd-correct (NIET aangeraakt na check):** channel-kb "1.650 credits" (math staat er:
+1500+150 ✓); chunk-artikel research-%s (54%/69%) zijn gesourced (Vecta/NAACL URLs); playlist
+"783 credits" (783 min × 1cr/min ✓).
+
+## Nog te doen in deze hervatte run
+- Resterende artikel-claims: obsidian/markdown "Obsidian Web Clipper brak 2×" (extern,
+  onverifieerbaar), srt "~20% geen captions" + "EBU 3264" (bron nodig), members-only single-video
+  detectie (tegen code checken). 
+- Fase 4-volledig (alle docs herschrijven), fase 6 (twee nieuwe pagina's), fase 7-volledig
+  (leesbaarheid + SourcesBlock + cross-link-component per artikel).
