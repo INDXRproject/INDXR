@@ -12219,3 +12219,62 @@ Changed: apps/app/src/app/dashboard/page.tsx
 apps/app/src/components/dashboard/HomeStorageMeter.tsx
 apps/app/src/components/dashboard/account/StorageMeterCard.tsx
 ---
+
+[2026-07-23 14:44] taak: /docs/quickstart volledig herschreven (handgeschreven tekst; AI-transcriptie als hoofdroute)
+
+Vervangen: de door Claude gegenereerde quickstart die een niet-bestaande captions-pre-check
+beweerde (ADR-076 — de keuze is een schakelaar vóór extractie, er wordt niets vooraf gecontroleerd)
+en alleen de gratis captions-route beschreef. Nieuwe pagina = 6 genummerde H2-stappen (AnchorHeading),
+DefinitionLeadOpening voor de opening, twee DocsFigure-placeholders (screenshots bestaan nog niet),
+RelatedTopicsList als Next-blok. Getallen (25 welkomstcredits, 1 cr/min, 1 cr/10min RAG) renderen uit
+pricing.ts, niet gehardcode. HowTo-schema met 6 stappen + echte route-url's per stap; BreadcrumbList
+via DocsBreadcrumb; dateModified 2026-07-23.
+
+Vier feitchecks tegen de code, alle groen: Extract→Check bij 'Generate with AI' (VideoTab.tsx:1022),
+refund van gereserveerde credits bij mislukte job (worker.refund_credits, ADR-050), anoniem = TXT-only
++ niets bewaard (TranscriptCard.tsx), en de UI-labels letterlijk (Reader Mode, Re-extract with AI,
+Confirm & Extract, Transcript Results, tabs Single Video/Playlist/Audio Upload). Geen conflict met de
+tekst gevonden.
+
+RelatedTopicsList kreeg één optionele description-prop (backward-compatible; de 19 titel-only callers
+ongewijzigd) zodat het Next-blok zijn handgeschreven beschrijvingen behoudt — op keuze van Khidr.
+
+Nu 0 gebruiken, NIET verwijderd: TutorialStep, TutorialOpening, PrerequisitesBlock, WhatJustHappened,
+NextStepsBlock (waren quickstart-only) + EdgeCasesCallout (was al ongebruikt).
+
+Marketing build green; /docs/quickstart rendert HTTP 200 met beide figuur-placeholders + 6-staps HowTo.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/quickstart/page.tsx
+apps/marketing/src/components/docs/RelatedTopicsList.tsx
+docs/LESSONS.md
+docs/LOG.md
+---
+[2026-07-23 14:45] commit: docs(quickstart): rewrite by hand — AI transcription as the main route (ADR-076)
+
+Replace the Claude-generated quickstart, which claimed a captions pre-check
+that does not exist (ADR-076: the choice is a toggle before extraction) and
+only described the free captions route. New page: 6 numbered H2 steps
+(AnchorHeading), DefinitionLeadOpening, two DocsFigure placeholders,
+RelatedTopicsList as the Next block. Welcome credits / 1-cr-per-min /
+1-cr-per-10min RAG all render from pricing.ts. HowTo schema with 6 steps and
+real per-step route URLs; BreadcrumbList via DocsBreadcrumb; dateModified set.
+
+Verified four product facts against code: Extract→Check on 'Generate with AI'
+(VideoTab.tsx:1022), reserved-credit refund on a failed job (worker.refund_credits,
+ADR-050), anonymous = TXT-only and nothing saved (TranscriptCard.tsx), and the UI
+labels verbatim (Reader Mode, Re-extract with AI, Confirm & Extract, Transcript
+Results, tabs Single Video/Playlist/Audio Upload).
+
+RelatedTopicsList gains one optional description prop (backward-compatible; the 19
+title-only callers unchanged) so the Next block keeps its descriptions.
+
+Now unused (not deleted): TutorialStep, TutorialOpening, PrerequisitesBlock,
+WhatJustHappened, NextStepsBlock, EdgeCasesCallout.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/quickstart/page.tsx
+apps/marketing/src/components/docs/RelatedTopicsList.tsx
+docs/LESSONS.md
+docs/LOG.md
+---

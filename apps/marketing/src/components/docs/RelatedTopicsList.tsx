@@ -5,6 +5,8 @@ import Link from "next/link"
 interface RelatedTopic {
   label: string
   href: string
+  /** Optional one-line context under the link. Omit for a plain title-only list. */
+  description?: string
 }
 
 interface RelatedTopicsListProps {
@@ -25,6 +27,9 @@ export function RelatedTopicsList({ topics, title = "See also" }: RelatedTopicsL
             >
               {topic.label}
             </Link>
+            {topic.description && (
+              <span className="block text-sm text-[var(--fg-muted)] mt-0.5">{topic.description}</span>
+            )}
           </li>
         ))}
       </ul>
