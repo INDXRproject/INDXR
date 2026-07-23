@@ -12,6 +12,8 @@ interface EditorialImageProps {
   sizes: string
   /** Rounding class — matches the surrounding surface (rounded-xl standalone, rounded-none inside a clipped card). */
   rounded?: string
+  /** Aspect ratio class. The files are 16:9; object-cover crops to any ratio in CSS (no new files). */
+  aspectClass?: string
   /** Border on the image itself — off when the parent card already draws one. */
   bordered?: boolean
   /** LCP hint for the hero; cards stay lazy. */
@@ -25,6 +27,7 @@ export function EditorialImage({
   widths,
   sizes,
   rounded = "rounded-xl",
+  aspectClass = "aspect-video",
   bordered = true,
   priority = false,
   className,
@@ -33,7 +36,7 @@ export function EditorialImage({
   const srcset = (ext: string) => widths.map((w) => `${base}-${w}.${ext} ${w}w`).join(", ")
   return (
     <div
-      className={`relative aspect-video overflow-hidden ${rounded} ${bordered ? "border border-[var(--border)]" : ""} bg-[var(--surface-sunken)] ${className ?? ""}`}
+      className={`relative ${aspectClass} overflow-hidden ${rounded} ${bordered ? "border border-[var(--border)]" : ""} bg-[var(--surface-sunken)] ${className ?? ""}`}
     >
       <picture>
         <source type="image/avif" srcSet={srcset("avif")} sizes={sizes} />

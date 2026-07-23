@@ -12701,3 +12701,48 @@ docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/design/editorial-images.md
 ---
+
+[2026-07-23 22:41] redesign polish: één presentatiesysteem voor /articles + /docs. Gedeelde PageHeader (ruime bovenmarge, eyebrow, lead, hairline), SectionLabel (accent-only) en ContentCard (kaart-als-object, hover naar accent). Kaartgrid 1/2/3 kolommen (max-w-5xl), sizes aangepast. Categoriekleuren eruit (alles --accent); Export Formats->Formats, Deep Dives->AI & RAG (labels, niet slugs). Achtergrondtextuur = Library HexagonPattern (shared, opacity 0.03/0.045) op /articles, /docs en DocsShell. Docs krijgen kaarten met seeded hexagon-tegels (HexField op page-href). Docs-detailbanner (DocsHexBanner) verwijderd; artikel-hero 16:9->21:9 band, niet full-bleed. --violet behouden (nog in gebruik door apps/app summary-chips).
+Changed: apps/marketing/src/components/content/{PageHeader,SectionLabel,ContentCard,EditorialImage,ArticleHero}.tsx, apps/marketing/src/app/{articles,docs}/page.tsx, apps/marketing/src/components/docs/DocsShell.tsx, docs/wiki/design/editorial-images.md, docs/wiki/INDEX.md, docs/wiki/business/content-sitemap.md; removed DocsHexBanner/DocsHubHero/DocsCategorySection.tsx
+---
+[2026-07-23 22:42] commit: feat(articles,docs): unify into one card/header presentation system
+
+Visual polish pass so /articles and /docs read as one system.
+
+- Shared PageHeader (generous top margin, optional accent eyebrow, title, lead on a
+  capped measure, hairline) on /articles + /docs — fixes the no-breathing-room start.
+- Shared ContentCard: one object with a defined surface + 1px border, media clipped to
+  the top corners, hover moving border + title to the accent (short transition, no scale,
+  no foreign shadow). Article cards use an editorial photo, docs cards a seeded hexagon
+  tile (HexField on the page href) — same component, same ratio/radius/hover/spacing.
+- Card grid now 1/2/3 columns (max-w-5xl); card sizes retuned to the ~325px column.
+- Categories carry no colour any more: SectionLabel, eyebrows and hover borders are all
+  --accent. Renamed labels Export Formats -> Formats, Deep Dives -> AI & RAG (display only,
+  URL slugs unchanged); carried through content-sitemap.md. --violet kept (still used by
+  apps/app summary chips).
+- Background texture reuses the Library's shared HexagonPattern (opacity 0.03/0.045) on
+  /articles, /docs and DocsShell — one implementation, both themes.
+- Docs detail: removed the standalone 370px hexagon banner (read as a wireframe in light
+  mode); docs now sit on the page texture. Article hero shortened from 16:9 to a 21:9 band,
+  still within the column (not full-bleed).
+- Removed orphaned DocsHexBanner / DocsHubHero / DocsCategorySection.
+
+Build green: marketing compiled, 58 static pages, exit 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/page.tsx
+apps/marketing/src/app/docs/page.tsx
+apps/marketing/src/components/content/ArticleHero.tsx
+apps/marketing/src/components/content/ContentCard.tsx
+apps/marketing/src/components/content/EditorialImage.tsx
+apps/marketing/src/components/content/PageHeader.tsx
+apps/marketing/src/components/content/SectionLabel.tsx
+apps/marketing/src/components/docs/DocsCategorySection.tsx
+apps/marketing/src/components/docs/DocsHexBanner.tsx
+apps/marketing/src/components/docs/DocsHubHero.tsx
+apps/marketing/src/components/docs/DocsShell.tsx
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/business/content-sitemap.md
+docs/wiki/design/editorial-images.md
+---

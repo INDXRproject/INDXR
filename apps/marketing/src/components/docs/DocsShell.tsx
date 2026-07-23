@@ -1,9 +1,9 @@
 import type { ReactNode } from "react"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
+import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { DocsSidebar } from "./DocsSidebar"
 import { DocsMobileNav } from "./DocsMobileNav"
 import { InPageTOC } from "./InPageTOC"
-import { DocsHexBanner } from "./DocsHexBanner"
 
 interface DocsShellProps {
   children: ReactNode
@@ -15,7 +15,11 @@ interface DocsShellProps {
 // drawer (DocsMobileNav).
 export function DocsShell({ children }: DocsShellProps) {
   return (
-    <div className="flex min-h-screen bg-[var(--bg)] pt-16">
+    <div className="relative flex min-h-screen bg-[var(--bg)] pt-16">
+      {/* Same very-light honeycomb texture as the Library and the /articles + /docs hubs, so
+          docs sit on one surface. Behind the columns; the sidebar's own surface covers it there. */}
+      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
+
       {/* Left sidebar — hidden on mobile, visible lg+ */}
       <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-[var(--border)] bg-[var(--surface)] sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
         <div className="px-4 py-5 border-b border-[var(--border)]">
@@ -45,14 +49,11 @@ export function DocsShell({ children }: DocsShellProps) {
         </div>
 
         {/* Content + right on-this-page TOC */}
-        <div className="flex gap-10 px-6 py-8">
+        <div className="flex gap-10 px-6 pt-10 pb-8">
           {/* max-w-2xl ≈ 42rem ≈ ~70–75ch — the docs reading measure per batch-3b research
               (denser than the old max-w-3xl/~90ch); wide enough that DocsTable (min-w-36rem)
               doesn't scroll on desktop. */}
           <div id="docs-content" className="min-w-0 flex-1 max-w-2xl">
-            {/* Seeded per-page hexagon masthead — docs get no photography, but share the
-                article hero's ratio/radius so the two read as one system. */}
-            <DocsHexBanner />
             {children}
           </div>
           <aside className="hidden xl:block w-56 shrink-0">

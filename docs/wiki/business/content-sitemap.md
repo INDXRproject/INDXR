@@ -39,9 +39,9 @@ indxr.ai/  ── marketing (publiek)
 ├─ 4 Funnel-content / SEO  /articles/*  (het verhaal + use-case = de bron)
 │    /articles                        index (4 categorieën)
 │    ├─ Troubleshooting   not-available · age-restricted · members-only · non-english · without-extension
-│    ├─ Export Formats    youtube-to-text · -markdown · -csv · srt-download · -json · -for-rag
+│    ├─ Formats    youtube-to-text · -markdown · -csv · srt-download · -json · -for-rag
 │    ├─ Workflows         bulk- · playlist- · audio-to-text · -obsidian
-│    └─ Deep Dives        chunk-…-for-rag · channel-knowledge-base · transcripts-vector-database
+│    └─ AI & RAG        chunk-…-for-rag · channel-knowledge-base · transcripts-vector-database
 │
 ├─ 5 Support & vertrouwen
 │    /about · /contact · /privacy · /terms · /suspended
@@ -132,20 +132,20 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 | `youtube-members-only-transcript` | Troubleshooting | Weigert members-only URL, error-card, 0cr; workaround = audio-upload; "first audio upload uses welcome credits". | live |
 | `youtube-transcript-non-english` | Troubleshooting | YouTube CDN forceert `tlang=en` (niet override-baar); **model-routing: Universal-2 voor non-EN, Universal-3 Pro alleen EN/ES/DE/FR/PT/IT** (⚠ botst met "Universal-3 Pro" elders). | live |
 | `youtube-transcript-without-extension` | Troubleshooting | **"8 export formats"** (⚠ botst); geen extensie ("post-launch roadmap"); yt-dlp + interne API; 67/99+ talen. | live |
-| `youtube-to-text` | Export Formats | **"Free account includes 25 credits"** (2×); **"six export formats, nine export options"** (⚠ botst met "8"); 67 talen; "95%+ accuracy". | live |
-| `youtube-transcript-markdown` | Export Formats | YAML-frontmatter velden; frontmatter-customisatie NIET in UI; paragraaf-split >5s; Obsidian Web Clipper "brak 2× begin 2026". | live |
-| `youtube-transcript-csv` | Export Formats | Kolommen segment_index/start/end/duration/text/word_count; UTF-8 BOM; video-metadata NIET in CSV. | live |
-| `youtube-srt-download` | Export Formats | Resegment 3–7s, ≤42 chars/regel (BBC/Netflix/EBU 3264); "~20% van YouTube-video's heeft geen auto-captions". | live |
-| `youtube-transcript-json` | Export Formats | Standaard-JSON gratis; RAG-JSON 1cr/10min (eerste 3 gratis); **claim: YouTube geeft "always English translation regardless of original".** | live |
-| `youtube-transcript-for-rag` | Export Formats ("RAG-Optimized JSON") | RAG-JSON workflow; chunk-presets; 1cr/10min. | live |
+| `youtube-to-text` | Formats | **"Free account includes 25 credits"** (2×); **"six export formats, nine export options"** (⚠ botst met "8"); 67 talen; "95%+ accuracy". | live |
+| `youtube-transcript-markdown` | Formats | YAML-frontmatter velden; frontmatter-customisatie NIET in UI; paragraaf-split >5s; Obsidian Web Clipper "brak 2× begin 2026". | live |
+| `youtube-transcript-csv` | Formats | Kolommen segment_index/start/end/duration/text/word_count; UTF-8 BOM; video-metadata NIET in CSV. | live |
+| `youtube-srt-download` | Formats | Resegment 3–7s, ≤42 chars/regel (BBC/Netflix/EBU 3264); "~20% van YouTube-video's heeft geen auto-captions". | live |
+| `youtube-transcript-json` | Formats | Standaard-JSON gratis; RAG-JSON 1cr/10min (eerste 3 gratis); **claim: YouTube geeft "always English translation regardless of original".** | live |
+| `youtube-transcript-for-rag` | Formats ("RAG-Optimized JSON") | RAG-JSON workflow; chunk-presets; 1cr/10min. | live |
 | `bulk-youtube-transcript` | Workflows | 3 captions gratis, dan 1cr/video; getest 19 vids/783 min/18m53s; batch ≤100; "playlists tot **5.000 video's**". | live |
 | `youtube-playlist-transcript` | Workflows | Idem 3-gratis; failed retry na 30s; batch ≤100; **geen channel-URL's**; dedup-badges (amber=captions, violet=AI). | live |
 | `audio-to-text` | Workflows | 500MB (~8u); "94–96%+ clean audio"; 99+ talen; summary 3cr; SRT/VTT 3–7s/42 chars. | live |
 | `youtube-transcript-obsidian` | Workflows | Markdown/frontmatter; summary 3cr; "19 lectures/13 hours" ZIP; youtube-transcript-api geblokt op cloud-IP's, INDXR = yt-dlp+residential proxy. | live |
-| `chunk-youtube-transcripts-for-rag` | Deep Dives | RAG 30/60/90/120s presets, 15% overlap, sentence-snap (AI) vs segment-snap (captions). | live (grotendeels topic) |
-| `youtube-channel-knowledge-base` | Deep Dives | **Alleen playlist-URL's, geen channel-URL's**; "up to 500 videos"; dedup gratis; voorbeeld 50×30min = 1.650 credits. | live |
-| `youtube-transcripts-vector-database` | Deep Dives | RAG via Playlist-tab-toggle; chunks 90–120s (~300–400 tokens); embedding-kosten zijn OpenAI's, niet INDXR's. | live (grotendeels topic) |
-| `articles` (index) | — | Groepeert de 18 artikelen in 4 categorieën (Troubleshooting 5 · Export Formats 6 · Workflows 4 · Deep Dives 3). | live |
+| `chunk-youtube-transcripts-for-rag` | AI & RAG | RAG 30/60/90/120s presets, 15% overlap, sentence-snap (AI) vs segment-snap (captions). | live (grotendeels topic) |
+| `youtube-channel-knowledge-base` | AI & RAG | **Alleen playlist-URL's, geen channel-URL's**; "up to 500 videos"; dedup gratis; voorbeeld 50×30min = 1.650 credits. | live |
+| `youtube-transcripts-vector-database` | AI & RAG | RAG via Playlist-tab-toggle; chunks 90–120s (~300–400 tokens); embedding-kosten zijn OpenAI's, niet INDXR's. | live (grotendeels topic) |
+| `articles` (index) | — | Groepeert de 18 artikelen in 4 categorieën (Troubleshooting 5 · Formats 6 · Workflows 4 · AI & RAG 3). | live |
 
 ### Groep 5 — Support & vertrouwen
 
@@ -211,7 +211,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 | **JSON (standaard)** | `…/export-formats/json` — standaard-JSON schema-velden (metadata-wrapper) | `youtube-transcript-json` — JSON-use-cases, velden-uitleg |
 | **RAG-JSON** | `…/export-formats/json` (RAG-deel) — chunk-schema (90–120s, `deep_link`, overlap) | `youtube-transcript-for-rag` (primair) + `chunk-…-for-rag` / `…-vector-database` (deep dives) |
 | **Talen** | `…/languages` — 67 captions / 99+ AI, auto-detect (kaal) | `youtube-transcript-non-english` — `tlang=en`-verhaal, model-routing |
-| **Formaten-overzicht** | `…/export-formats` (hub) — **alleen** overzichtstabel + doorverwijzing | `/articles` (categorie *Export Formats*) — de losse verhalen |
+| **Formaten-overzicht** | `…/export-formats` (hub) — **alleen** overzichtstabel + doorverwijzing | `/articles` (categorie *Formats*) — de losse verhalen |
 | **Troubleshooting** | *(geen docs-hub meer — ADR-073)* de **`/articles`-index** (categorie Troubleshooting) is de index | `not-available` · `non-english` · `without-extension` · `age-restricted` · `members-only` |
 
 *Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (Accuracy and languages), `limits`, `summaries`, `guides/playlists`, `guides/library`, `account/settings`. *Data-retentie:* geen aparte docs-pagina meer — `/privacy` draagt dit (ADR-074). *Credits:* `/pricing` + `/docs/account/credits` dragen dit — de dubbele `…/how-indxr-works/credits` is **verwijderd** (308 → `account/credits`).
@@ -241,7 +241,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 **Laag bepaalt thuis:**
 - **`indxr.ai/` (marketing)** — conversie. Alleen home, pricing, vrije tool. Nieuwe conversie-hoek? Sectie op de homepage, geen nieuwe route.
 - **`indxr.ai/docs/*`** — evergreen *producttruth*, **kale referentie-spec**. Eén onderwerp = één doc-pagina, alleen bij een aparte gebruikerstaak. Anders sectie op een bestaande doc.
-- **`indxr.ai/articles/*`** — SEO-acquisitie, **het verhaal (= de bron)**. Nieuwe pagina alleen bij een aparte zoekintentie (keyword). Overlap met bestaand artikel → uitbreiden, niet dupliceren. Categoriseer in één van de 4 buckets (Troubleshooting / Export Formats / Workflows / Deep Dives); een 5e bucket = bewuste beslissing.
+- **`indxr.ai/articles/*`** — SEO-acquisitie, **het verhaal (= de bron)**. Nieuwe pagina alleen bij een aparte zoekintentie (keyword). Overlap met bestaand artikel → uitbreiden, niet dupliceren. Categoriseer in één van de 4 buckets (Troubleshooting / Formats / Workflows / AI & RAG); een 5e bucket = bewuste beslissing.
 - **`app.indxr.ai/*`** — geauthenticeerde UX-copy. Geen SEO; empty/error/success-states horen hier, niet op marketing.
 - **Support & vertrouwen** (about/privacy/terms/refund/contact) — juridisch/vertrouwen; **moeten echt zijn vóór launch**.
 
