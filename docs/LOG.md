@@ -12465,3 +12465,29 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/app/docs/faq/page.tsx
 docs/LOG.md
 ---
+[2026-07-23 18:17] commit: fix(hero): recentre mobile 4:5 crop on the laptop
+
+The laptop sat ~68px off-centre in the mobile 4:5 crop (screen-centre x=2632 on a
+5400-wide master; frame centre 2700). Shifted the mobile crop-box from
+(1533, 0, 3867, 2917) to (1465, 0, 3799, 2917) so the laptop is exactly centred. Only the
+mobile variants were re-exported; desktop files are unchanged because there the window
+symmetry leads.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/public/hero/hero-dark-mobile-1290.avif
+apps/marketing/public/hero/hero-dark-mobile-1290.jpg
+apps/marketing/public/hero/hero-dark-mobile-1290.webp
+apps/marketing/public/hero/hero-dark-mobile-430.avif
+apps/marketing/public/hero/hero-dark-mobile-430.jpg
+apps/marketing/public/hero/hero-dark-mobile-430.webp
+apps/marketing/public/hero/hero-dark-mobile-860.avif
+apps/marketing/public/hero/hero-dark-mobile-860.webp
+apps/marketing/public/hero/hero-light-mobile-1290.avif
+apps/marketing/public/hero/hero-light-mobile-1290.jpg
+apps/marketing/public/hero/hero-light-mobile-1290.webp
+apps/marketing/public/hero/hero-light-mobile-430.avif
+apps/marketing/public/hero/hero-light-mobile-430.jpg
+apps/marketing/public/hero/hero-light-mobile-430.webp
+apps/marketing/public/hero/hero-light-mobile-860.avif
+apps/marketing/public/hero/hero-light-mobile-860.webp
+---
