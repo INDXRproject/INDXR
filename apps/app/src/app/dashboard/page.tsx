@@ -187,7 +187,7 @@ export default async function DashboardPage() {
         {/* ── Statistics ── */}
         <section>
           <SectionLabel label="Statistics" action={linkAction("Library", "/dashboard/library")} />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-xl border border-border bg-surface px-6 py-5">
               <p className="text-sm font-medium text-fg-muted mb-1">Total transcripts</p>
               <p className="text-3xl font-semibold text-fg tabular-nums">{transcriptCount}</p>

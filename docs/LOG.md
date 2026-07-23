@@ -12861,3 +12861,8 @@ packages/shared/src/components/SectionLabel.tsx
 packages/shared/src/lib/storage.ts
 supabase/migrations/20260724013956_library_storage_max_cap.sql
 ---
+[2026-07-24 01:52] commit: fix(dashboard): stack the two statistics cards on mobile (grid-cols-1 sm:grid-cols-2)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/page.tsx
+---
