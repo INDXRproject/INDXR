@@ -11960,3 +11960,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/app/articles/youtube-channel-knowledge-base/page.tsx
 apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
 ---
+[2026-07-23 11:47] commit: docs: night report — RelatedArticles built + second-round claim catches (bulk/channel-kb/playlist)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/nachtrapport-2026-07-23.md
+---

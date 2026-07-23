@@ -399,3 +399,23 @@ Fase 4 (docs) bleek grotendeels al op standaard; de jargon-specs zijn gerepareer
 gedocumenteerde niet-dupliceren-beslissing. Fase 7-claims klaar; fase-7-stijl resteert als
 `RelatedArticles`-component + optionele narratieve politoer. Alles per-commit bewaard, dit rapport
 is bijgewerkt naarmate ik vorderde.
+
+## Fase 7 — RelatedArticles-component gebouwd + tweede-ronde claim-catches
+
+- **`RelatedArticles`-footer gebouwd & bekabeld** (commit `edad11c`): sluit het door
+  content-sitemap §B gesignaleerde "link-eiland". Gecureerde map (`lib/relatedArticles.ts`, ≤3
+  links per artikel mét reden — C4), component, `slug`-prop in de 3 templates, slug in alle 18
+  artikelen. Rendert niets bij een lege set. Dit was de concrete structurele fase-7-post.
+- **csv + vtt reference-openingen** ook gewarmd (commit `8c98ae6`) — zelfde C11b-fix als srt.
+- **Tweede-ronde claim-catches** (gevonden tijdens de RelatedArticles-bekabeling):
+  - **bulk "Merged single file — CSV/RAG JSON one array across all videos"** → bestaat NIET in de
+    code (bulk-export is ZIP-van-losse-bestanden: `handleBatchDownload`/`handleBulkRagExecute`).
+    Verwijderd, herschreven naar het echte library-multiselect-ZIP-gedrag (commit `75784fa`).
+  - **"scan shows caption availability"** in bulk, channel-kb én playlist → valse pre-check
+    (ADR-076: het reviewscherm toont duur + dedup, checkt captions NIET vooraf). In alle drie weg,
+    met de eerlijke skip-plus-refund-noot (commits `75784fa`, `2cf1c17`).
+
+**Wat nu écht rest (optionele politoer, geen live-onwaarheid):** een woord-voor-woord narratieve
+herschrijf van artikelen die al als verhaal lezen zou churn zijn; en fase 6 blijft de
+gedocumenteerde niet-dupliceren-beslissing. De feitelijke correctheid + structuur (banner,
+See-also, cross-links, sources) staan.
