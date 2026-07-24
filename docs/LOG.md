@@ -12984,3 +12984,27 @@ apps/marketing/src/app/contact/page.tsx
 docs/LOG.md
 packages/shared/src/components/ui/sidebar.tsx
 ---
+
+[2026-07-24 18:20] follow-up: avatar-kleur + library-search. Avatar: kleur nu deterministisch uit username/email (UserAvatar), avatar_color-kolom niet meer gelezen/geschreven (updateProfileAction + ProfileSettingsCard opgeschoond) — nieuwe én bestaande users krijgen een stabiele gekleurde initiaal, geen picker, geen stille blauw-default meer bij Save. Library-search bug gefixt: was één substring-match op de hele zin (`title ILIKE %joe rogan evan%` → 0), nu per-woord tokens AND-ed over title/channel/video_id (bewezen tegen prod: "joe rogan tony" oud=0, nieuw=2). Build beide apps groen.
+Changed: packages/shared/src/components/UserAvatar.tsx, packages/shared/src/actions/auth-actions.ts, apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx, apps/app/src/app/dashboard/account/page.tsx, apps/app/src/app/dashboard/library/page.tsx
+[2026-07-24 17:48] commit: fix(avatar,library-search): deterministic avatar colour + multi-word search
+
+- Avatar: colour is now derived deterministically from username/email (UserAvatar), and the
+  avatar_color column is no longer read or written (removed from updateProfileAction and
+  ProfileSettingsCard). Every user — new and existing — gets a stable coloured initial, with
+  no picker and no silent 'default blue on Save' side-effect the old half-removal had.
+- Library search: was a single substring match on the whole query, so 'joe rogan evan' ran
+  title ILIKE '%joe rogan evan%' and found nothing (the guest name isn't contiguous with
+  'joe rogan' in the titles). Now split into word tokens, AND-ed, each matching title, channel
+  or video_id. Verified against prod: 'joe rogan tony' old=0 -> new=2 matches.
+
+Build green: both apps compiled, exit 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/account/page.tsx
+apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx
+docs/LOG.md
+packages/shared/src/actions/auth-actions.ts
+packages/shared/src/components/UserAvatar.tsx
+---

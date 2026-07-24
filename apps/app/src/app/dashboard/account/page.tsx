@@ -17,7 +17,7 @@ export default async function AccountPage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, role, avatar_color")
+    .select("username, role")
     .eq("id", user.id)
     .single()
 

@@ -14,19 +14,12 @@ import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 interface Profile {
   username: string | null
   role: string | null
-  avatar_color?: string | null
 }
-
-const AVATAR_COLORS = [
-  "bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-green-500",
-  "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-pink-500"
-]
 
 export function ProfileSettingsCard({ user, profile }: { user: User, profile: Profile | null }) {
   const [isEditing, setIsEditing] = useState(false)
   const [username, setUsername] = useState(profile?.username || "")
   const [role, setRole] = useState(profile?.role || "")
-  const [avatarColor, setAvatarColor] = useState(profile?.avatar_color || AVATAR_COLORS[4]) // default blue
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const [profileFeedback, setProfileFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
@@ -44,7 +37,6 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
       const formData = new FormData()
       formData.append('username', username)
       formData.append('role', role)
-      formData.append('avatar_color', avatarColor)
 
       const result = await updateProfileAction(formData)
 
@@ -186,7 +178,6 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                             setIsEditing(false)
                             setUsername(profile?.username || "")
                             setRole(profile?.role || "")
-                            setAvatarColor(profile?.avatar_color || AVATAR_COLORS[4])
                         }}
                         className="text-fg-muted hover:text-fg hover:bg-surface"
                     >

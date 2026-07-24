@@ -109,8 +109,17 @@ function LibraryContent() {
 
       if (selectedCollectionId) query = query.eq("collection_id", selectedCollectionId);
 
+      // Multi-word search: split into tokens and AND them, each token matching title, channel
+      // or video_id. So "joe rogan evan" = title/channel/video ~ joe AND ~ rogan AND ~ evan,
+      // instead of a single substring match on the whole phrase (which found nothing unless a
+      // title contained that exact string). Each .or() group is AND-ed with the others.
       const q = debouncedSearch.trim().replace(/[%,()]/g, " ").trim();
-      if (q) query = query.or(`title.ilike.%${q}%,video_id.ilike.%${q}%`);
+      if (q) {
+        const tokens = q.split(/\s+/).filter(Boolean).slice(0, 6);
+        for (const tok of tokens) {
+          query = query.or(`title.ilike.%${tok}%,channel.ilike.%${tok}%,video_id.ilike.%${tok}%`);
+        }
+      }
 
       if (sortBy === "duration")      query = query.order("duration", { ascending: false, nullsFirst: false });
       else if (sortBy === "title")    query = query.order("title", { ascending: true });

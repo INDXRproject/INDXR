@@ -198,7 +198,6 @@ export async function loginWithGoogleAction(formData: FormData) {
 export async function updateProfileAction(formData: FormData) {
   const username = formData.get('username') as string
   const role = formData.get('role') as string
-  const avatar_color = formData.get('avatar_color') as string
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -222,7 +221,6 @@ export async function updateProfileAction(formData: FormData) {
     id: user.id,
     username,
     role,
-    avatar_color,
     onboarding_completed: true,
     updated_at: new Date().toISOString(),
   })
