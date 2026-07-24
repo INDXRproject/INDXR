@@ -13052,3 +13052,20 @@ own truncated line, with the date on the right.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/app/dashboard/page.tsx
 ---
+
+[2026-07-24 23:15] taak: grote admin-dashboard audit (Finance/Growth/Operations + launch-readiness + KPI-capture-matrix) | gewijzigd: docs/wiki/roadmap/admin-kpi-audit.md (nieuw), docs/wiki/INDEX.md
+[2026-07-24 23:08] commit: docs(audit): admin Finance/Growth/Operations audit + KPI-capture matrix + launch-readiness
+
+Grote referentie-audit om later aan verder te werken. Kernbevinding: het geld
+(finance, 31/0/0) en de operations zijn grotendeels op orde; drie echte
+capture-gaten moeten vóór launch dicht omdat ze anders onherstelbaar data
+verliezen: Stripe chargeback/refund-handler (webhook handelt ze niet), eigen
+daily-active snapshot (DAU/WAU/MAU), en has_ever_purchased in de webhook. Alle
+overige 'ontbrekende' KPI's zijn al gecaptured (kolommen of PostHog) en later
+te surfacen zonder dataverlies.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/roadmap/admin-kpi-audit.md
+---

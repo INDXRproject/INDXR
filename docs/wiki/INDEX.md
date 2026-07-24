@@ -211,6 +211,7 @@ Durende end-to-end **live-verificaties** met nagerekende data (onderscheiden van
 | Bestand | Onderwerp |
 |---------|-----------|
 | [priorities.md](roadmap/priorities.md) | Gestructureerde prioriteitenlijst: BLOCKERS / PRE-LAUNCH / POST-LAUNCH |
+| [admin-kpi-audit.md](roadmap/admin-kpi-audit.md) | **Grote audit (2026-07-24):** admin Finance/Growth/Operations-staat + launch-readiness + KPI-capture-matrix (✅ surfaced / 🟡 captured-niet-surfaced / 🔴 niet-captured). Kernpunt: capture-gaten = permanent verlies → dicht vóór launch (chargeback/refund-handler, daily-active snapshot, `has_ever_purchased`). |
 | [backlog.md](roadmap/backlog.md) | Post-launch features, marketing, stabiliteit, gamification |
 
 ---
