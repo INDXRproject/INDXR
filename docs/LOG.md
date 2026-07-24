@@ -13069,3 +13069,13 @@ Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/roadmap/admin-kpi-audit.md
 ---
+[2026-07-24 23:27] commit: docs(audit): corrigeer has_ever_purchased — gemaksvlag, geen capture-gat
+
+Paid/free wordt al live afgeleid uit credit_transactions (getPaidUserIds); de
+kolom bestaat niet en niets leest hem. Betaald-status is altijd herafleidbaar
+uit permanente aankoop-rijen -> geen dataverlies. Verplaatst van permanentie-
+risico naar optioneel gemak.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/admin-kpi-audit.md
+---

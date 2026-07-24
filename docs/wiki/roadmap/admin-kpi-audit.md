@@ -18,7 +18,9 @@
 **Antwoord op "capturen we alles wat we willen?":** grotendeels **ja voor het geld** en **ja voor de operations**, maar met **drie echte capture-gaten** die vóór launch dicht moeten omdat ze anders onherstelbaar data verliezen:
 1. **Stripe disputes/chargebacks + geld-refunds** — nergens een webhook-handler (§7.1). 🔴
 2. **Eigen daily-active snapshot** (DAU/WAU/MAU + cohort-retentie) — DB houdt alleen `last_sign_in_at` (overschreven, geen historie); PostHog vangt het wel op (§7.2). 🟠
-3. **`has_ever_purchased`** wordt niet door de webhook gezet (bekende TODO) — raakt paid-user-gating + conversie-attributie. 🟠
+3. **Eigen daily-active snapshot** (DAU/WAU/MAU + cohort-retentie) — DB houdt alleen `last_sign_in_at` (overschreven, geen historie); PostHog vangt het wel op (§7.2). 🟠
+
+> **Correctie 2026-07-24 (na review):** `has_ever_purchased` stond eerder als capture-gat — **onterecht**. Het onderscheid betaald/gratis is géén verlies-risico: elke Stripe-aankoop schrijft permanent een `credit_transactions`-rij met `stripe_session_id`, en paid/free wordt daar overal al **live** uit afgeleid (`broadcast.ts:getPaidUserIds`, admin Paid Users, growth-conversie). De kolom bestaat niet eens en niets leest hem. Een `has_ever_purchased`-vlag zou puur een gemaks-/performance-cache zijn — nuttig voor snelle client-side gating, maar altijd herafleidbaar. Verplaatst naar 🟡 (§7.3).
 
 Alle overige "ontbrekende" KPI's zijn **wél al ergens vastgelegd** (Supabase-kolommen of de PostHog-eventstroom) en kunnen later worden geaggregeerd zonder dataverlies (§6). Dat is een UI/RPC-taak, geen capture-taak.
 
@@ -176,8 +178,8 @@ De webhook (`apps/app/src/app/api/stripe/webhook/route.ts`) handelt **alleen** `
 DB houdt alleen `last_sign_in_at` (overschreven — geen historie). **PostHog vangt de activiteit wél op**, dus dit is MEDIUM: HIGH als je activiteits-KPI's in je eigen admin/P&L wilt zonder PostHog-afhankelijkheid, LOW als PostHog-dashboards volstaan.
 - **Fix (indien in-house gewenst):** nachtelijke `daily_active_users`-snapshot (goedkoop, zoals `finance_daily_snapshot` al doet) → DAU/WAU/MAU + cohort-retentie later afleidbaar. Zonder snapshot is historische activiteit in je eigen DB permanent weg.
 
-### 7.3 🟠 `has_ever_purchased` niet door webhook gezet
-Bekende open TODO (priorities 1.13/known-issues). Raakt paid-user-gating in `AuthContext` én zuivere conversie-attributie. Forward-only verlies (elke aankoop zonder de vlag-set is een gemiste markering). **Fix:** in `checkout.session.completed` → `profiles.has_ever_purchased = true`.
+### 7.3 🟡 `has_ever_purchased` — gemaksvlag, GEEN capture-gat (gecorrigeerd)
+De kolom bestaat niet in de migraties en niets in de code leest hem; `isPaidUser`/`has_ever_purchased` = 0 hits in `apps/*/src`. Paid/free wordt vandaag **live afgeleid** uit `credit_transactions` (`type='credit'` + `metadata->>stripe_session_id`) in `broadcast.ts:getPaidUserIds`, admin Paid Users, en de growth-conversie-RPC. Omdat elke aankoop permanent een rij schrijft, is de betaald-status **altijd herafleidbaar** → **geen dataverlies**. Een `has_ever_purchased`-vlag (+ zetten in `checkout.session.completed` + backfill) is puur een **cache** voor snelle client-side gating (bijv. upsells verbergen voor payers). Nuttig, goedkoop, maar geen permanentie-risico — daarom 🟡, niet 🔴/🟠.
 
 ### 7.4 🟡 Goedkope instrumentatie-verbeteringen (klein verlies, doe mee als je toch bezig bent)
 - Onboarding-**timestamp** i.p.v. alleen boolean (funnel-timing).
@@ -199,7 +201,7 @@ Bekende open TODO (priorities 1.13/known-issues). Raakt paid-user-gating in `Aut
 | Anti-abuse op welcome-credits (1.12) | 🔴 | niet gedaan — credit-farming-risico bij launch |
 | Rate-limiting activeren (Upstash env vars terug) | 🟠 | `noopLimiter` in prod; caption-cache uit |
 | Supabase DB-backups configureren | 🟠 | niet gedaan (Railway-SPOF-risico) |
-| `has_ever_purchased` in webhook (§7.3) | 🟠 | niet gedaan |
+| `has_ever_purchased` gemaksvlag (§7.3) | 🟢 | optioneel — paid/free werkt al live |
 | Cookie-consent-mechanisme (1.18) | 🟠 | privacy-policy ✅, consent-UI onduidelijk |
 | `LOG_LEVEL=WARNING` op Railway | 🟢 | logs lopen vol op INFO |
 | Crisp support-chat (1.15) | 🟢 | niet gedaan (contact-form dekt deels) |
@@ -215,7 +217,7 @@ Bekende open TODO (priorities 1.13/known-issues). Raakt paid-user-gating in `Aut
 
 ## 9. Aanbevolen fasering (voor later)
 
-1. **Pre-launch, capture-first (klein, onherstelbaar-anders):** §7.1 chargeback/refund-handler + tabel · §7.3 `has_ever_purchased` · §7.2 daily-active snapshot (als in-house gewenst) · §7.4 welcome-claim/onboarding events. — *Bewaart data; UI volgt later.*
+1. **Pre-launch, capture-first (klein, onherstelbaar-anders):** §7.1 chargeback/refund-handler + tabel (de enige echte permanent-verlies-fix) · §7.2 daily-active snapshot (alleen als in-house gewenst; PostHog dekt het anders) · §7.4 welcome-claim/onboarding events. Optioneel-goedkoop: §7.3 `has_ever_purchased`-gemaksvlag. — *Bewaart data; UI volgt later.*
 2. **Pre-launch, operationeel:** uptime-monitor (1.14) · anti-abuse (1.12) · rate-limiting + DB-backups.
 3. **Post-launch, surfacing (geen capture-risico):** ARPU-over-all + time-to-first-purchase in growth · email-verificatie- & onboarding-funnel · product-usage-dashboard (methode-volume, export-populariteit, whisper-funnel, cache-hit-rate) uit de bestaande PostHog-stroom · caption-latency + (indien bron) provider-saldi terug in Operations.
 4. **Schaal-hygiëne (als user-aantal groeit):** admin-paginering DB-side, DB-brede zoek, paid-users server-side aggregatie.
