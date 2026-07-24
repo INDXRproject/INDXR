@@ -12962,3 +12962,25 @@ Changed: apps/app/src/app/dashboard/billing/page.tsx
 apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
 packages/shared/src/components/pricing/PricingTiers.tsx
 ---
+
+[2026-07-24 17:30] rechttrek-lijst (account/settings/billing/contact/sidebar). Settings max-w-2xl->4xl (== account/dashboard), "Custom themes coming soon" weg. Account: kaart-headings uniform text-lg op bg-surface, volgorde Profile->Credit activity->Purchases->Storage->Report; Avatar Color-picker eruit (stored kleur blijft, avatar werkt); "Report a problem" -> /dashboard/messages?tab=support (i.p.v. Sentry-dialog). Billing: credit-muntje op saldo, [Buy credits]-knop weg (pakketten staan eronder), Try nu selecteerbaar in dezelfde radiogroep + ToS-gated via één koopknop (PricingTiers footerSlot, renderCta optioneel). Contact-pagina was een stub (fake submit) -> echte /api/contact-route (Resend -> support@indxr.ai, reply_to = afzender, honeypot, 3 categorieën Feedback/Bug/General question, geen billing voor uitgelogd); confirm verwijst niet meer naar een inbox. Sidebar-nav text-sm->15px (h-8->h-9). Build beide apps groen. LET OP: /api/contact vereist RESEND_API_KEY + RESEND_FROM in het marketing-Vercel-project (anders 503 + fallback "email support@indxr.ai").
+Changed: apps/app/src/app/dashboard/{settings,account,billing}/page.tsx, apps/app/src/components/dashboard/settings/{ProfileSettingsCard,TransactionHistoryCard,SentryFeedbackCard}.tsx, apps/app/src/components/dashboard/billing/{PurchaseHistoryCard,BillingPurchaseGrid}.tsx, packages/shared/src/components/pricing/PricingTiers.tsx, packages/shared/src/components/ui/sidebar.tsx, apps/marketing/src/app/contact/page.tsx, apps/marketing/src/app/api/contact/route.ts (new)
+[2026-07-24 17:25] commit: feat(contact): real contact form -> support@indxr.ai; bump sidebar font
+
+- The /contact page was a stub (faked the submit, told logged-out visitors to check an
+  in-app inbox they don't have). Now a real form: 3 categories (Feedback / Bug / General
+  question — no billing for logged-out), posting to a new /api/contact route that emails
+  support@indxr.ai via Resend with reply-to set to the sender, plus a honeypot. Confirmation
+  now says we'll reply to their email. NOTE: needs RESEND_API_KEY + RESEND_FROM in the
+  marketing Vercel project; without them the route returns 503 and the form shows a
+  'email support@indxr.ai directly' fallback.
+- Sidebar nav bumped from text-sm to 15px (h-8 -> h-9) — the labels read a bit small.
+
+Build green: both apps compiled, exit 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/api/contact/route.ts
+apps/marketing/src/app/contact/page.tsx
+docs/LOG.md
+packages/shared/src/components/ui/sidebar.tsx
+---
