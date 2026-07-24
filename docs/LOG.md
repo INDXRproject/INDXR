@@ -12866,3 +12866,29 @@ supabase/migrations/20260724013956_library_storage_max_cap.sql
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/app/dashboard/page.tsx
 ---
+
+[2026-07-24 02:10] docs-accuracy: CLAUDE.md + start-up docs bijgewerkt tegen broncode. CLAUDE.md: AI-summary DeepSeek→Gemini 2.5 Flash (ADR-068), pricing 5-oud→4 tiers uit pricing.ts (Try€5/Starter€15/Plus€25/Power€60), webhook indxr.ai→app.indxr.ai, RLS "6"→25 tabellen (geverifieerd), Playwright 29→9 specs, bgutil-sectie gemarkeerd verwijderd (ADR-027), SMTP-noot→Resend custom SMTP 30/u live, Stripe live+getest. INDEX.md ai-pipeline-regel DeepSeek→Gemini. known-issues.md: GDPR/PostHog-blocker ✅ (replay uit + privacy ingevuld), per-job-capture ✅ (ADR-054, ondergrens post-launch), Stripe-checklist afgevinkt (2 echte betalingen bevestigd door Khidr).
+Changed: CLAUDE.md, docs/wiki/INDEX.md, docs/wiki/operations/known-issues.md
+[2026-07-24 16:15] commit: docs: sync CLAUDE.md + start-up docs with current reality
+
+Verified each factual claim against source and fixed the drift:
+- AI summary DeepSeek V3 -> Gemini 2.5 Flash via AssemblyAI EU LLM Gateway (ADR-068)
+- Pricing: stale 5-package list -> 4 tiers from pricing.ts (Try EUR5/100, Starter EUR15/400,
+  Plus EUR25/1000, Power EUR60/3000)
+- Stripe webhook URL indxr.ai -> app.indxr.ai; marked live + tested (two real payments)
+- RLS 'alle 6 tabellen' -> 25 public tables with RLS (verified via DB)
+- Playwright '29 specs' -> 9 specs
+- bgutil-pot section marked removed (ADR-027; 0 hits in code)
+- SMTP note -> Resend custom SMTP live (30/u), not the built-in 2/u mailer
+- known-issues: GDPR/PostHog blocker resolved (replay disabled + privacy filled),
+  per-job cost capture resolved (ADR-054 layer live; remainder is a post-launch lower-bound),
+  Stripe checklist items checked off
+
+Docs only — no code change.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: CLAUDE.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/operations/known-issues.md
+---

@@ -132,14 +132,14 @@ ADR-formaat:
 | Frontend | Next.js 16, React 19.2.3, App Router |
 | Styling | Tailwind CSS v4 + Radix + Shadcn/ui |
 | Auth | Supabase Auth (email + Google OAuth) |
-| Database | PostgreSQL via Supabase (RLS op alle 6 tabellen) |
+| Database | PostgreSQL via Supabase (RLS op alle public tabellen — 25 met RLS aan, 2026-07-24) |
 | Backend | FastAPI Python 3.12 op Railway (Docker) |
 | Transcriptie | YouTube captions (yt-dlp) + AssemblyAI fallback |
-| AI Samenvatting | DeepSeek V3 (`deepseek-chat`) |
-| Rate limiting | Upstash Redis (sliding window) |
-| Payments | Stripe (Checkout Sessions, eenmalig, EUR) |
-| Analytics | PostHog |
-| Testing | Playwright E2E (29 specs) |
+| AI Samenvatting | Gemini 2.5 Flash via AssemblyAI EU LLM Gateway (fallback Claude Haiku 4.5) — ADR-068 |
+| Rate limiting | Upstash Redis (sliding window) — **uit in prod** tot Upstash env-vars terug (noopLimiter) |
+| Payments | Stripe (Checkout Sessions, eenmalig, EUR) — live + getest |
+| Analytics | PostHog (session replay uit) |
+| Testing | Playwright E2E (9 specs) |
 
 ### Lokale commando's
 
@@ -173,7 +173,7 @@ venv/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 **Playwright tests:**
 ```bash
-npx playwright test                        # alle 29 specs headless
+npx playwright test                        # alle 9 specs headless
 npx playwright test specs/01-single-video  # één spec
 ```
 Vereist: `pnpm dev:marketing` + backend draaiend + `tests/test_accounts.json` aanwezig.
@@ -234,7 +234,7 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 
 ### Database
 
-- Alle 6 user-facing tabellen hebben RLS — gebruikers zien alleen eigen data
+- Alle user-facing tabellen hebben RLS — gebruikers zien alleen eigen data (25 public tabellen met RLS, geverifieerd 2026-07-24)
 - `SUPABASE_SERVICE_ROLE_KEY` alleen in Python backend (bypass RLS) — nooit in browser of Next.js client
 - **Balans-bron:** `user_credits.credits` is de **gezaghebbende, gematerialiseerde balans** — onderhouden door 4 RPC's (`deduct_credits_atomic`, `add_credits`, `claim_welcome_reward`, `update_playlist_video_progress`) onder `FOR UPDATE`-rijlock. `get_user_credits` leest deze kolom → dat is wat de user ziet. Reserveringen/aftrek altijd hierop opereren.
 - `credit_transactions` is een **audit-log, GEEN balans-bron**. Herleid de balans **niet** uit `SUM(amount)` — de balans is gematerialiseerd in `user_credits.credits` (gezaghebbend). De vroegere sign-bug (caption-debits negatief) is **gefixt** in migratie `20260706172045_fix_caption_debit_sign.sql`: `amount` is nu **altijd positief** en de kolom `type` (`'debit'`/`'credit'`) draagt de richting. Reden om alsnog niet te sommeren: `SUM(amount)` telt met altijd-positieve bedragen sowieso fout, en reserverings-/settlement-/refund-`kind`s (ADR-050) kunnen dubbeltellen. Lees dus altijd `user_credits.credits` via `get_user_credits`. (Geverifieerd tegen migraties + RPC's, 2026-07-10.)
@@ -267,11 +267,11 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 - Bij Whisper jobs: `session_id = job_id[:8]` — pinned exit IP noodzakelijk (YouTube CDN is IP-locked)
 - Overgestapt van IPRoyal naar Decodo residentieel op 2026-04-20
 
-### bgutil-pot
+### bgutil-pot — VERWIJDERD (ADR-027)
 
-- Linux x86_64 binary — werkt **niet** op macOS
-- Draait op `127.0.0.1:4416` bij app startup
-- iOS client bypassed PO tokens — alleen `web_embedded` gebruikt bgutil
+bgutil-pot is uit de codebase (yt-dlp client-rotatie, ADR-027; `grep bgutil` = 0 hits). Er is
+geen PO-token-server en geen proxy-health-check meer. Deze sectie blijft alleen als pointer voor
+oude referenties.
 
 ### Git hygiene
 
@@ -287,15 +287,15 @@ Als ze verschijnen: `git rm -r --cached <path>`
 
 ## Kritieke waarschuwingen
 
-### Stripe live mode
-- **Alle 5 pakketten** moeten aangemaakt worden in live mode: Try €2.49, Basic €5.99, Plus €11.99, Pro €24.99, Power €49.99
-- Webhook endpoint moet geregistreerd zijn: `https://indxr.ai/api/stripe/webhook`
-- `STRIPE_WEBHOOK_SECRET` altijd instellen in productie — zonder verificatie is webhook onveilig
+### Stripe live mode — LIVE + getest
+- **4 tiers** (single source: `pricing.ts`): Try €5/100cr, Starter €15/400cr, Plus €25/1.000cr (mostPopular), Power €60/3.000cr. Prijzen komen server-side uit `pricing.ts` — nooit client-side vertrouwen. (Let op: `pricing.ts` is de bron; oudere ADR-052-getallen zijn achterhaald.)
+- Webhook geregistreerd op **`https://app.indxr.ai/api/stripe/webhook`** (niet indxr.ai). `STRIPE_WEBHOOK_SECRET` gezet in productie (fail-closed — zonder verificatie is de webhook onveilig).
+- Betaal→credit-keten getest met twee echte betalingen (bevestigd 2026-07-24).
 
 ### Supabase
-- **Email verificatie staat AAN** (`mailer_autoconfirm=false`, geverifieerd 2026-07-15 via Management API). Nieuwe email/password-signups zijn PKCE en moeten de verificatielink klikken → `/auth/callback?code=…` → sessie. LET OP: de ingebouwde mailer heeft `rate_limit_email_sent=2`/uur (geen custom SMTP) — zie 1.30. **Nieuwe signups met `@indxr-test.com` worden door Supabase geweigerd** ("Email address invalid"); gebruik `@indxr.ai` (of een echt domein met MX) voor E2E-signup-tests, of maak accounts admin-side aan (`admin.createUser` met `email_confirm:true` accepteert `@indxr-test.com`).
-- RLS verificeren op alle 6 tabellen voor launch
-- Database backups nog niet geconfigureerd
+- **Email verificatie staat AAN** (`mailer_autoconfirm=false`, geverifieerd 2026-07-15 via Management API). Nieuwe email/password-signups zijn PKCE en moeten de verificatielink klikken → `/auth/callback?code=…` → sessie. LET OP: custom SMTP (Resend, `smtp.resend.com`, sender `no-reply@send.indxr.ai`) is gekoppeld met auth-rate-limit 30/u (geverifieerd 2026-07-20) — niet meer de ingebouwde 2/u mailer. **Nieuwe signups met `@indxr-test.com` worden door Supabase geweigerd** ("Email address invalid"); gebruik `@indxr.ai` (of een echt domein met MX) voor E2E-signup-tests, of maak accounts admin-side aan (`admin.createUser` met `email_confirm:true` accepteert `@indxr-test.com`).
+- RLS staat aan op alle 25 public tabellen (geverifieerd 2026-07-24)
+- Database backups nog niet geconfigureerd — **open voor launch**
 
 ### Railway
 - Bij Railway restart mid-job: background task sterft — job blijft hangen in `running` state, **geen auto-recovery**
@@ -324,7 +324,7 @@ Als ze verschijnen: `git rm -r --cached <path>`
 | Endpoint | Methode | Beschrijving |
 |----------|---------|--------------|
 | `/api/extract/youtube` | POST | YouTube captions extraheren (yt-dlp) |
-| `/api/summarize` | POST | AI samenvatting (DeepSeek) |
+| `/api/summarize` | POST | AI samenvatting (Gemini 2.5 Flash via EU LLM Gateway) |
 | `/api/transcribe/whisper` | POST | Start transcriptie-job → `{job_id}` direct |
 | `/api/jobs/{job_id}` | GET | Poll transcriptie-job status |
 | `/api/video/metadata/{video_id}` | GET | Video titel + duur |

@@ -88,10 +88,14 @@ Verweesde Resend-DNS-records in Namecheap opruimen. **Verwijderen:**
 
 ---
 
-### GDPR/PostHog-hardening ⚠️ launch-blocking
-**Vastgesteld:** 2026-07-01
+### ~~GDPR/PostHog-hardening~~ ✅ Opgelost 2026-07-24 (was launch-blocking)
+**Vastgesteld:** 2026-07-01 · **Opgelost/geverifieerd tegen code:** 2026-07-24
 
-Twee openstaande punten vóór launch:
+**Beide punten dicht:** (1) session replay staat **volledig uit** (`disable_session_recording: true`
+in `PostHogProvider.tsx`) — geen replay draait, dus geen ongemaskeerde velden; zet alsnog
+`maskAllInputs`/`data-ph-no-capture` als replay ooit aangezet wordt. (2) de privacy-policy
+placeholder is **weg** (`grep KHIDR` op `/privacy` = 0, tekst ingevuld). Oorspronkelijke punten
+ter referentie:
 
 1. **Session-replay zonder field-masking** — PostHog session replay draait in productie zonder dat gevoelige velden gemaskeerd zijn. Formuliervelden (wachtwoord, betaaldata, ticket-body) zijn zichtbaar in replay-opnames. Fix: `data-ph-no-capture` attributen toevoegen aan gevoelige inputs, of PostHog `maskAllInputs: true` instellen in de initialisatie. Zie [PostHog docs: data masking](https://posthog.com/docs/session-replay/privacy).
 
@@ -117,8 +121,13 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 
 ## Kritieke TODO's (blokkeren live launch)
 
-### Per-job kosten-capture ontbreekt — LAUNCH-BLOCKER (historische data onherstelbaar)
+### ~~Per-job kosten-capture ontbreekt — LAUNCH-BLOCKER~~ ✅ Capture-laag live (ADR-054); rest = ondergrens post-launch
 **Geregistreerd:** 2026-07-09 (bij ADR-052 pricing-herstructurering).
+**Update 2026-07-24 (geverifieerd tegen code):** de capture-laag bestaat sinds **ADR-054** — per-job
+Decodo-bytes/AssemblyAI-model/token-capture, `proxy_usage_log`, `daily_cost_counters`,
+`record_proxy_bytes` in main.py/worker.py. **Geen harde launch-blocker meer.** Wat rest is dekking
+van error-/retry-/non-job-verkeer; dat is een expliciete **ondergrens**-verfijning post-launch
+(ADR-065/066), niet launch-blokkerend. Onderstaande originele registratie ter context:
 **Probleem:** de worst-case-prijsstelling (ADR-052) is verdedigd op **schatting**, niet op gemeten data. Er is geen capture-laag die de werkelijke kosten en verbruik **per job** vastlegt. Zolang die ontbreekt kunnen we marges niet verifiëren, geen echte kost/winst tonen (priorities 1.24) en achteraf niets reconstrueren — **niet-gecaptured data is permanent verloren** (geen backfill mogelijk).
 **Vast te leggen per `job_id`:**
 - **Proxy-bytes per job** (Decodo) — nu **niet** gepersisteerd voor de YouTube-AI-route (`transcription_jobs.file_size_bytes = 0`; download gebeurt in de worker, wél gelogd, niet opgeslagen). Dit is de grootste kostenvariabele.
@@ -472,7 +481,7 @@ Geen externe service die alarmeert bij downtime.
 - [x] Vercel projects aangemaakt: `indxr-marketing` (15 env vars) + `indxr-app` (18 env vars, Stripe live) ✓ (B1.2/B2, 2026-05-06)
 - [x] Env vars gemigreerd naar nieuwe Vercel projects ✓ — let op: Upstash URL had quotes uit .env-paste; Vercel UI vereist rauwe waarden zonder quotes
 - [x] OSS-registratie bij Belastingdienst ingediend ✓ — wacht op reactie. Blocker voor Stripe live (1.13) blijft staan tot goedkeuring binnen is.
-- [ ] Stripe account activeren (KVK/bedrijfsinfo) + 5 producten in live mode + webhook registreren (**URL: `https://app.indxr.ai/api/stripe/webhook`**)
+- [x] Stripe live: account actief, **4 tiers** in live mode (`pricing.ts`: Try €5/100, Starter €15/400, Plus €25/1.000, Power €60/3.000), webhook op `https://app.indxr.ai/api/stripe/webhook` (2026-07-10). **Twee echte betalingen end-to-end geverifieerd (2026-07-24).**
 - [ ] `STRIPE_WEBHOOK_SECRET` configureren in Vercel indxr-app (wacht op B5 webhook re-registratie)
 - [ ] `NEXT_PUBLIC_PYTHON_BACKEND_URL` verwijderen uit Vercel dashboard — var is vervangen door `NEXT_PUBLIC_AUDIO_UPLOAD_URL`, staat nog in Vercel env vars maar niet meer in codebase (B0 cleanup 2026-05-05)
 - [ ] Vercel dashboard: "Automatically skip unnecessary deployments" inschakelen per project (Project Settings → Git) — native Turborepo-integratie
@@ -485,10 +494,10 @@ Geen externe service die alarmeert bij downtime.
   - [x] TEST 8 (Google OAuth) ✓ 2026-05-17 — getClaims() fix resolved PKCE verifier bug
   - [x] TEST 9 (Signup + onboarding redirect) ✓ 2026-05-17 — router.push → window.location.href = appHref('/dashboard')
   - [x] TEST 10 (Password reset PKCE flow) ✓ 2026-05-17 — redirectTo via /auth/callback?next=<settings URL>
-  - [ ] TEST 11 (Stripe checkout) — uitgesteld, Stripe tax setup pending bij Khidr
+  - [x] TEST 11 (Stripe checkout) — twee echte betalingen geslaagd (bevestigd 2026-07-24)
   - [ ] TEST 13 (Vercel logs inspectie) — handmatig, na deploy
-  - [ ] Eerste echte betaling (Test-pakket €3,49) — uitgesteld (Stripe tax setup pending bij Khidr)
-  - [ ] Stripe webhook delivery 200 verifiëren in Stripe Dashboard → Webhooks (na eerste echte betaling)
+  - [x] Eerste echte betaling(en) — twee betaalde acties end-to-end geverifieerd (2026-07-24); credits toegekend = webhook leverde 200 (credits gaan uitsluitend via de webhook)
+  - [x] Stripe webhook delivery 200 — impliciet bevestigd door de credit-toekenning bij beide betalingen
 - [ ] B7: Oud `indxr` Vercel project verwijderen (al gedisconnect van GitHub)
 - [x] Supabase email verificatie re-enabled ✓
 - [~] **Upstash Redis quota + worker-herstel** — `UPSTASH_REDIS_REST_URL` + `_TOKEN` verwijderd uit beide Vercel projects (2026-05-06). `noopLimiter` actief: rate limiting en caption cache uitgeschakeld in productie. Strategie besloten op 2026-06-04 (zie [ADR-048](../decisions/048-redis-split-upstash-railway.md)):
