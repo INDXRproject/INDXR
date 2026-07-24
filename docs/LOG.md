@@ -13079,3 +13079,34 @@ risico naar optioneel gemak.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/admin-kpi-audit.md
 ---
+
+[2026-07-24 23:45] taak: Sprint 1 — capture teruggestroomd geld (refunds + chargebacks) + has_ever_purchased-vlag | gewijzigd: supabase/migrations/20260724214548_payment_reversals_and_has_ever_purchased.sql (nieuw, toegepast via MCP, 108->109), apps/app/src/app/api/stripe/webhook/route.ts (3 handlers + flag), docs/wiki/architecture/database-schema.md, docs/wiki/roadmap/admin-kpi-audit.md, docs/wiki/operations/known-issues.md | build groen (exit 0), idempotentie DB-geverifieerd, security-advisor INFO (gelijk aan payment_attempts)
+[2026-07-24 23:55] commit: feat(webhook): capture refunds + chargebacks (payment_reversals) + has_ever_purchased
+
+Sprint 1 uit de admin-KPI-audit (7.1). De Stripe-webhook ving alleen geslaagde en
+mislukte betalingen; teruggestroomd geld (vrijwillige refunds + onvrijwillige
+chargebacks) werd nergens vastgelegd -> netto-omzet overschat + geen fraudesignaal,
+onherstelbaar. Nieuw:
+
+- Tabel payment_reversals (migratie 20260724214548, toegepast via MCP 108->109):
+  refunds (charge.refunded) + disputes (charge.dispute.created/.closed), dedupe_key-
+  idempotent, service-role RLS (security-advisor INFO, gelijk aan payment_attempts).
+  Join-sleutel stripe_payment_intent_id -> credit_transactions.metadata.payment_intent_id.
+- Drie webhook-handlers, best-effort (nooit non-200 op logfout).
+- profiles.has_ever_purchased: gemaks-cache van paid-status (gezet na add_credits,
+  niet erin want die draait ook voor grants/refunds), gebackfilld uit bestaande aankopen.
+
+Capture-only: verrekening in admin_finance_summary + dispute-tegel = follow-up.
+OPEN (Khidr): de 3 event-types aanzetten op de live webhook-endpoint.
+
+Verificatie: build groen (exit 0); migratie geverifieerd (tabel/kolom/backfill/RLS);
+idempotentie DB-getest (dispute created->closed = 1 rij), testrijen opgeruimd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/stripe/webhook/route.ts
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/admin-kpi-audit.md
+supabase/migrations/20260724214548_payment_reversals_and_has_ever_purchased.sql
+---

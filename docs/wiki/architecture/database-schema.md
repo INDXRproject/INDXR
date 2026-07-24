@@ -460,6 +460,20 @@ Migraties `20260714222523`–`20260714230120`. Periode-gebonden Finance-view + o
 
 ---
 
+## Payment reversals + has_ever_purchased (2026-07-24, admin-audit Sprint 1)
+
+Migratie `20260724214548_payment_reversals_and_has_ever_purchased`. Sluit het capture-gat uit de [admin-KPI-audit](../roadmap/admin-kpi-audit.md) §7.1: teruggestroomd geld werd nergens vastgelegd. **Capture-only** — nog niet in `admin_finance_summary` verrekend.
+
+### Nieuwe tabel
+- **`payment_reversals`** — refunds (`charge.refunded`) + chargebacks/disputes (`charge.dispute.created`/`.closed`) uit de Stripe-webhook. Kolommen: `dedupe_key` (UNIQUE, `chg_<charge>`/`dsp_<dispute>` → idempotente upsert), `kind` (`refund`|`dispute`), `occurred_at`, `status`, `reason`, `amount`, `currency`, `fee` (dispute-fee; refund NULL), `stripe_charge_id`, `stripe_payment_intent_id` (**join-sleutel** terug naar `credit_transactions.metadata.payment_intent_id`), `stripe_refund_id`, `stripe_dispute_id`, `user_id` (best-effort), `raw`, `created_at`. RLS aan, **geen policies** (service-role only — security-advisor toont INFO `rls_enabled_no_policy`, gelijk aan `payment_attempts`). Geschreven door `apps/app/src/app/api/stripe/webhook/route.ts` (best-effort, faalt nooit non-200). Dispute `created`→`closed` upserten dezelfde `dedupe_key` → status evolueert (`needs_response`→`won`/`lost`); geverifieerd idempotent.
+
+### Nieuwe kolom
+- **`profiles.has_ever_purchased`** (boolean NOT NULL default false) — gemaks-/performance-cache van "heeft ooit een Stripe-aankoop gedaan". **Geen balans-/financiële bron**; paid/free is altijd herafleidbaar uit `credit_transactions` (`stripe_session_id`, zoals `broadcast.ts:getPaidUserIds` al doet). Gezet door de webhook in de `checkout.session.completed`-tak ná geslaagde `add_credits` (best-effort; **niet** in `add_credits` zelf, want die draait ook voor grants/refunds). Bij de migratie gebackfilld uit bestaande aankopen.
+
+> **Openstaand (Khidr, Stripe Dashboard):** de webhook-endpoint (live mode) moet de drie event-types **`charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`** aan hebben staan, anders levert Stripe ze niet af (net zoals `charge.failed` voor `payment_attempts` aan moest). Handler + tabel zijn klaar; enkel de endpoint-config resteert.
+
+---
+
 ## Legacy en Undocumented Tabellen
 
 De volgende tabellen bestaan in de productie-DB (en in de baseline), maar zijn niet actief in de huidige codebase. Ze zijn **niet** verwijderd bij de baseline-squash — data aanraken is post-launch werk.

@@ -131,6 +131,72 @@ export async function POST(req: Request) {
     return new NextResponse(null, { status: 200 })
   }
 
+  // ── Teruggestroomd geld: refunds + chargebacks/disputes (payment_reversals) ──────────────────
+  // Vrijwillige refund (charge.refunded) én onvrijwillige chargeback (charge.dispute.*) stroomden
+  // eerder nergens in onze data → netto-omzet overschat + geen fraudesignaal. Capture-only: we leggen
+  // de gebeurtenis vast; verrekenen in de P&L + credit-clawback zijn bewuste vervolgstappen.
+  // Idempotent via dedupe_key (upsert); best-effort → nooit non-200 op een logfout (anders retryt Stripe).
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object as Stripe.Charge
+    try {
+      const admin = createAdminClient()
+      const refunds = charge.refunds?.data ?? []
+      const latest = refunds.length ? refunds[refunds.length - 1] : null
+      const piId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id ?? null
+      await admin.from('payment_reversals').upsert({
+        dedupe_key: `chg_${charge.id}`,
+        kind: 'refund',
+        occurred_at: new Date((latest?.created ?? charge.created) * 1000).toISOString(),
+        status: latest?.status ?? (charge.refunded ? 'succeeded' : null),
+        reason: latest?.reason ?? null,
+        amount: charge.amount_refunded != null ? charge.amount_refunded / 100 : null, // cumulatief teruggegeven
+        currency: charge.currency ?? null,
+        fee: null, // refund: geen nieuwe Stripe-fee hier (de oorspronkelijke %-fee wordt niet teruggegeven)
+        stripe_charge_id: charge.id,
+        stripe_payment_intent_id: piId,
+        stripe_refund_id: latest?.id ?? null,
+        stripe_dispute_id: null,
+        user_id: (charge.metadata?.userId as string | undefined) ?? null,
+        raw: { amount_refunded: charge.amount_refunded, refunded: charge.refunded, refund_count: refunds.length,
+               latest_refund: latest ? { id: latest.id, status: latest.status, reason: latest.reason } : null },
+      }, { onConflict: 'dedupe_key' })
+    } catch (e) {
+      Sentry.captureException(e, { level: 'warning', tags: { route: 'api/stripe/webhook', step: 'charge_refunded_log' }, extra: { charge_id: charge.id } })
+    }
+    return new NextResponse(null, { status: 200 })
+  }
+
+  if (event.type === 'charge.dispute.created' || event.type === 'charge.dispute.closed') {
+    const dispute = event.data.object as Stripe.Dispute
+    try {
+      const admin = createAdminClient()
+      const chargeId = typeof dispute.charge === 'string' ? dispute.charge : dispute.charge?.id ?? null
+      const piId = typeof dispute.payment_intent === 'string' ? dispute.payment_intent : dispute.payment_intent?.id ?? null
+      // Dispute-fee zit in balance_transactions (withdrawal bij created; reversal bij 'won'). Som best-effort.
+      const feeCents = (dispute.balance_transactions ?? []).reduce((s, bt) => s + (bt.fee ?? 0), 0)
+      await admin.from('payment_reversals').upsert({
+        dedupe_key: `dsp_${dispute.id}`, // created + closed upserten dezelfde rij → status evolueert naar won/lost
+        kind: 'dispute',
+        occurred_at: new Date(dispute.created * 1000).toISOString(),
+        status: dispute.status ?? null, // needs_response / under_review / won / lost / ...
+        reason: dispute.reason ?? null,
+        amount: dispute.amount != null ? dispute.amount / 100 : null,
+        currency: dispute.currency ?? null,
+        fee: feeCents ? feeCents / 100 : null,
+        stripe_charge_id: chargeId,
+        stripe_payment_intent_id: piId,
+        stripe_refund_id: null,
+        stripe_dispute_id: dispute.id,
+        user_id: (dispute.metadata?.userId as string | undefined) ?? null, // meestal leeg → later via PI-id joinbaar
+        raw: { status: dispute.status, reason: dispute.reason, is_charge_refundable: dispute.is_charge_refundable,
+               evidence_due_by: dispute.evidence_details?.due_by ?? null },
+      }, { onConflict: 'dedupe_key' })
+    } catch (e) {
+      Sentry.captureException(e, { level: 'warning', tags: { route: 'api/stripe/webhook', step: 'dispute_log' }, extra: { dispute_id: (event.data.object as Stripe.Dispute).id } })
+    }
+    return new NextResponse(null, { status: 200 })
+  }
+
   const session = event.data.object as Stripe.Checkout.Session
 
   if (event.type === 'checkout.session.completed') {
@@ -199,7 +265,22 @@ export async function POST(req: Request) {
       console.error('Failed to add credits:', error)
       return new NextResponse('Database Error', { status: 500 })
     }
-    
+
+    // Betaald-status cachen (gemaksvlag; paid/free is altijd herafleidbaar uit credit_transactions).
+    // Alleen echte aankopen zetten 'm — daarom hier, niet in add_credits (dat draait ook voor grants/refunds).
+    // Best-effort: de credits zijn al toegekend; een gefaalde cache-update mag de webhook niet laten falen.
+    const { error: flagError } = await supabase
+      .from('profiles')
+      .update({ has_ever_purchased: true })
+      .eq('id', userId)
+    if (flagError) {
+      Sentry.captureException(new Error(`Stripe webhook: has_ever_purchased update failed: ${flagError.message}`), {
+        level: 'warning',
+        tags: { route: 'api/stripe/webhook', step: 'has_ever_purchased', user_id: userId },
+        extra: { stripe_session_id: session.id },
+      })
+    }
+
     // Track in PostHog (Server-side)
     const { PostHog } = require('posthog-node')
     const client = new PostHog(

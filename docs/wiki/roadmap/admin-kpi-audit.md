@@ -16,7 +16,7 @@
 | **Launch-readiness** | 🟡 Betaalketen live, randvoorwaarden open | Stripe live+getest, finance klopt. Open: uptime-alerting, anti-abuse, rate-limiting (noop in prod), DB-backups, cookie-consent, chargeback-capture. |
 
 **Antwoord op "capturen we alles wat we willen?":** grotendeels **ja voor het geld** en **ja voor de operations**, maar met **drie echte capture-gaten** die vóór launch dicht moeten omdat ze anders onherstelbaar data verliezen:
-1. **Stripe disputes/chargebacks + geld-refunds** — nergens een webhook-handler (§7.1). 🔴
+1. ~~**Stripe disputes/chargebacks + geld-refunds** — nergens een webhook-handler~~ ✅ **Capture live (2026-07-24, Sprint 1):** `payment_reversals`-tabel + webhook-handlers (`charge.refunded`/`charge.dispute.*`). Resteert: endpoint-event-types aanzetten (Khidr) + P&L-verrekening (follow-up). §7.1.
 2. **Eigen daily-active snapshot** (DAU/WAU/MAU + cohort-retentie) — DB houdt alleen `last_sign_in_at` (overschreven, geen historie); PostHog vangt het wel op (§7.2). 🟠
 3. **Eigen daily-active snapshot** (DAU/WAU/MAU + cohort-retentie) — DB houdt alleen `last_sign_in_at` (overschreven, geen historie); PostHog vangt het wel op (§7.2). 🟠
 
@@ -142,8 +142,8 @@ Drie toestanden per KPI:
 | Credit-liability (outstanding) | ✅ | finance deferred obligation |
 | Time-to-first-purchase | 🟡 | afleidbaar (signup vs eerste sessie); niet berekend |
 | Failed/blocked betalingen | ✅ | `payment_attempts` → finance Radar-regel |
-| **Geld-refund-rate** | 🔴 | **geen `charge.refunded`-handler** — §7.1 |
-| **Chargeback/dispute-rate** | 🔴 | **geen `charge.dispute.*`-handler** — §7.1 |
+| **Geld-refund-rate** | 🟡 | **captured (2026-07-24):** `charge.refunded` → `payment_reversals`; nog niet in dashboard/P&L — §7.1 |
+| **Chargeback/dispute-rate** | 🟡 | **captured (2026-07-24):** `charge.dispute.*` → `payment_reversals`; nog niet in dashboard/P&L — §7.1 |
 
 ### Product-gebruik
 | KPI | Status | Bron / opmerking |
@@ -169,10 +169,10 @@ Drie toestanden per KPI:
 
 ## 7. Capture-gaten gerangschikt op permanentie-risico (dit vóór launch)
 
-### 7.1 🔴 Stripe disputes/chargebacks + geld-refunds — GEEN handler
-De webhook (`apps/app/src/app/api/stripe/webhook/route.ts`) handelt **alleen** `charge.failed`, `payment_intent.payment_failed`, `checkout.session.completed` (+ async-varianten). `grep` op `dispute|chargeback|refund` in `apps/*/src` + `backend/` = **0 hits**.
-- **Gevolg:** een terugboeking/chargeback of geld-refund wordt nergens vastgelegd → dispute-rate onmeetbaar, netto-revenue mogelijk overschat, en fraude-signaal verloren. **Onherstelbaar** (Stripe bewaart het event, maar je eigen keten/attributie niet).
-- **Fix:** handlers voor `charge.dispute.created`/`.closed` + `charge.refunded` → nieuwe tabel (bijv. `payment_reversals`) analoog aan `payment_attempts`; koppelen aan `credit_transactions` voor netto-revenue-correctie. **Klein, hoog rendement.**
+### 7.1 ✅ Stripe disputes/chargebacks + geld-refunds — CAPTURE LIVE (2026-07-24, Sprint 1)
+Was: de webhook handelde alleen geslaagde/mislukte betalingen; teruggestroomd geld werd nergens vastgelegd → dispute-rate onmeetbaar, netto-revenue overschat, fraude-signaal verloren, **onherstelbaar**.
+- **Gebouwd:** migratie `20260724214548` — tabel **`payment_reversals`** (refunds + disputes, `dedupe_key`-idempotent, service-role RLS) + handlers in `apps/app/src/app/api/stripe/webhook/route.ts` voor `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`. Join-sleutel `stripe_payment_intent_id` → `credit_transactions.metadata.payment_intent_id`. Build groen; idempotentie DB-geverifieerd (dispute `created`→`closed` = 1 rij).
+- **Openstaand:** (a) **Khidr** zet de drie event-types aan op de live webhook-endpoint (Stripe Dashboard) — anders levert Stripe ze niet af. (b) **Follow-up:** de reversals verrekenen in `admin_finance_summary` (netto-revenue-correctie) + een dispute-rate-tegel in Operations/Finance. Geen dataverlies meer — dat kan later over bewaarde data.
 
 ### 7.2 🟠 Eigen daily-active snapshot (DAU/WAU/MAU + cohorten)
 DB houdt alleen `last_sign_in_at` (overschreven — geen historie). **PostHog vangt de activiteit wél op**, dus dit is MEDIUM: HIGH als je activiteits-KPI's in je eigen admin/P&L wilt zonder PostHog-afhankelijkheid, LOW als PostHog-dashboards volstaan.
@@ -180,6 +180,8 @@ DB houdt alleen `last_sign_in_at` (overschreven — geen historie). **PostHog va
 
 ### 7.3 🟡 `has_ever_purchased` — gemaksvlag, GEEN capture-gat (gecorrigeerd)
 De kolom bestaat niet in de migraties en niets in de code leest hem; `isPaidUser`/`has_ever_purchased` = 0 hits in `apps/*/src`. Paid/free wordt vandaag **live afgeleid** uit `credit_transactions` (`type='credit'` + `metadata->>stripe_session_id`) in `broadcast.ts:getPaidUserIds`, admin Paid Users, en de growth-conversie-RPC. Omdat elke aankoop permanent een rij schrijft, is de betaald-status **altijd herafleidbaar** → **geen dataverlies**. Een `has_ever_purchased`-vlag (+ zetten in `checkout.session.completed` + backfill) is puur een **cache** voor snelle client-side gating (bijv. upsells verbergen voor payers). Nuttig, goedkoop, maar geen permanentie-risico — daarom 🟡, niet 🔴/🟠.
+
+**Gebouwd (2026-07-24, Sprint 1):** kolom `profiles.has_ever_purchased` toegevoegd (migratie `20260724214548`), gezet door de webhook ná geslaagde `add_credits`, gebackfilld uit bestaande aankopen. Nog geen lezer in de app — bestaat als cache voor toekomstige gating; paid/free blijft intussen live-afgeleid werken.
 
 ### 7.4 🟡 Goedkope instrumentatie-verbeteringen (klein verlies, doe mee als je toch bezig bent)
 - Onboarding-**timestamp** i.p.v. alleen boolean (funnel-timing).

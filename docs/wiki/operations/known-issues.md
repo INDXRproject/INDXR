@@ -143,6 +143,8 @@ van error-/retry-/non-job-verkeer; dat is een expliciete **ondergrens**-verfijni
 ✅ **Afgerond (2026-07-11):** afzender-e-mail → `contact@indxr.ai`; factuur-branding/logo ingesteld (Settings → Branding, logo verschijnt op de on-demand facturen).
 
 Openstaand:
+- [ ] **Webhook-event-types aanzetten (live mode) — vereist voor reversal-capture.** De handlers + tabel `payment_reversals` staan live (Sprint 1, 2026-07-24), maar Stripe levert de events alleen af als de endpoint (`app.indxr.ai/api/stripe/webhook`) is geabonneerd op **`charge.refunded`**, **`charge.dispute.created`** en **`charge.dispute.closed`**. Zonder deze abonnementen registreren we geen refunds/chargebacks (stille blinde vlek). Dashboard → Developers → Webhooks → endpoint → "Select events". Verifieer daarna met een test-refund (Stripe CLI `stripe trigger charge.refunded` of een echte refund) dat er een rij in `payment_reversals` verschijnt.
+- [ ] **Follow-up (code):** reversals verrekenen in `admin_finance_summary` (netto-revenue) + dispute-rate-tegel in Operations/Finance. Zie [admin-kpi-audit §7.1](../roadmap/admin-kpi-audit.md).
 - [ ] **Bij toekomstige BV + holding-structuur**: factuur-NAW/bedrijfsgegevens herzien (juiste rechtsvorm, KVK/BTW-nummer op de factuur).
 
 ### Stripe: valuta-gedrag (geen bug — verwacht)
