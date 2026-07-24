@@ -13008,3 +13008,10 @@ docs/LOG.md
 packages/shared/src/actions/auth-actions.ts
 packages/shared/src/components/UserAvatar.tsx
 ---
+
+[2026-07-24 18:45] contact geverifieerd LIVE: /api/contact stuurt echt mail naar support@indxr.ai (getest door Khidr, komt aan). RESEND_API_KEY + RESEND_FROM (= no-reply@send.indxr.ai) staan nu in het marketing-Vercel-project. Contact-item is af.
+[2026-07-24 17:54] commit: docs(log): contact form verified live (email delivered; RESEND env set in marketing Vercel)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+---
