@@ -8,6 +8,7 @@ import { MarketingOptOutToggle } from "@/components/dashboard/settings/Marketing
 import { LibraryPageSizeSelect } from "@/components/dashboard/settings/LibraryPageSizeSelect"
 import { DeleteAccountCard } from "@/components/dashboard/settings/DeleteAccountCard"
 import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
+import { PageHeader } from "@indxr/shared/components/PageHeader"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -27,11 +28,13 @@ export default async function SettingsPage() {
   const marketingSubscribed = !(profile?.marketing_unsubscribed ?? false)
 
   return (
-    <div className="container max-w-2xl py-10 px-4 sm:px-6 mx-auto animate-in fade-in zoom-in-95 duration-500">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-fg mb-2">Settings</h1>
-        <p className="text-fg-muted">Manage your security preferences.</p>
-      </div>
+    <div className="max-w-2xl mx-auto animate-in fade-in zoom-in-95 duration-500">
+      <PageHeader
+        compact
+        eyebrow="Dashboard"
+        title="Settings"
+        lead="Manage your security, preferences, and account."
+      />
 
       <div className="space-y-8">
         {/* Security */}

@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ChevronRight, AudioLines } from "lucide-react"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
 import { PageHeader } from "@indxr/shared/components/PageHeader"
 import { SectionLabel } from "@indxr/shared/components/SectionLabel"
@@ -90,11 +89,7 @@ export default async function DashboardPage() {
   )
 
   return (
-    <div className="relative min-h-full">
-      {/* Same very-light honeycomb texture as /dashboard/billing. */}
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-
-      <div className="relative max-w-4xl mx-auto w-full flex flex-col">
+    <div className="max-w-4xl mx-auto w-full flex flex-col">
         <PageHeader
           compact
           eyebrow="Dashboard"
@@ -199,6 +194,5 @@ export default async function DashboardPage() {
           </div>
         </section>
       </div>
-    </div>
   )
 }

@@ -5,6 +5,7 @@ import { TransactionHistoryCard } from "@/components/dashboard/settings/Transact
 import { PurchaseHistoryCard, PurchaseRow } from "@/components/dashboard/billing/PurchaseHistoryCard"
 import { SentryFeedbackCard } from "@/components/dashboard/settings/SentryFeedbackCard"
 import { StorageMeterCard } from "@/components/dashboard/StorageMeterCard"
+import { PageHeader } from "@indxr/shared/components/PageHeader"
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -57,11 +58,13 @@ export default async function AccountPage() {
   const purchases = (purchaseRows as PurchaseRow[] | null) ?? []
 
   return (
-    <div className="container max-w-4xl py-10 px-4 sm:px-6 mx-auto animate-in fade-in zoom-in-95 duration-500">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-fg mb-2">Account</h1>
-        <p className="text-fg-muted">Manage your profile and view your transaction history.</p>
-      </div>
+    <div className="max-w-4xl mx-auto animate-in fade-in zoom-in-95 duration-500">
+      <PageHeader
+        compact
+        eyebrow="Dashboard"
+        title="Account"
+        lead="Manage your profile and view your transaction history."
+      />
 
       <div className="space-y-8">
         <ProfileSettingsCard user={user} profile={profile} />

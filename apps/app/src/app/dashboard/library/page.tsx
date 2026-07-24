@@ -15,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from "@indxr/shared/components/ui/dropdown-menu";
 import { Search, LayoutGrid, List as ListIcon, Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight, Folder } from "lucide-react";
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { TranscriptList, Transcript } from "@/components/library/TranscriptList";
 import { cn } from "@indxr/shared/lib/utils";
@@ -195,11 +194,8 @@ function LibraryContent() {
   const pageSubtitle = `${totalCount} transcript${totalCount !== 1 ? "s" : ""}`;
 
   return (
-    <div className="relative flex flex-col min-h-full">
-      {/* Subtle honeycomb page-background texture — behind the content, not in the rows */}
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-
-      <div className="relative flex flex-col flex-1 space-y-0">
+    <div className="flex flex-col min-h-full">
+      <div className="flex flex-col flex-1 space-y-0">
         {/* Top bar */}
         <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
           <h1 className="text-2xl font-semibold text-fg wrap-break-word">

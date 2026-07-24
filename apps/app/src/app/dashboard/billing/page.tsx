@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { PageHeader } from "@indxr/shared/components/PageHeader"
 import { SectionLabel } from "@indxr/shared/components/SectionLabel"
 import { Button } from "@indxr/shared/components/ui/button"
@@ -33,11 +32,7 @@ export default async function BillingPage() {
   const purchases = (purchaseRows as PurchaseRow[] | null) ?? []
 
   return (
-    <div className="relative min-h-full">
-      {/* Same very-light honeycomb texture as /articles, /docs and /pricing. */}
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-
-      <div className="relative max-w-4xl mx-auto w-full flex flex-col">
+    <div className="max-w-4xl mx-auto w-full flex flex-col">
         <PageHeader
           compact
           eyebrow="Account"
@@ -77,7 +72,6 @@ export default async function BillingPage() {
           {/* Facturen staan op /dashboard/account — hier puur het overzicht. */}
           <PurchaseHistoryCard purchases={purchases} showInvoice={false} bare />
         </section>
-      </div>
     </div>
   )
 }

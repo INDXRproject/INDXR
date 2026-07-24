@@ -14,6 +14,7 @@ import { SaveErrorModal } from "@/components/SaveErrorModal"
 import { ActiveJobsIndicator } from "@/components/dashboard/ActiveJobsIndicator"
 import { useEffect } from "react"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
+import { PageHeader } from "@indxr/shared/components/PageHeader"
 
 export default function TranscribePage() {
   const [activeTab, setActiveTab] = useState("video")
@@ -377,10 +378,12 @@ export default function TranscribePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-       <div>
-         <h1 className="text-3xl font-bold text-fg mb-2">Transcribe</h1>
-         <p className="text-fg-muted">Extract captions from videos, playlists, or audio files. <a href={marketingHref('/docs')} className="text-accent hover:underline">Learn more →</a></p>
-       </div>
+       <PageHeader
+         compact
+         eyebrow="Dashboard"
+         title="Transcribe"
+         lead={<>Extract captions from videos, playlists, or audio files. <a href={marketingHref('/docs')} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Learn more →</a></>}
+       />
 
        <ActiveJobsIndicator />
 

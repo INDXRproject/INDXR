@@ -162,4 +162,19 @@ action. Op **mobiel** (sidebar ingeklapt) is die knop het enige zichtbare pad na
 hij is groot en goed aanraakbaar. Alles wat op desktop naast elkaar staat (saldo + knop, de twee
 statistiekkaarten) stapelt op smal scherm.
 
+## Dashboard-shell (alle ingelogde pagina's)
+
+- **Hexagon-textuur staat nu in de `dashboard/layout.tsx`** (één `HexagonPattern` achter alle
+  dashboard-pagina's), niet meer per pagina. De losse kopieën op Home/Billing/Library zijn
+  verwijderd — één bron, uniform. Nieuwe dashboard-pagina's krijgen de textuur automatisch.
+- **`PageHeader` (compact)** op Home, Billing, Account, Settings en Transcribe (eyebrow +
+  titel + lead + hairline). Messages en Library houden hun functionele koppen (tabs/toolbar).
+- **In-app footer** in de layout: `Docs · Articles · Privacy · Terms · Contact`, **openen in
+  nieuw tabblad** (ze leven op de marketing-host). Dekt desktop én mobiel — ingelogde users
+  hadden anders geen route naar docs/legal. De `/terms`-link is óók bij checkout bereikbaar via
+  de ToS-checkbox op Billing.
+- **Marketing-footer uitgekleed** tot `About · Privacy · Terms · Contact` (+ ©). De oude
+  Export-Formats/Learn-kolommen waren een link-farm zonder SEO-waarde (docs/articles staan in de
+  header-nav + sitemap).
+
 Zie ook: [hero-images.md](hero-images.md) voor de homepage-hero (aparte fotoketen, licht/donker).

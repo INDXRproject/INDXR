@@ -12892,3 +12892,33 @@ docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/operations/known-issues.md
 ---
+
+[2026-07-24 16:40] dashboard-sweep + footer: hexagon-textuur naar dashboard/layout.tsx (uniform, per-pagina kopieën op Home/Billing/Library weg). PageHeader (compact) op Account/Settings/Transcribe (Home/Billing hadden al). In-app footer in de layout: Docs/Articles/Privacy/Terms/Contact, opent in nieuw tabblad (route voor ingelogde users naar docs/legal, desktop+mobiel). Marketing-Footer uitgekleed tot About/Privacy/Terms/Contact (Export-Formats/Learn-kolommen weg — link-farm zonder SEO-waarde, docs/articles staan in header+sitemap). Build beide apps groen.
+Changed: apps/app/src/app/dashboard/layout.tsx, apps/app/src/app/dashboard/{page,billing/page,library/page,account/page,settings/page,transcribe/page}.tsx, packages/shared/src/components/Footer.tsx, docs/wiki/design/editorial-images.md
+[2026-07-24 16:35] commit: feat(dashboard): finish the presentation sweep + slim the footers
+
+- Hexagon texture moved into dashboard/layout.tsx so every logged-in page shares one
+  background (removed the per-page copies on Home/Billing/Library).
+- PageHeader (compact) on Account, Settings and Transcribe (Home/Billing already had it);
+  Messages and Library keep their functional tab/toolbar headers.
+- New in-app footer in the dashboard layout: Docs / Articles / Privacy / Terms / Contact,
+  opening in a new tab (they live on the marketing host) — gives logged-in users a route to
+  docs/legal on desktop and mobile. (/terms is also reachable at checkout via the ToS box.)
+- Marketing Footer slimmed to About / Privacy / Terms / Contact (+ ©). The old Export-Formats
+  and Learn columns were a link farm with no SEO value — docs/articles are in the header nav
+  and the sitemap.
+
+Build green: both apps compiled (marketing 58, app 46), exit 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/account/page.tsx
+apps/app/src/app/dashboard/billing/page.tsx
+apps/app/src/app/dashboard/layout.tsx
+apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/app/dashboard/page.tsx
+apps/app/src/app/dashboard/settings/page.tsx
+apps/app/src/app/dashboard/transcribe/page.tsx
+docs/LOG.md
+docs/wiki/design/editorial-images.md
+packages/shared/src/components/Footer.tsx
+---
