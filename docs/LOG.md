@@ -12945,3 +12945,20 @@ apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx
 apps/app/src/components/dashboard/settings/SentryFeedbackCard.tsx
 apps/app/src/components/dashboard/settings/TransactionHistoryCard.tsx
 ---
+[2026-07-24 17:18] commit: fix(billing): credit coin on balance, drop redundant button, Try selectable
+
+- Credits balance now shows the HexagonCreditIcon coin next to the number (like Home).
+- Removed the 'Buy credits' button — the packages sit right below it, so it was redundant.
+- Try is now a selectable radio in the same group as Starter/Plus/Power (highlights when
+  chosen); the single buy button reflects it ('Buy Try — €5.00') and the ToS checkbox gates
+  it too — you can't buy Try without accepting. Removed Try's separate button.
+  PricingTiers: renderCta is now optional (cta mode / marketing only); select mode uses one
+  footerSlot below the whole list. Marketing /pricing unchanged (still per-card buttons).
+
+Build green: both apps compiled, exit 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/billing/page.tsx
+apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
+packages/shared/src/components/pricing/PricingTiers.tsx
+---

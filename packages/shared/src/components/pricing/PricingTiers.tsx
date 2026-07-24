@@ -38,15 +38,16 @@ interface Selection {
 }
 
 interface PricingTiersProps {
-  // Retourneert de CTA voor één pakket. In select mode alleen gebruikt voor de Try-strip.
-  renderCta: (pkg: PricingPackage, opts?: { compact?: boolean }) => ReactNode
-  // Aanwezig = select mode: prominente kaarten worden radioknoppen i.p.v. CTA-kaarten.
+  // Per-pakket CTA (cta mode = marketing). Niet gebruikt in select mode — daar is elke kaart,
+  // inclusief Try, een radioknop en koop je via één knop in de footerSlot.
+  renderCta?: (pkg: PricingPackage, opts?: { compact?: boolean }) => ReactNode
+  // Aanwezig = select mode: álle pakketten (Starter/Plus/Power én Try) worden radioknoppen.
   selection?: Selection
-  // Tussen de prominente grid en de Try-strip (billing: ToS-checkbox + één koopknop).
-  betweenSlot?: ReactNode
+  // Onder de hele lijst (billing: ToS-checkbox + één koopknop die de selectie weerspiegelt).
+  footerSlot?: ReactNode
 }
 
-export function PricingTiers({ renderCta, selection, betweenSlot }: PricingTiersProps) {
+export function PricingTiers({ renderCta, selection, footerSlot }: PricingTiersProps) {
   const prominent = PACKAGES.filter((p) => p.prominent)
   const secondary = PACKAGES.filter((p) => !p.prominent)
 
@@ -66,39 +67,69 @@ export function PricingTiers({ renderCta, selection, betweenSlot }: PricingTiers
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto items-start">
           {prominent.map((pkg) => (
-            <ProminentCard key={pkg.id} pkg={pkg} cta={renderCta(pkg)} />
+            <ProminentCard key={pkg.id} pkg={pkg} cta={renderCta?.(pkg)} />
           ))}
         </div>
       )}
 
-      {/* Billing injecteert hier de ToS-checkbox + één koopknop, direct onder de grid. */}
-      {betweenSlot}
-
-      {/* Secundaire strip (Try) — bewust niet als gelijkwaardige vierde kaart (ADR-058) */}
+      {/* Secundaire strip (Try) — bewust niet als gelijkwaardige vierde kaart (ADR-058), maar in
+          select mode wél selecteerbaar zodat alle vier pakketten hetzelfde koop-pad delen. */}
       {secondary.length > 0 && (
         <div className="mt-8 max-w-md mx-auto">
           <p className="text-center text-xs text-[var(--fg-muted)] mb-3">
             Just want to try it on a single project first?
           </p>
-          {secondary.map((pkg) => (
-            <div
-              key={pkg.id}
-              className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] p-4 flex items-center gap-4"
-            >
-              <img src={pkg.image} alt="" aria-hidden className="h-12 w-12 shrink-0 object-contain" />
-              <div className="min-w-0 flex-1">
-                <h4 className="text-sm font-semibold text-[var(--fg)]">
-                  {pkg.name} · {formatEur(pkg.priceEur)}
-                </h4>
-                <p className="text-xs text-[var(--fg-muted)]">
-                  {pkg.credits.toLocaleString()} credits — {pkg.audience}
-                </p>
+          {secondary.map((pkg) => {
+            const info = (
+              <>
+                <img src={pkg.image} alt="" aria-hidden className="h-12 w-12 shrink-0 object-contain" />
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-sm font-semibold text-[var(--fg)]">
+                    {pkg.name} · {formatEur(pkg.priceEur)}
+                  </h4>
+                  <p className="text-xs text-[var(--fg-muted)]">
+                    {pkg.credits.toLocaleString()} credits — {pkg.audience}
+                  </p>
+                </div>
+              </>
+            )
+            if (selection) {
+              const selected = selection.selectedId === pkg.id
+              return (
+                <label
+                  key={pkg.id}
+                  className={`flex items-center gap-4 rounded-lg border p-4 cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-[var(--accent)] ${
+                    selected
+                      ? `border-[var(--accent)] ring-1 ring-[var(--accent)] ${TINT}`
+                      : "border-[var(--border-subtle)] bg-[var(--bg-subtle)] hover:border-[var(--accent)]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="billing-plan"
+                    className="sr-only"
+                    checked={selected}
+                    onChange={() => selection.onSelect(pkg.id)}
+                  />
+                  {info}
+                </label>
+              )
+            }
+            return (
+              <div
+                key={pkg.id}
+                className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] p-4 flex items-center gap-4"
+              >
+                {info}
+                <div className="shrink-0">{renderCta?.(pkg, { compact: true })}</div>
               </div>
-              <div className="shrink-0">{renderCta(pkg, { compact: true })}</div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
+
+      {/* Billing: ToS-checkbox + één koopknop, onder de hele lijst (weerspiegelt de selectie). */}
+      {footerSlot}
     </div>
   )
 }

@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
 
 import { PageHeader } from "@indxr/shared/components/PageHeader"
 import { SectionLabel } from "@indxr/shared/components/SectionLabel"
-import { Button } from "@indxr/shared/components/ui/button"
+import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { BillingPurchaseGrid } from "@/components/dashboard/billing/BillingPurchaseGrid"
 import { PurchaseHistoryCard, PurchaseRow } from "@/components/dashboard/billing/PurchaseHistoryCard"
@@ -43,17 +42,13 @@ export default async function BillingPage() {
         {/* Credits balance — compact row: balance prominent, button beside it (not below). */}
         <section className="mb-12">
           <SectionLabel label="Credits balance" />
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface px-6 py-5">
+          {/* Balance only — no "Buy credits" button here; the packages are right below. */}
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-6 py-5">
+            <HexagonCreditIcon className="size-9 shrink-0" />
             <div className="flex items-baseline gap-2">
               <span className="text-4xl sm:text-5xl font-bold tracking-tight text-fg tabular-nums">{credits}</span>
               <span className="text-sm text-fg-subtle font-medium">credits available</span>
             </div>
-            <Button
-              className="bg-accent text-fg hover:bg-accent-hover active:scale-[0.97] transition-all duration-150 ease-out font-semibold"
-              asChild
-            >
-              <Link href="#packages">Buy credits</Link>
-            </Button>
           </div>
         </section>
 

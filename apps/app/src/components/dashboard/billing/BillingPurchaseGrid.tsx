@@ -2,17 +2,18 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
-import { PricingTiers, pricingCtaClassName } from "@indxr/shared/components/pricing/PricingTiers"
+import { PricingTiers } from "@indxr/shared/components/pricing/PricingTiers"
 import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
 import { PACKAGES, VALID_PLAN_IDS, formatEur } from "@indxr/shared/lib/pricing"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
 
 const DEFAULT_PLAN = "plus"
 
-// Select-then-buy: the three prominent cards are one radio group (Plus selected by default),
-// the ToS checkbox and a single buy button sit directly under the grid so it's unambiguous what
-// you're agreeing to, and the button reflects the selection. Try keeps its own row + own button,
-// outside the selection. Native radios give keyboard support for free (arrows move + select).
+// Select-then-buy: all four packages (Starter/Plus/Power AND Try) are one radio group (Plus
+// selected by default). The ToS checkbox and a single buy button sit under the whole list, so it's
+// unambiguous what you're agreeing to, and the button reflects the selection (incl. "Buy Try").
+// The ToS gates every purchase — you can't buy Try without accepting either. Native radios give
+// keyboard support for free (arrows move + select).
 export function BillingPurchaseGrid() {
   const [selected, setSelected] = useState<string>(DEFAULT_PLAN)
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
@@ -47,12 +48,12 @@ export function BillingPurchaseGrid() {
   }
 
   // Arriving from the marketing buy-button (…/dashboard/billing?checkout=<plan>): preselect that
-  // plan (if it's one of the three prominent tiers) so the buy button reflects the intent. We do
-  // NOT auto-redirect — the Terms must be accepted first, so the user ticks the box and clicks Buy.
+  // plan so the buy button reflects the intent. We do NOT auto-redirect — the Terms must be
+  // accepted first, so the user ticks the box and clicks Buy.
   useEffect(() => {
     if (autoSelected.current) return
     const plan = searchParams.get("checkout")
-    if (plan && VALID_PLAN_IDS.has(plan) && PACKAGES.find((p) => p.id === plan)?.prominent) {
+    if (plan && VALID_PLAN_IDS.has(plan)) {
       autoSelected.current = true
       setSelected(plan)
     }
@@ -91,7 +92,7 @@ export function BillingPurchaseGrid() {
 
       <PricingTiers
         selection={{ selectedId: selected, onSelect: setSelected, groupLabel: "Choose a credit package" }}
-        betweenSlot={
+        footerSlot={
           <div className="max-w-4xl mx-auto mt-8 flex flex-col gap-4">
             {tos}
             <button
@@ -104,16 +105,6 @@ export function BillingPurchaseGrid() {
             </button>
           </div>
         }
-        renderCta={(pkg, opts) => (
-          <button
-            onClick={() => checkout(pkg.id)}
-            disabled={!accepted || loadingPlan !== null}
-            title={!accepted ? "Accept the Terms of Service and Privacy Policy first" : undefined}
-            className={pricingCtaClassName(false, opts?.compact)}
-          >
-            {loadingPlan === pkg.id ? "Redirecting…" : `Buy ${pkg.name}`}
-          </button>
-        )}
       />
     </div>
   )
