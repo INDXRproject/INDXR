@@ -13043,3 +13043,12 @@ docs/wiki/INDEX.md
 docs/wiki/content/content-rewrite-map.md
 docs/wiki/operations/known-issues.md
 ---
+[2026-07-24 22:49] commit: fix(dashboard): stack message preview (subject over body) so it doesn't cut off oddly
+
+The Home messages preview put the subject and the body preview on one line, both truncated,
+which read as a strange mid-line cut. Now the subject sits above the body preview, each on its
+own truncated line, with the date on the right.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/page.tsx
+---

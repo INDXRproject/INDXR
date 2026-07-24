@@ -136,14 +136,16 @@ export default async function DashboardPage() {
                 <Link
                   key={msg.id}
                   href="/dashboard/messages"
-                  className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-surface-elevated transition-colors"
+                  className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-surface-elevated transition-colors"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {!msg.read && <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />}
-                    <span className={`text-sm truncate ${msg.read ? "text-fg" : "font-semibold text-fg"}`}>{msg.title}</span>
-                    <span className="text-xs text-fg-muted truncate hidden sm:inline">{msg.body}</span>
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    {!msg.read && <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-accent shrink-0" />}
+                    <div className="min-w-0">
+                      <p className={`text-sm truncate ${msg.read ? "text-fg" : "font-semibold text-fg"}`}>{msg.title}</p>
+                      <p className="text-xs text-fg-muted truncate mt-0.5">{msg.body}</p>
+                    </div>
                   </div>
-                  <span className="text-xs text-fg-muted shrink-0">{formatDate(msg.created_at)}</span>
+                  <span className="text-xs text-fg-muted shrink-0 mt-0.5">{formatDate(msg.created_at)}</span>
                 </Link>
               ))}
             </div>
