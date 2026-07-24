@@ -67,11 +67,10 @@ export default async function AccountPage() {
       />
 
       <div className="space-y-8">
+        {/* Identity → money (credit activity, then payments) → storage → support. */}
         <ProfileSettingsCard user={user} profile={profile} />
-        {/* Billing & Credits: betaalhistorie + facturen (payments/receipts) boven de
-            credit-ledger (balans + verbruik) — twee duidelijk gescheiden lenzen. */}
-        <PurchaseHistoryCard purchases={purchases} />
         <TransactionHistoryCard transactions={transactions || []} credits={credits} />
+        <PurchaseHistoryCard purchases={purchases} />
         <StorageMeterCard libraryBytes={libraryBytes} capBytes={capBytes} />
         <SentryFeedbackCard userId={user.id} email={user.email} />
       </div>

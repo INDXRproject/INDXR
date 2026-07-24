@@ -80,10 +80,10 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
   }
 
   return (
-    <Card className="bg-surface/50 border-border">
+    <Card className="bg-surface border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-            <CardTitle className="text-fg">Profile & Identity</CardTitle>
+            <CardTitle className="text-lg text-fg">Profile & Identity</CardTitle>
             {isVerified ? (
                 <Badge variant="outline" className="border-green-500/50 text-success bg-success-subtle gap-1">
                     <CheckCircle2 className="h-3 w-3" /> Verified
@@ -142,24 +142,6 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                 <p className="text-xs text-fg-muted">
                     3-20 chars, letters, numbers, underscores, or hyphens only.
                 </p>
-            </div>
-            
-            <div className="grid gap-2">
-                <Label className="text-fg">Avatar Color</Label>
-                <div className="flex gap-2">
-                    {AVATAR_COLORS.map(color => (
-                        <button
-                            key={color}
-                            type="button"
-                            disabled={!isEditing}
-                            onClick={() => setAvatarColor(color)}
-                            className={`w-8 h-8 rounded-full ${color} transition-all border-2 ${
-                                avatarColor === color ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100 disabled:hover:opacity-50'
-                            }`}
-                            aria-label={`Select ${color.replace('bg-', '').replace('-500', '')} avatar color`}
-                        />
-                    ))}
-                </div>
             </div>
             
             <div className="grid gap-2">

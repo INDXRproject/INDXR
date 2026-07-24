@@ -12922,3 +12922,26 @@ docs/LOG.md
 docs/wiki/design/editorial-images.md
 packages/shared/src/components/Footer.tsx
 ---
+[2026-07-24 17:13] commit: fix(account,settings): consistent width, tidy cards, remove avatar-color
+
+- Settings now max-w-4xl (matches Account); removed the 'Custom themes coming soon' line.
+  Structure confirmed: Security → Preferences (theme + email toggles + page size) →
+  Developer exports → Delete account.
+- Account cards normalised: all headings text-lg font-semibold on bg-surface (Library storage
+  was text-lg, the rest inherited text-base — now uniform). Reordered to Profile → Credit
+  activity → Purchases & invoices → Library storage → Report a problem.
+- Removed the Avatar Color picker (no purpose); the stored colour is still submitted so the
+  topbar avatar keeps working — no data wiped, no new errors.
+- 'Report a problem' now links to /dashboard/messages?tab=support (a real support ticket)
+  instead of the fire-and-forget Sentry dialog; Sentry.setUser kept for error attribution.
+
+Build green (app, 46 pages, exit 0).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/account/page.tsx
+apps/app/src/app/dashboard/settings/page.tsx
+apps/app/src/components/dashboard/billing/PurchaseHistoryCard.tsx
+apps/app/src/components/dashboard/settings/ProfileSettingsCard.tsx
+apps/app/src/components/dashboard/settings/SentryFeedbackCard.tsx
+apps/app/src/components/dashboard/settings/TransactionHistoryCard.tsx
+---

@@ -69,9 +69,9 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
   const displayedTransactions = showAll ? transactions : transactions.slice(0, 10)
 
   return (
-    <Card className="bg-surface/50 border-border">
+    <Card className="bg-surface border-border">
       <CardHeader>
-        <CardTitle className="text-fg">Credit activity</CardTitle>
+        <CardTitle className="text-lg text-fg">Credit activity</CardTitle>
         <CardDescription className="text-fg-muted">Your balance and full credit history — purchases, usage and refunds</CardDescription>
       </CardHeader>
       <CardContent>

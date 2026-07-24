@@ -28,7 +28,7 @@ export default async function SettingsPage() {
   const marketingSubscribed = !(profile?.marketing_unsubscribed ?? false)
 
   return (
-    <div className="max-w-2xl mx-auto animate-in fade-in zoom-in-95 duration-500">
+    <div className="max-w-4xl mx-auto animate-in fade-in zoom-in-95 duration-500">
       <PageHeader
         compact
         eyebrow="Dashboard"
@@ -42,10 +42,7 @@ export default async function SettingsPage() {
 
         {/* Preferences */}
         <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
-          <div>
-            <h2 className="text-fg font-semibold mb-1">Preferences</h2>
-            <p className="text-fg-muted text-sm">Custom themes coming soon.</p>
-          </div>
+          <h2 className="text-lg font-semibold text-fg">Preferences</h2>
           <div className="flex items-center justify-between py-3 border-t border-border/50">
             <div>
               <p className="text-sm font-medium text-fg">Theme</p>

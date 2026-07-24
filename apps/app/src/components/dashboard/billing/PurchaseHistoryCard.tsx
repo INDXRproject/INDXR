@@ -67,7 +67,7 @@ export function PurchaseHistoryCard({ purchases, showInvoice = true, bare = fals
   return (
     <Card className="bg-surface border-border">
       <CardHeader>
-        <CardTitle className="text-fg">{showInvoice ? "Purchases & invoices" : "Purchase history"}</CardTitle>
+        <CardTitle className="text-lg text-fg">{showInvoice ? "Purchases & invoices" : "Purchase history"}</CardTitle>
         <CardDescription className="text-fg-subtle">
           {showInvoice
             ? "Your payments. Request an invoice for any purchase — it stays available to download afterwards."
