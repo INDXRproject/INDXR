@@ -53,7 +53,7 @@ export default async function BillingPage() {
         </section>
 
         {/* Credit packages — select-then-buy grid. */}
-        <section className="mb-12 scroll-mt-8" id="packages">
+        <section className="mb-12">
           <SectionLabel label="Credit packages" />
           <p className="text-sm text-fg-muted -mt-2 mb-5">
             Pick a package, then confirm below. Credits never expire.

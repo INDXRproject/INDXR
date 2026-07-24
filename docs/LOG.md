@@ -13015,3 +13015,31 @@ packages/shared/src/components/UserAvatar.tsx
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 ---
+
+[2026-07-24 19:30] launch-opruim + content-prep. has_ever_purchased NIET toegevoegd (niemand leest/schrijft het, af te leiden uit credit_transactions → speculatief). RAG chunk-size ✓-feedback bleek al gefixt (groene Check in DeveloperExportsCard) — known-issue afgevinkt. Dode code weg: TestimonialPlaceholder (orphan) + billing #packages-anchor (dood sinds Buy-credits-knop weg). Content-prep: content-rewrite-map.md (kickoff die product-truth/writing-standard/content-sitemap samenbindt + inline-copy-locaties + placeholder/asset-gaten: RemotionLoop/MacbookMockup/docs-figures/onboarding/testimonials) + INDEX-rij. Bevinding: marketing-claims kloppen + zijn dynamisch (pricing.ts) → herschrijf = kwaliteit/voice, geen feiten-fix. Build beide apps groen.
+Changed: apps/app/src/app/dashboard/billing/page.tsx, docs/wiki/content/content-rewrite-map.md (new), docs/wiki/INDEX.md, docs/wiki/operations/known-issues.md; removed apps/marketing/src/components/marketing/TestimonialPlaceholder.tsx
+[2026-07-24 18:13] commit: chore: launch cleanup + content-rewrite kickoff map
+
+- Removed dead code: orphan TestimonialPlaceholder component + the now-unused #packages
+  anchor on billing (dead since the 'Buy credits' button was removed).
+- has_ever_purchased: intentionally NOT added — nothing reads/writes it and it's derivable
+  from credit_transactions, so implementing it would be speculative.
+- RAG chunk-size '✓' feedback: verified already fixed (green Check for 2s in
+  DeveloperExportsCard) — known-issue closed.
+- Content prep: added content-rewrite-map.md — a lean kickoff that ties the existing
+  product-truth / writing-standard / content-sitemap docs together and adds what wasn't
+  documented: where the inline copy lives (landing page.tsx, pricing faqItems) and the
+  placeholder/asset gaps (RemotionLoop, Macbook mockups, docs figures, onboarding wizard,
+  testimonials). Finding: marketing claims are factually correct and dynamic (pricing.ts),
+  so the rewrite is a quality/voice pass, not a facts fix.
+
+Build green: both apps compiled, exit 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/billing/page.tsx
+apps/marketing/src/components/marketing/TestimonialPlaceholder.tsx
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/content/content-rewrite-map.md
+docs/wiki/operations/known-issues.md
+---
