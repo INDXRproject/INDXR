@@ -4,7 +4,7 @@ import { useState, useMemo, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { Switch } from "@indxr/shared/components/ui/switch"
 import { eur, pct, TYPE_META } from "../adminTypes"
-import type { FinanceSummary, FinanceScope, SnapshotRow, ExpenseRow, CostConfigRow, EnteredOpexLine } from "./financeTypes"
+import type { FinanceSummary, FinanceScope, SnapshotRow, ExpenseRow, CostConfigRow, EnteredOpexLine, ReversalsSummary, ReversalsScope } from "./financeTypes"
 import { shiftAnchor, presets, atLowerBound, type PeriodKind } from "./periods"
 import { accrualForRange } from "./accrual"
 import { FinanceSettings } from "./SettingsDialog"
@@ -22,6 +22,7 @@ interface PeriodProp {
 interface Props {
   summary: FinanceSummary
   comparison: FinanceSummary | null
+  reversals: ReversalsSummary | null
   snapshots: SnapshotRow[]
   expenses: ExpenseRow[]
   costConfig: CostConfigRow | null
@@ -533,6 +534,74 @@ function RevenueByRegion({ s }: { s: FinanceScope }) {
   )
 }
 
+// Refunds + chargebacks (payment_reversals via admin_reversals_summary). Money flowing back OUT — the
+// counterpart to revenue. Deliberately NOT folded into the P&L above yet (the recognition engine stays
+// audited); shown here as a standalone line so it's visible the moment a real refund/dispute lands.
+function ReversalsCard({ r, netRevenue }: { r: ReversalsScope | null; netRevenue: number }) {
+  const empty = !r || (r.refund.count === 0 && r.dispute.count === 0)
+  return (
+    <div className="rounded-xl border bg-surface p-5">
+      <h3 className="text-sm font-semibold">Refunds &amp; chargebacks</h3>
+      <p className="mb-3 text-xs text-fg-muted">Money flowing back out — refunds you issued and disputes raised by banks.</p>
+      {empty || !r ? (
+        <p className="text-xs text-fg-subtle">No refunds or chargebacks in this period.</p>
+      ) : (
+        <div className="space-y-2 text-sm">
+          {r.refund.count > 0 && (
+            <div className="flex justify-between">
+              <span className="text-fg-muted">Refunds <span className="text-fg-subtle">· {r.refund.count}</span></span>
+              <span className="font-semibold tabular-nums text-error">{eur(r.refund.amount)}</span>
+            </div>
+          )}
+          {r.dispute.count > 0 && (
+            <>
+              <div className="flex justify-between">
+                <span className="text-fg-muted">Chargebacks <span className="text-fg-subtle">· {r.dispute.count}</span></span>
+                <span className="font-semibold tabular-nums text-error">{eur(r.dispute.amount)}</span>
+              </div>
+              {r.dispute.lost_count > 0 && (
+                <div className="flex justify-between pl-3 text-xs text-fg-muted">
+                  <span>lost <span className="text-fg-subtle">· {r.dispute.lost_count}</span></span>
+                  <span className="tabular-nums">{eur(r.dispute.lost_amount)}</span>
+                </div>
+              )}
+              {r.dispute.open_count > 0 && (
+                <div className="flex justify-between pl-3 text-xs text-warning">
+                  <span>open · at risk <span className="text-fg-subtle">· {r.dispute.open_count}</span></span>
+                  <span className="tabular-nums">{eur(r.dispute.open_amount)}</span>
+                </div>
+              )}
+              {r.dispute.won_count > 0 && (
+                <div className="flex justify-between pl-3 text-xs text-fg-subtle">
+                  <span>won <span className="text-fg-subtle">· {r.dispute.won_count}</span></span>
+                  <span className="tabular-nums">recovered</span>
+                </div>
+              )}
+              {r.dispute.fee > 0 && (
+                <div className="flex justify-between pl-3 text-xs text-fg-muted">
+                  <span>dispute fees</span>
+                  <span className="tabular-nums text-error">{eur(r.dispute.fee)}</span>
+                </div>
+              )}
+            </>
+          )}
+          <div className="flex justify-between border-t pt-2">
+            <span className="font-medium">Money out <span className="text-fg-subtle text-xs">(settled)</span></span>
+            <span className="font-bold tabular-nums text-error">{eur(r.money_out)}</span>
+          </div>
+          <div className="mt-3 flex items-center justify-between rounded-lg bg-surface-sunken px-3 py-2">
+            <span className="text-[11px] text-fg-muted">Revenue after reversals</span>
+            <span className="text-xs font-semibold tabular-nums text-fg">{eur(netRevenue - r.money_out)}</span>
+          </div>
+          <p className="text-[11px] text-fg-subtle">
+            Not yet deducted from the P&amp;L above (capture-first). Open disputes are at risk, not counted in money-out until lost.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DeferredCard({ s }: { s: FinanceScope }) {
   const d = s.deferred
   // Insufficient data: no consumption in the last window_days → no rate to base a delivery-cost estimate on.
@@ -714,13 +783,14 @@ function PeriodPicker({ period, nowISO }: { period: PeriodProp; nowISO: string }
 }
 
 export function FinanceView(props: Props) {
-  const { summary, comparison, snapshots, expenses, costConfig, deferredWindowDays, period, generatedAt } = props
+  const { summary, comparison, reversals, snapshots, expenses, costConfig, deferredWindowDays, period, generatedAt } = props
   const router = useRouter()
   const [showTest, setShowTest] = useState(false)
   // In-place scope swap: the whole view shows ONE scope at a time, figures swap in place.
   const isExternal = !showTest
   const scopeKey: "external" | "internal" = isExternal ? "external" : "internal"
   const scope: FinanceScope = summary[scopeKey]
+  const revScope: ReversalsScope | null = reversals?.[scopeKey] ?? null
   const cmp = comparison?.[scopeKey] ?? null
   const netDelta = cmp ? delta(scope.net_profit, cmp.net_profit) : null
   const revDelta = cmp ? delta(scope.revenue_delivered, cmp.revenue_delivered) : null
@@ -800,6 +870,7 @@ export function FinanceView(props: Props) {
           <RevenueByRegion s={scope} />
           <BankBridge s={scope} />
           <DeferredCard s={scope} />
+          <ReversalsCard r={revScope} netRevenue={scope.revenue_delivered} />
         </div>
       </div>
 

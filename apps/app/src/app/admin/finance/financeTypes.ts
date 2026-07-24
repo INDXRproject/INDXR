@@ -173,6 +173,28 @@ export interface FinanceSummary {
   internal: FinanceScope
 }
 
+// admin_reversals_summary(p_from,p_to) — refunds + chargebacks/disputes per scope. Aparte RPC (raakt de
+// geauditeerde admin_finance_summary niet). money_out = definitief weg (refunds + verloren disputes + fees).
+export interface ReversalsScope {
+  refund: { count: number; amount: number }
+  dispute: {
+    count: number
+    amount: number
+    fee: number
+    open_count: number
+    open_amount: number
+    won_count: number
+    lost_count: number
+    lost_amount: number
+  }
+  money_out: number
+}
+
+export interface ReversalsSummary {
+  external: ReversalsScope
+  internal: ReversalsScope
+}
+
 // finance_daily_snapshot row (trend source)
 export interface SnapshotRow {
   snapshot_date: string

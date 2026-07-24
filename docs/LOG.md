@@ -13110,3 +13110,32 @@ docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/admin-kpi-audit.md
 supabase/migrations/20260724214548_payment_reversals_and_has_ever_purchased.sql
 ---
+
+[2026-07-25 00:15] taak: chargeback/refund-weergave in Finance (RPC admin_reversals_summary + ReversalsCard) | gewijzigd: supabase/migrations/20260724221925_admin_reversals_summary.sql (nieuw, MCP 109->110), apps/app/src/app/admin/finance/{page.tsx,financeTypes.ts,FinanceView.tsx}, docs/wiki/architecture/database-schema.md, docs/wiki/roadmap/admin-kpi-audit.md | build groen (exit 0), RPC DB-geverifieerd (scope-resolutie external/internal correct), aparte RPC laat admin_finance_summary 31/0/0 ongemoeid
+[2026-07-25 00:24] commit: feat(admin): surface refunds + chargebacks in Finance (ReversalsCard)
+
+Bouwt de chargeback-regel werkend uit de admin-KPI-audit. Nieuwe RPC
+admin_reversals_summary (migratie 20260724221925, MCP 109->110) leest
+payment_reversals en geeft per scope refunds + disputes (lost/open/won/fees) +
+money_out terug. Scope-split via user_id direct of via payment_intent_id ->
+credit_transactions; onbekend = external. SECURITY DEFINER, service-role only.
+
+Finance-tab: ReversalsCard 'Refunds & chargebacks' in de zijkolom (scope/periode-
+aware) met 'Money out (settled)' + 'Revenue after reversals'. Bewust een APARTE
+RPC + kaart -> de getal-voor-getal geauditeerde admin_finance_summary (31/0/0)
+blijft ongemoeid; P&L-verrekening is een aparte follow-up. Lege staat live
+(0 reversals), vult bij de eerste echte refund/chargeback.
+
+Verificatie: build groen (exit 0); RPC DB-getest op synthetische rijen (external
+verloren dispute money_out=20, interne refund money_out=3,49; scope-resolutie
+correct), testrijen opgeruimd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/finance/FinanceView.tsx
+apps/app/src/app/admin/finance/financeTypes.ts
+apps/app/src/app/admin/finance/page.tsx
+docs/LOG.md
+docs/wiki/architecture/database-schema.md
+docs/wiki/roadmap/admin-kpi-audit.md
+supabase/migrations/20260724221925_admin_reversals_summary.sql
+---

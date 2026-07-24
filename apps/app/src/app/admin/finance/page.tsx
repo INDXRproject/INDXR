@@ -1,7 +1,7 @@
 import { createAdminClient } from "@indxr/shared/utils/supabase/admin"
 import { FinanceView } from "./FinanceView"
 import { makePeriod, type PeriodKind } from "./periods"
-import type { FinanceSummary, SnapshotRow, ExpenseRow, CostConfigRow } from "./financeTypes"
+import type { FinanceSummary, SnapshotRow, ExpenseRow, CostConfigRow, ReversalsSummary } from "./financeTypes"
 
 export const dynamic = "force-dynamic"
 
@@ -27,9 +27,10 @@ export default async function AdminFinancePage({
   const businessStart = new Date(businessStartISO + "T00:00:00Z")
   const period = makePeriod(kind, anchor, now, customTo, businessStart)
 
-  const [curRes, cmpRes, snapRes, expRes, cfgRes] = await Promise.all([
+  const [curRes, cmpRes, revRes, snapRes, expRes, cfgRes] = await Promise.all([
     admin.rpc("admin_finance_summary", { p_from: period.from.toISOString(), p_to: period.to.toISOString() }),
     admin.rpc("admin_finance_summary", { p_from: period.compareFrom.toISOString(), p_to: period.compareTo.toISOString() }),
+    admin.rpc("admin_reversals_summary", { p_from: period.from.toISOString(), p_to: period.to.toISOString() }),
     admin.from("finance_daily_snapshot").select(
       "snapshot_date,scope,cash_in,vat,revenue_delivered,net_profit_measured,deferred_balance,cor_ai_transcription,cor_caption,cor_ai_summary,cor_rag,cor_storage",
     ).order("snapshot_date", { ascending: true }),
@@ -60,6 +61,7 @@ export default async function AdminFinancePage({
     <FinanceView
       summary={summary}
       comparison={(cmpRes.data as FinanceSummary | null) ?? null}
+      reversals={(revRes.data as ReversalsSummary | null) ?? null}
       snapshots={(snapRes.data as SnapshotRow[] | null) ?? []}
       expenses={expenses}
       costConfig={(cfgRes.data as CostConfigRow | null) ?? null}
