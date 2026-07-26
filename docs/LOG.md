@@ -13426,3 +13426,14 @@ packages/shared/src/components/PlaylistAvailabilitySummary.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/components/transcribe/errorCopy.ts
 ---
+[2026-07-26 23:19] commit: docs(lessons): never touch another session's build-lock; extraction_error is the sole catch-all
+
+Twee regels n.a.v. deze taak:
+- .next/lock van een andere sessie nooit aanraken (concurrente builds klobberen
+  temp-manifests); wacht of typecheck met tsc --noEmit.
+- extraction_error = enige download-fout-catch-all; geen tweede ernaast, niet hernoemen
+  (breekt errorCopy.ts-keys, ADR-080).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+---
