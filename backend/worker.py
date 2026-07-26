@@ -1104,6 +1104,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 await asyncio.to_thread(
                     lambda j=_jid, s=_new_status: supabase.table('transcription_jobs').update({
                         'status': s,
+                        'error_type': 'stuck_pending' if s == 'error' else None,
                         'error_message': 'Watchdog reaper: stuck pending job gesloten (ARQ pickup gemist)',
                         'updated_at': now.isoformat(),
                     }).eq('id', j).execute()
@@ -1138,6 +1139,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 await asyncio.to_thread(
                     lambda j=_jid, s=_new_status: supabase.table('transcription_jobs').update({
                         'status': s,
+                        'error_type': 'worker_crashed' if s == 'error' else None,
                         'error_message': 'Watchdog reaper: stale heartbeat — job gesloten',
                         'updated_at': now.isoformat(),
                     }).eq('id', j).execute()

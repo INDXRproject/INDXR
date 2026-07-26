@@ -1,12 +1,13 @@
 import { createAdminClient } from "@indxr/shared/utils/supabase/admin"
 import { eur, pct, resolveWindow, type GrowthSummary } from "../adminTypes"
 import { DashboardControls } from "../_components/DashboardControls"
+import { InfoHint } from "../_components/InfoHint"
 
 export const dynamic = "force-dynamic"
 
 // One funnel stage: headline metric + supporting detail, connected top-down.
-function Stage({ step, label, value, sub, children }: {
-  step: number; label: string; value: string; sub?: string; children?: React.ReactNode
+function Stage({ step, label, value, sub, info, children }: {
+  step: number; label: string; value: string; sub?: string; info?: string; children?: React.ReactNode
 }) {
   return (
     <div className="rounded-xl border bg-surface p-5">
@@ -14,6 +15,7 @@ function Stage({ step, label, value, sub, children }: {
         <div className="flex items-center gap-2">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-surface-sunken text-[11px] font-semibold text-fg-muted">{step}</span>
           <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">{label}</span>
+          {info && <InfoHint text={info} />}
         </div>
         <span className="text-2xl font-bold tabular-nums text-fg-strong">{value}</span>
       </div>
@@ -23,10 +25,10 @@ function Stage({ step, label, value, sub, children }: {
   )
 }
 
-function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Metric({ label, value, sub, info }: { label: string; value: string; sub?: string; info?: string }) {
   return (
     <div className="rounded-xl border bg-surface p-4">
-      <p className="text-xs uppercase tracking-wide text-fg-muted">{label}</p>
+      <p className="flex items-center text-xs uppercase tracking-wide text-fg-muted">{label}{info && <InfoHint text={info} />}</p>
       <p className="mt-1 text-xl font-bold tabular-nums">{value}</p>
       {sub && <p className="text-xs text-fg-muted">{sub}</p>}
     </div>
@@ -86,27 +88,35 @@ export default async function AdminGrowthPage({
         </div>
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
-          <Stage step={1} label="Acquisition" value={g.external_total.toLocaleString()} sub={`signups · ${win.label}`}>
+          <Stage step={1} label="Acquisition" value={g.external_total.toLocaleString()} sub={`signups · ${win.label}`}
+            info="New non-test accounts created in this window, grouped by where they came from (utm_source, else referrer, else 'direct').">
             <SourceBars bySource={g.acquisition.by_source} />
           </Stage>
           <Stage step={2} label="Activation" value={pct(g.activation.rate)}
-            sub={`${g.activation.activated} of ${g.external_total} used a paid feature`} />
+            sub={`${g.activation.activated} of ${g.external_total} used a paid feature`}
+            info="Share of these signups who spent credits on a paid feature (AI transcription, summary, RAG, or a playlist) — INCLUDING the free 25 welcome credits. It measures real product use, not just signing up. Free caption extraction (0 credits) does NOT count." />
           <Stage step={3} label="Monetization" value={pct(g.monetization.conversion)}
-            sub={`${g.monetization.paying} of ${g.external_total} bought credits`} />
+            sub={`${g.monetization.paying} of ${g.external_total} bought credits`}
+            info="Share of these signups who bought credits with real money (a completed Stripe purchase). Free welcome credits do NOT count here — this is paying customers only." />
           <Stage step={4} label="Retention" value={pct(g.retention.repeat_rate)}
-            sub={`${g.retention.repeat_buyers} of ${g.monetization.paying} bought again`} />
+            sub={`${g.retention.repeat_buyers} of ${g.monetization.paying} bought again`}
+            info="Of the paying customers, the share who made 2 or more separate purchases (repeat buyers ÷ paying customers)." />
         </div>
       )}
 
       <div>
         <h2 className="mb-2 text-sm font-semibold text-fg-muted">Unit economics · {win.label} cohort</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Metric label="CAC" value={g.acquisition.cac == null ? "—" : eur(g.acquisition.cac)} sub="ads ÷ new payers (once ads run)" />
-          <Metric label="LTV (avg)" value={g.monetization.ltv_avg == null ? "—" : eur(g.monetization.ltv_avg)} sub="avg spend / payer" />
-          <Metric label="LTV (total)" value={eur(g.monetization.ltv_total)} sub="sum of purchases" />
+          <Metric label="CAC" value={g.acquisition.cac == null ? "—" : eur(g.acquisition.cac)} sub="ads ÷ new payers (once ads run)"
+            info="Customer acquisition cost = ad spend ÷ new paying customers. Shows '—' until ad spend is recorded in opex_expenses." />
+          <Metric label="LTV (avg)" value={g.monetization.ltv_avg == null ? "—" : eur(g.monetization.ltv_avg)} sub="avg spend / payer"
+            info="Average lifetime value = total money paid ÷ number of paying customers, for this cohort." />
+          <Metric label="LTV (total)" value={eur(g.monetization.ltv_total)} sub="sum of purchases"
+            info="Sum of all real-money purchases (amount paid) by this cohort." />
           <Metric label="LTV : CAC"
             value={g.acquisition.cac && g.monetization.ltv_avg ? `${(g.monetization.ltv_avg / g.acquisition.cac).toFixed(1)}×` : "—"}
-            sub="target ≥ 3×" />
+            sub="target ≥ 3×"
+            info="How many euros of lifetime value each euro of ad spend buys. Healthy SaaS aims for 3× or higher. Needs CAC (ad spend) to compute." />
         </div>
       </div>
 

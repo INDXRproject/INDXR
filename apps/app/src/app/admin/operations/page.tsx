@@ -4,6 +4,7 @@ import {
   type OperationsSummary, type Health,
 } from "../adminTypes"
 import { DashboardControls } from "../_components/DashboardControls"
+import { InfoHint } from "../_components/InfoHint"
 
 export const dynamic = "force-dynamic"
 
@@ -30,12 +31,12 @@ function Donut({ data }: { data: { label: string; value: number; cls: string }[]
   )
 }
 
-function Metric({ label, value, sub, tone = "neutral", title }: {
-  label: string; value: string; sub?: string; tone?: Health; title?: string
+function Metric({ label, value, sub, tone = "neutral", info }: {
+  label: string; value: string; sub?: string; tone?: Health; info?: string
 }) {
   return (
-    <div className="rounded-xl border bg-surface p-4" title={title}>
-      <p className="text-xs uppercase tracking-wide text-fg-muted">{label}</p>
+    <div className="rounded-xl border bg-surface p-4">
+      <p className="flex items-center text-xs uppercase tracking-wide text-fg-muted">{label}{info && <InfoHint text={info} />}</p>
       <p className={`mt-1 text-2xl font-bold tabular-nums ${HEALTH_CLS[tone]}`}>{value}</p>
       {sub && <p className="text-xs text-fg-muted">{sub}</p>}
     </div>
@@ -87,6 +88,7 @@ export default async function AdminOperationsPage({
       <div className="rounded-xl border bg-surface-sunken p-4">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-fg-muted">
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" /> Live right now
+          <InfoHint text="Real-time job states this instant, independent of the window above. 'Stuck' = an in-progress job whose heartbeat went stale (the watchdog will recover or refund it)." />
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div><p className="text-2xl font-bold tabular-nums">{o.jobs.in_flight}</p><p className="text-xs text-fg-muted">processing</p></div>
@@ -101,12 +103,15 @@ export default async function AdminOperationsPage({
       {/* Windowed KPIs. */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="Success rate" value={pct(o.success_rate)} tone={successHealth(o.success_rate, finished)}
-          sub={`${o.jobs.complete} ok · ${o.jobs.error} failed`} title="Completed ÷ (completed + failed) over the selected window. Neutral until ≥5 finished jobs." />
-        <Metric label="Jobs processed" value={o.jobs.total.toLocaleString()} sub={win.label} title="Jobs created in the selected window." />
+          sub={`${o.jobs.complete} ok · ${o.jobs.error} failed`}
+          info="Completed ÷ (completed + failed) AI/playlist jobs in this window. Free caption extraction and live-now jobs aren't counted. Stays neutral (grey) until at least 5 jobs finished, so one bad job doesn't flash red." />
+        <Metric label="Jobs processed" value={o.jobs.total.toLocaleString()} sub={win.label}
+          info="AI transcription and playlist jobs created in this window. Free caption extractions are logged separately (usage_logs), not here." />
         <Metric label="Avg queue wait" value={secs(o.capacity.avg_queue_wait_sec)} tone={queueWaitHealth(o.capacity.avg_queue_wait_sec)}
-          sub="created → started" title="Average time a job waited before processing started. Green ≤30s, amber ≤2m, red above." />
+          sub="created → started"
+          info="Average time a job sat in the queue before processing started (created → started), in this window. Green ≤30s, amber ≤2m, red above." />
         <Metric label="Avg processing" value={secs(o.capacity.avg_processing_sec)} sub="AI jobs run minutes"
-          title="Average end-to-end processing time of completed jobs. Long is normal for AI transcription." />
+          info="Average end-to-end processing time of completed jobs in this window. Several minutes is normal for AI transcription; captions are near-instant." />
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">

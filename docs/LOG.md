@@ -13225,3 +13225,34 @@ packages/shared/src/components/transcribe/TranscribeWorkbench.tsx
 packages/shared/src/components/transcribe/TranscriptResultCard.tsx
 packages/shared/src/components/ui/CompletionReceipt.tsx
 ---
+
+[2026-07-26 11:30] taak: Fase 2a — error-capture thoughtfulness (standalone error_type persistence) + classifier-uitbreiding + info-tooltips | gewijzigd: backend/transcription_pipeline.py (14 branches error_type + classifier proxy_error/ytdlp_parse/keywords), backend/worker.py (reaper stuck_pending/worker_crashed), apps/app/src/app/admin/{adminTypes.ts,_components/InfoHint.tsx,operations/page.tsx,growth/page.tsx} | py_compile OK, classifier 15/15 real-case test, build groen (exit 0) | LESSONS + audit-doc bijgewerkt; follow-ups: caption usage_logs error_type, main.py classifier dedupe, api_error split[2026-07-26 14:46] commit: fix(backend): persist error_type on every failed job + expand classifier (thoughtful error capture)
+
+De error-taxonomie (~11 slugs) werd voor standalone jobs weggegooid vóór de
+DB-write: alleen de download-tak schreef error_type, de andere 13 branches lieten
+de kolom NULL -> Operations toonde bijna alles als 'uncategorized'. Nu:
+
+- transcription_pipeline.py: alle 14 terminale branches geven error_type mee aan
+  _update_job (api_error/AssemblyAI, no_speech, members_only, internal_error,
+  credit-check/-deduction, insufficient, validation, duration, compression).
+- worker.py watchdog-reaper 0a/0b: stuck_pending / worker_crashed i.p.v. NULL.
+- classifier uitgebreid: nieuwe slugs proxy_error + ytdlp_parse, en keywords voor
+  500/DNS/private/removed/geo-blocked -> minder valt in de catch-all extraction_error.
+- admin ERROR_META + FAULT_META bijgewerkt; info-tooltips (?) op beide dashboards,
+  o.a. activation-definitie (spent credits incl. gratis welcome-credits).
+
+Verificatie: py_compile OK; classifier 15/15 real-world strings correct; build
+groen. Follow-ups genoteerd (caption usage_logs error_type, main.py classifier
+dedupe, api_error-split). LESSONS.md-regel toegevoegd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/_components/InfoHint.tsx
+apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/growth/page.tsx
+apps/app/src/app/admin/operations/page.tsx
+backend/transcription_pipeline.py
+backend/worker.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/roadmap/admin-kpi-audit.md
+---

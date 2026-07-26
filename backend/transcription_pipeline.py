@@ -142,13 +142,26 @@ def _classify_download_error(
         'connection broken', 'broken pipe', 'econnreset', 'remote end closed',
         'temporarily unavailable', 'temporary failure', 'network is unreachable',
         '502', '503', 'bad gateway', 'service unavailable',
+        '500', 'internal server error', 'getaddrinfo', 'name or service not known',
+        'temporary failure in name resolution', 'eof occurred',
     )):
         return 'timeout'
     if any(kw in lower for kw in ('bytes read', 'more expected', 'incomplete read')):
         # HTTP content-length mismatch after all retry attempts — residential proxy
         # dropped mid-download. See ADR-031.
         return 'partial_write'
-    if '152' in error_msg or 'unavailable' in lower:
+    # Proxy auth / tunnel failure (Decodo) — a credential/config problem, not fixed by a plain retry.
+    if any(kw in lower for kw in ('proxy authentication', '407 proxy', 'tunnel connection failed', 'tunnelconnectionfailed')):
+        return 'proxy_error'
+    # yt-dlp could not parse YouTube's player response — typically needs a yt-dlp bump, not a retry.
+    if any(kw in lower for kw in ('unable to extract', 'nsig', 'failed to extract', 'player response', 'requested format is not available')):
+        return 'ytdlp_parse'
+    # Structurally unavailable on YouTube (removed / private / geo-blocked / terminated account).
+    if '152' in error_msg or any(kw in lower for kw in (
+        'unavailable', 'private video', 'video is private', 'has been removed',
+        'account associated with this video has been terminated', 'no longer available',
+        'not available in your country', 'blocked it in your country',
+    )):
         return 'youtube_restricted'
     logger.warning(
         f"[extraction_error:unclassified] raw={error_msg!r} "
@@ -320,10 +333,10 @@ async def do_assemblyai_transcription(
                         balance = await asyncio.to_thread(check_user_balance, user_id)
                     except Exception as e:
                         msg = f"Could not check credit balance: {e}"
-                        await _update_job(status="error", error_message=msg)
+                        await _update_job(status="error", error_message=msg, error_type="credit_check_error")
                         return {"success": False, "error_type": "credit_check_error", "error_message": msg, "credit_cost": 0}
                     if balance < credit_cost:
-                        await _update_job(status="error", error_message="Insufficient credits")
+                        await _update_job(status="error", error_message="Insufficient credits", error_type="insufficient_credits")
                         return {"success": False, "error_type": "insufficient_credits", "credit_cost": 0}
                     deduction_result = await asyncio.to_thread(
                         deduct_credits,
@@ -339,7 +352,7 @@ async def do_assemblyai_transcription(
                         product_type='ai_transcription',
                     )
                     if not deduction_result.get('success'):
-                        await _update_job(status="error", error_message="Credit deduction failed")
+                        await _update_job(status="error", error_message="Credit deduction failed", error_type="credit_deduction_failed")
                         return {"success": False, "error_type": "credit_deduction_failed", "credit_cost": 0}
                     credits_deducted = True
                     if job_id:
@@ -429,7 +442,7 @@ async def do_assemblyai_transcription(
                 if proxy_bytes is not None:
                     await _update_job(proxy_bytes=proxy_bytes)
             except MembersOnlyVideoError:
-                await _update_job(status="error", error_message="members_only")
+                await _update_job(status="error", error_message="members_only", error_type="members_only")
                 return {"success": False, "error_type": "members_only", "credit_cost": 0}
             except Exception as e:
                 error_msg = str(e)
@@ -438,7 +451,7 @@ async def do_assemblyai_transcription(
                 # anders logt een error-job 0 bytes ondanks verbruikte proxy-kost.
                 err_bytes = getattr(e, 'proxy_bytes', 0) or 0
                 if any(kw in error_msg.lower() for kw in MEMBERS_ONLY_KEYWORDS):
-                    await _update_job(status="error", error_message="members_only", proxy_bytes=err_bytes)
+                    await _update_job(status="error", error_message="members_only", error_type="members_only", proxy_bytes=err_bytes)
                     return {"success": False, "error_type": "members_only", "credit_cost": 0}
                 error_type = _classify_download_error(error_msg, video_id=video_id, job_id=job_id)
                 # bot_detection/timeout/members_only zijn verwachte operationele uitkomsten, geen bugs.
@@ -461,7 +474,7 @@ async def do_assemblyai_transcription(
         # ── Step 2: Validate ──────────────────────────────────────────────────
         validation = await asyncio.to_thread(validate_audio_file, audio_path)
         if not validation['valid']:
-            await _update_job(status="error", error_message=validation['error'])
+            await _update_job(status="error", error_message=validation['error'], error_type="validation_error")
             return {"success": False, "error_type": "validation_error", "error_message": validation['error'], "credit_cost": 0}
 
         # ── Step 3: Duration ──────────────────────────────────────────────────
@@ -476,7 +489,7 @@ async def do_assemblyai_transcription(
                 duration = await asyncio.to_thread(get_audio_duration, audio_path)
         except Exception as e:
             msg = f"Could not determine audio duration: {e}"
-            await _update_job(status="error", error_message=msg)
+            await _update_job(status="error", error_message=msg, error_type="duration_error")
             return {"success": False, "error_type": "duration_error", "error_message": msg, "credit_cost": 0}
 
         # ── Step 4: Credit check + deduction ─────────────────────────────────
@@ -488,12 +501,12 @@ async def do_assemblyai_transcription(
                 balance = await asyncio.to_thread(check_user_balance, user_id)
             except Exception as e:
                 msg = f"Could not check credit balance: {e}"
-                await _update_job(status="error", error_message=msg)
+                await _update_job(status="error", error_message=msg, error_type="credit_check_error")
                 return {"success": False, "error_type": "credit_check_error", "error_message": msg, "credit_cost": 0}
 
             if balance < credit_cost:
                 logger.warning(f"[pipeline] Insufficient credits: has {balance}, needs {credit_cost} (job={job_id})")
-                await _update_job(status="error", error_message="Insufficient credits")
+                await _update_job(status="error", error_message="Insufficient credits", error_type="insufficient_credits")
                 return {"success": False, "error_type": "insufficient_credits", "credit_cost": 0}
 
             deduction_result = await asyncio.to_thread(
@@ -511,7 +524,7 @@ async def do_assemblyai_transcription(
             )
             if not deduction_result.get('success'):
                 logger.error(f"[pipeline] Credit deduction failed: {deduction_result.get('error')}")
-                await _update_job(status="error", error_message="Credit deduction failed")
+                await _update_job(status="error", error_message="Credit deduction failed", error_type="credit_deduction_failed")
                 return {"success": False, "error_type": "credit_deduction_failed", "credit_cost": 0}
             credits_deducted = True
             _track(user_id, 'credits_deducted', {
@@ -539,7 +552,7 @@ async def do_assemblyai_transcription(
                     audio_path = compressed
             except Exception as e:
                 msg = f"Audio compression failed: {e}"
-                await _update_job(status="error", error_message=msg)
+                await _update_job(status="error", error_message=msg, error_type="compression_error")
                 return {"success": False, "error_type": "compression_error", "error_message": msg, "credit_cost": credit_cost}
 
         # ── Step 6: Transcribe ────────────────────────────────────────────────
@@ -560,7 +573,7 @@ async def do_assemblyai_transcription(
                 'video_id': video_id, 'source_type': 'youtube' if video_id else 'upload',
                 'error_type': 'api_error', 'error_message': whisper_result['error'],
             })
-            await _update_job(status="error", error_message=whisper_result['error'])
+            await _update_job(status="error", error_message=whisper_result['error'], error_type="api_error")
             return {"success": False, "error_type": "api_error", "error_message": whisper_result['error'], "credit_cost": credit_cost}
 
         if not whisper_result.get('transcript'):
@@ -568,7 +581,7 @@ async def do_assemblyai_transcription(
                 'video_id': video_id, 'source_type': 'youtube' if video_id else 'upload',
                 'error_type': 'no_speech', 'error_message': 'no_speech_detected',
             })
-            await _update_job(status="error", error_message="no_speech_detected")
+            await _update_job(status="error", error_message="no_speech_detected", error_type="no_speech")
             return {"success": False, "error_type": "no_speech", "credit_cost": credit_cost}
 
         # ── Step 7: Build transcript ──────────────────────────────────────────
@@ -674,7 +687,7 @@ async def do_assemblyai_transcription(
     except Exception as e:
         logger.error(f"[pipeline] Unexpected error: {type(e).__name__}: {e} (job={job_id})")
         try:
-            await _update_job(status="error", error_message=f"Internal error: {e}")
+            await _update_job(status="error", error_message=f"Internal error: {e}", error_type="internal_error")
         except Exception:
             pass
         with sentry_sdk.push_scope() as scope:
