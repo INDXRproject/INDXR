@@ -13329,3 +13329,27 @@ packages/shared/src/components/transcribe/SourceChoice.tsx
 packages/shared/src/components/transcribe/errorCopy.ts
 packages/shared/src/components/transcribe/method.ts
 ---
+
+[2026-07-26 19:10] taak: Operations capture-laag COMMIT 1 (fundament) — ops_config + fase-timestamps + retry-lineage + source_kind-backfill | gewijzigd: supabase/migrations/20260726190329_ops_capture_layer.sql, 20260726190453_ops_source_kind_backfill_playlist_whisper.sql (beide via MCP) | geverifieerd: UNIQUE(job_id,kind) bestaat (exactly-once refund OK), job_timeout 7200 vs max 36000 bevestigd (defect 1), backfill playlist 137/single 103/upload 18/unknown 0 na correctie 99 playlist-whisper-als-single | vervolg: commit 2 backend-capture, commit 3 submit+poll (eigen), commit 4 dashboard-RPCs, commit 5 docs[2026-07-26 21:06] commit: feat(ops): capture layer foundation (commit 1/5) — columns, config, source_kind backfill
+
+Fundament voor het Operations-dashboard (deel 1-5). Puur additief; geen geld.
+
+- ops_config tabel (los van finance_settings — ops/finance niet verstrengelen) +
+  assemblyai_concurrency_limit=200 (gedeelde pool, globaal, excess-queued).
+- transcription_jobs: submitted_at, provider_processing_at, provider_processing_ms
+  (deel 3/5a fase-timestamps), assemblyai_language (5b router-detectie), origin (deel 4).
+- playlist_extraction_jobs: parent_playlist_id + retry_round (B lineage),
+  first_pass_failed (deel 3 raw-first-pass snapshot).
+- source_kind backfill: 215 NULL-rijen geclassificeerd, ambigu->unknown (0), en
+  99 playlist-Whisper-jobs die als 'single' gelabeld waren gecorrigeerd naar
+  'playlist' via transcript-in-video_results (voorkomt single-inflatie, 5c).
+
+Verified assumpties: UNIQUE(job_id,kind) bestaat -> exactly-once refund geborgd;
+job_timeout 7200 vs MAX_TRANSCRIPTION 36000 -> defect 1 bevestigd.
+Backfill: playlist 137 / single 103 / upload 18 / unknown 0.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+supabase/migrations/20260726190329_ops_capture_layer.sql
+supabase/migrations/20260726190453_ops_source_kind_backfill_playlist_whisper.sql
+---
