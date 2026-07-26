@@ -3,7 +3,7 @@
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { useState, useEffect, useRef } from "react"
-import { Loader2, AlertCircle, Sparkles, Mic } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 import { TranscriptCard, TranscriptItem } from "../TranscriptCard"
 import { TranscriptMetadata, PROCESSING_METHODS } from "../../types/transcript"
 import { validateYouTubeUrl, YouTubeUrlType } from "../../utils/youtube"
@@ -18,7 +18,11 @@ import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
 import posthog from "posthog-js"
 import { BackgroundJobNotice } from "../BackgroundJobNotice"
 import { JobProgressCard } from "../transcribe/JobProgressCard"
-import { SourceChoice, type TranscribeSource } from "../transcribe/SourceChoice"
+import { MethodRadioCards } from "../transcribe/MethodRadioCards"
+import { MethodBadge } from "../transcribe/MethodBadge"
+import { BalanceLine } from "../transcribe/CostBreakdown"
+import { ErrorCard } from "../transcribe/ErrorCard"
+import { resolveErrorCopy } from "../transcribe/errorCopy"
 
 interface VideoTabProps {
   onPlaylistDetected?: () => void
@@ -40,15 +44,6 @@ function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return `${m}:${String(s).padStart(2, '0')}`
-}
-
-function getWhisperProcessingEstimate(durationSeconds: number): string {
-  const minutes = durationSeconds / 60
-  if (minutes < 10) return "~1 min"
-  if (minutes < 30) return "~2-3 min"
-  if (minutes < 60) return "~4-5 min"
-  if (minutes < 120) return "~6-8 min"
-  return "~10+ min"
 }
 
 export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAudio, onAiRequiresAuth, onBusyChange }: VideoTabProps) {
@@ -993,87 +988,78 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               disabled={loading || !url || isCheckingDuplicate}
             >
               {loading || isCheckingDuplicate ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {loading && isFetchingMeta ? "Checking…" : loading ? "Extracting…" : isCheckingDuplicate ? "Checking…" : useWhisper ? "Check" : "Extract"}
+              {loading && isFetchingMeta ? "Checking…" : loading ? "Extracting…" : isCheckingDuplicate ? "Checking…" : "Extract"}
             </Button>
           )}
         </div>
 
-        {/* Source choice — the footer of the video body (replaces the old "Generate with AI"
-            toggle, ADR-079). Bound to the same useWhisper/useWhisperRef state; no state lift.
-            The AI cell stays visible for anonymous visitors but is gated via onAiRequiresAuth. */}
+        {/* Transcription method — a real radio group (ADR-080), method colour from the Library
+            tokens. Bound to the same useWhisper/useWhisperRef state; no state lift. The AI card
+            stays visible for anonymous visitors but is gated via onAiRequiresAuth. The AI card's
+            sub-line always reserves room for the balance, so selecting AI never shifts the layout. */}
         {!whisperAutoTriggered && !loading && !showWhisperConfirm && !showDuplicateChoices && (
-          <div className="flex flex-col gap-2">
-            <SourceChoice
-              value={useWhisper ? "ai" : "captions"}
-              onChange={(next: TranscribeSource) => {
-                if (next === "ai") {
-                  if (!user) { onAiRequiresAuth?.(); return }
-                  useWhisperRef.current = true
-                  posthog.capture('whisper_toggle_enabled')
-                  setUseWhisper(true)
-                } else {
-                  useWhisperRef.current = false
-                  setUseWhisper(false)
-                }
-              }}
-            />
-            {useWhisper && user && credits !== null && (
-              <p className="px-1 text-xs text-fg-muted">
-                You have {credits} credit{credits !== 1 ? 's' : ''} available
-              </p>
-            )}
-          </div>
+          <MethodRadioCards
+            value={useWhisper ? "ai" : "captions"}
+            availableCredits={user ? credits : null}
+            onChange={(next) => {
+              if (next === "ai") {
+                if (!user) { onAiRequiresAuth?.(); return }
+                useWhisperRef.current = true
+                posthog.capture('whisper_toggle_enabled')
+                setUseWhisper(true)
+              } else {
+                useWhisperRef.current = false
+                setUseWhisper(false)
+              }
+            }}
+          />
         )}
 
-        {/* Whisper Confirmation Step */}
-        {showWhisperConfirm && pendingWhisperData && (
-          <div className="px-4 py-4 bg-accent/5 border border-primary/20 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-fg mb-1">
-                  {pendingWhisperData.duration > 0 ? (
-                    <>This video is {Math.ceil(pendingWhisperData.duration / 60)} minutes.</>
-                  ) : (
-                    <>Video duration unknown.</>
-                  )}
-                </p>
-                <p className="text-sm text-fg-muted mb-1">
-                  {pendingWhisperData.duration > 0 ? (
-                    <>AI Transcription will cost <span className="font-semibold text-accent">{pendingWhisperData.creditsRequired} credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span>. You have <span className="font-semibold">{credits}</span> credits.</>
-                  ) : (
-                    <>AI Transcription will cost approximately <span className="font-semibold text-accent">{pendingWhisperData.creditsRequired}+ credit{pendingWhisperData.creditsRequired !== 1 ? 's' : ''}</span> (1 credit per minute). You have <span className="font-semibold">{credits}</span> credits.</>
-                  )}
-                </p>
-                <p className="text-xs text-fg-muted mb-2">
-                  Estimated processing time: {pendingWhisperData.duration > 0 ? getWhisperProcessingEstimate(pendingWhisperData.duration) : "varies by length"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleWhisperConfirm}
-                    disabled={loading}
-                    className="h-8"
-                  >
-                    {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <Sparkles className="h-3 w-3 mr-1.5" />}
-                    Confirm & Extract
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleWhisperCancel}
-                    disabled={loading}
-                    className="h-8"
-                  >
-                    Cancel
-                  </Button>
+        {/* Cost block (B4, ADR-080) — the concrete total for THIS video, known once the
+            metadata is fetched (before the reservation). The total is the biggest number here;
+            the balance reads as secondary; the button carries the amount. Irreversibility sits
+            right at the button, before the click. */}
+        {showWhisperConfirm && pendingWhisperData && (() => {
+          const cost = pendingWhisperData.creditsRequired
+          const known = pendingWhisperData.duration > 0
+          const enough = credits == null || credits >= cost
+          return (
+            <div className="overflow-hidden rounded-xl border border-border bg-surface animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center gap-3 p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-fg">{pendingWhisperData.title || videoTitle || "This video"}</p>
+                  {known && <p className="font-mono text-xs text-fg-muted">{formatElapsed(pendingWhisperData.duration)}</p>}
                 </div>
+                <MethodBadge method="ai">AI transcription</MethodBadge>
+              </div>
+              <div className="flex items-baseline justify-between border-t border-border px-4 py-3">
+                <span className="font-medium">Total</span>
+                <span className="text-[20px] font-semibold tabular-nums text-fg-strong">{known ? `${cost} credits` : `${cost}+ credits`}</span>
+              </div>
+              <div className="flex flex-col gap-2 border-t border-border bg-surface-elevated px-4 py-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <BalanceLine have={credits} cost={cost} />
+                  <div className="ml-auto flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={handleWhisperCancel} disabled={loading} className="h-9">
+                      Cancel
+                    </Button>
+                    {enough ? (
+                      <Button size="sm" onClick={handleWhisperConfirm} disabled={loading} className="h-9">
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                        Extract — {cost}{known ? "" : "+"} credits
+                      </Button>
+                    ) : (
+                      <a href={appHref('/dashboard/billing')}>
+                        <Button size="sm" className="h-9">Buy credits</Button>
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-fg-muted">Once started, this can&apos;t be cancelled.</p>
               </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Duplicate pause-and-confirm prompt */}
         {existingTranscriptId && showDuplicateChoices && (
@@ -1137,88 +1123,32 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    </a>
                  </div>
                </div>
-             ) : error?.isMembersOnly ? (
-               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
-                 <div>
-                   <p className="text-sm font-medium text-error">Members-Only Video</p>
-                   <p className="text-sm text-error/80 mt-0.5">This video is only available to channel members and cannot be transcribed by INDXR.AI.</p>
-                 </div>
-               </div>
-             ) : error?.isNoSpeech ? (
-               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
-                 <div>
-                   <p className="text-sm font-medium text-error">No speech detected</p>
-                   <p className="text-sm text-error/80 mt-0.5">This video appears to contain only music, ambient sound, or silence — AI transcription requires audible speech. Any credits charged for this job have been automatically refunded to your account.</p>
-                 </div>
-               </div>
-             ) : error?.isYouTubeRestricted ? (
-               <div className="flex flex-col gap-2 w-full">
-                 <p className="text-sm text-error">
-                   {error.message}
-                 </p>
-                 {onSwitchToAudio && (
-                   <Button
-                     variant="outline"
-                     size="sm"
-                     onClick={() => handleGuardedTabSwitch(onSwitchToAudio)}
-                     className="self-start h-8 text-xs"
-                   >
-                     <Mic className="h-3 w-3 mr-1.5" />
-                     Open Audio Upload →
-                   </Button>
-                 )}
-               </div>
-             ) : error?.errorType === 'bot_detection' ? (
-               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
-                 <div>
-                   <p className="text-sm font-medium text-error">Temporarily blocked by YouTube</p>
-                   <p className="text-sm text-error/80 mt-0.5">
-                     {user
-                       ? <>YouTube temporarily blocked our request. Wait a few minutes and try again, or enable <strong>Generate with AI</strong> above — it transcribes the audio directly and often works immediately.</>
-                       : <>YouTube temporarily blocked our request. Wait a few minutes and try again, or <a href={marketingHref('/signup')} className="underline">sign in</a> to use AI transcription instead.</>
-                     }
-                   </p>
-                 </div>
-               </div>
-             ) : error?.errorType === 'no_captions' ? (
-               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
-                 <div>
-                   <p className="text-sm font-medium text-error">No captions available</p>
-                   <p className="text-sm text-error/80 mt-0.5">
-                     {user
-                       ? <>No captions found for this video. Enable <strong>Generate with AI</strong> above to transcribe it with AI — 1 credit per minute of audio. If no speech is detected, your credits are automatically refunded.</>
-                       : <>No captions found for this video. <a href={marketingHref('/signup')} className="underline">Sign in</a> to use AI transcription — 1 credit per minute of audio. If no speech is detected, your credits are automatically refunded.</>
-                     }
-                   </p>
-                 </div>
-               </div>
-             ) : error?.isCreditsError ? (
-               <div className="flex flex-col gap-2 w-full">
-                 <p className="text-sm text-error">
-                   {error.message}
-                 </p>
-                 <a href={marketingHref('/pricing')} className="self-start">
-                   <Button
-                     variant="outline"
-                     size="sm"
-                     className="h-8 text-xs"
-                   >
-                     Buy Credits →
-                   </Button>
-                 </a>
-               </div>
-             ) : error?.type === 'CHANNEL' ? (
-               <div className="p-3 rounded-lg bg-error/10 border border-error/20 flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
-                 <div>
-                   <p className="text-sm font-medium text-error">This is a channel URL</p>
-                   <p className="text-sm text-error/80 mt-0.5">{error.message}</p>
-                 </div>
-               </div>
+             ) : error ? (
+               (() => {
+                 // Map VideoTab's error flags to a backend code, then render the one shared
+                 // ErrorCard from the copy map (ADR-080). Presentation only — the state-setting,
+                 // early returns and throws that produced `error` are untouched.
+                 const errCode =
+                   error.errorType ||
+                   (error.isMembersOnly ? 'members_only'
+                   : error.isNoSpeech ? 'no_speech'
+                   : error.isYouTubeRestricted ? 'youtube_restricted'
+                   : error.isCreditsError ? 'insufficient_credits'
+                   : error.type === 'CHANNEL' ? 'channel_url'
+                   : null)
+                 const copy = resolveErrorCopy(errCode, {
+                   fallbackMessage: error.message,
+                   aiCost: videoDuration ? Math.ceil(videoDuration / 60) : null,
+                   billingHref: appHref('/dashboard/billing'),
+                   libraryHref: appHref('/dashboard/library'),
+                   accountHref: appHref('/dashboard/account'),
+                   contactHref: marketingHref('/contact'),
+                   onRetryUrl: () => { setUrl(''); setError(null) },
+                   onUseAi: user ? handleWhisperUpsell : undefined,
+                   onSwitchToAudio: onSwitchToAudio ? () => handleGuardedTabSwitch(onSwitchToAudio) : undefined,
+                 })
+                 return <ErrorCard className="w-full" {...copy} />
+               })()
              ) : isAlreadyProcessing && loading && whisperStatus !== 'idle' ? (
                <div className="flex flex-col gap-2 w-full">
                  <div className="p-3 rounded-lg bg-surface-elevated/60 border border-border flex items-start gap-2">
@@ -1243,8 +1173,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  />
                  <BackgroundJobNotice />
                </div>
-             ) : error ? (
-               <p className="text-sm text-error">{error.message}</p>
              ) : null}
           </div>
         )}

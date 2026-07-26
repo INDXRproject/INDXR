@@ -13278,3 +13278,54 @@ apps/app/src/app/admin/operations/page.tsx
 docs/LOG.md
 supabase/migrations/20260726125754_ops_summary_meaningful_speed_and_samples.sql
 ---
+[2026-07-26 19:30] feat (Transcribe-afwerking — ADR-080, methodekleur + kosten + ErrorCard + playlist-afronding): **6 nieuwe gedeelde componenten** (`packages/shared/src/components/transcribe/`): `method.ts` (methodekleur-conventie — leest sky/indigo uit de Library-badge-tokens, geen nieuwe kleuren/hex), `MethodBadge`, `MethodRadioCards` (radiogroep i.p.v. segmented control — vervangt+verwijdert `SourceChoice`), `CostBreakdown`+`BalanceLine` (kostenbalk+legenda+`Total` ~20px), `ErrorCard`+`errorCopy.ts` (copy-map gekeyd op backend-code, 3 kanalen, onbekend→neutrale kaart+code+contact+PostHog-log). **VideoTab**: MethodRadioCards, knop altijd "Extract" (niet "Check"), whisper-confirm→B4 kostenblok (concreet totaal, duur bekend post-klik pré-reservering), saldo in AI-kaart (geen layout-shift), 8-taks error-render→ErrorCard (state/returns/throws ongemoeid), `getWhisperProcessingEstimate`+Sparkles/Mic opgeruimd. **AudioTab**: indigo AI-methode-badge (upload=AI, KERNREGEL), Credit-Cost→prominent Total+BalanceLine (geel weg), error-state `string`→`{message,code?}` → ErrorCard. **PlaylistAvailabilitySummary**: 3 statkaarten(groen/GEEL/rood)→`CostBreakdown`-balk, per-video methode-badge+44px chip-toggle, actiebalk BalanceLine+onomkeerbaarheid, geel→indigo overal. **PlaylistManager**: afronding mockup C (neutrale kop, groen alleen 100%, bon methode-bar+authoritative `Charged`/refund uit receipt — creditlogica ongewijzigd, `CompletionReceipt` hier weg), mislukking-blok **`Retry all N`** (per-video Retry vervalt, GEEN cap, `retryRound` voor telemetrie+structurele toon), acties View secundair bij partial; voortgang één statusoppervlak (banner weg, selectielijst weg tijdens run, per-video rijen+methodebadge, URL/Fetch disabled); header punt-4 (titel wrapt, Select-all checkbox indeterminate+teller, knop op wrap-rij). **PlaylistTab**: `retryRound`-state (+reset/increment), progressMessage-banner verborgen tijdens run. **Backend**: comment bij `_classify_download_error` → copy-map. **Foutinventaris** vooraf (26 backend-codes, per-catch control-flow-safety). **Geverifieerd**: `pnpm build` groen (beide apps) na elke fase. Resume-matrix (echte jobs+credits) + browser-checks (WCAG/390px/dark) = [~] niet-runbaar in dit environment; geen job-/SSE-/resume-/dedup-/credit-logica aangeraakt. Afwijkingen gemeld: legenda-counts i.p.v. per-methode-credit-split, "Retry all N" zonder verzonnen credit-totaal, header-actie op wrap-rij i.p.v. sticky-bottom. | gewijzigd: packages/shared/src/components/transcribe/{method.ts,MethodBadge,MethodRadioCards,CostBreakdown,ErrorCard,errorCopy,SourceChoice(verwijderd)}, packages/shared/src/components/free-tool/{VideoTab,AudioTab,PlaylistTab}.tsx, packages/shared/src/components/{PlaylistManager,PlaylistAvailabilitySummary}.tsx, backend/transcription_pipeline.py, docs/wiki/decisions/080-transcribe-method-colour-cost-and-errorcard.md (nieuw), docs/wiki/INDEX.md, docs/wiki/design/system.md, docs/wiki/design/mockups/transcribe-redesign.md, docs/wiki/architecture/page-structures/dashboard-transcribe.md, docs/LESSONS.md, docs/LOG.md
+---
+[2026-07-26 16:38] commit: feat(transcribe): method-colour, prominent cost, shared ErrorCard, playlist completion (ADR-080)
+
+Finishing pass on the transcribe redesign. One method colour across the product,
+read from the Library badge tokens (auto-captions=sky, AI=indigo; method.ts) — no
+new colours, no hex; audio upload = AI indigo. Yellow removed from the flow; green
+= free/succeeded, red = unavailable/failed.
+
+New shared components: MethodBadge, MethodRadioCards (a real radio group replacing
+SourceChoice — a choice must not share the mode-strip's shape), CostBreakdown +
+BalanceLine (Total is the biggest number, balance secondary in --fg-subtle, short
+of credits offers Deselect/Buy not a dead button), ErrorCard + errorCopy (copy map
+keyed on backend code; unknown codes get the same card + code + contact, logged via
+PostHog). Video shows the concrete total (B4) at the confirm step; button is always
+"Extract".
+
+Playlist completion redesigned (mockup C): neutral header, green only at 100%,
+receipt bar with the authoritative Charged/refund from the credit receipt (credit
+logic untouched), one failure block with "Retry all N" — per-video retry removed,
+no round cap; retryRound tracked for telemetry and to shift the tone. Progress is
+one status surface: banner gone, selection list hidden during a run, per-video rows
+with method badges, URL/Fetch disabled. Irreversibility copy moved to the confirm
+screen.
+
+Presentation only — no job/SSE/resume/dedup/credit logic moved; the error inventory
+confirmed which returns/throws are load-bearing and they're left intact. Build green
+both apps. Resume matrix + browser a11y/390px/dark checks are [~] (not runnable here).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/transcription_pipeline.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/page-structures/dashboard-transcribe.md
+docs/wiki/decisions/080-transcribe-method-colour-cost-and-errorcard.md
+docs/wiki/design/mockups/transcribe-redesign.md
+docs/wiki/design/system.md
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/PlaylistTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/transcribe/CostBreakdown.tsx
+packages/shared/src/components/transcribe/ErrorCard.tsx
+packages/shared/src/components/transcribe/MethodBadge.tsx
+packages/shared/src/components/transcribe/MethodRadioCards.tsx
+packages/shared/src/components/transcribe/SourceChoice.tsx
+packages/shared/src/components/transcribe/errorCopy.ts
+packages/shared/src/components/transcribe/method.ts
+---

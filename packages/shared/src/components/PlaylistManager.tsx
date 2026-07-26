@@ -6,7 +6,6 @@ import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
 import { Loader2, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock, ListMusic, Mic, ExternalLink, Info, RefreshCw } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
-import Image from "next/image";
 import { validateYouTubeUrl } from "../utils/youtube";
 import { PlaylistAvailabilitySummary } from "./PlaylistAvailabilitySummary";
 import { BackgroundJobNotice } from "./BackgroundJobNotice";
@@ -14,8 +13,9 @@ import { useAuth } from "../hooks/useAuth";
 import { createClient } from "../utils/supabase/client";
 import { cn } from "../lib/utils";
 import { appHref } from "../lib/cross-host-links";
-import { CompletionReceipt } from "./ui/CompletionReceipt";
 import { ResultCardShell } from "./transcribe/ResultCardShell";
+import { CostBreakdown, type CostSegment } from "./transcribe/CostBreakdown";
+import { MethodBadge } from "./transcribe/MethodBadge";
 import { CREDIT_COSTS, FREE_TIER } from "../lib/pricing";
 import type { ReceiptData } from "../hooks/useCompletionReceipt";
 
@@ -61,6 +61,9 @@ interface PlaylistManagerProps {
   onSwitchToAudio?: () => void;
   onRetryVideo?: (videoId: string) => void;
   onRetryAll?: (videoIds: string[]) => void;
+  /** How many manual "Retry all" rounds have run (0 = none yet). Kept on the job for the
+      operations telemetry built elsewhere; here it only shifts the failure-block tone. */
+  retryRound?: number;
   elapsedSeconds?: number;
   resumePlaylist?: { title: string; entries: PlaylistEntry[] } | null;
   receipt?: ReceiptData;
@@ -72,11 +75,13 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryVideo, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0 }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCostDetail, setShowCostDetail] = useState(false);
+  const [showAllFailed, setShowAllFailed] = useState(false);
+  const [showAllProgress, setShowAllProgress] = useState(false);
   const [playlist, setPlaylist] = useState<{ title: string; entries: PlaylistEntry[]; total_count?: number; unavailable_count?: number } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set<string>());
   const [visibleCount, setVisibleCount] = useState(25);
@@ -350,6 +355,21 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   // playable video (private/members-only/deleted). Not a cap-driven subtraction.
   const missingCount = playlist?.unavailable_count ?? 0;
 
+  // Derived progress/completion values (presentation only — no job state moved, ADR-080).
+  const FAILED_STATES = ['bot_detection', 'timeout', 'error', 'no_captions', 'no_speech', 'members_only', 'age_restricted', 'youtube_restricted'];
+  const runEntries = (playlist?.entries ?? resumePlaylist?.entries ?? []).filter(e => videoStatuses[e.id]);
+  const compTotal = Object.keys(videoStatuses).length;
+  const compSucceededIds = Object.entries(videoStatuses).filter(([, s]) => s === 'success').map(([id]) => id);
+  const compSucceeded = compSucceededIds.length;
+  const compFailed = Object.values(videoStatuses).filter(s => FAILED_STATES.includes(s as string)).length;
+  const compDone = Object.values(videoStatuses).filter(s => s === 'success' || s === 'unavailable' || FAILED_STATES.includes(s as string)).length;
+  const compAiSuccess = compSucceededIds.filter(id => whisperVideoIds?.has(id)).length;
+  const compCapSuccess = compSucceeded - compAiSuccess;
+  const compRetryableIds = Object.entries(videoStatuses).filter(([, s]) => s === 'bot_detection' || s === 'timeout').map(([id]) => id);
+  const compRetryableEntries = (playlist?.entries ?? resumePlaylist?.entries ?? []).filter(e => compRetryableIds.includes(e.id));
+  // Round >= 1 means a manual "Retry all" already ran and failures remain → structural tone.
+  const compStalled = retryRound >= 1;
+
   // ADR-071: server caps a single playlist job at 500 videos. Warn early (>=50) so
   // users know large jobs run in the background, and block submit past the hard cap
   // so they get immediate feedback instead of waiting on a server 4xx.
@@ -367,14 +387,15 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
             className="h-12 bg-bg border-border text-fg"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && fetchPlaylistInfo()}
+            onKeyDown={(e) => e.key === "Enter" && !isExtracting && fetchPlaylistInfo()}
+            disabled={isExtracting}
           />
         </div>
         <Button
           size="lg"
           className="h-12 px-6 shrink-0 min-w-[150px] justify-center disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
           onClick={fetchPlaylistInfo}
-          disabled={loading || !url}
+          disabled={loading || !url || isExtracting}
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           {loading ? "Fetching…" : "Fetch playlist"}
@@ -414,226 +435,153 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       {/* Progress / Completion Bar — on the shared ResultCardShell so the batch
           completion reads with identical chrome to single-transcript results (ADR-079) */}
       {(isExtracting || isCompleted) && (
-        <ResultCardShell tone={isCompleted ? 'success' : 'default'} className="p-6">
+        <ResultCardShell tone={isCompleted && compFailed === 0 ? 'success' : 'default'} className="p-6">
             {isCompleted ? (
-                // Final Summary View
+                // Final Summary View (mockup C) — neutral unless every video succeeded
                 <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-success-subtle rounded-full text-success">
-                             <CheckCircle2 className="h-6 w-6" />
-                        </div>
+                    {compFailed === 0 ? (
+                      <div className="flex items-start gap-2.5">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
                         <div>
-                             <h3 className="text-lg font-bold text-fg">Extraction Complete!</h3>
-                             <p className="text-fg-muted text-sm">
-                                 {(() => {
-                                   const succeeded = Object.values(videoStatuses).filter(s => s === 'success').length;
-                                   const total = Object.keys(videoStatuses).length;
-                                   const failed = Object.values(videoStatuses).filter(s => s !== 'success' && s !== 'pending' && s !== 'extracting' && s !== 'unavailable').length;
-                                   const time = finalElapsed > 0 ? ` in ${formatElapsed(finalElapsed)}` : '';
-                                   if (failed === 0) {
-                                     return `All ${total} video${total !== 1 ? 's' : ''} extracted successfully${time}. Your transcripts are ready in the library.`;
-                                   }
-                                   return `Extracted ${succeeded} of ${total} video${total !== 1 ? 's' : ''}${time}. ${failed} video${failed !== 1 ? 's' : ''} couldn't be processed.`;
-                                 })()}
-                             </p>
+                          <p className="text-[17px] font-semibold text-fg">All {compTotal} video{compTotal !== 1 ? 's' : ''} transcribed</p>
+                          {finalElapsed > 0 && <p className="mt-0.5 text-[13px] text-fg-subtle">Finished in {formatElapsed(finalElapsed)}</p>}
                         </div>
-                    </div>
-
-                    {/* Credit receipt (ADR-050 fase 3) — total charged + per-video breakdown; refund transparency when videos were skipped */}
-                    {receipt && receipt.used != null && (
-                      <div className="border-t border-border-subtle pt-3 -mt-1">
-                        <CompletionReceipt
-                          kind="playlist"
-                          status="complete"
-                          headline="Playlist extracted"
-                          used={receipt.used}
-                          reserved={receipt.reserved}
-                          refunded={receipt.refunded}
-                          transcribedCount={receipt.transcribedCount}
-                          skippedCount={receipt.skippedCount}
-                          videos={receipt.videos}
-                          elapsedSeconds={finalElapsed}
-                          libraryHref={appHref('/dashboard/library')}
-                          embedded
-                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-[17px] font-semibold text-fg">{compSucceeded} of {compTotal} video{compTotal !== 1 ? 's' : ''} transcribed</p>
+                        <p className="mt-0.5 text-[13px] text-fg-subtle">
+                          {finalElapsed > 0 ? `Finished in ${formatElapsed(finalElapsed)} · ` : ''}{compFailed} could not be fetched
+                        </p>
                       </div>
                     )}
 
-                    {/* Grouped failure summary */}
-                    {(() => {
-                      const vals = Object.values(videoStatuses);
-                      const botOrTimeout = vals.filter(s => s === 'bot_detection' || s === 'timeout').length;
-                      const ageRestricted = vals.filter(s => s === 'age_restricted').length;
-                      const membersOnly = vals.filter(s => s === 'members_only').length;
-                      const youtubeRestricted = vals.filter(s => s === 'youtube_restricted').length;
-                      const extractionError = vals.filter(s => s === 'error').length;
-                      const groups: string[] = [
-                        ...(botOrTimeout > 0 ? [`⚠️ ${botOrTimeout} video${botOrTimeout !== 1 ? 's' : ''} couldn't be fetched — YouTube's rate limit or a temporary connection issue — and failed after an automatic retry. Retry ${botOrTimeout !== 1 ? 'them' : 'it'} below with a fresh connection, or use Audio Upload.`] : []),
-                        ...(ageRestricted > 0 ? [`🔞 ${ageRestricted} video${ageRestricted !== 1 ? 's' : ''} ${ageRestricted !== 1 ? 'are' : 'is'} age-restricted. YouTube prevents transcription of these videos. Download the audio manually and use Audio Upload instead.`] : []),
-                        ...(membersOnly > 0 ? [`🔒 ${membersOnly} video${membersOnly !== 1 ? 's' : ''} ${membersOnly !== 1 ? 'are' : 'is'} members-only. You need a channel membership to access these videos.`] : []),
-                        ...(youtubeRestricted > 0 ? [`🚫 ${youtubeRestricted} video${youtubeRestricted !== 1 ? 's' : ''} ${youtubeRestricted !== 1 ? 'are' : 'is'} unavailable or restricted on YouTube.`] : []),
-                        ...(extractionError > 0 ? [`❌ ${extractionError} video${extractionError !== 1 ? 's' : ''} failed with an unexpected error and couldn't be transcribed. This is uncommon — try Audio Upload, or contact support if it keeps happening.`] : []),
-                      ];
-                      if (groups.length === 0) return null;
-                      return (
-                        <div className="flex flex-col gap-1.5 p-3 bg-surface-elevated/50 border border-border rounded-lg">
-                          {groups.map((msg, i) => (
-                            <p key={i} className="text-sm text-fg-muted leading-snug">{msg}</p>
+                    {/* Receipt (mockup C) — method-colour bar + the authoritative Charged total and
+                        refund line from the credit receipt (ADR-050 numbers, unchanged). */}
+                    {receipt && receipt.used != null && (
+                      <CostBreakdown
+                        totalLabel="Charged"
+                        totalAmount={`${receipt.used} credit${receipt.used !== 1 ? 's' : ''}`}
+                        segments={[
+                          { key: 'cap', tone: 'captions', count: compCapSuccess, label: `${compCapSuccess} auto-captions`, amount: '' },
+                          { key: 'ai', tone: 'ai', count: compAiSuccess, label: `${compAiSuccess} AI transcription`, amount: '' },
+                          ...(compFailed > 0
+                            ? [{
+                                key: 'un', tone: 'unavailable', count: compFailed, label: `${compFailed} not fetched`,
+                                amount: receipt.refunded ? `${receipt.refunded} credit${receipt.refunded !== 1 ? 's' : ''} refunded` : 'refunded',
+                                refund: true,
+                              } as CostSegment]
+                            : []),
+                        ]}
+                      />
+                    )}
+
+                    {/* Failure block (mockup C) — one explanation, one action. Retryable videos
+                        (rate-limited) get "Retry all N" — no per-video retry, no round cap; the
+                        tone shifts to structural once a manual retry has already run (ADR-080). */}
+                    {compRetryableEntries.length > 0 && (
+                      <div className="rounded-lg border border-border bg-surface-elevated/50 p-3">
+                        <p className="mb-1 font-medium text-fg">{compRetryableEntries.length} video{compRetryableEntries.length !== 1 ? 's' : ''} could not be fetched</p>
+                        <p className="mb-3 text-[13px] leading-relaxed text-fg-subtle">
+                          {compStalled
+                            ? "YouTube is structurally blocking these right now. You can keep retrying, but Audio Upload is the reliable alternative."
+                            : "YouTube rate-limited these during extraction, and an automatic retry already failed once. Retrying now uses a fresh connection."}
+                        </p>
+                        <div className="mb-3 divide-y divide-border-subtle overflow-hidden rounded-lg border border-border">
+                          {(showAllFailed ? compRetryableEntries : compRetryableEntries.slice(0, 5)).map(e => (
+                            <p key={e.id} className="truncate px-3 py-1.5 text-[13px] text-fg-subtle">{e.title}</p>
                           ))}
                         </div>
-                      );
-                    })()}
-
-                    {/* Stats row: free + failed breakdown */}
-                    {(() => {
-                      const freeCount = freeVideoIds?.size ?? 0
-                      const noCaptionsIds = Object.entries(videoStatuses).filter(([, s]) => s === 'no_captions').map(([id]) => id)
-                      const noSpeechIds = Object.entries(videoStatuses).filter(([, s]) => s === 'no_speech').map(([id]) => id)
-                      const failedVideoIds = [...noCaptionsIds, ...noSpeechIds]
-                      const failedEntries = playlist?.entries.filter(e => failedVideoIds.includes(e.id)) ?? []
-                      if (freeCount === 0 && failedEntries.length === 0) return null
-                      return (
-                        <div className="space-y-3">
-                          {/* Credit / free summary */}
-                          {freeCount > 0 && (
-                            <div className="flex items-center gap-2 text-xs text-fg-muted">
-                              <span className="text-[10px] uppercase font-bold text-success bg-success-subtle px-1.5 py-0.5 rounded">{freeCount} free</span>
-                              <span>{freeCount} video{freeCount !== 1 ? 's' : ''} extracted without using credits</span>
-                            </div>
+                        {compRetryableEntries.length > 5 && !showAllFailed && (
+                          <button type="button" onClick={() => setShowAllFailed(true)} className="mb-3 block text-xs font-medium text-fg-muted hover:text-fg cursor-pointer">
+                            Show all {compRetryableEntries.length}
+                          </button>
+                        )}
+                        <div className="flex flex-wrap items-center gap-3">
+                          {credits !== null && <span className="text-[13px] text-fg-subtle">You have {credits} credit{credits !== 1 ? 's' : ''}</span>}
+                          {onSwitchToAudio && (
+                            <Button variant="outline" size="sm" onClick={onSwitchToAudio} className="h-9">Audio Upload</Button>
                           )}
-                          {/* Failed videos needing audio upload */}
-                          {failedEntries.length > 0 && (
-                            <div className="p-3 bg-surface-elevated/50 border border-border rounded-lg space-y-2">
-                              <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
-                                {failedEntries.length} video{failedEntries.length !== 1 ? 's' : ''} need audio upload
-                              </p>
-                              <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
-                                {failedEntries.map(e => (
-                                  <div key={e.id} className="flex items-center gap-2">
-                                    {e.thumbnail && (
-                                      <Image
-                                        src={e.thumbnail}
-                                        alt=""
-                                        width={40}
-                                        height={22}
-                                        className="rounded shrink-0 object-cover"
-                                        unoptimized
-                                      />
-                                    )}
-                                    <span className="text-xs text-fg-muted truncate">{e.title}</span>
-                                    <span className="shrink-0 text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                                      {videoStatuses[e.id] === 'no_speech' ? 'No speech' : 'No captions'}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled
-                                className="w-full mt-1 h-7 text-xs opacity-50 cursor-not-allowed"
-                                title="Coming soon"
-                              >
-                                Save failed videos for later
-                              </Button>
-                            </div>
+                          {onRetryAll && (
+                            <Button size="sm" disabled={isExtracting} onClick={() => onRetryAll(compRetryableIds)} className="ml-auto h-9">
+                              <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry all {compRetryableEntries.length}
+                            </Button>
                           )}
                         </div>
-                      )
-                    })()}
+                      </div>
+                    )}
 
-                    {/* Rate-limited videos — retry each without re-running the whole playlist */}
+                    {/* Permanently unavailable (private / members-only / age-restricted / no captions
+                        / no speech) — one compact note; retrying wouldn't help. Audio Upload where audio exists. */}
                     {(() => {
-                      const retryableIds = Object.entries(videoStatuses)
-                        .filter(([, s]) => s === 'bot_detection' || s === 'timeout')
+                      const permIds = Object.entries(videoStatuses)
+                        .filter(([, s]) => s === 'members_only' || s === 'age_restricted' || s === 'youtube_restricted' || s === 'no_captions' || s === 'no_speech' || s === 'error')
                         .map(([id]) => id)
-                      const retryableEntries = playlist?.entries.filter(e => retryableIds.includes(e.id)) ?? []
-                      if (retryableEntries.length === 0 || !onRetryVideo) return null
+                      if (permIds.length === 0) return null
                       return (
-                        <div className="p-3 bg-surface-elevated/50 border border-border rounded-lg space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
-                              {retryableEntries.length} video{retryableEntries.length !== 1 ? 's' : ''} to retry
-                            </p>
-                            {onRetryAll && retryableIds.length > 1 && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={isExtracting}
-                                className="h-7 text-xs shrink-0"
-                                onClick={() => onRetryAll(retryableIds)}
-                              >
-                                <RefreshCw className="h-3 w-3 mr-1" /> Retry all {retryableIds.length}
-                              </Button>
-                            )}
-                          </div>
-                          <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
-                            {retryableEntries.map(e => (
-                              <div key={e.id} className="flex items-center gap-2">
-                                {e.thumbnail && (
-                                  <Image src={e.thumbnail} alt="" width={40} height={22} className="rounded shrink-0 object-cover" unoptimized />
-                                )}
-                                <span className="text-xs text-fg-muted truncate flex-1">{e.title}</span>
-                                <span className="shrink-0 text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                                  {videoStatuses[e.id] === 'timeout' ? 'Timeout' : 'Blocked'}
-                                </span>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={isExtracting || videoStatuses[e.id] === 'extracting'}
-                                  className="h-7 text-xs shrink-0"
-                                  onClick={() => onRetryVideo(e.id)}
-                                >
-                                  {videoStatuses[e.id] === 'extracting'
-                                    ? <Loader2 className="h-3 w-3 animate-spin" />
-                                    : <><RefreshCw className="h-3 w-3 mr-1" /> Retry</>}
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
+                        <div className="rounded-lg border border-border bg-surface-elevated/50 p-3">
+                          <p className="mb-1 font-medium text-fg">{permIds.length} video{permIds.length !== 1 ? 's' : ''} couldn&apos;t be transcribed</p>
+                          <p className="mb-2 text-[13px] leading-relaxed text-fg-subtle">
+                            These are private, members-only, age-restricted, or have no captions or speech — retrying won&apos;t help. Any credits held for them were refunded. For ones with audio, Audio Upload is the way in.
+                          </p>
+                          {onSwitchToAudio && <Button variant="outline" size="sm" onClick={onSwitchToAudio} className="h-9">Audio Upload</Button>}
                         </div>
                       )
                     })()}
 
-                    <div className="flex items-center gap-3 mt-2">
-                        <Button
-                            onClick={handleReset}
-                            variant="outline"
-                            className="bg-bg border-border hover:bg-surface-elevated text-fg"
-                        >
-                            Start New Extraction
-                        </Button>
-                        <Button
-                            className="bg-accent hover:bg-accent/90 text-fg-on-accent"
-                            onClick={() => window.location.href = appHref('/dashboard/library')}
-                        >
-                            View in Library
-                        </Button>
+                    {/* Actions — at partial success Retry is the next step so View is secondary;
+                        at full success View is primary (mockup C). */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <Button variant="outline" size="sm" onClick={handleReset} className="h-9">Start new extraction</Button>
+                        <a href={appHref('/dashboard/library')} className="ml-auto">
+                            <Button variant={compFailed === 0 ? undefined : 'outline'} size="sm" className="h-9">
+                                View {compSucceeded} in Library
+                            </Button>
+                        </a>
                     </div>
                 </div>
             ) : (
-                // In Progress View
-                <>
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium flex items-center gap-2 text-fg">
-                            <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                            Extracting Playlist...
-                        </span>
-                        <span className="text-xs text-fg-muted">
-                            {Object.values(videoStatuses).filter(s => s === 'success').length} / {Object.keys(videoStatuses).length} completed · {formatElapsed(elapsedSeconds)}
-                        </span>
+                // In-progress — one status surface (mockup A3): header + bar + per-video rows.
+                <div className="flex flex-col gap-3">
+                    <div>
+                        <div className="mb-2 flex items-baseline gap-2">
+                            <span className="font-medium text-fg">Extracting playlist</span>
+                            <span className="ml-auto font-mono text-xs text-fg-muted">{compSucceeded} / {compTotal} · {formatElapsed(elapsedSeconds)}</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+                            <div className="h-full bg-accent transition-all duration-500 ease-out" style={{ width: `${(compDone / Math.max(1, compTotal)) * 100}%` }} />
+                        </div>
+                        <p className="mt-2 text-xs text-fg-muted">Runs in the background — safe to close this tab.</p>
                     </div>
-                    <div className="h-2 bg-surface-elevated rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-accent transition-all duration-500 ease-out"
-                            style={{ width: `${(Object.values(videoStatuses).filter(s => s === 'success' || s === 'error' || s === 'unavailable' || s === 'no_speech' || s === 'youtube_restricted' || s === 'age_restricted' || s === 'bot_detection' || s === 'timeout' || s === 'members_only' || s === 'no_captions').length / Math.max(1, Object.keys(videoStatuses).length)) * 100}%` }}
-                        />
-                    </div>
-                    <BackgroundJobNotice
-                        largePlaylist={Object.keys(videoStatuses).length > 50}
-                        className="mt-4"
-                    />
-                </>
+                    {runEntries.length > 0 && (
+                        <div className="divide-y divide-border-subtle overflow-hidden rounded-lg border border-border">
+                            {(showAllProgress ? runEntries : runEntries.slice(0, 5)).map(e => {
+                                const st = videoStatuses[e.id]
+                                const isAi = whisperVideoIds?.has(e.id)
+                                return (
+                                    <div key={e.id} className="flex items-center gap-2.5 bg-surface px-3 py-2 text-[13px]">
+                                        <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                                            {st === 'success' ? <span className="text-success">✓</span>
+                                              : st === 'extracting' ? <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                                              : st === 'pending' ? <span className="text-fg-muted">○</span>
+                                              : <span className="text-error">✕</span>}
+                                        </span>
+                                        <span className="min-w-0 flex-1 truncate text-fg-subtle">{e.title}</span>
+                                        {(st === 'pending') && <span className="shrink-0 text-xs text-fg-muted">Queued</span>}
+                                        {(st !== 'pending' && st !== 'extracting' && st !== 'success') && <span className="shrink-0 text-xs text-fg-muted">Skipped</span>}
+                                        <MethodBadge method={isAi ? 'ai' : 'captions'} className="shrink-0">{isAi ? 'AI' : 'Auto'}</MethodBadge>
+                                    </div>
+                                )
+                            })}
+                            {runEntries.length > 5 && (
+                                <button type="button" onClick={() => setShowAllProgress(v => !v)} className="w-full px-3 py-2 text-center text-xs font-medium text-fg-muted hover:text-fg cursor-pointer">
+                                    {showAllProgress ? 'Show less' : `Show all ${runEntries.length}`}
+                                </button>
+                            )}
+                        </div>
+                    )}
+                    <BackgroundJobNotice largePlaylist={compTotal > 50} />
+                </div>
             )}
         </ResultCardShell>
       )}
@@ -655,61 +603,52 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
         />
       )}
 
-      {playlist && !showAvailabilityModal && (
+      {playlist && !showAvailabilityModal && !isExtracting && !isCompleted && (
         <div className="bg-surface border border-border rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="p-6 border-b border-border bg-surface-elevated/30 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-accent/10 rounded-lg text-accent">
+          {/* Header (ADR-080) — title wraps freely; Select-all is one indeterminate checkbox +
+              counter; the primary action sits on its own wrapping row so it never collides with
+              a long title. */}
+          <div className="p-6 border-b border-border bg-surface-elevated/30 flex flex-col gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
                 <ListMusic className="h-6 w-6" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-fg truncate max-w-[300px] md:max-w-md">
-                  {playlist.title}
-                </h3>
-                <div className="flex items-center gap-3">
-                  <p className="text-sm text-fg-muted">
-                    {selectedIds.size} of {availableCount} available videos selected
-                  </p>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={selectAll}
-                      className="text-xs text-accent hover:text-accent/80 font-medium transition-colors"
-                    >
-                      Select All
-                    </button>
-                    <span className="text-fg-subtle">|</span>
-                    <button 
-                      onClick={deselectAll}
-                      className="text-xs text-fg-muted hover:text-fg font-medium transition-colors"
-                    >
-                      Deselect All
-                    </button>
-                  </div>
-                </div>
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-fg leading-snug">{playlist.title}</h3>
+                <p className="mt-0.5 text-sm text-fg-muted">{availableCount} video{availableCount !== 1 ? 's' : ''}</p>
               </div>
             </div>
-            {/* Action Buttons */}
-            {!hasExtracted && (
-              <div className="flex gap-2">
-                  <Button
-                    onClick={handleCheckAvailability}
-                    disabled={isCheckingAvailability || selectedIds.size === 0 || isOverHardCap}
-                    className="px-6 shadow-lg shadow-primary/20"
-                  >
-                    {isCheckingAvailability ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Preparing…
-                      </>
-                    ) : (
-                      <>
-                        <Search className="h-4 w-4 mr-2" />
-                        Review extraction
-                      </>
-                    )}
-                  </Button>
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={selectedIds.size === availableCount && availableCount > 0 ? 'true' : selectedIds.size === 0 ? 'false' : 'mixed'}
+                onClick={() => (selectedIds.size === availableCount ? deselectAll() : selectAll())}
+                className="flex min-h-[36px] items-center gap-2 text-sm text-fg-subtle cursor-pointer"
+              >
+                <span className={cn(
+                  "flex h-4 w-4 items-center justify-center rounded border text-[10px] leading-none",
+                  selectedIds.size > 0 ? "bg-accent border-accent text-fg-on-accent" : "border-border-strong"
+                )}>
+                  {selectedIds.size === availableCount && availableCount > 0 ? '✓' : selectedIds.size > 0 ? '–' : ''}
+                </span>
+                Select all
+              </button>
+              <span className="text-xs text-fg-muted">{selectedIds.size} of {availableCount} selected</span>
+              {!hasExtracted && (
+                <Button
+                  onClick={handleCheckAvailability}
+                  disabled={isCheckingAvailability || selectedIds.size === 0 || isOverHardCap}
+                  className="ml-auto"
+                >
+                  {isCheckingAvailability ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing…</>
+                  ) : (
+                    <><Search className="h-4 w-4 mr-2" /> Review extraction</>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
 
           {!hasExtracted && isOverHardCap && (

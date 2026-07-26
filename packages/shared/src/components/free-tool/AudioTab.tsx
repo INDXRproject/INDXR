@@ -17,6 +17,10 @@ import posthog from "posthog-js"
 import { createClient } from "../../utils/supabase/client"
 import { BackgroundJobNotice } from "../BackgroundJobNotice"
 import { JobProgressCard } from "../transcribe/JobProgressCard"
+import { MethodBadge } from "../transcribe/MethodBadge"
+import { BalanceLine } from "../transcribe/CostBreakdown"
+import { ErrorCard } from "../transcribe/ErrorCard"
+import { resolveErrorCopy } from "../transcribe/errorCopy"
 import { CREDIT_COSTS } from "../../lib/pricing"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
@@ -53,7 +57,7 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activeFilenameRef = useRef<string>('Audio Upload')
   const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ message: string; code?: string } | null>(null)
 
   // Active job tracked via Realtime + polling
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
@@ -98,9 +102,9 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
       sessionStorage.removeItem(AUDIO_JOB_KEY)
       if (job.error_message === 'Insufficient credits') {
-        setError('Not enough credits to transcribe this file.')
+        setError({ message: 'Not enough credits to transcribe this file.', code: 'insufficient_credits' })
       } else if (job.status !== 'network_error') {
-        setError(job.error_message || 'Transcription failed')
+        setError({ message: job.error_message || 'Transcription failed', code: job.error_type ?? undefined })
       }
       setIsTranscribing(false)
       setWhisperStatus('idle')
@@ -277,7 +281,7 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
     const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
 
     if (!validTypes.includes(fileExt)) {
-      setError(`Unsupported file type. Please use: ${validTypes.join(', ')}`)
+      setError({ message: `Unsupported file type. Please use: ${validTypes.join(', ')}`, code: 'unsupported_file' })
       setIsUploading(false)
       return
     }
@@ -285,7 +289,7 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
     // Check file size (500MB limit)
     const maxSize = 500 * 1024 * 1024
     if (selectedFile.size > maxSize) {
-      setError(`File too large (${formatFileSize(selectedFile.size)}). Maximum size is 500 MB.`)
+      setError({ message: `File too large (${formatFileSize(selectedFile.size)}). Maximum size is 500 MB.`, code: 'file_too_large' })
       setIsUploading(false)
       return
     }
@@ -348,7 +352,7 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
       const preflightRes = await fetch('/api/transcribe/preflight', { method: 'POST' })
       if (!preflightRes.ok) {
         const preflightData = await preflightRes.json()
-        setError(preflightData.error || 'Request blocked. Please try again.')
+        setError({ message: preflightData.error || 'Request blocked. Please try again.' })
         return
       }
 
@@ -356,7 +360,7 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) {
-        setError('Session expired. Please sign in again.')
+        setError({ message: 'Session expired. Please sign in again.', code: 'unauthorized' })
         return
       }
 
@@ -403,20 +407,20 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
 
       if (httpStatus !== 200 && httpStatus !== 201) {
         if (httpStatus === 413 && data.code === 'storage_full') {
-          setError('Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged.')
+          setError({ message: 'Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged.', code: 'storage_full' })
           return
         }
         if (httpStatus === 402) {
-          setError(`Not enough credits — you need ${data.required_credits as number} but have ${data.available_credits as number}. Buy more at /pricing.`)
+          setError({ message: `Not enough credits — you need ${data.required_credits as number} but have ${data.available_credits as number}.`, code: 'insufficient_credits' })
           return
         }
-        setError((data.user_friendly_message as string) || (data.error as string) || 'Transcription failed')
+        setError({ message: (data.user_friendly_message as string) || (data.error as string) || 'Transcription failed', code: (data.code as string | undefined) })
         return
       }
 
       const job_id = data.job_id as string | undefined
       if (!job_id) {
-        setError('Failed to start transcription job')
+        setError({ message: 'Failed to start transcription job' })
         return
       }
 
@@ -432,7 +436,7 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
       // Completion handled by useJobStatus onComplete/onError callbacks
     } catch (error) {
       console.error('Transcription error:', error)
-      setError(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
+      setError({ message: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })
       setIsTranscribing(false)
       setWhisperStatus('idle')
       setUploadPhase('idle')
@@ -471,11 +475,17 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
         </div>
       )}
       {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span className="flex-1">{error}</span>
-          <button onClick={() => setError(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
-        </div>
+        <ErrorCard
+          {...resolveErrorCopy(error.code, {
+            fallbackMessage: error.message,
+            billingHref: appHref('/dashboard/billing'),
+            libraryHref: appHref('/dashboard/library'),
+            accountHref: appHref('/dashboard/account'),
+            contactHref: marketingHref('/contact'),
+            loginHref: marketingHref('/login'),
+            onRetryUrl: () => setError(null),
+          })}
+        />
       )}
 
       {/* Resume Banner — shown when a running job is detected on mount */}
@@ -603,35 +613,33 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
         </div>
       )}
 
-      {/* Credit Cost Preview */}
+      {/* Credit cost (ADR-080) — indigo AI method (uploads always go via AssemblyAI), the
+          total is the biggest number here, the balance reads as secondary, never amber. */}
       {file && !transcript && (
-        <div className="p-4 rounded-lg border border-border bg-surface-elevated">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h4 className="font-semibold text-fg mb-1">Credit Cost</h4>
-              <p className="text-sm text-fg-muted">
-                This will use <span className="font-semibold text-fg">{estimatedCredits} credits</span> ({formatDuration(audioDuration)})
-              </p>
-              <p className="text-xs text-fg-muted mt-1">
-                Your balance: {credits ?? 0} credits
-              </p>
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="flex items-center gap-3 p-4">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm text-fg">{file.name}</p>
+              {audioDuration !== null && (
+                <p className="font-mono text-xs text-fg-muted">{formatDuration(audioDuration)}</p>
+              )}
             </div>
-
+            <MethodBadge method="ai">AI transcription</MethodBadge>
+          </div>
+          <div className="flex items-baseline justify-between border-t border-border px-4 py-3">
+            <span className="font-medium">Total</span>
+            <span className="text-[20px] font-semibold tabular-nums text-fg-strong">
+              {estimatedCredits} credit{estimatedCredits === 1 ? "" : "s"}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 border-t border-border bg-surface-elevated px-4 py-3">
+            <BalanceLine have={credits} cost={estimatedCredits} />
             {!hasEnoughCredits && credits !== null && (
-              <div className="flex items-center gap-2 text-amber-500">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-sm font-medium">Not enough credits</span>
-              </div>
+              <a href={appHref('/dashboard/billing')} className="ml-auto">
+                <Button size="sm" className="h-9">Buy credits</Button>
+              </a>
             )}
           </div>
-
-          {!hasEnoughCredits && credits !== null && (
-            <a href={marketingHref('/pricing')}>
-              <Button variant="outline" size="sm" className="mt-3 w-full">
-                Buy Credits →
-              </Button>
-            </a>
-          )}
         </div>
       )}
 

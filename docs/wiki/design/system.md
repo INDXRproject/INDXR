@@ -112,6 +112,8 @@ Elk design-besluit wordt getoetst aan deze zeven. Bij twijfel: terug naar `wiki/
 
 **Badge families (added 2026-07-03, Library redesign):** `--info` (blue) marks a transcript's *source* — Auto-captions vs. AI Transcription, one per row. `--violet` marks *AI-derived outputs* — Edited, AI Summary, Edited Summary, RAG, zero or more per row. Usage convention matches `success`/`warning`/`error`: `bg-{family}-subtle` background + base `text-{family}` (not `-fg`) for text. Both apply identically in dark mode via the same token names.
 
+**Method-colour convention (ADR-080):** a transcription *method* has one colour across the whole product, and it is the exact colour the **Library badge component** already uses (`apps/app/src/components/library/TranscriptList.tsx` → `BADGE_CLASSES`): **auto-captions = sky** (`--sky` / `bg-sky-subtle text-sky`), **AI transcription = indigo** (`--indigo` / `bg-indigo-subtle text-indigo`). The single shared source is `packages/shared/src/components/transcribe/method.ts` (`METHOD_META`) — do not define new method colours or duplicate hex; read these tokens. The method colour follows the method through the whole transcribe chain: method choice → playlist summary → per-video rows → progress → completion → Library. Only the **method** axis propagates; the **source** axis (video / playlist / uploaded file) is a separate Library concern, and an audio upload has no source badge (it runs via AssemblyAI, so it uses the AI indigo). In this flow: **green = free / new / fully succeeded, red = unavailable / failed, and yellow does not appear** (it previously sat on the paid AI function and read as a warning).
+
 **Dark theme (`[data-theme="dark"]`):**
 ```css
 [data-theme="dark"] {

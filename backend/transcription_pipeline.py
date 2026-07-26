@@ -122,7 +122,13 @@ def _classify_download_error(
     video_id: Optional[str] = None,
     job_id: Optional[str] = None,
 ) -> str:
-    """Map a download error string to a canonical error_type slug."""
+    """Map a download error string to a canonical error_type slug.
+
+    These slugs are the source of truth for the frontend's shared ErrorCard copy map
+    (ADR-080) — packages/shared/src/components/transcribe/errorCopy.ts. Any new slug added
+    here should get an entry there; unmapped codes still render a neutral card, are shown to
+    the user, and are logged, but tailored copy lives in the map. Keep the two in sync.
+    """
     lower = error_msg.lower()
     if any(kw in lower for kw in MEMBERS_ONLY_KEYWORDS):
         return 'members_only'

@@ -43,3 +43,13 @@ gedeelde **`TranscribeWorkbench`**; alleen de page-wrapper verschilt.
 - **`onBusyChange`** aggregeert naar één `busy`-state die de idle-`RecentTranscripts` verbergt; inactieve tabs zijn (Radix) unmounted en melden `false` bij unmount, dus `busy` weerspiegelt de actieve modus.
 - **Job-state onaangeroerd** — progress/result-**render** loopt via de gedeelde `JobProgressCard`/`ResultCardShell`, maar job/SSE/resume/dedup-**state** blijft binnen de tab-componenten (resume-op-mount ongewijzigd). Het uit de monolieten tillen = POST-LAUNCH (`priorities.md`).
 - **Hexagon uit** — werkoppervlak; per-pagina opt-in via `DashboardBackdrop`, hier niet gerenderd (system.md §5).
+
+## Afwerking (ADR-080)
+
+- **Methodekleur** volgt de methode door de hele keten (auto-captions=sky, AI=indigo, uit de Library-badge-tokens via `method.ts`). Audio-upload=indigo. Geen geel in deze flow.
+- **Methodekeuze** = `MethodRadioCards` (radiogroep, geen segmented control) — vervangt `SourceChoice`.
+- **Kosten** = `CostBreakdown` (bar + legenda + `Total` ~20px) + `BalanceLine`; video toont het concrete totaal (B4) in de bevestigingsstap.
+- **Fouten** = gedeelde `ErrorCard` + `errorCopy.ts` (gekeyd op backend-code; onbekend → neutrale kaart + code + contact).
+- **Playlist-bevestiging** (`PlaylistAvailabilitySummary`): 3 statkaarten → `CostBreakdown`-balk, per-video methode-badge + 44px chip-toggle, actiebalk met onomkeerbaarheid.
+- **Playlist-voortgang** (`PlaylistManager`): één statusoppervlak (banner weg, selectielijst weg tijdens run, per-video rijen + methodebadge, URL/Fetch disabled).
+- **Playlist-afronding** (mockup C): neutrale kop (groen alleen 100%), bon met authoritative `Charged`/refund, mislukking-blok met **`Retry all N`** (per-video Retry vervalt, geen cap; `retryRound` voor telemetrie/toon), acties (View secundair bij partial).

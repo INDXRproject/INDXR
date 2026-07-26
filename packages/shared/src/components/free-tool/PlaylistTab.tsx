@@ -55,6 +55,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const [freeVideoIds, setFreeVideoIds] = useState<Set<string>>(new Set())
   const [whisperVideoIds, setWhisperVideoIds] = useState<Set<string>>(new Set())
   const [progressMessage, setProgressMessage] = useState<string>("")
+  // How many manual "Retry all" rounds have run for the current playlist (telemetry is built
+  // elsewhere; here it shifts the completion failure-block tone). Reset on a fresh extraction.
+  const [retryRound, setRetryRound] = useState(0)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [resumeData, setResumeData] = useState<{ jobId: string; completed: number; total: number; title?: string } | null>(null)
   const [resumeBarActive, setResumeBarActive] = useState(false)
@@ -422,6 +425,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
   const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string) => {
     setError(null)
+    setRetryRound(0)
     setProgressMessage("Initializing...")
 
     // ── Pre-flight credit check ────────────────────────────────────────────
@@ -646,7 +650,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   }
 
   const handleRetryVideo = (videoId: string) => _startRetryJob([videoId])
-  const handleRetryAll = (videoIds: string[]) => _startRetryJob(videoIds)
+  const handleRetryAll = (videoIds: string[]) => { setRetryRound(r => r + 1); _startRetryJob(videoIds) }
 
   return (
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
@@ -738,8 +742,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         </div>
       )}
 
-      {/* Progress Message */}
-      {progressMessage && (
+      {/* Progress Message — hidden during a run; the progress card is the single status surface (ADR-080) */}
+      {progressMessage && !loading && (
         <div className="mb-4 p-3 bg-surface-sunken border border-border rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
             <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <span className="text-sm text-fg font-medium">{progressMessage}</span>
@@ -758,6 +762,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         onSwitchToAudio={onSwitchToAudio}
         onRetryVideo={handleRetryVideo}
         onRetryAll={handleRetryAll}
+        retryRound={retryRound}
         elapsedSeconds={elapsedSeconds}
         resumePlaylist={resumePlaylist}
         receipt={playlistReceipt}
