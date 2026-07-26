@@ -36,10 +36,10 @@ export function MobileTabBar({ messagesUnread = 0 }: MobileTabBarProps) {
   return (
     <nav
       className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-border"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      style={{ paddingBottom: "var(--safe-bottom)" }}
       aria-label="Mobile navigation"
     >
-      <div className="flex h-14">
+      <div className="flex h-[var(--tabbar-h)]">
         {TABS.map((tab) => {
           const active = isActive(tab)
           const Icon = tab.icon

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { TranscribeWorkbench } from "@indxr/shared/components/transcribe/TranscribeWorkbench"
-import { RecentTranscripts } from "@indxr/shared/components/transcribe/RecentTranscripts"
 import { VideoTab } from "@indxr/shared/components/free-tool/VideoTab"
 import { PlaylistTab } from "@indxr/shared/components/free-tool/PlaylistTab"
 import { AudioTab } from "@indxr/shared/components/free-tool/AudioTab"
@@ -46,7 +45,6 @@ const faqItems: FAQItem[] = [
 export default function FreeToolPage() {
   const [showPlaylistFriction, setShowPlaylistFriction] = useState(false)
   const [showVideoAiFriction, setShowVideoAiFriction] = useState(false)
-  const [busy, setBusy] = useState(false)
   const [user, setUser] = useState<unknown>(null)
   const [hasMounted, setHasMounted] = useState(false)
   const [storageFull, setStorageFull] = useState(false)
@@ -134,7 +132,6 @@ export default function FreeToolPage() {
                 onTranscriptLoaded={handleTranscriptLoaded}
                 onSwitchToAudio={() => switchMode("audio")}
                 onAiRequiresAuth={() => setShowVideoAiFriction(true)}
-                onBusyChange={setBusy}
               />
               {!user && showVideoAiFriction && (
                 <FrictionConversionCard
@@ -155,7 +152,6 @@ export default function FreeToolPage() {
                 isAuthenticated={!!user}
                 onAuthRequired={() => setShowPlaylistFriction(true)}
                 onSwitchToAudio={() => switchMode("audio")}
-                onBusyChange={setBusy}
               />
               {!user && showPlaylistFriction && (
                 <FrictionConversionCard
@@ -172,7 +168,7 @@ export default function FreeToolPage() {
           )}
           renderAudio={() => (
             user ? (
-              <AudioTab onTranscriptLoaded={handleTranscriptLoaded} onBusyChange={setBusy} />
+              <AudioTab onTranscriptLoaded={handleTranscriptLoaded} />
             ) : (
               <FrictionConversionCard
                 headline="Audio file transcription"
@@ -186,8 +182,9 @@ export default function FreeToolPage() {
           )}
         />
 
-        {/* Idle state below the card: Recent for logged-in visitors, trust signals for anonymous */}
-        {!busy && (user ? <RecentTranscripts className="mt-6" /> : <MicroTrustRow />)}
+        {/* Idle state below the card: trust signals for anonymous visitors (the Recent list is
+            gone, ADR-080). Logged-in idle is just the card + the docs link below. */}
+        {!user && <MicroTrustRow />}
 
         {/* Quiet docs link under the card */}
         <p className="mt-6 text-sm text-[var(--fg-muted)]">

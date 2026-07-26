@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { TranscribeWorkbench } from "@indxr/shared/components/transcribe/TranscribeWorkbench"
-import { RecentTranscripts } from "@indxr/shared/components/transcribe/RecentTranscripts"
 import { VideoTab } from "@indxr/shared/components/free-tool/VideoTab"
 import { PlaylistTab, PlaylistStats } from "@indxr/shared/components/free-tool/PlaylistTab"
 import { AudioTab } from "@indxr/shared/components/free-tool/AudioTab"
@@ -15,7 +14,6 @@ import { marketingHref } from "@indxr/shared/lib/cross-host-links"
 
 export default function TranscribePage() {
   const [isExtracting, setIsExtracting] = useState(false)
-  const [busy, setBusy] = useState(false)
   const [showSaveError, setShowSaveError] = useState(false)
   const [saveErrorMessage, setSaveErrorMessage] = useState("")
   const [pendingSave, setPendingSave] = useState<{ transcript: TranscriptItem[], metadata: TranscriptMetadata } | null>(null)
@@ -393,7 +391,6 @@ export default function TranscribePage() {
             onPlaylistDetected={() => switchMode('playlist')}
             onTranscriptLoaded={handleTranscriptLoaded}
             onSwitchToAudio={() => switchMode('audio')}
-            onBusyChange={setBusy}
           />
         )}
         renderPlaylist={({ switchMode }) => (
@@ -403,18 +400,14 @@ export default function TranscribePage() {
             onSwitchToAudio={() => switchMode('audio')}
             onPlaylistComplete={handlePlaylistComplete}
             onExtractingChange={setIsExtracting}
-            onBusyChange={setBusy}
           />
         )}
         renderAudio={() => (
-          <AudioTab onTranscriptLoaded={handleTranscriptLoaded} onBusyChange={setBusy} />
+          <AudioTab onTranscriptLoaded={handleTranscriptLoaded} />
         )}
       />
 
-      {/* Idle state below the card: last 3 transcripts (hidden the moment a job/result appears) */}
-      {!busy && <RecentTranscripts />}
-
-      {/* Quiet docs link under the card (moved out of the subline) */}
+      {/* Quiet docs link under the card (idle = just the card and this link, ADR-080) */}
       <p className="text-center text-sm text-fg-muted">
         <a href={marketingHref('/docs')} target="_blank" rel="noopener noreferrer" className="hover:text-fg transition-colors">
           Learn how transcription works →

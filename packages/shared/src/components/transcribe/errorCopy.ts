@@ -23,6 +23,10 @@ import type { ErrorCardAction } from "./ErrorCard"
 export type ErrorCtx = {
   requiredCredits?: number | null
   availableCredits?: number | null
+  // Read from transcription_jobs.credits_refunded, not asserted. When present and > 0, a "N credits
+  // refunded" line is shown; when absent/0, the card says nothing about credits (silence beats a
+  // wrong claim — ADR-080). System-behaviour assumptions are not reliable enough here.
+  creditsRefunded?: number | null
   maxHours?: number | null
   maxVideos?: number | null
   aiCost?: number | null
@@ -42,6 +46,8 @@ export type ResolvedError = {
   body: string
   actions: ErrorCardAction[]
   code: string | null
+  // Data-driven credit line (from creditsRefunded), or null to say nothing about credits.
+  creditsNote: string | null
 }
 
 type Entry = {
@@ -70,8 +76,9 @@ const retryOrAudio = (c: ErrorCtx): ErrorCardAction[] => {
 // video. Nothing is charged (a reservation, if any, is refunded on failure — ADR-050).
 const audioFetchFailed = (title: string): Entry => ({
   title,
+  // No credit claim in the body — the credit outcome is rendered from creditsRefunded (see below).
   body: () =>
-    "We couldn't fetch this video's audio — a temporary connection problem on our side, not the video itself. No credits were charged. Try again, or use Audio Upload.",
+    "We couldn't fetch this video's audio — a temporary connection problem on our side, not the video itself. Try again, or use Audio Upload.",
   actions: retryOrAudio,
 })
 
@@ -199,12 +206,19 @@ export function resolveErrorCopy(code: string | null | undefined, ctx: ErrorCtx 
   const key = (code ?? "").trim()
   const entry = key ? COPY[key] : undefined
 
+  // Credit line, read from data — never asserted. Only shown when a refund is actually reported.
+  const creditsNote =
+    ctx.creditsRefunded != null && ctx.creditsRefunded > 0
+      ? `${ctx.creditsRefunded} credit${ctx.creditsRefunded === 1 ? "" : "s"} refunded to your balance`
+      : null
+
   if (entry) {
     return {
       title: entry.title,
       body: entry.body(ctx),
       actions: entry.actions ? entry.actions(ctx) : [],
       code: key || null,
+      creditsNote,
     }
   }
 
@@ -224,8 +238,9 @@ export function resolveErrorCopy(code: string | null | undefined, ctx: ErrorCtx 
 
   return {
     title: "Something went wrong",
-    body: "We couldn't finish this. If any credits were reserved for it, they've been returned to your balance.",
+    body: "We couldn't finish this. Try again, or use Audio Upload.",
     actions,
     code: key || null,
+    creditsNote,
   }
 }

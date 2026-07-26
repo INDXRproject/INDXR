@@ -11,6 +11,7 @@ export interface JobStatusRow {
   language?: string | null
   duration?: number
   credits_used?: number
+  credits_refunded?: number | null
   processing_time_seconds?: number
   error_message?: string | null
   error_type?: string | null

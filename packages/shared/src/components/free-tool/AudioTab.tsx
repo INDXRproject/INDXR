@@ -31,12 +31,9 @@ const MAX_AUDIO_DURATION_SECONDS = 10 * 3600
 
 interface AudioTabProps {
   onTranscriptLoaded?: (transcript: TranscriptItem[], metadata: TranscriptMetadata) => void
-  /** Observational: fires when the tab leaves/returns to its idle state so the page can
-      hide/show its idle Recent row. Does not touch any job state. */
-  onBusyChange?: (busy: boolean) => void
 }
 
-export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
+export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const { user, credits, refreshCredits, loading } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -63,11 +60,6 @@ export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const [completedJobId, setCompletedJobId] = useState<string | null>(null)  // for the completion receipt (RLS read)
   const receipt = useCompletionReceipt('transcription', completedJobId, saveStatus === 'saved')
-
-  // Tell the page when this tab is past idle (uploading, transcribing, or a result on
-  // screen) so it can hide the idle Recent row. Read-only; touches no job state.
-  const isBusy = isUploading || isTranscribing || uploadPhase !== 'idle' || (transcript !== null && transcript.length > 0)
-  useEffect(() => { onBusyChange?.(isBusy); return () => onBusyChange?.(false) }, [isBusy, onBusyChange])
 
   useJobStatus({
     jobId: activeJobId,

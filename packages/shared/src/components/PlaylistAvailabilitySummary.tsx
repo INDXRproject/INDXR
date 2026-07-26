@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { CostBreakdown, BalanceLine } from "./transcribe/CostBreakdown";
 import { MethodBadge } from "./transcribe/MethodBadge";
+import { Switch } from "./ui/switch";
 
 interface VideoAvailability {
   videoId: string
@@ -126,20 +127,22 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
 
   return (
     <div className="bg-surface border border-border rounded-xl animate-in fade-in slide-in-from-top-4 duration-500 my-6 shadow-lg">
-      <div className="p-6 border-b border-border bg-surface-elevated/30 flex flex-wrap justify-between items-center gap-3">
+      <div className="p-6 border-b border-border bg-surface-elevated/30 rounded-t-xl flex flex-wrap justify-between items-center gap-3">
         <div className="min-w-0">
            <h3 className="text-lg font-semibold text-fg mb-1">Before you start</h3>
            <p className="text-sm text-fg-muted">Choose how each video is transcribed, and see what it costs.</p>
         </div>
 
-        {/* Global method toggle — switch every video to AI, or back to free captions. */}
-        <button
-          type="button"
-          onClick={() => toggleAllWhisper(currentSummary.hasCaptions > 0)}
-          className="inline-flex min-h-[36px] items-center rounded-lg border border-border px-3 text-xs font-medium text-fg-subtle hover:bg-surface-elevated transition-colors cursor-pointer"
-        >
-          {currentSummary.hasCaptions === 0 ? "Use free captions where available" : "Use AI transcription for all"}
-        </button>
+        {/* Global method switch — a real switch with a visible on/off track (ADR-080), flips
+            every video to AI or back to free captions. On = all AI. */}
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <span className="text-xs font-medium text-fg-subtle">AI for all</span>
+          <Switch
+            checked={currentSummary.hasCaptions === 0}
+            onCheckedChange={(on) => toggleAllWhisper(on)}
+            aria-label="Use AI transcription for all videos"
+          />
+        </label>
       </div>
 
       <div className="p-6 space-y-6">
@@ -195,28 +198,35 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
                      const paidCaption = !isAi && !free && (extractableIndex.get(video.videoId) ?? 0) >= 3
                      const costLabel = isAi ? `${video.estimatedCredits} cr` : paidCaption ? '1 cr' : 'free'
                      const dur = `${Math.floor(video.duration / 60)}:${Math.floor(video.duration % 60).toString().padStart(2, '0')}`
+                     // < md: thumbnail + title (2 lines) + duration on top, badge + toggle on a
+                     // second row under the title. sm+: single row. The title never collapses to a
+                     // few characters (ADR-080 points 1-2).
                      return (
-                       <div key={video.videoId} className="flex items-center gap-3 bg-surface px-3 py-2">
-                         <div className="relative h-[26px] w-11 shrink-0 overflow-hidden rounded border border-border">
-                           <Image src={video.thumbnail} alt="" fill className="object-cover" />
+                       <div key={video.videoId} className="flex flex-col gap-2 bg-surface px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3">
+                         <div className="flex min-w-0 items-start gap-3 sm:flex-1">
+                           <div className="relative h-[34px] w-14 shrink-0 overflow-hidden rounded border border-border sm:h-[26px] sm:w-11">
+                             <Image src={video.thumbnail} alt="" fill className="object-cover" />
+                           </div>
+                           <div className="min-w-0 flex-1">
+                             <p className="line-clamp-2 text-sm text-fg sm:line-clamp-1">{video.title}</p>
+                             <p className="font-mono text-xs text-fg-muted">
+                               {dur}
+                               {video.isDuplicate && <span className="ml-2 font-sans">· in library</span>}
+                             </p>
+                           </div>
                          </div>
-                         <div className="min-w-0 flex-1">
-                           <p className="truncate text-sm text-fg">{video.title}</p>
-                           <p className="font-mono text-xs text-fg-muted">
-                             {dur}
-                             {video.isDuplicate && <span className="ml-2 font-sans">· in library</span>}
-                           </p>
+                         <div className="flex items-center gap-2 pl-[4.25rem] sm:shrink-0 sm:pl-0">
+                           <MethodBadge method={isAi ? 'ai' : 'captions'} className="shrink-0">
+                             {isAi ? `AI · ${costLabel}` : `Auto · ${costLabel}`}
+                           </MethodBadge>
+                           <button
+                             type="button"
+                             onClick={() => toggleSingleWhisper(video.videoId, !isAi)}
+                             className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg border border-border px-3 text-xs font-medium text-fg-subtle hover:bg-surface-elevated transition-colors cursor-pointer"
+                           >
+                             {isAi ? 'Use captions' : 'Use AI'}
+                           </button>
                          </div>
-                         <MethodBadge method={isAi ? 'ai' : 'captions'} className="shrink-0">
-                           {isAi ? `AI · ${costLabel}` : `Auto · ${costLabel}`}
-                         </MethodBadge>
-                         <button
-                           type="button"
-                           onClick={() => toggleSingleWhisper(video.videoId, !isAi)}
-                           className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg border border-border px-3 text-xs font-medium text-fg-subtle hover:bg-surface-elevated transition-colors cursor-pointer"
-                         >
-                           {isAi ? 'Use captions' : 'Use AI'}
-                         </button>
                        </div>
                      )
                    })}
@@ -262,7 +272,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
          {/* Action bar — balance reads as secondary but readable, never amber; irreversibility
              sits right at the Extract button, before the click. On < md it sticks to the bottom
              of the viewport while the list is in view so the Extract button is always reachable. */}
-        <div className="sticky bottom-2 z-10 flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 shadow-lg md:static md:bg-surface-elevated/30 md:shadow-none [padding-bottom:calc(1rem+env(safe-area-inset-bottom))] md:[padding-bottom:1rem]">
+        <div className="sticky bottom-[calc(var(--tabbar-h)+var(--safe-bottom)+0.5rem)] z-10 flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 shadow-lg md:static md:bottom-auto md:bg-surface-elevated/30 md:p-4 md:shadow-none">
             <div className="flex flex-wrap items-center gap-3">
                 <BalanceLine have={userCredits} cost={totalExtractionCredits} />
                 <div className="ml-auto flex gap-2">

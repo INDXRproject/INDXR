@@ -8,7 +8,6 @@ import { Loader2, CheckCircle2, AlertCircle, ChevronDown, Search, XCircle, Clock
 import { ScrollArea } from "./ui/scroll-area";
 import { validateYouTubeUrl } from "../utils/youtube";
 import { PlaylistAvailabilitySummary } from "./PlaylistAvailabilitySummary";
-import { BackgroundJobNotice } from "./BackgroundJobNotice";
 import { useAuth } from "../hooks/useAuth";
 import { createClient } from "../utils/supabase/client";
 import { cn } from "../lib/utils";
@@ -365,6 +364,13 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   const compDone = Object.values(videoStatuses).filter(s => s === 'success' || s === 'unavailable' || FAILED_STATES.includes(s as string)).length;
   const compAiSuccess = compSucceededIds.filter(id => whisperVideoIds?.has(id)).length;
   const compCapSuccess = compSucceeded - compAiSuccess;
+  // Per-method charged credits, split from the authoritative per-video receipt breakdown
+  // (receipt.videos[].credits) by the method map (whisperVideoIds). Reconciles with receipt.used
+  // when the breakdown is present; when it isn't, the amounts fall back to '' (counts only).
+  const compChargedVideos = (receipt?.videos ?? []).filter(v => v.state === 'charged');
+  const compHasBreakdown = compChargedVideos.length > 0;
+  const compAiCredits = compChargedVideos.filter(v => whisperVideoIds?.has(v.videoId)).reduce((a, v) => a + (v.credits ?? 0), 0);
+  const compCapCredits = compChargedVideos.filter(v => !whisperVideoIds?.has(v.videoId)).reduce((a, v) => a + (v.credits ?? 0), 0);
   const compRetryableIds = Object.entries(videoStatuses).filter(([, s]) => s === 'bot_detection' || s === 'timeout').map(([id]) => id);
   const compRetryableEntries = (playlist?.entries ?? resumePlaylist?.entries ?? []).filter(e => compRetryableIds.includes(e.id));
   // Round >= 1 means a manual "Retry all" already ran and failures remain → structural tone.
@@ -380,7 +386,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2 max-w-xl mx-auto">
+      <div className="flex flex-col gap-2 max-w-xl mx-auto sm:flex-row sm:gap-3">
         <div className="relative flex-1">
           <Input
             placeholder="Paste YouTube Playlist URL..."
@@ -393,7 +399,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
         </div>
         <Button
           size="lg"
-          className="h-12 px-6 shrink-0 min-w-[150px] justify-center disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
+          className="h-12 px-6 w-full shrink-0 justify-center sm:w-auto sm:min-w-[150px] disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
           onClick={fetchPlaylistInfo}
           disabled={loading || !url || isExtracting}
         >
@@ -451,7 +457,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       <div>
                         <p className="text-[17px] font-semibold text-fg">{compSucceeded} of {compTotal} video{compTotal !== 1 ? 's' : ''} transcribed</p>
                         <p className="mt-0.5 text-[13px] text-fg-subtle">
-                          {finalElapsed > 0 ? `Finished in ${formatElapsed(finalElapsed)} · ` : ''}{compFailed} could not be fetched
+                          {finalElapsed > 0 ? `Finished in ${formatElapsed(finalElapsed)} · ` : ''}{compFailed} could not be processed
                         </p>
                       </div>
                     )}
@@ -463,8 +469,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         totalLabel="Charged"
                         totalAmount={`${receipt.used} credit${receipt.used !== 1 ? 's' : ''}`}
                         segments={[
-                          { key: 'cap', tone: 'captions', count: compCapSuccess, label: `${compCapSuccess} auto-captions`, amount: '' },
-                          { key: 'ai', tone: 'ai', count: compAiSuccess, label: `${compAiSuccess} AI transcription`, amount: '' },
+                          { key: 'cap', tone: 'captions', count: compCapSuccess, label: `${compCapSuccess} auto-captions`, amount: compHasBreakdown ? (compCapCredits > 0 ? `${compCapCredits} credit${compCapCredits !== 1 ? 's' : ''}` : 'free') : '' },
+                          { key: 'ai', tone: 'ai', count: compAiSuccess, label: `${compAiSuccess} AI transcription`, amount: compHasBreakdown ? `${compAiCredits} credit${compAiCredits !== 1 ? 's' : ''}` : '' },
                           ...(compFailed > 0
                             ? [{
                                 key: 'un', tone: 'unavailable', count: compFailed, label: `${compFailed} not fetched`,
@@ -497,13 +503,12 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                             Show all {compRetryableEntries.length}
                           </button>
                         )}
-                        <div className="flex flex-wrap items-center gap-3">
+                        {/* Retry is the single action here; Audio Upload lives in the permanent block
+                            below (the one place it's the only way in). On < md the button is full-width. */}
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                           {credits !== null && <span className="text-[13px] text-fg-subtle">You have {credits} credit{credits !== 1 ? 's' : ''}</span>}
-                          {onSwitchToAudio && (
-                            <Button variant="outline" size="sm" onClick={onSwitchToAudio} className="h-9">Audio Upload</Button>
-                          )}
                           {onRetryAll && (
-                            <Button size="sm" disabled={isExtracting} onClick={() => onRetryAll(compRetryableIds)} className="ml-auto h-9">
+                            <Button size="sm" disabled={isExtracting} onClick={() => onRetryAll(compRetryableIds)} className="h-9 w-full sm:ml-auto sm:w-auto">
                               <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry all {compRetryableEntries.length}
                             </Button>
                           )}
@@ -531,10 +536,10 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
 
                     {/* Actions — at partial success Retry is the next step so View is secondary;
                         at full success View is primary (mockup C). */}
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <Button variant="outline" size="sm" onClick={handleReset} className="h-9">Start new extraction</Button>
-                        <a href={appHref('/dashboard/library')} className="ml-auto">
-                            <Button variant={compFailed === 0 ? undefined : 'outline'} size="sm" className="h-9">
+                    <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:items-center">
+                        <Button variant="outline" size="sm" onClick={handleReset} className="h-9 w-full sm:w-auto">Start new extraction</Button>
+                        <a href={appHref('/dashboard/library')} className="w-full sm:ml-auto sm:w-auto">
+                            <Button variant={compFailed === 0 ? undefined : 'outline'} size="sm" className="h-9 w-full">
                                 View {compSucceeded} in Library
                             </Button>
                         </a>
@@ -580,7 +585,6 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                             )}
                         </div>
                     )}
-                    <BackgroundJobNotice largePlaylist={compTotal > 50} />
                 </div>
             )}
         </ResultCardShell>
@@ -639,7 +643,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                 <Button
                   onClick={handleCheckAvailability}
                   disabled={isCheckingAvailability || selectedIds.size === 0 || isOverHardCap}
-                  className="ml-auto"
+                  className="ml-auto hidden md:inline-flex"
                 >
                   {isCheckingAvailability ? (
                     <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing…</>
@@ -834,6 +838,24 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
               <span>The first 3 videos are always free. Credits apply from video 4 onwards.</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Sticky mobile action bar — keeps "Review extraction" reachable on a long selection list
+          (the header button scrolls off). Sits above the tab bar; desktop uses the header button. */}
+      {playlist && !showAvailabilityModal && !isExtracting && !isCompleted && !hasExtracted && (
+        <div className="sticky bottom-[calc(var(--tabbar-h)+var(--safe-bottom)+0.5rem)] z-10 md:hidden">
+          <Button
+            onClick={handleCheckAvailability}
+            disabled={isCheckingAvailability || selectedIds.size === 0 || isOverHardCap}
+            className="h-12 w-full shadow-lg"
+          >
+            {isCheckingAvailability ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing…</>
+            ) : (
+              <><Search className="h-4 w-4 mr-2" /> Review extraction · {selectedIds.size} selected</>
+            )}
+          </Button>
         </div>
       )}
     </div>

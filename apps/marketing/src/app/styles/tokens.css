@@ -88,6 +88,11 @@
 }
 
 :root {
+  /* No bottom tab bar on marketing, but shared components (e.g. the playlist confirm's sticky
+     action bar) read these; define them so their calc() resolves cleanly here too. */
+  --tabbar-h: 0rem;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
   /* Surfaces */
   --bg: oklch(0.985 0.004 70);
   --bg-subtle: oklch(0.972 0.005 70);

@@ -569,3 +569,7 @@ De AI-samenvatting draait sinds ADR-068 op `gemini-2.5-flash` via de AssemblyAI 
 ## Sentry: server-side Vercel API-routes blijven een blinde vlek (#17604)
 
 Zie de sectie hierboven (`Sentry.captureException()` in Vercel API-routes arriveert niet). Blijft een **bewust niet-opgelost** gat (Sentry GitHub #17604, closed-as-not-planned). De 2026-07-19 privacy-hardening raakt dit niet — die scrubt PII uit de events die wél aankomen (client + Next-server/edge + Python-backend); de Vercel-API-route-capture zelf is een aparte, upstream-beperking.
+
+## Transcribe ErrorCard: onbekende foutcodes → PostHog i.p.v. Sentry (ADR-080)
+
+De gedeelde transcribe-`ErrorCard` (`packages/shared/src/components/transcribe/errorCopy.ts`) moet onbekende backend-foutcodes loggen zodat er copy voor toegevoegd kan worden. De brief vroeg Sentry; **frontend-Sentry is voor dit pad niet gewired**, dus het logt via `posthog.capture('transcribe_error_unknown_code', { code })` + `console.warn`. Zoek in PostHog op dat event om nieuwe codes te vinden. Wanneer frontend-Sentry breder wordt uitgerold: heroverweeg of dit event daarheen moet. Verwant: de credit-regel op download-fout-kaarten leest `transcription_jobs.credits_refunded` uit de **Realtime**-payload van `useJobStatus`; de polling-fallback `/api/jobs/{id}` (Railway-proxy) bevat dat veld níét — voor volledige dekking zou de proxy `credits_refunded` moeten meesturen.

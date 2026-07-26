@@ -30,9 +30,6 @@ interface VideoTabProps {
   onSwitchToAudio?: () => void
   /** Anonymous visitor picked the AI source — gate it (show FrictionConversionCard). */
   onAiRequiresAuth?: () => void
-  /** Observational: fires when the tab leaves/returns to its bare-input idle state, so the
-      page can hide/show its idle Recent row. Does not touch any job state. */
-  onBusyChange?: (busy: boolean) => void
 }
 
 type WhisperStatus = 'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'
@@ -46,14 +43,14 @@ function formatElapsed(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAudio, onAiRequiresAuth, onBusyChange }: VideoTabProps) {
+export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAudio, onAiRequiresAuth }: VideoTabProps) {
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [transcript, setTranscript] = useState<TranscriptItem[] | null>(null)
   const [showSignupCard, setShowSignupCard] = useState(false)
   const [videoTitle, setVideoTitle] = useState<string>("")
   const [videoUrl, setVideoUrl] = useState<string>("")
-  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean, errorType?: string } | null>(null)
+  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean, errorType?: string, creditsRefunded?: number | null } | null>(null)
   const [isPlaylistUrl, setIsPlaylistUrl] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState("")
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -109,10 +106,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   // Ref mirror of useWhisper — always up-to-date regardless of closure staleness
   const useWhisperRef = useRef(false)
 
-  // Tell the page whether this tab is past its bare-input idle state (job running,
-  // confirming, or a result on screen) so it can hide the idle Recent row. Read-only.
-  const isBusy = loading || showWhisperConfirm || (transcript !== null && transcript.length > 0)
-  useEffect(() => { onBusyChange?.(isBusy); return () => onBusyChange?.(false) }, [isBusy, onBusyChange])
   // Cooldown: tracks the last successful extraction to suppress immediate duplicate warnings
   const lastSuccessTimestampRef = useRef<{ videoId: string; time: number } | null>(null)
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -224,6 +217,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             : errorMsg,
           isYouTubeRestricted,
           errorType: isYouTubeRestricted ? 'youtube_restricted' : (job.error_type ?? undefined),
+          creditsRefunded: job.credits_refunded ?? null,
         })
       }
     }
@@ -1141,6 +1135,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    : null)
                  const copy = resolveErrorCopy(errCode, {
                    fallbackMessage: error.message,
+                   creditsRefunded: error.creditsRefunded,
                    aiCost: videoDuration ? Math.ceil(videoDuration / 60) : null,
                    billingHref: appHref('/dashboard/billing'),
                    libraryHref: appHref('/dashboard/library'),

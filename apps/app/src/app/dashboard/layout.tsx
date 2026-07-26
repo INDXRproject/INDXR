@@ -53,8 +53,9 @@ export default async function DashboardLayout({
             <AppSidebar />
           </div>
           <main id="main-content" className="flex-1 overflow-y-auto">
-            {/* pb-[3.5rem] on mobile to avoid content hiding behind MobileTabBar */}
-            <div className="relative min-h-full p-4 md:p-8 bg-bg pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
+            {/* Clear the fixed MobileTabBar on < md (its height + iOS inset, tokenised in tokens.css)
+                so the footer links never hide behind it. md:pb-8 restores desktop spacing. */}
+            <div className="relative min-h-full p-4 md:p-8 bg-bg pb-[calc(var(--tabbar-h)+var(--safe-bottom)+1rem)] md:pb-8">
               {/* No blanket honeycomb wash here — the pattern is per-page opt-in via
                   DashboardBackdrop (ADR-079). system.md §5 only allows it on empty states /
                   marketing / auth / 404 / footer, not on working dashboard pages. Library keeps

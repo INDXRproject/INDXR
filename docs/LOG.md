@@ -13437,3 +13437,59 @@ Twee regels n.a.v. deze taak:
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 ---
+[2026-07-26 20:30] fix (Transcribe-afwerking follow-up — ErrorCard-lek + 15 mobiele defecten, ADR-080): **Punt 1 (live bug)**: ErrorCard toonde de rauwe yt-dlp-stacktrace (incl. GitHub-URL) als body, zonder code/credit-regel. Twee oorzaken: VideoTab's whisper-poll-else zette geen `errorType` (→errCode null), en de neutrale fallback gebruikte `fallbackMessage` (rauwe string) als body. Beide gefixt: poll draagt `job.error_type` mee; neutrale fallback-body is altijd eigen copy (nooit de rauwe string, ongeacht backend — grep-bewezen + standalone-replica-gedemonstreerd). Download-fout-familie (timeout/connection_error/server_error/partial_write/proxy_error/ytdlp_parse/extraction_error) copy toegevoegd: verbindingsprobleem, niet de video, Try again + Audio Upload. **Punt 9**: credit-regel data-gedreven uit `transcription_jobs.credits_refunded` (via useJobStatus Realtime-payload; `credits_refunded` toegevoegd aan JobStatusRow), toont niets als afwezig i.p.v. een aanname; polling-proxy-gap gerapporteerd. **Mobiel (390px)**: (2) sticky actiebalk op confirm <md (overflow-hidden weg); (3) sticky offset boven de tab bar; (15) tab-bar-hoogte getokeniseerd (`--tabbar-h`/`--safe-bottom` in beide tokens.css) + robuuste bodempadding (komma-vrije calc). (1+2) confirm-rijen mobiel gestapeld (titel line-clamp-2, badge+chip op 2e rij), header-radius. (5) "AI for all" → echte Switch. (6) playlist-input+knop gestapeld <sm. (7) dode ruimte weg (PlaylistTab `mt-8`). (4) dubbele achtergrond-boodschap weg (BackgroundJobNotice uit progress). (11) afrondingsbon-legenda toont per-methode bedragen (afgeleid uit receipt.videos×whisperVideoIds). (12) kop "could not be processed" (neutraal). (13) Audio Upload alleen in permanent-blok. (14) knoppen full-width gestapeld <sm. **Punt 8**: Recent-lijst + `onBusyChange`-machinerie volledig verwijderd (component gedeletet, 3 tabs, 2 pages). **Punt 3 (ActiveJobsIndicator)**: `excludeVisible`-prop dedupt de zichtbare job via sessionStorage-key van `?mode=`; "N other job(s) in the background" bij een andere achtergrondjob. Frontend-only, geen backend-files aangeraakt. **Geverifieerd**: `pnpm build` groen (beide apps). Punt 10 (console-fout tijdens run) = [~] geen browser; punt 4 WCAG numeriek berekend (light sky 5.15/indigo 5.74, dark 6.99/6.74, alle AA). | gewijzigd: packages/shared/src/components/transcribe/{errorCopy,ErrorCard,method,MethodBadge,MethodRadioCards,CostBreakdown,RecentTranscripts(verwijderd)}, packages/shared/src/components/{PlaylistManager,PlaylistAvailabilitySummary}.tsx, packages/shared/src/components/free-tool/{VideoTab,AudioTab,PlaylistTab}.tsx, packages/shared/src/hooks/useJobStatus.ts, apps/app/src/app/dashboard/{transcribe/page,layout}.tsx, apps/app/src/components/dashboard/{ActiveJobsIndicator,MobileTabBar}.tsx, apps/marketing/src/app/transcribe/page.tsx, apps/{app,marketing}/src/app/styles/tokens.css, docs/wiki/decisions/080-*.md, docs/LESSONS.md, docs/wiki/operations/known-issues.md, docs/LOG.md
+[2026-07-27 00:06] commit: fix(transcribe): 390px mobile defects + remove Recent list + data-driven credit line (ADR-080)
+
+Mobile verification on 390px surfaced 15 items; frontend-only, no backend touched.
+
+Playlist confirm (PlaylistAvailabilitySummary): rows stack on < md — thumbnail +
+title (2 lines) + duration on top, method badge + toggle chip on a second row, so
+the title never collapses to a few characters; header gets rounded-t so it doesn't
+overflow the card (overflow-hidden was removed for the sticky bar); the "AI for all"
+control is a real Switch with a visible track.
+
+Playlist selection (PlaylistManager): URL + Fetch stack on < sm; the dead space above
+the input (PlaylistTab mt-8) is gone; a sticky mobile action bar keeps "Review
+extraction" reachable on a long list, above the tab bar; the header button is hidden
+on < md.
+
+Playlist progress/completion: the duplicate background message is gone (BackgroundJobNotice
+removed — the "safe to close" line stays); the receipt legend now shows per-method
+amounts (derived from receipt.videos × whisperVideoIds, reconciles with Charged); the
+header reads "could not be processed" (neutral over cause); "Audio Upload" lives only in
+the permanent block; failure/completion buttons stack full-width on < md.
+
+The Recent list is removed entirely (component, query, and the onBusyChange machinery on
+all three tabs and both pages). Idle = card + docs link (app) / card + trust row (anon).
+
+Error credit line is read, not asserted: the download-failure copy no longer claims "no
+credits charged"; the ErrorCard shows credits_refunded from the job (via the useJobStatus
+realtime row, added to JobStatusRow) only when present — silence beats a wrong amount.
+
+Tab-bar height is tokenised (--tabbar-h / --safe-bottom in both tokens.css); the dashboard
+bottom padding and the sticky bars use it so the footer never hides behind the tab bar.
+
+Build green both apps. Console-error-during-run (point 10) is [~] — not observable without
+a browser here; WCAG method text-on-tint computed and passes AA both themes.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/layout.tsx
+apps/app/src/app/dashboard/transcribe/page.tsx
+apps/app/src/app/styles/tokens.css
+apps/app/src/components/dashboard/MobileTabBar.tsx
+apps/marketing/src/app/styles/tokens.css
+apps/marketing/src/app/transcribe/page.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/decisions/080-transcribe-method-colour-cost-and-errorcard.md
+docs/wiki/operations/known-issues.md
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/PlaylistTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/transcribe/ErrorCard.tsx
+packages/shared/src/components/transcribe/RecentTranscripts.tsx
+packages/shared/src/components/transcribe/errorCopy.ts
+packages/shared/src/hooks/useJobStatus.ts
+---

@@ -27,12 +27,16 @@ export function ErrorCard({
   body,
   actions,
   code,
+  creditsNote,
   className,
 }: {
   title: string
   body: ReactNode
   actions?: ErrorCardAction[]
   code?: string | null
+  /** Data-driven credit outcome (e.g. "3 credits refunded to your balance"). Rendered only when
+      present — the card says nothing about credits rather than assert an unverified amount. */
+  creditsNote?: string | null
   className?: string
 }) {
   return (
@@ -47,6 +51,7 @@ export function ErrorCard({
         <div className="min-w-0">
           <p className="font-medium text-fg">{title}</p>
           <p className="mt-1 text-[13px] leading-relaxed text-fg-subtle">{body}</p>
+          {creditsNote && <p className="mt-1.5 text-[13px] font-medium text-success">{creditsNote}</p>}
 
           {actions && actions.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
