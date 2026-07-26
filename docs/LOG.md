@@ -13516,3 +13516,16 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
 ---
+
+[2026-07-27 09:00] taak: Commit 2 — credits_refunded toegevoegd aan /api/jobs/{job_id} (pariteit Realtime vs polling voor de foutkaart-credit-regel) | gewijzigd: backend/main.py (get_job_status leesveld) | py_compile OK; 3 rijen met credits_refunded>0 (max 35) -> polling geeft nu hetzelfde als de Realtime-volle-rij[2026-07-27 01:20] commit: feat(ops/commit2): add credits_refunded to /api/jobs/{job_id} (Realtime/polling parity)
+
+De foutkaart rendert de credit-terugstort-regel uit transcription_jobs.credits_refunded.
+Realtime stuurt de volle rij (heeft het veld), maar de polling-fallback
+get_job_status gaf een curated subset zonder credits_refunded -> dezelfde fout
+toonde de terugstort inconsistent. Leesveld toegevoegd; geen creditlogica
+(reserve/debit/refund onaangeroerd). Geverifieerd: 3 rijen credits_refunded>0 (max 35).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+---

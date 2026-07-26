@@ -1124,6 +1124,9 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         "language": language,
         "duration": job.get('duration_seconds'),
         "credits_used": job.get('credits_cost'),
+        # Read-only pariteit met de Realtime-volle-rij: de foutkaart rendert de credit-terugstort-regel
+        # uit dit veld; zonder dit toont de polling-fallback 'm niet. Geen creditlogica.
+        "credits_refunded": job.get('credits_refunded'),
         "processing_time_seconds": job.get('processing_time_seconds'),
         "error_message": job.get('error_message'),
         "error_code": None,
