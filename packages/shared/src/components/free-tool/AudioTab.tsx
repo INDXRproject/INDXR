@@ -15,8 +15,9 @@ import { marketingHref, appHref } from "../../lib/cross-host-links"
 import { CardSkeleton } from "../ui/loading-skeleton"
 import posthog from "posthog-js"
 import { createClient } from "../../utils/supabase/client"
-import { TranscriptionProgress } from "../transcription/TranscriptionProgress"
 import { BackgroundJobNotice } from "../BackgroundJobNotice"
+import { JobProgressCard } from "../transcribe/JobProgressCard"
+import { CREDIT_COSTS } from "../../lib/pricing"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
 // ADR-071 — DEEL 4: mirrors the server's AssemblyAI cap (backend/main.py MAX_TRANSCRIPTION_SECONDS).
@@ -26,9 +27,12 @@ const MAX_AUDIO_DURATION_SECONDS = 10 * 3600
 
 interface AudioTabProps {
   onTranscriptLoaded?: (transcript: TranscriptItem[], metadata: TranscriptMetadata) => void
+  /** Observational: fires when the tab leaves/returns to its idle state so the page can
+      hide/show its idle Recent row. Does not touch any job state. */
+  onBusyChange?: (busy: boolean) => void
 }
 
-export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
+export function AudioTab({ onTranscriptLoaded, onBusyChange }: AudioTabProps) {
   const { user, credits, refreshCredits, loading } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -55,6 +59,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const [completedJobId, setCompletedJobId] = useState<string | null>(null)  // for the completion receipt (RLS read)
   const receipt = useCompletionReceipt('transcription', completedJobId, saveStatus === 'saved')
+
+  // Tell the page when this tab is past idle (uploading, transcribing, or a result on
+  // screen) so it can hide the idle Recent row. Read-only; touches no job state.
+  const isBusy = isUploading || isTranscribing || uploadPhase !== 'idle' || (transcript !== null && transcript.length > 0)
+  useEffect(() => { onBusyChange?.(isBusy); return () => onBusyChange?.(false) }, [isBusy, onBusyChange])
 
   useJobStatus({
     jobId: activeJobId,
@@ -581,7 +590,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       </div>
 
       <p className="text-xs text-fg-muted">
-        1 credit per minute of audio. Minimum 1 credit.
+        {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit per minute · minimum 1 credit
       </p>
 
       {/* Duration cap — AssemblyAI supports up to 10 hours per file (ADR-071 DEEL 4) */}
@@ -653,7 +662,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           {/* Processing state — shown after upload completes, while AI transcribes */}
           {uploadPhase === 'processing' && (
             <div className="space-y-3 py-1">
-              <TranscriptionProgress
+              <JobProgressCard
+                title={file?.name}
                 status={whisperStatus === 'idle' ? 'pending' : whisperStatus}
                 elapsedSeconds={elapsedSeconds}
                 audioDurationSeconds={audioDuration}
@@ -667,7 +677,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             <Button
               onClick={handleTranscribe}
               disabled={!canTranscribe}
-              className="w-full"
+              className="w-full disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
               size="lg"
             >
               Transcribe ({estimatedCredits} credits)

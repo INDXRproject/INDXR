@@ -13165,3 +13165,63 @@ docs/LOG.md
 docs/wiki/roadmap/admin-kpi-audit.md
 supabase/migrations/20260726103508_ops_growth_summary_windowed.sql
 ---
+[2026-07-26 16:00] feat (Transcribe-werkbank herontwerp — ADR-079, beide apps + shared): één gedeelde `TranscribeWorkbench` (kaart max-w-[640px], header=ModeStrip / body=actieve tab / footer=bron-/kostenregel) die marketing én app renderen via render-prop-slots — geen fork (VideoTab/PlaylistTab/AudioTab waren al gedeeld). **`?mode=` via `history.replaceState`** (niet router.replace → beschermt live job-state + Remotion-rust); default/onbekend⇒video. **ModeStrip** = Radix Tabs als segmented control op --surface-sunken, actief = --surface+hairline+--fg-strong+--accent icoon (géén massief amber), custom pointy-top **hexagon mode-iconen** (TranscribeModeIcons, weight matcht Lucide). **SourceChoice** vervangt de "Generate with AI"-toggle (in-place op useWhisper, geen state-lift; uitgelogd gated via nieuwe `onAiRequiresAuth`-prop ⇒ FrictionConversionCard). Actieknop: vol --accent enabled / --surface-sunken+--fg-muted disabled, "Extracting…"+ring-spinner+gereserveerde breedte, labels Extract/Fetch playlist/Transcribe. Playlist-footer één regel + info-disclosure; audio-footer "1 credit per minute · minimum 1 credit" (getallen uit pricing.ts). **Dashed empty-box weg** → idle onder de kaart: ingelogd `RecentTranscripts` (laatste 3, bestaande query), uitgelogd `MicroTrustRow`; verdwijnt via observationele `onBusyChange` op de 3 tabs (raakt geen job-state). Progress/result-chrome verenigd via `ResultCardShell`+`JobProgressCard` (CompletionReceipt loopt nu ook via de shell, playlist-batch idem) — job/SSE/resume/dedup-state ONgemoeid (uit de monolieten tillen = POST-LAUNCH 2.12). Kop: app H1 "Transcribe"+subregel (eyebrow weg), Learn-more→stille docs-link onder de kaart; marketing behoudt SEO-H1. **Hexagon per-pagina opt-in**: HexagonPattern uit dashboard/layout.tsx → `DashboardBackdrop`; transcribe/Home uit, Messages alleen empty-state, Library aan (byte-identiek via min-h-full). **Mobiele nav**: app avatar-DropdownMenu → rechts-slide Sheet; marketing hamburger → full-screen Sheet 44px-rijen + theme-toggle. FrictionConversionCard+MicroTrustRow gepromoveerd naar shared. **Geverifieerd**: `pnpm build` groen (beide apps, 59/44 pagina's). Echte-job-test (tabwissel+refresh mid-job) + browser-checks (WCAG 3:1, 390px, dark) = [~] niet-runbaar in dit environment (geen browser/backend/credits) — resume-op-mount + job-state onaangeroerd, risico laag. | gewijzigd: packages/shared/src/components/transcribe/{TranscribeWorkbench,ModeStrip,SourceChoice,ResultCardShell,JobProgressCard,TranscriptResultCard,RecentTranscripts}.tsx (nieuw), packages/shared/src/components/{DashboardBackdrop,FrictionConversionCard,MicroTrustRow}.tsx (nieuw), packages/shared/src/components/icons/TranscribeModeIcons.tsx (nieuw), packages/shared/src/components/free-tool/{VideoTab,AudioTab,PlaylistTab}.tsx, packages/shared/src/components/{PlaylistManager,Header}.tsx, packages/shared/src/components/ui/CompletionReceipt.tsx, apps/marketing/src/app/transcribe/page.tsx, apps/marketing/src/components/marketing/{FrictionConversionCard,MicroTrustRow}.tsx (verwijderd), apps/app/src/app/dashboard/{transcribe/page,layout,library/page,messages/MessagesClient}.tsx, apps/app/src/components/{AvatarDropdown,dashboard/ActiveJobsIndicator}.tsx, docs/wiki/decisions/079-transcribe-workbench-redesign.md (nieuw), docs/wiki/INDEX.md, docs/wiki/design/system.md, docs/wiki/architecture/page-structures/{free-tool,dashboard-transcribe,README}.md, docs/wiki/roadmap/priorities.md, docs/LESSONS.md, docs/LOG.md
+---
+[2026-07-26 14:16] commit: feat(transcribe): shared TranscribeWorkbench redesign — mode-strip, ?mode= URL, source-choice, per-page hexagon (ADR-079)
+
+One shared TranscribeWorkbench (card, max-w-640) rendered by both apps via
+render-prop slots — no fork (the tab bodies were already shared). Segmented
+ModeStrip with custom pointy-top hexagon icons (Lucide-weight), no solid amber.
+?mode= driven by history.replaceState (not router.replace) to protect live job
+state + Remotion calm. SourceChoice replaces the "Generate with AI" toggle
+in-place on useWhisper (anon gated via onAiRequiresAuth). Dashed empty box gone →
+idle RecentTranscripts / MicroTrustRow, hidden on job start via observational
+onBusyChange (no job state touched). Progress/result chrome unified via
+ResultCardShell + JobProgressCard (CompletionReceipt + playlist batch now on the
+shell too); job/SSE/resume/dedup state left inside the tabs (lift = POST-LAUNCH).
+Heading: app H1 "Transcribe" + subline (eyebrow gone), docs link under the card;
+marketing keeps its SEO H1. Hexagon per-page opt-in via DashboardBackdrop (wash
+removed from dashboard/layout.tsx; Library keeps it, Messages empty-state only).
+Mobile nav → Sheets (app avatar right-slide, marketing full-screen 44px rows).
+
+Build green both apps. Real-job test + browser a11y/390px/dark checks are [~]
+(not runnable here — no browser/backend/credits); resume-on-mount and job state
+are untouched.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/layout.tsx
+apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/app/dashboard/transcribe/page.tsx
+apps/app/src/components/AvatarDropdown.tsx
+apps/app/src/components/dashboard/ActiveJobsIndicator.tsx
+apps/marketing/src/app/transcribe/page.tsx
+apps/marketing/src/components/marketing/FrictionConversionCard.tsx
+apps/marketing/src/components/marketing/MicroTrustRow.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/architecture/page-structures/README.md
+docs/wiki/architecture/page-structures/dashboard-transcribe.md
+docs/wiki/architecture/page-structures/free-tool.md
+docs/wiki/decisions/079-transcribe-workbench-redesign.md
+docs/wiki/design/system.md
+docs/wiki/roadmap/priorities.md
+packages/shared/src/components/DashboardBackdrop.tsx
+packages/shared/src/components/FrictionConversionCard.tsx
+packages/shared/src/components/Header.tsx
+packages/shared/src/components/MicroTrustRow.tsx
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/PlaylistTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/icons/TranscribeModeIcons.tsx
+packages/shared/src/components/transcribe/JobProgressCard.tsx
+packages/shared/src/components/transcribe/ModeStrip.tsx
+packages/shared/src/components/transcribe/RecentTranscripts.tsx
+packages/shared/src/components/transcribe/ResultCardShell.tsx
+packages/shared/src/components/transcribe/SourceChoice.tsx
+packages/shared/src/components/transcribe/TranscribeWorkbench.tsx
+packages/shared/src/components/transcribe/TranscriptResultCard.tsx
+packages/shared/src/components/ui/CompletionReceipt.tsx
+---

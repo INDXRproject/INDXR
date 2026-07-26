@@ -15,6 +15,8 @@ import { createClient } from "../utils/supabase/client";
 import { cn } from "../lib/utils";
 import { appHref } from "../lib/cross-host-links";
 import { CompletionReceipt } from "./ui/CompletionReceipt";
+import { ResultCardShell } from "./transcribe/ResultCardShell";
+import { CREDIT_COSTS, FREE_TIER } from "../lib/pricing";
 import type { ReceiptData } from "../hooks/useCompletionReceipt";
 
 interface PlaylistEntry {
@@ -74,6 +76,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showCostDetail, setShowCostDetail] = useState(false);
   const [playlist, setPlaylist] = useState<{ title: string; entries: PlaylistEntry[]; total_count?: number; unavailable_count?: number } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set<string>());
   const [visibleCount, setVisibleCount] = useState(25);
@@ -369,17 +372,36 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
         </div>
         <Button
           size="lg"
-          className="h-12 px-6"
+          className="h-12 px-6 shrink-0 min-w-[150px] justify-center disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
           onClick={fetchPlaylistInfo}
           disabled={loading || !url}
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          {loading ? "Fetching..." : "Fetch Playlist"}
+          {loading ? "Fetching…" : "Fetch playlist"}
         </Button>
       </div>
-      <p className="text-xs text-fg-muted text-center -mt-4">
-        Auto-captions are free for the first 3 videos. From video 4: 1 credit per video (with auto-captions). Videos using AI Transcription cost 1 credit per minute instead — no per-video charge.
-      </p>
+      {/* One-line cost footer + info disclosure (ADR-079) — numbers from pricing.ts */}
+      <div className="-mt-4 flex flex-col items-center gap-2">
+        <div className="flex items-center gap-1.5 text-xs text-fg-muted">
+          <span>
+            First {FREE_TIER.PLAYLIST_FREE_VIDEOS} free · then {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit/video · AI {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowCostDetail(o => !o)}
+            aria-expanded={showCostDetail}
+            aria-label="Playlist pricing details"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-fg-muted hover:text-fg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+          >
+            <Info className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        {showCostDetail && (
+          <p className="max-w-md rounded-lg border border-border bg-surface-elevated px-3 py-2 text-xs text-fg-muted leading-relaxed">
+            Auto-captions are free for the first {FREE_TIER.PLAYLIST_FREE_VIDEOS} videos. From video {FREE_TIER.PLAYLIST_FREE_VIDEOS + 1}: {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit per video (with auto-captions). Videos using AI Transcription cost {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit per minute instead — no per-video charge.
+          </p>
+        )}
+      </div>
 
       {inlineError && (
         <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
@@ -389,9 +411,10 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
         </div>
       )}
 
-      {/* Progress / Completion Bar */}
+      {/* Progress / Completion Bar — on the shared ResultCardShell so the batch
+          completion reads with identical chrome to single-transcript results (ADR-079) */}
       {(isExtracting || isCompleted) && (
-        <div className={`bg-surface-sunken border ${isCompleted ? 'border-success/20 bg-success-subtle' : 'border-border'} rounded-xl p-6 animate-in fade-in slide-in-from-top-2 transition-all`}>
+        <ResultCardShell tone={isCompleted ? 'success' : 'default'} className="p-6">
             {isCompleted ? (
                 // Final Summary View
                 <div className="flex flex-col gap-4">
@@ -612,7 +635,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                     />
                 </>
             )}
-        </div>
+        </ResultCardShell>
       )}
 
       {/* Availability Summary INLINE */}

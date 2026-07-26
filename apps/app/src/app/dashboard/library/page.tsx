@@ -16,6 +16,7 @@ import {
 } from "@indxr/shared/components/ui/dropdown-menu";
 import { Search, LayoutGrid, List as ListIcon, Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight, Folder } from "lucide-react";
 import { createClient } from "@indxr/shared/utils/supabase/client";
+import { DashboardBackdrop } from "@indxr/shared/components/DashboardBackdrop";
 import { TranscriptList, Transcript } from "@/components/library/TranscriptList";
 import { cn } from "@indxr/shared/lib/utils";
 
@@ -203,8 +204,9 @@ function LibraryContent() {
   const pageSubtitle = `${totalCount} transcript${totalCount !== 1 ? "s" : ""}`;
 
   return (
-    <div className="flex flex-col min-h-full">
-      <div className="flex flex-col flex-1 space-y-0">
+    <DashboardBackdrop>
+      <div className="flex flex-col min-h-full">
+        <div className="flex flex-col flex-1 space-y-0">
         {/* Top bar */}
         <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
           <h1 className="text-2xl font-semibold text-fg wrap-break-word">
@@ -391,6 +393,7 @@ function LibraryContent() {
         )}
       </div>
     </div>
+    </DashboardBackdrop>
   );
 }
 

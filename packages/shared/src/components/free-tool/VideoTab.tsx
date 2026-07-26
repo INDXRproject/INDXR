@@ -16,13 +16,19 @@ import { useAuth } from "../../hooks/useAuth"
 import { CompletionReceipt } from "../ui/CompletionReceipt"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
 import posthog from "posthog-js"
-import { TranscriptionProgress } from "../transcription/TranscriptionProgress"
 import { BackgroundJobNotice } from "../BackgroundJobNotice"
+import { JobProgressCard } from "../transcribe/JobProgressCard"
+import { SourceChoice, type TranscribeSource } from "../transcribe/SourceChoice"
 
 interface VideoTabProps {
   onPlaylistDetected?: () => void
   onTranscriptLoaded?: (transcript: TranscriptItem[], metadata: TranscriptMetadata) => void
   onSwitchToAudio?: () => void
+  /** Anonymous visitor picked the AI source — gate it (show FrictionConversionCard). */
+  onAiRequiresAuth?: () => void
+  /** Observational: fires when the tab leaves/returns to its bare-input idle state, so the
+      page can hide/show its idle Recent row. Does not touch any job state. */
+  onBusyChange?: (busy: boolean) => void
 }
 
 type WhisperStatus = 'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'
@@ -45,7 +51,7 @@ function getWhisperProcessingEstimate(durationSeconds: number): string {
   return "~10+ min"
 }
 
-export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAudio }: VideoTabProps) {
+export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAudio, onAiRequiresAuth, onBusyChange }: VideoTabProps) {
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [transcript, setTranscript] = useState<TranscriptItem[] | null>(null)
@@ -107,6 +113,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const currentJobIdRef = useRef<string | null>(null)
   // Ref mirror of useWhisper — always up-to-date regardless of closure staleness
   const useWhisperRef = useRef(false)
+
+  // Tell the page whether this tab is past its bare-input idle state (job running,
+  // confirming, or a result on screen) so it can hide the idle Recent row. Read-only.
+  const isBusy = loading || showWhisperConfirm || (transcript !== null && transcript.length > 0)
+  useEffect(() => { onBusyChange?.(isBusy); return () => onBusyChange?.(false) }, [isBusy, onBusyChange])
   // Cooldown: tracks the last successful extraction to suppress immediate duplicate warnings
   const lastSuccessTimestampRef = useRef<{ videoId: string; time: number } | null>(null)
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -977,68 +988,40 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           {!showDuplicateChoices && (
             <Button
               size="lg"
-              className="h-12 px-6 shrink-0 min-w-[120px]"
+              className="h-12 px-6 shrink-0 min-w-[132px] justify-center disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
               onClick={() => handleExtract()}
               disabled={loading || !url || isCheckingDuplicate}
             >
               {loading || isCheckingDuplicate ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {loading && isFetchingMeta ? "Checking..." : loading ? "Extracting" : isCheckingDuplicate ? "Checking..." : useWhisper ? "Check" : "Extract"}
+              {loading && isFetchingMeta ? "Checking…" : loading ? "Extracting…" : isCheckingDuplicate ? "Checking…" : useWhisper ? "Check" : "Extract"}
             </Button>
           )}
         </div>
 
-        {/* Whisper Toggle - only for logged-in users, hidden if Whisper was auto-triggered */}
-        {user && !whisperAutoTriggered && !loading && !showWhisperConfirm &&
-         !error?.isMembersOnly && !error?.isNoSpeech && !error?.isCreditsError &&
-         !(error?.errorType && ['members_only', 'age_restricted', 'youtube_restricted', 'no_speech', 'insufficient_credits'].includes(error.errorType)) && (
-          <div className="flex items-start gap-3 px-1">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={useWhisper}
-              onClick={() => {
-                const next = !useWhisper
-                useWhisperRef.current = next
-                if (next) posthog.capture('whisper_toggle_enabled')
-                setUseWhisper(next)
+        {/* Source choice — the footer of the video body (replaces the old "Generate with AI"
+            toggle, ADR-079). Bound to the same useWhisper/useWhisperRef state; no state lift.
+            The AI cell stays visible for anonymous visitors but is gated via onAiRequiresAuth. */}
+        {!whisperAutoTriggered && !loading && !showWhisperConfirm && !showDuplicateChoices && (
+          <div className="flex flex-col gap-2">
+            <SourceChoice
+              value={useWhisper ? "ai" : "captions"}
+              onChange={(next: TranscribeSource) => {
+                if (next === "ai") {
+                  if (!user) { onAiRequiresAuth?.(); return }
+                  useWhisperRef.current = true
+                  posthog.capture('whisper_toggle_enabled')
+                  setUseWhisper(true)
+                } else {
+                  useWhisperRef.current = false
+                  setUseWhisper(false)
+                }
               }}
-              className={cn(
-                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring focus-visible:ring-offset-2 focus-visible:",
-                useWhisper ? "bg-accent" : "bg-input"
-              )}
-            >
-              <span
-                className={cn(
-                  "pointer-events-none block h-4 w-4 rounded-full bg-bg shadow-lg ring-0 transition-transform",
-                  useWhisper ? "translate-x-4" : "translate-x-0"
-                )}
-              />
-            </button>
-            <div className="flex flex-col gap-0.5">
-              <label
-                className={cn(
-                  "text-sm font-medium cursor-pointer flex items-center gap-1.5",
-                  useWhisper ? "text-accent" : "text-fg"
-                )}
-                onClick={() => {
-                  const next = !useWhisper
-                  useWhisperRef.current = next
-                  if (next) posthog.capture('whisper_toggle_enabled')
-                  setUseWhisper(next)
-                }}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Generate with AI
-              </label>
-              <p className="text-xs text-fg-muted">
-                1 credit per minute of audio. Auto-captions are free.
+            />
+            {useWhisper && user && credits !== null && (
+              <p className="px-1 text-xs text-fg-muted">
+                You have {credits} credit{credits !== 1 ? 's' : ''} available
               </p>
-              {useWhisper && credits !== null && (
-                <p className="text-xs text-accent mt-0.5">
-                  You have {credits} credit{credits !== 1 ? 's' : ''} available
-                </p>
-              )}
-            </div>
+            )}
           </div>
         )}
 
@@ -1242,7 +1225,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    <AlertCircle className="h-4 w-4 text-fg-muted mt-0.5 shrink-0" />
                    <p className="text-sm text-fg/80">This video is already being processed — showing the existing progress.</p>
                  </div>
-                 <TranscriptionProgress
+                 <JobProgressCard
+                   title={videoTitle}
                    status={whisperStatus}
                    elapsedSeconds={elapsedSeconds}
                    audioDurationSeconds={videoDuration}
@@ -1251,7 +1235,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                </div>
              ) : loading && whisperStatus !== 'idle' ? (
                <div className="flex flex-col gap-2 w-full mt-2">
-                 <TranscriptionProgress
+                 <JobProgressCard
+                   title={videoTitle}
                    status={whisperStatus}
                    elapsedSeconds={elapsedSeconds}
                    audioDurationSeconds={videoDuration}
@@ -1382,11 +1367,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     transcriptId={existingTranscriptId ?? existingTranscriptIdRef.current ?? undefined}
                   />
         </div>
-      ) : !loading && !transcript && (
-        <div className="p-12 min-h-[200px] rounded-2xl border border-dashed border-border bg-surface-elevated/20 flex flex-col items-center justify-center text-fg-muted">
-          <p>Transcript results will appear here</p>
-        </div>
-      )}
+      ) : null}
 
       {/* No Captions Warning */}
       {transcript !== null && transcript.length === 0 && !loading && (

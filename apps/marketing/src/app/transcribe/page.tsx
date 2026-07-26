@@ -1,16 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Video, ListMusic, Mic } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@indxr/shared/components/ui/tabs"
 import { createClient } from "@indxr/shared/utils/supabase/client"
+import { TranscribeWorkbench } from "@indxr/shared/components/transcribe/TranscribeWorkbench"
+import { RecentTranscripts } from "@indxr/shared/components/transcribe/RecentTranscripts"
 import { VideoTab } from "@indxr/shared/components/free-tool/VideoTab"
 import { PlaylistTab } from "@indxr/shared/components/free-tool/PlaylistTab"
 import { AudioTab } from "@indxr/shared/components/free-tool/AudioTab"
 import { TranscriptItem } from "@indxr/shared/components/TranscriptCard"
 import { TranscriptMetadata } from "@indxr/shared/types/transcript"
-import { MicroTrustRow } from "@/components/marketing/MicroTrustRow"
-import { FrictionConversionCard } from "@/components/marketing/FrictionConversionCard"
+import { MicroTrustRow } from "@indxr/shared/components/MicroTrustRow"
+import { FrictionConversionCard } from "@indxr/shared/components/FrictionConversionCard"
 import { PricingTeaserBlock } from "@/components/marketing/PricingTeaserBlock"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { ClosingCTASection } from "@/components/marketing/ClosingCTASection"
@@ -44,8 +44,9 @@ const faqItems: FAQItem[] = [
 ]
 
 export default function FreeToolPage() {
-  const [activeTab, setActiveTab] = useState("video")
   const [showPlaylistFriction, setShowPlaylistFriction] = useState(false)
+  const [showVideoAiFriction, setShowVideoAiFriction] = useState(false)
+  const [busy, setBusy] = useState(false)
   const [user, setUser] = useState<unknown>(null)
   const [hasMounted, setHasMounted] = useState(false)
   const [storageFull, setStorageFull] = useState(false)
@@ -59,7 +60,7 @@ export default function FreeToolPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) setShowPlaylistFriction(false)
+      if (session?.user) { setShowPlaylistFriction(false); setShowVideoAiFriction(false) }
     })
 
     return () => subscription.unsubscribe()
@@ -125,68 +126,53 @@ export default function FreeToolPage() {
           </div>
         )}
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => {
-            setActiveTab(v)
-            if (v !== "playlist") setShowPlaylistFriction(false)
-          }}
-          className="w-full space-y-8 mb-6"
-        >
-          <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-surface-elevated/30 h-auto rounded-xl">
-            <TabsTrigger
-              value="video"
-              className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
-            >
-              <Video className="h-4 w-4" /> Single Video
-            </TabsTrigger>
-            <TabsTrigger
-              value="playlist"
-              className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
-            >
-              <ListMusic className="h-4 w-4" /> Playlist
-            </TabsTrigger>
-            <TabsTrigger
-              value="audio"
-              className="rounded-lg py-2.5 data-[state=active]:bg-[var(--accent)] data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-[var(--fg-muted)] font-medium gap-2"
-            >
-              <Mic className="h-4 w-4" /> Audio Upload
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Single video — always works */}
-          <TabsContent value="video">
-            <VideoTab
-              onPlaylistDetected={() => setActiveTab("playlist")}
-              onTranscriptLoaded={handleTranscriptLoaded}
-              onSwitchToAudio={() => setActiveTab("audio")}
-            />
-          </TabsContent>
-
-          {/* Playlist — auth-aware; anonymous sees friction card on extraction attempt */}
-          <TabsContent value="playlist">
-            <PlaylistTab
-              isAuthenticated={!!user}
-              onAuthRequired={() => setShowPlaylistFriction(true)}
-              onSwitchToAudio={() => setActiveTab("audio")}
-            />
-            {!user && showPlaylistFriction && (
-              <FrictionConversionCard
-                className="mt-6 text-left"
-                headline="Get the full playlist"
-                body="Sign up free — 25 credits included, no credit card needed. Extract any playlist, not just single videos. Credits never expire."
-                primaryCtaLabel="Sign up free →"
-                primaryCtaHref="/signup"
-                secondaryLabel="Or extract a single video"
-                secondaryHref="#"
+        <TranscribeWorkbench
+          renderVideo={({ switchMode }) => (
+            <>
+              <VideoTab
+                onPlaylistDetected={() => switchMode("playlist")}
+                onTranscriptLoaded={handleTranscriptLoaded}
+                onSwitchToAudio={() => switchMode("audio")}
+                onAiRequiresAuth={() => setShowVideoAiFriction(true)}
+                onBusyChange={setBusy}
               />
-            )}
-          </TabsContent>
-
-          {/* Audio — anonymous sees friction card immediately */}
-          <TabsContent value="audio">
-            {user ? (
-              <AudioTab onTranscriptLoaded={handleTranscriptLoaded} />
+              {!user && showVideoAiFriction && (
+                <FrictionConversionCard
+                  className="mt-6 text-left"
+                  headline="AI transcription needs a free account"
+                  body="Sign up free — 25 credits included, no credit card needed. AI transcription runs at 1 credit per minute; auto-captions stay free. Credits never expire."
+                  primaryCtaLabel="Sign up free →"
+                  primaryCtaHref="/signup"
+                  secondaryLabel="Or use free auto-captions"
+                  secondaryHref="#"
+                />
+              )}
+            </>
+          )}
+          renderPlaylist={({ switchMode }) => (
+            <>
+              <PlaylistTab
+                isAuthenticated={!!user}
+                onAuthRequired={() => setShowPlaylistFriction(true)}
+                onSwitchToAudio={() => switchMode("audio")}
+                onBusyChange={setBusy}
+              />
+              {!user && showPlaylistFriction && (
+                <FrictionConversionCard
+                  className="mt-6 text-left"
+                  headline="Get the full playlist"
+                  body="Sign up free — 25 credits included, no credit card needed. Extract any playlist, not just single videos. Credits never expire."
+                  primaryCtaLabel="Sign up free →"
+                  primaryCtaHref="/signup"
+                  secondaryLabel="Or extract a single video"
+                  secondaryHref="#"
+                />
+              )}
+            </>
+          )}
+          renderAudio={() => (
+            user ? (
+              <AudioTab onTranscriptLoaded={handleTranscriptLoaded} onBusyChange={setBusy} />
             ) : (
               <FrictionConversionCard
                 headline="Audio file transcription"
@@ -196,12 +182,17 @@ export default function FreeToolPage() {
                 secondaryLabel="Or paste a YouTube URL"
                 secondaryHref="#"
               />
-            )}
-          </TabsContent>
-        </Tabs>
+            )
+          )}
+        />
 
-        {/* Trust signals */}
-        <MicroTrustRow />
+        {/* Idle state below the card: Recent for logged-in visitors, trust signals for anonymous */}
+        {!busy && (user ? <RecentTranscripts className="mt-6" /> : <MicroTrustRow />)}
+
+        {/* Quiet docs link under the card */}
+        <p className="mt-6 text-sm text-[var(--fg-muted)]">
+          <a href="/docs" className="hover:text-[var(--fg)] transition-colors">Learn how transcription works →</a>
+        </p>
       </div>
 
       {/* Below-fold sections */}

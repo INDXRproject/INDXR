@@ -560,12 +560,27 @@ Het verbindt persoonlijke berichten van admin met dagelijks gebruik — Itqan in
 
 ### Waar GEEN patterns
 
-- Transcribe form working area
-- Library list rows
+**De regel is breder dan deze lijst:** het honeycomb-patroon hoort **niet op werkende
+(dashboard-)oppervlakken** — alleen op de surfaces in de tabel hierboven (marketing, auth,
+empty states, 404, footer, docs-landing). Werkoppervlakken krijgen géén patroon, en **nooit
+vanuit een gedeelde layout** (dat lag ooit layout-breed over álle dashboardpagina's — ADR-079
+haalde die wash weg en maakte het patroon per pagina opt-in via `DashboardBackdrop`).
+
+Concreet géén patroon op:
+
+- Transcribe form working area (de werkbank-kaart staat op dichte `--surface`)
 - Transcript editor canvas
 - Settings forms
 - Data tables / dense tabular surfaces
 - Modals
+- Home / Messages (werkende weergave) en alle overige werkende dashboardpagina's
+
+**Uitzondering — Library:** de Library-body draagt bewust wél de honeycomb-textuur (op lage
+opaciteit), een vastgelegde, gedocumenteerde uitzondering (zie `docs/LESSONS.md`
+[2026-07-03] design-hexagon-bg-uitzondering en ADR-079). Messages houdt het patroon alleen op
+zijn empty-state (§5-tabel "Empty state Messages"), niet op de werkende lijst. Deze twee regels
+spreken elkaar dus niet tegen: werkoppervlak = geen patroon; Library = expliciete uitzondering;
+empty states = wel patroon.
 
 ### Implementation
 

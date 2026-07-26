@@ -29,6 +29,9 @@ interface PlaylistTabProps {
   onSwitchToAudio?: () => void
   onPlaylistComplete?: (stats: PlaylistStats) => void
   onExtractingChange?: (extracting: boolean) => void
+  /** Observational: fires when the tab leaves/returns to idle so the page can hide/show
+      its idle Recent row. Does not touch any job state. */
+  onBusyChange?: (busy: boolean) => void
 }
 
 function mapBackendStatus(res: { status: string; error_type?: string }): VideoStatus {
@@ -45,7 +48,7 @@ function mapBackendStatus(res: { status: string; error_type?: string }): VideoSt
   }
 }
 
-export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, onPlaylistComplete, onExtractingChange }: PlaylistTabProps) {
+export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, onPlaylistComplete, onExtractingChange, onBusyChange }: PlaylistTabProps) {
   const [error, setError] = useState<{ message: string; isCreditsError?: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [videoStatuses, setVideoStatuses] = useState<Record<string, VideoStatus>>({})
@@ -73,6 +76,11 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const playlistReceipt = useCompletionReceipt('playlist', completedPlaylistId, !!completedPlaylistId, receiptNonce)
   const fallbackMetaRef = useRef<{ title?: string; url?: string; total?: number }>({})
   const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
+
+  // Tell the page when this tab is past idle (a job running, completed, or per-video
+  // results on screen) so it can hide the idle Recent row. Read-only.
+  const isBusy = !!activeJobId || !!completedPlaylistId || resumeBarActive || Object.keys(videoStatuses).length > 0
+  useEffect(() => { onBusyChange?.(isBusy); return () => onBusyChange?.(false) }, [isBusy, onBusyChange])
 
   const _handlePlaylistUpdate = (job: JobStatusRow) => {
     const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>

@@ -3,15 +3,21 @@
 import { User, Settings, LogOut, BookOpen, Newspaper, Shield, Scale } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@indxr/shared/components/ui/dropdown-menu"
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+  SheetTitle,
+} from "@indxr/shared/components/ui/sheet"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { UserAvatar } from "@indxr/shared/components/UserAvatar"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
+
+// Account menu — a right-slide Sheet (ADR-079). On mobile the bottom tab bar is the primary
+// nav, so Account / Settings / Sign out live behind the avatar here; on desktop it doubles as
+// the account menu (the sidebar carries the same items). 44px rows throughout.
+const rowClass =
+  "flex items-center gap-3 min-h-[44px] px-3 rounded-lg text-sm text-fg hover:bg-surface-elevated transition-colors"
 
 export function AvatarDropdown() {
   const handleSignOut = async () => {
@@ -21,66 +27,68 @@ export function AvatarDropdown() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Sheet>
+      <SheetTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           className="rounded-full h-9 w-9 p-0 hover:ring-2 hover:ring-border transition-all border-none bg-transparent"
         >
           <UserAvatar className="h-7 w-7 text-sm" />
-          <span className="sr-only">User menu</span>
+          <span className="sr-only">Account menu</span>
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem asChild>
-          <a href="/dashboard/account" className="flex items-center gap-2 cursor-pointer">
-            <User className="h-4 w-4" />
-            Account
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[300px] gap-1 p-4">
+        <SheetTitle className="px-3 pb-1 text-xs font-semibold uppercase tracking-widest text-fg-muted">
+          Account
+        </SheetTitle>
+
+        <SheetClose asChild>
+          <a href="/dashboard/account" className={rowClass}>
+            <User className="h-4 w-4" /> Account
           </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="/dashboard/settings" className="flex items-center gap-2 cursor-pointer">
-            <Settings className="h-4 w-4" />
-            Settings
+        </SheetClose>
+        <SheetClose asChild>
+          <a href="/dashboard/settings" className={rowClass}>
+            <Settings className="h-4 w-4" /> Settings
           </a>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        {/* Cross-host to the marketing site (docs/articles/legal live there); new tab keeps the
-            app session open. */}
-        <DropdownMenuItem asChild>
-          <a href={marketingHref("/docs")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
-            <BookOpen className="h-4 w-4" />
-            Docs
+        </SheetClose>
+
+        <div className="my-2 border-t border-border" />
+
+        {/* Docs/articles/legal live on the marketing host; new tab keeps the app session open. */}
+        <SheetClose asChild>
+          <a href={marketingHref("/docs")} target="_blank" rel="noopener noreferrer" className={rowClass}>
+            <BookOpen className="h-4 w-4" /> Docs
           </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={marketingHref("/articles")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
-            <Newspaper className="h-4 w-4" />
-            Articles
+        </SheetClose>
+        <SheetClose asChild>
+          <a href={marketingHref("/articles")} target="_blank" rel="noopener noreferrer" className={rowClass}>
+            <Newspaper className="h-4 w-4" /> Articles
           </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={marketingHref("/privacy")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
-            <Shield className="h-4 w-4" />
-            Privacy
+        </SheetClose>
+        <SheetClose asChild>
+          <a href={marketingHref("/privacy")} target="_blank" rel="noopener noreferrer" className={rowClass}>
+            <Shield className="h-4 w-4" /> Privacy
           </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={marketingHref("/terms")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
-            <Scale className="h-4 w-4" />
-            Terms
+        </SheetClose>
+        <SheetClose asChild>
+          <a href={marketingHref("/terms")} target="_blank" rel="noopener noreferrer" className={rowClass}>
+            <Scale className="h-4 w-4" /> Terms
           </a>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={handleSignOut}
-          className="flex items-center gap-2 cursor-pointer text-error focus:text-error focus:bg-error-subtle"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </SheetClose>
+
+        <div className="my-2 border-t border-border" />
+
+        <SheetClose asChild>
+          <button
+            onClick={handleSignOut}
+            className={`${rowClass} w-full text-left text-error hover:bg-error-subtle`}
+          >
+            <LogOut className="h-4 w-4" /> Sign Out
+          </button>
+        </SheetClose>
+      </SheetContent>
+    </Sheet>
   )
 }

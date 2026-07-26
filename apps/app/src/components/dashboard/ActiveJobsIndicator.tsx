@@ -55,7 +55,7 @@ export function ActiveJobsIndicator({ collapsed }: Props) {
 
   if (activeCount === 0) return null
 
-  const href = hasPlaylist ? '/dashboard/transcribe?tab=playlist' : '/dashboard/transcribe'
+  const href = hasPlaylist ? '/dashboard/transcribe?mode=playlist' : '/dashboard/transcribe'
 
   return (
     <Link

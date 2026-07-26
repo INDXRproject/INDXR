@@ -1,5 +1,4 @@
 import { SidebarProvider } from "@indxr/shared/components/ui/sidebar"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
 import { AppSidebar } from "@/components/app-sidebar"
 import { AppTopbar } from "@/components/AppTopbar"
@@ -56,8 +55,10 @@ export default async function DashboardLayout({
           <main id="main-content" className="flex-1 overflow-y-auto">
             {/* pb-[3.5rem] on mobile to avoid content hiding behind MobileTabBar */}
             <div className="relative min-h-full p-4 md:p-8 bg-bg pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
-              {/* Shared honeycomb texture behind every dashboard page (same as /articles, Library). */}
-              <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
+              {/* No blanket honeycomb wash here — the pattern is per-page opt-in via
+                  DashboardBackdrop (ADR-079). system.md §5 only allows it on empty states /
+                  marketing / auth / 404 / footer, not on working dashboard pages. Library keeps
+                  it as a documented exception (LESSONS 2026-07-03). */}
               <div className="relative">
                 {children}
                 <footer className="mt-12 pt-6 border-t border-border/60 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-fg-muted">

@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { CheckCircle, Info, ChevronDown, ChevronRight } from "lucide-react"
 import { cn } from "../../lib/utils"
+import { ResultCardShell } from "../transcribe/ResultCardShell"
 
 // ── Completion receipt (ADR-050 fase 3) ─────────────────────────────────────────
 // One honest receipt for every job type. Principle: "silence on success, explain on
@@ -152,11 +153,14 @@ export function CompletionReceipt({
     )
   }
 
-  const tone = isError ? "border-border bg-surface-elevated" : "border-success/30 bg-success-subtle"
-
+  // Rendered through the shared ResultCardShell so this receipt reads with identical
+  // chrome to the JobProgressCard it replaces in the same slot and the playlist batch
+  // completion (ADR-079). All the credit logic below is unchanged.
   return (
-    <div className={cn("mb-4 rounded-xl border px-4 py-3 text-left animate-in fade-in slide-in-from-top-2 duration-300", tone, className)}>
-      <div className="flex items-start justify-between gap-3">
+    <ResultCardShell
+      tone={isError ? "error" : "success"}
+      className={cn("mb-4", className)}
+      header={
         <div className="flex items-start gap-2 min-w-0">
           {isError
             ? <Info className="h-4 w-4 shrink-0 mt-0.5 text-fg-muted" />
@@ -172,17 +176,20 @@ export function CompletionReceipt({
               : <p className="text-xs text-fg-muted mt-0.5 tabular-nums">{creditLine}</p>}
           </div>
         </div>
-        {!isError && libraryHref && (
+      }
+      actions={
+        !isError && libraryHref ? (
           <a
             href={libraryHref}
-            className="shrink-0 rounded-lg border border-success/40 px-2.5 py-1 text-xs font-medium text-success-fg dark:text-success hover:bg-success-subtle transition-colors"
+            className="rounded-lg border border-success/40 px-2.5 py-1 text-xs font-medium text-success-fg dark:text-success hover:bg-success-subtle transition-colors"
           >
             View in Library
           </a>
-        )}
-      </div>
+        ) : undefined
+      }
+    >
       {!isError && breakdown}
       {overshootStrip}
-    </div>
+    </ResultCardShell>
   )
 }

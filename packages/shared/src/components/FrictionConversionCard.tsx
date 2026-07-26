@@ -1,6 +1,6 @@
-// Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
-// Inline conversion card shown at feature-gating boundaries.
-// Not a modal — rendered inline where the user hits the limit.
+// Inline conversion card shown at feature-gating boundaries (playlist/audio/AI for
+// anonymous visitors). Not a modal — rendered inline where the user hits the limit.
+// Shared so both the marketing free tool and the app workbench can gate identically.
 
 import Link from "next/link"
 

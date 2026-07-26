@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Video, ListMusic, Mic } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@indxr/shared/components/ui/tabs"
+import { TranscribeWorkbench } from "@indxr/shared/components/transcribe/TranscribeWorkbench"
+import { RecentTranscripts } from "@indxr/shared/components/transcribe/RecentTranscripts"
 import { VideoTab } from "@indxr/shared/components/free-tool/VideoTab"
 import { PlaylistTab, PlaylistStats } from "@indxr/shared/components/free-tool/PlaylistTab"
 import { AudioTab } from "@indxr/shared/components/free-tool/AudioTab"
@@ -10,30 +10,18 @@ import { createClient } from "@indxr/shared/utils/supabase/client"
 import { TranscriptItem } from "@indxr/shared/components/TranscriptCard"
 import { TranscriptMetadata } from "@indxr/shared/types/transcript"
 import { SaveErrorModal } from "@/components/SaveErrorModal"
-
 import { ActiveJobsIndicator } from "@/components/dashboard/ActiveJobsIndicator"
-import { useEffect } from "react"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
-import { PageHeader } from "@indxr/shared/components/PageHeader"
 
 export default function TranscribePage() {
-  const [activeTab, setActiveTab] = useState("video")
   const [isExtracting, setIsExtracting] = useState(false)
+  const [busy, setBusy] = useState(false)
   const [showSaveError, setShowSaveError] = useState(false)
   const [saveErrorMessage, setSaveErrorMessage] = useState("")
   const [pendingSave, setPendingSave] = useState<{ transcript: TranscriptItem[], metadata: TranscriptMetadata } | null>(null)
   const [storageFull, setStorageFull] = useState(false)
 
   const supabase = createClient()
-
-  // Honour the ?tab= query param (e.g. from the active-jobs indicator, which
-  // links to the tab where a job is running) so it opens on the right tab.
-  useEffect(() => {
-    const tab = new URLSearchParams(window.location.search).get('tab')
-    if (tab === 'video' || tab === 'playlist' || tab === 'audio') {
-      setActiveTab(tab)
-    }
-  }, [])
 
 
   // Unified auto-save handler with retry logic
@@ -377,75 +365,62 @@ export default function TranscribePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-       <PageHeader
-         compact
-         eyebrow="Dashboard"
-         title="Transcribe"
-         lead={<>Extract captions from videos, playlists, or audio files. <a href={marketingHref('/docs')} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Learn more →</a></>}
-       />
+    <div className="mx-auto w-full max-w-[640px] space-y-6">
+      <div>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-fg">Transcribe</h1>
+        <p className="mt-2 text-fg-muted">Extract captions from videos, playlists, or audio files.</p>
+      </div>
 
-       <ActiveJobsIndicator />
+      <ActiveJobsIndicator />
 
-       {storageFull && (
-         <div className="rounded-xl border border-error/20 bg-error-subtle px-4 py-3 flex items-start justify-between gap-3">
-           <div>
-             <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full — this transcript wasn&apos;t saved.</p>
-             <p className="text-sm text-fg-subtle mt-1">
-               You can still copy or export it above. To save new transcripts, delete some from your{" "}
-               <a href="/dashboard/library" className="text-accent hover:underline">library</a>, or buy more space on your{" "}
-               <a href="/dashboard/account" className="text-accent hover:underline">account page</a>. Your existing transcripts are safe.
-             </p>
-           </div>
-           <button onClick={() => setStorageFull(false)} className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none" aria-label="Dismiss">✕</button>
-         </div>
-       )}
+      {storageFull && (
+        <div className="rounded-xl border border-error/20 bg-error-subtle px-4 py-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full — this transcript wasn&apos;t saved.</p>
+            <p className="text-sm text-fg-subtle mt-1">
+              You can still copy or export it above. To save new transcripts, delete some from your{" "}
+              <a href="/dashboard/library" className="text-accent hover:underline">library</a>, or buy more space on your{" "}
+              <a href="/dashboard/account" className="text-accent hover:underline">account page</a>. Your existing transcripts are safe.
+            </p>
+          </div>
+          <button onClick={() => setStorageFull(false)} className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none" aria-label="Dismiss">✕</button>
+        </div>
+      )}
 
-       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
-        <TabsList className="grid w-full grid-cols-3 gap-2 p-1 bg-surface-elevated h-auto rounded-xl">
-          <TabsTrigger
-            value="video"
-            className="rounded-lg py-2.5 data-[state=active]:bg-accent data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-fg-muted font-medium gap-2"
-          >
-            <Video className="h-4 w-4" /> Single Video
-          </TabsTrigger>
-          <TabsTrigger
-            value="playlist"
-            className="rounded-lg py-2.5 data-[state=active]:bg-accent data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-fg-muted font-medium gap-2"
-          >
-            <ListMusic className="h-4 w-4" /> Playlist
-          </TabsTrigger>
-          <TabsTrigger
-            value="audio"
-            className="rounded-lg py-2.5 data-[state=active]:bg-accent data-[state=active]:text-fg-on-accent data-[state=active]:shadow-sm transition-all duration-200 text-fg-muted font-medium gap-2"
-          >
-            <Mic className="h-4 w-4" /> Audio Upload
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="video">
+      <TranscribeWorkbench
+        renderVideo={({ switchMode }) => (
           <VideoTab
-            onPlaylistDetected={() => setActiveTab('playlist')}
+            onPlaylistDetected={() => switchMode('playlist')}
             onTranscriptLoaded={handleTranscriptLoaded}
-            onSwitchToAudio={() => setActiveTab('audio')}
+            onSwitchToAudio={() => switchMode('audio')}
+            onBusyChange={setBusy}
           />
-        </TabsContent>
-
-        <TabsContent value="playlist">
+        )}
+        renderPlaylist={({ switchMode }) => (
           <PlaylistTab
             isAuthenticated={true}
             onAuthRequired={() => {}}
-            onSwitchToAudio={() => setActiveTab('audio')}
+            onSwitchToAudio={() => switchMode('audio')}
             onPlaylistComplete={handlePlaylistComplete}
             onExtractingChange={setIsExtracting}
+            onBusyChange={setBusy}
           />
-        </TabsContent>
+        )}
+        renderAudio={() => (
+          <AudioTab onTranscriptLoaded={handleTranscriptLoaded} onBusyChange={setBusy} />
+        )}
+      />
 
-        <TabsContent value="audio">
-          <AudioTab onTranscriptLoaded={handleTranscriptLoaded} />
-        </TabsContent>
-      </Tabs>
+      {/* Idle state below the card: last 3 transcripts (hidden the moment a job/result appears) */}
+      {!busy && <RecentTranscripts />}
 
-      {/* Save Error Modal */}
+      {/* Quiet docs link under the card (moved out of the subline) */}
+      <p className="text-center text-sm text-fg-muted">
+        <a href={marketingHref('/docs')} target="_blank" rel="noopener noreferrer" className="hover:text-fg transition-colors">
+          Learn how transcription works →
+        </a>
+      </p>
+
       <SaveErrorModal
         open={showSaveError}
         onOpenChange={setShowSaveError}

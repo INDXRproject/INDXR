@@ -135,9 +135,43 @@ De lange prose SEO-tekst onder de tool (H2-secties met stappenplan, vergelijking
 
 ---
 
+## Anatomie (ADR-079, 2026-07-26)
+
+De losse drie-layout-opzet hierboven is vervangen door één gedeelde **`TranscribeWorkbench`**
+(`packages/shared/src/components/transcribe/`), die beide apps renderen. Vaste anatomie:
+
+```
+kaart (max-w-[640px], gecentreerd, dichte --surface)
+├─ header : ModeStrip — segmented control (Radix Tabs), custom hexagon-iconen,
+│           actief = --surface + hairline + --fg-strong + --accent icoon (géén massief amber)
+├─ body   : de actieve modus (VideoTab / PlaylistTab / AudioTab) — invoer + actieknop
+│           actieknop = vol --accent enabled / --surface-sunken + --fg-muted disabled;
+│           labels Extract / Fetch playlist / Transcribe; laden = "Extracting…" + ring-spinner
+└─ footer : bron-/kostenregel binnen de tab-body
+            · video   : SourceChoice (Auto-captions [Free] / AI transcription 1 cr/min)
+            · playlist: "First 3 free · then 1 credit/video · AI 1 credit/min" + info-popover
+            · audio   : "1 credit per minute · minimum 1 credit"
+```
+
+- **URL-state:** `?mode=video|playlist|audio` via `history.replaceState` (niet `router.replace`);
+  default/onbekend ⇒ video, geen redirect. Marketing-canonical blijft kaal (ADR-077).
+- **Onder de kaart:** idle-state — ingelogd `RecentTranscripts` (laatste 3, nul ⇒ niets),
+  uitgelogd `MicroTrustRow`; verdwijnt zodra een job start. Stille docs-link. Geen dashed box,
+  geen toasts. Lopende job = `JobProgressCard`; klaar = resultaatkaart in dezelfde slot
+  (beide op de gedeelde `ResultCardShell`).
+- **Gating uitgelogd:** AI-cel (video), playlist en audio tonen de `FrictionConversionCard`;
+  single-video captions blijven onderbroken-vrij.
+- Kop: app = H1 "Transcribe" + subregel (geen "DASHBOARD"-eyebrow); marketing behoudt zijn SEO-H1.
+
+---
+
 ## Mobile
 
-Pass later. Niet hier.
+- **Kaart:** `max-w-[640px]`, gecentreerd, actieknop full-width onder de input, alle targets ≥44px.
+- **App-navigatie:** bottom tab bar is primair (§4); geen sidebar-trigger/hamburger <md.
+  Account/Settings/Sign out achter de avatar rechtsboven in een rechts-in-schuivende `Sheet`.
+- **Marketing-navigatie:** hamburger → full-screen `Sheet` met 44px-rijen
+  (Pricing/Docs/Articles · scheiding · Log in · Sign up full-width · theme-toggle).
 
 ---
 
@@ -145,8 +179,8 @@ Pass later. Niet hier.
 
 - [x] Wiki documentatie (deze file)
 - [x] Skeleton implementatie (componenten + page-structuur)
-- [ ] Claude Design rondje (na alle Batch 1 pages)
+- [x] Gedeelde workbench-anatomie (ADR-079)
+- [x] Mobile pass (bottom tab bar + avatar/hamburger sheets)
 - [ ] Content writing (FAQ-antwoorden + kopij)
 - [ ] Format-export gating (3c) — deferred
 - [ ] Playlist eerste-3-free UI — deferred
-- [ ] Mobile pass

@@ -12,6 +12,10 @@ Bron van waarheid voor wat er op elke pagina staat — separaat van de implement
 - [reference-doc.md](reference-doc.md) — reference doc template
 - [tutorial-doc.md](tutorial-doc.md) — tutorial doc template
 
+## App (dashboard)
+
+- [dashboard-transcribe.md](dashboard-transcribe.md) — `/dashboard/transcribe` (app-variant van de Transcribe-tool, ADR-079)
+
 ## Batch 2-4 — volgt later
 
 Wordt aangevuld naarmate batches afgerond zijn.

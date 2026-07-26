@@ -6,7 +6,7 @@ import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "../hooks/useAuth"
 import { Button } from "./ui/button"
 import { ThemeToggle } from "./ui/theme-toggle"
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from "./ui/sheet"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -153,9 +153,8 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile Menu */}
-        <div className="flex md:hidden items-center gap-2 ml-auto">
-          <ThemeToggle />
+        {/* Mobile Menu — full-screen sheet, 44px rows, theme toggle inside (ADR-079) */}
+        <div className="flex md:hidden items-center ml-auto">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -163,57 +162,59 @@ export function Header() {
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <div className="flex flex-col gap-6 mt-8">
-                <nav className="flex flex-col gap-4">
-                  <SheetClose asChild>
-                    <a href={marketingHref('/pricing')} className="text-lg font-medium text-fg-subtle transition-colors hover:text-accent">
-                      Pricing
-                    </a>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <a href={marketingHref('/docs')} className="text-lg font-medium text-fg-subtle transition-colors hover:text-accent">
-                      Docs
-                    </a>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <a href={marketingHref('/articles')} className="text-lg font-medium text-fg-subtle transition-colors hover:text-accent">
-                      Articles
-                    </a>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <a href={marketingHref('/transcribe')} className="text-lg font-medium text-accent">
-                      Try it free
-                    </a>
-                  </SheetClose>
-                </nav>
-                <div className="flex flex-col gap-3 pt-4 border-t border-border">
-                  {user ? (
-                    <>
-                      <SheetClose asChild>
-                        <a href={appHref('/dashboard')} className="w-full">
-                          <Button className="w-full bg-accent text-fg-on-accent">Go to app</Button>
-                        </a>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <MobileSignOutButton />
-                      </SheetClose>
-                    </>
-                  ) : (
-                    <>
-                      <SheetClose asChild>
-                        <a href={marketingHref('/login')} className="w-full">
-                          <Button variant="outline" className="w-full">Log in</Button>
-                        </a>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <a href={marketingHref('/signup')} className="w-full">
-                          <Button className="w-full">Sign up</Button>
-                        </a>
-                      </SheetClose>
-                    </>
-                  )}
-                </div>
+            <SheetContent side="right" className="w-full sm:max-w-none p-6">
+              <SheetTitle className="sr-only">Menu</SheetTitle>
+              <nav className="mt-10 flex flex-col">
+                <SheetClose asChild>
+                  <a href={marketingHref('/pricing')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent">
+                    Pricing
+                  </a>
+                </SheetClose>
+                <SheetClose asChild>
+                  <a href={marketingHref('/docs')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent">
+                    Docs
+                  </a>
+                </SheetClose>
+                <SheetClose asChild>
+                  <a href={marketingHref('/articles')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent">
+                    Articles
+                  </a>
+                </SheetClose>
+              </nav>
+
+              <div className="my-4 border-t border-border" />
+
+              <div className="flex flex-col gap-3">
+                {user ? (
+                  <>
+                    <SheetClose asChild>
+                      <a href={appHref('/dashboard')} className="w-full">
+                        <Button className="w-full bg-accent text-fg-on-accent min-h-[44px]">Go to app</Button>
+                      </a>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <MobileSignOutButton />
+                    </SheetClose>
+                  </>
+                ) : (
+                  <>
+                    <SheetClose asChild>
+                      <a href={marketingHref('/login')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent">
+                        Log in
+                      </a>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <a href={marketingHref('/signup')} className="w-full">
+                        <Button className="w-full min-h-[44px]">Sign up</Button>
+                      </a>
+                    </SheetClose>
+                  </>
+                )}
+              </div>
+
+              <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                <span className="text-sm text-fg-muted">Theme</span>
+                <ThemeToggle />
               </div>
             </SheetContent>
           </Sheet>

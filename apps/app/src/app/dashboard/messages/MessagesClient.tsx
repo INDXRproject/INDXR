@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Inbox, Archive, ArchiveRestore, CheckCheck, ChevronLeft, ChevronDown, ChevronRight, Send } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import { cn } from "@indxr/shared/lib/utils"
+import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { SupportClient } from "../support/SupportClient"
 
@@ -261,9 +262,14 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
             {/* Message list */}
             <div className={cn("flex flex-col gap-1 w-full lg:w-80 shrink-0", mobileDetail && "hidden md:flex")}>
               {visible.length === 0 ? (
-                <div className="text-center py-12 text-fg-muted">
-                  <Inbox className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">{showArchived ? "No archived messages." : "No messages — we'll write when something matters."}</p>
+                <div className="relative overflow-hidden rounded-lg text-center py-12 text-fg-muted">
+                  {/* Empty states keep the honeycomb (system.md §5), even though the working
+                      Messages page no longer carries the blanket wash (ADR-079). */}
+                  <HexagonPattern className="opacity-[0.04] dark:opacity-[0.06]" />
+                  <div className="relative">
+                    <Inbox className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">{showArchived ? "No archived messages." : "No messages — we'll write when something matters."}</p>
+                  </div>
                 </div>
               ) : (
                 visible.map((msg) => (

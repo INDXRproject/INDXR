@@ -1,4 +1,5 @@
-// Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
+// Inline trust signals under the transcribe tool for anonymous visitors.
+// Shared so the marketing free tool and the app workbench render the same row.
 
 interface TrustSignal {
   icon: string
