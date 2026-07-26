@@ -518,7 +518,7 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
         rpc_error_type = _classify_download_error(str(e), video_id=video_id, job_id=f"{playlist_id}:{video_index}")
         logger.warning(f"{log_prefix} {video_id} failed ({rpc_error_type}): {e}")
         # bot_detection/timeout/members_only/no_captions zijn verwachte operationele uitkomsten, geen bugs.
-        if rpc_error_type not in ('bot_detection', 'timeout', 'members_only', 'no_captions'):
+        if rpc_error_type not in ('bot_detection', 'timeout', 'connection_error', 'server_error', 'members_only', 'no_captions'):
             with sentry_sdk.push_scope() as scope:
                 scope.set_tag("task_name", "process_playlist_video")
                 scope.set_tag("playlist_job_id", playlist_id)
@@ -575,7 +575,7 @@ async def _enqueue_next(
         # Last video — check for retry-eligible failures
         retry_eligible = [
             v for v, r in video_results.items()
-            if r.get('status') == 'error' and r.get('error_type') in ('bot_detection', 'timeout')
+            if r.get('status') == 'error' and r.get('error_type') in ('bot_detection', 'timeout', 'connection_error', 'server_error')
         ]
         if retry_eligible:
             try:
@@ -671,7 +671,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
 
     retry_video_ids = [
         v for v, r in video_results.items()
-        if r.get('status') == 'error' and r.get('error_type') in ('bot_detection', 'timeout')
+        if r.get('status') == 'error' and r.get('error_type') in ('bot_detection', 'timeout', 'connection_error', 'server_error')
     ]
 
     if not retry_video_ids:
@@ -768,7 +768,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
             rpc_error_type = _classify_download_error(str(e), video_id=video_id, job_id=f"{playlist_id}:retries")
             logger.warning(f"{log_prefix} {video_id} retry failed ({rpc_error_type}): {e}")
             # bot_detection/timeout/members_only/no_captions zijn verwachte operationele uitkomsten, geen bugs.
-            if rpc_error_type not in ('bot_detection', 'timeout', 'members_only', 'no_captions'):
+            if rpc_error_type not in ('bot_detection', 'timeout', 'connection_error', 'server_error', 'members_only', 'no_captions'):
                 with sentry_sdk.push_scope() as scope:
                     scope.set_tag("task_name", "process_playlist_retries")
                     scope.set_tag("playlist_job_id", playlist_id)

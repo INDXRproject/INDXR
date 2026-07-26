@@ -13353,3 +13353,39 @@ Changed: docs/LOG.md
 supabase/migrations/20260726190329_ops_capture_layer.sql
 supabase/migrations/20260726190453_ops_source_kind_backfill_playlist_whisper.sql
 ---
+
+[2026-07-26 19:25] taak: Commit 2 (error-capture) — classifier-honesty fix: timeout gesplitst in connection_error/server_error (+ proxy vóór timeout, partial_write vóór transient, numerieke false-positives weg) | gewijzigd: backend/transcription_pipeline.py, backend/worker.py, apps/app/.../adminTypes.ts, migrations 20260726191733 (RPC v_has_retryable IN-list + backfill) + 20260726191927 (partial_write/proxy backfill) | geverifieerd: classifier 11/11 real strings, 4/4 bestaande timeout-rijen gecorrigeerd (TLS->connection_error, 5xx->server_error, bytes->partial_write, tunnel->proxy_error; 0 echte timeouts), py_compile OK, RPC IN-list bevat nieuwe slugs. Full pnpm-build geblokkeerd door parallelle build (andere terminal); adminTypes tsc-clean.[2026-07-26 21:28] commit: fix(ops/commit2): honest error classification — split over-broad 'timeout'
+
+Een AI-job faalde op een TLS-fout (EOF/SSL) maar sloot af als error_type=timeout,
+omdat de classifier connectie/TLS/5xx allemaal in de retryable 'timeout'-bak
+lumpte. De failure-reason breakdown (commit 4) zou daarmee liegen.
+
+- _classify_download_error: 'timeout' nu ALLEEN echte timeouts. Nieuwe slugs
+  'connection_error' (reset/TLS/EOF/DNS) en 'server_error' (5xx). proxy_error
+  gecheckt VOOR timeout ('Tunnel connection failed: 504' is een proxy-, geen
+  timeout-fout). partial_write vóór de transient-takken. Bare cijfercodes
+  ('504','500','429') weg — matchten spurieus in byte-tellingen (6504400
+  bevat 504); nu tekstueel / 'http error 50x'. Unmapped -> 'extraction_error'
+  (honest catch-all), nooit 'timeout'. Geen bestaande slug hernoemd (alleen +).
+- Retry behouden: connection_error+server_error toegevoegd aan de retry-gates
+  (worker.py retry-set + Sentry-suppressie + RPC v_has_retryable IN-list).
+- Backfill: 4/4 bestaande 'timeout'-rijen bleken iets anders (TLS, 5xx,
+  partial_write, proxy) -> gecorrigeerd; 0 echte timeouts.
+
+Verificatie: classifier 11/11 tegen echte foutstrings (incl. byte-count-traps);
+py_compile OK; RPC IN-list bevat nieuwe slugs. Full pnpm-build tijdelijk
+geblokkeerd door een parallelle build (andere terminal) -> adminTypes.ts los
+tsc-geverifieerd (clean).
+
+LET OP frontend (andere sessie): errorCopy.ts moet 'connection_error' +
+'server_error' TOEVOEGEN (niet hernoemen) voor tailored copy; tot dan neutrale kaart.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+backend/transcription_pipeline.py
+backend/worker.py
+docs/LESSONS.md
+docs/LOG.md
+supabase/migrations/20260726191733_split_timeout_into_connection_server_errors.sql
+supabase/migrations/20260726191927_backfill_timeout_partial_write_proxy.sql
+---

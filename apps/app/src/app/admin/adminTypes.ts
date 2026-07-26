@@ -124,7 +124,9 @@ export const FAULT_META: Record<ErrorFault, { label: string; cls: string }> = {
 }
 export const ERROR_META: Record<string, { label: string; fault: ErrorFault; hint: string }> = {
   bot_detection:              { label: "Bot detection (YouTube blocked us)", fault: "youtube",   hint: "YouTube rate-limited us as a bot. Auto-retry rarely helps; the user can wait or use AI transcription." },
-  timeout:                    { label: "Network timeout",                    fault: "transient", hint: "Connection dropped mid-request. Auto-retried after 30s — usually recovers." },
+  timeout:                    { label: "Network timeout",                    fault: "transient", hint: "The request genuinely timed out (slow server / gateway timeout). Transient — auto-retried on a fresh IP." },
+  connection_error:           { label: "Connection / TLS dropped",           fault: "transient", hint: "The connection to YouTube dropped mid-request — reset, SSL/TLS handshake, EOF, or DNS. Transient — auto-retried on a fresh proxy IP. (Previously mislabelled as 'timeout'.)" },
+  server_error:               { label: "Upstream server error (5xx)",        fault: "transient", hint: "YouTube or an upstream server returned a 5xx (500/502/503). Transient — auto-retried." },
   partial_write:              { label: "Download cut off",                   fault: "transient", hint: "The proxy IP dropped mid-download. Auto-retried on a fresh IP (max 3)." },
   proxy_error:                { label: "Proxy auth/tunnel failure",          fault: "us",        hint: "Our proxy (Decodo) rejected the connection — a credential/config issue, not fixed by a plain retry." },
   ytdlp_parse:                { label: "YouTube parser broke (yt-dlp)",      fault: "us",        hint: "yt-dlp couldn't read YouTube's player response — usually needs a yt-dlp version bump. Watch for spikes after YouTube changes." },

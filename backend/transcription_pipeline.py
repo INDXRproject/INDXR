@@ -134,31 +134,42 @@ def _classify_download_error(
         return 'members_only'
     if any(kw in lower for kw in ('age-restricted', 'age restricted', 'only available on youtube', 'confirm your age')):
         return 'age_restricted'
-    if any(kw in lower for kw in ('sign in to confirm', 'confirming you', 'not a bot', '429', 'too many requests')):
+    if any(kw in lower for kw in ('sign in to confirm', 'confirming you', 'not a bot', 'error 429', 'too many requests')):
         return 'bot_detection'
-    # Transient network / connection failures map to the retryable 'timeout' family: on a
-    # residential proxy an unknown download drop is almost always recoverable with a fresh
-    # exit IP (same remedy as bot_detection). Reusing 'timeout' keeps ONE retryable slug that
-    # is already wired through every retry gate (worker retry-set, RPC v_has_retryable, the
-    # frontend retry filter/badge "Connection timeout"). Permanent errors (age_restricted /
-    # members_only / youtube_restricted) are matched earlier/below and stay non-retryable.
+    # Proxy auth / tunnel failure (Decodo) — checked BEFORE timeout: "Tunnel connection failed: 504
+    # Gateway Timeout" is a proxy problem, not a timeout. Own actionable category (our proxy).
+    if any(kw in lower for kw in ('proxy authentication', '407 proxy', 'unable to connect to proxy',
+                                  'tunnel connection failed', 'tunnelconnectionfailed', 'proxyerror')):
+        return 'proxy_error'
+    # Afgebroken download (content-length mismatch) — vóór de transient-takken, want een byte-telling
+    # kan cijfers als '504' bevatten. Specifieke keywords, geen numerieke false-positives (ADR-031).
+    if any(kw in lower for kw in ('bytes read', 'more expected', 'incomplete read')):
+        return 'partial_write'
+    # Transient failures are split into HONEST, distinct codes. A TLS/connection drop is NOT a
+    # timeout; lumping them poisons the failure-reason breakdown (a wrong category is worse than an
+    # empty one). All three below are still transient/retryable and stay wired through the retry
+    # gates (worker retry-set + RPC v_has_retryable IN-list — keep those three lists in sync).
+    # Unmatched download errors fall through to 'extraction_error' (honest catch-all), NEVER 'timeout'.
+    # (a) Genuine timeouts only.
     if any(kw in lower for kw in (
-        'timed out', 'timeout', 'read timed out', '504', 'gateway timeout',
-        'connection reset', 'connection aborted', 'connection refused', 'connection error',
-        'connection broken', 'broken pipe', 'econnreset', 'remote end closed',
-        'temporarily unavailable', 'temporary failure', 'network is unreachable',
-        '502', '503', 'bad gateway', 'service unavailable',
-        '500', 'internal server error', 'getaddrinfo', 'name or service not known',
-        'temporary failure in name resolution', 'eof occurred',
+        'timed out', 'timeout', 'read timed out', 'connection timed out', 'gateway timeout',
     )):
         return 'timeout'
-    if any(kw in lower for kw in ('bytes read', 'more expected', 'incomplete read')):
-        # HTTP content-length mismatch after all retry attempts — residential proxy
-        # dropped mid-download. See ADR-031.
-        return 'partial_write'
-    # Proxy auth / tunnel failure (Decodo) — a credential/config problem, not fixed by a plain retry.
-    if any(kw in lower for kw in ('proxy authentication', '407 proxy', 'tunnel connection failed', 'tunnelconnectionfailed')):
-        return 'proxy_error'
+    # (b) Connection / TLS / DNS drop — reset, refused, SSL/TLS handshake, EOF, name resolution.
+    if any(kw in lower for kw in (
+        'connection reset', 'connection aborted', 'connection refused', 'connection error',
+        'connection broken', 'broken pipe', 'econnreset', 'remote end closed', 'network is unreachable',
+        'eof occurred', 'unexpected_eof', 'ssl', 'tls', 'certificate', 'bad handshake',
+        'getaddrinfo', 'name or service not known', 'temporary failure in name resolution',
+    )):
+        return 'connection_error'
+    # (c) Upstream HTTP 5xx (YouTube / proxy server-side), transient. Textuele vormen + 'http error 50x'
+    # i.p.v. bare cijfers (die matchen spuriously in byte-tellingen/URLs).
+    if any(kw in lower for kw in (
+        'internal server error', 'bad gateway', 'service unavailable', 'temporarily unavailable',
+        'http error 500', 'http error 502', 'http error 503',
+    )):
+        return 'server_error'
     # yt-dlp could not parse YouTube's player response — typically needs a yt-dlp bump, not a retry.
     if any(kw in lower for kw in ('unable to extract', 'nsig', 'failed to extract', 'player response', 'requested format is not available')):
         return 'ytdlp_parse'
@@ -461,7 +472,7 @@ async def do_assemblyai_transcription(
                     return {"success": False, "error_type": "members_only", "credit_cost": 0}
                 error_type = _classify_download_error(error_msg, video_id=video_id, job_id=job_id)
                 # bot_detection/timeout/members_only zijn verwachte operationele uitkomsten, geen bugs.
-                if error_type not in ('bot_detection', 'timeout', 'members_only', 'no_captions'):
+                if error_type not in ('bot_detection', 'timeout', 'connection_error', 'server_error', 'members_only', 'no_captions'):
                     with sentry_sdk.push_scope() as scope:
                         scope.set_tag("pipeline", "do_assemblyai_transcription")
                         scope.set_tag("step", "audio_download")
