@@ -13493,3 +13493,26 @@ packages/shared/src/components/transcribe/RecentTranscripts.tsx
 packages/shared/src/components/transcribe/errorCopy.ts
 packages/shared/src/hooks/useJobStatus.ts
 ---
+
+[2026-07-27 08:30] taak: Commit 2 — playlist-completion payload verrijkt met 2 leesvelden (per-video methode + retry-kost) voor de frontend-bon | gewijzigd: backend/main.py (get_playlist_job read-only enrichment) | LEESVELDEN, geen creditlogica (reserve/debit/refund onaangeroerd); py_compile OK; geverifieerd op 2 datasets (echte all-caption job: 4 retryable/4cr, 2 no_captions uitgesloten; synthetische whisper: ceil(1527/60)=26+1=27)[2026-07-27 00:25] commit: feat(ops/commit2): enrich playlist payload with per-video method + retry cost estimate
+
+Twee LEESVELDEN voor de completion-bon van de frontend-sessie (geen creditlogica;
+reserve/debit/refund onaangeroerd):
+
+- job.video_methods: { <video_id>: 'ai_transcription' | 'caption' } voor elke video
+  (gezaghebbend uit use_whisper_ids) -> per-methode credit-split in de bon zonder
+  client-side afleiden.
+- job.retry_estimate: { videos: [{video_id, method, est_credits}], count, total_credits }
+  voor de 'Retry all N'-knop. Retryable-set = exact de retry-gate IN-list
+  (bot_detection/timeout/connection_error/server_error); permanente fouten
+  (no_captions/members_only/...) worden bewust uitgesloten. est_credits mirrort
+  _compute_playlist_reservation met is_retry=True (whisper=ceil(duur/60), caption=1).
+
+Toegevoegd aan GET /api/playlist/jobs/{job_id}. Geverifieerd op 2 datasets:
+echte all-caption job -> count=4 total=4 (2 no_captions uitgesloten);
+synthetische whisper (1527s) -> 26 + caption 1 = total=27.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+---

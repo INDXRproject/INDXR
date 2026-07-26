@@ -1494,6 +1494,41 @@ async def get_playlist_job(job_id: str, user_id: str, _: None = Depends(verify_b
             except Exception as e:
                 logger.error(f"[stale] Failed to mark {job_id} as interrupted: {e}")
 
+    # ── Read-only receipt-verrijking (LEESVELDEN — geen creditlogica; reserve/debit/refund onaangeroerd) ──
+    # De frontend bouwt de completion-bon uit deze payload en mag methode/kost niet client-side afleiden
+    # (reconcilieert alleen als elk veld gevuld is). Daarom leveren we ze hier, aan de bron.
+    _whisper_set = set(job.get('use_whisper_ids') or [])
+    _meta = job.get('video_metadata') or {}
+    _vr = job.get('video_results') or {}
+    # Gezaghebbende retryable-set = exact de IN-list van de retry-gates (worker + RPC v_has_retryable).
+    _RETRYABLE_ERRORS = ('bot_detection', 'timeout', 'connection_error', 'server_error')
+
+    def _method_of(vid: str) -> str:
+        return 'ai_transcription' if vid in _whisper_set else 'caption'
+
+    def _est_credits_of(vid: str) -> int:
+        # Mirror _compute_playlist_reservation met is_retry=True: whisper = ceil(duur/60) min 1,
+        # caption = 1 (op een retry vervalt de gratis-3, mirror worker.py).
+        if vid in _whisper_set:
+            d = (_meta.get(vid) or {}).get('duration')
+            return calculate_credit_cost(d) if d and d > 0 else 1
+        return 1
+
+    # (1) Per-video methode voor de bon-split — gezaghebbend uit use_whisper_ids.
+    job['video_methods'] = {vid: _method_of(vid) for vid in (job.get('video_ids') or [])}
+
+    # (2) Geschatte kost om de retryable failures opnieuw te draaien ("Retry all N").
+    _retry_videos = [
+        {'video_id': vid, 'method': _method_of(vid), 'est_credits': _est_credits_of(vid)}
+        for vid, r in _vr.items()
+        if isinstance(r, dict) and r.get('status') == 'error' and r.get('error_type') in _RETRYABLE_ERRORS
+    ]
+    job['retry_estimate'] = {
+        'videos': _retry_videos,
+        'count': len(_retry_videos),
+        'total_credits': sum(v['est_credits'] for v in _retry_videos),
+    }
+
     return JSONResponse(job)
 
 
