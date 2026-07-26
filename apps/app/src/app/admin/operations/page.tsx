@@ -107,11 +107,12 @@ export default async function AdminOperationsPage({
           info="Completed ÷ (completed + failed) AI/playlist jobs in this window. Free caption extraction and live-now jobs aren't counted. Stays neutral (grey) until at least 5 jobs finished, so one bad job doesn't flash red." />
         <Metric label="Jobs processed" value={o.jobs.total.toLocaleString()} sub={win.label}
           info="AI transcription and playlist jobs created in this window. Free caption extractions are logged separately (usage_logs), not here." />
-        <Metric label="Avg queue wait" value={secs(o.capacity.avg_queue_wait_sec)} tone={queueWaitHealth(o.capacity.avg_queue_wait_sec)}
-          sub="created → started"
-          info="Average time a job sat in the queue before processing started (created → started), in this window. Green ≤30s, amber ≤2m, red above." />
-        <Metric label="Avg processing" value={secs(o.capacity.avg_processing_sec)} sub="AI jobs run minutes"
-          info="Average end-to-end processing time of completed jobs in this window. Several minutes is normal for AI transcription; captions are near-instant." />
+        <Metric label="Queue wait" value={secs(o.capacity.queue_wait_p50)} tone={queueWaitHealth(o.capacity.queue_wait_p50)}
+          sub={o.capacity.queue_wait_p95 != null ? `typical · worst ${secs(o.capacity.queue_wait_p95)}` : "typical (median)"}
+          info="Time a job waits before processing starts (created → started). Shown as the typical job (median), with the slowest 5% (p95) beside it. This is length-independent, so short and long videos are comparable. Green ≤30s, amber ≤2m, red above. If this climbs, jobs are backing up faster than the worker clears them." />
+        <Metric label="1-hour video takes" value={o.capacity.ai_realtime_factor == null ? "—" : secs(o.capacity.ai_realtime_factor * 3600)}
+          sub={o.capacity.ai_speed_sample > 0 ? `median · ${o.capacity.ai_speed_sample} AI jobs` : "no AI jobs yet"}
+          info="How long AI transcription takes, normalised to video length (median of processing-time ÷ audio-length). A 1-hour video is the yardstick; a 3-hour video takes ~3× this, a 5-minute one ~1/12. Unlike a raw average, this is comparable across lengths — if it creeps up, transcription is genuinely slowing down." />
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
@@ -124,19 +125,34 @@ export default async function AdminOperationsPage({
           ) : (
             <div className="flex items-center gap-5">
               <Donut data={donut} />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                {errorData.map((e) => (
-                  <div key={e.slug} className="flex items-start gap-2 text-xs" title={e.meta.hint}>
-                    <span className={`mt-1 h-2 w-2 shrink-0 rounded-full bg-current ${FAULT_META[e.meta.fault].cls}`} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-fg">{e.meta.label}</span>
-                        <span className="font-semibold tabular-nums text-fg">{e.value}</span>
+              <div className="min-w-0 flex-1 space-y-1">
+                {errorData.map((e) => {
+                  const samples = o.error_samples[e.slug] ?? []
+                  return (
+                    <details key={e.slug} className="group text-xs">
+                      <summary className="flex cursor-pointer list-none items-start gap-2">
+                        <span className={`mt-1 h-2 w-2 shrink-0 rounded-full bg-current ${FAULT_META[e.meta.fault].cls}`} />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="truncate text-fg">{e.meta.label}<span className="ml-1 text-fg-subtle group-open:hidden">▸</span></span>
+                            <span className="font-semibold tabular-nums text-fg">{e.value}</span>
+                          </span>
+                          <span className={`text-[11px] ${FAULT_META[e.meta.fault].cls}`}>{FAULT_META[e.meta.fault].label}</span>
+                        </span>
+                      </summary>
+                      <div className="mt-1 space-y-1 pl-4">
+                        <p className="text-[11px] text-fg-subtle">{e.meta.hint}</p>
+                        {samples.length > 0 ? (
+                          samples.map((m, i) => (
+                            <p key={i} className="truncate rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-fg-muted" title={m}>{m}</p>
+                          ))
+                        ) : (
+                          <p className="text-[11px] text-fg-subtle italic">No raw message stored.</p>
+                        )}
                       </div>
-                      <span className={`text-[11px] ${FAULT_META[e.meta.fault].cls}`}>{FAULT_META[e.meta.fault].label}</span>
-                    </div>
-                  </div>
-                ))}
+                    </details>
+                  )
+                })}
               </div>
             </div>
           )}

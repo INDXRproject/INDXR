@@ -13256,3 +13256,25 @@ docs/LESSONS.md
 docs/LOG.md
 docs/wiki/roadmap/admin-kpi-audit.md
 ---
+
+[2026-07-26 13:00] taak: Fase 2b — betekenisvolle Operations-metrics (weg met blended avg) | gewijzigd: supabase/migrations/20260726125754_ops_summary_meaningful_speed_and_samples.sql (nieuw, MCP 111->112), apps/app/src/app/admin/{adminTypes.ts,operations/page.tsx} | build groen (exit 0), RPC DB-geverifieerd (qwait p50 0,3s/p95 1,1s; realtime-factor 0,0537 = 1u-video ~3min over 218 jobs; error_samples gevuld) | avg processing (nutteloos) -> lengte-onafhankelijke snelheid; mean -> p50/p95; error-drilldown naar ruwe error_message[2026-07-26 15:03] commit: feat(admin): meaningful Operations metrics — drop blended averages
+
+De 'avg processing'-meter was zinloos: een 3u-AI-job en een instant-caption in
+een gemiddelde zegt niets. Vervangen door cijfers die een echte vraag beantwoorden:
+
+- '1-hour video takes ~X min': mediaan(processing_time / audio_length), LENGTE-
+  ONAFHANKELIJK -> vergelijkbaar tussen korte en lange video's; loopt 'ie op = trager.
+- Queue wait als p50 (typisch) + p95 (staart) i.p.v. mean (uitschieter-bestendig).
+- Error-drilldown: elke foutregel klapt uit naar de 3 recentste RUWE error_messages,
+  zodat de 'unknown'-bak diagnosticeerbaar is i.p.v. een dood getal.
+
+Migratie 20260726125754 (MCP 111->112, CREATE OR REPLACE, Overview no-arg intact).
+DB-geverifieerd: qwait p50 0,3s/p95 1,1s; realtime 0,0537 (1u-video ~3min, 218 jobs).
+Build groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/operations/page.tsx
+docs/LOG.md
+supabase/migrations/20260726125754_ops_summary_meaningful_speed_and_samples.sql
+---

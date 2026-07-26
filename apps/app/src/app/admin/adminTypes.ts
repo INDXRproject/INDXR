@@ -68,8 +68,16 @@ export interface OperationsSummary {
   jobs: { total: number; complete: number; error: number; in_flight: number; stuck: number }
   success_rate: number | null
   error_types: Record<string, number>
+  error_samples: Record<string, string[]>
   retries: { playlist_retried: number; watchdog: number }
-  capacity: { queue_depth_now: number; avg_queue_wait_sec: number | null; avg_processing_sec: number | null }
+  capacity: {
+    queue_depth_now: number
+    queue_wait_p50: number | null
+    queue_wait_p95: number | null
+    // median(processing_seconds / audio_seconds) for AI jobs — length-independent speed. ×3600 = "1h video takes".
+    ai_realtime_factor: number | null
+    ai_speed_sample: number
+  }
   playlist: { total: number; complete: number }
   window: { from: string | null; to: string | null; exclude_internal: boolean }
 }
