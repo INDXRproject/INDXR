@@ -13,7 +13,7 @@ import { createClient } from "../utils/supabase/client";
 import { cn } from "../lib/utils";
 import { appHref } from "../lib/cross-host-links";
 import { ResultCardShell } from "./transcribe/ResultCardShell";
-import { CostBreakdown, type CostSegment } from "./transcribe/CostBreakdown";
+import { CostBreakdown, BalanceLine, type CostSegment } from "./transcribe/CostBreakdown";
 import { MethodBadge } from "./transcribe/MethodBadge";
 import { CREDIT_COSTS, FREE_TIER } from "../lib/pricing";
 import type { ReceiptData } from "../hooks/useCompletionReceipt";
@@ -61,8 +61,13 @@ interface PlaylistManagerProps {
   onRetryVideo?: (videoId: string) => void;
   onRetryAll?: (videoIds: string[]) => void;
   /** How many manual "Retry all" rounds have run (0 = none yet). Kept on the job for the
-      operations telemetry built elsewhere; here it only shifts the failure-block tone. */
+      operations telemetry built elsewhere; here it shifts the failure-block tone and the
+      progress header ("Retry round N"). */
   retryRound?: number;
+  /** Credit cost of retrying the failed set, once the backend estimate is available. When set,
+      the retry button shows "Retry all N — X credits" and a full balance line; until then we show
+      no half number (ADR-080 point 5). */
+  retryEstimate?: number | null;
   elapsedSeconds?: number;
   resumePlaylist?: { title: string; entries: PlaylistEntry[] } | null;
   receipt?: ReceiptData;
@@ -74,7 +79,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0 }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0, retryEstimate = null }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -386,6 +391,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
 
   return (
     <div className="space-y-6">
+      {/* Input + pricing — hidden on completion so "Start new extraction" is the only path back
+          (ADR-080 point 7); disabled during a run so you can't stack a second extraction. */}
+      {!isCompleted && (<>
       <div className="flex flex-col gap-2 max-w-xl mx-auto sm:flex-row sm:gap-3">
         <div className="relative flex-1">
           <Input
@@ -411,7 +419,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       <div className="-mt-4 flex flex-col items-center gap-2">
         <div className="flex items-center gap-1.5 text-xs text-fg-muted">
           <span>
-            First {FREE_TIER.PLAYLIST_FREE_VIDEOS} free · then {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit/video · AI {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min
+            First {FREE_TIER.PLAYLIST_FREE_VIDEOS} videos free · then {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit/video · AI {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min
           </span>
           <button
             type="button"
@@ -425,10 +433,11 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
         </div>
         {showCostDetail && (
           <p className="max-w-md rounded-lg border border-border bg-surface-elevated px-3 py-2 text-xs text-fg-muted leading-relaxed">
-            Auto-captions are free for the first {FREE_TIER.PLAYLIST_FREE_VIDEOS} videos. From video {FREE_TIER.PLAYLIST_FREE_VIDEOS + 1}: {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit per video (with auto-captions). Videos using AI Transcription cost {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit per minute instead — no per-video charge.
+            The first {FREE_TIER.PLAYLIST_FREE_VIDEOS} videos in the playlist are free (auto-captions), counted by position. From video {FREE_TIER.PLAYLIST_FREE_VIDEOS + 1} onwards it&apos;s {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit per video with auto-captions. AI transcription costs {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit per minute at any position — and choosing AI on one of the first {FREE_TIER.PLAYLIST_FREE_VIDEOS} uses that free slot, so a later video is charged instead.
           </p>
         )}
       </div>
+      </>)}
 
       {inlineError && (
         <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
@@ -506,10 +515,14 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         {/* Retry is the single action here; Audio Upload lives in the permanent block
                             below (the one place it's the only way in). On < md the button is full-width. */}
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                          {credits !== null && <span className="text-[13px] text-fg-subtle">You have {credits} credit{credits !== 1 ? 's' : ''}</span>}
+                          {/* Full balance line once the retry estimate is known; until then just the
+                              balance, never a half number (ADR-080 point 5). */}
+                          {retryEstimate != null
+                            ? <BalanceLine have={credits} cost={retryEstimate} />
+                            : (credits !== null && <span className="text-[13px] text-fg-subtle">You have {credits} credit{credits !== 1 ? 's' : ''}</span>)}
                           {onRetryAll && (
                             <Button size="sm" disabled={isExtracting} onClick={() => onRetryAll(compRetryableIds)} className="h-9 w-full sm:ml-auto sm:w-auto">
-                              <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry all {compRetryableEntries.length}
+                              <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry all {compRetryableEntries.length}{retryEstimate != null ? ` — ${retryEstimate} credit${retryEstimate === 1 ? '' : 's'}` : ''}
                             </Button>
                           )}
                         </div>
@@ -550,7 +563,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                 <div className="flex flex-col gap-3">
                     <div>
                         <div className="mb-2 flex items-baseline gap-2">
-                            <span className="font-medium text-fg">Extracting playlist</span>
+                            <span className="font-medium text-fg">{retryRound >= 1 ? `Retrying failed videos · round ${retryRound}` : "Extracting playlist"}</span>
                             <span className="ml-auto font-mono text-xs text-fg-muted">{compSucceeded} / {compTotal} · {formatElapsed(elapsedSeconds)}</span>
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
@@ -655,6 +668,13 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
             </div>
           </div>
 
+          {/* Explain the default preselection — it's a starting point, not a limit (the cap is 500). */}
+          {!hasExtracted && availableCount > 10 && (
+            <div className="px-6 py-2 border-b border-border text-xs text-fg-muted">
+              The first videos are preselected to get you started — tick any others below. Up to 500 videos per job.
+            </div>
+          )}
+
           {!hasExtracted && isOverHardCap && (
             <div className="px-6 py-2 bg-error/10 border-b border-border flex items-center gap-2 text-error text-xs font-medium">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
@@ -702,8 +722,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         onClick={(e) => e.stopPropagation()}
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm text-fg truncate font-medium">
+                        <div className="flex items-center gap-2 mb-0.5 min-w-0">
+                          <span className="text-sm text-fg truncate font-medium min-w-0 flex-1">
                             {entry.title}
                           </span>
                           {!hasExtracted && idx < 3 && !isPrivate && (
@@ -842,7 +862,11 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
       )}
 
       {/* Sticky mobile action bar — keeps "Review extraction" reachable on a long selection list
-          (the header button scrolls off). Sits above the tab bar; desktop uses the header button. */}
+          (the header button scrolls off). Sits above the tab bar; desktop uses the header button.
+          The spacer gives the list room to scroll clear of the sticky bar. */}
+      {playlist && !showAvailabilityModal && !isExtracting && !isCompleted && !hasExtracted && (
+        <div aria-hidden className="h-[calc(var(--tabbar-h)+4rem)] md:hidden" />
+      )}
       {playlist && !showAvailabilityModal && !isExtracting && !isCompleted && !hasExtracted && (
         <div className="sticky bottom-[calc(var(--tabbar-h)+var(--safe-bottom)+0.5rem)] z-10 md:hidden">
           <Button

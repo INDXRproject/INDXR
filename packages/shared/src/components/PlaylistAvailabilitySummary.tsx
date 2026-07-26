@@ -269,6 +269,9 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
             )}
         </div>
 
+         {/* Scroll room so the last content clears the sticky bar (which sticks above the tab bar,
+             so its flow position is hidden behind it) — ADR-080 point 2. */}
+        <div aria-hidden className="h-[calc(var(--tabbar-h)+4rem)] md:hidden" />
          {/* Action bar — balance reads as secondary but readable, never amber; irreversibility
              sits right at the Extract button, before the click. On < md it sticks to the bottom
              of the viewport while the list is in view so the Extract button is always reachable. */}

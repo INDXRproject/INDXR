@@ -655,11 +655,11 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           <div className="flex items-start gap-3">
             <AlertCircle className="h-4 w-4 text-fg-muted shrink-0 mt-0.5" />
             <p className="text-sm text-fg-muted">
-              We konden deze playlist niet verwerken na meerdere pogingen. Je credits zijn teruggestort.
+              We couldn&apos;t process this playlist after several attempts. Your credits were refunded.
             </p>
           </div>
           <button
-            aria-label="Sluiten"
+            aria-label="Close"
             onClick={() => setWatchdogRefundNotice(false)}
             className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none"
           >

@@ -13529,3 +13529,38 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
 ---
+[2026-07-27 12:00] fix (Transcribe mobiele testronde 2 — 7 punten, ADR-080): **Punt 1 (geld, onderzocht)**: gratis-3 is POSITIONEEL en bedoeld (backend `is_free = video_index < 3`, worker.py:431/692; matcht pricing.ts + frontend-schatting) — geen bug; label eerlijk gemaakt ("First N videos free" + popover legt slot-logica uit dat AI op positie 0-2 een gratis slot verbrandt). Geen backendwijziging. **Punt 2**: mobiele spacer vóór beide sticky actiebalken zodat laatste inhoud boven de balk scrollt. **Punt 3**: selectielijst-titel liep buiten de kaart — genestelde flex miste min-w-0 (LESSONS 2026-07-03), keten gefixt. **Punt 4**: ActiveJobsIndicator sluit playlist-kindjobs uit via `playlist_id IS NULL` (worker.py:472-473/723-724 zetten playlist_id op child-whisper-jobs). **Punt 5**: retry-voortgangskaart komt terug met kop "Retrying failed videos · round N" (retryRound); retry-bedrag/saldo via nieuwe `retryEstimate`-prop (wacht op backend-schatting, tot dan geen half getal). **Punt 6**: voorselectie (eerste 10, geen limiet — cap 500) uitgelegd met een balk onder de header. **Punt 7**: input+Fetch verborgen op afrondingsscherm (disabled tijdens run). + Nederlandse watchdog-string in PlaylistTab → Engels. **Geverifieerd**: pnpm build groen (beide apps). Punt 10 console-fout (vorige ronde) blijft [~] geen browser. Frontend-only, geen backend-files gewijzigd (alleen read voor het onderzoek). | gewijzigd: packages/shared/src/components/{PlaylistManager,PlaylistAvailabilitySummary}.tsx, packages/shared/src/components/free-tool/PlaylistTab.tsx, apps/app/src/components/dashboard/ActiveJobsIndicator.tsx, docs/wiki/decisions/080-*.md, docs/LOG.md
+[2026-07-27 01:35] commit: fix(transcribe): positional free-3 label, sticky-bar clearance, playlist-job pill dedup, retry feedback (ADR-080)
+
+Mobile round on 812bb63; frontend-only (backend read only, for point 1).
+
+1. Free-3 is positional and intended (backend is_free = video_index < 3, matches
+   pricing.ts and the frontend estimate) — not a bug. Label made honest: "First N
+   videos free" + a popover that explains an early AI pick spends a free slot.
+2. A mobile spacer before each sticky action bar so the last content clears it (the
+   bar sticks above the tab bar, so its flow position is hidden behind it).
+3. Selection-list titles overflowed the card — a nested flex was missing min-w-0
+   (LESSONS 2026-07-03); chain fixed so the title ellipsises.
+4. ActiveJobsIndicator excludes playlist child jobs via playlist_id IS NULL — each AI
+   video in a playlist spawns its own transcription_jobs row (worker.py sets playlist_id),
+   which was flickering "1 other job".
+5. The retry progress card returns with a "Retrying failed videos · round N" header; the
+   retry amount and full balance line slot in via a new retryEstimate prop once the backend
+   estimate is supplied — no half number until then.
+6. The default preselection (first 10, not a limit — cap is 500) is now explained under
+   the header.
+7. URL + Fetch are hidden on the completion screen (disabled during a run) so "Start new
+   extraction" is the only path back.
+
+Also: the leftover Dutch watchdog string in PlaylistTab is now English.
+
+Build green both apps.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/dashboard/ActiveJobsIndicator.tsx
+docs/LOG.md
+docs/wiki/decisions/080-transcribe-method-colour-cost-and-errorcard.md
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/PlaylistTab.tsx
+---

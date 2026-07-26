@@ -45,7 +45,10 @@ export function ActiveJobsIndicator({ collapsed, excludeVisible }: Props) {
       const freshHeartbeat = new Date(Date.now() - 10 * 60_000).toISOString()
       const orFresh = `created_at.gt.${freshCreated},last_heartbeat_at.gt.${freshHeartbeat}`
       const [tx, pl] = await Promise.all([
-        supabase.from('transcription_jobs').select('id')
+        // Exclude playlist child jobs: each AI video inside a playlist spawns its own
+        // transcription_jobs row with playlist_id set (worker.py) — counting those makes the pill
+        // flicker "1 other job" per AI video. Standalone single/upload jobs leave playlist_id null.
+        supabase.from('transcription_jobs').select('id').is('playlist_id', null)
           .in('status', TX_ACTIVE).or(orFresh),
         supabase.from('playlist_extraction_jobs').select('id')
           .in('status', PL_ACTIVE).or(orFresh),
