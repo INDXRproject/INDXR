@@ -216,11 +216,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         setError({ message: '', isNoSpeech: true })
       } else {
         const isYouTubeRestricted = errorMsg.includes('152') || errorMsg.toLowerCase().includes('unavailable')
+        // Carry the backend error_type (now always persisted) so the ErrorCard keys on it and
+        // never falls back to the raw provider string (ADR-080 fix).
         setError({
           message: isYouTubeRestricted
             ? "This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload here."
             : errorMsg,
           isYouTubeRestricted,
+          errorType: isYouTubeRestricted ? 'youtube_restricted' : (job.error_type ?? undefined),
         })
       }
     }

@@ -371,7 +371,7 @@ export default function TranscribePage() {
         <p className="mt-2 text-fg-muted">Extract captions from videos, playlists, or audio files.</p>
       </div>
 
-      <ActiveJobsIndicator />
+      <ActiveJobsIndicator excludeVisible />
 
       {storageFull && (
         <div className="rounded-xl border border-error/20 bg-error-subtle px-4 py-3 flex items-start justify-between gap-3">

@@ -13389,3 +13389,40 @@ docs/LOG.md
 supabase/migrations/20260726191733_split_timeout_into_connection_server_errors.sql
 supabase/migrations/20260726191927_backfill_timeout_partial_write_proxy.sql
 ---
+[2026-07-26 21:28] commit: fix(transcribe): ErrorCard never leaks the raw provider string; sticky mobile action bar; dedup active-jobs pill (ADR-080 follow-up)
+
+1. Live bug — the ErrorCard showed the raw yt-dlp stack trace (with a "report an
+   issue" GitHub URL) as the body, with no code and no credit statement. Two causes:
+   VideoTab's whisper-poll else-branch set the error without errorType (so the code
+   was null), and the neutral fallback used ctx.fallbackMessage (the raw string) as
+   the body. Fixed both: carry job.error_type into the error object, and the neutral
+   fallback body is now always our own safe copy — the raw string can never be the
+   body regardless of what the backend sends (only unsupported_file uses a
+   client-built message). Added copy for the download-failure family (timeout /
+   connection_error / server_error / partial_write / proxy_error / ytdlp_parse /
+   extraction_error): connection problem fetching the audio, not the video, no
+   credits charged, Try again or Audio Upload (Audio Upload is the escape, not
+   contact). The credit statement is safe without a backend field — the
+   reserve-and-hold model refunds on failure (ADR-050).
+
+2. Sticky mobile action bar on the playlist confirmation: on < md it sticks to the
+   viewport bottom while the list is in view (removed overflow-hidden that broke
+   sticky).
+
+3. ActiveJobsIndicator: with excludeVisible (set on the transcribe page) it subtracts
+   the job the workbench is already showing (the current ?mode= session key), so the
+   pill drops for the visible job and only stays for a genuinely other background
+   job, worded "N other job(s) in the background".
+
+WCAG (computed, not [~]): method text-on-tint passes AA (normal 4.5) both themes —
+light sky 5.15, indigo 5.74; dark sky 6.99, indigo 6.74. No colour changed.
+
+Build green both apps.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/transcribe/page.tsx
+apps/app/src/components/dashboard/ActiveJobsIndicator.tsx
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/transcribe/errorCopy.ts
+---

@@ -56,6 +56,25 @@ const retryUrl = (c: ErrorCtx): ErrorCardAction[] =>
 const buyCredits = (c: ErrorCtx): ErrorCardAction[] =>
   c.billingHref ? [{ label: "Buy credits", href: c.billingHref }] : []
 
+// Try again + Audio Upload — Audio Upload is the real way in when YouTube fetching fails,
+// so it is offered here (contact support is not the escape for these).
+const retryOrAudio = (c: ErrorCtx): ErrorCardAction[] => {
+  const out: ErrorCardAction[] = []
+  if (c.onRetryUrl) out.push({ label: "Try again", onClick: c.onRetryUrl })
+  if (c.onSwitchToAudio) out.push({ label: "Use Audio Upload", onClick: c.onSwitchToAudio, variant: out.length ? "secondary" : "primary" })
+  return out
+}
+
+// The download-failure family (timeout / partial_write / proxy_error / ytdlp_parse /
+// extraction_error): fetching the audio from YouTube failed for a connection reason — not the
+// video. Nothing is charged (a reservation, if any, is refunded on failure — ADR-050).
+const audioFetchFailed = (title: string): Entry => ({
+  title,
+  body: () =>
+    "We couldn't fetch this video's audio — a temporary connection problem on our side, not the video itself. No credits were charged. Try again, or use Audio Upload.",
+  actions: retryOrAudio,
+})
+
 const COPY: Record<string, Entry> = {
   no_captions: {
     title: "This video has no captions",
@@ -94,12 +113,13 @@ const COPY: Record<string, Entry> = {
       "YouTube asked us to confirm we're not a bot — this is temporary. Try again in a moment. No credits were used.",
     actions: (c) => (c.onRetryUrl ? [{ label: "Try again", onClick: c.onRetryUrl }] : []),
   },
-  timeout: {
-    title: "The connection dropped",
-    body: () =>
-      "A temporary network issue interrupted this. Any reserved credits were refunded. Try again.",
-    actions: (c) => (c.onRetryUrl ? [{ label: "Try again", onClick: c.onRetryUrl }] : []),
-  },
+  timeout: audioFetchFailed("The connection dropped"),
+  connection_error: audioFetchFailed("The connection dropped"),
+  server_error: audioFetchFailed("YouTube is temporarily unavailable"),
+  partial_write: audioFetchFailed("The audio download was interrupted"),
+  proxy_error: audioFetchFailed("We couldn't reach this video's audio"),
+  ytdlp_parse: audioFetchFailed("We couldn't read this video's audio"),
+  extraction_error: audioFetchFailed("We couldn't fetch this video's audio"),
   no_speech: {
     title: "No speech detected",
     body: () =>
@@ -196,15 +216,15 @@ export function resolveErrorCopy(code: string | null | undefined, ctx: ErrorCtx 
   }
   if (key) console.warn(`[transcribe] unmapped error code: ${key}`)
 
-  const actions: ErrorCardAction[] = []
-  if (ctx.onRetryUrl) actions.push({ label: "Try again", onClick: ctx.onRetryUrl })
-  if (ctx.contactHref) actions.push({ label: "Contact support", href: ctx.contactHref, variant: actions.length ? "secondary" : "primary" })
+  // Never surface the raw backend/provider string as the body — an unmapped code could carry a
+  // yt-dlp stack trace with a "report an issue" URL. The body is always our own safe copy; the
+  // code (when present) is shown small so support can still identify it.
+  const actions: ErrorCardAction[] = [...retryOrAudio(ctx)]
+  if (!actions.length && ctx.contactHref) actions.push({ label: "Contact support", href: ctx.contactHref })
 
   return {
     title: "Something went wrong",
-    body:
-      ctx.fallbackMessage?.trim() ||
-      "We couldn't finish this. If any credits were reserved for it, they've been returned to your balance.",
+    body: "We couldn't finish this. If any credits were reserved for it, they've been returned to your balance.",
     actions,
     code: key || null,
   }

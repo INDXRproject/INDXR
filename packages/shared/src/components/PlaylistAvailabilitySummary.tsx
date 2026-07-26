@@ -125,7 +125,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
   }
 
   return (
-    <div className="bg-surface border border-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500 my-6 shadow-lg">
+    <div className="bg-surface border border-border rounded-xl animate-in fade-in slide-in-from-top-4 duration-500 my-6 shadow-lg">
       <div className="p-6 border-b border-border bg-surface-elevated/30 flex flex-wrap justify-between items-center gap-3">
         <div className="min-w-0">
            <h3 className="text-lg font-semibold text-fg mb-1">Before you start</h3>
@@ -260,8 +260,9 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
         </div>
 
          {/* Action bar — balance reads as secondary but readable, never amber; irreversibility
-             sits right at the Extract button, before the click. */}
-        <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface-elevated/30 p-4">
+             sits right at the Extract button, before the click. On < md it sticks to the bottom
+             of the viewport while the list is in view so the Extract button is always reachable. */}
+        <div className="sticky bottom-2 z-10 flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 shadow-lg md:static md:bg-surface-elevated/30 md:shadow-none [padding-bottom:calc(1rem+env(safe-area-inset-bottom))] md:[padding-bottom:1rem]">
             <div className="flex flex-wrap items-center gap-3">
                 <BalanceLine have={userCredits} cost={totalExtractionCredits} />
                 <div className="ml-auto flex gap-2">

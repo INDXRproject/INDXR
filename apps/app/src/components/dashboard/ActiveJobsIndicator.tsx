@@ -14,17 +14,29 @@ const POLL_INTERVAL_MS = 30_000
 const TX_ACTIVE = ['pending', 'downloading', 'transcribing', 'saving']
 const PL_ACTIVE = ['running', 'retry_pending']
 
+const VISIBLE_JOB_KEY: Record<string, string> = {
+  video: 'indxr-active-video-job',
+  audio: 'indxr-active-audio-job',
+  playlist: 'indxr-active-playlist-job',
+}
+
 interface Props {
   collapsed?: boolean
+  // On the transcribe page the workbench already shows the running job's progress card, so the
+  // pill for THAT job is a duplicate. With excludeVisible, the job in the current ?mode= (from its
+  // sessionStorage key) is subtracted; the pill only remains for a genuinely OTHER background job,
+  // with wording that says so (ADR-080). Elsewhere (sidebar) it counts everything.
+  excludeVisible?: boolean
 }
 
 // Counts the user's genuinely-running jobs straight from the DB under RLS. This
 // replaces the old sessionStorage approach, which kept one key per job-type and so
 // collapsed two concurrent same-type jobs into a count of 1 (and lost the count on
 // reload / another device).
-export function ActiveJobsIndicator({ collapsed }: Props) {
+export function ActiveJobsIndicator({ collapsed, excludeVisible }: Props) {
   const [activeCount, setActiveCount] = useState(0)
   const [hasPlaylist, setHasPlaylist] = useState(false)
+  const [excludedVisible, setExcludedVisible] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
@@ -33,19 +45,41 @@ export function ActiveJobsIndicator({ collapsed }: Props) {
       const freshHeartbeat = new Date(Date.now() - 10 * 60_000).toISOString()
       const orFresh = `created_at.gt.${freshCreated},last_heartbeat_at.gt.${freshHeartbeat}`
       const [tx, pl] = await Promise.all([
-        supabase.from('transcription_jobs').select('id', { count: 'exact', head: true })
+        supabase.from('transcription_jobs').select('id')
           .in('status', TX_ACTIVE).or(orFresh),
-        supabase.from('playlist_extraction_jobs').select('id', { count: 'exact', head: true })
+        supabase.from('playlist_extraction_jobs').select('id')
           .in('status', PL_ACTIVE).or(orFresh),
       ])
-      const plCount = pl.count ?? 0
-      setActiveCount((tx.count ?? 0) + plCount)
-      setHasPlaylist(plCount > 0)
+      let txIds = (tx.data ?? []).map((r) => r.id as string)
+      let plIds = (pl.data ?? []).map((r) => r.id as string)
+
+      // Subtract the job the workbench is currently showing (the visible mode's session key).
+      let excluded = false
+      if (excludeVisible && typeof window !== 'undefined') {
+        const mode = new URLSearchParams(window.location.search).get('mode') || 'video'
+        const key = VISIBLE_JOB_KEY[mode] ?? VISIBLE_JOB_KEY.video
+        let visibleId: string | null = null
+        try {
+          const raw = sessionStorage.getItem(key)
+          if (raw) visibleId = (JSON.parse(raw)?.jobId as string) ?? null
+        } catch { /* ignore malformed key */ }
+        if (visibleId) {
+          const before = txIds.length + plIds.length
+          txIds = txIds.filter((id) => id !== visibleId)
+          plIds = plIds.filter((id) => id !== visibleId)
+          excluded = txIds.length + plIds.length !== before
+        }
+      }
+
+      setActiveCount(txIds.length + plIds.length)
+      setHasPlaylist(plIds.length > 0)
+      setExcludedVisible(excluded)
     } catch {
       setActiveCount(0)
       setHasPlaylist(false)
+      setExcludedVisible(false)
     }
-  }, [])
+  }, [excludeVisible])
 
   useEffect(() => {
     refresh()
@@ -55,6 +89,9 @@ export function ActiveJobsIndicator({ collapsed }: Props) {
 
   if (activeCount === 0) return null
 
+  const label = excludedVisible
+    ? `${activeCount} other job${activeCount !== 1 ? 's' : ''} in the background`
+    : `${activeCount} job${activeCount !== 1 ? 's' : ''} in progress`
   const href = hasPlaylist ? '/dashboard/transcribe?mode=playlist' : '/dashboard/transcribe'
 
   return (
@@ -65,14 +102,14 @@ export function ActiveJobsIndicator({ collapsed }: Props) {
         "text-fg-subtle hover:text-fg hover:bg-surface-elevated",
         collapsed && "justify-center px-0"
       )}
-      title={collapsed ? `${activeCount} job${activeCount !== 1 ? 's' : ''} in progress` : undefined}
+      title={collapsed ? label : undefined}
     >
       <span className="relative flex h-2 w-2 shrink-0">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
         <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
       </span>
       <span className={cn("text-xs text-fg-muted", collapsed && "hidden")}>
-        {activeCount} job{activeCount !== 1 ? 's' : ''} in progress
+        {label}
       </span>
     </Link>
   )
