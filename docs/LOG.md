@@ -13139,3 +13139,29 @@ docs/wiki/architecture/database-schema.md
 docs/wiki/roadmap/admin-kpi-audit.md
 supabase/migrations/20260724221925_admin_reversals_summary.sql
 ---
+
+[2026-07-26 10:40] taak: dashboard-herbouw Fase 1 (fundament) — Operations+Growth RPCs met tijdvenster+test-filter, gezondheidskleuren, errors in gewone taal | gewijzigd: supabase/migrations/20260726103508_ops_growth_summary_windowed.sql (nieuw, MCP 110->111), apps/app/src/app/admin/{adminTypes.ts,_components/DashboardControls.tsx,operations/page.tsx,growth/page.tsx}, docs/wiki/roadmap/admin-kpi-audit.md | build groen (exit 0), RPCs DB-geverifieerd (7d qwait 152s vs lifetime 25.2s; 0 real-user jobs 7d; ACL anon=false), Overview no-arg blijft werken via defaults
+[2026-07-26 12:42] commit: feat(admin): dashboard rebuild Fase 1 — time window + test filter + plain-language ops
+
+Operations en Growth toonden lifetime-totalen zonder venster/context (bv. avg
+queue wait 25.2s = gemiddelde over alle jobs ooit; 7-daags bleek 152s). Fase 1:
+
+- admin_operations_summary(p_from,p_to,p_exclude_internal) + admin_growth_summary(
+  p_from,p_to): tijdvenster (NULL=lifetime, Overview no-arg blijft werken), ops
+  test-filter, growth als aanmeld-cohort. Live-nu-meters blijven realtime.
+- UI: DashboardControls (24u/7d/30d/All + All-traffic/Real-users), gezondheids-
+  kleuren op success/queue-wait, errors in gewone taal met schuld-categorie +
+  hover-uitleg (ERROR_META/FAULT_META). Live-nu strip los van het venster.
+
+Migratie 20260726103508 (MCP 110->111). Build groen; RPCs DB-geverifieerd
+(anon EXECUTE=false, no-arg defaults intact). Fase 2-4 volgen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/_components/DashboardControls.tsx
+apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/growth/page.tsx
+apps/app/src/app/admin/operations/page.tsx
+docs/LOG.md
+docs/wiki/roadmap/admin-kpi-audit.md
+supabase/migrations/20260726103508_ops_growth_summary_windowed.sql
+---

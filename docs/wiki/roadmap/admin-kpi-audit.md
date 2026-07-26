@@ -26,6 +26,15 @@ Alle overige "ontbrekende" KPI's zijn **wél al ergens vastgelegd** (Supabase-ko
 
 ---
 
+## 1b. Dashboard-herbouw (in uitvoering, gestart 2026-07-26)
+
+Vierfasenplan na de bevinding dat Operations/Growth **lifetime-totalen zonder venster/context** tonen (o.a. "avg queue wait 25.2s" = gemiddelde over álle jobs ooit; 7-daags bleek 152s — het lifetime-cijfer verborg dat).
+
+- **Fase 1 — Fundament ✅ (2026-07-26).** `admin_operations_summary(p_from,p_to,p_exclude_internal)` + `admin_growth_summary(p_from,p_to)` — **tijdvenster** (24u/7d/30d/All, NULL=lifetime → Overview blijft werken) + **test-filter** (ops) + growth als **aanmeld-cohort**. Live-nu-meters (in flight/stuck/queue) blijven realtime, los van het venster. UI: `DashboardControls` (venster + All-traffic/Real-users toggle), **gezondheidskleuren** (success/queue-wait groen/oranje/rood), en **errors in gewone taal** met schuld-categorie (`ERROR_META`/`FAULT_META`) + hover-uitleg. Migratie `20260726103508`. Bewezen: 0 real-user jobs in 7d (alles test) → ops-default = "all traffic" (anders leeg).
+- **Fase 2 — Operations verdiepen** (volgend): trend per dag, verwerkingstijd p50/p95 + caption-vs-AI split, error-drill-down naar ruwe strings.
+- **Fase 3 — Growth-funnel**: funnel-plaat + UTM-campagne-uitsplitsing + betaal-funnel (`payment_attempts`).
+- **Fase 4 — Capture dichten**: `utm_term`/`utm_content` (zoekwoord, vóór ads) + evt. daily-active snapshot (DAU/WAU/retentie).
+
 ## 2. Admin-structuur (feitelijk, tegen code)
 
 Root `apps/app/src/app/admin/`. Toegangspoort in `layout.tsx:19` (redirect naar `/dashboard` tenzij `user.email === ADMIN_EMAIL`). Nav in `AdminNav.tsx`: **Overview · Finance · Growth · Operations · Users · Transcripts · Support · Announcements**. `credits/` en `paid-users/` bestaan nog als URL-bereikbare pagina's maar zijn **uit de nav** (ADR-056, bewust).
