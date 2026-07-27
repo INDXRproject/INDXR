@@ -13951,3 +13951,15 @@ backend/transcription_pipeline.py
 docs/LESSONS.md
 docs/LOG.md
 ---
+[2026-07-27 15:40] commit: docs(wiki): ADR-082 submit+poll + ai-pipeline download-fixes
+
+- ADR-082: AssemblyAI submit()+poll met resume-veilige provider_transcript_id (commit 3).
+- ai-pipeline.md: fallback-flow bijgewerkt (klein formaat + fallback-keten, duur-afgeleide
+  download-timeout + DownloadCancelled-abort, submit+poll+resume+fase-capture); Audio Format
+  Optimalisatie-sectie naar de live-vorm; Error Types timeout/connection_error/server_error.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/INDEX.md
+docs/wiki/architecture/ai-pipeline.md
+docs/wiki/decisions/082-assemblyai-submit-poll-resume.md
+---

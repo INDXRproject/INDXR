@@ -91,19 +91,26 @@ Frontend
   source_type='youtube' → ARQ worker (Fase 2 — zie ADR-019):
        └─ enqueue_job('run_whisper_job', job_id, user_id, video_id)
             └─ ARQ worker (backend/worker.py) verwerkt asynchroon:
-                 ├─ yt-dlp: download audio (best quality, no video)
+                 ├─ yt-dlp: download audio (KLEIN formaat, fallback-keten — geen video)
                  │    └─ extract_youtube_audio() retry-loop (ADR-031):
-                 │         ├─ Attempt 1: proxy session {sid}-r1
-                 │         ├─ Bij partial_write/timeout/connection → attempt 2: proxy session {sid}-r2 (ander exit-IP)
-                 │         ├─ Bij opnieuw falen → attempt 3: proxy session {sid}-r3
-                 │         └─ Na 3 failures: raise → job→error "partial_write" of "timeout"
+                 │         ├─ format 'bestaudio[abr<=70]/bestaudio[abr<=128]/bestaudio/best' — we
+                 │         │    transcoderen sowieso naar 12kbps mono, dus brontbitrate >~48k = verspilde
+                 │         │    proxy-egress; /best-fallback zorgt dat een werkende video nooit gaat falen
+                 │         ├─ download-timeout AFGELEID van videoduur (base 180 + 25/min, cap 3600s),
+                 │         │    niet vlak → clip krijgt niet te veel, lange video niet te weinig
+                 │         ├─ deadline-hook (DownloadCancelled uit progress_hook) breekt de download ÉCHT
+                 │         │    af — geen doorlopende thread die egress verspilt na de timeout
+                 │         ├─ Attempt 1/2/3: proxy session {sid}-r1/r2/r3 (ander exit-IP per poging)
+                 │         └─ Na 3 failures / deadline: raise → job→error "timeout"/"connection_error"/…
                  ├─ Valideer: MembersOnlyVideoError check
                  ├─ ffmpeg: compress naar 12kbps Opus/OGG
-                 ├─ Valideer bestandsgrootte en duur
-                 ├─ Exacte credit-check + deduct_credits_atomic(ceil(duur/60))
-                 ├─ POST audio naar AssemblyAI API
+                 ├─ AssemblyAI submit()+poll (ADR-082): non-blocking indienen → provider_transcript_id
+                 │    op de jobrij, dan poll-loop (heartbeat per poll, fase-capture submitted_at→
+                 │    provider_processing_at→provider_processing_ms, assemblyai_language/model)
+                 │    └─ worker-herstart her-pollt de lopende provider-job onder strakke gates i.p.v.
+                 │       opnieuw indienen (geen dubbele facturering)
                  ├─ Bij leeg transcript (geen spraak): job→error "no_speech_detected",
-                 │    credits automatisch teruggestort via finally-blok
+                 │    credits automatisch teruggestort (reservering/refund, ADR-050)
                  └─ Sla transcript op in Supabase, markeer job complete
 
   source_type='upload' → asyncio.create_task (bytes in memory, niet queue-serializable):
@@ -264,11 +271,19 @@ INDXR.AI gebruikt de volgende modellen voor AI-transcriptie:
 
 ## Audio Format Optimalisatie
 
-**Huidig (pending wijziging):** `bestaudio/best` → selecteert Opus 251 (~128–160 kbps, ~1.0 MB/min)
+**Live (sinds 2026-07-27, commit `1600ddf`):** `bestaudio[abr<=70]/bestaudio[abr<=128]/bestaudio/best`
+→ kiest een klein audioformaat (~48–70 kbps) i.p.v. `bestaudio` (~128–160 kbps).
 
-**Gepland (ADR-016):** `249/250/251/bestaudio/best` → selecteert Opus 249 (~50 kbps, ~0.37 MB/min)
+Rationale: we transcoderen sowieso alles naar **12 kbps mono Opus** vóór AssemblyAI, dus elke
+brontbitrate boven ~48 kbps is verspilde proxy-egress met een identiek eindresultaat. Halveert ruwweg
+de gedownloade bytes (een 76-min video was 82 MB als `bestaudio`), wat de blootstelling aan een trage
+residentiële exit — en dus de download-timeout — sterk verkleint. **Fallback-keten, geen harde keuze:**
+de `/best` aan het eind garandeert dat een video die nu lukt niet kan gaan falen. Zie ook
+[ADR-016](../decisions/016-opus-249-audio-format.md) (eerdere planvorm) en de download-timeout-fix.
 
-Vóór deploy naar productie: valideer transcriptie-kwaliteit op 50 diverse video's. Zie [ADR-016](../decisions/016-opus-249-audio-format.md).
+**Download-timeout (samen gewijzigd):** afgeleid van de videoduur (`base 180 + 25/min`, cap 3600s,
+`transcription_pipeline._derive_download_timeout`) i.p.v. een vlakke 600s; een `DownloadCancelled`-
+progress_hook breekt de lopende download écht af (geen doorlopende thread die egress verspilt).
 
 ---
 
@@ -281,7 +296,9 @@ De backend classificeert YouTube-fouten naar canonical slugs (`main.py:1233-1246
 | `members_only` | Members-only video gedetecteerd |
 | `age_restricted` | Leeftijdsbeperking vereist inloggen |
 | `bot_detection` | YouTube 429 / bot-check triggered |
-| `timeout` | Request timeout (>60s) |
+| `timeout` | Download overschreed het duur-afgeleide budget (`base 180 + 25/min`, cap 3600s) |
+| `connection_error` | Verbinding naar YouTube brak (SSL/EOF/reset) — los van timeout |
+| `server_error` | YouTube/proxy 5xx |
 | `youtube_restricted` | Video unavailable (gelimiteerd land, etc.) |
 | `extraction_error` | Generieke fout |
 
