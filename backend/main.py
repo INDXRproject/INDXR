@@ -1129,7 +1129,10 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         "credits_refunded": job.get('credits_refunded'),
         "processing_time_seconds": job.get('processing_time_seconds'),
         "error_message": job.get('error_message'),
-        "error_code": None,
+        # error_type is DE sleutel waarop de foutkaart-copy keyt (ADR-080 errorCopy.ts). Zonder dit veld
+        # valt de polling-fallback terug op de generieke kaart. Read-only, geen creditlogica.
+        "error_type": job.get('error_type'),
+        # error_code verwijderd: stond hardcoded op None (dood veld). error_type is de echte sleutel.
         "required_credits": None,
         "available_credits": None,
     })

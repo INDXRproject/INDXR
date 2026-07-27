@@ -13564,3 +13564,15 @@ packages/shared/src/components/PlaylistAvailabilitySummary.tsx
 packages/shared/src/components/PlaylistManager.tsx
 packages/shared/src/components/free-tool/PlaylistTab.tsx
 ---
+
+[2026-07-27 09:30] taak: Commit 2 — error_type toegevoegd + error_code (dood veld) verwijderd uit /api/jobs/{job_id}; parity-audit JobStatusRow vs curated dict | gewijzigd: backend/main.py (get_job_status) | py_compile OK; error_type is nu consistent Realtime<->polling (foutkaart-copy keyt hierop, ADR-080). Audit-bevindingen gerapporteerd: required_credits/available_credits zijn phantom (geen kolom, altijd null), duration/credits_used zijn dict-renames van duration_seconds/credits_cost (undefined via Realtime).[2026-07-27 13:11] commit: fix(ops/commit2): add error_type + drop dead error_code on /api/jobs/{job_id}
+
+De foutkaart-copy keyt op error_type (ADR-080 errorCopy.ts); de polling-fallback
+gaf het niet -> generieke kaart i.p.v. de juiste copy. Toegevoegd (read-only).
+error_code verwijderd: geen kolom, stond hardcoded op None (dood veld) -> error_type
+is de echte sleutel. Reserve/debit/refund onaangeroerd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+---
