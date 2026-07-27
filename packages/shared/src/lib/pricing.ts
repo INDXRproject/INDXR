@@ -200,9 +200,10 @@ export function anchorPerCreditText(): string {
 // test-fixtures/playlist_free_slots.json (geladen door receiptAggregation.test.ts) zodat CI faalt bij
 // divergentie. Retourneert de set video_ids die GRATIS zijn (0 credits). Aan te roepen door
 // PlaylistAvailabilitySummary, receiptAggregation en PlaylistManager i.p.v. eigen inline-kopieën.
-// STAP 1 = positioneel (eerste PLAYLIST_FREE_VIDEOS posities; een whisper-video op zo'n positie
-// verbrandt het slot zonder korting). STAP 2 zet dit om naar per-methode (de eerste 3 CAPTION-video's)
-// — dan wijzigt ALLEEN deze functie. Een retry pakt nooit een vers slot.
+// REGEL (per-methode, ADR gratis-slots): de eerste PLAYLIST_FREE_VIDEOS CAPTION-video's op playlist-
+// positie zijn gratis; AI/whisper kost NOOIT een slot -> bedrag is volgorde-onafhankelijk. Vooraf
+// bepaald -> reservering == settlement en GEEN doorschuif bij een gefaalde gratis video (slot vervalt).
+// Een retry pakt nooit een vers slot.
 export function playlistFreeIds(
   videoIds: string[],
   whisperIds: string[],
@@ -211,8 +212,12 @@ export function playlistFreeIds(
   if (isRetry) return new Set<string>()
   const ws = new Set(whisperIds ?? [])
   const free = new Set<string>()
-  ;(videoIds ?? []).forEach((vid, i) => {
-    if (i < FREE_TIER.PLAYLIST_FREE_VIDEOS && !ws.has(vid)) free.add(vid)
-  })
+  let seenCaptions = 0
+  for (const vid of videoIds ?? []) {
+    if (!ws.has(vid)) {
+      if (seenCaptions < FREE_TIER.PLAYLIST_FREE_VIDEOS) free.add(vid)
+      seenCaptions++
+    }
+  }
   return free
 }

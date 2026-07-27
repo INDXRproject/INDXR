@@ -13657,3 +13657,33 @@ docs/LOG.md
 packages/shared/src/lib/pricing.ts
 test-fixtures/playlist_free_slots.json
 ---
+
+[2026-07-27 11:45] taak: gratis-slots STAP 2 — per-methode (geldpad). De 3 gratis slots gaan naar de eerste 3 CAPTION-videos (vooraf bepaald); AI kost nooit een slot; geen doorschuif bij gefaalde gratis video (ADR-081). | gewijzigd: backend/credit_manager.py (helper per-methode), packages/shared/src/lib/pricing.ts (idem TS), test-fixtures/playlist_free_slots.json (rule=per_method), backend/test_playlist_free_slots.py, docs/wiki/decisions/081-...md (nieuw), docs/wiki/INDEX.md | geverifieerd: 8/8 (helper==fixture, reservering==settlement, per-methode<=positioneel nooit duurder); TS==Python==fixture; echte gemengde playlist 7446e9f4 (AI op pos0) positioneel 88 -> per-methode 87 (1 goedkoper). Commit expliciete paden (andere sessie had ongecommitte files in de tree).[2026-07-27 13:46] commit: feat(credits): playlist free slots per-method (first 3 CAPTION videos) — step 2 + ADR-081
+
+De 3 gratis slots gaan naar de eerste 3 CAPTION-videos (vooraf bepaald uit
+video_ids+whisper_ids) i.p.v. de eerste 3 POSITIES. AI kost nooit een slot ->
+bedrag is volgorde-onafhankelijk; 'eerste 3 gratis' klopt letterlijk.
+
+- credit_manager.playlist_free_ids + pricing.playlistFreeIds omgezet naar per-methode
+  (één wijziging per kant, dankzij step-1 consolidatie).
+- GEEN doorschuif bij een gefaalde gratis video (slot vervalt) -> gratis-set vooraf
+  bepaald -> reservering==settlement triviaal. Retries erven nooit een vers slot.
+- Fixture rule=per_method; test bewijst reservering==settlement + per-methode<=positioneel.
+
+Verificatie: 8/8 scenario's (o.a. AI-front 4<6, whisper-first 2<3, rest gelijk); nooit
+duurder. TS==Python==fixture. Echte gemengde playlist 7446e9f4 (AI op positie 0):
+positioneel 88 -> per-methode 87 credits (1 goedkoper), whisper-kost identiek.
+
+ADR-081 legt de regel + geen-doorschuif + retry-gedrag vast. Frontend-sessie: wire
+playlistFreeIds in de 3 TS-sites, fix de method-blinde Free-badge, trek copy gelijk
+op 'first 3 caption videos', verwijder de nu-overbodige uitleg-popover.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/credit_manager.py
+backend/test_playlist_free_slots.py
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/081-playlist-free-slots-per-method.md
+packages/shared/src/lib/pricing.ts
+test-fixtures/playlist_free_slots.json
+---

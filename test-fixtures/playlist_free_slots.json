@@ -1,14 +1,14 @@
 {
   "_comment": "GEDEELDE fixture voor de playlist gratis-slots-regel. Geladen door backend/test_playlist_free_slots.py (Python) EN packages/shared/src/hooks/receiptAggregation.test.ts (TS), zodat de Python- en TS-helper niet uiteenlopen (CI faalt bij divergentie). 'rule' = 'positional' voor STAP 1 (consolidatie, no-op). Bij STAP 2 (per-methode) worden expected_free + rule bijgewerkt in dezelfde commit als beide helpers.",
-  "rule": "positional",
+  "rule": "per_method",
   "cases": [
     { "name": "all captions",            "video_ids": ["a","b","c","d","e"], "whisper_ids": [],        "is_retry": false, "expected_free": ["a","b","c"] },
     { "name": "all AI",                  "video_ids": ["a","b","c"],         "whisper_ids": ["a","b","c"], "is_retry": false, "expected_free": [] },
-    { "name": "mixed AI front",          "video_ids": ["a","b","c","d","e"], "whisper_ids": ["a","b"],  "is_retry": false, "expected_free": ["c"] },
+    { "name": "mixed AI front",          "video_ids": ["a","b","c","d","e"], "whisper_ids": ["a","b"],  "is_retry": false, "expected_free": ["c","d","e"] },
     { "name": "mixed AI back",           "video_ids": ["a","b","c","d","e"], "whisper_ids": ["d","e"],  "is_retry": false, "expected_free": ["a","b","c"] },
     { "name": "retry (never free)",      "video_ids": ["a","b","c"],         "whisper_ids": [],        "is_retry": true,  "expected_free": [] },
     { "name": "two captions (<3)",       "video_ids": ["a","b"],             "whisper_ids": [],        "is_retry": false, "expected_free": ["a","b"] },
     { "name": "caption+whisper (<3)",    "video_ids": ["a","b"],             "whisper_ids": ["b"],     "is_retry": false, "expected_free": ["a"] },
-    { "name": "whisper first, caps in 3","video_ids": ["a","b","c","d"],     "whisper_ids": ["a"],     "is_retry": false, "expected_free": ["b","c"] }
+    { "name": "whisper first, caps in 3","video_ids": ["a","b","c","d"],     "whisper_ids": ["a"],     "is_retry": false, "expected_free": ["b","c","d"] }
   ]
 }
