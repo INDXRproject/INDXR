@@ -13918,3 +13918,36 @@ backend/worker.py
 docs/LOG.md
 supabase/migrations/20260727123756_add_provider_transcript_id.sql
 ---
+
+[2026-07-27 15:40] taak: Download-betrouwbaarheid (4 fixes na incident job 78b6f6f5, 76-min video timeout). Fix 1: yt-dlp format bestaudio->fallback-keten bestaudio[abr<=70]/[abr<=128]/bestaudio/best (we transcoderen sowieso naar 12k mono -> brontbitrate boven ~48k = verspilde egress; ~halveert bytes, kan geen werkende video laten falen door de /best-fallback). Fix 2: download-timeout AFGELEID van videoduur (credits_reserved~=min) i.p.v. vlakke 600s: base 180 + 25/min, cap 3600s (76min->2080s, was 600s = het verlies). Fix 3: deadline-hook (DownloadCancelled uit progress_hook) breekt de download ECHT af i.p.v. de thread te laten doorlopen. | gewijzigd: backend/audio_utils.py backend/transcription_pipeline.py docs/LESSONS.md | geverifieerd LOKAAL: py_compile+import-smoke groen; derived-timeout-waarden; Fix-3-afbreken bewezen (DownloadCancelled stopt yt-dlp-download bij 1024B, geen volledige file). NIET lokaal: format-grootte + transcript-tekst (YouTube PO-token/IP-challenge blokkeert lokale extractie; geen lokale AssemblyAI-key) -> prod-verificatie (60-min job).[2026-07-27 15:37] commit: fix(download): smaller audio format + duration-derived timeout that actually aborts
+
+Na incident job 78b6f6f5 (76-min video, download hit de vlakke 600s-cap op 96% en de
+losgekoppelde thread trok daarna alsnog de volledige 82 MB — weggegooid). Geen credits
+verloren (76 gerefund), geen commit-3-regressie. Drie gekoppelde download-fixes:
+
+Fix 1 — kleiner audioformaat. format bestaudio -> keten
+'bestaudio[abr<=70]/bestaudio[abr<=128]/bestaudio/best'. We transcoderen sowieso naar 12 kbps
+mono opus voor AssemblyAI, dus brontbitrate boven ~48k is pure verspilde proxy-egress. Halveert
+ruwweg de bytes bij identiek eindresultaat. Fallback-keten, geen harde keuze: de /best aan het
+eind garandeert dat een video die nu lukt niet kan gaan falen.
+
+Fix 2 — timeout afgeleid, niet vast. De download-wall-clock wordt afgeleid van de videoduur
+(credits_reserved ~= minuten): base 180s + 25s/min, absolute cap 3600s (<< ARQ 37800s). 600s was
+fout in beide richtingen: te veel voor een clip, 17s te weinig voor 76 min. 76min -> 2080s.
+
+Fix 3 — het afbreken stopt de download echt. Een deadline-progress_hook raist DownloadCancelled,
+wat de lopende yt-dlp-download in-process stopt — i.t.t. de oude asyncio.wait_for die alleen de
+coroutine kapte terwijl de thread doorlaadde. Bewezen lokaal: hook stopt de download bij 1024B,
+geen volledige file geschreven.
+
+Verificatie: py_compile + import-smoke groen; derived-timeout-waarden; Fix-3-afbreekmechanisme
+lokaal bewezen. Formaat-grootte + transcript-kwaliteit worden in PRODUCTIE geverifieerd (lokale
+YouTube-extractie wordt geblokkeerd door een PO-token/IP-challenge; geen lokale AssemblyAI-key) —
+de 60-min prod-run toont gedownloade grootte, downloadtijd, succes en tekst.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/audio_utils.py
+backend/transcription_pipeline.py
+docs/LESSONS.md
+docs/LOG.md
+---

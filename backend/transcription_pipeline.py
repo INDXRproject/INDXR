@@ -70,7 +70,26 @@ async def _heartbeat_loop(heartbeat_fn, interval: int = 60) -> None:
 # caption-extractie zodat één video de sequentiële playlist-keten niet blokkeert. Ruim boven normaal,
 # ver onder de watchdog reap-drempel (25min) en de 2u ARQ job_timeout. NOOIT op AssemblyAI-polling.
 CAPTION_EXTRACT_TIMEOUT = 120.0   # captions = tekst; seconden normaal, 120s vangt een yt-dlp-hang
-AUDIO_DOWNLOAD_TIMEOUT = 600.0    # grote audio over trage residential proxy (ruim, < reap-drempel)
+
+# Fix 2: de audio-download-timeout wordt AFGELEID van de videoduur i.p.v. een vlakke 600s. 600s was
+# fout in beide richtingen: een clip van 5 min haalt 'm nooit nodig, een video van 76 min verloor met
+# 17 seconden (82 MB net niet binnen 600s). Formule: basis + royale marge per audio-minuut, met een
+# absolute bovengrens ver onder de ARQ-backstop (TRANSCRIPTION_JOB_TIMEOUT_SECONDS). De deadline-hook in
+# extract_youtube_audio hanteert deze grens HARD (breekt de download echt af); _run_with_heartbeat houdt
+# er een coarse buffer omheen voor een volledig gestalde socket (geen progress → hook vuurt niet).
+DOWNLOAD_TIMEOUT_BASE_SECONDS = 180          # vaste basis: metadata/handshake/ffmpeg-overhead
+DOWNLOAD_TIMEOUT_PER_MINUTE_SECONDS = 25     # royale marge per audio-minuut (trage residential exit)
+DOWNLOAD_TIMEOUT_CEILING_SECONDS = 3600      # absolute bovengrens (60min) — << ARQ 37800s
+DOWNLOAD_TIMEOUT_DEFAULT_MINUTES = 120       # duur onbekend → genereus (nooit een legit download killen)
+
+
+def _derive_download_timeout(est_minutes: Optional[float]) -> float:
+    """Download-wall-clock-budget afgeleid van de geschatte videoduur (minuten). Onbekend → default."""
+    mins = est_minutes if (est_minutes and est_minutes > 0) else DOWNLOAD_TIMEOUT_DEFAULT_MINUTES
+    return float(min(
+        DOWNLOAD_TIMEOUT_CEILING_SECONDS,
+        DOWNLOAD_TIMEOUT_BASE_SECONDS + mins * DOWNLOAD_TIMEOUT_PER_MINUTE_SECONDS,
+    ))
 
 
 async def _run_with_heartbeat(awaitable, heartbeat_fn, timeout: Optional[float] = None):
@@ -619,11 +638,28 @@ async def do_assemblyai_transcription(
             else:
                 logger.warning(f"[pipeline] Proxy DISABLED for {video_id}")
                 proxy_urls = None
+            # Fix 2: leid de download-timeout af van de geschatte videoduur. credits_reserved ≈ minuten
+            # (bij reservering gezet uit de metadata-duur, 1 credit = 1 min); onbekend → genereuze default.
+            est_minutes: Optional[float] = None
+            if job_id:
+                try:
+                    _rr = await asyncio.to_thread(
+                        lambda: supabase.table('transcription_jobs')
+                            .select('credits_reserved').eq('id', job_id).single().execute()
+                    )
+                    est_minutes = (_rr.data or {}).get('credits_reserved') or None
+                except Exception:
+                    est_minutes = None
+            _dl_timeout = _derive_download_timeout(est_minutes)
+            logger.info(f"[pipeline] download-budget={_dl_timeout:.0f}s (est_minutes={est_minutes}) video={video_id} job={job_id}")
             try:
                 audio_path, video_title, channel, proxy_bytes = await _run_with_heartbeat(
-                    asyncio.to_thread(extract_youtube_audio, video_id, proxy_urls=proxy_urls),
+                    asyncio.to_thread(
+                        extract_youtube_audio, video_id,
+                        proxy_urls=proxy_urls, timeout_seconds=_dl_timeout,  # harde in-download deadline (Fix 3)
+                    ),
                     heartbeat_fn,
-                    timeout=AUDIO_DOWNLOAD_TIMEOUT,  # kap een hangende download → 'timeout' (retryable)
+                    timeout=_dl_timeout + 180,  # coarse backstop rond de harde deadline → 'timeout' (retryable)
                 )
                 temp_files.append(audio_path)
                 # Persist the Decodo egress bytes now — the proxy cost was incurred at download,

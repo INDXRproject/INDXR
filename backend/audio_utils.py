@@ -11,6 +11,7 @@ import time
 from typing import Dict, Optional
 from pydub import AudioSegment
 import yt_dlp
+from yt_dlp.utils import DownloadCancelled
 
 logger = logging.getLogger("indxr-backend")
 
@@ -145,6 +146,7 @@ def extract_youtube_audio(
     output_dir: str = "/tmp",
     proxy_url: Optional[str] = None,
     proxy_urls: Optional[list] = None,
+    timeout_seconds: Optional[float] = None,
 ) -> tuple[str, str, Optional[str], int]:
     """
     Extract audio from YouTube video using yt-dlp.
@@ -171,6 +173,24 @@ def extract_youtube_audio(
     base_output_path = os.path.join(output_dir, f"yt_audio_{video_id}")
     final_output_path = f"{base_output_path}.ogg"
 
+    # Fix 2/3: wall-clock deadline voor de HELE extract (alle pogingen samen), afgeleid van de
+    # videoduur door de caller (transcription_pipeline). De progress-hook hieronder breekt de lopende
+    # yt-dlp-download ECHT af zodra de deadline verstrijkt — DownloadCancelled stopt de download
+    # in-process, i.t.t. een asyncio.wait_for van buitenaf die de thread liet doorlopen (die trok de
+    # volledige 82 MB ná het afbreken en gooide 'm weg → verspilde proxy-egress). timeout_seconds=None
+    # => geen deadline (backward-compat).
+    overall_deadline = (time.time() + timeout_seconds) if timeout_seconds else None
+
+    def _deadline_hook(status) -> None:
+        # Alleen tijdens actief downloaden afbreken — nooit een zojuist voltooide download ('finished')
+        # weggooien omdat de deadline net verstreek.
+        if status.get('status') != 'downloading':
+            return
+        if overall_deadline is not None and time.time() > overall_deadline:
+            raise DownloadCancelled(
+                f"download timed out after {timeout_seconds:.0f}s derived budget"
+            )
+
     # NOTE: ydl_opts deliberately has NO postprocessors.
     # Adding FFmpegExtractAudio widens yt-dlp's format selection to include
     # DASH video+audio pairs, which triggers a second CDN download that does
@@ -183,8 +203,13 @@ def extract_youtube_audio(
     # retries=3 (not the default 10): on a dead residential proxy, 10 internal
     # retries waste ~5 minutes before our outer retry fires with a fresh exit IP.
     # 3 is sufficient for transient single-packet loss. See ADR-031.
+    # Fix 1: vraag een KLEIN audioformaat op i.p.v. bestaudio. We transcoderen sowieso naar 12 kbps
+    # mono opus voordat het naar AssemblyAI gaat (zie ffmpeg hieronder), dus de brontbitrate boven ~48k
+    # is verspilde egress: een 76-min video is 82 MB als bestaudio maar ~30-40 MB bij ~48-70 kbps, met
+    # een IDENTIEK 12 kbps-eindresultaat. Fallback-keten, geen harde keuze — zakt netjes terug zodat een
+    # video die nu lukt nooit kan gaan falen: eerst ≤70k, dan ≤128k, dan bestaudio, dan best.
     base_ydl_opts = {
-        'format': 'bestaudio/best',
+        'format': 'bestaudio[abr<=70]/bestaudio[abr<=128]/bestaudio/best',
         'outtmpl': f"{base_output_path}.%(ext)s",
         'quiet': True,
         'no_warnings': True,
@@ -194,6 +219,7 @@ def extract_youtube_audio(
         'extractor_retries': 3,
         'nocheckcertificate': True,
         'js_runtimes': {'node': {}},
+        'progress_hooks': [_deadline_hook],  # Fix 3: breekt de download echt af op de deadline
         'extractor_args': {
             'youtube': {
                 'player_client': ['ios', 'web_embedded'],
@@ -223,6 +249,10 @@ def extract_youtube_audio(
         return total
 
     for attempt in range(1, max_attempts + 1):
+        # Fix 2/3: geen verse poging meer starten als de afgeleide wall-clock-deadline al verstreken is.
+        if overall_deadline is not None and time.time() > overall_deadline:
+            last_error = TimeoutError(f"download timed out after {timeout_seconds:.0f}s derived budget")
+            break
         # Rotate proxy session on each attempt: proxy_urls[attempt-1] takes
         # precedence; fall back to the fixed proxy_url for backward-compat.
         if proxy_urls and len(proxy_urls) >= attempt:
@@ -287,6 +317,14 @@ def extract_youtube_audio(
             logger.info(f"[YT-DLP-AUDIO] conversion done: {raw_size:.2f}MB → {final_size:.2f}MB ogg")
 
             return final_output_path, video_title, channel, cumulative_bytes
+
+        except DownloadCancelled as e:
+            # Fix 3: de deadline-hook brak de download af. Budget is op — NIET retryen (een verse
+            # poging zou de deadline sowieso direct weer overschrijden). Egress van de partial telt mee.
+            cumulative_bytes += _measure_partial_egress()
+            last_error = TimeoutError(f"download timed out after {timeout_seconds:.0f}s derived budget")
+            logger.warning(f"[YT-DLP-AUDIO deadline-abort attempt={attempt} video={video_id}] {e}")
+            break
 
         except Exception as e:
             last_error = e
