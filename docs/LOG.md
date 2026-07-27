@@ -13726,3 +13726,18 @@ docs/LOG.md
 packages/shared/src/components/free-tool/AudioTab.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 ---
+
+[2026-07-27 12:15] taak: Commit 2 — origin-veld + parent_playlist_id/retry_round wiring | gewijzigd: backend/main.py (transcribe_with_whisper: origin Form-param + insert; PlaylistExtractRequest.parent_playlist_id; start_playlist_extraction: retry_round-lineage + insert) | py_compile OK. Leesvelden/lineage; geen creditlogica. Frontend vult origin + parent_playlist_id later.[2026-07-27 14:15] commit: feat(ops/commit2): wire origin field + parent_playlist_id/retry_round lineage
+
+- transcribe_with_whisper accepteert nu een optionele origin (Form) en stempelt het
+  op de transcription_jobs-rij (deel 4: funnel foutkaart->AI; frontend vult later).
+- PlaylistExtractRequest.parent_playlist_id; start_playlist_extraction leidt
+  retry_round af uit de parent (elke Retry-all = +1 ronde) en stempelt beide op de
+  playlist-rij (B: lineage voor ronde-telling). Retry zonder lineage -> ronde 1.
+
+Leesvelden / lineage; reserve/debit/refund onaangeroerd. py_compile OK.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+---

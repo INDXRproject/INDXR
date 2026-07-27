@@ -219,6 +219,7 @@ class PlaylistExtractRequest(BaseModel):
     playlist_url: Optional[str] = None
     video_metadata: Optional[dict] = {}  # {video_id: {title, duration, thumbnail}}
     is_retry: bool = False  # retry-/retry-all-job: onderdrukt de gratis-3 (die is al in de originele run verbruikt)
+    parent_playlist_id: Optional[str] = None  # B: originele playlist-job bij een Retry-all (lineage voor ronde-telling)
 
 class WhisperRequest(BaseModel):
     user_id: str
@@ -825,6 +826,7 @@ async def transcribe_with_whisper(
     audio_file: Optional[UploadFile] = File(None),
     user_id: Optional[str] = Form(None),  # youtube path only (server-to-server); ignored for upload
     duration: Optional[float] = Form(None),  # forwarded by Next.js when known upfront
+    origin: Optional[str] = Form(None),  # deel 4: herkomst van de job (bv. 'error_card_ai'); frontend vult later
     _: None = Depends(verify_backend_secret),
 ):
     """
@@ -1001,6 +1003,7 @@ async def transcribe_with_whisper(
         'file_format': file_format,
         # B3: bron-vlag bij aanmaak (voedt Operations). Losse job → upload of single.
         'source_kind': 'upload' if source_type == 'upload' else 'single',
+        'origin': origin,  # deel 4: leesveld voor Operations (funnel foutkaart->AI); frontend vult later
     }).execute()
 
     # ADR-050 fase 1 — reserveer het geschatte bedrag bij job-start (flag-gated, default OFF).
@@ -1410,11 +1413,27 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
 
     job_id = str(uuid.uuid4())
 
+    # B: retry-lineage. Elke 'Retry all'-actie = één ronde; koppel aan de parent en tel door.
+    retry_round = 0
+    if request.parent_playlist_id:
+        try:
+            _p = await asyncio.to_thread(
+                lambda: supabase.table('playlist_extraction_jobs')
+                    .select('retry_round').eq('id', request.parent_playlist_id).single().execute()
+            )
+            retry_round = ((_p.data or {}).get('retry_round') or 0) + 1
+        except Exception:
+            retry_round = 1  # parent onbekend maar het IS een retry-ronde
+    elif request.is_retry:
+        retry_round = 1  # retry zonder lineage (huidige frontend) → ronde >=1, exact nummer onbekend
+
     try:
         await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs').insert({
                 'id': job_id,
                 'user_id': request.user_id,
+                'parent_playlist_id': request.parent_playlist_id,
+                'retry_round': retry_round,
                 'status': 'running',
                 'playlist_url': request.playlist_url,
                 'playlist_title': request.playlist_title,
