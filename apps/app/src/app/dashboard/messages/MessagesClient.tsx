@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { Inbox, Archive, ArchiveRestore, CheckCheck, ChevronLeft, ChevronDown, ChevronRight, Send } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import { cn } from "@indxr/shared/lib/utils"
@@ -53,6 +54,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   bug:      "Bug",
 }
 
+// ?tab=inbox|support is the source of truth for the active top tab. Anything else → inbox.
+function normalizeTab(raw: string | null): "inbox" | "support" {
+  return raw === "support" ? "support" : "inbox"
+}
+
 // "Today" / "Yesterday" / "Jul 1" / "Jul 1, 2025"
 function formatDate(iso: string): string {
   const d = new Date(iso)
@@ -66,7 +72,17 @@ function formatDate(iso: string): string {
     : { month: "short", day: "numeric", year: "numeric" })
 }
 
-export function MessagesClient({ initialMessages, initialTickets, transcripts, initialTab }: Props) {
+// useSearchParams needs a Suspense boundary so a static build doesn't bail out.
+export function MessagesClient(props: Props) {
+  return (
+    <Suspense fallback={null}>
+      <MessagesClientInner {...props} />
+    </Suspense>
+  )
+}
+
+function MessagesClientInner({ initialMessages, initialTickets, transcripts, initialTab }: Props) {
+  const searchParams = useSearchParams()
   const [messages, setMessages]         = useState<Message[]>(initialMessages)
   const [activeTab, setActiveTab]       = useState<"inbox" | "support">(initialTab)
   const [showArchived, setShowArchived] = useState(false)
@@ -141,10 +157,31 @@ export function MessagesClient({ initialMessages, initialTickets, transcripts, i
     setMobileDetail(true)
   }
 
+  // Keep the active tab in sync with the URL. useSearchParams updates on our own
+  // replaceState in the App Router; popstate covers the browser back/forward buttons.
+  useEffect(() => {
+    setActiveTab(normalizeTab(searchParams.get("tab")))
+  }, [searchParams])
+
+  useEffect(() => {
+    const onPop = () => setActiveTab(normalizeTab(new URLSearchParams(window.location.search).get("tab")))
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
+
   const switchTopTab = (tab: "inbox" | "support") => {
     setActiveTab(tab)
     setSelectedId(null)
     setMobileDetail(false)
+    // Write the URL with the History API, not router.replace — a server round-trip
+    // would rerender the segment and drop the in-page state. inbox is the default, so
+    // keep the URL bare for it.
+    const params = new URLSearchParams(window.location.search)
+    if (tab === "inbox") params.delete("tab")
+    else params.set("tab", tab)
+    const query = params.toString()
+    const url = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`
+    window.history.replaceState(window.history.state, "", url)
   }
 
   const handleExpandTicket = (ticketId: string) => {

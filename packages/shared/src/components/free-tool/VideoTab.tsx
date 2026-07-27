@@ -1142,7 +1142,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    billingHref: appHref('/dashboard/billing'),
                    libraryHref: appHref('/dashboard/library'),
                    accountHref: appHref('/dashboard/account'),
-                   contactHref: marketingHref('/contact'),
+                   contactHref: user ? appHref('/dashboard/messages?tab=support') : marketingHref('/contact'),
                    onRetryUrl: () => { setUrl(''); setError(null) },
                    onUseAi: user ? handleWhisperUpsell : undefined,
                    onSwitchToAudio: onSwitchToAudio ? () => handleGuardedTabSwitch(onSwitchToAudio) : undefined,

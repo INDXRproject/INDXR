@@ -475,7 +475,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             billingHref: appHref('/dashboard/billing'),
             libraryHref: appHref('/dashboard/library'),
             accountHref: appHref('/dashboard/account'),
-            contactHref: marketingHref('/contact'),
+            contactHref: user ? appHref('/dashboard/messages?tab=support') : marketingHref('/contact'),
             loginHref: marketingHref('/login'),
             onRetryUrl: () => setError(null),
           })}

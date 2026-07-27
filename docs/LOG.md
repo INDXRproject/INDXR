@@ -13696,3 +13696,33 @@ met de nieuwe werkelijkheid. Alleen tekst; geen logica.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: packages/shared/src/lib/pricing.ts
 ---
+[2026-07-27 16:00] fix (2 bugs buiten Transcribe, frontend-only): **Bug 1 — Messages-tabs URL-state**: inbox/support wisselden zonder URL-verandering → support nergens linkbaar. MessagesClient leest nu `?tab=inbox|support` via useSearchParams en schrijft met window.history.replaceState (NIET router.replace — dat forceert een server-round-trip die het segment rerendert); popstate-sync voor back/forward; default+onbekend → inbox, geen redirect; useSearchParams in Suspense-boundary (zoals TranscribeWorkbench). Links die support bedoelen maar naar de root gingen: ErrorCard `contactHref` (VideoTab+AudioTab) → authed `appHref('/dashboard/messages?tab=support')`, anon `marketingHref('/contact')` (geen login-muur). Al correct (geverifieerd, niet gewijzigd): SentryFeedbackCard, /dashboard/support-redirect, admin-ticket-mail. Bewust root/publiek gelaten: algemene Messages-nav (topbar-bell, sidebar, mobile-tab, dashboard-sectie = de hub, niet support), Footer/docs/about `/contact` + unsubscribe mailto (anon marketing). **Bug 2 — Library-selectiebalk overloop mobiel**: bij [new]-selectie verscheen "Mark as read" en duwde de prullenbak buiten de pill. Balk is nu op de MAXIMALE actieset ontworpen: op <md collapse Download + Mark as read naar icon-only (aria-label), teller blijft tekst, Delete blijft error-gekleurd icoon (kreeg aria-label; confirm-dialog intact), harde max-w-[calc(100vw-1.5rem)] + shrink-0, geen ml-auto/wrap. **Geverifieerd**: pnpm build groen (beide apps). 390px light/dark visueel = [~] (geen browser hier; structureel: icon-only <md past ruim binnen 366px). + LESSONS-regel (actiebalk = maximale set). | gewijzigd: apps/app/src/app/dashboard/messages/MessagesClient.tsx, packages/shared/src/components/free-tool/{VideoTab,AudioTab}.tsx, apps/app/src/components/library/TranscriptList.tsx, docs/LESSONS.md, docs/LOG.md
+[2026-07-27 13:48] commit: fix: linkable Messages support tab (?tab=) + non-overflowing Library selection bar
+
+Bug 1 — Messages tabs had no URL state, so Support was linkable from nowhere.
+MessagesClient now reads ?tab=inbox|support with useSearchParams and writes it with
+window.history.replaceState (not router.replace — that would force a server round-trip
+and rerender the segment), with a popstate sync for back/forward. Default and unknown
+values → inbox, no redirect. useSearchParams sits behind a Suspense boundary.
+The ErrorCard contactHref (VideoTab + AudioTab) now points authed users at the Support
+tab and anon users at the public /contact form (no login wall). Already-correct links
+(SentryFeedbackCard, /dashboard/support redirect, admin ticket email) were left as-is;
+the general Messages nav stays on the inbox hub.
+
+Bug 2 — the Library selection bar overflowed on mobile when a [new] transcript was in the
+selection: "Mark as read" appeared and pushed the trash icon out of the pill. The bar is
+now built for the maximal action set — under md, Download and Mark as read collapse to
+icon-only with an aria-label, the counter stays text, Delete stays error-coloured (and
+gained an aria-label; its confirm dialog is untouched). Hard max-width + shrink-0, no
+ml-auto, no wrap.
+
+Build green both apps.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/components/library/TranscriptList.tsx
+docs/LESSONS.md
+docs/LOG.md
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+---

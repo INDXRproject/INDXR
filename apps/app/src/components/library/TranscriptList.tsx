@@ -560,16 +560,19 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
       {/* Floating Action Bar — lifted above the mobile bottom tab bar (h-14 + safe area) */}
       {selectedIds.size > 0 && (
         <div className="fixed left-1/2 -translate-x-1/2 z-50 bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom,0px))] md:bottom-6 animate-in slide-in-from-bottom-5 fade-in">
-           <div className="bg-surface border border-border shadow-xl rounded-full px-5 md:px-6 py-3 flex items-center gap-3 md:gap-4 max-w-[calc(100vw-1.5rem)]">
-              <span className="text-sm font-medium text-fg">{selectedIds.size} selected</span>
+           {/* Sized for the MAXIMAL action set (Download + Mark as read + Delete + clear). Under md the
+               labelled actions collapse to icon-only (with aria-label) so the bar never overflows its
+               hard max-width — the [new]-badge case adds "Mark as read", which used to push Delete out. */}
+           <div className="bg-surface border border-border shadow-xl rounded-full px-4 md:px-6 py-3 flex items-center gap-2 md:gap-4 max-w-[calc(100vw-1.5rem)]">
+              <span className="text-sm font-medium text-fg whitespace-nowrap shrink-0">{selectedIds.size} selected</span>
 
-              <div className="h-6 w-px bg-border/50" />
+              <div className="h-6 w-px bg-border/50 shrink-0" />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="secondary" disabled={isDownloading}>
-                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                    Download
+                  <Button size="sm" variant="secondary" disabled={isDownloading} aria-label="Download" className="shrink-0">
+                    {isDownloading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <Download className="h-4 w-4 md:mr-2" />}
+                    <span className="hidden md:inline">Download</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-52">
@@ -596,17 +599,18 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
               </DropdownMenu>
 
               {selectedUnreadIds.length > 0 && (
-                <Button size="sm" variant="ghost" className="text-fg-muted hover:text-fg" onClick={() => markRead(selectedUnreadIds)}>
-                  <CheckCheck className="mr-2 h-4 w-4" />
-                  Mark as read
+                <Button size="sm" variant="ghost" aria-label="Mark as read" className="text-fg-muted hover:text-fg shrink-0" onClick={() => markRead(selectedUnreadIds)}>
+                  <CheckCheck className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Mark as read</span>
                 </Button>
               )}
 
-              <Button size="sm" variant="ghost" className="text-error hover:text-error hover:bg-error/10" onClick={handleBatchDelete}>
+              {/* Delete stays error-coloured even as an icon; handleBatchDelete opens the confirm dialog. */}
+              <Button size="sm" variant="ghost" aria-label="Delete selected" className="text-error hover:text-error hover:bg-error/10 shrink-0" onClick={handleBatchDelete}>
                  <Trash2 className="h-4 w-4" />
               </Button>
 
-              <Button size="sm" variant="ghost" className="rounded-full h-6 w-6 p-0" onClick={() => setSelectedIds(new Set())}>
+              <Button size="sm" variant="ghost" aria-label="Clear selection" className="rounded-full h-6 w-6 p-0 shrink-0" onClick={() => setSelectedIds(new Set())}>
                 ×
               </Button>
            </div>
