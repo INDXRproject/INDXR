@@ -569,7 +569,7 @@ async def do_assemblyai_transcription(
                     audio_path = compressed
             except Exception as e:
                 msg = f"Audio compression failed: {e}"
-                await _update_job(status="error", error_message=msg, error_type="compression_error")
+                await _update_job(status="error", error_message=msg, error_type="compression_error", duration_seconds=int(duration))
                 return {"success": False, "error_type": "compression_error", "error_message": msg, "credit_cost": credit_cost}
 
         # ── Step 6: Transcribe ────────────────────────────────────────────────
@@ -590,7 +590,7 @@ async def do_assemblyai_transcription(
                 'video_id': video_id, 'source_type': 'youtube' if video_id else 'upload',
                 'error_type': 'api_error', 'error_message': whisper_result['error'],
             })
-            await _update_job(status="error", error_message=whisper_result['error'], error_type="api_error")
+            await _update_job(status="error", error_message=whisper_result['error'], error_type="api_error", duration_seconds=int(duration))
             return {"success": False, "error_type": "api_error", "error_message": whisper_result['error'], "credit_cost": credit_cost}
 
         if not whisper_result.get('transcript'):
@@ -598,7 +598,7 @@ async def do_assemblyai_transcription(
                 'video_id': video_id, 'source_type': 'youtube' if video_id else 'upload',
                 'error_type': 'no_speech', 'error_message': 'no_speech_detected',
             })
-            await _update_job(status="error", error_message="no_speech_detected", error_type="no_speech")
+            await _update_job(status="error", error_message="no_speech_detected", error_type="no_speech", duration_seconds=int(duration))
             return {"success": False, "error_type": "no_speech", "credit_cost": credit_cost}
 
         # ── Step 7: Build transcript ──────────────────────────────────────────

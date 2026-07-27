@@ -13757,3 +13757,17 @@ Changed: backend/audio_utils.py
 backend/main.py
 docs/LOG.md
 ---
+
+[2026-07-27 12:50] taak: Commit 2 — duration_seconds op faalrijen (A). Gestempeld op de late faalpaden (compression/api_error/no_speech) waar duur al bekend is. Model-op-faalrij = N/A (AssemblyAI geeft speech_model_used alleen bij succes). | gewijzigd: backend/transcription_pipeline.py | py_compile OK; duration gezet in step 3 (504/506) vóór alle 3 de branches.[2026-07-27 14:19] commit: feat(ops/commit2): stamp duration_seconds on late failure rows (A)
+
+duration_seconds stond alleen op succesrijen -> failure-cost-analytics miste het.
+Nu gestempeld op de late faalpaden waar de duur al geprobed is (compression_error,
+api_error/AssemblyAI, no_speech). Vroege faalpaden (voor de duur-probe) blijven
+NULL; model-op-faalrij is N/A (AssemblyAI geeft speech_model_used alleen op succes).
+
+py_compile OK; duration wordt in step 3 gezet vóór alle 3 de branches.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/transcription_pipeline.py
+docs/LOG.md
+---
