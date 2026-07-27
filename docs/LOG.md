@@ -13963,3 +13963,27 @@ Changed: docs/wiki/INDEX.md
 docs/wiki/architecture/ai-pipeline.md
 docs/wiki/decisions/082-assemblyai-submit-poll-resume.md
 ---
+
+[2026-07-27 15:55] taak: Commit 4 (datalaag) — RPC admin_operations_v3(from,to,exclude_internal) geeft de deel 1-5 Operations-metrics als JSON: traffic (jobs single/upload/playlist + units apart: 267 AI-jobs vs 1356 playlist-video-units), reliability (AI success 85.4% + playlist first-pass/recovered), latency (queue-wait submitted->processing / provider_processing_ms / download, mediaan/p95/max, leeg!=0 via sample), errors (per type + download-faal per duurcategorie 2.2/6.5/11.1/0/42.9% + dagreeks), audio (formaat-verdeling + download-MB p50/p95/max), provider (taal/model + concurrency-saturatie vs ops_config=200). Geld zit er bewust NIET in (blijft Finance). | gewijzigd: supabase/migrations/20260727135028_admin_operations_v3.sql (via MCP; tussenversie 134852 gefixt naar 135028 ops_config key-value) | geverifieerd tegen live data (exclude_internal true+false).[2026-07-27 15:52] commit: feat(ops/commit4): admin_operations_v3 RPC — deel 1-5 Operations-datalaag
+
+Nieuwe SECURITY DEFINER RPC admin_operations_v3(p_from,p_to,p_exclude_internal) die de
+Four-Golden-Signals-metrics als één JSON teruggeeft, klaar voor de V3 Operations-UI:
+
+- traffic: jobs (single/upload/playlist) EN units apart (job != unit — 267 AI-jobs vs 1356
+  playlist-video-units), + captions.
+- reliability: AI success-rate + per type; playlist first-pass-failed vs effective + recovered.
+- latency: queue-wait (submitted->processing, commit 3), provider_processing_ms, download —
+  mediaan/p95/max. LEEG != 0: nulls tellen niet mee, 'sample' toont de n (een korte job die
+  tussen twee polls klaar is heeft geen queue-wait, dat mag de gemeten wachttijd niet drukken).
+- errors: totaal + per type + DOWNLOAD-FAAL PER DUURCATEGORIE (het incident-paneel: 2.2/6.5/11.1/
+  0/onbekend 42.9%) + dagreeks voor de tijdlijn.
+- audio: file_format-verdeling + download-MB (p50/p95/max) — meet Fix 1's effect.
+- provider: taal/model-verdeling + concurrency-saturatie tegen ops_config (limiet 200).
+
+GELD zit hier bewust NIET in — dat blijft de Finance-RPC (Operations meet gedrag, niet bedragen).
+Geverifieerd tegen live data (exclude_internal true en false); alle secties berekenen correct.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+supabase/migrations/20260727135028_admin_operations_v3.sql
+---
