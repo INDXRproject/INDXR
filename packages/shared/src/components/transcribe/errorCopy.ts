@@ -144,7 +144,9 @@ const COPY: Record<string, Entry> = {
     body: (c) =>
       c.requiredCredits != null && c.availableCredits != null
         ? `This needs ${c.requiredCredits} credit${c.requiredCredits === 1 ? "" : "s"} and you have ${c.availableCredits}. No credits were used.`
-        : "You don't have enough credits for this. No credits were used.",
+        : c.availableCredits != null
+          ? `You have ${c.availableCredits} credit${c.availableCredits === 1 ? "" : "s"}, which isn't enough for this. No credits were used.`
+          : "You don't have enough credits for this. No credits were used.",
     actions: (c) => buyCredits(c),
   },
   storage_full: {

@@ -203,8 +203,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       const errorMsg = job.error_message || 'Transcription failed'
       if (errorMsg === 'members_only' || job.error_type === 'members_only') {
         setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
-      } else if (job.error_code === 'insufficient_credits') {
-        setError({ message: `Not enough credits. This video requires ${job.required_credits} credit${job.required_credits !== 1 ? 's' : ''}, you have ${job.available_credits}.`, isCreditsError: true })
+      } else if (job.error_type === 'insufficient_credits') {
+        // Balance is read from useAuth at render time (ErrorCard ctx), never a copied poll value.
+        setError({ message: 'Not enough credits to transcribe this video.', isCreditsError: true })
       } else if (errorMsg === 'no_speech_detected' || job.error_type === 'no_speech') {
         setError({ message: '', isNoSpeech: true })
       } else {
@@ -1136,6 +1137,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  const copy = resolveErrorCopy(errCode, {
                    fallbackMessage: error.message,
                    creditsRefunded: error.creditsRefunded,
+                   availableCredits: user ? credits : null,
                    aiCost: videoDuration ? Math.ceil(videoDuration / 60) : null,
                    billingHref: appHref('/dashboard/billing'),
                    libraryHref: appHref('/dashboard/library'),

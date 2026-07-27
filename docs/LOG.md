@@ -13602,3 +13602,28 @@ naar rauwe namen; stap 3 = aliassen weg.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/roadmap/priorities.md
 ---
+[2026-07-27 14:30] cleanup (JobStatusRow-contract, ADR-080 follow-up 3): (1) `error_code` weg uit JobStatusRow — stond backend-zijde hardcoded null; VideoTab keyt nu op `error_type === 'insufficient_credits'`. (2) `available_credits` weg uit JobStatusRow — de insufficient-credits-kaart leest het saldo nu uit useAuth (`availableCredits: user ? credits : null` in VideoTab+AudioTab ErrorCard-ctx); `errorCopy.insufficient_credits` kreeg een alleen-saldo-tak. `required_credits` blijft (backend vult binnenkort). (3) duration_seconds/credits_cost-standaardisatie bewust NIET gedaan — pas zodra backend de rauwe namen emit. Build groen (beide apps). | gewijzigd: packages/shared/src/hooks/useJobStatus.ts, packages/shared/src/components/free-tool/{VideoTab,AudioTab}.tsx, packages/shared/src/components/transcribe/errorCopy.ts, docs/wiki/decisions/080-*.md, docs/LOG.md
+[2026-07-27 13:33] commit: refactor(transcribe): drop dead error_code + copied available_credits from JobStatusRow
+
+error_code was hardcoded null backend-side and meant nothing — VideoTab's whisper
+poll now keys on error_type === 'insufficient_credits'.
+
+available_credits was a balance copied out of a poll response, which is by definition
+staler than what the user already sees via useAuth. The insufficient-credits card now
+reads the balance from useAuth (availableCredits in the ErrorCard ctx, VideoTab + AudioTab);
+errorCopy.insufficient_credits gained an available-only branch so it shows the live balance
+until the backend supplies required_credits. required_credits stays in the contract.
+
+duration_seconds/credits_cost standardisation deliberately deferred until the backend
+emits the raw names alongside the aliases.
+
+Build green both apps.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/decisions/080-transcribe-method-colour-cost-and-errorcard.md
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/transcribe/errorCopy.ts
+packages/shared/src/hooks/useJobStatus.ts
+---

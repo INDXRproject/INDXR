@@ -403,7 +403,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           return
         }
         if (httpStatus === 402) {
-          setError({ message: `Not enough credits — you need ${data.required_credits as number} but have ${data.available_credits as number}.`, code: 'insufficient_credits' })
+          // Balance is read from useAuth at render time (ErrorCard ctx), never a copied server value.
+          setError({ message: 'Not enough credits to transcribe this file.', code: 'insufficient_credits' })
           return
         }
         setError({ message: (data.user_friendly_message as string) || (data.error as string) || 'Transcription failed', code: (data.code as string | undefined) })
@@ -470,6 +471,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         <ErrorCard
           {...resolveErrorCopy(error.code, {
             fallbackMessage: error.message,
+            availableCredits: user ? credits : null,
             billingHref: appHref('/dashboard/billing'),
             libraryHref: appHref('/dashboard/library'),
             accountHref: appHref('/dashboard/account'),

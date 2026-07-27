@@ -15,9 +15,7 @@ export interface JobStatusRow {
   processing_time_seconds?: number
   error_message?: string | null
   error_type?: string | null
-  error_code?: string | null
   required_credits?: number
-  available_credits?: number
   completed?: number
   failed?: number
   total_videos?: number
