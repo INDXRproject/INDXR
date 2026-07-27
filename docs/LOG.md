@@ -13851,3 +13851,28 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
 ---
+[2026-07-27 20:00] cleanup (afsluitend, frontend-only): **Item 1** — error_code + available_credits waren al uit JobStatusRow (commit 2c0f2d4 eerder deze sessie); nu required_credits (backend vult het sinds recent) in de VideoTab insufficient-ErrorCard-ctx gewired → de kaart toont "This needs X and you have Y" (X=required_credits, Y=useAuth-saldo) i.p.v. alleen het saldo. **Item 2** — alias-uitfasering stap 2 (priorities 2.0): JobStatusRow van `duration`/`credits_used` naar de rauwe kolomnamen `duration_seconds`/`credits_cost` (die de backend sinds 669a0c1 emit náást de aliassen); dit was de oorzaak dat beide velden leeg waren op een pure Realtime-update. Alle lezers overgezet: VideoTab (`setVideoDuration`, `whisperMetadata`, posthog `transcript_extracted`), AudioTab (`audioMetadata`), `dashboard/transcribe/page.tsx` (transcript-update). Admin-`transcripts`-kolomlezers + `transcript.duration` ongemoeid (dat is de transcripts-tabel, geen job). **Geverifieerd**: pnpm build groen (beide apps). Frontend-only; backend niet aangeraakt (`backend/main.py` van parallelle sessie niet meegecommit). → stap 3 (aliassen weg) kan de andere sessie nu doen. | gewijzigd: packages/shared/src/hooks/useJobStatus.ts, packages/shared/src/components/free-tool/{VideoTab,AudioTab}.tsx, apps/app/src/app/dashboard/transcribe/page.tsx, docs/wiki/roadmap/priorities.md, docs/LOG.md
+[2026-07-27 14:47] commit: refactor(jobs): JobStatusRow onto raw duration_seconds/credits_cost + wire required_credits
+
+Item 2 (alias phase-out step 2, priorities 2.0): the curated /api/jobs dict renamed
+duration_seconds→duration and credits_cost→credits_used, but a Realtime UPDATE carries the
+raw row, so both fields came back empty on Realtime. JobStatusRow and every reader now use
+the raw column names the backend emits on both channels since 669a0c1 — VideoTab
+(setVideoDuration, whisperMetadata, posthog), AudioTab (audioMetadata), and the
+dashboard transcript update. The backend can now drop the aliases (step 3).
+
+Item 1: error_code and available_credits were already removed from JobStatusRow earlier
+this session (2c0f2d4); now that the backend populates required_credits, it is wired into
+the VideoTab insufficient-credits ErrorCard so the card shows "This needs X and you have Y"
+(X = required_credits, Y = the live useAuth balance) instead of the balance alone.
+
+Build green both apps.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/transcribe/page.tsx
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/hooks/useJobStatus.ts
+---

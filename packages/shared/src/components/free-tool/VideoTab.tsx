@@ -50,7 +50,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [showSignupCard, setShowSignupCard] = useState(false)
   const [videoTitle, setVideoTitle] = useState<string>("")
   const [videoUrl, setVideoUrl] = useState<string>("")
-  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean, errorType?: string, creditsRefunded?: number | null } | null>(null)
+  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean, errorType?: string, creditsRefunded?: number | null, requiredCredits?: number | null } | null>(null)
   const [isPlaylistUrl, setIsPlaylistUrl] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState("")
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -142,11 +142,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setTranscript(transcript)
     setVideoTitle(title || "")
     setVideoUrl(`https://www.youtube.com/watch?v=${videoId}`)
-    setVideoDuration(job.duration || null)
+    setVideoDuration(job.duration_seconds || null)
     setLastProcessingMethod('whisper_ai')
     setVideoChannel(job.channel ?? null)
     setVideoLanguage(job.language ?? null)
-    setWhisperMetadata({ duration: job.duration ?? 0, creditsUsed: job.credits_used || 1, truncationWarning })
+    setWhisperMetadata({ duration: job.duration_seconds ?? 0, creditsUsed: job.credits_cost || 1, truncationWarning })
     setCurrentVideoId(videoId)
     sessionSavedKeys.current.add(`${videoId}:whisper_ai`)
     setExistingTranscriptMethod('assemblyai')
@@ -155,7 +155,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
     posthog.capture('transcript_extracted', {
       type: 'video',
-      credits_used: job.credits_used || 1,
+      credits_used: job.credits_cost || 1,
       processing_method: PROCESSING_METHODS.ASSEMBLYAI,
       ...(ctx?.context === 'confirm' ? { user_selected_whisper: true } : {}),
     })
@@ -204,8 +204,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       if (errorMsg === 'members_only' || job.error_type === 'members_only') {
         setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
       } else if (job.error_type === 'insufficient_credits') {
-        // Balance is read from useAuth at render time (ErrorCard ctx), never a copied poll value.
-        setError({ message: 'Not enough credits to transcribe this video.', isCreditsError: true })
+        // Balance comes from useAuth at render time (never a copied poll value); the required
+        // amount is the backend's required_credits (now populated) so the card shows both numbers.
+        setError({ message: 'Not enough credits to transcribe this video.', isCreditsError: true, requiredCredits: job.required_credits ?? null })
       } else if (errorMsg === 'no_speech_detected' || job.error_type === 'no_speech') {
         setError({ message: '', isNoSpeech: true })
       } else {
@@ -1138,6 +1139,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    fallbackMessage: error.message,
                    creditsRefunded: error.creditsRefunded,
                    availableCredits: user ? credits : null,
+                   requiredCredits: error.requiredCredits ?? null,
                    aiCost: videoDuration ? Math.ceil(videoDuration / 60) : null,
                    billingHref: appHref('/dashboard/billing'),
                    libraryHref: appHref('/dashboard/library'),

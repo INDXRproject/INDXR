@@ -523,8 +523,8 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
 - [ ] **2.0 — Verwijder de `JobStatusRow`-aliassen `duration` / `credits_used`** (afronding 3-staps uitfasering; coördinatie-afhankelijk, geen productie-trigger).
     **Context:** de curated dict van `GET /api/jobs/{job_id}` (`backend/main.py` `get_job_status`) hernoemde `duration_seconds`→`duration` en `credits_cost`→`credits_used`; de Realtime-rij levert de **rauwe** kolomnamen → die twee velden waren `undefined` op een pure Realtime-update (parity-gat, audit 2026-07-27).
     - **Stap 1 — GEDAAN, commit `669a0c1`:** dict emit nu `duration_seconds` + `credits_cost` (rauwe namen) **naast** de aliassen `duration`/`credits_used`.
-    - **Stap 2 — andere sessie (frontend):** `JobStatusRow` + alle lezers overzetten naar de rauwe namen `duration_seconds` / `credits_cost`.
-    - **Stap 3 — DIT ITEM (backend):** de aliassen `duration` + `credits_used` uit de dict verwijderen zodra stap 2 live is. Niet vergeten — anders is de duplicatie permanent.
+    - **Stap 2 — GEDAAN (frontend), 2026-07-27:** `JobStatusRow` gebruikt nu `duration_seconds` / `credits_cost`; alle lezers overgezet (VideoTab `setVideoDuration`/`whisperMetadata`/posthog, AudioTab `audioMetadata`, `dashboard/transcribe/page.tsx` transcript-update). Build groen, gepusht. → **stap 3 kan nu.**
+    - **Stap 3 — DIT ITEM (backend):** de aliassen `duration` + `credits_used` uit de dict verwijderen zodra stap 2 live is (stap 2 is live sinds 2026-07-27). Niet vergeten — anders is de duplicatie permanent.
 
 - [ ] **2.1 — Circuit breakers via PyBreaker** rond yt-dlp, AssemblyAI, DeepSeek
     Trigger: eerste cascading failure in Sentry.

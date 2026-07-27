@@ -76,8 +76,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       setTranscript(job.transcript as TranscriptItem[])
       setAudioMetadata({
         filename: activeFilenameRef.current,
-        duration: job.duration ?? 0,
-        creditsUsed: job.credits_used ?? 1,
+        duration: job.duration_seconds ?? 0,
+        creditsUsed: job.credits_cost ?? 1,
         processingTimeSecs: job.processing_time_seconds ?? 0,
       })
       refreshCredits()

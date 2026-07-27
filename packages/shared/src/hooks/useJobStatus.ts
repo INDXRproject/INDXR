@@ -9,8 +9,11 @@ export interface JobStatusRow {
   transcript_id?: string | null
   channel?: string | null
   language?: string | null
-  duration?: number
-  credits_used?: number
+  // Raw DB column names (ADR/priorities 2.0 — alias phase-out step 2). The old curated
+  // aliases `duration`/`credits_used` came back empty on a Realtime UPDATE (which carries the
+  // raw row), so we read the raw columns the backend now emits on both channels (since 669a0c1).
+  duration_seconds?: number
+  credits_cost?: number
   credits_refunded?: number | null
   processing_time_seconds?: number
   error_message?: string | null

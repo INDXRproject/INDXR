@@ -299,7 +299,7 @@ export default function TranscribePage() {
                 duration,
                 character_count: characterCount,
                 processing_method: effectiveMethod,
-                credits_used: job.credits_used ?? null,
+                credits_used: job.credits_cost ?? null,
                 updated_at: new Date().toISOString(),
               }).eq('id', transcriptId)
               if (updateErr) throw new Error(updateErr.message)
