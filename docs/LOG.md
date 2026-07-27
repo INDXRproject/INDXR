@@ -13687,3 +13687,12 @@ docs/wiki/decisions/081-playlist-free-slots-per-method.md
 packages/shared/src/lib/pricing.ts
 test-fixtures/playlist_free_slots.json
 ---
+[2026-07-27 13:47] commit: docs(pricing): align copy to 'first 3 caption videos free' (ADR-081)
+
+pricing.ts zei nog 'first 3 videos free' terwijl de regel nu per-methode is en de
+marketing-copy al 'first 3 caption videos' zegt. Copy + FREE_TIER-comment gelijkgetrokken
+met de nieuwe werkelijkheid. Alleen tekst; geen logica.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: packages/shared/src/lib/pricing.ts
+---

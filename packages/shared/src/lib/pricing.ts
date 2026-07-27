@@ -40,7 +40,7 @@ export const PACKAGES: PricingPackage[] = [
     credits: 100,
     audience: "Try it on your own videos",
     description:
-      "100 credits to try INDXR on your own videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports for vector databases (1 credit per 10 minutes of video). Extracting existing YouTube captions is always free. Credits never expire.",
+      "100 credits to try INDXR on your own videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 caption videos free, then 1 credit per video), and RAG-ready JSON exports for vector databases (1 credit per 10 minutes of video). Extracting existing YouTube captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: false,
     image: "/packages/try-100.webp",
@@ -54,7 +54,7 @@ export const PACKAGES: PricingPackage[] = [
     credits: 400,
     audience: "Occasional use",
     description:
-      "400 credits for regular use. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
+      "400 credits for regular use. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 caption videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: true,
     image: "/packages/starter-400.webp",
@@ -68,7 +68,7 @@ export const PACKAGES: PricingPackage[] = [
     credits: 1000,
     audience: "Regular transcription — best value",
     description:
-      "1,000 credits — the sweet spot for regular transcription. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
+      "1,000 credits — the sweet spot for regular transcription. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 caption videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: true,
     prominent: true,
     image: "/packages/plus-1000.webp",
@@ -82,7 +82,7 @@ export const PACKAGES: PricingPackage[] = [
     credits: 3000,
     audience: "High volume, lowest price per credit",
     description:
-      "3,000 credits at our lowest price per credit, for people who process a lot of long videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
+      "3,000 credits at our lowest price per credit, for people who process a lot of long videos. Credits are used for AI transcription (1 credit per minute), playlist processing (first 3 caption videos free, then 1 credit per video), and RAG-ready JSON exports (1 credit per 10 minutes of video). Extracting existing captions is always free. Credits never expire.",
     mostPopular: false,
     prominent: true,
     image: "/packages/power-3000.webp",
@@ -107,7 +107,7 @@ export const CREDIT_COSTS = {
 // Free-tier limits
 export const FREE_TIER = {
   WELCOME_CREDITS: 25,
-  PLAYLIST_FREE_VIDEOS: 3, // eerste 3 videos van elke playlist gratis
+  PLAYLIST_FREE_VIDEOS: 3, // eerste 3 CAPTION-video's van elke playlist gratis (per-methode, ADR-081)
   RAG_FREE_EXPORTS: 3, // eerste 3 RAG exports gratis
 } as const
 
