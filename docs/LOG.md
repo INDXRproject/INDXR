@@ -13576,3 +13576,20 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
 ---
+
+[2026-07-27 10:00] taak: Commit 2 — parity /api/jobs/{job_id}: required_credits=jobkost, available_credits verwijderd, rauwe namen duration_seconds+credits_cost naast aliassen | gewijzigd: backend/main.py (get_job_status) | py_compile OK. Aliassen duration/credits_used gemarkeerd fase-uit (stap 3 -> priorities.md).[2026-07-27 13:23] commit: fix(ops/commit2): /api/jobs parity — required_credits, drop available_credits, raw-name aliases
+
+Parity-beslissingen op de audit:
+- required_credits: gevuld met de jobkost (credits_cost) — jobspecifiek, alleen
+  de backend weet het. Voor de insufficient-credits-kaart.
+- available_credits: VERWIJDERD uit de respons — de frontend heeft het live saldo
+  al via useAuth; een gekopieerd saldo is per definitie ouder (geen tweede bron).
+  Andere sessie haalt het uit JobStatusRow.
+- Naam-mismatch additief gedicht: duration_seconds + credits_cost (rauwe kolomnamen,
+  = Realtime) nu naast de aliassen duration/credits_used. Aliassen zijn fase-uit
+  (stap 3 = weg, zie priorities.md). Read-only, geen creditlogica.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+---

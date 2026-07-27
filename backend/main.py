@@ -1122,8 +1122,10 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         "transcript_id": job.get('transcript_id'),
         "channel": channel,
         "language": language,
-        "duration": job.get('duration_seconds'),
-        "credits_used": job.get('credits_cost'),
+        "duration": job.get('duration_seconds'),           # ALIAS (fase-uit — zie priorities.md); lees duration_seconds
+        "duration_seconds": job.get('duration_seconds'),   # rauwe kolomnaam = parity met de Realtime-rij
+        "credits_used": job.get('credits_cost'),           # ALIAS (fase-uit); lees credits_cost
+        "credits_cost": job.get('credits_cost'),           # rauwe kolomnaam = parity met de Realtime-rij
         # Read-only pariteit met de Realtime-volle-rij: de foutkaart rendert de credit-terugstort-regel
         # uit dit veld; zonder dit toont de polling-fallback 'm niet. Geen creditlogica.
         "credits_refunded": job.get('credits_refunded'),
@@ -1133,8 +1135,9 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         # valt de polling-fallback terug op de generieke kaart. Read-only, geen creditlogica.
         "error_type": job.get('error_type'),
         # error_code verwijderd: stond hardcoded op None (dood veld). error_type is de echte sleutel.
-        "required_credits": None,
-        "available_credits": None,
+        "required_credits": job.get('credits_cost'),  # jobkost (jobspecifiek) — voor de insufficient-credits-kaart
+        # available_credits VERWIJDERD: de frontend heeft het live saldo al via useAuth; een gekopieerd
+        # saldo in een poll-respons is per definitie ouder dan wat de user ziet -> geen tweede bron.
     })
 
 # AI-summary via the AssemblyAI EU LLM Gateway (OpenAI-compatible, EU data-residency) — ADR-068.
