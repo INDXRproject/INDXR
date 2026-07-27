@@ -14010,3 +14010,11 @@ Changed: apps/app/src/app/admin/adminTypes.ts
 apps/app/src/app/admin/operations/page.tsx
 docs/LOG.md
 ---
+[2026-07-27 15:57] commit: docs(wiki): monitoring.md — V3 Operations dashboard + admin_operations_v3
+
+Nieuw sectie: panelen (Golden Signals), de RPC-bron, geld-blijft-bij-Finance-grens,
+empty!=0-regel voor latency, en dat admin_operations_summary blijft bestaan (ongebruikt door UI).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/operations/monitoring.md
+---

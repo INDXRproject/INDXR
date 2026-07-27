@@ -174,6 +174,26 @@ Nachtelijke ARQ-worker-cron `fetch_service_metrics` (Railway, **02:00 UTC**, naa
 
 Log-tag: `[service-metrics]` in Railway worker-logs.
 
+## Operations-dashboard (admin, V3)
+
+`/admin/operations` (server component) draait op de RPC **`admin_operations_v3(p_from, p_to, p_exclude_internal)`**
+(`supabase/migrations/20260727135028_admin_operations_v3.sql`). Georganiseerd rond de Four Golden
+Signals; **geld staat er bewust NIET in** — dat blijft Finance (`admin_finance_summary`). Panelen:
+
+- **Live now** — in-flight / queue / stuck + AssemblyAI-saturatie (jobs `transcribing` nu vs de
+  concurrency-limiet in `ops_config.assemblyai_concurrency_limit`, default 200).
+- **Traffic** — jobs (single/upload/playlist) **én units apart** (1 playlist-job = N video-units) + captions.
+- **Errors** — success-rate + error% + per-type + het **download-faal-per-duurcategorie**-paneel
+  (het incident-signaal: faalkans per videolengte, 0-20/20-60/60-120/120m+) + dagreeks-sparkline.
+- **Latency** — queue-wait (`submitted_at`→`provider_processing_at`), processing (`provider_processing_ms`),
+  download (`started_at`→`submitted_at`) als **mediaan/p95/max**. Leeg → "no data yet", **nooit 0**
+  (een lege wachttijd — korte job klaar tussen twee polls — mag de gemeten wachttijd niet drukken).
+- **Playlist reliability** — videos effective vs `first_pass_failed` + door-auto-retry `recovered`.
+- **Audio & provider** — download-MB (meet de kleiner-formaat-fix) + formaat/model/taal-verdeling.
+
+De oude `admin_operations_summary` blijft bestaan (niet meer door de UI gebruikt). Toegang via de
+admin-service-role-client; route-niveau admin-gating (`ADMIN_EMAIL`).
+
 ## Wat nog ontbreekt
 
 - **Uptime monitoring:** Geen externe uptime monitor (bijv. healthchecks.io, BetterStack) — taak 1.14.
