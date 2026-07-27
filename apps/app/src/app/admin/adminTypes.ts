@@ -101,13 +101,20 @@ export interface OperationsV3 {
     playlist: {
       jobs_total: number; jobs_complete: number; videos_total: number
       videos_complete: number; videos_failed: number; first_pass_failed: number
+      // How many playlist jobs actually carry the first_pass_failed capture (non-null). 0 → the
+      // metric was just turned on and has no data yet → don't show it next to a filled number.
+      first_pass_measured: number
     }
     playlist_recovered: number
+    // How many playlist video-results entries carry the attempts/recovered capture yet. 0 → no data.
+    attempt_capture_present: number
   }
   latency: { queue_wait_ai: StatBand; provider_processing_ms: StatBand; download_seconds: StatBand }
   errors: {
     total: number
     by_type: Record<string, number>
+    // Up to 3 recent raw error_message per error_type (drill-down); keyed by the same slug as by_type.
+    samples: Record<string, string[]>
     download_by_duration: { bucket: string; total: number; dl_failures: number; pct: number }[]
     daily: { day: string; jobs: number; errors: number }[]
   }

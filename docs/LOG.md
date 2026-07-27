@@ -14047,3 +14047,36 @@ packages/shared/src/components/TranscriptCard.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/components/transcribe/errorCopy.ts
 ---
+
+[2026-07-27 17:15] taak: V3-dashboard fixes. Punt 1: job-vs-unit telfout — admin_operations_v3 job-niveau-aggregaten filteren nu source_kind IN (single,upload) (ai_total 269->126, success_rate 0.85->0.76 standalone, errors 30); unit-niveau (latency/audio/provider) blijft alle transcripties (gerapporteerd). Punt 4: playlist first-pass/recovered alleen tonen bij capture-data (first_pass_measured/attempt_capture_present); latency p95/max verborgen onder n=20. Verder B: ruwe error-message drill-down terug (errors.samples + uitklapbare Error-types-kaart). | gewijzigd: supabase/migrations/20260727151149_admin_operations_v3_standalone_and_samples.sql apps/app/src/app/admin/adminTypes.ts apps/app/src/app/admin/operations/page.tsx | geverifieerd: pnpm build groen 2/2, RPC live. Report-only: punt 2 (AssemblyAI geeft geen timing-timestamps -> voorstel), punt 3 (mockup-verschillenlijst), verder A (extraction_error 9/10 pre-split legacy).[2026-07-27 17:17] commit: fix(ops/dashboard): job-vs-unit counting, sparse-stat suppression, raw-error drill-down
+
+Point 1 — telfout, niet cosmetisch. admin_operations_v3 telde playlist-kindjobs
+(source_kind=playlist, 143 rijen) mee in de standalone-AI-aggregaten. JOB-niveau-metrics
+filteren nu source_kind IN (single,upload): traffic.jobs.ai_total (269->126), reliability.ai
+(complete/error/success_rate 0.85->0.76 standalone), errors.total (->30), errors.by_type,
+errors.daily, errors.samples, download_by_duration (was al gefilterd). UNIT-niveau-telemetrie
+(latency, audio, provider) blijft bewust ALLE transcripties — een playlist-video loopt door
+dezelfde pipeline, dus zijn timing/grootte/taal is een geldige unit-meting. Gerapporteerd.
+
+Punt 4 — twee panelen lazen als kapot.
+- Playlist: first-pass-failures + recovered verschijnen nu pas als hun capture data heeft
+  (first_pass_measured>0 / attempt_capture_present>0), niet als een rauwe 0 naast het historische
+  videos-failed-getal. Nieuwe RPC-velden reliability.playlist.first_pass_measured +
+  reliability.attempt_capture_present.
+- Latency: onder MIN_BAND_SAMPLE (20) tonen we alleen mediaan + n, geen p95/max (bij n=2 is p95/max
+  simpelweg de traagste van twee -> valse precisie). Geen uitlegtekst; puur wat wel/niet getoond wordt.
+
+Verder B — ruwe foutmelding-drill-down terug (V2 had het, V3 was het kwijt). errors.samples in de
+RPC (tot 3 recente rauwe error_message per type, standalone, nieuwste eerst); Error-types-kaart is
+weer uitklapbaar met de fout-hint + de ruwe meldingen — het eerste wat je nodig hebt bij een
+onbekende fout.
+
+Backend/admin only (geen frontend van de andere sessie geraakt). Geverifieerd: pnpm build groen
+(2/2), RPC live-getest (ai_total 126, success_rate 0.7619, samples 9 types).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/operations/page.tsx
+docs/LOG.md
+supabase/migrations/20260727151149_admin_operations_v3_standalone_and_samples.sql
+---

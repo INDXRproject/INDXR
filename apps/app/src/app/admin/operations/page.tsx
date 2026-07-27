@@ -48,11 +48,16 @@ function Stat({ label, value, sub, tone = "neutral", info }: {
   )
 }
 
-// median / p95 / max band. sample===0 → "no data yet" (empty must never read as 0/instant).
+// Below this, a p95/max is just "the slowest of a handful" — false precision. Show median + n only.
+const MIN_BAND_SAMPLE = 20
+
+// median / p95 / max band. sample===0 → "no data yet" (empty must never read as 0/instant);
+// 0 < sample < MIN_BAND_SAMPLE → median + n only (no p95/max — point 4).
 function Band({ label, band, fmt, info, tone = "neutral" }: {
   label: string; band: StatBand; fmt: (n: number | null) => string; info?: string; tone?: Health
 }) {
   const empty = band.sample === 0
+  const sparse = band.sample > 0 && band.sample < MIN_BAND_SAMPLE
   return (
     <div className="rounded-xl border bg-surface p-4">
       <p className="flex items-center text-xs uppercase tracking-wide text-fg-muted">{label}{info && <InfoHint text={info} />}</p>
@@ -61,7 +66,9 @@ function Band({ label, band, fmt, info, tone = "neutral" }: {
       ) : (
         <>
           <p className={`mt-1 text-2xl font-bold tabular-nums ${HEALTH_CLS[tone]}`}>{fmt(band.p50)}<span className="ml-1 text-xs font-normal text-fg-muted">median</span></p>
-          <p className="text-xs text-fg-muted tabular-nums">p95 {fmt(band.p95)} · max {fmt(band.max)} · n={band.sample}</p>
+          {sparse
+            ? <p className="text-xs text-fg-muted tabular-nums">n={band.sample}</p>
+            : <p className="text-xs text-fg-muted tabular-nums">p95 {fmt(band.p95)} · max {fmt(band.max)} · n={band.sample}</p>}
         </>
       )}
     </div>
@@ -251,23 +258,38 @@ export default async function AdminOperationsPage({
           </Card>
 
           <Card title={`Error types · ${win.label}`}
-            info="Every failure grouped by cause. 'Our system' errors are on us to fix; 'YouTube'/'User' are expected. 'Transient' auto-retries on a fresh proxy IP.">
+            info="Every failure grouped by cause. 'Our system' errors are on us to fix; 'YouTube'/'User' are expected. 'Transient' auto-retries on a fresh proxy IP. Expand a row for the raw backend messages — the first thing you need when investigating an unknown error.">
             {errorRows.length === 0 ? (
               <p className="py-6 text-sm text-fg-subtle">{traffic.jobs.ai_total === 0 ? "No jobs in this window." : "No errors. 🎉"}</p>
             ) : (
-              <div className="space-y-1.5">
-                {errorRows.map((e) => (
-                  <div key={e.slug} className="flex items-start gap-2 text-xs">
-                    <span className={`mt-1 h-2 w-2 shrink-0 rounded-full bg-current ${FAULT_META[e.meta.fault].cls}`} />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="truncate text-fg">{e.meta.label}</span>
-                        <span className="font-semibold tabular-nums text-fg">{e.value}</span>
-                      </span>
-                      <span className={`text-[11px] ${FAULT_META[e.meta.fault].cls}`}>{FAULT_META[e.meta.fault].label}</span>
-                    </span>
-                  </div>
-                ))}
+              <div className="space-y-1">
+                {errorRows.map((e) => {
+                  const samples = errors.samples[e.slug] ?? []
+                  return (
+                    <details key={e.slug} className="group text-xs">
+                      <summary className="flex cursor-pointer list-none items-start gap-2">
+                        <span className={`mt-1 h-2 w-2 shrink-0 rounded-full bg-current ${FAULT_META[e.meta.fault].cls}`} />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="truncate text-fg">{e.meta.label}<span className="ml-1 text-fg-subtle group-open:hidden">▸</span></span>
+                            <span className="font-semibold tabular-nums text-fg">{e.value}</span>
+                          </span>
+                          <span className={`text-[11px] ${FAULT_META[e.meta.fault].cls}`}>{FAULT_META[e.meta.fault].label}</span>
+                        </span>
+                      </summary>
+                      <div className="mt-1 space-y-1 pl-4">
+                        <p className="text-[11px] text-fg-subtle">{e.meta.hint}</p>
+                        {samples.length > 0 ? (
+                          samples.map((m, i) => (
+                            <p key={i} className="truncate rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-fg-muted" title={m}>{m}</p>
+                          ))
+                        ) : (
+                          <p className="text-[11px] italic text-fg-subtle">No raw message stored.</p>
+                        )}
+                      </div>
+                    </details>
+                  )
+                })}
               </div>
             )}
           </Card>
@@ -303,10 +325,16 @@ export default async function AdminOperationsPage({
           <Stat label="Videos completed" value={`${num(pl.videos_complete)}/${num(pl.videos_total)}`} tone={successHealthV3(plVideoSuccess, pl.videos_total)}
             sub={pct(plVideoSuccess)} info="Effective per-video success across all playlist jobs after auto-retry." />
           <Stat label="Videos failed" value={num(pl.videos_failed)} sub="after retries" info="Videos still failed once the playlist finished (post auto-retry)." />
-          <Stat label="First-pass failures" value={num(pl.first_pass_failed)} sub="before auto-retry"
-            info="Videos that failed on the FIRST attempt (snapshot before the retry pass). first_pass_failed − recovered = the retry's net rescue. Only populated for jobs run after the capture landed." />
-          <Stat label="Recovered by retry" value={num(reliability.playlist_recovered)} tone={reliability.playlist_recovered > 0 ? "good" : "neutral"}
-            sub="auto-retry rescued" info="Videos that failed once then succeeded on the auto-retry. The payoff of the retry pass." />
+          {/* Point 4: first-pass + recovered only appear once their capture has data — otherwise a
+              raw 0 sits next to the historical "videos failed" count and reads as a bug. */}
+          {pl.first_pass_measured > 0 && (
+            <Stat label="First-pass failures" value={num(pl.first_pass_failed)} sub="before auto-retry"
+              info="Videos that failed on the FIRST attempt (snapshot before the retry pass). first_pass_failed − recovered = the retry's net rescue." />
+          )}
+          {reliability.attempt_capture_present > 0 && (
+            <Stat label="Recovered by retry" value={num(reliability.playlist_recovered)} tone={reliability.playlist_recovered > 0 ? "good" : "neutral"}
+              sub="auto-retry rescued" info="Videos that failed once then succeeded on the auto-retry. The payoff of the retry pass." />
+          )}
         </div>
       </section>
 
