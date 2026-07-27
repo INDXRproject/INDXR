@@ -13987,3 +13987,26 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 supabase/migrations/20260727135028_admin_operations_v3.sql
 ---
+
+[2026-07-27 16:10] taak: Commit 4 (UI) — V3 Operations-dashboard herbouwd rond de Four Golden Signals. operations/page.tsx consumeert admin_operations_v3 i.p.v. _summary. Secties: Live now (in-flight/queue/stuck + AssemblyAI-saturatie vs limiet), Traffic (jobs vs units apart), Errors (success-rate + error% + per-type + DOWNLOAD-FAAL-PER-DUURCATEGORIE-paneel + dagreeks-sparkline), Latency (queue-wait/processing/download als mediaan/p95/max, leeg->"no data yet" nooit 0), Playlist reliability (first-pass vs effective + recovered), Audio & provider (download-MB + formaat + model/taal). Geld staat er niet in (footer verwijst naar Finance). (?) InfoHints overal. | gewijzigd: apps/app/src/app/admin/operations/page.tsx apps/app/src/app/admin/adminTypes.ts | geverifieerd: tsc --noEmit schoon voor beide files (2 resterende errors zijn stale .next + andere-sessie VideoTab.tsx, niet van mij).[2026-07-27 15:56] commit: feat(ops/commit4): V3 Operations dashboard — Golden Signals + download-failure panel
+
+Herbouwt de Operations-admin rond de Four Golden Signals, consumeert admin_operations_v3:
+
+- Live now: in-flight / queue / stuck + AssemblyAI-saturatie (transcribing nu vs limiet 200).
+- Traffic: AI-jobs vs playlist-jobs vs captions, EN video-units apart (job != unit zichtbaar).
+- Errors: success-rate + error% + per-type-lijst + het DOWNLOAD-FAAL-PER-DUURCATEGORIE-paneel
+  (het incident-signaal 2/6/11%, kleur naar faal%) + dagreeks-sparkline (incident vs trend).
+- Latency: queue-wait (submitted->processing), processing, download als mediaan/p95/max —
+  leeg toont 'no data yet', NOOIT 0 (een lege wachttijd mag de meting niet drukken).
+- Playlist reliability: videos effective vs first-pass-failed + door-retry-recovered.
+- Audio & provider: download-MB (meet de kleiner-formaat-fix) + formaat/model/taal-verdeling.
+
+Geld staat er bewust NIET in — footer verwijst naar Finance. (?) InfoHints op elk paneel.
+Geverifieerd: tsc --noEmit schoon voor page.tsx + adminTypes.ts (resterende errors zijn een
+stale .next-artifact en de andere-sessie VideoTab.tsx, niet deze wijziging).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/operations/page.tsx
+docs/LOG.md
+---

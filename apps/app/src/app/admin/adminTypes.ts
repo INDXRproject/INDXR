@@ -82,6 +82,44 @@ export interface OperationsSummary {
   window: { from: string | null; to: string | null; exclude_internal: boolean }
 }
 
+// ── V3 Operations (admin_operations_v3 RPC) — deel 1-5 metrics, job vs unit apart ─────────────────
+// `sample` is the n behind the percentiles; sample===0 means NO data (render "no data yet", never 0 —
+// an empty queue-wait must not read as instant). p50/p95/max are seconds, except provider_processing_ms
+// which is milliseconds.
+export interface StatBand { p50: number | null; p95: number | null; max: number | null; sample: number }
+export interface OperationsV3 {
+  traffic: {
+    jobs: { single: number; upload: number; playlist: number; ai_total: number }
+    units: { ai_single_upload: number; ai_playlist_videos: number; captions: number }
+    captions: { total: number; success: number; cache_hits: number }
+  }
+  reliability: {
+    ai: {
+      complete: number; error: number; success_rate: number | null
+      by_type: { single: { complete: number; error: number }; upload: { complete: number; error: number } }
+    }
+    playlist: {
+      jobs_total: number; jobs_complete: number; videos_total: number
+      videos_complete: number; videos_failed: number; first_pass_failed: number
+    }
+    playlist_recovered: number
+  }
+  latency: { queue_wait_ai: StatBand; provider_processing_ms: StatBand; download_seconds: StatBand }
+  errors: {
+    total: number
+    by_type: Record<string, number>
+    download_by_duration: { bucket: string; total: number; dl_failures: number; pct: number }[]
+    daily: { day: string; jobs: number; errors: number }[]
+  }
+  audio: { formats: Record<string, number>; download_mb: StatBand }
+  provider: {
+    languages: Record<string, number>; models: Record<string, number>
+    concurrency_limit: number | null; in_flight_now: number; saturation_pct: number | null
+  }
+  capacity: { in_flight: number; stuck: number; queue_depth_now: number }
+  window: { from: string | null; to: string | null; exclude_internal: boolean }
+}
+
 // ── Dashboard time-window (Operations + Growth) ────────────────────────────────────────────────────
 export const WINDOW_KEYS = ["24h", "7d", "30d", "all"] as const
 export type WindowKey = (typeof WINDOW_KEYS)[number]
