@@ -35,6 +35,7 @@ from transcription_pipeline import (
     _classify_download_error,
     _run_with_heartbeat,
     CAPTION_EXTRACT_TIMEOUT,
+    TRANSCRIPTION_JOB_TIMEOUT_SECONDS,
     do_assemblyai_transcription,
     run_whisper_reservation_aware,
     refund_with_retry,
@@ -1580,11 +1581,12 @@ class WorkerSettings:
         os.getenv("ARQ_REDIS_URL") or "redis://localhost:6379"
     )
     keep_result = 3600  # default for run_whisper_job / noop_task
-    # job_timeout: verhoogd van default 300s naar 7200s (2 uur).
-    # Reden: Whisper-jobs voor lange video's (bijv. 4-uur lecture) duren ~30 min;
-    # playlist-jobs met 100+ videos duren meerdere uren.
-    # Default 300s zou deze jobs halverwege killen.
-    job_timeout = 7200
+    # job_timeout uit config (commit 3, Defect 1): afgeleid van MAX_TRANSCRIPTION_SECONDS + marge in
+    # transcription_pipeline.py, i.p.v. een vlakke 7200s. De oude 2u was KORTER dan wat een lange-maar-
+    # geaccepteerde file (tot 10u audio) nodig kan hebben → ARQ killde zulke jobs halverwege. De poll-
+    # loop tikt per poll een heartbeat, dus de watchdog (Pass 0b, 10min) vangt een écht hangende job
+    # ruim vóór deze royale backstop. Playlist-jobs (100+ videos) vallen ook binnen deze grens.
+    job_timeout = TRANSCRIPTION_JOB_TIMEOUT_SECONDS
 
     # ── Graceful drain op deploy (SIGTERM) ────────────────────────────────────────────
     # Env-gated → inert by default (0 = huidig gedrag, geen risico tot expliciet aangezet).

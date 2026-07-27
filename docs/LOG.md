@@ -13876,3 +13876,45 @@ packages/shared/src/components/free-tool/AudioTab.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/hooks/useJobStatus.ts
 ---
+
+[2026-07-27 14:50] taak: Commit 3 — assemblyai_client omgezet naar submit()+poll (was blocking transcribe()). Enablet Operations-capture: submitted_at->provider_processing_at (queue-wait), provider_processing_ms, assemblyai_language/model. Poll-loop tikt per poll een heartbeat (lange job triggert watchdog niet). Resume-veilig: worker-herstart her-pollt de lopende provider-job onder STRAKE gates (zelfde jobrij, niet-terminaal, live status queued/processing, submitted_at<1dag), anders opnieuw indienen (verkeerde inhoud > dubbel betalen). Defect 1: ARQ job_timeout 7200->37800 afgeleid van MAX_TRANSCRIPTION_SECONDS+marge (single-source in transcription_pipeline). | gewijzigd: backend/assemblyai_client.py backend/transcription_pipeline.py backend/main.py backend/worker.py backend/test_submit_poll_resume.py backend/smoke_submit_poll.py supabase/migrations/20260727123756_add_provider_transcript_id.sql | geverifieerd LOKAAL: py_compile+import-smoke 4 modules groen; job_timeout=37800; resume-gate 6/6; resume-DECISION 5/5 (valid=hergebruikt, stale/mismatch/garbage=opnieuw ingediend, capture-kolommen geschreven). NIET geverifieerd: echte submit+poll tegen AssemblyAI (geen lokale API-key) -> prod-test is het bewijs.[2026-07-27 14:51] commit: feat(ops/commit3): AssemblyAI submit()+poll — queue-wait capture, safe resume, timeout from config
+
+Vervangt de blocking transcriber.transcribe() door submit() + eigen poll-loop.
+
+Waarom (Operations): met submit+poll kunnen we de WACHTRIJ-fase apart meten van de
+PROCESSING-fase (submitted_at -> provider_processing_at -> provider_processing_ms) en de
+door AssemblyAI gedetecteerde taal/model per job vastleggen (assemblyai_language/model).
+De poll-loop tikt bovendien per poll een heartbeat, zodat een lange job de watchdog niet
+onterecht als vastgelopen reapt.
+
+Resume-veilig (nieuwe kolom provider_transcript_id): een worker-herstart her-pollt de
+LOPENDE provider-job i.p.v. opnieuw in te dienen -> geen dubbele facturering. STRAK begrensd,
+want verkeerde inhoud is onherstelbaar en dubbel betalen niet: hergebruik alleen als de id op
+DEZELFDE jobrij staat, de job niet terminaal is, de live provider-status queued/processing is,
+en submitted_at binnen AssemblyAI's 1-dag-TTL valt. Elke twijfel -> opnieuw indienen + loggen.
+
+Defect 1: ARQ job_timeout van vlakke 7200s (2u) -> 37800s, afgeleid van
+MAX_TRANSCRIPTION_SECONDS (10u max audio) + 30min marge, nu single-source in
+transcription_pipeline.py. De oude 2u was korter dan wat een geaccepteerde lange file nodig
+kon hebben -> ARQ killde zulke jobs halverwege.
+
+VERIFICATIE — eerlijk over de grens:
+- LOKAAL GROEN: py_compile + import-smoke (4 modules), job_timeout=37800, resume-gate 6/6,
+  resume-DECISION 5/5 (valid=hergebruikt; stale/mismatch/garbage=opnieuw ingediend;
+  capture-kolommen geschreven). Segment/taal/model-parse is ongewijzigd overgenomen uit het
+  oude, in-prod-bewezen pad.
+- NIET LOKAAL GEVERIFIEERD: de ECHTE submit+poll tegen AssemblyAI — er is geen lokale API-key.
+  Dit is bewust ongetest gepusht; de PRODUCTIE-test (korte job -> juiste taal/tekst; lange job
+  + worker-herstart -> één afrekening in het AssemblyAI-dashboard; queue-wait > 0) is het bewijs.
+  smoke_submit_poll.py staat klaar om de echte levenscyclus lokaal te draaien zodra de key er is.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/assemblyai_client.py
+backend/main.py
+backend/smoke_submit_poll.py
+backend/test_submit_poll_resume.py
+backend/transcription_pipeline.py
+backend/worker.py
+docs/LOG.md
+supabase/migrations/20260727123756_add_provider_transcript_id.sql
+---

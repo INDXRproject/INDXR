@@ -23,7 +23,7 @@ from upstash_redis.asyncio import Redis as UpstashRedis
 import yt_dlp
 from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp, _CountingYoutubeDL
-from transcription_pipeline import run_whisper_reservation_aware
+from transcription_pipeline import run_whisper_reservation_aware, MAX_TRANSCRIPTION_SECONDS
 from language_utils import normalize_language_code
 
 # Load environment variables
@@ -87,7 +87,6 @@ from audio_utils import (
     MembersOnlyVideoError,
     MEMBERS_ONLY_KEYWORDS,
 )
-from assemblyai_client import transcribe_with_assemblyai
 from credit_manager import (
     check_user_balance,
     calculate_credit_cost,
@@ -776,7 +775,9 @@ MAX_CONCURRENT_JOBS = 3
 # fails the job, so AI transcription is rejected above this BEFORE any credit reservation.
 # The 5 GB byte limit is covered by the 500 MB upload cap + this 10h duration cap (10h at even
 # 128 kbps ≈ 0.6 GB). Caption extraction has NO duration cap.
-MAX_TRANSCRIPTION_SECONDS = 10 * 3600  # 36000
+# MAX_TRANSCRIPTION_SECONDS is nu single-source in transcription_pipeline.py (commit 3, Defect 1):
+# de ARQ job_timeout wordt daar van dezelfde waarde afgeleid, dus de max mag niet meer divergeren.
+# (geïmporteerd bovenaan)
 
 # ADR-071 — hard cap on videos per playlist extraction job, enforced on the extract route
 # BEFORE the job row + reservation (previously 500 only bit at enumeration; extraction was

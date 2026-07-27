@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 import posthog
@@ -23,7 +23,7 @@ from audio_utils import (
     get_audio_duration,
     validate_audio_file,
 )
-from assemblyai_client import transcribe_with_assemblyai
+from assemblyai_client import submit_assemblyai, poll_assemblyai
 from credit_manager import (
     add_credits,
     calculate_credit_cost,
@@ -105,6 +105,178 @@ async def _run_with_heartbeat(awaitable, heartbeat_fn, timeout: Optional[float] 
             await task
         except asyncio.CancelledError:
             pass
+
+
+# ── Commit 3 (submit+poll) — transcriptie-timeout uit config (Defect 1) ──────────────
+# De ARQ job_timeout stond vlak op 7200s (2u), maar MAX_TRANSCRIPTION_SECONDS accepteert audio tot
+# 10u — een lange-maar-geaccepteerde file kon zo door ARQ gekilld worden midden in de transcriptie.
+# We leiden de timeout nu af van de MAX geaccepteerde duur + een marge (download/upload/overhead).
+# AssemblyAI async verwerkt sneller dan realtime, dus MAX_TRANSCRIPTION_SECONDS is een ROYALE
+# bovengrens op de verwerkingstijd; genereus is hier veilig: de poll-loop heeft zijn eigen deadline
+# én tikt elke poll een heartbeat, dus de watchdog (Pass 0b, 10min stale) vangt een écht hangende job
+# ruim vóór deze ARQ-backstop. worker.WorkerSettings.job_timeout leest TRANSCRIPTION_JOB_TIMEOUT_SECONDS.
+MAX_TRANSCRIPTION_SECONDS = 10 * 3600            # 36000 — max geaccepteerde audioduur (single source)
+TRANSCRIPTION_TIMEOUT_MARGIN_SECONDS = 30 * 60  # 1800 — download/upload/overhead-marge
+TRANSCRIPTION_JOB_TIMEOUT_SECONDS = MAX_TRANSCRIPTION_SECONDS + TRANSCRIPTION_TIMEOUT_MARGIN_SECONDS
+ASSEMBLYAI_POLL_INTERVAL_SECONDS = 10           # poll-cadans == heartbeat-cadans in submit+poll
+
+
+def _resume_reject_reason(data: dict) -> Optional[str]:
+    """
+    Pure gate voor het HERGEBRUIKEN van een opgeslagen provider_transcript_id na een worker-herstart.
+    Retourneert None als hergebruik is toegestaan, anders een reden-string (→ opnieuw indienen + loggen).
+    Verkeerde inhoud > dubbel betalen: twijfel valt ALTIJD naar opnieuw indienen. Voorwaarden die hier
+    worden bewaakt (de queued/processing-statuscheck gebeurt op de live poll, niet hier):
+      - de job staat niet in een eindtoestand (anders horen we hier niet te zijn),
+      - er is een submitted_at, en die valt binnen AssemblyAI's bewaartermijn (TTL = 1 dag).
+    (De 'zelfde jobrij'-voorwaarde is structureel: we lezen provider_transcript_id ALLEEN van de eigen
+    job_id-rij, nooit via video_id/user_id of iets dat kan botsen.)
+    """
+    status = data.get('status')
+    if status in ('complete', 'error'):
+        return f'job terminal ({status})'
+    sub = data.get('submitted_at')
+    if not sub:
+        return 'geen submitted_at'
+    try:
+        sub_dt = datetime.fromisoformat(str(sub).replace('Z', '+00:00'))
+    except Exception:
+        return 'submitted_at onparseerbaar'
+    if sub_dt < datetime.now(timezone.utc) - timedelta(days=1):
+        return 'submitted_at > 1 dag (buiten AssemblyAI TTL)'
+    return None
+
+
+async def _submit_and_poll(audio_path: str, *, job_id: Optional[str], heartbeat_fn, supabase) -> dict:
+    """
+    Dien in bij AssemblyAI en poll tot done (submit+poll, commit 3). Vervangt de blocking
+    transcribe()-call zodat we per poll een heartbeat tikken (lange jobs triggeren de watchdog niet)
+    en de wachtrij-/verwerkings-fase apart kunnen meten (Operations: queue-wait vs processing).
+
+    Resume-veilig: staat er al een provider_transcript_id op DEZE jobrij en is die STRAK geldig
+    (niet-terminaal, binnen TTL, en de live poll geeft queued/processing), dan pollen we die door
+    i.p.v. opnieuw in te dienen — geen dubbele facturering. Elke twijfel → opnieuw indienen + loggen
+    (verkeerde inhoud is onherstelbaar, dubbel betalen niet).
+
+    Retourneert het bestaande whisper_result-contract:
+      { 'success': True, 'transcript': [...], 'duration': float, 'model': str|None, 'language': str|None }
+      { 'success': False, 'error': str }
+    Schrijft onderweg de Operations-capture-kolommen op de jobrij (best-effort, faalt nooit de job):
+      submitted_at, provider_transcript_id, provider_processing_at, provider_processing_ms,
+      assemblyai_language, assemblyai_model.
+    """
+    async def _cap(**cols) -> None:
+        if not job_id:
+            return
+        try:
+            await asyncio.to_thread(
+                lambda: supabase.table('transcription_jobs').update(cols).eq('id', job_id).execute()
+            )
+        except Exception as e:
+            logger.warning(f"[submit+poll] capture-write faalde job={job_id}: {e}")
+
+    provider_id: Optional[str] = None
+    processing_at_iso: Optional[str] = None
+
+    # ── Resume-check: STRAK begrensd hergebruik van een lopende provider-job ──
+    if job_id:
+        try:
+            row = await asyncio.to_thread(
+                lambda: supabase.table('transcription_jobs')
+                    .select('provider_transcript_id,submitted_at,provider_processing_at,status')
+                    .eq('id', job_id).single().execute()
+            )
+            data = row.data or {}
+        except Exception:
+            data = {}
+        candidate = data.get('provider_transcript_id')
+        if candidate:
+            reason = _resume_reject_reason(data)
+            if reason is None:
+                polled = await asyncio.to_thread(poll_assemblyai, candidate)
+                pstatus = polled.get('status')
+                # Alleen hergebruiken bij een ACTIEF lopende job. completed/error/onbekend → opnieuw
+                # indienen (een completed provider-job kan van een oudere submission zijn: gok niet).
+                if polled.get('success') and pstatus in ('queued', 'processing'):
+                    provider_id = candidate
+                    processing_at_iso = data.get('provider_processing_at')
+                    logger.info(
+                        f"[submit+poll] RESUME: her-poll provider_transcript_id={candidate} "
+                        f"(status={pstatus}) job={job_id}"
+                    )
+                else:
+                    logger.info(
+                        f"[submit+poll] provider id {candidate} niet herbruikbaar "
+                        f"(poll success={polled.get('success')}, status={pstatus}) → opnieuw indienen job={job_id}"
+                    )
+            else:
+                logger.info(
+                    f"[submit+poll] provider id {candidate} afgewezen ({reason}) → opnieuw indienen job={job_id}"
+                )
+
+    # ── Verse submission ──
+    if provider_id is None:
+        sub = await asyncio.to_thread(submit_assemblyai, audio_path)
+        if not sub.get('success'):
+            return {'success': False, 'error': sub.get('error', 'submit failed')}
+        provider_id = sub['transcript_id']
+        processing_at_iso = None
+        await _cap(
+            provider_transcript_id=provider_id,
+            submitted_at=datetime.now(timezone.utc).isoformat(),
+            provider_processing_at=None,
+            provider_processing_ms=None,
+        )
+        logger.info(f"[submit+poll] submitted provider_transcript_id={provider_id} job={job_id}")
+
+    # ── Poll-loop met per-iteratie heartbeat + eigen deadline ──
+    deadline = time.time() + TRANSCRIPTION_JOB_TIMEOUT_SECONDS
+    while True:
+        if heartbeat_fn is not None:
+            try:
+                await heartbeat_fn()
+            except Exception:
+                pass
+        polled = await asyncio.to_thread(poll_assemblyai, provider_id)
+        if not polled.get('success'):
+            # De poll-call zelf faalde (transient netwerk/SDK) — niet meteen opgeven; retry tot deadline.
+            if time.time() > deadline:
+                return {'success': False, 'error': f"poll bleef falen: {polled.get('error')}"}
+            await asyncio.sleep(ASSEMBLYAI_POLL_INTERVAL_SECONDS)
+            continue
+
+        status = polled['status']
+        if status == 'processing' and processing_at_iso is None:
+            processing_at_iso = datetime.now(timezone.utc).isoformat()
+            await _cap(provider_processing_at=processing_at_iso)
+
+        if status == 'completed':
+            # provider_processing_ms = observed processing→completed. Zagen we processing nooit (job te
+            # snel klaar tussen polls), laat ms leeg i.p.v. gokken.
+            ms: Optional[int] = None
+            if processing_at_iso:
+                try:
+                    p_at = datetime.fromisoformat(str(processing_at_iso).replace('Z', '+00:00'))
+                    ms = int((datetime.now(timezone.utc) - p_at).total_seconds() * 1000)
+                except Exception:
+                    ms = None
+            await _cap(
+                provider_processing_ms=ms,
+                assemblyai_language=polled.get('language'),
+                assemblyai_model=polled.get('model'),
+            )
+            return {
+                'success': True,
+                'transcript': polled.get('transcript') or [],
+                'duration': polled.get('duration') or 0,
+                'model': polled.get('model'),
+                'language': polled.get('language'),
+            }
+        if status == 'error':
+            return {'success': False, 'error': polled.get('error', 'transcription failed')}
+        if time.time() > deadline:
+            return {'success': False, 'error': f'transcription poll timed out after {TRANSCRIPTION_JOB_TIMEOUT_SECONDS}s'}
+        await asyncio.sleep(ASSEMBLYAI_POLL_INTERVAL_SECONDS)
 
 
 def _track(distinct_id: str, event: str, properties: Optional[dict] = None) -> None:
@@ -580,9 +752,11 @@ async def do_assemblyai_transcription(
             'duration_seconds': duration,
         })
         assemblyai_start = time.time()
-        whisper_result = await _run_with_heartbeat(
-            asyncio.to_thread(transcribe_with_assemblyai, str(audio_path)),
-            heartbeat_fn,
+        # submit+poll (commit 3): non-blocking indienen + zelf pollen zodat de heartbeat per poll tikt
+        # (lange jobs triggeren de watchdog niet), de queue-/processing-fase apart gemeten wordt, en een
+        # worker-herstart de lopende provider-job veilig her-pollt i.p.v. dubbel in te dienen.
+        whisper_result = await _submit_and_poll(
+            str(audio_path), job_id=job_id, heartbeat_fn=heartbeat_fn, supabase=supabase,
         )
 
         if not whisper_result['success']:
