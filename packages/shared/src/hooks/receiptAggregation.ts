@@ -1,4 +1,8 @@
 import type { ReceiptVideo } from "../components/ui/CompletionReceipt"
+// Explicit .ts extension: this module is also loaded by the node --experimental-strip-types
+// unit test (receiptAggregation.test.ts), and node's ESM loader needs the extension to resolve
+// a runtime import. tsconfig has allowImportingTsExtensions (noEmit) so the bundler build is fine.
+import { playlistFreeIds } from "../lib/pricing.ts"
 
 // ── Playlist receipt aggregation (ADR-050 fase 3, net-final fix) ─────────────────
 // Pure, side-effect-free assembly of the four receipt numbers from the collection's
@@ -63,11 +67,12 @@ export function aggregatePlaylistReceipt(
     }
   }
 
-  // 2. Free-tier slots come from the ORIGINAL (non-retry) run only — the first 3 caption
-  //    videos by index. Retry jobs never re-grant the free tier (is_retry). Mirrors the
-  //    backend reservation rule (main.py: idx < 3 caption is free; whisper never free).
+  // 2. Free-tier slots come from the ORIGINAL (non-retry) run only. Per-method (ADR-081): the
+  //    first N CAPTION videos by playlist position are free, whisper never takes a slot. Single
+  //    source: playlistFreeIds — the SAME helper the backend reserves/settles with, kept in sync
+  //    via test-fixtures/playlist_free_slots.json. Retry jobs never re-grant the tier (is_retry).
   const anchor = jobRows.find(j => j.id === anchorId) ?? jobRows.find(j => !j.is_retry) ?? jobRows[0]
-  const freeIds = new Set<string>((anchor?.video_ids ?? []).slice(0, 3).filter(v => !whisperSet.has(v)))
+  const freeIds = playlistFreeIds(anchor?.video_ids ?? [], anchor?.use_whisper_ids ?? [])
 
   // 3. Per-video net charge — a video settles exactly once (on its final success).
   const chargedBy: Record<string, number> = {}

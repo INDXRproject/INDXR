@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
@@ -15,7 +15,7 @@ import { appHref } from "../lib/cross-host-links";
 import { ResultCardShell } from "./transcribe/ResultCardShell";
 import { CostBreakdown, BalanceLine, type CostSegment } from "./transcribe/CostBreakdown";
 import { MethodBadge } from "./transcribe/MethodBadge";
-import { CREDIT_COSTS, FREE_TIER } from "../lib/pricing";
+import { CREDIT_COSTS, FREE_TIER, playlistFreeIds } from "../lib/pricing";
 import type { ReceiptData } from "../hooks/useCompletionReceipt";
 
 interface PlaylistEntry {
@@ -83,7 +83,6 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showCostDetail, setShowCostDetail] = useState(false);
   const [showAllFailed, setShowAllFailed] = useState(false);
   const [showAllProgress, setShowAllProgress] = useState(false);
   const [playlist, setPlaylist] = useState<{ title: string; entries: PlaylistEntry[]; total_count?: number; unavailable_count?: number } | null>(null);
@@ -385,6 +384,19 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
   // users know large jobs run in the background, and block submit past the hard cap
   // so they get immediate feedback instead of waiting on a server 4xx.
   const selectedCount = selectedIds.size;
+
+  // "Free" badge on the pre-extraction selection list — the SAME per-method rule as the
+  // backend, the confirm screen and the receipt (ADR-081): the first N CAPTION videos by
+  // playlist position are free, whisper never takes a slot. Before a method is chosen
+  // whisperVideoIds is empty, so it degrades to the first N videos (all caption).
+  const selectionFreeIds = useMemo(
+    () => playlistFreeIds(
+      (playlist?.entries ?? []).map(e => e.id),
+      whisperVideoIds ? Array.from(whisperVideoIds) : [],
+    ),
+    [playlist, whisperVideoIds],
+  );
+
   const isOverHardCap = selectedCount > 500;
   const isLargeJob = selectedCount >= 50 && !isOverHardCap;
   const estimatedMinutes = Math.max(1, Math.round(selectedCount * 11 / 60));
@@ -415,27 +427,14 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
           {loading ? "Fetching…" : "Fetch playlist"}
         </Button>
       </div>
-      {/* One-line cost footer + info disclosure (ADR-079) — numbers from pricing.ts */}
+      {/* One-line cost footer (ADR-079) — numbers from pricing.ts. Per-method (ADR-081):
+          free slots are for caption videos; AI never takes a slot, so no positional caveat. */}
       <div className="-mt-4 flex flex-col items-center gap-2">
         <div className="flex items-center gap-1.5 text-xs text-fg-muted">
           <span>
-            First {FREE_TIER.PLAYLIST_FREE_VIDEOS} videos free · then {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit/video · AI {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min
+            First {FREE_TIER.PLAYLIST_FREE_VIDEOS} caption videos free · then {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit/video · AI {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min
           </span>
-          <button
-            type="button"
-            onClick={() => setShowCostDetail(o => !o)}
-            aria-expanded={showCostDetail}
-            aria-label="Playlist pricing details"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-fg-muted hover:text-fg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-          >
-            <Info className="h-3.5 w-3.5" />
-          </button>
         </div>
-        {showCostDetail && (
-          <p className="max-w-md rounded-lg border border-border bg-surface-elevated px-3 py-2 text-xs text-fg-muted leading-relaxed">
-            The first {FREE_TIER.PLAYLIST_FREE_VIDEOS} videos in the playlist are free (auto-captions), counted by position. From video {FREE_TIER.PLAYLIST_FREE_VIDEOS + 1} onwards it&apos;s {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit per video with auto-captions. AI transcription costs {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit per minute at any position — and choosing AI on one of the first {FREE_TIER.PLAYLIST_FREE_VIDEOS} uses that free slot, so a later video is charged instead.
-          </p>
-        )}
       </div>
       </>)}
 
@@ -726,7 +725,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                           <span className="text-sm text-fg truncate font-medium min-w-0 flex-1">
                             {entry.title}
                           </span>
-                          {!hasExtracted && idx < 3 && !isPrivate && (
+                          {!hasExtracted && selectionFreeIds.has(entry.id) && !isPrivate && (
                             <span className="text-[10px] uppercase font-bold text-success bg-success-subtle px-1.5 py-0.5 rounded shrink-0">Free</span>
                           )}
                           {videoStatuses[entry.id] === 'success' && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
@@ -855,7 +854,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
           {!hasExtracted && (
             <div className="px-4 py-2.5 border-t border-border flex items-center gap-2 text-xs text-fg-muted">
               <Info className="h-3.5 w-3.5 shrink-0" />
-              <span>The first 3 videos are always free. Credits apply from video 4 onwards.</span>
+              <span>The first {FREE_TIER.PLAYLIST_FREE_VIDEOS} caption videos are always free. Auto-captions after that cost {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit each; AI is always charged.</span>
             </div>
           )}
         </div>

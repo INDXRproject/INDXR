@@ -13788,3 +13788,44 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 supabase/migrations/20260727122141_playlist_progress_attempt_traceability.sql
 ---
+[2026-07-27 18:30] fix (frontend consolidatie op ADR-081 — positioneel → per-methode gratis-slots): de frontend had nog inline positionele kopieën terwijl de backend per-methode is; bevestigingsscherm schatte hoger dan er werd afgerekend en de "Free"-badge stond op belaste AI-video's. Alle inline-kopieën vervangen door `playlistFreeIds` (pricing.ts): PlaylistAvailabilitySummary (`captionCredits` + `freeVideoIds` + `paidCaption`, `extractableIndex` opgeruimd), receiptAggregation (`freeIds`), PlaylistManager:729 method-blinde badge (via `selectionFreeIds`-memo). receiptAggregation.test.ts laadt nu de gedeelde fixture en assert `playlistFreeIds`==`expected_free` (8 cases) → CI faalt bij TS/Python-divergentie. Copy: PlaylistManager one-liner + footer → "first 3 caption videos"; positionele uitleg-popover + `showCostDetail`-state verwijderd. Build-detail: `.ts`-extensie op de pricing-import in receiptAggregation (node strip-types-test) + `allowImportingTsExtensions` in 3 tsconfigs (noEmit). **Geverifieerd**: pnpm build groen (beide apps); TS-test 5/5 + Python ALL_PASS tegen dezelfde fixture; bevestiging==bon via één helper (mixed-AI-front `free={c,d,e}`). Frontend-only; backend niet aangeraakt. | gewijzigd: packages/shared/src/components/{PlaylistManager,PlaylistAvailabilitySummary}.tsx, packages/shared/src/hooks/{receiptAggregation.ts,receiptAggregation.test.ts}, {packages/shared,apps/app,apps/marketing}/tsconfig.json, docs/wiki/decisions/081-*.md, docs/LESSONS.md, docs/LOG.md
+[2026-07-27 14:29] commit: fix(playlist): consolidate frontend free-slots onto per-method playlistFreeIds (ADR-081)
+
+The backend moved from positional to per-method free slots, but the frontend still
+carried inline positional copies — so the confirm screen estimated higher than the
+charge and the "Free" badge landed on AI videos that get billed.
+
+Every inline copy now calls playlistFreeIds from pricing.ts (the shared rule, mirrored
+by the Python helper via test-fixtures/playlist_free_slots.json):
+- PlaylistAvailabilitySummary: captionCredits + freeVideoIds, and the per-row paidCaption
+  (was `… && idx >= 3`, now `!isAi && !free` — the positional check was redundant and
+  misleading; extractableIndex orphaned and removed).
+- receiptAggregation: freeIds via playlistFreeIds(anchor.video_ids, anchor.use_whisper_ids).
+- PlaylistManager: the pre-extraction "Free" badge (was bare idx < 3) via a selectionFreeIds
+  memo; the positional explainer popover + showCostDetail state removed; copy → "first 3
+  caption videos" in the one-liner and the footer notice.
+
+receiptAggregation.test.ts now loads the shared fixture and asserts playlistFreeIds ==
+expected_free for all 8 cases, so CI fails if the TS and Python rules diverge.
+
+Build detail: receiptAggregation.ts is loaded by both the bundler and the node
+--experimental-strip-types test, so its pricing import uses an explicit .ts extension
+(node needs it) with allowImportingTsExtensions in the three tsconfigs (safe under noEmit).
+
+Verified: pnpm build green (both apps); TS test 5/5 + Python ALL_PASS against the same
+fixture; confirm screen and receipt both compute via playlistFreeIds, so they match —
+the mixed-AI-front case ([a,b,c,d,e], AI on a,b) yields free={c,d,e} in both, exactly
+where the old positional rule diverged.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/tsconfig.json
+apps/marketing/tsconfig.json
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/decisions/081-playlist-free-slots-per-method.md
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/hooks/receiptAggregation.test.ts
+packages/shared/src/hooks/receiptAggregation.ts
+packages/shared/tsconfig.json
+---

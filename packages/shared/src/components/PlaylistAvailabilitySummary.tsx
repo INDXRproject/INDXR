@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { CostBreakdown, BalanceLine } from "./transcribe/CostBreakdown";
 import { MethodBadge } from "./transcribe/MethodBadge";
 import { Switch } from "./ui/switch";
+import { playlistFreeIds } from "../lib/pricing";
 
 interface VideoAvailability {
   videoId: string
@@ -64,10 +65,15 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
 
   // Live recalculate summary
   const extractableResults = localResults.filter(r => r.status !== 'unavailable')
-  const extractableIndex = new Map(extractableResults.map((r, idx) => [r.videoId, idx]))
 
-  // captions idx 0–2 are free; captions idx >= 3 cost 1 credit each; whisper costs per-minute at any idx
-  const captionCredits = extractableResults.filter((r, idx) => r.status === 'has_captions' && idx >= 3).length
+  // Free slots are per-method (ADR-081): the first N CAPTION videos by playlist position are free,
+  // whisper never takes a slot. Single source: playlistFreeIds (mirrors the backend + the receipt).
+  // A caption video is charged (1 credit) iff it falls outside that free set.
+  const freeVideoIds = playlistFreeIds(
+    extractableResults.map(r => r.videoId),
+    extractableResults.filter(r => r.status === 'needs_whisper').map(r => r.videoId),
+  )
+  const captionCredits = extractableResults.filter(r => r.status === 'has_captions' && !freeVideoIds.has(r.videoId)).length
   const whisperCredits = extractableResults.filter(r => r.status === 'needs_whisper').reduce((acc, r) => acc + r.estimatedCredits, 0)
   const totalExtractionCredits = captionCredits + whisperCredits
 
@@ -82,11 +88,6 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
   const hasEnoughCredits = userCredits === null || userCredits >= totalExtractionCredits
 
   const unavailableVideos = localResults.filter(r => r.status === 'unavailable')
-
-  // Only captions at idx 0–2 are free; whisper at any idx always costs credits (matches backend logic)
-  const freeVideoIds = new Set(
-    extractableResults.slice(0, 3).filter(r => r.status === 'has_captions').map(r => r.videoId)
-  )
 
   const toggleAllWhisper = (useWhisper: boolean) => {
     setLocalResults(prev => prev.map(r => {
@@ -195,7 +196,8 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
                    {extractableResults.map((video) => {
                      const isAi = video.status === 'needs_whisper'
                      const free = freeVideoIds.has(video.videoId)
-                     const paidCaption = !isAi && !free && (extractableIndex.get(video.videoId) ?? 0) >= 3
+                     // Per-method (ADR-081): a caption video is charged iff it's not in the free set.
+                     const paidCaption = !isAi && !free
                      const costLabel = isAi ? `${video.estimatedCredits} cr` : paidCaption ? '1 cr' : 'free'
                      const dur = `${Math.floor(video.duration / 60)}:${Math.floor(video.duration % 60).toString().padStart(2, '0')}`
                      // < md: thumbnail + title (2 lines) + duration on top, badge + toggle on a

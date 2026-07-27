@@ -30,3 +30,15 @@ Job-niveau vs. unit-niveau: de gratis-tier werkt op **unit-niveau** (per getrans
 - **Copy gelijktrekken:** `pricing.ts`-copy ("first 3 videos") + de betreffende marketingpagina's → "first 3 **caption** videos"; de uitleg-popover in de playlist-modus (frontend-sessie) die het positionele gedrag uitlegde wordt **overbodig en moet weg**, niet blijven staan.
 - **Frontend-hand-off:** de drie TS-sites (`PlaylistAvailabilitySummary`, `receiptAggregation`, `PlaylistManager`) roepen `playlistFreeIds` aan i.p.v. eigen inline-kopieën; de method-blinde "Free"-badge (`PlaylistManager.tsx:729`) is dan meteen correct.
 - **Toekomstige wijziging:** de gratis-tier verander je nu op precies twee plekken (de twee helpers) + de fixture — nooit meer verspreid.
+
+## Follow-up — frontend uitgevoerd (2026-07-27)
+
+De drie TS-sites en de method-blinde badge roepen nu `playlistFreeIds` aan; de inline positionele kopieën zijn weg:
+- `PlaylistAvailabilitySummary.tsx`: `captionCredits` + `freeVideoIds` via `playlistFreeIds`; ook de per-rij `paidCaption` (was `… && idx >= 3`) is nu `!isAi && !free` (positioneel `>= 3` was redundant én misleidend — `free` is al per-methode; `extractableIndex` daardoor verweesd en verwijderd).
+- `receiptAggregation.ts`: `freeIds` via `playlistFreeIds(anchor.video_ids, anchor.use_whisper_ids)` i.p.v. `slice(0,3).filter(!whisper)`.
+- `PlaylistManager.tsx`: de pre-extractie "Free"-badge (was `idx < 3`) via een `selectionFreeIds`-memo op `playlistFreeIds`; de positionele uitleg-popover is verwijderd; copy "first 3 **caption** videos" in de one-liner + de footer-notice.
+- `receiptAggregation.test.ts`: laadt `test-fixtures/playlist_free_slots.json` en assert `playlistFreeIds` == `expected_free` voor alle 8 cases (naast de Python-test) → CI faalt bij TS/Python-divergentie.
+
+**Implementatiedetail (build):** `receiptAggregation.ts` wordt zowel gebundeld (Next) als door de node-`--experimental-strip-types`-unittest geladen. Node's ESM-loader vereist een expliciete extensie voor een runtime-import, dus de import is `../lib/pricing.ts`; om die `.ts`-extensie door de bundler-typecheck te laten, staat `allowImportingTsExtensions: true` in de drie tsconfigs (mag omdat `noEmit: true` overal aanstaat). De andere `.tsx`-sites importeren extensieloos (bundler-norm).
+
+**Verificatie:** `pnpm build` groen (beide apps). TS-test 5/5 groen, Python-test ALL_PASS — beide tegen dezelfde fixture. Bevestigingsscherm en afrondingsbon rekenen nu allebei via `playlistFreeIds`, dus tonen hetzelfde bedrag; de "mixed AI front"-case (`[a,b,c,d,e]`, AI op `a,b`) geeft in beide `free={c,d,e}`, precies waar oud (positioneel: alleen `c` gratis) en nieuw uiteenliepen.

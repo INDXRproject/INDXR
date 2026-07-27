@@ -1,7 +1,10 @@
 // Pure unit tests for the net-final playlist receipt aggregation (ADR-050 fase 3).
 // No framework — run: node --experimental-strip-types packages/shared/src/hooks/receiptAggregation.test.ts
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
 import { aggregatePlaylistReceipt, type ReceiptJobRow, type ReceiptTx } from "./receiptAggregation.ts"
+import { playlistFreeIds } from "../lib/pricing.ts"
 
 let passed = 0
 function test(name: string, fn: () => void) { fn(); passed++; console.log("  ✓", name) }
@@ -84,6 +87,23 @@ test("finally-skipped whisper video uses ceil(duration/60) as its rate", () => {
   const r = aggregatePlaylistReceipt([j], [], "w")
   assert.equal(r.refunded, 11, "whisper skip = ceil(610/60)")
   assert.equal(r.skippedCount, 1)
+})
+
+// ── 5. shared fixture: the TS playlistFreeIds helper must match the Python helper.
+// Both backend/test_playlist_free_slots.py and this test assert against the SAME
+// expected_free in test-fixtures/playlist_free_slots.json, so CI fails the moment the
+// TS and Python free-slot rules diverge (per-method, ADR-081).
+test("playlistFreeIds matches the shared cross-language fixture (per-method free slots)", () => {
+  const fixturePath = fileURLToPath(new URL("../../../../test-fixtures/playlist_free_slots.json", import.meta.url))
+  const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
+    rule: string
+    cases: { name: string; video_ids: string[]; whisper_ids: string[]; is_retry: boolean; expected_free: string[] }[]
+  }
+  assert.equal(fixture.rule, "per_method", "fixture must be on the per-method rule (ADR-081)")
+  for (const c of fixture.cases) {
+    const got = Array.from(playlistFreeIds(c.video_ids, c.whisper_ids, c.is_retry)).sort()
+    assert.deepEqual(got, [...c.expected_free].sort(), `free set diverged for case "${c.name}"`)
+  }
 })
 
 console.log(`\n${passed} passed`)
