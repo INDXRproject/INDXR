@@ -13593,3 +13593,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
 ---
+[2026-07-27 13:24] commit: docs(priorities): record step-3 alias removal (duration/credits_used) with step-1 hash 669a0c1
+
+3-staps uitfasering van de JobStatusRow-aliassen vastgelegd in Fase 2 (item 2.0)
+zodat de duplicatie niet permanent wordt. Stap 1 gedaan (669a0c1); stap 2 = frontend
+naar rauwe namen; stap 3 = aliassen weg.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/priorities.md
+---
