@@ -13829,3 +13829,25 @@ packages/shared/src/hooks/receiptAggregation.test.ts
 packages/shared/src/hooks/receiptAggregation.ts
 packages/shared/tsconfig.json
 ---
+
+[2026-07-27 12:40] taak: Commit 2 — Defect 2: upload-route op de watchdog aangesloten. Het upload-pad draait op asyncio.create_task in het API-proces (bytes niet queue-serializeerbaar) en tikte NOOIT last_heartbeat_at -> een vastgelopen upload was onzichtbaar voor watchdog Pass 0b en de reservering bleef eeuwig hangen. Upload geeft nu heartbeat_fn=_upload_hb mee (zelfde tik als run_whisper_job). | gewijzigd: backend/main.py | geverifieerd: (1) detectie — wegwerp-upload mét 15min-stale heartbeat wordt door het Pass 0b-predikaat geselecteerd (new_status=error, reservation-mode -> Pass 2c refundt); dezelfde rij ZONDER heartbeat (oud gedrag) wordt NIET geselecteerd. (2) exact-één refund — 2e refund-insert voor hetzelfde job_id geweigerd door credit_transactions_job_kind_uidx (23505). Testrijen opgeruimd (0/0).[2026-07-27 14:30] commit: fix(ops/commit2): connect upload route to heartbeat watchdog (Defect 2)
+
+Het upload-pad draait op asyncio.create_task binnen het API-proces (bytes niet
+queue-serializeerbaar -> nooit via ARQ) en gaf als enige jobtype NOOIT een heartbeat.
+Gevolg: last_heartbeat_at bleef NULL, watchdog Pass 0b (.not_.is_(last_heartbeat_at,null))
+zag een vastgelopen upload nooit, en de credit-reservering bleef eeuwig hangen.
+
+Upload geeft nu heartbeat_fn=_upload_hb mee — dezelfde tik als run_whisper_job (worker.py).
+Een gecrasht/gestald upload-proces laat nu een verouderde last_heartbeat_at achter ->
+Pass 0b reapt de job naar terminale status -> Pass 2c refundt de reservering exact één keer.
+
+Geverifieerd op wegwerprijen:
+- detectie: 15min-stale-heartbeat upload wordt door het Pass 0b-predikaat geselecteerd;
+  dezelfde rij zonder heartbeat (oud gedrag) wordt NIET geselecteerd.
+- exact-één refund: 2e refund-insert voor hetzelfde job_id geweigerd door de UNIQUE
+  index credit_transactions_job_kind_uidx (23505). Testrijen opgeruimd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+docs/LOG.md
+---

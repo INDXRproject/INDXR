@@ -1060,12 +1060,27 @@ async def transcribe_with_whisper(
         # Reservation-aware wrapper (ADR-050 fase 2): reserve is al gebeurd, dus deze directe
         # pipeline-aanroep moet via de wrapper (reservation_mode + refund), anders dubbele aftrek
         # bij flag ON en de reservering wordt nooit teruggeboekt.
+        #
+        # Defect 2 (Operations): het upload-pad draait op asyncio.create_task binnen het API-proces
+        # (bytes niet queue-serializeerbaar → nooit via ARQ). Zonder heartbeat bleef last_heartbeat_at
+        # NULL en zag de watchdog (worker Pass 0b) een vastgelopen upload NOOIT → de reservering bleef
+        # eeuwig hangen. We tikken nu dezelfde heartbeat als run_whisper_job (worker.py:_hb), zodat een
+        # gecrasht/gestald upload-proces een verouderde last_heartbeat_at achterlaat en de watchdog het
+        # reapt + de reservering exact één keer refundt (UNIQUE (job_id,'refund')).
+        async def _upload_hb() -> None:
+            await asyncio.to_thread(
+                lambda: supabase.table('transcription_jobs')
+                    .update({'last_heartbeat_at': datetime.now(timezone.utc).isoformat()})
+                    .eq('id', job_id).execute()
+            )
+
         asyncio.create_task(run_whisper_reservation_aware(
             user_id, None,
             job_id=job_id,
             audio_path=upload_tmp_path,
             audio_title=title or audio_filename,
             known_duration_seconds=known_duration,
+            heartbeat_fn=_upload_hb,
         ))
 
     logger.info(f"Whisper job created: {job_id} (user={user_id}, source={source_type}, video={video_id})")
