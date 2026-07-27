@@ -13627,3 +13627,33 @@ packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/components/transcribe/errorCopy.ts
 packages/shared/src/hooks/useJobStatus.ts
 ---
+
+[2026-07-27 11:00] taak: gratis-slots STAP 1 — consolidatie (bewijsbaar no-op). Regel van 6 kopieen -> 2 helpers: credit_manager.playlist_free_ids (Python, aangeroepen door reservering main.py + settlement worker.py:431/:692) + pricing.playlistFreeIds (TS). Gedeelde fixture test-fixtures/playlist_free_slots.json. | gewijzigd: backend/{credit_manager,worker,main}.py, backend/test_playlist_free_slots.py (nieuw), test-fixtures/playlist_free_slots.json (nieuw), packages/shared/src/lib/pricing.ts | py_compile OK; no-op-test 8/8 (free-set + settlement is_free + reservering old==new incl AI-front/AI-back); TS-helper == fixture == Python. Frontend-sessie wiret PlaylistAvailabilitySummary/receiptAggregation/PlaylistManager + laadt fixture in receiptAggregation.test.ts.[2026-07-27 13:38] commit: refactor(credits): consolidate playlist free-slot rule into 2 helpers (provable no-op) — step 1
+
+De 'eerste 3 gratis'-regel stond in 6 logica-kopieen (main.py reservering,
+worker.py:431/:692 settlement, + 3 TS-sites). Drift tussen reservering en
+settlement = echt-geld-bug. Nu 1 Python-helper + 1 TS-helper:
+
+- credit_manager.playlist_free_ids(video_ids, whisper_ids, is_retry) -> set gratis ids.
+  Aangeroepen door _compute_playlist_reservation EN beide settlement-passes -> kunnen
+  niet meer uiteenlopen.
+- pricing.playlistFreeIds (TS, gebruikt FREE_TIER.PLAYLIST_FREE_VIDEOS) voor de 3
+  frontend-sites (frontend-sessie wiret die; hun bestanden).
+- Gedeelde fixture test-fixtures/playlist_free_slots.json, geladen door de Python-test
+  en (straks) receiptAggregation.test.ts -> CI faalt bij divergentie.
+
+Gedrag ONGEWIJZIGD (positioneel). Bewezen no-op: 8/8 scenario's (all-caption,
+all-AI, AI-front, AI-back, retry, <3) — gratis-set, settlement is_free, en
+reservering old==new allemaal identiek. TS-helper == fixture == Python.
+
+Stap 2 (per-methode) wijzigt alleen deze twee functies + de fixture. Zie ADR (volgt).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/credit_manager.py
+backend/main.py
+backend/test_playlist_free_slots.py
+backend/worker.py
+docs/LOG.md
+packages/shared/src/lib/pricing.ts
+test-fixtures/playlist_free_slots.json
+---

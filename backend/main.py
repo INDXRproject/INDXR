@@ -90,6 +90,7 @@ from assemblyai_client import transcribe_with_assemblyai
 from credit_manager import (
     check_user_balance,
     calculate_credit_cost,
+    playlist_free_ids,
     deduct_credits,
     add_credits,
     reserve_credits,
@@ -1355,12 +1356,13 @@ def _compute_playlist_reservation(video_ids, use_whisper_ids, video_metadata, is
     """
     whisper_set = set(use_whisper_ids or [])
     meta = video_metadata or {}
+    free = playlist_free_ids(video_ids, use_whisper_ids, is_retry)  # ENIGE regel-bron (gedeeld met settlement)
     total = 0
-    for idx, vid in enumerate(video_ids):
+    for vid in video_ids:
         if vid in whisper_set:
             d = (meta.get(vid) or {}).get('duration')
             total += calculate_credit_cost(d) if d and d > 0 else 1
-        elif is_retry or idx >= 3:
+        elif vid not in free:
             total += 1
     return total
 

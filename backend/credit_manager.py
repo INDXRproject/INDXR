@@ -87,6 +87,28 @@ def calculate_credit_cost(duration_seconds: float) -> int:
     return max(credits, 1)
 
 
+def playlist_free_ids(video_ids, whisper_ids, is_retry: bool = False) -> set:
+    """
+    ENIGE bron van waarheid voor de playlist "eerste 3 gratis"-tier (backend-kant).
+
+    Geeft de set video_ids terug die GRATIS zijn (0 credits). Aangeroepen door de reservering
+    (_compute_playlist_reservation) én beide settlement-passes (worker.process_playlist_video hoofd-
+    pass + process_playlist_retries), zodat reservering en afrekening EXACT dezelfde regel gebruiken —
+    divergentie daar is een echt-geld-bug (reserved != Σsettlements). Zie ADR (gratis-slots).
+
+    STAP 1 (consolidatie, bewijsbaar no-op): POSITIONEEL — de eerste 3 POSITIES zijn gratis-slots;
+    alleen caption-video's (niet in whisper_ids) op idx<3 zijn gratis. Een whisper-video op idx<3
+    verbrandt het slot zonder korting (mirror van de oude inline-regel `idx<3 and not is_retry` in de
+    caption-tak; whisper wordt altijd per-minuut belast). Een retry pakt nooit een vers slot.
+
+    STAP 2 zet dit om naar per-methode (eerste 3 CAPTION-video's) — dan wijzigt ALLEEN deze functie.
+    """
+    if is_retry:
+        return set()
+    ws = set(whisper_ids or [])
+    return {vid for i, vid in enumerate(video_ids or []) if i < 3 and vid not in ws}
+
+
 def check_user_balance(user_id: str) -> int:
     """
     Get user's current credit balance.

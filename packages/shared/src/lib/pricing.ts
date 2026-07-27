@@ -194,3 +194,25 @@ export function creditCostPhrase(credits: number, pkg: PricingPackage = getAncho
 export function anchorPerCreditText(): string {
   return `€${pricePerCredit(getAnchorPackage()).toFixed(3)}/credit`
 }
+
+// ── Playlist gratis-slots — ENIGE bron voor de "eerste 3 gratis"-regel (frontend-kant). Spiegelt de
+// Python-helper credit_manager.playlist_free_ids EXACT; gesynchroniseerd via de gedeelde fixture
+// test-fixtures/playlist_free_slots.json (geladen door receiptAggregation.test.ts) zodat CI faalt bij
+// divergentie. Retourneert de set video_ids die GRATIS zijn (0 credits). Aan te roepen door
+// PlaylistAvailabilitySummary, receiptAggregation en PlaylistManager i.p.v. eigen inline-kopieën.
+// STAP 1 = positioneel (eerste PLAYLIST_FREE_VIDEOS posities; een whisper-video op zo'n positie
+// verbrandt het slot zonder korting). STAP 2 zet dit om naar per-methode (de eerste 3 CAPTION-video's)
+// — dan wijzigt ALLEEN deze functie. Een retry pakt nooit een vers slot.
+export function playlistFreeIds(
+  videoIds: string[],
+  whisperIds: string[],
+  isRetry = false,
+): Set<string> {
+  if (isRetry) return new Set<string>()
+  const ws = new Set(whisperIds ?? [])
+  const free = new Set<string>()
+  ;(videoIds ?? []).forEach((vid, i) => {
+    if (i < FREE_TIER.PLAYLIST_FREE_VIDEOS && !ws.has(vid)) free.add(vid)
+  })
+  return free
+}

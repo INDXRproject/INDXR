@@ -29,6 +29,7 @@ from credit_manager import (
     refund_credits,
     refund_credits_flat,
     get_supabase_client,
+    playlist_free_ids,
 )
 from transcription_pipeline import (
     _classify_download_error,
@@ -428,7 +429,8 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
 
     video_id = video_ids[video_index]
     is_whisper = video_id in use_whisper_ids
-    is_free = video_index < 3 and not is_retry
+    # Gedeelde regel-bron (identiek aan reservering + retry-pass) — geen inline-kopie meer.
+    is_free = video_id in playlist_free_ids(video_ids, use_whisper_ids, is_retry)
 
     # Idempotency: skip if already succeeded (e.g. duplicate enqueue)
     existing = video_results.get(video_id, {})
@@ -689,7 +691,8 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
             continue
 
         is_whisper = video_id in use_whisper_ids
-        is_free = orig_index < 3 and not is_retry
+        # Gedeelde regel-bron (identiek aan reservering + hoofd-pass).
+        is_free = video_id in playlist_free_ids(video_ids, use_whisper_ids, is_retry)
         # Retry pass: use a DIFFERENT sticky session than the original attempt
         # (worker.py process_playlist_video) so the retry lands on a fresh Decodo
         # exit IP instead of the same IP that YouTube already rate-limited (429).
