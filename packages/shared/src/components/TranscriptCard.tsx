@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock } from "lucide-react";
+import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { decodeEntities, createParagraphMode, buildRagJson, generateSrt, generateVtt, generateCsv, generateMarkdown, generateTxt } from "../utils/formatTranscript";
 import { deductRagExportCreditsAction } from "../actions/rag-export";
@@ -44,6 +44,16 @@ export interface TranscriptItem {
   offset: number;
 }
 
+// Reader Mode (timestamps hidden) is the default for readability; the choice is remembered
+// within the session so someone who turns timestamps on isn't reset on the next transcript.
+const TIMESTAMPS_KEY = "indxr-show-timestamps";
+
+function fmtElapsed(seconds?: number | null): string | null {
+  if (seconds == null || seconds < 0) return null;
+  const m = Math.floor(seconds / 60), s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 interface TranscriptCardProps {
   transcript: TranscriptItem[];
   videoTitle?: string;
@@ -57,6 +67,16 @@ interface TranscriptCardProps {
   publishedAt?: string;
   languageDetected?: boolean;
   transcriptId?: string;
+  // When present, this card IS the completion receipt (one card, not two): the header shows the
+  // outcome + a single meta line (duration · lines · credits), and "View in Library" joins the
+  // action row. Absent for the free/caption path, audio, and the library viewer.
+  completion?: {
+    credits: number;
+    durationSeconds?: number | null;
+    elapsedSeconds?: number | null;
+    libraryHref?: string;
+    warning?: string | null;
+  };
 }
 
 const RAG_CHUNK_LABELS: Record<number, { label: string; sub: string }> = Object.fromEntries(
@@ -75,9 +95,13 @@ export function TranscriptCard({
   publishedAt,
   languageDetected,
   transcriptId,
+  completion,
 }: TranscriptCardProps) {
   const [copied, setCopied] = useState(false);
-  const [showTimestamps, setShowTimestamps] = useState(true);
+  const [showTimestamps, setShowTimestamps] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false; // Reader Mode default (timestamps off)
+    return sessionStorage.getItem(TIMESTAMPS_KEY) === "true";
+  });
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [showRagModal, setShowRagModal] = useState(false);
   const [ragExportLoading, setRagExportLoading] = useState(false);
@@ -267,16 +291,38 @@ export function TranscriptCard({
         </div>
       </div>
     )}
-    <Card className="w-full max-w-4xl mx-auto mt-3 border shadow-sm">
+    <Card className={cn(
+      "w-full max-w-4xl mx-auto mt-3 border shadow-sm",
+      completion && !completion.warning && "border-success/30"
+    )}>
       <CardHeader className="pb-4 border-b">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <CardTitle className="text-xl">Transcript Results</CardTitle>
-            <CardDescription className="mt-1">
-              {transcript.length > 0
-                ? `${Math.ceil(transcript[transcript.length - 1].offset / 60)} minutes • ${transcript.length} lines`
-                : "No content"}
+          <div className="min-w-0">
+            <CardTitle className="text-xl flex items-center gap-2">
+              {completion ? (
+                <>
+                  {completion.warning
+                    ? <AlertTriangle className="h-5 w-5 shrink-0 text-warning" />
+                    : <CheckCircle className="h-5 w-5 shrink-0 text-success" />}
+                  <span>{completion.warning ? "Transcript saved" : "Transcript ready"}</span>
+                </>
+              ) : "Transcript Results"}
+            </CardTitle>
+            <CardDescription className="mt-1 tabular-nums">
+              {completion
+                ? [
+                    completion.durationSeconds && completion.durationSeconds > 0 ? `${Math.round(completion.durationSeconds / 60)} min` : null,
+                    `${transcript.length} lines`,
+                    `${completion.credits} credit${completion.credits === 1 ? "" : "s"}`,
+                    fmtElapsed(completion.elapsedSeconds) ? `Completed in ${fmtElapsed(completion.elapsedSeconds)}` : null,
+                  ].filter(Boolean).join(" · ")
+                : transcript.length > 0
+                  ? `${Math.ceil(transcript[transcript.length - 1].offset / 60)} minutes • ${transcript.length} lines`
+                  : "No content"}
             </CardDescription>
+            {completion?.warning && (
+              <p className="mt-1 text-xs text-warning-fg dark:text-warning">{completion.warning}</p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={copyToClipboard} className="gap-2">
@@ -392,6 +438,14 @@ export function TranscriptCard({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {completion?.libraryHref && (
+              <a href={completion.libraryHref}>
+                <Button variant="outline" size="sm" className="gap-2 border-success/40 text-success-fg dark:text-success hover:bg-success-subtle">
+                  View in Library
+                </Button>
+              </a>
+            )}
           </div>
         </div>
 
@@ -400,7 +454,11 @@ export function TranscriptCard({
           <Switch
             id="reader-mode"
             checked={!showTimestamps}
-            onCheckedChange={(checked) => setShowTimestamps(!checked)}
+            onCheckedChange={(checked) => {
+              const next = !checked; // reader mode on ⇒ timestamps off
+              setShowTimestamps(next);
+              try { sessionStorage.setItem(TIMESTAMPS_KEY, String(next)); } catch { /* private mode */ }
+            }}
           />
           <Label htmlFor="reader-mode" className="cursor-pointer flex flex-col">
             <span className="font-medium text-sm">Reader Mode</span>

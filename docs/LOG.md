@@ -14018,3 +14018,32 @@ empty!=0-regel voor latency, en dat admin_operations_summary blijft bestaan (ong
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/operations/monitoring.md
 ---
+
+[2026-07-27 16:45] taak: Transcribe-resultaat frontend afmaken (overgenomen van afgebroken sessie). Punt 1: resultaat = één kaart — CompletionReceipt + succes/truncatie-banner weg, gevouwen in TranscriptCard via nieuwe `completion`-prop (vinkje + één metaregel duur/regels/credits + View in Library + dunne success-rand, geen groen vlak). Punt 2: invoer klapt in na resultaat (`hasResult` + `handleNewTranscription` + "New transcription"-knop). Punt 3: BackgroundJobNotice-blok weg; korte regel terug in de voortgangskaart via JobProgressCard `note`. Punt 4: Reader Mode standaard aan (timestamps uit), onthouden via sessionStorage. Punt 5: errorCopy timeout/connection_error gesplitst met juiste titels; refundregel bewust NIET in body (data-driven via credits_refunded -> anders dubbel). Punt 6: JobStatusRow-opruiming (error_code/available_credits/aliassen weg -> rauwe namen) stond al gecommit in eerdere commit; geen wijziging nodig. | gewijzigd: packages/shared/src/components/free-tool/VideoTab.tsx packages/shared/src/components/TranscriptCard.tsx packages/shared/src/components/transcribe/errorCopy.ts | geverifieerd: pnpm build groen (2/2 apps). NIET meegecommit: untracked public/logo/X.com/ (X-brand-assets, ongerelateerd).[2026-07-27 16:58] commit: feat(transcribe): one result card, collapse input, reader-mode default, split timeout copy
+
+Frontend-afwerking van het transcribe-resultaatscherm (overgenomen van een afgebroken sessie):
+
+1. Eén kaart per resultaat: de losse CompletionReceipt + succes/truncatie-banner zijn weg;
+   de uitkomst is gevouwen in TranscriptCards header via een nieuwe completion-prop —
+   vinkje + één metaregel (duur / regels / credits / elapsed) + View in Library op de actierij,
+   met een dunne success-rand i.p.v. een groen vlak.
+2. Invoer klapt in na een resultaat: URL-veld + methodekeuze verdwijnen, alleen een
+   New-transcription-knop blijft (spiegelt de playlist-modus). handleNewTranscription reset state.
+3. Dubbele achtergrond-boodschap weg: het BackgroundJobNotice-blok is verwijderd; de korte
+   reassurance-regel staat nu in de voortgangskaart zelf (JobProgressCard note-slot).
+   Onomkeerbaarheid staat al bij de knop.
+4. Reader Mode is de default (timestamps uit) voor leesbaarheid; de keuze wordt binnen de sessie
+   onthouden (sessionStorage).
+5. errorCopy: timeout en connection_error gesplitst met de juiste titels (download-too-long vs
+   connection-dropped). De refundregel staat bewust NIET in de body — die wordt data-driven uit
+   credits_refunded gerenderd, dus in de body zou hij dubbel verschijnen.
+
+Punt 6 (JobStatusRow: error_code/available_credits/aliassen naar rauwe namen) stond al in gecommitte
+code. Geverifieerd: pnpm build groen (2/2 apps).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+packages/shared/src/components/TranscriptCard.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/transcribe/errorCopy.ts
+---

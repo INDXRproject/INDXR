@@ -3,7 +3,7 @@
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { useState, useEffect, useRef } from "react"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, Plus } from "lucide-react"
 import { TranscriptCard, TranscriptItem } from "../TranscriptCard"
 import { TranscriptMetadata, PROCESSING_METHODS } from "../../types/transcript"
 import { validateYouTubeUrl, YouTubeUrlType } from "../../utils/youtube"
@@ -13,10 +13,8 @@ import { createClient } from "../../utils/supabase/client"
 import { CardSkeleton } from "../ui/loading-skeleton"
 import { cn } from "../../lib/utils"
 import { useAuth } from "../../hooks/useAuth"
-import { CompletionReceipt } from "../ui/CompletionReceipt"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
 import posthog from "posthog-js"
-import { BackgroundJobNotice } from "../BackgroundJobNotice"
 import { JobProgressCard } from "../transcribe/JobProgressCard"
 import { MethodRadioCards } from "../transcribe/MethodRadioCards"
 import { MethodBadge } from "../transcribe/MethodBadge"
@@ -443,6 +441,38 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     if (error && ['NON_YOUTUBE', 'MALFORMED', 'PLAYLIST_IN_VIDEO', 'CHANNEL'].includes(error.type || '')) {
       setError(null)
     }
+  }
+
+  // "New transcription" (point 2): after a result the input collapses to a single action;
+  // this returns the tab to a clean input state, mirroring the playlist "Start new extraction".
+  const handleNewTranscription = () => {
+    setTranscript(null)
+    setUrl('')
+    setVideoTitle('')
+    setVideoUrl('')
+    setError(null)
+    setShowSignupCard(false)
+    setVideoDuration(null)
+    setVideoChannel(null)
+    setVideoLanguage(null)
+    setVideoPublishedAt(null)
+    setLanguageDetected(null)
+    setSaveStatus('idle')
+    setWhisperMetadata(null)
+    setWhisperStatus('idle')
+    setFinalElapsed(null)
+    setLastProcessingMethod(null)
+    setCurrentVideoId("")
+    setExistingTranscriptId(null)
+    existingTranscriptIdRef.current = null
+    setExistingTranscriptMethod(null)
+    setShowWhisperConfirm(false)
+    setShowDuplicateChoices(false)
+    setWhisperAutoTriggered(false)
+    setUseWhisper(false)
+    useWhisperRef.current = false
+    setIsPlaylistUrl(false)
+    lastSuccessTimestampRef.current = null
   }
 
   const handleExtract = async (videoIdOrUrl?: string) => {
@@ -900,6 +930,18 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     callback()
   }
 
+  // A saved result is showing → collapse the input to a single "New transcription" action (point 2).
+  const hasResult = transcript !== null && transcript.length > 0
+
+  // Point 3: the full "safe to close / can't be cancelled" info block (BackgroundJobNotice) is gone —
+  // irreversibility already sits on the button before the click. What remains is one short reassurance
+  // line inside the progress card itself, via JobProgressCard's `note` slot.
+  const backgroundNote = (
+    <p className="text-xs leading-snug text-fg-muted">
+      Runs in the background — safe to close this tab; finished transcripts appear in your Library.
+    </p>
+  )
+
   return (
     <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
       {/* Watchdog permanent failure notice — credits already refunded */}
@@ -963,6 +1005,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       )}
 
       <div className="flex flex-col gap-4 max-w-2xl mx-auto mb-12">
+        {!hasResult && (<>
         <p className="text-sm text-fg-muted px-1">Paste any YouTube video URL to extract captions</p>
         <div className="flex gap-3">
           <div className="relative flex-1 min-w-0">
@@ -1012,6 +1055,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               }
             }}
           />
+        )}
+        </>)}
+
+        {hasResult && (
+          <div className="flex justify-center">
+            <Button variant="outline" className="h-10" onClick={handleNewTranscription}>
+              <Plus className="h-4 w-4 mr-2" /> New transcription
+            </Button>
+          </div>
         )}
 
         {/* Cost block (B4, ADR-080) — the concrete total for THIS video, known once the
@@ -1162,8 +1214,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    status={whisperStatus}
                    elapsedSeconds={elapsedSeconds}
                    audioDurationSeconds={videoDuration}
+                   note={backgroundNote}
                  />
-                 <BackgroundJobNotice />
                </div>
              ) : loading && whisperStatus !== 'idle' ? (
                <div className="flex flex-col gap-2 w-full mt-2">
@@ -1172,8 +1224,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    status={whisperStatus}
                    elapsedSeconds={elapsedSeconds}
                    audioDurationSeconds={videoDuration}
+                   note={backgroundNote}
                  />
-                 <BackgroundJobNotice />
                </div>
              ) : null}
           </div>
@@ -1249,39 +1301,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
              );
           })()}
 
-          {/* Success / Truncation Warning Banner for Whisper Transcription */}
-          {saveStatus === 'saved' && whisperMetadata && (
-            whisperMetadata.truncationWarning ? (
-              <div className="mb-4 p-4 bg-warning-subtle border border-warning/30 rounded-xl flex items-center justify-between text-left animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex-1">
-                  <p className="text-warning-fg dark:text-warning font-semibold mb-1">⚠️ Transcript saved with a warning</p>
-                  <p className="text-sm text-warning-fg dark:text-warning mb-1">{whisperMetadata.truncationWarning}</p>
-                  <p className="text-xs text-fg-muted">
-                    Used {whisperMetadata.creditsUsed} credit{whisperMetadata.creditsUsed !== 1 ? 's' : ''} • {whisperMetadata.creditsUsed} min
-                    {finalElapsed !== null && (
-                      <span className="ml-2 font-mono">· Completed in {formatElapsed(finalElapsed)}</span>
-                    )}
-                  </p>
-                </div>
-                <a href={appHref('/dashboard/library')}>
-                  <Button variant="outline" size="sm" className="ml-4 border-warning/40 text-warning-fg dark:text-warning hover:bg-warning-subtle">
-                    View in Library
-                  </Button>
-                </a>
-              </div>
-            ) : (
-              <CompletionReceipt
-                kind="video"
-                status="complete"
-                headline="Transcript ready"
-                used={whisperMetadata.creditsUsed}
-                durationSeconds={whisperMetadata.duration}
-                elapsedSeconds={finalElapsed}
-                libraryHref={appHref('/dashboard/library')}
-              />
-            )
-          )}
-
+          {/* One card for one result (point 1): the completion receipt is folded into
+              TranscriptCard's header — checkmark + a single meta line + View in Library —
+              instead of a separate green bar above it. Whisper only; captions are free. */}
           <TranscriptCard
                     transcript={transcript}
                     videoTitle={videoTitle}
@@ -1295,6 +1317,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     publishedAt={videoPublishedAt ?? undefined}
                     languageDetected={languageDetected ?? undefined}
                     transcriptId={existingTranscriptId ?? existingTranscriptIdRef.current ?? undefined}
+                    completion={saveStatus === 'saved' && whisperMetadata ? {
+                      credits: whisperMetadata.creditsUsed,
+                      durationSeconds: whisperMetadata.duration,
+                      elapsedSeconds: finalElapsed,
+                      libraryHref: appHref('/dashboard/library'),
+                      warning: whisperMetadata.truncationWarning ?? null,
+                    } : undefined}
                   />
         </div>
       ) : null}

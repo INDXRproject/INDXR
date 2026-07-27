@@ -120,8 +120,22 @@ const COPY: Record<string, Entry> = {
       "YouTube asked us to confirm we're not a bot — this is temporary. Try again in a moment. No credits were used.",
     actions: (c) => (c.onRetryUrl ? [{ label: "Try again", onClick: c.onRetryUrl }] : []),
   },
-  timeout: audioFetchFailed("The connection dropped"),
-  connection_error: audioFetchFailed("The connection dropped"),
+  // timeout and connection_error are distinct backend failures (split in the download pipeline this
+  // afternoon): a slow download that ran out of time vs. a dropped connection. Kept separate so the
+  // copy names the real cause. The refund line is NOT in the body — it's rendered data-driven from
+  // creditsRefunded (see audioFetchFailed note above), so asserting it here would double it.
+  timeout: {
+    title: "The download took too long",
+    body: () =>
+      "We couldn't download this video's audio in time — usually a slow connection to YouTube for a longer video. Please try again; it often works on a second attempt, or use Audio Upload.",
+    actions: retryOrAudio,
+  },
+  connection_error: {
+    title: "The connection to YouTube dropped",
+    body: () =>
+      "The connection to YouTube dropped before we could fetch the audio. Please try again, or use Audio Upload.",
+    actions: retryOrAudio,
+  },
   server_error: audioFetchFailed("YouTube is temporarily unavailable"),
   partial_write: audioFetchFailed("The audio download was interrupted"),
   proxy_error: audioFetchFailed("We couldn't reach this video's audio"),
