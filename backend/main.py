@@ -79,6 +79,7 @@ CACHED_CAPTION_REQUIRED_KEYS = frozenset({
 # Import Whisper modules
 from audio_utils import (
     get_audio_duration,
+    get_audio_container,
     estimate_upload_reserve_cost,
     extract_youtube_audio,
     validate_audio_file,
@@ -989,10 +990,15 @@ async def transcribe_with_whisper(
     job_id = str(uuid.uuid4())
     video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
     file_size_bytes = len(audio_content) if audio_content else 0
-    file_format = (
-        os.path.splitext(audio_filename or '')[1].lstrip('.').lower() or 'unknown'
-        if source_type == "upload" else "youtube"
-    )
+    # Uploads: ECHT containerformaat uit de inhoud (ffprobe), niet de bestandsnaam (die kan liegen).
+    # Fallback op de extensie alleen als het tmp-bestand ontbreekt. YouTube-pad = geen upload -> 'youtube'.
+    if source_type == "upload":
+        file_format = (
+            get_audio_container(upload_tmp_path, audio_filename) if upload_tmp_path
+            else (os.path.splitext(audio_filename or '')[1].lstrip('.').lower() or 'unknown')
+        )
+    else:
+        file_format = "youtube"
     supabase.table('transcription_jobs').insert({
         'id': job_id,
         'user_id': user_id,

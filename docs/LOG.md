@@ -13741,3 +13741,19 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/main.py
 docs/LOG.md
 ---
+
+[2026-07-27 12:35] taak: Commit 2 — file_format via ffprobe (echt container uit inhoud) voor uploads i.p.v. bestandsnaam-extensie | gewijzigd: backend/audio_utils.py (get_audio_container), backend/main.py (import + upload file_format) | py_compile OK; echte ffprobe-test 7/7 (mp3/m4a/wav/ogg/flac/webm + renamed.mp3->webm bewijst inhoud-detectie, niet naam)[2026-07-27 14:18] commit: feat(ops/commit2): real container format via ffprobe for uploads (not filename)
+
+file_format kwam uit de bestandsnaam-extensie -> een .webm hernoemd naar .mp3 loog
+'mp3'. Nu leest get_audio_container het ECHTE container uit de inhoud (ffprobe magic
+bytes): mp3/mp4/wav/m4a/ogg/flac/webm/mkv. Alleen uploads (YouTube blijft 'youtube');
+fallback op de extensie enkel als het tmp-bestand ontbreekt.
+
+Geverifieerd met echte ffmpeg-gegenereerde bestanden: 7/7 correct, incl. een
+.webm hernoemd naar .mp3 -> 'webm' (leest inhoud, niet naam). py_compile OK.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/audio_utils.py
+backend/main.py
+docs/LOG.md
+---

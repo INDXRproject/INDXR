@@ -77,6 +77,37 @@ def get_audio_duration(file_path: str) -> float:
         raise Exception(f"Could not determine audio duration: {str(e)}")
 
 
+def get_audio_container(file_path: str, filename_hint: Optional[str] = None) -> str:
+    """
+    Bepaal het ECHTE containerformaat uit de bestandsINHOUD via ffprobe (magic bytes), niet uit de
+    bestandsnaam-extensie. Een .webm die naar .mp3 is hernoemd loog voorheen 'mp3'; dit leest de
+    werkelijke container. Retourneert een van: mp3/mp4/wav/m4a/ogg/flac/webm/mkv, anders de ruwe
+    format_name-token, of 'unknown' als ffprobe faalt. (Deel 3 audio-telemetrie — Operations.)
+    """
+    try:
+        result = subprocess.run(
+            ['ffprobe', '-v', 'error', '-show_entries', 'format=format_name',
+             '-of', 'default=noprint_wrappers=1:nokey=1', file_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            names = set(result.stdout.strip().lower().split(','))  # bv 'mov,mp4,m4a,3gp,3g2,mj2'
+            for fam in ('mp3', 'flac', 'wav', 'ogg', 'webm'):
+                if fam in names:
+                    return fam
+            if 'matroska' in names:
+                return 'mkv'
+            if names & {'mp4', 'm4a', 'mov'}:
+                # mp4-familie (ffprobe kan m4a/mp4 niet los zien) — ext-hint kiest BINNEN de bevestigde
+                # familie, dus geen leugen: de inhoud IS mp4/m4a, alleen het subtype uit de naam.
+                ext = os.path.splitext(filename_hint or '')[1].lstrip('.').lower()
+                return 'm4a' if ext == 'm4a' else 'mp4'
+            return sorted(names)[0] if names else 'unknown'
+    except (subprocess.TimeoutExpired, FileNotFoundError, ValueError) as e:
+        logger.warning(f"ffprobe container-detect faalde: {e}")
+    return 'unknown'
+
+
 # ADR-050 — reserve-bedrag voor een audio-UPLOAD, server-side + onomzeilbaar bepaald VÓÓR reserve.
 # De duur van een upload is niet bekend op reserve-moment (het bestand wordt pas in de pipeline
 # geprobed) en de client-waarde is onbetrouwbaar (directe JWT-upload → volledig client-gecontroleerd).
