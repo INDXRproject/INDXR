@@ -13771,3 +13771,20 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/transcription_pipeline.py
 docs/LOG.md
 ---
+
+[2026-07-27 12:25] taak: Commit 2 — punt 3 auto-retry-traceerbaarheid. RPC update_playlist_video_progress stempelt nu per video attempts+recovered en een first_pass_failed-snapshot bij de eerste retry_pending (raw vs effective first-pass). Credit-INSERT byte-identiek. | gewijzigd: supabase/migrations/20260727122141_playlist_progress_attempt_traceability.sql (via MCP) | geverifieerd op testrij: fail->retry->success gaf raw_first_pass_failed=1, effective_failed=0, entry {attempts:2, recovered:true}; p_amount=0 -> 0 credit-rijen; testrij opgeruimd.[2026-07-27 14:23] commit: feat(ops/commit2): playlist auto-retry traceability (punt 3) — raw vs effective first-pass
+
+De auto-retry-pass overschreef video_results[vid] in-place -> een geslaagde retry
+maakte de eerdere fout onzichtbaar. RPC update_playlist_video_progress legt nu vast:
+- per video: attempts (echte pogingen) + recovered (auto-retry herstelde een fout)
+- first_pass_failed: snapshot bij de EERSTE retry_pending-overgang (COALESCE, dus de
+  retry-pass overschrijft 'm niet) -> raw first-pass vs de effectieve (failed).
+
+ALLEEN telemetrie — de credit-settlement-INSERT is byte-identiek (geen geld-wijziging).
+Geverifieerd op een testrij (p_amount=0, geen credit-rijen): fail->retry->success gaf
+raw_first_pass_failed=1, effective_failed=0, entry {attempts:2, recovered:true}; opgeruimd.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+supabase/migrations/20260727122141_playlist_progress_attempt_traceability.sql
+---
