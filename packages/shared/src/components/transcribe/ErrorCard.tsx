@@ -28,6 +28,7 @@ export function ErrorCard({
   actions,
   code,
   creditsNote,
+  note,
   className,
 }: {
   title: string
@@ -37,6 +38,9 @@ export function ErrorCard({
   /** Data-driven credit outcome (e.g. "3 credits refunded to your balance"). Rendered only when
       present — the card says nothing about credits rather than assert an unverified amount. */
   creditsNote?: string | null
+  /** Optional quiet line below the actions — e.g. an alternative route framed as prose, not a
+      priced button (bot_detection's "still blocked? use AI, it works from the audio file"). */
+  note?: ReactNode
   className?: string
 }) {
   return (
@@ -74,6 +78,8 @@ export function ErrorCard({
               })}
             </div>
           )}
+
+          {note && <div className="mt-3 text-[13px] leading-relaxed text-fg-muted">{note}</div>}
 
           {code && <p className="mt-2.5 font-mono text-[11px] text-fg-muted">{code}</p>}
         </div>

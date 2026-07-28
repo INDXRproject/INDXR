@@ -16,6 +16,7 @@ import { useAuth } from "../../hooks/useAuth"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
 import posthog from "posthog-js"
 import { JobProgressCard } from "../transcribe/JobProgressCard"
+import { ResultCardShell } from "../transcribe/ResultCardShell"
 import { MethodRadioCards } from "../transcribe/MethodRadioCards"
 import { MethodBadge } from "../transcribe/MethodBadge"
 import { BalanceLine } from "../transcribe/CostBreakdown"
@@ -91,6 +92,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
   // SSE streaming state
   const [whisperStatus, setWhisperStatus] = useState<WhisperStatus>('idle')
+  // Live download progress bytes (point 5) — null until the backend writes them.
+  const [downloadBytes, setDownloadBytes] = useState<number | null>(null)
+  const [downloadTotalBytes, setDownloadTotalBytes] = useState<number | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
   // True while fetching video metadata for Whisper cost estimation
   const [isFetchingMeta, setIsFetchingMeta] = useState(false)
@@ -106,6 +110,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
   // Cooldown: tracks the last successful extraction to suppress immediate duplicate warnings
   const lastSuccessTimestampRef = useRef<{ videoId: string; time: number } | null>(null)
+  // Last URL submitted to handleExtract — replayed verbatim by the error card's "Try again".
+  const retryAttemptRef = useRef<string>("")
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Active Whisper job being tracked (Realtime + polling)
@@ -199,7 +205,12 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     } else {
       sessionStorage.removeItem(VIDEO_JOB_KEY)
       const errorMsg = job.error_message || 'Transcription failed'
-      if (errorMsg === 'members_only' || job.error_type === 'members_only') {
+      if (job.error_type === 'watchdog_permanent_failure') {
+        // Its own dedicated notice (with the refund) — never also a generic error card beside it.
+        // Clear any error so the two can't stack.
+        setError(null)
+        setWatchdogRefundNotice(true)
+      } else if (errorMsg === 'members_only' || job.error_type === 'members_only') {
         setError({ message: "This video is members-only and cannot be transcribed by INDXR.AI.", isMembersOnly: true })
       } else if (job.error_type === 'insufficient_credits') {
         // Balance comes from useAuth at render time (never a copied poll value); the required
@@ -240,6 +251,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       if (s === 'pending' || s === 'downloading' || s === 'transcribing' || s === 'saving') {
         setWhisperStatus(s)
       }
+      // Live download bytes (point 5) — undefined until the backend writes the columns.
+      setDownloadBytes(job.download_bytes ?? null)
+      setDownloadTotalBytes(job.download_total_bytes ?? null)
     },
     onComplete: _handleWhisperComplete,
     onError: _handleWhisperError,
@@ -478,6 +492,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const handleExtract = async (videoIdOrUrl?: string) => {
     const targetUrl = videoIdOrUrl || url
     if (!targetUrl) return
+
+    // Remember exactly what was attempted so the error card's "Try again" can re-run the SAME
+    // extraction (point 1) — it used to clear the field, forcing a re-paste. handleExtract routes
+    // on useWhisperRef, so replaying this URL replays the method (captions vs AI) too.
+    retryAttemptRef.current = targetUrl
 
     // Perform validation before extraction
     const validation = validateYouTubeUrl(targetUrl, 'video')
@@ -809,6 +828,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setPendingWhisperData(null)
   }
 
+  // Error-card "Try again" (point 1): re-run the exact extraction that failed — same URL, same
+  // method (handleExtract routes on useWhisperRef). Never clears the field. Falls back to the live
+  // url state if no attempt was recorded yet.
+  const handleRetry = () => {
+    setError(null)
+    const target = retryAttemptRef.current || url
+    if (target) handleExtract(target)
+  }
+
   const handleWhisperUpsell = async () => {
     if (!currentVideoId) return
     posthog.capture('whisper_upsell_clicked')
@@ -943,7 +971,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   )
 
   return (
-    <div className="mt-8 animate-in fade-in zoom-in-95 duration-300">
+    <div className="animate-in fade-in zoom-in-95 duration-300">
       {/* Watchdog permanent failure notice — credits already refunded */}
       {watchdogRefundNotice && (
         <div
@@ -1004,9 +1032,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         </div>
       )}
 
-      <div className="flex flex-col gap-4 max-w-2xl mx-auto mb-12">
+      <div className="flex flex-col gap-4 max-w-2xl mx-auto mb-6">
         {!hasResult && (<>
-        <p className="text-sm text-fg-muted px-1">Paste any YouTube video URL to extract captions</p>
         <div className="flex gap-3">
           <div className="relative flex-1 min-w-0">
             <Input
@@ -1076,35 +1103,36 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           const enough = credits == null || credits >= cost
           return (
             <div className="overflow-hidden rounded-xl border border-border bg-surface animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center gap-3 p-4">
+              <div className="flex items-start gap-3 p-4">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-fg">{pendingWhisperData.title || videoTitle || "This video"}</p>
-                  {known && <p className="font-mono text-xs text-fg-muted">{formatElapsed(pendingWhisperData.duration)}</p>}
+                  {/* wraps to two lines instead of hard-truncating on 390px (point 4) */}
+                  <p className="text-sm text-fg [text-wrap:balance] line-clamp-2">{pendingWhisperData.title || videoTitle || "This video"}</p>
+                  {known && <p className="mt-0.5 font-mono text-xs text-fg-muted">{formatElapsed(pendingWhisperData.duration)}</p>}
                 </div>
-                <MethodBadge method="ai">AI transcription</MethodBadge>
+                <MethodBadge method="ai" className="mt-0.5 shrink-0">AI transcription</MethodBadge>
               </div>
               <div className="flex items-baseline justify-between border-t border-border px-4 py-3">
                 <span className="font-medium">Total</span>
-                <span className="text-[20px] font-semibold tabular-nums text-fg-strong">{known ? `${cost} credits` : `${cost}+ credits`}</span>
+                <span className="text-[22px] font-semibold tabular-nums text-fg-strong">{known ? `${cost} credits` : `${cost}+ credits`}</span>
               </div>
-              <div className="flex flex-col gap-2 border-t border-border bg-surface-elevated px-4 py-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <BalanceLine have={credits} cost={cost} />
-                  <div className="ml-auto flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={handleWhisperCancel} disabled={loading} className="h-9">
-                      Cancel
+              {/* balance on its own line; actions fill the width and stack on mobile (primary on top
+                  via col-reverse), sit right on desktop — no cramped right-aligned cluster (point 4) */}
+              <div className="flex flex-col gap-3 border-t border-border bg-surface-elevated px-4 py-3">
+                <BalanceLine have={credits} cost={cost} />
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button variant="ghost" onClick={handleWhisperCancel} disabled={loading} className="h-10 w-full sm:w-auto">
+                    Cancel
+                  </Button>
+                  {enough ? (
+                    <Button onClick={handleWhisperConfirm} disabled={loading} className="h-10 w-full sm:w-auto">
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Extract — {cost}{known ? "" : "+"} credits
                     </Button>
-                    {enough ? (
-                      <Button size="sm" onClick={handleWhisperConfirm} disabled={loading} className="h-9">
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                        Extract — {cost}{known ? "" : "+"} credits
-                      </Button>
-                    ) : (
-                      <a href={appHref('/dashboard/billing')}>
-                        <Button size="sm" className="h-9">Buy credits</Button>
-                      </a>
-                    )}
-                  </div>
+                  ) : (
+                    <a href={appHref('/dashboard/billing')} className="w-full sm:w-auto">
+                      <Button className="h-10 w-full">Buy credits</Button>
+                    </a>
+                  )}
                 </div>
                 <p className="text-xs text-fg-muted">Once started, this can&apos;t be cancelled.</p>
               </div>
@@ -1197,11 +1225,17 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    libraryHref: appHref('/dashboard/library'),
                    accountHref: appHref('/dashboard/account'),
                    contactHref: user ? appHref('/dashboard/messages?tab=support') : marketingHref('/contact'),
-                   onRetryUrl: () => { setUrl(''); setError(null) },
+                   onRetryUrl: handleRetry,
                    onUseAi: user ? handleWhisperUpsell : undefined,
                    onSwitchToAudio: onSwitchToAudio ? () => handleGuardedTabSwitch(onSwitchToAudio) : undefined,
                  })
-                 return <ErrorCard className="w-full" {...copy} />
+                 // bot_detection (point 6): "Try again" is the primary action and usually clears the
+                 // block; AI sits below as a different route, framed as prose (no priced button, no
+                 // accent) so it doesn't read as "we're broken, pay us".
+                 const note = errCode === 'bot_detection' && user ? (
+                   <>Still blocked? <button type="button" onClick={handleWhisperUpsell} className="font-medium text-fg underline underline-offset-2 hover:text-fg-strong">Use AI transcription</button> — it works from the audio file instead of the route YouTube is blocking.</>
+                 ) : undefined
+                 return <ErrorCard className="w-full" {...copy} note={note} />
                })()
              ) : isAlreadyProcessing && loading && whisperStatus !== 'idle' ? (
                <div className="flex flex-col gap-2 w-full">
@@ -1214,6 +1248,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    status={whisperStatus}
                    elapsedSeconds={elapsedSeconds}
                    audioDurationSeconds={videoDuration}
+                   downloadedBytes={downloadBytes}
+                   totalBytes={downloadTotalBytes}
                    note={backgroundNote}
                  />
                </div>
@@ -1224,6 +1260,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    status={whisperStatus}
                    elapsedSeconds={elapsedSeconds}
                    audioDurationSeconds={videoDuration}
+                   downloadedBytes={downloadBytes}
+                   totalBytes={downloadTotalBytes}
                    note={backgroundNote}
                  />
                </div>
@@ -1255,51 +1293,40 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         </div>
       )}
 
-      {/* Loading Skeleton */}
+      {/* Loading — caption extraction shows a live progress card in the family (point 3): captions
+          used to sit behind a bare skeleton with no phase, time, or sign of life, so a slow or
+          blocked fetch looked like nothing. The Whisper metadata pre-flight keeps the skeleton (the
+          job's own progress card takes over the moment the job starts). */}
       {loading && !transcript && !isStreaming && (
+        (!useWhisper && !isFetchingMeta && whisperStatus === 'idle') ? (
           <div className="w-full max-w-4xl mx-auto mt-8">
-             <CardSkeleton />
+            <ResultCardShell
+              header={
+                <div className="flex items-center gap-2 min-w-0">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--accent)]" />
+                  <p className="truncate text-sm font-semibold text-[var(--fg-strong)]">Fetching captions</p>
+                  <span className="ml-auto shrink-0"><MethodBadge method="captions">Auto-captions</MethodBadge></span>
+                </div>
+              }
+            >
+              <div className="space-y-3">
+                <p className="text-xs text-fg-muted">Reading YouTube&apos;s caption track</p>
+                <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+                  <div className="h-full w-full rounded-full bg-accent/60 motion-safe:animate-pulse" />
+                </div>
+              </div>
+            </ResultCardShell>
           </div>
+        ) : (
+          <div className="w-full max-w-4xl mx-auto mt-8">
+            <CardSkeleton />
+          </div>
+        )
       )}
 
       {/* Transcript Display */}
       {transcript !== null && transcript.length > 0 ? (
         <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-
-          {/* Whisper Promo Banner - only show if NOT already using Whisper */}
-          {lastProcessingMethod === 'youtube_captions' && (credits !== null) && (() => {
-             const requiredCredits = videoDuration ? Math.ceil(videoDuration / 60) : 1;
-             const hasEnoughCredits = credits >= requiredCredits;
-             return (
-               <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between text-left gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                 <div>
-                   <span className="text-sm text-warning-fg dark:text-amber-500 font-medium block">Not happy with the auto-captions?</span>
-                   <span className="text-xs text-fg-muted mt-1 block">
-                     {hasEnoughCredits ? (
-                       `You have ${credits} credits remaining`
-                     ) : (
-                       <a href={appHref('/dashboard/billing')} className="text-warning-fg hover:text-amber-700 hover:underline">
-                         Not enough credits — top up
-                       </a>
-                     )}
-                   </span>
-                 </div>
-                 <Button
-                   variant="ghost"
-                   size="sm"
-                   onClick={handleWhisperUpsell}
-                   className="text-xs text-warning-fg dark:text-amber-500 hover:text-amber-700 dark:hover:text-warning hover:bg-amber-500/20 h-9 font-semibold whitespace-nowrap"
-                   disabled={loading || isReextracting || !hasEnoughCredits}
-                 >
-                   {isReextracting ? (
-                     <><Loader2 className="h-3 w-3 animate-spin mr-2" /> Extracting...</>
-                   ) : (
-                     `✨ Re-extract with AI · ${requiredCredits} credit${requiredCredits !== 1 ? 's' : ''}`
-                   )}
-                 </Button>
-               </div>
-             );
-          })()}
 
           {/* One card for one result (point 1): the completion receipt is folded into
               TranscriptCard's header — checkmark + a single meta line + View in Library —
@@ -1317,14 +1344,52 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     publishedAt={videoPublishedAt ?? undefined}
                     languageDetected={languageDetected ?? undefined}
                     transcriptId={existingTranscriptId ?? existingTranscriptIdRef.current ?? undefined}
-                    completion={saveStatus === 'saved' && whisperMetadata ? {
-                      credits: whisperMetadata.creditsUsed,
-                      durationSeconds: whisperMetadata.duration,
-                      elapsedSeconds: finalElapsed,
-                      libraryHref: appHref('/dashboard/library'),
-                      warning: whisperMetadata.truncationWarning ?? null,
-                    } : undefined}
+                    completion={
+                      // AI path: shows the credit cost + elapsed. Caption path (point 7): same one
+                      // card, but credits omitted (free) and no elapsed — "View in Library" only when
+                      // the transcript was actually saved (logged-in user → existingTranscriptId).
+                      saveStatus === 'saved' && whisperMetadata ? {
+                        credits: whisperMetadata.creditsUsed,
+                        durationSeconds: whisperMetadata.duration,
+                        elapsedSeconds: finalElapsed,
+                        libraryHref: appHref('/dashboard/library'),
+                        warning: whisperMetadata.truncationWarning ?? null,
+                      } : lastProcessingMethod === 'youtube_captions' ? {
+                        durationSeconds: videoDuration,
+                        libraryHref: (existingTranscriptId ?? existingTranscriptIdRef.current)
+                          ? appHref('/dashboard/library')
+                          : undefined,
+                      } : undefined
+                    }
                   />
+
+          {/* Re-extract offer (point 8): one ignorable line BELOW the result — no amber (that's the
+              product's primary-action colour), no ✨ icon, no separate balance/price lines. Whoever
+              is happy scrolls past; whoever isn't has already read the transcript. */}
+          {lastProcessingMethod === 'youtube_captions' && credits !== null && (() => {
+             const requiredCredits = videoDuration ? Math.ceil(videoDuration / 60) : 1;
+             const hasEnoughCredits = credits >= requiredCredits;
+             return (
+               <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-fg-muted">
+                 <span>Auto-captions not accurate enough?</span>
+                 {hasEnoughCredits ? (
+                   <button
+                     onClick={handleWhisperUpsell}
+                     disabled={loading || isReextracting}
+                     className="font-medium text-fg underline-offset-2 hover:underline disabled:opacity-50 disabled:no-underline inline-flex items-center"
+                   >
+                     {isReextracting
+                       ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Extracting…</>
+                       : `Re-extract with AI · ${requiredCredits} credit${requiredCredits !== 1 ? 's' : ''}`}
+                   </button>
+                 ) : (
+                   <a href={appHref('/dashboard/billing')} className="font-medium text-fg underline-offset-2 hover:underline">
+                     Re-extract with AI — top up credits
+                   </a>
+                 )}
+               </div>
+             );
+          })()}
         </div>
       ) : null}
 

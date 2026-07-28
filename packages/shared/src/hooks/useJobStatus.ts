@@ -16,6 +16,11 @@ export interface JobStatusRow {
   credits_cost?: number
   credits_refunded?: number | null
   processing_time_seconds?: number
+  // Live download progress (point 5). The yt-dlp progress hook already has these bytes for the
+  // deadline check; once the backend writes them on the same heartbeat throttle, the frontend shows
+  // a determinate download bar. Absent until those columns exist → indeterminate bar (no guessing).
+  download_bytes?: number | null
+  download_total_bytes?: number | null
   error_message?: string | null
   error_type?: string | null
   required_credits?: number

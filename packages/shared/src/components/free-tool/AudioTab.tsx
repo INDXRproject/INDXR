@@ -445,7 +445,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const canTranscribe = file && user && hasEnoughCredits && !isTranscribing && !isUploading && !isOverDurationCap
 
   return (
-    <div className="mt-8 space-y-6">
+    <div className="space-y-6">
       {/* Watchdog permanent failure notice — credits already refunded */}
       {watchdogRefundNotice && (
         <div
@@ -477,7 +477,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             accountHref: appHref('/dashboard/account'),
             contactHref: user ? appHref('/dashboard/messages?tab=support') : marketingHref('/contact'),
             loginHref: marketingHref('/login'),
-            onRetryUrl: () => setError(null),
+            // "Try again" re-runs the same upload when a file is still selected (point 1); if the
+            // error happened at file selection (too large / unsupported) there's nothing to re-run,
+            // so it just clears the card and the picker stays ready.
+            onRetryUrl: () => { setError(null); if (file) handleTranscribe() },
           })}
         />
       )}

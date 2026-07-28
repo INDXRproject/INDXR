@@ -172,6 +172,16 @@ const COPY: Record<string, Entry> = {
       ...(c.accountHref ? [{ label: "Buy space", href: c.accountHref } as ErrorCardAction] : []),
     ],
   },
+  // "Too long" arrives on TWO channels with two slugs — the async job error_type "duration_error"
+  // (transcription_pipeline.py) AND the sync HTTP code "duration_exceeds_max" (main.py:925). Only
+  // the sync one was mapped before, so the async path fell through to the neutral fallback. Both are
+  // real, live codes the backend sends; both point at the same copy. (Backend slugs are the source
+  // of truth — neither is renamed.)
+  duration_error: {
+    title: "This audio is too long",
+    body: (c) =>
+      `AI transcription supports up to ${c.maxHours ?? 10} hours per file. Split it into shorter parts. No credits were used.`,
+  },
   duration_exceeds_max: {
     title: "This audio is too long",
     body: (c) =>
@@ -211,6 +221,65 @@ const COPY: Record<string, Entry> = {
     body: (c) =>
       c.fallbackMessage?.trim() ||
       "Upload an MP3, WAV, M4A or another common audio file. No credits were used.",
+  },
+
+  // ── Our-side failures ──────────────────────────────────────────────────────────
+  // These are our problems, not the user's video. Where a reservation was made and refunded, the
+  // amount is rendered data-driven from creditsRefunded (creditsNote) — the body never asserts a
+  // second "refunded" line (that would double it). Different cause → different title/body, same
+  // reassurance: it wasn't your video, try again.
+  api_error: {
+    title: "Our transcription provider had a problem",
+    body: () =>
+      "The AI transcription service failed on our side — not your video. Please try again in a moment.",
+    actions: retryOrAudio,
+  },
+  compression_error: {
+    title: "We couldn't prepare this audio",
+    body: () =>
+      "Something went wrong preparing the audio on our side — not your video. Please try again.",
+    actions: retryOrAudio,
+  },
+  worker_crashed: {
+    title: "This job was dropped on our side",
+    body: () =>
+      "A processing worker went down before your transcript finished — not your video. Please try again.",
+    actions: retryOrAudio,
+  },
+  stuck_pending: {
+    title: "This job stalled on our side",
+    body: () =>
+      "Your transcription didn't start in time on our side — not your video. Please try again.",
+    actions: retryOrAudio,
+  },
+  // credit_deduction_failed touches money and gets its own explicit sentence: the deduction failed,
+  // so nothing ran and nothing was charged (silence about money is not an option here). Nothing was
+  // taken, so there is no refund amount to render — the body states it in full.
+  credit_deduction_failed: {
+    title: "The credit step didn't go through",
+    body: () =>
+      "We couldn't complete the credit transaction, so this didn't run and you weren't charged. Please try again.",
+    actions: retryOrAudio,
+  },
+  // credit_check_error / validation_error / internal_error: generic our-side failures that happen
+  // before any charge. One shared line, the code stays visible on the card for support.
+  credit_check_error: {
+    title: "Something went wrong on our side",
+    body: () =>
+      "We couldn't complete this because of a problem on our end — not your video. No credits were used. Please try again.",
+    actions: retryOrAudio,
+  },
+  validation_error: {
+    title: "Something went wrong on our side",
+    body: () =>
+      "We couldn't complete this because of a problem on our end — not your video. No credits were used. Please try again.",
+    actions: retryOrAudio,
+  },
+  internal_error: {
+    title: "Something went wrong on our side",
+    body: () =>
+      "We couldn't complete this because of a problem on our end — not your video. No credits were used. Please try again.",
+    actions: retryOrAudio,
   },
 }
 

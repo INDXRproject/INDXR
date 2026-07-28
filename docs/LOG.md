@@ -14081,6 +14081,9 @@ docs/LOG.md
 supabase/migrations/20260727151149_admin_operations_v3_standalone_and_samples.sql
 ---
 
+[2026-07-28 04:15] taak: Transcribe video-modus flow — volledige state-familie + 6 concrete fixes (na goedgekeurd Artifact-overzicht). Caption-route gelijkgetrokken met AI: één completion-kaart via TranscriptCard `completion` (credits optioneel → captions tonen geen bedrag), invoer klapt in (`hasResult`), re-extract-offer als één neutrale regel ONDER het resultaat (geen amber, geen ✨). Punt 1 (voorrang): errorcard "Try again" herstart nu dezelfde extractie (VideoTab `retryAttemptRef`+`handleRetry`; AudioTab `handleTranscribe` als file er nog is) i.p.v. het veld te legen. Punt 2: dode ruimte weg (VideoTab+AudioTab `mt-8` verwijderd) → tabs op het playlist-model. Punt 3: caption-extractie toont nu een levende voortgangskaart (ResultCardShell + puls-balk) i.p.v. kaal skelet. Punt 4: voortgang herontworpen — kop noemt de ECHTE fase (niet meer "Transcribing…" tijdens download), genummerde wizard → actieve regel + dunne fasestrip; confirm-kaart 390px (titel wrapt, knoppen vullen breedte, geen rechts-cluster); TranscriptCard actie-rij wrapt, Reader Mode-toggle één regel. Punt 5: echte download-voortgang — TranscriptionProgress determinate balk bij `download_bytes`/`download_total_bytes` (nieuwe JobStatusRow-velden), anders onbepaald; transcribing bewust geen balk (elapsed vs audioduur). Punt 6: bot-detectie upsell — "Try again" primair+eerst, AI eronder als prozaregel ("works from the audio file…"), geen prijs/actiekleur (ErrorCard `note`-slot). errorCopy-audit uitgevoerd: `duration_error` toegevoegd NAAST `duration_exceeds_max` (twee live kanalen — async error_type vs sync HTTP code main.py:925 — beide behouden, codebase wint van de aanname); nieuwe eigen copy voor api_error/compression_error/worker_crashed/stuck_pending/credit_deduction_failed (geld-expliciet) + gedeelde "onze kant"-copy voor credit_check_error/validation_error/internal_error; watchdog_permanent_failure toont nu ook op het live-pad alleen de dedicated notice (geen dubbele generieke kaart). Report-only: `invalid_request` (main.py) blijft bewust op de neutrale fallback (interne API-contractfout, niet user-facing); `test` is test-only. Backend-veld doorgegeven: rauwe `download_bytes`+`download_total_bytes` op transcription_jobs via yt-dlp progress-hook. | gewijzigd: packages/shared/src/components/free-tool/VideoTab.tsx packages/shared/src/components/free-tool/AudioTab.tsx packages/shared/src/components/TranscriptCard.tsx packages/shared/src/components/transcribe/errorCopy.ts packages/shared/src/components/transcribe/ErrorCard.tsx packages/shared/src/components/transcribe/JobProgressCard.tsx packages/shared/src/components/transcription/TranscriptionProgress.tsx packages/shared/src/hooks/useJobStatus.ts | geverifieerd: pnpm build groen (2/2 apps, TypeScript incl.). NIET visueel in browser bevestigd (per-state light/dark × 390/desktop = door Khidr na te kijken); Artifact-mock met producttokens vooraf goedgekeurd. NIET meegecommit: andere-sessie admin/wiki/migratie-wijzigingen + untracked public/logo/X.com/.
+---
+
 [2026-07-28 02:00] taak: V3-dashboard 3 beslissingen. (1) Latency: provider_turnaround (submitted->completed) is hoofdgetal, queue-wait/processing secundair; geen fast-poll. (2) Mockup terug: status-oordeel-banner (rood/geel/groen+reden+actie), rustige-toestand (geen muur lege kaarten), volledige fouttaxonomie gegroepeerd naar schuld incl 0-rijen + ruwe meldingen, uptime-eerlijk-vak; verspilde-proxy-MB op mislukte jobs (bytes, geen geld). (3) Playlist-video-foutuitsplitsing (unit-niveau, source_kind=playlist, uitklapbaar). verder-A: provenance-regel error-taxonomy.md. | gewijzigd: supabase/migrations/20260728015137_admin_operations_v3_turnaround_wasted_playlist_errors.sql apps/app/src/app/admin/operations/page.tsx apps/app/src/app/admin/adminTypes.ts docs/wiki/operations/monitoring.md docs/wiki/operations/error-taxonomy.md | geverifieerd: RPC live (turnaround p50 25.1s, wasted 45.8MB, playlist_errors 9); tsc+eslint schoon; full next build lokaal geblokkeerd door andere-sessie resource-contentie (marketing .next/lock + OOM) -> Vercel is gezaghebbend.[2026-07-28 04:11] commit: feat(ops/dashboard): turnaround-primary latency, status verdict, full taxonomy, playlist errors
 
 Drie beslissingen uitgewerkt.
@@ -14124,4 +14127,44 @@ docs/LOG.md
 docs/wiki/operations/error-taxonomy.md
 docs/wiki/operations/monitoring.md
 supabase/migrations/20260728015137_admin_operations_v3_turnaround_wasted_playlist_errors.sql
+---
+[2026-07-28 04:11] commit: feat(transcribe): full video-mode state family + 6 flow fixes
+
+Caption route brought to parity with AI: one completion card (TranscriptCard
+`completion`, credits optional so captions show no amount), input collapses,
+re-extract offer as a single neutral line BELOW the result (no amber, no ✨).
+
+1. "Try again" now re-runs the same extraction (VideoTab retryAttemptRef+handleRetry;
+   AudioTab re-submits the retained file) instead of clearing the field.
+2. Dead space removed (VideoTab+AudioTab mt-8) — tabs on the playlist model.
+3. Caption extraction shows a live progress card (ResultCardShell) not a bare skeleton.
+4. Progress redesigned: header names the real phase (not "Transcribing…" mid-download),
+   numbered wizard → active line + thin phase strip; confirm card fixed for 390px
+   (title wraps, actions fill width); TranscriptCard actions wrap, Reader Mode toggle
+   single-line.
+5. Real download progress: determinate bar from download_bytes/download_total_bytes
+   (new JobStatusRow fields), indeterminate until they exist; transcribing has no bar
+   (elapsed vs audio length).
+6. bot_detection: "Try again" primary+first, AI below as prose (ErrorCard note slot),
+   no price, no accent.
+
+errorCopy audit: duration_error added ALONGSIDE duration_exceeds_max (two live channels
+— async error_type vs sync HTTP code — both kept); new copy for api_error,
+compression_error, worker_crashed, stuck_pending, credit_deduction_failed (money-explicit)
++ shared our-side copy for credit_check_error/validation_error/internal_error;
+watchdog_permanent_failure shows only its dedicated notice on the live path too.
+
+Frontend-only. Verified: pnpm build green (2/2, TypeScript incl.). Per-state
+light/dark × 390/desktop pending Khidr's visual check; token-accurate mock pre-approved.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+packages/shared/src/components/TranscriptCard.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/transcribe/ErrorCard.tsx
+packages/shared/src/components/transcribe/JobProgressCard.tsx
+packages/shared/src/components/transcribe/errorCopy.ts
+packages/shared/src/components/transcription/TranscriptionProgress.tsx
+packages/shared/src/hooks/useJobStatus.ts
 ---

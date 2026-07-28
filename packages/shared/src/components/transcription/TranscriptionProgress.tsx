@@ -1,22 +1,31 @@
 "use client"
 
-import { Loader2, Check } from "lucide-react"
 import { cn } from "../../lib/utils"
 import { calcEta, formatElapsed, type WhisperJobStatus } from "../../lib/eta"
 
-const STEPS: { status: WhisperJobStatus; label: string; sublabel: string }[] = [
-  { status: 'pending',     label: 'Queued',        sublabel: 'Waiting for a worker' },
-  { status: 'downloading', label: 'Downloading',   sublabel: 'Fetching audio from server' },
-  { status: 'transcribing',label: 'Transcribing',  sublabel: 'AI is processing the audio' },
-  { status: 'saving',      label: 'Saving',        sublabel: 'Writing transcript to library' },
-]
+// The pipeline order. The header (JobProgressCard) names the active phase; here we render the
+// sub-line, the bar, the thin phase strip and the elapsed/ETA row. No numbered wizard — that read
+// like a form (point 4). The bar is determinate ONLY for a real download percentage; everything
+// else is indeterminate, never a guessed number (point 5).
+const STEPS: WhisperJobStatus[] = ['pending', 'downloading', 'transcribing', 'saving']
 
-const STATUS_ORDER: WhisperJobStatus[] = ['pending', 'downloading', 'transcribing', 'saving']
+const SUBLABEL: Record<WhisperJobStatus, string> = {
+  pending: 'Waiting for a free worker',
+  downloading: 'Fetching audio from YouTube',
+  transcribing: 'AI is processing the audio',
+  saving: 'Writing the transcript to your library',
+}
+
+const fmtMB = (bytes: number) => (bytes / 1_048_576).toFixed(1)
 
 interface TranscriptionProgressProps {
   status: WhisperJobStatus
   elapsedSeconds: number
   audioDurationSeconds?: number | null
+  /** Live download bytes (point 5). Determinate bar shows only when both are present and total > 0;
+      until the backend writes these columns, the download shows the indeterminate bar. */
+  downloadedBytes?: number | null
+  totalBytes?: number | null
   className?: string
 }
 
@@ -24,57 +33,56 @@ export function TranscriptionProgress({
   status,
   elapsedSeconds,
   audioDurationSeconds,
+  downloadedBytes,
+  totalBytes,
   className,
 }: TranscriptionProgressProps) {
-  const currentIndex = STATUS_ORDER.indexOf(status)
+  const currentIndex = STEPS.indexOf(status)
   const { label: etaLabel } = calcEta(audioDurationSeconds ?? null, elapsedSeconds, status)
 
+  const hasBytes =
+    status === 'downloading' && downloadedBytes != null && totalBytes != null && totalBytes > 0
+  const pct = hasBytes ? Math.min(100, Math.round((downloadedBytes! / totalBytes!) * 100)) : 0
+
+  // Right-hand context on the sub-line: real bytes while downloading, audio length while
+  // transcribing (AssemblyAI gives no percentage, so length is the honest context — not a bar).
+  const context = hasBytes
+    ? `${fmtMB(downloadedBytes!)} / ${fmtMB(totalBytes!)} MB`
+    : status === 'transcribing' && audioDurationSeconds
+      ? `~${Math.round(audioDurationSeconds / 60)} min of audio`
+      : null
+
   return (
-    <div className={cn("space-y-4", className)}>
-      {/* Steps */}
-      <ol className="flex flex-col gap-2">
-        {STEPS.map((step, i) => {
-          const isDone = i < currentIndex
-          const isActive = i === currentIndex
-          return (
-            <li key={step.status} className="flex items-center gap-3">
-              {/* Circle indicator */}
-              <div
-                className={cn(
-                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
-                  isDone  && "border-green-500 bg-green-500 text-white",
-                  isActive && "border-accent bg-accent/10 text-accent",
-                  !isDone && !isActive && "border-border bg-surface text-fg-muted",
-                )}
-              >
-                {isDone ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : isActive ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <span>{i + 1}</span>
-                )}
-              </div>
+    <div className={cn("space-y-3", className)}>
+      <div className="flex items-baseline justify-between gap-3 text-xs text-fg-muted">
+        <span className="min-w-0">{SUBLABEL[status]}</span>
+        {context && <span className="shrink-0 font-mono tabular-nums">{context}</span>}
+      </div>
 
-              {/* Label */}
-              <div className="min-w-0 flex-1">
-                <p className={cn(
-                  "text-sm font-medium leading-none",
-                  isActive ? "text-fg" : isDone ? "text-fg-muted" : "text-fg-muted/50",
-                )}>
-                  {step.label}
-                </p>
-                {isActive && (
-                  <p className="mt-0.5 text-xs text-fg-muted">{step.sublabel}</p>
-                )}
-              </div>
-            </li>
-          )
-        })}
-      </ol>
+      <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+        {hasBytes ? (
+          <div
+            className="h-full rounded-full bg-accent transition-[width] duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        ) : (
+          <div className="h-full w-full rounded-full bg-accent/60 motion-safe:animate-pulse" />
+        )}
+      </div>
 
-      {/* Elapsed + ETA row */}
-      <div className="flex items-center justify-between text-xs text-fg-muted font-mono">
+      <div className="flex gap-1.5" aria-hidden="true">
+        {STEPS.map((s, i) => (
+          <span
+            key={s}
+            className={cn(
+              "h-[3px] flex-1 rounded-full",
+              i < currentIndex ? "bg-success" : i === currentIndex ? "bg-accent" : "bg-surface-sunken",
+            )}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between font-mono text-xs text-fg-muted tabular-nums">
         <span>{formatElapsed(elapsedSeconds)}</span>
         {etaLabel && <span>{etaLabel}</span>}
       </div>

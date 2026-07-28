@@ -69,9 +69,10 @@ interface TranscriptCardProps {
   transcriptId?: string;
   // When present, this card IS the completion receipt (one card, not two): the header shows the
   // outcome + a single meta line (duration · lines · credits), and "View in Library" joins the
-  // action row. Absent for the free/caption path, audio, and the library viewer.
+  // action row. Used by both the AI path (shows the credit cost) and the caption path (credits
+  // omitted — captions are free). Absent for audio and the library viewer.
   completion?: {
-    credits: number;
+    credits?: number | null; // omit/null on the free caption path → no credit chip in the meta line
     durationSeconds?: number | null;
     elapsedSeconds?: number | null;
     libraryHref?: string;
@@ -313,7 +314,7 @@ export function TranscriptCard({
                 ? [
                     completion.durationSeconds && completion.durationSeconds > 0 ? `${Math.round(completion.durationSeconds / 60)} min` : null,
                     `${transcript.length} lines`,
-                    `${completion.credits} credit${completion.credits === 1 ? "" : "s"}`,
+                    completion.credits != null ? `${completion.credits} credit${completion.credits === 1 ? "" : "s"}` : null,
                     fmtElapsed(completion.elapsedSeconds) ? `Completed in ${fmtElapsed(completion.elapsedSeconds)}` : null,
                   ].filter(Boolean).join(" · ")
                 : transcript.length > 0
@@ -324,7 +325,9 @@ export function TranscriptCard({
               <p className="mt-1 text-xs text-warning-fg dark:text-warning">{completion.warning}</p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          {/* Actions wrap instead of overflowing on 390px — "View in Library" used to run off-screen
+              as a third button on one row (point 4). */}
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={copyToClipboard} className="gap-2">
               {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               {copied ? "Copied" : "Copy"}
@@ -450,7 +453,9 @@ export function TranscriptCard({
         </div>
 
         {/* Timestamp Toggle */}
-        <div className="flex items-center space-x-2 mt-4 pt-2">
+        {/* Single-line label so the switch sits level with it — a two-line label left it skewed
+            (point 4). */}
+        <div className="flex items-center gap-2.5 mt-4 pt-2">
           <Switch
             id="reader-mode"
             checked={!showTimestamps}
@@ -460,10 +465,8 @@ export function TranscriptCard({
               try { sessionStorage.setItem(TIMESTAMPS_KEY, String(next)); } catch { /* private mode */ }
             }}
           />
-          <Label htmlFor="reader-mode" className="cursor-pointer flex flex-col">
-            <span className="font-medium text-sm">Reader Mode</span>
-            <span className="text-[10px] text-fg-muted font-normal">Hide timestamps for easier reading</span>
-          </Label>
+          <Label htmlFor="reader-mode" className="cursor-pointer text-sm font-medium">Reader Mode</Label>
+          <span className="text-xs text-fg-muted">Hide timestamps</span>
         </div>
       </CardHeader>
 
