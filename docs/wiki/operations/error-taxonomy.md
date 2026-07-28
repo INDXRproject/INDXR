@@ -103,6 +103,7 @@ Eén plek voor alle `error_type` slugs die voorkomen in `transcription_jobs`, `p
 - **User-facing message EN:** "Extraction failed. Try again in a moment."
 - **Mitigatie nu:** Geen automatische retry (niet retry-eligible in `_enqueue_next`). Raw error string wordt gelogd op WARNING met video_id en job_id — zie Railway logs op `[extraction_error:unclassified]`.
 - **Mitigatie gepland:** Taak 1.6 cascade geeft aanvullende extractie-paden. Betere classificatie: productie-logs analyseren op `[extraction_error:unclassified]` om specifieke keywords toe te voegen aan `_classify_download_error`.
+- **Provenance (2026-07-28):** rijen van vóór de `connection_error`/`server_error`/`timeout`-splitsing (~2026-07-26) blijven bewust als `extraction_error` gelabeld — er is **geen backfill** die historie herschrijft (te veel risico voor cosmetiek). Van de standalone `extraction_error`-rijen dateert ~9/10 van vóór de splitsing (proxy 407/522-tunnelfouten die vandaag `server_error`/`proxy_error` zouden zijn). Een verhoogde `extraction_error`-teller in het Operations-dashboard is dus grotendeels legacy, geen actueel probleem; sinds de splitsing komt er bijna geen nieuwe bij.
 
 ---
 

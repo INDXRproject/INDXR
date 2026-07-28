@@ -177,19 +177,32 @@ Log-tag: `[service-metrics]` in Railway worker-logs.
 ## Operations-dashboard (admin, V3)
 
 `/admin/operations` (server component) draait op de RPC **`admin_operations_v3(p_from, p_to, p_exclude_internal)`**
-(`supabase/migrations/20260727135028_admin_operations_v3.sql`). Georganiseerd rond de Four Golden
-Signals; **geld staat er bewust NIET in** — dat blijft Finance (`admin_finance_summary`). Panelen:
+(laatste migratie `20260728015137_..._turnaround_wasted_playlist_errors.sql`). Georganiseerd rond de Four
+Golden Signals; **geld staat er bewust NIET in** — dat blijft Finance (`admin_finance_summary`).
 
-- **Live now** — in-flight / queue / stuck + AssemblyAI-saturatie (jobs `transcribing` nu vs de
-  concurrency-limiet in `ops_config.assemblyai_concurrency_limit`, default 200).
-- **Traffic** — jobs (single/upload/playlist) **én units apart** (1 playlist-job = N video-units) + captions.
-- **Errors** — success-rate + error% + per-type + het **download-faal-per-duurcategorie**-paneel
-  (het incident-signaal: faalkans per videolengte, 0-20/20-60/60-120/120m+) + dagreeks-sparkline.
-- **Latency** — queue-wait (`submitted_at`→`provider_processing_at`), processing (`provider_processing_ms`),
-  download (`started_at`→`submitted_at`) als **mediaan/p95/max**. Leeg → "no data yet", **nooit 0**
-  (een lege wachttijd — korte job klaar tussen twee polls — mag de gemeten wachttijd niet drukken).
-- **Playlist reliability** — videos effective vs `first_pass_failed` + door-auto-retry `recovered`.
-- **Audio & provider** — download-MB (meet de kleiner-formaat-fix) + formaat/model/taal-verdeling.
+**Job- vs unit-niveau (ADR-081):** JOB-niveau-metrics (ai_total, AI-success_rate, errors.total/by_type/
+daily) filteren `source_kind IN ('single','upload')` — playlist-kindjobs (`source_kind='playlist'`)
+vervuilen de standalone-cijfers dus NIET. UNIT-niveau-telemetrie (latency, audio, provider) blijft ALLE
+transcripties (playlist-video's lopen door dezelfde pipeline → geldige unit-meting).
+
+Panelen:
+- **Status-oordeel** (bovenaan) — 🔴/🟡/🟢-verdict "moet ik nú iets doen?", ergste actieve signaal wint
+  (stuck>0 / success<70%/90% / saturatie≥60/90%), met reden + actie. Drempels zijn startgokken.
+- **Live now** — in-flight / queue / stuck + AssemblyAI-saturatie (`ops_config.assemblyai_concurrency_limit`, 200).
+  Bij géén activiteit toont het scherm alleen het oordeel + Live-now ("Quiet"), geen muur lege kaarten.
+- **Traffic** — jobs (single/upload/playlist) **én units apart** + captions.
+- **Errors** — success-rate + error% + **download-faal-per-duurcategorie** + dagreeks + de **volledige
+  fouttaxonomie gegroepeerd naar schuld, inclusief 0-rijen** (us/transient/youtube/user/unknown),
+  uitklapbaar met de **ruwe backend-meldingen** (`errors.samples`, tot 3 per type).
+- **Latency** — **provider_turnaround** (`submitted_at`→`completed_at`) is het HOOFDgetal (altijd meetbaar,
+  loopt op bij saturatie); queue-wait + processing_ms zijn secundair (vullen alleen bij echte wachtrij —
+  AssemblyAI geeft geen timing-timestamps, en 1u audio verwerkt in ~30s dus de queued→processing-overgang
+  wordt meestal gemist). mediaan/p95/max; leeg → "no data yet" nooit 0; onder n=20 geen p95/max (valse precisie).
+- **Playlist reliability** — videos effective; first-pass/recovered pas zichtbaar zodra hun capture data
+  heeft; + **playlist-video-foutuitsplitsing** op unit-niveau (uitklapbare ruwe meldingen, `source_kind='playlist'`).
+- **Audio & provider** — download-MB + **verspilde proxy-MB op mislukte jobs** (gedrag/bytes, geen geld) +
+  formaat/model/taal-verdeling.
+- **Uptime** — eerlijk "nog niet ingericht"-vak tot een externe monitor (Better Stack) live is.
 
 De oude `admin_operations_summary` blijft bestaan (niet meer door de UI gebruikt). Toegang via de
 admin-service-role-client; route-niveau admin-gating (`ADMIN_EMAIL`).

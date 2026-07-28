@@ -14080,3 +14080,48 @@ apps/app/src/app/admin/operations/page.tsx
 docs/LOG.md
 supabase/migrations/20260727151149_admin_operations_v3_standalone_and_samples.sql
 ---
+
+[2026-07-28 02:00] taak: V3-dashboard 3 beslissingen. (1) Latency: provider_turnaround (submitted->completed) is hoofdgetal, queue-wait/processing secundair; geen fast-poll. (2) Mockup terug: status-oordeel-banner (rood/geel/groen+reden+actie), rustige-toestand (geen muur lege kaarten), volledige fouttaxonomie gegroepeerd naar schuld incl 0-rijen + ruwe meldingen, uptime-eerlijk-vak; verspilde-proxy-MB op mislukte jobs (bytes, geen geld). (3) Playlist-video-foutuitsplitsing (unit-niveau, source_kind=playlist, uitklapbaar). verder-A: provenance-regel error-taxonomy.md. | gewijzigd: supabase/migrations/20260728015137_admin_operations_v3_turnaround_wasted_playlist_errors.sql apps/app/src/app/admin/operations/page.tsx apps/app/src/app/admin/adminTypes.ts docs/wiki/operations/monitoring.md docs/wiki/operations/error-taxonomy.md | geverifieerd: RPC live (turnaround p50 25.1s, wasted 45.8MB, playlist_errors 9); tsc+eslint schoon; full next build lokaal geblokkeerd door andere-sessie resource-contentie (marketing .next/lock + OOM) -> Vercel is gezaghebbend.[2026-07-28 04:11] commit: feat(ops/dashboard): turnaround-primary latency, status verdict, full taxonomy, playlist errors
+
+Drie beslissingen uitgewerkt.
+
+1. Queue-wait — optie 1. provider_turnaround (submitted_at -> completed_at) is nu het HOOFDgetal
+   in de Latency-sectie: altijd meetbaar (we zien altijd 'completed'), loopt op bij saturatie, raakt
+   het live pad niet. queue_wait_ai + provider_processing_ms blijven secundair (vullen alleen bij
+   echte wachtrij). Geen versnelde poll-cadans — AssemblyAI geeft geen timing-timestamps en de
+   queued->processing-overgang is bijna altijd ~0, dus niet de moeite van extra polls op het kernpad.
+
+2. Uit de mockup terug (in volgorde):
+   a) Status-oordeel bovenaan — rood/geel/groen, ergste actieve signaal wint (stuck / success<70/90%
+      / saturatie>=60/90%), met reden + actie. Drempels zijn startgokken (staat in de hint).
+   b) Eerlijke rustige toestand — bij geen activiteit toont het scherm alleen het oordeel + Live-now
+      ("Quiet"), geen muur lege kaarten.
+   c) Volledige fouttaxonomie gegroepeerd naar schuld, INCLUSIEF 0-rijen (us/transient/youtube/user/
+      unknown), uitklapbaar met de ruwe meldingen. Nieuwe codes vallen vanzelf onder Unknown.
+   d) Uptime als eerlijk "nog niet ingericht"-vak.
+   NIET terug: kosten/efficiëntie-paneel (geld blijft Finance). WEL: verspilde proxy-bytes op mislukte
+   jobs als operationeel getal in MB (gedrag, geen bedrag) in de Audio-sectie.
+
+3. Het gat: playlist-video-fouten. Nieuwe foutuitsplitsing BINNEN de playlist-sectie, unit-niveau,
+   met dezelfde uitklapbare ruwe meldingen (source_kind='playlist'-kindjobs). Job- en unit-niveau
+   blijven gescheiden.
+
+verder-A: oude pre-splitsing-rijen blijven extraction_error (geen backfill die historie herschrijft);
+één provenance-regel toegevoegd in error-taxonomy.md.
+
+RPC-toevoegingen (migratie 20260728015137): latency.provider_turnaround, audio.wasted_proxy_mb_failed,
+reliability.playlist_errors (by_type+samples). Live-geverifieerd (turnaround p50 25.1s n=4, wasted
+45.8 MB, playlist_errors 9 met ruwe 407-meldingen).
+
+Verificatie: tsc --noEmit schoon + eslint schoon (app). De volledige next build kon lokaal niet
+groen draaien door resource-contentie met de andere sessie (marketing .next/lock + OOM) — niet mijn
+code; de Vercel-deploy is de gezaghebbende build. Backend/admin only, expliciete paden.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/operations/page.tsx
+docs/LOG.md
+docs/wiki/operations/error-taxonomy.md
+docs/wiki/operations/monitoring.md
+supabase/migrations/20260728015137_admin_operations_v3_turnaround_wasted_playlist_errors.sql
+---

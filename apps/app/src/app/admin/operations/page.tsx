@@ -1,8 +1,8 @@
 import type { ReactNode } from "react"
 import { createAdminClient } from "@indxr/shared/utils/supabase/admin"
 import {
-  pct, resolveWindow, errorMeta, FAULT_META, HEALTH_CLS,
-  type OperationsV3, type StatBand, type Health,
+  pct, resolveWindow, errorMeta, FAULT_META, ERROR_META, HEALTH_CLS,
+  type OperationsV3, type StatBand, type Health, type ErrorFault,
 } from "../adminTypes"
 import { DashboardControls } from "../_components/DashboardControls"
 import { InfoHint } from "../_components/InfoHint"
@@ -149,6 +149,141 @@ function successHealthV3(rate: number | null, sample: number): Health {
   return rate >= 0.95 ? "good" : rate >= 0.85 ? "warn" : "bad"
 }
 
+// ── Status verdict (mockup 2a) — one-glance "must I act now?", worst active signal wins ──────────────
+type Verdict = { level: "red" | "amber" | "green" | "quiet"; headline: string; detail: string }
+
+function topErrorLabel(byType: Record<string, number>): string {
+  const top = Object.entries(byType).sort((a, b) => b[1] - a[1])[0]
+  return top ? errorMeta(top[0]).label : "unknown"
+}
+
+function computeVerdict(o: OperationsV3): Verdict {
+  const { traffic, reliability, capacity, provider, errors } = o
+  const finished = reliability.ai.complete + reliability.ai.error
+  const sr = reliability.ai.success_rate
+  const sat = provider.saturation_pct
+  const activity = traffic.jobs.ai_total + traffic.jobs.playlist + traffic.captions.total
+  if (activity === 0 && capacity.in_flight === 0)
+    return { level: "quiet", headline: "Quiet — no jobs in this window", detail: "Nothing to act on. Widen the window to see history." }
+  if (capacity.stuck > 0)
+    return { level: "red", headline: `${capacity.stuck} job${capacity.stuck === 1 ? "" : "s"} stuck right now`, detail: "A heartbeat went stale — the watchdog will recover or refund, but check the worker if it persists." }
+  if (sat != null && sat >= 90)
+    return { level: "red", headline: `AssemblyAI at ${sat}% of its concurrency limit`, detail: "New transcriptions may start failing (429). Raise the account limit or shed load." }
+  if (sr != null && finished >= 10 && sr < 0.70)
+    return { level: "red", headline: `AI success rate ${pct(sr)}`, detail: `Below 70%. Top cause: ${topErrorLabel(errors.by_type)}. Investigate now.` }
+  if (sr != null && finished >= 10 && sr < 0.90)
+    return { level: "amber", headline: `AI success rate ${pct(sr)} — degraded`, detail: `Top cause: ${topErrorLabel(errors.by_type)}.` }
+  if (sat != null && sat >= 60)
+    return { level: "amber", headline: `AssemblyAI load ${sat}%`, detail: "Approaching the concurrency limit — watch for queueing." }
+  if (capacity.queue_depth_now > 5)
+    return { level: "amber", headline: `${capacity.queue_depth_now} jobs queued`, detail: "The worker may be falling behind." }
+  return { level: "green", headline: "Normal", detail: "Nothing stuck, success rate healthy, provider not saturated." }
+}
+
+const VERDICT_STYLE: Record<Verdict["level"], { ring: string; icon: string }> = {
+  red:   { ring: "border-error/40 bg-error-subtle",     icon: "🔴" },
+  amber: { ring: "border-warning/40 bg-warning-subtle", icon: "🟡" },
+  green: { ring: "border-success/40 bg-success-subtle", icon: "🟢" },
+  quiet: { ring: "border-border bg-surface-sunken",     icon: "🟢" },
+}
+
+function StatusBanner({ v }: { v: Verdict }) {
+  const s = VERDICT_STYLE[v.level]
+  return (
+    <div className={`flex items-start gap-3 rounded-xl border p-4 ${s.ring}`}>
+      <span className="text-lg leading-none">{s.icon}</span>
+      <div className="min-w-0">
+        <p className="flex items-center text-sm font-semibold text-fg-strong">
+          {v.headline}
+          <InfoHint text="One-glance verdict — the worst active signal wins. Thresholds (any stuck job, success <70%/90% over ≥10 finished, AssemblyAI load ≥60%/90%) are starting guesses; calibrate once real traffic settles." />
+        </p>
+        <p className="text-xs text-fg-muted">{v.detail}</p>
+      </div>
+    </div>
+  )
+}
+
+// ── Full error taxonomy grouped by fault, incl 0-rows (mockup 2c) ────────────────────────────────────
+const FAULT_ORDER: ErrorFault[] = ["us", "transient", "youtube", "user", "unknown"]
+
+function FaultTaxonomy({ byType, samples }: { byType: Record<string, number>; samples: Record<string, string[]> }) {
+  const known = new Set(Object.keys(ERROR_META))
+  const groups: Record<ErrorFault, { slug: string; label: string; count: number; hint: string }[]> =
+    { us: [], youtube: [], user: [], transient: [], unknown: [] }
+  for (const [slug, meta] of Object.entries(ERROR_META))
+    groups[meta.fault].push({ slug, label: meta.label, count: byType[slug] ?? 0, hint: meta.hint })
+  for (const [slug, count] of Object.entries(byType))
+    if (!known.has(slug)) groups.unknown.push({ slug, label: slug, count, hint: "New/unlabelled code — the raw message is your cue to label it." })
+
+  return (
+    <div className="space-y-3">
+      {FAULT_ORDER.map((fault) => {
+        const rows = groups[fault].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+        if (rows.length === 0) return null
+        const groupTotal = rows.reduce((s, r) => s + r.count, 0)
+        return (
+          <div key={fault}>
+            <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider">
+              <span className={FAULT_META[fault].cls}>{FAULT_META[fault].label}</span>
+              <span className="tabular-nums text-fg-muted">{groupTotal}</span>
+            </p>
+            <div className="mt-1 space-y-0.5">
+              {rows.map((r) => {
+                const raw = samples[r.slug] ?? []
+                const zero = r.count === 0
+                return (
+                  <details key={r.slug} className={`group text-xs ${zero ? "opacity-45" : ""}`}>
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+                      <span className="truncate text-fg">{r.label}{!zero && <span className="ml-1 text-fg-subtle group-open:hidden">▸</span>}</span>
+                      <span className="font-semibold tabular-nums text-fg">{r.count}</span>
+                    </summary>
+                    <div className="mt-0.5 space-y-1 pl-3">
+                      <p className="text-[11px] text-fg-subtle">{r.hint}</p>
+                      {raw.length > 0
+                        ? raw.map((m, i) => (<p key={i} className="truncate rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-fg-muted" title={m}>{m}</p>))
+                        : <p className="text-[11px] italic text-fg-subtle">No occurrence with a stored message.</p>}
+                    </div>
+                  </details>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Occurred-only error drill-down (playlist unit-level, point 3) — same expandable raw messages.
+function OccurredErrors({ byType, samples }: { byType: Record<string, number>; samples: Record<string, string[]> }) {
+  const rows = Object.entries(byType).map(([slug, count]) => ({ slug, count, meta: errorMeta(slug) })).sort((a, b) => b.count - a.count)
+  if (rows.length === 0) return <p className="py-3 text-sm text-fg-subtle">No playlist-video failures in this window. 🎉</p>
+  return (
+    <div className="space-y-0.5">
+      {rows.map((r) => {
+        const raw = samples[r.slug] ?? []
+        return (
+          <details key={r.slug} className="group text-xs">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+              <span className="min-w-0 truncate">
+                <span className={`mr-1.5 inline-block h-2 w-2 rounded-full bg-current align-middle ${FAULT_META[r.meta.fault].cls}`} />
+                <span className="text-fg">{r.meta.label}<span className="ml-1 text-fg-subtle group-open:hidden">▸</span></span>
+              </span>
+              <span className="font-semibold tabular-nums text-fg">{r.count}</span>
+            </summary>
+            <div className="mt-0.5 space-y-1 pl-4">
+              <p className="text-[11px] text-fg-subtle">{r.meta.hint}</p>
+              {raw.length > 0
+                ? raw.map((m, i) => (<p key={i} className="truncate rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-fg-muted" title={m}>{m}</p>))
+                : <p className="text-[11px] italic text-fg-subtle">No raw message stored.</p>}
+            </div>
+          </details>
+        )
+      })}
+    </div>
+  )
+}
+
 export default async function AdminOperationsPage({
   searchParams,
 }: {
@@ -171,10 +306,6 @@ export default async function AdminOperationsPage({
   const aiFinished = reliability.ai.complete + reliability.ai.error
   const errorPct = traffic.jobs.ai_total > 0 ? errors.total / traffic.jobs.ai_total : null
 
-  const errorRows = Object.entries(errors.by_type)
-    .map(([slug, value]) => ({ slug, value, meta: errorMeta(slug) }))
-    .sort((a, b) => b.value - a.value)
-
   const fmtList = (rec: Record<string, number>, cls?: string) =>
     Object.entries(rec).map(([label, value]) => ({ label, value, cls })).sort((a, b) => b.value - a.value)
 
@@ -183,6 +314,11 @@ export default async function AdminOperationsPage({
   const plVideoSuccess = pl.videos_total > 0 ? pl.videos_complete / pl.videos_total : null
   const satTone: Health = provider.saturation_pct == null ? "neutral"
     : provider.saturation_pct >= 90 ? "bad" : provider.saturation_pct >= 60 ? "warn" : "good"
+
+  // Status verdict (2a) + quiet state (2b): when there's no activity in the window, show the verdict
+  // and Live-now only — not a grid of empty cards.
+  const verdict = computeVerdict(o)
+  const quiet = verdict.level === "quiet"
 
   return (
     <div className="space-y-6">
@@ -195,6 +331,9 @@ export default async function AdminOperationsPage({
         </div>
         <DashboardControls showTest />
       </div>
+
+      {/* ── STATUS VERDICT (2a) — one glance: must I act now? ── */}
+      <StatusBanner v={verdict} />
 
       {/* ── LIVE NOW — real-time, window-independent ── */}
       <Card className="!bg-surface-sunken">
@@ -216,6 +355,8 @@ export default async function AdminOperationsPage({
         </div>
       </Card>
 
+      {/* Windowed detail — hidden when quiet (2b): no wall of empty cards. */}
+      {!quiet && (<>
       {/* ── TRAFFIC (Golden Signal) — jobs vs units apart ── */}
       <section className="space-y-3">
         <h2 className="flex items-center text-xs font-semibold uppercase tracking-wider text-fg-subtle">
@@ -254,44 +395,12 @@ export default async function AdminOperationsPage({
           <Card title="Download failure by video length"
             info="Download-phase failures bucketed by video length (credits_reserved ≈ minutes). If the rate climbs with length, long videos are hitting a limit of the current setup — this is exactly the signal behind the 76-min timeout incident. Bar colour: green <5%, amber <10%, red ≥10%.">
             <DurationFailure rows={errors.download_by_duration} />
-            <p className="mt-3 border-t pt-2 text-[11px] text-fg-subtle">Bar length = failure %, scaled to the worst bucket. "unknown" = pre-reservation jobs with no length recorded.</p>
+            <p className="mt-3 border-t pt-2 text-[11px] text-fg-subtle">Bar length = failure %, scaled to the worst bucket. The unknown bucket = pre-reservation jobs with no length recorded.</p>
           </Card>
 
-          <Card title={`Error types · ${win.label}`}
-            info="Every failure grouped by cause. 'Our system' errors are on us to fix; 'YouTube'/'User' are expected. 'Transient' auto-retries on a fresh proxy IP. Expand a row for the raw backend messages — the first thing you need when investigating an unknown error.">
-            {errorRows.length === 0 ? (
-              <p className="py-6 text-sm text-fg-subtle">{traffic.jobs.ai_total === 0 ? "No jobs in this window." : "No errors. 🎉"}</p>
-            ) : (
-              <div className="space-y-1">
-                {errorRows.map((e) => {
-                  const samples = errors.samples[e.slug] ?? []
-                  return (
-                    <details key={e.slug} className="group text-xs">
-                      <summary className="flex cursor-pointer list-none items-start gap-2">
-                        <span className={`mt-1 h-2 w-2 shrink-0 rounded-full bg-current ${FAULT_META[e.meta.fault].cls}`} />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center justify-between gap-2">
-                            <span className="truncate text-fg">{e.meta.label}<span className="ml-1 text-fg-subtle group-open:hidden">▸</span></span>
-                            <span className="font-semibold tabular-nums text-fg">{e.value}</span>
-                          </span>
-                          <span className={`text-[11px] ${FAULT_META[e.meta.fault].cls}`}>{FAULT_META[e.meta.fault].label}</span>
-                        </span>
-                      </summary>
-                      <div className="mt-1 space-y-1 pl-4">
-                        <p className="text-[11px] text-fg-subtle">{e.meta.hint}</p>
-                        {samples.length > 0 ? (
-                          samples.map((m, i) => (
-                            <p key={i} className="truncate rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-fg-muted" title={m}>{m}</p>
-                          ))
-                        ) : (
-                          <p className="text-[11px] italic text-fg-subtle">No raw message stored.</p>
-                        )}
-                      </div>
-                    </details>
-                  )
-                })}
-              </div>
-            )}
+          <Card title={`Error taxonomy · ${win.label}`}
+            info="The FULL known failure list, grouped by whose fault it is, including the 0-rows — so you see what did NOT go wrong, not just what did. 'Our system' errors are on us; 'YouTube'/'User' are expected; 'Transient' auto-retries. Any new backend code shows up under 'Unknown'. Expand a row for the raw messages.">
+            <FaultTaxonomy byType={errors.by_type} samples={errors.samples} />
           </Card>
         </div>
 
@@ -304,15 +413,17 @@ export default async function AdminOperationsPage({
       {/* ── LATENCY (Golden Signal) — median/p95/max, empty != 0 ── */}
       <section className="space-y-3">
         <h2 className="flex items-center text-xs font-semibold uppercase tracking-wider text-fg-subtle">
-          Latency<InfoHint text="How long each phase takes. Shown as median / p95 / max, never a blended average. A phase with no completed jobs yet reads 'no data yet' — an empty queue-wait is not zero." />
+          Latency<InfoHint text="How long each phase takes — median / p95 / max, never a blended average. Provider turnaround is the primary number (always measurable); queue-wait and processing are secondary and only fill in under real queueing. Below n=20, p95/max are hidden as false precision." />
         </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Band label="Provider turnaround" band={latency.provider_turnaround} fmt={secs} tone="neutral"
+            info="Submitted → completed at AssemblyAI — the PRIMARY latency number. Always measurable (we always observe completion) and it rises under saturation. This replaced queue-wait as the headline because a 1h audio processes in ~30s, so the queued→processing transition is usually missed between polls." />
           <Band label="AssemblyAI queue wait" band={latency.queue_wait_ai} fmt={secs}
-            info="Time a submitted job waits in AssemblyAI's queue before processing starts (submitted → processing). This is the metric this whole rework was built for. A short job that finishes between two polls has no measured wait — it's excluded, not counted as 0." />
+            info="Secondary: submitted → processing. Fills in only when there's real queueing (AssemblyAI saturated) — a job that starts instantly has ~0 wait and is excluded, not counted as 0." />
           <Band label="AI processing time" band={latency.provider_processing_ms} fmt={ms}
-            info="How long AssemblyAI spends actually transcribing (processing → completed), from our polling. Median / p95 / max." />
+            info="Secondary: processing → completed, from our polling. Only observed when the queued→processing transition is caught between polls." />
           <Band label="Download + prep" band={latency.download_seconds} fmt={secs}
-            info="Audio download + ffmpeg, from job start to AssemblyAI submit. Watch this against the new smaller-audio format — it should trend down." />
+            info="Audio download + ffmpeg, from job start to AssemblyAI submit. Watch against the smaller-audio format — it should trend down." />
         </div>
       </section>
 
@@ -336,6 +447,12 @@ export default async function AdminOperationsPage({
               sub="auto-retry rescued" info="Videos that failed once then succeeded on the auto-retry. The payoff of the retry pass." />
           )}
         </div>
+        {/* Point 3: playlist-video error causes — unit-level, kept out of the standalone figures but
+            no longer invisible. Same expandable raw messages. */}
+        <Card title={`Playlist video failures · ${win.label}`}
+          info="Why individual playlist videos failed (the playlist child-jobs). Unit-level — deliberately separate from the standalone-AI error numbers, but these failures used to be invisible on the whole dashboard. Expand for the raw messages.">
+          <OccurredErrors byType={reliability.playlist_errors.by_type} samples={reliability.playlist_errors.samples} />
+        </Card>
       </section>
 
       {/* ── AUDIO & PROVIDER ── */}
@@ -346,6 +463,12 @@ export default async function AdminOperationsPage({
         <div className="grid gap-3 lg:grid-cols-2">
           <Card title="Download size" info="Actual bytes pulled over the proxy per job (proxy_bytes). Median / p95 / max. The smaller-audio-format fix should pull the median down over time.">
             <Band label="Downloaded per job (MB)" band={audio.download_mb} fmt={(n) => (n == null ? "—" : `${n} MB`)} />
+            <p className="mt-3 flex items-center justify-between border-t pt-2 text-xs">
+              <span className="flex items-center text-fg-muted">Wasted on failed jobs
+                <InfoHint text="Proxy bytes we pulled for downloads that ultimately failed — behaviour, not money (the euro cost lives in Finance). A rising number means we're paying bandwidth for work that's being thrown away." />
+              </span>
+              <span className="font-semibold tabular-nums text-fg">{audio.wasted_proxy_mb_failed} MB</span>
+            </p>
             <div className="mt-3">
               <p className="mb-1.5 text-xs uppercase tracking-wide text-fg-muted">Audio format</p>
               <Bars data={fmtList(audio.formats, "bg-sky")} />
@@ -357,6 +480,19 @@ export default async function AdminOperationsPage({
             <p className="mb-1.5 mt-3 text-xs uppercase tracking-wide text-fg-muted">Detected language</p>
             <Bars data={fmtList(provider.languages, "bg-violet")} />
           </Card>
+        </div>
+      </section>
+
+      </>)}
+
+      {/* ── UPTIME (2d) — honest placeholder until external monitoring is wired ── */}
+      <section className="space-y-3">
+        <h2 className="flex items-center text-xs font-semibold uppercase tracking-wider text-fg-subtle">
+          Uptime<InfoHint text="Site/API availability — separate from whether jobs succeed. Needs an external monitor (e.g. Better Stack) hitting indxr.ai, app.indxr.ai and the Railway /health endpoint. Shown here so it isn't invisible on the list." />
+        </h2>
+        <div className="rounded-xl border border-dashed bg-surface p-5 text-sm text-fg-muted">
+          <p className="font-medium text-fg">Not set up yet</p>
+          <p className="mt-1 text-xs">Availability monitoring is not wired yet. Once an external monitor (Better Stack) is watching <span className="font-mono">indxr.ai</span>, <span className="font-mono">app.indxr.ai</span> and <span className="font-mono">/health</span>, real uptime lands here — no invented 99.9%.</p>
         </div>
       </section>
 

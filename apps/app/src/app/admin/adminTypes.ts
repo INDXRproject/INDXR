@@ -108,8 +108,13 @@ export interface OperationsV3 {
     playlist_recovered: number
     // How many playlist video-results entries carry the attempts/recovered capture yet. 0 → no data.
     attempt_capture_present: number
+    // Playlist-video errors (source_kind='playlist' child jobs) — unit-level, kept out of the
+    // standalone-AI figures. Same shape as errors.by_type/samples.
+    playlist_errors: { total: number; by_type: Record<string, number>; samples: Record<string, string[]> }
   }
-  latency: { queue_wait_ai: StatBand; provider_processing_ms: StatBand; download_seconds: StatBand }
+  // provider_turnaround (submitted→completed) is the primary latency number — always measurable.
+  // queue_wait_ai + provider_processing_ms are secondary (only populate under real queueing).
+  latency: { provider_turnaround: StatBand; queue_wait_ai: StatBand; provider_processing_ms: StatBand; download_seconds: StatBand }
   errors: {
     total: number
     by_type: Record<string, number>
@@ -118,7 +123,7 @@ export interface OperationsV3 {
     download_by_duration: { bucket: string; total: number; dl_failures: number; pct: number }[]
     daily: { day: string; jobs: number; errors: number }[]
   }
-  audio: { formats: Record<string, number>; download_mb: StatBand }
+  audio: { formats: Record<string, number>; download_mb: StatBand; wasted_proxy_mb_failed: number }
   provider: {
     languages: Record<string, number>; models: Record<string, number>
     concurrency_limit: number | null; in_flight_now: number; saturation_pct: number | null
