@@ -151,7 +151,7 @@ export default function LoginPage() {
               </Button>
             </div>
             <p className="text-xs text-center text-fg-muted">
-              OAuth providers coming soon
+              Apple sign-in coming soon
             </p>
 
         </CardContent>

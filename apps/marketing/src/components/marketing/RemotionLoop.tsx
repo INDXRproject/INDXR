@@ -1,5 +1,5 @@
-// Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
-// Remotion integration comes later. For now renders a static placeholder cycle.
+// Static presentation of the three input types. A future iteration may animate the cycle;
+// until then this renders the list as-is, with no visitor-facing note about that.
 
 interface RemotionLoopProps {
   items?: string[]
@@ -22,7 +22,6 @@ export function RemotionLoop({ items, className }: RemotionLoopProps) {
           </div>
         ))}
       </div>
-      <p className="text-xs text-[var(--fg-muted)] mt-3">[Remotion animation placeholder — static for now]</p>
     </div>
   )
 }

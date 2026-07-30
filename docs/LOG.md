@@ -14195,3 +14195,29 @@ Changed: backend/test_refund_before_error.py
 backend/transcription_pipeline.py
 docs/LOG.md
 ---
+
+[2026-07-30 12:00] taak: Marketing placeholder-sweep (2 dagen voor launch). Homepage blok 01 "Any video, any audio": zichtbare `<p>[Remotion animation placeholder — static for now]</p>` in RemotionLoop verwijderd — was écht gerenderd (geen alt/label), niet alleen DOM. De statische lijst (Single video URL / Playlist URL / Audio file upload) blijft, zonder commentaar; misleidende component-comment ook opgeschoond. Rest van marketing nagelopen op placeholder/TODO/lorem/coming-soon/for-now. Twee zichtbare fixes erbij: (1) DocsFigure toonde "Figure placeholder — {alt}" op 3 live docs-pagina's (quickstart 2×, markdown-export 1×; alle zonder `src`) — geen echte screenshots, dus geen statische versie: `src` ontbreekt → rendert nu null (geen lege aankondig-box); `src` toevoegen brengt de figuur terug. (2) login/page.tsx "OAuth providers coming soon" was onjuist (Google-OAuth werkt live via loginWithGoogleAction; alleen Apple disabled) → "Apple sign-in coming soon". Report-only (niet gefixt, geen bezoeker-impact): TutorialStep "Screenshot placeholder" (component 0× gebruikt) en MacbookMockupFrame `[mockup placeholder]`-fallback (alle 4 homepage-usages geven children, fallback rendert nooit). Artikel-regels "…not yet processed:" zijn legitieme intro's bij Obsidian Dataview-codevoorbeelden — geen placeholder. | gewijzigd: apps/marketing/src/components/marketing/RemotionLoop.tsx apps/marketing/src/components/docs/DocsFigure.tsx apps/marketing/src/app/login/page.tsx | geverifieerd: pnpm build:marketing groen.
+---
+[2026-07-30 17:41] commit: fix(marketing): remove visitor-facing placeholder copy pre-launch
+
+- Homepage block 01 "Any video, any audio": drop the rendered
+  "[Remotion animation placeholder — static for now]" line in RemotionLoop.
+  It was visible in production, not just alt/label. The static input-type list
+  stays, uncommented.
+- DocsFigure: render nothing when no `src` instead of a visible
+  "Figure placeholder — {alt}" box (3 live docs pages had no screenshot yet).
+- login: "OAuth providers coming soon" was wrong — Google OAuth is live; only
+  Apple is disabled. Now "Apple sign-in coming soon".
+
+Report-only, no visitor impact (left as-is): TutorialStep "Screenshot placeholder"
+(component unused) and MacbookMockupFrame "[mockup placeholder]" fallback (all
+homepage usages pass children, so it never renders).
+
+Marketing-only. Verified: pnpm build:marketing green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/login/page.tsx
+apps/marketing/src/components/docs/DocsFigure.tsx
+apps/marketing/src/components/marketing/RemotionLoop.tsx
+docs/LOG.md
+---

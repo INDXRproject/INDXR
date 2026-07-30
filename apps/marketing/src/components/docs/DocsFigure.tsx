@@ -1,7 +1,8 @@
 import type { ReactNode } from "react"
 
 interface DocsFigureProps {
-  /** Image path under /public. Omit to render the reserved-space placeholder. */
+  /** Image path under /public. Omit and the figure renders nothing (no visitor-facing
+      placeholder box) until a real screenshot lands. */
   src?: string
   /** REQUIRED. Screen-reader description of the image content. */
   alt: string
@@ -19,24 +20,19 @@ interface DocsFigureProps {
  * Never decorative. Caption states what it demonstrates.
  */
 export function DocsFigure({ src, alt, caption, aspect = "16 / 9" }: DocsFigureProps) {
+  // Until a real screenshot lands, render nothing — a visitor shouldn't see an empty
+  // reserved box announcing a missing figure. Add `src` and the figure (and its
+  // layout-stable reserved space) returns.
+  if (!src) return null
+
   return (
     <figure className="my-6">
       <div
         className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-sunken)]"
         style={{ aspectRatio: aspect }}
       >
-        {src ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
-        ) : (
-          <div
-            role="img"
-            aria-label={alt}
-            className="flex h-full w-full items-center justify-center px-4 text-center text-xs text-[var(--fg-muted)]"
-          >
-            Figure placeholder — {alt}
-          </div>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
       </div>
       <figcaption className="mt-2 text-sm text-[var(--fg-muted)]">{caption}</figcaption>
     </figure>
