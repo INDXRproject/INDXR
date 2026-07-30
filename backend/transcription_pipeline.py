@@ -665,11 +665,25 @@ async def do_assemblyai_transcription(
                     est_minutes = None
             _dl_timeout = _derive_download_timeout(est_minutes)
             logger.info(f"[pipeline] download-budget={_dl_timeout:.0f}s (est_minutes={est_minutes}) video={video_id} job={job_id}")
+
+            # Point 2: sync progress-writer, aangeroepen (gethrottled) vanuit de yt-dlp progress-hook in
+            # de download-thread. Schrijft rauwe bytes; de UI toont "19.2 / 50.4 MB". Faalt nooit hard.
+            def _write_dl_progress(done: int, total: int) -> None:
+                if not job_id:
+                    return
+                try:
+                    supabase.table('transcription_jobs').update(
+                        {'download_bytes': done, 'download_total_bytes': total}
+                    ).eq('id', job_id).execute()
+                except Exception as _pe:
+                    logger.debug(f"[pipeline] download-progress write skipped job={job_id}: {_pe}")
+
             try:
                 audio_path, video_title, channel, proxy_bytes = await _run_with_heartbeat(
                     asyncio.to_thread(
                         extract_youtube_audio, video_id,
                         proxy_urls=proxy_urls, timeout_seconds=_dl_timeout,  # harde in-download deadline (Fix 3)
+                        progress_cb=_write_dl_progress,                       # point 2: voortgangsbalk
                     ),
                     heartbeat_fn,
                     timeout=_dl_timeout + 180,  # coarse backstop rond de harde deadline → 'timeout' (retryable)

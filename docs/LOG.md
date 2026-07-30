@@ -14221,3 +14221,36 @@ apps/marketing/src/components/docs/DocsFigure.tsx
 apps/marketing/src/components/marketing/RemotionLoop.tsx
 docs/LOG.md
 ---
+
+[2026-07-30 17:50] taak: Point 2 + 3. P2 download-voortgang: kolommen download_bytes/download_total_bytes (migratie 20260730154145), geschreven vanuit yt-dlp progress-hook via sync progress_cb, gethrottled 3s (~frontend-poll-cadans); geen totaal -> beide NULL (onbepaalde balk); beide ook aan /api/jobs-respons. P3 alias-uitfasering stap 3: duration/credits_used aliassen uit get_job_status-dict verwijderd (rauwe namen only), geen lezer meer op oude namen, priorities.md 2.0 afgevinkt. | gewijzigd: backend/audio_utils.py backend/transcription_pipeline.py backend/main.py backend/test_download_progress.py supabase/migrations/20260730154145_add_download_progress_bytes.sql docs/wiki/roadmap/priorities.md | geverifieerd: py_compile+import-smoke; throttle-test 50->1 write, skip zonder totaal.[2026-07-30 17:47] commit: feat(backend): download-progress bytes + drop job-status duration/credits_used aliases
+
+Point 2 — download-voortgang wegschrijven. Nieuwe kolommen transcription_jobs.download_bytes +
+download_total_bytes (bigint, rauwe bytes — de UI toont "19.2 / 50.4 MB", geen percentage). Geschreven
+vanuit de bestaande yt-dlp progress-hook in extract_youtube_audio via een sync progress_cb, GETHROTTLED
+naar DOWNLOAD_PROGRESS_INTERVAL=3s. 3s onderbouwd: dat is ~de frontend-poll-cadans (useJobStatus pollt
+elke 2-3s + Realtime levert elke rij-update), dus sneller schrijven wordt toch niet vaker gezien,
+terwijl een download van minuten de DB niet bestookt (een 10-min download = ~200 writes i.p.v.
+duizenden). Kent yt-dlp het totaal niet (total_bytes noch _estimate), dan schrijven we NIETS -> beide
+kolommen blijven NULL en de frontend valt terug op een onbepaalde balk (geen gok van onze kant). Beide
+velden ook aan de /api/jobs-poll-respons toegevoegd (parity met de Realtime-volle-rij). Migratie
+20260730154145 via MCP.
+
+Point 3 — alias-uitfasering stap 3 (priorities.md 2.0). De aliassen duration/credits_used zijn uit de
+curated dict van GET /api/jobs/{job_id} verwijderd; de dict emit nu alleen de rauwe namen
+duration_seconds/credits_cost. Geverifieerd dat geen lezer meer op de oude namen zit: de job-status-
+handler leest duration_seconds/credits_cost (frontend stap 2, commit 9ed78d7); de resterende
+.duration/.credits_used-hits lezen ANDERE objecten (captions-/metadata-responses en de transcripts-
+tabel). Item 2.0 afgevinkt.
+
+Geverifieerd: py_compile + import-smoke 4 modules; throttle-test (50 snelle callbacks -> 1 write; geen
+write zonder totaal; geen write op 'finished'). Backend only.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/audio_utils.py
+backend/main.py
+backend/test_download_progress.py
+backend/transcription_pipeline.py
+docs/LOG.md
+docs/wiki/roadmap/priorities.md
+supabase/migrations/20260730154145_add_download_progress_bytes.sql
+---

@@ -8,10 +8,16 @@ import math
 import subprocess
 import logging
 import time
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable
 from pydub import AudioSegment
 import yt_dlp
 from yt_dlp.utils import DownloadCancelled
+
+# Point 2: hoe vaak we de download-voortgang naar de DB schrijven. yt-dlp's progress-hook vuurt
+# tientallen keren per seconde; we throttlen naar dit interval. 3s is bewust gekozen: het is ~de
+# frontend-poll-cadans (useJobStatus pollt elke 2-3s en Realtime levert elke rij-update), dus sneller
+# schrijven wordt toch niet vaker gezien, terwijl een langere download (minuten) de DB niet bestookt.
+DOWNLOAD_PROGRESS_INTERVAL = 3.0
 
 logger = logging.getLogger("indxr-backend")
 
@@ -147,6 +153,7 @@ def extract_youtube_audio(
     proxy_url: Optional[str] = None,
     proxy_urls: Optional[list] = None,
     timeout_seconds: Optional[float] = None,
+    progress_cb: Optional[Callable[[int, int], None]] = None,
 ) -> tuple[str, str, Optional[str], int]:
     """
     Extract audio from YouTube video using yt-dlp.
@@ -180,16 +187,31 @@ def extract_youtube_audio(
     # volledige 82 MB ná het afbreken en gooide 'm weg → verspilde proxy-egress). timeout_seconds=None
     # => geen deadline (backward-compat).
     overall_deadline = (time.time() + timeout_seconds) if timeout_seconds else None
+    _last_progress_write = [0.0]  # mutable cel voor de throttle-timestamp (closure)
 
     def _deadline_hook(status) -> None:
-        # Alleen tijdens actief downloaden afbreken — nooit een zojuist voltooide download ('finished')
+        # Alleen tijdens actief downloaden — nooit een zojuist voltooide download ('finished')
         # weggooien omdat de deadline net verstreek.
         if status.get('status') != 'downloading':
             return
-        if overall_deadline is not None and time.time() > overall_deadline:
+        now = time.time()
+        if overall_deadline is not None and now > overall_deadline:
             raise DownloadCancelled(
                 f"download timed out after {timeout_seconds:.0f}s derived budget"
             )
+        # Point 2: gethrottlede voortgang naar de DB. Totaal = wat yt-dlp zélf rapporteert (exact
+        # total_bytes, anders zijn eigen total_bytes_estimate — dezelfde waarde als in yt-dlp's
+        # "X% of 82MiB"-regel). Kent yt-dlp het totaal niet, dan schrijven we NIETS → beide kolommen
+        # blijven NULL en de frontend valt terug op een onbepaalde balk (geen gok van onze kant).
+        if progress_cb is not None and (now - _last_progress_write[0]) >= DOWNLOAD_PROGRESS_INTERVAL:
+            downloaded = status.get('downloaded_bytes')
+            total = status.get('total_bytes') or status.get('total_bytes_estimate')
+            if downloaded and total:
+                _last_progress_write[0] = now
+                try:
+                    progress_cb(int(downloaded), int(total))
+                except Exception:
+                    pass  # voortgang schrijven mag de download NOOIT breken
 
     # NOTE: ydl_opts deliberately has NO postprocessors.
     # Adding FFmpegExtractAudio widens yt-dlp's format selection to include

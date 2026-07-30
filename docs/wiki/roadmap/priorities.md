@@ -520,7 +520,7 @@ Geïmplementeerd 2026-05-04/05 (Code Sessie 1 + bugfix-serie). Code Sessie 2 (me
 
 Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het signaal geeft.
 
-- [ ] **2.0 — Verwijder de `JobStatusRow`-aliassen `duration` / `credits_used`** (afronding 3-staps uitfasering; coördinatie-afhankelijk, geen productie-trigger).
+- [x] **2.0 — Verwijder de `JobStatusRow`-aliassen `duration` / `credits_used`** (afronding 3-staps uitfasering; coördinatie-afhankelijk, geen productie-trigger). — **STAP 3 GEDAAN 2026-07-30:** aliassen uit `get_job_status` verwijderd; geverifieerd dat geen lezer meer op de oude namen zit (job-status leest `duration_seconds`/`credits_cost`; resterende `.duration`/`.credits_used`-hits zijn captions-/metadata-responses en de transcripts-tabel, andere objecten). De curated dict emit nu alleen de rauwe namen.
     **Context:** de curated dict van `GET /api/jobs/{job_id}` (`backend/main.py` `get_job_status`) hernoemde `duration_seconds`→`duration` en `credits_cost`→`credits_used`; de Realtime-rij levert de **rauwe** kolomnamen → die twee velden waren `undefined` op een pure Realtime-update (parity-gat, audit 2026-07-27).
     - **Stap 1 — GEDAAN, commit `669a0c1`:** dict emit nu `duration_seconds` + `credits_cost` (rauwe namen) **naast** de aliassen `duration`/`credits_used`.
     - **Stap 2 — GEDAAN (frontend), 2026-07-27:** `JobStatusRow` gebruikt nu `duration_seconds` / `credits_cost`; alle lezers overgezet (VideoTab `setVideoDuration`/`whisperMetadata`/posthog, AudioTab `audioMetadata`, `dashboard/transcribe/page.tsx` transcript-update). Build groen, gepusht. → **stap 3 kan nu.**

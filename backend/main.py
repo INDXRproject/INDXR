@@ -1148,10 +1148,16 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         "transcript_id": job.get('transcript_id'),
         "channel": channel,
         "language": language,
-        "duration": job.get('duration_seconds'),           # ALIAS (fase-uit — zie priorities.md); lees duration_seconds
         "duration_seconds": job.get('duration_seconds'),   # rauwe kolomnaam = parity met de Realtime-rij
-        "credits_used": job.get('credits_cost'),           # ALIAS (fase-uit); lees credits_cost
         "credits_cost": job.get('credits_cost'),           # rauwe kolomnaam = parity met de Realtime-rij
+        # Alias-uitfasering stap 3 (priorities.md 2.0): de aliassen `duration`/`credits_used` zijn hier
+        # verwijderd. De frontend is in commit 9ed78d7 overgezet op de rauwe namen; geen lezer zit nog
+        # op de oude namen (job-status leest duration_seconds/credits_cost; de resterende .duration/
+        # .credits_used-hits lezen andere objecten: captions-/metadata-responses en de transcripts-tabel).
+        # Point 2: download-voortgang voor de frontend-voortgangsbalk (rauwe bytes; UI toont "X / Y MB").
+        # Beide NULL als yt-dlp het totaal niet kende → onbepaalde balk. Parity met de Realtime-volle-rij.
+        "download_bytes": job.get('download_bytes'),
+        "download_total_bytes": job.get('download_total_bytes'),
         # Read-only pariteit met de Realtime-volle-rij: de foutkaart rendert de credit-terugstort-regel
         # uit dit veld; zonder dit toont de polling-fallback 'm niet. Geen creditlogica.
         "credits_refunded": job.get('credits_refunded'),
