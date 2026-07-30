@@ -466,13 +466,14 @@ async def run_whisper_reservation_aware(
         reservation_mode=reservation_mode,
         **pipeline_kwargs,
     )
-    # ADR-050 fase 2: gereserveerde job → verreken aan het eind (reserved − settled). Vuurt op
-    # success (refund=verschil) én failure (refund=alles), idempotent via (job_id,'refund').
+    # ADR-050 fase 2: gereserveerde job → verreken aan het eind (reserved − settled). Dit is nu primair
+    # het SUCCESS-pad (refund=verschil bij over-reservering; whisper-success zet transcript_id → buiten
+    # Pass 2). Op FAILURE heeft _update_job de refund al vóór de status='error'-write geboekt (point 1),
+    # dus deze aanroep is daar een idempotente no-op (safety net). Bounded idempotente retry
+    # (refund_credits idempotent via (job_id,'refund')); alarmeert als álle pogingen falen. Residueel
+    # crash-gap wordt door de watchdog Pass 2c-reconciliatie gedekt.
     if reservation_mode:
-        # Terminale refund: whisper-success zet transcript_id → buiten Pass 2. Bounded idempotente
-        # retry (refund_credits idempotent via (job_id,'refund')); alarmeert als álle pogingen falen.
-        # Residueel crash-gap wordt door de watchdog Pass 2c-reconciliatie gedekt.
-        await refund_with_retry(job_id, None, context="whisper-success")
+        await refund_with_retry(job_id, None, context="whisper-settle")
     return result
 
 
@@ -513,6 +514,18 @@ async def do_assemblyai_transcription(
     async def _update_job(**kwargs):
         if not job_id:
             return
+        # Point 1 (geldpad — terugstorting mag niet te laat komen): op een GERESERVEERD pad moet een
+        # terminale error-transitie EERST refunden (dat commit credits_refunded op de rij via de
+        # refund_credits-RPC) en PAS DAARNA status='error' schrijven. De frontend markeert de job af op
+        # dat eerste terminale Realtime-bericht (de volle rij) en negeert alles daarna; door eerst te
+        # refunden draagt dat bericht credits_refunded al, dus de gebruiker ziet dat zijn credits terug
+        # zijn. Faalt de refund NA een geslaagde statusupdate, dan geldt de job als mislukt zonder
+        # terugstorting (de slechte kant om op te falen). Omgedraaid is het ergste geval een
+        # teruggestorte job die nog niet als mislukt staat — die vangt de watchdog (Pass 2c). Alleen
+        # waar daadwerkelijk gereserveerd is (reservation_mode); insufficient_credits (niets
+        # gereserveerd) draait hier niet doorheen. Idempotent via (job_id,'refund'), dus nooit dubbel.
+        if kwargs.get('status') == 'error' and reservation_mode:
+            await refund_with_retry(job_id, None, context=f"whisper-fail-{kwargs.get('error_type')}")
         now = datetime.now(timezone.utc)
         kwargs['updated_at'] = now.isoformat()
         if kwargs.get('status') in ('complete', 'error') and 'completed_at' not in kwargs:

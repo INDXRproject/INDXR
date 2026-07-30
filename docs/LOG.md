@@ -14168,3 +14168,30 @@ packages/shared/src/components/transcribe/errorCopy.ts
 packages/shared/src/components/transcription/TranscriptionProgress.tsx
 packages/shared/src/hooks/useJobStatus.ts
 ---
+
+[2026-07-30 10:00] taak: Point 1 (geldpad) — refund vóór status=error. _update_job refundt nu EERST (refund_with_retry, commit credits_refunded op de rij) en schrijft PAS DAARNA status=error, alleen op gereserveerd pad (reservation_mode). Zo draagt het terminale Realtime-bericht credits_refunded al -> frontend markeert af op dat bericht en toont de terugstorting. Wrapper-refund is nu success-pad + idempotente no-op op failure. | gewijzigd: backend/transcription_pipeline.py backend/test_refund_before_error.py | geverifieerd: forced-failure test -> call-order downloading->refund->error, refund exact 1x, strikt vóór status=error; exactly-once via UNIQUE (job_id,refund) al bewezen (Defect 2).[2026-07-30 17:40] commit: fix(credits): refund before status=error so the terminal message carries credits_refunded
+
+Op het failure-pad schreef do_assemblyai_transcription eerst status='error' en refundde de
+wrapper pas ná terugkeer (credits_refunded in een aparte, latere update). De frontend markeert
+de job af op dat eerste terminale Realtime-bericht en negeert alles daarna, dus de terugstorting
+kwam ALTIJD te laat — de gebruiker las nooit dat zijn credits terug waren (precies het 76-credit-
+incident).
+
+Fix: _update_job refundt nu EERST (refund_with_retry -> refund_credits-RPC commit credits_refunded
+op de jobrij) en schrijft PAS DAARNA status='error', uitsluitend op een gereserveerd pad
+(reservation_mode). Het terminale bericht draagt dan de volle rij mét credits_refunded.
+
+Volgorde omgedraaid i.p.v. één atomaire update: faalt de refund ná een geslaagde statusupdate,
+dan geldt de job als mislukt zonder terugstorting (de slechte kant om op te falen). Omgedraaid is
+het ergste geval een teruggestorte job die nog niet als mislukt staat -> die vangt de watchdog
+(Pass 2c). insufficient_credits (niets gereserveerd) draait hier niet doorheen. Idempotent via
+(job_id,'refund'), dus nooit dubbel; de wrapper-refund is nu success-pad + failure-no-op.
+
+Geverifieerd: forced-failure test toont call-order downloading -> refund -> error, refund exact
+één keer en strikt vóór de status=error-write.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/test_refund_before_error.py
+backend/transcription_pipeline.py
+docs/LOG.md
+---
