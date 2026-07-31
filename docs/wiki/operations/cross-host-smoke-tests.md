@@ -307,3 +307,13 @@ Specs: `tests/playwright/specs/cross-host/`
 ### Handmatige tests (TEST 8–11 + 13)
 
 Gebruik incognito venster. Volg de stappen per test hierboven. Vink af wanneer geslaagd.
+
+---
+
+## Authenticated production DOM check (headless)
+
+`tests/playwright/prod-check.cjs` logt als `test1@indxr-test.com` in op **productie** door een
+Supabase-sessiecookie in Chromium te injecteren (geen dev-server nodig) en assert dan op de live DOM.
+Draaien: **`./tests/playwright/prod-check.sh`** (de wrapper zet `NODE_PATH` naar de pnpm-store, dus
+geen install nodig). Het seed't RTL-testdata als de user zelf (RLS-scoped) en ruimt die daarna op.
+Herbruik in eigen scripts: `const { withAuthedProd } = require('./tests/playwright/prod-check.cjs')`.

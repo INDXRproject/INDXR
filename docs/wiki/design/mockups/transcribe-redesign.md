@@ -413,3 +413,137 @@ Identieke volgorde, alles full-width gestapeld, actieknoppen onderaan over de vo
 </div>
 </div>
 ```
+
+
+---
+
+## Mockup D — bevestigings-, voortgangs- en afrondingskaart (video-modus)
+
+**Datum:** 2026-07-27
+**Aanleiding:** deze drie kaarten zijn gebouwd uit prozabeschrijvingen in plaats van uit een mockup. Dat is zichtbaar: op 390px lopen knoppen uit het scherm, staat de metaregel als één lange run-on, en leest de voortgangskaart als een formulier-wizard.
+
+Zelfde regels als mockup A t/m C: bindend voor hiërarchie en volgorde, niet voor kleurwaarden of pixelmaten.
+
+### Bevestigen
+
+- titel over twee regels, daaronder duur en methodebadge op één regel
+- totaalregel ongewijzigd (label links, bedrag ~20px rechts)
+- footer op mobiel: saldoregel, dan de Extract-knop **full width**, dan de onomkeerbaarheidsregel eronder, dan Cancel als tekstlink gecentreerd
+- geen rechtsuitlijning van knoppen op mobiel — dat is wat de huidige rommel maakt
+
+### Voortgang
+
+- kop = de huidige fase ("Downloading audio"), niet "Transcribing…" als vaste titel
+- voortgangsbalk toont **echte** voortgang met bytes eronder ("19.2 MB of 50.4 MB") tijdens de downloadfase
+- de vier stappen worden één compacte regel met vinkje / gevulde stip / open stip — geen genummerde bolletjes, die lezen als een formulier-wizard
+- één korte achtergrondregel onderaan
+
+### Afronding
+
+- kop met vinkje + "Transcript ready"
+- meta in **twee** regels op mobiel: "69 min · 689 lines" en "69 credits · done in 4:01"
+- acties mobiel: Copy en Export naast elkaar, elk halve breedte; **View in Library als tekstlink** eronder — drie knoppen passen niet op 390px
+- acties desktop: alle drie op één rij rechts van de kop
+- Reader Mode wordt één woord ("Timestamps") met de schakelaar rechts, in een dunne rij met scheidingslijn. Geen tweede regel uitleg.
+
+```html
+<div style="padding:16px;background:#faf8f4;font-family:ui-sans-serif,system-ui,sans-serif;font-size:14px;color:#2a2724">
+<style>
+:root{--surface-0:#f0ece6;--surface-1:#f7f4ef;--surface-2:#fff;--border:#e2ddd5;--border-strong:#c9c2b8;--text-primary:#2a2724;--text-secondary:#5c564e;--text-muted:#8a8279;--font-mono:ui-monospace,monospace}
+</style>
+<div style="display:flex;gap:14px;flex-wrap:wrap">
+
+<div style="width:320px;background:var(--surface-1);border-radius:12px;padding:14px">
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">D1 — Bevestigen, 390px</div>
+  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
+      <div style="font-size:14px;line-height:1.35">100% Free Software: Digital Privacy for Everyone</div>
+      <div style="margin-top:5px;display:flex;align-items:center;gap:8px">
+        <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted)">69:00</span>
+        <span style="background:#DFE7FA;color:#2F4C9A;font-size:11px;padding:2px 7px;border-radius:5px">AI transcription</span>
+      </div>
+    </div>
+    <div style="padding:11px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline">
+      <span style="font-weight:500">Total</span><span style="font-size:20px;font-weight:600">69 credits</span>
+    </div>
+    <div style="padding:12px 14px;background:var(--surface-1)">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:9px">You have 223 · 154 left after this</div>
+      <div style="height:44px;border-radius:8px;background:#BA7517;color:#fff;font-weight:500;display:flex;align-items:center;justify-content:center;font-size:14px">Extract — 69 credits</div>
+      <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:7px">Once started, this can't be cancelled</div>
+      <div style="font-size:13px;color:var(--text-secondary);text-align:center;margin-top:9px;text-decoration:underline">Cancel</div>
+    </div>
+  </div>
+</div>
+
+<div style="width:320px;background:var(--surface-1);border-radius:12px;padding:14px">
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">D2 — Voortgang met echte download-voortgang</div>
+  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px">
+    <div style="display:flex;align-items:baseline;margin-bottom:8px">
+      <span style="font-weight:500">Downloading audio</span>
+      <span style="margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--text-muted)">0:11</span>
+    </div>
+    <div style="height:6px;border-radius:3px;background:var(--surface-0);overflow:hidden"><div style="width:38%;height:100%;background:#BA7517"></div></div>
+    <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);margin-top:6px">19.2 MB of 50.4 MB</div>
+    <div style="display:flex;gap:14px;margin-top:12px;padding-top:11px;border-top:1px solid var(--border);font-size:12px;flex-wrap:wrap">
+      <span style="color:var(--text-muted)"><span style="color:#3B7A3B">&#10003;</span> Queued</span>
+      <span><span style="color:#BA7517">&#9673;</span> Downloading</span>
+      <span style="color:var(--text-muted)">&#9711; Transcribing</span>
+      <span style="color:var(--text-muted)">&#9711; Saving</span>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:11px">Runs in the background — safe to close this tab.</div>
+  </div>
+</div>
+
+<div style="width:320px;background:var(--surface-1);border-radius:12px;padding:14px">
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">D3 — Afronding, 390px</div>
+  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <div style="padding:13px 14px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="color:#3B7A3B;font-size:17px">&#10003;</span>
+        <span style="font-size:16px;font-weight:600">Transcript ready</span>
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:5px">69 min · 689 lines</div>
+      <div style="font-size:13px;color:var(--text-muted)">69 credits · done in 4:01</div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <div style="flex:1;height:40px;border-radius:8px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:13px">Copy</div>
+        <div style="flex:1;height:40px;border-radius:8px;background:#BA7517;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500">Export</div>
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:10px;text-decoration:underline">View in Library &rarr;</div>
+    </div>
+    <div style="padding:9px 14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface-1);display:flex;align-items:center">
+      <span style="font-size:13px;color:var(--text-secondary)">Timestamps</span>
+      <span style="margin-left:auto;width:36px;height:20px;border-radius:10px;background:var(--surface-0);border:1px solid var(--border-strong);position:relative"><span style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--border-strong)"></span></span>
+    </div>
+    <div style="padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.6">Okay, so my name is Mathieu and I'm from this organization…</div>
+  </div>
+</div>
+
+</div>
+
+<div style="background:var(--surface-1);border-radius:12px;padding:16px;margin-top:14px">
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">D4 — Afronding desktop, alles op één rij</div>
+  <div style="max-width:600px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="color:#3B7A3B;font-size:18px">&#10003;</span>
+      <div>
+        <div style="font-size:16px;font-weight:600">Transcript ready</div>
+        <div style="font-size:13px;color:var(--text-muted)">69 min · 689 lines · 69 credits · done in 4:01</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <div style="height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--border-strong);display:flex;align-items:center;font-size:13px">Copy</div>
+        <div style="height:38px;padding:0 16px;border-radius:8px;background:#BA7517;color:#fff;display:flex;align-items:center;font-size:13px;font-weight:500">Export</div>
+        <div style="height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--border-strong);display:flex;align-items:center;font-size:13px">View in Library</div>
+      </div>
+    </div>
+    <div style="padding:9px 16px;border-top:1px solid var(--border);background:var(--surface-1);display:flex;align-items:center">
+      <span style="font-size:13px;color:var(--text-secondary)">Timestamps</span>
+      <span style="margin-left:auto;width:36px;height:20px;border-radius:10px;background:var(--surface-0);border:1px solid var(--border-strong);position:relative"><span style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--border-strong)"></span></span>
+    </div>
+  </div>
+</div>
+</div>
+```
+
+### Openstaand, buiten de frontend
+
+De echte download-voortgang (D2) vereist dat de backend de bytes naar de jobrij schrijft. yt-dlp's progress-hook heeft die data al — hij wordt gebruikt voor de deadline-check — maar er wordt niets weggeschreven. Zonder dat kan de frontend alleen een onbepaalde balk tonen.

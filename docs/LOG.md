@@ -1,3 +1,5 @@
+[2026-07-31 23:00] chore (Transcriptpagina-herontwerp Fase 0 — afronden + opruimen): (1) Deploy `3c3e1e5` (beehive-redraw) groen geverifieerd + mobiele-tabbalk live-check (nieuwe iconen, geen lucide-home/inbox). (2) **Herbruikbare authenticated-productie-DOM-check** toegevoegd: `tests/playwright/prod-check.cjs` (`withAuthedProd`-helper injecteert een Supabase-sessiecookie in Chromium → assert op live app.indxr.ai zonder dev-server) + `prod-check.sh`-wrapper (zet NODE_PATH naar de pnpm-store) + 2-regel wiki-note in `operations/cross-host-smoke-tests.md`. (3) **Drie Fase-1 `[~]`-punten gesloten met bewijs** (11/11 checks PASS): `dir="auto"` computed-rtl op rij-titel + Move-menu-collectienaam + mobiele row-sheet-titel; mobiele bulkbalk bedekt de tabbalk nooit op 360px (`bottom 750 < top 765`) en 404px (`708 < 723`); MoveToCollectionMenu-focus (new-collection-input behoudt Arabische waarde, menu blijft open) + Radix-Sub rendert. Seed (RTL-transcript+collectie, RLS-scoped als test1) opgeruimd + één leftover-collectie handmatig verwijderd; script nu self-healing. (4) Working tree opgeschoond: `transcript-redesign-mockup.html` (richting voor deze opdracht) gecommit; `transcribe-redesign.md` +134 regels = "Mockup D" (video-modus kaarten, design-doc-toevoeging) gecommit; `public/logo/X.com/` = INDXR X/Twitter avatar+banners (merkassets) gecommit. Na deze commit is `git status` schoon. | gewijzigd: tests/playwright/prod-check.cjs+prod-check.sh (nieuw), docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/design/mockups/{transcript-redesign-mockup.html (nieuw),transcribe-redesign.md}, public/logo/X.com/* (nieuw), docs/LOG.md
+---
 [2026-07-31 22:00] feat (Fase 3 — /dashboard/billing → /dashboard/credits, ADR-084): **financieel-kritiek.** Route `git mv` billing→credits (page/success/cancel, historie behouden). **Geld op één plek:** Credits = money-hub (saldo, pakketten `BillingPurchaseGrid` incl. `?checkout=`-deeplink, `TransactionHistoryCard` verhuisd van Account, `PurchaseHistoryCard` mét factuur). **Account** getrimd tot identiteit/opslag/support (`ProfileSettingsCard`+`StorageMeterCard`+`SentryFeedbackCard`; beide history-cards + hun fetches eruit). **Stripe** `checkout/route.ts` `success_url`/`cancel_url` → `/dashboard/credits/{success,cancel}` (direct, geen redirect-hop op de callback). **Redirect** (permanent) in `apps/app/next.config.ts`: `/dashboard/billing`(+`/:path*`) → credits — vangt oude bookmarks én een in-flight Stripe-sessie zodat een terugkeer nooit op 404 landt. **Koop-routes → Credits:** topbar credit-pil (nu mét `+`-affordance, dé koop-route desktop+mobiel) → `/dashboard/credits`; dashboard "Buy more"; avatar-menu nieuw "Credits"-item; shared insufficient-credits-links (`TranscriptCard`, `PlaylistAvailabilitySummary`, `VideoTab`×3, `AudioTab`×2, `errorCopy billingHref`); marketing `BuyButton` deep-link. Support-componentmap `components/dashboard/billing/` NIET hernoemd (churn). Geverifieerd: `pnpm build` groen (2/2), routes = `/dashboard/credits{,/success,/cancel}`, geen billing-routes. Volledige Stripe-test-mode-betaling = handmatige stap; routes+redirect gebouwd zodat terugkeer nooit 404't. | gewijzigd: apps/app/src/app/dashboard/credits/** (git mv van billing), apps/app/src/app/dashboard/{account,page}.tsx, apps/app/src/app/api/stripe/checkout/route.ts, apps/app/next.config.ts, apps/app/src/components/{AppTopbar,AvatarDropdown}.tsx, apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx (comment), apps/marketing/src/components/pricing/BuyButton.tsx, packages/shared/src/components/{TranscriptCard,PlaylistAvailabilitySummary,free-tool/VideoTab,free-tool/AudioTab}.tsx, docs/wiki/decisions/084-billing-to-credits.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
 ---
 [2026-07-31 21:00] feat (Library redesign — Fase 2, voortvloeiende schermen): (1) **RAG-kostenkaart detailviewer** (`TranscriptViewer.tsx`) herontworpen — toont nu de berekening ("This export · N credits"), het saldo → "Balance X → Y after", en dat re-download gratis is; insufficient → inline error met "Buy credits →" naar `/dashboard/credits`. Consistent met de in Fase 1 herbouwde bulk-RAG-kaart. Control-flow (`deductRagExportCreditsAction`) onaangeroerd. (2) **Storage-full unificatie:** `VideoTab.tsx` zette bij 413 `storage_full` een platte `message` zonder key → viel door naar de neutrale fallback i.p.v. de gedeelde ErrorCard-copy; nu `errorType:'storage_full'` toegevoegd op beide callsites → rendert via de centrale `errorCopy.storage_full`-map (single source, met "Manage library"/"Buy space"-acties), gelijk aan AudioTab. `StorageMeterCard` bleek al correct (leest de echte DB-cap `library_bytes_cap`+`_bonus`; de "verzonnen 500MB" was uitsluitend de dode sidebar-berekening) → ongewijzigd. Delete-confirm (enkel+bulk) + rename inline gebruiken al de design-system-primitives (AlertDialog/inline) → geen wijziging. `VideoTab` zit in `packages/shared` → raakt ook marketing (alleen storage-error-keying). Geverifieerd: `pnpm build` groen (2/2). | gewijzigd: apps/app/src/components/library/TranscriptViewer.tsx, packages/shared/src/components/free-tool/VideoTab.tsx, docs/LOG.md
@@ -14468,4 +14470,29 @@ vlieggat. Zelfde lucide-conventies (24 viewBox, 2px round strokes).
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/icons/Beehive.tsx
+---
+[2026-07-31 23:33] commit: chore(fase0): reusable prod DOM-check, close [~] items, clean working tree
+
+- tests/playwright/prod-check.cjs + .sh: authenticated production DOM check
+  (injects a Supabase session cookie into Chromium; no dev server). Reusable
+  via withAuthedProd(). Wiki note in operations/cross-host-smoke-tests.md.
+- Closed the three Fase-1 [~] items (11/11 checks PASS on production):
+  dir="auto" computed-rtl on row title + Move-menu collection name + mobile
+  row-sheet title; mobile bulk bar clears the tab bar at 360px (750<765) and
+  404px (708<723); MoveToCollectionMenu keeps input focus/value + Radix Sub
+  renders. RTL seed created RLS-scoped as test1 and cleaned up (self-healing).
+- Working tree cleaned: committed transcript-redesign-mockup.html (this task's
+  direction), Mockup D in transcribe-redesign.md (video-mode cards), and
+  public/logo/X.com/ (INDXR X/Twitter brand assets).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/design/mockups/transcribe-redesign.md
+docs/wiki/design/mockups/transcript-redesign-mockup.html
+docs/wiki/operations/cross-host-smoke-tests.md
+public/logo/X.com/indxr-x-avatar.png
+public/logo/X.com/indxr-x-banner-clean.png
+public/logo/X.com/indxr-x-banner.png
+tests/playwright/prod-check.cjs
+tests/playwright/prod-check.sh
 ---

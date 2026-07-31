@@ -1,0 +1,878 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INDXR Transcript — redesign mockup v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+--bg:oklch(.985 .004 70);--bg-subtle:oklch(.972 .005 70);--surface:oklch(1 0 0);
+--surface-elevated:oklch(.995 .003 70);--surface-sunken:oklch(.955 .006 70);
+--border-subtle:oklch(.925 .006 70);--border:oklch(.880 .008 70);--border-strong:oklch(.780 .010 70);
+--fg-muted:oklch(.555 .010 70);--fg-subtle:oklch(.420 .012 70);--fg:oklch(.260 .010 70);--fg-strong:oklch(.165 .008 70);
+--fg-on-accent:oklch(.985 .004 70);
+--accent:oklch(.720 .140 75);--accent-hover:oklch(.680 .145 75);--accent-subtle:oklch(.955 .030 80);
+--accent-fg:oklch(.380 .090 60);--accent-ring:oklch(.720 .140 75/.45);
+--success:oklch(.620 .140 150);--success-subtle:oklch(.955 .030 150);
+--error:oklch(.580 .180 27);--error-subtle:oklch(.960 .030 25);
+--sky:oklch(.470 .150 230);--sky-subtle:oklch(.935 .050 230);
+--sky-soft:oklch(.510 .130 230);--sky-soft-subtle:oklch(.975 .020 230);
+--indigo:oklch(.470 .150 265);--indigo-subtle:oklch(.935 .050 265);
+--indigo-soft:oklch(.510 .130 265);--indigo-soft-subtle:oklch(.975 .020 265);
+--violet:oklch(.470 .150 300);--violet-subtle:oklch(.935 .050 300);
+--violet-soft:oklch(.510 .130 300);--violet-soft-subtle:oklch(.975 .020 300);
+--teal:oklch(.470 .150 185);--teal-subtle:oklch(.935 .050 185);
+--r-sm:.25rem;--r:.5rem;--r-lg:.75rem;
+--sh:0 1px 2px oklch(.20 .010 70/.06),0 1px 1px oklch(.20 .010 70/.04);
+--sh-lg:0 4px 12px oklch(.20 .010 70/.08),0 12px 24px oklch(.20 .010 70/.06);
+--ease:cubic-bezier(.16,1,.3,1);
+}
+[data-theme=dark]{
+--bg:oklch(.165 .008 70);--bg-subtle:oklch(.195 .009 70);--surface:oklch(.215 .010 70);
+--surface-elevated:oklch(.250 .011 70);--surface-sunken:oklch(.140 .007 70);
+--border-subtle:oklch(.275 .011 70);--border:oklch(.330 .012 70);--border-strong:oklch(.420 .013 70);
+--fg-muted:oklch(.625 .012 70);--fg-subtle:oklch(.730 .010 70);--fg:oklch(.880 .008 70);--fg-strong:oklch(.965 .006 70);
+--fg-on-accent:oklch(.165 .008 70);
+--accent:oklch(.760 .150 78);--accent-hover:oklch(.800 .145 78);--accent-subtle:oklch(.290 .060 78);--accent-fg:oklch(.880 .110 80);
+--success:oklch(.700 .150 150);--success-subtle:oklch(.290 .060 150);
+--error:oklch(.680 .180 27);--error-subtle:oklch(.310 .080 27);
+--sky:oklch(.780 .140 230);--sky-subtle:oklch(.295 .065 230);
+--sky-soft:oklch(.860 .120 230);--sky-soft-subtle:oklch(.360 .045 230);
+--indigo:oklch(.780 .140 265);--indigo-subtle:oklch(.295 .065 265);
+--indigo-soft:oklch(.860 .120 265);--indigo-soft-subtle:oklch(.360 .045 265);
+--violet:oklch(.780 .140 300);--violet-subtle:oklch(.295 .065 300);
+--violet-soft:oklch(.860 .120 300);--violet-soft-subtle:oklch(.360 .045 300);
+--teal:oklch(.780 .140 185);--teal-subtle:oklch(.295 .065 185);
+--sh:0 0 0 1px var(--border);--sh-lg:0 0 0 1px var(--border-strong),0 8px 24px oklch(0 0 0/.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;font-feature-settings:"calt" 1,"tnum" 1,"zero" 1;
+background:var(--bg-subtle);color:var(--fg);font-size:16px;line-height:1.5;padding:22px}
+button,input{font:inherit;color:inherit}button{background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
+svg{display:block;flex:none}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
+
+/* mockup-chrome */
+.shell{max-width:1560px;margin:0 auto}
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px;background:var(--surface);
+border:1px solid var(--border-subtle);border-radius:var(--r);box-shadow:var(--sh)}
+.bar h1{font-size:14px;font-weight:600;margin-right:auto;letter-spacing:-.01em}
+.bar .tag{font-size:11px;color:var(--fg-muted);font-weight:400}
+.bar .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg-muted);font-weight:600;margin-left:6px}
+.seg{display:flex;background:var(--surface-sunken);border-radius:var(--r);padding:2px;gap:2px}
+.seg button{padding:5px 10px;font-size:12.5px;border-radius:calc(var(--r) - 2px);color:var(--fg-muted);font-weight:500}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--fg-strong);box-shadow:var(--sh)}
+.notes{background:var(--surface);border:1px solid var(--border-subtle);border-left:3px solid var(--accent);
+border-radius:var(--r);padding:12px 18px;margin-bottom:12px;font-size:13.5px;color:var(--fg-subtle)}
+.notes summary{cursor:pointer;font-weight:600;color:var(--fg-strong);font-size:14px;list-style:none}
+.notes summary::-webkit-details-marker{display:none}
+.notes summary::before{content:"▸ ";color:var(--accent)}.notes[open] summary::before{content:"▾ "}
+.notes ul{margin:11px 0 0 18px;display:grid;gap:6px}
+.notes code{font-family:"IBM Plex Mono",monospace;font-size:12px;background:var(--surface-sunken);padding:1px 5px;border-radius:4px}
+.frames{display:flex;gap:20px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.flabel{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--fg-muted);margin-bottom:7px;font-weight:600}
+
+/* primitives */
+.btn{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 10px;border:1px solid var(--border);
+border-radius:var(--r);background:var(--surface);font-size:13px;font-weight:500;white-space:nowrap;transition:background 120ms var(--ease)}
+.btn:hover{background:var(--surface-sunken);border-color:var(--border-strong)}
+.btn.on{background:var(--accent-subtle);border-color:var(--accent);color:var(--accent-fg)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-i{width:32px;padding:0;justify-content:center}
+.btn-p{background:var(--accent);border-color:var(--accent);color:var(--fg-on-accent)}
+.btn-p:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn-d{color:var(--error)}.btn-d:hover{background:var(--error-subtle);border-color:var(--error)}
+.btn-g{border-color:transparent;background:transparent}.btn-g:hover{background:var(--surface-sunken)}
+.bg{display:inline-flex;align-items:center;gap:2px;height:18px;padding:0 5px;border-radius:var(--r-sm);
+font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:.04em;flex:none;line-height:1}
+.bg .pen{font-size:9px;font-weight:400;opacity:.9;margin-left:-1px}
+.bg.auto{background:var(--sky-subtle);color:var(--sky)}
+.bg.auto-edit{background:var(--sky-soft-subtle);color:var(--sky-soft)}
+.bg.ai{background:var(--indigo-subtle);color:var(--indigo)}
+.bg.ai-edit{background:var(--indigo-soft-subtle);color:var(--indigo-soft)}
+.bg.summary{background:var(--violet-subtle);color:var(--violet)}
+.bg.summary-edit{background:var(--violet-soft-subtle);color:var(--violet-soft)}
+.bg.rag{background:var(--teal-subtle);color:var(--teal)}
+.paid{display:inline-flex;align-items:center;height:17px;padding:0 6px;border-radius:var(--r-sm);
+background:var(--accent-subtle);color:var(--accent-fg);font-family:"IBM Plex Mono",monospace;font-size:9.5px;
+font-weight:600;letter-spacing:.06em;line-height:1}
+.paid.own{background:var(--teal-subtle);color:var(--teal)}
+
+/* menus */
+.menu{position:absolute;z-index:300;min-width:216px;padding:5px;background:var(--surface-elevated);
+border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh-lg)}
+.menu button{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;font-size:13.5px;border-radius:var(--r-sm);text-align:left}
+.menu button:hover{background:var(--surface-sunken)}
+.menu button:disabled{opacity:.38;cursor:default}.menu button:disabled:hover{background:none}
+.menu button.dg{color:var(--error)}.menu button.dg:hover{background:var(--error-subtle)}
+.menu .arr,.menu .ext{margin-left:auto;color:var(--fg-muted);font-family:"IBM Plex Mono",monospace;font-size:11px}
+.menu .kbd{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--fg-muted)}
+.menu hr{border:0;border-top:1px solid var(--border-subtle);margin:5px 0}
+.menu .hd{padding:6px 9px 4px;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--fg-muted);font-weight:600}
+.menu .note{padding:2px 9px 8px;font-size:11.5px;color:var(--fg-muted);line-height:1.4}
+.menu .cost{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--accent-fg);
+background:var(--accent-subtle);border-radius:999px;padding:2px 7px}
+.pop{position:absolute;z-index:300;padding:12px;background:var(--surface-elevated);border:1px solid var(--border);
+border-radius:var(--r-lg);box-shadow:var(--sh-lg);width:250px}
+.pop h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--fg-muted);margin-bottom:7px;font-weight:600}
+.pop h4:not(:first-child){margin-top:15px}
+.opt{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:var(--r-sm);font-size:13.5px;width:100%;text-align:left}
+.opt:hover{background:var(--surface-sunken)}
+.opt .bx{width:16px;height:16px;border:1.5px solid var(--border-strong);border-radius:4px;flex:none;display:flex;
+align-items:center;justify-content:center;color:var(--fg-on-accent)}
+.opt .bx.rd{border-radius:999px}
+.opt[aria-checked=true] .bx{background:var(--accent);border-color:var(--accent)}
+.opt .bx svg{opacity:0}.opt[aria-checked=true] .bx svg{opacity:1}
+.opt.act{gap:11px}.opt.act .ic{width:17px;display:flex;justify-content:center;color:var(--fg-muted);flex:none}
+.opt.dg{color:var(--error)}.opt.dg .ic{color:var(--error)}
+.opt .tl{margin-left:auto;font-size:11.5px;color:var(--fg-muted);font-family:"IBM Plex Mono",monospace}
+.sizeseg{display:flex;gap:2px;background:var(--surface-sunken);border-radius:var(--r);padding:2px;margin:2px 0}
+.sizeseg button{flex:1;padding:6px 0;border-radius:calc(var(--r) - 2px);font-weight:500;color:var(--fg-muted)}
+.sizeseg button[aria-pressed=true]{background:var(--surface);color:var(--fg-strong);box-shadow:var(--sh)}
+
+/* dialog */
+.scrim{position:absolute;inset:0;z-index:400;background:oklch(0 0 0/.45);opacity:0;pointer-events:none;transition:opacity 200ms}
+.scrim.on{opacity:1;pointer-events:auto}
+.dlg{position:absolute;z-index:410;left:50%;top:50%;transform:translate(-50%,-48%);width:min(440px,calc(100% - 40px));
+background:var(--surface-elevated);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-lg);
+opacity:0;pointer-events:none;visibility:hidden;transition:opacity 200ms var(--ease),transform 200ms var(--ease),visibility 200ms}
+.dlg.on{opacity:1;pointer-events:auto;visibility:visible;transform:translate(-50%,-50%)}
+.dlg .hd{padding:18px 20px 0}
+.dlg h3{font-size:17px;font-weight:600;color:var(--fg-strong);letter-spacing:-.01em}
+.dlg .lede{font-size:13.5px;color:var(--fg-muted);margin-top:5px;line-height:1.5}
+.dlg .calc{margin:16px 20px 0;border:1px solid var(--border-subtle);border-radius:var(--r);overflow:hidden}
+.dlg .calc div{display:flex;align-items:center;gap:10px;padding:9px 13px;font-size:13.5px;border-bottom:1px solid var(--border-subtle)}
+.dlg .calc div:last-child{border-bottom:0}
+.dlg .calc .k{color:var(--fg-muted)}.dlg .calc .v{margin-left:auto;font-family:"IBM Plex Mono",monospace;color:var(--fg-strong)}
+.dlg .calc .tot{background:var(--accent-subtle)}
+.dlg .calc .tot .k,.dlg .calc .tot .v{color:var(--accent-fg);font-weight:600}
+.dlg .ft{display:flex;gap:9px;padding:18px 20px 20px;justify-content:flex-end}
+.dlg .ft .btn{height:38px;padding:0 16px}
+
+/* ============ DE PAGINA ============ */
+.crumb{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted);margin-bottom:10px}
+.crumb a:hover{color:var(--fg-strong)}
+.crumb .sl{opacity:.5}
+h2.title{font-size:27px;line-height:1.22;font-weight:600;letter-spacing:-.022em;color:var(--fg-strong);
+max-width:34em;text-wrap:pretty}
+.factline{display:flex;align-items:center;gap:16px;margin-top:12px;font-size:12.5px;color:var(--fg-muted);flex-wrap:wrap}
+.factline .bgs{display:flex;align-items:center;gap:5px;margin-right:2px}
+.factline .f{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.factline .f svg{opacity:.72}
+.tabbar{display:flex;align-items:center;gap:10px;margin-top:18px;border-bottom:1px solid var(--border);
+padding-bottom:0;position:sticky;top:0;z-index:60;background:var(--bg)}
+.tabs{display:flex;gap:2px}
+.tabs button{position:relative;padding:9px 13px 11px;font-size:13.5px;font-weight:500;color:var(--fg-muted);border-radius:var(--r) var(--r) 0 0}
+.tabs button:hover{color:var(--fg-strong);background:var(--surface-sunken)}
+.tabs button[aria-selected=true]{color:var(--fg-strong)}
+.tabs button[aria-selected=true]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--accent);border-radius:2px}
+.tools{margin-left:auto;display:flex;align-items:center;gap:6px;padding-bottom:7px}
+.savest{font-size:12px;color:var(--fg-muted);margin-right:2px}
+.savest b{color:var(--success);font-weight:500}
+
+/* zoekbalk */
+.findbar{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}
+.findbar input{flex:1;max-width:340px;height:32px;padding:0 11px;background:var(--surface);border:1px solid var(--accent);
+border-radius:var(--r);font-size:13.5px;box-shadow:0 0 0 3px var(--accent-ring)}
+.findbar input:focus{outline:none}
+.findbar .cnt{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--fg-muted);min-width:52px}
+.findbar .btn{height:30px;width:30px;padding:0;justify-content:center}
+
+/* leeskolom + video */
+.stage{display:block;padding:18px 0 90px}
+.readcol{max-width:68ch}
+.vidrow{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border-subtle)}
+.vidrow button{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--fg-subtle);
+padding:5px 9px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface)}
+.vidrow button:hover{background:var(--surface-sunken);border-color:var(--border-strong)}
+.vidrow .meta{font-size:12px;color:var(--fg-muted);font-family:"IBM Plex Mono",monospace}
+.vidwrap{position:sticky;top:42px;z-index:50;background:var(--bg);padding:12px 0 14px;margin-bottom:2px}
+.player{max-width:470px;margin:0 auto;background:oklch(.16 .01 70);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.player .screen{aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;
+background:radial-gradient(120% 90% at 50% 40%,oklch(.28 .02 70),oklch(.13 .008 70))}
+.player .screen .play{width:48px;height:48px;border-radius:999px;background:oklch(1 0 0/.14);display:flex;
+align-items:center;justify-content:center;color:oklch(.98 0 0)}
+.player .screen .lbl{position:absolute;bottom:8px;left:10px;font-size:10.5px;color:oklch(1 0 0/.55);font-family:"IBM Plex Mono",monospace}
+.player .ctl{display:flex;align-items:center;gap:9px;padding:7px 10px;background:oklch(.16 .01 70)}
+.player .ctl .t{font-family:"IBM Plex Mono",monospace;font-size:11px;color:oklch(1 0 0/.72)}
+.player .track{flex:1;height:3px;border-radius:2px;background:oklch(1 0 0/.2);position:relative}
+.player .track i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:2px;transition:width 220ms var(--ease)}
+.vidhint{max-width:470px;margin:8px auto 0;font-size:11.5px;color:var(--fg-muted);text-align:center}
+
+/* banner die zegt WELKE versie je leest, met een kijkje naar het origineel */
+.verbar{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r);
+background:var(--accent-subtle);color:var(--accent-fg);font-size:12.5px;margin-bottom:18px}
+.verbar.orig{background:var(--surface-sunken);color:var(--fg-subtle)}
+.verbar .sp{flex:1}
+.verbar button{font-weight:600;text-decoration:underline;text-underline-offset:2px;color:inherit;white-space:nowrap}
+.doc p.chg{position:relative}
+.doc p.chg::before{content:"";position:absolute;left:-14px;top:.28em;bottom:.28em;width:2px;border-radius:2px;background:var(--accent)}
+.doc{font-size:16.5px;line-height:1.72;color:var(--fg)}
+.doc.s{font-size:15px}.doc.l{font-size:18px;line-height:1.75}
+.doc p{margin-bottom:1.15em;text-wrap:pretty}
+.doc p:last-child{margin-bottom:0}
+.ts{font-family:"IBM Plex Mono",monospace;font-size:.72em;color:var(--fg-muted);margin-right:.55em;
+padding:1px 5px;border-radius:4px;background:var(--surface-sunken);vertical-align:.12em;letter-spacing:-.01em}
+.ts:hover{background:var(--accent-subtle);color:var(--accent-fg)}
+.ts.cur{background:var(--accent);color:var(--fg-on-accent)}
+mark{background:var(--accent-subtle);color:var(--accent-fg);border-radius:2px;padding:0 1px}
+mark.hit{background:var(--accent);color:var(--fg-on-accent)}
+.doc.editing{outline:1px solid var(--border);border-radius:var(--r);padding:16px 18px;background:var(--surface)}
+.fmtbar{display:flex;align-items:center;gap:3px;padding:7px 0}
+.fmtbar .btn{height:30px;width:30px;padding:0;justify-content:center;border-color:transparent;background:transparent}
+.fmtbar .btn:hover{background:var(--surface-sunken)}
+.fmtbar .dv{width:1px;height:18px;background:var(--border);margin:0 5px}
+
+/* summary */
+.prov{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-muted);
+padding:9px 12px;background:var(--surface-sunken);border-radius:var(--r);margin-bottom:20px;flex-wrap:wrap}
+.prov .sep{opacity:.4}
+.nosum{border:1px dashed var(--border);border-radius:var(--r-lg);padding:34px 28px;text-align:center;max-width:520px}
+.nosum h3{font-size:16px;font-weight:600;color:var(--fg-strong)}
+.nosum p{font-size:13.5px;color:var(--fg-muted);margin-top:6px;line-height:1.55}
+.nosum .btn{margin-top:16px;height:38px;padding:0 16px}
+
+/* desktop frame */
+.desk{width:1240px;height:900px;flex:none;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);
+border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-lg);position:relative}
+.top{display:flex;align-items:center;gap:12px;padding:0 16px;height:54px;flex:none;border-bottom:1px solid var(--border-subtle);background:var(--surface)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:-.02em;font-size:15px;color:var(--fg-strong)}
+.logo .a{font-size:10px;color:var(--fg-muted);align-self:flex-end;margin-bottom:3px}
+.coin{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 5px 0 9px;border:1px solid var(--border);
+border-radius:999px;font-size:13px;font-family:"IBM Plex Mono",monospace;transition:background 120ms}
+.coin:hover{background:var(--surface-sunken);border-color:var(--border-strong)}
+.coin .plus{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;
+background:var(--accent);color:var(--fg-on-accent)}
+.av{width:28px;height:28px;border-radius:999px;background:var(--accent);color:var(--fg-on-accent);display:flex;
+align-items:center;justify-content:center;font-size:12.5px;font-weight:600}
+.brow{flex:1;display:flex;min-height:0}
+.side{width:230px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--border-subtle);background:var(--surface)}
+.nav{padding:10px 10px 6px}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:var(--r);color:var(--fg-subtle);font-size:14px;font-weight:500}
+.nav a:hover{background:var(--surface-sunken)}
+.nav a.on{background:var(--accent-subtle);color:var(--accent-fg)}
+.side .sp{flex:1}
+.side .foot{padding:8px 10px 12px;border-top:1px solid var(--border-subtle)}
+.side .foot a{display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:var(--r);color:var(--fg-muted);font-size:13.5px}
+.side .foot a:hover{background:var(--surface-sunken)}
+.main{flex:1;min-width:0;overflow-y:auto;position:relative;padding:0 34px}
+.main .inner{padding-top:20px}
+
+/* mobiel */
+.mob{flex:none;position:relative;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);
+border-radius:26px;overflow:hidden;box-shadow:var(--sh-lg);height:900px}
+.mtop{display:flex;align-items:center;gap:10px;padding:12px 14px 9px;flex:none;background:var(--surface);border-bottom:1px solid var(--border-subtle)}
+.mbar{display:flex;align-items:center;gap:6px;padding:7px 12px;flex:none;background:var(--bg);
+border-bottom:1px solid var(--border-subtle);min-height:46px}
+.mbar .mt{flex:1;min-width:0;font-size:13.5px;font-weight:500;color:var(--fg-strong);overflow:hidden;
+text-overflow:ellipsis;white-space:nowrap;opacity:0;transition:opacity 160ms}
+.mbar.scrolled .mt{opacity:1}
+.msc{flex:1;overflow-y:auto;position:relative;padding:0 16px 84px}
+.msc h2.title{font-size:22px;max-width:none;margin-top:14px}
+.msc .tabbar{margin-top:14px;top:0}
+.msc .stage{display:block;padding:18px 0 0}
+.msc .readcol{max-width:none}
+.mvid{position:sticky;top:0;z-index:55;margin:0 -16px;background:var(--bg);border-bottom:1px solid var(--border-subtle)}
+.mvid .player{border-radius:0;border-left:0;border-right:0;border-top:0}
+.mvid.min .screen{display:none}
+.mvid .strip{display:none;align-items:center;gap:9px;padding:8px 14px;background:oklch(.16 .01 70);color:oklch(.95 0 0);font-size:12.5px}
+.mvid.min .strip{display:flex}
+.mvid .strip .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.8}
+.tab{position:absolute;left:0;right:0;bottom:0;height:62px;z-index:70;display:flex;background:var(--surface);
+border-top:1px solid var(--border-subtle);padding-bottom:8px}
+.tab a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;color:var(--fg-muted);position:relative}
+.tab a.on{color:var(--accent-fg)}
+.tab a.on::before{content:"";position:absolute;top:0;left:22%;right:22%;height:2px;background:var(--accent)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:420;max-height:82%;display:flex;flex-direction:column;
+background:var(--surface-elevated);border-top:1px solid var(--border);border-radius:var(--r-lg) var(--r-lg) 0 0;
+transform:translateY(101%);transition:transform 300ms var(--ease)}
+.sheet.on{transform:translateY(0)}
+.gr{width:34px;height:4px;border-radius:999px;background:var(--border-strong);margin:9px auto 3px;flex:none}
+.sh{display:flex;align-items:center;padding:5px 16px 9px;flex:none}
+.sh h3{font-size:15.5px;font-weight:600;color:var(--fg-strong)}
+.sb{overflow-y:auto;padding:0 12px 22px}
+.sb h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--fg-muted);margin:13px 8px 5px;font-weight:600}
+.sb .opt{min-height:44px}
+/* mobiele werkbalk: 40px raakvlakken i.p.v. 32 */
+.mbar .btn{height:40px}
+.mbar .btn-i{width:40px}
+.mbar .btn svg{width:17px;height:17px}
+.viewsel{margin-top:14px;padding-bottom:2px}
+.viewsel button{display:flex;align-items:center;gap:9px;width:100%;height:44px;padding:0 13px;
+border:1px solid var(--border);border-radius:var(--r);background:var(--surface);font-size:14px}
+.viewsel button:hover{background:var(--surface-sunken)}
+.viewsel .cur{font-weight:600;color:var(--fg-strong)}
+.viewsel .of{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--fg-muted)}
+.mscroll-x{overflow-x:auto;scrollbar-width:none}
+.mscroll-x::-webkit-scrollbar{display:none}
+.mscroll-x .tabs{flex:none}
+.msc .tabs button{white-space:nowrap}
+/* Developer-paneel */
+.dev{border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;background:var(--surface)}
+.devhd{display:flex;align-items:center;gap:9px}
+.devhd h3{font-size:16px;font-weight:600;color:var(--fg-strong)}
+.devhd .sp{flex:1}
+.devlede{font-size:13.5px;color:var(--fg-muted);line-height:1.55;margin-top:9px}
+.dev h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--fg-muted);margin:18px 0 7px;font-weight:600}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets button{padding:7px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;
+font-weight:500;background:var(--surface);font-family:"IBM Plex Mono",monospace}
+.presets button:hover{background:var(--surface-sunken)}
+.presets button[aria-pressed=true]{background:var(--accent-subtle);border-color:var(--accent);color:var(--accent-fg)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:16px;background:var(--border-subtle);
+border:1px solid var(--border-subtle);border-radius:var(--r);overflow:hidden}
+.stats div{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface);font-size:13px}
+.stats .k{color:var(--fg-muted)}.stats .v{margin-left:auto;color:var(--fg-strong);font-size:12.5px}
+.devft{display:flex;align-items:center;gap:11px;margin-top:18px;flex-wrap:wrap}
+.devft .btn{height:38px;padding:0 15px}
+.free{font-size:12.5px;color:var(--fg-muted)}
+.lnk{text-decoration:underline;text-underline-offset:2px;color:var(--accent-fg);font-weight:500}
+.sb .note{padding:4px 10px 8px;font-size:12px;color:var(--fg-muted);line-height:1.45}
+</style>
+
+<div class="shell">
+  <div class="bar">
+    <h1>INDXR Transcript — redesign mockup <span class="tag">v1</span></h1>
+    <span class="lbl">View</span>
+    <div class="seg" id="vseg">
+      <button aria-pressed="true" data-v="desktop">Desktop</button>
+      <button aria-pressed="false" data-v="mobile">Mobile 404</button>
+      <button aria-pressed="false" data-v="narrow">Mobile 360</button>
+      <button aria-pressed="false" data-v="both">Both</button>
+    </div>
+    <span class="lbl">State</span>
+    <div class="seg" id="stseg">
+      <button aria-pressed="true" data-s="summary">Has summary</button>
+      <button aria-pressed="true" data-s="edited">Edited</button>
+      <button aria-pressed="false" data-s="rag">RAG bought</button>
+    </div>
+    <div class="seg" id="tseg"><button aria-pressed="true" data-t="light">Light</button><button aria-pressed="false" data-t="dark">Dark</button></div>
+  </div>
+
+  <details class="notes">
+    <summary>De redenering achter dit scherm</summary>
+    <ul>
+      <li><strong>Er is één document.</strong> Original / Edited / AI Summary / Edited Summary / Developer waren vijf voorwaardelijke tabs voor twee stukken inhoud. "Edited" is geen weergave maar een toestand — je ziet je bewerkte versie, en <code>Revert to original</code> in het <code>⋯</code>-menu is het vangnet. Vier tabs weg, nul functionaliteit weg.</li>
+      <li><strong>Twee segmenten, want twee soorten inhoud.</strong> Transcript en Summary. Het Summary-segment bestaat pas als er een samenvatting is — zet "Has summary" uit en je ziet wat er dan gebeurt: geen lege tab, één rustige uitnodiging. De Developer-tab was geen weergave maar een bestand; die zit nu in Export.</li>
+      <li><strong>Alinea's in plaats van ondertitelregels.</strong> Nu wordt elk segment als eigen regel gerenderd, met inspringing — vandaar de rafelrand in de live pagina. Segmenten horen samengevoegd tot echte alinea's. Dit is de grootste leeswinst en het is één wijziging in <code>transcriptToJSON</code>.</li>
+      <li><strong>Video reserveert nooit ruimte.</strong> Uit is nul pixels. Aan: desktop een plakkende kolom van 352px waarbij de tekst versmalt; mobiel een plakkende speler bovenaan die je inklapt tot een dunne balk. Tik op een tijdstempel en de speler springt daarheen — dat is de reden dat de video er is.</li>
+      <li><strong>Lezen is de standaard, Edit is een modus.</strong> Geen auto-save, geen toasts: <code>Cmd/Ctrl+S</code> en een inline "Saved 2s ago".</li>
+      <li><strong>Zeldzaam en betaald hoort in <code>⋯</code>.</strong> "Regenerate summary" viel in de live versie van het scherm omdat het in de primaire werkbalk stond. Het staat nu in het overloopmenu, mét de kosten.</li>
+      <li>De badgerij is identiek aan de Library, zodat je ziet dat het hetzelfde ding is. Kop volgt: terug → titel → feiten → tabs. Nu staat de werkbalk boven de titel.</li>
+      <li>De negen exportopties zijn overgenomen uit de Library-mockup en zijn een aanname — CC verifieert ze tegen <code>formatTranscript.ts</code>.</li>
+    </ul>
+  </details>
+
+  <div class="frames" id="frames">
+    <div id="f-desk">
+      <div class="flabel">Desktop · 1240 × 900</div>
+      <div class="desk" id="deskFrame">
+        <div class="top">
+          <div class="logo"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--accent)"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/><path d="M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>INDXR<span class="a">AI</span></div>
+          <div style="flex:1"></div>
+          <button class="coin" title="Buy credits"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent)"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/></svg><span id="dBal">627</span>
+            <span class="plus"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></span></button>
+          <div class="av">T</div>
+        </div>
+        <div class="brow">
+          <aside class="side">
+            <nav class="nav" id="dNav"></nav>
+            <div class="sp"></div>
+            <div class="foot">
+              <a href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>Account</a>
+              <a href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.2 7.5l1.7 1M18.1 15.5l1.7 1M4.2 16.5l1.7-1M18.1 8.5l1.7-1"/></svg>Settings</a>
+              <a href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 20H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h8"/><path d="M17 15l4-3-4-3M21 12H10"/></svg>Sign Out</a>
+            </div>
+          </aside>
+          <div class="main" id="dMain"><div class="inner" id="dInner"></div></div>
+        </div>
+        <div class="scrim" id="dScrim" onclick="closeDlg()"></div>
+        <div class="dlg" id="dDlg"></div>
+      </div>
+    </div>
+
+    <div id="f-mob" class="hidden">
+      <div class="flabel" id="mLbl">Mobile · 404 × 900</div>
+      <div class="mob" id="mFrame" style="width:404px">
+        <div class="mtop">
+          <div class="logo" style="font-size:13.5px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--accent)"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/><path d="M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>INDXR<span class="a">AI</span></div>
+          <div style="flex:1"></div>
+          <button class="coin" style="height:28px;font-size:12px" title="Buy credits"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent)"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/></svg><span id="mBal">627</span>
+            <span class="plus" style="width:17px;height:17px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></span></button>
+          <div class="av" style="width:27px;height:27px;font-size:11.5px">T</div>
+        </div>
+        <div class="mbar" id="mBar"></div>
+        <div class="msc" id="mSc"></div>
+        <nav class="tab" id="mTab"></nav>
+        <div class="scrim" id="mScrim" onclick="closeSheet();closeDlg()"></div>
+        <div class="sheet" id="mSheet"><div class="gr"></div><div class="sh"><h3 id="mShTitle"></h3></div><div class="sb" id="mShBody"></div></div>
+        <div class="dlg" id="mDlg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="menu hidden" id="menu"></div>
+<div class="pop hidden" id="pop"></div>
+
+<script>
+/* ---------- iconen (zelfde set als de Library-mockup) ---------- */
+const ICONS={
+ home:`<path d="M4.2 20.4C4.2 12 7 5.6 12 5.6s7.8 6.4 7.8 14.8z" stroke-linejoin="round"/><path d="M5.3 16.4h13.4M6.5 12.4h11M8.3 8.7h7.4" stroke-linecap="round"/><path d="M10.3 20.4v-1.7a1.7 1.7 0 0 1 3.4 0v1.7" stroke-linejoin="round"/>`,
+ transcribe:`<path d="M3 12h1.6M7 8.4v7.2M10.4 5.6v12.8M13.8 9.2v5.6M17.2 7v10M20.6 11h.8" stroke-linecap="round"/>`,
+ library:`<path d="M12 7.6C10.1 6.2 7.3 5.5 3.7 5.5v12.7c3.6 0 6.4.7 8.3 2.1 1.9-1.4 4.7-2.1 8.3-2.1V5.5c-3.6 0-6.4.7-8.3 2.1z" stroke-linejoin="round"/><path d="M12 7.6v12.7"/>`,
+ messages:`<path d="M4 5.5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9.6L5 20.5V16.5H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z" stroke-linejoin="round"/>`};
+const ico=(n,s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${ICONS[n]}</svg>`;
+const I={
+ back:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
+ vid:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="2.5" y="6" width="13" height="12" rx="2"/><path d="m15.5 12 6-3.5v11l-6-3.5z" stroke-linejoin="round"/></svg>',
+ search:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+ aa:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M2.5 18 7 6l4.5 12M4 14.4h6M14 18l3.5-9 3.5 9M15.2 15.2h4.6"/></svg>',
+ exp:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>',
+ edit:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 20h4L20 8l-4-4L4 16z"/><path d="m14 6 4 4"/></svg>',
+ dots:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="5" cy="12" r=".6"/><circle cx="12" cy="12" r=".6"/><circle cx="19" cy="12" r=".6"/></svg>',
+ yt:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 4h6v6M20 4 10 14"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg>',
+ copy:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
+ spark:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>',
+ undo:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="m8 5-4 4 4 4"/></svg>',
+ mv:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h6l2 2h8v10a2 2 0 0 1-2 2H4z"/><path d="M12 12v5M9.5 14.5 12 12l2.5 2.5"/></svg>',
+ ren:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20h4L20 8l-4-4L4 16z"/><path d="m14 6 4 4"/></svg>',
+ del:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
+ coin:'<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/></svg>',
+ clock:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.3V12l3.2 2" stroke-linecap="round"/></svg>',
+ text:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4.5 6h15M4.5 12h15M4.5 18h9" stroke-linecap="round"/></svg>',
+ cal:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.6" y="5.2" width="16.8" height="15.2" rx="2.2"/><path d="M3.6 9.6h16.8M8.2 3.4v3.4M15.8 3.4v3.4" stroke-linecap="round"/></svg>',
+ chk:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="m5 12 5 5L19 7"/></svg>',
+ x:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+ up:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 14 6-6 6 6"/></svg>',
+ dn:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 10 6 6 6-6"/></svg>',
+ play:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>'};
+
+/* ---------- inhoud ---------- */
+const DOC={
+ title:"Who is Lilith - First Wife of Adam - Ancient Origins and Development of the Myth of the Demon Queen",
+ collection:"Introduction to Western Esotericism",
+ src:"ai", secs:1702, words:4596, videoId:"dQw4w9WgXcQ",
+ mins:4, clock:"14:38", date:"28 Jul", dateY:"28 Jul 2025"};
+/* Today / Yesterday / datum. Geen "4m ago", geen "1d ago". */
+const DAY=1440;
+function addedLabel(mins){
+ if(mins<DAY)return `Today · ${DOC.clock}`;
+ if(mins<2*DAY)return `Yesterday · ${DOC.clock}`;
+ if(mins<365*DAY)return DOC.date;
+ return DOC.dateY}
+
+const PARAS=[
+ [0,"Long before she became a figure of horror, Lilith was a rumour. She turns up at the edges of Mesopotamian incantation bowls, in the margins of medical texts, and in the warnings that mothers whispered over newborn children. She is almost never the subject of the story. She is what the story is trying to keep out."],
+ [47,"The name itself is contested. Older scholarship connected it to the Hebrew word for night, and that reading has proved almost impossible to dislodge from popular culture, where Lilith is still routinely described as a creature of darkness. The more careful comparative work points somewhere else entirely, towards a family of Akkadian wind demons whose names share a root that has nothing to do with nightfall."],
+ [126,"That distinction matters more than it might seem. If Lilith begins as a wind spirit rather than a night spirit, then her earliest associations are with sudden loss, with things that arrive without warning and take something away. Infant mortality. Stillbirth. The kind of grief that arrives from nowhere and has no obvious cause to blame."],
+ [203,"The single verse in Isaiah that mentions her is remarkably thin. It appears in a passage describing a landscape given over to desolation, a place where wild animals gather among the ruins, and the word sits in a list alongside creatures that are otherwise unremarkable. Translators have rendered it as screech owl, as night hag, as night monster, and as a simple proper name, and each choice quietly commits the translator to a theory about what she is."],
+ [289,"For the story that most people know today, the first wife of Adam who refused to lie beneath him and left the garden of her own accord, we have to wait until the early medieval period and a satirical text called the Alphabet of Ben Sira. Its status has been argued over for a thousand years. Some read it as a serious work of aggadic literature. Others read it as parody, even as deliberate provocation aimed at the pious."],
+ [372,"What is not in dispute is that this is the text where the two creation accounts in Genesis get reconciled by way of a second woman. If the first chapter says that male and female were created together, and the second chapter says that woman was formed afterwards from the man, then the simplest narrative solution is that there were two women, and the first one left."],
+ [451,"The refusal is the part that survived. In the text, the argument is about position during intercourse, and Lilith's objection is that they were created from the same earth and are therefore equal. She pronounces the ineffable name, and she flies away to the Red Sea. Three angels are sent after her. She refuses to return, and the cost of that refusal is fixed in the story as the death of a hundred of her children every day."],
+ [538,"Kabbalistic literature inherits this and does something far more systematic with it. In the Zohar and the texts that grow up around it, Lilith stops being an isolated figure and becomes half of a pair, the consort of Samael, occupying a structural position within a whole shadow architecture that mirrors the divine emanations. She is no longer a demon that troubles households. She is a principle."],
+ [629,"That shift from individual to principle is what makes her useful to later writers, and it is also what makes her unrecognisable. The Lilith of the amulets is something you protect a specific child from on a specific night. The Lilith of the Zohar is something closer to a cosmological force, and you cannot hang a force above a cradle."],
+ [714,"The nineteenth century collected her again, and it collected her badly. Romantic and pre-Raphaelite treatments took the medieval material, stripped out the theology, and kept the sexual charge, which is roughly where the modern popular image comes from. Rossetti's Lilith is not a demon at all. She is a portrait of self-possession that the painter finds threatening and beautiful at the same time."],
+ [806,"The twentieth-century reclamation runs on that same reading, and it is more honest about what it is doing. Feminist theologians and writers who took up the name were not usually claiming a historical Lilith. They were claiming the refusal, which is the only part of the story that has ever really been load-bearing."],
+ [893,"So the question of who Lilith is has no single answer, and that is not evasion. She is a wind demon, a mistranslated bird, a satirical device, a kabbalistic consort, a Victorian portrait, and a modern symbol, and the reason she survives all of it is that each period found the same empty space in her and filled it with whatever it was most afraid of losing."]];
+
+const SUMMARY=[
+ "Lilith has no single origin. The figure that reaches modern readers is an accumulation of at least four distinct traditions, each of which repurposed the name for its own ends rather than inheriting a stable character.",
+ "The earliest layer is Mesopotamian. Incantation bowls and protective texts place her among wind demons associated with infant mortality and sudden loss, not with night, despite the popular etymology that connects her name to the Hebrew for night.",
+ "The single biblical mention, in Isaiah, is a one-word appearance in a list of creatures inhabiting a ruined landscape. Translations have rendered it variously as an owl, a night monster, and a proper name, and each choice presupposes an answer to the question it is meant to settle.",
+ "The familiar narrative of Adam's first wife who refuses subordination and leaves the garden appears only in the early medieval Alphabet of Ben Sira, a text whose seriousness has been debated for a millennium. It resolves the two Genesis creation accounts by positing two women.",
+ "Kabbalistic literature converts her from a household threat into a structural principle paired with Samael, and the nineteenth-century Romantic revival strips the theology back out while keeping the erotic charge. Modern reclamations generally claim the refusal rather than the history."];
+const EDITS={
+ 0:"Long before she became a figure of horror, Lilith was a rumour. She appears at the edges of Mesopotamian incantation bowls, in the margins of medical texts, and in the warnings mothers whispered over newborn children — never the subject of the story, always the thing the story is trying to keep out.",
+ 4:"The story most people know — the first wife of Adam who refused to lie beneath him and left the garden of her own accord — appears only in the early medieval Alphabet of Ben Sira. Its status has been argued over for a thousand years: some read it as serious aggadic literature, others as parody aimed squarely at the pious."};
+const SUMMARY_EDIT=[
+ "Lilith has no single origin. What reaches modern readers is an accumulation of at least four separate traditions, each of which borrowed the name for its own purposes rather than inheriting a stable character.",
+ ...SUMMARY.slice(1)];
+const PRESETS=[30,60,90,120];
+const SUM_META={model:"Gemini 2.5 Flash",when:"28 Jul 2026",edited:"2 days ago"};
+
+const FORMATS=[["Plain text",".txt",0],["Plain text with timestamps",".txt",0],["Markdown",".md",0],
+["Markdown with timestamps",".md",0],["Spreadsheet",".csv",0],["Subtitles",".srt",0],["Web subtitles",".vtt",0],
+["Structured data",".json",0],["RAG chunks",".json",1]];
+
+/* ---------- state ---------- */
+const V={tab:"transcript",copied:false,preset:60,boughtPreset:60,video:false,editing:false,find:false,q:"",hit:0,
+ timestamps:true,size:"m",hasSummary:true,edited:true,ragOwned:false,
+ playhead:null,saved:null,balance:627,mScrolled:false,vidMin:false};
+
+const esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const mmss=s=>{const m=Math.floor(s/60),x=s%60;return`${m}:${String(x).padStart(2,"0")}`};
+const dur=s=>{const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60,p=n=>String(n).padStart(2,"0");
+ return h?`${h}:${p(m)}:${p(x)}`:`${m}:${p(x)}`};
+const ragCredits=s=>Math.max(1,Math.ceil(s/600));           // 1 credit per 10 minuten
+/* Tabbladen: alleen wat bestaat. Transcript is er altijd; de rest verschijnt
+   zodra de inhoud bestaat. Edit stuurt je naar het bewerkte tabblad. */
+function tabs(){
+ const t=[["transcript","Transcript"]];
+ if(V.edited)t.push(["edited","Edited"]);
+ if(V.hasSummary)t.push(["summary","Summary"]);
+ if(V.hasSummary&&V.edited)t.push(["summary_edited","Edited summary"]);
+ if(V.ragOwned)t.push(["developer","Developer"]);
+ return t}
+function fixTab(){if(!tabs().some(([k])=>k===V.tab))V.tab="transcript"}
+const isText=()=>V.tab!=="developer";
+const isSum=()=>V.tab==="summary"||V.tab==="summary_edited";
+const paras=()=>{
+ if(V.tab==="summary")return SUMMARY.map(t=>[null,t,false]);
+ if(V.tab==="summary_edited")return SUMMARY_EDIT.map((t,i)=>[null,t,t!==SUMMARY[i]]);
+ if(V.tab==="edited")return PARAS.map(([t,x],i)=>EDITS[i]?[t,EDITS[i],true]:[t,x,false]);
+ return PARAS.map(([t,x])=>[t,x,false])};
+
+function hits(){if(!V.q.trim())return 0;
+ const re=new RegExp(V.q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi");
+ return paras().reduce((n,[,t])=>n+((t.match(re)||[]).length),0)}
+
+function bodyHTML(){
+ let idx=0;const re=V.q.trim()?new RegExp("("+V.q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"):null;
+ return paras().map(([t,txt,chg])=>{
+   let h=esc(txt);
+   if(re)h=h.replace(re,m=>`<mark class="${idx++===V.hit?"hit":""}">${m}</mark>`);
+   const ts=(t!==null&&V.timestamps&&V.tab==="transcript")
+     ? `<button class="ts${V.playhead===t?" cur":""}" onclick="seek(${t})" title="Jump to ${mmss(t)}">${mmss(t)}</button>`:"";
+   return `<p class="${chg?"chg":""}">${ts}${h}</p>`}).join("")}
+
+/* Eén melding die ergens over gaat: loopt de samenvatting achter op je bewerking? */
+function staleNote(){
+ if(!isSum()||!V.hasSummary||!V.edited)return"";
+ return `<div class="verbar">${I.spark}<span>This summary was written before you edited the transcript.</span>
+   <span class="sp"></span><button onclick="sumDialog()">Regenerate</button></div>`}
+
+/* Developer: /* Developer: de RAG-export, met de preset waarmee je hem gekocht hebt. */
+function devPanel(){
+ const chunks=Math.ceil(DOC.secs/V.preset);
+ return `<div class="dev">
+   <div class="devhd"><h3>RAG export</h3>
+     <span class="bg rag">RAG</span><span class="sp"></span>
+     <span class="mono" style="font-size:11.5px;color:var(--fg-muted)">purchased ${DOC.date}</span></div>
+   <p class="devlede">Chunked JSON with timestamps, deep links, token counts and deterministic chunk IDs — the shape a retrieval system expects. You paid once for this transcript; every chunk length below is free to download, as often as you like.</p>
+   <h4>Chunk length</h4>
+   <div class="presets">${PRESETS.map(x=>`<button aria-pressed="${V.preset===x}" onclick="V.preset=${x};paint()">${x}s${x===60?" · default":""}</button>`).join("")}</div>
+   <div class="stats">
+     <div><span class="k">Chunks</span><span class="v mono">${chunks}</span></div>
+     <div><span class="k">Overlap</span><span class="v mono">sentence boundary</span></div>
+     <div><span class="k">Deep links</span><span class="v mono">yes</span></div>
+     <div><span class="k">Token counts</span><span class="v mono">per chunk</span></div></div>
+   <div class="devft">
+     <button class="btn btn-p">${I.exp}Download .json</button>
+     <span class="free">${chunks} chunks at ${V.preset}s · free</span>
+   </div></div>`}
+
+/* Videoblok: tussen kop en tekst, op leesbreedte, plakkend. Uit = nul pixels. */
+function vidBlock(){
+ return V.video
+  ? `<div class="vidwrap">${playerHTML()}
+      <div class="vidrow" style="border:0;padding-top:10px;justify-content:center">
+        <button onclick="V.video=false;paint()">${I.up} Hide video</button>
+        <span class="meta">${mmss(V.playhead??0)} / ${dur(DOC.secs)}</span></div></div>`
+  : `<div class="vidrow"><button onclick="V.video=true;paint()">${I.vid} Watch video</button>
+      <span class="meta">${dur(DOC.secs)}</span></div>`}
+
+/* ---------- badges ---------- */
+const PEN='<span class="pen">✎</span>';
+function badges(){let h="";
+ const s=DOC.src;
+ h+= s==="auto"
+   ? (V.edited?`<span class="bg auto-edit" title="YouTube captions · edited">CC${PEN}</span>`:`<span class="bg auto" title="YouTube captions">CC</span>`)
+   : (V.edited?`<span class="bg ai-edit" title="AI transcription · edited">AI${PEN}</span>`:`<span class="bg ai" title="AI transcription">AI</span>`);
+ if(V.hasSummary)h+=`<span class="bg summary" title="AI summary">SUM</span>`;
+ if(V.ragOwned)h+=`<span class="bg rag" title="RAG export">RAG</span>`;
+ return h}
+
+/* ---------- desktop ---------- */
+function deskHTML(){
+ const findRow=V.find?`<div class="findbar">
+   <input id="dFind" placeholder="Find in ${V.tab==="summary"?"summary":"transcript"}…" value="${esc(V.q)}" oninput="V.q=this.value;V.hit=0;paint()">
+   <span class="cnt">${V.q.trim()?`${hits()?V.hit+1:0} / ${hits()}`:""}</span>
+   <button class="btn" onclick="step(-1)" aria-label="Previous">${I.up}</button>
+   <button class="btn" onclick="step(1)" aria-label="Next">${I.dn}</button>
+   <div style="flex:1"></div>
+   <button class="btn btn-g" onclick="V.find=false;V.q='';paint()">${I.x}</button></div>`:"";
+
+ const tools=V.editing
+  ? `<div class="tools">
+       <span class="savest">${V.saved?`<b>Saved</b> ${V.saved}`:"Unsaved changes"}</span>
+       <button class="btn" onclick="save()">Save <span class="mono" style="opacity:.6;font-size:11px">⌘S</span></button>
+       <button class="btn btn-p" onclick="V.editing=false;paint()">Done</button></div>`
+  : `<div class="tools">
+       <button class="btn btn-i" title="Find (⌘F)" onclick="V.find=true;paint();focusFind()">${I.search}</button>
+       <button class="btn btn-i" title="Display" onclick="display(event)">${I.aa}</button>
+       <button class="btn" onclick="copied()">${I.copy}<span id="cpLbl">${V.copied?"Copied":"Copy"}</span></button>
+       <button class="btn" onclick="exportMenu(event)">${I.exp}Export</button>
+       <button class="btn btn-p" onclick="startEdit()">${I.edit}Edit</button>
+       <button class="btn btn-i" title="More" onclick="more(event)">${I.dots}</button></div>`;
+
+ const fmt=V.editing?`<div class="fmtbar">
+   ${["B","I","S"].map(x=>`<button class="btn" style="font-weight:600">${x}</button>`).join("")}
+   <span class="dv"></span>
+   <button class="btn" style="font-size:12px">H2</button><button class="btn" style="font-size:12px">H3</button>
+   <button class="btn">${I.dn.replace('width="14" height="14"','width="15" height="15"')}</button>
+   <span class="dv"></span><button class="btn">${I.undo}</button></div>`:"";
+
+ let stage;
+ if(V.tab==="summary"&&!V.hasSummary){
+   stage=`<div class="stage"><div class="readcol"><div class="nosum">
+     <h3>No summary yet</h3>
+     <p>An AI summary condenses this ${dur(DOC.secs)} transcript into a handful of paragraphs you can scan. It costs 3 credits and takes about half a minute.</p>
+     <button class="btn btn-p" onclick="V.hasSummary=true;setState('summary',true);paint()">${I.spark}Summarise — 3 credits</button>
+   </div></div></div>`;
+ } else {
+   stage=V.tab==="developer"
+     ? `<div class="stage"><div class="readcol">${devPanel()}</div></div>`
+     : `<div class="stage">${isText()&&!isSum()?vidBlock():""}
+        <div class="readcol">${staleNote()}${fmt}<div class="doc ${V.size}${V.editing?" editing":""}">${bodyHTML()}</div></div></div>`;
+ }
+
+ return `<div class="crumb">
+   <a href="#">${I.back}</a><a href="#">Library</a><span class="sl">/</span><a href="#">${esc(DOC.collection)}</a></div>
+  <h2 class="title" dir="auto">${esc(DOC.title)}</h2>
+  <div class="factline"><span class="bgs">${badges()}</span>
+    <span class="f">${I.clock}<span class="mono">${dur(DOC.secs)}</span></span>
+    <span class="f">${I.text}<span class="mono">${DOC.words.toLocaleString("en-US")}</span> words</span>
+    <span class="f">${I.cal}${addedLabel(DOC.mins)}</span></div>
+  <div class="tabbar"><div class="tabs">${tabsHTML()}</div>${tools}</div>${findRow}${stage}`}
+
+function tabsHTML(){return tabs().map(([k,l])=>
+ `<button aria-selected="${V.tab===k}" onclick="go('${k}')">${l}</button>`).join("")
+ +(V.hasSummary?"":`<button aria-selected="false" style="opacity:.55" onclick="go('summary')">Summary</button>`)}
+function go(k){V.tab=k;V.hit=0;V.editing=false;paint()}
+function startEdit(){
+ if(V.tab==="transcript"||V.tab==="edited"){V.edited=true;setState("edited",true);V.tab="edited"}
+ else if(isSum()){V.edited=true;setState("edited",true);V.tab="summary_edited"}
+ V.editing=true;V.saved=null;paint()}
+
+function playerHTML(mini){
+ const pos=V.playhead??0, pct=Math.min(100,pos/DOC.secs*100);
+ return `<div class="player">
+   <div class="screen"><div class="play">${I.play}</div>
+     <span class="lbl">youtube · ${DOC.videoId}</span></div>
+   <div class="ctl"><span class="t">${mmss(pos)}</span><div class="track"><i style="width:${pct}%"></i></div>
+     <span class="t">${dur(DOC.secs)}</span></div></div>`}
+
+/* ---------- mobiel ---------- */
+function mobHTML(){
+ const findRow=V.find?`<div class="findbar">
+   <input id="mFind" placeholder="Find…" value="${esc(V.q)}" oninput="V.q=this.value;V.hit=0;paint()">
+   <span class="cnt">${V.q.trim()?`${hits()?V.hit+1:0}/${hits()}`:""}</span>
+   <button class="btn btn-i" onclick="step(-1)">${I.up}</button>
+   <button class="btn btn-i" onclick="step(1)">${I.dn}</button>
+   <button class="btn btn-g btn-i" onclick="V.find=false;V.q='';paint()">${I.x}</button></div>`:"";
+
+ let stage;
+ if(V.tab==="summary"&&!V.hasSummary){
+   stage=`<div class="stage"><div class="nosum" style="max-width:none">
+     <h3>No summary yet</h3><p>Condenses this ${dur(DOC.secs)} transcript into a few paragraphs. 3 credits, about half a minute.</p>
+     <button class="btn btn-p" onclick="V.hasSummary=true;setState('summary',true);paint()">${I.spark}Summarise — 3 credits</button></div></div>`;
+ } else {
+   stage=V.tab==="developer"
+     ? `<div class="stage"><div class="readcol">${devPanel()}</div></div>`
+     : `<div class="stage">${isText()&&!isSum()?vidBlock():""}
+        <div class="readcol">${staleNote()}<div class="doc ${V.size}${V.editing?" editing":""}">${bodyHTML()}</div></div></div>`;
+ }
+ return `<h2 class="title" dir="auto">${esc(DOC.title)}</h2>
+  <div class="factline"><span class="bgs">${badges()}</span>
+   <span class="f">${I.clock}<span class="mono">${dur(DOC.secs)}</span></span>
+   <span class="f">${I.text}<span class="mono">${DOC.words.toLocaleString("en-US")}</span></span>
+   <span class="f">${I.cal}${addedLabel(DOC.mins)}</span></div>
+  <div class="viewsel"><button onclick="mViewSheet()">
+     <span class="cur">${tabs().find(([k])=>k===V.tab)?.[1]??"Transcript"}</span>
+     <span class="of">${tabs().findIndex(([k])=>k===V.tab)+1} of ${tabs().length}</span>
+     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+   </button></div>${findRow}${stage}`}
+
+function mBarHTML(){
+ return V.editing
+  ? `<button class="btn btn-g btn-i" onclick="V.editing=false;paint()">${I.x}</button>
+     <span class="mt" style="opacity:1">${V.saved?`Saved ${V.saved}`:"Editing"}</span>
+     <button class="btn" onclick="save()">Save</button>
+     <button class="btn btn-p" onclick="V.editing=false;paint()">Done</button>`
+  : `<button class="btn btn-g btn-i" title="Back">${I.back}</button>
+     <span class="mt" dir="auto">${esc(DOC.title)}</span>
+     <button class="btn btn-i" title="Find" onclick="V.find=true;paint();focusFind()">${I.search}</button>
+     <button class="btn btn-i" title="Copy plain text" onclick="copied()">${I.copy}</button>
+     <button class="btn btn-p btn-i" title="Edit" onclick="startEdit()">${I.edit}</button>
+     <button class="btn btn-i" title="More" onclick="mSheet()">${I.dots}</button>`}
+
+/* ---------- menus & popovers ---------- */
+function place(el,rect,w){el.style.top=(window.scrollY+rect.bottom+6)+"px";
+ el.style.left=Math.max(8,Math.min(window.scrollX+rect.right-w,window.innerWidth-w-14))+"px"}
+function closeAll(){document.getElementById("menu").classList.add("hidden");document.getElementById("pop").classList.add("hidden")}
+function display(e){e.stopPropagation();const r=e.currentTarget.getBoundingClientRect(),p=document.getElementById("pop");
+ p.innerHTML=`<h4>Display</h4>
+  <button class="opt" aria-checked="${V.timestamps}" onclick="V.timestamps=!V.timestamps;paint();display2(${r.left},${r.bottom})">
+    <span class="bx">${I.chk}</span><span>Timestamps</span></button>
+  <h4>Text size</h4>
+  <div class="sizeseg">${[["s","Small"],["m","Default"],["l","Large"]].map(([k,l])=>
+    `<button aria-pressed="${V.size===k}" onclick="V.size='${k}';paint();display2(${r.left},${r.bottom})">${l}</button>`).join("")}</div>`;
+ p.classList.remove("hidden");place(p,r,250)}
+function display2(l,b){const p=document.getElementById("pop");p.classList.remove("hidden");
+ p.style.top=(window.scrollY+b+6)+"px";p.style.left=Math.max(8,window.scrollX+l-215)+"px"}
+function exportMenu(e){e.stopPropagation();const r=e.currentTarget.getBoundingClientRect(),m=document.getElementById("menu");
+ m.innerHTML=`<div class="hd">Download as</div>
+  ${FORMATS.map(([l,x,paid])=>`<button onclick="${paid?"closeAll();ragDialog()":"closeAll()"}"><span>${l}</span>
+    ${paid?`<span class="paid${V.ragOwned?" own":""}" style="margin-left:7px">${V.ragOwned?"PURCHASED":"PAID"}</span>`:""}
+    <span class="ext">${x}</span></button>`).join("")}
+  ${V.ragOwned?`<div class="note">You already bought a RAG export for this transcript — downloading it again is free.</div>`:""}
+  <hr><button onclick="closeAll()">${I.copy}Copy plain text<span class="ext">clipboard</span></button>`;
+ m.classList.remove("hidden");place(m,r,300)}
+function more(e){e.stopPropagation();const r=e.currentTarget.getBoundingClientRect(),m=document.getElementById("menu");
+ m.innerHTML=`
+  <button onclick="closeAll()">${I.yt}Watch on YouTube</button>
+  <hr>
+  ${V.hasSummary?`<button onclick="closeAll();sumDialog()">${I.spark}Regenerate summary<span class="ext">3 credits</span></button>`
+   :`<button onclick="closeAll();V.hasSummary=true;setState('summary',true);V.tab='summary';paint()">${I.spark}Summarise<span class="ext">3 credits</span></button>`}
+  ${V.edited?`<button onclick="closeAll();revertDialog()">${I.undo}Revert to original</button>`:""}
+  <hr>
+  <button onclick="closeAll()">${I.mv}Move to collection<span class="arr">›</span></button>
+  <button onclick="closeAll()">${I.ren}Rename</button>
+  <button class="dg" onclick="closeAll()">${I.del}Delete</button>`;
+ m.classList.remove("hidden");place(m,r,232)}
+
+/* ---------- dialogen ---------- */
+const mobile=()=>!document.getElementById("f-mob").classList.contains("hidden")&&
+ document.getElementById("f-desk").classList.contains("hidden");
+function dlgEls(){return mobile()?[document.getElementById("mDlg"),document.getElementById("mScrim")]
+ :[document.getElementById("dDlg"),document.getElementById("dScrim")]}
+function openDlg(html){const [d,s]=dlgEls();d.innerHTML=html;d.classList.add("on");s.classList.add("on")}
+function closeDlg(){["dDlg","mDlg"].forEach(i=>document.getElementById(i).classList.remove("on"));
+ ["dScrim","mScrim"].forEach(i=>document.getElementById(i).classList.remove("on"))}
+
+function ragDialog(){
+ const c=ragCredits(DOC.secs), after=V.balance-c;
+ if(V.ragOwned){
+  openDlg(`<div class="hd"><h3>Download RAG export</h3>
+    <p class="lede">You bought this export earlier. Downloading it again costs nothing — the chunks are already generated and stored.</p></div>
+   <div class="calc">
+     <div><span class="k">Chunk size</span><span class="v">60 s</span></div>
+     <div><span class="k">Chunks</span><span class="v">29</span></div>
+     <div class="tot"><span class="k">Cost now</span><span class="v">Free</span></div></div>
+   <div class="ft"><button class="btn" onclick="closeDlg()">Cancel</button>
+     <button class="btn btn-p" onclick="closeDlg()">Download .json</button></div>`);
+  return}
+ openDlg(`<div class="hd"><h3>Create a RAG export</h3>
+   <p class="lede">Splits this transcript into overlapping chunks with timestamps, deep links and token counts — the shape a retrieval system expects. You only pay once; later downloads of this export are free.</p></div>
+  <div class="calc">
+    <div><span class="k">Duration</span><span class="v">${dur(DOC.secs)}</span></div>
+    <div><span class="k">Rate</span><span class="v">1 credit / 10 min</span></div>
+    <div><span class="k">Chunk size</span><span class="v">60 s</span></div>
+    <div class="tot"><span class="k">Cost</span><span class="v">${c} credits</span></div>
+    <div><span class="k">Balance after</span><span class="v">${after} credits</span></div></div>
+  <div class="ft"><button class="btn" onclick="closeDlg()">Cancel</button>
+    <button class="btn btn-p" onclick="buyRag(${c})">${I.coin} Pay ${c} credits</button></div>`)}
+function buyRag(c){V.balance-=c;V.ragOwned=true;setState("rag",true);closeDlg();paint()}
+
+function sumDialog(){
+ const after=V.balance-3;
+ openDlg(`<div class="hd"><h3>Regenerate the summary</h3>
+   <p class="lede">This replaces the current summary${V.edited?", including the edits you made to it":""}. There is no undo.</p></div>
+  <div class="calc"><div><span class="k">Model</span><span class="v">${SUM_META.model}</span></div>
+   <div class="tot"><span class="k">Cost</span><span class="v">3 credits</span></div>
+   <div><span class="k">Balance after</span><span class="v">${after} credits</span></div></div>
+  <div class="ft"><button class="btn" onclick="closeDlg()">Cancel</button>
+   <button class="btn btn-p" onclick="V.balance-=3;closeDlg();paint()">${I.coin} Regenerate</button></div>`)}
+
+function revertDialog(){
+ openDlg(`<div class="hd"><h3>Revert to the original?</h3>
+   <p class="lede">Your edits to this ${V.tab==="summary"?"summary":"transcript"} will be discarded and the original ${DOC.src==="ai"?"AI transcription":"caption"} text comes back. This cannot be undone.</p></div>
+  <div class="ft"><button class="btn" onclick="closeDlg()">Keep my edits</button>
+   <button class="btn btn-d" onclick="V.edited=false;setState('edited',false);closeDlg();paint()">Revert</button></div>`)}
+
+/* mobiel overloop-sheet */
+function mSheet(){
+ const b=document.getElementById("mShBody");
+ document.getElementById("mShTitle").textContent="Transcript";
+ const A=(ic,l,fn,dg,tail)=>`<button class="opt act${dg?" dg":""}" onclick="${fn}"><span class="ic">${ic}</span><span>${l}</span>${tail?`<span class="tl">${tail}</span>`:""}</button>`;
+ b.innerHTML=`<h4>Display</h4>
+  <button class="opt" aria-checked="${V.timestamps}" onclick="V.timestamps=!V.timestamps;paint();mSheet()"><span class="bx">${I.chk}</span><span>Timestamps</span></button>
+  <div class="sizeseg">${[["s","Small"],["m","Default"],["l","Large"]].map(([k,l])=>
+    `<button aria-pressed="${V.size===k}" onclick="V.size='${k}';paint();mSheet()">${l}</button>`).join("")}</div>
+  <h4>This transcript</h4>
+  ${A(I.exp,"Export…","closeSheet();mExportSheet()")}
+  ${A(I.yt,"Watch on YouTube","closeSheet()")}
+  ${A(I.copy,"Copy plain text","closeSheet()")}
+  ${V.hasSummary?A(I.spark,"Regenerate summary","closeSheet();sumDialog()",0,"3 cr")
+    :A(I.spark,"Summarise","closeSheet();V.hasSummary=true;setState('summary',true);V.tab='summary';paint()",0,"3 cr")}
+  ${V.edited?A(I.undo,"Revert to original","closeSheet();revertDialog()"):""}
+  ${A(I.mv,"Move to collection…","closeSheet()")}
+  ${A(I.ren,"Rename","closeSheet()")}
+  ${A(I.del,"Delete","closeSheet()",1)}`;
+ openSheet()}
+function mViewSheet(){
+ document.getElementById("mShTitle").textContent="View";
+ document.getElementById("mShBody").innerHTML=tabs().map(([k,l])=>
+  `<button class="opt" aria-checked="${V.tab===k}" onclick="go('${k}');closeSheet()">
+    <span class="bx rd">${I.chk}</span><span>${l}</span></button>`).join("")
+  +(V.hasSummary?"":`<div class="note">A summary appears here once you create one.</div>`);
+ openSheet()}
+function mExportSheet(){
+ document.getElementById("mShTitle").textContent="Export";
+ document.getElementById("mShBody").innerHTML=FORMATS.map(([l,x,paid])=>
+  `<button class="opt act" onclick="${paid?"closeSheet();ragDialog()":"closeSheet()"}"><span class="ic">${I.exp}</span><span>${l}</span>
+   ${paid?`<span class="paid${V.ragOwned?" own":""}" style="margin-left:7px">${V.ragOwned?"PURCHASED":"PAID"}</span>`:""}
+   <span class="tl">${x}</span></button>`).join("")
+  +(V.ragOwned?`<div class="note">Already bought — downloading it again is free.</div>`:"");
+ openSheet()}
+function openSheet(){document.getElementById("mScrim").classList.add("on");document.getElementById("mSheet").classList.add("on")}
+function closeSheet(){document.getElementById("mScrim").classList.remove("on");document.getElementById("mSheet").classList.remove("on")}
+
+/* ---------- acties ---------- */
+function copied(){V.copied=true;paint();setTimeout(()=>{V.copied=false;paint()},1600)}
+function seek(t){V.playhead=t;if(!V.video){V.video=true;V.vidMin=false}paint()}
+function save(){V.saved="just now";paint();
+ setTimeout(()=>{if(V.saved==="just now"){V.saved="2s ago";paint()}},2000)}
+function step(d){const n=hits();if(!n)return;V.hit=(V.hit+d+n)%n;paint()}
+function focusFind(){setTimeout(()=>{const el=document.getElementById(mobile()?"mFind":"dFind");if(el){el.focus();el.select()}},20)}
+function setState(k,on){const m={summary:"summary",edited:"edited",rag:"rag"};
+ [...document.getElementById("stseg").children].forEach(b=>{if(b.dataset.s===m[k])b.setAttribute("aria-pressed",on)})}
+
+/* ---------- render ---------- */
+function nav(){const items=[["home","Home",0],["transcribe","Transcribe",0],["library","Library",1],["messages","Messages",0]];
+ document.getElementById("dNav").innerHTML=items.map(([n,l,on])=>`<a href="#" class="${on?"on":""}">${ico(n)}${l}</a>`).join("");
+ document.getElementById("mTab").innerHTML=items.map(([n,l,on])=>`<a href="#" class="${on?"on":""}">${ico(n,19)}${l}</a>`).join("")}
+
+function paint(){
+ fixTab();
+ document.getElementById("dInner").innerHTML=deskHTML();
+ document.getElementById("mSc").innerHTML=mobHTML();
+ const bar=document.getElementById("mBar");bar.innerHTML=mBarHTML();
+ bar.classList.toggle("scrolled",V.mScrolled||V.editing);
+ document.getElementById("dBal").textContent=V.balance;
+ document.getElementById("mBal").textContent=V.balance;
+ nav();
+ const h=document.querySelector("mark.hit");if(h)h.scrollIntoView({block:"center",behavior:"smooth"})}
+
+document.getElementById("mSc").addEventListener("scroll",e=>{
+ const s=e.target.scrollTop>70;if(s!==V.mScrolled){V.mScrolled=s;
+  document.getElementById("mBar").classList.toggle("scrolled",s||V.editing)}});
+
+document.addEventListener("click",e=>{if(!e.target.closest("#menu")&&!e.target.closest("#pop"))closeAll()});
+document.getElementById("tseg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+ [...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b));
+ document.documentElement.setAttribute("data-theme",b.dataset.t)};
+document.getElementById("vseg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+ [...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b));const v=b.dataset.v;
+ document.getElementById("f-desk").classList.toggle("hidden",v==="mobile"||v==="narrow");
+ document.getElementById("f-mob").classList.toggle("hidden",v==="desktop");
+ const w=v==="narrow"?360:404;document.getElementById("mFrame").style.width=w+"px";
+ document.getElementById("mLbl").textContent=`Mobile · ${w} × 900`};
+document.getElementById("stseg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+ const on=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",on);
+ if(b.dataset.s==="summary"){V.hasSummary=on;if(!on&&V.tab==="summary")V.tab="transcript"}
+ if(b.dataset.s==="edited")V.edited=on;
+ if(b.dataset.s==="rag")V.ragOwned=on;
+ paint()};
+document.addEventListener("keydown",e=>{
+ const meta=e.metaKey||e.ctrlKey;
+ if(meta&&e.key.toLowerCase()==="f"){e.preventDefault();V.find=true;paint();focusFind()}
+ if(meta&&e.key.toLowerCase()==="s"){e.preventDefault();if(V.editing)save()}
+ if(e.key==="Enter"&&V.find&&document.activeElement&&/find/i.test(document.activeElement.id||"")){e.preventDefault();step(e.shiftKey?-1:1)}
+ if(e.key==="Escape"){closeAll();closeSheet();closeDlg();if(V.find){V.find=false;V.q="";paint()}}});
+paint();
+</script>
