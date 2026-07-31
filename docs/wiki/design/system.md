@@ -578,7 +578,9 @@ Concreet géén patroon op:
 - Home / Messages (werkende weergave) en alle overige werkende dashboardpagina's
 
 **Uitzondering — Library:** de Library-body draagt bewust wél de honeycomb-textuur (op lage
-opaciteit), een vastgelegde, gedocumenteerde uitzondering (zie `docs/LESSONS.md`
+opaciteit — feitelijk `opacity-[0.03] dark:opacity-[0.045]` in `DashboardBackdrop`, geverifieerd
+2026-07-31; de tabelrij "Empty state Library" hierboven gaat over de losse lege-staat, niet de body),
+een vastgelegde, gedocumenteerde uitzondering (zie `docs/LESSONS.md`
 [2026-07-03] design-hexagon-bg-uitzondering en ADR-079). Messages houdt het patroon alleen op
 zijn empty-state (§5-tabel "Empty state Messages"), niet op de werkende lijst. Deze twee regels
 spreken elkaar dus niet tegen: werkoppervlak = geen patroon; Library = expliciete uitzondering;

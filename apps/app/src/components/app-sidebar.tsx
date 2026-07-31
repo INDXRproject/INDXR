@@ -5,10 +5,11 @@ import { useRouter, usePathname } from "next/navigation"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
 import Link from "next/link"
 import {
-  Home, Library, AudioLines, Inbox, BookOpen, Settings, User, LogOut,
-  ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2,
+  Library, AudioLines, MessageSquare, BookOpen, Settings, User, LogOut,
+  ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2, Search,
   PanelLeftClose, PanelLeftOpen,
 } from "lucide-react"
+import { Beehive } from "@/components/icons/Beehive"
 import { useUnreadMessages } from "../hooks/useUnreadMessages"
 
 import {
@@ -45,9 +46,9 @@ interface SimplifiedTranscript {
 }
 
 const topNavItems = [
-  { title: "Home",      url: "/dashboard",            icon: Home      },
-  { title: "Transcribe", url: "/dashboard/transcribe", icon: AudioLines },
-  { title: "Messages",  url: "/dashboard/messages",   icon: Inbox     },
+  { title: "Home",      url: "/dashboard",            icon: Beehive     },
+  { title: "Transcribe", url: "/dashboard/transcribe", icon: AudioLines  },
+  { title: "Messages",  url: "/dashboard/messages",   icon: MessageSquare },
 ]
 
 const footerItems = [
@@ -91,6 +92,9 @@ export function AppSidebar() {
 
   // Drag over
   const [dragOverId, setDragOverId] = useState<string | "all" | null>(null)
+
+  // Filter the collection list (22+ collections truncate hard without this)
+  const [colFilter, setColFilter] = useState("")
 
   // Compact feedback banner above collection list
   const [sidebarFeedback, setSidebarFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
@@ -449,11 +453,27 @@ export function AppSidebar() {
                         >
                           <BookOpen className="h-3 w-3 shrink-0" />
                           <span className="flex-1 text-left">All Transcripts</span>
-                          <span className="tabular-nums opacity-60">{transcripts.length}</span>
+                          <span className="font-mono tabular-nums opacity-60">{transcripts.length}</span>
                         </button>
 
+                        {/* Filter the collection list */}
+                        {collections.length > 8 && (
+                          <div className="relative px-1 py-1">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-fg-muted" />
+                            <input
+                              value={colFilter}
+                              onChange={e => setColFilter(e.target.value)}
+                              placeholder="Filter collections…"
+                              dir="auto"
+                              className="w-full h-7 rounded-md border border-border bg-surface pl-7 pr-2 text-xs text-fg placeholder:text-fg-muted outline-none focus:border-accent"
+                            />
+                          </div>
+                        )}
+
                         {/* Per-collection */}
-                        {collections.map(col => {
+                        {collections
+                          .filter(col => col.name.toLowerCase().includes(colFilter.trim().toLowerCase()))
+                          .map(col => {
                           const isSelected = isLibraryPage && selectedId === col.id
                           const isDragging = dragOverId === col.id
                           const isEditing  = editingId === col.id
@@ -517,7 +537,7 @@ export function AppSidebar() {
                                     >
                                       {col.name}
                                     </button>
-                                    <span className="tabular-nums opacity-60 shrink-0">{counts[col.id] ?? 0}</span>
+                                    <span className="font-mono tabular-nums opacity-60 shrink-0">{counts[col.id] ?? 0}</span>
                                     {/* Action icons — only visible on hover */}
                                     <button
                                       onClick={(e) => { e.stopPropagation(); handleRenameStart(col) }}

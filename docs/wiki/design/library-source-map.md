@@ -7,8 +7,19 @@ read-only geïnventariseerd tegen de **broncode** en de **live productie-DB**
 wiki-versie. Waar dit document en een andere wiki-pagina botsen: **dit is nagerekend tegen de code**,
 de code wint.
 
+> ⚠️ **Deels achterhaald sinds ADR-083 (2026-07-31, Library-lijst herontwerp Fase 1).** De **lijst**
+> (`page.tsx` + `TranscriptList.tsx`) is herbouwd: grid-view + thumbnails weg; twee-regelige rij met
+> `dir="auto"`; badges = mono-pillen `CC`/`AI`/`SUM`/`RAG`; echte server-side filters (Status/Source/Has/
+> Duration/Added) + chips; sort+dir+zoek in de URL; tri-state select-all (huidige pagina); rij- en
+> bulk-menu gescheiden; Move-to-collection-semantiek; twee lege staten; mobiele bottom-sheets. De
+> **data-read** gaat nu via de nieuwe view `transcripts_list` (`security_invoker=true`) i.p.v.
+> `select("*")` op de basistabel. Nieuwe componenten: `LibraryControls.tsx`, `filters.ts`, `badges.tsx`,
+> `MoveToCollectionMenu.tsx`, `components/icons/Beehive.tsx`. De **render-boom (§1)**, **de query (§2.1)**
+> en **§6 (wat er niet is)** hieronder beschrijven de PRE-redesign staat; de **detailpagina (§8)** is nog
+> onaangeroerd. §2.3 (kolominventaris), §5, §7 blijven geldig.
+
 **Scope:** `/dashboard/library` (lijst) + `/dashboard/library/[id]` (detail). Alle regelnummers zijn
-de stand bij het schrijven (2026-07-31).
+de stand bij het schrijven (2026-07-31, vóór ADR-083 tenzij anders vermeld).
 
 **Wie dit leest zonder de codebase te kunnen openen, kan hieruit beantwoorden:** welke velden per
 transcript-rij beschikbaar zijn, waar elk zichtbaar UI-element vandaan komt, wat gedeeld is met
@@ -496,13 +507,22 @@ Read-only geconstateerd, **niet gefixt** (per opdracht):
    kolom — inclusief de complete `transcript` jsonb (NOT NULL, kan tienduizenden segmenten zijn) — voor
    alle 50 rijen per pagina, terwijl de lijst alleen titel/duur/badges/datum toont. Onnodige egress +
    geheugen. Een expliciete kolom-select (zonder `transcript`) zou dit wegnemen.
-2. **Honeycomb-opacity: drie tegenstrijdige waarden.** Code `0.03/0.045` (`DashboardBackdrop.tsx:28`)
-   vs `LESSONS.md` `0.035/0.05` vs `system.md` §5 `0.04/0.06`. Docs zijn gedrift t.o.v. de code.
-3. **Sidebar-opslagmeter is hardcoded 500 MB en klopt niet met de echte cap.** `app-sidebar.tsx:165`
-   `const MAX_MB = 500` + meter uit `character_count/1024/1024`. De werkelijke per-user opslaglimiet is
-   `user_credits.library_bytes_cap` (basis **100 MiB**, ADR-078) — de sidebar toont dus een verzonnen
-   500 MB-noemer die niets met de gehandhaafde limiet te maken heeft, en meet bovendien tekens i.p.v.
-   bytes.
+2. **Honeycomb-opacity: één echte drift (gecorrigeerd 2026-07-31).** Code = `0.03/0.045`
+   (`DashboardBackdrop.tsx:28`). `LESSONS.md` zei `0.035/0.05` → **echte drift, nu gefixt** naar de
+   code-waarde. De eerder aangehaalde `system.md §5 0.04/0.06` blijkt de tabelrij **"Empty state Library"**
+   (een andere surface dan de Library-body) — geen drift; system.md §5 vermeldt nu expliciet de
+   body-waarde `0.03/0.045` bij de Library-uitzondering.
+3. **Sidebar-opslag: dode berekening, geen zichtbare meter (gecorrigeerd 2026-07-31).** De eerdere versie
+   van deze bevinding beschreef een "sidebar-opslagmeter" — maar de **zichtbare meter is er niet (meer)**.
+   `app-sidebar.tsx:162-166` berekent nog wél `totalCharacters`/`usedKB`/`usedMB`/`MAX_MB = 500`/
+   `storagePercentage`, maar **`storagePercentage` wordt nergens gerenderd** (geen enkele referentie in de
+   JSX). Het is dus **dode code**, geen kloppende-of-niet meter. De correcte, gerenderde meter is
+   `StorageMeterCard` (op `/dashboard` + `/dashboard/account`), die wél de echte cap
+   `library_bytes_cap`+`_bonus` (basis **100 MiB**, ADR-078) uit de DB leest. Actie: dode berekening is
+   pre-existing dead code → gemeld (niet stil verwijderd, CLAUDE.md); een expliciete opruimronde kan hem
+   weghalen. **Les:** deze bevinding dreef omdat ze een berekening als "meter" framede — herverifieer de
+   overige rommel-items tegen live JSX vóór je erop bouwt (items 1/2/4/5 hieronder zijn geverifieerd nog
+   geldig per 2026-07-31).
 4. **Twee TS-velden zonder DB-kolom.** `Transcript.video_url` en `Transcript.playlist_id`
    (`TranscriptList.tsx:102,114`) bestaan niet in `information_schema` → altijd `undefined`. Dode
    type-velden.

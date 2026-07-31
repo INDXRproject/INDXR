@@ -5,22 +5,21 @@ import Link from "next/link";
 import {
   Trash2,
   ExternalLink,
-  Eye,
   Loader2,
   Download,
-  Pencil,
-  Folder,
   AlertCircle,
   X,
   CheckCheck,
+  MoreHorizontal,
+  Check,
+  Minus,
+  FolderInput,
+  Pencil,
+  Play,
+  Eye,
+  Copy,
 } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@indxr/shared/components/ui/tooltip";
 import { Checkbox } from "@indxr/shared/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -28,6 +27,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@indxr/shared/components/ui/dropdown-menu";
 import {
@@ -48,6 +50,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@indxr/shared/components/ui/alert-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@indxr/shared/components/ui/sheet";
 import { HexagonEmptyState } from "@indxr/shared/components/icons/HexagonEmptyState";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import JSZip from "jszip";
@@ -56,480 +59,266 @@ import { generateTxt, generateCsv, generateSrt, generateVtt, generateMarkdown, b
 import { bulkDeductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 import { cn } from "@indxr/shared/lib/utils";
+import { Badge, CollectionBadge, transcriptBadges } from "./badges";
+import { MoveToCollectionMenu } from "./MoveToCollectionMenu";
+import type { Density, Collection } from "./LibraryControls";
 
-// Hybrid timestamp — relative for the last ~2 days, compact absolute date + time after.
+// ── The list row shape — the `transcripts_list` view (light columns + has_* booleans).
+export interface Transcript {
+  id: string;
+  title: string | null;
+  video_id: string;
+  created_at: string;
+  duration: number | null;
+  character_count: number | null;
+  processing_method: string | null;
+  collection_id: string | null;
+  viewed_at: string | null;
+  channel: string | null;
+  has_summary: boolean;
+  has_summary_edit: boolean;
+  has_edit: boolean;
+  has_rag: boolean;
+}
+
+// ── Formatting helpers ───────────────────────────────────────────────────────
 function formatDateHybrid(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (diff < 60) return 'just now';
+  if (diff < 60) return "just now";
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 172800) return '1d ago';
-  // Older than ~2 days → absolute date + time, compact.
+  if (diff < 172800) return "1d ago";
   const sameYear = date.getFullYear() === now.getFullYear();
-  const datePart = date.toLocaleDateString('en-US', sameYear
-    ? { month: 'short', day: 'numeric' }
-    : { month: 'short', day: 'numeric', year: 'numeric' });
-  const timePart = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${datePart} · ${timePart}`;
+  const datePart = date.toLocaleDateString("en-US", sameYear
+    ? { month: "short", day: "numeric" }
+    : { month: "short", day: "numeric", year: "numeric" });
+  return datePart;
 }
 
-/** Timestamp shown for a transcript — prefer a later edit time over creation. */
-function displayDate(t: Transcript) {
-  return t.updated_at && new Date(t.updated_at) > new Date(t.created_at)
-    ? t.updated_at
-    : t.created_at;
-}
-
+// >1h → H:MM:SS (unambiguous); otherwise M:SS.
 function formatDuration(seconds: number) {
-  const min = Math.floor(seconds / 60);
-  const sec = seconds % 60;
-  return `${min}:${sec.toString().padStart(2, '0')}`;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function formatWordCount(characterCount?: number) {
+function formatWordCount(characterCount?: number | null) {
   if (!characterCount) return null;
-  const words = Math.round(characterCount / 5);
-  return `${words.toLocaleString()} words`;
-}
-
-export interface Transcript {
-  id: string;
-  title: string;
-  video_id: string;
-  video_url?: string;
-  created_at: string;
-  updated_at?: string;
-  thumbnail_url?: string;
-  duration?: number;
-  character_count?: number;
-  processing_method?: string | null;
-  // New fields
-  edited_content?: object | null;
-  ai_summary?: { edited_html?: string } | null;
-  rag_exports?: object[] | null;
-  collection_id?: string | null;
-  playlist_id?: string | null;
-  viewed_at?: string | null;
+  return `${Math.round(characterCount / 5).toLocaleString()} words`;
 }
 
 const slugify = (s: string) =>
-  (s || 'video').toLowerCase().replace(/['''"""`]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  (s || "video").toLowerCase().replace(/['’‘"“”`]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-/** Badge variant → OKLCH family classes (see tokens.css "Badge families").
- *  Hue = family, "-soft"/"-edit" = edited variant (same hue, higher L). */
-const BADGE_CLASSES = {
-  auto:           'bg-sky-subtle text-sky',
-  'auto-edit':    'bg-sky-soft-subtle text-sky-soft',
-  ai:             'bg-indigo-subtle text-indigo',
-  'ai-edit':      'bg-indigo-soft-subtle text-indigo-soft',
-  summary:        'bg-violet-subtle text-violet',
-  'summary-edit': 'bg-violet-soft-subtle text-violet-soft',
-  rag:            'bg-teal-subtle text-teal',
-} as const;
-
-type BadgeVariant = keyof typeof BADGE_CLASSES;
-type BadgeSpec = { key: string; label: string; variant: BadgeVariant };
-
-/** Checkbox styling for the Library — a clearly-outlined, filled box when
- *  unchecked (AA-visible in both themes); the checked state keeps the accent
- *  fill from the primitive (its variant has higher specificity). */
-const CHECKBOX_CLS = "data-[state=unchecked]:border-border-strong data-[state=unchecked]:bg-surface-sunken";
-
-/** Type + output badges for a transcript. The full-colour source badge always
- *  shows; an edited artifact adds a separate lighter "-soft" chip of the same
- *  hue next to it, so both the source and its edited state read at a glance. */
-function transcriptBadges(t: Transcript): BadgeSpec[] {
-  const isAi = !!t.processing_method && t.processing_method !== 'youtube_captions';
-  const edited = !!t.edited_content;
-  const badges: BadgeSpec[] = [];
-
-  // Source (one per transcript) — captions (sky) vs AI transcription (indigo).
-  // Edited source content adds a lighter same-hue "Edited" chip beside it.
-  if (isAi) {
-    badges.push({ key: 'src', label: 'AI Transcription', variant: 'ai' });
-    if (edited) badges.push({ key: 'src-edit', label: 'Edited', variant: 'ai-edit' });
-  } else {
-    badges.push({ key: 'src', label: 'Auto-captions', variant: 'auto' });
-    if (edited) badges.push({ key: 'src-edit', label: 'Edited', variant: 'auto-edit' });
-  }
-
-  // AI summary (violet) + lighter "Edited" chip when the summary was edited.
-  if (t.ai_summary) {
-    badges.push({ key: 'sum', label: 'AI Summary', variant: 'summary' });
-    if (t.ai_summary.edited_html) badges.push({ key: 'sum-edit', label: 'Edited', variant: 'summary-edit' });
-  }
-
-  // RAG export (developer) — teal.
-  if (t.rag_exports && t.rag_exports.length > 0) {
-    badges.push({ key: 'rag', label: 'RAG ✦', variant: 'rag' });
-  }
-
-  return badges;
-}
-
-function Badge({ label, variant }: { label: string; variant: BadgeVariant }) {
-  return (
-    <span className={cn(
-      'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap',
-      BADGE_CLASSES[variant],
-    )}>
-      {label}
-    </span>
-  );
-}
-
-function CollectionBadge({ name }: { name: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] font-medium text-fg-subtle whitespace-nowrap">
-      <Folder className="h-2.5 w-2.5" />
-      {name}
-    </span>
-  );
-}
-
-function NewBadge({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            role="button"
-            onClick={onClick}
-            className="inline-flex items-center rounded-full bg-success-subtle px-1.5 py-0.5 text-[10px] font-bold text-success cursor-pointer hover:bg-success-subtle/80 transition-colors whitespace-nowrap"
-          >
-            NEW
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>Click to mark as read</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
+// ── Export formats (the real 9: 8 file formats + RAG handled separately) ──────
+type BatchFormat = "txt" | "txt-ts" | "md" | "md-ts" | "json" | "csv" | "srt" | "vtt";
+const FORMAT_GROUPS: { group: string; items: { id: BatchFormat; label: string }[] }[] = [
+  { group: "Text", items: [
+    { id: "txt", label: "Plain text (.txt)" },
+    { id: "txt-ts", label: "Text + timestamps (.txt)" },
+    { id: "md", label: "Markdown (.md)" },
+    { id: "md-ts", label: "Markdown + timestamps (.md)" },
+  ] },
+  { group: "Data", items: [
+    { id: "json", label: "JSON (.json)" },
+    { id: "csv", label: "CSV (.csv)" },
+  ] },
+  { group: "Subtitles", items: [
+    { id: "srt", label: "SRT (.srt)" },
+    { id: "vtt", label: "VTT (.vtt)" },
+  ] },
+];
 
 interface TranscriptListProps {
   transcripts: Transcript[];
   onDelete: (id: string) => void;
   onRename?: (id: string, newTitle: string) => void;
-  viewMode: 'grid' | 'list';
-  showThumbnails?: boolean;
-  collections?: { id: string; name: string }[];
+  onMove: (ids: string[], collectionId: string | null) => void;
+  density: Density;
+  collections: Collection[];
+  narrowed: boolean;
+  onClearFilters: () => void;
 }
 
-export function TranscriptList({ transcripts, onDelete, onRename, viewMode, showThumbnails = false, collections = [] }: TranscriptListProps) {
+export function TranscriptList({
+  transcripts,
+  onDelete,
+  onRename,
+  onMove,
+  density,
+  collections,
+  narrowed,
+  onClearFilters,
+}: TranscriptListProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false); // mobile
   const [isDownloading, setIsDownloading] = useState(false);
-  const [editingId, setEditingId]     = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
-  // Committed mark-as-read IDs (persisted to DB). The optimistic overlay below
-  // hides the NEW badge instantly while the mutation is in flight — no list refetch.
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
-  const [optimisticReadIds, addOptimisticRead] = useOptimistic(
-    readIds,
-    (prev, id: string) => new Set(prev).add(id),
-  );
+  const [optimisticReadIds, addOptimisticRead] = useOptimistic(readIds, (prev, id: string) => new Set(prev).add(id));
   const editTitleRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const { credits, refreshCredits } = useAuth();
 
-  const collectionName = (id: string | null | undefined) =>
-    id ? collections.find(c => c.id === id)?.name : undefined;
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadWarning, setDownloadWarning] = useState<string | null>(null);
 
-  // ── Bulk RAG export state ────────────────────────────────────────────────
+  // Mobile per-row action sheet.
+  const [rowSheet, setRowSheet] = useState<Transcript | null>(null);
+  const [showBulkSheet, setShowBulkSheet] = useState(false);
+
+  // ── RAG export (single or bulk) ────────────────────────────────────────────
   type RagBulkItem = { id: string; title: string; duration: number; alreadyExported: boolean; cost: number };
-  const [ragBulkItems, setRagBulkItems]         = useState<RagBulkItem[] | null>(null);
-  const [showRagBulkModal, setShowRagBulkModal] = useState(false);
-  const [ragBulkLoading, setRagBulkLoading]     = useState(false);
+  const [ragTargetIds, setRagTargetIds] = useState<string[]>([]);
+  const [ragBulkItems, setRagBulkItems] = useState<RagBulkItem[] | null>(null);
+  const [showRagModal, setShowRagModal] = useState(false);
+  const [ragBulkLoading, setRagBulkLoading] = useState(false);
   const [ragBulkExecuting, setRagBulkExecuting] = useState(false);
-  const [ragBulkError, setRagBulkError]         = useState<string | null>(null);
-  const [ragBulkSuccess, setRagBulkSuccess]     = useState(false);
-  const [ragChunkSize, setRagChunkSize]         = useState<number>(60);
-  const [downloadError, setDownloadError]       = useState<string | null>(null);
-  const [downloadWarning, setDownloadWarning]   = useState<string | null>(null);
+  const [ragBulkError, setRagBulkError] = useState<string | null>(null);
+  const [ragBulkSuccess, setRagBulkSuccess] = useState(false);
+  const [ragChunkSize, setRagChunkSize] = useState<number>(60);
 
-  // ── Delete confirmation ──────────────────────────────────────────────────
+  // ── Delete confirmation ────────────────────────────────────────────────────
   type DeleteTarget = { type: "single"; id: string; title: string } | { type: "bulk"; count: number };
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
-  const confirmDelete = () => {
-    if (!deleteTarget) return;
-    if (deleteTarget.type === "single") {
-      onDelete(deleteTarget.id);
-    } else {
-      selectedIds.forEach(id => onDelete(id));
-      setSelectedIds(new Set());
-    }
-    setDeleteTarget(null);
-  };
+  const collectionName = (id: string | null | undefined) =>
+    id ? collections.find((c) => c.id === id)?.name : undefined;
 
-  /**
-   * Mark one or more transcripts as viewed. Shared by the per-row NEW badge and
-   * the bulk selection-bar action. React 19 optimistic pattern: every id is hidden
-   * optimistically inside a SINGLE startTransition (addOptimisticRead must run
-   * inside it or the badge flashes back), one batched viewed_at write runs in the
-   * background, and only a successful write commits all ids to readIds. On failure
-   * nothing commits and the optimistic overlay reverts. No transcripts-updated
-   * dispatch → no list refetch, reflow or scroll-reset.
-   */
+  const isNew = (t: Transcript) => !t.viewed_at && !optimisticReadIds.has(t.id);
+  const titleOf = (t: Transcript) => t.title || `Video ${t.video_id}`;
+
+  const selectedTargets = transcripts
+    .filter((t) => selectedIds.has(t.id))
+    .map((t) => ({ id: t.id, collection_id: t.collection_id }));
+  const selectedUnreadIds = transcripts.filter((t) => selectedIds.has(t.id) && isNew(t)).map((t) => t.id);
+
+  // ── Selection ──────────────────────────────────────────────────────────────
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const allSelected = transcripts.length > 0 && selectedIds.size === transcripts.length;
+  const someSelected = selectedIds.size > 0 && !allSelected;
+  const toggleSelectAll = () => {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(transcripts.map((t) => t.id)));
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  // ── Mark as read (optimistic; single + bulk) ───────────────────────────────
   const markRead = (ids: string[]) => {
     if (ids.length === 0) return;
     startTransition(async () => {
-      ids.forEach(id => addOptimisticRead(id));
-      const { error } = await supabase
-        .from('transcripts')
-        .update({ viewed_at: new Date().toISOString() })
-        .in('id', ids);
+      ids.forEach((id) => addOptimisticRead(id));
+      const { error } = await supabase.from("transcripts").update({ viewed_at: new Date().toISOString() }).in("id", ids);
       if (error) {
-        console.error('Mark as read failed:', error);
-        // No commit → optimistic overlay reverts, NEW badges reappear.
+        console.error("Mark as read failed:", error);
         return;
       }
-      setReadIds(prev => { const s = new Set(prev); ids.forEach(id => s.add(id)); return s; });
+      setReadIds((prev) => {
+        const s = new Set(prev);
+        ids.forEach((id) => s.add(id));
+        return s;
+      });
     });
   };
 
-  /** Per-row NEW badge click — guards the event, then reuses markRead. */
-  const handleMarkAsRead = (transcriptId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    markRead([transcriptId]);
-  };
-
-  const isNew = (t: Transcript) => !t.viewed_at && !optimisticReadIds.has(t.id);
-
-  // Unread ids within the current selection. Because isNew folds in the
-  // optimistic overlay, this empties out as bulk marking commits, so the
-  // selection-bar "Mark as read" button hides itself once nothing is NEW.
-  const selectedUnreadIds = Array.from(selectedIds).filter(id => {
-    const t = transcripts.find(x => x.id === id);
-    return t ? isNew(t) : false;
-  });
-
-  // Drag start — pass transcript id via dataTransfer
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    e.dataTransfer.setData("transcriptId", id);
-    // Add plain text fallback for broader browser support
-    e.dataTransfer.setData("text/plain", id);
-    e.dataTransfer.effectAllowed = "move";
-    // Cancel any active rename on drag start
-    if (editingId) setEditingId(null);
-  };
-
-  // Inline rename
-  const handleRenameStart = (t: Transcript) => {
+  // ── Inline rename ──────────────────────────────────────────────────────────
+  const startRename = (t: Transcript) => {
     setEditingId(t.id);
-    setEditingTitle(t.title || `Video ${t.video_id}`);
+    setEditingTitle(titleOf(t));
     setTimeout(() => editTitleRef.current?.focus(), 0);
   };
-
-  const handleRenameSave = (id: string) => {
+  const saveRename = (id: string) => {
     const name = editingTitle.trim();
     setEditingId(null);
     if (!name) return;
-    const original = transcripts.find(t => t.id === id)?.title ?? "";
+    const original = transcripts.find((t) => t.id === id)?.title ?? "";
     if (name === original) return;
     onRename?.(id, name);
   };
 
-  // Selection Handlers
-  const toggleSelect = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
+  // ── Drag to sidebar collections ────────────────────────────────────────────
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData("transcriptId", id);
+    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = "move";
+    if (editingId) setEditingId(null);
   };
 
-  const handleSelectAll = () => {
-    if (selectedIds.size === transcripts.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(transcripts.map(t => t.id)));
-    }
+  // ── Create collection (for the move menu) ──────────────────────────────────
+  const createCollection = async (name: string): Promise<string | null> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data, error } = await supabase.from("collections").insert({ name, user_id: user.id }).select("id").single();
+    if (error || !data) return null;
+    window.dispatchEvent(new CustomEvent("transcripts-updated"));
+    return data.id as string;
   };
 
-  const handleBatchDelete = () => {
-    setDeleteTarget({ type: "bulk", count: selectedIds.size });
-  };
-
-  // ── Bulk RAG: fetch preview data then show confirmation modal ────────────
-  const handleBulkRagPreview = async () => {
-    setRagBulkLoading(true);
-    setRagBulkError(null);
-    setRagBulkSuccess(false);
-    try {
-      // Fetch user's chunk size preference
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('rag_chunk_size')
-          .eq('id', authUser.id)
-          .single();
-        setRagChunkSize(profile?.rag_chunk_size ?? 60);
-      }
-
-      const { data, error } = await supabase
-        .from('transcripts')
-        .select('id, title, duration, rag_exports')
-        .in('id', Array.from(selectedIds));
-
-      if (error || !data) throw new Error('Failed to load transcript data');
-
-      const items: RagBulkItem[] = data.map((t: Record<string, unknown>) => {
-        const ragExports = (t.rag_exports as object[] | null) ?? [];
-        const alreadyExported = ragExports.length > 0;
-        const duration = (t.duration as number) ?? 0;
-        const cost = alreadyExported ? 0 : Math.max(1, Math.ceil(duration / 600));
-        return { id: t.id as string, title: (t.title as string) || `Video ${t.id}`, duration, alreadyExported, cost };
-      });
-
-      setRagBulkItems(items);
-      setShowRagBulkModal(true);
-    } catch (e) {
-      console.error(e);
-      // Open the modal to show the error persistently (no auto-dismissing toast)
-      setRagBulkError('Failed to load transcript data. Please try again.');
-      setShowRagBulkModal(true);
-    } finally {
-      setRagBulkLoading(false);
-    }
-  };
-
-  // ── Bulk RAG: deduct (atomic total) then generate ZIP ───────────────────
-  const handleBulkRagExecute = async () => {
-    if (!ragBulkItems) return;
-    setRagBulkExecuting(true);
-    setRagBulkError(null);
-    try {
-      const newExports = ragBulkItems.filter(item => !item.alreadyExported);
-
-      // Deduct total in one atomic RPC — all or nothing
-      if (newExports.length > 0) {
-        const result = await bulkDeductRagExportCreditsAction(
-          newExports.map(item => ({ transcriptId: item.id, durationSeconds: item.duration, chunkSize: ragChunkSize }))
-        );
-        if (!result.success) {
-          setRagBulkError(result.error ?? 'Insufficient credits');
-          return;
-        }
-        await refreshCredits();
-      }
-
-      // Fetch full transcript content for ZIP generation
-      const { data, error } = await supabase
-        .from('transcripts')
-        .select('id, title, video_id, transcript')
-        .in('id', Array.from(selectedIds));
-
-      if (error || !data) throw new Error('Failed to fetch transcript data');
-
-
-      const zip = new JSZip();
-      const usedNames = new Set<string>();
-      data.forEach((item: Record<string, unknown>) => {
-        const slug = slugify(item.title as string);
-        const videoId = (item.video_id as string) || 'unknown';
-        const base = `${slug}_rag_${ragChunkSize}s`;
-        let filename = `${base}.json`;
-        let counter = 2;
-        while (usedNames.has(filename)) { filename = `${base}_${counter++}.json`; }
-        usedNames.add(filename);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const json = buildRagJson(item.transcript as any, { videoId, title: item.title as string, chunkSize: ragChunkSize });
-        zip.file(filename, json);
-      });
-
-      // Integrity check: archive must contain as many files as selected
-      const fileCount = Object.keys(zip.files).length;
-      if (fileCount !== selectedIds.size) {
-        setRagBulkError(`Warning: exported ${fileCount} of ${selectedIds.size} files — some may have been skipped.`);
-      }
-
-      const content = await zip.generateAsync({ type: 'blob' });
-      const now = new Date();
-      const zipDate = now.toISOString().slice(0, 10);
-      const zipTime = now.toISOString().slice(11, 16).replace(':', '');
-      saveAs(content, `indxr-${selectedIds.size}-transcripts-rag-${zipDate}-${zipTime}.zip`);
-
-      setRagBulkSuccess(true);
-      setSelectedIds(new Set());
-    } catch (e) {
-      console.error(e);
-      setRagBulkError('Export failed. Please try again.');
-    } finally {
-      setRagBulkExecuting(false);
-    }
-  };
-
-  type BatchFormat = 'txt' | 'txt-ts' | 'md' | 'md-ts' | 'json' | 'csv' | 'srt' | 'vtt';
-
-  const handleBatchDownload = async (format: BatchFormat) => {
+  // ── Download (single file when one id, ZIP when many) ──────────────────────
+  const handleDownload = async (ids: string[], format: BatchFormat) => {
     setIsDownloading(true);
     setDownloadError(null);
     setDownloadWarning(null);
     try {
       const { data, error } = await supabase
-        .from('transcripts')
-        .select('id, title, video_id, processing_method, transcript')
-        .in('id', Array.from(selectedIds));
-
+        .from("transcripts")
+        .select("id, title, video_id, processing_method, transcript")
+        .in("id", ids);
       if (error || !data) throw new Error("Failed to fetch transcript data");
 
+      const tsSuffix = format === "txt-ts" || format === "md-ts" ? "_timestamps" : "";
+      const formatType = format === "txt-ts" ? "txt" : format === "md-ts" ? "md" : format;
 
-      const zip = new JSZip();
-      const usedNames = new Set<string>();
-      const tsSuffix = format === 'txt-ts' || format === 'md-ts' ? '_timestamps' : '';
-      const formatType = format === 'txt-ts' ? 'txt' : format === 'md-ts' ? 'md' : format;
-
-      data.forEach((item: Record<string, unknown>) => {
-        const slug = slugify(item.title as string);
-        const videoId = (item.video_id as string) || 'unknown';
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const build = (item: Record<string, unknown>): { content: string; ext: string } => {
         const tx = item.transcript as Parameters<typeof generateTxt>[0];
+        const videoId = (item.video_id as string) || "unknown";
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        if (format === "txt" || format === "txt-ts") return { content: generateTxt(tx, format === "txt-ts"), ext: "txt" };
+        if (format === "md" || format === "md-ts") return { content: generateMarkdown(tx, item.title as string, format === "md-ts"), ext: "md" };
+        if (format === "json") return { content: JSON.stringify({ metadata: { title: item.title, videoUrl }, transcript: tx }, null, 2), ext: "json" };
+        if (format === "csv") return { content: generateCsv(tx), ext: "csv" };
+        if (format === "srt") return { content: generateSrt(tx, { extractionMethod: (item.processing_method as string) ?? undefined }), ext: "srt" };
+        return { content: generateVtt(tx, { title: item.title as string, extractionMethod: (item.processing_method as string) ?? undefined }), ext: "vtt" };
+      };
 
-        let fileContent = "";
-        let extension = "";
-
-        if (format === 'txt' || format === 'txt-ts') {
-          fileContent = generateTxt(tx, format === 'txt-ts'); extension = "txt";
-        } else if (format === 'md' || format === 'md-ts') {
-          fileContent = generateMarkdown(tx, item.title as string, format === 'md-ts'); extension = "md";
-        } else if (format === 'json') {
-          fileContent = JSON.stringify({ metadata: { title: item.title, videoUrl }, transcript: tx }, null, 2); extension = "json";
-        } else if (format === 'csv') {
-          fileContent = generateCsv(tx); extension = "csv";
-        } else if (format === 'srt') {
-          fileContent = generateSrt(tx, { extractionMethod: (item.processing_method as string) ?? undefined }); extension = "srt";
-        } else if (format === 'vtt') {
-          fileContent = generateVtt(tx, { title: item.title as string, extractionMethod: (item.processing_method as string) ?? undefined }); extension = "vtt";
+      if (data.length === 1) {
+        const item = data[0] as Record<string, unknown>;
+        const { content, ext } = build(item);
+        const slug = slugify(item.title as string);
+        saveAs(new Blob([content], { type: "text/plain;charset=utf-8" }), `${slug}_${formatType}${tsSuffix}.${ext}`);
+      } else {
+        const zip = new JSZip();
+        const usedNames = new Set<string>();
+        data.forEach((item: Record<string, unknown>) => {
+          const { content, ext } = build(item);
+          const slug = slugify(item.title as string);
+          const base = `${slug}_${formatType}${tsSuffix}`;
+          let filename = `${base}.${ext}`;
+          let counter = 2;
+          while (usedNames.has(filename)) filename = `${base}_${counter++}.${ext}`;
+          usedNames.add(filename);
+          zip.file(filename, content);
+        });
+        if (Object.keys(zip.files).length !== ids.length) {
+          setDownloadWarning(`Exported ${Object.keys(zip.files).length} of ${ids.length} files — some may have been skipped.`);
         }
-
-        const base = `${slug}_${formatType}${tsSuffix}`;
-        let filename = `${base}.${extension}`;
-        let counter = 2;
-        while (usedNames.has(filename)) { filename = `${base}_${counter++}.${extension}`; }
-        usedNames.add(filename);
-
-        zip.file(filename, fileContent);
-      });
-
-      // Integrity check: warn when archive file count doesn't match selection
-      const fileCount = Object.keys(zip.files).length;
-      if (fileCount !== selectedIds.size) {
-        setDownloadWarning(`Exported ${fileCount} of ${selectedIds.size} files — some transcripts may have been skipped.`);
+        const content = await zip.generateAsync({ type: "blob" });
+        const now = new Date();
+        saveAs(content, `indxr-${ids.length}-transcripts-${format}-${now.toISOString().slice(0, 10)}.zip`);
       }
-
-      const content = await zip.generateAsync({ type: "blob" });
-      const now = new Date();
-      const zipDate = now.toISOString().slice(0, 10);
-      const zipTime = now.toISOString().slice(11, 16).replace(':', '');
-      saveAs(content, `indxr-${selectedIds.size}-transcripts-${format}-${zipDate}-${zipTime}.zip`);
-      setSelectedIds(new Set());
+      if (ids.length > 1) clearSelection();
     } catch (e) {
       console.error(e);
       setDownloadError("Download failed. Please try again.");
@@ -538,15 +327,139 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
     }
   };
 
+  const copyPlainText = async (id: string) => {
+    try {
+      const { data } = await supabase.from("transcripts").select("transcript").eq("id", id).single();
+      if (!data) return;
+      const text = generateTxt(data.transcript as Parameters<typeof generateTxt>[0], false);
+      await navigator.clipboard.writeText(text);
+    } catch {
+      setDownloadError("Copy failed. Please try again.");
+    }
+  };
+
+  // ── RAG export ─────────────────────────────────────────────────────────────
+  const openRag = async (ids: string[]) => {
+    setRagTargetIds(ids);
+    setRagBulkLoading(true);
+    setRagBulkError(null);
+    setRagBulkSuccess(false);
+    setShowRagModal(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("rag_chunk_size").eq("id", user.id).single();
+        setRagChunkSize((profile as { rag_chunk_size?: number } | null)?.rag_chunk_size ?? 60);
+      }
+      const { data, error } = await supabase.from("transcripts").select("id, title, duration, rag_exports").in("id", ids);
+      if (error || !data) throw new Error("load failed");
+      setRagBulkItems(
+        data.map((t: Record<string, unknown>) => {
+          const already = (((t.rag_exports as unknown[]) ?? []).length) > 0;
+          const duration = (t.duration as number) ?? 0;
+          return {
+            id: t.id as string,
+            title: (t.title as string) || `Video ${t.id}`,
+            duration,
+            alreadyExported: already,
+            cost: already ? 0 : Math.max(1, Math.ceil(duration / 600)),
+          };
+        }),
+      );
+    } catch {
+      setRagBulkError("Failed to load transcript data. Please try again.");
+    } finally {
+      setRagBulkLoading(false);
+    }
+  };
+
+  const executeRag = async () => {
+    if (!ragBulkItems) return;
+    setRagBulkExecuting(true);
+    setRagBulkError(null);
+    try {
+      const newExports = ragBulkItems.filter((i) => !i.alreadyExported);
+      if (newExports.length > 0) {
+        const result = await bulkDeductRagExportCreditsAction(
+          newExports.map((i) => ({ transcriptId: i.id, durationSeconds: i.duration, chunkSize: ragChunkSize })),
+        );
+        if (!result.success) {
+          setRagBulkError(result.error ?? "Insufficient credits");
+          return;
+        }
+        await refreshCredits();
+      }
+
+      const { data, error } = await supabase.from("transcripts").select("id, title, video_id, transcript").in("id", ragTargetIds);
+      if (error || !data) throw new Error("fetch failed");
+
+      if (data.length === 1) {
+        const item = data[0] as Record<string, unknown>;
+        const json = buildRagJson(item.transcript as Parameters<typeof buildRagJson>[0], {
+          videoId: (item.video_id as string) || "unknown",
+          title: item.title as string,
+          chunkSize: ragChunkSize,
+        });
+        saveAs(new Blob([json], { type: "application/json" }), `${slugify(item.title as string)}_rag_${ragChunkSize}s.json`);
+      } else {
+        const zip = new JSZip();
+        const usedNames = new Set<string>();
+        data.forEach((item: Record<string, unknown>) => {
+          const base = `${slugify(item.title as string)}_rag_${ragChunkSize}s`;
+          let filename = `${base}.json`;
+          let counter = 2;
+          while (usedNames.has(filename)) filename = `${base}_${counter++}.json`;
+          usedNames.add(filename);
+          zip.file(filename, buildRagJson(item.transcript as Parameters<typeof buildRagJson>[0], {
+            videoId: (item.video_id as string) || "unknown",
+            title: item.title as string,
+            chunkSize: ragChunkSize,
+          }));
+        });
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `indxr-${ragTargetIds.length}-transcripts-rag-${new Date().toISOString().slice(0, 10)}.zip`);
+        clearSelection();
+      }
+      setRagBulkSuccess(true);
+    } catch {
+      setRagBulkError("Export failed. Please try again.");
+    } finally {
+      setRagBulkExecuting(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === "single") onDelete(deleteTarget.id);
+    else {
+      selectedIds.forEach((id) => onDelete(id));
+      clearSelection();
+    }
+    setDeleteTarget(null);
+  };
+
+  // ── Empty states ───────────────────────────────────────────────────────────
   if (transcripts.length === 0) {
+    if (narrowed) {
+      return (
+        <div className="rounded-xl border border-dashed border-border py-20 text-center">
+          <div className="flex flex-col items-center">
+            <HexagonEmptyState className="mb-4" />
+            <h3 className="text-lg font-medium text-fg">No transcripts match</h3>
+            <p className="text-sm text-fg-muted mt-2 max-w-xs">Try a different search, or clear your filters.</p>
+            <Button variant="outline" className="mt-6" onClick={onClearFilters}>
+              Clear all filters
+            </Button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="rounded-xl border border-dashed border-border py-20 text-center">
         <div className="flex flex-col items-center">
           <HexagonEmptyState className="mb-4" />
           <h3 className="text-lg font-medium text-fg">Library is empty</h3>
-          <p className="text-sm text-fg-muted mt-2 max-w-xs">
-            Transcripts you extract will appear here.
-          </p>
+          <p className="text-sm text-fg-muted mt-2 max-w-xs">Transcripts you extract will appear here.</p>
           <Link href="/dashboard/transcribe">
             <Button className="mt-6">Transcribe a video</Button>
           </Link>
@@ -555,68 +468,91 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
     );
   }
 
+  // Reusable export dropdown content (row = single id, bulk = many ids).
+  const exportMenuContent = (ids: string[], rowRag?: boolean) => (
+    <DropdownMenuSubContent className="w-56">
+      {FORMAT_GROUPS.map((g) => (
+        <div key={g.group}>
+          <DropdownMenuLabel className="text-xs text-fg-muted font-normal">{g.group}</DropdownMenuLabel>
+          {g.items.map((f) => (
+            <DropdownMenuItem key={f.id} onClick={() => handleDownload(ids, f.id)}>
+              {f.label}
+            </DropdownMenuItem>
+          ))}
+        </div>
+      ))}
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
+      <DropdownMenuItem onClick={() => openRag(ids)}>
+        RAG JSON
+        {rowRag ? (
+          <span className="ml-auto text-[9px] font-bold rounded-full bg-teal-subtle text-teal px-1.5 py-0.5">PURCHASED</span>
+        ) : (
+          <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+        )}
+      </DropdownMenuItem>
+    </DropdownMenuSubContent>
+  );
+
+  const rowMenu = (t: Transcript) => (
+    <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuItem asChild>
+        <Link href={`/dashboard/library/${t.id}`}>
+          <Eye className="mr-2 h-4 w-4" /> Open transcript
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
+          <Play className="mr-2 h-4 w-4" /> Watch on YouTube
+        </a>
+      </DropdownMenuItem>
+      {isNew(t) && (
+        <DropdownMenuItem onClick={() => markRead([t.id])}>
+          <CheckCheck className="mr-2 h-4 w-4" /> Mark as read
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuSeparator />
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Download className="mr-2 h-4 w-4" /> Export
+        </DropdownMenuSubTrigger>
+        {exportMenuContent([t.id], t.has_rag)}
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <FolderInput className="mr-2 h-4 w-4" /> Move to collection
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent className="p-2">
+          <MoveToCollectionMenu
+            targets={[{ id: t.id, collection_id: t.collection_id }]}
+            collections={collections}
+            onMove={onMove}
+            onCreateCollection={createCollection}
+            onDone={() => {}}
+          />
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuItem onClick={() => startRename(t)}>
+        <Pencil className="mr-2 h-4 w-4" /> Rename
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => copyPlainText(t.id)}>
+        <Copy className="mr-2 h-4 w-4" /> Copy plain text
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        className="text-error focus:text-error focus:bg-error/10"
+        onClick={() => setDeleteTarget({ type: "single", id: t.id, title: titleOf(t) })}
+      >
+        <Trash2 className="mr-2 h-4 w-4" /> Delete
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
+
+  const compact = density === "compact";
+
   return (
     <>
-      {/* Floating Action Bar — lifted above the mobile bottom tab bar (h-14 + safe area) */}
-      {selectedIds.size > 0 && (
-        <div className="fixed left-1/2 -translate-x-1/2 z-50 bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom,0px))] md:bottom-6 animate-in slide-in-from-bottom-5 fade-in">
-           {/* Sized for the MAXIMAL action set (Download + Mark as read + Delete + clear). Under md the
-               labelled actions collapse to icon-only (with aria-label) so the bar never overflows its
-               hard max-width — the [new]-badge case adds "Mark as read", which used to push Delete out. */}
-           <div className="bg-surface border border-border shadow-xl rounded-full px-4 md:px-6 py-3 flex items-center gap-2 md:gap-4 max-w-[calc(100vw-1.5rem)]">
-              <span className="text-sm font-medium text-fg whitespace-nowrap shrink-0">{selectedIds.size} selected</span>
-
-              <div className="h-6 w-px bg-border/50 shrink-0" />
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="secondary" disabled={isDownloading} aria-label="Download" className="shrink-0">
-                    {isDownloading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <Download className="h-4 w-4 md:mr-2" />}
-                    <span className="hidden md:inline">Download</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-52">
-                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('txt')}>TXT — plain text (.zip)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('txt-ts')}>TXT — with timestamps (.zip)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('md')}>Markdown (.zip)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('md-ts')}>Markdown — with timestamps (.zip)</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Data</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('json')}>JSON (.zip)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('csv')}>CSV (.zip)</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Subtitles</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('srt')}>SRT (.zip)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBatchDownload('vtt')}>VTT (.zip)</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={handleBulkRagPreview} disabled={ragBulkLoading}>
-                    {ragBulkLoading ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : null}
-                    RAG JSON <span className="text-accent text-[10px] font-bold align-super ml-0.5">✦</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {selectedUnreadIds.length > 0 && (
-                <Button size="sm" variant="ghost" aria-label="Mark as read" className="text-fg-muted hover:text-fg shrink-0" onClick={() => markRead(selectedUnreadIds)}>
-                  <CheckCheck className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Mark as read</span>
-                </Button>
-              )}
-
-              {/* Delete stays error-coloured even as an icon; handleBatchDelete opens the confirm dialog. */}
-              <Button size="sm" variant="ghost" aria-label="Delete selected" className="text-error hover:text-error hover:bg-error/10 shrink-0" onClick={handleBatchDelete}>
-                 <Trash2 className="h-4 w-4" />
-              </Button>
-
-              <Button size="sm" variant="ghost" aria-label="Clear selection" className="rounded-full h-6 w-6 p-0 shrink-0" onClick={() => setSelectedIds(new Set())}>
-                ×
-              </Button>
-           </div>
-        </div>
-      )}
-
+      {/* Download feedback */}
       {downloadError && (
         <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error mb-2">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -632,284 +568,393 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
         </div>
       )}
 
-      {viewMode === 'list' ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface">
-          {/* Header row */}
-          <div className="flex items-center gap-3 border-b border-border-subtle bg-surface-elevated/50 px-4 py-2.5 text-xs font-medium text-fg-muted">
-            <Checkbox
-              className={CHECKBOX_CLS}
-              checked={selectedIds.size === transcripts.length && transcripts.length > 0}
-              onCheckedChange={handleSelectAll}
-            />
-            <span className="flex-1">Title</span>
-            <div className="hidden sm:flex items-center gap-4 shrink-0">
-              <span className="w-14 text-right">Duration</span>
-              <span className="w-28 text-right">Words</span>
-              <span className="w-40 text-right">Added</span>
-            </div>
-            <span className="hidden sm:block w-[104px] shrink-0" aria-hidden />
+      {/* Mobile select bar */}
+      <div className="sm:hidden mb-2 flex items-center justify-between">
+        {selectionMode ? (
+          <>
+            <button onClick={toggleSelectAll} className="flex items-center gap-2 text-sm text-fg">
+              <TriBox checked={allSelected} indeterminate={someSelected} />
+              {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+            </button>
+            <button
+              onClick={() => { setSelectionMode(false); clearSelection(); }}
+              className="text-sm text-fg-muted hover:text-fg"
+            >
+              Done
+            </button>
+          </>
+        ) : (
+          <button onClick={() => setSelectionMode(true)} className="ml-auto text-sm text-fg-muted hover:text-fg">
+            Select
+          </button>
+        )}
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        {/* Header row (desktop) */}
+        <div className="hidden sm:flex items-center gap-3 border-b border-border-subtle bg-surface-elevated/50 px-4 py-2.5 text-xs font-medium text-fg-muted">
+          <button onClick={toggleSelectAll} aria-label="Select all on page">
+            <TriBox checked={allSelected} indeterminate={someSelected} />
+          </button>
+          <span className="flex-1">Title</span>
+          <div className="flex items-center gap-4 shrink-0">
+            <span className="w-16 text-right">Duration</span>
+            <span className="w-24 text-right">Words</span>
+            <span className="w-24 text-right">Added</span>
           </div>
-
-          <div className="divide-y divide-border-subtle">
-            {transcripts.map((t) => {
-              const badges = transcriptBadges(t);
-              const colName = collectionName(t.collection_id);
-              const words = formatWordCount(t.character_count);
-              return (
-                <div
-                  key={t.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, t.id)}
-                  className={cn(
-                    "group flex items-start gap-3 px-4 py-3 transition-colors cursor-grab active:cursor-grabbing hover:bg-surface-elevated/40",
-                    selectedIds.has(t.id) && "bg-surface-elevated/50"
-                  )}
-                >
-                  {/* Checkbox — always visible on mobile (no hover); hover/selected on desktop */}
-                  <div className={cn("pt-0.5 transition-opacity", selectedIds.has(t.id) ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100")}>
-                    <Checkbox
-                      className={CHECKBOX_CLS}
-                      checked={selectedIds.has(t.id)}
-                      onCheckedChange={() => toggleSelect(t.id)}
-                    />
-                  </div>
-
-                  {/* Thumbnail — opt-in only */}
-                  {showThumbnails && t.thumbnail_url && (
-                    <div className="hidden sm:block h-[36px] w-16 shrink-0 overflow-hidden rounded-md bg-bg-subtle">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={t.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                    </div>
-                  )}
-
-                  {/* Title-driven content block */}
-                  <div className="min-w-0 flex-1">
-                    <div className="group/title flex items-start gap-1.5">
-                      {editingId === t.id ? (
-                        <input
-                          ref={editTitleRef}
-                          value={editingTitle}
-                          onChange={e => setEditingTitle(e.target.value)}
-                          onBlur={() => handleRenameSave(t.id)}
-                          onKeyDown={e => {
-                            if (e.key === "Enter") e.currentTarget.blur();
-                            if (e.key === "Escape") { setEditingId(null); }
-                          }}
-                          className="w-full bg-transparent border-b border-border font-medium text-fg text-[15px] leading-snug outline-none py-0.5"
-                        />
-                      ) : (
-                        <>
-                          <Link
-                            href={`/dashboard/library/${t.id}`}
-                            className="font-medium text-fg text-[15px] leading-snug line-clamp-2 hover:text-accent transition-colors"
-                            onDoubleClick={e => { e.preventDefault(); handleRenameStart(t); }}
-                          >
-                            {t.title || `Video ${t.video_id}`}
-                          </Link>
-                          <button
-                            onClick={() => handleRenameStart(t)}
-                            className="opacity-0 group-hover/title:opacity-100 transition-opacity text-fg-muted hover:text-fg h-4 w-4 hidden sm:flex items-center justify-center shrink-0 mt-1"
-                            title="Rename"
-                          >
-                            <Pencil className="h-2.5 w-2.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Badges */}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      {isNew(t) && <NewBadge onClick={(e) => handleMarkAsRead(t.id, e)} />}
-                      {badges.map(b => <Badge key={b.key} label={b.label} variant={b.variant} />)}
-                      {colName && <CollectionBadge name={colName} />}
-                    </div>
-
-                    {/* Compact metadata — mobile only (desktop uses the aligned columns) */}
-                    <div className="mt-1.5 sm:hidden text-[11px] text-fg-muted tabular-nums">
-                      {t.duration ? formatDuration(t.duration) : '—'}
-                      {words && <> · {words}</>}
-                      {' · '}{formatDateHybrid(displayDate(t))}
-                    </div>
-                  </div>
-
-                  {/* Metadata — right-aligned parallel columns, aligned across rows */}
-                  <div className="hidden sm:flex items-center gap-4 shrink-0 pt-0.5 text-xs text-fg-muted tabular-nums">
-                    <span className="w-14 text-right">{t.duration ? formatDuration(t.duration) : '—'}</span>
-                    <span className="w-28 text-right">{words ?? '—'}</span>
-                    <span className="w-40 text-right whitespace-nowrap">{formatDateHybrid(displayDate(t))}</span>
-                  </div>
-
-                  {/* Row actions — desktop hover only (hidden on mobile so the title uses full width) */}
-                  <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <Link href={`/dashboard/library/${t.id}`}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent" asChild>
-                      <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
-                      onClick={() => setDeleteTarget({ type: "single", id: t.id, title: t.title || `Video ${t.video_id}` })}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <span className="w-16 shrink-0" aria-hidden />
         </div>
-      ) : (
-        <div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {transcripts.map((t) => {
-              const badges = transcriptBadges(t);
-              const colName = collectionName(t.collection_id);
-              return (
+
+        <div className="divide-y divide-border-subtle">
+          {transcripts.map((t) => {
+            const badges = transcriptBadges(t);
+            const colName = collectionName(t.collection_id);
+            const words = formatWordCount(t.character_count);
+            const unread = isNew(t);
+            const showMobileCheckbox = selectionMode;
+            return (
+              <div
+                key={t.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, t.id)}
+                className={cn(
+                  "group flex items-center gap-3 px-4 transition-colors cursor-grab active:cursor-grabbing hover:bg-surface-elevated/40",
+                  compact ? "py-2" : "py-3",
+                  selectedIds.has(t.id) && "bg-surface-elevated/50",
+                )}
+              >
+                {/* Checkbox — desktop hover/selected; mobile only in selection mode */}
                 <div
-                  key={t.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, t.id)}
                   className={cn(
-                    "group relative rounded-xl border border-border bg-surface transition-colors cursor-grab active:cursor-grabbing hover:border-border-strong",
-                    selectedIds.has(t.id) && "ring-2 ring-accent border-transparent"
+                    "shrink-0 transition-opacity",
+                    showMobileCheckbox ? "block" : "hidden sm:block",
+                    selectedIds.has(t.id) ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
                   )}
                 >
-                  <div
-                    className={cn("absolute top-3 left-3 z-20 transition-opacity", selectedIds.has(t.id) ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100")}
-                  >
-                    <Checkbox
-                      checked={selectedIds.has(t.id)}
-                      onCheckedChange={() => toggleSelect(t.id)}
-                      className={CHECKBOX_CLS}
-                    />
-                  </div>
+                  <Checkbox
+                    className="data-[state=unchecked]:border-border-strong data-[state=unchecked]:bg-surface-sunken"
+                    checked={selectedIds.has(t.id)}
+                    onCheckedChange={() => toggleSelect(t.id)}
+                  />
+                </div>
 
-                  {showThumbnails && t.thumbnail_url && (
-                    <div className="aspect-video w-full overflow-hidden rounded-t-xl bg-bg-subtle relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={t.thumbnail_url}
-                        alt=""
-                        className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                {/* Content */}
+                <div className="min-w-0 flex-1">
+                  <div className={cn("flex items-center gap-1.5", compact && "flex-wrap")}>
+                    {unread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-label="Unread" />}
+                    {editingId === t.id ? (
+                      <input
+                        ref={editTitleRef}
+                        value={editingTitle}
+                        dir="auto"
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onBlur={() => saveRename(t.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        className="w-full bg-transparent border-b border-border font-medium text-fg text-[15px] leading-snug outline-none py-0.5"
                       />
-                      <div className="absolute bottom-2 right-2 bg-bg/80 px-1.5 py-0.5 rounded text-[10px] font-mono text-fg">
-                        {t.duration ? formatDuration(t.duration) : '00:00'}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="p-4">
-                    <div className="flex items-start gap-1.5">
+                    ) : (
                       <Link
                         href={`/dashboard/library/${t.id}`}
-                        className="font-medium text-fg text-sm leading-snug line-clamp-2 flex-1 hover:text-accent transition-colors"
+                        dir="auto"
+                        title={titleOf(t)}
+                        className={cn(
+                          "text-fg text-[15px] leading-snug truncate hover:text-accent transition-colors",
+                          unread ? "font-medium" : "font-normal",
+                          compact ? "max-w-full" : "",
+                        )}
                       >
-                        {t.title || `Video ${t.video_id}`}
+                        {titleOf(t)}
                       </Link>
-                      {isNew(t) && <NewBadge onClick={(e) => handleMarkAsRead(t.id, e)} />}
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {badges.map(b => <Badge key={b.key} label={b.label} variant={b.variant} />)}
-                      {colName && <CollectionBadge name={colName} />}
-                    </div>
-
-                    {!showThumbnails && (
-                      <p className="mt-2 text-xs text-fg-muted tabular-nums">
-                        {t.duration ? formatDuration(t.duration) : '—'} · {formatDateHybrid(displayDate(t))}
-                      </p>
+                    )}
+                    {/* Compact: badges inline after title */}
+                    {compact && (
+                      <span className="flex items-center gap-1 shrink-0">
+                        {badges.map((b) => <Badge key={b.key} label={b.label} variant={b.variant} pencil={b.pencil} title={b.title} />)}
+                      </span>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-1 px-3 pb-3">
-                    <Link href={`/dashboard/library/${t.id}`} className="flex-1">
-                      <Button variant="ghost" size="sm" className="h-8 text-xs w-full text-fg hover:bg-accent hover:text-fg-on-accent">
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </Button>
-                    </Link>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent" asChild>
-                      <a href={`https://youtu.be/${t.video_id}`} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-fg-muted hover:text-error hover:bg-error/10"
-                      onClick={() => setDeleteTarget({ type: "single", id: t.id, title: t.title || `Video ${t.video_id}` })}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                  {/* Default: badges + collection on line 2 */}
+                  {!compact && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      {badges.map((b) => <Badge key={b.key} label={b.label} variant={b.variant} pencil={b.pencil} title={b.title} />)}
+                      {colName && <CollectionBadge name={colName} />}
+                    </div>
+                  )}
+
+                  {/* Mobile metadata */}
+                  <div className="mt-1.5 sm:hidden text-[11px] text-fg-muted tabular-nums">
+                    {t.duration ? formatDuration(t.duration) : "—"}
+                    {words && <> · {words}</>}
+                    {" · "}
+                    {formatDateHybrid(t.created_at)}
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Desktop metadata columns */}
+                <div className="hidden sm:flex items-center gap-4 shrink-0 text-xs text-fg-muted tabular-nums">
+                  <span className="w-16 text-right">{t.duration ? formatDuration(t.duration) : "—"}</span>
+                  <span className="w-24 text-right">{words ?? "—"}</span>
+                  <span className="w-24 text-right whitespace-nowrap">{formatDateHybrid(t.created_at)}</span>
+                </div>
+
+                {/* Desktop actions: export + ⋯ */}
+                <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 w-16 justify-end">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent" aria-label="Export">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {FORMAT_GROUPS.map((g) => (
+                        <div key={g.group}>
+                          <DropdownMenuLabel className="text-xs text-fg-muted font-normal">{g.group}</DropdownMenuLabel>
+                          {g.items.map((f) => (
+                            <DropdownMenuItem key={f.id} onClick={() => handleDownload([t.id], f.id)}>{f.label}</DropdownMenuItem>
+                          ))}
+                        </div>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => openRag([t.id])}>
+                        RAG JSON
+                        {t.has_rag ? (
+                          <span className="ml-auto text-[9px] font-bold rounded-full bg-teal-subtle text-teal px-1.5 py-0.5">PURCHASED</span>
+                        ) : (
+                          <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:bg-accent hover:text-fg-on-accent" aria-label="More actions">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    {rowMenu(t)}
+                  </DropdownMenu>
+                </div>
+
+                {/* Mobile ⋯ */}
+                <button
+                  className="sm:hidden shrink-0 h-8 w-8 flex items-center justify-center text-fg-muted"
+                  onClick={() => setRowSheet(t)}
+                  aria-label="Row actions"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Floating bulk bar (desktop + mobile-selection) */}
+      {selectedIds.size > 0 && (
+        <div className="fixed left-1/2 -translate-x-1/2 z-50 bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom,0px))] md:bottom-6 animate-in slide-in-from-bottom-5 fade-in">
+          <div className="bg-surface border border-border shadow-xl rounded-full px-4 md:px-6 py-3 flex items-center gap-2 md:gap-4 max-w-[calc(100vw-1.5rem)]">
+            <span className="text-sm font-medium text-fg whitespace-nowrap shrink-0">{selectedIds.size} selected</span>
+            <div className="h-6 w-px bg-border/50 shrink-0" />
+
+            {/* Move (desktop dropdown; mobile opens sheet via More) */}
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="secondary" className="shrink-0">
+                    <FolderInput className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Move</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="p-2">
+                  <MoveToCollectionMenu
+                    targets={selectedTargets}
+                    collections={collections}
+                    onMove={onMove}
+                    onCreateCollection={createCollection}
+                    onDone={() => {}}
+                  />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Export */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="secondary" disabled={isDownloading} aria-label="Export" className="shrink-0">
+                  {isDownloading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <Download className="h-4 w-4 md:mr-2" />}
+                  <span className="hidden md:inline">Export</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-56">
+                {FORMAT_GROUPS.map((g) => (
+                  <div key={g.group}>
+                    <DropdownMenuLabel className="text-xs text-fg-muted font-normal">{g.group}</DropdownMenuLabel>
+                    {g.items.map((f) => (
+                      <DropdownMenuItem key={f.id} onClick={() => handleDownload(Array.from(selectedIds), f.id)}>{f.label} (.zip)</DropdownMenuItem>
+                    ))}
+                  </div>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => openRag(Array.from(selectedIds))}>
+                  RAG JSON
+                  <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {selectedUnreadIds.length > 0 && (
+              <Button size="sm" variant="ghost" aria-label="Mark as read" className="text-fg-muted hover:text-fg shrink-0" onClick={() => markRead(selectedUnreadIds)}>
+                <CheckCheck className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Mark as read</span>
+              </Button>
+            )}
+
+            {/* Mobile: More (move) */}
+            <Button size="sm" variant="ghost" className="md:hidden shrink-0 text-fg-muted" aria-label="More" onClick={() => setShowBulkSheet(true)}>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+
+            <Button size="sm" variant="ghost" aria-label="Delete selected" className="text-error hover:text-error hover:bg-error/10 shrink-0" onClick={() => setDeleteTarget({ type: "bulk", count: selectedIds.size })}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="ghost" aria-label="Clear selection" className="rounded-full h-6 w-6 p-0 shrink-0" onClick={clearSelection}>×</Button>
           </div>
         </div>
       )}
 
-      {/* ── Bulk RAG confirmation dialog ────────────────────────────────────── */}
+      {/* Mobile bulk "more" sheet (Move) */}
+      <Sheet open={showBulkSheet} onOpenChange={setShowBulkSheet}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Move {selectedIds.size} to collection</SheetTitle>
+          </SheetHeader>
+          <div className="pb-6 pt-2">
+            <MoveToCollectionMenu
+              targets={selectedTargets}
+              collections={collections}
+              onMove={onMove}
+              onCreateCollection={createCollection}
+              onDone={() => setShowBulkSheet(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Mobile row action sheet */}
+      <Sheet open={rowSheet !== null} onOpenChange={(o) => { if (!o) setRowSheet(null); }}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+          {rowSheet && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="truncate" dir="auto">{titleOf(rowSheet)}</SheetTitle>
+              </SheetHeader>
+              <div className="pb-6 pt-2 space-y-1">
+                <SheetRow href={`/dashboard/library/${rowSheet.id}`} icon={<Eye className="h-4 w-4" />} label="Open transcript" onNavigate={() => setRowSheet(null)} />
+                <SheetAnchor href={`https://youtu.be/${rowSheet.video_id}`} icon={<Play className="h-4 w-4" />} label="Watch on YouTube" />
+                {isNew(rowSheet) && <SheetButton icon={<CheckCheck className="h-4 w-4" />} label="Mark as read" onClick={() => { markRead([rowSheet.id]); setRowSheet(null); }} />}
+                <SheetButton icon={<Pencil className="h-4 w-4" />} label="Rename" onClick={() => { const r = rowSheet; setRowSheet(null); startRename(r); }} />
+                <div className="border-t border-border-subtle pt-2">
+                  <p className="px-2 pb-1 text-xs font-medium text-fg-muted">Move to collection</p>
+                  <MoveToCollectionMenu
+                    targets={[{ id: rowSheet.id, collection_id: rowSheet.collection_id }]}
+                    collections={collections}
+                    onMove={onMove}
+                    onCreateCollection={createCollection}
+                    onDone={() => setRowSheet(null)}
+                  />
+                </div>
+                <div className="border-t border-border-subtle pt-2">
+                  <p className="px-2 pb-1 text-xs font-medium text-fg-muted">Export</p>
+                  {FORMAT_GROUPS.flatMap((g) => g.items).map((f) => (
+                    <SheetButton key={f.id} icon={<Download className="h-4 w-4" />} label={f.label} onClick={() => { handleDownload([rowSheet.id], f.id); setRowSheet(null); }} />
+                  ))}
+                  <SheetButton
+                    icon={<Download className="h-4 w-4" />}
+                    label="RAG JSON"
+                    trailing={rowSheet.has_rag
+                      ? <span className="text-[9px] font-bold rounded-full bg-teal-subtle text-teal px-1.5 py-0.5">PURCHASED</span>
+                      : <span className="text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>}
+                    onClick={() => { const id = rowSheet.id; setRowSheet(null); openRag([id]); }}
+                  />
+                </div>
+                <div className="border-t border-border-subtle pt-2">
+                  <SheetButton
+                    icon={<Trash2 className="h-4 w-4" />}
+                    label="Delete"
+                    destructive
+                    onClick={() => { const r = rowSheet; setRowSheet(null); setDeleteTarget({ type: "single", id: r.id, title: titleOf(r) }); }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* RAG confirmation dialog */}
       {(() => {
-        const totalCost    = ragBulkItems?.reduce((s, i) => s + i.cost, 0) ?? 0;
-        const paidCount    = ragBulkItems?.filter(i => !i.alreadyExported).length ?? 0;
-        const freeCount    = ragBulkItems?.filter(i => i.alreadyExported).length ?? 0;
-        // Guard: suppress insufficient banner while export is running or after success to prevent
-        // post-deduct re-render artefact (credits refreshed to post-aftrek saldo < totalCost).
+        const totalCost = ragBulkItems?.reduce((s, i) => s + i.cost, 0) ?? 0;
+        const paidCount = ragBulkItems?.filter((i) => !i.alreadyExported).length ?? 0;
+        const freeCount = ragBulkItems?.filter((i) => i.alreadyExported).length ?? 0;
         const insufficient = !ragBulkExecuting && !ragBulkSuccess && credits !== null && totalCost > 0 && credits < totalCost;
+        const remaining = credits !== null ? credits - totalCost : null;
         return (
-          <Dialog open={showRagBulkModal} onOpenChange={(open) => {
-            setShowRagBulkModal(open);
-            if (!open) { setRagBulkItems(null); setRagBulkError(null); setRagBulkSuccess(false); }
-          }}>
+          <Dialog
+            open={showRagModal}
+            onOpenChange={(open) => {
+              setShowRagModal(open);
+              if (!open) { setRagBulkItems(null); setRagBulkError(null); setRagBulkSuccess(false); setRagTargetIds([]); }
+            }}
+          >
             <DialogContent className="max-w-[min(32rem,calc(100%-2rem))]">
               <DialogHeader>
-                <DialogTitle>Bulk RAG JSON Export</DialogTitle>
+                <DialogTitle>{ragTargetIds.length > 1 ? "Export RAG JSON" : "Export RAG JSON"}</DialogTitle>
                 <DialogDescription>
-                  Chunk size: {ragChunkSize}s (from your Settings preset). Re-downloads are always free.
+                  Chunk size {ragChunkSize}s (from your Settings). Re-downloads are always free.
                 </DialogDescription>
               </DialogHeader>
 
-              {ragBulkItems && (
+              {ragBulkLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-fg-muted" /></div>
+              ) : ragBulkItems && (
                 <div className="space-y-4">
-                  {/* Per-transcript breakdown */}
                   <div className="space-y-1.5 max-h-48 overflow-y-auto overflow-x-hidden">
-                    {ragBulkItems.map(item => (
+                    {ragBulkItems.map((item) => (
                       <div key={item.id} className="flex items-center justify-between text-sm gap-2">
-                        <span className="text-fg truncate flex-1 min-w-0">{item.title}</span>
-                        {item.alreadyExported
-                          ? <span className="text-fg-muted text-xs shrink-0">Free (re-download)</span>
-                          : <span className="text-fg-muted text-xs shrink-0">{item.cost} credit{item.cost !== 1 ? 's' : ''}</span>
-                        }
+                        <span className="text-fg truncate flex-1 min-w-0" dir="auto">{item.title}</span>
+                        <span className="text-fg-muted text-xs shrink-0">
+                          {item.alreadyExported ? "Free (re-download)" : `${item.cost} credit${item.cost !== 1 ? "s" : ""}`}
+                        </span>
                       </div>
                     ))}
                   </div>
 
-                  {/* Summary */}
-                  <div className="rounded-lg border border-border bg-surface-elevated/30 p-3 text-sm space-y-0.5">
-                    {freeCount > 0 && (
-                      <p className="text-fg-muted">{freeCount} already exported — free</p>
-                    )}
-                    {paidCount > 0 && (
-                      <p className="text-fg">
-                        <span className="font-semibold">{paidCount} new</span>
-                        {' · '}{totalCost} credit{totalCost !== 1 ? 's' : ''}
-                        {credits !== null && <span className="text-fg-muted ml-1">({credits} available)</span>}
-                      </p>
-                    )}
-                    {totalCost === 0 && (
-                      <p className="text-success font-medium">All transcripts already exported — free!</p>
+                  {/* Cost summary */}
+                  <div className="rounded-lg border border-border bg-surface-elevated/30 p-3 text-sm space-y-1">
+                    {freeCount > 0 && <p className="text-fg-muted">{freeCount} already exported — free</p>}
+                    {totalCost === 0 ? (
+                      <p className="text-success font-medium">All already exported — free re-download.</p>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-fg-muted">{paidCount} new export{paidCount !== 1 ? "s" : ""}</span>
+                          <span className="font-semibold text-fg tabular-nums">{totalCost} credit{totalCost !== 1 ? "s" : ""}</span>
+                        </div>
+                        {credits !== null && (
+                          <div className="flex items-center justify-between text-xs text-fg-muted">
+                            <span>Balance {credits} → {Math.max(0, remaining ?? 0)} after</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
-                  {/* Pre-confirm: insufficient credits */}
                   {insufficient && (
                     <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
                       <AlertCircle className="h-4 w-4 shrink-0" />
@@ -919,43 +964,31 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
                 </div>
               )}
 
-              {/* Persistent inline error (replaces toast) */}
               {ragBulkError && (
                 <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   {ragBulkError}
                 </div>
               )}
-
-              {/* Inline success confirmation — persistent until user dismisses */}
               {ragBulkSuccess && (
                 <div className="flex items-center justify-between gap-2 rounded-lg bg-success/10 border border-success/20 px-3 py-2 text-sm text-success">
-                  <span className="font-medium">Export complete — ZIP download started.</span>
-                  <button
-                    onClick={() => setShowRagBulkModal(false)}
-                    className="shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-                    aria-label="Close"
-                  >
+                  <span className="font-medium">Export complete — download started.</span>
+                  <button onClick={() => setShowRagModal(false)} className="shrink-0 opacity-60 hover:opacity-100 cursor-pointer" aria-label="Close">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )}
 
               <DialogFooter>
-                <button
-                  className="text-sm text-fg-muted hover:text-fg transition-colors px-3 py-1.5"
-                  onClick={() => setShowRagBulkModal(false)}
-                >
-                  Cancel
-                </button>
+                <button className="text-sm text-fg-muted hover:text-fg transition-colors px-3 py-1.5" onClick={() => setShowRagModal(false)}>Cancel</button>
                 <button
                   className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-fg-on-accent hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handleBulkRagExecute}
-                  disabled={ragBulkExecuting || insufficient || !ragBulkItems || ragBulkSuccess}
+                  onClick={executeRag}
+                  disabled={ragBulkExecuting || insufficient || !ragBulkItems || ragBulkSuccess || ragBulkLoading}
                 >
                   {ragBulkExecuting && <Loader2 className="h-4 w-4 animate-spin" />}
                   <Download className="h-4 w-4" />
-                  {totalCost > 0 ? `Export · ${totalCost} credits` : 'Export — Free'}
+                  {totalCost > 0 ? `Export · ${totalCost} credit${totalCost !== 1 ? "s" : ""}` : "Export — Free"}
                 </button>
               </DialogFooter>
             </DialogContent>
@@ -963,30 +996,71 @@ export function TranscriptList({ transcripts, onDelete, onRename, viewMode, show
         );
       })()}
 
-      {/* ── Delete confirmation dialog (per-row + bulk) ───────────────────────── */}
+      {/* Delete confirmation */}
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {deleteTarget?.type === "bulk"
                 ? `Delete ${deleteTarget.count} transcript${deleteTarget.count !== 1 ? "s" : ""}?`
-                : `Delete "${deleteTarget?.type === "single" ? deleteTarget.title : ""}"?`}
+                : `Delete “${deleteTarget?.type === "single" ? deleteTarget.title : ""}”?`}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              This can&apos;t be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This can&apos;t be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-error text-white hover:bg-error/90"
-              onClick={confirmDelete}
-            >
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction className="bg-error text-white hover:bg-error/90" onClick={confirmDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+// ── Small local primitives ───────────────────────────────────────────────────
+function TriBox({ checked, indeterminate }: { checked: boolean; indeterminate: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex h-4 w-4 items-center justify-center rounded-[4px] border transition-colors",
+        checked || indeterminate ? "border-accent bg-accent text-fg-on-accent" : "border-border-strong bg-surface-sunken",
+      )}
+    >
+      {checked ? <Check className="h-3 w-3" /> : indeterminate ? <Minus className="h-3 w-3" /> : null}
+    </span>
+  );
+}
+
+function SheetButton({ icon, label, onClick, destructive, trailing }: { icon: React.ReactNode; label: string; onClick: () => void; destructive?: boolean; trailing?: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-3 rounded-md px-2 py-2.5 text-sm transition-colors",
+        destructive ? "text-error hover:bg-error/10" : "text-fg hover:bg-surface-elevated/60",
+      )}
+    >
+      <span className="shrink-0">{icon}</span>
+      <span className="flex-1 text-left">{label}</span>
+      {trailing}
+    </button>
+  );
+}
+
+function SheetRow({ href, icon, label, onNavigate }: { href: string; icon: React.ReactNode; label: string; onNavigate: () => void }) {
+  return (
+    <Link href={href} onClick={onNavigate} className="w-full flex items-center gap-3 rounded-md px-2 py-2.5 text-sm text-fg hover:bg-surface-elevated/60 transition-colors">
+      <span className="shrink-0">{icon}</span>
+      <span className="flex-1">{label}</span>
+    </Link>
+  );
+}
+
+function SheetAnchor({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-3 rounded-md px-2 py-2.5 text-sm text-fg hover:bg-surface-elevated/60 transition-colors">
+      <span className="shrink-0">{icon}</span>
+      <span className="flex-1">{label}</span>
+    </a>
   );
 }

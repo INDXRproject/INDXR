@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, AudioLines, Library, Inbox } from "lucide-react"
+import { AudioLines, Library, MessageSquare } from "lucide-react"
 import { cn } from "@indxr/shared/lib/utils"
+import { Beehive } from "@/components/icons/Beehive"
 
 // TODO: Account + Settings via avatar-tap rechtsboven → drawer slide van rechts (Claude Design fase)
 
@@ -15,10 +16,10 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { href: "/dashboard",            label: "Home",      icon: Home,       matchPrefix: undefined },
+  { href: "/dashboard",            label: "Home",      icon: Beehive,    matchPrefix: undefined },
   { href: "/dashboard/transcribe", label: "Transcribe", icon: AudioLines  },
   { href: "/dashboard/library",    label: "Library",   icon: Library,    matchPrefix: "/dashboard/library" },
-  { href: "/dashboard/messages",   label: "Messages",  icon: Inbox       },
+  { href: "/dashboard/messages",   label: "Messages",  icon: MessageSquare },
 ]
 
 interface MobileTabBarProps {

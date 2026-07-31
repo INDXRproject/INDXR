@@ -1,0 +1,891 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INDXR Library — redesign mockup v5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+--bg:oklch(.985 .004 70);--bg-subtle:oklch(.972 .005 70);--surface:oklch(1 0 0);
+--surface-elevated:oklch(.995 .003 70);--surface-sunken:oklch(.955 .006 70);
+--border-subtle:oklch(.925 .006 70);--border:oklch(.880 .008 70);--border-strong:oklch(.780 .010 70);
+--fg-muted:oklch(.555 .010 70);--fg-subtle:oklch(.420 .012 70);--fg:oklch(.260 .010 70);--fg-strong:oklch(.165 .008 70);
+--fg-on-accent:oklch(.985 .004 70);
+--accent:oklch(.720 .140 75);--accent-hover:oklch(.680 .145 75);--accent-subtle:oklch(.955 .030 80);
+--accent-fg:oklch(.380 .090 60);--accent-ring:oklch(.720 .140 75/.45);
+--error:oklch(.580 .180 27);--error-subtle:oklch(.960 .030 25);
+--sky:oklch(.470 .150 230);--sky-subtle:oklch(.935 .050 230);
+--sky-soft:oklch(.510 .130 230);--sky-soft-subtle:oklch(.975 .020 230);
+--indigo:oklch(.470 .150 265);--indigo-subtle:oklch(.935 .050 265);
+--indigo-soft:oklch(.510 .130 265);--indigo-soft-subtle:oklch(.975 .020 265);
+--violet:oklch(.470 .150 300);--violet-subtle:oklch(.935 .050 300);
+--violet-soft:oklch(.510 .130 300);--violet-soft-subtle:oklch(.975 .020 300);
+--teal:oklch(.470 .150 185);--teal-subtle:oklch(.935 .050 185);
+--r-sm:.25rem;--r:.5rem;--r-lg:.75rem;
+--sh:0 1px 2px oklch(.20 .010 70/.06),0 1px 1px oklch(.20 .010 70/.04);
+--sh-lg:0 4px 12px oklch(.20 .010 70/.08),0 12px 24px oklch(.20 .010 70/.06);
+--ease:cubic-bezier(.16,1,.3,1);
+}
+[data-theme=dark]{
+--bg:oklch(.165 .008 70);--bg-subtle:oklch(.195 .009 70);--surface:oklch(.215 .010 70);
+--surface-elevated:oklch(.250 .011 70);--surface-sunken:oklch(.140 .007 70);
+--border-subtle:oklch(.275 .011 70);--border:oklch(.330 .012 70);--border-strong:oklch(.420 .013 70);
+--fg-muted:oklch(.625 .012 70);--fg-subtle:oklch(.730 .010 70);--fg:oklch(.880 .008 70);--fg-strong:oklch(.965 .006 70);
+--fg-on-accent:oklch(.165 .008 70);
+--accent:oklch(.760 .150 78);--accent-hover:oklch(.800 .145 78);--accent-subtle:oklch(.290 .060 78);--accent-fg:oklch(.880 .110 80);
+--error:oklch(.680 .180 27);--error-subtle:oklch(.310 .080 27);
+--sky:oklch(.780 .140 230);--sky-subtle:oklch(.295 .065 230);
+--sky-soft:oklch(.860 .120 230);--sky-soft-subtle:oklch(.360 .045 230);
+--indigo:oklch(.780 .140 265);--indigo-subtle:oklch(.295 .065 265);
+--indigo-soft:oklch(.860 .120 265);--indigo-soft-subtle:oklch(.360 .045 265);
+--violet:oklch(.780 .140 300);--violet-subtle:oklch(.295 .065 300);
+--violet-soft:oklch(.860 .120 300);--violet-soft-subtle:oklch(.360 .045 300);
+--teal:oklch(.780 .140 185);--teal-subtle:oklch(.295 .065 185);
+--sh:0 0 0 1px var(--border);--sh-lg:0 0 0 1px var(--border-strong),0 8px 24px oklch(0 0 0/.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;font-feature-settings:"calt" 1,"tnum" 1,"zero" 1;
+background:var(--bg-subtle);color:var(--fg);font-size:16px;line-height:1.5;padding:22px}
+button,input{font:inherit;color:inherit}button{background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
+svg{display:block;flex:none}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
+
+.shell{max-width:1560px;margin:0 auto}
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px;background:var(--surface);
+border:1px solid var(--border-subtle);border-radius:var(--r);box-shadow:var(--sh)}
+.bar h1{font-size:14px;font-weight:600;margin-right:auto;letter-spacing:-.01em}
+.bar .tag{font-size:11px;color:var(--fg-muted);font-weight:400}
+.seg{display:flex;background:var(--surface-sunken);border-radius:var(--r);padding:2px;gap:2px}
+.seg button{padding:5px 11px;font-size:13px;border-radius:calc(var(--r) - 2px);color:var(--fg-muted);font-weight:500}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--fg-strong);box-shadow:var(--sh)}
+.legend{background:var(--surface);border:1px solid var(--border-subtle);border-radius:var(--r);padding:10px 16px;
+margin-bottom:12px;display:flex;align-items:center;gap:13px;flex-wrap:wrap;font-size:12.5px;color:var(--fg-muted)}
+.legend b{color:var(--fg-strong);font-size:13px;font-weight:600;margin-right:2px}
+.legend span.i{display:inline-flex;align-items:center;gap:6px}
+.legend .ic{display:inline-flex;align-items:center;gap:5px;color:var(--fg-subtle)}
+.frames{display:flex;gap:20px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.flabel{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--fg-muted);margin-bottom:7px;font-weight:600}
+
+.btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 11px;border:1px solid var(--border);
+border-radius:var(--r);background:var(--surface);font-size:13.5px;font-weight:500;white-space:nowrap;transition:background 120ms var(--ease)}
+.btn:hover{background:var(--surface-sunken);border-color:var(--border-strong)}
+.btn.active,.btn[aria-pressed=true]{background:var(--accent-subtle);border-color:var(--accent);color:var(--accent-fg)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-i{width:34px;padding:0;justify-content:center}
+.btn-p{background:var(--accent);border-color:var(--accent);color:var(--fg-on-accent)}
+.btn-p:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn-d{color:var(--error)}.btn-d:hover{background:var(--error-subtle);border-color:var(--error)}
+.btn-g{border-color:transparent;background:transparent}.btn-g:hover{background:var(--surface-sunken)}
+.pill{font-family:"IBM Plex Mono",monospace;font-size:11px;background:var(--surface-sunken);border-radius:999px;padding:1px 7px;color:var(--fg-muted)}
+
+.srch{position:relative;display:flex;align-items:center;flex:1;min-width:0}
+.srch>svg:first-child{position:absolute;left:11px;color:var(--fg-muted);pointer-events:none}
+.srch input{width:100%;height:34px;padding:0 32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:14px}
+.srch input::placeholder{color:var(--fg-muted)}
+.srch input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+.srch .x{position:absolute;right:6px;width:24px;height:24px;display:none;align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--fg-muted)}
+.srch.on .x{display:flex}
+.cb{width:17px;height:17px;flex:none;border-radius:4px;border:1.5px solid var(--border-strong);background:var(--surface);
+display:flex;align-items:center;justify-content:center;color:var(--fg-on-accent);transition:all 120ms}
+.cb svg{opacity:0}.cb.on,.cb.mix{background:var(--accent);border-color:var(--accent)}
+.cb.on svg,.cb.mix svg{opacity:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 5px 0 9px;background:var(--surface-sunken);
+color:var(--fg-subtle);border:1px solid var(--border-subtle);border-radius:var(--r-sm);font-size:12.5px}
+.chip button{display:flex;color:var(--fg-muted);padding:2px;border-radius:3px}
+.chip button:hover{color:var(--fg-strong);background:var(--border-subtle)}
+.chip-x{font-size:12.5px;color:var(--fg-muted);text-decoration:underline;text-underline-offset:2px;padding:0 4px}
+
+/* badges */
+.bg{display:inline-flex;align-items:center;gap:2px;height:18px;padding:0 5px;border-radius:var(--r-sm);
+font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:.04em;flex:none;line-height:1;white-space:nowrap}
+.bg .pen{font-size:9px;font-weight:400;opacity:.9;margin-left:-1px}
+.bg.auto{background:var(--sky-subtle);color:var(--sky)}
+.bg.auto-edit{background:var(--sky-soft-subtle);color:var(--sky-soft)}
+.bg.ai{background:var(--indigo-subtle);color:var(--indigo)}
+.bg.ai-edit{background:var(--indigo-soft-subtle);color:var(--indigo-soft)}
+.bg.summary{background:var(--violet-subtle);color:var(--violet)}
+.bg.summary-edit{background:var(--violet-soft-subtle);color:var(--violet-soft)}
+.bg.rag{background:var(--teal-subtle);color:var(--teal)}
+.paid.own{background:var(--teal-subtle);color:var(--teal)}
+.paid{display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 6px;border-radius:var(--r-sm);
+background:var(--accent-subtle);color:var(--accent-fg);font-family:"IBM Plex Mono",monospace;font-size:9.5px;
+font-weight:600;letter-spacing:.06em;line-height:1}
+
+/* ============ RIJEN — twee regels ============ */
+.row{display:flex;align-items:center;gap:9px;padding:7px 8px 7px 10px;border-bottom:1px solid var(--border-subtle);
+transition:background 120ms var(--ease)}
+.row:hover{background:var(--surface)}
+.row.sel{background:var(--accent-subtle)}
+.row .cb{opacity:0;transition:opacity 120ms}
+.row:hover .cb,.row.sel .cb{opacity:1}
+.dot{width:6px;height:6px;flex:none;border-radius:999px;background:transparent}
+.row.new .dot{background:var(--accent)}
+.tw{flex:1;min-width:0}
+.ttl{display:block;font-size:14.5px;font-weight:400;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.new .ttl{font-weight:500;color:var(--fg-strong)}
+.row:hover .ttl{color:var(--fg-strong)}
+.sub2{display:flex;align-items:center;gap:5px;margin-top:5px;min-height:18px}
+.sub2 .coll{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--fg-muted);
+overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px;margin-left:3px}
+.c-dur{width:64px;flex:none;text-align:right;font-size:12.5px;color:var(--fg-muted)}
+.c-wd{width:62px;flex:none;text-align:right;font-size:12.5px;color:var(--fg-muted)}
+.c-tm{width:74px;flex:none;text-align:right;font-size:12.5px;color:var(--fg-muted)}
+.c-ac{width:58px;flex:none;display:flex;justify-content:flex-end;gap:1px}
+.c-ac button{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);
+color:var(--fg-muted);opacity:0;transition:opacity 120ms}
+.row:hover .c-ac button,.row:focus-within .c-ac button{opacity:1}
+.c-ac button:hover{background:var(--surface-sunken);color:var(--fg-strong)}
+/* compact = één regel, badges achter de titel */
+.list.compact .row{padding-top:3px;padding-bottom:3px;min-height:31px}
+.list.compact .tw{display:flex;align-items:center;gap:8px}
+.list.compact .ttl{font-size:13.5px;flex:1;min-width:0}
+.list.compact .sub2{margin-top:0;flex:none}
+.list.compact .sub2 .coll{display:none}
+.rn{width:100%;height:26px;padding:0 8px;font-size:14px;background:var(--surface);
+border:1px solid var(--accent);border-radius:var(--r-sm);box-shadow:0 0 0 3px var(--accent-ring)}
+.sab{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;font-size:12.5px;
+background:var(--accent-subtle);color:var(--accent-fg);border-radius:var(--r-sm);margin-top:8px}
+.sab button{text-decoration:underline;text-underline-offset:2px;font-weight:600}
+
+.menu{position:absolute;z-index:200;min-width:214px;padding:5px;background:var(--surface-elevated);
+border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh-lg)}
+.menu button{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;font-size:13.5px;border-radius:var(--r-sm);text-align:left}
+.menu button:hover{background:var(--surface-sunken)}
+.menu button:disabled{opacity:.38;cursor:default}
+.menu button:disabled:hover{background:none}
+.menu button.dg{color:var(--error)}.menu button.dg:hover{background:var(--error-subtle)}
+.menu .arr{margin-left:auto;color:var(--fg-muted)}
+.menu .kbd{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--fg-muted)}
+.menu hr{border:0;border-top:1px solid var(--border-subtle);margin:5px 0}
+.menu .hd{padding:6px 9px 4px;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--fg-muted);font-weight:600}
+.menu .note{padding:2px 9px 7px;font-size:11.5px;color:var(--fg-muted);line-height:1.35}
+.menu .sq{position:relative;display:flex;align-items:center;padding:4px 4px 6px}
+.menu .sq input{width:100%;height:30px;padding:0 10px 0 29px;font-size:13px;background:var(--surface-sunken);
+border:1px solid transparent;border-radius:var(--r)}
+.menu .sq input:focus{outline:none;background:var(--surface);border-color:var(--accent)}
+.menu .sq svg{position:absolute;left:13px;color:var(--fg-muted)}
+.menu .sc{max-height:196px;overflow-y:auto}
+.menu .ext{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--fg-muted);margin-left:auto}
+.menu .tick{margin-left:auto;color:var(--accent)}
+.menu .mixed{margin-left:auto;font-size:10px;font-family:"IBM Plex Mono",monospace;color:var(--fg-muted);
+background:var(--surface-sunken);border-radius:999px;padding:1px 6px}
+
+.pop{position:absolute;z-index:150;padding:13px;background:var(--surface-elevated);border:1px solid var(--border);
+border-radius:var(--r-lg);box-shadow:var(--sh-lg)}
+.pop h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--fg-muted);margin-bottom:6px;font-weight:600}
+.pop h4:not(:first-child){margin-top:14px}
+.opt{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:var(--r-sm);font-size:13.5px;width:100%;text-align:left}
+.opt:hover{background:var(--surface-sunken)}
+.opt:disabled{opacity:.38;cursor:default}.opt:disabled:hover{background:none}
+.opt .bx{width:16px;height:16px;border:1.5px solid var(--border-strong);border-radius:4px;flex:none;display:flex;
+align-items:center;justify-content:center;color:var(--fg-on-accent)}
+.opt .bx.rd{border-radius:999px}
+.opt[aria-checked=true] .bx{background:var(--accent);border-color:var(--accent)}
+.opt .bx svg{opacity:0}.opt[aria-checked=true] .bx svg{opacity:1}
+.opt .tl{margin-left:auto;font-size:11.5px;color:var(--fg-muted);font-family:"IBM Plex Mono",monospace}
+.opt.act{gap:11px}.opt.act .ic{width:17px;display:flex;justify-content:center;color:var(--fg-muted);flex:none}
+.opt.dg{color:var(--error)}.opt.dg .ic{color:var(--error)}
+.pf{display:flex;gap:8px;margin-top:13px;padding-top:11px;border-top:1px solid var(--border-subtle)}
+.pf .btn{flex:1;justify-content:center;height:32px}
+
+.bulk{position:absolute;left:50%;bottom:20px;z-index:120;transform:translateX(-50%) translateY(8px);display:flex;
+align-items:center;gap:7px;padding:7px 7px 7px 15px;background:var(--surface-elevated);border:1px solid var(--border-strong);
+border-radius:999px;box-shadow:var(--sh-lg);opacity:0;pointer-events:none;visibility:hidden;
+transition:opacity 200ms var(--ease),transform 200ms var(--ease),visibility 200ms}
+.bulk.on{opacity:1;pointer-events:auto;visibility:visible;transform:translateX(-50%) translateY(0)}
+.bulk .n{font-size:13px;font-weight:600;color:var(--fg-strong);white-space:nowrap}
+.bulk .btn{height:30px}.bulk .dv{width:1px;height:18px;background:var(--border)}
+.pgr{display:flex;align-items:center;gap:10px;padding:16px 8px 0;font-size:12.5px;color:var(--fg-muted)}
+.pgr .btn{height:30px}.pgr .sp{flex:1}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:50px 24px;gap:5px}
+.empty h3{font-size:15.5px;font-weight:600;color:var(--fg-strong)}
+.empty p{font-size:13.5px;color:var(--fg-muted);max-width:320px}
+.empty .btn{margin-top:11px}
+
+.desk{width:1240px;height:850px;flex:none;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);
+border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-lg);position:relative}
+.top{display:flex;align-items:center;gap:12px;padding:0 16px;height:54px;flex:none;border-bottom:1px solid var(--border-subtle);background:var(--surface)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:-.02em;font-size:15px;color:var(--fg-strong)}
+.logo .a{font-size:10px;color:var(--fg-muted);align-self:flex-end;margin-bottom:3px}
+.coin{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px 0 8px;border:1px solid var(--border);
+border-radius:999px;font-size:13px;font-family:"IBM Plex Mono",monospace}
+.av{width:28px;height:28px;border-radius:999px;background:var(--accent);color:var(--fg-on-accent);display:flex;
+align-items:center;justify-content:center;font-size:12.5px;font-weight:600}
+.brow{flex:1;display:flex;min-height:0}
+.side{width:246px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--border-subtle);background:var(--surface)}
+.nav{padding:10px 10px 6px}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:var(--r);color:var(--fg-subtle);font-size:14px;font-weight:500}
+.nav a:hover{background:var(--surface-sunken)}
+.nav a.on{background:var(--accent-subtle);color:var(--accent-fg)}
+.chd{display:flex;align-items:center;gap:8px;padding:12px 16px 6px;font-size:10.5px;font-weight:600;text-transform:uppercase;
+letter-spacing:.07em;color:var(--fg-muted)}
+.chd .btn{margin-left:auto;height:24px;width:24px;padding:0;justify-content:center;border-color:transparent;background:transparent;color:var(--fg-muted)}
+.cs{padding:0 10px 8px;position:relative;display:flex;align-items:center}
+.cs svg{position:absolute;left:19px;color:var(--fg-muted)}
+.cs input{width:100%;height:30px;padding:0 10px 0 31px;font-size:13px;background:var(--surface-sunken);border:1px solid transparent;border-radius:var(--r)}
+.cs input:focus{outline:none;background:var(--surface);border-color:var(--accent)}
+.cl{flex:1;overflow-y:auto;padding:0 10px 10px}
+.ci{display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;border-radius:var(--r);font-size:13.5px;color:var(--fg-subtle);text-align:left}
+.ci:hover{background:var(--surface-sunken)}
+.ci.on{background:var(--accent-subtle);color:var(--accent-fg);font-weight:500}
+.ci.drop{outline:2px dashed var(--accent);outline-offset:-2px}
+.ci .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci .ct{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--fg-muted);flex:none}
+.ci.on .ct{color:var(--accent-fg)}
+.sf{padding:8px 10px;border-top:1px solid var(--border-subtle)}
+.sf .btn{width:100%;justify-content:center;border-style:dashed}
+.buycr{padding-right:5px;gap:5px;transition:background 120ms}
+.buycr:hover{background:var(--surface-sunken);border-color:var(--border-strong)}
+.buycr .plus{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:var(--accent);color:var(--fg-on-accent);margin-left:1px}
+.credrowX{display:flex;align-items:center;gap:9px;height:42px;padding:0 14px;border-top:1px solid var(--border-subtle);
+font-size:13.5px;font-weight:500;color:var(--fg-subtle)}
+.credrow:hover{background:var(--surface-sunken)}
+.credrow .bal{margin-left:auto;font-size:13px;color:var(--fg-strong)}
+.credrow .buy{font-size:11.5px;font-weight:600;letter-spacing:.03em;background:var(--accent-subtle);color:var(--accent-fg);
+border-radius:var(--r-sm);padding:3px 8px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+.msc{flex:1;overflow-y:auto;position:relative;padding:0 24px 90px}
+.ph{padding:20px 0 0;display:flex;align-items:baseline;gap:10px}
+.ph h2{font-size:24px;font-weight:600;letter-spacing:-.02em;color:var(--fg-strong)}
+.ph .sub{font-size:13px;color:var(--fg-muted);font-family:"IBM Plex Mono",monospace}
+.tl{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:8px;padding:13px 0;margin-top:12px;
+background:var(--bg);border-bottom:1px solid var(--border)}
+.hd2{display:flex;align-items:center;gap:9px;padding:8px 8px 8px 10px;font-size:10.5px;font-weight:600;
+letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);border-bottom:1px solid var(--border-subtle);
+position:sticky;top:61px;z-index:30;background:var(--bg)}
+
+.mob{flex:none;position:relative;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);
+border-radius:26px;overflow:hidden;box-shadow:var(--sh-lg);height:850px}
+.mtop{display:flex;align-items:center;gap:10px;padding:13px 16px 9px;flex:none;background:var(--surface);border-bottom:1px solid var(--border-subtle)}
+.msr{flex:1;overflow-y:auto;position:relative;padding-bottom:78px}
+.mh{padding:15px 16px 0;display:flex;align-items:baseline;gap:8px}
+.mh h2{font-size:21px;font-weight:600;letter-spacing:-.02em;color:var(--fg-strong)}
+.mh .sub{font-size:12px;color:var(--fg-muted);font-family:"IBM Plex Mono",monospace}
+.mtl{position:sticky;top:0;z-index:40;display:flex;gap:8px;align-items:center;padding:11px 16px;margin-top:9px;
+background:var(--bg);border-bottom:1px solid var(--border)}
+.mc{display:flex;align-items:center;gap:8px;width:calc(100% - 32px);margin:11px 16px 0;height:38px;padding:0 12px;
+border:1px solid var(--border);border-radius:var(--r);background:var(--surface);font-size:13.5px;font-weight:500}
+.mc .ct{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--fg-muted)}
+.msb{display:flex;align-items:center;gap:10px;padding:9px 16px;background:var(--accent-subtle);color:var(--accent-fg);
+font-size:13px;font-weight:500;border-bottom:1px solid var(--border-subtle)}
+.msb .lk{margin-left:auto;text-decoration:underline;text-underline-offset:2px;font-weight:600;min-height:30px;display:flex;align-items:center}
+.ml{padding:0 16px}
+.mr{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+.mr.sel{background:var(--accent-subtle);margin:0 -8px;padding-left:8px;padding-right:8px}
+.mr .cb{margin-top:2px;width:0;opacity:0;transition:opacity 120ms,width 120ms}
+.ml.pick .mr .cb{width:17px;opacity:1}
+.mr .dot{margin-top:8px}
+.mm{flex:1;min-width:0}
+.mt{font-size:14.5px;font-weight:400;color:var(--fg);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;
+-webkit-box-orient:vertical;overflow:hidden}
+.mr.new .mt{font-weight:500;color:var(--fg-strong)}
+.mbadges{display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap}
+.mbadges .coll{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--fg-muted);
+overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;margin-left:2px}
+.mnum{margin-top:5px;font-size:12px;color:var(--fg-muted);display:flex;gap:6px;align-items:center}
+.mnum .sep{opacity:.4}
+.mac{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);color:var(--fg-muted);margin-top:-1px}
+.mac:hover{background:var(--surface-sunken)}
+.ml.pick .mac{display:none}
+.tab{position:absolute;left:0;right:0;bottom:0;height:62px;z-index:60;display:flex;background:var(--surface);
+border-top:1px solid var(--border-subtle);padding-bottom:8px}
+.tab a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;color:var(--fg-muted);position:relative}
+.tab a.on{color:var(--accent-fg)}
+.tab a.on::before{content:"";position:absolute;top:0;left:22%;right:22%;height:2px;background:var(--accent)}
+.scrim{position:absolute;inset:0;z-index:80;background:oklch(0 0 0/.42);opacity:0;pointer-events:none;transition:opacity 200ms}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:90;max-height:80%;display:flex;flex-direction:column;
+background:var(--surface-elevated);border-top:1px solid var(--border);border-radius:var(--r-lg) var(--r-lg) 0 0;
+transform:translateY(101%);transition:transform 300ms var(--ease)}
+.sheet.on{transform:translateY(0)}
+.gr{width:34px;height:4px;border-radius:999px;background:var(--border-strong);margin:9px auto 3px;flex:none}
+.sh{display:flex;align-items:center;padding:5px 16px 9px;flex:none}
+.sh h3{font-size:15.5px;font-weight:600;color:var(--fg-strong)}
+.sh .sm{font-size:12px;color:var(--fg-muted);margin-left:8px;font-family:"IBM Plex Mono",monospace}
+.sh .btn{margin-left:auto;height:30px}
+.sb{overflow-y:auto;padding:0 12px 12px}
+.sb h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--fg-muted);margin:13px 8px 5px;font-weight:600}
+.sb .opt{min-height:44px}
+.sb .note{padding:4px 10px 8px;font-size:12px;color:var(--fg-muted);line-height:1.4}
+.sf2{flex:none;display:flex;gap:8px;padding:11px 16px 18px;border-top:1px solid var(--border-subtle)}
+.sf2 .btn{flex:1;justify-content:center;height:44px}
+/* BUGFIX v4: balk schoof niet ver genoeg weg en bedekte de tabbar */
+.mbk{position:absolute;left:0;right:0;bottom:62px;z-index:70;background:var(--surface-elevated);
+border-top:1px solid var(--border-strong);box-shadow:var(--sh-lg);
+transform:translateY(calc(100% + 64px));visibility:hidden;
+transition:transform 260ms var(--ease),visibility 260ms}
+.mbk.on{transform:translateY(0);visibility:visible}
+.mbk .c{display:flex;align-items:center;padding:7px 16px 0;font-size:12px;color:var(--fg-muted);font-weight:500}
+.mbk .a{display:flex;padding:3px 6px 9px}
+.mbk .a button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:54px;
+border-radius:var(--r);font-size:11px;font-weight:500;color:var(--fg-subtle);padding:0 2px}
+.mbk .a button:hover{background:var(--surface-sunken)}
+.mbk .a button.dg{color:var(--error)}
+</style>
+
+<div class="shell">
+  <div class="bar">
+    <h1>INDXR Library — redesign mockup <span class="tag">v5</span></h1>
+    <div class="seg" id="vseg">
+      <button aria-pressed="true" data-v="desktop">Desktop</button>
+      <button aria-pressed="false" data-v="mobile">Mobile 404</button>
+      <button aria-pressed="false" data-v="narrow">Mobile 360</button>
+      <button aria-pressed="false" data-v="both">Both</button>
+    </div>
+    <div class="seg" id="tseg"><button aria-pressed="true" data-t="light">Light</button><button aria-pressed="false" data-t="dark">Dark</button></div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="frames" id="frames">
+
+  <div id="f-desk">
+    <div class="flabel">Desktop · 1240 × 850</div>
+    <div class="desk">
+      <div class="top">
+        <div class="logo"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--accent)"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/><path d="M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>INDXR<span class="a">AI</span></div>
+        <div style="flex:1"></div>
+        <button class="coin buycr" title="Buy credits"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent)"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/></svg>627
+          <span class="plus"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></span></button>
+        <div class="av">T</div>
+      </div>
+      <div class="brow">
+        <aside class="side">
+          <nav class="nav" id="dNav"></nav>
+          <div class="chd">Collections<button class="btn" title="New collection"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>
+          <div class="cs"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="Filter collections…" id="cF"></div>
+          <div class="cl" id="cL"></div>
+          <div class="sf"><button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New collection</button></div>
+</aside>
+        <div class="main">
+          <div class="msc" id="dScroll">
+            <div class="ph"><h2>Library</h2><span class="sub" id="dCount">945 transcripts</span></div>
+            <div class="tl">
+              <div class="srch" id="dSW" style="max-width:300px">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <input id="dSearch" placeholder="Search" dir="auto">
+                <button class="x" id="dSX" aria-label="Clear"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+              </div>
+              <div style="flex:1"></div>
+              <div style="position:relative">
+                <button class="btn" id="dFB"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>Filter<span class="pill" id="dFN" style="display:none">0</span></button>
+                <div class="pop hidden" id="dFP" style="right:0;top:40px;width:286px"></div>
+              </div>
+              <div style="position:relative">
+                <button class="btn" id="dSB"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3"/></svg><span id="dSL">Newest</span></button>
+                <div class="pop hidden" id="dSP" style="right:0;top:40px;width:220px"></div>
+              </div>
+              <div class="seg" id="dD" style="height:34px">
+                <button aria-pressed="true" data-d="default" title="Default"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+                <button aria-pressed="false" data-d="compact" title="Compact"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 5h16M4 9.5h16M4 14h16M4 18.5h16"/></svg></button>
+              </div>
+            </div>
+            <div id="dCbar" class="hidden" style="padding-top:10px"><div class="chips" id="dChips"></div></div>
+            <div class="hd2">
+              <button class="cb" id="dMst" aria-label="Select all"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L19 7"/></svg></button>
+              <span class="dot"></span><span style="flex:1">Title</span>
+              <span class="c-dur">Duration</span><span class="c-wd">Words</span><span class="c-tm">Added</span><span class="c-ac"></span>
+            </div>
+            <div class="sab hidden" id="dSab"><span id="dSabT"></span><button id="dSabB"></button></div>
+            <div class="list" id="dList"></div>
+            <div class="empty hidden" id="dEmpty">
+              <h3>Nothing matches these filters</h3><p>Remove one filter, or clear them all.</p>
+              <button class="btn" onclick="clearAll('d')">Clear all filters</button>
+            </div>
+            <div class="pgr"><span id="dRange"></span><div class="sp"></div>
+              <button class="btn" disabled>Previous</button><span class="mono">Page 1 of 19</span><button class="btn">Next</button></div>
+          </div>
+          <div class="bulk" id="dBulk">
+            <span class="n" id="dBulkN"></span>
+            <button class="btn" onclick="openMove(event,'bulk')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 6h6l2 2h8v10a2 2 0 0 1-2 2H4z"/><path d="M12 12v5M9.5 14.5 12 12l2.5 2.5"/></svg>Move to collection</button>
+            <button class="btn" onclick="openExport(event,'bulk')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>Export ZIP</button>
+            <button class="btn hidden" id="dMarkBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>Mark read</button>
+            <button class="btn btn-d"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>Delete</button>
+            <div class="dv"></div>
+            <button class="btn btn-g" onclick="clearSel('d')">Deselect</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="f-mob" class="hidden">
+    <div class="flabel" id="mLbl">Mobile · 404 × 850</div>
+    <div class="mob" id="mFrame" style="width:404px">
+      <div class="mtop">
+        <div class="logo" style="font-size:13.5px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--accent)"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/><path d="M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>INDXR<span class="a">AI</span></div>
+        <div style="flex:1"></div>
+        <button class="coin buycr" style="height:29px;font-size:12px" title="Buy credits"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent)"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/></svg>627
+          <span class="plus"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></span></button>
+        <div class="av" style="width:27px;height:27px;font-size:11.5px">T</div>
+      </div>
+      <div class="msr" id="mScroll">
+        <div class="mh"><h2>Library</h2><span class="sub" id="mCount">945</span></div>
+        <div class="mtl">
+          <div class="srch" id="mSW">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="mSearch" placeholder="Search" dir="auto">
+            <button class="x" id="mSX" aria-label="Clear"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <button class="btn btn-i" id="mFB" title="Filter and sort"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg></button>
+          <button class="btn btn-i" id="mPk" title="Select"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/></svg></button>
+        </div>
+        <button class="mc" id="mCB"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 6h6l2 2h8v10a2 2 0 0 1-2 2H4z"/></svg>
+          <span id="mCL">All transcripts</span><span class="ct" id="mCC">945</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--fg-muted)"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="msb hidden" id="mSB">
+          <button class="cb" id="mMst" aria-label="Select all"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L19 7"/></svg></button>
+          <span id="mSelT">0 selected</span><button class="lk" id="mSelL">Select all</button>
+        </div>
+        <div id="mCbar" class="hidden" style="padding:11px 16px 0"><div class="chips" id="mChips"></div></div>
+        <div class="ml" id="mList"></div>
+        <div class="empty hidden" id="mEmpty"><h3>Nothing matches</h3><p>Remove a filter to see more.</p>
+          <button class="btn" onclick="clearAll('m')">Clear all filters</button></div>
+        <div class="pgr" style="padding:15px 16px 0"><span>1–15 of 945</span><div class="sp"></div>
+          <button class="btn" disabled>Prev</button><button class="btn">Next</button></div>
+      </div>
+      <div class="mbk" id="mBulk">
+        <div class="c"><span id="mBulkN">0 selected</span></div>
+        <div class="a" id="mBulkActs"></div>
+      </div>
+      <nav class="tab" id="mTab"></nav>
+      <div class="scrim" id="mScrim" onclick="closeSheets()"></div>
+      <div class="sheet" id="mFSheet"><div class="gr"></div>
+        <div class="sh"><h3>Filter and sort</h3><button class="btn btn-g" onclick="closeSheets()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div class="sb" id="mFBody"></div>
+        <div class="sf2"><button class="btn" onclick="clearAll('m');closeSheets()">Clear all</button><button class="btn btn-p" onclick="closeSheets()"><span id="mApply"></span></button></div></div>
+      <div class="sheet" id="mCSheet"><div class="gr"></div>
+        <div class="sh"><h3>Collections</h3><button class="btn btn-g" onclick="closeSheets()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div class="srch" style="padding:0 16px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="left:27px"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="mCF" placeholder="Filter collections…" style="padding-left:33px"></div>
+        <div class="sb" id="mCBody"></div></div>
+      <div class="sheet" id="mMoveSheet"><div class="gr"></div>
+        <div class="sh"><h3>Move to collection</h3><span class="sm" id="mMoveN"></span><button class="btn btn-g" onclick="closeSheets()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div class="sb" id="mMoveBody"></div></div>
+      <div class="sheet" id="mExpSheet"><div class="gr"></div>
+        <div class="sh"><h3 id="mExpTitle">Export</h3><span class="sm" id="mExpN"></span><button class="btn btn-g" onclick="closeSheets()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div class="sb" id="mExpBody"></div></div>
+      <div class="sheet" id="mMoreSheet"><div class="gr"></div>
+        <div class="sh"><h3>More actions</h3><span class="sm" id="mMoreN"></span><button class="btn btn-g" onclick="closeSheets()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div class="sb" id="mMoreBody"></div></div>
+      <div class="sheet" id="mRowSheet"><div class="gr"></div>
+        <div class="sh"><h3>Transcript</h3><button class="btn btn-g" onclick="closeSheets()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div class="sb" id="mRowBody"></div></div>
+    </div>
+  </div>
+
+  </div>
+</div>
+
+<div class="menu hidden" id="rowMenu"></div>
+<div class="menu hidden" id="subMenu"></div>
+
+<script>
+/* ===== hexagon-iconenset: alles uit hetzelfde grondvorm ===== */
+function hex(cx,cy,r){const p=[];for(let i=0;i<6;i++){const a=(Math.PI/180)*(90+i*60);
+  p.push(`${(cx+r*Math.cos(a)).toFixed(2)},${(cy-r*Math.sin(a)).toFixed(2)}`)}return"M"+p.join("L")+"Z"}
+const ICONS={
+  /* Home = bijenkorf (skep): koepel, banden, vlieggat */
+  home:`<path d="M4.2 20.4C4.2 12 7 5.6 12 5.6s7.8 6.4 7.8 14.8z" stroke-linejoin="round"/><path d="M5.3 16.4h13.4M6.5 12.4h11M8.3 8.7h7.4" stroke-linecap="round"/><path d="M10.3 20.4v-1.7a1.7 1.7 0 0 1 3.4 0v1.7" stroke-linejoin="round"/>`,
+  /* Transcribe = golfvorm, geen hexagon */
+  transcribe:`<path d="M3 12h1.6M7 8.4v7.2M10.4 5.6v12.8M13.8 9.2v5.6M17.2 7v10M20.6 11h.8" stroke-linecap="round"/>`,
+  /* Library = opengeslagen boek, één silhouet */
+  library:`<path d="M12 7.6C10.1 6.2 7.3 5.5 3.7 5.5v12.7c3.6 0 6.4.7 8.3 2.1 1.9-1.4 4.7-2.1 8.3-2.1V5.5c-3.6 0-6.4.7-8.3 2.1z" stroke-linejoin="round"/><path d="M12 7.6v12.7"/>`,
+  /* Messages = tekstballon */
+  messages:`<path d="M4 5.5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9.6L5 20.5V16.5H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z" stroke-linejoin="round"/>`,
+};
+
+const ico=(n,s=17)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${ICONS[n]}</svg>`;
+
+const COL=[{id:"all",name:"All transcripts",n:945},{id:"we",name:"Introduction to Western Esotericism",n:87},
+{id:"s8",name:"8 Sopranos about the Sopranos",n:14},{id:"so",name:"The Sopranos — full rewatch",n:10},
+{id:"g1",name:"Game of Thrones lore",n:18},{id:"g2",name:"Game of Thrones reactions",n:6},
+{id:"pr",name:"History of Prussia",n:0},{id:"ar",name:"عالم الجن والسحر",n:29},
+{id:"cn",name:"The Rise of China",n:6},{id:"tq",name:"Tadabbur of Qur'an",n:30},
+{id:"an",name:"Surah An-Najm — tafsir",n:26},{id:"kf",name:"Surah al-Kahf (in depth)",n:12},
+{id:"iq",name:"Inside the Quran",n:10},{id:"se",name:"Striking Examples",n:28},
+{id:"w2",name:"What Everyone Should Know",n:12},{id:"oc",name:"Out of Context",n:12},
+{id:"hl",name:"Happiness Lessons",n:10},{id:"hi",name:"History",n:60},
+{id:"jr",name:"The Joe Rogan Experience",n:462},{id:"hu",name:"Huberman Lab Essentials",n:47},
+{id:"jm",name:"Justice with Michael Sandel",n:19},{id:"rh",name:"Surah Ar-Rahman: tafsir series",n:3}];
+
+const ROWS=[
+{t:"Who is Lilith - First Wife of Adam - Ancient Origins and Development of the Myth of the Demon Queen",s:1702,w:4596,tm:"4m ago",mins:4,src:"ai",srcEdit:0,sum:1,sumEdit:0,rag:0,c:null,nw:1},
+{t:"الحلقة الكاملة | مشروع إبليس.. قصة العلم والسحر والوجه الآخر للحضارة المادية",s:12214,w:32761,tm:"1d ago",mins:1440,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:0,c:"عالم الجن والسحر",nw:1},
+{t:"Kabbalah + Alchemy + Magic - The Refiner's Fire - אש מצרף - Transmutation & Jewish Mystical Theurgy",s:1310,w:3531,tm:"1d ago",mins:1500,src:"ai",srcEdit:1,sum:0,sumEdit:0,rag:0,c:null,nw:1},
+{t:"The Three Books of Occult Philosophy - Cornelius Agrippa - Renaissance Hermeticism Cabala and Magic",s:1719,w:5753,tm:"Jul 29",mins:2880,src:"ai",srcEdit:0,sum:1,sumEdit:1,rag:1,c:"History",nw:1},
+{t:"Egyptian Alchemy : Decoding the Greek - Egyptian Alchemy - The Formula of the Crab / Scorpion",s:1025,w:3846,tm:"Jul 28",mins:4300,src:"ai",srcEdit:0,sum:0,sumEdit:0,rag:0,c:null,nw:1},
+{t:"Egyptian Alchemy : Decoding the Greek - Egyptian Alchemy - The Formula of the Crab / Scorpion",s:1021,w:2057,tm:"Jul 28",mins:4301,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:0,c:null,nw:0},
+{t:"Renaissance Hermetic & Pagan Revival - Insights from a 16th Century Anthology of Magic & Astrology",s:2490,w:6909,tm:"Jul 28",mins:4320,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:1,c:"Introduction to Western Esotericism",nw:0},
+{t:"The Mithras Liturgy - Mystical Ascent in the Mystery Cult of Mithras",s:1249,w:3027,tm:"Jul 28",mins:4325,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:0,c:"Introduction to Western Esotericism",nw:0},
+{t:"The Library of Alexandria - Myth vs History",s:2338,w:6672,tm:"Jul 28",mins:4326,src:"auto",srcEdit:0,sum:1,sumEdit:0,rag:0,c:"Introduction to Western Esotericism",nw:0},
+{t:"Agrippa - Three Books of Occult Philosophy - Mystical Philosophy of Language, Mind & Magic",s:1466,w:3823,tm:"Jul 28",mins:4330,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:0,c:"Introduction to Western Esotericism",nw:0},
+{t:"The Occult Philosophy of Agrippa in Translation - conversation w/ Eric Purdue + Q&A",s:4046,w:10808,tm:"Jul 28",mins:4331,src:"auto",srcEdit:1,sum:1,sumEdit:0,rag:0,c:"Introduction to Western Esotericism",nw:0},
+{t:"Alchemy - The Life Times & Alchemical Writings of Edward Kelley - Beyond John Dee and Enochian Magic",s:2036,w:5050,tm:"Jul 26",mins:14400,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:0,c:null,nw:0},
+{t:"Magic & Necromancy - The Heptameron - Medieval Guide to Summoning Angels, Demons & Planetary Spirits",s:1862,w:5194,tm:"Jul 26",mins:14500,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:0,c:null,nw:0},
+{t:"How Divine Madness can Reveal Mystical Truths - Plato | Ficino | Bruno",s:1379,w:3410,tm:"Jun 24",mins:52000,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:1,c:"History",nw:0},
+{t:"Lady Anne Conway - Early Theosophy and Kabbalah vs Mechanism, Atheism and Materialism",s:1729,w:4501,tm:"Jun 23",mins:53000,src:"auto",srcEdit:0,sum:0,sumEdit:0,rag:0,c:"Introduction to Western Esotericism",nw:0}];
+
+/* h:mm:ss boven het uur, m:ss eronder — zoals YouTube */
+const dur=s=>{const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60,p=n=>String(n).padStart(2,"0");
+  return h?`${h}:${p(m)}:${p(x)}`:`${m}:${p(x)}`};
+
+const SORTS=[{id:"new",l:"Newest first"},{id:"old",l:"Oldest first"},{id:"long",l:"Longest first"},
+{id:"short",l:"Shortest first"},{id:"words",l:"Most words"},{id:"az",l:"Title A → Z"},{id:"za",l:"Title Z → A"}];
+const DUR=[{id:"a",l:"Under 10 min",f:r=>r.s<600},{id:"b",l:"10 – 30 min",f:r=>r.s>=600&&r.s<1800},
+{id:"c",l:"30 – 60 min",f:r=>r.s>=1800&&r.s<3600},{id:"d",l:"Over 60 min",f:r=>r.s>=3600}];
+const ADD=[{id:"1",l:"Today"},{id:"7",l:"Last 7 days"},{id:"30",l:"Last 30 days"}];
+const HAS=[{id:"sum",l:"AI summary",f:r=>r.sum},{id:"edit",l:"Edited",f:r=>r.srcEdit||r.sumEdit},{id:"rag",l:"RAG export",f:r=>r.rag}];
+const FORMATS=[["Plain text",".txt",0],["Plain text with timestamps",".txt",0],["Markdown",".md",0],
+["Markdown with timestamps",".md",0],["Spreadsheet",".csv",0],["Subtitles",".srt",0],["Web subtitles",".vtt",0],
+["Structured data",".json",0],["RAG chunks",".json",1]];
+
+const S={d:{q:"",sort:"new",dens:"default",coll:"all",src:null,has:[],dur:null,add:null,unread:false,sel:new Set(),all:false,rn:-1},
+        m:{q:"",sort:"new",dens:"default",coll:"all",src:null,has:[],dur:null,add:null,unread:false,sel:new Set(),all:false,pick:false}};
+/* CTX: waar een actie op slaat. Rij-actie = die ene rij. Bulk = de selectie. Nooit door elkaar. */
+let CTX={mode:"bulk",ids:[]};
+const ctxIds=()=>CTX.mode==="row"?CTX.ids:[...S[CTX.pane||"d"].sel];
+const esc=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const nOf=n=>n===1?"1 transcript":`${n} transcripts`;
+
+function filt(k){const s=S[k];
+  let r=ROWS.filter(x=>{
+    if(s.q&&!x.t.toLowerCase().includes(s.q.toLowerCase()))return false;
+    if(s.coll!=="all"){const c=COL.find(c=>c.id===s.coll);if(!c||x.c!==c.name)return false}
+    if(s.src&&x.src!==s.src)return false;
+    if(s.has.length&&!s.has.every(h=>HAS.find(y=>y.id===h).f(x)))return false;
+    if(s.dur){const d=DUR.find(d=>d.id===s.dur);if(d&&!d.f(x))return false}
+    if(s.add==="1"&&x.mins>1440)return false;
+    if(s.add==="7"&&x.mins>10080)return false;
+    if(s.unread&&!x.nw)return false;return true});
+  const c={new:(a,b)=>a.mins-b.mins,old:(a,b)=>b.mins-a.mins,long:(a,b)=>b.s-a.s,short:(a,b)=>a.s-b.s,
+    words:(a,b)=>b.w-a.w,az:(a,b)=>a.t.localeCompare(b.t),za:(a,b)=>b.t.localeCompare(a.t)}[s.sort];
+  return r.slice().sort(c)}
+function act(k){const s=S[k],o=[];
+  if(s.coll!=="all")o.push({k:"coll",l:COL.find(c=>c.id===s.coll).name});
+  if(s.src)o.push({k:"src",l:s.src==="auto"?"Auto-captions":"AI transcription"});
+  s.has.forEach(x=>o.push({k:"has",v:x,l:HAS.find(y=>y.id===x).l}));
+  if(s.dur)o.push({k:"dur",l:DUR.find(d=>d.id===s.dur).l});
+  if(s.add)o.push({k:"add",l:ADD.find(a=>a.id===s.add).l});
+  if(s.unread)o.push({k:"unread",l:"Unread only"});return o}
+function dropF(k,key,v){const s=S[k];
+  if(key==="coll")s.coll="all";else if(key==="src")s.src=null;else if(key==="has")s.has=s.has.filter(x=>x!==v);
+  else if(key==="dur")s.dur=null;else if(key==="add")s.add=null;else if(key==="unread")s.unread=false;render()}
+function clearAll(k){Object.assign(S[k],{coll:"all",src:null,has:[],dur:null,add:null,unread:false,q:""});
+  const i=document.getElementById(k+"Search");i.value="";i.parentElement.classList.remove("on");render()}
+function clearSel(k){S[k].sel.clear();S[k].all=false;render()}
+function exitPick(){S.m.pick=false;S.m.sel.clear();document.getElementById("mPk").classList.remove("active");render()}
+function tog(k,i,e){e.stopPropagation();const s=S[k];s.sel.has(i)?s.sel.delete(i):s.sel.add(i);s.all=false;CTX={mode:'bulk',pane:k};render()}
+function markRead(ids){ids.forEach(i=>ROWS[i].nw=0);render()}
+
+const PEN='<span class="pen">✎</span>';
+function badges(x){let h="";
+  if(x.src==="auto") h+=x.srcEdit?`<span class="bg auto-edit" title="Auto-captions · edited">CC${PEN}</span>`:`<span class="bg auto" title="Auto-captions">CC</span>`;
+  else                h+=x.srcEdit?`<span class="bg ai-edit" title="AI transcription · edited">AI${PEN}</span>`:`<span class="bg ai" title="AI transcription">AI</span>`;
+  if(x.sum) h+=x.sumEdit?`<span class="bg summary-edit" title="AI summary · edited">SUM${PEN}</span>`:`<span class="bg summary" title="AI summary">SUM</span>`;
+  if(x.rag) h+=`<span class="bg rag" title="RAG export available">RAG</span>`;return h}
+const collIco=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h6l2 2h8v10a2 2 0 0 1-2 2H4z"/></svg>`;
+
+function dRow(x,i){
+  const sel=S.d.sel.has(i);
+  const title=S.d.rn===i
+    ? `<input class="rn" value="${esc(x.t)}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'||event.key==='Escape'){S.d.rn=-1;render()}">`
+    : `<a class="ttl" href="#" dir="auto" title="${esc(x.t)}">${esc(x.t)}</a>`;
+  const coll=x.c&&S.d.coll==="all"?`<span class="coll" title="${esc(x.c)}">${collIco}<span dir="auto" style="overflow:hidden;text-overflow:ellipsis">${esc(x.c)}</span></span>`:"";
+  return `<div class="row${sel?" sel":""}${x.nw?" new":""}" draggable="true">
+    <button class="cb${sel?" on":""}" aria-label="Select" onclick="tog('d',${i},event)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L19 7"/></svg></button>
+    <span class="dot"></span>
+    <span class="tw">${title}<span class="sub2">${badges(x)}${coll}</span></span>
+    <span class="c-dur mono">${dur(x.s)}</span><span class="c-wd mono">${x.w.toLocaleString("en-US")}</span>
+    <span class="c-tm">${x.tm}</span>
+    <span class="c-ac">
+      <button aria-label="Export" onclick="openExport(event,'row',${i})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg></button>
+      <button aria-label="More actions" onclick="rowMenu(event,${i})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="5" cy="12" r=".6"/><circle cx="12" cy="12" r=".6"/><circle cx="19" cy="12" r=".6"/></svg></button>
+    </span></div>`}
+function mRow(x,i){
+  const sel=S.m.sel.has(i);
+  const coll=x.c&&S.m.coll==="all"?`<span class="coll" title="${esc(x.c)}">${collIco}<span dir="auto" style="overflow:hidden;text-overflow:ellipsis">${esc(x.c)}</span></span>`:"";
+  return `<div class="mr${sel?" sel":""}${x.nw?" new":""}">
+    <button class="cb${sel?" on":""}" aria-label="Select" onclick="tog('m',${i},event)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L19 7"/></svg></button>
+    <span class="dot"></span>
+    <div class="mm"><a class="mt" href="#" dir="auto">${esc(x.t)}</a>
+      <div class="mbadges">${badges(x)}${coll}</div>
+      <div class="mnum"><span class="mono">${dur(x.s)}</span><span class="sep">·</span><span class="mono">${x.w.toLocaleString("en-US")} words</span><span class="sep">·</span><span>${x.tm}</span></div></div>
+    <button class="mac" aria-label="More actions" onclick="mRowSheet(${i})"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="5" r=".6"/><circle cx="12" cy="12" r=".6"/><circle cx="12" cy="19" r=".6"/></svg></button>
+  </div>`}
+
+function render(){
+  ["d","m"].forEach(k=>{
+    const s=S[k],rs=filt(k),ids=rs.map(r=>ROWS.indexOf(r));
+    const L=document.getElementById(k+"List");
+    L.className=(k==="m"?"ml":"list")+(k==="d"&&s.dens==="compact"?" compact":"")+(k==="m"&&s.pick?" pick":"");
+    L.innerHTML=rs.map(x=>k==="d"?dRow(x,ROWS.indexOf(x)):mRow(x,ROWS.indexOf(x))).join("");
+    L.classList.toggle("hidden",!rs.length);
+    document.getElementById(k+"Empty").classList.toggle("hidden",!!rs.length);
+    const a=act(k);
+    document.getElementById(k+"Count").textContent=(a.length||s.q)
+      ?(k==="d"?`${rs.length} of 945 transcripts`:`${rs.length}/945`):(k==="d"?"945 transcripts":"945");
+    const bar=document.getElementById(k+"Cbar"),ch=document.getElementById(k+"Chips");
+    if(a.length){bar.classList.remove("hidden");
+      ch.innerHTML=a.map(x=>`<span class="chip">${esc(x.l)}<button aria-label="Remove" onclick="dropF('${k}','${x.k}','${x.v||""}')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>`).join("")
+        +`<button class="chip-x" onclick="clearAll('${k}')">Clear all</button>`}else bar.classList.add("hidden");
+    const all=ids.length&&ids.every(i=>s.sel.has(i)),some=ids.some(i=>s.sel.has(i));
+    const M=document.getElementById(k==="d"?"dMst":"mMst");
+    M.className="cb"+(all?" on":some?" mix":"");
+    M.innerHTML=all?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L19 7"/></svg>'
+      :'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="M6 12h12"/></svg>'});
+  const s=S.d,rs=filt("d"),ids=rs.map(r=>ROWS.indexOf(r));
+  const pageAll=ids.length&&ids.every(i=>s.sel.has(i));
+  document.getElementById("dSab").classList.toggle("hidden",!pageAll);
+  document.getElementById("dSabT").textContent=s.all?"All 945 transcripts are selected.":`All ${ids.length} on this page are selected.`;
+  document.getElementById("dSabB").textContent=s.all?"Clear selection":"Select all 945 transcripts";
+  document.getElementById("dBulk").classList.toggle("on",s.sel.size>0);
+  document.getElementById("dBulkN").textContent=(s.all?945:s.sel.size)+" selected";
+  document.getElementById("dMarkBtn").classList.toggle("hidden",![...s.sel].some(i=>ROWS[i].nw));
+  const msel=[...S.m.sel];
+  document.getElementById("mBulk").classList.toggle("on",msel.length>0);
+  document.getElementById("mBulkN").textContent=msel.length+" selected";
+  document.getElementById("mSB").classList.toggle("hidden",!S.m.pick);
+  document.getElementById("mSelT").textContent=msel.length+" selected";
+  const mi=filt("m").map(r=>ROWS.indexOf(r));
+  document.getElementById("mSelL").textContent=(mi.length&&mi.every(i=>S.m.sel.has(i)))?"Deselect all":"Select all";
+  mBulkBar(msel);
+  document.getElementById("dSL").textContent=SORTS.find(x=>x.id===s.sort).l.replace(" first","");
+  const fn=document.getElementById("dFN"),n=act("d").filter(x=>x.k!=="coll").length;
+  fn.style.display=n?"inline-block":"none";fn.textContent=n;
+  document.getElementById("dFB").classList.toggle("active",n>0);
+  document.getElementById("dRange").textContent=`1–${rs.length} of 945`;
+  document.getElementById("mApply").textContent=`Show ${filt("m").length} results`;
+  colls();sheets();nav();
+  const r=document.querySelector(".rn");if(r){r.focus();r.select()}}
+
+function nav(){
+  document.getElementById("dNav").innerHTML=
+    [["home","Home",0],["transcribe","Transcribe",0],["library","Library",1],["messages","Messages",0]]
+    .map(([n,l,on])=>`<a href="#" class="${on?"on":""}">${ico(n)}${l}</a>`).join("");
+  document.getElementById("mTab").innerHTML=
+    [["home","Home",0],["transcribe","Transcribe",0],["library","Library",1],["messages","Messages",0]]
+    .map(([n,l,on])=>`<a href="#" class="${on?"on":""}">${ico(n,19)}${l}</a>`).join("");
+  document.getElementById("legend").innerHTML=`<b>Badges</b>
+    <span class="i"><span class="bg auto">CC</span>auto-captions</span>
+    <span class="i"><span class="bg auto-edit">CC${PEN}</span>edited</span>
+    <span class="i"><span class="bg ai">AI</span>AI transcription</span>
+    <span class="i"><span class="bg ai-edit">AI${PEN}</span>edited</span>
+    <span class="i"><span class="bg summary">SUM</span>summary</span>
+    <span class="i"><span class="bg summary-edit">SUM${PEN}</span>edited</span>
+    <span class="i"><span class="bg rag">RAG</span>RAG export</span>
+    <span style="width:12px"></span><b>Icons</b>
+    ${["home","transcribe","library","messages"].map(n=>`<span class="ic">${ico(n,16)}${n}</span>`).join("")}`}
+
+function colls(){
+  const q=(document.getElementById("cF").value||"").toLowerCase();
+  document.getElementById("cL").innerHTML=COL.filter(c=>c.id==="all"||c.name.toLowerCase().includes(q))
+    .map(c=>`<button class="ci${S.d.coll===c.id?" on":""}" onclick="S.d.coll='${c.id}';clearSel('d')"
+      ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')"
+      ondrop="event.preventDefault();this.classList.remove('drop')">
+      ${c.id==="all"?ico("library",14):collIco.replace('width="11" height="11"','width="14" height="14"')}
+      <span class="nm" dir="auto" title="${esc(c.name)}">${esc(c.name)}</span><span class="ct">${c.n}</span></button>`).join("");
+  const c=COL.find(x=>x.id===S.m.coll);
+  document.getElementById("mCL").textContent=c.name;document.getElementById("mCC").textContent=c.n}
+document.getElementById("cF").addEventListener("input",colls);
+
+const opt=(l,on,fn,rd,tail)=>`<button class="opt" aria-checked="${on}" onclick="${fn}">
+ <span class="bx${rd?" rd":""}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="m5 12 5 5L19 7"/></svg></span>
+ <span>${l}</span>${tail?`<span class="tl">${tail}</span>`:""}</button>`;
+const actOpt=(ic,l,fn,dg,tail,dis)=>`<button class="opt act${dg?" dg":""}"${dis?" disabled":""} onclick="${dis?"":fn}">
+  <span class="ic">${ic}</span><span>${l}</span>${tail?`<span class="tl">${tail}</span>`:""}</button>`;
+function togHas(k,id){const s=S[k];s.has.includes(id)?s.has=s.has.filter(o=>o!==id):s.has.push(id);render();if(k==="d")bF()}
+function fBody(k,sfx){const s=S[k];
+  return `<h4>Status</h4>${opt("Unread only",s.unread,`S.${k}.unread=!S.${k}.unread;render();${sfx}`,0)}
+  <h4>Source</h4>${opt("Any source",!s.src,`S.${k}.src=null;render();${sfx}`,1)}
+  ${opt("Auto-captions (CC)",s.src==="auto",`S.${k}.src='auto';render();${sfx}`,1)}
+  ${opt("AI transcription (AI)",s.src==="ai",`S.${k}.src='ai';render();${sfx}`,1)}
+  <h4>Has</h4>${HAS.map(h=>opt(h.l,s.has.includes(h.id),`togHas('${k}','${h.id}')`,0)).join("")}
+  <h4>Duration</h4>${opt("Any duration",!s.dur,`S.${k}.dur=null;render();${sfx}`,1)}
+  ${DUR.map(d=>opt(d.l,s.dur===d.id,`S.${k}.dur='${d.id}';render();${sfx}`,1)).join("")}
+  <h4>Added</h4>${opt("Any time",!s.add,`S.${k}.add=null;render();${sfx}`,1)}
+  ${ADD.map(a=>opt(a.l,s.add===a.id,`S.${k}.add='${a.id}';render();${sfx}`,1)).join("")}`}
+function bF(){document.getElementById("dFP").innerHTML=fBody("d","bF()")+
+  `<div class="pf"><button class="btn" onclick="clearAll('d');bF()">Clear</button>
+   <button class="btn btn-p" onclick="document.getElementById('dFP').classList.add('hidden')">Done</button></div>`}
+function bS(){document.getElementById("dSP").innerHTML=SORTS.map(x=>
+  opt(x.l,S.d.sort===x.id,`S.d.sort='${x.id}';render();document.getElementById('dSP').classList.add('hidden')`,1)).join("")}
+
+const IC={open:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h10l6 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v6h6"/></svg>',
+ yt:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 4h6v6M20 4 10 14"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg>',
+ mail:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>',
+ exp:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>',
+ mv:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h6l2 2h8v10a2 2 0 0 1-2 2H4z"/><path d="M12 12v5M9.5 14.5 12 12l2.5 2.5"/></svg>',
+ out:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h6l2 2h8v10a2 2 0 0 1-2 2H4z"/><path d="M9 15h6"/></svg>',
+ ren:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20h4L20 8l-4-4L4 16z"/><path d="m14 6 4 4"/></svg>',
+ del:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
+ x:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+ coin:'<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 20 6.5v9L12 20l-8-4.5v-9z"/></svg>'};
+function place(m,e,w,rect){const r=rect||e.currentTarget.getBoundingClientRect();
+  m.style.top=(window.scrollY+r.bottom+6)+"px";
+  m.style.left=Math.max(8,Math.min(window.scrollX+r.right-w,window.innerWidth-w-14))+"px"}
+
+/* ---- context-samenvatting voor Move: waar zitten ze nú? ---- */
+function collSummary(ids){
+  const names=ids.map(i=>ROWS[i].c);
+  const uniq=[...new Set(names)];
+  const inColl=names.filter(Boolean).length;
+  if(!ids.length)return{txt:"",current:null,inColl:0,mixed:false};
+  if(uniq.length===1)return{txt:uniq[0]?`All ${nOf(ids.length)} are in “${uniq[0]}”.`:`${ids.length===1?"This transcript is":`All ${nOf(ids.length)} are`} not in a collection.`,
+    current:uniq[0],inColl,mixed:false};
+  const none=names.filter(x=>!x).length;
+  return{txt:`Currently spread over ${uniq.filter(Boolean).length} collections${none?`, ${none} in none`:""}. Moving replaces that for all ${ids.length}.`,
+    current:null,inColl,mixed:true}}
+
+function rowMenu(e,i){e.stopPropagation();e.preventDefault();
+  CTX={mode:"row",ids:[i],pane:"d"};
+  const x=ROWS[i],m=document.getElementById("rowMenu");
+  m.innerHTML=`
+  <button onclick="closeMenus()">${IC.open}Open transcript<span class="kbd">↵</span></button>
+  <button onclick="closeMenus()">${IC.yt}Watch on YouTube</button>
+  ${x.nw?`<button onclick="markRead([${i}]);closeMenus()">${IC.mail}Mark as read</button>`:""}
+  <hr>
+  <button onclick="openExport(event,'row',${i})">${IC.exp}Export<span class="arr"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></span></button>
+  <button onclick="openMove(event,'row',${i})">${IC.mv}Move to collection<span class="arr"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></span></button>
+  <button onclick="S.d.rn=${i};closeMenus();render()">${IC.ren}Rename<span class="kbd">F2</span></button>
+  <hr><button class="dg" onclick="closeMenus()">${IC.del}Delete</button>`;
+  m.classList.remove("hidden");place(m,e,214)}
+
+/* Export: extensie blijft extensie. PAID is een aparte badge, geen tariefregel. */
+function openExport(e,mode,i){e.stopPropagation();const RECT=e.currentTarget.getBoundingClientRect();document.getElementById("rowMenu").classList.add("hidden");
+  CTX=mode==="row"?{mode:"row",ids:[i],pane:"d"}:{mode:"bulk",pane:"d"};
+  const ids=ctxIds(),m=document.getElementById("subMenu");
+  const owned=ids.length===1&&ROWS[ids[0]].rag;
+  m.innerHTML=`<div class="hd">${mode==="bulk"?`Download ${nOf(S.d.all?945:ids.length)} as one ZIP`:"Download as"}</div>
+  ${FORMATS.map(([l,x,paid])=>`<button onclick="closeMenus()"><span>${l}</span>
+    ${paid?`<span class="paid${owned?" own":""}" style="margin-left:7px">${owned?"PURCHASED":"PAID"}</span>`:""}
+    <span class="ext">${x}</span></button>`).join("")}
+  ${owned?`<div class="note">You already bought a RAG export for this transcript — downloading it again is free.</div>`:""}
+  ${mode==="row"?`<hr><button onclick="closeMenus()"><span>Copy plain text</span><span class="ext">clipboard</span></button>`:""}`;
+  m.classList.remove("hidden");place(m,e,296,RECT)}
+
+/* Move: toont waar ze nu zitten, markeert de huidige collectie, Remove alleen als er iets te verwijderen is */
+function openMove(e,mode,i){e.stopPropagation();const RECT=e.currentTarget.getBoundingClientRect();document.getElementById("rowMenu").classList.add("hidden");
+  CTX=mode==="row"?{mode:"row",ids:[i],pane:"d"}:{mode:"bulk",pane:"d"};
+  const ids=ctxIds(),sum=collSummary(ids),m=document.getElementById("subMenu");
+  const draw=q=>{m.innerHTML=`<div class="hd">Move ${nOf(S.d.all?945:ids.length)}</div>
+    ${sum.txt?`<div class="note">${esc(sum.txt)}</div>`:""}
+    <div class="sq"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="sq" placeholder="Find a collection…" value="${q}"></div>
+    <div class="sc">${COL.filter(c=>c.id!=="all"&&c.name.toLowerCase().includes(q.toLowerCase()))
+      .map(c=>{const cur=sum.current===c.name;
+        return `<button onclick="closeMenus()"${cur?" disabled":""}>${collIco.replace('width="11" height="11"','width="14" height="14"')}
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="auto">${esc(c.name)}</span>
+        ${cur?`<span class="tick"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 5 5L19 7"/></svg></span>`
+          :sum.mixed&&ROWS.some(r=>ids.includes(ROWS.indexOf(r))&&r.c===c.name)?`<span class="mixed">some</span>`
+          :`<span class="ext">${c.n}</span>`}</button>`}).join("")
+      ||`<div style="padding:10px;font-size:13px;color:var(--fg-muted)">No match</div>`}</div>
+    <hr>
+    <button onclick="closeMenus()"${sum.inColl?"":" disabled"}>${IC.out}${sum.inColl?`Remove ${nOf(sum.inColl)} from collection`:"Not in any collection"}</button>
+    <button onclick="closeMenus()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New collection…</button>`;
+    const inp=m.querySelector("#sq");inp.oninput=()=>{const v=inp.value;draw(v);m.querySelector("#sq").focus()};inp.focus()};
+  draw("");m.classList.remove("hidden");place(m,e,268,RECT)}
+function closeMenus(){document.getElementById("rowMenu").classList.add("hidden");document.getElementById("subMenu").classList.add("hidden")}
+
+/* ---- mobiel ---- */
+function mBulkBar(sel){
+  const anyU=sel.some(i=>ROWS[i].nw),anyC=sel.some(i=>ROWS[i].c);
+  const more=anyU||anyC;
+  document.getElementById("mBulkActs").innerHTML=
+    `<button onclick="mOpenMove('bulk')">${IC.mv.replace('width="16" height="16"','width="18" height="18"')}Move</button>
+     <button onclick="mOpenExport('bulk')">${IC.exp.replace('width="16" height="16"','width="18" height="18"')}Export</button>
+     <button class="dg">${IC.del.replace('width="16" height="16"','width="18" height="18"')}Delete</button>
+     <button onclick="${more?"openSheet('mMoreSheet')":"exitPick()"}">${more
+       ?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="12" r=".7"/><circle cx="12" cy="12" r=".7"/><circle cx="19" cy="12" r=".7"/></svg>More'
+       :IC.x.replace('width="16" height="16"','width="18" height="18"')+"Done"}</button>`}
+function mOpenMove(mode,i){CTX=mode==="row"?{mode:"row",ids:[i],pane:"m"}:{mode:"bulk",pane:"m"};sheets();closeSheets();openSheet("mMoveSheet")}
+function mOpenExport(mode,i){CTX=mode==="row"?{mode:"row",ids:[i],pane:"m"}:{mode:"bulk",pane:"m"};sheets();closeSheets();openSheet("mExpSheet")}
+function mRowSheet(i){CTX={mode:"row",ids:[i],pane:"m"};const x=ROWS[i];
+  document.getElementById("mRowBody").innerHTML=
+    `<div style="padding:2px 8px 8px;font-size:13px;color:var(--fg-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden" dir="auto">${esc(x.t)}</div>`
+    +actOpt(IC.open,"Open transcript","closeSheets()")
+    +actOpt(IC.yt,"Watch on YouTube","closeSheets()")
+    +(x.nw?actOpt(IC.mail,"Mark as read",`markRead([${i}]);closeSheets()`):"")
+    +actOpt(IC.exp,"Export…",`mOpenExport('row',${i})`)
+    +actOpt(IC.mv,"Move to collection…",`mOpenMove('row',${i})`)
+    +actOpt(IC.ren,"Rename","closeSheets()")
+    +actOpt(IC.del,"Delete","closeSheets()",1);
+  sheets();openSheet("mRowSheet")}
+
+function sheets(){
+  document.getElementById("mFBody").innerHTML="<h4>Sort</h4>"+
+    SORTS.map(x=>opt(x.l,S.m.sort===x.id,`S.m.sort='${x.id}';render()`,1)).join("")+fBody("m","");
+  const q=(document.getElementById("mCF")?.value||"").toLowerCase();
+  document.getElementById("mCBody").innerHTML=COL.filter(c=>c.id==="all"||c.name.toLowerCase().includes(q))
+    .map(c=>`<button class="opt" aria-checked="${S.m.coll===c.id}" onclick="S.m.coll='${c.id}';clearSel('m');closeSheets()">
+      <span class="bx rd"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="m5 12 5 5L19 7"/></svg></span>
+      <span dir="auto" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</span>
+      <span class="tl">${c.n}</span></button>`).join("");
+
+  const ids=(CTX.pane==="m"&&CTX.mode==="row")?CTX.ids:[...S.m.sel];
+  const sum=collSummary(ids);
+  document.getElementById("mMoveN").textContent=nOf(ids.length);
+  document.getElementById("mExpN").textContent=nOf(ids.length);
+  document.getElementById("mMoreN").textContent=nOf([...S.m.sel].length);
+  document.getElementById("mExpTitle").textContent=ids.length>1?"Export as one ZIP":"Export";
+  document.getElementById("mMoveBody").innerHTML=
+    (sum.txt?`<div class="note">${esc(sum.txt)}</div>`:"")
+    +COL.filter(c=>c.id!=="all").map(c=>{const cur=sum.current===c.name;
+      return actOpt(collIco.replace('width="11" height="11"','width="16" height="16"'),esc(c.name),"closeSheets()",0,
+        cur?"current":(sum.mixed&&ids.some(i=>ROWS[i].c===c.name)?"some":""),cur)}).join("")
+    +`<div style="border-top:1px solid var(--border-subtle);margin:6px 8px"></div>`
+    +actOpt(IC.out,sum.inColl?`Remove ${nOf(sum.inColl)} from collection`:"Not in any collection","closeSheets()",0,"",!sum.inColl)
+    +actOpt('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',"New collection…","closeSheets()");
+  const owned=ids.length===1&&ROWS[ids[0]].rag;
+  document.getElementById("mExpBody").innerHTML=FORMATS.map(([l,x,paid])=>
+    `<button class="opt act" onclick="closeSheets()"><span class="ic">${IC.exp}</span><span>${l}</span>
+     ${paid?`<span class="paid${owned?" own":""}" style="margin-left:7px">${owned?"PURCHASED":"PAID"}</span>`:""}
+     <span class="tl">${x}</span></button>`).join("")
+    +(owned?`<div class="note">You already bought a RAG export for this transcript — downloading it again is free.</div>`:"");
+  const sel=[...S.m.sel],anyU=sel.some(i=>ROWS[i].nw),anyC=sel.some(i=>ROWS[i].c);
+  document.getElementById("mMoreBody").innerHTML=
+    (anyU?actOpt(IC.mail,`Mark ${nOf(sel.filter(i=>ROWS[i].nw).length)} as read`,`markRead([${sel.filter(i=>ROWS[i].nw)}]);closeSheets()`):"")
+    +(anyC?actOpt(IC.out,`Remove ${nOf(sel.filter(i=>ROWS[i].c).length)} from collection`,"closeSheets()"):"")
+    +actOpt(IC.x,"Exit selection","exitPick();closeSheets()")}
+
+document.addEventListener("click",e=>{
+  if(!e.target.closest("#rowMenu")&&!e.target.closest("#subMenu"))closeMenus();
+  if(!e.target.closest("#dFP")&&!e.target.closest("#dFB"))document.getElementById("dFP").classList.add("hidden");
+  if(!e.target.closest("#dSP")&&!e.target.closest("#dSB"))document.getElementById("dSP").classList.add("hidden")});
+document.getElementById("dFB").onclick=e=>{e.stopPropagation();bF();document.getElementById("dSP").classList.add("hidden");document.getElementById("dFP").classList.toggle("hidden")};
+document.getElementById("dSB").onclick=e=>{e.stopPropagation();bS();document.getElementById("dFP").classList.add("hidden");document.getElementById("dSP").classList.toggle("hidden")};
+["d","m"].forEach(k=>{const i=document.getElementById(k+"Search");
+  i.addEventListener("input",()=>{S[k].q=i.value;i.parentElement.classList.toggle("on",!!i.value);render()});
+  document.getElementById(k+"SX").onclick=()=>{i.value="";S[k].q="";i.parentElement.classList.remove("on");render()}});
+document.getElementById("dD").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b));S.d.dens=b.dataset.d;render()};
+document.getElementById("dMst").onclick=()=>{const ids=filt("d").map(r=>ROWS.indexOf(r)),s=S.d;
+  ids.every(i=>s.sel.has(i))?(s.sel.clear(),s.all=false):ids.forEach(i=>s.sel.add(i));CTX={mode:"bulk",pane:"d"};render()};
+document.getElementById("dSabB").onclick=()=>{S.d.all=!S.d.all;if(!S.d.all)S.d.sel.clear();render()};
+document.getElementById("mMst").onclick=()=>{const ids=filt("m").map(r=>ROWS.indexOf(r)),s=S.m;
+  ids.every(i=>s.sel.has(i))?s.sel.clear():ids.forEach(i=>s.sel.add(i));CTX={mode:"bulk",pane:"m"};render()};
+document.getElementById("mSelL").onclick=()=>document.getElementById("mMst").click();
+document.getElementById("mPk").onclick=e=>{S.m.pick=!S.m.pick;e.currentTarget.classList.toggle("active",S.m.pick);
+  if(!S.m.pick)S.m.sel.clear();CTX={mode:"bulk",pane:"m"};render()};
+document.getElementById("mFB").onclick=()=>openSheet("mFSheet");
+document.getElementById("mCB").onclick=()=>openSheet("mCSheet");
+document.getElementById("mCF").addEventListener("input",sheets);
+function openSheet(id){document.getElementById("mScrim").classList.add("on");document.getElementById(id).classList.add("on")}
+function closeSheets(){document.getElementById("mScrim").classList.remove("on");
+  ["mFSheet","mCSheet","mMoveSheet","mExpSheet","mMoreSheet","mRowSheet"].forEach(i=>document.getElementById(i).classList.remove("on"))}
+document.getElementById("tseg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b));
+  document.documentElement.setAttribute("data-theme",b.dataset.t)};
+document.getElementById("vseg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b));const v=b.dataset.v;
+  document.getElementById("f-desk").classList.toggle("hidden",v==="mobile"||v==="narrow");
+  document.getElementById("f-mob").classList.toggle("hidden",v==="desktop");
+  const w=v==="narrow"?360:404;document.getElementById("mFrame").style.width=w+"px";
+  document.getElementById("mLbl").textContent=`Mobile · ${w} × 850`};
+document.addEventListener("keydown",e=>{
+  if(e.key==="/"&&!/input/i.test(e.target.tagName)){e.preventDefault();document.getElementById("dSearch").focus()}
+  if(e.key==="Escape"){closeMenus();closeSheets();if(S.d.rn>-1){S.d.rn=-1;render()}}});
+render();
+</script>

@@ -1,3 +1,5 @@
+[2026-07-31 20:00] feat (Library-lijst herontwerp — Fase 1, ADR-083): grote herbouw van /dashboard/library. **DB:** migratie `20260731160000_transcripts_list_view` — view `transcripts_list` (`security_invoker=true`) met lichte kolommen + `has_summary`/`has_summary_edit`/`has_edit`/`has_rag` (COALESCE+jsonb_typeof-guard) zodat de lijst nooit meer de zware `transcript`-jsonb ophaalt. **Frontend (lokaal, geen marketing-impact):** `page.tsx` herschreven (query van de view, expliciete kolommen, server-side filters, sort+dir+q in URL, twee counts "N of TOTAL", grid+thumbnails weg, chips + Clear all, twee lege staten); nieuw `LibraryControls.tsx` (search + Filter/Sort dropdowns + Density + mobiele bottom-sheets), `filters.ts` (URL↔query↔chips), `badges.tsx` (mono `CC`/`AI`/`SUM`/`RAG`, edited = `-soft`-tint + potlood), `MoveToCollectionMenu.tsx` (vervangt-semantiek, gedeeld rij+bulk), `TranscriptList.tsx` volledig herbouwd (twee-regelige rij + Compact-dichtheid, `dir="auto"` overal, amberen unread-stip i.p.v. NEW-badge, tri-state select-all = alleen huidige pagina, rij-⋯ gescheiden van bulk, export-menu 9 formaten + RAG PAID/PURCHASED, context-afhankelijke bulk-balk, mobiele row/bulk-sheets). `app-sidebar.tsx` (collectie-filterveld + mono-counts + Home=beehive + Messages `Inbox`→`MessageSquare`), `MobileTabBar.tsx` (idem icons), nieuw `components/icons/Beehive.tsx`. Rommel mee: `select("*")`→view; dode TS-velden `video_url`/`playlist_id` weg; source-map + LESSONS + system.md honeycomb-opacity gecorrigeerd naar code-waarde `0.03/0.045`; sidebar-opslag = dode berekening (gemeld, niet stil verwijderd). **Verificatie:** `pnpm build` groen; view-booleans byte-exact vs basistabel (952 rijen); end-to-end via authenticated anon-client (test1) — door de view precies 3 eigen geseede rijen, niet de 952 → security_invoker-RLS bewezen; alle filters teruggerekend; Arabische titel round-tript; seed opgeruimd. Playwright-contract behouden (rij-link + `placeholder="Search…"`), data-testids toegevoegd. Fase 2/3 volgen. | gewijzigd: supabase/migrations/20260731160000_transcripts_list_view.sql (nieuw), apps/app/src/app/dashboard/library/page.tsx, apps/app/src/components/library/{TranscriptList,LibraryControls,filters,badges,MoveToCollectionMenu}.tsx, apps/app/src/components/{app-sidebar,dashboard/MobileTabBar}.tsx, apps/app/src/components/icons/Beehive.tsx (nieuw), docs/wiki/decisions/083-library-list-redesign.md (nieuw), docs/wiki/INDEX.md, docs/wiki/design/{library-source-map,system}.md, docs/LESSONS.md, docs/LOG.md
+---
 [2026-07-31 00:00] docs (Library source-map — read-only kaart voor het herontwerp): nieuw `docs/wiki/design/library-source-map.md`, geïnventariseerd tegen broncode + live DB (project uivlvwcplcaixkzuiwsv). Render-boom (lokaal vs shared/marketing-impact), verbatim lijst-query + volledige 22-koloms transcripts-inventaris (incl. niet-geselecteerde velden), verbatim toolbar/rij/collecties-sidebar/mobiel, state & persistentie-tabel (alleen ?page/?collection + page-size/sidebar-collapsed overleven refresh; zoek/sort/view/thumbnails resetten). Bewijs-antwoorden: full-text = query-taak want tekst leeft in Postgres `transcript` jsonb (951/951 NOT NULL, geen R2, geen tsvector/GIN-index); `language`-kolom bestaat maar 180/951 (19%) gevuld + niet-genormaliseerd (en/en-GB); thumbnail-mobiel-verberging = `TranscriptList.tsx:679` `hidden sm:block`. system.md §Library Patterns getoetst: chip-filters NEE, MoreHorizontal NEE, floating bulk-bar JA, geen aparte 0-resultaten-lege-staat. Honeycomb = DashboardBackdrop `opacity-[0.03] dark:opacity-[0.045]` (LESSONS/system.md-getallen gedrift). Detailpagina + Tiptap-optuiging beknopt. 7 rommel-items gerapporteerd (o.a. `select("*")` haalt volledige transcript-jsonb voor lijst; sidebar-500MB-meter ≠ echte 100MiB-cap ADR-078; 2 TS-velden zonder DB-kolom). Read-only: geen code aangeraakt. | gewijzigd: docs/wiki/design/library-source-map.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
 ---
 [2026-07-15 03:20] docs (Finance-tab FASE 5 — ADRs + wiki + LESSONS): ADR-059 (nachtelijke finance-snapshot + live-overlay: range-refactor byte-identiek, pg_cron DST-aware, bevries alleen measured) + ADR-060 (accrual-kostenmodel: reeks/occurrence, changed-from-this-month, entered=external-only, Stripe-fee uit fee_details = measured OPEX op verkoopdatum). INDEX.md-beslissingentabel bijgewerkt (059/060). database-schema.md: nieuwe sectie "Finance-tab capture + accrual" (finance_daily_snapshot, finance_settings, credit_transactions point-in-time cols + trigger, cache_hit/source_kind/playlist_id, usage_logs.source, opex_expenses accrual, _geld_scope range, snapshot_finance_day, opex_accrual, admin_finance_summary). credit-system.md: periode-model-noot. LESSONS: 5 regels (rpc-regressie-embed / net-profit-goodwill-dubbeltelling / amsterdam-dag-grain / stripe-fee-details / mcp-execute-sql-laatste-statement). | gewijzigd: docs/wiki/decisions/{059-finance-snapshot-and-live-overlay,060-accrual-cost-model-and-stripe-fee}.md (nieuw), docs/wiki/INDEX.md, docs/wiki/architecture/{database-schema,credit-system}.md, docs/LESSONS.md, docs/LOG.md
@@ -14339,4 +14341,53 @@ Changed: apps/app/src/app/admin/operations/betterstack.ts
 apps/app/src/app/admin/operations/page.tsx
 docs/LOG.md
 docs/wiki/operations/monitoring.md
+---
+[2026-07-31 21:39] commit: feat(library): Library-lijst herontwerp — Fase 1 (ADR-083)
+
+Herbouw van /dashboard/library tot een dichte, filterbare, deelbare,
+RTL-correcte werklijst.
+
+DB: migratie 20260731160000 — view transcripts_list (security_invoker),
+lichte kolommen + has_summary/has_summary_edit/has_edit/has_rag, zodat de
+lijst nooit meer de zware transcript-jsonb ophaalt.
+
+Frontend (lokaal apps/app, geen marketing-impact):
+- page.tsx: query van de view, expliciete kolommen, server-side filters
+  (Status/Source/Has/Duration/Added), sort+dir+q in de URL, twee counts
+  "N of TOTAL", grid+thumbnails weg, chips + Clear all, twee lege staten
+- LibraryControls/filters/badges/MoveToCollectionMenu (nieuw)
+- TranscriptList herbouwd: twee-regelige rij + Compact, dir="auto" overal,
+  amberen unread-stip, tri-state select-all (alleen huidige pagina),
+  rij-⋯ gescheiden van bulk, export 9 formaten + RAG PAID/PURCHASED,
+  context-afhankelijke bulk-balk, mobiele bottom-sheets
+- sidebar collectie-filter + mono-counts; Home=beehive; Messages icon swap
+
+Rommel: select("*")→view; dode TS-velden video_url/playlist_id weg;
+honeycomb-opacity in LESSONS/system.md gecorrigeerd naar code 0.03/0.045;
+sidebar-opslag = dode berekening (gemeld).
+
+Verificatie: pnpm build groen (2/2); view-booleans byte-exact vs basistabel
+(952 rijen); end-to-end via authenticated anon-client (test1) ziet door de
+view precies 3 eigen geseede rijen, niet de 952 -> security_invoker-RLS
+bewezen; alle filters teruggerekend; Arabische titel round-tript; seed
+opgeruimd. Playwright-contract behouden + data-testids.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/library/page.tsx
+apps/app/src/components/app-sidebar.tsx
+apps/app/src/components/dashboard/MobileTabBar.tsx
+apps/app/src/components/icons/Beehive.tsx
+apps/app/src/components/library/LibraryControls.tsx
+apps/app/src/components/library/MoveToCollectionMenu.tsx
+apps/app/src/components/library/TranscriptList.tsx
+apps/app/src/components/library/badges.tsx
+apps/app/src/components/library/filters.ts
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/083-library-list-redesign.md
+docs/wiki/design/library-source-map.md
+docs/wiki/design/mockups/library-redesign-mockupv2.html
+docs/wiki/design/system.md
+supabase/migrations/20260731160000_transcripts_list_view.sql
 ---
