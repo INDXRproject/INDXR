@@ -764,7 +764,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       if (!response.ok) {
         const errorData = await response.json()
         if (errorData.code === 'storage_full') {
-          setError({ message: "Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged." })
+          setError({ message: "Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged.", errorType: 'storage_full' })
           setLoading(false)
           setWhisperStatus('idle')
           return
@@ -859,7 +859,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       if (!response.ok) {
         const errorData = await response.json()
         if (errorData.code === 'storage_full') {
-          setError({ message: "Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged." })
+          setError({ message: "Your library is full, so new transcriptions are paused. Delete some transcripts from your library, or buy more space on your Account page, then try again. No credits were charged.", errorType: 'storage_full' })
           setLoading(false)
           setWhisperStatus('idle')
           return

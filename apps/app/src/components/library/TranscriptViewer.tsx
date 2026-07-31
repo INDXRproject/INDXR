@@ -1220,16 +1220,27 @@ export function TranscriptViewer({
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-fg-muted">
-                Cost:{" "}
-                <span className="font-semibold text-fg">
-                  {ragCost} credit{ragCost !== 1 ? "s" : ""}
-                </span>
-              </p>
+              {/* Cost breakdown — what it costs, your balance, what remains */}
+              <div className="rounded-lg border border-border bg-surface-elevated/30 p-3 text-sm space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-fg-muted">This export</span>
+                  <span className="font-semibold text-fg tabular-nums">{ragCost} credit{ragCost !== 1 ? "s" : ""}</span>
+                </div>
+                {credits !== null && (
+                  <div className="flex items-center justify-between text-xs text-fg-muted">
+                    <span>Balance</span>
+                    <span className="tabular-nums">{credits} → {Math.max(0, credits - ragCost)} after</span>
+                  </div>
+                )}
+                <p className="text-xs text-fg-muted pt-1 border-t border-border-subtle mt-1">
+                  One-time — re-downloading any preset is free afterwards.
+                </p>
+              </div>
               {ragInsufficientCredits && (
                 <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  Not enough credits. Purchase more to continue.
+                  <span>Not enough credits.</span>
+                  <a href="/dashboard/credits" className="ml-auto font-medium underline hover:no-underline">Buy credits →</a>
                 </div>
               )}
               <DialogFooter>
