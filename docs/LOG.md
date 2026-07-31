@@ -14319,3 +14319,24 @@ Changed: docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/design/library-source-map.md
 ---
+
+[2026-07-31 17:30] taak: Uptime in dashboard (optie B). operations/betterstack.ts: server-side fetch van BetterStack-API (monitors + heartbeats, no-store, 5s-timeout, env-gated op BETTERSTACK_API_TOKEN, volledig graceful). Uptime-paneel toont nu de 3 monitors + worker-heartbeat live (groen/rood/amber/grijs) i.p.v. het placeholder. Token = Vercel env-var op indxr-app (server-only). | gewijzigd: apps/app/src/app/admin/operations/betterstack.ts apps/app/src/app/admin/operations/page.tsx docs/wiki/operations/monitoring.md | geverifieerd: eslint + tsc schoon. OPEN: Khidr zet BETTERSTACK_API_TOKEN op Vercel indxr-app.[2026-07-31 17:25] commit: feat(ops): live BetterStack uptime in the Operations dashboard (option B)
+
+Het Uptime-paneel toont nu de status van de 3 URL-monitors + de worker-heartbeat LIVE, i.p.v. het
+'nog niet ingericht'-placeholder. operations/betterstack.ts doet een server-side fetch op de
+BetterStack-API (/api/v2/monitors + /heartbeats), Bearer-token uit BETTERSTACK_API_TOKEN (server-only
+env-var op het Vercel indxr-app-project, geen NEXT_PUBLIC_ dus nooit naar de browser).
+
+Env-gated + volledig graceful: geen token -> nette placeholder; API-fout/timeout (5s AbortController)
+-> een 'unreachable'-regel; het breekt NOOIT de rest van het dashboard. cache:no-store want uptime is
+live. Status -> kleur: up=groen, down=rood, pending/validating=amber, paused/maintenance=grijs.
+Volledige historie/response-tijden/incidenten blijven in de BetterStack-UI.
+
+Geverifieerd: eslint + tsc schoon. Zet BETTERSTACK_API_TOKEN op Vercel (indxr-app) -> paneel licht op.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/operations/betterstack.ts
+apps/app/src/app/admin/operations/page.tsx
+docs/LOG.md
+docs/wiki/operations/monitoring.md
+---

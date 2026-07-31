@@ -6,6 +6,7 @@ import {
 } from "../adminTypes"
 import { DashboardControls } from "../_components/DashboardControls"
 import { InfoHint } from "../_components/InfoHint"
+import { fetchUptime } from "./betterstack"
 
 export const dynamic = "force-dynamic"
 
@@ -18,6 +19,17 @@ function ms(n: number | null): string {
 }
 function num(n: number): string {
   return n.toLocaleString()
+}
+
+// BetterStack status → dot colour. up=green, down=red, pending/validating=amber, else grey.
+function uptimeDot(status: string): string {
+  switch (status) {
+    case "up": return "bg-success"
+    case "down": return "bg-error"
+    case "pending":
+    case "validating": return "bg-warning"
+    default: return "bg-fg-subtle" // paused / maintenance / unknown
+  }
 }
 
 // ── small building blocks ─────────────────────────────────────────────────────────────────────────
@@ -294,9 +306,12 @@ export default async function AdminOperationsPage({
   const excludeInternal = sp.test === "real"
 
   const admin = createAdminClient()
-  const { data } = await admin.rpc("admin_operations_v3", {
-    p_from: win.from, p_to: win.to, p_exclude_internal: excludeInternal,
-  })
+  const [{ data }, uptime] = await Promise.all([
+    admin.rpc("admin_operations_v3", {
+      p_from: win.from, p_to: win.to, p_exclude_internal: excludeInternal,
+    }),
+    fetchUptime(), // BetterStack live status (option B) — env-gated + graceful
+  ])
   const o = data as OperationsV3 | null
   if (!o) {
     return <div className="rounded-xl border bg-surface p-6 text-sm text-fg-muted">Operations data unavailable.</div>
@@ -491,15 +506,41 @@ export default async function AdminOperationsPage({
 
       </>)}
 
-      {/* ── UPTIME (2d) — honest placeholder until external monitoring is wired ── */}
+      {/* ── UPTIME (2d) — live from BetterStack (option B) ── */}
       <section className="space-y-3">
         <h2 className="flex items-center text-xs font-semibold uppercase tracking-wider text-fg-subtle">
-          Uptime<InfoHint text="Site/API availability — separate from whether jobs succeed. Needs an external monitor (e.g. Better Stack) hitting indxr.ai, app.indxr.ai and the Railway /health endpoint. Shown here so it isn't invisible on the list." />
+          Uptime<InfoHint text="Site/API availability + the worker heartbeat, pulled live from BetterStack (uptime.betterstack.com/api/v2). Separate from whether jobs succeed. Green=up, red=down, amber=pending/validating, grey=paused/maintenance." />
         </h2>
-        <div className="rounded-xl border border-dashed bg-surface p-5 text-sm text-fg-muted">
-          <p className="font-medium text-fg">Not set up yet</p>
-          <p className="mt-1 text-xs">Availability monitoring is not wired yet. Once an external monitor (Better Stack) is watching <span className="font-mono">indxr.ai</span>, <span className="font-mono">app.indxr.ai</span> and <span className="font-mono">/health</span>, real uptime lands here — no invented 99.9%.</p>
-        </div>
+        <Card>
+          {!uptime.configured ? (
+            <div className="text-sm text-fg-muted">
+              <p className="font-medium text-fg">Not wired yet</p>
+              <p className="mt-1 text-xs">Set <span className="font-mono">BETTERSTACK_API_TOKEN</span> on this app in Vercel and the monitors + worker heartbeat show here live.</p>
+            </div>
+          ) : !uptime.ok ? (
+            <div className="text-sm">
+              <p className="font-medium text-warning">BetterStack unreachable</p>
+              <p className="mt-1 text-xs text-fg-muted">Couldn&apos;t read the status ({uptime.error ?? "unknown error"}). Token valid? This box self-recovers on the next load.</p>
+            </div>
+          ) : uptime.items.length === 0 ? (
+            <p className="py-2 text-sm text-fg-subtle">No monitors or heartbeats configured in BetterStack yet.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {uptime.items.map((it, i) => (
+                <div key={`${it.kind}-${i}`} className="flex items-center gap-2 text-sm">
+                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${uptimeDot(it.status)}`} />
+                  <span className="min-w-0 flex-1 truncate">
+                    <span className="text-fg">{it.name}</span>
+                    {it.kind === "heartbeat" && <span className="ml-1.5 rounded bg-surface-sunken px-1 text-[10px] uppercase tracking-wide text-fg-subtle">heartbeat</span>}
+                    {it.url && <span className="ml-1.5 truncate font-mono text-[11px] text-fg-subtle">{it.url}</span>}
+                  </span>
+                  <span className="shrink-0 text-xs font-medium tabular-nums text-fg-muted">{it.status}</span>
+                </div>
+              ))}
+              <p className="mt-2 border-t pt-2 text-[11px] text-fg-subtle">Live from BetterStack. Full history, response times &amp; incidents live in the BetterStack dashboard.</p>
+            </div>
+          )}
+        </Card>
       </section>
 
       <p className="border-t pt-3 text-[11px] text-fg-subtle">
