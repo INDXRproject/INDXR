@@ -111,7 +111,7 @@ export default async function DashboardPage() {
                 <p className="text-xs text-fg-muted mt-0.5">1 credit = 1 minute of AI transcription</p>
               </div>
             </div>
-            <Link href="/dashboard/billing">
+            <Link href="/dashboard/credits">
               <Button variant="outline" size="sm">Buy more</Button>
             </Link>
           </div>

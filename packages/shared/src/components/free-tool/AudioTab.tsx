@@ -472,7 +472,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           {...resolveErrorCopy(error.code, {
             fallbackMessage: error.message,
             availableCredits: user ? credits : null,
-            billingHref: appHref('/dashboard/billing'),
+            billingHref: appHref('/dashboard/credits'),
             libraryHref: appHref('/dashboard/library'),
             accountHref: appHref('/dashboard/account'),
             contactHref: user ? appHref('/dashboard/messages?tab=support') : marketingHref('/contact'),
@@ -632,7 +632,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           <div className="flex flex-wrap items-center gap-3 border-t border-border bg-surface-elevated px-4 py-3">
             <BalanceLine have={credits} cost={estimatedCredits} />
             {!hasEnoughCredits && credits !== null && (
-              <a href={appHref('/dashboard/billing')} className="ml-auto">
+              <a href={appHref('/dashboard/credits')} className="ml-auto">
                 <Button size="sm" className="h-9">Buy credits</Button>
               </a>
             )}

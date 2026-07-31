@@ -485,7 +485,7 @@ export function TranscriptCard({
       {showInsufficientCreditsForRag && (
         <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-error/30 bg-error/5 px-4 py-3 text-sm">
           <span className="text-fg">Not enough credits for RAG export — need {ragCost} credit{ragCost !== 1 ? 's' : ''}.</span>
-          <a href={appHref('/dashboard/billing')} className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors whitespace-nowrap">
+          <a href={appHref('/dashboard/credits')} className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors whitespace-nowrap">
             Buy credits →
           </a>
         </div>

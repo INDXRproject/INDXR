@@ -29,7 +29,7 @@ export function BuyButton({ pkg, featured = false, compact = false, className }:
 
   const handlePurchase = async () => {
     setRedirecting(true)
-    const target = appHref(`/dashboard/billing?checkout=${pkg.id}`)
+    const target = appHref(`/dashboard/credits?checkout=${pkg.id}`)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 

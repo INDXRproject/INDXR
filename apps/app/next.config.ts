@@ -25,6 +25,9 @@ const nextConfig: NextConfig = {
       { source: '/login',           destination: `${MARKETING_URL}/login`,           permanent: true },
       { source: '/signup',          destination: `${MARKETING_URL}/signup`,          permanent: true },
       { source: '/forgot-password', destination: `${MARKETING_URL}/forgot-password`, permanent: true },
+      // Billing → Credits rename (ADR-084). Query (?checkout=…) is preserved by Next automatically.
+      { source: '/dashboard/billing',          destination: '/dashboard/credits',          permanent: true },
+      { source: '/dashboard/billing/:path*',   destination: '/dashboard/credits/:path*',   permanent: true },
     ]
   },
   images: {

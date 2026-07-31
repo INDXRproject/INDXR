@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Settings, LogOut, BookOpen, Newspaper, Shield, Scale } from "lucide-react"
+import { User, Settings, LogOut, BookOpen, Newspaper, Shield, Scale, Coins } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import {
   Sheet,
@@ -46,6 +46,11 @@ export function AvatarDropdown() {
         <SheetClose asChild>
           <a href="/dashboard/account" className={rowClass}>
             <User className="h-4 w-4" /> Account
+          </a>
+        </SheetClose>
+        <SheetClose asChild>
+          <a href="/dashboard/credits" className={rowClass}>
+            <Coins className="h-4 w-4" /> Credits
           </a>
         </SheetClose>
         <SheetClose asChild>

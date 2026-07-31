@@ -1,3 +1,5 @@
+[2026-07-31 22:00] feat (Fase 3 — /dashboard/billing → /dashboard/credits, ADR-084): **financieel-kritiek.** Route `git mv` billing→credits (page/success/cancel, historie behouden). **Geld op één plek:** Credits = money-hub (saldo, pakketten `BillingPurchaseGrid` incl. `?checkout=`-deeplink, `TransactionHistoryCard` verhuisd van Account, `PurchaseHistoryCard` mét factuur). **Account** getrimd tot identiteit/opslag/support (`ProfileSettingsCard`+`StorageMeterCard`+`SentryFeedbackCard`; beide history-cards + hun fetches eruit). **Stripe** `checkout/route.ts` `success_url`/`cancel_url` → `/dashboard/credits/{success,cancel}` (direct, geen redirect-hop op de callback). **Redirect** (permanent) in `apps/app/next.config.ts`: `/dashboard/billing`(+`/:path*`) → credits — vangt oude bookmarks én een in-flight Stripe-sessie zodat een terugkeer nooit op 404 landt. **Koop-routes → Credits:** topbar credit-pil (nu mét `+`-affordance, dé koop-route desktop+mobiel) → `/dashboard/credits`; dashboard "Buy more"; avatar-menu nieuw "Credits"-item; shared insufficient-credits-links (`TranscriptCard`, `PlaylistAvailabilitySummary`, `VideoTab`×3, `AudioTab`×2, `errorCopy billingHref`); marketing `BuyButton` deep-link. Support-componentmap `components/dashboard/billing/` NIET hernoemd (churn). Geverifieerd: `pnpm build` groen (2/2), routes = `/dashboard/credits{,/success,/cancel}`, geen billing-routes. Volledige Stripe-test-mode-betaling = handmatige stap; routes+redirect gebouwd zodat terugkeer nooit 404't. | gewijzigd: apps/app/src/app/dashboard/credits/** (git mv van billing), apps/app/src/app/dashboard/{account,page}.tsx, apps/app/src/app/api/stripe/checkout/route.ts, apps/app/next.config.ts, apps/app/src/components/{AppTopbar,AvatarDropdown}.tsx, apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx (comment), apps/marketing/src/components/pricing/BuyButton.tsx, packages/shared/src/components/{TranscriptCard,PlaylistAvailabilitySummary,free-tool/VideoTab,free-tool/AudioTab}.tsx, docs/wiki/decisions/084-billing-to-credits.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
+---
 [2026-07-31 21:00] feat (Library redesign — Fase 2, voortvloeiende schermen): (1) **RAG-kostenkaart detailviewer** (`TranscriptViewer.tsx`) herontworpen — toont nu de berekening ("This export · N credits"), het saldo → "Balance X → Y after", en dat re-download gratis is; insufficient → inline error met "Buy credits →" naar `/dashboard/credits`. Consistent met de in Fase 1 herbouwde bulk-RAG-kaart. Control-flow (`deductRagExportCreditsAction`) onaangeroerd. (2) **Storage-full unificatie:** `VideoTab.tsx` zette bij 413 `storage_full` een platte `message` zonder key → viel door naar de neutrale fallback i.p.v. de gedeelde ErrorCard-copy; nu `errorType:'storage_full'` toegevoegd op beide callsites → rendert via de centrale `errorCopy.storage_full`-map (single source, met "Manage library"/"Buy space"-acties), gelijk aan AudioTab. `StorageMeterCard` bleek al correct (leest de echte DB-cap `library_bytes_cap`+`_bonus`; de "verzonnen 500MB" was uitsluitend de dode sidebar-berekening) → ongewijzigd. Delete-confirm (enkel+bulk) + rename inline gebruiken al de design-system-primitives (AlertDialog/inline) → geen wijziging. `VideoTab` zit in `packages/shared` → raakt ook marketing (alleen storage-error-keying). Geverifieerd: `pnpm build` groen (2/2). | gewijzigd: apps/app/src/components/library/TranscriptViewer.tsx, packages/shared/src/components/free-tool/VideoTab.tsx, docs/LOG.md
 ---
 [2026-07-31 20:00] feat (Library-lijst herontwerp — Fase 1, ADR-083): grote herbouw van /dashboard/library. **DB:** migratie `20260731160000_transcripts_list_view` — view `transcripts_list` (`security_invoker=true`) met lichte kolommen + `has_summary`/`has_summary_edit`/`has_edit`/`has_rag` (COALESCE+jsonb_typeof-guard) zodat de lijst nooit meer de zware `transcript`-jsonb ophaalt. **Frontend (lokaal, geen marketing-impact):** `page.tsx` herschreven (query van de view, expliciete kolommen, server-side filters, sort+dir+q in URL, twee counts "N of TOTAL", grid+thumbnails weg, chips + Clear all, twee lege staten); nieuw `LibraryControls.tsx` (search + Filter/Sort dropdowns + Density + mobiele bottom-sheets), `filters.ts` (URL↔query↔chips), `badges.tsx` (mono `CC`/`AI`/`SUM`/`RAG`, edited = `-soft`-tint + potlood), `MoveToCollectionMenu.tsx` (vervangt-semantiek, gedeeld rij+bulk), `TranscriptList.tsx` volledig herbouwd (twee-regelige rij + Compact-dichtheid, `dir="auto"` overal, amberen unread-stip i.p.v. NEW-badge, tri-state select-all = alleen huidige pagina, rij-⋯ gescheiden van bulk, export-menu 9 formaten + RAG PAID/PURCHASED, context-afhankelijke bulk-balk, mobiele row/bulk-sheets). `app-sidebar.tsx` (collectie-filterveld + mono-counts + Home=beehive + Messages `Inbox`→`MessageSquare`), `MobileTabBar.tsx` (idem icons), nieuw `components/icons/Beehive.tsx`. Rommel mee: `select("*")`→view; dode TS-velden `video_url`/`playlist_id` weg; source-map + LESSONS + system.md honeycomb-opacity gecorrigeerd naar code-waarde `0.03/0.045`; sidebar-opslag = dode berekening (gemeld, niet stil verwijderd). **Verificatie:** `pnpm build` groen; view-booleans byte-exact vs basistabel (952 rijen); end-to-end via authenticated anon-client (test1) — door de view precies 3 eigen geseede rijen, niet de 952 → security_invoker-RLS bewezen; alle filters teruggerekend; Arabische titel round-tript; seed opgeruimd. Playwright-contract behouden (rij-link + `placeholder="Search…"`), data-testids toegevoegd. Fase 2/3 volgen. | gewijzigd: supabase/migrations/20260731160000_transcripts_list_view.sql (nieuw), apps/app/src/app/dashboard/library/page.tsx, apps/app/src/components/library/{TranscriptList,LibraryControls,filters,badges,MoveToCollectionMenu}.tsx, apps/app/src/components/{app-sidebar,dashboard/MobileTabBar}.tsx, apps/app/src/components/icons/Beehive.tsx (nieuw), docs/wiki/decisions/083-library-list-redesign.md (nieuw), docs/wiki/INDEX.md, docs/wiki/design/{library-source-map,system}.md, docs/LESSONS.md, docs/LOG.md
@@ -14410,5 +14412,51 @@ Geverifieerd: pnpm build groen (2/2).
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/library/TranscriptViewer.tsx
 docs/LOG.md
+packages/shared/src/components/free-tool/VideoTab.tsx
+---
+[2026-07-31 23:11] commit: feat(credits): Fase 3 — /dashboard/billing → /dashboard/credits (ADR-084)
+
+Financieel-kritiek. Route git mv billing→credits (page/success/cancel).
+
+Geld op één plek:
+- Credits = money-hub: saldo, pakketten (BillingPurchaseGrid, ?checkout=),
+  TransactionHistoryCard (verhuisd van Account), PurchaseHistoryCard mét factuur
+- Account getrimd tot identiteit/opslag/support
+
+Stripe: checkout success_url/cancel_url → /dashboard/credits/{success,cancel}
+(direct, geen redirect-hop op de callback). Permanente redirect
+/dashboard/billing(/*) → credits in next.config.ts — vangt oude bookmarks +
+een in-flight Stripe-sessie zodat terugkeer nooit op 404 landt.
+
+Koop-routes → Credits: topbar credit-pil (nu mét +, dé koop-route
+desktop+mobiel); dashboard "Buy more"; avatar-menu nieuw "Credits"-item;
+shared insufficient-credits-links (TranscriptCard/PlaylistAvailabilitySummary/
+VideoTab×3/AudioTab×2); marketing BuyButton. Support-componentmap niet hernoemd.
+
+Geverifieerd: pnpm build groen (2/2); routes = /dashboard/credits{,/success,
+/cancel}, geen billing-routes. Volledige Stripe test-mode-betaling = handmatig;
+routes+redirect zo gebouwd dat terugkeer nooit 404't.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/next.config.ts
+apps/app/src/app/api/stripe/checkout/route.ts
+apps/app/src/app/dashboard/account/page.tsx
+apps/app/src/app/dashboard/billing/cancel/page.tsx
+apps/app/src/app/dashboard/billing/page.tsx
+apps/app/src/app/dashboard/billing/success/page.tsx
+apps/app/src/app/dashboard/credits/cancel/page.tsx
+apps/app/src/app/dashboard/credits/page.tsx
+apps/app/src/app/dashboard/credits/success/page.tsx
+apps/app/src/app/dashboard/page.tsx
+apps/app/src/components/AppTopbar.tsx
+apps/app/src/components/AvatarDropdown.tsx
+apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx
+apps/marketing/src/components/pricing/BuyButton.tsx
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/084-billing-to-credits.md
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/TranscriptCard.tsx
+packages/shared/src/components/free-tool/AudioTab.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 ---

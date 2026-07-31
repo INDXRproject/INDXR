@@ -1129,7 +1129,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                       Extract — {cost}{known ? "" : "+"} credits
                     </Button>
                   ) : (
-                    <a href={appHref('/dashboard/billing')} className="w-full sm:w-auto">
+                    <a href={appHref('/dashboard/credits')} className="w-full sm:w-auto">
                       <Button className="h-10 w-full">Buy credits</Button>
                     </a>
                   )}
@@ -1221,7 +1221,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    availableCredits: user ? credits : null,
                    requiredCredits: error.requiredCredits ?? null,
                    aiCost: videoDuration ? Math.ceil(videoDuration / 60) : null,
-                   billingHref: appHref('/dashboard/billing'),
+                   billingHref: appHref('/dashboard/credits'),
                    libraryHref: appHref('/dashboard/library'),
                    accountHref: appHref('/dashboard/account'),
                    contactHref: user ? appHref('/dashboard/messages?tab=support') : marketingHref('/contact'),
@@ -1383,7 +1383,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                        : `Re-extract with AI · ${requiredCredits} credit${requiredCredits !== 1 ? 's' : ''}`}
                    </button>
                  ) : (
-                   <a href={appHref('/dashboard/billing')} className="font-medium text-fg underline-offset-2 hover:underline">
+                   <a href={appHref('/dashboard/credits')} className="font-medium text-fg underline-offset-2 hover:underline">
                      Re-extract with AI — top up credits
                    </a>
                  )}

@@ -289,7 +289,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
                               : 'Extract'}
                         </Button>
                     ) : (
-                        <a href={appHref('/dashboard/billing')}>
+                        <a href={appHref('/dashboard/credits')}>
                             <Button size="sm" className="h-9">Buy credits</Button>
                         </a>
                     )}

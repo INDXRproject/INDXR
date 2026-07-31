@@ -47,7 +47,7 @@ export function BillingPurchaseGrid() {
     }
   }
 
-  // Arriving from the marketing buy-button (…/dashboard/billing?checkout=<plan>): preselect that
+  // Arriving from the marketing buy-button (…/dashboard/credits?checkout=<plan>): preselect that
   // plan so the buy button reflects the intent. We do NOT auto-redirect — the Terms must be
   // accepted first, so the user ticks the box and clicks Buy.
   useEffect(() => {
