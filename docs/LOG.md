@@ -14254,3 +14254,23 @@ docs/LOG.md
 docs/wiki/roadmap/priorities.md
 supabase/migrations/20260730154145_add_download_progress_bytes.sql
 ---
+
+[2026-07-31 14:30] taak: worker-slot-saturatie-gauge (mockup-item, op verzoek). WorkerSettings.max_jobs expliciet 10; ops_config.worker_concurrency_limit=10; RPC admin_operations_v3 provider-sectie geeft worker_slots_used (downloading/transcribing/saving nu) + worker_concurrency_limit + worker_saturation_pct; Live-now toont een "worker load"-gauge naast AssemblyAI load (de tightere lokale bottleneck, 10 vs 200). | gewijzigd: backend/worker.py supabase/migrations/20260731142539_ops_config_worker_concurrency_limit.sql supabase/migrations/20260731142813_admin_operations_v3_worker_saturation.sql apps/app/src/app/admin/operations/page.tsx apps/app/src/app/admin/adminTypes.ts | geverifieerd: RPC live (worker_max 10, used 0, sat 0); py_compile worker; eslint schoon.[2026-07-31 16:29] commit: feat(ops): worker-slot saturation gauge (max_jobs explicit + Live-now gauge)
+
+Laatste mockup-item, op verzoek. De ARQ worker-concurrency-cap (max_jobs) was impliciet ARQ's
+default; nu expliciet 10 in WorkerSettings + gespiegeld in ops_config.worker_concurrency_limit.
+admin_operations_v3.provider geeft nu worker_slots_used (jobs in downloading/transcribing/saving nu)
++ worker_concurrency_limit + worker_saturation_pct; het Live-now-paneel toont een 'worker load'-gauge
+naast 'AssemblyAI load'. Dit is de TIGHTERE, lokale bottleneck (10) t.o.v. de AssemblyAI-cap (200) —
+het echte 'zitten we vol'-signaal.
+
+Geverifieerd: RPC live (worker_max=10, used=0, sat=0); py_compile worker; eslint schoon.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/operations/page.tsx
+backend/worker.py
+docs/LOG.md
+supabase/migrations/20260731142539_ops_config_worker_concurrency_limit.sql
+supabase/migrations/20260731142813_admin_operations_v3_worker_saturation.sql
+---

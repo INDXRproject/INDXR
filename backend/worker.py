@@ -1588,6 +1588,11 @@ class WorkerSettings:
     # ruim vóór deze royale backstop. Playlist-jobs (100+ videos) vallen ook binnen deze grens.
     job_timeout = TRANSCRIPTION_JOB_TIMEOUT_SECONDS
 
+    # Worker-concurrency: max gelijktijdig lopende ARQ-taken. Was impliciet ARQ's default (10); nu
+    # expliciet zodat de Operations worker-saturatie-gauge (ops_config.worker_concurrency_limit) tegen
+    # een echt getal meet i.p.v. een aanname. Wijzig je dit, werk dan ook die config-rij bij.
+    max_jobs = 10
+
     # ── Graceful drain op deploy (SIGTERM) ────────────────────────────────────────────
     # Env-gated → inert by default (0 = huidig gedrag, geen risico tot expliciet aangezet).
     # Bij >0: arq stopt op SIGTERM met NIEUWE jobs oppakken (allow_pick_jobs=False) en wacht

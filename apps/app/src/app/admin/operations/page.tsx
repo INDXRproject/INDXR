@@ -314,6 +314,8 @@ export default async function AdminOperationsPage({
   const plVideoSuccess = pl.videos_total > 0 ? pl.videos_complete / pl.videos_total : null
   const satTone: Health = provider.saturation_pct == null ? "neutral"
     : provider.saturation_pct >= 90 ? "bad" : provider.saturation_pct >= 60 ? "warn" : "good"
+  const workerSatTone: Health = provider.worker_saturation_pct == null ? "neutral"
+    : provider.worker_saturation_pct >= 90 ? "bad" : provider.worker_saturation_pct >= 60 ? "warn" : "good"
 
   // Status verdict (2a) + quiet state (2b): when there's no activity in the window, show the verdict
   // and Live-now only — not a grid of empty cards.
@@ -339,14 +341,18 @@ export default async function AdminOperationsPage({
       <Card className="!bg-surface-sunken">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-fg-muted">
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" /> Live right now
-          <InfoHint text="Job states this instant, independent of the window above. 'Stuck' = an in-progress job whose heartbeat went stale (the watchdog will recover or refund it). Saturation = jobs transcribing now vs the AssemblyAI concurrency limit." />
+          <InfoHint text="Job states this instant, independent of the window above. 'Stuck' = an in-progress job whose heartbeat went stale (the watchdog will recover or refund it). Worker load = jobs actively processing vs the ARQ worker-slot cap (the tight local bottleneck). AssemblyAI load = jobs transcribing now vs the provider concurrency limit (the wide external one)." />
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <div><p className="text-2xl font-bold tabular-nums">{capacity.in_flight}</p><p className="text-xs text-fg-muted">processing</p></div>
           <div><p className="text-2xl font-bold tabular-nums">{capacity.queue_depth_now}</p><p className="text-xs text-fg-muted">in queue</p></div>
           <div>
             <p className={`text-2xl font-bold tabular-nums ${capacity.stuck > 0 ? "text-error" : "text-fg-strong"}`}>{capacity.stuck}</p>
             <p className="text-xs text-fg-muted">stuck</p>
+          </div>
+          <div>
+            <p className={`text-2xl font-bold tabular-nums ${HEALTH_CLS[workerSatTone]}`}>{provider.worker_saturation_pct == null ? "—" : `${provider.worker_saturation_pct}%`}</p>
+            <p className="text-xs text-fg-muted">worker load ({provider.worker_slots_used}/{provider.worker_concurrency_limit ?? "?"})</p>
           </div>
           <div>
             <p className={`text-2xl font-bold tabular-nums ${HEALTH_CLS[satTone]}`}>{provider.saturation_pct == null ? "—" : `${provider.saturation_pct}%`}</p>

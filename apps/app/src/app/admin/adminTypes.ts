@@ -127,6 +127,9 @@ export interface OperationsV3 {
   provider: {
     languages: Record<string, number>; models: Record<string, number>
     concurrency_limit: number | null; in_flight_now: number; saturation_pct: number | null
+    // Worker-slot-saturatie: actief-verwerkende jobs vs de ARQ worker-concurrency-cap (max_jobs).
+    // De tightere, lokale bottleneck — het echte "zitten we vol"-signaal.
+    worker_concurrency_limit: number | null; worker_slots_used: number; worker_saturation_pct: number | null
   }
   capacity: { in_flight: number; stuck: number; queue_depth_now: number }
   window: { from: string | null; to: string | null; exclude_internal: boolean }
