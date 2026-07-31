@@ -233,6 +233,7 @@ Durende end-to-end **live-verificaties** met nagerekende data (onderscheiden van
 
 | Bestand | Onderwerp |
 |---------|-----------|
+| [library-source-map.md](design/library-source-map.md) | **De kaart voor het Library-herontwerp** (zoals finance-map.md voor Finance): render-boom (wat lokaal vs shared/marketing-impact), de letterlijke Supabase-query + volledige kolominventaris per transcript-rij (incl. niet-geselecteerde velden), verbatim toolbar/rij/sidebar/mobiel, state & persistentie (wat een refresh overleeft), en bewijs-antwoorden: full-text zoeken = query-taak (tekst leeft in Postgres `transcript` jsonb, geen R2, geen tsvector-index), `language`-kolom bestaat maar 19% dekking, thumbnail-mobiel-regel. Getoetst tegen live DB + system.md §Library Patterns |
 | [audit-frontend.md](design/audit-frontend.md) | Volledige frontend-inventarisatie: sitemap (47 routes), layouts, componenten, styling, dark mode, responsive, iconografie, forms, inconsistenties, vragen voor redesign |
 | [principles-v0.1-final.md](design/principles-v0.1-final.md) | Ihsan design principles V0.1 — Honest Materiality, Coherence, Geen Israf, Zuhd |
 | [system.md](design/system.md) | Design system V1.0 — OKLCH kleurenschaal, typografie, spacing, radii, shadows, motion tokens |

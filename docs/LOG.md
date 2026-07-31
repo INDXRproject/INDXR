@@ -1,3 +1,5 @@
+[2026-07-31 00:00] docs (Library source-map — read-only kaart voor het herontwerp): nieuw `docs/wiki/design/library-source-map.md`, geïnventariseerd tegen broncode + live DB (project uivlvwcplcaixkzuiwsv). Render-boom (lokaal vs shared/marketing-impact), verbatim lijst-query + volledige 22-koloms transcripts-inventaris (incl. niet-geselecteerde velden), verbatim toolbar/rij/collecties-sidebar/mobiel, state & persistentie-tabel (alleen ?page/?collection + page-size/sidebar-collapsed overleven refresh; zoek/sort/view/thumbnails resetten). Bewijs-antwoorden: full-text = query-taak want tekst leeft in Postgres `transcript` jsonb (951/951 NOT NULL, geen R2, geen tsvector/GIN-index); `language`-kolom bestaat maar 180/951 (19%) gevuld + niet-genormaliseerd (en/en-GB); thumbnail-mobiel-verberging = `TranscriptList.tsx:679` `hidden sm:block`. system.md §Library Patterns getoetst: chip-filters NEE, MoreHorizontal NEE, floating bulk-bar JA, geen aparte 0-resultaten-lege-staat. Honeycomb = DashboardBackdrop `opacity-[0.03] dark:opacity-[0.045]` (LESSONS/system.md-getallen gedrift). Detailpagina + Tiptap-optuiging beknopt. 7 rommel-items gerapporteerd (o.a. `select("*")` haalt volledige transcript-jsonb voor lijst; sidebar-500MB-meter ≠ echte 100MiB-cap ADR-078; 2 TS-velden zonder DB-kolom). Read-only: geen code aangeraakt. | gewijzigd: docs/wiki/design/library-source-map.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
+---
 [2026-07-15 03:20] docs (Finance-tab FASE 5 — ADRs + wiki + LESSONS): ADR-059 (nachtelijke finance-snapshot + live-overlay: range-refactor byte-identiek, pg_cron DST-aware, bevries alleen measured) + ADR-060 (accrual-kostenmodel: reeks/occurrence, changed-from-this-month, entered=external-only, Stripe-fee uit fee_details = measured OPEX op verkoopdatum). INDEX.md-beslissingentabel bijgewerkt (059/060). database-schema.md: nieuwe sectie "Finance-tab capture + accrual" (finance_daily_snapshot, finance_settings, credit_transactions point-in-time cols + trigger, cache_hit/source_kind/playlist_id, usage_logs.source, opex_expenses accrual, _geld_scope range, snapshot_finance_day, opex_accrual, admin_finance_summary). credit-system.md: periode-model-noot. LESSONS: 5 regels (rpc-regressie-embed / net-profit-goodwill-dubbeltelling / amsterdam-dag-grain / stripe-fee-details / mcp-execute-sql-laatste-statement). | gewijzigd: docs/wiki/decisions/{059-finance-snapshot-and-live-overlay,060-accrual-cost-model-and-stripe-fee}.md (nieuw), docs/wiki/INDEX.md, docs/wiki/architecture/{database-schema,credit-system}.md, docs/LESSONS.md, docs/LOG.md
 ---
 [2026-07-15 03:00] feat (Finance-tab FASE 4 — Settings-UI + definitieve view): herbouw `admin/finance/` op de nieuwe `admin_finance_summary`-RPC. **Nieuw**: `periods.ts` (Week/Month/Quarter/Year/Custom + pijltjes → afgeronde vorige periodes + "to date" + zelfde-verstreken-dagen-vergelijking), `financeTypes.ts`, `accrual.ts` (JS-spiegel van opex_accrual voor de trend-overlay), `SettingsDialog.tsx` (⚙ Dialog+Tabs: Expenses met Add/Import-CSV/edit "changed from this month"↔"correct"/delete, Tariffs = cost_config inline, Deferred mix = 30/60/90-venster), `app/actions/finance.ts` (server actions, ADMIN_EMAIL-gated). **FinanceView herbouwd**: periode-kiezer, "Live · updated HH:MM"+Refresh, hero (net-profit-delta + revenue met delivered/deferred-balk), income statement één kolom (Revenue delivered − COR = Gross − OPEX = Net + marges; COR uitklapbaar per methode + cache-savings alleen op ai-transcriptie & captions; OPEX uitklap met measured/entered-labels + "Payment processing" fee-regel + entered-fractie "14 of 31 days"), bankbrug-kaart "Where the cash sits" (charged − fee = settled; VAT + revenue ex-VAT), Deferred-kaart (saldo + est. cost/gross), Trend (frozen snapshots + live entered-overlay, eerlijke lege staat <2 snapshots, microcopy "measured frozen nightly · entered live"), test/intern-toggle (default uit), honest vat_computed ("not computed" bij amount_tax=0). Logo toegevoegd aan admin-layout (was plain "Admin"-tekst). Geen toasts. **Geverifieerd**: pnpm build:app groen end-to-end; admin_finance_summary over Week/Month/Quarter/Year — bank-identity (charged−vat=rev_ex_vat) klopt overal, deferred-stock cumulatief (6,98) over alle vensters, cash period-begrensd (week=0), vat_computed=false honest. Live prod-tab-check + Stripe-reconcile = post-deploy (admin-sessie/live-key vereist). GEEN railway.json. | gewijzigd: apps/app/src/app/admin/finance/{page,FinanceView,SettingsDialog,periods,financeTypes,accrual}.{tsx,ts}, apps/app/src/app/actions/finance.ts (nieuw), apps/app/src/app/admin/layout.tsx, docs/LOG.md
@@ -14291,4 +14293,29 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/worker.py
 docs/LOG.md
 docs/wiki/operations/monitoring.md
+---
+[2026-07-31 16:58] commit: docs(design): Library source-map — read-only kaart voor het herontwerp
+
+Nieuw docs/wiki/design/library-source-map.md, geverifieerd tegen broncode
++ live DB (information_schema/pg_indexes, project uivlvwcplcaixkzuiwsv).
+
+Bevat: render-boom (lokaal vs shared/marketing-impact), verbatim lijst-query
++ volledige 22-koloms transcripts-inventaris (incl. niet-geselecteerde velden),
+verbatim toolbar/rij/collecties-sidebar/mobiel, state & persistentie-tabel, en
+bewijs-antwoorden op de drie kernvragen:
+- full-text zoeken = query-taak: tekst leeft in Postgres transcript jsonb
+  (951/951 NOT NULL, geen R2, geen tsvector/GIN-index)
+- language-kolom bestaat maar 19% dekking (180/951) + niet-genormaliseerd
+- thumbnail-mobiel-verberging = TranscriptList.tsx:679 `hidden sm:block`
+
+system.md §Library Patterns getoetst (chip-filters/MoreHorizontal NEE, floating
+bulk-bar JA, geen 0-resultaten-lege-staat). Honeycomb feitelijke waarden
+(0.03/0.045). 7 rommel-items gerapporteerd, niet gefixt. INDEX.md + LOG.md bij.
+
+Read-only: geen code aangeraakt.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/design/library-source-map.md
 ---
