@@ -14460,3 +14460,12 @@ packages/shared/src/components/TranscriptCard.tsx
 packages/shared/src/components/free-tool/AudioTab.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 ---
+[2026-07-31 23:18] commit: fix(nav): redraw beehive icon — legible at 17px
+
+Punchlijst na Fase 3: de oude skep had 3 dwarsbanden + vlieggat die op 17px
+dichtliepen. Nu 2 ruimer-gespreide banden + een hoger, duidelijk gescheiden
+vlieggat. Zelfde lucide-conventies (24 viewBox, 2px round strokes).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/icons/Beehive.tsx
+---

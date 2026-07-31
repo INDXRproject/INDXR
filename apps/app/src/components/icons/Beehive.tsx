@@ -23,15 +23,14 @@ export function Beehive({ className, ...props }: SVGProps<SVGSVGElement>) {
       {...props}
     >
       {/* dome */}
-      <path d="M4 21a8 8 0 0 1 16 0" />
+      <path d="M4 20.5a8 7.5 0 0 1 16 0" />
       {/* ground */}
-      <path d="M3.5 21h17" />
-      {/* coils */}
-      <path d="M6 16.5h12" />
-      <path d="M8 12h8" />
-      <path d="M10 8h4" />
-      {/* entrance */}
-      <path d="M10.5 21v-1.2a1.5 1.5 0 0 1 3 0V21" />
+      <path d="M2.5 20.5h19" />
+      {/* two bands — spaced so they stay legible at 17px */}
+      <path d="M6 15h12" />
+      <path d="M8.5 10h7" />
+      {/* entrance — taller and clearly separated from the lowest band */}
+      <path d="M10.5 20.5v-2.5a1.5 1.5 0 0 1 3 0v2.5" />
     </svg>
   );
 }
