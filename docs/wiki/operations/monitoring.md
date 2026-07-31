@@ -209,7 +209,7 @@ admin-service-role-client; route-niveau admin-gating (`ADMIN_EMAIL`).
 
 ## Wat nog ontbreekt
 
-- **Uptime monitoring:** Geen externe uptime monitor (bijv. healthchecks.io, BetterStack) — taak 1.14.
+- **Uptime monitoring:** BetterStack in gebruik (2026-07-31). **3 URL-monitors** ("URL becomes unavailable", 3-min-interval): `indxr.ai`, `app.indxr.ai`, `indxr-production.up.railway.app/health`. Plus **1 Heartbeat** voor de portloze worker: verwacht elke 5 min, grace 5 min. De worker pingt `BETTERSTACK_HEARTBEAT_URL` aan het eind van elke watchdog-cyclus (elke 2 min → ruim binnen de grace; `worker.watchdog_interrupted_jobs`). **Env-var staat ALLEEN op de worker-service** (de API is al gedekt door de `/health`-URL-monitor); code is env-gated dus inert tot de var gezet is. Een gemiste ping = worker stilgevallen → BetterStack alarmeert.
 - **Sentry alerting rules:** Sentry is geconfigureerd maar nog geen alert-regels ingesteld voor watchdog-errors of financiële failures.
 - **Database monitoring:** Supabase Dashboard heeft basis query-statistieken; geen aangepaste dashboards.
 

@@ -1449,6 +1449,21 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
 
+    # BetterStack worker-heartbeat (env-gated: inert tot BETTERSTACK_HEARTBEAT_URL op de worker-service
+    # staat). Draait aan het EIND van elke watchdog-cyclus (elke 2 min); een geslaagde ping bewijst dat
+    # de worker-cron-loop + Redis leven. De 3 URL-monitors dekken de web-services; de PORTLOZE worker kan
+    # alleen zó bewaakt worden. Nooit-fataal — een gemiste ping IS het signaal (BetterStack alarmeert na
+    # de grace-periode). Ping elke 2 min << de 5-min-verwacht + 5-min-grace, dus een deploy-restart geeft
+    # geen vals alarm.
+    _hb_url = os.getenv("BETTERSTACK_HEARTBEAT_URL", "").strip()
+    if _hb_url:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=10) as _hb_client:
+                await _hb_client.get(_hb_url)
+        except Exception as _hb_e:
+            logger.warning(f"[heartbeat] BetterStack ping failed (non-fatal): {_hb_e}")
+
 
 async def noop_task(ctx: dict) -> str:
     """Fase 1 stub — verifies the worker picks up jobs from the queue."""

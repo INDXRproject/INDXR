@@ -14274,3 +14274,21 @@ docs/LOG.md
 supabase/migrations/20260731142539_ops_config_worker_concurrency_limit.sql
 supabase/migrations/20260731142813_admin_operations_v3_worker_saturation.sql
 ---
+
+[2026-07-31 16:45] taak: BetterStack uptime — worker-heartbeat gewired. worker.watchdog_interrupted_jobs pingt aan het eind van elke cyclus (elke 2 min) BETTERSTACK_HEARTBEAT_URL via httpx (env-gated: inert tot var gezet; nooit-fataal). Env-var alleen op worker-service. Dekt de portloze worker die de 3 URL-monitors niet zien. | gewijzigd: backend/worker.py docs/wiki/operations/monitoring.md | geverifieerd: py_compile+import-smoke; httpx aanwezig.[2026-07-31 16:48] commit: feat(ops): BetterStack worker-heartbeat ping (env-gated)
+
+De 3 URL-monitors dekken de web-services, maar de PORTLOZE ARQ-worker kan alleen via een heartbeat
+bewaakt worden. worker.watchdog_interrupted_jobs pingt nu aan het eind van elke cyclus (elke 2 min)
+BETTERSTACK_HEARTBEAT_URL via httpx. Elke 2 min << de BetterStack-verwacht (5 min) + grace (5 min),
+dus een deploy-restart geeft geen vals alarm; valt de worker stil -> geen ping -> alarm na de grace.
+
+Env-gated: inert tot BETTERSTACK_HEARTBEAT_URL gezet is (ALLEEN op de worker-service; de API is al
+gedekt door de /health-URL-monitor). Nooit-fataal: een ping-fout breekt de watchdog niet.
+
+Geverifieerd: py_compile + import-smoke; httpx aanwezig.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/worker.py
+docs/LOG.md
+docs/wiki/operations/monitoring.md
+---
