@@ -14708,3 +14708,14 @@ length (30/60/90/120s) free to re-download. No wording implied a re-cost.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/library/RagExportView.tsx
 ---
+[2026-08-01 15:49] commit: fix(library): mobile bulk bar — labeled actions, no single-item ⋯
+
+The mobile ⋯ opened a sheet with just 'Move to collection'. Replace it with
+a full-width bar of labeled icon+label columns (Move · Export · [Mark read] ·
+Delete), matching the desktop actions and the mockup. Export opens a bottom
+sheet; Move reuses the existing sheet; Clear moves to the header row. Desktop
+keeps its labeled pill.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptList.tsx
+---

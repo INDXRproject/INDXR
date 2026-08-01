@@ -171,6 +171,7 @@ export function TranscriptList({
   // Mobile per-row action sheet.
   const [rowSheet, setRowSheet] = useState<Transcript | null>(null);
   const [showBulkSheet, setShowBulkSheet] = useState(false);
+  const [showBulkExportSheet, setShowBulkExportSheet] = useState(false);
 
   // ── RAG export (single or bulk) ────────────────────────────────────────────
   type RagBulkItem = { id: string; title: string; duration: number; alreadyExported: boolean; cost: number };
@@ -754,40 +755,34 @@ export function TranscriptList({
         </div>
       </div>
 
-      {/* Floating bulk bar (desktop + mobile-selection) */}
+      {/* Desktop floating bulk bar — labeled buttons in a pill */}
       {selectedIds.size > 0 && (
-        <div className="fixed left-1/2 -translate-x-1/2 z-50 bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom,0px))] md:bottom-6 animate-in slide-in-from-bottom-5 fade-in">
-          <div className="bg-surface border border-border shadow-xl rounded-full px-4 md:px-6 py-3 flex items-center gap-2 md:gap-4 max-w-[calc(100vw-1.5rem)]">
+        <div className="hidden md:block fixed left-1/2 -translate-x-1/2 z-50 bottom-6 animate-in slide-in-from-bottom-5 fade-in">
+          <div className="bg-surface border border-border shadow-xl rounded-full px-6 py-3 flex items-center gap-4 max-w-[calc(100vw-1.5rem)]">
             <span className="text-sm font-medium text-fg whitespace-nowrap shrink-0">{selectedIds.size} selected</span>
             <div className="h-6 w-px bg-border/50 shrink-0" />
 
-            {/* Move (desktop dropdown; mobile opens sheet via More) */}
-            <div className="hidden md:block">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="secondary" className="shrink-0">
-                    <FolderInput className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">Move</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="p-2">
-                  <MoveToCollectionMenu
-                    targets={selectedTargets}
-                    collections={collections}
-                    onMove={onMove}
-                    onCreateCollection={createCollection}
-                    onDone={() => {}}
-                  />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="secondary" className="shrink-0">
+                  <FolderInput className="h-4 w-4 mr-2" /> Move
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="p-2">
+                <MoveToCollectionMenu
+                  targets={selectedTargets}
+                  collections={collections}
+                  onMove={onMove}
+                  onCreateCollection={createCollection}
+                  onDone={() => {}}
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Export */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="secondary" disabled={isDownloading} aria-label="Export" className="shrink-0">
-                  {isDownloading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <Download className="h-4 w-4 md:mr-2" />}
-                  <span className="hidden md:inline">Export</span>
+                  {isDownloading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />} Export
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-56">
@@ -810,15 +805,9 @@ export function TranscriptList({
 
             {selectedUnreadIds.length > 0 && (
               <Button size="sm" variant="ghost" aria-label="Mark as read" className="text-fg-muted hover:text-fg shrink-0" onClick={() => markRead(selectedUnreadIds)}>
-                <CheckCheck className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Mark as read</span>
+                <CheckCheck className="h-4 w-4 mr-2" /> Mark as read
               </Button>
             )}
-
-            {/* Mobile: More (move) */}
-            <Button size="sm" variant="ghost" className="md:hidden shrink-0 text-fg-muted" aria-label="More" onClick={() => setShowBulkSheet(true)}>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
 
             <Button size="sm" variant="ghost" aria-label="Delete selected" className="text-error hover:text-error hover:bg-error/10 shrink-0" onClick={() => setDeleteTarget({ type: "bulk", count: selectedIds.size })}>
               <Trash2 className="h-4 w-4" />
@@ -827,6 +816,77 @@ export function TranscriptList({
           </div>
         </div>
       )}
+
+      {/* Mobile bulk bar — full-width, one labeled action per column (no ⋯ that opens a single item) */}
+      {selectedIds.size > 0 && (
+        <div className="md:hidden fixed inset-x-0 z-50 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] bg-surface-elevated border-t border-border shadow-xl animate-in slide-in-from-bottom-5">
+          <div className="flex items-center px-4 pt-2 text-xs font-medium text-fg-muted">
+            <span>{selectedIds.size} selected</span>
+            <button aria-label="Clear selection" className="ml-auto h-7 w-7 flex items-center justify-center rounded-full text-fg-muted hover:text-fg" onClick={clearSelection}>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex px-1.5 pb-2 pt-0.5">
+            <button
+              className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[54px] rounded-lg text-[11px] font-medium text-fg-muted hover:bg-surface-sunken transition-colors"
+              onClick={() => setShowBulkSheet(true)}
+            >
+              <FolderInput className="h-[18px] w-[18px]" /> Move
+            </button>
+            <button
+              disabled={isDownloading}
+              className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[54px] rounded-lg text-[11px] font-medium text-fg-muted hover:bg-surface-sunken transition-colors disabled:opacity-50"
+              onClick={() => setShowBulkExportSheet(true)}
+            >
+              {isDownloading ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <Download className="h-[18px] w-[18px]" />} Export
+            </button>
+            {selectedUnreadIds.length > 0 && (
+              <button
+                className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[54px] rounded-lg text-[11px] font-medium text-fg-muted hover:bg-surface-sunken transition-colors"
+                onClick={() => markRead(selectedUnreadIds)}
+              >
+                <CheckCheck className="h-[18px] w-[18px]" /> Mark read
+              </button>
+            )}
+            <button
+              className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[54px] rounded-lg text-[11px] font-medium text-error hover:bg-error/10 transition-colors"
+              onClick={() => setDeleteTarget({ type: "bulk", count: selectedIds.size })}
+            >
+              <Trash2 className="h-[18px] w-[18px]" /> Delete
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile bulk export sheet (formats + RAG) */}
+      <Sheet open={showBulkExportSheet} onOpenChange={setShowBulkExportSheet}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Export {selectedIds.size} as ZIP</SheetTitle>
+          </SheetHeader>
+          <div className="pb-6 pt-2 space-y-4">
+            {FORMAT_GROUPS.map((g) => (
+              <div key={g.group}>
+                <p className="text-xs text-fg-muted font-medium px-1 mb-1">{g.group}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {g.items.map((f) => (
+                    <Button key={f.id} variant="secondary" size="sm" className="justify-start" onClick={() => { handleDownload(Array.from(selectedIds), f.id); setShowBulkExportSheet(false); }}>
+                      {f.label} (.zip)
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div>
+              <p className="text-xs text-fg-muted font-medium px-1 mb-1">Developer</p>
+              <Button variant="secondary" size="sm" className="w-full justify-between" onClick={() => { openRag(Array.from(selectedIds)); setShowBulkExportSheet(false); }}>
+                RAG JSON
+                <span className="text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Mobile bulk "more" sheet (Move) */}
       <Sheet open={showBulkSheet} onOpenChange={setShowBulkSheet}>
