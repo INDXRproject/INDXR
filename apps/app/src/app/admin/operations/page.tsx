@@ -389,7 +389,7 @@ export default async function AdminOperationsPage({
           <Stat label="Playlist jobs" value={num(traffic.jobs.playlist)} sub={`${num(traffic.units.ai_playlist_videos)} video-units`}
             info="Playlist extraction jobs (1 job = many videos). The video-units line is the real per-video volume those jobs expanded to." />
           <Stat label="Caption extractions" value={num(traffic.captions.total)} sub={`${num(traffic.captions.cache_hits)} cache hits`}
-            info="Free auto-caption extractions (usage_logs). Always 0 credits; kept separate from paid AI jobs." />
+            info="Free YouTube-caption extractions (usage_logs). Always 0 credits; kept separate from paid AI jobs." />
           <Stat label="Total video-units" value={num(traffic.units.ai_single_upload + traffic.units.ai_playlist_videos + traffic.units.captions)}
             sub="AI + playlist videos + captions" info="Every individual video processed across all paths — the true throughput, not the job count." />
         </div>

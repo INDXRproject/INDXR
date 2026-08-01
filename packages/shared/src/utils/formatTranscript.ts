@@ -379,7 +379,7 @@ export const generateCsv = (
   if (meta?.extractionMethod) {
     const src = (meta.extractionMethod === 'assemblyai' || meta.extractionMethod === 'whisper_ai')
       ? 'AI Transcription (AssemblyAI)'
-      : 'Auto-captions (YouTube)';
+      : 'YouTube captions';
     metaLines.push(`# transcript_source: ${src}`);
   }
   metaLines.push(`# extracted: ${new Date().toISOString().slice(0, 10)}`);
@@ -648,7 +648,7 @@ function buildYamlFrontmatter(
   if (context?.extractionMethod) {
     const src = (context.extractionMethod === 'assemblyai' || context.extractionMethod === 'whisper_ai')
       ? 'AI Transcription (AssemblyAI)'
-      : 'Auto-captions (YouTube)';
+      : 'YouTube captions';
     lines.push(`transcript_source: "${src}"`);
   }
   lines.push(`created: "${new Date().toISOString().slice(0, 10)}"`);

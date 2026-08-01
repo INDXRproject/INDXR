@@ -14794,3 +14794,27 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 docs/LOG.md
 ---
+[2026-08-01 23:35] commit: rename(ui): 'Auto-captions' → 'YouTube captions' in app + shared
+
+Visible labels + export metadata only; the DB enum processing_method='youtube_captions'
+is untouched (renaming would break rows, the caption/AI branch, dedup and Playwright
+role-keys). yt-dlp also returns creator-uploaded subtitles, so 'auto' overclaimed —
+'YouTube captions' is true in both cases, and pricing.ts already said so.
+
+- method.ts label + MethodRadioCards card label
+- formatTranscript.ts export metadata transcript_source (the downloaded-file line)
+- Playlist labels/prose, free-tool VideoTab badge + prose
+- admin badge/info/dropdown
+Concept-explaining code comments left as-is (internal).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/adminTypes.ts
+apps/app/src/app/admin/operations/page.tsx
+apps/app/src/app/admin/transcripts/page.tsx
+packages/shared/src/components/PlaylistAvailabilitySummary.tsx
+packages/shared/src/components/PlaylistManager.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/transcribe/MethodRadioCards.tsx
+packages/shared/src/components/transcribe/method.ts
+packages/shared/src/utils/formatTranscript.ts
+---

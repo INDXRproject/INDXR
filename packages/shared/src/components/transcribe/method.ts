@@ -2,7 +2,7 @@
 //
 // A transcription method has ONE colour across the whole product, and it is the
 // exact colour the Library badge component already uses (apps/app/.../library/
-// TranscriptList.tsx → BADGE_CLASSES): auto-captions = sky, AI transcription =
+// TranscriptList.tsx → BADGE_CLASSES): YouTube captions = sky, AI transcription =
 // indigo. No new colours, no duplicated hex — every class below resolves to the
 // --sky / --indigo tokens defined once in tokens.css.
 //
@@ -20,8 +20,8 @@ export type TranscribeMethod = "captions" | "ai"
 export const METHOD_META: Record<
   TranscribeMethod,
   {
-    label: string // full label, e.g. "Auto-captions"
-    short: string // compact label for dense rows, e.g. "Auto"
+    label: string // full label, e.g. "YouTube captions"
+    short: string // compact label for dense rows, e.g. "Captions"
     badge: string // Library badge classes (subtle bg + base text) — AA-verified there
     bar: string // solid segment fill for cost bars
     dot: string // legend swatch
@@ -31,8 +31,8 @@ export const METHOD_META: Record<
   }
 > = {
   captions: {
-    label: "Auto-captions",
-    short: "Auto",
+    label: "YouTube captions",
+    short: "Captions",
     badge: "bg-sky-subtle text-sky",
     bar: "bg-sky",
     dot: "bg-sky",

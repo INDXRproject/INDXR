@@ -477,7 +477,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         totalLabel="Charged"
                         totalAmount={`${receipt.used} credit${receipt.used !== 1 ? 's' : ''}`}
                         segments={[
-                          { key: 'cap', tone: 'captions', count: compCapSuccess, label: `${compCapSuccess} auto-captions`, amount: compHasBreakdown ? (compCapCredits > 0 ? `${compCapCredits} credit${compCapCredits !== 1 ? 's' : ''}` : 'free') : '' },
+                          { key: 'cap', tone: 'captions', count: compCapSuccess, label: `${compCapSuccess} YouTube captions`, amount: compHasBreakdown ? (compCapCredits > 0 ? `${compCapCredits} credit${compCapCredits !== 1 ? 's' : ''}` : 'free') : '' },
                           { key: 'ai', tone: 'ai', count: compAiSuccess, label: `${compAiSuccess} AI transcription`, amount: compHasBreakdown ? `${compAiCredits} credit${compAiCredits !== 1 ? 's' : ''}` : '' },
                           ...(compFailed > 0
                             ? [{
@@ -854,7 +854,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
           {!hasExtracted && (
             <div className="px-4 py-2.5 border-t border-border flex items-center gap-2 text-xs text-fg-muted">
               <Info className="h-3.5 w-3.5 shrink-0" />
-              <span>The first {FREE_TIER.PLAYLIST_FREE_VIDEOS} caption videos are always free. Auto-captions after that cost {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit each; AI is always charged.</span>
+              <span>The first {FREE_TIER.PLAYLIST_FREE_VIDEOS} caption videos are always free. YouTube captions after that cost {CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS} credit each; AI is always charged.</span>
             </div>
           )}
         </div>

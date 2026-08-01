@@ -77,7 +77,7 @@ export default async function AdminTranscriptsPage({
             className="border rounded-md px-3 py-1.5 text-sm bg-bg"
           >
             <option value="">All methods</option>
-            <option value={PROCESSING_METHODS.CAPTIONS}>Auto-captions</option>
+            <option value={PROCESSING_METHODS.CAPTIONS}>YouTube captions</option>
             <option value={PROCESSING_METHODS.ASSEMBLYAI}>AI transcription</option>
             <option value={PROCESSING_METHODS.WHISPER_LEGACY}>Whisper (legacy)</option>
           </select>

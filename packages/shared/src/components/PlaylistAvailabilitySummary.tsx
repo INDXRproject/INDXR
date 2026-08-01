@@ -155,7 +155,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
               key: "cap",
               tone: "captions",
               count: currentSummary.hasCaptions,
-              label: `${currentSummary.hasCaptions} auto-captions`,
+              label: `${currentSummary.hasCaptions} YouTube captions`,
               amount: captionCredits > 0 ? `${captionCredits} credit${captionCredits !== 1 ? "s" : ""}` : "free",
             },
             {

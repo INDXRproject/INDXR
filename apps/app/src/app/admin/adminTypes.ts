@@ -223,7 +223,7 @@ export const TYPE_META: Record<
   { label: string; text: string; bg: string; bar: string }
 > = {
   ai_transcription: { label: "AI transcription", text: "text-indigo", bg: "bg-indigo-subtle", bar: "bg-indigo" },
-  caption: { label: "Auto-captions", text: "text-sky", bg: "bg-sky-subtle", bar: "bg-sky" },
+  caption: { label: "YouTube captions", text: "text-sky", bg: "bg-sky-subtle", bar: "bg-sky" },
   ai_summary: { label: "AI summary", text: "text-violet", bg: "bg-violet-subtle", bar: "bg-violet" },
   rag: { label: "RAG", text: "text-teal", bg: "bg-teal-subtle", bar: "bg-teal" },
 }

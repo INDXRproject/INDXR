@@ -84,7 +84,7 @@ export function MethodRadioCards({
               {m === "captions" ? (
                 <span className="min-w-0">
                   <span className={cn("flex items-center gap-1.5 font-medium", selected ? "text-sky" : "text-fg")}>
-                    Auto-captions
+                    YouTube captions
                     <span className="rounded-sm bg-success-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
                       Free
                     </span>

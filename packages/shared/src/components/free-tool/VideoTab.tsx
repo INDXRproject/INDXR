@@ -1305,7 +1305,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 <div className="flex items-center gap-2 min-w-0">
                   <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--accent)]" />
                   <p className="truncate text-sm font-semibold text-[var(--fg-strong)]">Fetching captions</p>
-                  <span className="ml-auto shrink-0"><MethodBadge method="captions">Auto-captions</MethodBadge></span>
+                  <span className="ml-auto shrink-0"><MethodBadge method="captions">YouTube captions</MethodBadge></span>
                 </div>
               }
             >
@@ -1371,7 +1371,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
              const hasEnoughCredits = credits >= requiredCredits;
              return (
                <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-fg-muted">
-                 <span>Auto-captions not accurate enough?</span>
+                 <span>YouTube captions not accurate enough?</span>
                  {hasEnoughCredits ? (
                    <button
                      onClick={handleWhisperUpsell}
