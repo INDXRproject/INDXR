@@ -4,6 +4,7 @@ import { TranscriptViewer } from "@/components/library/TranscriptViewer";
 import { AiSummaryView } from "@/components/library/AiSummaryView";
 import { RagExportView } from "@/components/library/RagExportView";
 import { TranscriptTabs, ViewTab } from "@/components/library/TranscriptTabs";
+import { TranscriptHeader } from "@/components/library/TranscriptHeader";
 
 interface PageProps {
   params: Promise<{
@@ -40,18 +41,42 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
   // reverted, an export that never happened) falls back to Transcript — never a dead tab.
   const hasEditedSummary = !!transcript.ai_summary && !!transcript.ai_summary.edited_html;
   const hasRag = Array.isArray(transcript.rag_exports) && transcript.rag_exports.length > 0;
+  const requestedTab = resolvedSearchParams.tab as string | undefined;
+  // The Edited tab may be entered fresh (?tab=edited) to START an edit — it is seeded from the
+  // original, so the edit happens on the Edited tab, never in edit-mode on the original.
+  const canEdited = !!transcript.edited_content || requestedTab === "edited";
   const tabs: ViewTab[] = [
     { id: "original", label: "Transcript" },
-    ...(transcript.edited_content ? [{ id: "edited", label: "Edited" }] : []),
+    ...(canEdited ? [{ id: "edited", label: "Edited" }] : []),
     ...(transcript.ai_summary ? [{ id: "summary", label: "Summary" }] : []),
     ...(hasEditedSummary ? [{ id: "summary_edited", label: "Edited summary" }] : []),
     ...(hasRag ? [{ id: "developer", label: "Developer" }] : []),
   ];
-  const requestedTab = resolvedSearchParams.tab as string | undefined;
   const activeTab = tabs.some((t) => t.id === requestedTab) ? (requestedTab as string) : "original";
+
+  // Collection name for the breadcrumb (only when the transcript is in one).
+  let collectionName: string | null = null;
+  if (transcript.collection_id) {
+    const { data: col } = await supabase.from("collections").select("name").eq("id", transcript.collection_id).single();
+    collectionName = (col as { name?: string } | null)?.name ?? null;
+  }
 
   return (
     <div className="flex flex-col overflow-x-hidden max-w-7xl mx-auto w-full">
+      <TranscriptHeader
+        id={transcript.id}
+        title={transcript.title || "Untitled Transcript"}
+        collectionId={transcript.collection_id ?? null}
+        collectionName={collectionName}
+        processingMethod={transcript.processing_method}
+        hasEdit={!!transcript.edited_content}
+        hasSummary={!!transcript.ai_summary}
+        hasSummaryEdit={hasEditedSummary}
+        hasRag={hasRag}
+        duration={transcript.duration ?? null}
+        characterCount={transcript.character_count ?? null}
+        createdAt={transcript.created_at}
+      />
       <div className="mb-6">
         <TranscriptTabs tabs={tabs} activeId={activeTab} transcriptId={id} />
       </div>

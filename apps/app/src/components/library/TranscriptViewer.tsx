@@ -6,9 +6,6 @@ import {
   Copy,
   Check,
   Trash2,
-  ArrowLeft,
-  Video,
-  VideoOff,
   Bold,
   Italic,
   Underline as UnderlineIcon,
@@ -22,6 +19,11 @@ import {
   X,
   Save,
   AlertCircle,
+  MoreHorizontal,
+  SlidersHorizontal,
+  RotateCcw,
+  Play,
+  Pencil,
 } from "lucide-react";
 import posthog from "posthog-js";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -32,7 +34,6 @@ import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { JSONContent } from "@tiptap/react";
 
 import { Button } from "@indxr/shared/components/ui/button";
-import { ScrollArea } from "@indxr/shared/components/ui/scroll-area";
 import { Switch } from "@indxr/shared/components/ui/switch";
 import { Label } from "@indxr/shared/components/ui/label";
 import { Input } from "@indxr/shared/components/ui/input";
@@ -63,7 +64,6 @@ import {
   DialogTitle,
 } from "@indxr/shared/components/ui/dialog";
 
-import Link from "next/link";
 import { marketingHref } from "@indxr/shared/lib/cross-host-links";
 import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard";
 import { useRouter } from "next/navigation";
@@ -306,11 +306,12 @@ export function TranscriptViewer({
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isEditingOriginal, setIsEditingOriginal] = useState(false);
+  const [showSearch, setShowSearch] = useState(false); // Find is a button, not a permanent field
+  const [textSize, setTextSize] = useState<"s" | "m" | "l">("m"); // Display menu → reading size
 
-  // Title editing
-  const [title, setTitle] = useState(initialTitle);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const titleIsSaving = useRef(false);
+  // Title is display/edit-owned by the page header (TranscriptHeader); here it's read-only
+  // (used for exports/copy/video panel).
+  const title = initialTitle;
 
   // Editor mode state
   const isOriginalMode = mode === "original";
@@ -329,7 +330,6 @@ export function TranscriptViewer({
 
   // Inline feedback state
   const [copied, setCopied] = useState(false);
-  const [titleFeedback, setTitleFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [contentSaveFeedback, setContentSaveFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -410,21 +410,6 @@ export function TranscriptViewer({
       editor.setEditable(isEditedMode || isEditingOriginal);
     }
   }, [editor, isEditedMode, isEditingOriginal]);
-
-  // ── Title save ─────────────────────────────────────────────────────────────
-
-  const handleTitleBlur = useCallback(async () => {
-    setIsEditingTitle(false);
-    if (titleIsSaving.current) return;
-    titleIsSaving.current = true;
-    const { error } = await supabase
-      .from("transcripts")
-      .update({ title })
-      .eq("id", id);
-    titleIsSaving.current = false;
-    if (error) setTitleFeedback({ type: 'error', message: 'Failed to save title' });
-    else setTitleFeedback({ type: 'success', message: 'Title saved' });
-  }, [id, supabase, title]);
 
   // ── Explicit Save ──────────────────────────────────────────────────────────
 
@@ -719,262 +704,172 @@ export function TranscriptViewer({
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row bg-bg">
-        {/* ── VIDEO SIDEBAR ── */}
-        <div
-          className={cn(
-            "border-r bg-surface-elevated/10 shrink-0 transition-all duration-300 ease-in-out flex flex-col",
-            showVideo
-              ? "w-full lg:w-[400px] xl:w-[480px] lg:sticky lg:top-0 lg:h-[calc(100svh-3.5rem)] lg:self-start"
-              : "w-0 border-r-0 overflow-hidden"
-          )}
-        >
-          <div className="w-[400px] xl:w-[480px] flex flex-col h-full">
-            <div className="p-4 border-b flex items-center gap-2">
-              <Link href="/dashboard/library">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-4 w-4" />
+      <div className="bg-bg">
+        <div className="max-w-3xl mx-auto px-6 lg:px-12 pb-20 pt-2 space-y-4">
+          {/* Toolbar — read tools, right-aligned; wraps on mobile so nothing falls off screen */}
+          <div className="sticky top-0 z-10 -mx-6 lg:-mx-12 px-6 lg:px-12 bg-bg flex items-center justify-end gap-1 flex-wrap py-2 border-b border-border-subtle">
+            {/* Find */}
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" onClick={() => setShowSearch((s) => !s)} aria-label="Find" title="Find (Ctrl/Cmd+F)">
+              <Search className="h-4 w-4" />
+            </Button>
+
+            {/* Display options */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" aria-label="Display options">
+                  <SlidersHorizontal className="h-4 w-4" />
                 </Button>
-              </Link>
-              <h1 className="font-semibold text-sm truncate flex-1">{title}</h1>
-              <Button variant="ghost" size="sm" onClick={() => setShowVideo(false)}>
-                <VideoOff className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="aspect-video w-full bg-surface-elevated shrink-0">
-              {showVideo && (
-                <NocookieYouTubePlayer ref={playerRef} videoId={videoId} className="w-full h-full" />
-              )}
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="p-4">
-                {channelTitle && (
-                  <p className="text-sm text-fg-muted">{channelTitle}</p>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </div>
-
-        {/* ── MAIN EDITOR ── */}
-        <div className="flex-1 flex flex-col bg-bg">
-          {/* Top action bar */}
-          <div className="sticky top-0 h-14 border-b flex items-center justify-between px-6 shrink-0 bg-bg z-10">
-            <div className="flex items-center gap-3">
-              {!showVideo && (
-                <div className="flex items-center gap-2">
-                  <Link href="/dashboard/library">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowVideo(true)}
-                    className="gap-2 h-8 hover:bg-accent hover:text-fg transition-all duration-150"
-                  >
-                    <Video className="h-4 w-4" />
-                    <span className="hidden sm:inline">Show Video</span>
-                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <Label htmlFor="ts-mode" className="text-sm">Timestamps</Label>
+                  <Switch id="ts-mode" checked={showTimestamps} onCheckedChange={setShowTimestamps} />
                 </div>
-              )}
-              <div className="flex items-center space-x-2 border-l pl-3">
-                <Switch
-                  id="ts-mode"
-                  checked={showTimestamps}
-                  onCheckedChange={setShowTimestamps}
-                />
-                <Label htmlFor="ts-mode" className="text-sm font-medium">
-                  Timestamps
-                </Label>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Summarize is strictly bound to the Original tab */}
-              {isOriginalMode && (
-                summarySuccess ? (
-                  <div className="flex items-center gap-2 mr-2">
-                    <span className="text-xs font-medium text-success mr-1 hidden sm:inline">Summary ready!</span>
-                    <Button
-                      size="sm"
-                      className="h-8 text-xs px-3 bg-warning text-fg hover:bg-warning-hover border border-warning-border"
-                      onClick={() => {
-                        router.replace(`?tab=summary`);
-                      }}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text size</DropdownMenuLabel>
+                <div className="flex items-center gap-1 px-2 pb-1.5">
+                  {(["s", "m", "l"] as const).map((sz) => (
+                    <button
+                      key={sz}
+                      onClick={() => setTextSize(sz)}
+                      className={cn("flex-1 rounded-md border py-1 text-xs", textSize === sz ? "border-accent text-accent" : "border-border text-fg-muted hover:text-fg")}
                     >
-                      View Summary
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 gap-1.5 px-3 text-xs font-medium hover:bg-accent hover:text-fg mr-2 transition-all duration-150 border border-border"
+                      {sz === "s" ? "Small" : sz === "m" ? "Default" : "Large"}
+                    </button>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Copy — a core task, its own button */}
+            <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8 gap-1.5 text-fg-muted hover:text-fg">
+              {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
+            </Button>
+
+            {/* Export */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {hasSavedEdits && (
+                  <>
+                    <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Edited version</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleDownloadEditedTxt}>Edited — plain text (.txt)</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDownloadEditedMd}>Edited — Markdown (.md)</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleDownload("txt")}>Plain text (.txt)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload("txt-ts")}>Text + timestamps (.txt)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload("md")}>Markdown (.md)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload("md-ts")}>Markdown + timestamps (.md)</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Data</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleDownload("json")}>JSON (.json)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload("csv")}>CSV (.csv)</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Subtitles</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleDownload("srt")}>SRT (.srt)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload("vtt")}>VTT (.vtt)</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleRagMenuClick}>
+                  RAG JSON
+                  {(localRagExports?.length ?? 0) > 0 ? (
+                    <span className="ml-auto text-[9px] font-bold rounded-full bg-teal-subtle text-teal px-1.5 py-0.5">PURCHASED</span>
+                  ) : (
+                    <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Edit routes to the Edited tab (in edit mode) — never edits the original in place. */}
+            {isOriginalMode && (
+              <Button size="sm" className="h-8 gap-1.5 px-3" onClick={() => router.push(`/dashboard/library/${id}?tab=edited`)}>
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Button>
+            )}
+            {(isEditedMode || isEditingOriginal) && (
+              <>
+                {isEditingOriginal && (
+                  <Button variant="ghost" size="sm" className="h-8 px-3" onClick={() => { setIsEditingOriginal(false); setIsDirty(false); editor?.commands.setContent(originalJSON); }}>
+                    Cancel
+                  </Button>
+                )}
+                <Button size="sm" className="h-8 gap-1.5 px-3" onClick={handleSave} disabled={isSaving || !editor || !isDirty}>
+                  {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save
+                </Button>
+              </>
+            )}
+
+            {/* Overflow — rare & paid actions, so they never crowd the row on mobile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" aria-label="More actions">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <a href={`https://youtu.be/${videoId}`} target="_blank" rel="noopener noreferrer">
+                    <Play className="mr-2 h-4 w-4" /> Watch on YouTube
+                  </a>
+                </DropdownMenuItem>
+                {isOriginalMode && (
+                  <DropdownMenuItem
                     disabled={isSummarizing || !user}
                     onClick={() => {
-                      if (!user) {
-                        setSummarizeError("Please sign in to summarize.");
-                        return;
-                      }
-                      if (credits !== null && credits < 3) {
-                        setSummarizeError("Not enough credits — you need 3 credits to generate a summary.");
-                        return;
-                      }
-
-                      posthog.capture('summary_requested', { transcript_id: id })
+                      if (!user) { setSummarizeError("Please sign in to summarize."); return; }
+                      if (credits !== null && credits < 3) { setSummarizeError("Not enough credits — you need 3 credits to generate a summary."); return; }
+                      posthog.capture('summary_requested', { transcript_id: id });
                       setShowSummaryDialog(true);
                     }}
                   >
-                    {isSummarizing ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    {aiSummary ? "Regenerate Summary" : "Summarize"}
-                  </Button>
-                )
-              )}
-
-              <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8">
-                {copied ? <Check className="mr-2 h-3.5 w-3.5 text-success" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
-                {copied ? "Copied!" : "Copy"}
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 gap-2 hover:bg-accent hover:text-fg transition-all duration-150">
-                    <Download className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Export</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel>Export As…</DropdownMenuLabel>
-                  {hasSavedEdits && (
-                    <>
-                      <DropdownMenuItem onClick={handleDownloadEditedTxt}>
-                        Edited TXT ✏️
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDownloadEditedMd}>
-                        Edited MD ✏️
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleDownload("txt")}>TXT — plain text</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownload("txt-ts")}>TXT — with timestamps</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownload("md")}>Markdown</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownload("md-ts")}>Markdown — with timestamps</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Data</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleDownload("json")}>JSON</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownload("csv")}>CSV</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Subtitles</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleDownload("srt")}>SRT</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownload("vtt")}>VTT</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={handleRagMenuClick}>
-                    RAG JSON{" "}
-                    <span className="text-accent text-[10px] font-bold align-super ml-0.5">✦</span>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    {aiSummary ? "Regenerate summary" : "Summarise"}
+                    <span className="ml-auto text-xs text-fg-muted">3 credits</span>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-error font-medium focus:text-error focus:bg-error/10"
-                    onClick={() => setShowDeleteDialog(true)}
-                    disabled={isDeleting}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Transcript
+                )}
+                {hasSavedEdits && isEditedMode && (
+                  <DropdownMenuItem onClick={() => editor?.commands.setContent(originalJSON)}>
+                    <RotateCcw className="mr-2 h-4 w-4" /> Revert to original
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Edit button logic for Original tab */}
-              {isOriginalMode && !hasSavedEdits && !isEditingOriginal && (
-                <>
-                  <div className="h-5 w-px bg-border mx-1" />
-                  <Button
-                    size="sm"
-                    className="h-8 gap-1.5 px-3"
-                    onClick={() => setIsEditingOriginal(true)}
-                  >
-                    Edit
-                  </Button>
-                </>
-              )}
-
-              {/* Save/Cancel logic for active editing */}
-              {(isEditedMode || isEditingOriginal) && (
-                <>
-                  <div className="h-5 w-px bg-border mx-1" />
-                  {isEditingOriginal && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-3 mr-1"
-                      onClick={() => {
-                        setIsEditingOriginal(false);
-                        setIsDirty(false);
-                        editor?.commands.setContent(originalJSON);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    className="h-8 gap-1.5 px-3"
-                    onClick={handleSave}
-                    disabled={isSaving || !editor || !isDirty}
-                  >
-                    {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    Save
-                  </Button>
-                </>
-              )}
-            </div>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-error focus:text-error focus:bg-error/10" onClick={() => setShowDeleteDialog(true)} disabled={isDeleting}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete transcript
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          {/* Scrollable content — scroll is handled by dashboard layout's overflow-y-auto on main */}
-          <div className="flex-1 w-full">
-            <div>
-              <div className="max-w-3xl mx-auto px-6 lg:px-12 pb-20 pt-8 space-y-6">
+          {/* Video — zero pixels when closed; nocookie player, sticky under the tabs, when open */}
+          {!showVideo ? (
+            <button onClick={() => setShowVideo(true)} className="flex items-center gap-2 text-sm text-fg-muted hover:text-fg transition-colors" aria-label="Watch video">
+              <Play className="h-4 w-4 fill-current" />
+              Watch video
+              {derivedDuration > 0 && <span className="text-fg-subtle tabular-nums font-mono text-xs">· {formatUITimestamp(derivedDuration).replace(/^00:/, "")}</span>}
+              <span className="text-[10px] text-fg-subtle">(loads YouTube)</span>
+            </button>
+          ) : (
+            <div className="sticky top-12 z-[9] space-y-1.5">
+              <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-elevated">
+                <NocookieYouTubePlayer ref={playerRef} videoId={videoId} className="h-full w-full" />
+              </div>
+              <button onClick={() => setShowVideo(false)} className="flex items-center gap-1.5 text-xs text-fg-muted hover:text-fg">
+                <ChevronUp className="h-3.5 w-3.5" /> Hide video
+              </button>
+            </div>
+          )}
 
-                {/* Editable title */}
-                <div className="flex items-start gap-2">
-                  {isEditingTitle ? (
-                    <input
-                      autoFocus
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      onBlur={handleTitleBlur}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === "Escape")
-                          e.currentTarget.blur();
-                      }}
-                      className="flex-1 text-2xl font-bold bg-transparent border-b-2 border-primary outline-none text-fg"
-                    />
-                  ) : (
-                    <h1
-                      className="flex-1 text-2xl font-bold text-fg cursor-pointer hover:text-fg/80 transition-colors"
-                      onClick={() => setIsEditingTitle(true)}
-                      title="Click to edit title"
-                    >
-                      {title}
-                    </h1>
-                  )}
-                </div>
-
-                {titleFeedback && (
-                  <FeedbackCard
-                    variant={titleFeedback.type}
-                    message={titleFeedback.message}
-                    onDismiss={() => setTitleFeedback(null)}
-                  />
-                )}
+                {/* Title lives in the page header (TranscriptHeader) — not repeated here. */}
                 {contentSaveFeedback && (
                   <FeedbackCard
                     variant={contentSaveFeedback.type}
@@ -1011,11 +906,13 @@ export function TranscriptViewer({
                   />
                 )}
 
-                {/* Search bar */}
+                {/* Search bar — toggled by the Find button */}
+                {showSearch && (
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-fg-muted" />
                     <Input
+                      autoFocus
                       placeholder="Search in transcript…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -1047,8 +944,9 @@ export function TranscriptViewer({
                     <span className="text-xs text-fg-muted whitespace-nowrap">No results</span>
                   )}
                 </div>
+                )}
 
-                {/* Toolbar */}
+                {/* Formatting toolbar (edit mode) */}
                 {(isEditedMode || isEditingOriginal) && (
                   <div className="flex items-center gap-2 p-2 rounded-lg border border-border flex-wrap mb-4 bg-surface-elevated/30">
                     <Button
@@ -1107,14 +1005,13 @@ export function TranscriptViewer({
                   onClick={handleTranscriptClick}
                   className={cn(
                     "rounded-xl border border-border bg-surface p-5 min-h-[400px] [&_.ProseMirror]:max-w-[68ch]",
+                    textSize === "s" && "[&_.ProseMirror]:text-sm",
+                    textSize === "l" && "[&_.ProseMirror]:text-lg",
                     !showTimestamps && "hide-timestamps"
                   )}
                 >
                   <EditorContent editor={editor} />
                 </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

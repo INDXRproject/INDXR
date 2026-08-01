@@ -83,19 +83,18 @@ test.describe('3.1 — Library operations', () => {
     await firstRow.click()
     await page.waitForURL('**/library/**', { timeout: 10_000 })
 
-    // Find export/download button
-    const exportBtn = page.locator(
-      'button:has-text("Export"), button:has-text("Download"), button:has-text("TXT")'
-    ).first()
-
+    // Export is a dropdown on the transcript toolbar: open it, then pick a format.
+    const exportBtn = page.getByRole('button', { name: 'Export' }).first()
     if (await exportBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await exportBtn.click()
+      const item = page.getByRole('menuitem', { name: /Plain text \(\.txt\)/i })
       const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: 15_000 }),
-        exportBtn.click(),
+        item.click(),
       ])
       const filename = download.suggestedFilename()
       console.log(`Downloaded: ${filename}`)
-      expect(filename).toBeTruthy()
+      expect(filename).toMatch(/\.txt$/i)
     } else {
       console.warn('No export button found on transcript viewer page')
     }
@@ -112,11 +111,12 @@ test.describe('3.1 — Library operations', () => {
     await firstRow.click()
     await page.waitForURL('**/library/**', { timeout: 10_000 })
 
-    const srtBtn = page.locator('button:has-text("SRT"), a:has-text("SRT")').first()
-    if (await srtBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    const exportBtn = page.getByRole('button', { name: 'Export' }).first()
+    if (await exportBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await exportBtn.click()
       const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: 15_000 }),
-        srtBtn.click(),
+        page.getByRole('menuitem', { name: /SRT \(\.srt\)/i }).click(),
       ])
       expect(download.suggestedFilename()).toMatch(/\.srt$/i)
     } else {
@@ -135,11 +135,12 @@ test.describe('3.1 — Library operations', () => {
     await firstRow.click()
     await page.waitForURL('**/library/**', { timeout: 10_000 })
 
-    const jsonBtn = page.locator('button:has-text("JSON"), a:has-text("JSON")').first()
-    if (await jsonBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    const exportBtn = page.getByRole('button', { name: 'Export' }).first()
+    if (await exportBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await exportBtn.click()
       const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: 15_000 }),
-        jsonBtn.click(),
+        page.getByRole('menuitem', { name: /JSON \(\.json\)/i }).click(),
       ])
       expect(download.suggestedFilename()).toMatch(/\.json$/i)
     } else {

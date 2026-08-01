@@ -1,3 +1,5 @@
+[2026-08-01 14:30] feat (Transcriptpagina Fase 2b — kop/toolbar/video/edit-routing): **Kop** boven de tabs: nieuw `TranscriptHeader` (breadcrumb `‹ Library / collectie` → bewerkbare titel → feitenregel met badges + duur/woorden/datum met iconen; `formatDetailDate` = Today/Yesterday/`28 Jul`, nooit "4h ago"). Titel uit `TranscriptViewer` verwijderd (stond dubbel). **Toolbar** herbouwd tot één rechts-uitgelijnde, `flex-wrap`-rij (nooit meer overflow op mobiel — Regenerate viel eerder van 't scherm): Find (knop → smalle zoekbalk i.p.v. permanent veld), Display-menu (timestamps + tekstgrootte S/M/L), **Copy** (eigen knop), Export (9 formaten + Edited TXT/MD + RAG PAID/PURCHASED), Edit/Save, en **⋯** met de zeldzame/betaalde acties (Watch on YouTube, Regenerate summary "3 credits" als platte tekst, Revert to original, Delete). **Video** = nul pixels dicht (regel `▸ Watch video · mm:ss (loads YouTube)`), open = nocookie-speler sticky onder de tabs op leesbreedte; de videobalk-sidebar is weg (enkele leeskolom, 68ch). **Edit-routing:** Edit vanaf Transcript → `router.push(?tab=edited)` → landt op de Edited-tab in editmodus (geseed uit het origineel), niet edit-op-origineel; page staat `?tab=edited` vers toe. **Summarize/RAG-aftrek ongemoeid** (alleen triggers verplaatst). Playwright spec 03 export-tests bijgewerkt (Export = dropdown → menu-item). Verweesde imports (ArrowLeft/Video/VideoOff/ScrollArea/Link) opgeruimd. `pnpm build` groen (2/2). | gewijzigd: apps/app/src/components/library/{TranscriptHeader.tsx (nieuw),TranscriptViewer}.tsx, apps/app/src/app/dashboard/library/[id]/page.tsx, tests/playwright/specs/03-library.spec.ts, docs/LOG.md
+---
 [2026-08-01 13:00] fix (alinea-drempel — geen mid-zin-knip): `buildReadingParagraphs` herschreven van segment-accumulatie naar **sentence-reflow**: pause breekt altijd; binnen een spraak-run wordt de tekst in zinnen gesplitst (Unicode-aware — punctuatie valt mid-segment bij AI) en breekt een alinea alleen **tussen zinnen**, zodat de char-guardrail (`maxChars`) en de duur-cap nooit een zin doorknippen. Captions breken op de eerste zin ná `minBreakSec`. Een ongepunctueerde run zonder zinsgrens in bereik valt terug op woord-/segment-chunks begrensd door char **én** duur (nooit mid-woord). **Unicode-splitter** (Latin `.!?` + Arabisch `؟ ۔` + CJK `。！？` + ellipsis) i.p.v. Engels-only `sbd` in dit pad. **Gemeten op echte transcripten:** snel AI `ddfc590d` nu median 79 / max 103 woorden en **99% van de alinea's eindigt op een zinsgrens** (was 149-woord-muren); captions 97%; Arabisch `52a68136` 30% (lange run-on zinnen → begrensde woord-breaks, nog steeds geen muren/mid-woord). Unit-test uitgebreid naar **9 checks** incl. "punctuated AI eindigt op zinsgrens". `pnpm build` groen (2/2). | gewijzigd: packages/shared/src/utils/formatTranscript.ts, packages/shared/src/utils/buildReadingParagraphs.test.ts, docs/LOG.md
 ---
 [2026-08-01 11:30] feat (Transcriptpagina Fase 3a — nocookie video+seek, stale-notice, privacy): **Video privacy+interactie:** nieuw `NocookieYouTubePlayer` (IFrame Player API `host=youtube-nocookie.com`, **lazy** — script + speler laden pas als de gebruiker de video opent, geen cookie tot playback); `TranscriptViewer` iframe→player, `getEmbedUrl` (cookieful youtube.com/embed) verwijderd. **In-app seek:** tijdstempel-klik in het transcript → `player.seekTo()` + opent de speler (href blijft no-JS-fallback). Leescanvas 68ch op de ProseMirror. **Embed-audit:** dit was de enige cookieful YouTube-embed in de repo → nocookie-omzetting repo-breed consistent. **Stale-summary:** migratie `20260801120000_edited_content_updated_at` (kolom), gezet in **beide** edited_content-writers (`TranscriptViewer.handleSave`→now(), `transcribe/page.tsx` reset→null); `AiSummaryView` toont een `warning`-banner + Regenerate-link wanneer `generated_at < edited_content_updated_at`. **Legacy-check:** de 2 bestaande edited-rijen bleken **echte edits** (bevatten "Edited version") — niet gecleared (rigoreus geverifieerd via plaintext-vergelijk); origineel rendert altijd merged, nieuwe edits seeden merged → geen poem-vs-merged-divergentie. **Privacy-verklaring** (`privacy/page.tsx`) uitgebreid met accurate nocookie-embed-disclosure ("niets van YouTube tot je de speler opent"). `pnpm build` groen (2/2). Header/toolbar-restructuur = resterend. | gewijzigd: supabase/migrations/20260801120000_edited_content_updated_at.sql (nieuw), apps/app/src/components/library/{NocookieYouTubePlayer.tsx (nieuw),TranscriptViewer,AiSummaryView}.tsx, apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/app/dashboard/transcribe/page.tsx, apps/marketing/src/app/privacy/page.tsx, docs/LOG.md
@@ -14603,4 +14605,31 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 packages/shared/src/utils/buildReadingParagraphs.test.ts
 packages/shared/src/utils/formatTranscript.ts
+---
+[2026-08-01 14:20] commit: feat(transcript): Fase 2b — header, toolbar-on-tab-row, video collapse, edit-routing
+
+- TranscriptHeader (new, above tabs): breadcrumb (‹ Library / collection),
+  editable title, one fact line (badges + duration/words/date w/ icons).
+  formatDetailDate = Today/Yesterday/28 Jul (never "4h ago"). Title removed
+  from TranscriptViewer (was duplicated).
+- Toolbar rebuilt into one right-aligned flex-wrap row (no mobile overflow —
+  Regenerate no longer falls off screen): Find (button → search bar), Display
+  menu (timestamps + text size), Copy (own button), Export (9 formats + Edited
+  TXT/MD + RAG PAID/PURCHASED), Edit/Save, and ⋯ (Watch on YouTube, Regenerate
+  "3 credits" as plain text, Revert, Delete).
+- Video: zero pixels when closed (one-line "▸ Watch video · mm:ss"); open =
+  nocookie player sticky under the tabs at reading width. Sidebar removed →
+  single 68ch reading column.
+- Edit routing: Edit from Transcript → ?tab=edited in edit mode (seeded from
+  the original), never edits the original in place; page allows fresh ?tab=edited.
+
+Summarize/RAG deduction untouched (only triggers moved). Spec 03 export tests
+updated (Export is a dropdown). Orphaned imports removed. pnpm build green (2/2).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/library/[id]/page.tsx
+apps/app/src/components/library/TranscriptHeader.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+docs/LOG.md
+tests/playwright/specs/03-library.spec.ts
 ---
