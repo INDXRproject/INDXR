@@ -14907,3 +14907,10 @@ docs/content/PRICING-PAGE.md
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: tests/playwright/specs/03-library.spec.ts
 ---
+[2026-08-01 23:59] commit: docs+db: ADR-086 (YouTube-captions rename) + drop dead is_favorite column
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/INDEX.md
+docs/wiki/decisions/086-youtube-captions-rename.md
+supabase/migrations/20260801140000_drop_is_favorite.sql
+---
