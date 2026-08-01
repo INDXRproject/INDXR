@@ -79,6 +79,7 @@ import {
   generateMarkdown,
   decodeEntities,
   buildRagJson,
+  buildReadingParagraphs,
   TranscriptItem,
 } from "@indxr/shared/utils/formatTranscript";
 import { deductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
@@ -236,14 +237,18 @@ function getEmbedUrl(url: string): string {
   return url;
 }
 
-/** Convert transcript array → Tiptap JSONContent document */
+/** Convert transcript segments → Tiptap document, merged into readable paragraphs
+ *  (buildReadingParagraphs) with one leading timestamp per paragraph. This is the fix
+ *  for the "one segment per line = poem with a ragged edge" reading problem. */
 function transcriptToJSON(
   items: TranscriptItem[],
-  videoId: string
+  videoId: string,
+  isAi: boolean
 ): JSONContent {
+  const paras = buildReadingParagraphs(items, { isAi });
   return {
     type: "doc",
-    content: items.map((item) => ({
+    content: paras.map((para) => ({
       type: "paragraph",
       content: [
         {
@@ -252,16 +257,16 @@ function transcriptToJSON(
             {
               type: "link",
               attrs: {
-                href: `https://youtube.com/watch?v=${videoId}&t=${Math.floor(item.offset)}s`,
+                href: `https://youtube.com/watch?v=${videoId}&t=${Math.floor(para.startOffset)}s`,
                 target: "_blank",
                 rel: "noopener noreferrer",
                 class: "ts-link",
               },
             },
           ],
-          text: `[${formatUITimestamp(item.offset)}]`,
+          text: `[${formatUITimestamp(para.startOffset)}]`,
         },
-        { type: "text", text: ` ${item.text}` },
+        { type: "text", text: ` ${para.text}` },
       ],
     })),
   };
@@ -367,8 +372,10 @@ export function TranscriptViewer({
 
   // ── Tiptap editor ──────────────────────────────────────────────────────────
 
-  // Initial content: original JSON or edited JSON based on mode
-  const originalJSON = transcriptToJSON(transcript, videoId);
+  // Initial content: original JSON or edited JSON based on mode. AI transcripts (AssemblyAI)
+  // and captions merge differently — see buildReadingParagraphs.
+  const isAiTranscript = !!processingMethod && processingMethod !== "youtube_captions";
+  const originalJSON = transcriptToJSON(transcript, videoId, isAiTranscript);
   const initialContent: JSONContent = isEditedMode && editedContent ? editedContent : originalJSON;
 
   const editor = useEditor({

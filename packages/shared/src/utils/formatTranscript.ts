@@ -83,6 +83,88 @@ export const createParagraphMode = (transcript: TranscriptItem[]): string => {
   return paragraphs.join('\n\n');
 };
 
+// ── Reading paragraphs ────────────────────────────────────────────────────────
+// Groups raw caption/AI segments into readable paragraphs while KEEPING each
+// paragraph's start offset (so a timestamp can lead it). This is what the reader
+// renders instead of one-line-per-segment.
+//
+// Thresholds are data-driven (measured on real transcripts): segment gaps are
+// near-zero for both captions and AI, so pause-breaking barely fires; captions end a
+// sentence ~38% of the time (usable), AI ~0.6% (punctuation lands mid-segment, so
+// sentence-breaking is useless for AI). Hence: captions break at a sentence boundary
+// once past `minBreakSec`; AI falls back to a hard `maxParaSec` cap. Exported + tunable
+// so a unit test pins the behaviour.
+
+export interface ReadingParagraph {
+  startOffset: number;
+  text: string;
+}
+
+export interface ReadingParagraphConfig {
+  /** A real pause longer than this (seconds) always starts a new paragraph. */
+  pauseBreakSec: number;
+  captions: { minBreakSec: number; maxParaSec: number };
+  ai: { maxParaSec: number };
+  /** Hard guardrail on paragraph length in characters — bounds word count regardless of
+   *  speaking rate (a duration cap alone lets fast speakers produce 140+ word walls). */
+  maxChars: number;
+}
+
+export const READING_PARAGRAPH_CONFIG: ReadingParagraphConfig = {
+  pauseBreakSec: 2,
+  captions: { minBreakSec: 22, maxParaSec: 45 },
+  ai: { maxParaSec: 32 },
+  maxChars: 500,
+};
+
+const endsSentence = (s: string) => /[.!?]["')\]]*$/.test(s.trim());
+
+export function buildReadingParagraphs(
+  transcript: TranscriptItem[],
+  opts: { isAi?: boolean; config?: ReadingParagraphConfig } = {},
+): ReadingParagraph[] {
+  const cfg = opts.config ?? READING_PARAGRAPH_CONFIG;
+  const isAi = !!opts.isAi;
+  const maxSec = isAi ? cfg.ai.maxParaSec : cfg.captions.maxParaSec;
+  const minSec = isAi ? 0 : cfg.captions.minBreakSec;
+
+  const paras: ReadingParagraph[] = [];
+  let texts: string[] = [];
+  let startOffset = 0;
+  let accDur = 0;
+  let accChars = 0;
+  let prev: TranscriptItem | null = null;
+
+  const flush = () => {
+    if (texts.length > 0) paras.push({ startOffset, text: texts.join(' ') });
+    texts = [];
+    accDur = 0;
+    accChars = 0;
+  };
+
+  for (const item of transcript) {
+    const text = decodeEntities(item.text).trim();
+    if (!text) continue;
+
+    if (texts.length > 0) {
+      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
+      const pause = gap > cfg.pauseBreakSec;
+      // Captions: break at a sentence boundary once the paragraph is long enough.
+      const naturalBreak = !isAi && accDur >= minSec && endsSentence(texts[texts.length - 1]);
+      const hitMax = accDur >= maxSec || accChars >= cfg.maxChars;
+      if (pause || naturalBreak || hitMax) flush();
+    }
+
+    if (texts.length === 0) startOffset = item.offset;
+    texts.push(text);
+    accDur += item.duration;
+    accChars += text.length + 1;
+    prev = item;
+  }
+  flush();
+  return paras;
+}
+
 export interface SubtitleBlock {
   startTime: number;
   endTime: number;

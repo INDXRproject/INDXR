@@ -1,3 +1,5 @@
+[2026-08-01 10:00] feat (Transcriptpagina Fase 1 — leesbare alinea's): kern-leeswinst. Nieuwe pure util `buildReadingParagraphs(transcript,{isAi,config})` in `formatTranscript.ts` met **configureerbare** `READING_PARAGRAPH_CONFIG` (pauseBreakSec/captions.minBreakSec+maxParaSec/ai.maxParaSec/maxChars). Data-gedreven drempels (gemeten): captions breken op zinseinde ná 22s; AI (geen zinseinde-signaal, 0,6%) op harde cap 32s; **`maxChars=500` guardrail** bindt de alinealengte los van spreektempo (voorkwam AI-muren tot 149 woorden). `transcriptToJSON` in `TranscriptViewer.tsx` geseed uit merged paragraphs i.p.v. één-segment-per-paragraaf (was: gedicht met rafelrand). **Unit-test** `buildReadingParagraphs.test.ts` (8 checks, `node --experimental-strip-types`, vaste fixtures, pint elk gedrag) + `test:unit`-script. **Gemeten op 3 echte transcripten:** captions median 51 woorden (max 115); AI 82/91 median (max 117) — alles onder de 140-plafond. `pnpm build` groen (2/2). Header/tabs-restructuur = Fase 2 (onlosmakelijk met tabs). packages/shared additief (nieuwe util, geen marketing-gedragswijziging). | gewijzigd: packages/shared/src/utils/formatTranscript.ts, packages/shared/src/utils/buildReadingParagraphs.test.ts (nieuw), apps/app/src/components/library/TranscriptViewer.tsx, package.json, docs/LOG.md
+---
 [2026-07-31 23:00] chore (Transcriptpagina-herontwerp Fase 0 — afronden + opruimen): (1) Deploy `3c3e1e5` (beehive-redraw) groen geverifieerd + mobiele-tabbalk live-check (nieuwe iconen, geen lucide-home/inbox). (2) **Herbruikbare authenticated-productie-DOM-check** toegevoegd: `tests/playwright/prod-check.cjs` (`withAuthedProd`-helper injecteert een Supabase-sessiecookie in Chromium → assert op live app.indxr.ai zonder dev-server) + `prod-check.sh`-wrapper (zet NODE_PATH naar de pnpm-store) + 2-regel wiki-note in `operations/cross-host-smoke-tests.md`. (3) **Drie Fase-1 `[~]`-punten gesloten met bewijs** (11/11 checks PASS): `dir="auto"` computed-rtl op rij-titel + Move-menu-collectienaam + mobiele row-sheet-titel; mobiele bulkbalk bedekt de tabbalk nooit op 360px (`bottom 750 < top 765`) en 404px (`708 < 723`); MoveToCollectionMenu-focus (new-collection-input behoudt Arabische waarde, menu blijft open) + Radix-Sub rendert. Seed (RTL-transcript+collectie, RLS-scoped als test1) opgeruimd + één leftover-collectie handmatig verwijderd; script nu self-healing. (4) Working tree opgeschoond: `transcript-redesign-mockup.html` (richting voor deze opdracht) gecommit; `transcribe-redesign.md` +134 regels = "Mockup D" (video-modus kaarten, design-doc-toevoeging) gecommit; `public/logo/X.com/` = INDXR X/Twitter avatar+banners (merkassets) gecommit. Na deze commit is `git status` schoon. | gewijzigd: tests/playwright/prod-check.cjs+prod-check.sh (nieuw), docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/design/mockups/{transcript-redesign-mockup.html (nieuw),transcribe-redesign.md}, public/logo/X.com/* (nieuw), docs/LOG.md
 ---
 [2026-07-31 22:00] feat (Fase 3 — /dashboard/billing → /dashboard/credits, ADR-084): **financieel-kritiek.** Route `git mv` billing→credits (page/success/cancel, historie behouden). **Geld op één plek:** Credits = money-hub (saldo, pakketten `BillingPurchaseGrid` incl. `?checkout=`-deeplink, `TransactionHistoryCard` verhuisd van Account, `PurchaseHistoryCard` mét factuur). **Account** getrimd tot identiteit/opslag/support (`ProfileSettingsCard`+`StorageMeterCard`+`SentryFeedbackCard`; beide history-cards + hun fetches eruit). **Stripe** `checkout/route.ts` `success_url`/`cancel_url` → `/dashboard/credits/{success,cancel}` (direct, geen redirect-hop op de callback). **Redirect** (permanent) in `apps/app/next.config.ts`: `/dashboard/billing`(+`/:path*`) → credits — vangt oude bookmarks én een in-flight Stripe-sessie zodat een terugkeer nooit op 404 landt. **Koop-routes → Credits:** topbar credit-pil (nu mét `+`-affordance, dé koop-route desktop+mobiel) → `/dashboard/credits`; dashboard "Buy more"; avatar-menu nieuw "Credits"-item; shared insufficient-credits-links (`TranscriptCard`, `PlaylistAvailabilitySummary`, `VideoTab`×3, `AudioTab`×2, `errorCopy billingHref`); marketing `BuyButton` deep-link. Support-componentmap `components/dashboard/billing/` NIET hernoemd (churn). Geverifieerd: `pnpm build` groen (2/2), routes = `/dashboard/credits{,/success,/cancel}`, geen billing-routes. Volledige Stripe-test-mode-betaling = handmatige stap; routes+redirect gebouwd zodat terugkeer nooit 404't. | gewijzigd: apps/app/src/app/dashboard/credits/** (git mv van billing), apps/app/src/app/dashboard/{account,page}.tsx, apps/app/src/app/api/stripe/checkout/route.ts, apps/app/next.config.ts, apps/app/src/components/{AppTopbar,AvatarDropdown}.tsx, apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx (comment), apps/marketing/src/components/pricing/BuyButton.tsx, packages/shared/src/components/{TranscriptCard,PlaylistAvailabilitySummary,free-tool/VideoTab,free-tool/AudioTab}.tsx, docs/wiki/decisions/084-billing-to-credits.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
@@ -14495,4 +14497,29 @@ public/logo/X.com/indxr-x-banner-clean.png
 public/logo/X.com/indxr-x-banner.png
 tests/playwright/prod-check.cjs
 tests/playwright/prod-check.sh
+---
+[2026-08-01 13:01] commit: feat(transcript): Fase 1 — readable paragraphs (buildReadingParagraphs)
+
+The reader rendered one caption segment per line (a "poem with a ragged
+edge"). New pure util buildReadingParagraphs() merges segments into readable
+paragraphs, keeping each paragraph's start offset for its leading timestamp.
+
+- READING_PARAGRAPH_CONFIG (configurable): captions break at a sentence
+  boundary after minBreakSec (22s); AI (no seg-end punctuation) at a hard
+  duration cap (32s); maxChars=500 guardrail bounds length regardless of
+  speaking rate (prevented AI walls up to 149 words).
+- transcriptToJSON seeds Tiptap from merged paragraphs.
+- Unit test (8 checks, node --experimental-strip-types, fixed fixtures) pins
+  every rule; `test:unit` script.
+
+Measured on 3 real transcripts: captions median 51 words (max 115); AI 82/91
+median (max 117) — all under the 140 ceiling. pnpm build green (2/2). Header +
+tabs restructure follows in Fase 2 (inseparable from tabs).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptViewer.tsx
+docs/LOG.md
+package.json
+packages/shared/src/utils/buildReadingParagraphs.test.ts
+packages/shared/src/utils/formatTranscript.ts
 ---
