@@ -249,23 +249,27 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
         )}
       </div>
 
-      {/* Top-level tabs: Inbox / Support */}
-      <div className="flex gap-1 mb-4 border-b border-border">
+      {/* Top-level tabs: Inbox / Support — segmented control, matching the Transcribe mode strip */}
+      <div className="flex w-full items-center gap-1 rounded-lg bg-surface-sunken p-1 mb-4">
         <button
           onClick={() => switchTopTab("inbox")}
           className={cn(
-            "px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-            activeTab === "inbox" ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg"
+            "flex flex-1 items-center justify-center gap-1.5 rounded-md h-11 min-h-[44px] px-2 text-sm font-medium border border-transparent transition-colors",
+            activeTab === "inbox"
+              ? "bg-surface border-border text-fg-strong shadow-xs"
+              : "text-fg-muted hover:text-fg"
           )}
         >
           Inbox
-          {unreadCount > 0 && <span className="ml-1.5 text-xs text-accent">({unreadCount})</span>}
+          {unreadCount > 0 && <span className="text-xs text-accent">({unreadCount})</span>}
         </button>
         <button
           onClick={() => switchTopTab("support")}
           className={cn(
-            "px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-            activeTab === "support" ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg"
+            "flex flex-1 items-center justify-center gap-1.5 rounded-md h-11 min-h-[44px] px-2 text-sm font-medium border border-transparent transition-colors",
+            activeTab === "support"
+              ? "bg-surface border-border text-fg-strong shadow-xs"
+              : "text-fg-muted hover:text-fg"
           )}
         >
           Support

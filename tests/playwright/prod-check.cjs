@@ -91,9 +91,9 @@ if (require.main === module) {
       await page.waitForTimeout(1500);
       const nav = page.locator('nav[aria-label="Mobile navigation"]');
       const html = await nav.innerHTML();
-      check("mobile nav: new icons (beehive + message-square, no lucide-home/inbox)",
-        (await nav.isVisible()) && !/lucide-home|lucide-house|lucide-inbox/.test(html) &&
-        html.includes("M4 20.5a8 7.5 0 0 1 16 0") && /lucide-message-square/.test(html));
+      check("mobile nav: House (home) + message-square icons, no beehive/inbox",
+        (await nav.isVisible()) && /lucide-house/.test(html) && /lucide-message-square/.test(html) &&
+        !html.includes("M4 20.5a8 7.5 0 0 1 16 0") && !/lucide-inbox/.test(html));
     }, { device: "Pixel 7" });
 
     // Seeded [~] checks — Arabic RTL + mobile bulk bar + Radix-Sub focus

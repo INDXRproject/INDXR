@@ -14746,3 +14746,20 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: tests/playwright/helpers/auth.ts
 tests/playwright/specs/03-library.spec.ts
 ---
+[2026-08-01 16:33] commit: fix(nav): House home icon, segmented Messages tabs, wider sidebar collections
+
+- Replace the custom beehive Home icon with lucide House in the mobile tab bar
+  + sidebar (looked off); delete the now-unused Beehive icon.
+- Messages Inbox/Support tabs -> the Transcribe segmented-control look
+  (surface-sunken track, raised active cell), instead of the underline tabs.
+- Sidebar collections under Library: drop the pl-12 indent to pl-2 so rows are
+  as wide as Library and long collection titles stay readable.
+- prod-check: assert the mobile nav now uses lucide-house (no beehive path).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/messages/MessagesClient.tsx
+apps/app/src/components/app-sidebar.tsx
+apps/app/src/components/dashboard/MobileTabBar.tsx
+apps/app/src/components/icons/Beehive.tsx
+tests/playwright/prod-check.cjs
+---

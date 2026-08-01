@@ -7,9 +7,8 @@ import Link from "next/link"
 import {
   Library, AudioLines, MessageSquare, BookOpen, Settings, User, LogOut,
   ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2, Search,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, House,
 } from "lucide-react"
-import { Beehive } from "@/components/icons/Beehive"
 import { useUnreadMessages } from "../hooks/useUnreadMessages"
 
 import {
@@ -46,7 +45,7 @@ interface SimplifiedTranscript {
 }
 
 const topNavItems = [
-  { title: "Home",      url: "/dashboard",            icon: Beehive     },
+  { title: "Home",      url: "/dashboard",            icon: House       },
   { title: "Transcribe", url: "/dashboard/transcribe", icon: AudioLines  },
   { title: "Messages",  url: "/dashboard/messages",   icon: MessageSquare },
 ]
@@ -417,7 +416,9 @@ export function AppSidebar() {
                     >
                       {/* Scroll region — fills the available space, scrolls only when it truly overflows */}
                       <div className="overflow-y-auto min-h-0 flex-1">
-                        <div className="pl-12 py-1 space-y-0.5">
+                        {/* Near-flush with Library (small pl-2 indent, not pl-12) so collection
+                            rows are as wide as Library and long titles stay readable. */}
+                        <div className="pl-2 pr-1 py-1 space-y-0.5">
 
                         {sidebarFeedback && (
                           <div className={cn(
