@@ -1,7 +1,7 @@
 # Beslissing 085: Transcriptpagina-herontwerp (`/dashboard/library/[id]`)
 
-**Status:** Geaccepteerd (gefaseerd; leescanvas + tabs + video + stale-notice geleverd, header/toolbar-
-laag resterend)
+**Status:** Geaccepteerd (volledig geleverd — leescanvas, tabs+fallback, nocookie-video+seek, stale-
+notice, kop/feitenregel, toolbar-op-tabregel, Edit-routing, mobiel)
 **Datum:** 2026-08-01
 **Gerelateerde code:** `packages/shared/src/utils/formatTranscript.ts` (`buildReadingParagraphs`),
 `apps/app/src/components/library/{TranscriptViewer,TranscriptTabs,NocookieYouTubePlayer,AiSummaryView}.tsx`,
@@ -60,11 +60,15 @@ met rafelrand. Richting: `docs/wiki/design/mockups/transcript-redesign-mockup.ht
   echte edits en blijven ongewijzigd.
 - Nieuwe kolom `edited_content_updated_at` moet meebewegen met **elk** toekomstig edited_content-schrijfpad
   (anders stille melding + dode kolom).
-- **Resterend (header/toolbar-laag):** de visuele kop-herschikking (breadcrumb → titel → feitenregel met
-  badges+duur/woorden/datum → tabs+toolbar op één rij), de toolbar-herindeling (Copy als eigen knop,
-  Find-als-knop, Display-menu, `⋯` met transcript-acties), de Edit-routing (vanaf Transcript direct naar
-  de Edited-tab in editmodus i.p.v. edit-op-origineel), en de mobiele toolbar-overflow-fix zijn nog te
-  doen. `library-source-map.md §8` bij te werken zodra die laag landt.
+- **Kop/toolbar-laag (geleverd):** `TranscriptHeader` (breadcrumb → bewerkbare titel → feitenregel met
+  badges + duur/woorden/datum + `formatDetailDate`) boven de tabs; titel uit de viewer weg (was dubbel).
+  Toolbar = één rechts-uitgelijnde `flex-wrap`-rij (Find-knop → zoekbalk, Display-menu, Copy eigen knop,
+  Export, Edit/Save, `⋯` met Watch/Regenerate("3 credits" tekst)/Revert/Delete). Video = 0px dicht +
+  nocookie-speler sticky onder de tabs op leesbreedte (sidebar weg). **Edit-routing:** Edit → `?tab=edited`
+  in editmodus (geseed uit origineel), nooit edit-op-origineel; page staat `?tab=edited` vers toe.
+  Summarize/RAG-aftrek ongemoeid (alleen triggers verplaatst).
+- Mobiel: toolbar wrapt (nooit overflow); de topbar-wordmark verbergt <380px (aparte fix `2c1f35e`).
+- Playwright spec 03 export-tests bijgewerkt (Export = dropdown → menu-item).
 
 ## Verificatie
 

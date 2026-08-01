@@ -441,6 +441,17 @@ pagina kiest zelf door `DashboardBackdrop` te renderen (`layout.tsx:59-62`).
 
 ## 8. Detailpagina — `/dashboard/library/[id]`
 
+> ⚠️ **Herontworpen in ADR-085 (2026-08-01).** De onderstaande render-boom is de PRE-redesign staat.
+> Nieuwe werkelijkheid: de server-page berekent conditionele tabs **met content-fallback** (geen dood
+> tabblad) en rendert nu `TranscriptHeader` (breadcrumb → bewerkbare titel → feitenregel met badges +
+> duur/woorden/datum, `formatDetailDate`) + `TranscriptTabs` (desktop-strip / mobiele view-selector-sheet)
+> boven de content. `TranscriptViewer` is één 68ch-leeskolom (video-sidebar weg): rechts-uitgelijnde
+> `flex-wrap`-toolbar (Find/Display/Copy/Export/Edit/⋯), video = 0px dicht + **nocookie** IFrame-Player
+> (`NocookieYouTubePlayer`, lazy, in-app **seek** op tijdstempels), en de reader seedt Tiptap uit
+> **`buildReadingParagraphs`** (leesbare alinea's i.p.v. één segment per regel). Edit routeert naar de
+> Edited-tab. Nieuwe componenten: `TranscriptHeader.tsx`, `TranscriptTabs.tsx`, `NocookieYouTubePlayer.tsx`.
+> Migratie `20260801120000_edited_content_updated_at` voedt de stale-summary-melding in `AiSummaryView`.
+
 ### 8.1 Render-boom
 
 | # | Bestand | Rendert | S/C | Locatie |

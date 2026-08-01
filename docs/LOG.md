@@ -14643,3 +14643,9 @@ the transcript-page 360px verification (the transcript toolbar itself wraps fine
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/AppTopbar.tsx
 ---
+[2026-08-01 14:30] commit: docs(transcript): ADR-085 complete + source-map §8 updated for the redesign
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/decisions/085-transcript-page-redesign.md
+docs/wiki/design/library-source-map.md
+---
