@@ -1,3 +1,5 @@
+[2026-08-01 10:40] feat (Transcriptpagina Fase 2a — tab-laag): conditionele tabs + **content-fallback** in `[id]/page.tsx` (tabs verschijnen alleen als de inhoud bestaat; een `?tab` waarvan de inhoud weg is valt terug op Transcript — geen dood tabblad meer, was de bug). Labels hernoemd: Original→**Transcript**, AI Summary→**Summary**, Edited Summary→**Edited summary**, ✦ weg; mockup-volgorde (Transcript/Edited/Summary/Edited summary/Developer). Nieuw client-component `TranscriptTabs.tsx`: desktop-strip + **mobiele view-selector** ("Transcript · 1 of N ▾" → bottom-sheet, elke tab bereikbaar op 360px zonder horizontaal scrollen, raakvlakken ≥44px). URL-`?tab`-ids stabiel gehouden (original/edited/…). data-testids toegevoegd. `pnpm build:app` groen. | gewijzigd: apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/components/library/TranscriptTabs.tsx (nieuw), docs/LOG.md
+---
 [2026-08-01 10:00] feat (Transcriptpagina Fase 1 — leesbare alinea's): kern-leeswinst. Nieuwe pure util `buildReadingParagraphs(transcript,{isAi,config})` in `formatTranscript.ts` met **configureerbare** `READING_PARAGRAPH_CONFIG` (pauseBreakSec/captions.minBreakSec+maxParaSec/ai.maxParaSec/maxChars). Data-gedreven drempels (gemeten): captions breken op zinseinde ná 22s; AI (geen zinseinde-signaal, 0,6%) op harde cap 32s; **`maxChars=500` guardrail** bindt de alinealengte los van spreektempo (voorkwam AI-muren tot 149 woorden). `transcriptToJSON` in `TranscriptViewer.tsx` geseed uit merged paragraphs i.p.v. één-segment-per-paragraaf (was: gedicht met rafelrand). **Unit-test** `buildReadingParagraphs.test.ts` (8 checks, `node --experimental-strip-types`, vaste fixtures, pint elk gedrag) + `test:unit`-script. **Gemeten op 3 echte transcripten:** captions median 51 woorden (max 115); AI 82/91 median (max 117) — alles onder de 140-plafond. `pnpm build` groen (2/2). Header/tabs-restructuur = Fase 2 (onlosmakelijk met tabs). packages/shared additief (nieuwe util, geen marketing-gedragswijziging). | gewijzigd: packages/shared/src/utils/formatTranscript.ts, packages/shared/src/utils/buildReadingParagraphs.test.ts (nieuw), apps/app/src/components/library/TranscriptViewer.tsx, package.json, docs/LOG.md
 ---
 [2026-07-31 23:00] chore (Transcriptpagina-herontwerp Fase 0 — afronden + opruimen): (1) Deploy `3c3e1e5` (beehive-redraw) groen geverifieerd + mobiele-tabbalk live-check (nieuwe iconen, geen lucide-home/inbox). (2) **Herbruikbare authenticated-productie-DOM-check** toegevoegd: `tests/playwright/prod-check.cjs` (`withAuthedProd`-helper injecteert een Supabase-sessiecookie in Chromium → assert op live app.indxr.ai zonder dev-server) + `prod-check.sh`-wrapper (zet NODE_PATH naar de pnpm-store) + 2-regel wiki-note in `operations/cross-host-smoke-tests.md`. (3) **Drie Fase-1 `[~]`-punten gesloten met bewijs** (11/11 checks PASS): `dir="auto"` computed-rtl op rij-titel + Move-menu-collectienaam + mobiele row-sheet-titel; mobiele bulkbalk bedekt de tabbalk nooit op 360px (`bottom 750 < top 765`) en 404px (`708 < 723`); MoveToCollectionMenu-focus (new-collection-input behoudt Arabische waarde, menu blijft open) + Radix-Sub rendert. Seed (RTL-transcript+collectie, RLS-scoped als test1) opgeruimd + één leftover-collectie handmatig verwijderd; script nu self-healing. (4) Working tree opgeschoond: `transcript-redesign-mockup.html` (richting voor deze opdracht) gecommit; `transcribe-redesign.md` +134 regels = "Mockup D" (video-modus kaarten, design-doc-toevoeging) gecommit; `public/logo/X.com/` = INDXR X/Twitter avatar+banners (merkassets) gecommit. Na deze commit is `git status` schoon. | gewijzigd: tests/playwright/prod-check.cjs+prod-check.sh (nieuw), docs/wiki/operations/cross-host-smoke-tests.md, docs/wiki/design/mockups/{transcript-redesign-mockup.html (nieuw),transcribe-redesign.md}, public/logo/X.com/* (nieuw), docs/LOG.md
@@ -14522,4 +14524,20 @@ docs/LOG.md
 package.json
 packages/shared/src/utils/buildReadingParagraphs.test.ts
 packages/shared/src/utils/formatTranscript.ts
+---
+[2026-08-01 13:07] commit: feat(transcript): Fase 2a — conditional tabs + fallback + mobile view-selector
+
+- [id]/page.tsx: tabs computed from content; a requested ?tab whose content is
+  gone falls back to Transcript (no more dead tab). Labels renamed
+  (Transcript/Summary/Edited summary), mockup order, ✦ removed.
+- New TranscriptTabs.tsx: desktop strip + mobile "Transcript · 1 of N ▾"
+  bottom-sheet (every tab reachable at 360px without horizontal scroll,
+  ≥44px targets). URL ?tab ids kept stable. data-testids added.
+
+pnpm build:app green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/library/[id]/page.tsx
+apps/app/src/components/library/TranscriptTabs.tsx
+docs/LOG.md
 ---

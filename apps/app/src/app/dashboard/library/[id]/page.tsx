@@ -1,10 +1,9 @@
 import { createClient } from "@indxr/shared/utils/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import { cn } from "@indxr/shared/lib/utils";
 import { TranscriptViewer } from "@/components/library/TranscriptViewer";
 import { AiSummaryView } from "@/components/library/AiSummaryView";
 import { RagExportView } from "@/components/library/RagExportView";
+import { TranscriptTabs, ViewTab } from "@/components/library/TranscriptTabs";
 
 interface PageProps {
   params: Promise<{
@@ -16,11 +15,7 @@ interface PageProps {
 export default async function TranscriptPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
-  const validTabs = ["original", "edited", "summary", "summary_edited", "developer"];
-  const activeTab = validTabs.includes(resolvedSearchParams.tab as string) 
-    ? (resolvedSearchParams.tab as string) 
-    : "original";
-  
+
   const supabase = await createClient();
 
   const {
@@ -41,74 +36,24 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
     return notFound();
   }
 
+  // Tabs appear only when their content exists. A requested ?tab whose content is gone (an edit
+  // reverted, an export that never happened) falls back to Transcript — never a dead tab.
+  const hasEditedSummary = !!transcript.ai_summary && !!transcript.ai_summary.edited_html;
+  const hasRag = Array.isArray(transcript.rag_exports) && transcript.rag_exports.length > 0;
+  const tabs: ViewTab[] = [
+    { id: "original", label: "Transcript" },
+    ...(transcript.edited_content ? [{ id: "edited", label: "Edited" }] : []),
+    ...(transcript.ai_summary ? [{ id: "summary", label: "Summary" }] : []),
+    ...(hasEditedSummary ? [{ id: "summary_edited", label: "Edited summary" }] : []),
+    ...(hasRag ? [{ id: "developer", label: "Developer" }] : []),
+  ];
+  const requestedTab = resolvedSearchParams.tab as string | undefined;
+  const activeTab = tabs.some((t) => t.id === requestedTab) ? (requestedTab as string) : "original";
+
   return (
     <div className="flex flex-col overflow-x-hidden max-w-7xl mx-auto w-full">
-      <div className="mb-6 flex space-x-4 border-b border-border text-sm">
-        <Link
-          href={`/dashboard/library/${id}?tab=original`}
-          className={cn(
-            "pb-3 border-b-2 px-2 transition-colors",
-            activeTab === "original"
-              ? "border-accent font-medium text-fg"
-              : "border-transparent text-fg-muted hover:text-fg"
-          )}
-        >
-          Original
-        </Link>
-        {transcript.edited_content && (
-          <Link
-            href={`/dashboard/library/${id}?tab=edited`}
-            className={cn(
-              "pb-3 border-b-2 px-2 transition-colors",
-              activeTab === "edited"
-                ? "border-accent font-medium text-fg"
-                : "border-transparent text-fg-muted hover:text-fg"
-            )}
-          >
-            Edited
-          </Link>
-        )}
-        {transcript.rag_exports && Array.isArray(transcript.rag_exports) && transcript.rag_exports.length > 0 && (
-          <Link
-            href={`/dashboard/library/${id}?tab=developer`}
-            className={cn(
-              "pb-3 border-b-2 px-2 transition-colors",
-              activeTab === "developer"
-                ? "border-accent font-medium text-fg"
-                : "border-transparent text-fg-muted hover:text-fg"
-            )}
-          >
-            Developer <span className="text-accent text-[10px] font-bold align-super">✦</span>
-          </Link>
-        )}
-        {transcript.ai_summary && (
-          <>
-            <Link
-              href={`/dashboard/library/${id}?tab=summary`}
-              className={cn(
-                "pb-3 border-b-2 px-2 transition-colors",
-                activeTab === "summary"
-                  ? "border-accent font-medium text-fg"
-                  : "border-transparent text-fg-muted hover:text-fg"
-              )}
-            >
-              AI Summary
-            </Link>
-            {transcript.ai_summary.edited_html && (
-              <Link
-                href={`/dashboard/library/${id}?tab=summary_edited`}
-                className={cn(
-                  "pb-3 border-b-2 px-2 transition-colors",
-                  activeTab === "summary_edited"
-                    ? "border-accent font-medium text-fg"
-                    : "border-transparent text-fg-muted hover:text-fg"
-                )}
-              >
-                Edited Summary
-              </Link>
-            )}
-          </>
-        )}
+      <div className="mb-6">
+        <TranscriptTabs tabs={tabs} activeId={activeTab} transcriptId={id} />
       </div>
 
       {activeTab === "original" || activeTab === "edited" ? (
