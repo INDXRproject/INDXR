@@ -55,6 +55,13 @@
   display: none !important;
 }
 
+/* Uploaded audio has no player to seek — its timestamps are inert position markers,
+   not links (no hover affordance, not clickable), but still styled + toggleable. */
+.ts-static {
+  pointer-events: none;
+  cursor: default;
+}
+
 /* Tiptap List Styles */
 .prose ul {
   list-style-type: disc !important;

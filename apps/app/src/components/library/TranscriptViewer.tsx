@@ -233,8 +233,9 @@ function transcriptToJSON(
   isAi: boolean
 ): JSONContent {
   const paras = buildReadingParagraphs(items, { isAi });
-  // Uploaded audio has no YouTube video_id → render the timestamp as a plain position
-  // marker, not a broken `watch?v=null` link that seeks a player that isn't there.
+  // Uploaded audio has no YouTube video_id: keep the timestamp styled + toggleable (same
+  // `.ts-link` class) but make it an inert position marker (`.ts-static`, pointer-events:none)
+  // instead of a link to a player that isn't there / a broken `watch?v=null` URL.
   const hasVideo = !!videoId;
   return {
     type: "doc",
@@ -243,19 +244,19 @@ function transcriptToJSON(
       content: [
         {
           type: "text",
-          ...(hasVideo && {
-            marks: [
-              {
-                type: "link",
-                attrs: {
-                  href: `https://youtube.com/watch?v=${videoId}&t=${Math.floor(para.startOffset)}s`,
-                  target: "_blank",
-                  rel: "noopener noreferrer",
-                  class: "ts-link",
-                },
-              },
-            ],
-          }),
+          marks: [
+            {
+              type: "link",
+              attrs: hasVideo
+                ? {
+                    href: `https://youtube.com/watch?v=${videoId}&t=${Math.floor(para.startOffset)}s`,
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "ts-link",
+                  }
+                : { href: "#", class: "ts-link ts-static" },
+            },
+          ],
           text: `[${formatUITimestamp(para.startOffset)}]`,
         },
         { type: "text", text: ` ${para.text}` },

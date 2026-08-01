@@ -14661,3 +14661,14 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/app/dashboard/library/[id]/page.tsx
 apps/app/src/components/library/TranscriptViewer.tsx
 ---
+[2026-08-01 15:21] commit: fix(transcript): inert, toggleable timestamps for uploaded audio
+
+Keep the .ts-link styling + Display>Timestamps toggle working for uploads
+(no video_id) by rendering the timestamp as a .ts-static marker
+(pointer-events:none) instead of a broken watch?v=null link — it reads as
+a position label, not a dead click target.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/globals.css
+apps/app/src/components/library/TranscriptViewer.tsx
+---
