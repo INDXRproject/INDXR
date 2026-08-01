@@ -14700,3 +14700,11 @@ blocks; collection chip radius matched for consistency.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/library/badges.tsx
 ---
+[2026-08-01 15:49] commit: copy(rag): Developer tab tells the same 'paid once = every preset free' story
+
+Aligns RagExportView subtitle with the cost card: one payment, every chunk
+length (30/60/90/120s) free to re-download. No wording implied a re-cost.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/library/RagExportView.tsx
+---

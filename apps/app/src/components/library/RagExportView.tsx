@@ -141,7 +141,8 @@ export function RagExportView({
         <div>
           <h2 className="text-sm font-semibold text-fg mb-0.5">Export New Preset</h2>
           <p className="text-xs text-fg-muted">
-            Free — you&apos;ve already paid for this transcript.
+            One-time — you paid for this transcript once, so every chunk length
+            (30 / 60 / 90 / 120s) is free to download, as often as you like.
           </p>
         </div>
 
