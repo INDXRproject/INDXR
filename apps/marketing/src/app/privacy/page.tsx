@@ -61,6 +61,12 @@ export default function PrivacyPage() {
               own domain so it stays reliable, we never sell it, and we honour your browser’s
               Do-Not-Track setting.
             </p>
+            <p className="mt-4">
+              A saved transcript can show the original video in an embedded player. Nothing from
+              YouTube loads until you choose to open that player, and when it does it loads from
+              YouTube’s privacy-enhanced (no-cookie) domain — it sets no cookie until you press
+              play. If you never open the player, YouTube is never contacted.
+            </p>
           </section>
 
           <section>

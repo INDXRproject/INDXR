@@ -77,10 +77,11 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
         />
       ) : (activeTab === "summary" || activeTab === "summary_edited") && transcript.ai_summary ? (
         <div className="pb-12 bg-bg w-full relative z-10 w-full mt-2">
-          <AiSummaryView 
-            id={transcript.id} 
-            initialSummary={transcript.ai_summary} 
+          <AiSummaryView
+            id={transcript.id}
+            initialSummary={transcript.ai_summary}
             mode={activeTab === "summary" ? "original" : "edited"}
+            editedContentUpdatedAt={transcript.edited_content_updated_at ?? null}
           />
         </div>
       ) : activeTab === "developer" && Array.isArray(transcript.rag_exports) && (transcript.rag_exports as unknown[]).length > 0 ? (

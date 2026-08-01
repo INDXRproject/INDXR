@@ -70,6 +70,7 @@ export default function TranscribePage() {
           // User-triggered full reset: overwrite title and nuke edits/summaries
           updateData.title = metadata.title
           updateData.edited_content = null
+          updateData.edited_content_updated_at = null // edit cleared → no stale-summary notice (ADR-085)
           updateData.ai_summary = null
         }
         // User-triggered 'replace': title, edited_content, ai_summary are intentionally preserved

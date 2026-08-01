@@ -1,3 +1,5 @@
+[2026-08-01 11:30] feat (Transcriptpagina Fase 3a — nocookie video+seek, stale-notice, privacy): **Video privacy+interactie:** nieuw `NocookieYouTubePlayer` (IFrame Player API `host=youtube-nocookie.com`, **lazy** — script + speler laden pas als de gebruiker de video opent, geen cookie tot playback); `TranscriptViewer` iframe→player, `getEmbedUrl` (cookieful youtube.com/embed) verwijderd. **In-app seek:** tijdstempel-klik in het transcript → `player.seekTo()` + opent de speler (href blijft no-JS-fallback). Leescanvas 68ch op de ProseMirror. **Embed-audit:** dit was de enige cookieful YouTube-embed in de repo → nocookie-omzetting repo-breed consistent. **Stale-summary:** migratie `20260801120000_edited_content_updated_at` (kolom), gezet in **beide** edited_content-writers (`TranscriptViewer.handleSave`→now(), `transcribe/page.tsx` reset→null); `AiSummaryView` toont een `warning`-banner + Regenerate-link wanneer `generated_at < edited_content_updated_at`. **Legacy-check:** de 2 bestaande edited-rijen bleken **echte edits** (bevatten "Edited version") — niet gecleared (rigoreus geverifieerd via plaintext-vergelijk); origineel rendert altijd merged, nieuwe edits seeden merged → geen poem-vs-merged-divergentie. **Privacy-verklaring** (`privacy/page.tsx`) uitgebreid met accurate nocookie-embed-disclosure ("niets van YouTube tot je de speler opent"). `pnpm build` groen (2/2). Header/toolbar-restructuur = resterend. | gewijzigd: supabase/migrations/20260801120000_edited_content_updated_at.sql (nieuw), apps/app/src/components/library/{NocookieYouTubePlayer.tsx (nieuw),TranscriptViewer,AiSummaryView}.tsx, apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/app/dashboard/transcribe/page.tsx, apps/marketing/src/app/privacy/page.tsx, docs/LOG.md
+---
 [2026-08-01 10:40] feat (Transcriptpagina Fase 2a — tab-laag): conditionele tabs + **content-fallback** in `[id]/page.tsx` (tabs verschijnen alleen als de inhoud bestaat; een `?tab` waarvan de inhoud weg is valt terug op Transcript — geen dood tabblad meer, was de bug). Labels hernoemd: Original→**Transcript**, AI Summary→**Summary**, Edited Summary→**Edited summary**, ✦ weg; mockup-volgorde (Transcript/Edited/Summary/Edited summary/Developer). Nieuw client-component `TranscriptTabs.tsx`: desktop-strip + **mobiele view-selector** ("Transcript · 1 of N ▾" → bottom-sheet, elke tab bereikbaar op 360px zonder horizontaal scrollen, raakvlakken ≥44px). URL-`?tab`-ids stabiel gehouden (original/edited/…). data-testids toegevoegd. `pnpm build:app` groen. | gewijzigd: apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/components/library/TranscriptTabs.tsx (nieuw), docs/LOG.md
 ---
 [2026-08-01 10:00] feat (Transcriptpagina Fase 1 — leesbare alinea's): kern-leeswinst. Nieuwe pure util `buildReadingParagraphs(transcript,{isAi,config})` in `formatTranscript.ts` met **configureerbare** `READING_PARAGRAPH_CONFIG` (pauseBreakSec/captions.minBreakSec+maxParaSec/ai.maxParaSec/maxChars). Data-gedreven drempels (gemeten): captions breken op zinseinde ná 22s; AI (geen zinseinde-signaal, 0,6%) op harde cap 32s; **`maxChars=500` guardrail** bindt de alinealengte los van spreektempo (voorkwam AI-muren tot 149 woorden). `transcriptToJSON` in `TranscriptViewer.tsx` geseed uit merged paragraphs i.p.v. één-segment-per-paragraaf (was: gedicht met rafelrand). **Unit-test** `buildReadingParagraphs.test.ts` (8 checks, `node --experimental-strip-types`, vaste fixtures, pint elk gedrag) + `test:unit`-script. **Gemeten op 3 echte transcripten:** captions median 51 woorden (max 115); AI 82/91 median (max 117) — alles onder de 140-plafond. `pnpm build` groen (2/2). Header/tabs-restructuur = Fase 2 (onlosmakelijk met tabs). packages/shared additief (nieuwe util, geen marketing-gedragswijziging). | gewijzigd: packages/shared/src/utils/formatTranscript.ts, packages/shared/src/utils/buildReadingParagraphs.test.ts (nieuw), apps/app/src/components/library/TranscriptViewer.tsx, package.json, docs/LOG.md
@@ -14540,4 +14542,29 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/app/dashboard/library/[id]/page.tsx
 apps/app/src/components/library/TranscriptTabs.tsx
 docs/LOG.md
+---
+[2026-08-01 13:22] commit: feat(transcript): Fase 3a — nocookie video + in-app seek, stale-summary, privacy
+
+- NocookieYouTubePlayer: IFrame Player API with host=youtube-nocookie.com,
+  loaded lazily only when the user opens the video (nothing from YouTube, no
+  cookie, until then). Replaces the cookieful youtube.com/embed iframe (the
+  only YouTube embed in the repo). Timestamp click → in-app seekTo().
+- Reading measure: 68ch on the transcript.
+- Stale-summary: migration edited_content_updated_at, set in BOTH edited_content
+  writers (save→now(), transcribe reset→null); AiSummaryView shows a notice
+  when generated_at < edited_content_updated_at. The 2 legacy edited rows are
+  real edits (verified) → preserved, not cleared.
+- Privacy statement: accurate nocookie-embed disclosure.
+
+pnpm build green (2/2). Header/toolbar restructure remains.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/library/[id]/page.tsx
+apps/app/src/app/dashboard/transcribe/page.tsx
+apps/app/src/components/library/AiSummaryView.tsx
+apps/app/src/components/library/NocookieYouTubePlayer.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+apps/marketing/src/app/privacy/page.tsx
+docs/LOG.md
+supabase/migrations/20260801120000_edited_content_updated_at.sql
 ---

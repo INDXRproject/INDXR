@@ -27,9 +27,12 @@ interface AiSummaryViewProps {
     edited_html?: string;
   };
   mode?: "original" | "edited";
+  /** When the transcript's edited_content was last written — the summary is stale if it was
+   *  generated before that (ADR-085). Null when the transcript has no edit. */
+  editedContentUpdatedAt?: string | null;
 }
 
-export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSummaryViewProps) {
+export function AiSummaryView({ id, initialSummary, mode = "original", editedContentUpdatedAt = null }: AiSummaryViewProps) {
   const [summary, setSummary] = useState(initialSummary);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -230,6 +233,19 @@ export function AiSummaryView({ id, initialSummary, mode = "original" }: AiSumma
           </div>
         )}
 
+        {/* Stale notice — the summary predates the last transcript edit (ADR-085). */}
+        {!isEditing && summary.generated_at && editedContentUpdatedAt &&
+          new Date(summary.generated_at) < new Date(editedContentUpdatedAt) && (
+          <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning mb-4">
+            <span className="flex-1">This summary was written before you last edited the transcript.</span>
+            <button
+              onClick={() => router.replace(`/dashboard/library/${id}?tab=original`)}
+              className="font-medium underline hover:no-underline shrink-0 cursor-pointer"
+            >
+              Regenerate
+            </button>
+          </div>
+        )}
         {saveFeedback && (
           <FeedbackCard
             variant={saveFeedback.type}

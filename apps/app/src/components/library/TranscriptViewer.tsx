@@ -70,6 +70,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 import { cn } from "@indxr/shared/lib/utils";
+import { NocookieYouTubePlayer, type YouTubePlayerHandle } from "./NocookieYouTubePlayer";
 import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "@indxr/shared/lib/pricing";
 import {
   generateTxt,
@@ -223,20 +224,6 @@ function formatUITimestamp(seconds: number): string {
   return new Date(seconds * 1000).toISOString().substr(11, 8);
 }
 
-function getEmbedUrl(url: string): string {
-  try {
-    if (url.includes("youtube.com") || url.includes("youtu.be")) {
-      const id = url.includes("v=")
-        ? url.split("v=")[1].split("&")[0]
-        : url.split("/").pop();
-      return `https://www.youtube.com/embed/${id}`;
-    }
-  } catch {
-    /* ignore */
-  }
-  return url;
-}
-
 /** Convert transcript segments → Tiptap document, merged into readable paragraphs
  *  (buildReadingParagraphs) with one leading timestamp per paragraph. This is the fix
  *  for the "one segment per line = poem with a ragged edge" reading problem. */
@@ -302,6 +289,19 @@ export function TranscriptViewer({
   // UI state
   const [showTimestamps, setShowTimestamps] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const playerRef = useRef<YouTubePlayerHandle>(null);
+
+  // Timestamp click → seek the in-app nocookie player (opening it if needed) instead of
+  // navigating to YouTube. The links keep their href as a no-JS fallback.
+  const handleTranscriptClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const anchor = (e.target as HTMLElement).closest("a.ts-link") as HTMLAnchorElement | null;
+    if (!anchor) return;
+    const m = anchor.href.match(/[?&]t=(\d+)s/);
+    if (!m) return;
+    e.preventDefault();
+    setShowVideo(true);
+    playerRef.current?.seekTo(parseInt(m[1], 10));
+  };
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -442,7 +442,9 @@ export function TranscriptViewer({
     setIsSaving(true);
     const { error } = await supabase
       .from("transcripts")
-      .update({ edited_content: json })
+      // Stamp when edited_content changed so the stale-summary notice can compare against
+      // ai_summary.generated_at (must move with every edited_content write — ADR-085).
+      .update({ edited_content: json, edited_content_updated_at: new Date().toISOString() })
       .eq("id", id);
     setIsSaving(false);
 
@@ -741,12 +743,7 @@ export function TranscriptViewer({
             </div>
             <div className="aspect-video w-full bg-surface-elevated shrink-0">
               {showVideo && (
-                <iframe
-                  src={getEmbedUrl(videoUrl)}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                <NocookieYouTubePlayer ref={playerRef} videoId={videoId} className="w-full h-full" />
               )}
             </div>
             <ScrollArea className="flex-1">
@@ -1105,10 +1102,11 @@ export function TranscriptViewer({
                   </div>
                 )}
 
-                {/* Editor */}
+                {/* Editor — max-w reading measure; timestamp clicks seek the in-app player */}
                 <div
+                  onClick={handleTranscriptClick}
                   className={cn(
-                    "rounded-xl border border-border bg-surface p-5 min-h-[400px]",
+                    "rounded-xl border border-border bg-surface p-5 min-h-[400px] [&_.ProseMirror]:max-w-[68ch]",
                     !showTimestamps && "hide-timestamps"
                   )}
                 >
