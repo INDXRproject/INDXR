@@ -14732,3 +14732,17 @@ Changed: apps/app/src/components/library/AiSummaryView.tsx
 apps/app/src/components/library/TranscriptList.tsx
 tests/playwright/prod-check.cjs
 ---
+[2026-08-01 16:23] commit: test(e2e): reliable cookie-injection login + robust spec 03
+
+- loginAs now mints a Supabase session and injects the cookie (the headless UI
+  login form doesn't persist across navigations — same technique as prod-check).
+  Makes every loginAs-based spec reliable against prod and local.
+- spec 03: wait for rows (isVisible doesn't auto-wait), use stable tab testids
+  (Original→Transcript rename), and edit-flow now waits for the ?tab=edited
+  route + editable editor and inserts a bracket-free marker atomically (per-key
+  typing near the timestamp link scattered chars). Spec 03 now 9/9 green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: tests/playwright/helpers/auth.ts
+tests/playwright/specs/03-library.spec.ts
+---

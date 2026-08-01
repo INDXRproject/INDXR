@@ -59,7 +59,7 @@ test.describe('3.1 — Library operations', () => {
     await page.goto('/dashboard/library')
     const firstRow = page.locator('a[href*="/dashboard/library/"]').first()
 
-    if (await firstRow.isVisible({ timeout: 10_000 }).catch(() => false)) {
+    if (await firstRow.waitFor({ state: "visible", timeout: 10_000 }).then(() => true).catch(() => false)) {
       await firstRow.click()
 
       await page.waitForURL('**/library/**', { timeout: 10_000 })
@@ -76,7 +76,7 @@ test.describe('3.1 — Library operations', () => {
     await page.goto('/dashboard/library')
     const firstRow = page.locator('a[href*="/dashboard/library/"]').first()
 
-    if (!await firstRow.isVisible({ timeout: 10_000 }).catch(() => false)) {
+    if (!await firstRow.waitFor({ state: "visible", timeout: 10_000 }).then(() => true).catch(() => false)) {
       test.skip(true, 'No transcripts in library')
     }
 
@@ -104,7 +104,7 @@ test.describe('3.1 — Library operations', () => {
     await page.goto('/dashboard/library')
     const firstRow = page.locator('a[href*="/dashboard/library/"]').first()
 
-    if (!await firstRow.isVisible({ timeout: 10_000 }).catch(() => false)) {
+    if (!await firstRow.waitFor({ state: "visible", timeout: 10_000 }).then(() => true).catch(() => false)) {
       test.skip(true, 'No transcripts in library')
     }
 
@@ -128,7 +128,7 @@ test.describe('3.1 — Library operations', () => {
     await page.goto('/dashboard/library')
     const firstRow = page.locator('a[href*="/dashboard/library/"]').first()
 
-    if (!await firstRow.isVisible({ timeout: 10_000 }).catch(() => false)) {
+    if (!await firstRow.waitFor({ state: "visible", timeout: 10_000 }).then(() => true).catch(() => false)) {
       test.skip(true, 'No transcripts in library')
     }
 
@@ -173,7 +173,7 @@ test.describe('3.2 — AI Summary', () => {
       const rows = await page.locator('a[href*="/dashboard/library/"]').count()
       if (rows > 0) {
         const viewLink = page.locator('a[href*="/dashboard/library/"]').first()
-        if (await viewLink.isVisible().catch(() => false)) {
+        if (await viewLink.waitFor({ state: "visible", timeout: 3_000 }).then(() => true).catch(() => false)) {
           await viewLink.click()
           found = true
           break
@@ -185,7 +185,7 @@ test.describe('3.2 — AI Summary', () => {
       // Open first available transcript
       await page.goto('/dashboard/library')
       const firstLink = page.locator('a[href*="/dashboard/library/"]').first()
-      if (await firstLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      if (await firstLink.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false)) {
         await firstLink.click()
         found = true
       }
@@ -247,14 +247,14 @@ test.describe('3.3 — Transcript editing', () => {
 
     await page.goto('/dashboard/library')
     const firstLink = page.locator('a[href*="/dashboard/library/"]').first()
-    if (!await firstLink.isVisible({ timeout: 10_000 }).catch(() => false)) {
+    if (!await firstLink.waitFor({ state: "visible", timeout: 10_000 }).then(() => true).catch(() => false)) {
       test.skip(true, 'No transcripts in library — run 01-single-video first')
     }
     await firstLink.click()
     await page.waitForURL('**/library/**', { timeout: 10_000 })
 
-    // Make sure we're on Original tab
-    const originalTab = page.locator('[role="tab"]:has-text("Original"), button:has-text("Original")').first()
+    // Make sure we're on the Transcript tab (id 'original' — labelled "Transcript" post-redesign)
+    const originalTab = page.locator('[data-testid="transcript-tab-original"]').first()
     if (await originalTab.isVisible({ timeout: 3_000 }).catch(() => false)) {
       await originalTab.click()
     }
@@ -269,18 +269,23 @@ test.describe('3.3 — Transcript editing', () => {
     }
     await editBtn.click()
 
-    // Wait for editable area to appear (Tiptap rich text editor)
-    const editor = page.locator('[contenteditable="true"], .tiptap, [data-editor]').first()
+    // Edit routes to the Edited tab (?tab=edited) and re-mounts the editor seeded from the
+    // original — wait for that navigation AND the editable ProseMirror to be ready before
+    // typing, or the seed overwrites the marker.
+    await page.waitForURL(/tab=edited/, { timeout: 10_000 })
+    const editor = page.locator('.ProseMirror[contenteditable="true"]').first()
     await editor.waitFor({ state: 'visible', timeout: 10_000 })
+    await page.waitForTimeout(600) // let the seed settle before typing
 
-    // Capture original content before edit
-    const originalContent = await editor.textContent() ?? ''
-
-    // Inject a unique marker at the start
-    const marker = `[TEST-EDIT-${Date.now()}]`
+    // Inject a unique marker. Bracket-free (brackets collide with ProseMirror input rules /
+    // the leading timestamp link) and inserted atomically at the document end (per-key typing
+    // near the timestamp link scatters characters).
+    const marker = `TESTEDIT${Date.now()}`
     await editor.click()
-    await page.keyboard.press('Home')
-    await page.keyboard.type(marker + ' ')
+    await page.keyboard.press('Control+End')
+    await page.keyboard.insertText(' ' + marker)
+    // Confirm the marker actually landed in the editor before saving
+    await expect(editor).toContainText(marker, { timeout: 5_000 })
 
     // Save
     const saveBtn = page.locator(
@@ -293,23 +298,24 @@ test.describe('3.3 — Transcript editing', () => {
     await page.waitForTimeout(1_500)
 
     // Edited tab should now appear
-    const editedTab = page.locator(
-      '[role="tab"]:has-text("Edited"), button:has-text("Edited")'
-    ).first()
+    const editedTab = page.locator('[data-testid="transcript-tab-edited"]').first()
     await editedTab.waitFor({ state: 'visible', timeout: 10_000 })
     expect(editedTab, 'Edited tab should appear after saving').toBeTruthy()
 
-    // Click Edited tab and verify marker is present
+    // Click Edited tab and verify marker is present (read the editor, not page chrome)
     await editedTab.click()
-    await page.waitForTimeout(500)
-    const editedContent = await page.locator('[contenteditable="true"], .tiptap, main').first().textContent() ?? ''
-    expect(editedContent, 'Edited content should contain the injected marker').toContain(marker)
+    await page.waitForURL(/tab=edited/, { timeout: 10_000 })
+    await expect(page.locator('.ProseMirror').first()).toContainText(marker, { timeout: 10_000 })
 
-    // Switch back to Original and confirm it's unchanged
+    // Switch back to the Transcript (original) tab and confirm it's unchanged. Wait for the
+    // route + a fresh editor so we don't read the still-mounted edited editor mid-transition.
     if (await originalTab.isVisible().catch(() => false)) {
       await originalTab.click()
-      await page.waitForTimeout(500)
-      const restoredContent = await page.locator('[contenteditable="true"], .tiptap, main').first().textContent() ?? ''
+      await page.waitForURL(/tab=original/, { timeout: 10_000 })
+      const orig = page.locator('.ProseMirror').first()
+      await orig.waitFor({ state: 'visible', timeout: 10_000 })
+      await page.waitForTimeout(400)
+      const restoredContent = await orig.textContent() ?? ''
       expect(restoredContent, 'Original content should not contain the edit marker').not.toContain(marker)
     }
 
@@ -354,7 +360,7 @@ test.describe('3.4 — AI Summary with editing', () => {
       // Fallback to first available transcript
       await page.goto('/dashboard/library')
       const firstLink = page.locator('a[href*="/dashboard/library/"]').first()
-      if (!await firstLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      if (!await firstLink.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false)) {
         test.skip(true, 'No transcripts in library')
       }
       await firstLink.click()

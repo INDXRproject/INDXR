@@ -1,5 +1,38 @@
 import { type Page, expect } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
+import * as fs from 'fs'
+import * as path from 'path'
 import type { TestAccount } from '../config/accounts'
+
+// Supabase project config for minting a session (read once from apps/app/.env.local).
+function supabaseConfig(): { url: string; anon: string } {
+  const p = path.resolve(__dirname, '../../../apps/app/.env.local')
+  const env = fs.readFileSync(p, 'utf8')
+  return {
+    url: env.match(/NEXT_PUBLIC_SUPABASE_URL=(.*)/)![1].trim(),
+    anon: env.match(/NEXT_PUBLIC_SUPABASE_ANON_KEY=(.*)/)![1].trim(),
+  }
+}
+
+// Build the Supabase auth cookie(s) for a session, chunked the way @supabase/ssr reads them,
+// scoped to the host we're testing (prod: `.indxr.ai`, local: `localhost`).
+function sessionCookies(session: unknown, supabaseUrl: string, baseURL: string) {
+  const ref = supabaseUrl.match(/https:\/\/([a-z0-9]+)\.supabase/)![1]
+  const name = `sb-${ref}-auth-token`
+  const value = 'base64-' + Buffer.from(JSON.stringify(session)).toString('base64')
+  const MAX = 3180
+  const parts =
+    value.length <= MAX
+      ? [{ name, value }]
+      : Array.from({ length: Math.ceil(value.length / MAX) }, (_, i) => ({
+          name: `${name}.${i}`,
+          value: value.slice(i * MAX, (i + 1) * MAX),
+        }))
+  const u = new URL(baseURL)
+  const secure = u.protocol === 'https:'
+  const domain = u.hostname === 'localhost' ? 'localhost' : '.' + u.hostname.split('.').slice(-2).join('.')
+  return parts.map((c) => ({ ...c, domain, path: '/', httpOnly: false, secure, sameSite: 'Lax' as const }))
+}
 
 // --- Selectors (derived from UI audit) ---
 const SEL = {
@@ -20,20 +53,23 @@ const SEL = {
 } as const
 
 /**
- * Log in via the UI and wait for the dashboard to load.
+ * Authenticate by minting a Supabase session and injecting its cookie into the browser
+ * context, then navigate to the dashboard. The headless UI login form is flaky (PKCE cookie
+ * timing) and doesn't persist across navigations, so we use the same cookie-injection the
+ * reusable prod-check does. Reliable against both prod (app.indxr.ai) and local dev.
  */
 export async function loginAs(page: Page, account: TestAccount): Promise<void> {
-  await page.goto('/login')
-  await page.waitForLoadState('networkidle')
-  await page.locator(SEL.email).fill(account.email)
-  await page.locator(SEL.password).fill(account.password)
-  await page.locator('form').getByRole('button', { name: 'Log In' }).click()
-  // May land on /dashboard or /onboarding (accounts that haven't finished onboarding)
-  await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15_000 })
-  if (page.url().includes('/onboarding')) {
-    await page.goto('/dashboard/transcribe')
-    await page.waitForURL('**/dashboard**', { timeout: 10_000 })
-  }
+  const baseURL = process.env.BASE_URL ?? 'http://localhost:3000'
+  const { url, anon } = supabaseConfig()
+  const sb = createClient(url, anon)
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: account.email,
+    password: account.password,
+  })
+  if (error) throw new Error(`loginAs(${account.email}) failed: ${error.message}`)
+  await page.context().addCookies(sessionCookies(data.session, url, baseURL))
+  await page.goto('/dashboard/library')
+  await page.waitForURL(/\/dashboard/, { timeout: 15_000 })
 }
 
 /**
