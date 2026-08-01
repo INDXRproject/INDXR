@@ -14818,3 +14818,21 @@ packages/shared/src/components/transcribe/MethodRadioCards.tsx
 packages/shared/src/components/transcribe/method.ts
 packages/shared/src/utils/formatTranscript.ts
 ---
+[2026-08-01 23:49] commit: feat(nav): readable beehive Home icon + sidebar/⋯ polish
+
+- Beehive icon redrawn minimal (tall dome + two coil bands, no ground line or
+  entrance) so it stays legible at 17px; verified rendered at 17/19/24px vs the
+  other nav icons. Rewired into mobile tab bar + sidebar (House removed).
+- Sidebar 'New Collection' button: pl-12 → pl-2 so it shares the collection
+  rows' left edge/width.
+- TranscriptViewer ⋯ collapses to a direct Delete button when it would hold
+  only Delete (edited + no video + no saved edits) — no ⋯ for one item.
+- prod-check asserts the beehive path again.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/app-sidebar.tsx
+apps/app/src/components/dashboard/MobileTabBar.tsx
+apps/app/src/components/icons/Beehive.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+tests/playwright/prod-check.cjs
+---

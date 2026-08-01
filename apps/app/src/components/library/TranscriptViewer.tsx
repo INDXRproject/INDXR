@@ -332,6 +332,14 @@ export function TranscriptViewer({
   // True when an edited version has been persisted in Supabase
   const [hasSavedEdits, setHasSavedEdits] = useState(editedContent !== null);
 
+  // The ⋯ overflow can degrade to a single item: with no video (no "Watch on YouTube"),
+  // outside original mode (no "Summarise") and without saved edits (no "Revert"), only
+  // "Delete" remains. Rather than a ⋯ that opens one item, show Delete directly then
+  // (same rule as the bulk bar / AiSummaryView).
+  const overflowActionCount =
+    (hasVideo ? 1 : 0) + (isOriginalMode ? 1 : 0) + (hasSavedEdits && isEditedMode ? 1 : 0) + 1; // +1 = Delete (always)
+  const collapseOverflowToDelete = overflowActionCount <= 1;
+
   // Search
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMatchesCount, setSearchMatchesCount] = useState(0);
@@ -807,7 +815,20 @@ export function TranscriptViewer({
               </Button>
             )}
 
-            {/* Overflow — rare & paid actions, so they never crowd the row on mobile */}
+            {/* Overflow — rare & paid actions, so they never crowd the row on mobile.
+                Collapses to a direct Delete button when it would otherwise hold only Delete. */}
+            {collapseOverflowToDelete ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-3 text-error hover:text-error hover:bg-error/10"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isDeleting}
+                aria-label="Delete transcript"
+              >
+                <Trash2 className="h-4 w-4" /> Delete
+              </Button>
+            ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" aria-label="More actions">
@@ -848,6 +869,7 @@ export function TranscriptViewer({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
           </div>
 
           {/* Video — zero pixels when closed; nocookie player, sticky under the tabs, when open.

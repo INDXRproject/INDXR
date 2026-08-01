@@ -7,8 +7,9 @@ import Link from "next/link"
 import {
   Library, AudioLines, MessageSquare, BookOpen, Settings, User, LogOut,
   ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2, Search,
-  PanelLeftClose, PanelLeftOpen, House,
+  PanelLeftClose, PanelLeftOpen,
 } from "lucide-react"
+import { Beehive } from "@/components/icons/Beehive"
 import { useUnreadMessages } from "../hooks/useUnreadMessages"
 
 import {
@@ -45,7 +46,7 @@ interface SimplifiedTranscript {
 }
 
 const topNavItems = [
-  { title: "Home",      url: "/dashboard",            icon: House       },
+  { title: "Home",      url: "/dashboard",            icon: Beehive     },
   { title: "Transcribe", url: "/dashboard/transcribe", icon: AudioLines  },
   { title: "Messages",  url: "/dashboard/messages",   icon: MessageSquare },
 ]
@@ -582,8 +583,9 @@ export function AppSidebar() {
                         </div>
                       </div>
 
-                      {/* + New Collection — pinned below the scroll area, always visible */}
-                      <div className="pl-12 pt-1 pb-1 shrink-0 border-t border-border/30 mt-1">
+                      {/* + New Collection — pinned below the scroll area, always visible.
+                          pl-2 matches the collection rows above so it shares their left edge/width. */}
+                      <div className="pl-2 pr-1 pt-1 pb-1 shrink-0 border-t border-border/30 mt-1">
                         {creating ? (
                           <div className="px-2 py-1.5 space-y-1.5">
                             <Input
