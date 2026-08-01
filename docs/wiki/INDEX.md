@@ -200,6 +200,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | [railway-cli.md](operations/railway-cli.md) | Railway CLI setup + log-recepten voor worker/api (CC-gebruik) |
 | [test-reports.md](operations/test-reports.md) | Handmatige testrapporten per feature |
 | [cross-host-smoke-tests.md](operations/cross-host-smoke-tests.md) | 13 smoke tests post-migratie (8 geautomatiseerd via Playwright) |
+| [testing.md](operations/testing.md) | Testaccounts (admin-side aanmaken, `@indxr-test.com`), Playwright draaien (cookie-login), herbruikbare prod-check |
 | [migration-summary.md](operations/migration-summary.md) | 5-minuten overzicht: huidige staat, wat gedaan, wat resteert |
 
 ---

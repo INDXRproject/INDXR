@@ -1,557 +1,389 @@
-# Library source map — de kaart voor het herontwerp
+# Library source map — de kaart
 
-**Rol:** dit document speelt voor het Library-herontwerp dezelfde rol die
+**Rol:** dit document speelt voor de Library dezelfde rol die
 [`architecture/finance-map.md`](../architecture/finance-map.md) speelt voor Finance. Het is
-read-only geïnventariseerd tegen de **broncode** en de **live productie-DB**
-(`information_schema` / `pg_indexes`, project `uivlvwcplcaixkzuiwsv`), niet tegen een eerdere
-wiki-versie. Waar dit document en een andere wiki-pagina botsen: **dit is nagerekend tegen de code**,
-de code wint.
+read-only geïnventariseerd tegen de **broncode**: waar dit document en een andere wiki-pagina
+botsen, is dit nagerekend tegen de code en wint de code.
 
-> ⚠️ **Deels achterhaald sinds ADR-083 (2026-07-31, Library-lijst herontwerp Fase 1).** De **lijst**
-> (`page.tsx` + `TranscriptList.tsx`) is herbouwd: grid-view + thumbnails weg; twee-regelige rij met
-> `dir="auto"`; badges = mono-pillen `CC`/`AI`/`SUM`/`RAG`; echte server-side filters (Status/Source/Has/
-> Duration/Added) + chips; sort+dir+zoek in de URL; tri-state select-all (huidige pagina); rij- en
-> bulk-menu gescheiden; Move-to-collection-semantiek; twee lege staten; mobiele bottom-sheets. De
-> **data-read** gaat nu via de nieuwe view `transcripts_list` (`security_invoker=true`) i.p.v.
-> `select("*")` op de basistabel. Nieuwe componenten: `LibraryControls.tsx`, `filters.ts`, `badges.tsx`,
-> `MoveToCollectionMenu.tsx`, `components/icons/Beehive.tsx`. De **render-boom (§1)**, **de query (§2.1)**
-> en **§6 (wat er niet is)** hieronder beschrijven de PRE-redesign staat; de **detailpagina (§8)** is nog
-> onaangeroerd. §2.3 (kolominventaris), §5, §7 blijven geldig.
-
-**Scope:** `/dashboard/library` (lijst) + `/dashboard/library/[id]` (detail). Alle regelnummers zijn
-de stand bij het schrijven (2026-07-31, vóór ADR-083 tenzij anders vermeld).
+**Scope:** `/dashboard/library` (lijst) + `/dashboard/library/[id]` (detail).
 
 **Wie dit leest zonder de codebase te kunnen openen, kan hieruit beantwoorden:** welke velden per
-transcript-rij beschikbaar zijn, waar elk zichtbaar UI-element vandaan komt, wat gedeeld is met
-marketing, en of zoeken-op-volledige-tekst + een taalfilter mogelijk zijn.
+transcript-rij beschikbaar zijn, waar elk zichtbaar UI-element vandaan komt, welke state waar leeft
+en wat een refresh overleeft, en welke tokens/testids de badges, tabs en exports dragen.
 
 ---
 
 ## 0. Samenvatting in één alinea
 
-De Library is een **volledig client-side** pagina (`"use client"`) die rechtstreeks vanuit de browser
-`supabase.from("transcripts").select("*")` doet met server-side filter/sort/paginatie. Er is **geen**
-Next.js API-route en **geen** server-component voor de lijst. De detailpagina (`[id]`) is wél een
-**server-component** die de rij één keer ophaalt en aan client-editors doorgeeft. De volledige
-transcripttekst leeft **in Postgres** (`transcripts.transcript`, `jsonb`, NOT NULL, 951/951 rijen) —
-niet in R2 — dus full-text zoeken is een **query/UI-taak, geen migratie-taak**. Een `language`-kolom
-bestaat op de rij maar is **maar op 19% van de rijen gevuld** (180/951). De collecties-sidebar is
-**desktop-only** en leeft in de dashboard-shell (`app-sidebar.tsx`), niet in de Library-route.
+De **lijst** (`/dashboard/library`) is een client-component (`"use client"`) die vanuit de browser
+`supabase.from("transcripts_list").select(...)` doet — een lichte Postgres-**view** (`security_invoker`)
+die alleen de kolommen bevat die de lijst rendert plus vier `has_*`-presence-booleans, zodat de zware
+`transcript`-jsonb nooit mee wordt opgehaald. Filters, zoeken, sortering en paginatie draaien
+**server-side** over de hele set en leven in de **URL** (`?q=`, `?status=`, `?source=`, `?has=`,
+`?dur=`, `?added=`, `?sort=`, `?dir=`, `?collection=`, `?page=`). De **detailpagina** (`[id]`) is een
+**server-component** die de volledige rij één keer ophaalt (`select("*")` op de basistabel), de
+conditionele tabs server-side berekent en de rij aan client-view-componenten doorgeeft. De volledige
+transcripttekst leeft in Postgres (`transcripts.transcript`, jsonb) — niet in R2 — dus het lees-pad
+doet geen R2-fetch. De collecties-sidebar is desktop-only en leeft in de dashboard-shell
+(`app-sidebar.tsx`), niet in de Library-route.
 
 ---
 
 ## 1. Render-boom
 
-### `/dashboard/library` (lijst)
+### 1.1 `/dashboard/library` (lijst)
 
-| # | Bestand | Rendert | S/C | Locatie |
-|---|---------|---------|-----|---------|
-| 1 | `apps/app/src/app/dashboard/layout.tsx` | Dashboard-shell: `<AppTopbar>`, `<AppSidebar>` (desktop), `<main>`, `<MobileTabBar>`, footer-links | **Server** | lokaal (app) |
-| 2 | `apps/app/src/app/dashboard/library/page.tsx` | De hele Library-route: `<Suspense>` → `LibraryContent` (toolbar, zoekveld, view-toggle, display-menu, mobiele collectie-picker, filter-context-bar, paginatie) | **Client** | lokaal (app) |
-| 3 | `apps/app/src/components/library/TranscriptList.tsx` | Lijst-/grid-weergave, per-rij badges, checkbox-selectie, floating bulk-actiebalk, bulk-download + bulk-RAG-dialogs, delete-confirm | **Client** | lokaal (app) |
-| 4 | `packages/shared/src/components/DashboardBackdrop.tsx` | Honeycomb-achtergrondlaag + content-wrapper | Server-safe (geen `"use client"`) | **shared** ⚠ |
-| 5 | `packages/shared/src/components/icons/HexagonPattern.tsx` | De SVG honeycomb-tessellatie zelf | shared | **shared** ⚠ |
-| 6 | `packages/shared/src/components/icons/HexagonEmptyState.tsx` | Illustratie in de lege-staat-kaart | shared | **shared** ⚠ |
-| — | `apps/app/src/components/app-sidebar.tsx` | **Collecties-sidebar** (desktop) — leeft in de shell (#1), niet in de route | **Client** | lokaal (app) |
+```
+DashboardBackdrop                         (shared) honeycomb-achtergrond + content-wrapper
+└─ LibraryContent  (page.tsx, Client)     hele route: header, toolbar, chips, lijst, paginatie
+   ├─ <h1> "Library" (of collectie-naam)  + teller "· N of TOTAL transcripts" (of "TOTAL")
+   ├─ LibraryControls                      zoekveld + Filter/Sort/Density (desktop) + mobiele triggers/sheets
+   │   ├─ Search-Input                     data-testid="library-search"
+   │   ├─ Filter-DropdownMenu (desktop)    data-testid="library-filter" → FilterPanel
+   │   ├─ Sort-DropdownMenu (desktop)      data-testid="library-sort"   → SortPanel
+   │   ├─ DensityToggle (desktop)          Rows3 = default, Rows2 = compact
+   │   ├─ mobiele "Filters & sort"-knop    → Sheet met FilterPanel + SortPanel + DensityToggle
+   │   └─ mobiele collecties-knop          → Sheet met "All Transcripts" + collecties (radio)
+   ├─ actieve filter-chips-rij             collectie-chip + één chip per actieve filter + "Clear all"
+   ├─ listError-banner                     (alleen bij fetch-fout)
+   ├─ TranscriptList  (Client)             de lijst zelf — zie 1.2
+   └─ paginatie-nav                        alleen als filteredCount > pageSize
+```
 
-Shared UI-primitives die de lijst gebruikt (allemaal `packages/shared/src/components/ui/`, dus
-**elke wijziging raakt ook marketing**): `input`, `button`, `dropdown-menu`, `checkbox`, `tooltip`,
-`dialog`, `alert-dialog`. Utils uit shared: `utils/supabase/client`, `lib/utils` (`cn`),
-`utils/formatTranscript`, `actions/rag-export`, `hooks/useAuth`.
+- **`DashboardBackdrop`**, `HexagonPattern`, `HexagonEmptyState` en alle `ui/`-primitives zitten in
+  `packages/shared` → **elke visuele wijziging daaraan raakt ook de marketing-app**. De lijst-,
+  toolbar- en badge-logica is lokaal in `apps/app` en veilig los te herontwerpen.
+- De **collecties-sidebar** (desktop) leeft in `apps/app/src/components/app-sidebar.tsx`, in de
+  dashboard-shell (`dashboard/layout.tsx`), **niet** in deze route. Een lijstrij is `draggable`; hij
+  wordt op een collectie in die sidebar gedropt om te verplaatsen.
 
-> ⚠ **Shared = marketing-impact.** #4/#5/#6 en alle `ui/`-primitives zitten in `packages/shared`. Een
-> visuele wijziging daaraan verandert ook de marketing-app. De rij-/toolbar-/sidebar-logica (#2/#3 +
-> `app-sidebar.tsx`) is **lokaal in `apps/app`** en veilig te herontwerpen zonder marketing te raken.
+### 1.2 `TranscriptList.tsx` — de lijst zelf
 
-### `/dashboard/library/[id]` (detail) — zie §8.
+```
+TranscriptList
+├─ download error/warning-banners
+├─ mobiele "Select / Done"-balk           (sm:hidden) → selectionMode
+├─ omkaderde lijst-container
+│   ├─ desktop header-rij                  TriBox (select-all) · "Title" · Duration · Words · Added
+│   └─ per transcript één rij:
+│       ├─ Checkbox                        desktop hover/selected; mobiel alleen in selectionMode
+│       ├─ titel als <Link> → /dashboard/library/[id]   (dubbelklik-vrij; rename via rij-menu)
+│       │   └─ unread-dot (bg-warning) vóór de titel als de rij ongelezen is
+│       ├─ badges-rij                      transcriptBadges(t) → CC|AI · SUM? · RAG?  + CollectionBadge
+│       │   (compact-density: badges inline achter de titel; default: op regel 2)
+│       ├─ mobiele metadata-regel          duration · words · datum   (sm:hidden)
+│       ├─ desktop metadata-kolommen       w-16 Duration · w-24 Words · w-24 Added (tabular-nums)
+│       ├─ desktop hover-acties            Export-DropdownMenu (Download-icoon) + ⋯ rowMenu
+│       └─ mobiele ⋯-knop                  → rowSheet (bottom-sheet)
+├─ desktop floating bulk-bar              data-testid="bulk-bar-desktop"  (bij selectie > 0)
+├─ mobiele bulk-bar                       data-testid="bulk-bar-mobile"
+├─ Sheets: bulk-export, bulk-move, rij-acties
+├─ RAG-export-Dialog (single + bulk, kostenoverzicht + credits)
+└─ delete-AlertDialog ("This can't be undone.")
+```
+
+- **Twee lege staten** (bij `transcripts.length === 0`), gestuurd door de `narrowed`-prop:
+  - `narrowed` (filter/zoekterm actief): "No transcripts match" + "Clear all filters"-knop.
+  - anders (bibliotheek echt leeg): "Library is empty" + "Transcribe a video"-CTA.
+- **Rij-menu (`rowMenu`, desktop ⋯):** Open transcript · Watch on YouTube · Mark as read (indien
+  ongelezen) · Export (submenu) · Move to collection (submenu, `MoveToCollectionMenu`) · Rename ·
+  Copy plain text · Delete.
+- **Select-all is tri-state** (`TriBox`): leeg / indeterminate (`someSelected`) / vol (`allSelected`),
+  scope = **de huidige pagina** (`transcripts` = alleen de geladen rijen).
+- **Density** (`default` | `compact`) verandert alleen de rij-layout, niet de data.
+
+### 1.3 `/dashboard/library/[id]` (detail) — zie §5.
 
 ---
 
-## 2. De data (het belangrijkste deel)
+## 2. De data
 
-### 2.1 De lijst-query (verbatim, `page.tsx:102-142`)
+### 2.1 De lijst-view: `public.transcripts_list`
+
+De lijst leest **niet** de basistabel maar de view `transcripts_list`
+(`supabase/migrations/20260731160000_transcripts_list_view.sql`). De view is
+`WITH (security_invoker = true)` — de RLS van de basistabel (`auth.uid() = user_id`) wordt als de
+bevragende user afgedwongen, dus de query filtert **niet zelf** op `user_id`. `SELECT` is alleen
+gegrant aan `authenticated` (niet aan `anon`).
+
+**De 14 kolommen die de view (en dus een lijstrij) blootstelt** — dit is de volledige waarheid over
+wat per rij beschikbaar is in de lijst:
+
+| Kolom | Type | Herkomst / betekenis |
+|-------|------|----------------------|
+| `id` | uuid | primaire sleutel (key, links naar detail) |
+| `title` | text \| null | titel; null → UI toont `Video {video_id}` |
+| `video_id` | text \| null | YouTube-id. **null bij geüploade audio** → geen YouTube-link/thumbnail |
+| `created_at` | timestamptz | sort `date`, getoonde datum |
+| `duration` | integer \| null | seconden; sort `duration`, duration-kolom, duration-filter |
+| `character_count` | integer \| null | woorden-heuristiek = `round(cc / 5)` |
+| `processing_method` | text \| null | bron-badge + source-filter (`youtube_captions` = CC, anders AI) |
+| `collection_id` | uuid \| null | collectie-filter + `CollectionBadge` |
+| `viewed_at` | timestamptz \| null | `null` → unread (NEW-dot); status-filter "Unread only" |
+| `channel` | text \| null | meegezocht (title/channel/video_id); niet als eigen kolom getoond |
+| `has_summary` | boolean | `ai_summary IS NOT NULL` → SUM-badge + `has:summary`-filter |
+| `has_summary_edit` | boolean | `ai_summary ->> 'edited_html' IS NOT NULL` → SUM-badge in edited-variant |
+| `has_edit` | boolean | `edited_content IS NOT NULL` → potlood op de bron-badge + `has:edited`-filter |
+| `has_rag` | boolean | niet-lege `rag_exports`-array → RAG-badge + `has:rag`-filter |
+
+De `has_*`-booleans zijn in de view berekend uit de zware jsonb-kolommen (`ai_summary`,
+`edited_content`, `rag_exports`) van de basistabel; de lijst krijgt zo de aanwezigheid **zonder** de
+inhoud te fetchen.
+
+### 2.2 De lijst-query (verbatim, `page.tsx`)
 
 ```ts
-let query = supabase.from("transcripts").select("*", { count: "exact" });
-
+// LIST_COLUMNS = "id, title, video_id, created_at, duration, character_count,
+//                 processing_method, collection_id, viewed_at, channel,
+//                 has_summary, has_summary_edit, has_edit, has_rag"
+let query = supabase.from("transcripts_list").select(LIST_COLUMNS, { count: "exact" });
 if (selectedCollectionId) query = query.eq("collection_id", selectedCollectionId);
-
-// Multi-word search: split into tokens and AND them, each token matching title, channel or video_id.
-const q = debouncedSearch.trim().replace(/[%,()]/g, " ").trim();
-if (q) {
-  const tokens = q.split(/\s+/).filter(Boolean).slice(0, 6);
-  for (const tok of tokens) {
-    query = query.or(`title.ilike.%${tok}%,channel.ilike.%${tok}%,video_id.ilike.%${tok}%`);
-  }
-}
-
-if (sortBy === "duration")      query = query.order("duration", { ascending: false, nullsFirst: false });
-else if (sortBy === "title")    query = query.order("title", { ascending: true });
-else                            query = query.order("created_at", { ascending: false });
-
+query = applyLibraryFilters(query, filters, new Date());   // zoeken + status/source/has/dur/added
+query = applyLibrarySort(query, filters);                  // sort + dir
 const from = (page - 1) * pageSize;
-query = query.range(from, from + pageSize - 1);
+query = query.range(from, from + pageSize - 1);            // server-side paginatie
 ```
 
-- **Filter:** `collection_id` (exact) + zoekterm (tot 6 tokens, elk ge-`AND`-t, elk token matcht
-  `title` OF `channel` OF `video_id` via `ilike`). RLS (`user_id = auth.uid()`) scoping komt van de
-  policy op de tabel — de query filtert **niet zelf** op `user_id`.
-- **Sorteren:** `date` (`created_at DESC`, default), `duration` (`DESC`, nulls laatst), `title` (`ASC`).
-- **Paginatie:** `.range()` server-side, `pageSize` default 50 (of `profiles.library_page_size`).
-- **`count:"exact"`** levert `totalCount` voor de paginatie-teller.
+Alle filter-/sort-/search-logica zit in **`filters.ts`** (`applyLibraryFilters`, `applyLibrarySort`,
+`parseFilters`, `filterChips`), de single source voor hoe een filter mapt naar URL → query → chip:
 
-> **`select("*")` haalt élke kolom op — inclusief de volledige `transcript` jsonb** (de complete tekst,
-> NOT NULL) voor alle 50 rijen op een pagina, terwijl de lijst alleen titel/duur/badges/datum toont.
-> Zie **Aangetroffen rommel #1**.
+- **Zoeken** (`?q=`): tot 6 whitespace-tokens, elk ge-`AND`-t, elk token matcht
+  `title` OF `channel` OF `video_id` via `ilike`. `%,()` worden gestript.
+- **Status** (`?status=unread`): `viewed_at IS NULL`.
+- **Source** (`?source=captions|ai`): `processing_method = 'youtube_captions'` resp. `= 'assemblyai'`.
+- **Has** (`?has=summary,edited,rag`, multi): `has_summary` / `has_edit` / `has_rag` = true.
+- **Duration** (`?dur=lt10|10to30|30to60|gt60`): seconden-buckets `[0,600) / [600,1800) /
+  [1800,3600) / [3600,∞)` op `duration`.
+- **Added** (`?added=today|7d|30d`): `created_at >= cutoff` (today = middernacht lokaal, anders
+  now − 7/30 dagen).
+- **Sort** (`?sort=date|duration|title`, `?dir=asc|desc`): default `date desc`; `duration` met
+  `nullsFirst:false`. De 6 UI-presets (Newest/Oldest/Longest/Shortest/Title A–Z/Z–A) mappen op
+  `{sort,dir}`-paren; een default-waarde laat de param weg uit de URL.
+- **Collectie** (`?collection=<id>`): `collection_id = <id>` (los van de filter-params).
+- **Paginatie** (`?page=N`): `.range()` server-side; `page=1` = param afwezig. `pageSize` default 50,
+  of `profiles.library_page_size` (eenmalig geladen).
 
-### 2.2 Het type van een rij
+Naast de gepagineerde fetch draait een tweede **head-count** (`count:"exact", head:true`, zonder
+filters, wel collectie-scoped) voor de "N of TOTAL"-teller in de header.
 
-De lijst declareert een **subset** in TypeScript (`TranscriptList.tsx:98-116`), maar `select("*")`
-retourneert alle kolommen; de niet-gedeclareerde velden zijn op de rij aanwezig maar niet getypeerd.
+### 2.3 Basistabel & detail-query
+
+De **detailpagina** en de zware acties (download, copy, RAG-export) lezen wél de **basistabel**
+`public.transcripts` (o.a. de `transcript`-jsonb). De detail-server-page doet:
 
 ```ts
-export interface Transcript {
-  id: string;
-  title: string;
-  video_id: string;
-  video_url?: string;          // ⚠ bestaat NIET als kolom in de DB — nergens gevuld
-  created_at: string;
-  updated_at?: string;
-  thumbnail_url?: string;
-  duration?: number;
-  character_count?: number;
-  processing_method?: string | null;
-  edited_content?: object | null;
-  ai_summary?: { edited_html?: string } | null;
-  rag_exports?: object[] | null;
-  collection_id?: string | null;
-  playlist_id?: string | null; // ⚠ bestaat NIET als kolom in de DB (zie 2.3)
-  viewed_at?: string | null;
-}
+supabase.from("transcripts").select("*").eq("id", id).eq("user_id", user.id).single()
 ```
 
-### 2.3 Werkelijke kolommen op `public.transcripts` (geverifieerd, `information_schema.columns`)
+(dubbele zekerheid: expliciete `user_id`-eq bovenop RLS; `notFound()` bij leeg/fout.) Extra velden die
+alleen op de basistabel leven en die de detail gebruikt bovenop de 14 view-kolommen:
 
-Dit is de **volledige waarheid** over wat per transcript beschikbaar is — de basis voor waarop
-gefilterd/gesorteerd **kan** worden:
+- `transcript` (jsonb, NOT NULL) — array van segmenten `{ text, offset, duration }` (`TranscriptItem`),
+  de complete tekst. Geen R2-fetch in het lees-pad.
+- `edited_content` (jsonb) — opgeslagen Tiptap-doc van de Edited-tab.
+- `edited_content_updated_at` (timestamptz) — wanneer `edited_content` laatst geschreven is; voedt de
+  stale-summary-melding.
+- `ai_summary` (jsonb) — `{ text, action_points[], generated_at, edited, html?, edited_html? }`.
+- `rag_exports` (jsonb array) — `{ chunk_size, exported_at, credits_spent }` per betaalde export.
+- `language` (text, nullable) — meegegeven aan de viewer + RAG-export; niet in de lijst.
+- `thumbnail_url` (text, nullable).
 
-| Kolom | Type | Null? | Default | Gebruikt in Library-lijst? |
-|-------|------|-------|---------|----------------------------|
-| `id` | uuid | nee | `gen_random_uuid()` | ja (key, links) |
-| `user_id` | uuid | nee | — | via RLS (niet in query) |
-| `video_id` | text | ja | — | ja (titel-fallback, zoek, YouTube-link) |
-| `transcript` | **jsonb** | **nee** | — | **opgehaald via `*`, niet getoond in lijst** — array van `{text, offset, duration}` (zie §5a) |
-| `created_at` | timestamptz | nee | `utc now()` | ja (sort `date`, datumkolom) |
-| `title` | text | ja | — | ja (titel, sort `title`, zoek, rename) |
-| `thumbnail_url` | text | ja | — | ja (alleen als thumbnails-toggle aan) |
-| `duration` | integer | ja | — | ja (durationkolom, sort `duration`) |
-| `character_count` | integer | ja | `0` | ja → "words" = `round(cc/5)` (heuristiek) |
-| `is_favorite` | boolean | ja | `false` | **nee — dode kolom, geen UI leest/schrijft dit** |
-| `source_type` | text | ja | `'youtube'` | nee (wel geïndexeerd; sidebar toont het niet) |
-| `filename` | text | ja | — | nee |
-| `credits_used` | integer | ja | — | nee |
-| `processing_method` | text | ja | — | ja → bepaalt bron-badge (auto-captions vs AI) |
-| `edited_content` | jsonb | ja | — | ja → "Edited"-badge + detail-tab |
-| `ai_summary` | jsonb | ja | — | ja → "AI Summary"(+Edited)-badge + detail-tab |
-| `collection_id` | uuid | ja | — | ja (collectie-filter + collectie-badge) |
-| `viewed_at` | timestamptz | ja | — | ja → NEW-badge (`!viewed_at`) |
-| `updated_at` | timestamptz | ja | `now()` | ja → getoonde datum als > `created_at` |
-| `rag_exports` | jsonb | ja | `'[]'` | ja → "RAG ✦"-badge + detail-tab |
-| `channel` | text | ja | — | ja (zoek), getoond op **detailpagina**, niet in de lijstrij |
-| `language` | text | ja | — | **niet in de lijst**; getoond/gebruikt op de detailpagina (zie §5b) |
-
-**Kolommen die op de rij bestaan maar NIET in de lijst geselecteerd/getoond worden als eigen veld:**
-`is_favorite`, `source_type`, `filename`, `credits_used`, `channel` (wel meegezocht, niet als
-kolom getoond), `language`, `user_id`. Ze komen wél binnen via `select("*")` maar worden genegeerd.
-
-**Twee door de UI verzonnen velden bestaan NIET in de DB:** `video_url` en `playlist_id` staan in de
-TS-`interface` maar niet in `information_schema` → altijd `undefined`. Zie **Aangetroffen rommel #4**.
-
-### 2.4 Collections-query (verbatim)
-
-Twee losse plekken lezen collections:
+### 2.4 Collections-query
 
 ```ts
-// page.tsx:157 — voor de mobiele picker + filter-context-naam
-supabase.from("collections").select("id, name").eq("user_id", user.id)
-
-// app-sidebar.tsx:135 — voor de desktop-sidebar (met tellingen)
-supabase.from("collections").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+supabase.from("collections").select("id, name").eq("user_id", user.id)   // page.tsx (picker + chip-naam)
 ```
 
-`public.collections` = `id uuid`, `user_id uuid`, `name text`, `created_at timestamptz`. Tellingen
-per collectie worden **client-side** afgeleid in de sidebar uit een aparte
-`transcripts.select("id, collection_id, character_count")`-fetch (`app-sidebar.tsx:134`), niet via
-een DB-aggregatie.
+`public.collections` = `id`, `user_id`, `name`, `created_at`. De desktop-sidebar (`app-sidebar.tsx`)
+leest collecties apart en leidt tellingen client-side af.
 
 ---
 
-## 3. Verbatim bron
+## 3. Verbatim: tokens, labels, formats, testids
 
-Voor de **volledige** verbatim broncode van de vier gevraagde blokken, zie de bestanden zelf — ze zijn
-te lang om hier te dupliceren zonder drift te riskeren. De relevante ankers en de kernfragmenten:
+### 3.1 Badges — `badges.tsx`
 
-### 3.1 Toolbar + display-options-menu (`page.tsx:211-273`, verbatim)
+`transcriptBadges(t)` bouwt korte **mono-pillen**: exact één bron-badge (**`CC`** als
+`processing_method === "youtube_captions"`, anders **`AI`**), dan optioneel **`SUM`** (bij
+`has_summary`), dan optioneel **`RAG`** (bij `has_rag`). De "edited"-staat draagt zowel de `-soft`-tint
+als een potlood-glyph (de tint alleen is op een 18px-pil niet leesbaar).
 
-```tsx
-<div className="flex items-center gap-2">
-  {/* Search */}
-  <div className="relative w-56">
-    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted" />
-    <Input placeholder="Search…" className="pl-8 h-9 rounded-lg border-border bg-surface …"
-      value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-  </div>
-
-  {/* View toggle (list | grid) */}
-  <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5 bg-surface">
-    <Button … onClick={() => setViewMode("list")} aria-label="List view"><ListIcon/></Button>
-    <Button … onClick={() => setViewMode("grid")} aria-label="Grid view"><LayoutGrid/></Button>
-  </div>
-
-  {/* Display options — the ONLY options menu (geen chip-filters) */}
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button … aria-label="Display options"><SlidersHorizontal/></Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="w-52">
-      <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-      <DropdownMenuRadioGroup value={sortBy} onValueChange={…}>
-        <DropdownMenuRadioItem value="date">Date</DropdownMenuRadioItem>
-        <DropdownMenuRadioItem value="duration">Duration</DropdownMenuRadioItem>
-        <DropdownMenuRadioItem value="title">Title</DropdownMenuRadioItem>
-      </DropdownMenuRadioGroup>
-      <DropdownMenuSeparator />
-      <DropdownMenuCheckboxItem checked={showThumbnails} onCheckedChange={setShowThumbnails}>
-        Show thumbnails
-      </DropdownMenuCheckboxItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-</div>
+```ts
+export const BADGE_CLASSES = {
+  auto:            "bg-sky-subtle text-sky",
+  "auto-edit":     "bg-sky-soft-subtle text-sky-soft",
+  ai:              "bg-indigo-subtle text-indigo",
+  "ai-edit":       "bg-indigo-soft-subtle text-indigo-soft",
+  summary:         "bg-violet-subtle text-violet",
+  "summary-edit":  "bg-violet-soft-subtle text-violet-soft",
+  rag:             "bg-teal-subtle text-teal",
+} as const;
 ```
 
-Het display-options-menu bevat dus **alleen**: sort (date/duration/title) + één thumbnails-toggle.
-Geen Source/Status/Collection/Date-range chip-filters (zie §6).
+| Pil | Variant | Wanneer | Potlood? |
+|-----|---------|---------|----------|
+| `CC` | `auto` / `auto-edit` | captions-bron | `has_edit` |
+| `AI` | `ai` / `ai-edit` | AI-bron | `has_edit` |
+| `SUM` | `summary` / `summary-edit` | `has_summary` | `has_summary_edit` |
+| `RAG` | `rag` | `has_rag` | — |
 
-### 3.2 Lijst-/rijcomponent — zie `TranscriptList.tsx:635-767` (list) en `:768-857` (grid)
+`Badge` = `inline-flex … rounded-[3px] px-2 py-0.5 text-[10px] font-mono font-medium tracking-tight`.
+`CollectionBadge` = omkaderde pil met `Folder`-icoon + collectie-naam (`dir="auto"`, `max-w-[10rem]`).
+Dezelfde `transcriptBadges` + `Badge` worden op de **detailpagina** hergebruikt (`TranscriptHeader`).
 
-Kernstructuur van een **list-rij** (`:659-763`), samengevat met de exacte klassen die er toe doen:
+### 3.2 Export-formats (`FORMAT_GROUPS`, `TranscriptList.tsx`)
 
-- Wrapper: `group flex items-start gap-3 px-4 py-3 … cursor-grab`, `draggable`, `onDragStart` zet
-  `transcriptId` in `dataTransfer` (voor drop op een collectie in de sidebar).
-- Checkbox (`:669`): op mobiel altijd zichtbaar, op desktop hover/selected (`sm:opacity-0 sm:group-hover:opacity-100`).
-- Thumbnail (`:678`): **`hidden sm:block h-[36px] w-16`** — alleen desktop, alleen als
-  `showThumbnails && t.thumbnail_url`. **Dit is de exacte regel achter §5c.**
-- Titel (`:702`): `<Link href={/dashboard/library/${t.id}}>` met `line-clamp-2`; dubbelklik = rename.
-- Badges (`:721`): `NewBadge` (indien ongelezen) + `transcriptBadges(t)` + `CollectionBadge`.
-- Rechts (desktop, `:736`): parallelle kolommen `w-14`/`w-28`/`w-40` voor Duration/Words/Added,
-  `tabular-nums text-fg-muted`, rechts uitgelijnd.
-- Mobiele metadata (`:728`): `sm:hidden` compacte regel `duration · words · datum`.
-- Rij-acties (`:743`): `hidden sm:flex opacity-0 group-hover:opacity-100` — Eye (View),
-  ExternalLink (YouTube), Trash2 (delete-confirm). **Losse hover-icons, geen `MoreHorizontal`-menu.**
+8 file-formats in 3 groepen, plus RAG apart:
 
-De badge-logica (`transcriptBadges`, `:144-171`) en de `BADGE_CLASSES`-map (`:123-131`) zijn de
-canonieke bron voor de methodekleuren (ADR-080): `auto` = sky, `ai` = indigo, `summary` = violet,
-`rag` = teal, met `-soft`-varianten voor "Edited".
+- **Text:** `txt` "Plain text (.txt)" · `txt-ts` "Text + timestamps (.txt)" · `md` "Markdown (.md)" ·
+  `md-ts` "Markdown + timestamps (.md)"
+- **Data:** `json` "JSON (.json)" · `csv` "CSV (.csv)"
+- **Subtitles:** `srt` "SRT (.srt)" · `vtt` "VTT (.vtt)"
+- **Developer:** "RAG JSON" — badge `PAID` (nog nooit geëxporteerd) of `PURCHASED` (`has_rag`).
 
-### 3.3 Collecties-sidebar (desktop) — `app-sidebar.tsx:367-606`
+Één id ⇒ los bestand; meerdere ⇒ ZIP. De detail-viewer (`TranscriptViewer`) heeft dezelfde lijst,
+plus een "Edited version"-sectie (Edited .txt / Edited .md) wanneer er opgeslagen edits zijn.
 
-De sidebar zit in de **dashboard-shell**, niet in de Library-route. Structuur:
+### 3.3 Data-testids
 
-- "Library"-rij + chevron die de sub-sectie in/uitklapt (`libraryOpen`, `:368-410`).
-- "All Transcripts" drop-target (`:437-453`) met totaal-telling.
-- Per collectie een rij (`:456-566`): navigatie (`?collection=<id>`), inline rename (Enter/Escape,
-  max 150 tekens), inline delete-confirm (verplaatst transcripts naar "All Transcripts"), drop-target
-  (`onDrop` → `transcripts.update({collection_id})`), telling.
-- "+ New Collection" onderaan (`:571-603`), inline create.
-- Drag-and-drop: een rij uit de lijst (`draggable`) wordt hier gedropt om te verplaatsen.
-
-### 3.4 Mobiele varianten
-
-- **Collecties op mobiel** (`page.tsx:276-303`): de sidebar is `hidden` < md, dus een aparte
-  `DropdownMenu` bovenaan de Library-body toont "All Transcripts" + de collecties als radio-items.
-  Alleen zichtbaar als er ≥1 collectie is.
-- **Rijen op mobiel** (`TranscriptList.tsx`): geen thumbnail (§5c), geen hover-acties, metadata op
-  één compacte `sm:hidden`-regel; checkbox altijd zichtbaar.
-- **Navigatie op mobiel**: geen sidebar; `MobileTabBar` onderaan (Home/Transcribe/Library/Messages),
-  `apps/app/src/components/dashboard/MobileTabBar.tsx`.
-- **Floating bulk-actiebalk** (`:562`): op mobiel opgetild boven de tab-bar
-  (`bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom))]`), labels collapsen naar icon-only.
+| testid | Element |
+|--------|---------|
+| `library-search` | zoek-Input (lijst-toolbar) |
+| `library-filter` | Filter-dropdown-trigger (desktop) |
+| `library-sort` | Sort-dropdown-trigger (desktop) |
+| `bulk-bar-desktop` | desktop floating bulk-actiebalk |
+| `bulk-bar-mobile` | mobiele bulk-actiebalk |
+| `transcript-tab-{id}` | detail-tab-link (`id` ∈ original/edited/summary/summary_edited/developer) |
+| `transcript-view-selector` | mobiele view-selector-knop (detail) |
 
 ---
 
-## 4. State en persistentie
+## 4. State & persistentie (lijst)
 
 | State | Waar het leeft | Overleeft refresh? |
 |-------|----------------|--------------------|
-| **Zoekterm** | React `useState` (`searchQuery`) + gedebouncede `debouncedSearch` (300 ms) | **Nee** — niet in URL, niet opgeslagen |
-| **Sortering** | React `useState` (`sortBy`, default `"date"`) | **Nee** |
-| **View-mode (list/grid)** | React `useState` (`viewMode`, default `"list"`) | **Nee** |
-| **Thumbnails-toggle** | React `useState` (`showThumbnails`, default `false`) | **Nee** |
-| **Paginatie (`?page=N`)** | **URL search-param** (`page.tsx:69`) | **Ja** — shareable, Back werkt; `page=1` = param afwezig |
-| **Collectie-selectie (`?collection=<id>`)** | **URL search-param** (`page.tsx:54`) | **Ja** |
-| **Page-size** | **Server** — `profiles.library_page_size` (eenmalig geladen, `page.tsx:158`), fallback 50 | **Ja** (per user in DB) |
-| **Selectie (bulk)** | React `useState` (`selectedIds: Set`) in `TranscriptList` | **Nee** — leeg na refresh/paginawissel |
-| **Mark-as-read overlay** | `useState(readIds)` + `useOptimistic` (`TranscriptList.tsx:228`); canoniek in DB `viewed_at` | overlay nee, DB-waarde ja |
-| **Sidebar collapsed** | `localStorage["sidebar-collapsed"]` (`app-sidebar.tsx:70`) | **Ja** (localStorage) |
-| **Library sub-sectie open/dicht** | `useState(libraryOpen)` in sidebar | Nee (auto-opent op library-pagina) |
+| Zoekterm | lokale `searchValue` (300 ms debounce) → `?q=` | **Ja** (via URL) |
+| Alle content-filters | **URL** (`?status/source/has/dur/added=`) via `parseFilters` | **Ja** |
+| Sortering + richting | **URL** (`?sort=`, `?dir=`) | **Ja** |
+| Collectie-selectie | **URL** (`?collection=<id>`) | **Ja** |
+| Paginatie | **URL** (`?page=N`; page=1 = afwezig) | **Ja** |
+| Density (default/compact) | `localStorage["library-density"]` | **Ja** |
+| Page-size | server — `profiles.library_page_size` (fallback 50) | **Ja** (per user in DB) |
+| Selectie (bulk) | `useState(selectedIds: Set)` in `TranscriptList` | **Nee** |
+| Selection-mode (mobiel) | `useState(selectionMode)` | **Nee** |
+| Mark-as-read overlay | `useState(readIds)` + `useOptimistic`; canoniek in DB `viewed_at` | overlay nee, DB ja |
+| Inline rename | `useState(editingId/editingTitle)` | **Nee** |
+| Sidebar collapsed | `localStorage["sidebar-collapsed"]` (`app-sidebar.tsx`) | **Ja** |
 
-**Samengevat:** alleen **paginatie**, **collectie-selectie** (beide URL) en **page-size** +
-**sidebar-collapsed** (server/localStorage) overleven een refresh. **Zoekterm, sortering, view-mode
-en de thumbnails-toggle zijn puur React-state en resetten bij elke refresh** — een herontwerp dat deze
-in de URL of localStorage wil bewaren, moet dat expliciet toevoegen.
-
-Cross-component sync verloopt via twee window-events: `transcripts-updated` en
-`indxr-library-refresh` (dispatched na move/rename/delete; de lijst en sidebar luisteren en re-fetchen).
+Elke filter-/sort-/search-mutatie **reset naar page 1** (`updateParams` verwijdert `page`). Cross-component
+sync loopt via het window-event **`transcripts-updated`** (dispatched na move/rename/delete/create; de
+lijst en sidebar luisteren en re-fetchen). **Waar edits persisteren:** `title`, `viewed_at`,
+`collection_id` en `edited_content`(+`edited_content_updated_at`) worden per rij teruggeschreven naar
+`public.transcripts`; `ai_summary` (incl. `edited_html`) idem; `rag_exports` groeit per betaalde export.
 
 ---
 
-## 5. Drie concrete vragen — met bewijs beantwoord
+## 5. Detailpagina — `/dashboard/library/[id]`
 
-### 5a. Staat transcripttekst doorzoekbaar in Postgres, of alleen in R2?
+### 5.1 Render-boom
 
-**In Postgres. Full-text zoeken is een UI/query-taak, geen migratie-taak — de tekst is er al.**
-
-Bewijs:
-- Kolom `transcripts.transcript` is **`jsonb`, NOT NULL**, en gevuld op **951/951 rijen**
-  (`transcript_null = 0`).
-- Vorm (live sample): een **array** van segmenten `{"text": "...", "offset": 0.24, "duration": 5.92}`.
-  Het `TranscriptItem`-type (`packages/shared/src/utils/formatTranscript.ts:3`) bevestigt
-  `{ text, duration, offset }`.
-- De detailpagina geeft `transcript.transcript` rechtstreeks aan de client-viewer door
-  (`[id]/page.tsx:117`) — er is **geen R2-fetch** in het lees-pad. R2 (ADR-020/021) wordt door dit
-  Library-pad **niet** aangeroepen; de `master_transcripts`-cache is een aparte backend-optimalisatie.
-
-**Maar:** de huidige zoekfunctie zoekt **alleen** in `title`/`channel`/`video_id` (`page.tsx:121`),
-**niet** in de tekst. Om op volledige tekst te zoeken zijn er twee routes:
-1. **Zonder migratie:** query op de jsonb (bv. `transcript::text ilike '%…%'`, of
-   `jsonb_path_exists`) — werkt, maar zonder index → sequential scan over jsonb (traag op schaal).
-2. **Met migratie (aan te raden bij echte full-text):** een gegenereerde `tsvector`-kolom + GIN-index,
-   of een aparte platgeslagen tekstkolom. Er is **nu geen** full-text index — zie 5a-index hieronder.
-
-**Indexen op `transcripts` (geverifieerd `pg_indexes`):** pk (`id`), `user_id`, `video_id`,
-`created_at DESC`, `(user_id, created_at DESC)`, `title`, `source_type`, `(user_id, source_type)`,
-`collection_id`, `viewed_at`, `updated_at DESC`. **Geen tsvector/GIN-index, geen index op de
-`transcript`-jsonb.** Full-text-zoeken op schaal vraagt dus wél een nieuwe index (maar geen
-data-migratie — de tekst staat er al).
-
-### 5b. Bestaat er een taalveld op een transcript-rij? Coverage?
-
-**Ja — kolom `transcripts.language` (`text`, nullable). Maar de dekking is laag: legacy-data draagt
-het grotendeels niet.**
-
-Live telling (geverifieerd):
-
-| language | rijen |
-|----------|-------|
-| `NULL`   | **771** |
-| `en`     | 143 |
-| `ar`     | 33 |
-| `en-GB`  | 2 |
-| `id`     | 1 |
-| `ro`     | 1 |
-
-Totaal 951 rijen; **180 gevuld (18,9%), 771 NULL (81,1%)**, 5 distinct waarden. Het veld staat **niet**
-in het `Transcript`-lijsttype en wordt in de lijst niet gebruikt; het wordt wél doorgegeven aan de
-detail-viewer (`[id]/page.tsx:122`) en meegegeven aan de RAG-export (`TranscriptViewer.tsx:538`).
-
-**Consequentie voor een taalfilter:** technisch mogelijk (kolom bestaat), maar een filter zou op 81%
-van de bibliotheek "onbekend" tonen. De codes zijn bovendien **niet genormaliseerd** (`en` naast
-`en-GB`). Een bruikbaar taalfilter vereist een backfill/normalisatie-slag op bestaande rijen.
-
-### 5c. Waarom renderen thumbnails wél in desktop-rijweergave en niet op mobiel?
-
-**Oorzaak, exacte regel — `TranscriptList.tsx:679`:**
-
-```tsx
-{showThumbnails && t.thumbnail_url && (
-  <div className="hidden sm:block h-[36px] w-16 shrink-0 overflow-hidden rounded-md bg-bg-subtle">
+```
+TranscriptPage  ([id]/page.tsx, Server)   auth-guard, rij-fetch (select("*")), tab-berekening
+├─ TranscriptHeader  (Client)             breadcrumb → bewerkbare titel → één feitenregel
+│   ├─ breadcrumb                          "‹ Library" (+ "/ {collectie}" als in collectie)
+│   ├─ <h1> titel                          inline bewerkbaar (klik → input; Enter/Escape); schrijft title
+│   └─ feitenregel                         badges + CollectionBadge · ⏱ duur · 📄 woorden · 📅 datum
+├─ TranscriptTabs  (Client)               desktop-strip (role=tablist) / mobiele view-selector-sheet
+└─ één van de view-componenten o.b.v. activeTab:
+    ├─ original|edited → TranscriptViewer  (leescanvas, toolbar, video, Tiptap-editor)
+    ├─ summary|summary_edited → AiSummaryView
+    └─ developer → RagExportView
 ```
 
-De thumbnail-wrapper in de **list-view-rij** draagt **`hidden sm:block`**: verborgen onder de
-Tailwind `sm`-breakpoint (640 px), zichtbaar daarboven. Dat is de hele oorzaak — geen vermoeden.
+Geen `DashboardBackdrop` → **geen honeycomb** hier (bewust; dit is een werkoppervlak). De page is
+`max-w-7xl mx-auto`.
 
-Twee nuances:
-- Thumbnails zijn sowieso **opt-in** (`showThumbnails` default `false`) én vereisen een
-  `thumbnail_url`.
-- In **grid-view** heeft de thumbnail **geen** `hidden sm:block` (`:794-795`,
-  `aspect-video w-full`), dus daar verschijnt hij óók op mobiel. De mobiel-verberging geldt dus
-  specifiek voor de **list-rij**, bewust, zodat de titel op smalle schermen de volle breedte krijgt.
+### 5.2 Tab-resolutie (server-side, `?tab=`)
 
----
+Tabs verschijnen **alleen als hun content bestaat**; een `?tab=` waarvan de content weg is valt terug
+op `original` (nooit een dood tabblad). `?tab=` ∈ `{original, edited, summary, summary_edited,
+developer}`, default `original`.
 
-## 6. Wat er niet is (toets van `design/system.md` §Library Patterns)
+| Tab-id | Label | Verschijnt wanneer | DB-veld |
+|--------|-------|--------------------|---------|
+| `original` | **Transcript** | altijd | `transcript` |
+| `edited` | **Edited** | `edited_content` bestaat **of** `?tab=edited` (verse edit-start) | `edited_content` |
+| `summary` | **Summary** | `ai_summary` bestaat | `ai_summary` |
+| `summary_edited` | **Edited summary** | `ai_summary.edited_html` bestaat | `ai_summary.edited_html` |
+| `developer` | **Developer** | niet-lege `rag_exports`-array | `rag_exports` |
 
-`system.md:506` beschrijft het al zelf; hier per stuk geverifieerd tegen de **code**:
+`activeTab` = de gevraagde tab als die in de zichtbare set zit, anders `original`. Tab-state = **URL**
+(`<Link href="…?tab=…">`), overleeft refresh. De breadcrumb-collectienaam komt uit een aparte
+`collections`-lookup wanneer `collection_id` gezet is.
 
-| Claim in system.md §Library Patterns | Bestaat in code? | Bewijs |
-|--------------------------------------|------------------|--------|
-| **Chip-filters** (Source / Status / Collection / Date range) | **Nee** | Enige filtercontrole is het display-options-`DropdownMenu` (sort + thumbnails, `page.tsx:254-272`) + collectie via URL. Geen chip-UI. |
-| **`MoreHorizontal`-contextmenu** per rij | **Nee** | Per-rij acties zijn losse hover-icons Eye/ExternalLink/Trash2 (`TranscriptList.tsx:743-762`). Rename via dubbelklik/potlood. Geen `MoreHorizontal`. |
-| **Floating bulk-actiebalk** | **Ja, bestaat** | `TranscriptList.tsx:561-618` — verschijnt bij `selectedIds.size > 0`: "N selected", Download-menu, (Mark as read), Delete, clear. |
+### 5.3 `TranscriptViewer` (Original + Edited tabs)
 
-**Aparte lege staat voor "filter levert 0 resultaten" (los van "bibliotheek is leeg")?**
-**Nee.** `TranscriptList.tsx:541` rendert één en dezelfde lege staat (`HexagonEmptyState` +
-"Library is empty" + "Transcribe a video"-knop) zodra `transcripts.length === 0`, **ongeacht** of dat
-komt door een lege bibliotheek of door een zoekterm/collectie zonder resultaten. Een zoekopdracht die
-niets vindt toont dus de misleidende tekst "Library is empty" + de "Transcribe a video"-CTA. Een
-herontwerp dat een echte "geen resultaten"-staat wil, moet die toevoegen (de code kent het
-onderscheid al: `debouncedSearch`/`selectedCollectionId` zijn beschikbaar in `page.tsx`).
+Eén **68ch-leeskolom** (`max-w-3xl`, `[&_.ProseMirror]:max-w-[68ch]`). Structuur:
 
----
+- **Toolbar** (sticky, rechts-uitgelijnd, `flex-wrap` zodat niets van het scherm valt):
+  - **Find** — toggelt een zoekbalk (niet permanent zichtbaar); zoekt in-transcript via een custom
+    ProseMirror `SearchExtension` (highlight + prev/next teller "n / N").
+  - **Display** — dropdown met **Timestamps**-switch + **Text size** (Small / Default / Large).
+  - **Copy** — eigen knop (kopieert de editor-tekst).
+  - **Export** — dropdown met de 8 formats (Text/Data/Subtitles) + RAG JSON; plus "Edited version"
+    (Edited .txt / .md) bovenaan als er opgeslagen edits zijn.
+  - **Edit** (original-mode) → routeert naar `?tab=edited` (bewerkt nooit het origineel in-place).
+    **Save** (edited-mode) → schrijft `edited_content` + `edited_content_updated_at`.
+  - **⋯ overflow** — Watch on YouTube (alleen met `video_id`) · Summarise/Regenerate (3 credits) ·
+    Revert to original (edited-mode) · Delete transcript.
+- **Video** — **0px dicht**. "Watch video"-knop opent een sticky, in-app **nocookie** speler
+  (`NocookieYouTubePlayer`): lazy `youtube-nocookie.com` IFrame-Player; geen YouTube-load/cookie tot de
+  user hem opent. **Alleen bij een YouTube-bron** (`video_id` niet leeg); geüploade audio heeft geen
+  video. Klik op een tijdstempel in de tekst **seekt** deze in-app speler (opent hem zo nodig).
+- **Reader** — Tiptap-editor (`immediatelyRender: false`, `setEditable` via `useEffect`), geseed uit
+  **`buildReadingParagraphs`**: segmenten worden tot leesbare alinea's samengevoegd met één
+  leidend tijdstempel per alinea (i.p.v. één segment per regel). Bij `video_id` is het tijdstempel een
+  `.ts-link`; bij geüploade audio een inerte `.ts-static`-marker. Timestamps zichtbaar/verborgen via de
+  Display-switch (`hide-timestamps`-class).
+- **Edit-mode** toont een formatting-toolbar (Bold/Italic/Underline/Bullet/Numbered).
+- **Client-state:** `showTimestamps`, `showVideo`, `textSize` (s/m/l), `showSearch` + `searchQuery`,
+  `isDirty`/`isSaving`/`hasSavedEdits`, RAG-modal-state. Bij mount: `viewed_at` gestampt als nog leeg
+  (+ `transcripts-updated`-event zodat de NEW-badge in de lijst verdwijnt).
 
-## 7. Honeycomb — feitelijke implementatie
+### 5.4 `AiSummaryView` (Summary + Edited summary tabs)
 
-De honeycomb op de Library-body komt van **`DashboardBackdrop`** (shared), die de Library-page
-omhult (`page.tsx:207` `<DashboardBackdrop>` … `</DashboardBackdrop>`, `:396`).
+Tweede Tiptap-editor (`immediatelyRender: false`) over `ai_summary`. Toont `html`/`edited_html` (of een
+default uit `text` + `action_points`). Copy · Export .txt · Edit → schrijft `ai_summary.edited_html`
+(+ `edited: true`); een eerste edit vanuit `summary` routeert door naar `?tab=summary_edited`.
+**Stale-melding:** als `ai_summary.generated_at` ouder is dan `edited_content_updated_at`, verschijnt
+"This summary was written before you last edited the transcript" met een Regenerate-link.
 
-**`packages/shared/src/components/DashboardBackdrop.tsx` (verbatim kern):**
+### 5.5 `RagExportView` (Developer tab)
 
-```tsx
-export function DashboardBackdrop({ children, className }) {
-  return (
-    <div className={`relative min-h-full ${className ?? ""}`}>
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-      <div className="relative min-h-full">{children}</div>
-    </div>
-  );
-}
-```
+Her-download van eerder betaalde RAG-exports. Toont een **Export History**-tabel (Preset · Date ·
+Credits · Re-download) uit `rag_exports`, plus een "Export New Preset"-blok waar elke chunk-preset
+(30/60/90/120s) **gratis** opnieuw te downloaden is (`buildRagJson`). Render-guard: bij lege
+`rag_exports` een lock-staat i.p.v. de tabel (kan nooit als gratis bypass dienen).
 
-**Feitelijke waarden (uit de code, niet uit de wiki):**
+### 5.6 Gedeeld met de lijst
 
-| Aspect | Waarde |
-|--------|--------|
-| Component | `HexagonPattern` (`packages/shared/src/components/icons/HexagonPattern.tsx`) |
-| Aanroep | binnen `DashboardBackdrop`, die om de hele Library-body zit |
-| **Opacity light** | **`opacity-[0.03]`** |
-| **Opacity dark** | **`dark:opacity-[0.045]`** |
-| Positionering | `pointer-events-none absolute inset-0 h-full w-full` (achter de content, die `relative` staat) |
-| Vorm | flat-top honeycomb, `size=20` user-units, `stroke-fg strokeWidth="1"`, `fill-none`, naadloze `<pattern>`-tegel |
-
-> **Let op — drie tegenstrijdige opacity-waarden in de docs.** De code = **0.03 / 0.045**. Maar
-> `LESSONS.md` [2026-07-03] noemt `0.035 / 0.05` en `system.md` §5-tabel noemt voor "Empty state
-> Library" `0.04 / 0.06`. De **code is de waarheid**; de twee wiki-getallen zijn gedrift. Zie
-> **Aangetroffen rommel #2**.
-
-De uitzondering zelf (honeycomb op een werkoppervlak, tegen system.md §5.4) is bewust en vastgelegd in
-`LESSONS.md` [2026-07-03] + ADR-079. Het dashboard-layout schildert **geen** blanket-wash meer; elke
-pagina kiest zelf door `DashboardBackdrop` te renderen (`layout.tsx:59-62`).
-
----
-
-## 8. Detailpagina — `/dashboard/library/[id]`
-
-> ⚠️ **Herontworpen in ADR-085 (2026-08-01).** De onderstaande render-boom is de PRE-redesign staat.
-> Nieuwe werkelijkheid: de server-page berekent conditionele tabs **met content-fallback** (geen dood
-> tabblad) en rendert nu `TranscriptHeader` (breadcrumb → bewerkbare titel → feitenregel met badges +
-> duur/woorden/datum, `formatDetailDate`) + `TranscriptTabs` (desktop-strip / mobiele view-selector-sheet)
-> boven de content. `TranscriptViewer` is één 68ch-leeskolom (video-sidebar weg): rechts-uitgelijnde
-> `flex-wrap`-toolbar (Find/Display/Copy/Export/Edit/⋯), video = 0px dicht + **nocookie** IFrame-Player
-> (`NocookieYouTubePlayer`, lazy, in-app **seek** op tijdstempels), en de reader seedt Tiptap uit
-> **`buildReadingParagraphs`** (leesbare alinea's i.p.v. één segment per regel). Edit routeert naar de
-> Edited-tab. Nieuwe componenten: `TranscriptHeader.tsx`, `TranscriptTabs.tsx`, `NocookieYouTubePlayer.tsx`.
-> Migratie `20260801120000_edited_content_updated_at` voedt de stale-summary-melding in `AiSummaryView`.
-
-### 8.1 Render-boom
-
-| # | Bestand | Rendert | S/C | Locatie |
-|---|---------|---------|-----|---------|
-| 1 | `apps/app/src/app/dashboard/library/[id]/page.tsx` | Server-component: auth-guard, rij-fetch, tab-navigatie (Original / Edited / Developer / AI Summary / Edited Summary), routeert naar de juiste view-component o.b.v. `?tab=` | **Server** | lokaal (app) |
-| 2 | `apps/app/src/components/library/TranscriptViewer.tsx` | Original+Edited tabs: Tiptap-editor, zoek-in-transcript, video-sidebar (iframe), export-menu, summarize-knop, RAG-modal, delete/rename | **Client** | lokaal (app) |
-| 3 | `apps/app/src/components/library/AiSummaryView.tsx` | AI-Summary + Edited-Summary tabs: Tiptap-editor over `ai_summary` | **Client** | lokaal (app) |
-| 4 | `apps/app/src/components/library/RagExportView.tsx` | Developer-tab: her-download van eerder betaalde RAG-exports | **Client** | lokaal (app) |
-
-Geen `DashboardBackdrop` op de detailpagina → **geen honeycomb** hier (bewust; dit is een werkoppervlak).
-
-### 8.2 Query (verbatim, `[id]/page.tsx:34-37`)
-
-```ts
-const [{ data: transcript, error }, { data: profileData }] = await Promise.all([
-  supabase.from("transcripts").select("*").eq("id", id).eq("user_id", user.id).single(),
-  supabase.from("profiles").select("rag_chunk_size").eq("id", user.id).single(),
-]);
-```
-
-Server-side, één rij, expliciet `eq("user_id", user.id)` (dubbele zekerheid bovenop RLS). `notFound()`
-bij error/leeg. `profiles.rag_chunk_size` levert de default chunk-preset voor RAG-export.
-
-### 8.3 Tab-routing
-
-`?tab=` ∈ `{original, edited, summary, summary_edited, developer}`, default `original`
-(`[id]/page.tsx:19-22`). Tabs verschijnen **conditioneel**: "Edited" alleen bij `edited_content`,
-"Developer ✦" alleen bij een niet-lege `rag_exports`-array, "AI Summary"/"Edited Summary" alleen bij
-`ai_summary`(`.edited_html`). Tab-state = **URL** (`<Link href="…?tab=…">`), overleeft refresh.
-
-### 8.4 Gedeeld met de lijst
-
-- **Componenten:** geen. De vier detail-view-componenten zijn lokaal en worden niet door de lijst
-  gebruikt; de lijst gebruikt geen viewer-componenten.
-- **Wel gedeeld (utils/primitives):** `utils/formatTranscript` (`generateTxt/Csv/Srt/Vtt/Markdown/buildRagJson`,
-  `TranscriptItem`-type), `actions/rag-export`, `hooks/useAuth`, en de shared `ui/`-primitives — dus
-  identieke marketing-impact-regel als §1.
-- **Zelfde tabel + kolommen:** beide lezen `transcripts`; de detail leest bovendien `channel` en
-  `language` die de lijst wel binnenkrijgt (`*`) maar niet toont.
-
-### 8.5 Waar Tiptap wordt opgetuigd
-
-Twee editors, beide met de verplichte `immediatelyRender: false` (LESSONS-regel, geverifieerd):
-
-- **`TranscriptViewer.tsx:374-398`** — `useEditor({ editable: isEditedMode || isEditingOriginal,
-  immediatelyRender: false, extensions: [StarterKit, SearchExtension] })`. Content komt van
-  `transcriptToJSON(transcript, videoId)` (array → Tiptap-doc met per-segment timestamp-link) of
-  `editedContent`. Een custom **`SearchExtension`** (ProseMirror-decorations, `:96-194`) doet de
-  in-transcript-zoekfunctie (highlight + prev/next). `setEditable` wordt via `useEffect` gesynct
-  (`:401-405`).
-- **`AiSummaryView.tsx:51-...`** — een tweede `useEditor({ immediatelyRender: false })` over de
-  `ai_summary`-html/-content.
-
-Opslaan schrijft terug naar dezelfde rij: `edited_content` (`TranscriptViewer.tsx:438`), `title`
-(`:415`), `viewed_at` bij mount (`:353`).
-
----
-
-## Aangetroffen rommel
-
-Read-only geconstateerd, **niet gefixt** (per opdracht):
-
-1. **`select("*")` haalt de volledige transcripttekst op voor de lijst.** `page.tsx:109` fetcht élke
-   kolom — inclusief de complete `transcript` jsonb (NOT NULL, kan tienduizenden segmenten zijn) — voor
-   alle 50 rijen per pagina, terwijl de lijst alleen titel/duur/badges/datum toont. Onnodige egress +
-   geheugen. Een expliciete kolom-select (zonder `transcript`) zou dit wegnemen.
-2. **Honeycomb-opacity: één echte drift (gecorrigeerd 2026-07-31).** Code = `0.03/0.045`
-   (`DashboardBackdrop.tsx:28`). `LESSONS.md` zei `0.035/0.05` → **echte drift, nu gefixt** naar de
-   code-waarde. De eerder aangehaalde `system.md §5 0.04/0.06` blijkt de tabelrij **"Empty state Library"**
-   (een andere surface dan de Library-body) — geen drift; system.md §5 vermeldt nu expliciet de
-   body-waarde `0.03/0.045` bij de Library-uitzondering.
-3. **Sidebar-opslag: dode berekening, geen zichtbare meter (gecorrigeerd 2026-07-31).** De eerdere versie
-   van deze bevinding beschreef een "sidebar-opslagmeter" — maar de **zichtbare meter is er niet (meer)**.
-   `app-sidebar.tsx:162-166` berekent nog wél `totalCharacters`/`usedKB`/`usedMB`/`MAX_MB = 500`/
-   `storagePercentage`, maar **`storagePercentage` wordt nergens gerenderd** (geen enkele referentie in de
-   JSX). Het is dus **dode code**, geen kloppende-of-niet meter. De correcte, gerenderde meter is
-   `StorageMeterCard` (op `/dashboard` + `/dashboard/account`), die wél de echte cap
-   `library_bytes_cap`+`_bonus` (basis **100 MiB**, ADR-078) uit de DB leest. Actie: dode berekening is
-   pre-existing dead code → gemeld (niet stil verwijderd, CLAUDE.md); een expliciete opruimronde kan hem
-   weghalen. **Les:** deze bevinding dreef omdat ze een berekening als "meter" framede — herverifieer de
-   overige rommel-items tegen live JSX vóór je erop bouwt (items 1/2/4/5 hieronder zijn geverifieerd nog
-   geldig per 2026-07-31).
-4. **Twee TS-velden zonder DB-kolom.** `Transcript.video_url` en `Transcript.playlist_id`
-   (`TranscriptList.tsx:102,114`) bestaan niet in `information_schema` → altijd `undefined`. Dode
-   type-velden.
-5. **Geen "0 resultaten"-staat.** Een zoekopdracht zonder treffers toont "Library is empty" + een
-   "Transcribe a video"-CTA (§6). Misleidend maar functioneel onschadelijk.
-6. **`is_favorite`-kolom is dood.** `DEFAULT false`, geen enkele Library-UI leest of schrijft hem.
-   (Idem ongebruikt in de lijst: `source_type`, `filename`, `credits_used`.)
-7. **Dubbele `w-full` classname** op `[id]/page.tsx:134` (`… relative z-10 w-full mt-2` bevat `w-full`
-   tweemaal). Cosmetisch.
+- **Componenten:** `badges.tsx` (`transcriptBadges`, `Badge`, `CollectionBadge`) — hergebruikt in
+  `TranscriptHeader`. De view-componenten zelf zijn detail-only.
+- **Utils/primitives (shared → marketing-impact):** `utils/formatTranscript`
+  (`generateTxt/Csv/Srt/Vtt/Markdown`, `buildRagJson`, `buildReadingParagraphs`, `TranscriptItem`),
+  `actions/rag-export`, `hooks/useAuth`, en de `ui/`-primitives.
 
 ---
 
 ## Cross-references
 
-- Badge-/methodekleuren: `LESSONS.md` [2026-07-03] + [2026-07-04], ADR-080, `system.md:113-115`.
-- Honeycomb-uitzondering: `LESSONS.md` [2026-07-03] design-hexagon-bg-uitzondering, ADR-079.
-- Optimistische mark-as-read: `LESSONS.md` [2026-07-04] library-optimistic-mutaties.
+- Badge-/methodekleuren: ADR-080, `design/system.md`, tokens.css "Badge families".
+- Library-lijst herontwerp (view + URL-filters + badges): ADR-083.
+- Detail-herontwerp (header/tabs, 68ch-reader, nocookie-speler, stale-summary): ADR-085 +
+  migratie `20260801120000_edited_content_updated_at`.
+- Honeycomb-uitzondering (werkoppervlak): ADR-079, `LESSONS.md` [2026-07-03].
+- Optimistische mark-as-read: `LESSONS.md` [2026-07-04].
+- Tiptap `immediatelyRender: false`: `LESSONS.md` [2026-05-04].
 - Opslaglimiet (echte cap): ADR-078.
-- Tiptap `immediatelyRender: false`: `LESSONS.md` [2026-05-04] tiptap.
 </content>
 </invoke>

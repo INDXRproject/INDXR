@@ -14763,3 +14763,10 @@ apps/app/src/components/dashboard/MobileTabBar.tsx
 apps/app/src/components/icons/Beehive.tsx
 tests/playwright/prod-check.cjs
 ---
+[2026-08-01 16:33] commit: docs: rewrite library-source-map to current state + testing.md (accounts/e2e)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/INDEX.md
+docs/wiki/design/library-source-map.md
+docs/wiki/operations/testing.md
+---
