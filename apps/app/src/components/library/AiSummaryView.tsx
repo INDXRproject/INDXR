@@ -9,12 +9,6 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { cn } from "@indxr/shared/lib/utils";
 import { useRouter } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@indxr/shared/components/ui/dropdown-menu";
 
 interface AiSummaryViewProps {
   id: string;
@@ -145,19 +139,12 @@ export function AiSummaryView({ id, initialSummary, mode = "original", editedCon
                   {copied ? "Copied!" : "Copy"}
                 </Button>
                 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 gap-2">
-                      <Download className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Export</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleExportTxt}>
-                      Text File (.txt)
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Summary is HTML with no timings — .txt is the only export, so a direct
+                    button, not a dropdown that reveals a single item. */}
+                <Button variant="outline" size="sm" onClick={handleExportTxt} className="h-8 gap-2">
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Export .txt</span>
+                </Button>
 
                 <div className="h-5 w-px bg-border mx-1" />
                 {mode === "original" && !summary.edited_html && (

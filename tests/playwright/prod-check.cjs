@@ -183,7 +183,7 @@ if (require.main === module) {
           await page.locator('button[role="checkbox"], [role="checkbox"]').first().click().catch(() => {});
           // fallback: click the visible checkbox control
           await page.waitForTimeout(600);
-          const bulk = page.locator("div.fixed.z-50").first();
+          const bulk = page.locator('[data-testid="bulk-bar-mobile"]').first();
           const tabbar = page.locator('nav[aria-label="Mobile navigation"]');
           const b = await bulk.boundingBox();
           const t = await tabbar.boundingBox();

@@ -14719,3 +14719,16 @@ keeps its labeled pill.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/library/TranscriptList.tsx
 ---
+[2026-08-01 15:58] commit: fix(summary): direct Export .txt button, not a one-item dropdown
+
+Second instance of the single-child-overflow smell (found while auditing):
+AiSummaryView's Export dropdown revealed only 'Text File (.txt)'. Summary is
+HTML with no timings, so .txt is the only format — make it a direct button.
+Also: data-testids on both bulk bars + point the headless bulk-bar check at
+the mobile bar (the split desktop/mobile bars share fixed/z-50).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/library/AiSummaryView.tsx
+apps/app/src/components/library/TranscriptList.tsx
+tests/playwright/prod-check.cjs
+---

@@ -757,7 +757,7 @@ export function TranscriptList({
 
       {/* Desktop floating bulk bar — labeled buttons in a pill */}
       {selectedIds.size > 0 && (
-        <div className="hidden md:block fixed left-1/2 -translate-x-1/2 z-50 bottom-6 animate-in slide-in-from-bottom-5 fade-in">
+        <div data-testid="bulk-bar-desktop" className="hidden md:block fixed left-1/2 -translate-x-1/2 z-50 bottom-6 animate-in slide-in-from-bottom-5 fade-in">
           <div className="bg-surface border border-border shadow-xl rounded-full px-6 py-3 flex items-center gap-4 max-w-[calc(100vw-1.5rem)]">
             <span className="text-sm font-medium text-fg whitespace-nowrap shrink-0">{selectedIds.size} selected</span>
             <div className="h-6 w-px bg-border/50 shrink-0" />
@@ -819,7 +819,7 @@ export function TranscriptList({
 
       {/* Mobile bulk bar — full-width, one labeled action per column (no ⋯ that opens a single item) */}
       {selectedIds.size > 0 && (
-        <div className="md:hidden fixed inset-x-0 z-50 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] bg-surface-elevated border-t border-border shadow-xl animate-in slide-in-from-bottom-5">
+        <div data-testid="bulk-bar-mobile" className="md:hidden fixed inset-x-0 z-50 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] bg-surface-elevated border-t border-border shadow-xl animate-in slide-in-from-bottom-5">
           <div className="flex items-center px-4 pt-2 text-xs font-medium text-fg-muted">
             <span>{selectedIds.size} selected</span>
             <button aria-label="Clear selection" className="ml-auto h-7 w-7 flex items-center justify-center rounded-full text-fg-muted hover:text-fg" onClick={clearSelection}>
