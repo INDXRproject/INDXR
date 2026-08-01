@@ -14568,3 +14568,16 @@ apps/marketing/src/app/privacy/page.tsx
 docs/LOG.md
 supabase/migrations/20260801120000_edited_content_updated_at.sql
 ---
+[2026-08-01 13:25] commit: docs(transcript): ADR-085 + LESSONS (nocookie-embed, new-column-every-writer)
+
+ADR-085 records the four researched answers (measured paragraph thresholds,
+nocookie+seek privacy call, edited_content_updated_at stale-notice, RAG free
+presets), the tab/fallback/mobile decisions, and the remaining header/toolbar
+layer. Two reusable LESSONS: youtube embeds must be nocookie+lazy to protect
+the cookieless posture; a derived-signal column must be set in every writer.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/085-transcript-page-redesign.md
+---
