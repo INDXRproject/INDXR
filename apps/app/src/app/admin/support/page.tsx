@@ -11,7 +11,7 @@ export default async function AdminTicketsPage() {
   const admin = createAdminClient()
   const { data: tickets } = await admin
     .from("support_tickets")
-    .select("id, user_id, category, subject, body, status, created_at")
+    .select("id, user_id, category, subject, body, attachment_path, status, created_at")
     .order("created_at", { ascending: false })
 
   // Resolve user emails
@@ -24,7 +24,18 @@ export default async function AdminTicketsPage() {
     })
   )
 
-  const enriched = (tickets ?? []).map((t) => ({ ...t, user_email: emailMap[t.user_id] ?? null }))
+  const enriched = await Promise.all(
+    (tickets ?? []).map(async (t) => {
+      let attachment_url: string | null = null
+      if (t.attachment_path) {
+        const { data: signed } = await admin.storage
+          .from("support-attachments")
+          .createSignedUrl(t.attachment_path, 3600)
+        attachment_url = signed?.signedUrl ?? null
+      }
+      return { ...t, user_email: emailMap[t.user_id] ?? null, attachment_url }
+    })
+  )
 
   // Fetch thread messages for all tickets, chronological ascending
   const ticketIds = enriched.map((t) => t.id)

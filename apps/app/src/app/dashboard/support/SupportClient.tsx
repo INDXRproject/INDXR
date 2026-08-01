@@ -1,9 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { LifeBuoy, CheckCircle, AlertCircle, Clock } from "lucide-react"
+import { CheckCircle, AlertCircle, Clock, Paperclip, X } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import { cn } from "@indxr/shared/lib/utils"
+import { createClient } from "@indxr/shared/utils/supabase/client"
+
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024 // 5 MB — matches the bucket limit
+const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"]
 
 interface Transcript {
   id: string
@@ -32,8 +36,24 @@ export function SupportClient({ transcripts }: Props) {
   const [subject, setSubject]       = useState("")
   const [body, setBody]             = useState("")
   const [transcriptId, setTranscriptId] = useState("")
+  const [file, setFile]             = useState<File | null>(null)
+  const [fileError, setFileError]   = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult]         = useState<ResultState | null>(null)
+
+  const pickFile = (f: File | null) => {
+    setFileError(null)
+    if (!f) { setFile(null); return }
+    if (!ALLOWED_TYPES.includes(f.type)) {
+      setFileError("Please attach a PNG, JPG, WebP or GIF image.")
+      return
+    }
+    if (f.size > MAX_ATTACHMENT_BYTES) {
+      setFileError("That image is larger than 5 MB.")
+      return
+    }
+    setFile(f)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,6 +62,21 @@ export function SupportClient({ transcripts }: Props) {
     setResult(null)
 
     try {
+      // Upload the screenshot first (private bucket, own folder) so we can attach its path.
+      let attachmentPath: string | undefined
+      if (file) {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setResult({ type: "error", message: "You need to be signed in to attach a screenshot." }); return }
+        const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png"
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`
+        const { error: upErr } = await supabase.storage
+          .from("support-attachments")
+          .upload(path, file, { contentType: file.type, upsert: false })
+        if (upErr) { setResult({ type: "error", message: "We couldn't upload that screenshot. Please try again." }); return }
+        attachmentPath = path
+      }
+
       const res = await fetch("/api/support/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,6 +85,7 @@ export function SupportClient({ transcripts }: Props) {
           subject: subject.trim(),
           body: body.trim(),
           ...(transcriptId ? { transcript_id: transcriptId } : {}),
+          ...(attachmentPath ? { attachment_path: attachmentPath } : {}),
         }),
       })
 
@@ -59,6 +95,7 @@ export function SupportClient({ transcripts }: Props) {
         setSubject("")
         setBody("")
         setTranscriptId("")
+        setFile(null)
         return
       }
 
@@ -203,6 +240,35 @@ export function SupportClient({ transcripts }: Props) {
               </select>
             </div>
           )}
+
+          {/* Screenshot (optional) */}
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium text-fg">
+              Screenshot <span className="text-fg-muted font-normal">(optional)</span>
+            </p>
+            {!file ? (
+              <label className="flex items-center gap-2 w-fit cursor-pointer rounded-md border border-border bg-surface px-3 py-2 text-sm text-fg-muted hover:bg-surface-elevated hover:text-fg transition-colors">
+                <Paperclip className="h-4 w-4" />
+                Attach an image
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="sr-only"
+                  onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            ) : (
+              <div className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2">
+                <img src={URL.createObjectURL(file)} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                <span className="text-sm text-fg truncate flex-1" title={file.name}>{file.name}</span>
+                <button type="button" onClick={() => pickFile(null)} className="text-fg-muted hover:text-fg shrink-0" aria-label="Remove screenshot">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+            <p className="text-xs text-fg-muted">PNG, JPG, WebP or GIF · up to 5 MB.</p>
+            {fileError && <p className="text-xs text-error">{fileError}</p>}
+          </div>
 
           <Button type="submit" disabled={submitting || !subject.trim() || !body.trim()}>
             {submitting ? "Sending…" : "Submit ticket"}

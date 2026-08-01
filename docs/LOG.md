@@ -14770,3 +14770,20 @@ Changed: docs/wiki/INDEX.md
 docs/wiki/design/library-source-map.md
 docs/wiki/operations/testing.md
 ---
+[2026-08-01 16:46] commit: feat(support): optional screenshot upload on tickets
+
+Users can attach one image (PNG/JPG/WebP/GIF, ≤5MB) to a support ticket.
+Uploads go to a new private 'support-attachments' bucket, scoped by RLS to the
+user's own folder; the path is stored on support_tickets.attachment_path and
+re-validated in the submit_support_ticket RPC (rejects paths outside the
+caller's folder). Admin sees the screenshot via a short-lived signed URL in the
+tickets table. Verified: RLS + RPC validation + admin signing (6/6 checks).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/admin/support/TicketsTable.tsx
+apps/app/src/app/admin/support/page.tsx
+apps/app/src/app/api/admin/tickets/route.ts
+apps/app/src/app/api/support/submit/route.ts
+apps/app/src/app/dashboard/support/SupportClient.tsx
+supabase/migrations/20260801130000_support_attachments.sql
+---

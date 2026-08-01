@@ -20,6 +20,7 @@ interface Ticket {
   category: "feedback" | "billing" | "bug"
   subject: string
   body: string
+  attachment_url: string | null
   status: "open" | "closed"
   created_at: string
 }
@@ -252,6 +253,22 @@ export function TicketsTable({ initialTickets, initialRepliesByTicket }: Props) 
                     <span className="text-xs text-fg-muted">{fmtDate(ticket.created_at)}</span>
                   </div>
                   <p className="text-sm text-fg whitespace-pre-line break-words">{ticket.body}</p>
+                  {ticket.attachment_url && (
+                    <a
+                      href={ticket.attachment_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block"
+                      title="Open screenshot"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={ticket.attachment_url}
+                        alt="Ticket screenshot"
+                        className="max-h-48 rounded-md border border-border object-contain"
+                      />
+                    </a>
+                  )}
                 </div>
 
                 {/* Thread messages chronological ascending (already sorted from server) */}
