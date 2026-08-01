@@ -158,78 +158,30 @@ test.describe('3.2 — AI Summary', () => {
     await loginAs(page, account1)
   })
 
-  test('generates AI summary for transcript > 5 minutes', async ({ page }) => {
+  // Summarize moved into the ⋯ overflow menu in the redesign. Assert its placement, its
+  // 3-credit cost, and that it opens a confirmation — but STOP before confirming, so this
+  // never spends credits on a real AI call (that path is covered manually).
+  test('summarize is reachable from ⋯ with the 3-credit cost and a confirmation step', async ({ page }) => {
     await page.goto('/dashboard/library')
-
-    // Find a long transcript (Steve Jobs or 3Blue1Brown from test 1.x)
-    const longVideoTitles = ['Steve Jobs', '3Blue1Brown', 'aircAruvnKk', 'UF8uR6Z6KLc']
-    let found = false
-
-    for (const title of longVideoTitles) {
-      const search = page.locator(SEL.searchInput)
-      await search.fill(title)
-      await page.waitForTimeout(600)
-
-      const rows = await page.locator('a[href*="/dashboard/library/"]').count()
-      if (rows > 0) {
-        const viewLink = page.locator('a[href*="/dashboard/library/"]').first()
-        if (await viewLink.waitFor({ state: "visible", timeout: 3_000 }).then(() => true).catch(() => false)) {
-          await viewLink.click()
-          found = true
-          break
-        }
-      }
+    const firstLink = page.locator('a[href*="/dashboard/library/"]').first()
+    if (!await firstLink.waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false)) {
+      test.skip(true, 'No transcripts in library')
     }
-
-    if (!found) {
-      // Open first available transcript
-      await page.goto('/dashboard/library')
-      const firstLink = page.locator('a[href*="/dashboard/library/"]').first()
-      if (await firstLink.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false)) {
-        await firstLink.click()
-        found = true
-      }
-    }
-
-    if (!found) {
-      test.skip(true, 'No suitable transcript found for AI summary test')
-    }
-
+    await firstLink.click()
     await page.waitForURL('**/library/**', { timeout: 10_000 })
 
-    // Click Summarize button
-    const summarizeBtn = page.locator(
-      'button:has-text("Summarize"), button:has-text("Summary"), button:has-text("Generate")'
-    ).first()
+    // Open the ⋯ menu and find the summarise item (label + cost live together).
+    await page.locator('[aria-label="More actions"]').first().click()
+    const summarise = page.getByRole('menuitem', { name: /Summari|Regenerate summary/i })
+    await expect(summarise, 'Summarise/Regenerate lives in the ⋯ menu').toBeVisible({ timeout: 5_000 })
+    await expect(summarise, 'the cost is shown as 3 credits').toContainText(/3 credits/i)
 
-    if (!await summarizeBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      console.warn('Summarize button not found on transcript page')
-      return
-    }
-
-    await summarizeBtn.click()
-
-    // Wait up to 30s for summary to appear
-    const summaryAppeared = await Promise.race([
-      page.waitForSelector('text=/summary|action point|key point/i', { timeout: 30_000 })
-        .then(() => true).catch(() => false),
-      page.waitForSelector('[data-tab="summary"], button:has-text("Summary")', { timeout: 30_000 })
-        .then(() => true).catch(() => false),
-    ])
-
-    if (summaryAppeared) {
-      // Click summary tab if present
-      const summaryTab = page.locator('[role="tab"]:has-text("Summary"), button:has-text("Summary")').first()
-      if (await summaryTab.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await summaryTab.click()
-      }
-
-      const summaryContent = await page.locator('text=/action point|key point|summary/i').count()
-      console.log(`Summary content elements found: ${summaryContent}`)
-      expect(summaryContent).toBeGreaterThan(0)
-    } else {
-      console.warn('AI summary did not appear within 30s')
-    }
+    // Clicking opens the confirmation dialog — assert it, then bail out (no AI call).
+    await summarise.click()
+    const dialog = page.getByRole('alertdialog')
+    await expect(dialog).toBeVisible({ timeout: 5_000 })
+    await expect(dialog).toContainText(/3 credits/i)
+    await page.keyboard.press('Escape')
   })
 })
 
@@ -336,127 +288,49 @@ test.describe('3.4 — AI Summary with editing', () => {
     await loginAs(page, account1)
   })
 
-  test('generates AI summary, edits it, asserts Edited Summary tab', async ({ page }) => {
+  // Edit an EXISTING summary → Edited Summary tab. Never generates one (that's a paid AI call);
+  // skips if the first transcript has no summary. Exercises the summary-edit flow + the
+  // stable summary/summary_edited tab ids the redesign introduced.
+  test('edit an existing AI summary → Edited Summary tab', async ({ page }) => {
     const start = Date.now()
-
-    // Find a long transcript (> 10 min)
     await page.goto('/dashboard/library')
-    const longTitles = ['Steve Jobs', '3Blue1Brown', 'lecture', 'aircAruvnKk', 'UF8uR6Z6KLc']
-    let opened = false
-
-    for (const term of longTitles) {
-      const search = page.locator(SEL.searchInput)
-      await search.fill(term)
-      await page.waitForTimeout(600)
-      const firstLink = page.locator('a[href*="/dashboard/library/"]').first()
-      if (await firstLink.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await firstLink.click()
-        opened = true
-        break
-      }
+    const firstLink = page.locator('a[href*="/dashboard/library/"]').first()
+    if (!await firstLink.waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false)) {
+      test.skip(true, 'No transcripts in library')
     }
-
-    if (!opened) {
-      // Fallback to first available transcript
-      await page.goto('/dashboard/library')
-      const firstLink = page.locator('a[href*="/dashboard/library/"]').first()
-      if (!await firstLink.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false)) {
-        test.skip(true, 'No transcripts in library')
-      }
-      await firstLink.click()
-    }
-
+    await firstLink.click()
     await page.waitForURL('**/library/**', { timeout: 10_000 })
 
-    // Click Summarize
-    const summarizeBtn = page.locator(
-      'button:has-text("Summarize"), button:has-text("Summary"), button:has-text("Generate")'
-    ).first()
-    if (!await summarizeBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      console.warn('3.4: Summarize button not found')
-      return
-    }
-    await summarizeBtn.click()
-
-    // Wait for AI Summary tab (up to 60s)
-    const summaryTab = page.locator(
-      '[role="tab"]:has-text("Summary"), [role="tab"]:has-text("AI"), button:has-text("Summary")'
-    ).first()
-    await summaryTab.waitFor({ state: 'visible', timeout: 60_000 })
-    // Dismiss any alert-dialog overlay that may block the tab click
-    const overlay = page.locator('[data-slot="alert-dialog-overlay"]')
-    if (await overlay.isVisible().catch(() => false)) {
-      await page.keyboard.press('Escape')
-      await overlay.waitFor({ state: 'hidden', timeout: 3_000 }).catch(() => {})
+    // The Summary tab exists only when the transcript already has an AI summary.
+    const summaryTab = page.locator('[data-testid="transcript-tab-summary"]').first()
+    if (!await summaryTab.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false)) {
+      test.skip(true, 'First transcript has no AI summary to edit')
     }
     await summaryTab.click()
-    await page.waitForTimeout(500)
+    await page.waitForURL(/tab=summary/, { timeout: 10_000 })
+    await expect(page.getByText('AI Summary', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
 
-    // Assert summary text is not empty
-    const summaryText = await page.locator('main, [data-tab-content], article').first().textContent() ?? ''
-    expect(summaryText.trim().length, 'Summary should contain text').toBeGreaterThan(50)
-    console.log(`3.4: summary length = ${summaryText.trim().length} chars`)
-
-    // Assert action points section visible
-    const hasActionPoints = await page.locator('text=/action point|key point|takeaway/i').count()
-    if (hasActionPoints === 0) {
-      console.warn('3.4: action points section not found — may use different heading text')
-    }
-
-    // Edit the summary
-    const editSummaryBtn = page.locator(
-      'button:has-text("Edit"), button[aria-label*="edit" i]'
-    ).first()
-    if (!await editSummaryBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      console.warn('3.4: summary edit button not found')
-      logTestResult('3.4 — AI Summary editing', {
-        success: true,
-        processing_time_ms: Date.now() - start,
-        method: 'unknown',
-        extra: { summary_length: summaryText.trim().length, edit_attempted: false },
-      })
-      return
-    }
-    await editSummaryBtn.click()
-
-    const editor = page.locator('[contenteditable="true"], .tiptap').first()
-    await editor.waitFor({ state: 'visible', timeout: 5_000 })
-
-    const editMarker = `[SUMMARY-EDIT-${Date.now()}]`
+    // Edit → type a bracket-free marker atomically → Save (auto-routes to ?tab=summary_edited).
+    await page.getByRole('button', { name: /^Edit$/ }).first().click()
+    const editor = page.locator('.ProseMirror[contenteditable="true"]').first()
+    await editor.waitFor({ state: 'visible', timeout: 10_000 })
+    await page.waitForTimeout(400)
+    const marker = `SUMEDIT${Date.now()}`
     await editor.click()
-    await page.keyboard.press('End')
-    await page.keyboard.type(' ' + editMarker)
+    await page.keyboard.press('Control+End')
+    await page.keyboard.insertText(' ' + marker)
+    await expect(editor).toContainText(marker, { timeout: 5_000 })
+    await page.getByRole('button', { name: /^Save$/ }).first().click()
 
-    const saveBtn = page.locator('button:has-text("Save"), button:has-text("Done")').first()
-    await saveBtn.waitFor({ state: 'visible', timeout: 5_000 })
-    await saveBtn.click()
-    await page.waitForTimeout(1_500)
-
-    // Edited Summary tab should appear
-    const editedSummaryTab = page.locator(
-      '[role="tab"]:has-text("Edited Summary"), [role="tab"]:has-text("Edited")'
-    ).first()
-    const editedTabVisible = await editedSummaryTab.isVisible({ timeout: 8_000 }).catch(() => false)
-
-    if (editedTabVisible) {
-      await editedSummaryTab.click()
-      await page.waitForTimeout(500)
-      const editedText = await page.locator('main, [data-tab-content], article').first().textContent() ?? ''
-      expect(editedText, 'Edited summary should contain the marker').toContain(editMarker)
-      console.log('3.4: Edited Summary tab verified')
-    } else {
-      console.warn('3.4: Edited Summary tab did not appear — checking if content was saved inline')
-    }
+    // Saving routes to the Edited Summary tab; assert it exists and carries the marker.
+    await page.waitForURL(/tab=summary_edited/, { timeout: 10_000 })
+    await expect(page.locator('[data-testid="transcript-tab-summary_edited"]').first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.ProseMirror').first()).toContainText(marker, { timeout: 10_000 })
 
     logTestResult('3.4 — AI Summary editing', {
       success: true,
       processing_time_ms: Date.now() - start,
       method: 'unknown',
-      extra: {
-        summary_length: summaryText.trim().length,
-        edit_attempted: true,
-        edited_tab_appeared: editedTabVisible,
-      },
     })
   })
 })

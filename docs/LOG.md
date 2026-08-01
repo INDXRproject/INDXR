@@ -14896,3 +14896,14 @@ docs/content/ARTIKEL-youtube-transcript-without-extension.md
 docs/content/LANDING-PAGE.md
 docs/content/PRICING-PAGE.md
 ---
+[2026-08-01 23:57] commit: test(e2e): spec 3.2/3.4 actually cover the summarize placement (no AI call)
+
+3.2 and 3.4 used to warn+return since Summarize moved into the ⋯ menu. Now:
+- 3.2 opens ⋯, asserts the Summarise/Regenerate item + its '3 credits' cost, clicks it,
+  asserts the confirmation alertdialog opens, and STOPS before confirming (no credits spent).
+- 3.4 edits an EXISTING (seeded) summary → asserts the Edited Summary tab via stable
+  testids; skips if no summary exists. Never generates one.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: tests/playwright/specs/03-library.spec.ts
+---
