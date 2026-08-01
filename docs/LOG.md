@@ -14633,3 +14633,13 @@ apps/app/src/components/library/TranscriptViewer.tsx
 docs/LOG.md
 tests/playwright/specs/03-library.spec.ts
 ---
+[2026-08-01 14:28] commit: fix(topbar): hide wordmark below 380px so the mobile topbar never overflows
+
+The credit pill's "+" (added in the Library redesign) pushed the topbar controls
+past the viewport on the smallest phones (19px horizontal scroll at 360px). Hide
+the wordmark below ~380px — the hexagon mark carries the brand there. Surfaced by
+the transcript-page 360px verification (the transcript toolbar itself wraps fine).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/AppTopbar.tsx
+---

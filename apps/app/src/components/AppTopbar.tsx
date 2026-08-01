@@ -29,18 +29,22 @@ export function AppTopbar() {
           className="hidden dark:block"
           style={{ height: "32px", width: "auto" }}
         />
-        <img
-          src="/logo/indxr-wordmark-black-transparent.png"
-          alt="INDXR.AI"
-          className="dark:hidden"
-          style={{ height: "36px", width: "auto" }}
-        />
-        <img
-          src="/logo/indxr-wordmark-white-transparent.png"
-          alt="INDXR.AI"
-          className="hidden dark:block"
-          style={{ height: "36px", width: "auto" }}
-        />
+        {/* Wordmark hides below ~380px so the topbar never overflows on the smallest phones
+            (the mark alone carries the brand there). */}
+        <span className="contents max-[379px]:hidden">
+          <img
+            src="/logo/indxr-wordmark-black-transparent.png"
+            alt="INDXR.AI"
+            className="dark:hidden"
+            style={{ height: "36px", width: "auto" }}
+          />
+          <img
+            src="/logo/indxr-wordmark-white-transparent.png"
+            alt="INDXR.AI"
+            className="hidden dark:block"
+            style={{ height: "36px", width: "auto" }}
+          />
+        </span>
       </Link>
 
       {/* On mobile, navigation is the bottom tab bar only — no sidebar, so no trigger here. */}
