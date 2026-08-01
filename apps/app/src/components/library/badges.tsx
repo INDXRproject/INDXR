@@ -70,7 +70,7 @@ export function Badge({ label, variant, pencil, title }: BadgeSpec) {
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-mono font-medium tracking-tight whitespace-nowrap",
+        "inline-flex items-center gap-0.5 rounded-[3px] px-2 py-0.5 text-[10px] font-mono font-medium tracking-tight whitespace-nowrap",
         BADGE_CLASSES[variant],
       )}
     >
@@ -82,7 +82,7 @@ export function Badge({ label, variant, pencil, title }: BadgeSpec) {
 
 export function CollectionBadge({ name }: { name: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] font-medium text-fg-subtle whitespace-nowrap max-w-[10rem]">
+    <span className="inline-flex items-center gap-1 rounded-[3px] border border-border px-2 py-0.5 text-[10px] font-medium text-fg-subtle whitespace-nowrap max-w-[10rem]">
       <Folder className="h-2.5 w-2.5 shrink-0" />
       <span className="truncate" dir="auto">
         {name}

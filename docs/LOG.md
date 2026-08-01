@@ -14692,3 +14692,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/app/src/components/app-sidebar.tsx
 apps/app/src/components/library/TranscriptViewer.tsx
 ---
+[2026-08-01 15:49] commit: style(badges): block-shaped, not pill (YouTube CC look)
+
+rounded-full -> rounded-[3px], px-1.5 -> px-2 so CC/AI/SUM/RAG read as
+blocks; collection chip radius matched for consistency.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/library/badges.tsx
+---
