@@ -14836,3 +14836,63 @@ apps/app/src/components/icons/Beehive.tsx
 apps/app/src/components/library/TranscriptViewer.tsx
 tests/playwright/prod-check.cjs
 ---
+[2026-08-01 23:57] commit: rename(marketing+docs): 'auto-captions' → 'YouTube captions' where it's INDXR's method
+
+Applies the label≠concept rule across marketing UI, article pages, /docs pages and
+docs/content sources: INDXR's method/free-option/cost-rows/badges → 'YouTube captions';
+prose EXPLAINING YouTube's auto-captioning feature (mechanism, accuracy, availability)
+keeps 'automatic captions' as correct English. ~190 occurrences changed, ~110 deliberately
+kept (reported). No /docs/*/auto-captions route exists, so no redirect needed; the
+accuracy page's in-page anchor changes #auto-captions→#youtube-captions (zero references).
+Also drops the dead 'is_favorite: false' write on the free-tool insert (column removed next).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/bulk-youtube-transcript/page.tsx
+apps/marketing/src/app/articles/page.tsx
+apps/marketing/src/app/articles/youtube-playlist-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-csv/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-for-rag/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-markdown/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-not-available/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-obsidian/page.tsx
+apps/marketing/src/app/docs/guides/playlists/page.tsx
+apps/marketing/src/app/docs/guides/single-video/page.tsx
+apps/marketing/src/app/docs/reference/accuracy/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/markdown/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/app/terms/page.tsx
+apps/marketing/src/app/transcribe/layout.tsx
+apps/marketing/src/app/transcribe/page.tsx
+apps/marketing/src/components/marketing/ClosingCTASection.tsx
+apps/marketing/src/components/marketing/DifferentiatorStrip.tsx
+apps/marketing/src/components/pricing/AlwaysFreeBlock.tsx
+apps/marketing/src/components/pricing/CreditCostTable.tsx
+apps/marketing/src/components/pricing/PricingHero.tsx
+docs/content/ARTIKEL-alternative-downsub.md
+docs/content/ARTIKEL-alternative-happyscribe.md
+docs/content/ARTIKEL-alternative-notegpt.md
+docs/content/ARTIKEL-alternative-tactiq.md
+docs/content/ARTIKEL-alternative-turboscribe.md
+docs/content/ARTIKEL-blog-chunk-youtube-transcripts-for-rag.md
+docs/content/ARTIKEL-blog-youtube-channel-knowledge-base.md
+docs/content/ARTIKEL-bulk-youtube-transcript.md
+docs/content/ARTIKEL-how-it-works.md
+docs/content/ARTIKEL-youtube-age-restricted-transcript.md
+docs/content/ARTIKEL-youtube-members-only-transcript.md
+docs/content/ARTIKEL-youtube-playlist-transcript.md
+docs/content/ARTIKEL-youtube-srt-download.md
+docs/content/ARTIKEL-youtube-to-text.md
+docs/content/ARTIKEL-youtube-transcript-csv.md
+docs/content/ARTIKEL-youtube-transcript-for-rag.md
+docs/content/ARTIKEL-youtube-transcript-generator.md
+docs/content/ARTIKEL-youtube-transcript-json.md
+docs/content/ARTIKEL-youtube-transcript-markdown.md
+docs/content/ARTIKEL-youtube-transcript-not-available.md
+docs/content/ARTIKEL-youtube-transcript-obsidian.md
+docs/content/ARTIKEL-youtube-transcript-without-extension.md
+docs/content/LANDING-PAGE.md
+docs/content/PRICING-PAGE.md
+---

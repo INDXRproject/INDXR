@@ -1,7 +1,7 @@
 # YouTube Transcript JSON Export — Structured Data for Developers
 
-**Meta title:** YouTube Transcript JSON Export — Free Auto-Captions to RAG-Ready Output | INDXR.AI
-**Meta description:** Export YouTube transcripts as structured JSON with metadata wrapper, start/end timestamps, and video context. Free for auto-caption videos. AI transcription and RAG-optimized chunking available.
+**Meta title:** YouTube Transcript JSON Export — Free YouTube Captions to RAG-Ready Output | INDXR.AI
+**Meta description:** Export YouTube transcripts as structured JSON with metadata wrapper, start/end timestamps, and video context. Free for YouTube caption videos. AI transcription and RAG-optimized chunking available.
 **Slug:** /youtube-transcript-json
 **Schema:** SoftwareApplication + FAQPage
 **Internal links:** /youtube-transcript-for-rag, /pricing, /how-it-works, /audio-to-text
@@ -11,13 +11,13 @@
 
 If you've ever worked with YouTube transcript data programmatically, you know the problem: you extract the text, you get an array of 2–5 second fragments with no video title, no channel, no language, no end timestamp, no context. You spend the next hour writing boilerplate to add metadata, calculate end times, merge short segments, and figure out which video these fragments even came from.
 
-INDXR.AI exports YouTube transcripts as structured JSON with a metadata wrapper built in. Auto-caption extraction is free. For better quality — proper punctuation, higher accuracy, cleanly segmented text — AI transcription is available at a per-minute cost. For developers building RAG pipelines or vector databases, a RAG-optimized variant chunks the transcript into embedding-ready segments with deep links and flat metadata per chunk.
+INDXR.AI exports YouTube transcripts as structured JSON with a metadata wrapper built in. YouTube caption extraction is free. For better quality — proper punctuation, higher accuracy, cleanly segmented text — AI transcription is available at a per-minute cost. For developers building RAG pipelines or vector databases, a RAG-optimized variant chunks the transcript into embedding-ready segments with deep links and flat metadata per chunk.
 
 Here's exactly what each option gives you and what it costs.
 
 ---
 
-## Option 1: Auto-Captions + Standard JSON — Free
+## Option 1: YouTube Captions + Standard JSON — Free
 
 For any YouTube video with auto-generated captions, JSON export is free. No account required for a single video; a free account removes the daily rate limit.
 
@@ -95,7 +95,7 @@ The text now has proper capitalization, punctuation, and sentence boundaries. Th
 - **Sentence detection works correctly.** If you split on sentence endings to build summaries or chunks, punctuated text gives you real sentence boundaries. Auto-captions give you arbitrary cuts.
 - **Readability for end users.** If your application presents transcript text to users, punctuated text reads like text. Unpunctuated lowercase reads like a raw log file.
 - **Better RAG quality.** Chunkers that respect sentence boundaries (like pySBD, which achieves 97.9% accuracy on the Golden Rule Set benchmark) need punctuation to work. Without it, chunks get cut mid-thought.
-- **Works for videos without captions.** Roughly 20% of YouTube videos have no auto-captions (YouTube Help, support.google.com/youtube/answer/6373554). AI Transcription is the only way to get JSON output for those videos.
+- **Works for videos without captions.** Roughly 20% of YouTube videos have no YouTube captions (YouTube Help, support.google.com/youtube/answer/6373554). AI Transcription is the only way to get JSON output for those videos.
 
 **Cost: 1 credit per minute of video, minimum 1 credit.**
 
@@ -145,7 +145,7 @@ Instead of 2–5 second raw segments, you get 90–120 second chunks (~300–400
 
 This output loads directly into LangChain, LlamaIndex, Pinecone, ChromaDB, Weaviate, and Qdrant. The `metadata` object on each chunk is a flat key-value structure ready for direct vector database upsert.
 
-**Why use auto-captions for RAG JSON?** You can, but the Vectara NAACL 2025 paper found that chunking strategy significantly affects retrieval quality — and sentence-boundary snapping, which is central to good chunking, requires punctuation. Auto-caption RAG JSON will work but produce lower retrieval quality than AI-transcribed RAG JSON. INDXR.AI shows a warning if you try to enable RAG JSON on an auto-caption transcript.
+**Why use YouTube captions for RAG JSON?** You can, but the Vectara NAACL 2025 paper found that chunking strategy significantly affects retrieval quality — and sentence-boundary snapping, which is central to good chunking, requires punctuation. YouTube caption RAG JSON will work but produce lower retrieval quality than AI-transcribed RAG JSON. INDXR.AI shows a warning if you try to enable RAG JSON on a YouTube caption transcript.
 
 **Cost: AI Transcription (1 credit per minute) + RAG export (1 credit per 15 minutes).**
 
@@ -169,10 +169,10 @@ The important difference: `youtube-transcript-api` deployed to cloud environment
 ## Frequently Asked Questions
 
 **Is standard JSON export always free?**
-Yes. Standard JSON export from auto-caption videos has no additional credit cost beyond the base extraction, which is free for captioned videos. You pay credits only for AI Transcription (1 credit/minute) and RAG JSON export (1 credit per 15 minutes). A free account with 25 welcome credits lets you test both.
+Yes. Standard JSON export from YouTube caption videos has no additional credit cost beyond the base extraction, which is free for captioned videos. You pay credits only for AI Transcription (1 credit/minute) and RAG JSON export (1 credit per 15 minutes). A free account with 25 welcome credits lets you test both.
 
-**When does it make sense to pay for AI Transcription over free auto-captions?**
-Three situations: (1) the video has no auto-captions at all, (2) you need proper punctuation for downstream text processing or user-facing display, or (3) you're building a RAG pipeline where sentence-boundary chunking quality matters. For quick data extraction where you're doing your own text processing anyway, free auto-captions are often fine.
+**When does it make sense to pay for AI Transcription over free YouTube captions?**
+Three situations: (1) the video has no YouTube captions at all, (2) you need proper punctuation for downstream text processing or user-facing display, or (3) you're building a RAG pipeline where sentence-boundary chunking quality matters. For quick data extraction where you're doing your own text processing anyway, free YouTube captions are often fine.
 
 **What's the total cost for a 1-hour video with maximum quality output?**
 AI Transcription + RAG JSON export: 60 credits + 4 credits = 64 credits. At Plus pricing (€13.99/1,200 credits), that's €0.77. At Basic pricing (€6.99/500 credits), it's €0.89. Credits never expire.
@@ -188,4 +188,4 @@ For playlists: extract the playlist, then use the bulk export with merge option 
 
 ---
 
-*[Extract a YouTube transcript as JSON free](/youtube-transcript-generator) — auto-caption videos export instantly at no cost. 25 free credits on signup to test AI transcription and RAG export.*
+*[Extract a YouTube transcript as JSON free](/youtube-transcript-generator) — YouTube caption videos export instantly at no cost. 25 free credits on signup to test AI transcription and RAG export.*

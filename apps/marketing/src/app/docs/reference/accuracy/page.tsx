@@ -44,7 +44,7 @@ export default function DocsAccuracyPage() {
           reported per language, so accuracy and language coverage are the same subject.
         </DefinitionLeadOpening>
 
-        <AnchorHeading as="h2">Auto-captions</AnchorHeading>
+        <AnchorHeading as="h2">YouTube captions</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           YouTube auto-captions are generated either by the video creator or by YouTube&apos;s own
           speech recognition. INDXR fetches these verbatim — their accuracy depends entirely on the

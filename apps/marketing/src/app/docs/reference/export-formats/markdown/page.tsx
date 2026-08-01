@@ -80,7 +80,7 @@ export default function DocsMarkdownPage() {
             <tr><td><code>published</code></td><td>Upload date</td></tr>
             <tr><td><code>duration</code></td><td>Seconds (number)</td></tr>
             <tr><td><code>language</code></td><td>Detected language code</td></tr>
-            <tr><td><code>transcript_source</code></td><td>&quot;AI Transcription (AssemblyAI)&quot; or &quot;Auto-captions (YouTube)&quot;</td></tr>
+            <tr><td><code>transcript_source</code></td><td>&quot;AI Transcription (AssemblyAI)&quot; or &quot;YouTube captions&quot;</td></tr>
             <tr><td><code>created</code></td><td>Export date (YYYY-MM-DD)</td></tr>
             <tr><td><code>type</code></td><td>Always <code>youtube</code></td></tr>
             <tr><td><code>tags</code></td><td><code>[youtube, transcript]</code></td></tr>

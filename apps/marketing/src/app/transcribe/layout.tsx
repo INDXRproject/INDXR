@@ -3,11 +3,11 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
   alternates: { canonical: "/transcribe" },
   title: "YouTube Transcript Generator - Free & Premium | INDXR.AI",
-  description: "Generate accurate YouTube transcripts instantly. Free auto-captions or premium AI-powered transcription. Export to TXT, JSON, CSV, SRT, VTT formats.",
+  description: "Generate accurate YouTube transcripts instantly. Free YouTube captions or premium AI-powered transcription. Export to TXT, JSON, CSV, SRT, VTT formats.",
   keywords: ["youtube transcript generator", "youtube transcript", "youtube captions", "transcript download", "youtube subtitle download", "video transcript", "youtube to text"],
   openGraph: {
     title: "YouTube Transcript Generator - Free & Premium | INDXR.AI",
-    description: "Generate accurate YouTube transcripts instantly. Free auto-captions or premium AI-powered transcription.",
+    description: "Generate accurate YouTube transcripts instantly. Free YouTube captions or premium AI-powered transcription.",
     type: "website",
   },
   twitter: {

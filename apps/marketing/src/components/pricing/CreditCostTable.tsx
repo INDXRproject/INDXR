@@ -7,10 +7,10 @@ import { useState } from "react"
 import { PACKAGES, CREDIT_COSTS, PricingPackage, costInTier, formatEur } from "@indxr/shared/lib/pricing"
 
 const TASKS = [
-  { name: "Single video, auto-captions", credits: 0 },
+  { name: "Single video, YouTube captions", credits: 0 },
   { name: "AI Transcription, 30 min", credits: 30 },
   { name: "AI Transcription, 1 hour", credits: 60 },
-  { name: "Playlist, 20 videos (auto-captions)", credits: 17 }, // 20 - 3 free
+  { name: "Playlist, 20 videos (YouTube captions)", credits: 17 }, // 20 - 3 free
   { name: "AI Summary", credits: CREDIT_COSTS.AI_SUMMARY },
   { name: "RAG JSON export, 1-hour video", credits: 6 }, // 60 min / 10
   { name: "1-hour AI Transcription + RAG JSON", credits: 66 }, // 60 + 6

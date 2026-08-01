@@ -35,7 +35,7 @@ NoteGPT also has a large existing user base and handles high volumes of videos. 
 
 **Walled garden.** NoteGPT stores your notes inside its platform. You can't easily export your history, integrate with your own note-taking system, or migrate away from the tool without losing your content. INDXR.AI's library exports in open formats that work anywhere.
 
-**No AI transcription for captionless videos.** NoteGPT summarizes by processing existing YouTube captions. If a video has no auto-captions — common for non-English content, older videos, and many educational recordings — NoteGPT either fails or returns a degraded result. INDXR.AI falls back to AI transcription, automatically routing to the best model for the video's language — our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise — transcribing directly from audio.
+**No AI transcription for captionless videos.** NoteGPT summarizes by processing existing YouTube captions. If a video has no YouTube captions — common for non-English content, older videos, and many educational recordings — NoteGPT either fails or returns a degraded result. INDXR.AI falls back to AI transcription, automatically routing to the best model for the video's language — our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise — transcribing directly from audio.
 
 ---
 
@@ -64,7 +64,7 @@ NoteGPT also has a large existing user base and handles high volumes of videos. 
 
 NoteGPT offers a free tier with limitations and a Pro tier at approximately $9.99/month (annual pricing lowers this to around $8.33/month). The free tier caps summaries per day and restricts export features.
 
-INDXR.AI is credit-based with no subscription. Auto-caption extraction is free for all users. Credits are purchased once and never expire:
+INDXR.AI is credit-based with no subscription. YouTube caption extraction is free for all users. Credits are purchased once and never expire:
 
 - Basic: €6.99 / 500 credits
 - Plus: €13.99 / 1,200 credits *(most popular)*
@@ -89,7 +89,7 @@ These tools can also complement each other. Some users use INDXR.AI to extract a
 ## Frequently Asked Questions
 
 **Does INDXR.AI also do AI summaries like NoteGPT?**
-Yes. INDXR.AI includes AI summary with action points, powered by Gemini 2.5 Flash via the AssemblyAI EU LLM Gateway. The summary costs 3 credits and is available for any transcript in your library — both auto-caption extractions and AI-transcribed videos. The key difference: you also get the full transcript, not just the summary.
+Yes. INDXR.AI includes AI summary with action points, powered by Gemini 2.5 Flash via the AssemblyAI EU LLM Gateway. The summary costs 3 credits and is available for any transcript in your library — both YouTube caption extractions and AI-transcribed videos. The key difference: you also get the full transcript, not just the summary.
 
 **Can INDXR.AI import content from NoteGPT?**
 No direct import. If you have transcripts or notes in NoteGPT, you can copy the text and paste it into INDXR.AI's editor, but there's no automated migration path.
@@ -105,4 +105,4 @@ Everything in your INDXR.AI library is exportable in open formats (TXT, Markdown
 
 ---
 
-*[Try INDXR.AI free](/youtube-transcript-generator) — extract any YouTube transcript at no cost for auto-caption videos. 25 free credits on signup to test AI transcription, exports, and summaries.*
+*[Try INDXR.AI free](/youtube-transcript-generator) — extract any YouTube transcript at no cost for YouTube caption videos. 25 free credits on signup to test AI transcription, exports, and summaries.*

@@ -96,7 +96,7 @@ channel: "Huberman Lab"
 published: "2021-07-05"
 duration: 8191
 language: "en"
-transcript_source: "Auto-captions (YouTube)"
+transcript_source: "YouTube captions"
 created: "2026-04-24"
 type: youtube
 tags: [youtube, transcript]
@@ -107,7 +107,7 @@ tags: [youtube, transcript]
 Welcome to the Huberman Lab Podcast, where we discuss science
 and science-based tools for everyday life...`}</code></pre>
 
-      <p>And here&apos;s a real export using AI Transcription instead of auto-captions:</p>
+      <p>And here&apos;s a real export using AI Transcription instead of YouTube captions:</p>
 
       <pre className="prose-content-pre"><code>{`---
 title: "Controlling Your Dopamine For Motivation, Focus & Satisfaction"

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/playlists" },
   title: "Transcribe a playlist — INDXR.AI Docs",
   description:
-    "Turn a whole YouTube playlist into transcripts in one job. Choose per video whether to use captions or AI, the first three auto-caption videos are free, credits are reserved up front and the unused part is returned, and the job keeps running after you close the tab. Up to 500 videos per job.",
+    "Turn a whole YouTube playlist into transcripts in one job. Choose per video whether to use captions or AI, the first three YouTube caption videos are free, credits are reserved up front and the unused part is returned, and the job keeps running after you close the tab. Up to 500 videos per job.",
   robots: { index: true, follow: true },
 }
 
@@ -55,14 +55,14 @@ export default function DocsPlaylistsPage() {
         </p>
         <ol className="list-decimal pl-5 space-y-1.5 text-[var(--fg-subtle)] leading-relaxed">
           <li>Paste the playlist URL. INDXR lists the videos it can reach; any that YouTube doesn&apos;t return — private or deleted — are counted as unavailable and left out.</li>
-          <li>For each video, choose how it&apos;s transcribed — free auto-captions, or AI transcription (which uses credits). Nothing is checked ahead of time.</li>
+          <li>For each video, choose how it&apos;s transcribed — free YouTube captions, or AI transcription (which uses credits). Nothing is checked ahead of time.</li>
           <li>Review the total, then start. Credits are reserved up front for the whole job. If a video turns out to have no captions or can&apos;t be reached, it&apos;s skipped during extraction and the credits held for it come back.</li>
           <li>Let it run. The job continues in the background — you can close the tab and the transcripts appear in your <a className="text-[var(--accent)] hover:underline" href="/docs/guides/library">library</a> as they finish.</li>
         </ol>
 
         <AnchorHeading as="h2">What a playlist costs</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          The first {freeVideos} auto-caption videos in a playlist are free. From the fourth onward,
+          The first {freeVideos} YouTube caption videos in a playlist are free. From the fourth onward,
           each caption video costs {perVideo} credit. Any video you switch to AI transcription costs
           {" "}{perMin} credit per minute instead, with no per-video charge and no free discount.
         </p>

@@ -60,7 +60,7 @@ This specific detection exists because many tools fail silently on members-only 
 Members-only is one of several access restriction types that prevent standard transcript extraction. For other restriction types:
 
 - **Age-restricted videos** — Require a signed-in YouTube account with age verification. See [YouTube Age-Restricted Transcript](/youtube-age-restricted-transcript) for what's possible.
-- **Videos without auto-captions** — Not an access restriction, just a missing caption track. AI Transcription solves this. See [YouTube Transcript Not Available](/youtube-transcript-not-available).
+- **Videos without YouTube captions** — Not an access restriction, just a missing caption track. AI Transcription solves this. See [YouTube Transcript Not Available](/youtube-transcript-not-available).
 - **Private videos** — No extraction possible by any external tool. If you own the video, download it from YouTube Studio and use the audio upload path.
 
 ---

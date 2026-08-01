@@ -62,7 +62,7 @@ INDXR.AI runs server-side via yt-dlp and residential proxies, bypassing browser-
 
 Getting a YouTube transcript into your Obsidian vault with INDXR.AI takes four steps.
 
-**Step 1: Extract the transcript.** Paste the YouTube URL into INDXR.AI. If the video has auto-captions, extraction is free and takes a few seconds. If it doesn't, enable AI Transcription (1 credit per minute) and confirm.
+**Step 1: Extract the transcript.** Paste the YouTube URL into INDXR.AI. If the video has YouTube captions, extraction is free and takes a few seconds. If it doesn't, enable AI Transcription (1 credit per minute) and confirm.
 
 **Step 2: Export as Markdown.** Once the transcript appears, click Export → Markdown. Choose between plain or with timestamps depending on your use case. The file downloads immediately.
 
@@ -141,7 +141,7 @@ Not every workflow needs Markdown. Here's when each format makes sense:
 
 ## Frequently Asked Questions
 
-**Does the Markdown export work for videos without auto-captions?**
+**Does the Markdown export work for videos without YouTube captions?**
 Yes. Enable AI Transcription before extracting — INDXR.AI uses AssemblyAI Universal-3.5 Pro to transcribe the audio. The resulting Markdown is higher quality than auto-caption exports because AssemblyAI adds proper punctuation and sentence boundaries. Cost: 1 credit per minute of video.
 
 **What's the difference between Markdown plain and Markdown with timestamps?**
@@ -161,4 +161,4 @@ No. INDXR.AI is a web tool — paste a YouTube URL, get a transcript, download t
 
 ---
 
-*Extract any YouTube video as Markdown in seconds — [try INDXR.AI free](/youtube-transcript-generator). Works with or without an account for auto-caption videos.*
+*Extract any YouTube video as Markdown in seconds — [try INDXR.AI free](/youtube-transcript-generator). Works with or without an account for YouTube caption videos.*

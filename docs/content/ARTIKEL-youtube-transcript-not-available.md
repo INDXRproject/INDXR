@@ -142,11 +142,11 @@ YouTube Shorts support transcripts through the same mechanism as regular videos,
 This is a known intermittent YouTube UI bug. The caption data exists on YouTube's servers but the "Show transcript" button fails to render. Refreshing the page or clearing the browser cache resolves it in most cases.
 
 **Does INDXR.AI work for videos in languages other than English?**
-Yes. AI Transcription via INDXR.AI automatically detects the video's language and routes it to the best available model — our highest-quality model, AssemblyAI's Universal-3.5 Pro, for supported languages, with broad coverage across 99+ languages otherwise. Auto-caption extraction also works for any language YouTube supports (67 languages).
+Yes. AI Transcription via INDXR.AI automatically detects the video's language and routes it to the best available model — our highest-quality model, AssemblyAI's Universal-3.5 Pro, for supported languages, with broad coverage across 99+ languages otherwise. YouTube caption extraction also works for any language YouTube supports (67 languages).
 
 **What's the difference between captions and a transcript on YouTube?**
 Captions are the subtitles that appear synchronized with the video. A transcript is the same text presented as a plain-text document with timestamps, accessible via the "Show transcript" panel below the description. Both come from the same underlying caption track. If captions exist, the transcript exists. If there are no captions, there is no transcript.
 
 ---
 
-*Still can't get the transcript you need? [Try INDXR.AI free](/youtube-transcript-generator) — paste any YouTube URL, and we'll tell you immediately whether auto-captions are available or whether AI transcription is needed. No account required for the first check.*
+*Still can't get the transcript you need? [Try INDXR.AI free](/youtube-transcript-generator) — paste any YouTube URL, and we'll tell you immediately whether YouTube captions are available or whether AI transcription is needed. No account required for the first check.*

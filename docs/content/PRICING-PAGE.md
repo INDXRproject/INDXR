@@ -1,7 +1,7 @@
 # INDXR.AI Pricing — Credits That Never Expire
 
 **Meta title:** INDXR.AI Pricing — Pay Once, Use When You Need It | INDXR.AI
-**Meta description:** No subscription. Buy credits once, use them whenever. Auto-caption extraction is always free. AI transcription from €0.01/minute. Credits never expire.
+**Meta description:** No subscription. Buy credits once, use them whenever. YouTube caption extraction is always free. AI transcription from €0.01/minute. Credits never expire.
 **Slug:** /pricing
 **Schema:** Offer + FAQPage
 **Internal links:** /how-it-works, /youtube-transcript-generator, /youtube-transcript-for-rag
@@ -10,13 +10,13 @@
 
 ## Pay once. Use when you need it. Credits never expire.
 
-Auto-caption extraction is always free. Credits apply only when you use AI transcription, playlist processing beyond the first three auto-caption videos (AI-transcription videos are always 1 credit/minute, no per-video discount), AI summaries, or RAG JSON export.
+YouTube caption extraction is always free. Credits apply only when you use AI transcription, playlist processing beyond the first three YouTube caption videos (AI-transcription videos are always 1 credit/minute, no per-video discount), AI summaries, or RAG JSON export.
 
 ---
 
 ## Always free
 
-- Single video auto-caption extraction — unlimited for registered users
+- Single video YouTube caption extraction — unlimited for registered users
 - All export formats for registered free accounts
 - 25 welcome credits on signup — no credit card required
 
@@ -32,7 +32,7 @@ Good for: occasional use, testing AI transcription, processing a short course
 
 What 500 credits covers:
 - ~8 hours of AI transcription
-- or 500 playlist videos (auto-captions)
+- or 500 playlist videos (YouTube captions)
 - or 166 AI summaries
 
 ---
@@ -45,7 +45,7 @@ Good for: regular use, researchers, content creators, developers
 
 What 1,200 credits covers:
 - ~20 hours of AI transcription
-- or 1,200 playlist videos (auto-captions)
+- or 1,200 playlist videos (YouTube captions)
 - or 400 AI summaries
 
 ---
@@ -58,7 +58,7 @@ Good for: heavy use, large corpus projects, agencies
 
 What 2,800 credits covers:
 - ~46 hours of AI transcription
-- or 2,800 playlist videos (auto-captions)
+- or 2,800 playlist videos (YouTube captions)
 - or 933 AI summaries
 
 ---
@@ -76,10 +76,10 @@ Processing larger volumes?
 
 | Task | Credits | Cost at Basic | Cost at Plus |
 |---|---|---|---|
-| Single video, auto-captions | 0 | Free | Free |
+| Single video, YouTube captions | 0 | Free | Free |
 | Single video, AI Transcription (30 min) | 30 | €0.42 | €0.36 |
 | Single video, AI Transcription (1 hour) | 60 | €0.84 | €0.72 |
-| Playlist, 20 videos with auto-captions | 17 | €0.24 | €0.20 |
+| Playlist, 20 videos with YouTube captions | 17 | €0.24 | €0.20 |
 | AI Summary | 3 | €0.04 | €0.04 |
 | RAG JSON export, 1-hour video | 4 | €0.06 | €0.05 |
 | Full quality: 1-hour video AI Transcription + RAG JSON | 64 | €0.90 | €0.77 |
@@ -97,7 +97,7 @@ Processing larger volumes?
 | **INDXR.AI Basic** | **€0.014/min** | Credits, no expiry |
 | **INDXR.AI Plus** | **€0.012/min** | Credits, no expiry |
 
-INDXR.AI's AI transcription costs are comparable to the cheapest subscription tools — without requiring a monthly commitment. Auto-caption extraction, which covers the majority of YouTube videos, is always free.
+INDXR.AI's AI transcription costs are comparable to the cheapest subscription tools — without requiring a monthly commitment. YouTube caption extraction, which covers the majority of YouTube videos, is always free.
 
 ---
 
@@ -109,7 +109,7 @@ INDXR.AI's AI transcription costs are comparable to the cheapest subscription to
 
 **Costs are shown before you commit.** Before any paid operation — AI transcription, playlist processing, RAG export — INDXR.AI shows you exactly how many credits it will use for that specific video's duration. No surprises.
 
-**Most things are free.** Auto-caption extraction, all export formats, and library storage have no credit cost. Credits only apply to compute-intensive operations.
+**Most things are free.** YouTube caption extraction, all export formats, and library storage have no credit cost. Credits only apply to compute-intensive operations.
 
 ---
 
@@ -119,7 +119,7 @@ INDXR.AI's AI transcription costs are comparable to the cheapest subscription to
 Never. Buy when you want, use when you're ready. There's no time limit.
 
 **Do I need an account to get started?**
-No. Extracting a single video with auto-captions is free without an account — paste a URL, download as TXT. A free account removes the daily rate limit, unlocks all export formats, and gives you 25 welcome credits to test AI transcription and other paid features.
+No. Extracting a single video with YouTube captions is free without an account — paste a URL, download as TXT. A free account removes the daily rate limit, unlocks all export formats, and gives you 25 welcome credits to test AI transcription and other paid features.
 
 **What happens when I run out of credits?**
 You can always purchase a new package. Your library and all previously extracted transcripts remain available — nothing is deleted when your credit balance reaches zero.

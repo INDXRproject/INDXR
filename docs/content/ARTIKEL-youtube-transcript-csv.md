@@ -76,11 +76,11 @@ df <- read_csv("transcript.csv", locale = locale(encoding = "UTF-8"))
 
 ---
 
-## Auto-Captions vs. AI Transcription for CSV
+## YouTube Captions vs. AI Transcription for CSV
 
-The same quality distinction that applies to other export formats applies here. Auto-caption CSV files will have unpunctuated lowercase text and segments of 2–5 seconds. AI transcription CSV files have properly punctuated text and more natural segment boundaries.
+The same quality distinction that applies to other export formats applies here. YouTube caption CSV files will have unpunctuated lowercase text and segments of 2–5 seconds. AI transcription CSV files have properly punctuated text and more natural segment boundaries.
 
-For text analysis tasks that don't depend on punctuation (word frequency, keyword search, topic modeling), auto-caption CSV is often sufficient and costs nothing. For tasks that rely on sentence structure — readability scoring, syntactic analysis, named entity recognition — AI transcription produces meaningfully better input data.
+For text analysis tasks that don't depend on punctuation (word frequency, keyword search, topic modeling), YouTube caption CSV is often sufficient and costs nothing. For tasks that rely on sentence structure — readability scoring, syntactic analysis, named entity recognition — AI transcription produces meaningfully better input data.
 
 ---
 
@@ -93,7 +93,7 @@ For playlist extractions, you can download all video CSVs as a ZIP (one file per
 ## Frequently Asked Questions
 
 **Is CSV export free?**
-Yes. Like all export formats, CSV export has no additional credit cost beyond the base extraction. Auto-caption extraction is free; AI Transcription costs 1 credit per minute. Once you have a transcript in your library, you can export it as CSV (or any other format) at any time at no additional cost.
+Yes. Like all export formats, CSV export has no additional credit cost beyond the base extraction. YouTube caption extraction is free; AI Transcription costs 1 credit per minute. Once you have a transcript in your library, you can export it as CSV (or any other format) at any time at no additional cost.
 
 **Why is `end_time` included when I can calculate it from `start_time + duration`?**
 Convenience. The calculation is trivial but having `end_time` as a pre-computed column saves repeated formula work in Excel and eliminates a transformation step in pandas or R. Both values are included because downstream tools may need either form.
@@ -109,4 +109,4 @@ Yes. After playlist extraction, the bulk export options include both "one file p
 
 ---
 
-*[Extract any YouTube transcript as CSV free](/youtube-transcript-generator) — auto-caption videos export instantly at no cost.*
+*[Extract any YouTube transcript as CSV free](/youtube-transcript-generator) — YouTube caption videos export instantly at no cost.*

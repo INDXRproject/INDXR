@@ -106,7 +106,7 @@ channel: "Harvard University"
 published: "2009-09-04"
 duration: 3421
 language: "en"
-transcript_source: "Auto-captions (YouTube)"
+transcript_source: "YouTube captions"
 created: "2026-04-24"
 type: youtube
 tags: [youtube, transcript]

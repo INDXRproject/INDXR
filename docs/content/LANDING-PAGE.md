@@ -25,7 +25,7 @@ Extract YouTube transcripts in seconds — free for videos with captions, AI tra
 [URL input field with placeholder: "Paste a YouTube URL or playlist link"]
 [Extract button]
 
-*Small text below input:* Free for auto-caption videos. No account required.
+*Small text below input:* Free for YouTube caption videos. No account required.
 
 ---
 
@@ -34,14 +34,14 @@ Extract YouTube transcripts in seconds — free for videos with captions, AI tra
 ### Blok 1 — Single Video
 **Heading:** Paste a URL, get a transcript in seconds
 
-Auto-captions extracted instantly. Free, no account needed. If captions don't exist — or if you need better accuracy — enable AI Transcription. We tell you upfront whether captions are available and exactly what AI transcription will cost before you confirm.
+YouTube captions extracted instantly. Free, no account needed. If captions don't exist — or if you need better accuracy — enable AI Transcription. We tell you upfront whether captions are available and exactly what AI transcription will cost before you confirm.
 
 *Stat:* Works for videos up to 214 minutes. Tested.
 
 ### Blok 2 — Playlist & Bulk
 **Heading:** Extract entire playlists in one job
 
-Paste a playlist URL. We scan every video for caption availability before you commit. The first three auto-caption videos in any extraction are free. Select which videos to process, toggle AI Transcription per video where needed, confirm the total cost, and the job runs on our servers.
+Paste a playlist URL. We scan every video for caption availability before you commit. The first three YouTube caption videos in any extraction are free. Select which videos to process, toggle AI Transcription per video where needed, confirm the total cost, and the job runs on our servers.
 
 *Stat:* 19 videos. 13 hours of audio. 18 minutes and 53 seconds. One extraction.
 
@@ -91,7 +91,7 @@ The only web-based tool that exports YouTube transcripts as RAG-optimized JSON �
 Obsidian plugins for YouTube break when YouTube updates its UI. INDXR.AI extracts server-side and exports Markdown with Dataview-compatible frontmatter — title, channel, duration, source URL, language, type. Drop it into your vault, query it immediately.
 
 **Feature 4: AI transcription as fallback, not default**
-About 20% of YouTube videos have no auto-captions. Most tools fail silently on these. INDXR.AI tells you upfront when a video has no captions and offers AI transcription at 1 credit per minute. You decide; we don't charge you for the detection.
+About 20% of YouTube videos have no YouTube captions. Most tools fail silently on these. INDXR.AI tells you upfront when a video has no captions and offers AI transcription at 1 credit per minute. You decide; we don't charge you for the detection.
 
 **Feature 5: Playlist batch extraction**
 One URL, one job, one library. Extract entire courses, conference archives, or research channels. Per-video status in real time. Duplicate detection so you never pay for a transcript you already have.
@@ -118,7 +118,7 @@ One URL, one job, one library. Extract entire courses, conference archives, or r
 
 **Heading:** Pay once. Use when you need it. Credits never expire.
 
-**Subheading:** Auto-caption extraction is free for every video. Credits apply only when you use AI transcription, playlist processing beyond the first three auto-caption videos (AI-transcription videos are always 1 credit/minute, no per-video discount), AI summaries, or RAG JSON export.
+**Subheading:** YouTube caption extraction is free for every video. Credits apply only when you use AI transcription, playlist processing beyond the first three YouTube caption videos (AI-transcription videos are always 1 credit/minute, no per-video discount), AI summaries, or RAG JSON export.
 
 ### Pricing tiers (3 primaire kaarten)
 
@@ -151,7 +151,7 @@ Processing larger volumes? [Power — €54.99 / 6,000 credits]
 What does a 1-hour video cost?
 | | Basic | Plus | Pro |
 |---|---|---|---|
-| Auto-caption extraction | Free | Free | Free |
+| YouTube caption extraction | Free | Free | Free |
 | AI Transcription (60 min) | €0.84 | €0.70 | €0.60 |
 | + RAG JSON export | €0.89 | €0.75 | €0.64 |
 
@@ -167,9 +167,9 @@ No subscription. No monthly charge. Buy credits when you need them and they'll b
 **Heading:** Common questions
 
 **Q: Do I need an account to use INDXR.AI?**
-A: Not for a single video with auto-captions — paste a URL, get a transcript, download as TXT, all free. A free account removes the daily rate limit, unlocks all export formats, and gives you 25 credits to test AI transcription and other paid features.
+A: Not for a single video with YouTube captions — paste a URL, get a transcript, download as TXT, all free. A free account removes the daily rate limit, unlocks all export formats, and gives you 25 credits to test AI transcription and other paid features.
 
-**Q: What happens when a video has no auto-captions?**
+**Q: What happens when a video has no YouTube captions?**
 A: We tell you before doing anything. You'll see that captions aren't available, what AI transcription will cost for that video's length, and a button to confirm. No silent failures, no surprise charges.
 
 **Q: How is the quality of AI transcription?**
@@ -193,7 +193,7 @@ A: RAG (Retrieval-Augmented Generation) is a technique for making AI systems sea
 [URL input field]
 [Extract Transcript button]
 
-*Small text:* Auto-caption videos are always free. No account required.
+*Small text:* YouTube caption videos are always free. No account required.
 
 ---
 

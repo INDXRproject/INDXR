@@ -31,7 +31,7 @@ HappyScribe also has an established content marketing presence — hundreds of p
 
 **Export format depth.** HappyScribe's primary export formats are oriented around subtitle files and professional document formats. INDXR.AI's eight export formats include Markdown with YAML frontmatter for Obsidian and Notion users, structured JSON for developers, and RAG-optimized JSON for AI pipelines — outputs HappyScribe doesn't offer.
 
-**Auto-caption extraction.** HappyScribe doesn't distinguish between videos with and without captions — it bills for AI transcription regardless. INDXR.AI checks caption availability first. For the roughly 80% of YouTube videos that have auto-captions, extraction is free. You only pay AI transcription credits for videos that genuinely need them.
+**YouTube caption extraction.** HappyScribe doesn't distinguish between videos with and without captions — it bills for AI transcription regardless. INDXR.AI checks caption availability first. For the roughly 80% of YouTube videos that have captions, extraction is free. You only pay AI transcription credits for videos that genuinely need them.
 
 ---
 
@@ -39,7 +39,7 @@ HappyScribe also has an established content marketing presence — hundreds of p
 
 | Use case | HappyScribe | INDXR.AI (Plus) |
 |---|---|---|
-| 1-hour video, auto-captions available | ~€12 | **Free** |
+| 1-hour video, YouTube captions available | ~€12 | **Free** |
 | 1-hour video, AI transcription | ~€12 | **€0.70** |
 | 10-hour lecture series, AI transcription | ~€120 | **€7.00** |
 | 50-hour YouTube corpus, AI transcription | ~€600 | **€35.00** |
@@ -55,7 +55,7 @@ The gap widens significantly at scale. A researcher building a knowledge base fr
 | Feature | HappyScribe | INDXR.AI |
 |---|---|---|
 | AI transcription | ✅ €0.20/min | ✅ €0.01–0.014/min |
-| Free auto-caption extraction | ❌ | ✅ |
+| Free YouTube caption extraction | ❌ | ✅ |
 | YouTube playlist / bulk | ❌ | ✅ |
 | Audio file upload | ✅ | ✅ |
 | Professional subtitle editor | ✅ | ❌ (basic editor) |
@@ -72,14 +72,14 @@ The gap widens significantly at scale. A researcher building a knowledge base fr
 
 **Use HappyScribe if:** You're producing professional media content that requires a dedicated subtitle editing interface, translation into multiple languages, real-time team collaboration, or compliance-grade subtitle delivery. The higher per-minute cost reflects genuine production capabilities.
 
-**Use INDXR.AI if:** Your primary need is extracting, exporting, and working with YouTube transcript content — for research, content creation, developer pipelines, or AI knowledge bases. Free auto-caption extraction, 17× cheaper AI transcription, playlist batch processing, and export formats designed for modern workflows.
+**Use INDXR.AI if:** Your primary need is extracting, exporting, and working with YouTube transcript content — for research, content creation, developer pipelines, or AI knowledge bases. Free YouTube caption extraction, 17× cheaper AI transcription, playlist batch processing, and export formats designed for modern workflows.
 
 ---
 
 ## Frequently Asked Questions
 
 **Why is INDXR.AI so much cheaper than HappyScribe?**
-HappyScribe is priced for professional media production with team collaboration, translation, compliance tools, and dedicated customer support. INDXR.AI is focused specifically on YouTube transcript extraction and export. The narrower scope allows for different pricing. Auto-captions are also free on INDXR.AI — HappyScribe doesn't distinguish between captioned and uncaptioned videos.
+HappyScribe is priced for professional media production with team collaboration, translation, compliance tools, and dedicated customer support. INDXR.AI is focused specifically on YouTube transcript extraction and export. The narrower scope allows for different pricing. YouTube captions are also free on INDXR.AI — HappyScribe doesn't distinguish between captioned and uncaptioned videos.
 
 **Does INDXR.AI match HappyScribe's transcription accuracy?**
 INDXR.AI automatically routes each video to the best transcription model for its detected language — our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise. On clean audio, this reaches 94–96%+ accuracy. HappyScribe uses its own model. For YouTube content — a mix of studio recordings, screencasts, lectures, and interviews — both tools produce accurate results on clean audio. HappyScribe has more extensive accuracy benchmarking for broadcast and compliance use cases; INDXR.AI has more extensive testing on YouTube-specific content.
@@ -92,4 +92,4 @@ Not currently. INDXR.AI transcribes audio in its original language but doesn't t
 
 ---
 
-*[Try INDXR.AI free](/youtube-transcript-generator) — auto-caption YouTube videos extract at no cost. 25 credits on signup for AI transcription testing.*
+*[Try INDXR.AI free](/youtube-transcript-generator) — YouTube videos with captions extract at no cost. 25 credits on signup for AI transcription testing.*

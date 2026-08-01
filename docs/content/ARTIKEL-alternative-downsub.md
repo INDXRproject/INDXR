@@ -45,7 +45,7 @@ DownSub's output is always a subtitle file. INDXR.AI's output is whatever format
 
 **Readable text transcript.** An SRT file is not a transcript you can read, quote from, or paste into ChatGPT. INDXR.AI exports plain TXT and Markdown — clean, continuous prose, stripped of timestamp markup. This is what researchers, content creators, journalists, and students actually need when they want "the text of this video."
 
-**AI transcription for videos without captions.** When YouTube has no auto-captions — which affects roughly 20% of videos, including most non-English content, videos with poor audio, and content from smaller creators (YouTube Help, support.google.com/youtube/answer/6373554) — DownSub returns an empty file or an error. INDXR.AI switches to AI transcription — automatically routing to the best model for the video's language (our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise) — transcribing directly from the audio. The resulting SRT and VTT files are higher quality than auto-caption files anyway, because AssemblyAI produces proper punctuation and more accurate word boundaries.
+**AI transcription for videos without captions.** When a video has no YouTube captions — which affects roughly 20% of videos, including most non-English content, videos with poor audio, and content from smaller creators (YouTube Help, support.google.com/youtube/answer/6373554) — DownSub returns an empty file or an error. INDXR.AI switches to AI transcription — automatically routing to the best model for the video's language (our highest-quality model, AssemblyAI Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise) — transcribing directly from the audio. The resulting SRT and VTT files are higher quality than auto-caption files anyway, because AssemblyAI produces proper punctuation and more accurate word boundaries.
 
 **Audio file upload.** If you have a local audio or video file — a podcast recording, a downloaded video, a lecture captured on your phone — INDXR.AI accepts it directly (MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB) and produces the same SRT, VTT, and transcript outputs. DownSub is URL-only and YouTube-focused.
 
@@ -85,7 +85,7 @@ DownSub's output is always a subtitle file. INDXR.AI's output is whatever format
 
 DownSub is free, supported by advertising.
 
-INDXR.AI's SRT and VTT export from auto-caption videos is also free — same as DownSub, but with resegmented output. No account required for the first extraction. Credits apply only to features DownSub doesn't offer: AI transcription for captionless videos (1 credit per minute), playlist processing beyond the first three caption videos (1 credit per video — AI-transcription videos in a playlist are always 1 credit/minute, with no per-video discount), AI summaries (3 credits), and RAG JSON export (1 credit per 10 minutes of video; re-downloading an already-exported transcript is free).
+INDXR.AI's SRT and VTT export from YouTube caption videos is also free — same as DownSub, but with resegmented output. No account required for the first extraction. Credits apply only to features DownSub doesn't offer: AI transcription for captionless videos (1 credit per minute), playlist processing beyond the first three caption videos (1 credit per video — AI-transcription videos in a playlist are always 1 credit/minute, with no per-video discount), AI summaries (3 credits), and RAG JSON export (1 credit per 10 minutes of video; re-downloading an already-exported transcript is free).
 
 The Basic package — €6.99 for 500 credits — covers approximately 8 hours of AI transcription or 500 playlist videos. Credits never expire.
 
@@ -106,14 +106,14 @@ For editors and content creators who currently use DownSub specifically for YouT
 **Does INDXR.AI's SRT output actually work better in video editors?**
 Yes. DaVinci Resolve, Premiere Pro, and CapCut all import SRT, but YouTube's raw 2–4 second segments create readability problems in the timeline. INDXR.AI's resegmented SRT uses 3–7 second segments at a maximum of 42 characters per line — the broadcast standard that editors already expect. Less cleanup work after import.
 
-**Can INDXR.AI export SRT for videos with no auto-captions?**
+**Can INDXR.AI export SRT for videos with no YouTube captions?**
 Yes. Enable AI Transcription before extracting — INDXR.AI automatically routes to the best transcription model for the video's language (AssemblyAI Universal-3.5 Pro is our highest-quality model, with broad coverage across 99+ languages otherwise), then exports the result as SRT or VTT with the same resegmented timing. DownSub has no equivalent for captionless videos.
 
 **Does INDXR.AI work for audio files, not just YouTube URLs?**
 Yes. The [Audio Upload tab](/audio-to-text) accepts MP3, MP4, WAV, M4A, OGG, FLAC, and WEBM files up to 500MB. A recorded interview, podcast episode, or lecture can be transcribed and exported as SRT/VTT just like a YouTube video.
 
 **Is INDXR.AI free like DownSub?**
-SRT and VTT export from auto-caption YouTube videos is free on INDXR.AI — no account needed for a single extraction. The free tier covers the same use case DownSub serves. Paid features (AI transcription, playlists, additional formats) use credits from a free account with 25 welcome credits on signup.
+SRT and VTT export from YouTube videos with captions is free on INDXR.AI — no account needed for a single extraction. The free tier covers the same use case DownSub serves. Paid features (AI transcription, playlists, additional formats) use credits from a free account with 25 welcome credits on signup.
 
 **Does INDXR.AI support platforms other than YouTube?**
 Currently, INDXR.AI handles YouTube URLs and direct audio/video file uploads. It does not support Viki, Viu, WeTV, or other streaming platforms that DownSub covers. For non-YouTube subtitle downloads, DownSub remains the right tool.

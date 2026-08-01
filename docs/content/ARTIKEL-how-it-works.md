@@ -17,7 +17,7 @@ Here's exactly how each part of the system works.
 
 ## Step 1: Paste a URL or Upload a File
 
-**For YouTube videos:** Paste a standard YouTube URL, a shortened `youtu.be/` link, or a full playlist URL into the Single Video or Playlist tab. INDXR.AI fetches the video metadata immediately — title, duration, channel, and whether auto-captions are available — before doing any extraction. You see what you're working with before committing.
+**For YouTube videos:** Paste a standard YouTube URL, a shortened `youtu.be/` link, or a full playlist URL into the Single Video or Playlist tab. INDXR.AI fetches the video metadata immediately — title, duration, channel, and whether YouTube captions are available — before doing any extraction. You see what you're working with before committing.
 
 **For audio or video files:** The Audio Upload tab accepts MP3, MP4, WAV, M4A, OGG, FLAC, and WEBM files up to 500MB. The file uploads directly to INDXR.AI's backend server — not through a web intermediary with file-size limits. A 2-hour podcast recording, a lecture, an interview — all handled.
 
@@ -27,17 +27,17 @@ Here's exactly how each part of the system works.
 
 ## Step 2: Choose Your Method
 
-### Auto-Captions — Free
+### YouTube Captions — Free
 
 When YouTube has auto-generated captions for a video, INDXR.AI retrieves them via YouTube's internal API. Extraction takes a few seconds. The result is the same text you'd see if you clicked "Show transcript" on the YouTube page — but exported in a clean format, stored in your library, and available for re-export at any time.
 
-Auto-captions are free for single videos, with no daily limit for registered users. For playlists, the first three **caption** videos are always free; additional captioned videos cost 1 credit each from video four onward. AI-transcription videos in a playlist are always 1 credit per minute, with no per-video discount regardless of position.
+YouTube captions are free for single videos, with no daily limit for registered users. For playlists, the first three **caption** videos are always free; additional captioned videos cost 1 credit each from video four onward. AI-transcription videos in a playlist are always 1 credit per minute, with no per-video discount regardless of position.
 
 The honest limitation: auto-generated captions lack punctuation and capitalization. They're a continuous stream of lowercase text. For reading, copy-pasting into AI tools, or quick data extraction, this is usually fine. For user-facing applications, subtitle timing, or RAG pipelines that rely on sentence detection, the quality gap matters.
 
 ### AI Transcription — 1 Credit Per Minute
 
-When a video has no auto-captions — or when you need better quality than auto-captions provide — enable the AI Transcription toggle. INDXR.AI downloads the video audio through residential proxies (to avoid YouTube's IP-blocking of cloud servers) and sends it to AssemblyAI's transcription pipeline.
+When a video has no YouTube captions — or when you need better quality than YouTube captions provide — enable the AI Transcription toggle. INDXR.AI downloads the video audio through residential proxies (to avoid YouTube's IP-blocking of cloud servers) and sends it to AssemblyAI's transcription pipeline.
 
 INDXR.AI automatically uses the best model for the video's language — our highest-quality model, Universal-3.5 Pro, for the languages it supports, with broad coverage across 99+ languages otherwise. The result includes proper punctuation, accurate capitalization, and real sentence boundaries. Accuracy runs 94–96%+ on clean audio for languages covered by Universal-3.5 Pro (AssemblyAI benchmarks, assemblyai.com).
 
@@ -98,10 +98,10 @@ During extraction, you see real-time progress: which video is being processed, h
 
 | Action | Cost |
 |---|---|
-| Single video, auto-captions | Free |
+| Single video, YouTube captions | Free |
 | Single video, AI Transcription | 1 credit per minute |
-| Playlist video 1–3 (auto-captions) | Free |
-| Playlist video 4+ (auto-captions) | 1 credit per video |
+| Playlist video 1–3 (YouTube captions) | Free |
+| Playlist video 4+ (YouTube captions) | 1 credit per video |
 | Playlist video, AI Transcription | 1 credit per minute |
 | AI Summary | 3 credits |
 | RAG JSON export | 1 credit per 10 minutes (re-download of an already-exported transcript is free) |
@@ -114,9 +114,9 @@ Credits are purchased once and never expire. 25 free credits on signup are enoug
 ## Frequently Asked Questions
 
 **Does INDXR.AI work without an account?**
-Yes, for single videos with auto-captions. Anonymous users can extract TXT transcripts up to 10 times per day. A free account removes the daily limit, unlocks all export formats, and gives you 25 welcome credits to test AI Transcription and other paid features.
+Yes, for single videos with YouTube captions. Anonymous users can extract TXT transcripts up to 10 times per day. A free account removes the daily limit, unlocks all export formats, and gives you 25 welcome credits to test AI Transcription and other paid features.
 
-**What happens if a video has no auto-captions?**
+**What happens if a video has no YouTube captions?**
 INDXR.AI detects this before extraction and prompts you to enable AI Transcription. There's no silent failure — you're told upfront whether captions exist and what AI Transcription will cost for that specific video's duration.
 
 **How long does AI Transcription take?**
@@ -130,4 +130,4 @@ Completed videos are saved to your library as they finish. Only incomplete video
 
 ---
 
-*[Start extracting](/youtube-transcript-generator) — paste any YouTube URL. Auto-caption videos are free and instant.*
+*[Start extracting](/youtube-transcript-generator) — paste any YouTube URL. YouTube caption videos are free and instant.*

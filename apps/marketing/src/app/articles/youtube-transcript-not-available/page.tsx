@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: "Does INDXR.AI work for videos in languages other than English?",
-    a: `Yes. AI Transcription via INDXR.AI uses ${transcriptionModelName()}; INDXR.AI automatically picks the best model for the video's language — up to 99 languages with automatic detection. Auto-caption extraction also works for any language YouTube provides captions for.`,
+    a: `Yes. AI Transcription via INDXR.AI uses ${transcriptionModelName()}; INDXR.AI automatically picks the best model for the video's language — up to 99 languages with automatic detection. YouTube caption extraction also works for any language YouTube provides captions for.`,
   },
   {
     q: "What's the difference between captions and a transcript on YouTube?",

@@ -54,7 +54,7 @@ export default function TermsPage() {
             <p>
               INDXR.AI extracts transcripts from YouTube videos, playlists, and audio files you
               provide, and offers optional features such as AI transcription, AI summaries, and
-              export formats. Auto-caption extraction for single videos and the first videos of
+              export formats. YouTube caption extraction for single videos and the first videos of
               a playlist is free; AI transcription and certain features use credits (see below).
               We provide the Service with reasonable care and skill, but we can’t guarantee that
               every video can be processed, or that the Service will always be available or

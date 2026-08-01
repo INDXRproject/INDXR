@@ -60,7 +60,7 @@ The resegmentation algorithm respects sentence boundaries — it doesn't merge s
 
 ---
 
-## When Auto-Captions Don't Exist
+## When YouTube Captions Don't Exist
 
 About 20% of YouTube videos have no auto-generated captions — non-English content YouTube hasn't processed, videos from smaller creators, older uploads, content with poor audio quality (YouTube Help, support.google.com/youtube/answer/6373554). Basic subtitle downloaders return empty files or errors for these videos.
 
@@ -88,7 +88,7 @@ VTT is the correct format for HTML5 `<video>` elements and web-based players tha
 
 ## Pricing
 
-SRT and VTT export from auto-caption YouTube videos is free — no account required for a single extraction, no credit cost for the export itself. For videos without auto-captions, AI Transcription costs 1 credit per minute (a 30-minute video: 30 credits, approximately €0.36 at Plus pricing).
+SRT and VTT export from YouTube videos with captions is free — no account required for a single extraction, no credit cost for the export itself. For videos without YouTube captions, AI Transcription costs 1 credit per minute (a 30-minute video: 30 credits, approximately €0.36 at Plus pricing).
 
 There is no additional charge for the SRT or VTT export format itself — all export formats are included at no credit cost once you have a transcript.
 
@@ -108,9 +108,9 @@ Yes. After extracting a transcript, you can export in any format from the export
 **Does the SRT output work for videos in non-Latin scripts?**
 Yes. UTF-8 BOM encoding handles Arabic, Chinese, Japanese, Korean, Hebrew, and other scripts correctly in both SRT and VTT. The encoding is set automatically — no manual configuration required.
 
-**What if the video has no auto-captions?**
+**What if the video has no YouTube captions?**
 INDXR.AI detects this before extraction and offers AI Transcription as a fallback. Enable it, confirm the credit cost for that video's length, and the audio is transcribed. The resulting SRT and VTT follow the same resegmentation as caption-based exports.
 
 ---
 
-*[Download a YouTube SRT file free](/youtube-srt-download) — paste a URL and choose SRT or VTT from the export menu. Auto-caption videos export at no cost.*
+*[Download a YouTube SRT file free](/youtube-srt-download) — paste a URL and choose SRT or VTT from the export menu. YouTube caption videos export at no cost.*

@@ -10,7 +10,7 @@ export function PricingHero() {
       <PageHeader
         eyebrow="Pricing"
         title="Pay once. Use when you need it."
-        lead="Auto-caption extraction is always free. Credits apply only when you use AI transcription, playlist caption processing beyond the first three videos, AI summaries, or RAG JSON export."
+        lead="YouTube caption extraction is always free. Credits apply only when you use AI transcription, playlist caption processing beyond the first three videos, AI summaries, or RAG JSON export."
       />
       <div className="flex flex-col sm:flex-row items-start gap-4 mb-12">
         <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border)] bg-[var(--surface)]">

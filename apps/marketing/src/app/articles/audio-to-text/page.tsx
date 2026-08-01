@@ -214,7 +214,7 @@ export default function AudioToTextPage() {
       <p>
         For YouTube videos (where you have a URL rather than a downloaded file), use the{" "}
         <Link href="/transcribe">YouTube Transcript Generator</Link> instead — it
-        handles auto-caption extraction for free and AI transcription when captions aren&apos;t available. For
+        handles YouTube caption extraction for free and AI transcription when captions aren&apos;t available. For
         credit packages, see the <Link href="/pricing">pricing page</Link>.
       </p>
     </ToolPageTemplate>

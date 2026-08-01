@@ -13,7 +13,7 @@ interface ClosingCTASectionProps {
 
 export function ClosingCTASection({
   headline = "Start organizing your transcripts and exports into a clean library.",
-  oneLiner = "Auto-captions stay free for single videos. Sign up to unlock playlists, AI transcription, and your personal library.",
+  oneLiner = "YouTube captions stay free for single videos. Sign up to unlock playlists, AI transcription, and your personal library.",
   primaryCtaLabel = "Sign up free",
   primaryCtaHref = "/signup",
   secondaryLabel = "Or try without an account →",

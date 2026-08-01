@@ -20,7 +20,7 @@ const differentiators: Differentiator[] = [
   {
     icon: "🎁",
     heading: "Free tier that's actually useful",
-    description: "Auto-captions for any video, free, no account needed. Not a 5-second trial.",
+    description: "YouTube captions for any video, free, no account needed. Not a 5-second trial.",
   },
 ]
 

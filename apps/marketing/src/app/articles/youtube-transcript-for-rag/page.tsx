@@ -334,7 +334,7 @@ for chunk in data["chunks"]:
 for i in range(0, len(vectors), 100):
     index.upsert(vectors=vectors[i:i+100])`}</code></pre>
 
-      <h2>Auto-Captions vs. AI Transcription for RAG</h2>
+      <h2>YouTube Captions vs. AI Transcription for RAG</h2>
 
       <p>The difference matters more for RAG than for any other use case.</p>
 

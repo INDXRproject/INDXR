@@ -227,7 +227,7 @@ results = index.query(
 
 ---
 
-## Auto-Captions vs. AI Transcription for RAG
+## YouTube Captions vs. AI Transcription for RAG
 
 This distinction matters more for RAG than for any other use case.
 
@@ -235,7 +235,7 @@ Auto-generated captions have two problems that hurt RAG quality specifically. Fi
 
 For RAG pipelines where retrieval quality matters, use AI Transcription as your source. Enable the AI Transcription toggle before extracting, confirm the credit cost, and the resulting transcript has proper punctuation, accurate text, and meaningful sentence boundaries.
 
-INDXR.AI shows a warning when you enable RAG JSON export on an auto-caption transcript. You can proceed — it will work — but the chunk quality will be lower than an AssemblyAI-sourced transcript.
+INDXR.AI shows a warning when you enable RAG JSON export on a YouTube caption transcript. You can proceed — it will work — but the chunk quality will be lower than an AssemblyAI-sourced transcript.
 
 ---
 
@@ -282,4 +282,4 @@ The default is 120-second chunks with 18-second (15%) overlap. If you need diffe
 
 ---
 
-*[Extract a transcript now](/youtube-transcript-generator) and try the RAG JSON export — 1 credit per 10 minutes of video, with free re-downloads afterward. No account required for auto-caption videos.*
+*[Extract a transcript now](/youtube-transcript-generator) and try the RAG JSON export — 1 credit per 10 minutes of video, with free re-downloads afterward. No account required for YouTube caption videos.*

@@ -32,7 +32,7 @@ const articles = [
 
   // Workflows & Use Cases
   { href: "/articles/bulk-youtube-transcript", label: "Bulk Transcript Extraction", category: "Workflows", description: "Download transcripts from entire playlists in one extraction, with real-time progress." },
-  { href: "/articles/youtube-playlist-transcript", label: "Playlist Transcripts", category: "Workflows", description: "Extract a whole playlist in one job — first 3 auto-caption videos free." },
+  { href: "/articles/youtube-playlist-transcript", label: "Playlist Transcripts", category: "Workflows", description: "Extract a whole playlist in one job — first 3 YouTube caption videos free." },
   { href: "/articles/audio-to-text", label: "Audio File Transcription", category: "Workflows", description: "Upload any audio or video file and get a full transcript. 1 credit per minute." },
   { href: "/articles/youtube-transcript-obsidian", label: "Obsidian Workflow", category: "Workflows", description: "Markdown export with Dataview-compatible properties — no plugin required." },
 

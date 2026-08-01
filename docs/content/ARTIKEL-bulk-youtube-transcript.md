@@ -1,7 +1,7 @@
 # Bulk YouTube Transcript Downloader — Extract Entire Playlists at Once
 
 **Meta title:** Bulk YouTube Transcript Download — Entire Playlists in One Job | INDXR.AI
-**Meta description:** Download transcripts from entire YouTube playlists in one extraction. First 3 auto-caption videos free. Real-time progress. Export as TXT, Markdown, SRT, JSON, or RAG-ready ZIP.
+**Meta description:** Download transcripts from entire YouTube playlists in one extraction. First 3 YouTube caption videos free. Real-time progress. Export as TXT, Markdown, SRT, JSON, or RAG-ready ZIP.
 **Slug:** /bulk-youtube-transcript
 **Schema:** SoftwareApplication + FAQPage
 **Internal links:** /youtube-playlist-transcript, /youtube-transcript-generator, /pricing, /youtube-transcript-for-rag
@@ -23,7 +23,7 @@ We've tested this at scale: 19 videos, 783 minutes of total audio, all processed
 
 **Paste a playlist URL.** INDXR.AI scans every video in the playlist before you commit: caption availability, duration, and whether you've already extracted it before. Videos already in your library are flagged so you don't pay for duplicates.
 
-**Select and configure.** Choose which videos to include. For videos without auto-captions, toggle AI Transcription individually — the credit cost updates in real time as you make selections. You see the exact total before confirming.
+**Select and configure.** Choose which videos to include. For videos without YouTube captions, toggle AI Transcription individually — the credit cost updates in real time as you make selections. You see the exact total before confirming.
 
 **Monitor progress.** Extraction runs on INDXR.AI's servers. Per-video status updates show which video is processing, which have completed, and any failures with specific error types. Stay on the page while the job runs — the system handles disconnects as a fallback, but active monitoring lets you respond to issues immediately.
 
@@ -33,15 +33,15 @@ We've tested this at scale: 19 videos, 783 minutes of total audio, all processed
 
 ## What's Free and What Costs Credits
 
-The first three **auto-caption** videos in any playlist extraction are always free. Auto-caption extraction for additional videos costs 1 credit per video from video four onward. AI Transcription always costs 1 credit per minute regardless of position in the playlist.
+The first three **YouTube caption** videos in any playlist extraction are always free. YouTube caption extraction for additional videos costs 1 credit per video from video four onward. AI Transcription always costs 1 credit per minute regardless of position in the playlist.
 
-**Example: 30-video lecture series, all auto-captions**
+**Example: 30-video lecture series, all YouTube captions**
 - Videos 1–3: Free
 - Videos 4–30: 27 credits (~€0.32 at Plus pricing)
 
 **Example: 10-video research playlist, 4 videos without captions (avg 20 min)**
-- Videos 1–3: Free (assuming auto-captions)
-- Videos 4–6 (auto-captions): 3 credits
+- Videos 1–3: Free (assuming YouTube captions)
+- Videos 4–6 (YouTube captions): 3 credits
 - 4 videos × AI Transcription × 20 min: 80 credits
 - Total: 83 credits (~€1.00 at Plus pricing)
 
@@ -91,8 +91,8 @@ Yes, including other creators' public playlists and curated topic lists — not 
 **Do I get charged for videos already in my library?**
 No. The pre-extraction scan shows which videos are already in your library and excludes them from the job. You won't be charged for transcripts you already have.
 
-**Can I mix auto-caption and AI Transcription in the same playlist?**
-Yes. Toggle AI Transcription per video in the selection screen. Videos with auto-captions default to free caption extraction; you can upgrade individual videos to AI Transcription where higher accuracy matters.
+**Can I mix YouTube captions and AI Transcription in the same playlist?**
+Yes. Toggle AI Transcription per video in the selection screen. Videos with YouTube captions default to free caption extraction; you can upgrade individual videos to AI Transcription where higher accuracy matters.
 
 ---
 

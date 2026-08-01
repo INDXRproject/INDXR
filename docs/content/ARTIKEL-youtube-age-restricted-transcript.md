@@ -49,9 +49,9 @@ The same path works for members-only content you're paying to access, and for pr
 
 ## Accuracy Note for Age-Restricted Content
 
-Age-restricted videos on YouTube tend to have auto-captions available alongside the age gate — but accessing those captions externally still requires passing the authentication check. For the audio upload path, you're getting AI-generated transcription rather than YouTube's captions.
+Age-restricted videos on YouTube tend to have YouTube captions available alongside the age gate — but accessing those captions externally still requires passing the authentication check. For the audio upload path, you're getting AI-generated transcription rather than YouTube's captions.
 
-Universal-3.5 Pro, INDXR.AI's highest-quality transcription model, achieves 94–96%+ accuracy on clean audio for the languages it supports (with broad coverage across 99+ languages otherwise). For content with challenging audio conditions — music, background noise, non-standard speech — accuracy varies but remains higher than YouTube's auto-captions for difficult audio. The `is_auto_generated: false` flag in JSON exports distinguishes AI-transcribed content from auto-caption sources.
+Universal-3.5 Pro, INDXR.AI's highest-quality transcription model, achieves 94–96%+ accuracy on clean audio for the languages it supports (with broad coverage across 99+ languages otherwise). For content with challenging audio conditions — music, background noise, non-standard speech — accuracy varies but remains higher than YouTube's auto-captions for difficult audio. The `is_auto_generated: false` flag in JSON exports distinguishes AI-transcribed content from YouTube caption sources.
 
 ---
 
@@ -60,7 +60,7 @@ Universal-3.5 Pro, INDXR.AI's highest-quality transcription model, achieves 94�
 Age-restricted is one category. Related issues that require different approaches:
 
 - **Members-only videos** — Requires channel membership payment. Same audio upload path applies if you're a paying member. See [YouTube Members-Only Transcript](/youtube-members-only-transcript).
-- **Videos without auto-captions** — No access restriction, just no captions. AI Transcription solves this without any download step — paste the URL and INDXR.AI handles it. See [YouTube Transcript Not Available](/youtube-transcript-not-available).
+- **Videos without YouTube captions** — No access restriction, just no captions. AI Transcription solves this without any download step — paste the URL and INDXR.AI handles it. See [YouTube Transcript Not Available](/youtube-transcript-not-available).
 - **Private videos** — No external access by any tool. Requires the creator to download from YouTube Studio and use the audio upload path.
 
 ---

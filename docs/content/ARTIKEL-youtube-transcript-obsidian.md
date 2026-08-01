@@ -83,7 +83,7 @@ SORT created DESC
 
 ## The Step-by-Step Workflow
 
-**Step 1: Extract the transcript.** Paste the YouTube URL into INDXR.AI. For videos with auto-captions, extraction is free and takes seconds. For videos without captions, enable AI Transcription (1 credit per minute) — the resulting transcript has proper punctuation, which matters for readability in your vault.
+**Step 1: Extract the transcript.** Paste the YouTube URL into INDXR.AI. For videos with YouTube captions, extraction is free and takes seconds. For videos without captions, enable AI Transcription (1 credit per minute) — the resulting transcript has proper punctuation, which matters for readability in your vault.
 
 **Step 2: Export as Markdown.** Click Export and choose "Markdown — With Timestamps" for notes you'll actively review, or "Markdown — Plain" for videos you'll process into summaries or feed to AI tools. The `.md` file downloads immediately.
 
@@ -135,7 +135,7 @@ Not currently via the export UI — the template is standardized. You can add fi
 **Why does the Obsidian Web Clipper stop working for YouTube?**
 The Web Clipper extracts transcripts by targeting specific HTML elements in YouTube's page. YouTube updates its frontend periodically, changing or removing those elements. The transcript panel also has to be manually opened before clipping, or the selector returns empty. INDXR.AI retrieves transcripts server-side via YouTube's internal API, which is not affected by frontend UI changes.
 
-**Does this work for YouTube videos without auto-captions?**
+**Does this work for YouTube videos without YouTube captions?**
 Yes. Enable AI Transcription in INDXR.AI before extracting. The resulting Markdown is higher quality than auto-caption exports — proper punctuation means transcript text reads naturally in your notes. Cost: 1 credit per minute of video.
 
 **What folder structure do you recommend for video notes in Obsidian?**
@@ -143,4 +143,4 @@ A simple approach that scales: `Clippings/Videos/` for all video transcripts. If
 
 ---
 
-*[Extract a YouTube transcript for Obsidian](/youtube-transcript-generator) — free for auto-caption videos, Markdown export with YAML frontmatter included.*
+*[Extract a YouTube transcript for Obsidian](/youtube-transcript-generator) — free for YouTube caption videos, Markdown export with YAML frontmatter included.*

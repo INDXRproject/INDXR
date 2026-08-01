@@ -17,12 +17,12 @@ import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 const faqItems: FAQItem[] = [
   {
-    question: "What's the difference between auto-captions and AI transcription?",
-    answer: "Auto-captions are read from YouTube's subtitle track — free and instant. AI transcription uses AssemblyAI to generate a transcript from the audio when no captions exist, at 1 credit per minute.",
+    question: "What's the difference between YouTube captions and AI transcription?",
+    answer: "YouTube captions come straight from the video's own subtitle track — free and instant. AI transcription uses AssemblyAI to generate a transcript from the audio when no captions exist, at 1 credit per minute.",
   },
   {
     question: "Why would I sign up if the tool is free?",
-    answer: "The free tier covers single videos with auto-captions. Signing up (free, no card) adds 25 credits, playlists, AI transcription, every export format beyond TXT, and your personal library.",
+    answer: "The free tier covers single videos with YouTube captions. Signing up (free, no card) adds 25 credits, playlists, AI transcription, every export format beyond TXT, and your personal library.",
   },
   {
     question: "What if my video doesn't have captions?",
@@ -34,7 +34,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "What languages are supported?",
-    answer: `Auto-caption extraction works for any language YouTube provides captions for. For AI transcription, INDXR automatically picks the best model for the language — up to 99 languages with automatic detection, powered by ${transcriptionModelName()}.`,
+    answer: `YouTube caption extraction works for any language YouTube provides captions for. For AI transcription, INDXR automatically picks the best model for the language — up to 99 languages with automatic detection, powered by ${transcriptionModelName()}.`,
   },
   {
     question: "What export formats can I get?",
@@ -90,7 +90,6 @@ export default function FreeToolPage() {
         duration: duration,
         character_count: characterCount,
         thumbnail_url: thumbnailUrl,
-        is_favorite: false,
         source_type: metadata.source || "youtube",
         filename: metadata.filename,
         credits_used: metadata.creditsUsed || 0,
@@ -137,10 +136,10 @@ export default function FreeToolPage() {
                 <FrictionConversionCard
                   className="mt-6 text-left"
                   headline="AI transcription needs a free account"
-                  body="Sign up free — 25 credits included, no credit card needed. AI transcription runs at 1 credit per minute; auto-captions stay free. Credits never expire."
+                  body="Sign up free — 25 credits included, no credit card needed. AI transcription runs at 1 credit per minute; YouTube captions stay free. Credits never expire."
                   primaryCtaLabel="Sign up free →"
                   primaryCtaHref="/signup"
-                  secondaryLabel="Or use free auto-captions"
+                  secondaryLabel="Or use free YouTube captions"
                   secondaryHref="#"
                 />
               )}

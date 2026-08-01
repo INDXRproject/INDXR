@@ -214,7 +214,7 @@ to understand about this topic`}</code></pre>
       <h2>Pricing</h2>
 
       <p>
-        SRT and VTT export from auto-caption YouTube videos is free — no account required for a
+        SRT and VTT export from videos with YouTube captions is free — no account required for a
         single extraction, no credit cost for the export itself. For videos without auto-captions,
         AI Transcription costs 1 credit per minute (a 30-minute video: 30 credits, approximately
         {" "}{creditCostEur(30)} at {getAnchorPackage().name} pricing).

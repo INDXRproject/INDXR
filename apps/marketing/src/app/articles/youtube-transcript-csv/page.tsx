@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Is CSV export free?",
-    a: "Yes. Like all export formats, CSV export has no additional credit cost beyond the base extraction. Auto-caption extraction is free; AI Transcription costs 1 credit per minute. Once you have a transcript in your library, you can export it as CSV (or any other format) at any time at no additional cost.",
+    a: "Yes. Like all export formats, CSV export has no additional credit cost beyond the base extraction. YouTube caption extraction is free; AI Transcription costs 1 credit per minute. Once you have a transcript in your library, you can export it as CSV (or any other format) at any time at no additional cost.",
   },
   {
     q: "Why is end_time included when I can calculate it from start_time + duration?",
@@ -180,7 +180,7 @@ df <- read_csv("transcript.csv", locale = locale(encoding = "UTF-8"))`}</code></
         system breaks speech — average segment lengths, variance, gaps between segments.
       </p>
 
-      <h2>Auto-Captions vs. AI Transcription for CSV</h2>
+      <h2>YouTube Captions vs. AI Transcription for CSV</h2>
 
       <p>
         The same quality distinction that applies to other export formats applies here. Auto-caption

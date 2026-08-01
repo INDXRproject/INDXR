@@ -64,7 +64,7 @@ export default function DocsSingleVideoPage() {
           model.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Auto-caption extraction stays free; AI transcription costs {perMin} credit per minute of
+          YouTube caption extraction stays free; AI transcription costs {perMin} credit per minute of
           audio (rounded up, minimum 1). The toggle only appears once you are logged in.
         </p>
 

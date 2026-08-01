@@ -31,12 +31,12 @@ INDXR.AI is a web application you access at indxr.ai. There's nothing to install
 
 The extraction pipeline uses yt-dlp, a maintained open-source tool that communicates with YouTube's internal data endpoints rather than scraping page HTML. When YouTube updates its frontend, yt-dlp continues working because it talks to the underlying API, not the visual layer that changes with UI redesigns.
 
-For videos without auto-captions, INDXR.AI downloads the audio through the same server-side pipeline and routes it to the best transcription model for the video's language — AssemblyAI Universal-3.5 Pro, our highest-quality model, for supported languages, with broad coverage across 99+ languages otherwise. This means INDXR.AI works for:
+For videos without YouTube captions, INDXR.AI downloads the audio through the same server-side pipeline and routes it to the best transcription model for the video's language — AssemblyAI Universal-3.5 Pro, our highest-quality model, for supported languages, with broad coverage across 99+ languages otherwise. This means INDXR.AI works for:
 
-- Videos with auto-captions (instant, free)
-- Videos without auto-captions (AI transcription, 1 credit per minute)
+- Videos with YouTube captions (instant, free)
+- Videos without YouTube captions (AI transcription, 1 credit per minute)
 - Videos in any of the 67 languages YouTube auto-captions support
-- Videos in 99+ languages via AssemblyAI when auto-captions aren't available
+- Videos in 99+ languages via AssemblyAI when YouTube captions aren't available
 
 ---
 
@@ -63,7 +63,7 @@ INDXR.AI gives you the same starting text but adds a processing and export layer
 
 **Resegmented SRT/VTT** — YouTube's raw subtitle segments are 2–4 seconds each, which creates readability problems in video editors. INDXR.AI resegments to 3–7 second blocks at 42 characters per line — the broadcast standard — without any manual editing.
 
-**AI transcription fallback** — When a video has no auto-captions, no extension can help you because there's nothing on the page to extract. INDXR.AI switches to audio-based AI transcription automatically.
+**AI transcription fallback** — When a video has no YouTube captions, no extension can help you because there's nothing on the page to extract. INDXR.AI switches to audio-based AI transcription automatically.
 
 **Persistent library** — Transcripts are saved to your account and searchable. Re-export in a different format months later without re-extracting.
 
@@ -98,4 +98,4 @@ Yes. Copy the share link from the YouTube mobile app, open INDXR.AI in your mobi
 
 ---
 
-*[Use INDXR.AI free in your browser](/youtube-transcript-generator) — no extension, no installation, no account required for auto-caption videos.*
+*[Use INDXR.AI free in your browser](/youtube-transcript-generator) — no extension, no installation, no account required for YouTube caption videos.*

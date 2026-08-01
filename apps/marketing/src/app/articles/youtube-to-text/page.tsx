@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-to-text" },
   title: "YouTube to text — what you actually get | INDXR.AI",
   description:
-    "Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — seven export formats, nine output options.",
+    "Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for YouTube caption videos — seven export formats, nine output options.",
   ...editorialOg("youtube-to-text"),
 }
 
@@ -23,11 +23,11 @@ const faqs = [
   },
   {
     q: "Does it work for non-English videos?",
-    a: "Auto-caption extraction works for any language YouTube provides captions for. AI transcription covers 99 languages with automatic detection — no need to specify the language.",
+    a: "YouTube caption extraction works for any language YouTube provides captions for. AI transcription covers 99 languages with automatic detection — no need to specify the language.",
   },
   {
     q: "Can I convert a whole playlist to text at once?",
-    a: (<>Yes. The <Link href="/articles/youtube-playlist-transcript">Playlist tab</Link> processes all selected videos in one job — first three auto-caption videos free, 1 credit per video from video four onward.</>),
+    a: (<>Yes. The <Link href="/articles/youtube-playlist-transcript">Playlist tab</Link> processes all selected videos in one job — first three YouTube caption videos free, 1 credit per video from video four onward.</>),
   },
   {
     q: "What about YouTube Shorts?",
@@ -49,7 +49,7 @@ export default function YouTubeToTextPage() {
       category="Export Formats"
       slug="youtube-to-text"
       title="YouTube to text — what you actually get"
-      metaDescription="Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for auto-caption videos — seven export formats, nine output options."
+      metaDescription="Most tools give you raw caption fragments. INDXR.AI groups them into readable paragraphs. Free for YouTube caption videos — seven export formats, nine output options."
       publishedAt="2026-04-16"
       updatedAt="2026-04-19"
       author={AUTHORS["indxr-editorial"]}
@@ -201,7 +201,7 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
       <h2>What you can do with the transcript</h2>
 
       <p>
-        Once a transcript exists — whether from auto-captions or AI transcription —
+        Once a transcript exists — whether from YouTube captions or AI transcription —
         it can be exported in seven file formats, with nine export options total.
       </p>
 

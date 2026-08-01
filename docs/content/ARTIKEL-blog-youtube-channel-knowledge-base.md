@@ -37,7 +37,7 @@ For channels with hundreds of videos, consider batching by year or topic rather 
 
 ## Step 2: Extract Transcripts with INDXR.AI
 
-Paste the playlist URL into INDXR.AI's Playlist tab. The pre-extraction scan shows you every video's caption availability, duration, and whether you've already processed it. For a channel knowledge base, you almost certainly want AI Transcription rather than auto-captions — the punctuation and accuracy difference matters when the transcripts become your retrieval corpus.
+Paste the playlist URL into INDXR.AI's Playlist tab. The pre-extraction scan shows you every video's caption availability, duration, and whether you've already processed it. For a channel knowledge base, you almost certainly want AI Transcription rather than YouTube captions — the punctuation and accuracy difference matters when the transcripts become your retrieval corpus.
 
 **Credit cost for a typical knowledge base project:**
 

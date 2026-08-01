@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/articles/bulk-youtube-transcript" },
   title: "Bulk YouTube Transcript Download — Entire Playlists in One Job | INDXR.AI",
   description:
-    "Download transcripts from entire YouTube playlists in one extraction. First 3 auto-caption videos free. Real-time progress. Export as TXT, Markdown, SRT, JSON, or RAG-ready ZIP.",
+    "Download transcripts from entire YouTube playlists in one extraction. First 3 YouTube caption videos free. Real-time progress. Export as TXT, Markdown, SRT, JSON, or RAG-ready ZIP.",
   ...editorialOg("bulk-youtube-transcript"),
 }
 
@@ -31,7 +31,7 @@ const faqs = [
     a: "No. The pre-extraction scan shows which videos are already in your library and excludes them from the job. You won't be charged for transcripts you already have.",
   },
   {
-    q: "Can I mix auto-caption and AI Transcription in the same playlist?",
+    q: "Can I mix YouTube captions and AI Transcription in the same playlist?",
     a: "Yes. Toggle AI Transcription per video in the selection screen. Videos with auto-captions default to free caption extraction; you can upgrade individual videos to AI Transcription where higher accuracy matters.",
   },
 ]
@@ -42,7 +42,7 @@ export default function BulkYouTubeTranscriptPage() {
       category="Workflows"
       slug="bulk-youtube-transcript"
       title="Bulk YouTube Transcript Downloader — Extract Entire Playlists at Once"
-      metaDescription="Download transcripts from entire YouTube playlists in one extraction. First 3 auto-caption videos free. Real-time progress. Export as TXT, Markdown, SRT, JSON, or RAG-ready ZIP."
+      metaDescription="Download transcripts from entire YouTube playlists in one extraction. First 3 YouTube caption videos free. Real-time progress. Export as TXT, Markdown, SRT, JSON, or RAG-ready ZIP."
       publishedAt="2026-04-16"
       updatedAt="2026-04-16"
       author={AUTHORS["indxr-editorial"]}
@@ -93,8 +93,8 @@ export default function BulkYouTubeTranscriptPage() {
       <h2>What&apos;s Free and What Costs Credits</h2>
 
       <p>
-        The first three <strong>auto-caption</strong> videos in any playlist extraction are always free.
-        Auto-caption extraction for additional videos costs 1 credit per video from video four onward. AI
+        The first three <strong>YouTube caption</strong> videos in any playlist extraction are always free.
+        YouTube caption extraction for additional videos costs 1 credit per video from video four onward. AI
         Transcription always costs 1 credit per minute regardless of position in the playlist.
       </p>
 
@@ -106,8 +106,8 @@ export default function BulkYouTubeTranscriptPage() {
 
       <p><strong>Example: 10-video research playlist, 4 videos without captions (avg 20 min)</strong></p>
       <ul>
-        <li>Videos 1–3: Free (assuming auto-captions)</li>
-        <li>Videos 4–6 (auto-captions): 3 credits</li>
+        <li>Videos 1–3: Free (assuming YouTube captions)</li>
+        <li>Videos 4–6 (YouTube captions): 3 credits</li>
         <li>4 videos × AI Transcription × 20 min: 80 credits</li>
         <li>Total: 83 credits ({creditCostPhrase(83)})</li>
       </ul>

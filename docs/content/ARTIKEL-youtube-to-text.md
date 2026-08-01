@@ -1,7 +1,7 @@
 # Convert YouTube Videos to Text — Free, Instant, No Extension
 
 **Meta title:** Convert YouTube to Text — Free Transcript Extractor | INDXR.AI
-**Meta description:** Convert any YouTube video to text in seconds. Free for videos with auto-captions. AI transcription for videos without. Download as TXT, Markdown, SRT, JSON, and more.
+**Meta description:** Convert any YouTube video to text in seconds. Free for videos with YouTube captions. AI transcription for videos without. Download as TXT, Markdown, SRT, JSON, and more.
 **Slug:** /youtube-to-text
 **Schema:** SoftwareApplication + FAQPage + WebApplication
 **Internal links:** /youtube-transcript-generator, /pricing, /youtube-transcript-not-available, /audio-to-text
@@ -35,7 +35,7 @@ The conversion from video to text is the same operation. The output format deter
 
 ---
 
-## When Auto-Captions Exist
+## When YouTube Captions Exist
 
 For the roughly 80% of YouTube videos with auto-generated captions, conversion is immediate and free. INDXR.AI retrieves the caption data from YouTube and delivers it in whatever format you select.
 
@@ -43,7 +43,7 @@ Auto-captions have one meaningful limitation: they lack punctuation and capitali
 
 ---
 
-## When Auto-Captions Don't Exist
+## When YouTube Captions Don't Exist
 
 About 20% of YouTube videos have no auto-generated captions (YouTube Help, support.google.com/youtube/answer/6373554). Common reasons: the creator disabled captions, the video is in a language YouTube doesn't process well, the audio quality was too poor for YouTube's speech recognition, or the video was uploaded before YouTube's auto-caption rollout.
 
@@ -74,23 +74,23 @@ All formats export from the same transcript. Extract once, re-export in any form
 ## Frequently Asked Questions
 
 **Is this actually free?**
-For auto-caption videos: yes, completely. No account needed to extract and download as TXT. Creating a free account unlocks all export formats and gives you 25 credits for testing AI transcription.
+For YouTube caption videos: yes, completely. No account needed to extract and download as TXT. Creating a free account unlocks all export formats and gives you 25 credits for testing AI transcription.
 
 **How is this different from just copying YouTube's transcript?**
 YouTube's "Show transcript" button only works when captions exist, only displays text on-screen, and can only be copied manually. INDXR.AI works when captions don't exist (AI transcription), exports in eight formats, resegments subtitle timing for professional use, and saves everything to a searchable library for re-export later.
 
 **Does it work for non-English videos?**
-Auto-caption extraction works for any language YouTube supports (67 languages). AI Transcription supports 99+ languages with automatic detection — no need to specify the language.
+YouTube caption extraction works for any language YouTube supports (67 languages). AI Transcription supports 99+ languages with automatic detection — no need to specify the language.
 
 **Can I convert a whole playlist to text at once?**
-Yes. The Playlist tab accepts any YouTube playlist URL and processes all selected videos in a single job. First three auto-caption videos are free; additional auto-caption videos cost 1 credit each from video four onward. This free tier applies only to auto-caption videos — any video requiring AI Transcription costs 1 credit per minute with no discount, regardless of its position in the playlist.
+Yes. The Playlist tab accepts any YouTube playlist URL and processes all selected videos in a single job. First three YouTube caption videos are free; additional YouTube caption videos cost 1 credit each from video four onward. This free tier applies only to YouTube caption videos — any video requiring AI Transcription costs 1 credit per minute with no discount, regardless of its position in the playlist.
 
 **What about YouTube Shorts?**
-Yes. Paste the Short's URL the same way as any other video. Shorts follow YouTube's standard caption system — auto-captions available for most, AI transcription available when they're not.
+Yes. Paste the Short's URL the same way as any other video. Shorts follow YouTube's standard caption system — captions available for most, AI transcription available when they're not.
 
 **How accurate is AI transcription?**
 INDXR.AI's AI transcription automatically routes each video to the best model for its language — led by AssemblyAI Universal-3.5 Pro, our highest-quality model, which achieves 94–96%+ accuracy on clean audio for its supported languages, with broad coverage across 99+ languages otherwise. For challenging audio conditions — background noise, accents, overlapping speakers — accuracy varies but consistently outperforms YouTube's auto-captioning system.
 
 ---
 
-*Paste a YouTube URL above to convert it to text. Auto-caption videos are always free.*
+*Paste a YouTube URL above to convert it to text. YouTube caption videos are always free.*

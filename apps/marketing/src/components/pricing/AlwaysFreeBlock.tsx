@@ -5,7 +5,7 @@ export function AlwaysFreeBlock() {
     <div className="max-w-2xl mx-auto mb-10 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-center">
       <p className="text-sm text-[var(--fg-subtle)]">
         <strong className="text-[var(--fg)]">Always free:</strong>{" "}
-        single video auto-caption extraction (unlimited for registered users), all export formats, 25 welcome credits on signup.
+        single-video YouTube caption extraction (unlimited for registered users), all export formats, 25 welcome credits on signup.
       </p>
     </div>
   )

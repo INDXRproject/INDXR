@@ -91,7 +91,7 @@ Chunk size is only half the story. Retrieval quality also depends heavily on wha
 
 At minimum, each chunk should carry: video ID, video title, channel name, start and end timestamps (as floats for computation, as formatted strings for display), and a pre-constructed deep link to the exact timestamp in the video. The deep link matters because it's the citation — "According to [Title] at 12:34, ..." is only useful if the viewer can actually jump to that moment.
 
-Optional but valuable: chapter title (if the video has YouTube chapters), language code, and whether the transcript came from auto-captions or AI transcription. The `is_auto_generated` flag in particular lets downstream pipelines apply different confidence weighting to auto-caption chunks versus AI-transcribed ones.
+Optional but valuable: chapter title (if the video has YouTube chapters), language code, and whether the transcript came from YouTube captions or AI transcription. The `is_auto_generated` flag in particular lets downstream pipelines apply different confidence weighting to YouTube caption chunks versus AI-transcribed ones.
 
 ---
 

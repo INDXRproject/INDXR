@@ -31,7 +31,7 @@ Tactiq also has workflow integrations for CRM tools, project management platform
 
 **Batch processing.** Tactiq processes one meeting at a time. INDXR.AI extracts entire playlists in a single background job — tested up to 19 videos across 13 hours of audio in under 19 minutes.
 
-**Videos without captions.** Tactiq's YouTube tool depends on existing YouTube captions. If a video has no auto-captions, there's no fallback. INDXR.AI uses AI transcription for captionless videos — the same pipeline that handles audio uploads from any source.
+**Videos without captions.** Tactiq's YouTube tool depends on existing YouTube captions. If a video has no YouTube captions, there's no fallback. INDXR.AI uses AI transcription for captionless videos — the same pipeline that handles audio uploads from any source.
 
 **Pricing model.** Tactiq uses a subscription model. INDXR.AI uses pay-per-use credits that never expire. For users with irregular or variable YouTube processing needs, credits are typically cheaper than maintaining a monthly subscription.
 
@@ -75,11 +75,11 @@ Tactiq has a YouTube transcript tool but it's limited to one video at a time wit
 No. INDXR.AI processes existing video and audio content — YouTube URLs, playlists, and uploaded files. It doesn't integrate with video conferencing platforms or capture live audio from your browser.
 
 **Is INDXR.AI cheaper than Tactiq?**
-For YouTube-only use cases, yes. INDXR.AI's auto-caption extraction is free. AI transcription costs 1 credit per minute — a 1-hour video at Plus pricing costs €0.70. Tactiq's subscription pricing applies regardless of how much you use it.
+For YouTube-only use cases, yes. INDXR.AI's YouTube caption extraction is free. AI transcription costs 1 credit per minute — a 1-hour video at Plus pricing costs €0.70. Tactiq's subscription pricing applies regardless of how much you use it.
 
 **Can I use both tools together?**
 Yes — they serve different sources. Tactiq for meetings you attend, INDXR.AI for YouTube content you research or reference. The workflows don't overlap.
 
 ---
 
-*[Try INDXR.AI for YouTube](/youtube-transcript-generator) — free for auto-caption videos, no account required.*
+*[Try INDXR.AI for YouTube](/youtube-transcript-generator) — free for YouTube caption videos, no account required.*

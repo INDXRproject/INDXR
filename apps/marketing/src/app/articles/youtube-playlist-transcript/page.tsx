@@ -9,14 +9,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-playlist-transcript" },
   title: "YouTube Playlist Transcript Extractor — Batch Download in Minutes | INDXR.AI",
   description:
-    "Extract transcripts from entire YouTube playlists in one job. First 3 auto-caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats.",
+    "Extract transcripts from entire YouTube playlists in one job. First 3 YouTube caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats.",
   ...editorialOg("youtube-playlist-transcript"),
 }
 
 const faqs = [
   {
     q: "Are the first three videos always free regardless of method?",
-    a: "No — and this is important to understand. The first three videos are free only for auto-caption extraction. If any of those videos requires AI Transcription (because they have no captions, or because you've specifically toggled AI Transcription for them), that transcription costs 1 credit per minute at the standard rate. The 'free' applies to the per-video caption processing fee, not to AI transcription costs.",
+    a: "No — and this is important to understand. The first three videos are free only for YouTube caption extraction. If any of those videos requires AI Transcription (because they have no captions, or because you've specifically toggled AI Transcription for them), that transcription costs 1 credit per minute at the standard rate. The 'free' applies to the per-video caption processing fee, not to AI transcription costs.",
   },
   {
     q: "What happens if I close the browser mid-extraction?",
@@ -35,7 +35,7 @@ const faqs = [
     a: "Yes, if the playlist URL is accessible with the link. Unlisted playlists (visible to anyone with the URL) work the same as public ones. Private playlists that require YouTube login cannot be accessed.",
   },
   {
-    q: "Can I mix auto-captions and AI Transcription in the same playlist extraction?",
+    q: "Can I mix YouTube captions and AI Transcription in the same playlist extraction?",
     a: "Yes. The pre-extraction screen lets you toggle AI Transcription per video. Videos with auto-captions default to caption extraction; you can upgrade individual videos to AI Transcription where higher quality matters — for example, enabling AI Transcription for the key lectures in a course and using free captions for introductory videos you just need to skim.",
   },
 ]
@@ -46,7 +46,7 @@ export default function YouTubePlaylistTranscriptPage() {
       category="Workflows"
       slug="youtube-playlist-transcript"
       title="YouTube Playlist Transcript — Extract All Videos at Once"
-      metaDescription="Extract transcripts from entire YouTube playlists in one job. First 3 auto-caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats."
+      metaDescription="Extract transcripts from entire YouTube playlists in one job. First 3 YouTube caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats."
       publishedAt="2026-04-16"
       updatedAt="2026-04-16"
       author={AUTHORS["indxr-editorial"]}
@@ -76,7 +76,7 @@ export default function YouTubePlaylistTranscriptPage() {
       <p>
         The pre-extraction screen shows each video with two indicators: whether auto-captions are
         available, and whether a transcript already exists in your library. Videos already in your library
-        are flagged with colored badges — amber for existing auto-caption transcripts, violet for existing
+        are flagged with colored badges — amber for existing YouTube caption transcripts, violet for existing
         AI transcriptions — and excluded from the extraction count by default. No duplicate charges.
       </p>
 
@@ -97,21 +97,21 @@ export default function YouTubePlaylistTranscriptPage() {
 
       <p>
         The first three videos with <strong>auto-captions</strong> in any playlist extraction are free.
-        From video four onwards, auto-caption extraction costs 1 credit per video. AI Transcription always
+        From video four onwards, YouTube caption extraction costs 1 credit per video. AI Transcription always
         costs 1 credit per minute regardless of position in the playlist.
       </p>
 
       <p><strong>Example 1: 20-video course, all auto-captions available</strong></p>
       <ul>
-        <li>Videos 1–3 (auto-captions): Free</li>
-        <li>Videos 4–20 (auto-captions): 17 credits</li>
+        <li>Videos 1–3 (YouTube captions): Free</li>
+        <li>Videos 4–20 (YouTube captions): 17 credits</li>
         <li>Total: <strong>17 credits</strong> ({creditCostPhrase(17)})</li>
       </ul>
 
       <p><strong>Example 2: 20-video course, 5 videos without captions averaging 15 minutes each</strong></p>
       <ul>
-        <li>Videos 1–3 (auto-captions): Free</li>
-        <li>Videos 4–15 (auto-captions): 12 credits</li>
+        <li>Videos 1–3 (YouTube captions): Free</li>
+        <li>Videos 4–15 (YouTube captions): 12 credits</li>
         <li>5 videos × AI Transcription × 15 min: 75 credits</li>
         <li>Total: <strong>87 credits</strong> ({creditCostPhrase(87)})</li>
       </ul>
