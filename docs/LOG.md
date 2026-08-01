@@ -14649,3 +14649,15 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/decisions/085-transcript-page-redesign.md
 docs/wiki/design/library-source-map.md
 ---
+[2026-08-01 15:11] commit: fix(transcript): hide video affordance for uploaded audio (no video_id)
+
+Uploaded audio has no YouTube video_id, so the nocookie player rendered a
+black square and 'Watch on YouTube'/paragraph timestamps pointed at
+watch?v=null. Now: no 'Watch video' collapse or player, no 'Watch on
+YouTube' item, and paragraph timestamps render as plain position markers
+(not broken links) when there is no video. JSON export omits videoUrl too.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/library/[id]/page.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+---

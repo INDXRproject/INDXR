@@ -233,6 +233,9 @@ function transcriptToJSON(
   isAi: boolean
 ): JSONContent {
   const paras = buildReadingParagraphs(items, { isAi });
+  // Uploaded audio has no YouTube video_id → render the timestamp as a plain position
+  // marker, not a broken `watch?v=null` link that seeks a player that isn't there.
+  const hasVideo = !!videoId;
   return {
     type: "doc",
     content: paras.map((para) => ({
@@ -240,17 +243,19 @@ function transcriptToJSON(
       content: [
         {
           type: "text",
-          marks: [
-            {
-              type: "link",
-              attrs: {
-                href: `https://youtube.com/watch?v=${videoId}&t=${Math.floor(para.startOffset)}s`,
-                target: "_blank",
-                rel: "noopener noreferrer",
-                class: "ts-link",
+          ...(hasVideo && {
+            marks: [
+              {
+                type: "link",
+                attrs: {
+                  href: `https://youtube.com/watch?v=${videoId}&t=${Math.floor(para.startOffset)}s`,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  class: "ts-link",
+                },
               },
-            },
-          ],
+            ],
+          }),
           text: `[${formatUITimestamp(para.startOffset)}]`,
         },
         { type: "text", text: ` ${para.text}` },
@@ -312,6 +317,10 @@ export function TranscriptViewer({
   // Title is display/edit-owned by the page header (TranscriptHeader); here it's read-only
   // (used for exports/copy/video panel).
   const title = initialTitle;
+
+  // Uploaded audio has no YouTube video_id → no "Watch video"/"Watch on YouTube" affordance
+  // (a nocookie player with no id renders a black square, which reads as broken).
+  const hasVideo = !!videoId;
 
   // Editor mode state
   const isOriginalMode = mode === "original";
@@ -502,7 +511,7 @@ export function TranscriptViewer({
         downloadFile(
           JSON.stringify(
             {
-              metadata: { title, videoUrl, extractedAt: new Date().toISOString() },
+              metadata: { title, ...(videoUrl && { videoUrl }), extractedAt: new Date().toISOString() },
               transcript: transcript.map((t) => ({ ...t, text: decodeEntities(t.text) })),
             },
             null,
@@ -817,11 +826,13 @@ export function TranscriptViewer({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <a href={`https://youtu.be/${videoId}`} target="_blank" rel="noopener noreferrer">
-                    <Play className="mr-2 h-4 w-4" /> Watch on YouTube
-                  </a>
-                </DropdownMenuItem>
+                {hasVideo && (
+                  <DropdownMenuItem asChild>
+                    <a href={`https://youtu.be/${videoId}`} target="_blank" rel="noopener noreferrer">
+                      <Play className="mr-2 h-4 w-4" /> Watch on YouTube
+                    </a>
+                  </DropdownMenuItem>
+                )}
                 {isOriginalMode && (
                   <DropdownMenuItem
                     disabled={isSummarizing || !user}
@@ -850,8 +861,9 @@ export function TranscriptViewer({
             </DropdownMenu>
           </div>
 
-          {/* Video — zero pixels when closed; nocookie player, sticky under the tabs, when open */}
-          {!showVideo ? (
+          {/* Video — zero pixels when closed; nocookie player, sticky under the tabs, when open.
+              Only for YouTube sources; uploaded audio has no video to show. */}
+          {hasVideo && (!showVideo ? (
             <button onClick={() => setShowVideo(true)} className="flex items-center gap-2 text-sm text-fg-muted hover:text-fg transition-colors" aria-label="Watch video">
               <Play className="h-4 w-4 fill-current" />
               Watch video
@@ -867,7 +879,7 @@ export function TranscriptViewer({
                 <ChevronUp className="h-3.5 w-3.5" /> Hide video
               </button>
             </div>
-          )}
+          ))}
 
                 {/* Title lives in the page header (TranscriptHeader) — not repeated here. */}
                 {contentSaveFeedback && (
