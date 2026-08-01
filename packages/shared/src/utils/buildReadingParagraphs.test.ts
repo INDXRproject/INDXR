@@ -105,4 +105,24 @@ test("maxChars caps a fast speaker before the duration cap (no word walls)", () 
   for (const p of paras) assert.ok(p.text.length <= READING_PARAGRAPH_CONFIG.maxChars + 210, `paragraph ${p.text.length} chars overruns the guardrail`);
 });
 
+// ── 9. Char cap does NOT cut mid-sentence when punctuation is reachable ───────
+test("punctuated AI transcript: paragraphs end at sentence boundaries (no mid-sentence cut)", () => {
+  // Periods land MID-segment (AssemblyAI style). 40 segs × 5s. The char cap must run on to the
+  // next sentence end rather than slicing a sentence.
+  const endsSentence = (s: string) => /[.!?]["')\]]*$/.test(s.trim());
+  const segs: TranscriptItem[] = [];
+  for (let i = 0; i < 40; i++) {
+    segs.push(seg(i * 5, 5,
+      i % 2 === 0
+        ? "the speaker keeps going and going without stopping here yet at"
+        : "all up to this point. then a brand new sentence starts again here"));
+  }
+  const paras = buildReadingParagraphs(segs, { isAi: true });
+  const withPunct = paras.filter((p) => endsSentence(p.text)).length;
+  // All but maybe the last paragraph should end cleanly on a sentence.
+  assert.ok(withPunct >= paras.length - 1, `${withPunct}/${paras.length} paragraphs end on a sentence`);
+  assert.ok(paras.length >= 3, "should split a 200s transcript");
+  for (const p of paras) assert.ok(p.text.length <= READING_PARAGRAPH_CONFIG.maxChars + 80, `paragraph ${p.text.length} chars over guardrail`);
+});
+
 console.log(`\n${passed} passed`);

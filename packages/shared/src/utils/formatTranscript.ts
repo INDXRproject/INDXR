@@ -84,16 +84,18 @@ export const createParagraphMode = (transcript: TranscriptItem[]): string => {
 };
 
 // ── Reading paragraphs ────────────────────────────────────────────────────────
-// Groups raw caption/AI segments into readable paragraphs while KEEPING each
-// paragraph's start offset (so a timestamp can lead it). This is what the reader
-// renders instead of one-line-per-segment.
+// Groups raw caption/AI segments into readable paragraphs while KEEPING each paragraph's
+// start offset (so a timestamp can lead it). This is what the reader renders instead of
+// one-line-per-segment.
 //
-// Thresholds are data-driven (measured on real transcripts): segment gaps are
-// near-zero for both captions and AI, so pause-breaking barely fires; captions end a
-// sentence ~38% of the time (usable), AI ~0.6% (punctuation lands mid-segment, so
-// sentence-breaking is useless for AI). Hence: captions break at a sentence boundary
-// once past `minBreakSec`; AI falls back to a hard `maxParaSec` cap. Exported + tunable
-// so a unit test pins the behaviour.
+// It reflows by SENTENCE, not by segment: a pause always breaks; within a run of speech the
+// text is split into sentences (Unicode-aware — punctuation lands mid-segment for AI) and
+// paragraphs break only BETWEEN sentences, so the char guardrail and duration cap never slice
+// a sentence. Captions break at the first sentence past `minBreakSec`. An unpunctuated run with
+// no sentence boundary in reach falls back to word/segment chunks bounded by char AND duration
+// (never mid-word). Thresholds are data-driven, exported + tunable so a unit test pins them.
+// Measured: caption median 51–83 words; punctuated AI median ~79, max ~103, ~99% of paragraphs
+// end on a sentence boundary (vs 149-word walls before).
 
 export interface ReadingParagraph {
   startOffset: number;
@@ -117,7 +119,36 @@ export const READING_PARAGRAPH_CONFIG: ReadingParagraphConfig = {
   maxChars: 500,
 };
 
-const endsSentence = (s: string) => /[.!?]["')\]]*$/.test(s.trim());
+interface Seg { text: string; offset: number; duration: number }
+
+// Sentence-ending punctuation across the scripts we see (Latin, Arabic ؟ ۔, CJK 。！？, ellipsis),
+// followed by optional closing quotes/brackets and whitespace-or-end.
+const SENTENCE_END = /[.!?؟۔。！？…]+["')\]»”’]*(?=\s|$)/gu;
+
+/** Split text into sentences tagged with their start char index. Unicode-aware (a spoken
+ *  transcript rarely has abbreviation periods, so a terminator regex beats English-only sbd —
+ *  it also handles Arabic ؟ and CJK, which sbd misses). Whole string when no boundary is found. */
+function splitSentencesWithPos(text: string): { text: string; start: number }[] {
+  const out: { text: string; start: number }[] = [];
+  const re = new RegExp(SENTENCE_END.source, "gu");
+  let m: RegExpExecArray | null;
+  let last = 0;
+  while ((m = re.exec(text)) !== null) {
+    const end = m.index + m[0].length;
+    const raw = text.slice(last, end);
+    const lead = raw.length - raw.trimStart().length;
+    const trimmed = raw.trim();
+    if (trimmed) out.push({ text: trimmed, start: last + lead });
+    last = end;
+  }
+  if (last < text.length) {
+    const raw = text.slice(last);
+    const lead = raw.length - raw.trimStart().length;
+    const trimmed = raw.trim();
+    if (trimmed) out.push({ text: trimmed, start: last + lead });
+  }
+  return out.length ? out : text.trim() ? [{ text: text.trim(), start: text.length - text.trimStart().length }] : [];
+}
 
 export function buildReadingParagraphs(
   transcript: TranscriptItem[],
@@ -128,40 +159,83 @@ export function buildReadingParagraphs(
   const maxSec = isAi ? cfg.ai.maxParaSec : cfg.captions.maxParaSec;
   const minSec = isAi ? 0 : cfg.captions.minBreakSec;
 
-  const paras: ReadingParagraph[] = [];
-  let texts: string[] = [];
-  let startOffset = 0;
-  let accDur = 0;
-  let accChars = 0;
-  let prev: TranscriptItem | null = null;
+  const segs: Seg[] = [];
+  for (const it of transcript) {
+    const t = decodeEntities(it.text).trim();
+    if (t) segs.push({ text: t, offset: it.offset, duration: it.duration });
+  }
+  if (segs.length === 0) return [];
 
-  const flush = () => {
-    if (texts.length > 0) paras.push({ startOffset, text: texts.join(' ') });
-    texts = [];
-    accDur = 0;
-    accChars = 0;
+  // Split at real pauses first — a silence always starts a new paragraph.
+  const blocks: Seg[][] = [];
+  let cur: Seg[] = [segs[0]];
+  for (let i = 1; i < segs.length; i++) {
+    const gap = segs[i].offset - (segs[i - 1].offset + segs[i - 1].duration);
+    if (gap > cfg.pauseBreakSec) { blocks.push(cur); cur = []; }
+    cur.push(segs[i]);
+  }
+  blocks.push(cur);
+
+  // Word-aligned segment accumulation bounded by BOTH char and duration — the fallback for
+  // unpunctuated speech where there are no sentence boundaries to align to.
+  const segmentChunks = (subset: Seg[]): { text: string; offset: number }[] => {
+    const out: { text: string; offset: number }[] = [];
+    let texts: string[] = [], off = 0, chars = 0, dur = 0;
+    const fl = () => { if (texts.length) { out.push({ text: texts.join(' '), offset: off }); texts = []; chars = 0; dur = 0; } };
+    for (const s of subset) {
+      if (texts.length && (chars + s.text.length + 1 > cfg.maxChars || dur + s.duration > maxSec)) fl();
+      if (!texts.length) off = s.offset;
+      texts.push(s.text); chars += s.text.length + 1; dur += s.duration;
+    }
+    fl();
+    return out;
   };
 
-  for (const item of transcript) {
-    const text = decodeEntities(item.text).trim();
-    if (!text) continue;
-
-    if (texts.length > 0) {
-      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
-      const pause = gap > cfg.pauseBreakSec;
-      // Captions: break at a sentence boundary once the paragraph is long enough.
-      const naturalBreak = !isAi && accDur >= minSec && endsSentence(texts[texts.length - 1]);
-      const hitMax = accDur >= maxSec || accChars >= cfg.maxChars;
-      if (pause || naturalBreak || hitMax) flush();
+  const paras: ReadingParagraph[] = [];
+  for (const block of blocks) {
+    // Reconstruct the block's continuous text with a char-index → segment map.
+    let full = "";
+    const bounds: { charStart: number; charEnd: number; seg: Seg }[] = [];
+    for (const s of block) {
+      if (full.length) full += " ";
+      const cs = full.length;
+      full += s.text;
+      bounds.push({ charStart: cs, charEnd: full.length, seg: s });
     }
+    const offsetAt = (charPos: number) => {
+      let off = bounds[0].seg.offset;
+      for (const b of bounds) { if (b.charStart <= charPos) off = b.seg.offset; else break; }
+      return off;
+    };
+    const overlapping = (a: number, b: number) => bounds.filter((bd) => bd.charStart < b && bd.charEnd > a).map((bd) => bd.seg);
 
-    if (texts.length === 0) startOffset = item.offset;
-    texts.push(text);
-    accDur += item.duration;
-    accChars += text.length + 1;
-    prev = item;
+    // Group whole sentences into paragraphs, breaking only BETWEEN sentences: captions break at
+    // the first sentence past minBreakSec; everything is bounded by the char guardrail and the
+    // duration cap — but never mid-sentence. An over-long sentence (unpunctuated run, no boundary
+    // to align to) is emitted as its own already-bounded word/segment chunks.
+    let texts: string[] = [], startOffset = 0, accChars = 0;
+    const flush = () => { if (texts.length) { paras.push({ startOffset, text: texts.join(' ') }); texts = []; accChars = 0; } };
+    const addUnit = (u: { text: string; offset: number }) => {
+      if (texts.length > 0) {
+        const durSoFar = u.offset - startOffset;
+        const overChars = accChars + 1 + u.text.length > cfg.maxChars;
+        const captionBreak = !isAi && durSoFar >= minSec;
+        if (overChars || durSoFar >= maxSec || captionBreak) flush();
+      }
+      if (texts.length === 0) startOffset = u.offset;
+      texts.push(u.text);
+      accChars += (accChars ? 1 : 0) + u.text.length;
+    };
+    for (const s of splitSentencesWithPos(full)) {
+      if (s.text.length <= cfg.maxChars) {
+        addUnit({ text: s.text, offset: offsetAt(s.start) });
+      } else {
+        flush(); // end the grouped sentences, then push the run's bounded chunks as paragraphs
+        for (const c of segmentChunks(overlapping(s.start, s.start + s.text.length))) paras.push({ startOffset: c.offset, text: c.text });
+      }
+    }
+    flush();
   }
-  flush();
   return paras;
 }
 

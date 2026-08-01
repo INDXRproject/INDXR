@@ -1,3 +1,5 @@
+[2026-08-01 13:00] fix (alinea-drempel — geen mid-zin-knip): `buildReadingParagraphs` herschreven van segment-accumulatie naar **sentence-reflow**: pause breekt altijd; binnen een spraak-run wordt de tekst in zinnen gesplitst (Unicode-aware — punctuatie valt mid-segment bij AI) en breekt een alinea alleen **tussen zinnen**, zodat de char-guardrail (`maxChars`) en de duur-cap nooit een zin doorknippen. Captions breken op de eerste zin ná `minBreakSec`. Een ongepunctueerde run zonder zinsgrens in bereik valt terug op woord-/segment-chunks begrensd door char **én** duur (nooit mid-woord). **Unicode-splitter** (Latin `.!?` + Arabisch `؟ ۔` + CJK `。！？` + ellipsis) i.p.v. Engels-only `sbd` in dit pad. **Gemeten op echte transcripten:** snel AI `ddfc590d` nu median 79 / max 103 woorden en **99% van de alinea's eindigt op een zinsgrens** (was 149-woord-muren); captions 97%; Arabisch `52a68136` 30% (lange run-on zinnen → begrensde woord-breaks, nog steeds geen muren/mid-woord). Unit-test uitgebreid naar **9 checks** incl. "punctuated AI eindigt op zinsgrens". `pnpm build` groen (2/2). | gewijzigd: packages/shared/src/utils/formatTranscript.ts, packages/shared/src/utils/buildReadingParagraphs.test.ts, docs/LOG.md
+---
 [2026-08-01 11:30] feat (Transcriptpagina Fase 3a — nocookie video+seek, stale-notice, privacy): **Video privacy+interactie:** nieuw `NocookieYouTubePlayer` (IFrame Player API `host=youtube-nocookie.com`, **lazy** — script + speler laden pas als de gebruiker de video opent, geen cookie tot playback); `TranscriptViewer` iframe→player, `getEmbedUrl` (cookieful youtube.com/embed) verwijderd. **In-app seek:** tijdstempel-klik in het transcript → `player.seekTo()` + opent de speler (href blijft no-JS-fallback). Leescanvas 68ch op de ProseMirror. **Embed-audit:** dit was de enige cookieful YouTube-embed in de repo → nocookie-omzetting repo-breed consistent. **Stale-summary:** migratie `20260801120000_edited_content_updated_at` (kolom), gezet in **beide** edited_content-writers (`TranscriptViewer.handleSave`→now(), `transcribe/page.tsx` reset→null); `AiSummaryView` toont een `warning`-banner + Regenerate-link wanneer `generated_at < edited_content_updated_at`. **Legacy-check:** de 2 bestaande edited-rijen bleken **echte edits** (bevatten "Edited version") — niet gecleared (rigoreus geverifieerd via plaintext-vergelijk); origineel rendert altijd merged, nieuwe edits seeden merged → geen poem-vs-merged-divergentie. **Privacy-verklaring** (`privacy/page.tsx`) uitgebreid met accurate nocookie-embed-disclosure ("niets van YouTube tot je de speler opent"). `pnpm build` groen (2/2). Header/toolbar-restructuur = resterend. | gewijzigd: supabase/migrations/20260801120000_edited_content_updated_at.sql (nieuw), apps/app/src/components/library/{NocookieYouTubePlayer.tsx (nieuw),TranscriptViewer,AiSummaryView}.tsx, apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/app/dashboard/transcribe/page.tsx, apps/marketing/src/app/privacy/page.tsx, docs/LOG.md
 ---
 [2026-08-01 10:40] feat (Transcriptpagina Fase 2a — tab-laag): conditionele tabs + **content-fallback** in `[id]/page.tsx` (tabs verschijnen alleen als de inhoud bestaat; een `?tab` waarvan de inhoud weg is valt terug op Transcript — geen dood tabblad meer, was de bug). Labels hernoemd: Original→**Transcript**, AI Summary→**Summary**, Edited Summary→**Edited summary**, ✦ weg; mockup-volgorde (Transcript/Edited/Summary/Edited summary/Developer). Nieuw client-component `TranscriptTabs.tsx`: desktop-strip + **mobiele view-selector** ("Transcript · 1 of N ▾" → bottom-sheet, elke tab bereikbaar op 360px zonder horizontaal scrollen, raakvlakken ≥44px). URL-`?tab`-ids stabiel gehouden (original/edited/…). data-testids toegevoegd. `pnpm build:app` groen. | gewijzigd: apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/components/library/TranscriptTabs.tsx (nieuw), docs/LOG.md
@@ -14580,4 +14582,25 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 docs/wiki/INDEX.md
 docs/wiki/decisions/085-transcript-page-redesign.md
+---
+[2026-08-01 13:54] commit: fix(reading): sentence-reflow so the char guardrail never cuts mid-sentence
+
+buildReadingParagraphs now reflows by sentence: a pause always breaks; within a
+run of speech the text is split into sentences (Unicode-aware — punctuation
+lands mid-segment for AI) and paragraphs break only BETWEEN sentences, so the
+char guardrail and duration cap never slice a sentence. Captions break at the
+first sentence past minBreakSec. An unpunctuated run with no sentence boundary
+in reach falls back to word/segment chunks bounded by char AND duration (never
+mid-word). Unicode splitter (Latin + Arabic ؟ ۔ + CJK) replaces English-only sbd
+in this path.
+
+Measured on real transcripts: fast AI ddfc590d now median 79 / max 103 words and
+99% of paragraphs end on a sentence boundary (was 149-word walls); captions 97%;
+Arabic 52a68136 30% (long run-on sentences → bounded word-breaks, still no
+walls/mid-word). Unit test extended to 9 checks. pnpm build green (2/2).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+packages/shared/src/utils/buildReadingParagraphs.test.ts
+packages/shared/src/utils/formatTranscript.ts
 ---
