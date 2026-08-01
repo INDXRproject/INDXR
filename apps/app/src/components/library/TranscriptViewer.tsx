@@ -311,7 +311,6 @@ export function TranscriptViewer({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isEditingOriginal, setIsEditingOriginal] = useState(false);
   const [showSearch, setShowSearch] = useState(false); // Find is a button, not a permanent field
   const [textSize, setTextSize] = useState<"s" | "m" | "l">("m"); // Display menu → reading size
 
@@ -389,7 +388,7 @@ export function TranscriptViewer({
   const initialContent: JSONContent = isEditedMode && editedContent ? editedContent : originalJSON;
 
   const editor = useEditor({
-    editable: isEditedMode || isEditingOriginal,
+    editable: isEditedMode,
     immediatelyRender: false,
     extensions: [
       StarterKit,
@@ -405,21 +404,21 @@ export function TranscriptViewer({
       attributes: {
         class: cn(
           "prose prose-sm max-w-none focus:outline-none min-h-[300px] text-fg/90 leading-relaxed",
-          (!isEditedMode && !isEditingOriginal) && "read-only-mode" 
+          !isEditedMode && "read-only-mode"
         )
       },
     },
     onUpdate: () => {
       setIsDirty(true);
     },
-  }, [mode, isEditingOriginal, isEditedMode]); // Reinitialize if mode or editing state changes
+  }, [mode, isEditedMode]); // Reinitialize if mode changes
 
   // Synchronize editor editable state
   useEffect(() => {
     if (editor) {
-      editor.setEditable(isEditedMode || isEditingOriginal);
+      editor.setEditable(isEditedMode);
     }
-  }, [editor, isEditedMode, isEditingOriginal]);
+  }, [editor, isEditedMode]);
 
   // ── Explicit Save ──────────────────────────────────────────────────────────
 
@@ -448,13 +447,9 @@ export function TranscriptViewer({
     } else {
       setIsDirty(false);
       setHasSavedEdits(true);
-      setIsEditingOriginal(false);
       setContentSaveFeedback({ type: 'success', message: 'Saved!' });
-      if (!isEditedMode) {
-        router.replace(`?tab=edited`);
-      }
     }
-  }, [editor, id, supabase, router, isEditedMode]);
+  }, [editor, id, supabase]);
 
   // ── Search ────────────────────────────────────────────────────────────────
 
@@ -806,17 +801,10 @@ export function TranscriptViewer({
                 <Pencil className="h-3.5 w-3.5" /> Edit
               </Button>
             )}
-            {(isEditedMode || isEditingOriginal) && (
-              <>
-                {isEditingOriginal && (
-                  <Button variant="ghost" size="sm" className="h-8 px-3" onClick={() => { setIsEditingOriginal(false); setIsDirty(false); editor?.commands.setContent(originalJSON); }}>
-                    Cancel
-                  </Button>
-                )}
-                <Button size="sm" className="h-8 gap-1.5 px-3" onClick={handleSave} disabled={isSaving || !editor || !isDirty}>
-                  {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save
-                </Button>
-              </>
+            {isEditedMode && (
+              <Button size="sm" className="h-8 gap-1.5 px-3" onClick={handleSave} disabled={isSaving || !editor || !isDirty}>
+                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save
+              </Button>
             )}
 
             {/* Overflow — rare & paid actions, so they never crowd the row on mobile */}
@@ -960,7 +948,7 @@ export function TranscriptViewer({
                 )}
 
                 {/* Formatting toolbar (edit mode) */}
-                {(isEditedMode || isEditingOriginal) && (
+                {isEditedMode && (
                   <div className="flex items-center gap-2 p-2 rounded-lg border border-border flex-wrap mb-4 bg-surface-elevated/30">
                     <Button
                       variant="ghost"

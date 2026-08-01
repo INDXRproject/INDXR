@@ -14680,3 +14680,15 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 docs/LOG.md
 ---
+[2026-08-01 15:49] commit: refactor(library): remove dead code orphaned by the redesign
+
+- TranscriptViewer: drop isEditingOriginal (always false since Edit routes
+  to ?tab=edited) + its branches, incl. the never-rendered Cancel button and
+  the dead !isEditedMode save-redirect. Edit mode now keys only on isEditedMode.
+- app-sidebar: remove the fabricated 500 MB storage meter calc (never rendered;
+  the real usage lives on Account/Credits).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/app-sidebar.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+---
