@@ -285,7 +285,17 @@ Gedefinieerd in `next.config.ts` → `async redirects()`. Totaal: 23 regels.
 | `public/robots.txt` | `/robots.txt` | Live |
 | ~~`public/llms.txt`~~ | ~~`/llms.txt`~~ | **VERWIJDERD 2026-07-23** (ADR-039 herzien — geen bewezen lever, INDXR heeft geen publieke API) |
 | `public/site.webmanifest` | `/site.webmanifest` | Live |
-| `src/app/sitemap.ts` | `/sitemap.xml` | Live (bijgewerkt 2026-05-03, Werksessie B) |
+| `src/app/sitemap.ts` | `/sitemap.xml` | Live (bijgewerkt 2026-08-02 — zie hieronder) |
+| `src/app/sitemap-lastmod.ts` | — (data voor `sitemap.ts`) | Live (per-route contentdatums, hand-onderhouden) |
+
+### `/sitemap.xml` — generatie & lastmod (bijgewerkt 2026-08-02)
+
+- **Routecount: 47** indexeerbare URL's (7 marketing + 21 docs + 19 articles). `/login` en `/signup` staan er **niet** in — geen zoeklandingspagina's (alleen uit de sitemap gehaald; routes/noindex ongemoeid).
+- **Geen `priority`, geen `changefreq`** — Google negeert beide (Search Central, juli 2026).
+- **`<lastmod>` = echte contentdatum per pagina**, uit `sitemap-lastmod.ts` (in de repo, niet op buildtijd uit git — Vercel cloont ondiep). Een route zonder entry in die map krijgt **géén** `<lastmod>`; er wordt nooit teruggevallen op de build-datum of `Date.now()`.
+  - **Onderhoudsregel:** verander de datum van een route alleen bij een **inhoudelijke** contentwijziging (zichtbare tekst/feiten/structuur), niet bij styling, refactors, dependency-bumps of het toevoegen van metadata (zoals een canonical). Eén uniforme buildstempel op alle URL's maakt het signaal onbruikbaar (zie `docs/LESSONS.md`).
+  - Seed (2026-08-02): 5 distinct datums (2026-05-03 t/m 2026-08-01), per route de laatste content-commit van het eigen page.tsx (docs/articles: content-page, niet de gedeelde template; homepage: page.tsx + de marketing-componenten die de copy dragen).
+- **URL's = self-referencing canonicals** (geverifieerd live): `baseUrl + route`, geen trailing slash — homepage-canonical is eveneens `https://indxr.ai` zonder slash, dus consistent. `robots.txt` bevat de correcte regel `Sitemap: https://indxr.ai/sitemap.xml`.
 
 ---
 

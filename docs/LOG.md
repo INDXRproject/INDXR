@@ -14930,3 +14930,23 @@ Geen code of content gewijzigd — enkel het rapportbestand.
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/wiki/content/content-audit-2026-08-02.md
 ---
+[2026-08-02 13:31] commit: fix(sitemap): real per-route lastmod, drop priority/changefreq, remove login+signup
+
+Drie defecten in /sitemap.xml:
+1. /login + /signup uit de routeset (geen zoeklandingspagina's) → 49 → 47 URLs.
+2. priority + changefreq volledig verwijderd (Google negeert beide).
+3. buildtijd-lastmod (Date.now() op alle URLs) vervangen door echte contentdata
+   per route uit git-historie, vastgelegd in sitemap-lastmod.ts (in de repo;
+   niet op buildtijd uit git — Vercel cloont ondiep). Route zonder entry = geen
+   lastmod. 5 distinct datums (2026-05-03..2026-08-01).
+
+Geverifieerd: gegenereerde sitemap.xml = 47 URLs, 0 priority/changefreq, 0 login/signup.
+URLs = self-referencing canonicals (home + rest zonder trailing slash, live gecheckt);
+robots.txt heeft correcte Sitemap-regel. Geen routes/noindex/redirects aangeraakt.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/sitemap-lastmod.ts
+apps/marketing/src/app/sitemap.ts
+docs/LESSONS.md
+docs/wiki/architecture/sitemap.md
+---

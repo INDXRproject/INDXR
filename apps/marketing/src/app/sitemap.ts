@@ -1,85 +1,83 @@
 import { MetadataRoute } from "next";
+import { SITEMAP_LASTMOD } from "./sitemap-lastmod";
+
+// Route-set = de canonieke, indexeerbare publieke pagina's. URL's spiegelen exact
+// de self-referencing canonical van elke pagina (baseUrl + route, geen trailing slash;
+// homepage-canonical is eveneens https://indxr.ai zonder slash — geverifieerd live).
+//
+// GEEN priority/changefreq: Google negeert beide (Search Central). /login en /signup
+// staan er bewust NIET in — het zijn geen zoeklandingspagina's.
+//
+// <lastmod> komt uit SITEMAP_LASTMOD (echte contentdata, in de repo). Een route zonder
+// entry krijgt géén <lastmod> — nooit een buildstempel of Date.now() (zie sitemap-lastmod.ts).
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://indxr.ai";
 
-  const marketingPages = [
-    { route: "", priority: 1.0 },
-    { route: "/pricing", priority: 0.8 },
-    { route: "/transcribe", priority: 1.0 },
-    { route: "/about", priority: 0.6 },
-    { route: "/contact", priority: 0.5 },
-    { route: "/privacy", priority: 0.4 },
-    { route: "/terms", priority: 0.4 },
-    { route: "/login", priority: 0.5 },
-    { route: "/signup", priority: 0.5 },
+  const routes = [
+    // Marketing
+    "",
+    "/pricing",
+    "/transcribe",
+    "/about",
+    "/contact",
+    "/privacy",
+    "/terms",
+
+    // Docs — Getting started
+    "/docs",
+    "/docs/quickstart",
+    "/docs/how-indxr-works",
+    "/docs/faq",
+    // Docs — Guides
+    "/docs/guides/single-video",
+    "/docs/guides/playlists",
+    "/docs/guides/uploads",
+    "/docs/guides/library",
+    "/docs/guides/summaries",
+    // Docs — Reference
+    "/docs/reference/export-formats",
+    "/docs/reference/export-formats/txt",
+    "/docs/reference/export-formats/markdown",
+    "/docs/reference/export-formats/csv",
+    "/docs/reference/export-formats/srt",
+    "/docs/reference/export-formats/vtt",
+    "/docs/reference/export-formats/json",
+    "/docs/reference/accuracy",
+    "/docs/reference/limits",
+    // Docs — Account
+    "/docs/account/credits",
+    "/docs/account/billing",
+    "/docs/account/settings",
+
+    // Articles
+    "/articles",
+    "/articles/youtube-transcript-not-available",
+    "/articles/youtube-age-restricted-transcript",
+    "/articles/youtube-members-only-transcript",
+    "/articles/youtube-transcript-non-english",
+    "/articles/youtube-transcript-without-extension",
+    "/articles/bulk-youtube-transcript",
+    "/articles/youtube-playlist-transcript",
+    "/articles/audio-to-text",
+    "/articles/youtube-transcript-obsidian",
+    "/articles/youtube-to-text",
+    "/articles/youtube-transcript-markdown",
+    "/articles/youtube-transcript-csv",
+    "/articles/youtube-srt-download",
+    "/articles/youtube-transcript-json",
+    "/articles/youtube-transcript-for-rag",
+    "/articles/chunk-youtube-transcripts-for-rag",
+    "/articles/youtube-channel-knowledge-base",
+    "/articles/youtube-transcripts-vector-database",
   ];
 
-  // Docs — Diátaxis: 4 categories by what the reader comes to do (ADR-075).
-  const docsPages = [
-    { route: "/docs", priority: 0.7 },
-    // Getting started
-    { route: "/docs/quickstart", priority: 0.7 },
-    { route: "/docs/how-indxr-works", priority: 0.6 },
-    { route: "/docs/faq", priority: 0.6 },
-    // Guides
-    { route: "/docs/guides/single-video", priority: 0.6 },
-    { route: "/docs/guides/playlists", priority: 0.5 },
-    { route: "/docs/guides/uploads", priority: 0.6 },
-    { route: "/docs/guides/library", priority: 0.5 },
-    { route: "/docs/guides/summaries", priority: 0.5 },
-    // Reference
-    { route: "/docs/reference/export-formats", priority: 0.6 },
-    { route: "/docs/reference/export-formats/txt", priority: 0.5 },
-    { route: "/docs/reference/export-formats/markdown", priority: 0.5 },
-    { route: "/docs/reference/export-formats/csv", priority: 0.5 },
-    { route: "/docs/reference/export-formats/srt", priority: 0.5 },
-    { route: "/docs/reference/export-formats/vtt", priority: 0.5 },
-    { route: "/docs/reference/export-formats/json", priority: 0.5 },
-    { route: "/docs/reference/accuracy", priority: 0.5 },
-    { route: "/docs/reference/limits", priority: 0.5 },
-    // Account
-    { route: "/docs/account/credits", priority: 0.5 },
-    { route: "/docs/account/billing", priority: 0.5 },
-    { route: "/docs/account/settings", priority: 0.5 },
-  ];
-
-  const articlesPages = [
-    { route: "/articles", priority: 0.7 },
-    // Troubleshooting
-    { route: "/articles/youtube-transcript-not-available", priority: 0.8 },
-    { route: "/articles/youtube-age-restricted-transcript", priority: 0.7 },
-    { route: "/articles/youtube-members-only-transcript", priority: 0.7 },
-    { route: "/articles/youtube-transcript-non-english", priority: 0.7 },
-    { route: "/articles/youtube-transcript-without-extension", priority: 0.7 },
-    // Workflows & use cases
-    { route: "/articles/bulk-youtube-transcript", priority: 0.7 },
-    { route: "/articles/youtube-playlist-transcript", priority: 0.7 },
-    { route: "/articles/audio-to-text", priority: 0.7 },
-    { route: "/articles/youtube-transcript-obsidian", priority: 0.7 },
-    // Export formats
-    { route: "/articles/youtube-to-text", priority: 0.7 },
-    { route: "/articles/youtube-transcript-markdown", priority: 0.7 },
-    { route: "/articles/youtube-transcript-csv", priority: 0.7 },
-    { route: "/articles/youtube-srt-download", priority: 0.7 },
-    { route: "/articles/youtube-transcript-json", priority: 0.7 },
-    { route: "/articles/youtube-transcript-for-rag", priority: 0.7 },
-    // Deep dives
-    { route: "/articles/chunk-youtube-transcripts-for-rag", priority: 0.7 },
-    { route: "/articles/youtube-channel-knowledge-base", priority: 0.7 },
-    { route: "/articles/youtube-transcripts-vector-database", priority: 0.7 },
-  ];
-
-  const allPages = [
-    ...marketingPages,
-    ...docsPages,
-    ...articlesPages,
-  ];
-
-  return allPages.map(({ route, priority }) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority,
-  }));
+  return routes.map((route) => {
+    const lastmod = SITEMAP_LASTMOD[route];
+    return {
+      url: `${baseUrl}${route}`,
+      // Alleen een <lastmod> als er een echte contentdatum bekend is.
+      ...(lastmod ? { lastModified: lastmod } : {}),
+    };
+  });
 }
