@@ -117,7 +117,7 @@ const COPY: Record<string, Entry> = {
   bot_detection: {
     title: "YouTube rate-limited this request",
     body: () =>
-      "YouTube asked us to confirm we're not a bot — this is temporary. Try again in a moment. No credits were used.",
+      "Each attempt goes out over a different connection, and trying again usually gets through. No credits were used.",
     actions: (c) => (c.onRetryUrl ? [{ label: "Try again", onClick: c.onRetryUrl }] : []),
   },
   // timeout and connection_error are distinct backend failures (split in the download pipeline this

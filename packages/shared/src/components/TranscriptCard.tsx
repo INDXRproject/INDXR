@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { decodeEntities, createParagraphMode, buildRagJson, generateSrt, generateVtt, generateCsv, generateMarkdown, generateTxt } from "../utils/formatTranscript";
+import { decodeEntities, createParagraphMode, buildRagJson, generateSrt, generateVtt, generateCsv, generateMarkdown, generateTxt, buildReadingParagraphs } from "../utils/formatTranscript";
 import { deductRagExportCreditsAction } from "../actions/rag-export";
 import { appHref } from "../lib/cross-host-links";
 import { Button } from "./ui/button";
@@ -108,6 +108,15 @@ export function TranscriptCard({
   const [ragExportLoading, setRagExportLoading] = useState(false);
   const [showInsufficientCreditsForRag, setShowInsufficientCreditsForRag] = useState(false);
   const { user, profile, credits, refreshCredits } = useAuth();
+
+  // Reader Mode (timestamps off) merges segments into sentence-aligned paragraphs so
+  // sentences don't break mid-line — the same shared, unit-tested logic the Library
+  // transcript page uses (ADR-085). Imported, not re-implemented.
+  const isAiTranscript = extractionMethod === "assemblyai" || extractionMethod === "whisper_ai";
+  const readingParagraphs = useMemo(
+    () => buildReadingParagraphs(transcript, { isAi: isAiTranscript }),
+    [transcript, isAiTranscript],
+  );
 
   const derivedDuration =
     durationSeconds ??
@@ -495,20 +504,24 @@ export function TranscriptCard({
         <ScrollArea className="h-[500px] w-full bg-surface-elevated/30">
           <div className="p-6">
              <div className="space-y-4 max-w-none">
-                 {transcript.map((item, index) => (
-                    <div key={index} className="group hover:bg-surface-elevated/50 p-2 -mx-2 rounded transition-colors duration-200">
-                        <div className={showTimestamps ? "flex gap-4" : "block"}>
-                            {showTimestamps && (
-                                <span className="text-xs font-mono text-fg-muted/70 shrink-0 pt-1 select-none">
-                                    {new Date(item.offset * 1000).toISOString().substr(11, 8)}
-                                </span>
-                            )}
-                            <p className={cn("text-fg leading-relaxed", showTimestamps ? "text-sm" : "text-base")}>
-                                {item.text}
-                            </p>
-                        </div>
-                    </div>
-                 ))}
+                 {showTimestamps ? (
+                    transcript.map((item, index) => (
+                       <div key={index} className="group hover:bg-surface-elevated/50 p-2 -mx-2 rounded transition-colors duration-200">
+                           <div className="flex gap-4">
+                               <span className="text-xs font-mono text-fg-muted/70 shrink-0 pt-1 select-none">
+                                   {new Date(item.offset * 1000).toISOString().substr(11, 8)}
+                               </span>
+                               <p className="text-fg leading-relaxed text-sm">{item.text}</p>
+                           </div>
+                       </div>
+                    ))
+                 ) : (
+                    // Reader Mode: sentence-aligned paragraphs (buildReadingParagraphs, ADR-085)
+                    // so a sentence never breaks across two segment lines.
+                    readingParagraphs.map((para, index) => (
+                       <p key={index} className="text-fg leading-relaxed text-base">{para.text}</p>
+                    ))
+                 )}
              </div>
           </div>
         </ScrollArea>

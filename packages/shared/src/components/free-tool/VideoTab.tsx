@@ -1233,7 +1233,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                  // block; AI sits below as a different route, framed as prose (no priced button, no
                  // accent) so it doesn't read as "we're broken, pay us".
                  const note = errCode === 'bot_detection' && user ? (
-                   <>Still blocked? <button type="button" onClick={handleWhisperUpsell} className="font-medium text-fg underline underline-offset-2 hover:text-fg-strong">Use AI transcription</button> — it works from the audio file instead of the route YouTube is blocking.</>
+                   <>Still failing? <button type="button" onClick={handleWhisperUpsell} className="font-medium text-fg underline underline-offset-2 hover:text-fg-strong">AI transcription</button> is the reliable way in — it costs credits, and you get them back if it can&apos;t finish either.</>
                  ) : undefined
                  return <ErrorCard className="w-full" {...copy} note={note} />
                })()

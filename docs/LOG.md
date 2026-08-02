@@ -15117,3 +15117,30 @@ docs/wiki/content/product-truth.md
 docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-08-02 19:04] commit: fix(copy+reader): four honest app strings + Reader Mode sentence-aligned paragraphs
+
+FASE 1 of the content rewrite (strings that will appear on every docs screenshot):
+- 1a Transcribe subtitle: 'Extract captions from videos, playlists, or audio files'
+  (untrue — uploads have no captions, AI isn't captions) -> 'Turn a YouTube video,
+  a playlist, or an uploaded file into a transcript.'
+- 1b Consent banner: drop the _gcl_au cookie name + attribution mechanics from the
+  running sentence -> 'Help us see which ad brought you here. One cookie from Google
+  Ads, nothing else...'. _gcl_au stays documented in the /privacy cookie table.
+  Consent behaviour / Consent Mode v2 basic / cross-subdomain sync UNCHANGED (ADR-087).
+- 1c bot_detection ErrorCard: the AI upsell claimed it 'works from the audio file
+  instead of the route YouTube is blocking' — false (audio hits the same extract_info
+  botcheck; its only edge was a fresh IP, which captions now have too, f8cbfc1). Card
+  body reframed to the retry-rotates-connection truth; AI note reframed as honest
+  fallback ('reliable way in — costs credits, refunded if it can't finish either').
+- 1d Reader Mode on the Transcribe result card rendered one <p> per segment -> broke
+  sentences mid-line. Now reuses (imports) buildReadingParagraphs (ADR-085) for
+  sentence-aligned paragraphs; timestamps mode unchanged. Verified: build green +
+  buildReadingParagraphs unit test 9/9 (incl. 'no mid-sentence cut').
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/transcribe/page.tsx
+packages/shared/src/components/TranscriptCard.tsx
+packages/shared/src/components/consent/ConsentBanner.tsx
+packages/shared/src/components/free-tool/VideoTab.tsx
+packages/shared/src/components/transcribe/errorCopy.ts
+---

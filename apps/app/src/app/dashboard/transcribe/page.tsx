@@ -367,7 +367,7 @@ export default function TranscribePage() {
     <div className="mx-auto w-full max-w-[640px] space-y-6">
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-fg">Transcribe</h1>
-        <p className="mt-2 text-fg-muted">Extract captions from videos, playlists, or audio files.</p>
+        <p className="mt-2 text-fg-muted">Turn a YouTube video, a playlist, or an uploaded file into a transcript.</p>
       </div>
 
       <ActiveJobsIndicator excludeVisible />

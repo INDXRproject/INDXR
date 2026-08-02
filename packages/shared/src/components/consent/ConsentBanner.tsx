@@ -27,10 +27,9 @@ export function ConsentBanner({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-[var(--fg-subtle)] leading-relaxed">
             <p>
-              <span className="font-semibold text-[var(--fg)]">We measure which ad brought you here.</span>{" "}
-              With your consent, Google Ads sets one cookie (<code className="font-mono text-xs">_gcl_au</code>) so we
-              can tell which ad led to a signup or purchase. Nothing else — no profile, no other trackers. Change it
-              anytime under Cookie settings.{" "}
+              <span className="font-semibold text-[var(--fg)]">Help us see which ad brought you here.</span>{" "}
+              One cookie from Google Ads, nothing else — no profile, no tracking across sites. You can change this
+              any time under Cookie settings.{" "}
               <a
                 href={marketingHref("/privacy")}
                 className="underline text-[var(--fg)] hover:text-[var(--accent)]"
