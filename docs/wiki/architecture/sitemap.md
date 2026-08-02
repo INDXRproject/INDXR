@@ -297,6 +297,20 @@ Gedefinieerd in `next.config.ts` → `async redirects()`. Totaal: 23 regels.
   - Seed (2026-08-02): 5 distinct datums (2026-05-03 t/m 2026-08-01), per route de laatste content-commit van het eigen page.tsx (docs/articles: content-page, niet de gedeelde template; homepage: page.tsx + de marketing-componenten die de copy dragen).
 - **URL's = self-referencing canonicals** (geverifieerd live): `baseUrl + route`, geen trailing slash — homepage-canonical is eveneens `https://indxr.ai` zonder slash, dus consistent. `robots.txt` bevat de correcte regel `Sitemap: https://indxr.ai/sitemap.xml`.
 
+### `robots.txt` — beleid (gecorrigeerd 2026-08-02)
+
+Marketing-host `apps/marketing/public/robots.txt` (de app-host `apps/app/public/robots.txt` = `Disallow: /` en blijft ongemoeid).
+
+- **Eén `*`-groep draagt het beleid.** De vorige file had **13 named `User-agent`-groepen met enkel `Allow: /`** (Googlebot, Bingbot, GPTBot, ClaudeBot, OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, Google-Extended, CCBot, anthropic-ai). **Defect:** per RFC 9309 gehoorzaamt een crawler exact één groep (zijn meest-specifieke match) en erft een named group NIETS van `*` → al die 13 crawlers negeerden de `Disallow`-regels. **Voeg named allow-groepen NIET opnieuw toe** — ze delen stil rechten uit. De "allowed by choice"-rationale (ADR-077) staat nu als **commentaar** in de file, niet als groepen. Zie `docs/LESSONS.md`.
+- **`*`-disallows:** `/api/`, `/dashboard/`, `/admin/`, `/auth/`.
+  - `/library/` **verwijderd** — bestaat niet (meer) als route op de marketing-host (dode regel van vóór de app-split).
+  - `/auth/` **toegevoegd** — `apps/marketing/src/app/auth/callback/route.ts` leeft op marketing; crawlers die daarop landen geven fouten + Sentry-ruis.
+  - `/api/` dekt alle marketing-API-routes (`/api/extract`, `/api/contact`, `/api/video/metadata/[videoId]`).
+  - `/dashboard/` + `/admin/` bestaan niet als marketing-routes (leven op `app.indxr.ai`), maar blijven als defense-in-depth staan.
+  - `/login` + `/signup` blijven **crawlbaar** (robots-blokkeren maakt ze URL-only indexeerbaar zonder snippet — slechter).
+- **`Meta-ExternalAgent` = `Disallow: /`** (legitieme named group: herhaalt een volledige regel). Dekt alléén ExternalAgent — **niet** `Meta-ExternalFetcher`/`Meta-WebIndexer` (beleidskeuze open, Khidr). `facebookexternalhit` (link-preview) blijft bewust toegestaan via `*` (blokkeren breekt social share-previews).
+- **`anthropic-ai` verwijderd** — token afgeschaft door Anthropic; live Claude-tokens (ClaudeBot/Claude-User/Claude-SearchBot) vallen onder `*`.
+
 ---
 
 ## Scope-grenzen

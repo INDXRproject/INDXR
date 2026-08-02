@@ -14950,3 +14950,25 @@ apps/marketing/src/app/sitemap.ts
 docs/LESSONS.md
 docs/wiki/architecture/sitemap.md
 ---
+[2026-08-02 13:56] commit: fix(robots+sitemap): consolidate robots to one *-group; correct /terms lastmod
+
+DEEL A — robots.txt (marketing): 13 named user-agent groups each held only
+'Allow: /'. Per RFC 9309 a crawler obeys one most-specific group and named
+groups do NOT inherit *; so Googlebot/GPTBot/Bingbot/all AI crawlers ignored the
+four Disallows. Consolidated to one *-group carrying the policy (rationale kept
+as comments). Removed dead /library/, added /auth/ (callback lives on marketing),
+dropped retired anthropic-ai token. Meta-ExternalAgent block kept (real override).
+/login+/signup stay crawlable. Policy intent unchanged (ADR-077).
+
+DEEL B — /terms lastmod 2026-08-01 -> 2026-07-20: the 08-01 commit was purely the
+'auto-captions'->'YouTube captions' rename (no rights/obligations change); legal
+pages track the legal version. /privacy stays 2026-08-01: its 08-01 commit added
+a real disclosure (no-cookie embedded player). Reported (not mutated): /privacy's
+visible 'Last updated' + LEGAL_VERSION still 2026-07-20, lagging that content.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/public/robots.txt
+apps/marketing/src/app/sitemap-lastmod.ts
+docs/LESSONS.md
+docs/wiki/architecture/sitemap.md
+---

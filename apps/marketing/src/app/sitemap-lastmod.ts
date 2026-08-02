@@ -29,8 +29,15 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/transcribe": "2026-08-01",
   "/about": "2026-05-03",
   "/contact": "2026-07-24",
+  // Legal-pagina's tracken de legal-versie, niet cosmetische wording. /terms:
+  // de 08-01-commit was PUUR de 'auto-captions'→'YouTube captions'-hernoeming (geen
+  // wijziging aan rechten/plichten) → terug naar 2026-07-20 (= LEGAL_VERSION + zichtbare
+  // "Last updated"). /privacy: de 08-01-commit voegde WEL een inhoudelijke disclosure toe
+  // (embedded no-cookie YouTube-speler) → blijft 2026-08-01. LET OP: de zichtbare datum en
+  // LEGAL_VERSION van /privacy staan nog op 2026-07-20 en lopen dus achter op deze content —
+  // besluit van Khidr (zie content-audit / LESSONS), hier bewust niet mee-gemuteerd.
   "/privacy": "2026-08-01",
-  "/terms": "2026-08-01",
+  "/terms": "2026-07-20",
 
   // Docs — Getting started
   "/docs": "2026-07-23",
