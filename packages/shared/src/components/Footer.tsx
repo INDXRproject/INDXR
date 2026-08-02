@@ -1,4 +1,5 @@
 import { marketingHref } from "../lib/cross-host-links";
+import { CookieSettingsLink } from "./consent/CookieSettingsLink";
 
 // Slim footer: just the essentials. Docs/Articles/Formats live in the header nav and the
 // sitemap, so a long link farm here added clutter without SEO value. Kept: About, Privacy,
@@ -24,6 +25,7 @@ export function Footer() {
             {link.label}
           </a>
         ))}
+        <CookieSettingsLink className="hover:text-fg transition-colors cursor-pointer" />
       </div>
     </footer>
   );

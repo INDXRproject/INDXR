@@ -11,6 +11,7 @@ import { useAuth } from "@indxr/shared/hooks/useAuth"
 import { updateProfileAction } from "@indxr/shared/actions/auth-actions"
 import { appHref } from "@indxr/shared/lib/cross-host-links"
 import { safeAppRedirect } from "@indxr/shared/lib/safe-redirect"
+import { trackSignup } from "@indxr/shared/lib/gtag"
 import { CheckCircle2, Circle } from "lucide-react"
 
 export default function OnboardingPage() {
@@ -48,7 +49,10 @@ export default function OnboardingPage() {
       } else {
         // Honoreer het door de auth-flow gethread checkout-doel (bv. billing?checkout=plus);
         // ongeldig/ontbrekend → gewone dashboard-landing. Open-redirect-guard via safeAppRedirect.
-        window.location.href = safeAppRedirect(searchParams.get('next')) ?? appHref('/dashboard')
+        const target = safeAppRedirect(searchParams.get('next')) ?? appHref('/dashboard')
+        // Google Ads signup-conversie (geen waarde). Vuurt alleen bij consent; de redirect
+        // gebeurt in de callback (met timeout-fallback) zodat 'ie nooit wordt afgekapt.
+        trackSignup(() => { window.location.href = target })
       }
     } catch (err) {
       console.error(err)

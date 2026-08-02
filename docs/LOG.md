@@ -15024,3 +15024,56 @@ docs/wiki/business/marketing.md
 docs/wiki/content/writing-standard.md
 docs/wiki/roadmap/priorities.md
 ---
+[2026-08-02 16:44] commit: feat(ads): Google Ads consent layer + tag + conversions; /privacy + legal bundle to 2026-08-02
+
+One coherent deploy — tag, banner and privacy text ship together (deploying the
+_gcl_au tag without the banner+text would make /privacy's cookieless claim untrue).
+
+Consent Mode v2 BASIC (packages/shared, mounted in both root layouts):
+- Nothing loads to Google before consent; gtag.js injected imperatively on grant.
+- Geo-split via x-vercel-ip-country (read in the already-dynamic layout): EEA/UK/CH
+  → default denied + banner (Accept/Decline equal weight); ROW → default granted,
+  no banner, opt-out via footer 'Cookie settings' + /privacy cookie table.
+- Choice in localStorage + a strictly-necessary .indxr.ai cookie 'indxr_consent'
+  (choice only — no identifier) that syncs across indxr.ai ↔ app.indxr.ai; newest wins.
+- cookie_domain:'auto' → _gcl_au on .indxr.ai (readable on app host). Withdraw wipes _gcl_*.
+- Conversions: purchase (success state; value=eurForCredits BRUTO incl VAT, transaction_id=
+  session-id, localStorage dedup) + signup_completed (onboarding). No enhanced conversions.
+- PostHog untouched. Missing NEXT_PUBLIC_GOOGLE_ADS_ID → tag never loads, no crash.
+
+Verified headless (Playwright, local): before consent 0 requests to google*/0 _gcl_*
++ banner shown; after Accept gtag.js + _gcl_au + conversion pixels + choice persists;
+ROW(US) no-banner + tag loads; Decline wipes _gcl_* and flips consent to denied.
+Purchase end-to-end needs a real test purchase (Khidr) — code path done + deduped.
+
+Privacy/legal (same commit): scope cookieless claim to product analytics + disclose the
+consent-gated Google cookie; add Google Ireland subprocessor + a 2-row cookie table
+(_gcl_au consent-gated vs indxr_consent strictly-necessary). LEGAL_VERSION + /privacy
+'Last updated' + sitemap-lastmod → 2026-08-02 (bundle, ADR-069); /terms stays 2026-07-20.
+terms_acceptances: 0 rows since 2026-08-01 (2 total, both 2026-07-20).
+
+Docs: ADR-087 (measurement stack + consent, 4 rationale + 'Ads revenue != Finance revenue');
+ADR-023 GA4 rule superseded; INDEX + LESSONS (2) + priorities check-offs.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/dashboard/credits/success/page.tsx
+apps/app/src/app/layout.tsx
+apps/app/src/components/app-sidebar.tsx
+apps/marketing/src/app/layout.tsx
+apps/marketing/src/app/onboarding/page.tsx
+apps/marketing/src/app/privacy/page.tsx
+apps/marketing/src/app/sitemap-lastmod.ts
+docs/LESSONS.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/023-observability-stack.md
+docs/wiki/decisions/087-google-ads-measurement-and-consent.md
+docs/wiki/roadmap/priorities.md
+packages/shared/src/components/Footer.tsx
+packages/shared/src/components/consent/ConsentBanner.tsx
+packages/shared/src/components/consent/CookieSettingsLink.tsx
+packages/shared/src/lib/consent.ts
+packages/shared/src/lib/gtag.ts
+packages/shared/src/lib/legal.ts
+packages/shared/src/lib/pricing.ts
+packages/shared/src/providers/ConsentProvider.tsx
+---

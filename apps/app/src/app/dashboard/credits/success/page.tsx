@@ -8,6 +8,8 @@ import { CheckCircle2, ArrowRight, Loader2 } from "lucide-react"
 import Link from 'next/link'
 import { useAuth } from '@indxr/shared/hooks/useAuth'
 import { createClient } from '@indxr/shared/utils/supabase/client'
+import { eurForCredits } from '@indxr/shared/lib/pricing'
+import { trackPurchase } from '@indxr/shared/lib/gtag'
 import posthog from 'posthog-js'
 
 // Poll onze eigen credit_transactions (RLS: eigen rijen) op de aankoop-rij die de
@@ -60,6 +62,17 @@ export default function BillingSuccessPage() {
         setCreditsAdded(amount)
         setStatus('confirmed')
         refreshCredits() // haal het gezaghebbende nieuwe saldo op
+        // Google Ads purchase-conversie — één keer per Stripe-sessie (guard tegen
+        // dubbeltellen bij refresh; transaction_id dedupt bovendien Google-side).
+        // Value = BRUTO EUR-lijstprijs uit pricing.ts (ADR-087). Vuurt alleen als de
+        // tag geladen is (= consent gegeven); anders no-op.
+        if (sessionId) {
+          const guardKey = `gads_purchase_${sessionId}`
+          if (!localStorage.getItem(guardKey)) {
+            trackPurchase({ valueEur: eurForCredits(amount), transactionId: sessionId })
+            localStorage.setItem(guardKey, '1')
+          }
+        }
         return
       }
       if (attempts >= MAX_ATTEMPTS) {

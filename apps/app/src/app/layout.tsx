@@ -4,7 +4,10 @@ import "./globals.css";
 import { AuthProvider } from "@indxr/shared/contexts/AuthContext";
 import { PostHogProvider } from "@indxr/shared/providers/PostHogProvider";
 import { ThemeProvider } from "@indxr/shared/components/theme-provider";
+import { ConsentProvider } from "@indxr/shared/providers/ConsentProvider";
+import { regionFromCountry } from "@indxr/shared/lib/consent";
 import { createClient } from "@indxr/shared/utils/supabase/server";
+import { headers } from "next/headers";
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin", "latin-ext"],
@@ -43,6 +46,10 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Geo for consent default (Vercel injects x-vercel-ip-country). Layout is already
+  // dynamic via getUser(), so reading headers() is free. Absent → 'eea' (safe default).
+  const region = regionFromCountry((await headers()).get("x-vercel-ip-country"));
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -56,9 +63,11 @@ export default async function RootLayout({
         </a>
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem disableTransitionOnChange>
           <PostHogProvider>
-            <AuthProvider initialUser={user}>
-              {children}
-            </AuthProvider>
+            <ConsentProvider region={region}>
+              <AuthProvider initialUser={user}>
+                {children}
+              </AuthProvider>
+            </ConsentProvider>
           </PostHogProvider>
         </ThemeProvider>
       </body>

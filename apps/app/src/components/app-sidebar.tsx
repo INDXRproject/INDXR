@@ -29,6 +29,7 @@ import { Input } from "@indxr/shared/components/ui/input"
 import { Button } from "@indxr/shared/components/ui/button"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { UserAvatar } from "@indxr/shared/components/UserAvatar"
+import { CookieSettingsLink } from "@indxr/shared/components/consent/CookieSettingsLink"
 import { Progress } from "@indxr/shared/components/ui/progress"
 import { cn } from "@indxr/shared/lib/utils"
 
@@ -697,6 +698,11 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
+          {!collapsed && (
+            <div className="px-3 pt-1 pb-2">
+              <CookieSettingsLink className="text-[11px] text-fg-muted hover:text-fg transition-colors cursor-pointer" />
+            </div>
+          )}
         </SidebarFooter>
       </Sidebar>
     </TooltipProvider>

@@ -88,15 +88,11 @@ Axiom's free tier (500GB ingest/maand, 30 dagen retentie) is in 2026 het meest g
 
 Vercel-integratie is one-click. Backend OTLP-export configureerbaar via `sentry-sdk[fastapi]` of standalone OpenTelemetry SDK.
 
-### Waarom GA4 ALLEEN voor Google Ads attributie
+### ~~Waarom GA4 ALLEEN voor Google Ads attributie~~ — ACHTERHAALD (ADR-087, 2026-08-02)
 
-PostHog dekt UTM-tracking, funnels, web analytics en conversies beter dan GA4 voor product-gebruik. Wat GA4 wél uniek doet:
+> **Deze sectie is achterhaald.** We doen **geen GA4**. De Google Ads-tag (`AW-…`) meet conversies zelf; PostHog doet product-analytics. Een tweede vendor (GA4) voegt cookies + een subverwerker toe zonder meerwaarde. Zie [ADR-087](087-google-ads-measurement-and-consent.md). De Ads-tag zit achter een eigen Consent Mode v2-banner (Basic mode) — de aanname elders in deze ADR dat "cookieless ⇒ geen consent-banner nodig" geldt niet meer voor advertentiemeting.
 
-- **Google Ads conversion tracking** met native attributie naar campagnes
-- **Search Console organic-keyword data** (welke zoektermen brengen verkeer)
-- **Server-side GTM** met Smart Bidding-signals voor Google's biedingsalgoritme
-
-Dus GA4 wordt **alleen geactiveerd op de dag dat Google Ads-campagnes draaien** — niet pre-launch. Dit voorkomt overlap-billing van events en analytics-noise.
+_Oorspronkelijke tekst (historisch):_ PostHog dekt UTM-tracking, funnels, web analytics en conversies beter dan GA4 voor product-gebruik. GA4 zou alleen op de Ads-launch-dag geactiveerd worden — dat is vervangen door de eigen Ads-tag + consent-laag van ADR-087.
 
 ---
 
@@ -182,6 +178,6 @@ Deze paden zijn beschikbaar omdat alle gekozen tools open formats hebben (PostHo
 
 **Admin-deeplinks** (`admin/users`, `admin/paid-users`) → `eu.posthog.com`.
 
-**Ongewijzigd:** GA4 blijft zoals besloten (alleen bij Google-Ads-launch, niet pre-launch). **Sentry** blijft actief — let op: **Sentry is óók een subverwerker** die IP's en (bij replay) DOM kan bevatten; die hoort in de subverwerkers-alinea van het privacy-beleid (1.18). Crisp is (nog) niet in de code aanwezig → niet noemen in het beleid tot het er is.
+**Ongewijzigd:** ~~GA4 blijft zoals besloten~~ → **achterhaald door [ADR-087](087-google-ads-measurement-and-consent.md): geen GA4; de Google Ads-tag meet zelf, achter een eigen Consent Mode v2-banner (Basic).** De PostHog-cookieless-config blijft ongewijzigd, maar de eerdere gevolgtrekking "cookieless ⇒ geen consent-banner nodig" geldt niet meer voor de Ads-cookie `_gcl_au` (die vereist wél toestemming; PostHog blijft eronderuit). **Sentry** blijft actief — let op: **Sentry is óók een subverwerker** die IP's en (bij replay) DOM kan bevatten; die hoort in de subverwerkers-alinea van het privacy-beleid (1.18). Crisp is (nog) niet in de code aanwezig → niet noemen in het beleid tot het er is.
 
 **Khidr-actie:** verse EU-projectkey aanmaken op `eu.posthog.com`, `NEXT_PUBLIC_POSTHOG_KEY`/`_HOST`/`_PROJECT_ID` op Vercel (beide projecten) + lokaal zetten, en de **US-instance opzeggen zodra de EU-instance events ontvangt**.

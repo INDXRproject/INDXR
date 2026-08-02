@@ -147,6 +147,15 @@ export function pricePerCredit(pkg: PricingPackage): number {
   return pkg.priceEur / pkg.credits
 }
 
+// Reverse-map a credited amount back to the package list price (credit counts
+// 100/400/1000/3000 are unique). Used ONLY for the Google Ads purchase-conversion
+// value. NOTE (ADR-087): this is the BRUTO, VAT-inclusive EUR list price — it is NOT
+// revenue_ex_vat and is NOT corrected for Stripe Adaptive Pricing (localized currency,
+// up to −20%). A deliberate approximation for ROAS, not a finance figure.
+export function eurForCredits(credits: number): number | null {
+  return PACKAGES.find((p) => p.credits === credits)?.priceEur ?? null
+}
+
 export function costInTier(credits: number, pkg: PricingPackage): number {
   return credits * pricePerCredit(pkg)
 }

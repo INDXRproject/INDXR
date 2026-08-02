@@ -14,7 +14,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-[var(--fg-muted)] mb-10">
-          Last updated: 2026-08-01
+          Last updated: 2026-08-02
         </p>
 
         <div className="prose-content text-[var(--fg-subtle)] leading-relaxed space-y-8">
@@ -55,11 +55,19 @@ export default function PrivacyPage() {
             </p>
             <p className="mt-4">
               We also measure how the service is used — which features are popular, where
-              people run into trouble — to improve the product. We do this with cookieless,
-              EU-hosted product analytics: no tracking cookies, no profile that follows you
+              people run into trouble — to improve the product. Our <strong>product analytics</strong>
+              {" "}is cookieless and EU-hosted: no tracking cookies, no profile that follows you
               across sessions or sites, and we remove your IP address. We route it through our
               own domain so it stays reliable, we never sell it, and we honour your browser’s
               Do-Not-Track setting.
+            </p>
+            <p className="mt-4">
+              Separately, if you arrive from a Google ad and <strong>give consent</strong>, we use
+              Google Ads to measure which ad led to a signup or purchase. That sets one cookie
+              (<code>_gcl_au</code>) and nothing else — no advertising profile, no data sold. Without
+              your consent this cookie is never placed and no request goes to Google. You can accept,
+              decline, or withdraw at any time via <strong>“Cookie settings”</strong> in the footer
+              (withdrawing also deletes the cookie). See the cookie table below.
             </p>
             <p className="mt-4">
               A saved transcript can show the original video in an embedded player. Nothing from
@@ -128,9 +136,11 @@ export default function PrivacyPage() {
               transcript on servers inside the EU, and does not use your audio to train its
               models. File storage is provided by Cloudflare. Error monitoring is provided by
               Sentry. We also use providers for proxying public video data, for sending email,
-              and for our own product analytics. Some of these providers are based outside the
-              EU; where that’s the case, the transfer is protected by the European Commission’s
-              Standard Contractual Clauses.
+              and for our own product analytics. If you consent to ad measurement,
+              <strong> Google Ireland Ltd</strong> provides Google Ads conversion measurement and
+              advertisement attribution. Some of these providers are based outside the
+              EU; where that’s the case (including the Google transfer to the United States), the
+              transfer is protected by the European Commission’s Standard Contractual Clauses.
             </p>
           </section>
 
@@ -156,6 +166,45 @@ export default function PrivacyPage() {
             <p>
               INDXR.AI is not intended for children under 16, and we don’t knowingly collect
               their data.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-[var(--fg)] mb-3">Cookies</h2>
+            <p>
+              We keep cookies to a minimum. There are exactly two, and they are different in
+              kind:
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--border)] text-left">
+                    <th className="py-2 pr-4 font-semibold text-[var(--fg)]">Cookie</th>
+                    <th className="py-2 pr-4 font-semibold text-[var(--fg)]">Purpose</th>
+                    <th className="py-2 pr-4 font-semibold text-[var(--fg)]">Retention</th>
+                    <th className="py-2 font-semibold text-[var(--fg)]">Consent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-[var(--border)] align-top">
+                    <td className="py-2 pr-4"><code>_gcl_au</code></td>
+                    <td className="py-2 pr-4">Google Ads — attributes a signup or purchase to the ad you came from.</td>
+                    <td className="py-2 pr-4">~90 days</td>
+                    <td className="py-2"><strong>Only with your consent.</strong> Not placed until you accept.</td>
+                  </tr>
+                  <tr className="align-top">
+                    <td className="py-2 pr-4"><code>indxr_consent</code></td>
+                    <td className="py-2 pr-4">Remembers your cookie choice across our sites (indxr.ai and app.indxr.ai). Holds only your choice — no identifier, nothing that can recognise you.</td>
+                    <td className="py-2 pr-4">Up to 6 months</td>
+                    <td className="py-2">Strictly necessary — placed without consent. It exists so we can honour “no”, and because it can’t track you, the ePrivacy consent rule doesn’t apply.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4">
+              Our product analytics is cookieless (see above). To accept, decline, or withdraw the
+              advertising cookie, use <strong>“Cookie settings”</strong> in the footer — withdrawing
+              deletes <code>_gcl_au</code> on both sites.
             </p>
           </section>
 
