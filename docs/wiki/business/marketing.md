@@ -169,6 +169,23 @@ Backend events (handmatig getracked):
 
 ---
 
+## Betaalde zoekcampagne (Ads) — richtlijnen
+
+Afgeleid uit de keyword-meting van 2026-08-02 (bron + cijfers: [keyword-demand-2026-08.md](keyword-demand-2026-08.md)). Nog niet live; dit zijn de vastgelegde keuzes vóór de campagne draait.
+
+- **Geo-targeting = US + CA + AU**, expliciet **zónder VK** en zonder de andere geblokkeerde landen (ADR-062: `GB/CH/KR/TR/IN/BR/UY/OM/RS`). India is de grootste zoekmarkt maar kan niet afrekenen → niet targeten. ~44% van de meetbare wereldvraag is structureel niet-converteerbaar.
+- **Niet bieden op de kop** (`youtube transcript` e.d.): de top-10 is een gratis-markt (tien concurrenten met "Free" in de title) tegen ~€1,30/klik. Gratis caption-extractie is onze funnel, maar die haal je **organisch** binnen.
+- **Niet bieden op concurrentmerken** (notegpt/tactiq/turboscribe/downsub/…): legaal maar het onderschept wie expliciet om een ánder product vroeg — botst met ihsaan + [ADR-037](../decisions/037-no-comparison-pages.md). Merken gaan juist als **negatief** in de campagne.
+- **Verplichte negatieven:**
+  - Merken: `notegpt`, `tactiq`, `turboscribe`, `downsub`, `youtubetranscript`, `youtubetotranscript`, `ytscribe`, `kome`, `transcript.io`.
+  - Ondertitel-piraterijbuurt (uit de `srt`/`subtitle`-seed): `subscene`, `opensubtitles`, `yify`, `yts`, `movie`, `series`.
+  - `api` — wij hebben geen publieke API (zelfde grond als [ADR-039](../decisions/039-llms-txt-low-priority.md)).
+- **Waar de vraag wél zit:** het `video to text`-cluster (~19k+ impressies, groter dan de hele YouTube-transcript-staart) → het terrein van `/articles/audio-to-text` (betaald AI-transcriptieproduct). Prioriteitskandidaat.
+- **Long-tail workflow-termen** (playlist/bulk/rag/srt/markdown/obsidian/csv/json) waren in Bing **niet meetbaar** (meetgrens, geen afwezige vraag) → valideren via Google Keyword Planner + het search terms report zodra de campagne draait, niet vanuit deze meting concluderen.
+- **Niet-Engelse vraag** (Spaans 17k, Indonesisch, JP/CN) raakt de native-anchored differentiator, maar de site is Engels-only en het gros komt uit (deels geblokkeerd) Latijns-Amerika → **kans, geen actie zonder omzetdata**.
+
+---
+
 ## Toekomstige Groeikanalen
 
 - **Audience hubs** — `/for/researchers`, `/for/educators` etc. (post-launch, op basis van PostHog-data — zie [ADR-038](../decisions/038-no-audience-hubs.md))
@@ -176,7 +193,7 @@ Backend events (handmatig getracked):
 - **Zapier integratie** — automatisering voor power users
 - **Referral program** — 5 credits referrer + 5 credits referee
 - **Channel extractie** — directe kanaal-transcriptie (vereist queue-architectuur)
-- **Google Ads (US)** — longtail keyword campagne post-launch
+- **Google Ads (US + CA + AU)** — longtail keyword campagne post-launch; richtlijnen + negatieven in [§ Betaalde zoekcampagne](#betaalde-zoekcampagne-ads--richtlijnen) (geo/kop/merk/negatieven uit de keyword-meting 2026-08-02)
 
 ---
 

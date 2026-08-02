@@ -176,7 +176,8 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | [pricing.md](business/pricing.md) | 5-tier model, credit formule, marges, marketing copy |
 | [unit-economics.md](business/unit-economics.md) | Geverifieerde kostenbasis: AssemblyAI + Decodo per credit, vaste infra, prijs-rationale |
 | [positioning.md](business/positioning.md) | Marktpositie, doelgroep, onderscheid t.o.v. concurrenten |
-| [marketing.md](business/marketing.md) | SEO-strategie, conversie funnel, channel FAQ, copy anchors |
+| [marketing.md](business/marketing.md) | SEO-strategie, conversie funnel, channel FAQ, copy anchors, **betaalde-zoekcampagne-richtlijnen** |
+| [keyword-demand-2026-08.md](business/keyword-demand-2026-08.md) | **Keyword-vraag-meting (Bing WMT, 2026-08-02):** leesregel (impressie ≠ zoekvolume), geo-blocklist-overlap (44% niet-converteerbaar), merkenmarkt, gratis-kop, niet-Engelse vraag, video-to-text, negatieven; correctie Bing≠ChatGPT-index |
 
 ---
 

@@ -356,7 +356,7 @@ Openstaande punten na de money-model-/BTW-/markt-scope-sessies (ADR-055 t/m ADR-
 **NA FINANCE**
 
 - [ ] **F18 — Per-user segmentatie (betaald / gratis / anoniem) door het hele dashboard** — nu is bijna alles aggregaat. Pas oppakken als de omzetketen klopt (na F1–F5).
-- [ ] **F19 — Growth: definities + testcases met ≥2 users op papier vóór er een mockup komt.** Dezelfde foutklasse zit daar (conversieratio = cohort vs momentopname).
+- [ ] **F19 — Growth: definities + testcases met ≥2 users op papier vóór er een mockup komt.** Dezelfde foutklasse zit daar (conversieratio = cohort vs momentopname). **Geo-caveat (keyword-meting 2026-08-02, zie [keyword-demand-2026-08](../business/keyword-demand-2026-08.md)):** organisch verkeer uit de ADR-062-geblokkeerde landen (IN/GB/TR/BR/…) kán niet afrekenen — ~44% van de gemeten wereldvraag. Conversieratio's moeten **geo-gefilterd op converteerbare landen** worden, anders lijkt de funnel kapot terwijl de bezoeker simpelweg niet mág kopen.
 - [ ] **F20 — Operations** (dashboard/observability van de operationele kant — na Finance).
 
 **NOTITIE**

@@ -78,7 +78,7 @@ Het masterplan langsgelopen tegen de live code.
 | **robots.txt AI-crawler-allowlist** | **LIVE** | ClaudeBot/ClaudeSearchBot/Claude-User/GPTBot/OAI-SearchBot/ChatGPT-User/PerplexityBot/Googlebot/Bingbot = `Allow`; CCBot + Meta-ExternalAgent = `Disallow`. **Gat:** `Google-Extended` en `anthropic-ai` staan er **niet** (vallen onder `*` = default-allow). |
 | **llms.txt** | **VERWIJDERD** (2026-07-23) | Stond op oude 5-tier-prijzen (loog over het product). Extern getoetst: geen bewezen lever, INDXR heeft geen publieke API → verwijderd (alle 3 bestanden + referenties). Zie A5/ADR-039. |
 | **Gesegmenteerde sitemap** | **NEVER** (single volstaat) | Eén platte `sitemap.ts`, **46 URL's**, `priority` per route, `lastModified: new Date()` (build-tijd, geen echte mtimes), `changeFrequency: monthly`. Masterplan wilde `sitemap-pages/features/comparisons/blog.xml`. Voor 46 URL's is segmentatie onnodig — **[TE VERIFIËREN]** of het ooit nodig is (Google adviseert pas bij duizenden URL's). |
-| **Bing-indiening / IndexNow** | **NEVER** | 0 hits voor IndexNow-key, `msvalidate`, BingSiteAuth. Alleen Bingbot in robots. Masterplan-claim "Bing = ChatGPT web index" = **[TE VERIFIËREN]**. |
+| **Bing-indiening / IndexNow** | **NEVER** | 0 hits voor IndexNow-key, `msvalidate`, BingSiteAuth. Alleen Bingbot in robots. Masterplan-claim "Bing = ChatGPT web index" is **achterhaald** (geverifieerd 2026-08-02): OpenAI draait sinds eind 2024 een eigen zoekcrawler, **OAI-SearchBot**, die de ChatGPT-Search-index bouwt; Bing voedt nu vooral **Microsoft Copilot + Edge**. Bing WMT blijft nuttig voor indexering + Copilot-zichtbaarheid, **niet** als ChatGPT-index-rechtvaardiging. Zie [keyword-demand-2026-08](../business/keyword-demand-2026-08.md). |
 | **JsonLd-component + schema per pagina** | **LIVE** (goed) | `JsonLd.tsx` rendert schema-arrays. Docs=TechArticle+CollectionPage+BreadcrumbList; tool-artikelen=SoftwareApplication+Offer+FAQPage; Article/Tutorial=Article+Person+Organization+FAQPage(+HowTo); pricing=Product+AggregateOffer+FAQPage (data-afgeleid uit `PACKAGES` → blijft correct); about=Organization. **Gaten:** geen BreadcrumbList op de 18 artikelen; FAQPage-antwoord dropt ReactNode → `""`. |
 | **FAQPage-schema** | **LIVE, breed** | Elke artikel-template + pricing + `/docs/faq` emitteren FAQPage. (Dus masterplan's "FAQ-everywhere" is grotendeels al gebouwd voor de artikel-/marketinglaag.) |
 | **Interne-linkstructuur** | **HALF** | Docs: `RelatedTopicsList` op 14 pagina's — **maar alleen docs→docs**, geen docs→artikel. **Artikelen: 0 interne links** (18 pagina's, geen artikel↔artikel, geen artikel→docs, geen related-footer). De hele artikel-cluster is een **link-eiland**. Masterplan + batch-3a §4.6 eisen juist related-footers + cross-links. |
@@ -194,9 +194,11 @@ Ruimhartig gemarkeerd; alles hieronder rust op een aanname of op SEO-claims van 
 - **FAQPage-schema** → **behouden waar de content écht Q&A is; nooit toevoegen om AI-zichtbaarheid**. Rich result gedeprecieerd 7-mei-2026; Google's AI-gids 15-mei-2026: structured data niet vereist voor AI Overviews/AI Mode; geen leverancier bevestigt FAQ-schema als citatiesignaal; Bing gebruikt het nog. "Geen inline FAQ in docs" blijft. Zie A1/C3.
 - **Answer-first** → **blijft** (het enige masterplan-element dat de toets doorstaat — AI-systemen halen uit heldere, direct-antwoordende inhoud, niet uit markup). Zie C1/A8.
 
+**✅ GEVERIFIEERD 2026-08-02:**
+- **Bing ≠ ChatGPT-web-index** (masterplan-claim achterhaald). ChatGPT Search draait op OpenAI's eigen **OAI-SearchBot** (sinds eind 2024); Bing voedt Copilot + Edge. Bing WMT = indexering + Copilot-zichtbaarheid, geen ChatGPT-index. IndexNow-waarde blijft laag (niet gebouwd). Zie §B-regel + [keyword-demand-2026-08](../business/keyword-demand-2026-08.md).
+
 **Nog open [TE VERIFIËREN]:**
 4. **robots AI-crawler-allowlist-specifics** — welke bots citaties helpen; wel/niet `Google-Extended`/`anthropic-ai` blokkeren. (C12/B)
-5. **Bing-indiening = ChatGPT-web-index** + IndexNow-waarde. (C12/B)
 6. **Sitemap-segmentatie** — of ooit nodig onder duizenden URL's. (C12/B)
 7. **Toon/aanspreekvorm "you"/informeel** — geen tone-of-voice-onderzoek; formaliteit + internationale markten toetsen. (C11)
 8. **Welk schema-type beter rankt** (Article vs BlogPosting vs TechArticle; SoftwareApplication voor tool-pagina's). (C6/A2)

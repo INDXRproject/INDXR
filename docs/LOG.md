@@ -14996,3 +14996,31 @@ docs/LESSONS.md
 docs/wiki/decisions/069-terms-acceptance-at-checkout.md
 packages/shared/src/lib/legal.ts
 ---
+[2026-08-02 14:48] commit: docs(business): capture Bing keyword-demand 2026-08-02 + campaign decisions; fix Bing=ChatGPT claim
+
+New business/keyword-demand-2026-08.md: measured Bing WMT keyword demand with the
+reading rule (impressions != search volume, Bing-only), the ADR-062 geo-blocklist
+overlap (~44% of measured world demand can't pay: IN+GB+TR), the brand-heavy market
+(29%), the free-headed SERP, non-English demand, the under-served 'video to text'
+cluster, and the srt/subtitle piracy neighbourhood.
+
+Threaded actionables:
+- marketing.md: new 'Betaalde zoekcampagne (Ads)' section — geo US+CA+AU (no UK),
+  don't bid on head/brands/free, mandatory negatives (brands, subscene/opensubtitles/
+  yify/yts/movie/series, api); Ads growth bullet repointed.
+- priorities.md F19: geo-filter conversion ratios on convertible countries only.
+- writing-standard §B: corrected the stale 'Bing = ChatGPT web index' claim — ChatGPT
+  Search runs on OpenAI's own OAI-SearchBot (since late 2024); Bing feeds Copilot/Edge.
+- INDEX + LESSONS (Bing impressions != search volume; long-tail clusters not measurable
+  in Bing = a measurement limit, not absent demand).
+
+Docs only; claims verified against code (ADR-062 blocklist, no public API).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/wiki/INDEX.md
+docs/wiki/business/keyword-demand-2026-08.md
+docs/wiki/business/marketing.md
+docs/wiki/content/writing-standard.md
+docs/wiki/roadmap/priorities.md
+---
