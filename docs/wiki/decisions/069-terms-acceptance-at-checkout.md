@@ -29,3 +29,15 @@ Een **verplicht acceptatie-vinkje** vóór de betaling: *"I agree to the Terms o
 - `LEGAL_VERSION` moet **meebewegen** met elke wijziging aan `/terms` of `/privacy`, anders legt de rij een verkeerde versie vast.
 - `terms_acceptances` staat **buiten** de finance-keten (geen finance-RPC/`cost_config`/credit-ledger raakt het) → de audit-tally blijft 31/0/0.
 - **Restpunt (juridisch, buiten code):** de box incorporeert §7 per referentie. Of een strikte lezing van art. 16(m) CRD / 6:230p BW een **aparte, expliciete** "ik ga akkoord met directe uitvoering en verlies mijn herroepingsrecht"-bevestiging vereist (los van de Terms-acceptatie), is een vraag voor juridisch advies vóór launch. De huidige implementatie legt in elk geval aanvaarding van de Terms (met §7 erin) aantoonbaar vast.
+
+## Addendum 2026-08-02 — LEGAL_VERSION als bundelversie
+
+Verduidelijking na een incident waarbij `/privacy` op 2026-08-01 inhoudelijk wijzigde (nieuwe no-cookie-speler-disclosure) terwijl `LEGAL_VERSION` en de zichtbare "Last updated" op 2026-07-20 bleven staan — het bewijsspoor liep stil uit de pas. Rechtgetrokken (`LEGAL_VERSION`→`2026-08-01`, /privacy "Last updated"→`2026-08-01`; /terms blijft `2026-07-20`, want ongewijzigd). DB-check bevestigde 0 aanvaardingen sinds 2026-08-01, dus geen retroactieve schade.
+
+Drie vastgelegde regels:
+
+- **(a) `LEGAL_VERSION` is een BUNDELVERSIE**, gedefinieerd als de datum van de **meest recente inhoudelijke wijziging aan `/privacy` OF `/terms`** (de laatste van de twee). Beide docs worden samen aanvaard → één versie voor de bundel. Bij elke inhoudelijke wijziging aan een van beide: bump `LEGAL_VERSION` + de zichtbare "Last updated" van het gewijzigde doc + diens sitemap-`<lastmod>` in één keer. De zichtbare datum per document mag afwijken van de bundelversie als alleen het andere document wijzigde (bedoeld: /terms toont 2026-07-20 onder bundel 2026-08-01). Definitie staat in de comment van `packages/shared/src/lib/legal.ts`. De eerdere "splits in per-document constanten als ze divergeren"-noot is hiermee **verworpen**: `terms_acceptances.documents` zegt al welke docs de bundel dekt.
+- **(b) Het kolomveld heet `terms_version` maar draagt de bundelversie** — bewust **niet** hernoemd. Een migratie/rename op een legal-accountability-tabel (met bestaande rijen die het bewijsspoor zijn) is de churn niet waard; de semantiek staat hier + in de `legal.ts`-comment.
+- **(c) Git is het versiearchief** van beide documenten (`apps/marketing/src/app/{privacy,terms}/page.tsx`) — elke `LEGAL_VERSION`-string is via de commit-historie terug te voeren op de exacte tekst die toen live stond. **Geen apart archiefmechanisme nodig** (geen versietabel, geen gearchiveerde HTML-snapshots).
+
+Enige code-consument van `LEGAL_VERSION` blijft `apps/app/src/app/api/stripe/checkout/route.ts` (Stripe `session.metadata.termsVersion` + de `terms_acceptances`-insert); de waarde wordt puur vastgelegd, geen logica vergelijkt of gate't erop.

@@ -14972,3 +14972,27 @@ apps/marketing/src/app/sitemap-lastmod.ts
 docs/LESSONS.md
 docs/wiki/architecture/sitemap.md
 ---
+[2026-08-02 14:25] commit: fix(legal): bump LEGAL_VERSION to bundle version 2026-08-01; /privacy Last updated 08-01
+
+The 2026-08-01 /privacy change (no-cookie player disclosure) touched only the text;
+LEGAL_VERSION + visible 'Last updated' stayed 2026-07-20, so terms_acceptances would
+record a version the buyer didn't see. Verified first: 0 acceptances with
+accepted_at >= 2026-08-01 (2 total rows, both 2026-07-20, correct at the time);
+LEGAL_VERSION's only consumer is the checkout route (Stripe metadata + insert), value
+is purely recorded — no logic gates on it, so the bump is safe.
+
+- LEGAL_VERSION 2026-07-20 -> 2026-08-01, redefined in-comment as a BUNDLE version
+  (latest substantive change to /privacy OR /terms).
+- /privacy visible 'Last updated' -> 2026-08-01. /terms stays 2026-07-20 (unchanged text).
+- sitemap-lastmod unchanged (privacy 08-01, terms 07-20); stale comment there corrected.
+- Both pages already carry a 'Changes to this policy' clause — verified, not rewritten.
+- ADR-069 addendum: bundle-version semantics, terms_version field keeps its name, git is
+  the version archive. No column change, no field rename, no cookie/Ads text added.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/privacy/page.tsx
+apps/marketing/src/app/sitemap-lastmod.ts
+docs/LESSONS.md
+docs/wiki/decisions/069-terms-acceptance-at-checkout.md
+packages/shared/src/lib/legal.ts
+---
