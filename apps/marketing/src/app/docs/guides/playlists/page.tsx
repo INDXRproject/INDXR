@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 
@@ -60,7 +61,12 @@ export default function DocsPlaylistsPage() {
           <li>Let it run. The job continues in the background — you can close the tab and the transcripts appear in your <a className="text-[var(--accent)] hover:underline" href="/docs/guides/library">library</a> as they finish.</li>
         </ol>
 
-        <AnchorHeading as="h2">What a playlist costs</AnchorHeading>
+                <DocsFigure
+          src="/docs/screenshots/playlist-review.png"
+          alt="The playlist review screen: every video listed with a checkbox, the first free caption videos flagged, before the job starts."
+          caption="The review screen lists every video and flags the free ones before you commit."
+        />
+<AnchorHeading as="h2">What a playlist costs</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           The first {freeVideos} YouTube caption videos in a playlist are free. From the fourth onward,
           each caption video costs {perVideo} credit. Any video you switch to AI transcription costs

@@ -15361,3 +15361,31 @@ Changed: apps/marketing/src/app/docs/how-indxr-works/page.tsx
 apps/marketing/src/components/docs/HowItWorksFlow.tsx
 docs/wiki/roadmap/priorities.md
 ---
+[2026-08-03 01:46] commit: docs(guides): drop the existing screenshots into the three guides; capture-machine notes
+
+FASE 4 (figures only — guide prose untouched, that's a later round):
+- guides/single-video: method-choice + the no_captions and youtube_restricted error cards.
+- guides/playlists: the playlist review screen.
+- guides/uploads: the empty uploader (formats + 500MB) + the storage_full card.
+Each is a DocsFigure with a caption stating what it demonstrates; no running text changed.
+
+Vastleggen:
+- screenshot-machine.md: storageState (one shared login; local 41 assets ~162s, live 5 ~37s),
+  the dedup dummy-id workaround, 46 assets, and the ErrorCard coverage now CLOSED (invalid_request
+  + watchdog cards added; no_speech_detected kept — it's live; no code falls to the fallback).
+- product-truth.md: corrected the stale storage claim (§5 said 'niet gebouwd' — ADR-078 built it:
+  100 MiB base, 500 MB max, 100cr=100MB, server-side enforced 413). Flagged the uploader label
+  under-counting formats (7 shown vs 9 accepted).
+- LESSONS: capture-machine determinism (dedup dummy-id, storageState, text/role anchors).
+
+Reported (not fixed): uploader drop-zone label shows 7 formats, real accept is 9 (AudioTab.tsx:593);
+storage cap+enforcement missing from rendered docs (priorities.md).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/guides/playlists/page.tsx
+apps/marketing/src/app/docs/guides/single-video/page.tsx
+apps/marketing/src/app/docs/guides/uploads/page.tsx
+docs/LESSONS.md
+docs/wiki/content/product-truth.md
+docs/wiki/content/screenshot-machine.md
+---

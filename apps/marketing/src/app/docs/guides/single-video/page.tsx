@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 
@@ -57,7 +58,12 @@ export default function DocsSingleVideoPage() {
           <li>Read it on the page, or download it — see the <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats">export formats</a>.</li>
         </ol>
 
-        <AnchorHeading as="h2">No captions? Switch on AI transcription</AnchorHeading>
+                <DocsFigure
+          src="/docs/screenshots/method-choice.png"
+          alt="The Transcription method chooser: YouTube captions (marked Free) selected, next to AI transcription with its per-minute rate and your balance."
+          caption="You pick the method before extracting — captions are free, AI shows its rate."
+        />
+<AnchorHeading as="h2">No captions? Switch on AI transcription</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Not every video has captions. When none are found, signed-in users can turn on <strong>AI
           transcription</strong> — INDXR downloads the audio and transcribes it with a speech-to-text
@@ -68,7 +74,12 @@ export default function DocsSingleVideoPage() {
           audio (rounded up, minimum 1). The toggle only appears once you are logged in.
         </p>
 
-        <AnchorHeading as="h2">Restricted or unavailable videos</AnchorHeading>
+                <DocsFigure
+          src="/docs/screenshots/error-no_captions.png"
+          alt="The error card shown when a video has no caption track, pointing to AI transcription."
+          caption="No caption track? INDXR says so and offers AI transcription — no credits spent."
+        />
+<AnchorHeading as="h2">Restricted or unavailable videos</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Some videos can&apos;t be read, and INDXR tells you which case you hit rather than failing
           silently.
@@ -96,7 +107,12 @@ export default function DocsSingleVideoPage() {
             { publisher: "INDXR (own code)", supports: "channel-URL rejection, plain-text-only for anonymous", verifiedAgainst: "packages/shared/src/utils/youtube.ts (youtube.ts:22,36); packages/shared/src/components/TranscriptCard.tsx (TranscriptCard.tsx:122-133,418)" },
           ]}
         />
-        <RelatedTopicsList
+                <DocsFigure
+          src="/docs/screenshots/error-youtube_restricted.png"
+          alt="The error card for a private, removed, or region-blocked video: it can't be reached and no credits were used."
+          caption="Private, removed, or region-blocked videos can't be reached; no credits are used."
+        />
+<RelatedTopicsList
           topics={[
             { label: "How INDXR works", href: "/docs/how-indxr-works" },
             { label: "Playlists", href: "/docs/guides/playlists" },

@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 
@@ -55,7 +56,12 @@ export default function DocsUploadsPage() {
           oversized file is stopped early rather than after a long wait.
         </p>
 
-        <AnchorHeading as="h2">Uploads are always transcribed with AI</AnchorHeading>
+                <DocsFigure
+          src="/docs/screenshots/uploader-empty.png"
+          alt="The empty audio uploader: a drop zone that says to drag a file or click to browse, with the accepted formats and the 500 MB size limit."
+          caption="Drag a file in or browse; the accepted formats and the 500 MB limit are shown."
+        />
+<AnchorHeading as="h2">Uploads are always transcribed with AI</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           A YouTube video can carry captions; a raw file can&apos;t. So every upload goes through AI
           transcription — there is no free caption path for uploads. It costs {perMin} credit per minute
@@ -65,7 +71,12 @@ export default function DocsUploadsPage() {
           Uploading needs a free account — the uploader only appears once you are signed in.
         </DocsCallout>
 
-        <AnchorHeading as="h2">What happens to your file</AnchorHeading>
+                <DocsFigure
+          src="/docs/screenshots/error-storage_full.png"
+          alt="The error card shown when your library storage is full: a new transcript is blocked and no credits are lost."
+          caption="When your library is full, a new transcript is blocked with no credits lost."
+        />
+<AnchorHeading as="h2">What happens to your file</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Websites normally cap how big a file you can send them, which would block a large recording.
           To avoid that, your file goes straight to the transcription server instead of passing through

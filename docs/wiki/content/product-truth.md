@@ -167,8 +167,8 @@ Bij een model-upgrade: wijzig `models.ts` (en de statische mirrors), niet ~30 lo
 - **Storage-indicator = 500 MB** — maar **alléén weergave** (zie hieronder).
 
 **PLANNED / NIET in code (niet als feature noemen):**
-- **Betaalde storage-uitbreiding (+100 MB / 100 cr, cap 500 MB): NIET gebouwd.** Geen enkele code-match. De enige "+100"-referentie is welkomst-credit-marketingcopy (`pricing.ts:43`). → alleen als "planned".
-- **Handhaving van de 500 MB-cap: NIET gebouwd.** De cap is een **afgeleide weergave** uit `character_count` (`app-sidebar.tsx:165-169`, `MAX_MB = 500` op `:168`), geen echte byte-meter en **geen server-side quota-block** — extractie/opslaan wordt nergens geblokkeerd bij overschrijding. Content mag de 500 MB dus **niet** als harde limiet claimen; het is een indicator.
+- ~~**Betaalde storage-uitbreiding / handhaving: NIET gebouwd.**~~ **ACHTERHAALD — WÉL gebouwd (ADR-078, geverifieerd 2026-08-03).** Reële staat: **basis 100 MiB/account** (`user_credits.library_bytes_cap`), uitbreidbaar tot **max 500 MB** door **100 credits = +100 MiB permanent** (`purchase_library_space`). **Handhaving is echt en server-side**: een nieuw transcript wordt geblokkeerd zodra de bibliotheek vol is (`library_storage_is_full` → 413 `storage_full`, géén credits kwijt; grandfather-safe — bestaande transcripten blijven). Documentatie: de bijkoop-kant staat op `/docs/account/credits`; de **cap + handhaving staan nog nergens in de rendered docs** (docs-gat, zie `roadmap/priorities.md`).
+- **Uploader-label onvolledig (UI-onwaarheid, gerapporteerd):** het drop-zone-label toont **7 formaten** ("Supported: MP3, MP4, WAV, M4A, OGG, FLAC, WEBM", `AudioTab.tsx:593`) terwijl de echte accept **9** is (mist `.mpeg`/`.mpga` — §6.1) en de uploads-guide correct "nine formats" zegt. Label undercount t.o.v. de code + de guide.
 - **Mobiele collections-UI: NIET gebouwd** (zie §5-UX hieronder).
 - **User-facing ZIP/bulk format-export: NIET gebouwd.**
 
