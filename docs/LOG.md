@@ -15269,3 +15269,32 @@ docs/wiki/content/product-truth.md
 docs/wiki/content/screenshot-machine.md
 docs/wiki/roadmap/backlog.md
 ---
+[2026-08-03 01:09] commit: refactor(export): single source for the export menu; derive format counts in content
+
+FASE 1. 'seven formats / nine downloads' was typed by hand in ~9 places and had already
+drifted 6/7/8 (content-audit). New shared descriptor packages/shared/src/lib/exportFormats.ts
+lists the four groups, nine items, and which is paid — and TranscriptCard now RENDERS its
+dropdown FROM that array (was hardcoded JSX), so adding/removing a format updates the menu
+AND every count at once. Menu behaviour preserved exactly: Text/Subtitles/Data/Developer,
+9 items, RAG JSON paid + auth-gated (✦, 'Sign in to export' when logged out), same icons +
+handlers (id→handler map). Build green (type-checks descriptor↔handlers).
+
+Counts now derive from EXPORT_FORMAT_COUNT (7) / EXPORT_DOWNLOAD_COUNT (9) via spellCount()
+across rendered content: quickstart, docs/reference/export-formats (+txt), docs/faq,
+docs-config, articles/youtube-to-text, articles/youtube-transcript-without-extension. No
+hardcoded format count left in rendered content (how-indxr-works handled in FASE 3's rewrite).
+
+Reported (not fixed): the static docs/content/*.md mirrors still say '8 formats' — stale, but
+not rendered on the live site.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/youtube-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-without-extension/page.tsx
+apps/marketing/src/app/docs/faq/page.tsx
+apps/marketing/src/app/docs/quickstart/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/page.tsx
+apps/marketing/src/app/docs/reference/export-formats/txt/page.tsx
+apps/marketing/src/lib/docs-config.ts
+packages/shared/src/components/TranscriptCard.tsx
+packages/shared/src/lib/exportFormats.ts
+---

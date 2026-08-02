@@ -9,6 +9,7 @@ import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
+import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 
 const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats" },
   title: "Export Formats — INDXR.AI Docs",
   description:
-    "INDXR exports every transcript in seven formats — plain text, Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON. This page explains what each one is for; each format has its own spec page.",
+    "`INDXR exports every transcript in ${spellCount(EXPORT_FORMAT_COUNT)} formats — plain text, Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON. This page explains what each one is for; each format has its own spec page.`",
 }
 
 export default function DocsExportFormatsPage() {
@@ -25,7 +26,7 @@ export default function DocsExportFormatsPage() {
     "@type": "TechArticle",
     headline: "Export Formats",
     description:
-      "INDXR exports every transcript in seven formats — plain text, Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON. What each one is for, and links to each format spec.",
+      "`INDXR exports every transcript in ${spellCount(EXPORT_FORMAT_COUNT)} formats — plain text, Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON. What each one is for, and links to each format spec.`",
     url: "https://indxr.ai/docs/reference/export-formats",
   }
 
@@ -44,7 +45,7 @@ export default function DocsExportFormatsPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Export formats</h1>
         <DefinitionLeadOpening>
-          Every transcript downloads in seven formats. The right one depends on what you&apos;ll do
+          Every transcript downloads in {spellCount(EXPORT_FORMAT_COUNT)} formats. The right one depends on what you&apos;ll do
           next — read it, drop it in a note app, load it into a spreadsheet, add subtitles to a video,
           or feed it to code. Six are free and unlimited; only RAG JSON uses credits. Here&apos;s what
           each one is for; every format has its own page with the exact fields and a real sample.
@@ -124,7 +125,7 @@ export default function DocsExportFormatsPage() {
 
         <SourcesBlock
           sources={[
-            { publisher: "INDXR (own code)", supports: "the seven formats and their serializers", verifiedAgainst: "packages/shared/src/utils/formatTranscript.ts" },
+            { publisher: "INDXR (own code)", supports: `the ${spellCount(EXPORT_FORMAT_COUNT)} formats and their serializers`, verifiedAgainst: "packages/shared/src/utils/formatTranscript.ts" },
             { publisher: "INDXR (own code)", supports: "RAG JSON cost, plain-text-only for anonymous", verifiedAgainst: "packages/shared/src/lib/pricing.ts (RAG_JSON_PER_10MIN); packages/shared/src/components/TranscriptCard.tsx:122-133" },
           ]}
         />

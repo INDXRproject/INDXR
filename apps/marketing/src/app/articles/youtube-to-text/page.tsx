@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
+import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-to-text" },
@@ -19,7 +20,7 @@ const faqs = [
   },
   {
     q: "How is this different from copying YouTube's built-in transcript?",
-    a: "YouTube's transcript panel only works when captions exist, only shows text on-screen, and requires manual copying as raw fragments. INDXR.AI groups those same fragments into readable paragraphs, works when captions don't exist via AI transcription, exports in seven formats with nine export options, and saves everything to a personal searchable library.",
+    a: "YouTube's transcript panel only works when captions exist, only shows text on-screen, and requires manual copying as raw fragments. INDXR.AI groups those same fragments into readable paragraphs, works when captions don't exist via AI transcription, exports in ${spellCount(EXPORT_FORMAT_COUNT)} formats with ${spellCount(EXPORT_DOWNLOAD_COUNT)} export options, and saves everything to a personal searchable library.",
   },
   {
     q: "Does it work for non-English videos?",
@@ -202,7 +203,7 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
 
       <p>
         Once a transcript exists — whether from YouTube captions or AI transcription —
-        it can be exported in seven file formats, with nine export options total.
+        it can be exported in {spellCount(EXPORT_FORMAT_COUNT)} file formats, with {spellCount(EXPORT_DOWNLOAD_COUNT)} export options total.
       </p>
 
       <p>
@@ -227,7 +228,7 @@ over 10 000 years ago that number suddenly stabilized`}</pre>
         retrieval systems using tools like LangChain or Pinecone.
       </p>
 
-      <p>Seven formats, nine export options:</p>
+      <p>{spellCount(EXPORT_FORMAT_COUNT)[0].toUpperCase() + spellCount(EXPORT_FORMAT_COUNT).slice(1)} formats, {spellCount(EXPORT_DOWNLOAD_COUNT)} export options:</p>
 
       <table>
         <thead>

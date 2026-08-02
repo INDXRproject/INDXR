@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { decodeEntities, createParagraphMode, buildRagJson, generateSrt, generateVtt, generateCsv, generateMarkdown, generateTxt, buildReadingParagraphs } from "../utils/formatTranscript";
@@ -37,6 +37,7 @@ import {
 import { cn } from "../lib/utils";
 import { marketingHref } from "../lib/cross-host-links";
 import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "../lib/pricing";
+import { EXPORT_MENU, EXPORT_GROUPS, type ExportIcon, type ExportItemId } from "../lib/exportFormats";
 
 export interface TranscriptItem {
   text: string;
@@ -277,6 +278,15 @@ export function TranscriptCard({
     triggerRagDownload();
   };
 
+  // Menu renders from the shared EXPORT_MENU descriptor (single source of truth for the
+  // groups/items AND the "N formats / M downloads" counts in content). Each item id maps
+  // to its download handler; the icon key maps to a lucide component.
+  const EXPORT_ICONS: Record<ExportIcon, typeof FileText> = { FileText, FileCode, Film, Video, FileType, FileJson };
+  const EXPORT_HANDLERS: Record<ExportItemId, () => void> = {
+    txt: downloadTxtPlain, txt_ts: downloadTxtWithTimestamps, md: downloadMarkdown, md_ts: downloadMarkdownWithTimestamps,
+    srt: downloadSrt, vtt: downloadVtt, csv: downloadCsv, json: downloadJson, rag: handleRagExportClick,
+  };
+
   return (
     <>
     {showSignupCard && !user && (
@@ -351,103 +361,32 @@ export function TranscriptCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel className="text-xs text-fg-muted">
-                  Text
-                </DropdownMenuLabel>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadTxtPlain}>
-                  <FileText className="size-4 text-fg-muted" />
-                  <div className="flex-1">
-                    <div className="font-medium">TXT — plain text</div>
-                    <div className="text-xs text-fg-muted">No timestamps</div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadTxtWithTimestamps}>
-                  <FileText className="size-4 text-fg-muted" />
-                  <div className="flex-1">
-                    <div className="font-medium">TXT — with timestamps</div>
-                    <div className="text-xs text-fg-muted">[HH:MM:SS] per line</div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadMarkdown}>
-                  <FileCode className="size-4 text-fg-muted" />
-                  <div className="flex-1">
-                    <div className="font-medium">Markdown</div>
-                    <div className="text-xs text-fg-muted">Notion, Obsidian, blog</div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadMarkdownWithTimestamps}>
-                  <FileCode className="size-4 text-fg-muted" />
-                  <div className="flex-1">
-                    <div className="font-medium">Markdown — with timestamps</div>
-                    <div className="text-xs text-fg-muted">Sections per timestamp</div>
-                  </div>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-fg-muted">
-                  Subtitles
-                </DropdownMenuLabel>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadSrt}>
-                  <Film className="size-4 text-fg-muted" />
-                  <div className="flex-1">
-                    <div className="font-medium">SRT</div>
-                    <div className="text-xs text-fg-muted">SubRip Subtitle</div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadVtt}>
-                  <Video className="size-4 text-fg-muted" />
-                  <div className="flex-1">
-                    <div className="font-medium">VTT</div>
-                    <div className="text-xs text-fg-muted">Web Video Text</div>
-                  </div>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-fg-muted">
-                  Data
-                </DropdownMenuLabel>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadCsv}>
-                  <FileType className="size-4 text-fg-muted" />
-                  <div className="flex-1">
-                    <div className="font-medium">CSV</div>
-                    <div className="text-xs text-fg-muted">Spreadsheet compatible</div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-3 cursor-pointer" onClick={downloadJson}>
-                  <FileJson className="size-4 text-fg-muted" />
-                  <div className="flex-1">
-                    <div className="font-medium">JSON</div>
-                    <div className="text-xs text-fg-muted">segments with start/end time</div>
-                  </div>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-fg-muted">
-                  Developer
-                </DropdownMenuLabel>
-                {user ? (
-                  <DropdownMenuItem className="gap-3 cursor-pointer" onClick={handleRagExportClick}>
-                    <FileJson className="size-4 text-accent" />
-                    <div className="flex-1">
-                      <div className="font-medium flex items-center gap-1.5">
-                        RAG JSON
-                        <span className="text-[10px] text-accent font-bold">✦</span>
-                      </div>
-                      <div className="text-xs text-fg-muted">LangChain, LlamaIndex, Pinecone</div>
-                    </div>
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem className="gap-3 cursor-pointer opacity-60" onClick={() => setShowSignupPrompt(true)}>
-                    <Lock className="size-4 text-fg-muted" />
-                    <div className="flex-1">
-                      <div className="font-medium flex items-center gap-1.5">
-                        RAG JSON
-                        <span className="text-[10px] text-accent font-bold">✦</span>
-                      </div>
-                      <div className="text-xs text-fg-muted">Sign in to export</div>
-                    </div>
-                  </DropdownMenuItem>
-                )}
+                {EXPORT_GROUPS.map((group, gi) => (
+                  <Fragment key={group}>
+                    {gi > 0 && <DropdownMenuSeparator />}
+                    <DropdownMenuLabel className="text-xs text-fg-muted">{group}</DropdownMenuLabel>
+                    {EXPORT_MENU.filter((item) => item.group === group).map((item) => {
+                      const gated = !!item.paid && !user;
+                      const Icon = gated ? Lock : EXPORT_ICONS[item.icon];
+                      return (
+                        <DropdownMenuItem
+                          key={item.id}
+                          className={cn("gap-3 cursor-pointer", gated && "opacity-60")}
+                          onClick={gated ? () => setShowSignupPrompt(true) : EXPORT_HANDLERS[item.id]}
+                        >
+                          <Icon className={cn("size-4", item.paid && !gated ? "text-accent" : "text-fg-muted")} />
+                          <div className="flex-1">
+                            <div className="font-medium flex items-center gap-1.5">
+                              {item.label}
+                              {item.paid && <span className="text-[10px] text-accent font-bold">✦</span>}
+                            </div>
+                            <div className="text-xs text-fg-muted">{gated ? "Sign in to export" : item.sub}</div>
+                          </div>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </Fragment>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
 

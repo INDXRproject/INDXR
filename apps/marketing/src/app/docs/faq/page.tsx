@@ -8,6 +8,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { reactNodeToText } from "@/lib/reactNodeToText"
+import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/faq" },
@@ -65,7 +66,7 @@ const faqs: { question: string; answer: ReactNode }[] = [
     answer: (
       <>
         Seven: TXT, Markdown, CSV, SRT, VTT, JSON and RAG JSON. TXT and Markdown each come with and
-        without timestamps, which makes nine downloads in total. Only RAG JSON costs credits, and
+        without timestamps, which makes {spellCount(EXPORT_DOWNLOAD_COUNT)} downloads in total. Only RAG JSON costs credits, and
         re-downloading anything you already generated is free. See{" "}
         <Link href="/docs/reference/export-formats" className={A}>Export formats</Link>.
       </>

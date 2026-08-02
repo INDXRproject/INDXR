@@ -7,6 +7,7 @@ import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats/txt" },
@@ -72,7 +73,7 @@ export default function DocsTxtPage() {
         <AnchorHeading as="h2">Availability</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           TXT (both variants) is the only export you can download — or copy — without an account. The
-          other six formats need a free account.
+          other {spellCount(EXPORT_FORMAT_COUNT - 1)} formats need a free account.
         </p>
 
         <SourcesBlock

@@ -1,3 +1,5 @@
+import { EXPORT_FORMAT_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+
 export type DocsPage = {
   href: string
   label: string
@@ -41,7 +43,7 @@ export const docsConfig: DocsConfig = {
     {
       label: "Reference",
       pages: [
-        { href: "/docs/reference/export-formats", label: "Export formats", description: "The seven formats and when to use each." },
+        { href: "/docs/reference/export-formats", label: "Export formats", description: `The ${spellCount(EXPORT_FORMAT_COUNT)} formats and when to use each.` },
         { href: "/docs/reference/export-formats/txt", label: "TXT", description: "Readable plain-text paragraphs.", indent: 1 },
         { href: "/docs/reference/export-formats/markdown", label: "Markdown", description: "Frontmatter and timestamp headings for note apps.", indent: 1 },
         { href: "/docs/reference/export-formats/csv", label: "CSV", description: "One row per segment, for spreadsheets.", indent: 1 },

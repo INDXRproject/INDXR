@@ -7,7 +7,10 @@ import { DocsFigure } from "@/components/docs/DocsFigure"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
+import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 
+const formatCount = spellCount(EXPORT_FORMAT_COUNT)
+const downloadCount = spellCount(EXPORT_DOWNLOAD_COUNT)
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 const ragPer10Min = CREDIT_COSTS.RAG_JSON_PER_10MIN
 const welcomeCredits = FREE_TIER.WELCOME_CREDITS
@@ -67,7 +70,7 @@ export default function GettingStartedPage() {
         "@type": "HowToStep",
         position: 6,
         name: "Read it and export it",
-        text: `The result card shows the length, the line count, and — for AI — the credits and how long it took. Reader Mode hides the timestamps. Copy gives you the text; Export gives you a file in one of seven formats. Every format is free except RAG JSON, at ${ragPer10Min} credit per 10 minutes.`,
+        text: `The result card shows the length, the line count, and — for AI — the credits and how long it took. Reader Mode hides the timestamps. Copy gives you the text; Export gives you a file in one of ${formatCount} formats. Every format is free except RAG JSON, at ${ragPer10Min} credit per 10 minutes.`,
         url: "https://indxr.ai/docs/quickstart#6-read-it-and-export-it",
       },
       {
@@ -186,7 +189,7 @@ export default function GettingStartedPage() {
           <strong>Copy</strong> gives you the full text; <strong>Export</strong> gives you a file. The
           menu groups the formats as <strong>Text</strong> (TXT and Markdown, each with or without
           timestamps), <strong>Subtitles</strong> (SRT and VTT), <strong>Data</strong> (CSV and JSON),
-          and <strong>Developer</strong> (RAG JSON) — seven formats, nine downloads. Everything is free
+          and <strong>Developer</strong> (RAG JSON) — {formatCount} formats, {downloadCount} downloads. Everything is free
           except RAG JSON, at {ragPer10Min} credit per 10 minutes of transcript, and re-downloading
           something you already exported is always free. What each file contains is on{" "}
           <a href="/docs/reference/export-formats" className="text-[var(--accent)] hover:underline">Export formats</a>.
@@ -194,7 +197,7 @@ export default function GettingStartedPage() {
         <DocsFigure
           src="/docs/screenshots/export-menu.png"
           alt="The Export menu open over a finished transcript, listing TXT and Markdown (plain and with timestamps), SRT, VTT, CSV, JSON and RAG JSON under the group headings Text, Subtitles, Data and Developer."
-          caption="One transcript, nine downloads, exported as often as you like."
+          caption={`One transcript, ${downloadCount} downloads, exported as often as you like.`}
         />
 
         <AnchorHeading as="h2">7. It stays in your library — fix it once</AnchorHeading>

@@ -4,6 +4,7 @@ import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcript-without-extension" },
@@ -147,7 +148,7 @@ export default function YouTubeTranscriptWithoutExtensionPage() {
         <strong>Seven export formats</strong> — plain text, Markdown with YAML frontmatter
         (for <Link href="/articles/youtube-transcript-markdown">Obsidian/Notion</Link>), CSV, SRT, VTT, JSON, and{" "}
         <Link href="/articles/youtube-transcript-for-rag">RAG-optimized JSON</Link>. Text and Markdown also come
-        with a timestamped variant, for nine download options in total.
+        with a timestamped variant, for {spellCount(EXPORT_DOWNLOAD_COUNT)} download options in total.
       </p>
 
       <p>
