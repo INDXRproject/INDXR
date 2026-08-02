@@ -11,29 +11,24 @@
  * NOT that the backend emits that code in that situation.
  */
 import { test, type Page, type Locator } from '@playwright/test'
-import { loginAs } from '../helpers/auth'
-import { account1 } from '../config/accounts'
 import * as path from 'path'
 import * as fs from 'fs'
 
 const OUT = path.resolve(__dirname, '../../../apps/marketing/public/docs/screenshots')
 const VIDEO_URL = 'https://www.youtube.com/watch?v=kBdfcR-8hEY'
+// Stubbed captures use a dummy 11-char video id so the "already in your library" dedup prompt never
+// intercepts the Extract click (the stub ignores which video it is — only the rendered card matters).
+const STUB_URL = 'https://www.youtube.com/watch?v=STUBCARD001'
 const PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PL30C13C91CFFEFEA6'
-const CONSENT = JSON.stringify({
-  ad_storage: 'granted', analytics_storage: 'granted', ad_user_data: 'granted',
-  ad_personalization: 'granted', version: '1', ts: 1785000000000,
-})
 
 fs.mkdirSync(OUT, { recursive: true })
 
+// Session + consent + light theme come from the shared storageState (global-setup); each test just
+// pins the theme attribute before first paint so there's no light/dark flash in the screenshot.
 async function prep(page: Page) {
-  await page.addInitScript((consent) => {
-    localStorage.setItem('indxr_consent', consent as string)
-    localStorage.setItem('theme', 'light')
+  await page.addInitScript(() => {
     try { document.documentElement.setAttribute('data-theme', 'light') } catch {}
-  }, CONSENT)
-  await page.emulateMedia({ colorScheme: 'light' })
-  await loginAs(page, account1) // cookie-injected session; navigates to /dashboard/library
+  })
 }
 
 async function save(el: Locator, name: string) {
@@ -95,9 +90,11 @@ test('captions-result + export-menu (live)', async ({ page }) => {
 test('library-row (live)', async ({ page }) => {
   await prep(page)
   await page.goto('/dashboard/library')
-  // Each list row is a direct child div of the divide-y container (TranscriptList.tsx:609-618).
-  const row = page.locator('div.divide-y > div').first()
-  await row.waitFor({ state: 'visible', timeout: 20_000 })
+  // Anchor on the row's transcript link (stable href pattern), then screenshot the row it sits in
+  // (a direct child of the divide-y list) — not a bare shape selector.
+  const rowLink = page.locator('a[href*="/dashboard/library/"]').first()
+  await rowLink.waitFor({ state: 'visible', timeout: 20_000 })
+  const row = rowLink.locator('xpath=ancestor::div[parent::div[contains(@class,"divide-y")]][1]')
   await save(row, 'library-row')
 })
 
@@ -108,9 +105,22 @@ test('playlist-review (live)', async ({ page }) => {
   await page.goto('/dashboard/transcribe?mode=playlist')
   await page.getByPlaceholder('Paste YouTube Playlist URL...').fill(PLAYLIST_URL)
   await page.getByRole('button', { name: 'Fetch playlist' }).click()
-  const review = page.locator('div.rounded-2xl').filter({ hasText: /videos/ }).first()
-  await review.waitFor({ state: 'visible', timeout: 90_000 })
+  // Anchor on the visible ROLE (the review screen's action button), not a shape class — a renamed
+  // button fails this capture instead of silently shooting a different card.
+  const reviewBtn = page.getByRole('button', { name: /Review extraction/ })
+  await reviewBtn.waitFor({ state: 'visible', timeout: 90_000 })
+  const review = reviewBtn.locator('xpath=ancestor::div[contains(@class,"rounded-2xl")][1]')
   await save(review, 'playlist-review')
+})
+
+// ── LIVE UI: empty Audio uploader with the accepted formats + size limit in view ─
+test('uploader-empty (live UI)', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/transcribe?mode=audio')
+  const hint = page.getByText('Drag and drop your audio file here', { exact: false })
+  await hint.waitFor({ state: 'visible' })
+  const dropzone = hint.locator('xpath=ancestor::div[contains(@class,"border-dashed")][1]')
+  await save(dropzone, 'uploader-empty')
 })
 
 // ── STUBBED: progress cards (Downloading audio / Transcribing) ────────────────
@@ -124,7 +134,7 @@ for (const [phase, name] of [['downloading', 'progress-downloading'], ['transcri
     await page.route('**/api/jobs/stub-job**', (r) =>
       r.fulfill({ json: { status: phase, duration_seconds: 3296, credits_cost: 55, download_bytes: 2_400_000, download_total_bytes: 6_000_000 } }))
     await page.goto('/dashboard/transcribe')
-    await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(VIDEO_URL)
+    await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
     await page.getByRole('radio', { name: /AI transcription/ }).click()
     await page.getByRole('button', { name: /Extract|Checking/ }).click()
     await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click() // hits STUBBED whisper → no charge
@@ -149,7 +159,7 @@ test('ai-result (stubbed)', async ({ page }) => {
     ],
   } }))
   await page.goto('/dashboard/transcribe')
-  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(VIDEO_URL)
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
   await page.getByRole('radio', { name: /AI transcription/ }).click()
   await page.getByRole('button', { name: /Extract|Checking/ }).click()
   await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click()
@@ -166,7 +176,8 @@ const ERROR_CODES = [
   'duration_error', 'duration_exceeds_max', 'file_too_large', 'too_many_jobs', 'too_many_videos',
   'suspended', 'unauthorized', 'channel_url', 'unsupported_file', 'api_error', 'compression_error',
   'worker_crashed', 'stuck_pending', 'credit_deduction_failed', 'credit_check_error',
-  'validation_error', 'internal_error', 'zzz_unknown_fallback',
+  'validation_error', 'internal_error', 'invalid_request', 'watchdog_permanent_failure',
+  'zzz_unknown_fallback',
 ]
 for (const code of ERROR_CODES) {
   test(`errorcard ${code} (stubbed)`, async ({ page }) => {
@@ -176,7 +187,7 @@ for (const code of ERROR_CODES) {
       json: { success: false, error_type: code, error: 'stub', required_credits: 100 },
     }))
     await page.goto('/dashboard/transcribe')
-    await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(VIDEO_URL)
+    await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
     await page.getByRole('button', { name: /^Extract$/ }).click()
     const card = page.locator('.border-l-error').first()
     await card.waitFor({ state: 'visible', timeout: 15_000 })

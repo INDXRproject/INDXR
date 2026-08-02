@@ -6,12 +6,15 @@ import { defineConfig, devices } from '@playwright/test'
 // picks this up (different testDir), so the 9 specs are neither slowed nor broken.
 export default defineConfig({
   testDir: './tests/playwright/capture',
+  globalSetup: './tests/playwright/capture/global-setup.ts',
   fullyParallel: false,
   workers: 1,
   retries: 0,
   reporter: [['list']],
   use: {
     baseURL: process.env.BASE_URL ?? 'http://localhost:3001',
+    // One shared logged-in session (+ consent + light theme), minted once in global-setup.
+    storageState: './tests/playwright/capture/capture-state.json',
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 2,
     colorScheme: 'light',

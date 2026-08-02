@@ -281,6 +281,24 @@ const COPY: Record<string, Entry> = {
       "We couldn't complete this because of a problem on our end — not your video. No credits were used. Please try again.",
     actions: retryOrAudio,
   },
+  // watchdog_permanent_failure: the job was interrupted and auto-recovery failed, so the watchdog
+  // gave up. The refund is GUARANTEED before this code is ever set: worker.py:800-838 books the
+  // refund FIRST and only then claims status=error — a failed refund leaves the job 'interrupted'
+  // for the next cycle, so the user never sees this code with credits still held. The body says so.
+  watchdog_permanent_failure: {
+    title: "We gave up on this job — and refunded it",
+    body: () =>
+      "This transcription was interrupted, and our automatic recovery couldn't finish it, so we stopped retrying. The credits you reserved for it have been returned. Start it again whenever you're ready.",
+    actions: retryOrAudio,
+  },
+  // invalid_request: a malformed/missing-field request (backend/main.py:850-886) — rejected before
+  // anything ran or was charged. Rare in normal use; retry is the fix.
+  invalid_request: {
+    title: "That request didn't come through",
+    body: () =>
+      "Something was missing or malformed in the request, so nothing was processed and no credits were used. Please try again.",
+    actions: retryOrAudio,
+  },
 }
 
 /**

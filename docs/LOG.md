@@ -15298,3 +15298,37 @@ apps/marketing/src/lib/docs-config.ts
 packages/shared/src/components/TranscriptCard.tsx
 packages/shared/src/lib/exportFormats.ts
 ---
+[2026-08-03 01:34] commit: feat(capture): close ErrorCard coverage + storageState + robust anchors + uploader
+
+FASE 2 (beeldmachine afmaken):
+- 2a coverage: added invalid_request + watchdog_permanent_failure cards to errorCopy so no
+  backend code falls to the generic fallback. watchdog states the refund EXPLICITLY —
+  verified in code first (worker.py:800-838 books the refund BEFORE claiming status=error;
+  a failed refund leaves the job 'interrupted' for retry, so the user never sees this code
+  with credits still held). no_speech_detected KEPT — not a dead alias (VideoTab.tsx:219,910
+  check it as a message-string path distinct from job.error_type==='no_speech'). Backend↔card
+  coverage now closed both ways (test/invalid_request/watchdog resolved).
+- 2b robust anchors: playlist-review now anchors on the 'Review extraction' button ROLE (was
+  div.rounded-2xl shape); library-row anchors on the transcript href link. A renamed control
+  fails the capture instead of silently shooting a different card.
+- 2c speed: one shared logged-in session via global-setup + storageState (was per-test login).
+  Full run in one command; local stubbed/UI batch 41 assets in 162s, live-backend batch 5 in 37s.
+- 2d new captures: uploader-empty (Audio tab, formats + 500MB limit in view) + the storage_full
+  card (already in the ErrorCard sweep). Stubbed captures use a dummy video id so the
+  'already in your library' dedup prompt can't intercept the Extract click.
+
+46 assets total. capture-state.json (session) gitignored.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: .gitignore
+apps/marketing/public/docs/screenshots/error-invalid_request.png
+apps/marketing/public/docs/screenshots/error-watchdog_permanent_failure.png
+apps/marketing/public/docs/screenshots/library-row.png
+apps/marketing/public/docs/screenshots/method-choice.png
+apps/marketing/public/docs/screenshots/progress-transcribing.png
+apps/marketing/public/docs/screenshots/uploader-empty.png
+packages/shared/src/components/transcribe/errorCopy.ts
+playwright.capture.config.ts
+tests/playwright/capture/global-setup.ts
+tests/playwright/capture/quickstart-capture.spec.ts
+---
