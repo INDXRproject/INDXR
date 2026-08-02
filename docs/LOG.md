@@ -14921,3 +14921,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LESSONS.md
 docs/LOG.md
 ---
+[2026-08-02 13:04] commit: docs(content): read-only content audit 2026-08-02 (2 registers, 50 routes)
+
+Read-only audit van alle user-facing content (marketing + docs + articles).
+Register 1: 8 BLOCKER / 21 FOUT / 1 DRIFT / 4 STIJL. Register 2: visual gaps.
+Geen code of content gewijzigd — enkel het rapportbestand.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/content/content-audit-2026-08-02.md
+---
