@@ -15221,3 +15221,29 @@ apps/marketing/public/docs/screenshots/progress-transcribing.png
 playwright.capture.config.ts
 tests/playwright/capture/quickstart-capture.spec.ts
 ---
+[2026-08-02 19:55] commit: docs(quickstart): rewrite for the current UI + fill the figure slots
+
+FASE 3. The old quickstart described an interface that no longer exists: a 'Generate
+with AI' toggle, a 'Check' button, 'Confirm & Extract', 'Transcript Results', and
+Video/Playlist/Audio labelled 'Single Video / Audio Upload'. Rewritten against the
+live UI, verified in code:
+- Tabs are Video / Playlist / Audio (Video default).
+- Method is the 'Transcription method' chooser (YouTube captions [Free] vs AI
+  transcription), not a toggle. Captions → Extract (instant, no approval). AI →
+  Extract opens a cost card with 'Extract — N credits' + Cancel (no 'Check'/'Confirm').
+- 'Re-extract with AI' sits BELOW the result (VideoTab.tsx:1366), not above — corrected.
+- Anonymous capture is the /transcribe free tool, not the homepage — corrected.
+- Export menu named exactly as it renders: Text / Subtitles / Data / Developer,
+  seven formats, nine downloads (counted from TranscriptCard.tsx, not the old copy).
+- No throughput claim (no usage_logs median to cite). The 55-credit figure is framed
+  as an example (fixture 3296s), not a fixed price.
+
+Five DocsFigure slots filled with the FASE-2 screenshots (method-choice, cost-card,
+progress, export-menu, library-row). DocsFigure now renders a screenshot at its natural
+aspect (was object-cover on a fixed box → cropped UI shots); no src → still renders
+nothing. Sentence case throughout incl. meta title; answer-first per H2. Marketing build green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/quickstart/page.tsx
+apps/marketing/src/components/docs/DocsFigure.tsx
+---

@@ -8,32 +8,29 @@ interface DocsFigureProps {
   alt: string
   /** REQUIRED. Says what the figure demonstrates, not what it is. */
   caption: ReactNode
-  /** CSS aspect-ratio for the reserved box, e.g. "16 / 9" (default) or "4 / 3". */
+  /** Deprecated/unused: figures now render at the screenshot's natural aspect (no crop). */
   aspect?: string
 }
 
 /**
- * A figure slot with a REQUIRED caption and alt text. Reserves space via a fixed
- * aspect-ratio box so the page layout does not shift when a screenshot lands later.
+ * A figure slot with a REQUIRED caption and alt text. When `src` is absent it renders
+ * nothing (no visitor-facing empty box). When present it shows the screenshot at its
+ * natural aspect ratio inside a bordered frame — UI screenshots must never be cropped.
  * Rule: a figure only earns its place when it shows what prose can't — a rendered
- * output (CSV in a spreadsheet, Markdown in Obsidian, a RAG chunk) or a UI state.
- * Never decorative. Caption states what it demonstrates.
+ * output or a UI state. Never decorative. Caption states what it demonstrates.
  */
-export function DocsFigure({ src, alt, caption, aspect = "16 / 9" }: DocsFigureProps) {
-  // Until a real screenshot lands, render nothing — a visitor shouldn't see an empty
-  // reserved box announcing a missing figure. Add `src` and the figure (and its
-  // layout-stable reserved space) returns.
+export function DocsFigure({ src, alt, caption }: DocsFigureProps) {
   if (!src) return null
 
   return (
     <figure className="my-6">
-      <div
-        className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-sunken)]"
-        style={{ aspectRatio: aspect }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        className="w-full h-auto rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-sunken)]"
+      />
       <figcaption className="mt-2 text-sm text-[var(--fg-muted)]">{caption}</figcaption>
     </figure>
   )

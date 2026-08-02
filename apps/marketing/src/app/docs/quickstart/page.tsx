@@ -15,7 +15,7 @@ const welcomeCredits = FREE_TIER.WELCOME_CREDITS
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/quickstart" },
   title: "Get your first transcript — INDXR.AI Docs",
-  description: `Turn a YouTube video into text with INDXR — AI transcription at ${perMin} credit per minute, or free caption extraction. See the cost before you confirm, then export or re-extract.`,
+  description: `Turn a YouTube video, a playlist, or an uploaded file into a transcript with INDXR — free YouTube captions, or AI transcription at ${perMin} credit per minute. See the cost before you confirm, then export.`,
   robots: { index: true, follow: true },
 }
 
@@ -26,49 +26,56 @@ export default function GettingStartedPage() {
     name: "Get your first transcript",
     description: metadata.description,
     url: "https://indxr.ai/docs/quickstart",
-    dateModified: "2026-07-23",
+    dateModified: "2026-08-02",
     step: [
       {
         "@type": "HowToStep",
         position: 1,
         name: "Open Transcribe",
-        text: `Sign in and open the Transcribe tab in the sidebar. The Single Video tab is selected by default, with Playlist and Audio Upload next to it. New accounts get ${welcomeCredits} credits, enough to transcribe a ${welcomeCredits / perMin}-minute video. You can also extract captions without an account on the INDXR homepage, but that route gives you plain text only and saves nothing.`,
+        text: `Open Transcribe in the app sidebar. It has three tabs — Video, Playlist, and Audio — and Video is selected. New accounts get ${welcomeCredits} credits; YouTube captions cost nothing either way.`,
         url: "https://indxr.ai/docs/quickstart#1-open-transcribe",
       },
       {
         "@type": "HowToStep",
         position: 2,
-        name: "Paste a URL and choose how it's made",
-        text: "Paste any public YouTube video URL into the field. For the free captions, click Extract. For AI transcription, switch on Generate with AI first: the Extract button becomes Check, so you approve the cost before anything is charged.",
-        url: "https://indxr.ai/docs/quickstart#2-paste-a-url-and-choose-how-it-s-made",
+        name: "Paste a link and pick a method",
+        text: "Paste a public YouTube link, then choose a method. Under Transcription method, YouTube captions is on by default and marked free; AI transcription shows its rate and your balance.",
+        url: "https://indxr.ai/docs/quickstart#2-paste-a-link-and-pick-a-method",
       },
       {
         "@type": "HowToStep",
         position: 3,
-        name: "Check the cost, then confirm",
-        text: `Clicking Check looks up the video's length and shows what the transcription will cost, how many credits you hold, and roughly how long it will take. AI transcription costs ${perMin} credit per minute of audio, rounded up. Nothing is charged until you click Confirm & Extract — cancel here and you have spent nothing. If a job fails after you confirm, the credits are returned.`,
-        url: "https://indxr.ai/docs/quickstart#3-check-the-cost-then-confirm",
+        name: "Captions come back right away",
+        text: "With YouTube captions selected, click Extract and the transcript appears — nothing to approve, no credits spent. If YouTube refuses the request, a card offers Try again and a switch to AI transcription; no credits are charged.",
+        url: "https://indxr.ai/docs/quickstart#3-captions-come-back-right-away",
       },
       {
         "@type": "HowToStep",
         position: 4,
-        name: "Read what came back",
-        text: "The transcript appears under Transcript Results with the video's duration and line count. Each line carries a timestamp; the Reader Mode switch hides them when you want to read straight through. If you took the free captions and they read poorly, Re-extract with AI sits above the transcript with the exact cost for that video.",
-        url: "https://indxr.ai/docs/quickstart#4-read-what-came-back",
+        name: "AI transcription shows the cost first",
+        text: `Select AI transcription and click Extract, and a card shows the title, the length, the total, and what you hold and what is left. The rate is ${perMin} credit per minute of audio, rounded up. Cancel and you have spent nothing; once it starts it can't be cancelled, but a failed job returns the credits.`,
+        url: "https://indxr.ai/docs/quickstart#4-ai-transcription-shows-the-cost-first",
       },
       {
         "@type": "HowToStep",
         position: 5,
-        name: "Export it",
-        text: `Click Copy for the full text, or Export for a file. INDXR gives you seven formats: TXT and Markdown, each with or without timestamps, SRT and VTT for subtitles, CSV and JSON for data, and RAG JSON for AI retrieval. Every format is free except RAG JSON, which costs ${ragPer10Min} credit per 10 minutes of transcript.`,
-        url: "https://indxr.ai/docs/quickstart#5-export-it",
+        name: "It runs in the background",
+        text: "AI transcription runs in the background. You can close the tab — the finished transcript lands in your Library regardless.",
+        url: "https://indxr.ai/docs/quickstart#5-it-runs-in-the-background",
       },
       {
         "@type": "HowToStep",
         position: 6,
-        name: "Find it again, and fix it once",
-        text: "The transcript stays in your Library, where you can edit it. INDXR keeps the original alongside your edited version, so you never lose what came out of the video. Correct a misheard name in the transcript and every export you make afterwards carries the correction.",
-        url: "https://indxr.ai/docs/quickstart#6-find-it-again-and-fix-it-once",
+        name: "Read it and export it",
+        text: `The result card shows the length, the line count, and — for AI — the credits and how long it took. Reader Mode hides the timestamps. Copy gives you the text; Export gives you a file in one of seven formats. Every format is free except RAG JSON, at ${ragPer10Min} credit per 10 minutes.`,
+        url: "https://indxr.ai/docs/quickstart#6-read-it-and-export-it",
+      },
+      {
+        "@type": "HowToStep",
+        position: 7,
+        name: "It stays in your library — fix it once",
+        text: "The transcript stays in your Library, where you can edit it; INDXR keeps the original beside your edited version. Correct a misheard name once and every export you make afterwards carries the fix.",
+        url: "https://indxr.ai/docs/quickstart#7-it-stays-in-your-library-fix-it-once",
       },
     ],
   }
@@ -86,90 +93,124 @@ export default function GettingStartedPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Get your first transcript</h1>
         <DefinitionLeadOpening>
-          INDXR turns a YouTube video into text in one of two ways. AI transcription reads the audio
-          and writes it out with punctuation and sentences, at {perMin} credit per minute. Caption
-          extraction copies the subtitle track the video already carries, for free.
+          INDXR takes a YouTube link, a playlist, or an audio or video file you upload, and gives you
+          back a transcript you can export — as plain text, Markdown, subtitles, or structured data.
+          There are two ways to make it. <strong>YouTube captions</strong> copies the subtitle track a
+          video already has: free, instant, and only for YouTube videos and playlists.{" "}
+          <strong>AI transcription</strong> listens to the audio and writes it out with punctuation and
+          full sentences: {perMin} credit per minute, and it works on anything, including uploads.
         </DefinitionLeadOpening>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Transcribe the audio when the quality of the text matters — anything you publish, quote,
-          edit, or feed to an AI. Captions are free and fine for everything else.
+          Use AI when the wording matters — anything you publish, quote, edit, or feed to a model.
+          Captions are free and good enough for the rest.
         </p>
 
         <AnchorHeading as="h2">1. Open Transcribe</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Sign in and open{" "}
-          <a href="https://app.indxr.ai/transcribe" className="text-[var(--accent)] hover:underline">Transcribe</a>{" "}
-          in the sidebar. The <strong>Single Video</strong> tab is selected by default, with{" "}
-          <strong>Playlist</strong> and <strong>Audio Upload</strong> next to it. New accounts get{" "}
-          {welcomeCredits} credits, enough to transcribe a {welcomeCredits / perMin}-minute video.
+          Open{" "}
+          <a href="https://app.indxr.ai/dashboard/transcribe" className="text-[var(--accent)] hover:underline">Transcribe</a>{" "}
+          in the app sidebar. It has three tabs — <strong>Video</strong>, <strong>Playlist</strong>, and{" "}
+          <strong>Audio</strong> — and <strong>Video</strong> is selected. New accounts get{" "}
+          {welcomeCredits} credits, enough for a {welcomeCredits / perMin}-minute AI transcription;
+          YouTube captions cost nothing either way.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          You can also extract captions without an account on the INDXR homepage, but that route gives
-          you plain text only and saves nothing.
-        </p>
-
-        <AnchorHeading as="h2">2. Paste a URL and choose how it&apos;s made</AnchorHeading>
-        <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Paste any public YouTube video URL into the field.
-        </p>
-        <p className="text-[var(--fg-subtle)] leading-relaxed">
-          For the free captions, click <strong>Extract</strong>. That is the whole step — skip to
-          step 4. For AI transcription, switch on <strong>Generate with AI</strong> first: the{" "}
-          <strong>Extract</strong> button becomes <strong>Check</strong>, so you approve the cost
-          before anything is charged.
+          You can also extract captions without an account on the{" "}
+          <a href="https://indxr.ai/transcribe" className="text-[var(--accent)] hover:underline">free tool</a>{" "}
+          at indxr.ai/transcribe, but that route gives you plain text only and saves nothing to a library.
         </p>
 
-        <AnchorHeading as="h2">3. Check the cost, then confirm</AnchorHeading>
+        <AnchorHeading as="h2">2. Paste a link and pick a method</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Clicking <strong>Check</strong> looks up the video&apos;s length and shows what the
-          transcription will cost, how many credits you hold, and roughly how long it will take. AI
-          transcription costs {perMin} credit per minute of audio, rounded up. Nothing is charged
-          until you click <strong>Confirm &amp; Extract</strong> — cancel here and you have spent
-          nothing. If a job fails after you confirm, the credits are returned.
+          Paste a public YouTube link into the field, then pick how the transcript is made. Under{" "}
+          <strong>Transcription method</strong>, <strong>YouTube captions</strong> is selected by
+          default and marked <strong>Free</strong>; <strong>AI transcription</strong> shows its rate
+          ({perMin} credit per minute) and how many credits you have.
         </p>
         <DocsFigure
-          alt="The Check result for a 22-minute video, showing a cost of 22 credits against a balance of 139, with Confirm & Extract and Cancel buttons."
-          caption="The price appears before the charge. Cancel costs nothing."
+          src="/docs/screenshots/method-choice.png"
+          alt="The Transcription method chooser: two cards, YouTube captions (marked Free) selected, and AI transcription showing 1 credit per minute and the available balance."
+          caption="Pick the method before you extract. Captions are free; AI shows the rate up front."
         />
 
-        <AnchorHeading as="h2">4. Read what came back</AnchorHeading>
+        <AnchorHeading as="h2">3. Captions come back right away</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          The transcript appears under <strong>Transcript Results</strong> with the video&apos;s
-          duration and line count. Each line carries a timestamp; the <strong>Reader Mode</strong>{" "}
-          switch hides them when you want to read straight through.
+          With <strong>YouTube captions</strong> selected, click <strong>Extract</strong> and the
+          transcript appears — there is nothing to approve and no credits are spent.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          If you took the free captions and they read poorly, <strong>Re-extract with AI</strong> sits
-          above the transcript with the exact cost for that video.
+          If YouTube refuses the request, you get a card with <strong>Try again</strong> (each retry
+          goes out over a different connection) and the option to switch to AI transcription; no
+          credits are charged. The{" "}
+          <a href="/docs/guides/single-video" className="text-[var(--accent)] hover:underline">single-video guide</a>{" "}
+          covers the rest — no captions, private videos, the wrong language.
         </p>
 
-        <AnchorHeading as="h2">5. Export it</AnchorHeading>
+        <AnchorHeading as="h2">4. AI transcription shows the cost first</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Click <strong>Copy</strong> for the full text, or <strong>Export</strong> for a file. INDXR
-          gives you seven formats: TXT and Markdown, each with or without timestamps, SRT and VTT for
-          subtitles, CSV and JSON for data, and RAG JSON for AI retrieval.
+          Select <strong>AI transcription</strong> and click <strong>Extract</strong>, and a card shows
+          the cost before anything is charged: the title, the length, the total, and what you hold and
+          what is left afterwards. The rate is {perMin} credit per minute of audio, rounded up — the
+          card below is one 55-minute lecture, so 55 credits.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Every format is free except RAG JSON, which costs {ragPer10Min} credit per 10 minutes of
-          transcript. Re-downloading an export you already generated is free. What each file contains
-          is on{" "}
+          <strong>Cancel</strong> and you have spent nothing. Once it starts it can&apos;t be cancelled,
+          but if the job fails the credits come back.
+        </p>
+        <DocsFigure
+          src="/docs/screenshots/cost-card-ai.png"
+          alt="The AI transcription cost card for a 55-minute video: title, duration, a Total of 55 credits, a balance line, and an Extract — 55 credits button beside Cancel."
+          caption="The price is on the button. Nothing is charged until you click it; Cancel costs nothing."
+        />
+
+        <AnchorHeading as="h2">5. It runs in the background</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          AI transcription runs in the background — you can close the tab and the finished transcript
+          lands in your <strong>Library</strong> regardless. The card shows each stage as it goes.
+        </p>
+        <DocsFigure
+          src="/docs/screenshots/progress-downloading.png"
+          alt="The progress card while an AI transcription runs, showing the Downloading audio stage with a progress bar and an elapsed timer."
+          caption="Downloading, then transcribing, then saving — you don't have to wait on the page."
+        />
+
+        <AnchorHeading as="h2">6. Read it and export it</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          The result card shows the length and the line count — and for AI transcription, the credits it
+          cost and how long it took. Each line carries a timestamp; the <strong>Reader Mode</strong>{" "}
+          switch hides them so you can read straight through. If you took the free captions and they read
+          poorly, a <strong>Re-extract with AI</strong> line sits below the transcript with the exact
+          cost for that video.
+        </p>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          <strong>Copy</strong> gives you the full text; <strong>Export</strong> gives you a file. The
+          menu groups the formats as <strong>Text</strong> (TXT and Markdown, each with or without
+          timestamps), <strong>Subtitles</strong> (SRT and VTT), <strong>Data</strong> (CSV and JSON),
+          and <strong>Developer</strong> (RAG JSON) — seven formats, nine downloads. Everything is free
+          except RAG JSON, at {ragPer10Min} credit per 10 minutes of transcript, and re-downloading
+          something you already exported is always free. What each file contains is on{" "}
           <a href="/docs/reference/export-formats" className="text-[var(--accent)] hover:underline">Export formats</a>.
         </p>
         <DocsFigure
-          alt="The Export menu open over a finished transcript, listing TXT, Markdown, SRT, VTT, CSV, JSON and RAG JSON in four groups."
+          src="/docs/screenshots/export-menu.png"
+          alt="The Export menu open over a finished transcript, listing TXT and Markdown (plain and with timestamps), SRT, VTT, CSV, JSON and RAG JSON under the group headings Text, Subtitles, Data and Developer."
           caption="One transcript, nine downloads, exported as often as you like."
         />
 
-        <AnchorHeading as="h2">6. Find it again, and fix it once</AnchorHeading>
+        <AnchorHeading as="h2">7. It stays in your library — fix it once</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          The transcript stays in your <strong>Library</strong>, where you can edit it. INDXR keeps
-          the original alongside your edited version, so you never lose what came out of the video.
+          The transcript stays in your <strong>Library</strong>, where you can open and edit it. INDXR
+          keeps the original alongside your edited version, so you never lose what came out of the video.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Editing early is worth the minute. Correct a misheard name in the transcript and every
-          export you make afterwards carries the correction — the subtitles, the Markdown, the RAG
-          chunks.
+          Fixing it early is worth the minute: correct a misheard name once, and every export you make
+          afterwards carries the correction — the subtitles, the Markdown, the RAG chunks.
         </p>
+        <DocsFigure
+          src="/docs/screenshots/library-row.png"
+          alt="A transcript row in the Library, showing the title, a source method badge, and its duration, word count and date."
+          caption="Every transcript lands here, tagged with how it was made, ready to open and edit."
+        />
 
         <RelatedTopicsList
           title="Next"
