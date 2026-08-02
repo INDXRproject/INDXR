@@ -109,6 +109,14 @@ YouTube's auto-vertaalde tracks worden vermeden door tracks te kiezen waarvan de
 | JSON (segmenten + metadata, **gratis**) | inline `JSON.stringify` | `TranscriptViewer.tsx:511-523` |
 | **RAG-JSON** (chunked, deep-links, overlap, **betaald**) | `buildRagJson` / `buildRagChunks` | `:516,:283` |
 
+**Exporteermenu — exacte inhoud + groepering** (geverifieerd 2026-08-02 tegen `packages/shared/src/components/TranscriptCard.tsx:354-427`, voor de format-batch). Vier groepen via `DropdownMenuLabel`, **9 items over 7 formaten**:
+- **Text:** `TXT — plain text`, `TXT — with timestamps`, `Markdown`, `Markdown — with timestamps`
+- **Subtitles:** `SRT`, `VTT`
+- **Data:** `CSV`, `JSON`
+- **Developer:** `RAG JSON` (uitgelogd: label wordt `Sign in to export`)
+
+Dus "seven formats, nine downloads" klopt (TXT×2, Markdown×2, + SRT/VTT/CSV/JSON/RAG). Alles gratis behalve RAG JSON (1 cr/10 min); opnieuw downloaden van een reeds geëxporteerd transcript is altijd gratis.
+
 **Bulk ZIP-export bestaat WÉL** (gecorrigeerd 2026-07-23 — deze regel zei eerder "geen"; dat klopte niet tegen de code). In de **library** kun je meerdere transcripten selecteren en als **ZIP met één bestand per transcript** downloaden:
 - Vrije formaten (TXT/TXT-ts/MD/MD-ts/CSV/SRT/VTT/JSON) → `handleBatchDownload` (`apps/app/src/components/library/TranscriptList.tsx:469-499`, `BatchFormat`-type `:469`).
 - **RAG-JSON-bulk-ZIP** (betaald, per transcript afgerekend via `bulkDeductRagExportCreditsAction`) → `handleBulkRagExecute` (`TranscriptList.tsx:403-467`).

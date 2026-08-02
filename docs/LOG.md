@@ -15247,3 +15247,25 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/app/docs/quickstart/page.tsx
 apps/marketing/src/components/docs/DocsFigure.tsx
 ---
+[2026-08-02 19:58] commit: docs(fase4): screenshot-machine note, export-menu truth, Remotion follow-up
+
+FASE 4 (vastleggen):
+- content/screenshot-machine.md: how to run the capture machine (NODE_PATH pnpm quirk,
+  against the live app), the 43 assets, which are live vs stubbed, that a renamed UI
+  string makes it fall over (= the route check), and the ErrorCard card↔code coverage
+  analysis (backend codes without a card: invalid_request, watchdog_permanent_failure;
+  no_speech_detected likely a no_speech alias). INDEX updated.
+- product-truth.md: the verified Export-menu content + grouping (Text/Subtitles/Data/
+  Developer, 9 items over 7 formats) so the format batch needn't re-derive it.
+- LESSONS: running a root Playwright config in this pnpm monorepo (NODE_PATH) + the
+  local-app-can't-reach-backend gap → capture live; cookie-login over UI login.
+- backlog: the Remotion clip as the follow-up on the captured progress stills (apps/video
+  deliberately not built).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/wiki/INDEX.md
+docs/wiki/content/product-truth.md
+docs/wiki/content/screenshot-machine.md
+docs/wiki/roadmap/backlog.md
+---
