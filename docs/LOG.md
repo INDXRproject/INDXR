@@ -15077,3 +15077,43 @@ packages/shared/src/lib/legal.ts
 packages/shared/src/lib/pricing.ts
 packages/shared/src/providers/ConsentProvider.tsx
 ---
+[2026-08-02 17:35] commit: fix(captions): fresh random proxy session per request (kill exit-IP pinning) + bump yt-dlp
+
+bot_detection diagnose 2026-08-02 (Sentry 78691da..., video XV46euqhvHQ).
+
+Root cause: the caption cascade used a DETERMINISTIC Decodo session (video_id[-8:]),
+which pins the sticky exit IP for the session TTL. Once YouTube bot-flags that IP,
+every internal retry AND every 'Try again' (which replays the extraction 1:1) reuses
+the same flagged IP and fails identically. Live-proven: a fixed sid pinned kBdfcR to
+79.144.40.38 for 7 runs and XV46 to 186.233.177.43 for 3 runs. The audio path never
+had this (per-job job_id[:8] = fresh session per job).
+
+Fix (main.py): captions get a fresh random session per request (secrets.token_hex(4));
+the tv/android fallback gets a '-rot' suffix -> a different exit IP than step 2. So
+'Try again' = new request = new session = new IP (proven: 95.70.149.185 -> 77.52.17.77).
+yt-dlp 2026.06.09 -> 2026.7.4 (latest stable; ejs compat verified live). Captions are
+not IP-locked (the VTT download already uses a different -r IP than extract_info).
+
+Success rate (10x/video, captions route): kBdfcR 8/10 -> 10/10; XV46 10/10 -> 9/10.
+Honest: bot_detection is an IP-lottery/arms race — the fix removes failure amplification
+(no more IP pinning), it does not eliminate blocks; expect ~5%-order residual failure.
+PO-tokens/bgutil deliberately not restored (ADR-027).
+
+Also reported (not changed): the ErrorCard's 'audio file instead of the route YouTube is
+blocking' is misleading — the audio path calls the same extract_info bot-check surface;
+its only edge is a fresh per-job IP. Honest rewording proposed in known-issues.md.
+
+Docs: known-issues.md (measurement + fix + arms-race honesty + false-promise note),
+priorities.md BLOCKERS, product-truth.md fixture (kBdfcR-8hEY: en manual captions, 3296s
+= 55 credits, license None; playlist PL30C13C91CFFEFEA6: 19 videos ~12h50m), LESSONS.
+Pre-existing unrelated test failure noted: test_error_classification connection->timeout
+label drift in transcription_pipeline (untouched).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/main.py
+backend/requirements.txt
+docs/LESSONS.md
+docs/wiki/content/product-truth.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+---

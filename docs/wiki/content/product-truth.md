@@ -258,3 +258,21 @@ De `/docs/how-indxr-works`-sectie is **15 → 11 pagina's**: `credits` weg (301 
 - **Overview** (`/docs/how-indxr-works/overview`) is nu volledig geschreven; volatiele getallen (welcome-credits, 1cr/min, 3cr summary, 1cr/10min RAG, gratis-3) renderen uit `pricing.ts` (`CREDIT_COSTS`/`FREE_TIER`) via de nieuwe `AnchorHeading`-component (anchor op élke H2/H3).
 - **DocsShell-header** gerepareerd: de fixed marketing-header (`h-16`) kreeg geen offset → overlap met sidebar-titel + breadcrumb; fix = `pt-16` + sidebar `top-16`, en de **dubbele breadcrumb** (shell rende er zelf één náást de per-pagina `DocsBreadcrumb`) is opgeheven (shell-breadcrumb weg, per-pagina blijft — draagt JSON-LD). `/articles`-nav toegevoegd.
 - Elke verwijderde route heeft een **301** in `next.config.ts`.
+
+---
+
+## 8. Fixture-video voor docs-screenshots + Remotion (vastgelegd 2026-08-02)
+
+Eén vaste voorbeeldvideo voor álle documentatie-screenshots en Remotion-opnames, zodat de docs/Remotion-batch niet opnieuw hoeft te zoeken. **Live geverifieerd via yt-dlp door de Decodo-proxy (2026-08-02).**
+
+**Video:** `kBdfcR-8hEY` — https://www.youtube.com/watch?v=kBdfcR-8hEY
+- **Titel (verbatim):** *Justice: What's The Right Thing To Do? Episode 01 "THE MORAL SIDE OF MURDER"* — kanaal **Harvard University**.
+- **Captions:** JA — **1 door-mensen-gemaakte** manuele track (`en`) **plus** auto-captions (`en-orig` native ASR + 313 vertaal-tracks). Extraheerbaar (cascade stap 1 `youtube-transcript-api` slaagt).
+- **Duur:** **3296 s** → AI-transcriptiekosten = `ceil(3296/60)` = **55 credits** (pricing.ts, 1 cr/min).
+- **Licentieveld (verbatim, geen oordeel):** yt-dlp `license` = **`None`** (geen expliciete Creative-Commons-markering; standaard YouTube-licentie niet uit te sluiten — letterlijk `None` gerapporteerd).
+
+**Playlist:** `PL30C13C91CFFEFEA6` — https://www.youtube.com/playlist?list=PL30C13C91CFFEFEA6
+- **Titel:** *Justice with Michael Sandel*.
+- **Aantal video's:** **19**. **Totale duur:** **46 243 s (~12 u 50 m)**. (0 entries met ontbrekende duur.)
+
+Gebruik deze getallen voor de playlist-reviewscreenshot. Video's zonder captions of niet-extraheerbaar: niet zelf vervangen — terugrapporteren. (Hier N.v.t.: de video heeft captions en is extraheerbaar.)

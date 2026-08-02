@@ -12,6 +12,8 @@ Voor de strategische "waarom" achter de architectuur-keuzes in Fase 1, zie ADR-0
 
 **Launch-datum: 1 juli 2026.** Geschatte werkdagen niet meer relevant — datum is leidend, scope past zich aan.
 
+- [~] **Caption-extractie bot_detection ("not a bot") — structureel, gemitigeerd 2026-08-02 (niet opgelost).** Meting: ~4,7% caption-failures (14d, ingelogd; usage_logs), ≥6 bot-hits uit captions in één Railway-log-snapshot → terugkerend. Root cause: deterministische proxy-sessie (`video_id[-8:]`) pinde het exit-IP → een geflagd IP verdoemde elke retry/Try-again. Fix: verse random sessie per request + `-rot`-fallback + yt-dlp → 2026.7.4. **Dit is een wapenwedloop, geen permanente fix** — reken op restfalen (~5%-orde). Volledige meting + eerlijke nuance in [known-issues.md](../operations/known-issues.md#caption-extractie-bot_detection-sign-in-to-confirm-youre-not-a-bot--gemitigeerd-2026-08-02-niet-permanent-opgelost). Monitoren na deploy; PO-tokens/bgutil bewust niet terug (ADR-027).
+
 ### Zachte landing — geïsoleerde quick wins (eerst)
 
 Reden voor deze volgorde: Sentry vroeg = we vangen onze eigen wijzigingen op. Smart polling, caption cache en User Feedback widget zijn los staand zonder onderlinge afhankelijkheden.

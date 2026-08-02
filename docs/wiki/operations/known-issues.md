@@ -207,6 +207,30 @@ Dit is geen bug die gefixt wordt — het is een YouTube infrastructuur beperking
 
 ## Actieve Bugs
 
+### Caption-extractie bot_detection ("Sign in to confirm you're not a bot") — gemitigeerd 2026-08-02, NIET permanent opgelost
+
+**Vastgesteld:** 2026-08-02 (Sentry `78691dabfd2f4e298db09a143cba2b06`, video `XV46euqhvHQ`, logger `indxr-youtube-utils`). Publieke video, speelt normaal af; ErrorCard toonde `bot_detection`, geen credits verbruikt.
+
+**Meting (14 dagen, read-only diagnose):**
+- DB `usage_logs` (ingelogde caption-events): **7 mislukt / 150 = 4,7%** (reden niet opgeslagen in de kolom; bot_detection is een deel hiervan). Anonieme extracties staan niet in `usage_logs`.
+- Railway `api`-log-snapshot (recent buffer, ~163 regels): **15× "not a bot"**, waarvan **≥6 uit `indxr-youtube-utils`** (captions) en 3 uit `indxr-backend`. → **structureel/terugkerend, geen one-off.**
+- Audio/whisper-jobs: 13 error / 61 (14d) — reden niet uitgesplitst; bot_detection is een deel.
+- Exacte 14-daagse Sentry-telling niet beschikbaar (geen Sentry-tool in deze omgeving) — de log-recurrence + het Sentry-issue dragen de "structureel"-conclusie.
+
+**Root cause (code-geverifieerd):** `main.py` gaf de caption-cascade een **deterministische** proxy-sessie `session_id = video_id[-8:]`. Decodo pint per sessie een sticky exit-IP voor de sessie-TTL. Zodra YouTube dat IP bot-flagt, hergebruiken álle interne yt-dlp-retries **én** elke "Try again" (die de extractie 1-op-1 herdraait) exact datzelfde geflagde IP → identiek falen tot de TTL verloopt. Live bewezen: een vaste sid pinde `kBdfcR-8hEY` 7 runs lang op `79.144.40.38` en `XV46euqhvHQ` 3 runs op `186.233.177.43`. Het audio-pad had dit niet (per-job `job_id[:8]` = verse sessie per job).
+
+**Fix (2026-08-02, `main.py`):** captions krijgen een **verse random sessie per request** (`secrets.token_hex(4)`) i.p.v. `video_id[-8:]`, en de tv/android-fallback (stap 3) krijgt een `-rot`-suffix → ander exit-IP dan stap 2. "Try again" = nieuwe request = nieuwe sessie = ander IP (live bewezen: opeenvolgende sessies → `95.70.149.185` → `77.52.17.77`). yt-dlp gebumpt `2026.06.09` → `2026.7.4` (laatste stable, ejs-compat geverifieerd).
+
+**Slagingspercentage (10× per video, captions-route):**
+| Video | vóór (deterministisch, yt-dlp 2026.06.09) | ná (random sessie, yt-dlp 2026.7.4) |
+|---|---|---|
+| `kBdfcR-8hEY` | 8/10 (80%) — 2× bot_detection op runs 1-2, daarna gepind op één IP | 10/10 (100%) — 10 verschillende IP's |
+| `XV46euqhvHQ` | 10/10 (100%) — gepind op één IP | 9/10 (90%) — 1× bot_detection, hersteld op andere IP's |
+
+**Eerlijk deel (belangrijk):** dit is een **wapenwedloop, geen permanente oplossing**. De ruwe slaging per poging is op een normale dag al hoog (~70–100%) omdat de meeste residentiële IP's op enig moment niet geflagd zijn; bot_detection is een **IP-loterij** die per dag/uur schommelt. De fix **verhoogt de dag-slaging niet dramatisch** — hij verwijdert de **failure-amplificatie**: een geflagd IP verdoemt niet langer élke retry/Try-again voor de TTL, want elke poging verkent nu een vers IP. Verwacht dus **restfalen** (grofweg de 5%-orde uit de meting), niet nul. PO-tokens/bgutil bewust NIET teruggehaald (ADR-027; provider waarschuwt zelf dat het de botcheck meestal niet meer omzeilt).
+
+**Valse-belofte-observatie (DEEL 1.5, gerapporteerd — niet gefixt):** de ErrorCard stuurt geblokkeerde users naar AI-transcriptie met _"it works from the audio file instead of the route YouTube is blocking"_ (`VideoTab.tsx:1236`). Dat is **misleidend**: de blokkade zit op yt-dlp's `extract_info` (watch-page/player), die het **audio-pad identiek** aanroept (`audio_utils.py:305`, zelfde `player_client:['ios','web_embedded']`) — het is niet "de audio-route i.p.v. de geblokkeerde route". Het audio-pad wint enkel via een **verse per-job IP** — precies wat de caption-fix nu óók geeft. Voorgestelde eerlijker formulering (ter weging, niet doorgevoerd): _"Try AI transcription — it retries over a fresh connection, which often gets through. If YouTube is blocking us hard right now it can hit the same wall; your credits are refunded if it can't finish."_
+
 ### ~~AI-transcriptie master-cache write ontbrak — cache-pad functioneel dood~~ ✅ Opgelost 2026-06-26
 **Vastgesteld:** 2026-06-26 (CC analyse)
 **Opgelost:** 2026-06-26

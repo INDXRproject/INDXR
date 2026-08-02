@@ -422,7 +422,14 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
                 )
 
         # ── Cascade step 1: youtube-transcript-api ───────────────────────────
-        session_id = video_id[-8:]
+        # Fresh random Decodo session per REQUEST (was `video_id[-8:]` — deterministic).
+        # A deterministic session pins the sticky exit IP for that video: once YouTube
+        # bot-flags that IP, every internal retry AND every "Try again" reuses the same
+        # flagged IP for the session TTL and fails identically (diagnose 2026-08-02 —
+        # a fixed sid pinned kBdfcR to one IP for 7 runs). A random sid gives each request
+        # a fresh IP, so "Try again" genuinely rotates. Captions aren't IP-locked (the VTT
+        # download already uses a different `-r` IP than extract_info), so this is safe.
+        session_id = secrets.token_hex(4)
         result = await extract_via_youtube_transcript_api(video_id, session_id=session_id, lang_pref=normalised_lang)
         caption_model = "youtube_transcript_api"
 
@@ -461,7 +468,9 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             except Exception as step2_err:
                 # ── Cascade step 3: yt-dlp (tv/android client rotation) ──────
                 logger.info(f"[CASCADE] {video_id}: step 2 failed ({type(step2_err).__name__}), trying step 3 (tv/android)")
-                result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=session_id, clients=['tv', 'android'], lang_pref=normalised_lang)
+                # Rotate the session for the fallback → a different exit IP than step 2, so a
+                # bot-flagged IP on step 2 doesn't doom the tv/android retry on the same IP.
+                result = await extract_with_ytdlp(video_id, use_proxy=True, session_id=f"{session_id}-rot", clients=['tv', 'android'], lang_pref=normalised_lang)
                 caption_model = "youtube_captions_rotated"
 
         # result can be a dict (success) or list (empty/failure)
