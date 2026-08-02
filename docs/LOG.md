@@ -15144,3 +15144,80 @@ packages/shared/src/components/consent/ConsentBanner.tsx
 packages/shared/src/components/free-tool/VideoTab.tsx
 packages/shared/src/components/transcribe/errorCopy.ts
 ---
+[2026-08-02 19:49] commit: feat(docs): Playwright screenshot-capture machine + 43 quickstart assets
+
+FASE 2. A capture spec that produces the /docs/quickstart stills and doubles as a
+route-check: it drives the real UI by role/exact-text, so a renamed button or moved
+control makes the matching capture fail (that IS the regression signal).
+
+Isolation: own config (playwright.capture.config.ts, testDir tests/playwright/capture)
+so the default  (testDir=specs, the 9 functional specs) never picks it
+up — verified: 0 capture tests in the default config's set. Run separately:
+  BASE_URL=https://app.indxr.ai NODE_PATH=node_modules/.pnpm/node_modules \
+    node node_modules/.pnpm/@playwright+test@1.59.1/node_modules/@playwright/test/cli.js \
+    test --config=playwright.capture.config.ts
+
+Determinism: fixed capture account (test1, 500 credits set admin-side), light theme,
+1280x800 @2x, consent pre-accepted (no banner), element (not full-page) screenshots.
+Fixture kBdfcR-8hEY / PL30C13C91CFFEFEA6 (product-truth §8).
+
+43 assets in apps/marketing/public/docs/screenshots/:
+- LIVE (real backend): method-choice, cost-card-ai (real 3296s→55 credits, then Cancel —
+  never confirmed), captions-result, export-menu, library-row, playlist-review (fetch
+  only, job never started).
+- STUBBED (page.route; proves the FRONTEND renders the state, not that the backend emits
+  that code there): progress-downloading, progress-transcribing, ai-result, and every one
+  of the 34 ErrorCards in the copy map (incl. the unknown-code fallback).
+
+sharp not installed → PNG only (no .webp), as designed. Note: the local app can't reach
+the extraction backend (503 on /api/extract — a local env gap, reported not fixed), so the
+LIVE captures run against app.indxr.ai; stubbed/UI captures run anywhere.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/public/docs/screenshots/.gitkeep
+apps/marketing/public/docs/screenshots/ai-result.png
+apps/marketing/public/docs/screenshots/captions-result.png
+apps/marketing/public/docs/screenshots/cost-card-ai.png
+apps/marketing/public/docs/screenshots/error-age_restricted.png
+apps/marketing/public/docs/screenshots/error-api_error.png
+apps/marketing/public/docs/screenshots/error-bot_detection.png
+apps/marketing/public/docs/screenshots/error-channel_url.png
+apps/marketing/public/docs/screenshots/error-compression_error.png
+apps/marketing/public/docs/screenshots/error-connection_error.png
+apps/marketing/public/docs/screenshots/error-credit_check_error.png
+apps/marketing/public/docs/screenshots/error-credit_deduction_failed.png
+apps/marketing/public/docs/screenshots/error-duration_error.png
+apps/marketing/public/docs/screenshots/error-duration_exceeds_max.png
+apps/marketing/public/docs/screenshots/error-extraction_error.png
+apps/marketing/public/docs/screenshots/error-file_too_large.png
+apps/marketing/public/docs/screenshots/error-insufficient_credits.png
+apps/marketing/public/docs/screenshots/error-internal_error.png
+apps/marketing/public/docs/screenshots/error-members_only.png
+apps/marketing/public/docs/screenshots/error-no_captions.png
+apps/marketing/public/docs/screenshots/error-no_speech.png
+apps/marketing/public/docs/screenshots/error-no_speech_detected.png
+apps/marketing/public/docs/screenshots/error-partial_write.png
+apps/marketing/public/docs/screenshots/error-proxy_error.png
+apps/marketing/public/docs/screenshots/error-server_error.png
+apps/marketing/public/docs/screenshots/error-storage_full.png
+apps/marketing/public/docs/screenshots/error-stuck_pending.png
+apps/marketing/public/docs/screenshots/error-suspended.png
+apps/marketing/public/docs/screenshots/error-timeout.png
+apps/marketing/public/docs/screenshots/error-too_many_jobs.png
+apps/marketing/public/docs/screenshots/error-too_many_videos.png
+apps/marketing/public/docs/screenshots/error-unauthorized.png
+apps/marketing/public/docs/screenshots/error-unsupported_file.png
+apps/marketing/public/docs/screenshots/error-validation_error.png
+apps/marketing/public/docs/screenshots/error-worker_crashed.png
+apps/marketing/public/docs/screenshots/error-youtube_restricted.png
+apps/marketing/public/docs/screenshots/error-ytdlp_parse.png
+apps/marketing/public/docs/screenshots/error-zzz_unknown_fallback.png
+apps/marketing/public/docs/screenshots/export-menu.png
+apps/marketing/public/docs/screenshots/library-row.png
+apps/marketing/public/docs/screenshots/method-choice.png
+apps/marketing/public/docs/screenshots/playlist-review.png
+apps/marketing/public/docs/screenshots/progress-downloading.png
+apps/marketing/public/docs/screenshots/progress-transcribing.png
+playwright.capture.config.ts
+tests/playwright/capture/quickstart-capture.spec.ts
+---
