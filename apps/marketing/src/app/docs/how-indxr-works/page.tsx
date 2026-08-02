@@ -5,7 +5,12 @@ import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { DocsFigure } from "@/components/docs/DocsFigure"
+import { HowItWorksFlow } from "@/components/docs/HowItWorksFlow"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { EXPORT_FORMAT_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+
+const formatCount = spellCount(EXPORT_FORMAT_COUNT)
 
 const description =
   "INDXR gets text out of a video in one of two ways: it copies the caption track the video already carries, or it sends the audio to a speech recognition model and writes the transcript from scratch. Which of the two you use decides the quality of everything you export afterwards."
@@ -48,9 +53,13 @@ export default function DocsOverviewPage() {
           export afterwards.
         </DefinitionLeadOpening>
         <p className={P}>
-          Everything else in INDXR — playlists, uploads, the library, the export formats — is built on
+          Everything else in INDXR — <Link href="/docs/guides/playlists" className={A}>playlists</Link>,{" "}
+          <Link href="/docs/guides/uploads" className={A}>uploads</Link>, the{" "}
+          <Link href="/docs/guides/library" className={A}>library</Link>, the{" "}
+          <Link href="/docs/reference/export-formats" className={A}>export formats</Link> — is built on
           that one distinction.
         </p>
+        <HowItWorksFlow />
 
         <AnchorHeading as="h2">The caption track a video already has</AnchorHeading>
         <p className={P}>
@@ -70,6 +79,18 @@ export default function DocsOverviewPage() {
           tracks read cleanly. You cannot tell which kind a video carries before you extract it, and
           INDXR does not check in advance.
         </p>
+        <p className={P}>
+          Occasionally YouTube refuses the request outright and asks us to prove we&apos;re not a bot.
+          It lands on a small share of caption requests — on the order of five percent — and it is
+          about YouTube throttling us, not about your video. No credits are charged. Trying again sends
+          the request over a different connection, which usually gets through; if it keeps failing, AI
+          transcription reads the audio instead and is the reliable way in.
+        </p>
+        <DocsFigure
+          src="/docs/screenshots/error-bot_detection.png"
+          alt="The error card shown when YouTube rate-limits a caption request: it says each attempt goes out over a different connection, that no credits were used, and offers Try again."
+          caption="When YouTube throttles a request: no credits spent, and Try again goes out over a fresh connection."
+        />
 
         <AnchorHeading as="h2">Transcribing the audio instead</AnchorHeading>
         <p className={P}>
@@ -88,23 +109,31 @@ export default function DocsOverviewPage() {
           caption extraction does not; the rates are on{" "}
           <Link href="/docs/account/credits" className={A}>Credits</Link>.
         </p>
+        <DocsFigure
+          src="/docs/screenshots/method-choice.png"
+          alt="The Transcription method chooser: YouTube captions, marked Free, selected by default, next to AI transcription showing its per-minute rate and your available balance."
+          caption="You pick between the two routes before extracting: captions are free, AI shows its rate up front."
+        />
 
         <AnchorHeading as="h2">What happens between the video and the transcript</AnchorHeading>
         <p className={P}>
-          The path is the same whichever way you start. INDXR takes a single video URL, a playlist URL,
-          or an audio or video file you upload. It fetches what it needs — the caption track, or the
-          audio — produces the transcript, and stores it in your library.
+          The path is the same whichever way you start. INDXR takes a single video URL, a{" "}
+          <Link href="/docs/guides/playlists" className={A}>playlist</Link> URL, or an audio or video
+          file you <Link href="/docs/guides/uploads" className={A}>upload</Link>. It fetches what it
+          needs — the caption track, or the audio — produces the transcript, and stores it in your{" "}
+          <Link href="/docs/guides/library" className={A}>library</Link>.
         </p>
         <p className={P}>
-          Nothing is checked before a job starts. In a playlist, videos that turn out to have no
-          captions, or that cannot be reached at all, are skipped while the job runs, and the credits
-          held for them are returned. An uploaded file has no caption track to fall back on, so uploads
-          are always transcribed.
+          Nothing is checked before a job starts. In a{" "}
+          <Link href="/docs/guides/playlists" className={A}>playlist</Link>, videos that turn out to
+          have no captions, or that cannot be reached at all, are skipped while the job runs, and the
+          credits held for them are returned. An uploaded file has no caption track to fall back on, so
+          uploads are always transcribed.
         </p>
         <p className={P}>
-          Audio is deleted as soon as the transcription finishes; INDXR keeps no recording of it. If a
-          video has been transcribed before, INDXR serves the stored transcript instead of processing
-          the audio again — the same text, sooner.
+          Audio is deleted as soon as the job ends, whether it succeeds or fails; INDXR keeps no
+          recording of it. If a video has been transcribed before, INDXR serves the stored transcript
+          instead of fetching and processing it again — the same text, sooner.
         </p>
 
         <AnchorHeading as="h2">Why the choice sticks</AnchorHeading>
@@ -128,12 +157,17 @@ export default function DocsOverviewPage() {
 
         <AnchorHeading as="h2">Where the transcript goes from there</AnchorHeading>
         <p className={P}>
-          Every transcript INDXR produces lands in your library, stays editable, and can be exported as
-          often as you like into any of the seven formats, from plain text to subtitles to a JSON file
-          prepared for a vector database. Only the last of those costs credits.
+          Every transcript INDXR produces lands in your{" "}
+          <Link href="/docs/guides/library" className={A}>library</Link>, stays editable, and can be
+          exported as often as you like into any of the{" "}
+          <Link href="/docs/reference/export-formats" className={A}>{formatCount} formats</Link>, from
+          plain text to subtitles to a JSON file prepared for a vector database. Only the last of those
+          costs credits.
         </p>
         <p className={P}>
-          A transcript can also be summarised, and the summary is stored and edited the same way.
+          A transcript can also be{" "}
+          <Link href="/docs/guides/summaries" className={A}>summarised</Link>, and the summary is stored
+          and edited the same way.
         </p>
 
         <RelatedTopicsList
@@ -146,7 +180,7 @@ export default function DocsOverviewPage() {
             {
               label: "Export formats",
               href: "/docs/reference/export-formats",
-              description: "what each of the seven files actually contains",
+              description: `what each of the ${formatCount} files actually contains`,
             },
             {
               label: "Credits",

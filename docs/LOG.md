@@ -15332,3 +15332,32 @@ playwright.capture.config.ts
 tests/playwright/capture/global-setup.ts
 tests/playwright/capture/quickstart-capture.spec.ts
 ---
+[2026-08-03 01:40] commit: docs(how-indxr-works): cross-link, honest refusal paragraph, figures — no new content
+
+FASE 3. Kept the good sections (opening, the two caption/AI sections, 'Why the choice
+sticks'); this page explains the SYSTEM and points elsewhere — it does not become a
+third home for numbers that live on other pages.
+
+- Cross-links added at the point each sub-movement is named: playlists, uploads, library,
+  summaries, export formats, accuracy, credits — instead of only three links at the bottom.
+- One honest paragraph on refused caption requests: YouTube throttles ~5% of caption
+  requests (known-issues 2026-08-02), no credits charged, Try again goes out over a different
+  connection, AI transcription is the reliable way in. Not buried, not dramatised.
+- Verified + corrected: audio deletion now says 'as soon as the job ends, whether it succeeds
+  or fails' (finally-block cleanup, transcription_pipeline.py:961-980); dedup reworded (video-
+  keyed cache serves captions too, not just 'the audio'); the Credits link is right — the rates/
+  reserve/refund story genuinely lives at /docs/account/credits (not /pricing), verified.
+- 'seven formats' now derives from EXPORT_FORMAT_COUNT (FASE 1).
+- Figures: a new inline-SVG flow diagram (source → method [sky=captions / indigo=AI] → transcript
+  → library → export, design tokens, no bitmap/lib) as the first figure; the method-choice
+  screenshot at the two-routes section; the bot_detection card at the refusal paragraph.
+
+Reported (not fixed): the storage MAX cap (500 MB) + enforcement (ADR-078) is in no rendered
+doc and absent from /docs/reference/limits where a user would look (buy-space IS on
+/docs/account/credits). Noted in priorities.md as a real docs gap → belongs in Limits.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/how-indxr-works/page.tsx
+apps/marketing/src/components/docs/HowItWorksFlow.tsx
+docs/wiki/roadmap/priorities.md
+---
