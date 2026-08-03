@@ -40,6 +40,19 @@ export const EXPORT_DOWNLOAD_COUNT = EXPORT_MENU.length
 /** Distinct free formats (everything except RAG JSON). */
 export const EXPORT_FREE_FORMAT_COUNT = new Set(EXPORT_MENU.filter((i) => !i.paid).map((i) => i.format)).size
 
+/** Distinct format labels in menu order: ["TXT","Markdown","SRT","VTT","CSV","JSON","RAG JSON"].
+    Prose lists (hero, marketing) derive from this so they can never drift from the export menu. */
+export const EXPORT_FORMAT_LABELS = EXPORT_MENU.reduce<string[]>((acc, i) => {
+  if (!acc.includes(i.format)) acc.push(i.format)
+  return acc
+}, [])
+
+/** Oxford-comma prose list: "TXT, Markdown, …, JSON, or RAG JSON" (pass "and" for the and-form). */
+export function exportFormatsProse(conj: "or" | "and" = "or"): string {
+  const l = EXPORT_FORMAT_LABELS
+  return `${l.slice(0, -1).join(", ")}, ${conj} ${l[l.length - 1]}`
+}
+
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]
 /** Spell a small count for prose ("seven"), so content stays natural while deriving from code. */
 export function spellCount(n: number): string {

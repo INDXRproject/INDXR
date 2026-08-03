@@ -15620,3 +15620,30 @@ Changed: docs/LESSONS.md
 docs/LOG.md
 docs/wiki/content/screenshot-machine.md
 ---
+
+[2026-08-03 19:00] feat(homepage) FASE1: waarheid + echte beelden | (1a) 3 codevoorbeelden (Markdown/SRT/RAG JSON) vervangen door ECHTE generator-output uit formatTranscript op fixture kBdfcR-8hEY (1142 segmenten); gefabriceerde `source_url` weg, echte `deep_link`/`chunk_id`/`token_count_estimate`/`total_chunks:60` erin; fragmenten in apps/marketing/src/lib/homeExportSamples.ts met provenance-header. (1b) hero-formaatlijst rendert uit EXPORT_MENU (`exportFormatsProse`) → 7 i.p.v. 5. (1c) free-tier claim eerlijk: "10 caption-extracties/dag zonder account" i.p.v. "not a 5-second trial". (1d) blok 2: "200-video overnight"+"in seconds" geschrapt → echte cap "up to 500 videos/job". (1e) 4 nep-Macbooks weg: blok 2 → echte playlist-review-screenshot (DocsFigure dual-theme); blok 3/4/5 → echte export in nieuwe CodeSample-codeblok. (1f) emoji → Lucide Puzzle/Infinity/Gift. (1g) "Five ways…" → "One input, any scale, and the output your work needs." MacbookMockupFrame nu ongebruikt. build:marketing groen; live-geverifieerd. | gewijzigd: apps/marketing/src/app/page.tsx, apps/marketing/src/components/marketing/{DifferentiatorStrip,CodeSample}.tsx, apps/marketing/src/lib/homeExportSamples.ts, packages/shared/src/lib/exportFormats.ts, docs/LOG.md
+[2026-08-03 18:13] commit: feat(homepage): real export output, honest claims, real screenshots
+
+1a: replace all three hand-typed code samples (Markdown, SRT, RAG JSON) with
+verbatim output from the real generators (formatTranscript) run over the fixture
+video's stored transcript. The fabricated source_url field is gone; the real
+deep_link/chunk_id/token_count_estimate/total_chunks fields are what shows.
+Fragments live in lib/homeExportSamples.ts with reproducible provenance.
+
+1b: hero format list renders from EXPORT_MENU (new exportFormatsProse) — 7 not 5.
+1c: free-tier claim names the real anonymous limit (10 caption extractions/day).
+1d: block 2 drops unmeasured 'in seconds' and the wrong '200-video'; uses the real
+500-video/job cap.
+1e: the four fake Macbook mockups are gone — block 2 shows the real playlist-review
+screenshot (dual-theme); blocks 3/4/5 show real export output in a CodeSample block.
+1f: emoji icons -> Lucide (Puzzle/Infinity/Gift).
+1g: false 'Five ways' subhead -> 'One input, any scale, and the output your work needs.'
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/page.tsx
+apps/marketing/src/components/marketing/CodeSample.tsx
+apps/marketing/src/components/marketing/DifferentiatorStrip.tsx
+apps/marketing/src/lib/homeExportSamples.ts
+docs/LOG.md
+packages/shared/src/lib/exportFormats.ts
+---
