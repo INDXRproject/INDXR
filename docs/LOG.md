@@ -15596,3 +15596,27 @@ docs/LOG.md
 docs/wiki/operations/known-issues.md
 docs/wiki/roadmap/priorities.md
 ---
+
+[2026-08-03 17:45] docs(finalize) DEEL4: opnamestandaard vastgelegd + contactsheet | screenshot-machine.md herschreven met de opnamestandaard (FRAME_W/PAD/ademruimte, var(--bg)-achtergrond, één frame-border, licht+donker in één run, frameShot-kloontechniek, DocsFigure -light/-dark-afleiding), asset-tabel bijgewerkt (20 dual-theme, export-menu→DocsTable, library-row→library-list, gestubde cost-card, CAPTURE_GALLERY-opt-in). Mirror-afbouw + besluit staan al in de wiki (product-truth.md + priorities.md, DEEL 1). LESSONS: 2 echte herhaalpatronen (dode-kolom-gate; SSR-comment-grep-valkuil). Contactsheet: één self-contained HTML (20 assets, licht+donker naast elkaar, bestandsnaam + LIVE/STUBBED) in de scratchpad-outputs + gepubliceerd als Artifact voor review — bewust NIET in de repo/site/sitemap. | gewijzigd: docs/wiki/content/screenshot-machine.md, docs/LESSONS.md, docs/LOG.md
+[2026-08-03 16:12] commit: docs: capture standard in screenshot-machine.md + review lessons
+
+Rewrite screenshot-machine.md around the new capture standard (fixed frame
+width, breathing room, theme background, single frame border, light+dark in one
+run via frameShot's clone technique, DocsFigure -light/-dark derivation) and the
+current 20 dual-theme asset set (export menu → DocsTable, library row → list,
+stubbed cost card, opt-in error gallery).
+
+LESSONS: two real recurring patterns — a feature gate read from a never-written
+column is silently dead (verify the source column is populated); and grepping
+rendered React HTML must account for the <!-- --> markers SSR inserts between
+adjacent {expr} and text.
+
+A self-contained HTML contact sheet (all 20 assets, light+dark, live/stubbed) was
+produced for review in the session outputs and published as an Artifact — kept out
+of the repo/site/sitemap by design.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/content/screenshot-machine.md
+---
