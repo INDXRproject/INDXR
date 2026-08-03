@@ -15647,3 +15647,29 @@ apps/marketing/src/lib/homeExportSamples.ts
 docs/LOG.md
 packages/shared/src/lib/exportFormats.ts
 ---
+
+[2026-08-03 20:00] fix(pricing) FASE2: geld- en juridische claims rechtgetrokken | (2a) refund-FAQ trok naar /terms §7: 14-daags herroepingsrecht, alleen als géén credit van die aankoop gebruikt is (was tegenstrijdig "7 dagen/≤5 credits"). Enige twee refund-window-plekken waren /pricing + /terms; /terms ongewijzigd. (2b) factuur-claims: /pricing-FAQ + VatLine + billing-doc (3 plekken) zeiden "Stripe genereert/maalt automatisch een factuur" — ONWAAR (ADR-053: on-demand download-knop per aankoop). Herschreven naar "download een VAT-factuur per aankoop vanaf je account; niets wordt gemaild". (2c) AlwaysFreeBlock "unlimited for registered users" (onwaar; gratis ingelogd = 50/u) → "caption-extractie kost nooit een credit". (2d) opslag toegevoegd aan de kostentabel als creditbesteding, gerenderd uit storage.ts (+100 MB = 100 credits; live €2.50 in Plus). (2e) landenbeperking (ADR-062: Radar-blocklist, alleen in Stripe-dashboard, NIET in code) nu zichtbaar vóór de kassa: korte niet-defensieve regel + link naar nieuwe FAQ; geen landen hardgecodeerd (list niet code-verifieerbaar → OVERGESLAGEN). (2f) betaalmethode-FAQ: payment_method_types staat NIET in code (dynamic van Stripe-dashboard) → opsomming iDEAL/Bancontact geschrapt, nu zonder enumeratie. Kostentabel narekend tegen pricing.ts: alle 7 rijen correct (0/30/60/17/3/6/66), storage-rij klopt. build:marketing groen; live-geverifieerd. | gewijzigd: apps/marketing/src/app/pricing/page.tsx, apps/marketing/src/components/pricing/{VatLine,AlwaysFreeBlock,CreditCostTable}.tsx, apps/marketing/src/app/docs/account/billing/page.tsx, docs/LOG.md
+[2026-08-03 18:19] commit: fix(pricing): align refund policy, correct invoice + unlimited claims, add storage + country notice
+
+2a: /pricing refund FAQ now matches Terms §7 (14-day right of withdrawal, refundable
+only if no credit from the purchase was used) — was a contradictory '7 days / <=5 credits'.
+2b: invoice claims on /pricing, VatLine and the billing doc said Stripe auto-generates/
+emails an invoice — false (ADR-053: on-demand download per purchase). Rewritten.
+2c: AlwaysFreeBlock 'unlimited for registered users' (false; free signed-in is 50/hr)
+-> 'caption extraction never costs a credit'.
+2d: library storage added to the cost table as a credit spend, rendered from storage.ts.
+2e: country restriction (ADR-062 Radar blocklist) now surfaced before checkout — a short
+line + a new FAQ; countries not hardcoded (the list lives only in the Stripe Dashboard).
+2f: payment-methods FAQ no longer enumerates iDEAL/Bancontact (not set in code; dynamic
+from the Stripe Dashboard).
+
+Cost table re-derived against pricing.ts — all rows correct. build:marketing green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/docs/account/billing/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+apps/marketing/src/components/pricing/AlwaysFreeBlock.tsx
+apps/marketing/src/components/pricing/CreditCostTable.tsx
+apps/marketing/src/components/pricing/VatLine.tsx
+docs/LOG.md
+---

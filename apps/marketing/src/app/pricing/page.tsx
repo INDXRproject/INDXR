@@ -45,7 +45,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Can I get a refund?",
-    answer: "We offer refunds within 7 days if you haven't used more than 5 credits.",
+    answer: "Yes, under your 14-day right of withdrawal: if you haven't used any credit from a purchase, you can request a full refund within 14 days. Once you use a credit from that purchase — by generating a transcript — it becomes non-refundable, but your credits never expire, so their value stays yours. If a transcription fails on our side, those credits are returned automatically. Full terms are in our Terms of Service.",
   },
   {
     question: "How is VAT handled?",
@@ -53,11 +53,15 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Can I get an invoice for business use?",
-    answer: "Yes — Stripe automatically generates an invoice for every purchase, emailed to you after payment. Your purchase history is also on your account page.",
+    answer: "Yes. Your account's purchase history has a Download invoice button for every purchase — a proper VAT invoice, generated on demand when you click it. Nothing is emailed automatically; you download it whenever you need it.",
+  },
+  {
+    question: "Which countries can buy credits?",
+    answer: "Most of them. Payment isn't available in a few countries yet, where we can't currently meet local requirements — in those, checkout is declined before any charge, so you're never billed. If that happens to you, email support@indxr.ai and we'll help.",
   },
   {
     question: "What payment methods are supported?",
-    answer: "Credit and debit cards, iDEAL, Bancontact, and the other payment methods Stripe supports in the EU.",
+    answer: "Whatever Stripe offers at your checkout — cards, plus the local payment methods Stripe supports in your country. You'll see the available options on the payment screen.",
   },
 ]
 
@@ -131,8 +135,15 @@ export default function PricingPage() {
           {/* Section 8 — VAT line */}
           <VatLine />
 
+          {/* Country availability — surfaced BEFORE checkout so nobody runs the whole funnel only to be
+              declined at the till (ADR-062: a Stripe Radar rule blocks a few countries pre-charge). */}
+          <p className="mt-4 text-center text-sm text-[var(--fg-muted)]">
+            Payment isn&apos;t available in every country yet.{" "}
+            <a href="#faq" className="text-[var(--accent)] hover:underline">See who can buy</a>.
+          </p>
+
           {/* Section 9 — FAQ */}
-          <div className="mt-16 max-w-3xl mx-auto border-t border-[var(--border)] pt-12">
+          <div id="faq" className="mt-16 max-w-3xl mx-auto border-t border-[var(--border)] pt-12">
             <h2 className="text-2xl font-bold text-[var(--fg)] mb-6">Frequently asked questions</h2>
             <FAQAccordion items={faqItems} />
           </div>

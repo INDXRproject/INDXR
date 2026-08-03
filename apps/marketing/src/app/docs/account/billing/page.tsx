@@ -9,7 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 
 const description =
-  "You buy credits in one-time packages — there are no subscriptions. Stripe handles the payment and issues a proper VAT invoice, and your invoices and purchase history live on your Account page. A few countries can't buy yet because of how VAT registration works."
+  "You buy credits in one-time packages — there are no subscriptions. Stripe handles the payment, and you can download a proper VAT invoice for any purchase from your Account page, where your purchase history lives. A few countries can't buy yet because of how VAT registration works."
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/account/billing" },
@@ -41,9 +41,9 @@ export default function DocsBillingPage() {
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Billing and invoices</h1>
         <DefinitionLeadOpening>
           You buy credits in one-time packages — there are no subscriptions and nothing recurring. Stripe,
-          our payment processor, handles the payment and issues a proper VAT invoice — VAT being the sales
-          tax built into EU prices. Your invoices and purchase history live on your Account page. A few
-          countries can&apos;t buy yet, because of how VAT registration works.
+          our payment processor, handles the payment, and you can download a proper VAT invoice — VAT being
+          the sales tax built into EU prices — for any purchase from your Account page, where your full
+          purchase history lives. A few countries can&apos;t buy yet, because of how VAT registration works.
         </DefinitionLeadOpening>
 
         <AnchorHeading as="h2">Buying credits</AnchorHeading>
@@ -57,8 +57,10 @@ export default function DocsBillingPage() {
 
         <AnchorHeading as="h2">Invoices and purchase history</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Every purchase gets a VAT invoice from Stripe, suitable for expensing or reclaiming VAT where
-          you&apos;re entitled to. You&apos;ll find your invoices and full purchase history on your{" "}
+          You can download a VAT invoice for any purchase from Stripe, suitable for expensing or reclaiming
+          VAT where you&apos;re entitled to. The invoice is generated on demand, the moment you click to
+          download it — nothing is emailed automatically. You&apos;ll find the download and your full
+          purchase history on your{" "}
           <a href={appHref("/dashboard/account")} className="text-[var(--accent)] hover:underline">Account page</a>,
           alongside your credit transaction history. Refunds on a purchase are covered in the{" "}
           <a href="/terms" className="text-[var(--accent)] hover:underline">Terms</a>.
