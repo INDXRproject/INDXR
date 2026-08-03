@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
+import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
@@ -97,7 +98,7 @@ export default function YouTubeMembersOnlyTranscriptPage() {
         <li>
           <strong>Upload to INDXR.AI.</strong> Open the{" "}
           <Link href="/articles/audio-to-text">Audio Upload tab</Link> in INDXR.AI. Drag in the audio file
-          (MP3, MP4, WAV, M4A, OGG, FLAC, or WEBM, up to 500MB). INDXR.AI sends it through{" "}
+          ({uploadFormatsProse()}, up to {UPLOAD_MAX_FILE_MB}MB). INDXR.AI sends it through{" "}
           {transcriptionModelName()} for transcription.
         </li>
         <li>

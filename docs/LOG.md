@@ -15389,3 +15389,48 @@ docs/LESSONS.md
 docs/wiki/content/product-truth.md
 docs/wiki/content/screenshot-machine.md
 ---
+
+[2026-08-03 14:30] feat(uploads): single source voor geaccepteerde uploadformaten | nieuwe `packages/shared/src/lib/uploadFormats.ts` (9 exts, lockstep met backend `audio_utils.py SUPPORTED_FORMATS`, `spellCount`→"nine", oxford-prose + accept-attr helpers). AudioTab drop-zone toonde 7/9 (MPEG+MPGA weg) → nu derived: `accept`-attr, client `validTypes`-guard, label. 6 articles + /pricing + uploads-guide + /docs/reference/limits (hand-getypte 9-lijst → `UPLOAD_EXTENSIONS.join`) renderen nu uit de bron. Broad grep: 0 hand-getypte 7-tellingen/enumeraties over op de rendered surface. **docs/content-mirrors:** 4 aangeraakte page-mirrors (rendered `.tsx` bestaat) VERWIJDERD i.p.v. bijgewerkt (audio-to-text, how-it-works, youtube-to-text, LANDING-PAGE); 4 aangeraakte WEES-drafts (geen route: alternative-downsub/notegpt/turboscribe, youtube-transcript-generator) TERUGGEDRAAID naar HEAD (off-task export-count-edits) + gemarkeerd als content-debt. Rest van mirror-afbouw + wees-draft-besluit in priorities.md; product-truth.md mirror-regel bijgewerkt. `pnpm build` 2/2 groen. | gewijzigd: packages/shared/src/lib/uploadFormats.ts (nieuw), packages/shared/src/components/free-tool/AudioTab.tsx, apps/marketing/src/app/articles/{audio-to-text,youtube-age-restricted-transcript,youtube-members-only-transcript,youtube-srt-download,youtube-transcript-json,youtube-transcript-not-available}/page.tsx, apps/marketing/src/app/pricing/page.tsx, apps/marketing/src/app/docs/guides/uploads/page.tsx, apps/marketing/src/app/docs/reference/limits/page.tsx, docs/content/{ARTIKEL-audio-to-text,ARTIKEL-how-it-works,ARTIKEL-youtube-to-text,LANDING-PAGE}.md (verwijderd), docs/wiki/{roadmap/priorities.md,content/product-truth.md}, docs/LESSONS.md
+[2026-08-03 15:01] commit: feat(uploads): single source for accepted upload formats; retire page-mirrors
+
+New packages/shared/src/lib/uploadFormats.ts is the one source for the 9
+accepted upload extensions (lockstep with backend audio_utils.py
+SUPPORTED_FORMATS). The AudioTab drop-zone showed only 7 of 9 (MPEG + MPGA
+were dropped); its accept attr, client-side validTypes guard and label now
+all derive from the constant, as do 6 articles, /pricing, the uploads guide,
+and the /docs/reference/limits table (previously a hand-typed 9-extension
+list). Broad grep confirms no hand-typed 7-count or format enumeration
+survives on the rendered surface.
+
+docs/content mirrors: the 4 touched files with a rendered .tsx equivalent
+(audio-to-text, how-it-works, youtube-to-text, LANDING-PAGE) are an
+unrendered second source of truth and were deleted rather than updated. The
+4 touched files with NO rendered route (alternative-downsub/notegpt/turbo-
+scribe, youtube-transcript-generator) are orphan drafts / sole source; their
+off-task export-count edits were reverted and they are flagged as content
+debt in priorities.md. Remaining mirror retirement + orphan decision tracked
+there; product-truth.md updated so future sessions stop syncing deleted files.
+
+pnpm build green (2/2).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/articles/audio-to-text/page.tsx
+apps/marketing/src/app/articles/youtube-age-restricted-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-members-only-transcript/page.tsx
+apps/marketing/src/app/articles/youtube-srt-download/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-json/page.tsx
+apps/marketing/src/app/articles/youtube-transcript-not-available/page.tsx
+apps/marketing/src/app/docs/guides/uploads/page.tsx
+apps/marketing/src/app/docs/reference/limits/page.tsx
+apps/marketing/src/app/pricing/page.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/content/ARTIKEL-audio-to-text.md
+docs/content/ARTIKEL-how-it-works.md
+docs/content/ARTIKEL-youtube-to-text.md
+docs/content/LANDING-PAGE.md
+docs/wiki/content/product-truth.md
+docs/wiki/roadmap/priorities.md
+packages/shared/src/components/free-tool/AudioTab.tsx
+packages/shared/src/lib/uploadFormats.ts
+---

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
+import { UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
@@ -121,8 +122,8 @@ export default function YouTubeAgeRestrictedTranscriptPage() {
         </li>
         <li>
           <strong>Upload to INDXR.AI.</strong> Open the{" "}
-          <Link href="/articles/audio-to-text">Audio Upload tab</Link>. Accepted formats: MP3, MP4, WAV,
-          M4A, OGG, FLAC, WEBM, up to 500MB. The file is sent directly to INDXR.AI&apos;s backend — not
+          <Link href="/articles/audio-to-text">Audio Upload tab</Link>. Accepted formats: {UPLOAD_FORMATS_LIST},
+          up to {UPLOAD_MAX_FILE_MB}MB. The file is sent directly to INDXR.AI&apos;s backend — not
           through Vercel&apos;s size-limited proxy.
         </li>
         <li>

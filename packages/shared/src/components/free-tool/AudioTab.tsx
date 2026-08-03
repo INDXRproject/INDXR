@@ -22,6 +22,7 @@ import { BalanceLine } from "../transcribe/CostBreakdown"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy } from "../transcribe/errorCopy"
 import { CREDIT_COSTS } from "../../lib/pricing"
+import { UPLOAD_EXTENSIONS, UPLOAD_ACCEPT_ATTR, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "../../lib/uploadFormats"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
 // ADR-071 — DEEL 4: mirrors the server's AssemblyAI cap (backend/main.py MAX_TRANSCRIPTION_SECONDS).
@@ -269,7 +270,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     setIsUploading(true)
 
     // Check file type
-    const validTypes = ['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.mp4', '.mpeg', '.mpga', '.webm']
+    const validTypes: readonly string[] = UPLOAD_EXTENSIONS
     const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
 
     if (!validTypes.includes(fileExt)) {
@@ -544,7 +545,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".mp3,.wav,.m4a,.ogg,.flac,.mp4,.mpeg,.mpga,.webm"
+          accept={UPLOAD_ACCEPT_ATTR}
           onChange={handleFileSelect}
           className="hidden"
           disabled={isUploading}
@@ -590,7 +591,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               </div>
               <h3 className="text-xl font-semibold text-fg mb-2">Upload Audio File</h3>
               <p className="text-fg-muted mb-2">Drag and drop your audio file here, or click to browse</p>
-              <p className="text-sm text-fg-muted">Supported: MP3, MP4, WAV, M4A, OGG, FLAC, WEBM (max 500MB)</p>
+              <p className="text-sm text-fg-muted">Supported: {UPLOAD_FORMATS_LIST} (max {UPLOAD_MAX_FILE_MB}MB)</p>
             </>
           )}
         </div>

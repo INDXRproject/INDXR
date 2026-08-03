@@ -9,6 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
+import { UPLOAD_FORMAT_COUNT_WORD, UPLOAD_FORMATS_LIST } from "@indxr/shared/lib/uploadFormats"
 
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 
@@ -50,8 +51,8 @@ export default function DocsUploadsPage() {
 
         <AnchorHeading as="h2">What you can upload</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          INDXR accepts nine audio and video formats: MP3, MP4, MPEG, MPGA, M4A, WAV, WEBM, OGG and
-          FLAC. A file can be up to <strong>500 MB</strong> and up to <strong>10 hours</strong> long.
+          INDXR accepts {UPLOAD_FORMAT_COUNT_WORD} audio and video formats: {UPLOAD_FORMATS_LIST}. A
+          file can be up to <strong>500 MB</strong> and up to <strong>10 hours</strong> long.
           Both limits are checked in the browser before the upload starts and again on the server, so an
           oversized file is stopped early rather than after a long wait.
         </p>

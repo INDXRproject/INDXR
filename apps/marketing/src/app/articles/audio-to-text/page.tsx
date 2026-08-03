@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
+import { UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/articles/audio-to-text" },
   title: "Audio File to Text — Upload MP3, MP4, WAV & More | INDXR.AI",
   description:
-    `Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by ${transcriptionModelName()}.`,
+    `Upload any audio or video file and get a full transcript. Supports ${UPLOAD_FORMATS_LIST} up to ${UPLOAD_MAX_FILE_MB}MB. 1 credit per minute, powered by ${transcriptionModelName()}.`,
   ...editorialOg("audio-to-text"),
 }
 
@@ -54,7 +55,7 @@ export default function AudioToTextPage() {
       category="Workflows"
       slug="audio-to-text"
       title="Audio File to Text — Upload Any Audio, Get a Transcript"
-      metaDescription={`Upload any audio or video file and get a full transcript. Supports MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. 1 credit per minute, powered by ${transcriptionModelName()}.`}
+      metaDescription={`Upload any audio or video file and get a full transcript. Supports ${UPLOAD_FORMATS_LIST} up to ${UPLOAD_MAX_FILE_MB}MB. 1 credit per minute, powered by ${transcriptionModelName()}.`}
       publishedAt="2026-04-16"
       updatedAt="2026-04-16"
       author={AUTHORS["indxr-editorial"]}

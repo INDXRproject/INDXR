@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
+import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { PricingHero } from "@/components/pricing/PricingHero"
@@ -36,7 +37,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Does INDXR.AI work for audio files, not just YouTube?",
-    answer: "Yes. Audio Upload accepts MP3, MP4, WAV, M4A, OGG, FLAC, and WEBM files up to 500MB. Same AI transcription pipeline, same credit cost (1 credit per minute), same export options.",
+    answer: `Yes. Audio Upload accepts ${uploadFormatsProse("and")} files up to ${UPLOAD_MAX_FILE_MB}MB. Same AI transcription pipeline, same credit cost (1 credit per minute), same export options.`,
   },
   {
     question: "Is RAG JSON export included in the standard price?",

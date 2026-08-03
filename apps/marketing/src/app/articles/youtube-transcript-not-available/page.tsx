@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
+import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
@@ -331,8 +332,8 @@ export default function YouTubeTranscriptNotAvailablePage() {
 
       <p>
         For audio you already have — a recording, a podcast episode, a downloaded video file — the{" "}
-        <Link href="/articles/audio-to-text">Audio Upload</Link> tab accepts MP3, MP4, WAV, M4A, OGG, FLAC,
-        and WEBM files up to 500MB. The same AI pipeline applies; for a full technical overview see{" "}
+        <Link href="/articles/audio-to-text">Audio Upload</Link> tab accepts {uploadFormatsProse("and")}{" "}
+        files up to {UPLOAD_MAX_FILE_MB}MB. The same AI pipeline applies; for a full technical overview see{" "}
         <Link href="/docs/how-indxr-works">how INDXR.AI works</Link>.
       </p>
 

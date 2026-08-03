@@ -7,6 +7,7 @@ import { DocsTable } from "@/components/docs/DocsTable"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { UPLOAD_EXTENSIONS } from "@indxr/shared/lib/uploadFormats"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/limits" },
@@ -55,7 +56,7 @@ export default function DocsLimitsPage() {
           <tbody>
             <tr><td>AI transcription — max duration</td><td>10 hours per file</td></tr>
             <tr><td>Audio/video upload — max size</td><td>500 MB</td></tr>
-            <tr><td>Upload — accepted files</td><td>.mp3, .mp4, .mpeg, .mpga, .m4a, .wav, .webm, .ogg, .flac</td></tr>
+            <tr><td>Upload — accepted files</td><td>{UPLOAD_EXTENSIONS.join(", ")}</td></tr>
             <tr><td>Playlist — max videos per job</td><td>500</td></tr>
             <tr><td>Concurrent jobs (per account)</td><td>3</td></tr>
             <tr><td>Caption extraction — duration</td><td>No limit</td></tr>

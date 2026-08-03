@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
+import { UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
@@ -21,7 +22,7 @@ const faqs = [
   },
   {
     q: "Does this work for audio files I upload myself?",
-    a: "Yes. Upload MP3, MP4, WAV, M4A, OGG, FLAC, WEBM up to 500MB. Standard JSON and RAG JSON are both available after transcription. channel and language will be null since there's no YouTube metadata to fetch.",
+    a: `Yes. Upload ${UPLOAD_FORMATS_LIST} up to ${UPLOAD_MAX_FILE_MB}MB. Standard JSON and RAG JSON are both available after transcription. channel and language will be null since there's no YouTube metadata to fetch.`,
   },
   {
     q: "What's the difference between standard JSON and RAG JSON?",

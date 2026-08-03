@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
+import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
@@ -171,8 +172,8 @@ to understand about this topic`}</code></pre>
 
       <p>
         For audio files you&apos;ve already downloaded, the{" "}
-        <Link href="/articles/audio-to-text">Audio Upload tab</Link> accepts MP3, MP4, WAV, M4A, OGG, FLAC,
-        and WEBM files up to 500MB and produces the same resegmented SRT/VTT output.
+        <Link href="/articles/audio-to-text">Audio Upload tab</Link> accepts {uploadFormatsProse("and")}{" "}
+        files up to {UPLOAD_MAX_FILE_MB}MB and produces the same resegmented SRT/VTT output.
       </p>
 
       <h2>Compatibility with Video Editors</h2>
