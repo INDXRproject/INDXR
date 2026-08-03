@@ -15566,3 +15566,33 @@ apps/marketing/src/components/docs/HowItWorksFlow.tsx
 docs/LOG.md
 tests/playwright/capture/quickstart-capture.spec.ts
 ---
+
+[2026-08-03 17:10] feat(limits+ratelimit) DEEL3: opslaglimiet gedocumenteerd + premium-bypass gefixt | /docs/reference/limits: nieuwe "Library storage"-sectie gerenderd uit @indxr/shared/lib/storage (basis 100 MB, max 500 MB = basis + 4×100 MB gekocht, +100 MB per 100 credits) + handhavings-prose (storage_full 413 vóór credit-reservering, géén credits kwijt, bestaande transcripten blijven) + kruislink naar /docs/account/credits#library-storage-and-buying-more + storage_full-ErrorCard-figuur (nieuwe beeldstandaard). Eenheid-onderscheid expliciet: bibliotheekcap ≠ per-bestand-uploadcap (beide "500" maar verschillende dingen). Getallen tegen storage.ts + migraties 20260723140000/20260724013956 geverifieerd. RATE LIMITER: `/api/extract` bepaalde `isPremium` uit `user_credits.total_credits_purchased` — DODE kolom (0 voor alle 9 rijen, geverifieerd) → bypass vuurde nooit. Nu uit `credit_transactions.kind='purchase'` (RLS "own transactions" laat user eigen rijen lezen); live-geverifieerd: enige koper 7a280a22 → bypass, gratis account → 50/u. Docs rate-tabel nu 3 tiers. EERLIJK: limiter staat in prod nog UIT (noopLimiter, Upstash-env weg sinds 2026-05-06 — known-issues §Upstash); deze fix maakt het gedrag kloppend zodra Upstash terugkomt. `pnpm build:marketing` groen; limits-render geverifieerd. | gewijzigd: apps/marketing/src/app/api/extract/route.ts, apps/marketing/src/app/docs/reference/limits/page.tsx, docs/wiki/operations/known-issues.md, docs/wiki/roadmap/priorities.md, docs/LOG.md
+[2026-08-03 16:06] commit: feat(limits): document storage cap + fix the after-purchase rate-limit bypass
+
+Storage limits were enforced (ADR-078) but documented nowhere. /docs/reference/limits
+now has a Library storage section rendered from @indxr/shared/lib/storage (base
+100 MB, max 500 MB = base + up to 4 bought 100 MB blocks at 100 credits each), the
+enforcement rule (a full library refuses a new transcript BEFORE reserving credits —
+no credits lost, existing transcripts kept), a cross-link to Credits, and the
+storage_full ErrorCard figure. The library cap is stated as distinct from the
+per-file upload cap (both happen to be 500 but mean different things).
+
+Rate limiter: /api/extract computed isPremium from user_credits.total_credits_purchased
+— a dead column, 0 for every row (verified), so the 'anyone who purchased bypasses the
+limiter' rule never actually fired. Now derived from the authoritative signal: a
+credit_transactions row with kind='purchase' (written only by the Stripe webhook). RLS
+lets a user read their own transactions. Verified against live data: the one purchaser
+bypasses, free accounts do not. Docs rate table now shows three tiers.
+
+Honest note: the limiter itself is still off in prod (noopLimiter, Upstash env removed
+2026-05-06 — known-issues); this fix makes the behaviour correct once Upstash returns.
+build:marketing green; limits page render verified.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/api/extract/route.ts
+apps/marketing/src/app/docs/reference/limits/page.tsx
+docs/LOG.md
+docs/wiki/operations/known-issues.md
+docs/wiki/roadmap/priorities.md
+---

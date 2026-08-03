@@ -7,13 +7,21 @@ import { DocsTable } from "@/components/docs/DocsTable"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { DocsFigure } from "@/components/docs/DocsFigure"
 import { UPLOAD_EXTENSIONS } from "@indxr/shared/lib/uploadFormats"
+import {
+  LIBRARY_STORAGE_BASE_MB,
+  LIBRARY_STORAGE_MAX_MB,
+  STORAGE_BLOCK_MB,
+  STORAGE_BLOCK_COST_CREDITS,
+  STORAGE_MAX_UPGRADES,
+} from "@indxr/shared/lib/storage"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/limits" },
   title: "Limits — INDXR.AI Docs",
   description:
-    "The hard limits INDXR enforces: AI transcription up to 10 hours per file, uploads up to 500 MB, playlists up to 500 videos per job, 3 concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.",
+    "The hard limits INDXR enforces: AI transcription up to 10 hours per file, uploads up to 500 MB, a 100 MB library that scales to 500 MB, playlists up to 500 videos per job, 3 concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.",
 }
 
 export default function DocsLimitsPage() {
@@ -69,6 +77,42 @@ export default function DocsLimitsPage() {
           extractions can run at the same time — you can have up to 3 going at once.
         </p>
 
+        <AnchorHeading as="h2">Library storage</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          Your <strong>library</strong> — every saved transcript plus its edits, AI summaries and
+          exported files — has its own storage cap. This is separate from the per-file upload size
+          above: the upload cap limits a single file you send in, while this limits the total size of
+          everything kept in your library. Because transcripts are text, {LIBRARY_STORAGE_BASE_MB} MB
+          holds a great many of them.
+        </p>
+        <DocsTable>
+          <thead>
+            <tr>
+              <th>Limit</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Library storage — base (every account)</td><td>{LIBRARY_STORAGE_BASE_MB} MB, free</td></tr>
+            <tr><td>Library storage — maximum</td><td>{LIBRARY_STORAGE_MAX_MB} MB (base + bought space)</td></tr>
+            <tr><td>Buy more space</td><td>+{STORAGE_BLOCK_MB} MB per {STORAGE_BLOCK_COST_CREDITS} credits, permanent — up to {STORAGE_MAX_UPGRADES} times</td></tr>
+          </tbody>
+        </DocsTable>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          When your library is full, a new transcript is refused <em>before</em> any credits are
+          reserved — you are never charged for a transcript that could not be saved, and your existing
+          transcripts are left untouched. Free up space by deleting transcripts you no longer need, or buy
+          more room: {STORAGE_BLOCK_COST_CREDITS} credits adds a permanent {STORAGE_BLOCK_MB} MB, up to a{" "}
+          {LIBRARY_STORAGE_MAX_MB} MB total. See{" "}
+          <a className="text-[var(--accent)] hover:underline" href="/docs/account/credits#library-storage-and-buying-more">Credits</a>{" "}
+          for how buying space works.
+        </p>
+        <DocsFigure
+          src="/docs/screenshots/error-storage_full.png"
+          alt="An error card headed 'Your library is full', explaining the transcript was not saved because the library is at its limit and no credits were used, with buttons to manage the library or buy space."
+          caption="What you see when the library is full: the transcript is refused before any credits are spent."
+        />
+
         <AnchorHeading as="h2">Rate limits</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           A rate limit caps how many requests you can make in a set window of time, so no single user
@@ -84,7 +128,8 @@ export default function DocsLimitsPage() {
           </thead>
           <tbody>
             <tr><td>Anonymous (no account)</td><td>10 per 24 hours (per IP)</td></tr>
-            <tr><td>Signed in</td><td>50 per hour</td></tr>
+            <tr><td>Signed in, on the free tier</td><td>50 per hour</td></tr>
+            <tr><td>Signed in, after any purchase</td><td>No limit</td></tr>
           </tbody>
         </DocsTable>
 
@@ -98,7 +143,8 @@ export default function DocsLimitsPage() {
         <SourcesBlock
           sources={[
             { publisher: "INDXR (own code)", supports: "duration, playlist, concurrency and upload limits", verifiedAgainst: "backend/main.py (MAX_TRANSCRIPTION_SECONDS, MAX_PLAYLIST_VIDEOS, MAX_CONCURRENT_JOBS); backend/audio_utils.py (SUPPORTED_FORMATS, MAX_FILE_SIZE_MB)" },
-            { publisher: "INDXR (own code)", supports: "rate limits", verifiedAgainst: "packages/shared/src/lib/ratelimit.ts" },
+            { publisher: "INDXR (own code)", supports: "library storage base, maximum, buy-space ratio and full-library enforcement (ADR-078)", verifiedAgainst: "packages/shared/src/lib/storage.ts; supabase migrations 20260723140000_library_storage_limit, 20260724013956_library_storage_max_cap; backend is_library_full" },
+            { publisher: "INDXR (own code)", supports: "rate limits and the after-purchase bypass", verifiedAgainst: "packages/shared/src/lib/ratelimit.ts; apps/marketing/src/app/api/extract/route.ts" },
           ]}
         />
         <RelatedTopicsList

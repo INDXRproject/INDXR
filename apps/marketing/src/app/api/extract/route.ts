@@ -36,9 +36,19 @@ export async function POST(request: Request) {
         );
       }
 
-      const { data } = await supabase.rpc('get_user_credits', { p_user_id: user.id }).single();
-      const typedData = data as { total_credits_purchased: number } | null;
-      if (typedData && typedData.total_credits_purchased > 0) {
+      // "Has ever purchased" → bypass the rate limiter entirely. The authoritative signal is a
+      // credit_transactions row with kind='purchase' (written only by the Stripe webhook's add_credits,
+      // p_kind:'purchase'). The old check read user_credits.total_credits_purchased, a DEAD column that
+      // is never written (0 for every row) — so the premium bypass never actually fired. RLS lets a user
+      // read their own transactions (policy "Users can view own transactions": auth.uid() = user_id).
+      const { data: purchase } = await supabase
+        .from('credit_transactions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('kind', 'purchase')
+        .limit(1)
+        .maybeSingle();
+      if (purchase) {
         isPremium = true;
       }
     }
