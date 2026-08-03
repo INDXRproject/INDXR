@@ -1,7 +1,9 @@
 # Content-sitemap — INDXR.AI
 
 **Doel:** de kaart van *alle user-facing content* vóór we etappe B (GDPR) en C (waarheids-pagina) schrijven.
-**Aangemaakt:** 2026-07-18 · **Scope:** `apps/marketing` (indxr.ai) + user-facing kant van `apps/app` (app.indxr.ai)
+**Aangemaakt:** 2026-07-18 · **Bijgewerkt:** 2026-08-03 · **Scope:** `apps/marketing` (indxr.ai) + user-facing kant van `apps/app` (app.indxr.ai)
+
+> **CORRECTIES 2026-08-03** (de 07-18-snapshot beschreef inmiddels-verdwenen claims — geverifieerd tegen code, niet aannames). De genoemde entries hieronder zijn bijgewerkt: **`99.4% accuracy` bestaat NERGENS meer** in de content (grep = 0); **`67 talen`-caption-claim weg** (grep = 0); **`200-video overnight` weg** → echte cap 500/job; **privacy + terms zijn nu ECHTE juridische documenten** (`LEGAL_VERSION` 2026-08-02, Last updated privacy 08-02 / terms 07-20), geen lege bodies meer; **refund = 14-daags herroepingsrecht (ToS §7, gezaghebbend)**, niet "7 dagen/≤5 credits" — die tegenstrijdigheid is rechtgetrokken op /pricing (zie [[product-truth]] §refundbeleid); **pricing- en free-tool-FAQ's zijn géén `[placeholder — Khidr]`-stubs meer** (factuur=on-demand, betaalmethoden zonder opsomming, landenbeperking zichtbaar); **homepage-codevoorbeelden zijn nu echte generator-output** (geen `source_url`); **/login Apple-"coming soon"-knop verwijderd**; **/transcribe H1 sentence case**, taalclaim via `transcriptionRouterPhrase()` (99+ dekking, kopmodel 18). **Volatiele tellingen (formaten/credits/talen/opslag) horen uit een gedeelde bron te renderen** — verifieer tegen `pricing.ts` / `exportFormats.ts` / `storage.ts` / [[product-truth]], niet tegen dit document. Entries buiten de bovenstaande lijst zijn NIET her-geauditeerd sinds 07-18.
 **Methode:** de bestaande content-audit (`architecture/sitemap.md`, 2026-05-03) als basis, aangescherpt tegen de *daadwerkelijke* routes in `apps/`. Waar audit en routes verschillen: de routes winnen — verschillen staan in [§ Discrepanties](#discrepanties-audit-vs-werkelijkheid).
 
 > **Twee lagen.** [Laag 1 = wat er IS](#laag-1--de-kaart) (feit). [Laag 2 = mijn oordeel](#laag-2--kritische-blik) (mening). Strikt gescheiden.
@@ -71,14 +73,14 @@ app.indxr.ai/  ── app (auth vereist)
 
 | Pagina | Route | Doel (1 zin) | Belangrijkste claims | Status |
 |---|---|---|---|---|
-| Homepage | `/` | Pitch: extract → export → index voor video's, playlists, audio. | "Extract. Export. Index. Every video."; single URL / playlist / audio in één interface; formaten TXT·MD·SRT·VTT·JSON·RAG-JSON·CSV; "no account needed — free for captioned videos"; **99.4% accuracy, 800+ min getest**; "200-video playlist overnight"; EU-hosted (Supabase eu-west-1); audio verwijderd na transcriptie; geen extensie / geen abonnement / credits verlopen nooit; teaser "Starting at €5.00". Testimonials = **expliciete placeholder** (ADR-044, geen nep-quotes). | live |
-| Pricing | `/pricing` | Pay-per-use pakketten + credit-kostentabel + FAQ. | Tiers (uit `pricing.ts`): **Try €5/100 · Starter €15/400 · Plus €25/1.000 (Recommended) · Power €60/3.000**; VAT inclusief, geen abonnement, credits verlopen nooit; credit-kosten: AI-transcriptie 1cr/min, playlist 1cr/video na 3 gratis, AI-summary 3cr, RAG-JSON 1cr/10min, single-caption 0cr; **25 welcome credits**; audio-upload MP3/MP4/WAV/M4A/OGG/FLAC/WEBM tot **500MB**; **refund binnen 7 dagen als ≤5 credits gebruikt**. Laatste **3 FAQ-antwoorden = `[placeholder — Khidr]` stubs** (VAT, facturen, betaalmethoden). | live (FAQ deels placeholder) |
+| Homepage | `/` | Pitch: extract → export → index voor video's, playlists, audio. | "Extract. Export. Index. Every video."; single URL / playlist / audio in één interface; formaten TXT·MD·SRT·VTT·JSON·RAG-JSON·CSV; "no account needed — free for captioned videos" + eerlijke anon-limiet (10 caption-extracties/dag); playlist-cap **500/job** (niet "200 overnight"); StatsFromTesting "~5% median" (eigen runs, ADR-044); **homepage-codevoorbeelden = echte generator-output** (geen `source_url`); EU-hosted (Supabase eu-west-1); audio verwijderd na transcriptie; geen extensie / geen abonnement / credits verlopen nooit; teaser "Starting at €5.00". Testimonials = **expliciete placeholder** (ADR-044, geen nep-quotes). | live |
+| Pricing | `/pricing` | Pay-per-use pakketten + credit-kostentabel + FAQ. | Tiers (uit `pricing.ts`): **Try €5/100 · Starter €15/400 · Plus €25/1.000 (Recommended) · Power €60/3.000**; VAT inclusief, geen abonnement, credits verlopen nooit; credit-kosten: AI-transcriptie 1cr/min, playlist 1cr/video na 3 gratis, AI-summary 3cr, RAG-JSON 1cr/10min, single-caption 0cr; **25 welcome credits**; audio-upload 9 formaten tot **500MB** (uit `uploadFormats`); **refund = 14-daags herroepingsrecht (ToS §7)**; opslag-bijkoop staat nu in de kostentabel; landenbeperking zichtbaar vóór de kassa. FAQ's ingevuld (factuur on-demand, betaalmethoden zonder opsomming) — **géén placeholders meer**. | live |
 
 ### Groep 2 — Vrije tool (funnel-ingang)
 
 | Pagina | Route | Doel (1 zin) | Belangrijkste claims | Status |
 |---|---|---|---|---|
-| Free tool | `/transcribe` | Gratis 3-tab tool (video/playlist/audio) met conversie-gating. | "Free YouTube Transcript Generator"; single-video werkt voor iedereen (auto-save alleen ingelogd); playlist + audio → **gratis account vereist** (25 credits, geen kaart); audio 1cr/min, "99.4% accuracy", "deleted after transcription"; formaten TXT (gratis/anoniem) vs rest (account); **67 talen auto-captions / 99+ AI (AssemblyAI Universal-3)**. FAQ-antwoorden = **`[placeholder — Khidr]` stubs**. | live (FAQ placeholder) |
+| Free tool | `/transcribe` | Gratis 3-tab tool (video/playlist/audio) met conversie-gating. | H1 "Free YouTube transcript generator" (sentence case); `meta-keywords`-tag verwijderd; single-video werkt voor iedereen (auto-save alleen ingelogd); playlist + audio → **gratis account vereist** (25 credits, geen kaart); audio 1cr/min, "deleted after transcription"; formaten TXT (gratis/anoniem) vs rest (account), lijst uit `exportFormats`; taalclaim via `transcriptionRouterPhrase()` (99+ dekking, kopmodel Universal-3.5 Pro voor z'n 18 talen). FAQ's ingevuld — **geen placeholders**. | live |
 
 ### Groep 3 — Product-documentatie (`indxr.ai/docs/*`)
 
@@ -153,15 +155,15 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 |---|---|---|---|---|
 | About | `/about` | Bedrijf/product-omschrijving. | Intro echt (captions/playlists/AI-fallback/multi-format); **"What we do" en "Who builds" secties leeg** (`[KHIDR: vul aan]`). | placeholder (deels) |
 | Contact | `/contact` | Support-formulier (Help vs Feedback). | Twee kaarten; "we read and respond to everything"; reply in dashboard Messages. **⚠ Formulier submit werkt niet** — `handleSubmit` = fake 800ms delay, marketing-`/api/support` niet geïmplementeerd (terwijl app wél `/api/support/submit` heeft). | live UI / ⚠ kapotte backend |
-| Privacy | `/privacy` | GDPR-privacyverklaring. | **7 kopjes, alle bodies leeg** (`[KHIDR: vul aan]`); "Last updated: —". Geen echte GDPR-tekst. | placeholder |
-| Terms | `/terms` | Terms of Service. | **7 kopjes, alle bodies leeg** (incl. Refund policy); "Last updated: —". Geen echte terms. | placeholder |
+| Privacy | `/privacy` | GDPR-privacyverklaring. | Echte GDPR-tekst; "Last updated: 2026-08-02" (`LEGAL_VERSION`); no-cookie-speler-disclosure. Geen lege bodies meer. | live |
+| Terms | `/terms` | Terms of Service. | Echte terms incl. **§7 Refunds — 14-daags herroepingsrecht, gezaghebbend** (ADR-069); "Last updated: 2026-07-20". | live |
 | Suspended | `/suspended` | "Account paused"-melding. | "Your account is paused"; `noindex`; **contact-email = `[KHIDR]` TODO**. | live (minimal) |
 
 ### Groep 6 — Auth flows (blijven op marketing-domain, ADR-036)
 
 | Pagina | Route | Doel | Belangrijkste claims | Status |
 |---|---|---|---|---|
-| Login | `/login` | E-mail/wachtwoord + OAuth. | Google OAuth actief; **Apple OAuth disabled** ("coming soon"); forgot-password-link. | live |
+| Login | `/login` | E-mail/wachtwoord + OAuth. | Google OAuth actief (Apple-"coming soon"-knop **verwijderd** 2026-08-03 — kwam niet); forgot-password-link. | live |
 | Signup | `/signup` | Accountaanmaak. | Google + e-mail/wachtwoord; wachtwoord ≥8 tekens; **e-mailverificatie vereist**; koppelt /terms + /privacy. | live |
 | Forgot password | `/forgot-password` | Wachtwoord-reset. | E-mail → resetlink → bevestigingsview. | live |
 | Onboarding | `/onboarding` | Post-signup profielsetup. | **"25 welcome credits" (3×)**; 3-stappen checklist; username 3–20 tekens; role-dropdown (student/personal/academic/creator/marketing/developer/other). | live |
@@ -226,9 +228,9 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 
 | Ontbrekend | Wie zoekt het | Waarom het ontbreken schaadt |
 |---|---|---|
-| **Refund-/terugbetaalbeleid — een gezaghebbende versie** | Koper vóór aankoop; support; Stripe-dispuut | Meer dan "de `/terms`-sectie is leeg": er is **nog niet beslist wát het beleid ís**. Het enige statement ("7 dagen als ≤5 credits gebruikt") staat begraven in de **/pricing-FAQ** en nergens juridisch bekrachtigd. Bij een chargeback sta je zwak. Vraagt een *besluit* (etappe B), niet alleen copy. **Launch-blocker.** |
+| ~~**Refund-/terugbetaalbeleid — een gezaghebbende versie**~~ ✅ OPGELOST 2026-08-03 | Koper vóór aankoop; support; Stripe-dispuut | Beleid is nu beslist én juridisch bekrachtigd: **ToS §7 = 14-daags herroepingsrecht, refund alleen als géén credit van die aankoop verbruikt is** (ADR-069). De tegenstrijdige "/pricing 7-dagen/≤5-credits"-FAQ is naar die versie getrokken; /terms is gezaghebbend. Eén regel in [[product-truth]] zodat het niet opnieuw uiteenloopt. |
 
-*Privacy- en terms-bódies zijn óók leeg, maar die pagina's bestáán als route en zijn precies het onderwerp van etappe B — dus niet als "ontbrekend" geteld, wel launch-blocker.*
+*Privacy- en terms-bódies zijn inmiddels **echte juridische documenten** (`LEGAL_VERSION` 2026-08-02) — niet meer leeg, niet meer launch-blocker.*
 
 ### 2. Kapotte functie (technisch fix-item, geen content-kwestie)
 

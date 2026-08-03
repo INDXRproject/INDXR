@@ -15697,3 +15697,27 @@ apps/marketing/src/app/transcribe/layout.tsx
 apps/marketing/src/app/transcribe/page.tsx
 docs/LOG.md
 ---
+
+[2026-08-03 21:40] chore(restanten) FASE4: mirrors + content-sitemap + seeding vastgelegd | (4a) PRICING-PAGE.md (concurrent-prijstabel, botst ADR-037, stale) + ARTIKEL-youtube-transcript-csv.md (merged-CSV-sectie, bewust vervangen door ZIP-met-losse-bestanden) verwijderd; de 4 overige gap-mirrors blijven tot hun artikel aan de beurt is. (4b) capture-account-seeding vastgelegd waar een sessie het vindt: screenshot-machine.md nu expliciet dat `account1` (f136104d) 5 schone publieke transcripten in de PRODUCTIE-DB heeft, bewust + permanent (niet "opruimen"); ook pointer in product-truth §8 (FASE5). (4c) content-sitemap (2026-07-18-snapshot) bijgewerkt: dated correctie-header + kernrijen herzien (homepage: 99.4%/800min/200-video weg → echte cap 500 + echte codevoorbeelden; pricing: refund 14-daags + FAQ's ingevuld; free-tool: sentence-case + taalclaim + geen placeholders; privacy/terms: nu ECHTE juridische docs, niet leeg; login: Apple-knop weg; refund-launch-blocker → OPGELOST). Geverifieerd tegen code: 99.4% (0 hits), 67 talen (0 hits), LEGAL_VERSION 2026-08-02. | gewijzigd: docs/content/{PRICING-PAGE,ARTIKEL-youtube-transcript-csv}.md (verwijderd), docs/wiki/business/content-sitemap.md, docs/wiki/content/screenshot-machine.md, docs/LOG.md
+[2026-08-03 18:32] commit: chore(docs): delete two stale content mirrors, refresh the content-sitemap
+
+4a: delete PRICING-PAGE.md (competitor price table, clashes with ADR-037, stale) and
+ARTIKEL-youtube-transcript-csv.md (merged-CSV section we deliberately replaced with
+per-file ZIP). The four remaining gap-mirrors stay until their article is rewritten.
+
+4b: record that the capture account (account1) carries 5 clean public seed transcripts
+in the PRODUCTION database — deliberate and permanent — in screenshot-machine.md, where
+a later session will find it (not just the LOG).
+
+4c: the content-sitemap was a 2026-07-18 snapshot describing since-removed claims. Added a
+dated correction header and refreshed the key rows: no 99.4% (grep 0), no 67-languages
+(grep 0), privacy/terms are now real legal docs (not empty), refund is the 14-day Terms §7,
+homepage claims fixed, Apple button gone. Verified against code, not the old map.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/content/ARTIKEL-youtube-transcript-csv.md
+docs/content/PRICING-PAGE.md
+docs/wiki/business/content-sitemap.md
+docs/wiki/content/screenshot-machine.md
+---
