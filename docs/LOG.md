@@ -15472,3 +15472,97 @@ docs/content/ARTIKEL-youtube-transcript-without-extension.md
 docs/wiki/content/product-truth.md
 docs/wiki/roadmap/priorities.md
 ---
+
+[2026-08-03 16:20] feat(docs-figures) DEEL2: beeldstandaard + alles opnieuw geschoten, licht+donker | Capture-standaard in de spec (frameShot): één vaste framebreedte (FRAME_W=1000) met ademruimte (PAD=28), onderwerp gecentreerd, achtergrond = var(--bg) van het ACTIEVE thema, één frame-border (DocsFigure tekent er geen meer → dubbele rand weg). Elke opname twee keer geschoten in ÉÉN run (data-theme flip): <naam>-light.png + <naam>-dark.png. DocsFigure leidt -light/-dark af uit de bestaande src en wisselt puur via CSS op [data-theme] (twee <img>, dark:hidden/hidden dark:block — geen JS, geen flits). Flow-diagram (HowItWorksFlow): min-w-[640px] + overflow-x-auto weg → viewBox + w-full h-auto, geen horizontale scroll (geverifieerd op 375px: scrollW==clientW). Library-figuur: rij → LIJST (capture-account geseed met 5 extra schone publieke transcripten → 6 rijen archief); quickstart stap 7 herschreven (bewaren/terugvinden/bewerken-met-origineel). Export-menu-beeld VERVANGEN door DocsTable uit EXPORT_MENU-descriptor (9 downloads, 4 groepen, RAG=1 credit/10min) — het menu viel te hoog/smal uit naast de rest; nu single-sourced en consistent. Oude single-theme assets (46) verwijderd, 20 nieuwe dual-theme toegevoegd; alle DocsFigure-refs resolven. `pnpm build:marketing` groen; render-checks (flow no-scroll, export-tabel 9 rijen, library-lijst 6 rijen, dark-flip) geverifieerd. | gewijzigd: apps/marketing/src/components/docs/{DocsFigure,HowItWorksFlow}.tsx, apps/marketing/src/app/docs/quickstart/page.tsx, tests/playwright/capture/quickstart-capture.spec.ts, apps/marketing/public/docs/screenshots/* (46 verwijderd, 20 dual-theme toegevoegd), docs/LOG.md
+[2026-08-03 15:53] commit: feat(docs): one screenshot standard, reshoot all figures in light + dark
+
+Capture standard (frameShot in the capture spec): one fixed frame width, breathing
+room, the active theme's real page background, a single frame border. DocsFigure
+draws no border of its own (kills the double outline) and swaps <name>-light.png /
+<name>-dark.png purely by CSS on [data-theme] — no JS, no load flash. Every figure
+is shot in both themes in one run.
+
+- Flow diagram (HowItWorksFlow): drop min-w + overflow-x-auto → viewBox scales to the
+  container; verified no horizontal scroll at 375px.
+- Library figure: single row → the LIST (account seeded with clean public transcripts
+  so it reads as an archive); quickstart step 7 rewritten (store / find / edit-keeping-
+  the-original).
+- Export menu screenshot → a DocsTable rendered from the EXPORT_MENU descriptor (9
+  downloads, 4 groups, RAG JSON = 1 credit/10min); the menu was a tall narrow panel
+  that dwarfed the other figures.
+- 46 old single-theme PNGs removed; 20 dual-theme PNGs added; all DocsFigure refs
+  resolve. build:marketing green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/public/docs/screenshots/ai-result.png
+apps/marketing/public/docs/screenshots/captions-result.png
+apps/marketing/public/docs/screenshots/cost-card-ai-dark.png
+apps/marketing/public/docs/screenshots/cost-card-ai-light.png
+apps/marketing/public/docs/screenshots/cost-card-ai.png
+apps/marketing/public/docs/screenshots/error-age_restricted.png
+apps/marketing/public/docs/screenshots/error-api_error.png
+apps/marketing/public/docs/screenshots/error-bot_detection-dark.png
+apps/marketing/public/docs/screenshots/error-bot_detection-light.png
+apps/marketing/public/docs/screenshots/error-bot_detection.png
+apps/marketing/public/docs/screenshots/error-channel_url.png
+apps/marketing/public/docs/screenshots/error-compression_error.png
+apps/marketing/public/docs/screenshots/error-connection_error.png
+apps/marketing/public/docs/screenshots/error-credit_check_error.png
+apps/marketing/public/docs/screenshots/error-credit_deduction_failed.png
+apps/marketing/public/docs/screenshots/error-duration_error.png
+apps/marketing/public/docs/screenshots/error-duration_exceeds_max.png
+apps/marketing/public/docs/screenshots/error-extraction_error.png
+apps/marketing/public/docs/screenshots/error-file_too_large.png
+apps/marketing/public/docs/screenshots/error-insufficient_credits.png
+apps/marketing/public/docs/screenshots/error-internal_error.png
+apps/marketing/public/docs/screenshots/error-invalid_request.png
+apps/marketing/public/docs/screenshots/error-members_only.png
+apps/marketing/public/docs/screenshots/error-no_captions-dark.png
+apps/marketing/public/docs/screenshots/error-no_captions-light.png
+apps/marketing/public/docs/screenshots/error-no_captions.png
+apps/marketing/public/docs/screenshots/error-no_speech.png
+apps/marketing/public/docs/screenshots/error-no_speech_detected.png
+apps/marketing/public/docs/screenshots/error-partial_write.png
+apps/marketing/public/docs/screenshots/error-proxy_error.png
+apps/marketing/public/docs/screenshots/error-server_error.png
+apps/marketing/public/docs/screenshots/error-storage_full-dark.png
+apps/marketing/public/docs/screenshots/error-storage_full-light.png
+apps/marketing/public/docs/screenshots/error-storage_full.png
+apps/marketing/public/docs/screenshots/error-stuck_pending.png
+apps/marketing/public/docs/screenshots/error-suspended.png
+apps/marketing/public/docs/screenshots/error-timeout.png
+apps/marketing/public/docs/screenshots/error-too_many_jobs.png
+apps/marketing/public/docs/screenshots/error-too_many_videos.png
+apps/marketing/public/docs/screenshots/error-unauthorized.png
+apps/marketing/public/docs/screenshots/error-unsupported_file.png
+apps/marketing/public/docs/screenshots/error-validation_error.png
+apps/marketing/public/docs/screenshots/error-watchdog_permanent_failure.png
+apps/marketing/public/docs/screenshots/error-worker_crashed.png
+apps/marketing/public/docs/screenshots/error-youtube_restricted-dark.png
+apps/marketing/public/docs/screenshots/error-youtube_restricted-light.png
+apps/marketing/public/docs/screenshots/error-youtube_restricted.png
+apps/marketing/public/docs/screenshots/error-ytdlp_parse.png
+apps/marketing/public/docs/screenshots/error-zzz_unknown_fallback.png
+apps/marketing/public/docs/screenshots/export-menu.png
+apps/marketing/public/docs/screenshots/library-list-dark.png
+apps/marketing/public/docs/screenshots/library-list-light.png
+apps/marketing/public/docs/screenshots/library-row.png
+apps/marketing/public/docs/screenshots/method-choice-dark.png
+apps/marketing/public/docs/screenshots/method-choice-light.png
+apps/marketing/public/docs/screenshots/method-choice.png
+apps/marketing/public/docs/screenshots/playlist-review-dark.png
+apps/marketing/public/docs/screenshots/playlist-review-light.png
+apps/marketing/public/docs/screenshots/playlist-review.png
+apps/marketing/public/docs/screenshots/progress-downloading-dark.png
+apps/marketing/public/docs/screenshots/progress-downloading-light.png
+apps/marketing/public/docs/screenshots/progress-downloading.png
+apps/marketing/public/docs/screenshots/progress-transcribing.png
+apps/marketing/public/docs/screenshots/uploader-empty-dark.png
+apps/marketing/public/docs/screenshots/uploader-empty-light.png
+apps/marketing/public/docs/screenshots/uploader-empty.png
+apps/marketing/src/app/docs/quickstart/page.tsx
+apps/marketing/src/components/docs/DocsFigure.tsx
+apps/marketing/src/components/docs/HowItWorksFlow.tsx
+docs/LOG.md
+tests/playwright/capture/quickstart-capture.spec.ts
+---

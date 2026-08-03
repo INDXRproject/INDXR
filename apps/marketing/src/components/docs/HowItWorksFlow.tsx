@@ -8,8 +8,8 @@ export function HowItWorksFlow() {
 
   return (
     <figure className="my-6">
-      <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-sunken)] p-4 overflow-x-auto">
-        <svg viewBox="0 0 760 210" className="w-full min-w-[640px]" role="img"
+      <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-sunken)] p-4">
+        <svg viewBox="0 0 760 210" className="block w-full h-auto" role="img"
           aria-label="Flow: a YouTube video, playlist, or uploaded file becomes a transcript by one of two methods — free YouTube captions (sky) or AI transcription (indigo) — which is saved to your library and then exported.">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">

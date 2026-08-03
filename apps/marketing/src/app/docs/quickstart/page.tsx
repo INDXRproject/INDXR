@@ -4,10 +4,11 @@ import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsFigure } from "@/components/docs/DocsFigure"
+import { DocsTable } from "@/components/docs/DocsTable"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
-import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, EXPORT_MENU, spellCount } from "@indxr/shared/lib/exportFormats"
 
 const formatCount = spellCount(EXPORT_FORMAT_COUNT)
 const downloadCount = spellCount(EXPORT_DOWNLOAD_COUNT)
@@ -194,25 +195,50 @@ export default function GettingStartedPage() {
           something you already exported is always free. What each file contains is on{" "}
           <a href="/docs/reference/export-formats" className="text-[var(--accent)] hover:underline">Export formats</a>.
         </p>
-        <DocsFigure
-          src="/docs/screenshots/export-menu.png"
-          alt="The Export menu open over a finished transcript, listing TXT and Markdown (plain and with timestamps), SRT, VTT, CSV, JSON and RAG JSON under the group headings Text, Subtitles, Data and Developer."
-          caption={`One transcript, ${downloadCount} downloads, exported as often as you like.`}
-        />
+        {/* Rendered from the export descriptor (EXPORT_MENU) — the same array that builds the real
+            Export menu — so the {downloadCount} downloads and the one paid format can never drift from
+            the app. (Replaces the old menu screenshot, which was a tall narrow panel that dwarfed the
+            other figures.) */}
+        <DocsTable>
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>Download</th>
+              <th>Contents</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {EXPORT_MENU.map((item) => (
+              <tr key={item.id}>
+                <td>{item.group}</td>
+                <td className="whitespace-nowrap font-medium text-[var(--fg)]">{item.label}</td>
+                <td>{item.sub}</td>
+                <td className="whitespace-nowrap">
+                  {item.paid ? `${ragPer10Min} credit / 10 min` : "Free"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </DocsTable>
 
-        <AnchorHeading as="h2">7. It stays in your library — fix it once</AnchorHeading>
+        <AnchorHeading as="h2">7. It stays in your library</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          The transcript stays in your <strong>Library</strong>, where you can open and edit it. INDXR
-          keeps the original alongside your edited version, so you never lose what came out of the video.
+          Every transcript is saved to your <strong>Library</strong> — a searchable archive of everything
+          you have made. Search by title, filter by how it was made, and open any one again to re-read,
+          re-export in another format, or edit. Nothing is one-shot: a transcript you made last month is
+          one search away.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Fixing it early is worth the minute: correct a misheard name once, and every export you make
-          afterwards carries the correction — the subtitles, the Markdown, the RAG chunks.
+          When you edit, INDXR keeps the original alongside your edited version, so you never lose what
+          came out of the video. Fixing it early is worth the minute: correct a misheard name once, and
+          every export you make afterwards carries the correction — the subtitles, the Markdown, the RAG
+          chunks.
         </p>
         <DocsFigure
-          src="/docs/screenshots/library-row.png"
-          alt="A transcript row in the Library, showing the title, a source method badge, and its duration, word count and date."
-          caption="Every transcript lands here, tagged with how it was made, ready to open and edit."
+          src="/docs/screenshots/library-list.png"
+          alt="The Library list showing several saved transcripts, each row with its title, a source-method badge (YouTube captions or AI transcription), duration, word count and date."
+          caption="Your Library: every transcript you make, searchable and re-openable — tagged with how it was made."
         />
 
         <RelatedTopicsList

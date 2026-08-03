@@ -1,11 +1,25 @@
 /**
- * Docs-screenshot capture machine (NOT a functional test). Produces the stills used by
- * /docs/quickstart. Because it drives the real UI by role/text, a renamed button or a moved
- * control makes the matching capture fail — that failure IS the route/label regression signal.
+ * Docs-screenshot capture machine (NOT a functional test). Produces the stills shown by the docs
+ * pages (quickstart, how-indxr-works, the three guides). Because it drives the real UI by role/text,
+ * a renamed button or a moved control makes the matching capture fail — that failure IS the
+ * route/label regression signal.
  *
- * Run:  BASE_URL=http://localhost:3001 npx playwright test --config=playwright.capture.config.ts
- * (Needs: local app on :3001, the capture account signed in with 500 credits, live Railway backend
- *  for the LIVE captures. The 9 functional specs live in a different testDir and are unaffected.)
+ * Run (ONE command, produces every asset in BOTH themes):
+ *   BASE_URL=https://app.indxr.ai <pnpm-playwright> test --config=playwright.capture.config.ts
+ * (LIVE captures need the real backend, so run against app.indxr.ai — a local `next start` can't reach
+ *  the extraction backend. STUBBED captures use page.route and run anywhere. The 9 functional specs
+ *  live in a different testDir and are unaffected.)
+ *
+ * ── CAPTURE STANDARD (screenshot-machine.md) — applied to every shot via frameShot() ──
+ *  • One fixed frame width for ALL captures (FRAME_W). A narrower subject is CENTERED; the frame is
+ *    always equally wide, so figures on one page never wildly differ in width.
+ *  • Breathing room (PAD) around the subject — never flush to the card edge.
+ *  • Background = the ACTIVE THEME's real page background (var(--bg)), never transparent.
+ *  • The frame draws ONE border+radius; DocsFigure draws none (no double outline).
+ *  • Height follows content; a disproportionately tall subject is shot compacter (fewer rows / a
+ *    dropped panel) rather than clamped, so heights stay comparable.
+ *  • Every subject is shot twice — light and dark — as <name>-light.png / <name>-dark.png. DocsFigure
+ *    swaps them by [data-theme] with pure CSS.
  *
  * LIVE vs STUBBED is marked per capture. A stubbed card proves the FRONTEND renders that state,
  * NOT that the backend emits that code in that situation.
@@ -21,155 +35,157 @@ const VIDEO_URL = 'https://www.youtube.com/watch?v=kBdfcR-8hEY'
 const STUB_URL = 'https://www.youtube.com/watch?v=STUBCARD001'
 const PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PL30C13C91CFFEFEA6'
 
+// ── Capture-standard constants ────────────────────────────────────────────────
+const FRAME_W = 1000 // fixed frame width for every capture (CSS px; DSR 2 → 2000px PNG)
+const PAD = 28       // breathing room around the subject
+
 fs.mkdirSync(OUT, { recursive: true })
 
-// Session + consent + light theme come from the shared storageState (global-setup); each test just
-// pins the theme attribute before first paint so there's no light/dark flash in the screenshot.
+async function setTheme(page: Page, theme: 'light' | 'dark') {
+  await page.evaluate((t) => {
+    document.documentElement.setAttribute('data-theme', t)
+    try { localStorage.setItem('theme', t) } catch {}
+  }, theme)
+}
+
+// Pin light theme before first paint so there's no flash; each capture flips to dark itself.
 async function prep(page: Page) {
   await page.addInitScript(() => {
-    try { document.documentElement.setAttribute('data-theme', 'light') } catch {}
+    try {
+      document.documentElement.setAttribute('data-theme', 'light')
+      localStorage.setItem('theme', 'light')
+    } catch {}
   })
 }
 
-async function save(el: Locator, name: string) {
-  await el.screenshot({ path: path.join(OUT, `${name}.png`) })
-  console.log(`  ✔ captured ${name}.png`)
+/**
+ * Frame a subject to the capture standard and shoot it in BOTH themes. A CLONE of the subject is
+ * placed inside a fixed-width, padded, single-bordered frame on the theme's page background; the
+ * clone is static so flipping [data-theme] restyles both the frame vars and the clone's token/
+ * Tailwind classes with no reflow risk to the live React tree. Writes <name>-light.png + <name>-dark.png.
+ */
+async function frameShot(page: Page, subject: Locator, name: string) {
+  await subject.scrollIntoViewIfNeeded().catch(() => {})
+  await subject.evaluate((node, { FRAME_W, PAD }) => {
+    document.getElementById('__capframe')?.remove()
+    const wrap = document.createElement('div')
+    wrap.id = '__capframe'
+    Object.assign(wrap.style, {
+      position: 'fixed', left: '0px', top: '0px', zIndex: '2147483647',
+      width: FRAME_W + 'px', boxSizing: 'border-box', padding: PAD + 'px',
+      display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
+      background: 'var(--bg)',
+      border: '1px solid var(--border)', borderRadius: '14px',
+    })
+    const clone = node.cloneNode(true) as HTMLElement
+    clone.style.margin = '0'
+    clone.style.maxWidth = '100%'
+    clone.style.flex = '0 1 auto'
+    wrap.appendChild(clone)
+    document.body.appendChild(wrap)
+  }, { FRAME_W, PAD })
+
+  const frame = page.locator('#__capframe')
+  await frame.waitFor({ state: 'visible' })
+
+  await setTheme(page, 'light')
+  await page.waitForTimeout(150)
+  await frame.screenshot({ path: path.join(OUT, `${name}-light.png`) })
+
+  await setTheme(page, 'dark')
+  await page.waitForTimeout(150)
+  await frame.screenshot({ path: path.join(OUT, `${name}-dark.png`) })
+
+  await page.evaluate(() => document.getElementById('__capframe')?.remove())
+  await setTheme(page, 'light')
+  console.log(`  ✔ ${name}-{light,dark}.png`)
 }
 
 test.describe.configure({ mode: 'default', timeout: 120_000 })
 
-// ── LIVE: method chooser ────────────────────────────────────────────────────
-test('method-choice (live)', async ({ page }) => {
+// ── LIVE UI: method chooser (client-side; no backend) ─────────────────────────
+test('method-choice', async ({ page }) => {
   await prep(page)
   await page.goto('/dashboard/transcribe')
   await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(VIDEO_URL)
   const chooser = page.getByRole('radiogroup', { name: 'Transcription method' })
   await chooser.waitFor({ state: 'visible' })
-  // include the "Transcription method" caption above the radiogroup
-  await save(chooser.locator('xpath=..'), 'method-choice')
+  await frameShot(page, chooser.locator('xpath=..'), 'method-choice') // include the caption above the group
 })
 
-// ── LIVE: AI cost card (real metadata → 55 credits), then Cancel (never confirm) ─
-test('cost-card-ai (live, cancel)', async ({ page }) => {
+// ── STUBBED metadata: AI cost card (deterministic credit count), then Cancel ──
+test('cost-card-ai', async ({ page }) => {
   await prep(page)
+  await page.route('**/api/video/metadata/**', (r) =>
+    r.fulfill({ json: { duration: 3296, title: 'Justice: What’s The Right Thing To Do? — Episode 01' } }))
   await page.goto('/dashboard/transcribe')
-  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(VIDEO_URL)
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
   await page.getByRole('radio', { name: /AI transcription/ }).click()
   await page.getByRole('button', { name: /Extract|Checking/ }).click()
   const extractBtn = page.getByRole('button', { name: /^Extract — \d+\+? credits$/ })
   await extractBtn.waitFor({ state: 'visible' })
   const card = extractBtn.locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]')
-  await save(card, 'cost-card-ai')
-  await page.getByRole('button', { name: 'Cancel' }).click() // safety: never charge
+  await frameShot(page, card, 'cost-card-ai')
 })
 
-// ── LIVE: captions extraction → result card + export menu (retry — bot_detection is possible) ─
-test('captions-result + export-menu (live)', async ({ page }) => {
-  test.setTimeout(340_000)
-  await prep(page)
-  let ok = false
-  for (let attempt = 1; attempt <= 6 && !ok; attempt++) {
-    await page.goto('/dashboard/transcribe')
-    await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(VIDEO_URL)
-    await page.getByRole('button', { name: /^Extract$/ }).click()
-    try {
-      await page.getByText('Transcript ready', { exact: false }).waitFor({ state: 'visible', timeout: 40_000 })
-      ok = true
-    } catch { console.log(`  captions attempt ${attempt} did not complete, retrying…`) }
-  }
-  if (!ok) { test.skip(true, 'captions extraction bot-blocked in 6 attempts') ; return }
-  const card = page.getByText('Transcript ready').locator('xpath=ancestor::*[contains(@class,"shadow-sm")][1]')
-  await save(card, 'captions-result')
-  await page.getByRole('button', { name: 'Export' }).click()
-  const menu = page.getByRole('menu')
-  await menu.waitFor({ state: 'visible' })
-  await save(menu, 'export-menu')
-})
-
-// ── LIVE: library row of the just-made transcript (with method badge) ─────────
-test('library-row (live)', async ({ page }) => {
-  await prep(page)
-  await page.goto('/dashboard/library')
-  // Anchor on the row's transcript link (stable href pattern), then screenshot the row it sits in
-  // (a direct child of the divide-y list) — not a bare shape selector.
-  const rowLink = page.locator('a[href*="/dashboard/library/"]').first()
-  await rowLink.waitFor({ state: 'visible', timeout: 20_000 })
-  const row = rowLink.locator('xpath=ancestor::div[parent::div[contains(@class,"divide-y")]][1]')
-  await save(row, 'library-row')
-})
-
-// ── LIVE: playlist review screen (fetch is free; NEVER start the paid job) ────
-test('playlist-review (live)', async ({ page }) => {
-  test.setTimeout(140_000)
-  await prep(page)
-  await page.goto('/dashboard/transcribe?mode=playlist')
-  await page.getByPlaceholder('Paste YouTube Playlist URL...').fill(PLAYLIST_URL)
-  await page.getByRole('button', { name: 'Fetch playlist' }).click()
-  // Anchor on the visible ROLE (the review screen's action button), not a shape class — a renamed
-  // button fails this capture instead of silently shooting a different card.
-  const reviewBtn = page.getByRole('button', { name: /Review extraction/ })
-  await reviewBtn.waitFor({ state: 'visible', timeout: 90_000 })
-  const review = reviewBtn.locator('xpath=ancestor::div[contains(@class,"rounded-2xl")][1]')
-  await save(review, 'playlist-review')
-})
-
-// ── LIVE UI: empty Audio uploader with the accepted formats + size limit in view ─
-test('uploader-empty (live UI)', async ({ page }) => {
+// ── LIVE UI: empty Audio uploader (accepted formats + size limit in view) ─────
+test('uploader-empty', async ({ page }) => {
   await prep(page)
   await page.goto('/dashboard/transcribe?mode=audio')
   const hint = page.getByText('Drag and drop your audio file here', { exact: false })
   await hint.waitFor({ state: 'visible' })
   const dropzone = hint.locator('xpath=ancestor::div[contains(@class,"border-dashed")][1]')
-  await save(dropzone, 'uploader-empty')
+  await frameShot(page, dropzone, 'uploader-empty')
 })
 
-// ── STUBBED: progress cards (Downloading audio / Transcribing) ────────────────
-for (const [phase, name] of [['downloading', 'progress-downloading'], ['transcribing', 'progress-transcribing']] as const) {
-  test(`${name} (stubbed)`, async ({ page }) => {
-    await prep(page)
-    await page.route('**/api/video/metadata/**', (r) =>
-      r.fulfill({ json: { duration: 3296, title: 'Justice: What’s The Right Thing To Do? — Episode 01' } }))
-    await page.route('**/api/transcribe/whisper', (r) =>
-      r.fulfill({ json: { job_id: 'stub-job', status: 'pending' } }))
-    await page.route('**/api/jobs/stub-job**', (r) =>
-      r.fulfill({ json: { status: phase, duration_seconds: 3296, credits_cost: 55, download_bytes: 2_400_000, download_total_bytes: 6_000_000 } }))
-    await page.goto('/dashboard/transcribe')
-    await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
-    await page.getByRole('radio', { name: /AI transcription/ }).click()
-    await page.getByRole('button', { name: /Extract|Checking/ }).click()
-    await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click() // hits STUBBED whisper → no charge
-    const label = phase === 'downloading' ? 'Downloading audio' : 'Transcribing'
-    const header = page.getByText(label, { exact: true })
-    await header.waitFor({ state: 'visible', timeout: 20_000 })
-    await save(header.locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]'), name)
-  })
-}
+// ── LIVE: playlist review screen (fetch is free; NEVER start the paid job) ────
+test('playlist-review', async ({ page }) => {
+  test.setTimeout(140_000)
+  await prep(page)
+  await page.goto('/dashboard/transcribe?mode=playlist')
+  await page.getByPlaceholder('Paste YouTube Playlist URL...').fill(PLAYLIST_URL)
+  await page.getByRole('button', { name: 'Fetch playlist' }).click()
+  const reviewBtn = page.getByRole('button', { name: /Review extraction/ })
+  await reviewBtn.waitFor({ state: 'visible', timeout: 90_000 })
+  const review = reviewBtn.locator('xpath=ancestor::div[contains(@class,"rounded-2xl")][1]')
+  await frameShot(page, review, 'playlist-review')
+})
 
-// ── STUBBED: AI result card ───────────────────────────────────────────────────
-test('ai-result (stubbed)', async ({ page }) => {
+// ── LIVE: the Library LIST (several rows → reads as an archive; account seeded) ─
+test('library-list', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const rowLink = page.locator('a[href*="/dashboard/library/"]').first()
+  await rowLink.waitFor({ state: 'visible', timeout: 20_000 })
+  // Frame the whole divide-y list (all rows), not a single row.
+  const list = rowLink.locator('xpath=ancestor::div[contains(@class,"divide-y")][1]')
+  await frameShot(page, list, 'library-list')
+})
+
+// ── STUBBED: progress card (Downloading audio) ────────────────────────────────
+test('progress-downloading', async ({ page }) => {
   await prep(page)
   await page.route('**/api/video/metadata/**', (r) =>
     r.fulfill({ json: { duration: 3296, title: 'Justice: What’s The Right Thing To Do? — Episode 01' } }))
-  await page.route('**/api/transcribe/whisper', (r) => r.fulfill({ json: { job_id: 'stub-ai', status: 'pending' } }))
-  await page.route('**/api/jobs/stub-ai**', (r) => r.fulfill({ json: {
-    status: 'complete', duration_seconds: 3296, credits_cost: 55, transcript_id: '00000000-0000-0000-0000-000000000001',
-    transcript: [
-      { text: 'Consider the following.', offset: 0, duration: 2.4 },
-      { text: 'Suppose you were the driver of a runaway trolley.', offset: 2.4, duration: 3.1 },
-    ],
-  } }))
+  await page.route('**/api/transcribe/whisper', (r) =>
+    r.fulfill({ json: { job_id: 'stub-job', status: 'pending' } }))
+  await page.route('**/api/jobs/stub-job**', (r) =>
+    r.fulfill({ json: { status: 'downloading', duration_seconds: 3296, credits_cost: 55, download_bytes: 2_400_000, download_total_bytes: 6_000_000 } }))
   await page.goto('/dashboard/transcribe')
   await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
   await page.getByRole('radio', { name: /AI transcription/ }).click()
   await page.getByRole('button', { name: /Extract|Checking/ }).click()
-  await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click()
-  const header = page.getByText('Transcript ready', { exact: false })
+  await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click() // hits STUBBED whisper → no charge
+  const header = page.getByText('Downloading audio', { exact: true })
   await header.waitFor({ state: 'visible', timeout: 20_000 })
-  await save(header.locator('xpath=ancestor::*[contains(@class,"shadow-sm")][1]'), 'ai-result')
+  await frameShot(page, header.locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]'), 'progress-downloading')
 })
 
-// ── STUBBED: every ErrorCard the copy map knows ───────────────────────────────
-const ERROR_CODES = [
+// ── STUBBED: the ErrorCards that docs pages actually render ───────────────────
+// Default: only the 4 shown on pages. CAPTURE_GALLERY=1 shoots the full ErrorCard set (coverage),
+// still to the same dir and still dual-theme.
+const RENDERED_ERROR_CODES = ['no_captions', 'youtube_restricted', 'bot_detection', 'storage_full']
+const ALL_ERROR_CODES = [
   'no_captions', 'members_only', 'age_restricted', 'youtube_restricted', 'bot_detection',
   'timeout', 'connection_error', 'server_error', 'partial_write', 'proxy_error', 'ytdlp_parse',
   'extraction_error', 'no_speech', 'no_speech_detected', 'insufficient_credits', 'storage_full',
@@ -179,8 +195,9 @@ const ERROR_CODES = [
   'validation_error', 'internal_error', 'invalid_request', 'watchdog_permanent_failure',
   'zzz_unknown_fallback',
 ]
+const ERROR_CODES = process.env.CAPTURE_GALLERY === '1' ? ALL_ERROR_CODES : RENDERED_ERROR_CODES
 for (const code of ERROR_CODES) {
-  test(`errorcard ${code} (stubbed)`, async ({ page }) => {
+  test(`errorcard ${code}`, async ({ page }) => {
     await prep(page)
     await page.route('**/api/extract', (r) => r.fulfill({
       status: code === 'members_only' ? 403 : 400,
@@ -191,6 +208,6 @@ for (const code of ERROR_CODES) {
     await page.getByRole('button', { name: /^Extract$/ }).click()
     const card = page.locator('.border-l-error').first()
     await card.waitFor({ state: 'visible', timeout: 15_000 })
-    await save(card, `error-${code}`)
+    await frameShot(page, card, `error-${code}`)
   })
 }
