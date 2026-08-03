@@ -51,6 +51,8 @@ Runtime: de default-set (20 assets) draait in **~1 min** tegen `app.indxr.ai`.
 
 Het onderscheid mag niet verdwijnen: **een gestubde kaart bewijst dat de frontend die state rendert, NIET dat de backend die code in die situatie stuurt.** Dit zijn precies de assets die de docs-pagina's renderen (quickstart, how-indxr-works, de drie guides); ongebruikte captures worden niet meer geschoten.
 
+**Homepage (2026-08-03):** de landing (`/`) hergebruikt `playlist-review` in blok 2 (via `DocsFigure`, dual-theme). De homepage-blokken 3/4/5 zijn **géén** screenshots maar **echte export-output** in een `CodeSample`-codeblok (exports zijn bestanden, geen UI) — herkomst in [product-truth §8](product-truth.md). Er zijn dus geen nieuwe assets bijgekomen; de set blijft 20 dual-theme.
+
 | Type | Onderwerpen (elk `-light` + `-dark`) |
 |------|------|
 | **LIVE** (echte UI / echt backend) | `method-choice` (chooser, client-side), `uploader-empty` (Audio-tab, pure UI), `playlist-review` (alleen fetch, job **nooit** gestart), `library-list` (geseed account, meerdere rijen) |

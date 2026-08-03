@@ -29,6 +29,9 @@ Eén single source of truth: `PACKAGES` (`pricing.ts:35-92`). Alle prijzen **BTW
 - **Playlist eerste 3 video's gratis** (`FREE_TIER.PLAYLIST_FREE_VIDEOS = 3`, `pricing.ts:110`).
 - `FREE_TIER.RAG_FREE_EXPORTS = 3` (`pricing.ts:111`) — **DODE CONSTANTE**, nergens gelezen (zie §2, RAG). Content mag hier **niet** naar verwijzen.
 
+### Refundbeleid — bron: `/terms` §7 (gezaghebbend, ADR-069)
+**Eén canonieke regel, zodat het niet opnieuw uiteenloopt:** 14-daags herroepingsrecht — een aankoop is volledig terugbetaalbaar binnen 14 dagen **zolang er géén credit van die aankoop is verbruikt**; zodra je één credit gebruikt (een transcript genereert) is die aankoop niet-terugbetaalbaar, maar credits verlopen nooit dus de waarde blijft van jou. Mislukte AI-operaties → credits automatisch terug (operationeel, los van dit venster). **Elke content-plek moet exact dit zeggen** — géén "7 dagen / ≤5 credits" (die tegenstrijdige /pricing-FAQ is op 2026-08-03 rechtgetrokken); `/terms` §7 blijft de gezaghebbende tekst.
+
 ### UI-parity: billing-UI vs `pricing.ts` — GEEN afwijking in de draaiende UI
 Zowel de marketing-`/pricing`-pagina als de app-`/dashboard/billing`-pagina renderen via hetzelfde gedeelde component `PricingTiers` (`packages/shared/src/components/pricing/PricingTiers.tsx`), dat volledig uit `PACKAGES` leest — geen hardcoded prijzen/credits.
 - App-billing: `apps/app/src/components/dashboard/billing/BillingPurchaseGrid.tsx:109` gebruikt `PricingTiers`.
@@ -284,3 +287,7 @@ Eén vaste voorbeeldvideo voor álle documentatie-screenshots en Remotion-opname
 - **Aantal video's:** **19**. **Totale duur:** **46 243 s (~12 u 50 m)**. (0 entries met ontbrekende duur.)
 
 Gebruik deze getallen voor de playlist-reviewscreenshot. Video's zonder captions of niet-extraheerbaar: niet zelf vervangen — terugrapporteren. (Hier N.v.t.: de video heeft captions en is extraheerbaar.)
+
+**Echte homepage-codevoorbeelden (herkomst, reproduceerbaar — 2026-08-03).** De Markdown/SRT/RAG-JSON-fragmenten op de homepage (`apps/marketing/src/lib/homeExportSamples.ts`) zijn GEEN handwerk: ze komen verbatim uit de echte generators in `packages/shared/src/utils/formatTranscript.ts`, gedraaid op de opgeslagen transcript-jsonb van deze fixture (1142 caption-segmenten). Reproductie: (1) een node-script logt in als `account1` (`@supabase/supabase-js`, url+anon uit `apps/app/.env.local`, password uit `tests/test_accounts.json`), haalt `transcripts.transcript` voor `video_id=kBdfcR-8hEY` en schrijft die naar een file; (2) een tweede script (gedraaid vanuit `packages/shared` zodat `sbd` resolt, met `node --experimental-strip-types` op Node 24) roept `generateMarkdown(t, title, true, {videoId, channel:"Harvard University", language:"en", durationSeconds:3282, extractionMethod:"youtube_captions", includeYamlFrontmatter:true})`, `generateSrt(t, {extractionMethod:"youtube_captions"})` en `buildRagJson(t, {…})` aan. De RAG-output heeft **`deep_link`/`chunk_id`/`token_count_estimate`/`total_chunks:60`** — er is **geen `source_url`-veld** (dat was het gefabriceerde schema dat we overal opruimden). Fragmenten enkel ingekort met `…`, nooit velden/waarden verzonnen.
+
+**Capture-account seeding (prod-DB, bewust).** `account1` (`f136104d-…`) draagt in de **live** DB 5 handmatig geseede publieke transcripten (Feynman/MIT/Stanford/CS50/consciousness-podcast) naast de fixture, zodat de `library-list`-screenshot als archief leest. Opzet, mag blijven — zie [screenshot-machine.md](screenshot-machine.md#library-account-geseed).

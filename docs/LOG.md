@@ -15721,3 +15721,23 @@ docs/content/PRICING-PAGE.md
 docs/wiki/business/content-sitemap.md
 docs/wiki/content/screenshot-machine.md
 ---
+
+[2026-08-03 22:00] docs(vastleggen) FASE5: herkomst, refundregel, lessen | product-truth §8: herkomst van de echte homepage-codefragmenten (1a) volledig reproduceerbaar vastgelegd (2 scripts, generator-calls, geen source_url) + capture-account-seeding-pointer. product-truth §1: refundbeleid als ÉÉN canonieke regel (14-daags herroepingsrecht, refund alleen als géén credit verbruikt — ToS §7 gezaghebbend) zodat /pricing en /terms niet opnieuw uiteenlopen. screenshot-machine.md: homepage hergebruikt playlist-review (blok 2) + code-blokken i.p.v. screenshots → geen nieuwe assets (blijft 20 dual-theme) → GEEN nieuwe contactsheet nodig. LESSONS: 2 echte herhaalpatronen (gefabriceerd-schema-in-voorbeelden; audit-doc-veroudert-tegen-code-checken). `pnpm build` 2/2 groen. | gewijzigd: docs/wiki/content/{product-truth,screenshot-machine}.md, docs/LESSONS.md, docs/LOG.md
+[2026-08-03 18:36] commit: docs: record fragment provenance + canonical refund line + lessons
+
+FASE 5: product-truth now records (§8) how the homepage's real code fragments are
+generated — reproducibly, from the fixture transcript through formatTranscript, with
+no source_url — plus the seeded capture-account note; and (§1) the refund policy as
+one canonical line (14-day right of withdrawal, refundable only if no credit was used,
+Terms §7 authoritative) so /pricing and /terms can't diverge again.
+
+screenshot-machine.md notes the homepage reuses playlist-review + uses code blocks (not
+new screenshots) — no new assets, so no new contact sheet. LESSONS: fabricated-schema-in-
+examples, and audit-docs must be refreshed against code. pnpm build 2/2 green.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+docs/LOG.md
+docs/wiki/content/product-truth.md
+docs/wiki/content/screenshot-machine.md
+---
