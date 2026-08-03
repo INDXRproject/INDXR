@@ -15434,3 +15434,41 @@ docs/wiki/roadmap/priorities.md
 packages/shared/src/components/free-tool/AudioTab.tsx
 packages/shared/src/lib/uploadFormats.ts
 ---
+
+[2026-08-03 15:10] chore(docs-content) DEEL1: docs/content-mirrors afgebouwd | 6 wees-drafts verwijderd (ADR-037 + campagnebesluit: alternative-{downsub,happyscribe,notegpt,tactiq,turboscribe} + youtube-transcript-generator); 10 echte mirrors verwijderd nadat een subagent per-bestand verifieerde dat de gerenderde .tsx de inhoud volledig dekt. 6 mirrors met een échte gap BEWUST gelaten (rendered pagina dekt niet alles): blog-chunk-…-rag (minor FAQ), youtube-transcript-csv (stale merged-CSV), youtube-transcript-for-rag (LlamaIndex-code), youtube-transcript-json (yt-transcript-api-sectie + 2 FAQ's), youtube-transcript-not-available (minor FAQ), PRICING-PAGE (concurrent-prijstabel, botst ADR-037). ARCHITECTURE.md blijft. product-truth.md + priorities.md bijgewerkt. Geen code-refs naar docs/content (grep 0) → build onaangetast. | gewijzigd: docs/content/* (16 verwijderd), docs/wiki/content/product-truth.md, docs/wiki/roadmap/priorities.md, docs/LOG.md
+[2026-08-03 15:35] commit: chore(docs): retire docs/content mirrors (drift source)
+
+Delete the 6 orphan drafts with no rendered route (Khidr-approved): the
+alternative-* comparison drafts clash with ADR-037 (no comparison pages) and
+the campaign decision not to target competitor brands; the generator draft
+duplicates what /transcribe already serves.
+
+Delete 10 real mirrors whose rendered .tsx fully covers their content
+(verified per-file by comparing each .md against its page). Leave 6 mirrors
+whose rendered page does NOT fully cover them (a section or FAQ exists only in
+the .md) — flagged in priorities.md for a port-or-drop decision. ARCHITECTURE.md
+stays (real docs, not a page copy).
+
+No code references docs/content (grep clean) → build unaffected.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/content/ARTIKEL-alternative-downsub.md
+docs/content/ARTIKEL-alternative-happyscribe.md
+docs/content/ARTIKEL-alternative-notegpt.md
+docs/content/ARTIKEL-alternative-tactiq.md
+docs/content/ARTIKEL-alternative-turboscribe.md
+docs/content/ARTIKEL-blog-youtube-channel-knowledge-base.md
+docs/content/ARTIKEL-blog-youtube-transcripts-vector-database.md
+docs/content/ARTIKEL-bulk-youtube-transcript.md
+docs/content/ARTIKEL-youtube-age-restricted-transcript.md
+docs/content/ARTIKEL-youtube-members-only-transcript.md
+docs/content/ARTIKEL-youtube-playlist-transcript.md
+docs/content/ARTIKEL-youtube-srt-download.md
+docs/content/ARTIKEL-youtube-transcript-generator.md
+docs/content/ARTIKEL-youtube-transcript-markdown.md
+docs/content/ARTIKEL-youtube-transcript-obsidian.md
+docs/content/ARTIKEL-youtube-transcript-without-extension.md
+docs/wiki/content/product-truth.md
+docs/wiki/roadmap/priorities.md
+---
