@@ -13,7 +13,8 @@ import { FrictionConversionCard } from "@indxr/shared/components/FrictionConvers
 import { PricingTeaserBlock } from "@/components/marketing/PricingTeaserBlock"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { ClosingCTASection } from "@/components/marketing/ClosingCTASection"
-import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { transcriptionRouterPhrase } from "@indxr/shared/lib/models"
+import { exportFormatsProse } from "@indxr/shared/lib/exportFormats"
 
 const faqItems: FAQItem[] = [
   {
@@ -34,7 +35,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "What languages are supported?",
-    answer: `YouTube caption extraction works for any language YouTube provides captions for. For AI transcription, INDXR automatically picks the best model for the language — up to 99 languages with automatic detection, powered by ${transcriptionModelName()}.`,
+    answer: `YouTube caption extraction works for any language YouTube provides captions for. For AI transcription, ${transcriptionRouterPhrase()}.`,
   },
   {
     question: "What export formats can I get?",
@@ -105,10 +106,10 @@ export default function FreeToolPage() {
       {/* Hero + tool */}
       <div className="container max-w-4xl py-24 px-4 mx-auto text-center">
         <h1 className="text-4xl font-bold text-[var(--fg)] mb-6">
-          Free YouTube Transcript Generator
+          Free YouTube transcript generator
         </h1>
         <p className="text-[var(--fg-muted)] mb-10 text-lg max-w-2xl mx-auto">
-          Extract YouTube transcripts instantly. Free for videos with captions. AI transcription for videos without. Export as TXT, Markdown, SRT, VTT, CSV, JSON, or RAG-ready. No extension needed.
+          Extract YouTube transcripts instantly. Free for videos with captions. AI transcription for videos without. Export as {exportFormatsProse("or")}. No extension needed.
         </p>
 
         {storageFull && (

@@ -15673,3 +15673,27 @@ apps/marketing/src/components/pricing/CreditCostTable.tsx
 apps/marketing/src/components/pricing/VatLine.tsx
 docs/LOG.md
 ---
+
+[2026-08-03 21:00] fix(transcribe+auth) FASE3: casing, meta, taalclaim, Apple-knop | (3a) /transcribe H1 "Free YouTube Transcript Generator" → sentence case "Free YouTube transcript generator"; meta-title idem sentence case; `meta-keywords`-tag verwijderd (sinds 2009 genegeerd). 99-talenclaim in de talen-FAQ ("up to 99 languages ... powered by Universal-3.5 Pro" — verboden per product-truth: 99 hoort bij Universal-2, kopmodel dekt 18) → nu `transcriptionRouterPhrase()` (eerlijk: beste model per taal, kopmodel voor z'n talen, brede dekking 99+). Hero-formaatlijst + meta-description renderen nu uit EXPORT_MENU (`exportFormatsProse`). Methodekeuze (radio cards, geen toggle) + formaatgating al correct — ongewijzigd. Tool-pagina rendert de live workbench → geen screenshot zinvol (gerapporteerd). (3b) /login: gedisabelde Apple-"coming soon"-knop + caption + Apple-import VERWIJDERD (provider komt niet); Google full-width. /onboarding: [KHIDR]-marker opgeruimd. Geverifieerd tegen code: welkomstcredits=25 (FREE_TIER.WELCOME_CREDITS), e-mailverificatie vereist (signUp emailRedirectTo), wachtwoordeis 8 (minLength). build:marketing groen; H1/meta/login live-geverifieerd. | gewijzigd: apps/marketing/src/app/transcribe/{layout,page}.tsx, apps/marketing/src/app/login/page.tsx, apps/marketing/src/app/onboarding/page.tsx, docs/LOG.md
+[2026-08-03 18:26] commit: fix(transcribe+auth): sentence case, drop meta-keywords, honest language claim, remove dead Apple button
+
+3a: /transcribe H1 and meta title to sentence case; remove the meta-keywords tag
+(ignored by search engines since 2009). The languages FAQ claimed '99 languages ...
+powered by Universal-3.5 Pro' — product-truth forbids this (99 belongs to the
+Universal-2 fallback; the head model covers 18) — now uses transcriptionRouterPhrase().
+Hero format list + meta description render from the EXPORT_MENU descriptor.
+
+3b: /login drops the disabled Apple 'coming soon' button, its caption and the Apple
+import (the provider isn't coming); Google goes full width. /onboarding: [KHIDR] marker
+removed. Verified against code: 25 welcome credits, email verification required, 8-char
+password minimum.
+
+build:marketing green; H1/meta/login verified live.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/login/page.tsx
+apps/marketing/src/app/onboarding/page.tsx
+apps/marketing/src/app/transcribe/layout.tsx
+apps/marketing/src/app/transcribe/page.tsx
+docs/LOG.md
+---

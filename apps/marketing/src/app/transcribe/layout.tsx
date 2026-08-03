@@ -1,18 +1,20 @@
 import type { Metadata } from "next"
+import { exportFormatsProse } from "@indxr/shared/lib/exportFormats"
+
+const title = "YouTube transcript generator — free & premium | INDXR.AI"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/transcribe" },
-  title: "YouTube Transcript Generator - Free & Premium | INDXR.AI",
-  description: "Generate accurate YouTube transcripts instantly. Free YouTube captions or premium AI-powered transcription. Export to TXT, JSON, CSV, SRT, VTT formats.",
-  keywords: ["youtube transcript generator", "youtube transcript", "youtube captions", "transcript download", "youtube subtitle download", "video transcript", "youtube to text"],
+  title,
+  description: `Generate accurate YouTube transcripts instantly. Free YouTube captions or premium AI-powered transcription. Export to ${exportFormatsProse("and")}.`,
   openGraph: {
-    title: "YouTube Transcript Generator - Free & Premium | INDXR.AI",
+    title,
     description: "Generate accurate YouTube transcripts instantly. Free YouTube captions or premium AI-powered transcription.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "YouTube Transcript Generator - Free & Premium | INDXR.AI",
+    title,
     description: "Generate accurate YouTube transcripts instantly. Export to multiple formats.",
   },
 }

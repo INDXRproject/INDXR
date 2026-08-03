@@ -6,7 +6,7 @@ import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
-import { Chrome, Apple } from "lucide-react"
+import { Chrome } from "lucide-react"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { loginAction, loginWithGoogleAction } from "@indxr/shared/actions/auth-actions"
@@ -130,29 +130,16 @@ export default function LoginPage() {
             </div>
 
             {/* OAuth Buttons */}
-            <div className="grid grid-cols-2 gap-4">
-              <form action={loginWithGoogleAction}>
-                {nextParam && <input type="hidden" name="next" value={nextParam} />}
-                <Button
-                  type="submit"
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Chrome className="mr-2 h-4 w-4" /> Google
-                </Button>
-              </form>
+            <form action={loginWithGoogleAction}>
+              {nextParam && <input type="hidden" name="next" value={nextParam} />}
               <Button
-                type="button"
+                type="submit"
                 variant="outline"
-                className="opacity-50 cursor-not-allowed"
-                disabled
+                className="w-full"
               >
-                <Apple className="mr-2 h-4 w-4" /> Apple
+                <Chrome className="mr-2 h-4 w-4" /> Google
               </Button>
-            </div>
-            <p className="text-xs text-center text-fg-muted">
-              Apple sign-in coming soon
-            </p>
+            </form>
 
         </CardContent>
         <CardFooter>

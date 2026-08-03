@@ -69,7 +69,6 @@ export default function OnboardingPage() {
           <div className="space-y-6 hidden md:block">
             <div>
               <h1 className="text-4xl font-semibold text-[var(--fg)] mb-3">Welcome to INDXR</h1>
-              {/* KHIDR: first-run wizard content komt hier */}
               <p className="text-[var(--fg-subtle)] text-lg leading-relaxed">
                 Your account is ready. We&apos;ve added 25 welcome credits to get you started.
               </p>
