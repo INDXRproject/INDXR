@@ -1,3 +1,5 @@
+[2026-08-04 20:47] content (/about afgeschreven + /suspended contactroute — laatste [KHIDR]-markers weg): **/about** was placeholder met 3 `[KHIDR]`-markers + twee lege secties op een live, footer-gelinkte pagina met Organization-schema. Afgeschreven, feitelijk uit product-truth + terms/privacy, ADR-042 gevolgd (bedrijf, geen persoon): Tiny Web Ventures = eenmanszaak, KvK 98828762, NL; één maker, geen oprichtersverhaal; "Where it runs" = EU-hosting (Supabase EU + AI-verwerking binnen EU, code-waar uit privacy §hosting), Stripe, Nederlands recht + BTW-inclusief. Intro verwijst naar homepage i.p.v. features te herhalen (legt uit wie, niet wat). Organization-schema kreeg `contactPoint` (support@indxr.ai) per ADR-042-consequenties. **/suspended** `[KHIDR]`-marker weg + echte contactroute: directe `mailto:support@indxr.ai` (geen afhankelijkheid van het contactformulier — een geschorste gebruiker heeft geen andere ingang). `pnpm build` groen (2/2). | gewijzigd: apps/marketing/src/app/about/page.tsx, apps/marketing/src/app/suspended/page.tsx, docs/LOG.md
+---
 [2026-08-02 00:30] rename/fix (Afsluiten — hernoeming + iconen + uitlijning + rommel): **Fase A/B** productbrede hernoeming "Auto-captions" → "YouTube captions" (label-only, ADR-086): app+shared zichtbare strings incl. export-metadata (`formatTranscript.ts` `generateCsv`/`generateMarkdown` `transcript_source`, unit-geverifieerd "YouTube captions"; AI-label ongemoeid), method-card, playlist/free-tool, admin; marketing-UI (9 files) + articles (14) + /docs + `docs/content` (24) via subagents met label≠concept-regel — ~190 gewijzigd, ~110 bewust behouden (YouTube's-feature-uitleg blijft "automatic captions"). **DB-enum `youtube_captions` ongemoeid.** Geen docs-slug hernoemd (geen `/docs/*/auto-captions`-route → geen redirect; accuracy-anker `#auto-captions`→`#youtube-captions`, nul refs). `docs/wiki` bewust niet meegenomen. **Fase C** bijenkorf-icoon opnieuw getekend (koepel + 2 coil-banden, geen grondlijn/gat) — gerenderd op 17/19/24px, herkenbaar + distinct → House vervangen; prod-check bevestigt beehive live. **Fase D** New-Collection-knop `pl-12`→`pl-2` (uitgelijnd met rijen: row.x=16=btn.x=16, breedte gelijk — geverifieerd); `TranscriptViewer` ⋯ zakt in tot directe Delete-knop bij één actie. **Fase E** dode `is_favorite`-kolom weg (0 lezers; write-regel + migratie `drop_is_favorite` ná deploy-groen). **Fase F** spec 3.2 test nu ⋯→Summarise + "3 credits" + bevestigingsdialog (stopt vóór AI-call); 3.4 bewerkt bestaande summary → Edited-Summary-tab (geen AI-call). Verificatie: **spec 03 9/9**, prod-check **11/11** (beehive), export-metadata unit-check, sidebar-uitlijning, isolatie eerder 5/5. `pnpm build` groen (2/2); deploys groen. | gewijzigd: packages/shared/{method,MethodRadioCards,formatTranscript,VideoTab,PlaylistManager,PlaylistAvailabilitySummary}, apps/app/{admin/*,icons/Beehive,dashboard/MobileTabBar,app-sidebar,library/TranscriptViewer}, apps/marketing/** (rename), docs/content/** (rename), migratie 20260801140000_drop_is_favorite, ADR-086, tests/playwright/{specs/03-library,prod-check}, docs
 [2026-08-01 17:30] feat/fix (Library+Transcript afronding — 7 blokken + 4 UI-punten): **Blok 1** mobiele bulkbalk herbouwd — geen ⋯ meer die één actie (Move) opent; volle-breedte balk met gelabelde icon+label-kolommen (Move/Export/[Mark read]/Delete), Export→sheet, desktop houdt zijn pill (data-testids `bulk-bar-mobile/desktop`). Patroon-audit: **2e** instantie gevonden+gefixt (`AiSummaryView` Export-dropdown met één item → directe "Export .txt"-knop). **Blok 2** badges van pil→blok (`rounded-full`→`rounded-[3px]`, `px-1.5`→`px-2`), collectie-chip mee. **Blok 3** Developer-tab RAG-copy expliciet gemaakt (betaald-is-betaald: elke chunklengte gratis) — was correct, nu ondubbelzinnig. **Blok 4** dode code weg: `isEditingOriginal` + takken (Edit routet naar ?tab=edited) en de verzonnen 500MB-opslagmeter in `app-sidebar`. **Blok 5** spec 03 draait: `loginAs` → cookie-injectie (UI-login flaky headless), robuuste row-waits + stabiele tab-testids + edit-flow wacht op ?tab=edited-route + bracket-vrije marker via insertText → **9/9 groen**. **Blok 6** test2–4 waren verwijderd → admin-side opnieuw aangemaakt (+credits), `test_accounts.json` bijgewerkt, isolatie geverifieerd als test2 (5/5, RLS bevestigd), `operations/testing.md` toegevoegd. **Blok 7** `library-source-map.md` herschreven naar heden (banner-vrij). **UI-punten:** beehive-home-icoon → lucide `House` (mobiel+sidebar, Beehive.tsx verwijderd); Messages Inbox/Support-tabs → segmented control als Transcribe; sidebar-collecties `pl-12`→`pl-2` (even breed als Library); support-ticket **screenshot-upload** (privé bucket + RLS + kolom + RPC-param + admin signed-URL, 6/6 security-checks). Visuele eindcheck 12/13 (13e = eigen off-by-one drempel). `pnpm build` groen (2/2). | gewijzigd: TranscriptList/TranscriptViewer/AiSummaryView/RagExportView/badges/app-sidebar/MobileTabBar/MessagesClient/SupportClient + api/support/submit + api/admin/tickets + admin/support/{page,TicketsTable} + migratie 20260801130000_support_attachments + tests/playwright/{helpers/auth,specs/03-library,prod-check} + docs
 [2026-08-01 15:10] fix (uploads zonder video — geen zwart speler-vierkant): geüploade audio heeft `video_id = NULL` (geen YouTube-video), waardoor de nocookie-speler een zwart vierkant toonde en "Watch on YouTube"/paragraaf-timestamps naar `watch?v=null` wezen (door Khidr gemeld tijdens testen). Fix via `const hasVideo = !!videoId`: **geen** "Watch video"-collapse/speler en **geen** "Watch on YouTube"-item bij uploads; paragraaf-timestamps blijven gestyled + toggle-baar (`.ts-link`) maar worden **inerte** positie-markers (`.ts-static`, `pointer-events:none`) i.p.v. dode `watch?v=null`-links; JSON-export laat `videoUrl` weg als leeg; `[id]/page.tsx` bouwt geen `watch?v=null` meer. Geverifieerd op prod (7/7 upload-check + 6/6 YouTube-regressie-check groen). `pnpm build:app` groen. | gewijzigd: apps/app/src/components/library/TranscriptViewer.tsx, apps/app/src/app/dashboard/library/[id]/page.tsx, apps/app/src/app/globals.css, docs/LESSONS.md, docs/LOG.md
@@ -15740,4 +15742,58 @@ Changed: docs/LESSONS.md
 docs/LOG.md
 docs/wiki/content/product-truth.md
 docs/wiki/content/screenshot-machine.md
+---
+[2026-08-04 20:48] commit: content(about+suspended): write /about from company facts, fix /suspended contact route
+
+/about was a live, footer-linked page (carries Organization schema) still
+holding three [KHIDR] markers and two empty sections. Written from product-truth
++ terms/privacy, per ADR-042 (the company, not a named person): Tiny Web Ventures,
+a one-person Dutch sole proprietorship (KvK 98828762); EU hosting (Supabase EU, AI
+processed in the EU — code-true from privacy); Stripe; Dutch law, VAT included. The
+intro points to the homepage instead of repeating features — it says who, not what.
+Organization schema gains a contactPoint (support@indxr.ai) per ADR-042.
+
+/suspended drops its [KHIDR] marker and gets a real contact route: a direct
+mailto:support@indxr.ai — a suspended user has no other entry, so it must not
+depend on the /contact form.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/about/page.tsx
+apps/marketing/src/app/suspended/page.tsx
+apps/marketing/src/components/marketing/MacbookMockupFrame.tsx
+docs/LOG.md
+---
+[2026-08-04 20:48] commit: chore(cleanup): delete orphaned MacbookMockupFrame, fix stale gap-mirror roadmap entry
+
+MacbookMockupFrame.tsx has had zero source callers since the homepage change
+(70ab571) replaced the four fake mockups with the real playlist screenshot and
+CodeSample blocks. Orphaned by our own change, so removed (grep across apps/**/src,
+packages/*/src and tests confirms no reference outside the file itself).
+
+priorities.md line 413 still listed 6 open gap-mirrors, but 82ea3d5 deleted two of
+them (ARTIKEL-youtube-transcript-csv.md, PRICING-PAGE.md). Corrected to: 2 deleted
+(with commit ref) + the 4 that remain on disk, each with its not-yet-rendered
+content noted, so they can't get buried in a commit message.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/wiki/roadmap/priorities.md
+---
+[2026-08-04 20:50] commit: content(about+suspended): write /about from company facts, fix /suspended contact route
+
+/about was a live, footer-linked page (carries Organization schema) still
+holding three [KHIDR] markers and two empty sections. Written from product-truth
++ terms/privacy, per ADR-042 (the company, not a named person): Tiny Web Ventures,
+a one-person Dutch sole proprietorship (KvK 98828762); EU hosting (Supabase EU, AI
+processed in the EU — code-true from privacy); Stripe; Dutch law, VAT included. The
+intro points to the homepage instead of repeating features — it says who, not what.
+Organization schema gains a contactPoint (support@indxr.ai) per ADR-042.
+
+/suspended drops its [KHIDR] marker and gets a real contact route: a direct
+mailto:support@indxr.ai — a suspended user has no other entry, so it must not
+depend on the /contact form.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/about/page.tsx
+apps/marketing/src/app/suspended/page.tsx
+docs/LOG.md
 ---

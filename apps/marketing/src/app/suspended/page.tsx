@@ -14,8 +14,10 @@ export default function SuspendedPage() {
           Access to your account has been temporarily restricted.
         </p>
         <p className="text-sm text-[var(--fg-muted)]">
-          {/* KHIDR: voeg contact email / link toe */}
-          If you have questions, please get in touch with us.
+          If you have questions, email us at{" "}
+          <a href="mailto:support@indxr.ai" className="text-[var(--accent)] hover:underline">
+            support@indxr.ai
+          </a>.
         </p>
       </div>
     </div>
