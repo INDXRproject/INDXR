@@ -1,3 +1,5 @@
+[2026-08-07 17:12] feat (FASE 3 — Remotion-workspace + eerste clip): `apps/video` opgezet als **standalone** Remotion-project buiten de Turborepo-graph (**ADR-089**: pnpm `!apps/video`-exclusie, eigen node_modules/npm-install, eigen package-lock; geverifieerd turbo-scope=3 packages / Tasks:2, `indxr-video` niet in `pnpm -r ls`). Eén compositie `HomeClip` (1280×720, 30fps) monteert de FASE-2-opname: gentle crop (scale 1.04), tempo 1,25× (26,4→21,2s), en vier korte tekst-overlays getimed op de beats ("Paste a YouTube link" / "Captions, or AI when there are none" / "It transcribes on its own" / "Ready to read, edit, and export") — IBM Plex Sans + onze OKLCH-tokens (light, verbatim uit tokens.css), geen externe template. Gerenderd → `out/home-clip.mp4` (1,4 MB, H.264) + poster `out/home-clip-poster.png` (frame 609 = "Transcript ready"-kaart, voor no-autoplay). Visueel geverifieerd (caption-frame + poster). **Niet op de homepage** — ter review. Bronopname niet dubbel gecommit (`public/` gitignored, `copy-source` pre-hook). | gewijzigd: pnpm-workspace.yaml, apps/video/{package.json,tsconfig.json,remotion.config.ts,.gitignore,src/{index.ts,Root.tsx,HomeClip.tsx,tokens.ts},out/{home-clip.mp4,home-clip-poster.png}} (nieuw), docs/wiki/decisions/089-remotion-workspace-outside-build-graph.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
+---
 [2026-08-07 17:02] feat (FASE 2 — kernflow-opname): eerste bewegende opname `recordings/core-flow.webm` (1280×720, ~26,4s, VP8): link in veld → AI-transcriptie gekozen → extractie doorloopt de fasen (Downloading audio met determinate balk → Transcribing → Saving) → **Transcript ready** met de echte fixture-titel (54:56), 55 credits en de echte fixture-captions als transcript. Deterministisch via gestubde backend (`page.route`: metadata→fixture-titel/duur, whisper→stub-job, `/api/jobs`→wall-clock-fasen; Supabase `transcripts?video_id=eq.`→leeg zodat de dedup-banner niet flitst) — nul credits verbrand. Geverifieerd via 6 geëxtraheerde frames (cursor zichtbaar, kostenkaart 55cr, downloadbalk, eindresultaat). Beat-sheet met tijdstempels ernaast (`core-flow.beats.md`) voor de montage. YouTube-pagina komt niet in beeld (ADR-088). | gewijzigd: tests/playwright/capture/recordings/core-flow.webm (nieuw), tests/playwright/capture/recordings/core-flow.beats.md (nieuw), docs/LOG.md
 ---
 [2026-08-07 17:00] feat (FASE 0+1 — video-opnamemachine + YouTube-brand-beslissing): **FASE 0** legal check (read-only web): YouTube's UI prominent in marketing vereist voorafgaande goedkeuring (Brand Resources + Brand Use Guidelines PDF + API Branding Guidelines) → **ADR-088**: clip toont geen youtube.com; start bij ons eigen invoerveld; nominatieve tekst blijft toegestaan. **FASE 1** de bestaande capture-machine kreeg een tweede tak voor bewegende opnames (`recordVideo`): `video-helpers.ts` (geïnjecteerde cursor die de echte muis volgt + klik-pulsering, menselijk tempo via `mouse.move({steps})`/`pressSequentially({delay})`, `beat()`-pauzes, deterministisch — geen Math.random), eigen `playwright.video.config.ts` (gescheiden `testMatch` van de beeldmachine; `quickstart-capture` afgebakend), en de opnamestandaard vastgelegd in `screenshot-machine.md` naast de beeldstandaard. `pnpm build` groen (2/2, FULL TURBO — geen app-code geraakt). | gewijzigd: tests/playwright/capture/video-helpers.ts (nieuw), playwright.video.config.ts (nieuw), playwright.capture.config.ts, tests/playwright/capture/core-flow-video.spec.ts (nieuw), docs/wiki/content/screenshot-machine.md, docs/wiki/decisions/088-youtube-ui-in-marketing.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
@@ -15860,4 +15862,31 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: docs/LOG.md
 tests/playwright/capture/recordings/core-flow.beats.md
 tests/playwright/capture/recordings/core-flow.webm
+---
+[2026-08-07 17:13] commit: feat(video): Remotion workspace + first rendered HomeClip (ADR-089)
+
+FASE 3 — apps/video is a standalone Remotion workspace OUTSIDE the Turborepo build
+graph (ADR-089: pnpm '!apps/video' exclusion, own node_modules/install; verified
+turbo scope = 3 packages, Tasks: 2). One composition HomeClip (1280x720, 30fps)
+montages the FASE-2 recording: gentle crop, 1.25x tempo (26.4->21.2s), four short
+beat-timed captions, IBM Plex Sans + our OKLCH tokens (no external template).
+Rendered out/home-clip.mp4 (1.4 MB, H.264) + out/home-clip-poster.png (frame 609,
+the 'Transcript ready' card, for no-autoplay). NOT placed on the homepage — for review.
+Source recording not committed twice (public/ gitignored, copy-source pre-hook).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/video/.gitignore
+apps/video/out/home-clip-poster.png
+apps/video/out/home-clip.mp4
+apps/video/package.json
+apps/video/remotion.config.ts
+apps/video/src/HomeClip.tsx
+apps/video/src/Root.tsx
+apps/video/src/index.ts
+apps/video/src/tokens.ts
+apps/video/tsconfig.json
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/089-remotion-workspace-outside-build-graph.md
+pnpm-workspace.yaml
 ---

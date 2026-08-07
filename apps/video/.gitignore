@@ -1,0 +1,6 @@
+node_modules/
+package-lock.json
+.remotion/
+# The source recording is the canonical file in tests/playwright/capture/recordings/ — it's copied
+# into public/ by the pre-hooks (copy-source), not committed twice.
+public/
