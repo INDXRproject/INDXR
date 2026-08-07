@@ -41,11 +41,10 @@ export default function AboutPage() {
 
           <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Who builds INDXR.AI</h2>
           <p>
-            INDXR.AI is built and operated by Tiny Web Ventures, a one-person sole
-            proprietorship registered in the Netherlands (KvK 98828762). It&apos;s the work
-            of a single maker rather than a team, and we keep the attention on the
-            product instead of a personal brand — so you won&apos;t find a founder story
-            here, just a tool that does what it says.
+            INDXR.AI is built and operated by Tiny Web Ventures, a company based in the
+            Netherlands. We keep the attention on the product rather than a personal brand —
+            so you won&apos;t find a founder story here, just a tool that does what it says.
+            Full company details are in our <a href="/terms" className="text-[var(--accent)] hover:underline">Terms</a>.
           </p>
 
           <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Where it runs</h2>

@@ -1,3 +1,5 @@
+[2026-08-07 17:30] docs+fix (FASE 5 — vastleggen + carryover): **/about** — eenmanszaak/KvK-bijzin uit de lopende tekst gehaald en "one-person" laten vallen (sluit geen toekomstig team uit); geverifieerd dat KvK 98828762 elders vindbaar is (terms:24-25 + privacy:22 — dus niets te verplaatsen), verwijst nu naar Terms voor bedrijfsdetails. `pnpm build` groen (2/2). **product-truth §8** — marketing-clip + exportdemo-herkomst + ADR-088-regel (geen YouTube-UI in marketing) toegevoegd. **screenshot-machine.md** — pijplijn-pointers naar `apps/video/` (Remotion, hoe je 'm draait) + `export-demos/`. **LESSONS** — pnpm+ESM-standalone-scripts-valkuil (NODE_PATH werkt niet in ESM; import via absoluut `.pnpm`-pad / `playwright-core`). **Carryover mobiele tabbar:** vastgesteld dat account/instellingen/uitloggen op mobiel WÉL bereikbaar zijn via `AppTopbar`→`AvatarDropdown`-sheet (`AppTopbar.tsx:82`, `AvatarDropdown.tsx:47/57/88`, ongated) — geen gat; de TODO-comment in `MobileTabBar.tsx:9` is stale (niet aangeraakt, buiten scope). **OVERGESLAGEN:** btw-nummer staat nergens (about/terms/privacy) — NL-wet vereist het bij online verkoop; niet verzonnen, gemeld voor Khidr. | gewijzigd: apps/marketing/src/app/about/page.tsx, docs/wiki/content/product-truth.md, docs/wiki/content/screenshot-machine.md, docs/LESSONS.md, docs/LOG.md
+---
 [2026-08-07 17:24] feat (FASE 4 — exportblokken uit echte fixture-export): de drie homepage-codeblokken voorbereid als beelden van het bestand op de plek waar het gebruikt wordt. **Echte exports** gegenereerd uit het opgeslagen fixture-transcript (1142 segmenten, video kBdfcR-8hEY) via de eigen generators (`packages/shared/.../formatTranscript.ts`) — een eenmalig Supabase-fetch-script (service-role read van `transcripts`, `duration`-kolom niet `duration_seconds`) dat ná de run is verwijderd → `export-demos/fixture/justice.{srt,vtt,md,rag.json}` (RAG = **60 chunks**, matcht `total_chunks`, geen `source_url`). **(1) SRT → ondertitels (browser):** `srt-demo.html` laadt de echte `.srt` en rendert cue 3 als ondertitel over een neutrale speler (`neutral-player.mp4`, geen YouTube-frame — ADR-088), IBM Plex + tokens, light+dark PNG via `capture-srt.mjs`. **(2) RAG → retrieval (browser):** `rag-demo.html` query "the driver of a trolley car" tegen de echte 60-chunk-export → antwoord **chunk 4 @ 3:45** + echte deep-link `?t=225`, light+dark via `capture-rag.mjs`. **(3) Markdown → Obsidian:** Obsidian heeft **geen** webversie (desktop/mobiel only; Publish = hosting) → gemeld + exact één screenshot-instructie voor Khidr (Reading view, Properties-panel = frontmatter, eerste getimede sectie) in `export-demos/README.md`; echte `justice.md` staat klaar. Alle vier demo-screenshots visueel geverifieerd. Niet op de homepage — voorbereide assets ter review. | gewijzigd: apps/video/export-demos/** (nieuw: fixture/justice.{srt,vtt,md,rag.json}+neutral-player.mp4, srt-demo.html, rag-demo.html, capture-srt.mjs, capture-rag.mjs, srt-demo-{light,dark}.png, rag-demo-{light,dark}.png, README.md), docs/LOG.md
 ---
 [2026-08-07 17:12] feat (FASE 3 — Remotion-workspace + eerste clip): `apps/video` opgezet als **standalone** Remotion-project buiten de Turborepo-graph (**ADR-089**: pnpm `!apps/video`-exclusie, eigen node_modules/npm-install, eigen package-lock; geverifieerd turbo-scope=3 packages / Tasks:2, `indxr-video` niet in `pnpm -r ls`). Eén compositie `HomeClip` (1280×720, 30fps) monteert de FASE-2-opname: gentle crop (scale 1.04), tempo 1,25× (26,4→21,2s), en vier korte tekst-overlays getimed op de beats ("Paste a YouTube link" / "Captions, or AI when there are none" / "It transcribes on its own" / "Ready to read, edit, and export") — IBM Plex Sans + onze OKLCH-tokens (light, verbatim uit tokens.css), geen externe template. Gerenderd → `out/home-clip.mp4` (1,4 MB, H.264) + poster `out/home-clip-poster.png` (frame 609 = "Transcript ready"-kaart, voor no-autoplay). Visueel geverifieerd (caption-frame + poster). **Niet op de homepage** — ter review. Bronopname niet dubbel gecommit (`public/` gitignored, `copy-source` pre-hook). | gewijzigd: pnpm-workspace.yaml, apps/video/{package.json,tsconfig.json,remotion.config.ts,.gitignore,src/{index.ts,Root.tsx,HomeClip.tsx,tokens.ts},out/{home-clip.mp4,home-clip-poster.png}} (nieuw), docs/wiki/decisions/089-remotion-workspace-outside-build-graph.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
@@ -15922,4 +15924,24 @@ apps/video/export-demos/srt-demo-dark.png
 apps/video/export-demos/srt-demo-light.png
 apps/video/export-demos/srt-demo.html
 docs/LOG.md
+---
+[2026-08-07 17:30] commit: docs+fix(about): FASE 5 — lock in the pipeline, soften /about, carryover
+
+- /about: remove the sole-proprietorship/KvK clause from running prose and drop
+  'one-person' (don't exclude a future team); KvK is already in Terms + Privacy, so
+  nothing to move — /about now points to Terms for company details.
+- product-truth §8: marketing-clip + export-demo provenance + ADR-088 rule.
+- screenshot-machine.md: pointers to apps/video (Remotion, how to run) + export-demos.
+- LESSONS: pnpm+ESM standalone-script gotcha (NODE_PATH is CJS-only).
+
+Carryover — mobile tabbar: account/settings/logout ARE reachable on mobile via
+AppTopbar -> AvatarDropdown sheet (not a gap); the MobileTabBar TODO comment is stale.
+pnpm build green (2/2).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/marketing/src/app/about/page.tsx
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/content/product-truth.md
+docs/wiki/content/screenshot-machine.md
 ---

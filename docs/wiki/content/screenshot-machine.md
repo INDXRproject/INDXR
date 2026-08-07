@@ -26,6 +26,24 @@ BASE_URL=https://app.indxr.ai NODE_PATH=node_modules/.pnpm/node_modules \
 ```
 De twee configs delen `global-setup.ts` maar hebben een gescheiden `testMatch`, dus de beeldmachine en de videomachine raken elkaar niet, en de 9 functionele specs (andere testDir) evenmin.
 
+### Van opname naar clip — `apps/video/` (Remotion)
+
+De ruwe WebM is grondstof; de montage gebeurt in de **standalone Remotion-workspace** `apps/video/`, bewust **buiten** de Turborepo-build-graph ([ADR-089](../decisions/089-remotion-workspace-outside-build-graph.md)) — eigen `node_modules`, eigen install, raakt de app-builds/deploys nooit.
+
+```bash
+cd apps/video
+npm install            # eenmalig, standalone (niet via pnpm root)
+npm run render         # → out/home-clip.mp4  (compositie HomeClip: crop + tempo + tekst-overlays)
+npm run still          # → out/home-clip-poster.png  (stilstaand frame voor no-autoplay)
+npm run studio         # interactieve Remotion-preview
+```
+
+De `copy-source` pre-hook kopieert de canonieke opname uit `recordings/` naar `public/` (gitignored — niet dubbel gecommit). Tokens/fonts komen uit onze eigen `tokens.ts` (OKLCH, licht) + IBM Plex — geen externe template.
+
+### Exportblok-demo's — `apps/video/export-demos/`
+
+De drie homepage-exportblokken (Markdown/SRT/RAG) als **beeld van het bestand in gebruik**, op de **echte** fixture-export (`fixture/justice.{srt,vtt,md,rag.json}`, 60-chunk RAG): `srt-demo.html` (ondertitels over een neutrale speler — géén YouTube-frame, [ADR-088](../decisions/088-youtube-ui-in-marketing.md)) en `rag-demo.html` (query → chunk mét tijdstempel), elk geschoten via `capture-{srt,rag}.mjs` (light+dark). Markdown → Obsidian heeft **geen** webversie; de exacte één-screenshot-instructie staat in `export-demos/README.md`.
+
 ## Opnamestandaard (2026-08-03) — geldt voor ELKE opname
 
 De reden voor deze standaard: eerder waren de docs-beelden een systeemfout (dubbele randen, geen dark mode, wild uiteenlopende formaten, een horizontaal scrollend diagram). De helper `frameShot()` dwingt nu één norm af, zodat een latere batch niet opnieuw scheve beelden maakt:
