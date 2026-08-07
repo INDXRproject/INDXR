@@ -109,3 +109,108 @@ De masterplan-claim "Bing = de index waar ChatGPT uit ophaalt" is **achterhaald*
 
 1. **Google Keyword Planner** (ranges, maar dekt wél onze niche + top-of-page bids) — vult de meetgrens uit §1.
 2. **Search terms report** zodra de campagne draait — de **enige** bron die werkelijke intentie in ónze markt meet. Alles hierboven is een schatting vooraf.
+
+---
+
+# Meting 2 — Google Keyword Planner (2026-08-07)
+
+**Bron:** Google Ads Keyword Planner, "Get search volume and forecasts". All locations, All languages, Google (zonder search partners), venster juli 2025 – juni 2026. Drie runs: kernclusters (24 termen), longtail-clusters (31), verdieping (19). Export = `Plan historical metrics` CSV.
+
+**Vult de meetgrens uit §1 van de Bing-meting.** Dit is de bron die de longtail-clusters wél kon meten.
+
+## Leesregel
+
+- Het account zit onder Google's spend-drempel → **volumes komen als bucket, niet als exact getal**. De CSV toont het bucket-midden: `50` = 10–100, `500` = 100–1K, `5.000` = 1K–10K, `50.000` = 10K–100K, `500.000` = 100K–1M, `5.000.000` = 1M–10M.
+- Gevolg: **ordenen op grootteorde kan, twee termen binnen dezelfde bucket vergelijken niet.** Een geo-aftreksom (wereld min geblokkeerde landen) is met buckets onmogelijk — die methode is vervallen; geo moet per-land gedraaid worden.
+- Google voegt close variants samen. Van 24 ingevoerde kerntermen kwamen er 21 terug (`download youtube transcript`, `video transcription`, `youtube subtitle downloader` samengevoegd). **Clusterrijen nooit optellen als "totaal".**
+- Vergelijk deze getallen **niet** met de Bing-impressies hierboven — andere eenheid.
+- `Competition (indexed value)` (0–100) is meegenomen als proxy voor commerciële waarde: het meet advertentie-concurrentie, niet organische moeilijkheid.
+
+## Kernbevinding: er zijn twee markten
+
+| Term | Volume | Comp. index | Top bid hoog |
+|---|---|---|---|
+| youtube transcript | 1M – 10M | **3** | €0,79 |
+| youtube transcript generator | 100K – 1M | 6 | €1,09 |
+| youtube video transcript | 100K – 1M | 9 | €0,80 |
+| youtube transcript download | 10K – 100K | 7 | €0,80 |
+| transcribe audio to text | 100K – 1M | **69** | €2,65 |
+| convert audio to text | 10K – 100K | 63 | €1,38 |
+| transcription software | 1K – 10K | 56 | **€7,65** |
+| free transcript generator | 1K – 10K | 56 | €2,91 |
+| audio to text | 100K – 1M | 53 | €0,97 |
+| video transcript generator | 10K – 100K | 52 | €2,62 |
+| transcribe video | 100K – 1M | 46 | €1,97 |
+| video to text | 100K – 1M | 35 | €0,74 |
+
+De YouTube-transcriptkant is enorm in volume en commercieel leeg (index 3–9) — dit bevestigt §4 van de Bing-meting ("de kop is een gratis-markt"). De audio/video-to-text-kant is kleiner maar commercieel: index 35–69, biedingen €2–€7,65. **Dat is het terrein van het betaalde product (AI-transcriptie van uploads).**
+
+## Besluit omgedraaid: audio-to-text wordt NIET geretarget naar video-to-text
+
+Clustersom (grof, bucket-middens):
+
+- audio: 500K + 500K + 50K + 50K ≈ **1,1M**
+- video: 500K + 500K + 50K + 50K + 50K + 5K ≈ **1,15M**
+
+Gelijkspel over vier tot zes termen aan beide kanten. De aanname waarop de retarget rustte (audio mikt op een dode term, video heeft de vraag) komt uit de Bing-meting §6 en houdt in Google geen stand. **Twee aparte artikelen**, geen redirect. Een redirect is onomkeerbaarder dan een tweede artikel.
+
+## Clusteruitkomsten (longtail, run 2 + 3)
+
+**Nul meetbaar volume:** `transcript for llm`, `transcript rag`, `chunk transcript for rag`, `llamaindex youtube transcript`, `youtube transcript for chatgpt`, `youtube transcript json`, `youtube transcript notion`, `export transcript to txt`, `batch transcribe youtube`, `transcribe multiple videos`, `find quote in video`, `search video for keyword`, `transcript keyword search`, `summarize long video`.
+
+→ **De RAG/LLM-hoek bestaat niet als zoekvraag.** Blijft een productdifferentiator, is geen organisch kanaal. Post-launch heronderzoeken op longform-varianten.
+
+| Cluster | Termen | Volume |
+|---|---|---|
+| **Samenvatten** | youtube video summarizer · summarize youtube video · video summarizer · ai video summarizer | alle 10K–100K |
+| | summarize video 1K–10K · youtube summary generator 100–1K | |
+| **Developer/API** | youtube transcript api 1K–10K · api python 100–1K · langchain 10–100 | val: geen publieke API → blijft negatief |
+| **Formaten** | convert srt to text · srt to text · srt to txt: alle 1K–10K | **verkeerde intentie** (consumeert SRT, wij produceren het) |
+| | youtube transcript with timestamps 100–1K · youtube transcript srt 10–100 | |
+| **Zoeken** | search youtube transcript · youtube transcript search: beide 1K–10K, index 1 | intentie = zoeken bínnen één transcript (bestaat al) |
+| **Playlist/bulk** | youtube playlist transcript 100–1K (YoY +900%) · youtube channel transcript 100–1K · bulk youtube transcript 10–100 | klein, groeiend, nul concurrentie |
+| **Notities** | transcript to notes 100–1K, bid **€4,69** (hoogste van de set) · youtube to obsidian 10–100 · youtube transcript obsidian 10–100 (YoY ∞, vanaf nul) | |
+| **Vertalen** | translate youtube transcript · youtube transcript translate: beide 10–100 | dood |
+
+Let op de trendkolom: `ai video summarizer` doet −90% (3-maands én YoY) terwijl de YouTube-specifieke varianten vlak zijn. → **anker het samenvat-artikel op YouTube, niet op generiek "AI video summarizer".**
+
+## Beslisregel
+
+**Volume bepaalt het ambitieniveau van een artikel, niet het bestaansrecht.** Schrappen alleen bij nul volume én geen funnelrol. 100–1K → strak, kort artikel. 10K–100K → pillar. Reden: KP meet volume, niet haalbaarheid of conversie; nummer 1 op een term van 500 met koopintentie verslaat nummer 40 op een term van 50K achter NoteGPT.
+
+## Artikeloordeel — van 18 naar 8 actief + 4 nieuw
+
+*(op /articles staan 18 kaarten geteld, niet 19)*
+
+| Artikel | Anker + volume | Oordeel |
+|---|---|---|
+| Audio File Transcription | audio to text, 100K–1M, index 53 | **Houden → pillar.** Commercieel waardevolst. |
+| Playlist Transcripts | youtube playlist transcript, 100–1K, +900% | **Houden, absorbeert Bulk.** |
+| YouTube Transcript Not Available? | hangt onder de 5M-kop | **Houden, absorbeert Age-Restricted.** Beste funnel-artikel. |
+| Non-English Transcripts | Spaans/Indonesisch groot (Bing §5) | **Houden, retargeten** naar de taalfix als product. |
+| Obsidian Workflow | transcript to notes 100–1K, bid €4,69 | **Houden, retargeten** naar notitie-workflow; Obsidian als voorbeeld. |
+| Bulk Transcript Extraction | bulk youtube transcript 10–100 | **Samenvoegen** met Playlist (kannibalisatie). |
+| 6× Formats (TXT/Markdown/CSV/SRT/JSON/RAG JSON) | alle <100; srt-volume = verkeerde intentie | **Samenvoegen tot één** hub; /docs heeft de referentie al. |
+| 3× AI & RAG (Chunking/Knowledge Base/Vector DBs) | nul op vijf RAG-termen | **Parkeren.** Blijven live, geen investering, post-launch heroverwegen. |
+| Age-Restricted Videos | niet meetbaar | **Samenvoegen** in Transcript Not Available. |
+| Members-Only Videos | niet meetbaar | **Schrappen.** Legt uit wat we níet kunnen. |
+| Without Browser Extension | niet meetbaar | **Houden als positionering**, niet als SEO-doel (antwoord op Tactiq). Geen investering. |
+
+**Nieuw, door de data gerechtvaardigd:**
+
+1. `/articles/video-to-text` — 100K–1M, index 35. Grootste gat.
+2. `/articles/youtube-video-summarizer` — 4 termen van 10K–100K, feature bestaat. **Geblokkeerd tot de samenvatting-herbouw af is** (huidige samenvatting is ~300–400 woorden ongeacht duur).
+3. `/articles/how-to-get-a-youtube-transcript` — 1K–10K + de vraagvormen (Bing §8, 3.819 impressies). Vraag-en-antwoordvorm: dit is hoe men het aan Copilot/ChatGPT vraagt.
+4. `/articles/search-youtube-transcript` — 1K–10K over twee termen, index 1. **Gescoped op zoeken bínnen één transcript** (bestaat, geverifieerd in de UI: zoekveld + highlighting + treffer-teller op de transcriptpagina). Bibliotheekbrede full-text search bestaat níet — niet beloven.
+
+## Schrijfvolgorde (commerciële waarde)
+
+1. Audio File Transcription (pillar) · 2. video-to-text (nieuw) · 3. Transcript Not Available · 4. how-to-get-a-youtube-transcript (nieuw) · 5. youtube-video-summarizer (na de samenvatting-herbouw) · 6. Playlist (+Bulk) · 7. Non-English · 8. Obsidian → notes · 9. Formats-hub · 10. search-youtube-transcript (nieuw)
+
+**Structuur vóór inhoud:** de samenvoegingen + 308's + sitemap-regeneratie gaan vooraf aan de herschrijfronde. Geen pagina's herschrijven die daarna samengevoegd worden; en de sitemap is net (47 routes) ingediend, dus één consolidatie i.p.v. twee.
+
+## Openstaand
+
+- **Geo-verdieping**: per-land runs (US / IN / GB) op de overgebleven termen, om de blocklist-impact per cluster te wegen. Aftreksom kan niet met buckets.
+- **Discover-run per nieuwe pillar** voor subkoppen en FAQ-vragen — gebundeld, niet per artikel.
+- **Search terms report** blijft de enige echte intentiemeting zodra de campagne draait.

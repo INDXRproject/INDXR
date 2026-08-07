@@ -95,7 +95,7 @@ export default function DocsCsvPage() {
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },
             { label: "JSON / RAG JSON", href: "/docs/reference/export-formats/json" },
-            { label: "Article: YouTube transcript to CSV", href: "/articles/youtube-transcript-csv" },
+            { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
           ]}
         />
       </DocsShell>

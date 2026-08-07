@@ -153,8 +153,35 @@ export default function YouTubePlaylistTranscriptPage() {
       <p>
         For AI pipelines, RAG JSON export is available per video or in bulk, with a merge option that
         combines all playlist transcripts into a single JSON array. See{" "}
-        <Link href="/articles/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link> for the
+        <Link href="/articles/transcript-export-formats">the export formats reference</Link> for the
         schema and integration examples.
+      </p>
+
+      <h2>Common Bulk Extraction Use Cases</h2>
+
+      <p>
+        <strong>Course transcription:</strong> Extract all lectures from an educational playlist. Export
+        each as Markdown with YAML frontmatter for an Obsidian or Notion knowledge base, or as a merged
+        CSV for analysis.
+      </p>
+
+      <p>
+        <strong>Research corpus:</strong> Download transcripts from a conference archive, a speaker&apos;s body
+        of work, or a topic-specific playlist. The merged CSV or merged RAG JSON gives you a single,
+        queryable dataset.
+      </p>
+
+      <p>
+        <strong>Content repurposing:</strong> Extract your own video playlist and export as plain Markdown
+        — ready to feed into an AI assistant for blog post generation, newsletter writing, or social
+        content.
+      </p>
+
+      <p>
+        <strong>AI knowledge base:</strong> Extract a playlist as RAG-optimized JSON and load into a
+        vector database for semantic search. See{" "}
+        <Link href="/articles/youtube-transcripts-vector-database">YouTube Transcripts in Vector Databases</Link> for a
+        complete implementation guide.
       </p>
 
       <h2>Playlist Size and Practical Limits</h2>
@@ -167,8 +194,7 @@ export default function YouTubePlaylistTranscriptPage() {
       </p>
 
       <p>
-        To start a playlist extraction, paste any YouTube playlist URL in the{" "}
-        <Link href="/articles/bulk-youtube-transcript">Bulk YouTube Transcript</Link> tool or use the Playlist tab
+        To start a playlist extraction, paste any YouTube playlist URL in the Playlist tab
         on the <Link href="/transcribe">transcript generator</Link>. For credit costs
         and package options, see the <Link href="/pricing">pricing page</Link>. For a full overview of
         the extraction pipeline, see <Link href="/docs/how-indxr-works">how INDXR.AI works</Link>.

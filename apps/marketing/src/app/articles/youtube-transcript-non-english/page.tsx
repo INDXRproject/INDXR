@@ -192,7 +192,7 @@ export default function YouTubeTranscriptNonEnglishPage() {
 
       <p>
         For the full JSON export schema, see{" "}
-        <Link href="/articles/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For audio file
+        <Link href="/articles/transcript-export-formats">the export formats reference</Link>. For audio file
         uploads, see <Link href="/articles/audio-to-text">Audio Upload</Link>. For credit packages, see the{" "}
         <Link href="/pricing">pricing page</Link>.
       </p>

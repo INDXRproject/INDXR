@@ -17,21 +17,13 @@ export const metadata: Metadata = {
 const articles = [
   // Troubleshooting
   { href: "/articles/youtube-transcript-not-available", label: "YouTube Transcript Not Available?", category: "Troubleshooting", description: "Missing or not showing? Every reason — and how to get the text anyway." },
-  { href: "/articles/youtube-age-restricted-transcript", label: "Age-Restricted Videos", category: "Troubleshooting", description: "Age-restricted videos need authentication, so standard tools fail. Here's the workaround." },
-  { href: "/articles/youtube-members-only-transcript", label: "Members-Only Videos", category: "Troubleshooting", description: "Members-only videos are access-restricted by design — what you can and can't do." },
   { href: "/articles/youtube-transcript-non-english", label: "Non-English Transcripts", category: "Troubleshooting", description: "Arabic, Spanish, Portuguese, Indonesian, Turkish — captions vs. AI transcription." },
   { href: "/articles/youtube-transcript-without-extension", label: "Without Browser Extension", category: "Troubleshooting", description: "Chrome extensions break when YouTube changes its UI. INDXR works in any browser." },
 
   // Formats (internal key: Export Formats)
-  { href: "/articles/youtube-to-text", label: "Plain Text (TXT)", category: "Export Formats", description: "Most tools give you raw caption fragments. INDXR groups them into readable paragraphs." },
-  { href: "/articles/youtube-transcript-markdown", label: "Markdown Transcripts", category: "Export Formats", description: "Clean Markdown with YAML frontmatter and clickable timestamp deep links." },
-  { href: "/articles/youtube-transcript-csv", label: "CSV Export", category: "Export Formats", description: "One row per segment with timestamps, text, and word count. UTF-8 BOM for Excel." },
-  { href: "/articles/youtube-srt-download", label: "SRT / VTT Subtitles", category: "Export Formats", description: "Subtitles with professional timing — 3–7 second segments, 42 characters per line." },
-  { href: "/articles/youtube-transcript-json", label: "JSON Export", category: "Export Formats", description: "Structured JSON with video metadata, start/end timestamps, and channel info." },
-  { href: "/articles/youtube-transcript-for-rag", label: "RAG-Optimized JSON", category: "Export Formats", description: "Chunked JSON with 15% overlap and per-chunk deep links for Pinecone, Chroma, Weaviate." },
+  { href: "/articles/transcript-export-formats", label: "Transcript Export Formats", category: "Export Formats", description: "Every export format — plain text, Markdown, CSV, SRT/VTT, JSON, and RAG-optimized JSON." },
 
   // Workflows & Use Cases
-  { href: "/articles/bulk-youtube-transcript", label: "Bulk Transcript Extraction", category: "Workflows", description: "Download transcripts from entire playlists in one extraction, with real-time progress." },
   { href: "/articles/youtube-playlist-transcript", label: "Playlist Transcripts", category: "Workflows", description: "Extract a whole playlist in one job — first 3 YouTube caption videos free." },
   { href: "/articles/audio-to-text", label: "Audio File Transcription", category: "Workflows", description: "Upload any audio or video file and get a full transcript. 1 credit per minute." },
   { href: "/articles/youtube-transcript-obsidian", label: "Obsidian Workflow", category: "Workflows", description: "Markdown export with Dataview-compatible properties — no plugin required." },

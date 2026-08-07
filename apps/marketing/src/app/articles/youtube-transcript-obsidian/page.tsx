@@ -275,7 +275,7 @@ SORT created ASC`}</code></pre>
 
       <p>
         For more detail on the Markdown export format and YAML frontmatter schema, see{" "}
-        <Link href="/articles/youtube-transcript-markdown">YouTube Transcript to Markdown</Link>. For credit
+        <Link href="/articles/transcript-export-formats">the export formats reference</Link>. For credit
         costs and package options, see the <Link href="/pricing">pricing page</Link>.{" "}
         <Link href="/transcribe">
           Export a YouTube transcript for Obsidian

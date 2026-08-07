@@ -177,8 +177,7 @@ export default function DocsJsonPage() {
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },
             { label: "Credits", href: "/docs/account/credits" },
-            { label: "Article: YouTube transcript JSON", href: "/articles/youtube-transcript-json" },
-            { label: "Article: YouTube transcripts for RAG", href: "/articles/youtube-transcript-for-rag" },
+            { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
           ]}
         />
       </DocsShell>

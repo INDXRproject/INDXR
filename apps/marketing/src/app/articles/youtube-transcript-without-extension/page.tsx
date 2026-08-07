@@ -146,8 +146,8 @@ export default function YouTubeTranscriptWithoutExtensionPage() {
 
       <p>
         <strong>Seven export formats</strong> — plain text, Markdown with YAML frontmatter
-        (for <Link href="/articles/youtube-transcript-markdown">Obsidian/Notion</Link>), CSV, SRT, VTT, JSON, and{" "}
-        <Link href="/articles/youtube-transcript-for-rag">RAG-optimized JSON</Link>. Text and Markdown also come
+        (for <Link href="/articles/transcript-export-formats">Obsidian/Notion</Link>), CSV, SRT, VTT, JSON, and
+        RAG-optimized JSON. Text and Markdown also come
         with a timestamped variant, for {spellCount(EXPORT_DOWNLOAD_COUNT)} download options in total.
       </p>
 

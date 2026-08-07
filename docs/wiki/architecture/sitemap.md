@@ -119,21 +119,13 @@ route. Alleen deze twee blijven:
 | Route | Status | Beschrijving |
 |-------|--------|--------------|
 | `/articles` | Live | Index van alle articles (gecategoriseerd) |
-| `/articles/youtube-transcript-not-available` | Live | Troubleshooting: captions unavailable |
-| `/articles/youtube-age-restricted-transcript` | Live | Troubleshooting: age-gated video |
-| `/articles/youtube-members-only-transcript` | Live | Troubleshooting: members-only video |
+| `/articles/youtube-transcript-not-available` | Live | Troubleshooting: captions unavailable (+ age-restricted + members-only secties, 2026-08-07) |
 | `/articles/youtube-transcript-non-english` | Live | Troubleshooting: niet-Engelstalige video |
 | `/articles/youtube-transcript-without-extension` | Live | Troubleshooting: geen browser extension |
-| `/articles/bulk-youtube-transcript` | Live | Workflow: bulk extractie |
-| `/articles/youtube-playlist-transcript` | Live | Workflow: playlist extractie |
+| `/articles/transcript-export-formats` | Live | Formats-hub: TXT·Markdown·CSV·SRT/VTT·JSON·RAG-JSON (samenvoeging 2026-08-07) |
+| `/articles/youtube-playlist-transcript` | Live | Workflow: playlist extractie (+ bulk-sectie, 2026-08-07) |
 | `/articles/audio-to-text` | Live | Workflow: audio naar tekst |
 | `/articles/youtube-transcript-obsidian` | Live | Workflow: Obsidian integratie |
-| `/articles/youtube-to-text` | Live | Export: plain TXT |
-| `/articles/youtube-transcript-markdown` | Live | Export: Markdown |
-| `/articles/youtube-transcript-csv` | Live | Export: CSV |
-| `/articles/youtube-srt-download` | Live | Export: SRT |
-| `/articles/youtube-transcript-json` | Live | Export: JSON/RAG |
-| `/articles/youtube-transcript-for-rag` | Live | Export: RAG workflows |
 | `/articles/chunk-youtube-transcripts-for-rag` | Live | Deep dive: chunking voor RAG |
 | `/articles/youtube-channel-knowledge-base` | Live | Deep dive: channel knowledge base |
 | `/articles/youtube-transcripts-vector-database` | Live | Deep dive: vector database |
@@ -227,33 +219,23 @@ Auth-guard: `dashboard/layout.tsx` — redirect `/login` als geen user; redirect
 
 ## Redirects
 
+Canonieke bron: **`apps/marketing/next.config.ts`** → `async redirects()` (de root-`next.config.ts` is legacy dead code, buiten de pnpm-workspace — niet live). Pre-launch teruggebracht tot 2 functionele regels (ADR-075) + 9 article-consolidatie-308's (2026-08-07). Alle `permanent: true` = **308**.
+
 | Van | Naar | Type |
 |-----|------|------|
-| `/faq` | `/docs/faq` | 301 permanent |
-| `/account/credits` | `/dashboard/account` | 301 permanent |
-| `/how-it-works` | `/` | 301 permanent |
-| `/youtube-transcript-generator` | `/transcribe` | 301 permanent |
-| `/support` | `/contact` | 301 permanent |
-| `/youtube-transcript-not-available` | `/articles/youtube-transcript-not-available` | 301 permanent |
-| `/youtube-age-restricted-transcript` | `/articles/youtube-age-restricted-transcript` | 301 permanent |
-| `/youtube-members-only-transcript` | `/articles/youtube-members-only-transcript` | 301 permanent |
-| `/youtube-transcript-non-english` | `/articles/youtube-transcript-non-english` | 301 permanent |
-| `/youtube-transcript-without-extension` | `/articles/youtube-transcript-without-extension` | 301 permanent |
-| `/bulk-youtube-transcript` | `/articles/bulk-youtube-transcript` | 301 permanent |
-| `/youtube-playlist-transcript` | `/articles/youtube-playlist-transcript` | 301 permanent |
-| `/audio-to-text` | `/articles/audio-to-text` | 301 permanent |
-| `/youtube-transcript-obsidian` | `/articles/youtube-transcript-obsidian` | 301 permanent |
-| `/youtube-to-text` | `/articles/youtube-to-text` | 301 permanent |
-| `/youtube-transcript-markdown` | `/articles/youtube-transcript-markdown` | 301 permanent |
-| `/youtube-transcript-csv` | `/articles/youtube-transcript-csv` | 301 permanent |
-| `/youtube-srt-download` | `/articles/youtube-srt-download` | 301 permanent |
-| `/youtube-transcript-json` | `/articles/youtube-transcript-json` | 301 permanent |
-| `/youtube-transcript-for-rag` | `/articles/youtube-transcript-for-rag` | 301 permanent |
-| `/blog/chunk-youtube-transcripts-for-rag` | `/articles/chunk-youtube-transcripts-for-rag` | 301 permanent |
-| `/blog/youtube-channel-knowledge-base` | `/articles/youtube-channel-knowledge-base` | 301 permanent |
-| `/blog/youtube-transcripts-vector-database` | `/articles/youtube-transcripts-vector-database` | 301 permanent |
+| `/account/credits` | *(app-host)* `/dashboard/account` | 308 |
+| `/faq` | `/docs/faq` | 308 |
+| `/articles/bulk-youtube-transcript` | `/articles/youtube-playlist-transcript` | 308 |
+| `/articles/youtube-age-restricted-transcript` | `/articles/youtube-transcript-not-available` | 308 |
+| `/articles/youtube-members-only-transcript` | `/articles/youtube-transcript-not-available` | 308 |
+| `/articles/youtube-to-text` | `/articles/transcript-export-formats` | 308 |
+| `/articles/youtube-transcript-markdown` | `/articles/transcript-export-formats` | 308 |
+| `/articles/youtube-transcript-csv` | `/articles/transcript-export-formats` | 308 |
+| `/articles/youtube-srt-download` | `/articles/transcript-export-formats` | 308 |
+| `/articles/youtube-transcript-json` | `/articles/transcript-export-formats` | 308 |
+| `/articles/youtube-transcript-for-rag` | `/articles/transcript-export-formats` | 308 |
 
-Gedefinieerd in `next.config.ts` → `async redirects()`. Totaal: 23 regels.
+Totaal: 11 regels. Elke consolidatie-redirect wijst **direct** naar het eindpunt (geen ketens).
 
 ---
 

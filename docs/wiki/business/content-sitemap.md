@@ -40,9 +40,9 @@ indxr.ai/  ── marketing (publiek)
 │
 ├─ 4 Funnel-content / SEO  /articles/*  (het verhaal + use-case = de bron)
 │    /articles                        index (4 categorieën)
-│    ├─ Troubleshooting   not-available · age-restricted · members-only · non-english · without-extension
-│    ├─ Formats    youtube-to-text · -markdown · -csv · srt-download · -json · -for-rag
-│    ├─ Workflows         bulk- · playlist- · audio-to-text · -obsidian
+│    ├─ Troubleshooting   not-available (+age-restricted +members-only geabsorbeerd) · non-english · without-extension
+│    ├─ Formats           transcript-export-formats (hub: TXT·Markdown·CSV·SRT/VTT·JSON·RAG-JSON)
+│    ├─ Workflows         playlist- (+bulk geabsorbeerd) · audio-to-text · -obsidian
 │    └─ AI & RAG        chunk-…-for-rag · channel-knowledge-base · transcripts-vector-database
 │
 ├─ 5 Support & vertrouwen
@@ -125,23 +125,17 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 
 ### Groep 4 — Funnel-content / SEO-artikelen (`indxr.ai/articles/*`)
 
-18 artikelen + index. Drie gedeelde templates (`ToolPageTemplate` / `TutorialTemplate` / `ArticleTemplate`). Euro-bedragen dynamisch uit `pricing.ts` → **geen placeholders, geen stale pagina's gevonden**. Terugkerende claims: AI = AssemblyAI Universal-3 Pro @ 1cr/min; captions gratis; 500MB-cap; 7 audioformaten; RAG-JSON 1cr/10min (eerste 3 gratis); summary 3cr; credits verlopen nooit. Interne links naar bare slugs / `/how-it-works` / `/blog/*` zijn **niet kapot** — `next.config` 301-redirects vangen ze.
+10 artikelen + index (was 18; **9 samengevoegd op 2026-08-07** — zie [keyword-demand-2026-08.md](keyword-demand-2026-08.md) § "Artikeloordeel"). Drie gedeelde templates (`ToolPageTemplate` / `TutorialTemplate` / `ArticleTemplate`). Euro-bedragen dynamisch uit `pricing.ts` → **geen placeholders, geen stale pagina's gevonden**. Terugkerende claims: AI = AssemblyAI Universal-3 Pro @ 1cr/min; captions gratis; 500MB-cap; 7 audioformaten; RAG-JSON 1cr/10min (eerste 3 gratis); summary 3cr; credits verlopen nooit. De 9 verdwenen slugs krijgen elk één 308 → eindpunt in `apps/marketing/next.config.ts` (geen ketens); interne links wijzen rechtstreeks naar het eindpunt.
+
+**Consolidatie (2026-08-07):** Bulk → Playlist · Age-restricted + Members-only → Not-available (als secties) · 6× Formats (TXT/Markdown/CSV/SRT/JSON/RAG-JSON) → één hub `transcript-export-formats`. Structuurtaak: inhoud verhuisd zoals-hij-was + ontdubbeld; tekstuele kwaliteit = latere ronde.
 
 | Route (`/articles/…`) | Categorie (index) | Product-specifieke claims (truth-check-doelen) | Status |
 |---|---|---|---|
-| `youtube-transcript-not-available` | Troubleshooting | 67 talen captions / 99+ AI; AssemblyAI "94.1% English, 9.97% WER vs 24.73% Amazon"; live-captions EN-only + 1000+ subs; detecteert age/members-only. | live |
-| `youtube-age-restricted-transcript` | Troubleshooting | Detecteert age-gate vóór extractie, error-card, **0 credits**; bypasst gate NIET; workaround = audio-upload; `is_auto_generated:false`. | live |
-| `youtube-members-only-transcript` | Troubleshooting | Weigert members-only URL, error-card, 0cr; workaround = audio-upload; "first audio upload uses welcome credits". | live |
+| `youtube-transcript-not-available` | Troubleshooting | 67 talen captions / 99+ AI; AssemblyAI "94.1% English, 9.97% WER vs 24.73% Amazon"; live-captions EN-only + 1000+ subs; **absorbeert age-restricted + members-only als secties** (audio-upload-workaround, error-cards, 0 credits). | live |
 | `youtube-transcript-non-english` | Troubleshooting | YouTube CDN forceert `tlang=en` (niet override-baar); **model-routing: Universal-2 voor non-EN, Universal-3 Pro alleen EN/ES/DE/FR/PT/IT** (⚠ botst met "Universal-3 Pro" elders). | live |
 | `youtube-transcript-without-extension` | Troubleshooting | **"8 export formats"** (⚠ botst); geen extensie ("post-launch roadmap"); yt-dlp + interne API; 67/99+ talen. | live |
-| `youtube-to-text` | Formats | **"Free account includes 25 credits"** (2×); **"six export formats, nine export options"** (⚠ botst met "8"); 67 talen; "95%+ accuracy". | live |
-| `youtube-transcript-markdown` | Formats | YAML-frontmatter velden; frontmatter-customisatie NIET in UI; paragraaf-split >5s; Obsidian Web Clipper "brak 2× begin 2026". | live |
-| `youtube-transcript-csv` | Formats | Kolommen segment_index/start/end/duration/text/word_count; UTF-8 BOM; video-metadata NIET in CSV. | live |
-| `youtube-srt-download` | Formats | Resegment 3–7s, ≤42 chars/regel (BBC/Netflix/EBU 3264); "~20% van YouTube-video's heeft geen auto-captions". | live |
-| `youtube-transcript-json` | Formats | Standaard-JSON gratis; RAG-JSON 1cr/10min (eerste 3 gratis); **claim: YouTube geeft "always English translation regardless of original".** | live |
-| `youtube-transcript-for-rag` | Formats ("RAG-Optimized JSON") | RAG-JSON workflow; chunk-presets; 1cr/10min. | live |
-| `bulk-youtube-transcript` | Workflows | 3 captions gratis, dan 1cr/video; getest 19 vids/783 min/18m53s; batch ≤100; "playlists tot **5.000 video's**". | live |
-| `youtube-playlist-transcript` | Workflows | Idem 3-gratis; failed retry na 30s; batch ≤100; **geen channel-URL's**; dedup-badges (amber=captions, violet=AI). | live |
+| `transcript-export-formats` | Formats (hub) | **Samenvoeging van 6 format-artikelen** (TXT·Markdown·CSV·SRT/VTT·JSON·RAG-JSON), elk als sectie. "six export formats, nine export options"; UTF-8 BOM; resegment 3–7s/≤42 chars; RAG-JSON 1cr/10min; frontmatter-velden. ⚠ oude "8 vs 9"-telling-botsing blijft (latere kwaliteitsronde). | live (nieuw) |
+| `youtube-playlist-transcript` | Workflows | 3-gratis; failed retry na 30s; batch ≤500; **geen channel-URL's**; dedup-badges (amber=captions, violet=AI); **absorbeert bulk** (use-cases-sectie). | live |
 | `audio-to-text` | Workflows | 500MB (~8u); "94–96%+ clean audio"; 99+ talen; summary 3cr; SRT/VTT 3–7s/42 chars. | live |
 | `youtube-transcript-obsidian` | Workflows | Markdown/frontmatter; summary 3cr; "19 lectures/13 hours" ZIP; youtube-transcript-api geblokt op cloud-IP's, INDXR = yt-dlp+residential proxy. | live |
 | `chunk-youtube-transcripts-for-rag` | AI & RAG | RAG 30/60/90/120s presets, 15% overlap, sentence-snap (AI) vs segment-snap (captions). | live (grotendeels topic) |
@@ -205,16 +199,16 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 
 | Onderwerp | DOCS-pagina (spec) — draagt | ARTIKEL (bron) — draagt |
 |---|---|---|
-| **Plain text / TXT** | `…/export-formats/txt` — TXT-varianten (met/zonder timestamps), `[HH:MM:SS]`-format, "anoniem-only" | `youtube-to-text` — waarom plain text, wat-je-krijgt, no-account-hoek |
-| **Markdown** | `…/export-formats/markdown` — exacte YAML-frontmatter-keys, paragraaf-split-regel | `youtube-transcript-markdown` — Obsidian/Notion-verhaal · (`youtube-transcript-obsidian` = workflow-variant) |
-| **CSV** | `…/export-formats/csv` — kolomnamen (`segment_index,start,end,duration,text,word_count`), UTF-8 BOM | `youtube-transcript-csv` — pandas/Sheets/Voyant use-case |
-| **SRT** | `…/export-formats/srt` — `HH:MM:SS,mmm`, index-nummering | `youtube-srt-download` — resegmentatie-verhaal (3–7s/42chars), editor-compat |
-| **VTT** | `…/export-formats/vtt` — `WEBVTT`-header, `HH:MM:SS.mmm` | `youtube-srt-download` (dekt SRT **én** VTT — deelt het artikel) |
-| **JSON (standaard)** | `…/export-formats/json` — standaard-JSON schema-velden (metadata-wrapper) | `youtube-transcript-json` — JSON-use-cases, velden-uitleg |
-| **RAG-JSON** | `…/export-formats/json` (RAG-deel) — chunk-schema (90–120s, `deep_link`, overlap) | `youtube-transcript-for-rag` (primair) + `chunk-…-for-rag` / `…-vector-database` (deep dives) |
+| **Plain text / TXT** | `…/export-formats/txt` — TXT-varianten (met/zonder timestamps), `[HH:MM:SS]`-format, "anoniem-only" | `transcript-export-formats` § Plain text — waarom plain text, wat-je-krijgt |
+| **Markdown** | `…/export-formats/markdown` — exacte YAML-frontmatter-keys, paragraaf-split-regel | `transcript-export-formats` § Markdown · (`youtube-transcript-obsidian` = workflow-variant) |
+| **CSV** | `…/export-formats/csv` — kolomnamen (`segment_index,start,end,duration,text,word_count`), UTF-8 BOM | `transcript-export-formats` § CSV — pandas/Sheets/Voyant use-case |
+| **SRT** | `…/export-formats/srt` — `HH:MM:SS,mmm`, index-nummering | `transcript-export-formats` § SRT/VTT — resegmentatie (3–7s/42chars), editor-compat |
+| **VTT** | `…/export-formats/vtt` — `WEBVTT`-header, `HH:MM:SS.mmm` | `transcript-export-formats` § SRT/VTT (dekt SRT **én** VTT) |
+| **JSON (standaard)** | `…/export-formats/json` — standaard-JSON schema-velden (metadata-wrapper) | `transcript-export-formats` § JSON — use-cases, velden-uitleg |
+| **RAG-JSON** | `…/export-formats/json` (RAG-deel) — chunk-schema (90–120s, `deep_link`, overlap) | `transcript-export-formats` § RAG-JSON + `chunk-…-for-rag` / `…-vector-database` (deep dives) |
 | **Talen** | `…/languages` — 67 captions / 99+ AI, auto-detect (kaal) | `youtube-transcript-non-english` — `tlang=en`-verhaal, model-routing |
 | **Formaten-overzicht** | `…/export-formats` (hub) — **alleen** overzichtstabel + doorverwijzing | `/articles` (categorie *Formats*) — de losse verhalen |
-| **Troubleshooting** | *(geen docs-hub meer — ADR-073)* de **`/articles`-index** (categorie Troubleshooting) is de index | `not-available` · `non-english` · `without-extension` · `age-restricted` · `members-only` |
+| **Troubleshooting** | *(geen docs-hub meer — ADR-073)* de **`/articles`-index** (categorie Troubleshooting) is de index | `not-available` (bevat age-restricted + members-only-secties) · `non-english` · `without-extension` |
 
 *Onderwerpen zónder artikel-tegenhanger (docs-only, blijven kaal):* `accuracy` (Accuracy and languages), `limits`, `summaries`, `guides/playlists`, `guides/library`, `account/settings`. *Data-retentie:* geen aparte docs-pagina meer — `/privacy` draagt dit (ADR-074). *Credits:* `/pricing` + `/docs/account/credits` dragen dit — de dubbele `…/how-indxr-works/credits` is **verwijderd** (308 → `account/credits`).
 

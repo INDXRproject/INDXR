@@ -109,7 +109,7 @@ export default function DocsMarkdownPage() {
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },
             { label: "Plain text (TXT)", href: "/docs/reference/export-formats/txt" },
-            { label: "Article: YouTube transcript to Markdown", href: "/articles/youtube-transcript-markdown" },
+            { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
             { label: "Article: Obsidian workflow", href: "/articles/youtube-transcript-obsidian" },
           ]}
         />

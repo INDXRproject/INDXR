@@ -81,7 +81,7 @@ export default function DocsVttPage() {
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },
             { label: "SRT", href: "/docs/reference/export-formats/srt" },
-            { label: "Article: YouTube SRT download", href: "/articles/youtube-srt-download" },
+            { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
           ]}
         />
       </DocsShell>

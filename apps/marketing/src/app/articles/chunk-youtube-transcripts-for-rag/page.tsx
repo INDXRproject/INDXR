@@ -345,10 +345,10 @@ export default function ChunkYouTubeTranscriptsForRAGPage() {
 
       <p>
         INDXR.AI&apos;s{" "}
-        <Link href="/articles/youtube-transcript-for-rag">RAG JSON export</Link> handles the chunking, overlap,
+        <Link href="/articles/transcript-export-formats">RAG JSON export</Link> handles the chunking, overlap,
         and metadata — download and load directly into your vector database. For the full output
-        schema, see{" "}
-        <Link href="/articles/youtube-transcript-json">YouTube Transcript JSON Export</Link>. For credit
+        schema, see the{" "}
+        <Link href="/docs/reference/export-formats/json">JSON format reference</Link>. For credit
         packages, see the <Link href="/pricing">pricing page</Link>.
       </p>
     </TutorialTemplate>

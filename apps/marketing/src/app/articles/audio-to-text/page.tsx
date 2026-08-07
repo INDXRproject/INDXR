@@ -185,7 +185,7 @@ export default function AudioToTextPage() {
         <strong>Export as RAG JSON:</strong> For podcasts, lectures, or interviews you want to make
         searchable via a vector database — enable RAG JSON export to get chunked, metadata-rich output
         ready for LangChain, LlamaIndex, or direct vector database ingestion. See{" "}
-        <Link href="/articles/youtube-transcript-for-rag">YouTube Transcripts for RAG Pipelines</Link> for the
+        <Link href="/articles/transcript-export-formats">the export formats reference</Link> for the
         full pipeline.
       </p>
 

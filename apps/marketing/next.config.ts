@@ -23,12 +23,29 @@ const nextConfig: NextConfig = {
   async redirects() {
     // Pre-launch: never submitted to Search Console, no external inbound links. All redirects
     // from our own restructures were dead weight and are removed (ADR-075). Internal links point
-    // straight at the real route. Only two rules survive:
+    // straight at the real route. Two functional rules survive:
     //   1. cross-host: /account/credits → the app's account page (functional, not a doc move)
     //   2. /faq → /docs/faq (a short URL people type)
+    //
+    // Article consolidation (2026-08-07, keyword-demand-2026-08 § "Artikeloordeel"): 9 article
+    // slugs merged away. Each vanished slug gets a permanent (308) redirect straight to its
+    // endpoint — no chains. Internal links already point at the endpoint; these are the safety net.
     return [
       { source: '/account/credits', destination: `${APP_URL}/dashboard/account`, permanent: true },
       { source: '/faq', destination: '/docs/faq', permanent: true },
+
+      // Bulk → Playlist (absorbed)
+      { source: '/articles/bulk-youtube-transcript', destination: '/articles/youtube-playlist-transcript', permanent: true },
+      // Access restrictions → Transcript Not Available (absorbed / dropped)
+      { source: '/articles/youtube-age-restricted-transcript', destination: '/articles/youtube-transcript-not-available', permanent: true },
+      { source: '/articles/youtube-members-only-transcript', destination: '/articles/youtube-transcript-not-available', permanent: true },
+      // Six format articles → single export-formats hub
+      { source: '/articles/youtube-to-text', destination: '/articles/transcript-export-formats', permanent: true },
+      { source: '/articles/youtube-transcript-markdown', destination: '/articles/transcript-export-formats', permanent: true },
+      { source: '/articles/youtube-transcript-csv', destination: '/articles/transcript-export-formats', permanent: true },
+      { source: '/articles/youtube-srt-download', destination: '/articles/transcript-export-formats', permanent: true },
+      { source: '/articles/youtube-transcript-json', destination: '/articles/transcript-export-formats', permanent: true },
+      { source: '/articles/youtube-transcript-for-rag', destination: '/articles/transcript-export-formats', permanent: true },
     ]
   },
   images: {

@@ -85,7 +85,7 @@ export default function DocsTxtPage() {
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },
             { label: "Markdown", href: "/docs/reference/export-formats/markdown" },
-            { label: "Article: YouTube to text", href: "/articles/youtube-to-text" },
+            { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
           ]}
         />
       </DocsShell>

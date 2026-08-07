@@ -116,7 +116,7 @@ export default function DocsSingleVideoPage() {
           topics={[
             { label: "How INDXR works", href: "/docs/how-indxr-works" },
             { label: "Playlists", href: "/docs/guides/playlists" },
-            { label: "Article: YouTube to text", href: "/articles/youtube-to-text" },
+            { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
           ]}
         />
       </DocsShell>

@@ -133,7 +133,7 @@ export default function DocsExportFormatsPage() {
           topics={[
             { label: "Credits", href: "/docs/account/credits" },
             { label: "How INDXR works", href: "/docs/how-indxr-works" },
-            { label: "Article: YouTube to text", href: "/articles/youtube-to-text" },
+            { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
           ]}
         />
       </DocsShell>

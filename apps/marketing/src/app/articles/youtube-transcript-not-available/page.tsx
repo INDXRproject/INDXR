@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
-import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
+import { uploadFormatsProse, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
+import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
@@ -39,6 +40,18 @@ const faqs = [
     q: "What's the difference between captions and a transcript on YouTube?",
     a: 'Captions are the subtitles that appear synchronized with the video. A transcript is the same text presented as a plain-text document with timestamps, accessible via the "Show transcript" panel below the description. Both come from the same underlying caption track. If captions exist, the transcript exists. If there are no captions, there is no transcript.',
   },
+  {
+    q: "Can any tool extract transcripts from members-only YouTube videos via URL?",
+    a: "No. Any tool claiming to do so is either misrepresenting its capabilities or bypassing YouTube's authentication in ways that violate YouTube's Terms of Service. INDXR.AI detects members-only content and declines to process it rather than attempting to circumvent the restriction.",
+  },
+  {
+    q: "Why can't INDXR.AI just log into YouTube to bypass an age restriction?",
+    a: "Technically possible to build, but not how INDXR.AI operates — and not something it should do. Storing user credentials or impersonating users to access age-restricted content creates security risks and raises serious ethical questions about consent and access control. The audio upload workaround keeps the responsibility where it belongs: with you, verifying you have legitimate access before downloading.",
+  },
+  {
+    q: "If I have a VPN that makes me appear to be in a different country, will that help with an age restriction?",
+    a: "No. Age restriction on YouTube is based on account authentication and age verification, not geographic location. A VPN changes your apparent location but doesn't satisfy YouTube's age verification requirement.",
+  },
 ]
 
 const sources = [
@@ -49,6 +62,10 @@ const sources = [
   {
     label: "YouTube Help — Content ID claims",
     url: "https://support.google.com/youtube/answer/6013276",
+  },
+  {
+    label: "YouTube Help — Age-restricted content",
+    url: "https://support.google.com/youtube/answer/2802167",
   },
   {
     label: `${transcriptionModelName()} benchmarks`,
@@ -184,12 +201,11 @@ export default function YouTubeTranscriptNotAvailablePage() {
       </p>
 
       <p>
-        <strong>What to do:</strong> For age-restricted videos, see the guide on{" "}
-        <Link href="/articles/youtube-age-restricted-transcript">YouTube age-restricted transcripts</Link> —
-        there is a workaround via audio download. For members-only content, see{" "}
-        <Link href="/articles/youtube-members-only-transcript">YouTube members-only transcripts</Link>. If
-        you are not a member and cannot obtain the audio file, there is no way to transcribe the
-        video.
+        <strong>What to do:</strong> For age-restricted videos, see the{" "}
+        <strong>Age-restricted videos</strong> section below — there is a workaround via audio
+        download. For members-only content, see the <strong>Members-only videos</strong> section
+        below. If you are not a member and cannot obtain the audio file, there is no way to
+        transcribe the video.
       </p>
 
       <h3>Reason 6: The video is private</h3>
@@ -372,6 +388,143 @@ export default function YouTubeTranscriptNotAvailablePage() {
         Restricted Mode can be enabled at the network level, hiding certain content types including
         transcript panels for flagged videos. Try accessing the video on a different network or with
         a VPN to confirm this is the cause.
+      </p>
+
+      <h2>Age-restricted videos</h2>
+
+      <p>
+        Age-restricted YouTube videos present a narrower problem than members-only content: the
+        restriction isn&apos;t about paying for access, it&apos;s about verifying your age. YouTube requires
+        you to be signed in with a verified account to watch age-restricted content (
+        <a
+          href="https://support.google.com/youtube/answer/2802167"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          YouTube Help
+        </a>
+        ). Tools that access YouTube&apos;s transcript API without authentication hit this wall and either
+        fail silently or return nothing.
+      </p>
+
+      <p>
+        INDXR.AI detects age-restricted videos before attempting extraction and shows a clear error.
+        Here&apos;s what&apos;s happening technically and what options you have.
+      </p>
+
+      <h3>Why age restriction blocks transcript extraction</h3>
+
+      <p>
+        YouTube&apos;s age-restricted videos are served differently from standard public videos. The
+        transcript data is gated behind the same authentication check as the video itself. When
+        INDXR.AI makes a server-side request for transcript data, it doesn&apos;t carry your personal
+        YouTube login session — so YouTube returns an error rather than the caption data.
+      </p>
+
+      <p>
+        This isn&apos;t a bug or an engineering gap. YouTube&apos;s system is working as designed: the content
+        is restricted, and accessing it requires authentication the tool doesn&apos;t possess.
+      </p>
+
+      <p>
+        INDXR.AI shows a specific &quot;Age-Restricted Video&quot; error card when this happens, distinct from
+        other error types (members-only, no captions, private video). No credits are charged.
+      </p>
+
+      <h3>The practical situation</h3>
+
+      <p>
+        Age-restricted content exists for a specific reason: YouTube has determined the content may
+        be inappropriate for some audiences. Most people who need a transcript from an age-restricted
+        video are doing so for legitimate purposes — research, journalism, academic analysis, content
+        they have every right to access as an adult. The restriction is about audience
+        appropriateness, not about access rights for authorized viewers.
+      </p>
+
+      <p>
+        If you can watch the video — meaning you&apos;re signed into YouTube and your account has age
+        verification — there is a path to getting a transcript.
+      </p>
+
+      <h3>The audio upload workaround</h3>
+
+      <ol>
+        <li>
+          <strong>Watch and download the audio.</strong> While signed into YouTube with a verified
+          account, download the audio from the video using a tool like yt-dlp (command line), 4K
+          Video Downloader, or similar. You&apos;re downloading content you have authorized access to.
+        </li>
+        <li>
+          <strong>Upload to INDXR.AI.</strong> Open the{" "}
+          <Link href="/articles/audio-to-text">Audio Upload tab</Link>. Accepted formats: {UPLOAD_FORMATS_LIST},
+          up to {UPLOAD_MAX_FILE_MB}MB. The file is sent directly to INDXR.AI&apos;s backend — not
+          through Vercel&apos;s size-limited proxy.
+        </li>
+        <li>
+          <strong>Transcribe and export.</strong> {transcriptionModelName()} produces a transcript
+          with proper punctuation and high accuracy. Export in any format — TXT, Markdown with YAML
+          frontmatter, SRT, VTT, JSON, or RAG-optimized JSON.
+        </li>
+      </ol>
+
+      <p>
+        <strong>Cost:</strong> 1 credit per minute of audio. A 45-minute video: 45 credits,
+        approximately {creditCostEur(45)} at {getAnchorPackage().name} pricing ({anchorPerCreditText()}) — see the{" "}
+        <Link href="/pricing">pricing page</Link> for all packages.
+      </p>
+
+      <p>
+        The same path works for members-only content you&apos;re paying to access, and for private videos
+        you own. The common thread: you need legitimate access to the content to download it, and
+        INDXR.AI processes the audio file you provide without needing to authenticate with YouTube
+        directly.
+      </p>
+
+      <p>
+        Age-restricted videos on YouTube tend to have auto-captions available alongside the age gate
+        — but accessing those captions externally still requires passing the authentication check.
+        For the audio upload path, you&apos;re getting AI-generated transcription rather than YouTube&apos;s
+        captions. The{" "}
+        <code>is_auto_generated: false</code> flag in JSON exports distinguishes AI-transcribed
+        content from auto-caption sources.
+      </p>
+
+      <h2>Members-only videos</h2>
+
+      <p>
+        Members-only YouTube videos cannot be transcribed via URL by any tool — including INDXR.AI.
+        This isn&apos;t a technical limitation that could be engineered around; it&apos;s a deliberate access
+        restriction. The video is locked behind a channel membership paywall, and extracting its
+        content without membership would undermine the creator&apos;s business model. That boundary
+        deserves to be respected.
+      </p>
+
+      <p>
+        When a YouTube video requires channel membership, YouTube&apos;s servers verify your
+        authentication before serving any video data — including captions. A transcript extraction
+        tool that uses YouTube&apos;s internal APIs (like INDXR.AI) or scrapes the page (like most Chrome
+        extensions) hits an authentication wall before it can access anything. INDXR.AI detects this
+        state and shows a clear &quot;Members-Only Video&quot; error card with an explanation, rather than a
+        confusing failure or empty result. No credits are charged.
+      </p>
+
+      <p>
+        If you have membership and can watch the video, the same audio upload workaround described
+        above for age-restricted videos applies: download the audio while logged in with your
+        membership, then upload it to the{" "}
+        <Link href="/articles/audio-to-text">Audio Upload tab</Link>. This path is legitimate because
+        you&apos;re transcribing content you have authorized access to — the same principle as transcribing
+        a recorded lecture you attended. Cost is 1 credit per minute of audio: a 30-minute
+        members-only video costs 30 credits, about {creditCostEur(30)} at {getAnchorPackage().name} pricing.
+      </p>
+
+      <p>
+        <strong>If the members-only video is yours,</strong> the audio upload path works the same way
+        — or you can download the video from YouTube Studio directly, extract the audio, and upload it.
+        Alternatively, if your video has captions you&apos;ve uploaded manually through YouTube Studio,
+        those can sometimes be accessed differently depending on how you&apos;ve configured visibility
+        settings. Check YouTube Studio → Subtitles to see if your caption tracks are accessible via
+        the standard extraction path.
       </p>
     </ArticleTemplate>
   )
