@@ -1,3 +1,5 @@
+[2026-08-07 17:02] feat (FASE 2 — kernflow-opname): eerste bewegende opname `recordings/core-flow.webm` (1280×720, ~26,4s, VP8): link in veld → AI-transcriptie gekozen → extractie doorloopt de fasen (Downloading audio met determinate balk → Transcribing → Saving) → **Transcript ready** met de echte fixture-titel (54:56), 55 credits en de echte fixture-captions als transcript. Deterministisch via gestubde backend (`page.route`: metadata→fixture-titel/duur, whisper→stub-job, `/api/jobs`→wall-clock-fasen; Supabase `transcripts?video_id=eq.`→leeg zodat de dedup-banner niet flitst) — nul credits verbrand. Geverifieerd via 6 geëxtraheerde frames (cursor zichtbaar, kostenkaart 55cr, downloadbalk, eindresultaat). Beat-sheet met tijdstempels ernaast (`core-flow.beats.md`) voor de montage. YouTube-pagina komt niet in beeld (ADR-088). | gewijzigd: tests/playwright/capture/recordings/core-flow.webm (nieuw), tests/playwright/capture/recordings/core-flow.beats.md (nieuw), docs/LOG.md
+---
 [2026-08-07 17:00] feat (FASE 0+1 — video-opnamemachine + YouTube-brand-beslissing): **FASE 0** legal check (read-only web): YouTube's UI prominent in marketing vereist voorafgaande goedkeuring (Brand Resources + Brand Use Guidelines PDF + API Branding Guidelines) → **ADR-088**: clip toont geen youtube.com; start bij ons eigen invoerveld; nominatieve tekst blijft toegestaan. **FASE 1** de bestaande capture-machine kreeg een tweede tak voor bewegende opnames (`recordVideo`): `video-helpers.ts` (geïnjecteerde cursor die de echte muis volgt + klik-pulsering, menselijk tempo via `mouse.move({steps})`/`pressSequentially({delay})`, `beat()`-pauzes, deterministisch — geen Math.random), eigen `playwright.video.config.ts` (gescheiden `testMatch` van de beeldmachine; `quickstart-capture` afgebakend), en de opnamestandaard vastgelegd in `screenshot-machine.md` naast de beeldstandaard. `pnpm build` groen (2/2, FULL TURBO — geen app-code geraakt). | gewijzigd: tests/playwright/capture/video-helpers.ts (nieuw), playwright.video.config.ts (nieuw), playwright.capture.config.ts, tests/playwright/capture/core-flow-video.spec.ts (nieuw), docs/wiki/content/screenshot-machine.md, docs/wiki/decisions/088-youtube-ui-in-marketing.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
 ---
 [2026-08-04 20:47] chore (opruimronde — verweesd component + stale roadmap-entry): **MacbookMockupFrame.tsx verwijderd** — nul bronverwijzingen sinds de homepage-wijziging (`70ab571`) de vier nepschermen verving door de echte playlist-screenshot + CodeSample-blokken; verweesd door onze eigen wijziging, dus opgeruimd (`grep MacbookMockup` over `apps/**/src` + `packages/*/src` + `tests` = 0 buiten het bestand zelf). **priorities.md r413 rechtgetrokken:** de gap-mirror-entry noemde nog **6** open mirrors, maar `82ea3d5` verwijderde er twee (`ARTIKEL-youtube-transcript-csv.md` stale merged-CSV, `PRICING-PAGE.md` ADR-037-conflict). Entry nu: 2 verwijderd (met commit-ref) + **4 resterend** met per bestand de niet-gerenderde content (chunk-rag FAQ · for-rag LlamaIndex-voorbeeld · json api-match/JSONL/merged-FAQ · not-available search-FAQ), zodat ze niet in een commit-message begraven blijven. `pnpm build` groen (2/2). | gewijzigd: apps/marketing/src/components/marketing/MacbookMockupFrame.tsx (verwijderd), docs/wiki/roadmap/priorities.md, docs/LOG.md
@@ -15843,4 +15845,19 @@ playwright.capture.config.ts
 playwright.video.config.ts
 tests/playwright/capture/core-flow-video.spec.ts
 tests/playwright/capture/video-helpers.ts
+---
+[2026-08-07 17:02] commit: feat(capture): record the core-flow sequence (raw clip + beat sheet)
+
+FASE 2 — the first moving recording: a YouTube link lands in the field, AI
+transcription is chosen, extraction runs its phases (Downloading with a determinate
+bar → Transcribing → Saving), and the transcript appears — real fixture title (54:56),
+55 credits, real fixture captions. Deterministic via a stubbed backend (page.route:
+metadata, whisper job, wall-clock /api/jobs phases, and an empty transcripts dedup
+lookup so no 'already in library' banner flashes) — zero credits spent. Verified via
+six extracted frames. Beat sheet with timestamps alongside for the montage.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+tests/playwright/capture/recordings/core-flow.beats.md
+tests/playwright/capture/recordings/core-flow.webm
 ---
