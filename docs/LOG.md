@@ -1,3 +1,5 @@
+[2026-08-07 17:24] feat (FASE 4 — exportblokken uit echte fixture-export): de drie homepage-codeblokken voorbereid als beelden van het bestand op de plek waar het gebruikt wordt. **Echte exports** gegenereerd uit het opgeslagen fixture-transcript (1142 segmenten, video kBdfcR-8hEY) via de eigen generators (`packages/shared/.../formatTranscript.ts`) — een eenmalig Supabase-fetch-script (service-role read van `transcripts`, `duration`-kolom niet `duration_seconds`) dat ná de run is verwijderd → `export-demos/fixture/justice.{srt,vtt,md,rag.json}` (RAG = **60 chunks**, matcht `total_chunks`, geen `source_url`). **(1) SRT → ondertitels (browser):** `srt-demo.html` laadt de echte `.srt` en rendert cue 3 als ondertitel over een neutrale speler (`neutral-player.mp4`, geen YouTube-frame — ADR-088), IBM Plex + tokens, light+dark PNG via `capture-srt.mjs`. **(2) RAG → retrieval (browser):** `rag-demo.html` query "the driver of a trolley car" tegen de echte 60-chunk-export → antwoord **chunk 4 @ 3:45** + echte deep-link `?t=225`, light+dark via `capture-rag.mjs`. **(3) Markdown → Obsidian:** Obsidian heeft **geen** webversie (desktop/mobiel only; Publish = hosting) → gemeld + exact één screenshot-instructie voor Khidr (Reading view, Properties-panel = frontmatter, eerste getimede sectie) in `export-demos/README.md`; echte `justice.md` staat klaar. Alle vier demo-screenshots visueel geverifieerd. Niet op de homepage — voorbereide assets ter review. | gewijzigd: apps/video/export-demos/** (nieuw: fixture/justice.{srt,vtt,md,rag.json}+neutral-player.mp4, srt-demo.html, rag-demo.html, capture-srt.mjs, capture-rag.mjs, srt-demo-{light,dark}.png, rag-demo-{light,dark}.png, README.md), docs/LOG.md
+---
 [2026-08-07 17:12] feat (FASE 3 — Remotion-workspace + eerste clip): `apps/video` opgezet als **standalone** Remotion-project buiten de Turborepo-graph (**ADR-089**: pnpm `!apps/video`-exclusie, eigen node_modules/npm-install, eigen package-lock; geverifieerd turbo-scope=3 packages / Tasks:2, `indxr-video` niet in `pnpm -r ls`). Eén compositie `HomeClip` (1280×720, 30fps) monteert de FASE-2-opname: gentle crop (scale 1.04), tempo 1,25× (26,4→21,2s), en vier korte tekst-overlays getimed op de beats ("Paste a YouTube link" / "Captions, or AI when there are none" / "It transcribes on its own" / "Ready to read, edit, and export") — IBM Plex Sans + onze OKLCH-tokens (light, verbatim uit tokens.css), geen externe template. Gerenderd → `out/home-clip.mp4` (1,4 MB, H.264) + poster `out/home-clip-poster.png` (frame 609 = "Transcript ready"-kaart, voor no-autoplay). Visueel geverifieerd (caption-frame + poster). **Niet op de homepage** — ter review. Bronopname niet dubbel gecommit (`public/` gitignored, `copy-source` pre-hook). | gewijzigd: pnpm-workspace.yaml, apps/video/{package.json,tsconfig.json,remotion.config.ts,.gitignore,src/{index.ts,Root.tsx,HomeClip.tsx,tokens.ts},out/{home-clip.mp4,home-clip-poster.png}} (nieuw), docs/wiki/decisions/089-remotion-workspace-outside-build-graph.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
 ---
 [2026-08-07 17:02] feat (FASE 2 — kernflow-opname): eerste bewegende opname `recordings/core-flow.webm` (1280×720, ~26,4s, VP8): link in veld → AI-transcriptie gekozen → extractie doorloopt de fasen (Downloading audio met determinate balk → Transcribing → Saving) → **Transcript ready** met de echte fixture-titel (54:56), 55 credits en de echte fixture-captions als transcript. Deterministisch via gestubde backend (`page.route`: metadata→fixture-titel/duur, whisper→stub-job, `/api/jobs`→wall-clock-fasen; Supabase `transcripts?video_id=eq.`→leeg zodat de dedup-banner niet flitst) — nul credits verbrand. Geverifieerd via 6 geëxtraheerde frames (cursor zichtbaar, kostenkaart 55cr, downloadbalk, eindresultaat). Beat-sheet met tijdstempels ernaast (`core-flow.beats.md`) voor de montage. YouTube-pagina komt niet in beeld (ADR-088). | gewijzigd: tests/playwright/capture/recordings/core-flow.webm (nieuw), tests/playwright/capture/recordings/core-flow.beats.md (nieuw), docs/LOG.md
@@ -15889,4 +15891,35 @@ docs/LOG.md
 docs/wiki/INDEX.md
 docs/wiki/decisions/089-remotion-workspace-outside-build-graph.md
 pnpm-workspace.yaml
+---
+[2026-08-07 17:26] commit: feat(video): prepare the three export blocks from the real fixture export
+
+FASE 4 — the homepage's Markdown/SRT/RAG code blocks become the file in its habitat,
+using the REAL fixture export (generated from the stored transcript via the app's own
+generators; 60 real RAG chunks, no source_url):
+- SRT -> subtitles: srt-demo.html renders a real cue over a neutral player (no YouTube
+  frame, ADR-088). capture-srt.mjs -> light/dark PNGs.
+- RAG -> retrieval: rag-demo.html queries the real 60-chunk export and returns the
+  best chunk with its timestamp (chunk 4 @ 3:45, deep_link ?t=225). capture-rag.mjs.
+- Markdown -> Obsidian: Obsidian has no web version, so README names the single
+  screenshot Khidr must take; the real justice.md is ready.
+
+All four demo screenshots verified. Not wired into the homepage — assets for review.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/video/export-demos/README.md
+apps/video/export-demos/capture-rag.mjs
+apps/video/export-demos/capture-srt.mjs
+apps/video/export-demos/fixture/justice.md
+apps/video/export-demos/fixture/justice.rag.json
+apps/video/export-demos/fixture/justice.srt
+apps/video/export-demos/fixture/justice.vtt
+apps/video/export-demos/fixture/neutral-player.mp4
+apps/video/export-demos/rag-demo-dark.png
+apps/video/export-demos/rag-demo-light.png
+apps/video/export-demos/rag-demo.html
+apps/video/export-demos/srt-demo-dark.png
+apps/video/export-demos/srt-demo-light.png
+apps/video/export-demos/srt-demo.html
+docs/LOG.md
 ---
