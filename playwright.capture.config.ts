@@ -6,6 +6,8 @@ import { defineConfig, devices } from '@playwright/test'
 // picks this up (different testDir), so the 9 specs are neither slowed nor broken.
 export default defineConfig({
   testDir: './tests/playwright/capture',
+  // Only the still-screenshot spec — the video machine (core-flow-video.spec.ts) has its own config.
+  testMatch: '**/quickstart-capture.spec.ts',
   globalSetup: './tests/playwright/capture/global-setup.ts',
   fullyParallel: false,
   workers: 1,

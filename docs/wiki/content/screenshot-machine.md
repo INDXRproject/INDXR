@@ -1,8 +1,30 @@
 # Docs-screenshot capture machine (Playwright)
 
-**Aangemaakt:** 2026-08-02 · **Standaard herzien:** 2026-08-03 · **Spec:** `tests/playwright/capture/quickstart-capture.spec.ts` · **Config:** `playwright.capture.config.ts` · **Assets:** `apps/marketing/public/docs/screenshots/*.png`
+**Aangemaakt:** 2026-08-02 · **Beeldstandaard herzien:** 2026-08-03 · **Video-opname toegevoegd:** 2026-08-07
+**Beeld (stills):** spec `tests/playwright/capture/quickstart-capture.spec.ts` · config `playwright.capture.config.ts` · assets `apps/marketing/public/docs/screenshots/*.png`
+**Video (bewegend):** spec `tests/playwright/capture/core-flow-video.spec.ts` · config `playwright.video.config.ts` · helpers `tests/playwright/capture/video-helpers.ts` · output `tests/playwright/capture/recordings/*.webm`
 
-Eén Playwright-spec die géén gedrag test maar de docs-beelden vastlegt. Hij is **tegelijk een routecheck**: hij stuurt de echte UI aan op ARIA-rollen + exacte zichtbare tekst, dus een hernoemde knop of verplaatste control laat de bijbehorende capture **omvallen**. Dat is de bedoeling — de capture die faalt is het regressiesignaal.
+Eén Playwright-spec die géén gedrag test maar de docs-beelden vastlegt. Hij is **tegelijk een routecheck**: hij stuurt de echte UI aan op ARIA-rollen + exacte zichtbare tekst, dus een hernoemde knop of verplaatste control laat de bijbehorende capture **omvallen**. Dat is de bedoeling — de capture die faalt is het regressiesignaal. Sinds 2026-08-07 heeft de machine een **tweede tak**: bewegende opnames (`recordVideo`) voor marketing, met een eigen standaard hieronder.
+
+## Video-opnamestandaard (2026-08-07) — geldt voor ELKE bewegende opname
+
+De reden: de homepage zag eruit als documentatie (drie codeblokken + één losse still). Een product laat je het zien in beweging. De beeldstandaard (frameShot, hieronder) legt een statische kloon vast; een opname legt de **echte, levende** pagina vast terwijl een handeling zich voltrekt. Wat een opname leesbaar maakt en een still niet nodig had, staat in `video-helpers.ts` en is verplicht:
+
+- **Zichtbare cursor.** Playwright tekent er geen; `installCursor()` injecteert een pijl (+ klik-pulsering) op `<html>` die de echte muispositie volgt. Leeft buiten de React-tree, dus SPA-navigaties wissen 'm niet.
+- **Menselijk tempo.** De muis reist in stappen (`page.mouse.move(..., { steps })`) i.p.v. te springen; typen gaat met per-toets-vertraging (`pressSequentially({ delay })`). Eén tempo-tabel `TEMPO` bepaalt de feel van élke opname.
+- **Bewuste pauzes** (`beat()`) op de momenten die ertoe doen — leeg veld, kostenkaart, resultaat — zodat de kijker kan volgen.
+- **Deterministisch, altijd.** Geen `Math.random`/echte-tijd-jitter (twee runs moeten identiek zijn): elke vertraging is een vaste constante. De **backend is gestubd** (`page.route`) zodat de opname geen credits verbrandt en dezelfde fasen speelt; de job-fasen (downloading→transcribing→saving→complete) worden gedreven op **wall-clock sinds de eerste poll** (robuust tegen meerdere pollers + de polling-backoff), niet op call-count.
+- **Vast venster + thema + sessie**, net als de beeldstandaard: viewport 1280×720, `colorScheme:'light'`, consent gezet, gedeelde `account1`-sessie uit `capture-state.json` (dezelfde `global-setup.ts`), fixture-video `kBdfcR-8hEY`. De opname toont **echte fixture-titel + duur** (54:56 → 55 credits) en **echte** fixture-captions als transcript (verbatim uit `homeExportSamples.ts`).
+- **Eén WebB per run**, weggeschreven via een **eigen context** (`browser.newContext({ recordVideo })`) zodat de spec `context.close()` + `video.saveAs(<stabiel pad>)` controleert; Playwright's tijdelijke random-naam-bestand wordt daarna verwijderd. Output: `recordings/core-flow.webm` (overschreven per run).
+- **Juridisch (FASE 0 / [ADR-088](../decisions/088-youtube-ui-in-marketing.md)):** de youtube.com-pagina komt **niet** in beeld. De opname begint in ons eigen invoerveld waar de link geplakt wordt; alleen ons product is te zien.
+
+**Draaien (één commando, tegen de live app — stubs onderscheppen vóór het netwerk):**
+```bash
+BASE_URL=https://app.indxr.ai NODE_PATH=node_modules/.pnpm/node_modules \
+  node node_modules/.pnpm/@playwright+test@1.59.1/node_modules/@playwright/test/cli.js \
+  test --config=playwright.video.config.ts
+```
+De twee configs delen `global-setup.ts` maar hebben een gescheiden `testMatch`, dus de beeldmachine en de videomachine raken elkaar niet, en de 9 functionele specs (andere testDir) evenmin.
 
 ## Opnamestandaard (2026-08-03) — geldt voor ELKE opname
 

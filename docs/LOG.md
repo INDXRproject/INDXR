@@ -1,3 +1,5 @@
+[2026-08-07 17:00] feat (FASE 0+1 — video-opnamemachine + YouTube-brand-beslissing): **FASE 0** legal check (read-only web): YouTube's UI prominent in marketing vereist voorafgaande goedkeuring (Brand Resources + Brand Use Guidelines PDF + API Branding Guidelines) → **ADR-088**: clip toont geen youtube.com; start bij ons eigen invoerveld; nominatieve tekst blijft toegestaan. **FASE 1** de bestaande capture-machine kreeg een tweede tak voor bewegende opnames (`recordVideo`): `video-helpers.ts` (geïnjecteerde cursor die de echte muis volgt + klik-pulsering, menselijk tempo via `mouse.move({steps})`/`pressSequentially({delay})`, `beat()`-pauzes, deterministisch — geen Math.random), eigen `playwright.video.config.ts` (gescheiden `testMatch` van de beeldmachine; `quickstart-capture` afgebakend), en de opnamestandaard vastgelegd in `screenshot-machine.md` naast de beeldstandaard. `pnpm build` groen (2/2, FULL TURBO — geen app-code geraakt). | gewijzigd: tests/playwright/capture/video-helpers.ts (nieuw), playwright.video.config.ts (nieuw), playwright.capture.config.ts, tests/playwright/capture/core-flow-video.spec.ts (nieuw), docs/wiki/content/screenshot-machine.md, docs/wiki/decisions/088-youtube-ui-in-marketing.md (nieuw), docs/wiki/INDEX.md, docs/LOG.md
+---
 [2026-08-04 20:47] chore (opruimronde — verweesd component + stale roadmap-entry): **MacbookMockupFrame.tsx verwijderd** — nul bronverwijzingen sinds de homepage-wijziging (`70ab571`) de vier nepschermen verving door de echte playlist-screenshot + CodeSample-blokken; verweesd door onze eigen wijziging, dus opgeruimd (`grep MacbookMockup` over `apps/**/src` + `packages/*/src` + `tests` = 0 buiten het bestand zelf). **priorities.md r413 rechtgetrokken:** de gap-mirror-entry noemde nog **6** open mirrors, maar `82ea3d5` verwijderde er twee (`ARTIKEL-youtube-transcript-csv.md` stale merged-CSV, `PRICING-PAGE.md` ADR-037-conflict). Entry nu: 2 verwijderd (met commit-ref) + **4 resterend** met per bestand de niet-gerenderde content (chunk-rag FAQ · for-rag LlamaIndex-voorbeeld · json api-match/JSONL/merged-FAQ · not-available search-FAQ), zodat ze niet in een commit-message begraven blijven. `pnpm build` groen (2/2). | gewijzigd: apps/marketing/src/components/marketing/MacbookMockupFrame.tsx (verwijderd), docs/wiki/roadmap/priorities.md, docs/LOG.md
 ---
 [2026-08-04 20:47] content (/about afgeschreven + /suspended contactroute — laatste [KHIDR]-markers weg): **/about** was placeholder met 3 `[KHIDR]`-markers + twee lege secties op een live, footer-gelinkte pagina met Organization-schema. Afgeschreven, feitelijk uit product-truth + terms/privacy, ADR-042 gevolgd (bedrijf, geen persoon): Tiny Web Ventures = eenmanszaak, KvK 98828762, NL; één maker, geen oprichtersverhaal; "Where it runs" = EU-hosting (Supabase EU + AI-verwerking binnen EU, code-waar uit privacy §hosting), Stripe, Nederlands recht + BTW-inclusief. Intro verwijst naar homepage i.p.v. features te herhalen (legt uit wie, niet wat). Organization-schema kreeg `contactPoint` (support@indxr.ai) per ADR-042-consequenties. **/suspended** `[KHIDR]`-marker weg + echte contactroute: directe `mailto:support@indxr.ai` (geen afhankelijkheid van het contactformulier — een geschorste gebruiker heeft geen andere ingang). `pnpm build` groen (2/2). | gewijzigd: apps/marketing/src/app/about/page.tsx, apps/marketing/src/app/suspended/page.tsx, docs/LOG.md
@@ -15815,4 +15817,30 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: apps/marketing/src/components/marketing/MacbookMockupFrame.tsx
 docs/LOG.md
 docs/wiki/roadmap/priorities.md
+---
+[2026-08-07 17:01] commit: feat(capture): video-recording branch + ADR-088 (no YouTube UI in marketing)
+
+FASE 0 — legal check (read-only): YouTube's brand rules require prior approval to
+feature their UI in marketing, so the clip shows no youtube.com page — it starts in
+our own input field. Recorded as ADR-088; nominative text references stay allowed.
+
+FASE 1 — extend the Playwright capture machine with a moving-recording branch:
+- video-helpers.ts: an injected cursor that follows the real mouse (+ click pulse),
+  human tempo (stepped mouse moves, delayed typing), beat() pauses, all deterministic
+  (no Math.random / wall-clock jitter).
+- playwright.video.config.ts: own testMatch, shares global-setup with the still machine;
+  playwright.capture.config.ts pinned to quickstart-capture so the two never overlap.
+- Recording standard documented in screenshot-machine.md beside the image standard.
+
+pnpm build green (2/2, no app code touched).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/content/screenshot-machine.md
+docs/wiki/decisions/088-youtube-ui-in-marketing.md
+playwright.capture.config.ts
+playwright.video.config.ts
+tests/playwright/capture/core-flow-video.spec.ts
+tests/playwright/capture/video-helpers.ts
 ---
