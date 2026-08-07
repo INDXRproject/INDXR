@@ -90,10 +90,12 @@ from audio_utils import (
 from credit_manager import (
     check_user_balance,
     calculate_credit_cost,
+    calculate_summary_cost,
     playlist_free_ids,
     deduct_credits,
     add_credits,
     reserve_credits,
+    refund_credits,
     RESERVATION_ENABLED,
     get_supabase_client,
     record_proxy_bytes,
@@ -238,11 +240,6 @@ class WhisperResponse(BaseModel):
 class SummarizeRequest(BaseModel):
     transcript_id: str
     user_id: str
-
-class SummarizeResponse(BaseModel):
-    success: bool
-    summary: Optional[Dict] = None
-    error: Optional[str] = None
 
 # Helper function to extract video ID from URL
 def extract_video_id(input_str: str) -> str:
@@ -810,6 +807,7 @@ def _count_active_jobs(supabase, user_id: str) -> int:
           .select('id', count='exact', head=True)
           .eq('user_id', user_id)
           .in_('status', ['pending', 'downloading', 'transcribing', 'saving'])
+          .neq('source_kind', 'ai_summary')  # ADR-090: summaries tellen niet mee in de transcriptie-cap
           .or_(or_fresh)
           .execute())
     pl = (supabase.table('playlist_extraction_jobs')
@@ -1181,204 +1179,148 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         # saldo in een poll-respons is per definitie ouder dan wat de user ziet -> geen tweede bron.
     })
 
-# AI-summary via the AssemblyAI EU LLM Gateway (OpenAI-compatible, EU data-residency) — ADR-068.
-# DeepSeek (China, no DPA/SCC) was unlawful for EU personal data; the gateway keeps processing in the EU.
-LLM_GATEWAY_URL = "https://llm-gateway.eu.assemblyai.com/v1/chat/completions"
-SUMMARY_MODEL_PRIMARY = "gemini-2.5-flash"
-SUMMARY_MODEL_FALLBACK = "claude-haiku-4-5-20251001"
+# AI-samenvatting als ACHTERGRONDTAAK — twee modelstappen op de EU LLM Gateway (ADR-090).
+# De pipeline zelf leeft in summary_pipeline.py; deze endpoints starten de job en pollen de status.
+SUMMARY_STALE_MINUTES = 15
 
 
-@app.post("/api/summarize", response_model=SummarizeResponse)
-async def summarize_transcript(request: SummarizeRequest, _: None = Depends(verify_backend_secret)):
-    """Summarize transcript using the AssemblyAI EU LLM Gateway (Gemini Flash, Haiku fallback)."""
+@app.post("/api/summarize", response_model=None)
+async def start_summary(request: SummarizeRequest, req: Request, _: None = Depends(verify_backend_secret)):
+    """Start een AI-samenvatting als achtergrondtaak (ADR-090). Berekent de duur-afhankelijke kost
+    (3 t/m 30min, +1 per begonnen 30min), plaatst een transcription_jobs-rij met source_kind='ai_summary',
+    reserveert de credits en enqueued run_summary_job. Retourneert {job_id, status:'pending'}; de frontend
+    pollt /api/summary/jobs/{job_id}."""
+    user_id = request.user_id
+    transcript_id = request.transcript_id
+    supabase = get_supabase_client()
+
+    # Duur ophalen voor de kostberekening.
     try:
-        # 1. Check balance
-        try:
-            current_balance = check_user_balance(request.user_id)
-        except Exception as e:
-            with sentry_sdk.push_scope() as scope:
-                scope.set_tag("endpoint", "summarize_transcript")
-                scope.set_tag("step", "credit_balance_check")
-                scope.set_tag("user_id", request.user_id)
-            sentry_sdk.capture_exception(e)
-            return SummarizeResponse(success=False, error=f"Could not check credit balance: {str(e)}")
-            
-        if current_balance < 3:
-            logger.warning(f"Insufficient credits for summary: user {request.user_id} has {current_balance}, needs 3")
-            return SummarizeResponse(success=False, error="Insufficient credits")
-        
-        # 2. Deduct credit atomically
-        deduction_result = deduct_credits(
-            user_id=request.user_id,
-            amount=3,
-            reason="AI Summarization",
-            metadata={"transcript_id": request.transcript_id},
-            product_type="ai_summary"
+        row = await asyncio.to_thread(
+            lambda: supabase.table('transcripts').select('duration').eq('id', transcript_id).single().execute()
         )
-        if not deduction_result.get('success'):
-            logger.error(f"Credit deduction failed: {deduction_result.get('error')}")
-            return SummarizeResponse(success=False, error="Credit deduction failed")
-
-        # Track credits_deducted for summary
-        track_event(request.user_id, 'credits_deducted', {
-            'amount': 3,
-            'reason': 'summary',
-            'balance_after': deduction_result.get('new_balance')
-        })
-
-        summary_start_time = time.time()
-
-        # 3. Fetch transcript from Supabase
-        supabase = get_supabase_client()
-        try:
-            response = supabase.table('transcripts').select('transcript').eq('id', request.transcript_id).single().execute()
-            if not response.data or 'transcript' not in response.data:
-                raise Exception("Transcript not found or empty")
-            transcript_data = response.data['transcript']
-        except Exception as e:
-            logger.error(f"Failed to fetch transcript {request.transcript_id}: {e}")
-            add_credits(request.user_id, 3, "AI Summarization Refund (Transcript fetch failed)", kind='refund')
-            return SummarizeResponse(success=False, error="Transcript not found")
-            
-        # Combine transcript text
-        full_text = " ".join([item['text'] for item in transcript_data if 'text' in item])
-        if not full_text.strip():
-            add_credits(request.user_id, 3, "AI Summarization Refund (Empty text)", kind='refund')
-            return SummarizeResponse(success=False, error="Transcript is empty")
-            
-        # 4. Call the AssemblyAI EU LLM Gateway (OpenAI-compatible)
-        assemblyai_api_key = os.getenv("ASSEMBLYAI_API_KEY")
-        if not assemblyai_api_key:
-            add_credits(request.user_id, 3, "AI Summarization Refund (LLM Gateway API key missing)", kind='refund')
-            return SummarizeResponse(success=False, error="LLM Gateway API key not configured")
-            
-        # AssemblyAI gateway auth: raw API key in `authorization` (no "Bearer"). ZDR TODO: true
-        # zero-data-retention needs an executed BAA + the header/project setting confirmed with
-        # AssemblyAI (Khidr); EU-residency (this endpoint) + AssemblyAI DPA/SCCs already make it lawful.
-        headers = {
-            "authorization": assemblyai_api_key,
-            "Content-Type": "application/json"
-        }
-        
-        system_prompt = (
-            "You are a helpful assistant that summarizes transcripts. "
-            "Output JSON with two keys: 'text' (a summary paragraph) and 'action_points' (an array of strings representing key takeaways). "
-            "Let the length be determined by the content."
-        )
-        
-        data = {
-            "model": SUMMARY_MODEL_PRIMARY,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Transcript:\\n{full_text}"}
-            ],
-            "response_format": {"type": "json_object"}
-        }
-        
-        import httpx
-        from datetime import datetime, timezone
-        import json
-        
-        try:
-            with httpx.Client(timeout=120.0) as client:
-                logger.info(f"Calling LLM Gateway ({data['model']}) for transcript {request.transcript_id}")
-                gw_resp = client.post(LLM_GATEWAY_URL, headers=headers, json=data)
-                # One fallback to the Haiku-class model on gateway failure.
-                if gw_resp.status_code != 200:
-                    logger.warning(f"LLM Gateway {data['model']} -> {gw_resp.status_code}; falling back to {SUMMARY_MODEL_FALLBACK}")
-                    data["model"] = SUMMARY_MODEL_FALLBACK
-                    gw_resp = client.post(LLM_GATEWAY_URL, headers=headers, json=data)
-            
-            if gw_resp.status_code != 200:
-                logger.error(f"LLM Gateway error: {gw_resp.status_code} {gw_resp.text[:500]}")
-                add_credits(request.user_id, 3, "AI Summarization Refund (LLM Gateway Error)", kind='refund')
-                return SummarizeResponse(success=False, error="Failed to generate summary")
-                
-            result_json = gw_resp.json()
-            content = result_json['choices'][0]['message']['content']
-            # Gemini/Claude via the gateway may wrap JSON in ```json ... ``` fences — strip before parse.
-            _s = (content or "").strip()
-            if _s.startswith("```"):
-                _s = _s[3:]
-                if _s[:4].lower() == "json":
-                    _s = _s[4:]
-                if _s.rstrip().endswith("```"):
-                    _s = _s.rstrip()[:-3]
-            summary_data = json.loads(_s.strip())
-
-            # OpenAI-compatible usage → the real per-summary COR source (ai_summary_usage_log). Billing
-            # stays a flat 3 credits; this is cost-accounting only. No prompt-cache tier on the gateway's
-            # Gemini/Claude models (prompt_tokens_details.cached_tokens = 0) → cache_hit_tokens = 0.
-            usage = result_json.get('usage') or {}
-            ai_summary_usage = {
-                "model": data["model"],
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-            }
-
-            ai_summary = {
-                "text": summary_data.get("text", ""),
-                "action_points": summary_data.get("action_points", []),
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "edited": False
-            }
-
-            # 5. Save the summary. Token usage is NOT stored on the transcript anymore (ADR-064/065): the
-            # authoritative per-run COR source is ai_summary_usage_log (insert below). `ai_summary_usage` is
-            # kept as a local dict only to source generated_at/model for that log row.
-            update_resp = supabase.table('transcripts').update({
-                "ai_summary": ai_summary,
-            }).eq('id', request.transcript_id).execute()
-            if not update_resp.data:
-                logger.warning(f"Could not confirm transcript update for {request.transcript_id}")
-
-            # F2: per-run token log (insert-only) — the authoritative AI-summary COR source. transcripts.ai_summary_usage
-            # is UPDATE'd in place on regenerate (only the last run survives) and is read on transcripts.created_at, so it
-            # both under-books COR (N runs → 1×) and misattributes it to transcript birth. Each run appends an immutable
-            # log row keyed on generated_at instead; _geld_scope reads COR from here. Non-fatal: never fail the user's
-            # summary over a cost-accounting write.
-            try:
-                supabase.table('ai_summary_usage_log').insert({
-                    "transcript_id": request.transcript_id,
-                    "user_id": request.user_id,
-                    "generated_at": ai_summary_usage["generated_at"],
-                    "model": ai_summary_usage["model"],
-                    "prompt_tokens": usage.get("prompt_tokens") or 0,
-                    "completion_tokens": usage.get("completion_tokens") or 0,
-                    "cache_hit_tokens": 0,  # no prompt-cache tier on the LLM Gateway
-                }).execute()
-            except Exception as log_err:
-                logger.warning(f"ai_summary_usage_log insert failed for {request.transcript_id}: {log_err}")
-                
-            logger.info(f"Summary generated and saved for {request.transcript_id}")
-
-            # Track summarization_completed
-            processing_time_ms = int((time.time() - summary_start_time) * 1000)
-            track_event(request.user_id, 'summarization_completed', {
-                'transcript_id': request.transcript_id,
-                'processing_time_ms': processing_time_ms
-            })
-
-            return SummarizeResponse(success=True, summary=ai_summary)
-            
-        except Exception as e:
-            logger.error(f"LLM Gateway call exception: {type(e).__name__}: {e}")
-            add_credits(request.user_id, 3, f"AI Summarization Refund ({type(e).__name__})", kind='refund')
-            with sentry_sdk.push_scope() as scope:
-                scope.set_tag("endpoint", "summarize_transcript")
-                scope.set_tag("step", "llm_gateway_call")
-                scope.set_tag("user_id", request.user_id)
-                scope.set_tag("transcript_id", request.transcript_id)
-            sentry_sdk.capture_exception(e)
-            return SummarizeResponse(success=False, error="Failed to generate summary")
-            
     except Exception as e:
-        logger.error(f"Summarize endpoint error: {e}")
-        with sentry_sdk.push_scope() as scope:
-            scope.set_tag("endpoint", "summarize_transcript")
-            scope.set_tag("step", "outer_catch")
-            scope.set_tag("user_id", request.user_id)
-        sentry_sdk.capture_exception(e)
-        return SummarizeResponse(success=False, error=str(e))
+        logger.warning(f"[summary] transcript {transcript_id} niet gevonden: {e}")
+        return JSONResponse(status_code=404, content={"success": False, "error": "Transcript not found"})
+    if not row.data:
+        return JSONResponse(status_code=404, content={"success": False, "error": "Transcript not found"})
+    cost = calculate_summary_cost(row.data.get('duration') or 0)
+
+    # Dedup: bestaande actieve summary-job voor deze transcript → teruggeven (geen dubbele reservering).
+    _existing = await asyncio.to_thread(
+        lambda: supabase.table('transcription_jobs').select('id,status')
+            .eq('user_id', user_id).eq('transcript_id', transcript_id).eq('source_kind', 'ai_summary')
+            .in_('status', ['pending', 'summarizing']).limit(1).execute()
+    )
+    if _existing.data:
+        _ex = _existing.data[0]
+        return JSONResponse({"job_id": _ex['id'], "status": _ex['status'], "deduplicated": True})
+
+    # Job-rij op de gedeelde tabel (discriminator source_kind='ai_summary', ADR-090). De transcript_id-kolom
+    # draagt hier de te-samenvatten transcript: een valide FK, én sluit de rij automatisch uit van de
+    # whisper-watchdog-passes die transcript_id IS NULL vereisen.
+    job_id = str(uuid.uuid4())
+    await asyncio.to_thread(
+        lambda: supabase.table('transcription_jobs').insert({
+            'id': job_id,
+            'user_id': user_id,
+            'status': 'pending',
+            'source_type': 'summary',
+            'source_kind': 'ai_summary',
+            'transcript_id': transcript_id,
+            'credits_cost': cost,
+        }).execute()
+    )
+
+    # Reserveren (deduct + credits_reserved + balanscheck). Insufficient => rij opruimen + 402.
+    _resv = await asyncio.to_thread(reserve_credits, user_id=user_id, amount=cost, job_id=job_id)
+    if not _resv.get('success'):
+        await asyncio.to_thread(lambda: supabase.table('transcription_jobs').delete().eq('id', job_id).execute())
+        if _resv.get('error') == 'insufficient_credits' or _resv.get('available') is not None:
+            return JSONResponse(status_code=402, content={
+                "success": False, "error": "Insufficient credits", "code": "insufficient_credits",
+                "required_credits": cost, "available_credits": _resv.get('available'),
+            })
+        return JSONResponse(status_code=500, content={"success": False, "error": "Could not reserve credits"})
+
+    # Enqueue (fallback op asyncio.create_task zonder Redis, zoals het whisper-pad).
+    arq_pool = req.app.state.arq_pool
+    if arq_pool:
+        await arq_pool.enqueue_job(
+            'run_summary_job', job_id=job_id, user_id=user_id, transcript_id=transcript_id
+        )
+    else:
+        from summary_pipeline import run_summary_reservation_aware
+        asyncio.create_task(run_summary_reservation_aware(
+            job_id=job_id, user_id=user_id, transcript_id=transcript_id, supabase=supabase,
+        ))
+
+    return JSONResponse({"job_id": job_id, "status": "pending"})
+
+
+@app.get("/api/summary/jobs/{job_id}")
+async def get_summary_job_status(job_id: str, user_id: str, _: None = Depends(verify_backend_secret)):
+    """Poll een summary-achtergrondtaak (ADR-090). Een niet-terminale job zonder verse heartbeat is
+    dood → error + VOLLEDIGE teruggave (de watchdog doet dit ook, maar de poll geeft de user direct
+    uitsluitsel). Retourneert de ai_summary zodra status 'complete' is."""
+    supabase = get_supabase_client()
+    try:
+        resp = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs').select('*').eq('id', job_id).single().execute()
+        )
+    except Exception:
+        return JSONResponse(status_code=404, content={"error": "Job not found"})
+    job = resp.data
+    if not job or job.get('user_id') != user_id or job.get('source_kind') != 'ai_summary':
+        return JSONResponse(status_code=404, content={"error": "Job not found"})
+
+    status = job.get('status')
+
+    if status in ('pending', 'summarizing'):
+        hb = job.get('last_heartbeat_at')
+        now = datetime.now(timezone.utc)
+        is_stale = False
+        if hb:
+            try:
+                is_stale = datetime.fromisoformat(hb) < (now - timedelta(minutes=SUMMARY_STALE_MINUTES))
+            except (ValueError, TypeError):
+                is_stale = False
+        elif job.get('created_at'):
+            try:
+                is_stale = datetime.fromisoformat(job['created_at']) < (now - timedelta(minutes=30))
+            except (ValueError, TypeError):
+                is_stale = False
+        if is_stale:
+            await asyncio.to_thread(refund_credits, job_id, None)  # volledige teruggave (consumed==0)
+            await asyncio.to_thread(
+                lambda: supabase.table('transcription_jobs').update({
+                    'status': 'error', 'error_type': 'worker_crashed',
+                    'error_message': 'Summary job timed out', 'credits_refunded': True,
+                    'completed_at': now.isoformat(),
+                }).eq('id', job_id).in_('status', ['pending', 'summarizing']).execute()
+            )
+            status = 'error'
+            job['error_type'] = 'worker_crashed'
+            job['error_message'] = 'Summary job timed out'
+
+    ai_summary = None
+    if status == 'complete' and job.get('transcript_id'):
+        try:
+            tr = await asyncio.to_thread(
+                lambda: supabase.table('transcripts').select('ai_summary').eq('id', job['transcript_id']).single().execute()
+            )
+            ai_summary = (tr.data or {}).get('ai_summary')
+        except Exception as e:
+            logger.warning(f"[summary] kon ai_summary niet lezen voor job {job_id}: {e}")
+
+    return JSONResponse({
+        "status": status,
+        "ai_summary": ai_summary,
+        "error_type": job.get('error_type'),
+        "error_message": job.get('error_message'),
+        "credits_cost": job.get('credits_cost'),
+        "credits_refunded": job.get('credits_refunded'),
+    })
 
 def _compute_playlist_reservation(video_ids, use_whisper_ids, video_metadata, is_retry=False) -> int:
     """

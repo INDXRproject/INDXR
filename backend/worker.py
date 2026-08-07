@@ -40,6 +40,7 @@ from transcription_pipeline import (
     run_whisper_reservation_aware,
     refund_with_retry,
 )
+from summary_pipeline import run_summary_reservation_aware
 from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_client import YouTubeClient
 from youtube_utils import extract_via_youtube_transcript_api, extract_with_ytdlp
@@ -131,6 +132,38 @@ async def run_whisper_job(
         logger.info(f"← run_whisper_job ● (transcript_id={result['transcript_id']}, {result['credit_cost']}cr)")
     else:
         logger.warning(f"← run_whisper_job ✗ (error_type={result.get('error_type')})")
+
+
+async def run_summary_job(
+    ctx: dict,
+    job_id: str,
+    user_id: str,
+    transcript_id: str,
+) -> None:
+    """
+    ARQ task: AI-samenvatting als achtergrondtaak (ADR-090). Draait op een gereserveerde
+    transcription_jobs-rij met source_kind='ai_summary'. De reservation-aware wrapper settelt bij
+    succes (product_type='ai_summary') en refundt volledig bij elk faalpad. Heartbeat op de eigen
+    job-rij zodat stale-detectie een lange summary niet als 'interrupted' markeert.
+    """
+    logger.info(f"→ run_summary_job(job_id={job_id!r}, transcript={transcript_id!r})")
+    supabase = get_supabase_client()
+
+    async def _hb() -> None:
+        await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .update({'last_heartbeat_at': datetime.now(timezone.utc).isoformat()})
+                .eq('id', job_id).execute()
+        )
+
+    await run_summary_reservation_aware(
+        job_id=job_id,
+        user_id=user_id,
+        transcript_id=transcript_id,
+        heartbeat_fn=_hb,
+        supabase=supabase,
+    )
+    logger.info(f"← run_summary_job done (job_id={job_id})")
 
 
 async def _log_caption_event(user_id: str, video_id: str, proxy_bytes: int, cache_hit: bool,
@@ -1095,13 +1128,17 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         _p0a = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,credits_deducted')
+                .select('id,credits_deducted,source_kind')
                 .eq('status', 'pending')
                 .is_('last_heartbeat_at', 'null')
                 .lt('created_at', _pending_cutoff)
                 .execute()
         )
         for _job in (_p0a.data or []):
+            # ai_summary-jobs (ADR-090) hebben eigen reaper (refundt de reservering); nooit via de
+            # whisper-reaper afsluiten (die zou credits_deducted=False → 'error' zetten zónder refund).
+            if _job.get('source_kind') == 'ai_summary':
+                continue
             _jid = _job['id']
             _new_status = 'interrupted' if _job.get('credits_deducted') else 'error'
             try:
@@ -1130,13 +1167,15 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         _p0b = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,credits_deducted')
+                .select('id,credits_deducted,source_kind')
                 .in_('status', ['downloading', 'transcribing', 'saving'])
                 .not_.is_('last_heartbeat_at', 'null')
                 .lt('last_heartbeat_at', _active_stale)
                 .execute()
         )
         for _job in (_p0b.data or []):
+            if _job.get('source_kind') == 'ai_summary':  # eigen reaper (ADR-090)
+                continue
             _jid = _job['id']
             _new_status = 'interrupted' if _job.get('credits_deducted') else 'error'
             try:
@@ -1163,7 +1202,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         result = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,user_id,video_url')
+                .select('id,user_id,video_url,source_kind')
                 .eq('status', 'interrupted')
                 .eq('credits_deducted', True)
                 .is_('transcript_id', 'null')
@@ -1173,6 +1212,8 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 .execute()
         )
         for job in (result.data or []):
+            if job.get('source_kind') == 'ai_summary':  # nooit als whisper-job her-indienen (ADR-090)
+                continue
             job_id = job['id']
             video_url = job.get('video_url') or ''
             # Extract YouTube video ID from stored URL (e.g. https://youtube.com/watch?v=ID)
@@ -1339,7 +1380,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         result = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,user_id,credits_cost,credits_reserved')
+                .select('id,user_id,credits_cost,credits_reserved,source_kind')
                 .eq('status', 'interrupted')
                 .is_('transcript_id', 'null')
                 .gte('watchdog_attempts', 1)
@@ -1348,6 +1389,8 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 .execute()
         )
         for job in (result.data or []):
+            if job.get('source_kind') == 'ai_summary':  # eigen reaper (ADR-090)
+                continue
             job_id = job['id']
             try:
                 await _refund_then_claim_job(supabase, job)
@@ -1411,6 +1454,56 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # Pass 2/2b. De anti-join (credits_reserved>0 + geen refund-rij) levert precies die gemiste
     # refunds; Pass 2c boekt ze idempotent zonder de status te muteren (cap = 50 rijen/cyclus/tabel).
     await _reconcile_unrefunded_reserved(supabase, limit=50)
+
+    # ── Pass S: ai_summary reaper (ADR-090) ───────────────────────────────────
+    # Summary-jobs (source_kind='ai_summary') worden NIET door de whisper-reaper/re-enqueue passes
+    # afgehandeld (uitgesloten hierboven — ze mogen nooit als run_whisper_job her-ingediend worden).
+    # Dit is hun eigen crash-recovery: een dode summary-job (status 'summarizing' met stale heartbeat,
+    # of 'pending' die ARQ nooit oppikte) → VOLLEDIGE teruggave via refund_credits(job_id) + status
+    # 'error'. refund is idempotent (marker); de CAS op de niet-terminale status voorkomt het
+    # overschrijven van een net-voltooide job. NIET re-enqueuen (gebruiker triggert zelf opnieuw).
+    try:
+        _sum_pending_cutoff = (now - timedelta(minutes=30)).isoformat()
+        _dead = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .select('id,user_id,status')
+                .eq('source_kind', 'ai_summary')
+                .gt('credits_reserved', 0)
+                .or_(
+                    f'and(status.eq.summarizing,last_heartbeat_at.lt.{stale_before}),'
+                    f'and(status.eq.pending,last_heartbeat_at.is.null,created_at.lt.{_sum_pending_cutoff})'
+                )
+                .execute()
+        )
+        for _job in (_dead.data or []):
+            _jid = _job['id']
+            try:
+                r = await asyncio.to_thread(refund_credits, _jid, None)  # volledige teruggave (consumed==0)
+                await asyncio.to_thread(
+                    lambda j=_jid, s=_job['status']: supabase.table('transcription_jobs').update({
+                        'status': 'error',
+                        'error_type': 'worker_crashed',
+                        'error_message': 'Watchdog: summary-job dood (stale/nooit opgepikt) — gerefund',
+                        'credits_refunded': True,
+                        'completed_at': now.isoformat(),
+                        'updated_at': now.isoformat(),
+                    }).eq('id', j).eq('status', s).execute()
+                )
+                logger.warning(f"[WATCHDOG summary-reaper] {_jid} → error + refund ({r})")
+            except Exception as _e:
+                logger.error(f"[WATCHDOG summary-reaper] failed for {_jid}: {_e}")
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("task_name", "watchdog_interrupted_jobs")
+                    scope.set_tag("pass", "summary-reaper")
+                    scope.set_tag("job_id", _jid)
+                sentry_sdk.capture_exception(_e)
+    except Exception as _e:
+        logger.warning(f"[WATCHDOG summary-reaper] query failed (transient, retry in 2min): {_e}")
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("pass", "summary-reaper")
+            scope.set_level("warning")
+        sentry_sdk.capture_exception(_e)
 
     # ── Pass 3: reap stale RUNNING playlists (stuck-playlist fix) ──────────────
     # Een 'running' playlist waarvan de ARQ-keten stierf is onzichtbaar voor Pass 1b/2b (die query'en
@@ -1580,6 +1673,7 @@ class WorkerSettings:
     functions = [
         noop_task,
         run_whisper_job,
+        run_summary_job,
         arq_func(process_playlist_video, keep_result=0),
         arq_func(process_playlist_retries, keep_result=0),
         watchdog_interrupted_jobs,

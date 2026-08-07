@@ -48,7 +48,10 @@ export function ActiveJobsIndicator({ collapsed, excludeVisible }: Props) {
         // Exclude playlist child jobs: each AI video inside a playlist spawns its own
         // transcription_jobs row with playlist_id set (worker.py) — counting those makes the pill
         // flicker "1 other job" per AI video. Standalone single/upload jobs leave playlist_id null.
+        // ADR-090: sluit ai_summary-achtergrondtaken uit — die hebben hun eigen in-component polling
+        // en horen niet in de transcriptie-badge.
         supabase.from('transcription_jobs').select('id').is('playlist_id', null)
+          .neq('source_kind', 'ai_summary')
           .in('status', TX_ACTIVE).or(orFresh),
         supabase.from('playlist_extraction_jobs').select('id')
           .in('status', PL_ACTIVE).or(orFresh),

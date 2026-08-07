@@ -16083,3 +16083,57 @@ docs/wiki/architecture/sitemap.md
 docs/wiki/business/content-sitemap.md
 docs/wiki/business/keyword-demand-2026-08.md
 ---
+[2026-08-07 21:00] herontwerp AI-samenvatting (ADR-090): twee modelstappen (sonnet-4-6 structuur + gemini-2.5-flash per-sectie uitwerking, dekking+dichtheid i.p.v. lengte-op-de-klok) + assemblage; nieuw JSON-schema (overview+sections, klikbare tijdstempels→seek); achtergrondtaak (ARQ run_summary_job + /api/summary/jobs poll) op gedeelde transcription_jobs met source_kind='ai_summary'; gateway fallbacks/fallback_config; credit 3 t/m 30min +1/30min (reserve==settle, volledige refund bij falen); per-model COR (sonnet-tarief); alle transcription_jobs-lezers gefilterd; oude summaries gewist | gewijzigd: backend/summary_pipeline.py (nieuw), backend/main.py, backend/worker.py, backend/credit_manager.py, backend/test_summary_credits.py (nieuw), apps/app/.../AiSummaryView.tsx, TranscriptViewer.tsx, library/[id]/page.tsx, ActiveJobsIndicator.tsx, api/ai/summarize/route.ts, api/summary/jobs/[job_id]/route.ts (nieuw), 8 migraties 20260807204300-07, ADR-090 + INDEX
+[2026-08-07 23:07] commit: feat(summary): two-step structured AI summary as background job (ADR-090)
+
+Herontwerp van de AI-samenvatting. De oude synchrone one-call flow vroeg om één
+alinea zonder max_tokens of duur-koppeling → 4u leverde evenveel op als 15min.
+
+Nieuw (ADR-090):
+- Stap 1 structuur: claude-sonnet-4-6 over het volledige getimestampte transcript
+  → overview + secties (kop + begin/eind-tijdstempel), structured json_schema.
+- Stap 2 uitwerking: per sectie gemini-2.5-flash op alleen het fragment; opdracht
+  = volledige dekking + ~1/3-richtlijn (informatiedichtheid, niet lengte-op-de-klok);
+  parallel begrensd; max_tokens alleen vangnet. Gateway fallbacks/fallback_config.
+- Stap 3 assemblage in code. Nieuw schema {overview, sections[]}; klikbare
+  tijdstempels → in-app speler-seek (hergebruik NocookieYouTubePlayer.seekTo).
+- Achtergrondtaak: ARQ run_summary_job + /api/summary/jobs poll (was synchrone 60s).
+- Gedeelde transcription_jobs met source_kind='ai_summary'; erft reserve/refund +
+  watchdog; eigen summary-reaper; whisper-passes sluiten ai_summary uit.
+- Credit 3 t/m 30min, +1 per begonnen 30min (was vast 3); reserve==settle,
+  volledige refund bij falen. settle_credits +p_product_type ('ai_summary').
+- Per-model COR in _geld_scope (sonnet-tarief); alle transcription_jobs-lezers
+  gefilterd op source_kind (COR/proxy, admin-ops x2, concurrency, indicator).
+- Oude summaries hard gewist; per-call log +request_id/region (input/output_tokens).
+
+Verificatie: pnpm build groen (2/2); test_summary_credits.py 21/21 + test_settle_refund.py
+76/76 tegen prod-DB (settle_credits DROP+CREATE breekt whisper-pad niet); 8 migraties
+toegepast + geverifieerd (137 rijen). E2E-verhouding op 3 echte video's = prod-run
+(gateway-key niet lokaal; e2e_summary_measure.py meelevert).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/app/api/ai/summarize/route.ts
+apps/app/src/app/api/summary/jobs/[job_id]/route.ts
+apps/app/src/app/dashboard/library/[id]/page.tsx
+apps/app/src/components/dashboard/ActiveJobsIndicator.tsx
+apps/app/src/components/library/AiSummaryView.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+backend/credit_manager.py
+backend/e2e_summary_measure.py
+backend/main.py
+backend/summary_pipeline.py
+backend/test_summary_credits.py
+backend/worker.py
+docs/LESSONS.md
+docs/LOG.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/090-ai-summary-two-step-structured.md
+supabase/migrations/20260807204300_source_kind_ai_summary.sql
+supabase/migrations/20260807204301_settle_credits_product_type.sql
+supabase/migrations/20260807204302_ai_summary_usage_log_request_region.sql
+supabase/migrations/20260807204303_cost_config_sonnet_rate.sql
+supabase/migrations/20260807204304_geld_scope_summary_per_model_and_source_kind.sql
+supabase/migrations/20260807204305_admin_operations_summary_exclude_ai_summary.sql
+supabase/migrations/20260807204306_admin_operations_v3_exclude_ai_summary_unitlevel.sql
+supabase/migrations/20260807204307_wipe_old_ai_summaries.sql
+---

@@ -39,7 +39,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
 
   // Tabs appear only when their content exists. A requested ?tab whose content is gone (an edit
   // reverted, an export that never happened) falls back to Transcript — never a dead tab.
-  const hasEditedSummary = !!transcript.ai_summary && !!transcript.ai_summary.edited_html;
+  // ADR-090: het nieuwe samenvatting-schema is read-only (overview + secties) — geen edited_html-tab meer.
   const hasRag = Array.isArray(transcript.rag_exports) && transcript.rag_exports.length > 0;
   const requestedTab = resolvedSearchParams.tab as string | undefined;
   // The Edited tab may be entered fresh (?tab=edited) to START an edit — it is seeded from the
@@ -49,7 +49,6 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
     { id: "original", label: "Transcript" },
     ...(canEdited ? [{ id: "edited", label: "Edited" }] : []),
     ...(transcript.ai_summary ? [{ id: "summary", label: "Summary" }] : []),
-    ...(hasEditedSummary ? [{ id: "summary_edited", label: "Edited summary" }] : []),
     ...(hasRag ? [{ id: "developer", label: "Developer" }] : []),
   ];
   const activeTab = tabs.some((t) => t.id === requestedTab) ? (requestedTab as string) : "original";
@@ -71,7 +70,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
         processingMethod={transcript.processing_method}
         hasEdit={!!transcript.edited_content}
         hasSummary={!!transcript.ai_summary}
-        hasSummaryEdit={hasEditedSummary}
+        hasSummaryEdit={false}
         hasRag={hasRag}
         duration={transcript.duration ?? null}
         characterCount={transcript.character_count ?? null}
@@ -100,12 +99,12 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           userChunkSize={profileData?.rag_chunk_size ?? 60}
           duration={transcript.duration ?? undefined}
         />
-      ) : (activeTab === "summary" || activeTab === "summary_edited") && transcript.ai_summary ? (
+      ) : activeTab === "summary" && transcript.ai_summary ? (
         <div className="pb-12 bg-bg w-full relative z-10 w-full mt-2">
           <AiSummaryView
             id={transcript.id}
             initialSummary={transcript.ai_summary}
-            mode={activeTab === "summary" ? "original" : "edited"}
+            videoId={transcript.video_id ?? undefined}
             editedContentUpdatedAt={transcript.edited_content_updated_at ?? null}
           />
         </div>

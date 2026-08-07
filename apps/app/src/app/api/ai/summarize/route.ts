@@ -35,8 +35,10 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    // The frontend sends { transcript_id, user_id }
-    // We forward this to the Python backend exactly as is.
+    // The frontend sends { transcript_id, user_id }. We forward it to the Python backend, which
+    // now STARTS a background summary job (ADR-090) and returns { job_id, status } — no longer a
+    // synchronous summary. Pass the backend response and status through as-is (like the whisper
+    // start route); the frontend polls /api/summary/jobs/{job_id}.
     const response = await fetch(`${PYTHON_BACKEND_URL}/api/summarize`, {
       method: 'POST',
       headers: {
@@ -47,18 +49,7 @@ export async function POST(request: Request) {
     });
 
     const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: data.error || 'Failed to generate summary'
-        },
-        { status: response.status === 200 ? 500 : response.status }
-      );
-    }
-
-    return NextResponse.json(data, { status: 200 });
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     Sentry.captureException(error, { tags: { route: 'api/ai/summarize' } });
     await Sentry.flush(2000);

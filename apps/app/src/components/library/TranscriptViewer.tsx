@@ -290,7 +290,6 @@ export function TranscriptViewer({
   const supabase = createClient();
   const { user, credits, refreshCredits } = useAuth();
   const [isSummarizing, setIsSummarizing] = useState(false);
-  const [summarySuccess, setSummarySuccess] = useState(false);
 
   // UI state
   const [showTimestamps, setShowTimestamps] = useState(false);
@@ -365,6 +364,8 @@ export function TranscriptViewer({
       ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
       : 0);
   const ragCost = Math.max(1, Math.ceil(derivedDuration / 600));
+  // AI-summary kost (ADR-090): 3 t/m 30min, +1 per begonnen 30min. Deterministisch uit de duur.
+  const summaryCost = 3 + Math.max(0, Math.ceil(derivedDuration / 1800) - 1);
 
   // Mark as viewed on mount if not already viewed
   useEffect(() => {
@@ -681,30 +682,55 @@ export function TranscriptViewer({
   const handleSummarizeConfirm = async () => {
     setShowSummaryDialog(false);
     setIsSummarizing(true);
+    setSummarizeError(null);
     try {
-      const response = await fetch('/api/ai/summarize', {
+      // Start de achtergrondtaak (ADR-090) → { job_id, status }.
+      const startRes = await fetch('/api/ai/summarize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript_id: id, user_id: user?.id })
       });
-      
-      let data;
+      let startData;
       try {
-        data = await response.json();
-      } catch (e) {
-        console.error("Failed to parse response:", e);
+        startData = await startRes.json();
+      } catch {
         setSummarizeError("Server error: received invalid response.");
         setIsSummarizing(false);
         return;
       }
-
-      if (!response.ok || !data.success) {
-        setSummarizeError(data?.error || "Failed to generate summary");
+      if (!startRes.ok || !startData.job_id) {
+        setSummarizeError(startData?.error || "Failed to start summary");
         setIsSummarizing(false);
         return;
       }
+
+      // Refresh saldo direct (de reservering is al afgetrokken bij job-start).
       await refreshCredits();
-      setSummarySuccess(true);
+
+      // Poll de job-status (zelfde cadans als transcriptie).
+      const jobId = startData.job_id as string;
+      const POLL_MS = 3000;
+      const MAX_POLLS = 300; // ~15 min plafond
+      for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise((r) => setTimeout(r, POLL_MS));
+        const pollRes = await fetch(`/api/summary/jobs/${jobId}?user_id=${user?.id}`);
+        if (!pollRes.ok) continue;
+        const job = await pollRes.json();
+        if (job.status === 'complete') {
+          posthog.capture('summary_completed', { transcript_id: id });
+          await refreshCredits();
+          router.push(`/dashboard/library/${id}?tab=summary`);
+          router.refresh();
+          return;
+        }
+        if (job.status === 'error') {
+          await refreshCredits(); // teruggave bij mislukking
+          setSummarizeError(job.error_message || "Failed to generate summary");
+          setIsSummarizing(false);
+          return;
+        }
+      }
+      setSummarizeError("Summary is taking longer than expected — it may still complete. Refresh in a moment.");
     } catch (error) {
       console.error("Summarize error:", error);
       setSummarizeError("Failed to summarize transcript");
@@ -848,14 +874,14 @@ export function TranscriptViewer({
                     disabled={isSummarizing || !user}
                     onClick={() => {
                       if (!user) { setSummarizeError("Please sign in to summarize."); return; }
-                      if (credits !== null && credits < 3) { setSummarizeError("Not enough credits — you need 3 credits to generate a summary."); return; }
+                      if (credits !== null && credits < summaryCost) { setSummarizeError(`Not enough credits — you need ${summaryCost} credits to generate a summary.`); return; }
                       posthog.capture('summary_requested', { transcript_id: id });
                       setShowSummaryDialog(true);
                     }}
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
                     {aiSummary ? "Regenerate summary" : "Summarise"}
-                    <span className="ml-auto text-xs text-fg-muted">3 credits</span>
+                    <span className="ml-auto text-xs text-fg-muted">{summaryCost} credits</span>
                   </DropdownMenuItem>
                 )}
                 {hasSavedEdits && isEditedMode && (
@@ -1044,9 +1070,9 @@ export function TranscriptViewer({
           <AlertDialogHeader>
             <AlertDialogTitle>Generate AI Summary</AlertDialogTitle>
             <AlertDialogDescription>
-              {aiSummary 
-                ? "You already have a summary for this video. Regenerating will cost 3 credits and overwrite the current version. Continue?"
-                : "Generating an AI Summary costs 3 credits. Would you like to proceed?"}
+              {aiSummary
+                ? `You already have a summary for this video. Regenerating will cost ${summaryCost} credits and overwrite the current version. Continue?`
+                : `Generating an AI Summary costs ${summaryCost} credits. Would you like to proceed?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

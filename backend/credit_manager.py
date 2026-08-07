@@ -87,6 +87,21 @@ def calculate_credit_cost(duration_seconds: float) -> int:
     return max(credits, 1)
 
 
+def calculate_summary_cost(duration_seconds: float) -> int:
+    """
+    Credit-kost voor een AI-samenvatting (ADR-090). Duur-afhankelijk i.p.v. de oude vaste 3:
+
+        3 credits t/m 30 minuten videoduur, daarna +1 credit per BEGONNEN 30 minuten.
+        (0–30min=3, 31–60min=4, 61–90min=5, …)
+
+    Deterministisch uit de videoduur → reservering == afrekening (geen actual-vs-estimate-gat
+    zoals bij transcriptie). NULL/0/onbekende duur → minimum 3 (mirror de oude flat-3-baseline).
+    """
+    if not duration_seconds or duration_seconds <= 0:
+        return 3
+    return 3 + max(0, math.ceil(duration_seconds / 1800.0) - 1)
+
+
 def playlist_free_ids(video_ids, whisper_ids, is_retry: bool = False) -> set:
     """
     ENIGE bron van waarheid voor de playlist "eerste 3 gratis"-tier (backend-kant).
@@ -325,12 +340,17 @@ def settle_credits(
     playlist_id: Optional[str] = None,
     video_id: Optional[str] = None,
     reason: str = "AI transcription",
+    product_type: Optional[str] = None,
 ) -> Dict:
     """
-    Registreer het WERKELIJKE verbruik van één succesvolle whisper-video (ADR-050 fase 2).
+    Registreer het WERKELIJKE verbruik van één succesvolle job (ADR-050 fase 2).
     BALANS-NEUTRAAL: de balans is al bij reserve bewogen; dit is een consumptie-registratie
     (kind='settlement'), idempotent via (job_id,'settlement'). playlist_id meesturen bij
     whisper-in-playlist zodat de playlist-refund het meesomt.
+
+    product_type: COR-stempel op de settlement-rij. NULL → de RPC valt terug op 'ai_transcription'
+    (bestaand gedrag; alle transcriptie-callers ongemoeid). De AI-summary-flow (ADR-090) geeft
+    'ai_summary' zodat credit-spend correct per product gesplitst blijft.
     """
     try:
         supabase = get_supabase_client()
@@ -341,6 +361,7 @@ def settle_credits(
             'p_playlist_id': playlist_id,
             'p_video_id': video_id,
             'p_reason': reason,
+            'p_product_type': product_type,
         }).execute()
         if response.data:
             return response.data
