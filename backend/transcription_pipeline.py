@@ -508,6 +508,13 @@ async def do_assemblyai_transcription(
     supabase = get_supabase_client()
     job_started_at = datetime.now(timezone.utc)
     temp_files: list = []
+    # Upload-pad: main.py schreef het geüploade bestand naar een temp-pad (delete=False) en geeft dat
+    # als audio_path mee. Registreer het NU zodat het finally-blok het ALTIJD verwijdert — bij success,
+    # bij elke error én ongeacht compressie. (YouTube-pad komt binnen met audio_path=None en append't
+    # zijn download zelf verderop; daar is dit dus een no-op.) Zonder dit lekte het rauwe upload-bestand
+    # op het geslaagde pad zonder compressie — empirisch bevestigd.
+    if audio_path is not None:
+        temp_files.append(audio_path)
     credit_cost = 0
     credits_deducted = False
 

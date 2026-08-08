@@ -11,6 +11,7 @@ import re
 import uuid
 import secrets
 import logging
+import glob
 import json
 import os
 import tempfile
@@ -129,8 +130,27 @@ sentry_sdk.init(
     before_send=sentry_scrub, # scrub email/IP/auth-headers/body before send (errors stay)
 )
 
+def _sweep_orphan_upload_tmps() -> None:
+    """Ruim geüploade temp-bestanden op die door een harde herstart (Railway restart mid-job)
+    zijn achtergebleven. Uploads draaien in-proces (asyncio.create_task) — bij een restart sterft
+    die task en blijft het 'indxr_upload_*'-bestand staan zonder eigenaar. Bij startup is er per
+    definitie geen in-flight in-proces upload, dus elk gevonden bestand is een wees. De prefix houdt
+    dit strikt bij ons eigen materiaal (raakt geen andere /tmp-inhoud). Best-effort, faalt nooit hard."""
+    removed = 0
+    pattern = os.path.join(tempfile.gettempdir(), "indxr_upload_*")
+    for path in glob.glob(pattern):
+        try:
+            os.remove(path)
+            removed += 1
+        except OSError as e:
+            logger.warning(f"[startup-sweep] kon wees-upload {path} niet verwijderen: {e}")
+    if removed:
+        logger.info(f"[startup-sweep] {removed} wees-upload-temp-bestand(en) opgeruimd")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _sweep_orphan_upload_tmps()
     redis_url = os.getenv("ARQ_REDIS_URL")
     if redis_url:
         app.state.arq_pool = await create_pool(ArqRedisSettings.from_dsn(redis_url))
@@ -905,7 +925,10 @@ async def transcribe_with_whisper(
         # (directe JWT-upload), dus zonder deze probe viel estimated_cost terug op 1 = lege gate.
         # Schrijf het bestand één keer naar temp (hergebruikt door de pipeline) en probe het hier.
         suffix = os.path.splitext(audio_filename or "")[1] or ".mp3"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        # prefix "indxr_upload_" markeert dit als ons upload-temp-bestand, zodat de startup-sweep
+        # (lifespan) na een harde herstart precies onze weesbestanden kan opruimen zonder aan andere
+        # /tmp-inhoud te komen. Normale opruiming loopt via de pipeline-finally (temp_files).
+        with tempfile.NamedTemporaryFile(delete=False, prefix="indxr_upload_", suffix=suffix) as tmp:
             tmp.write(audio_content)
             upload_tmp_path = tmp.name
         _est = await asyncio.to_thread(estimate_upload_reserve_cost, upload_tmp_path)

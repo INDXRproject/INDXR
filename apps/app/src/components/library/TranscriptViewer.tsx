@@ -344,6 +344,7 @@ export function TranscriptViewer({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMatchesCount, setSearchMatchesCount] = useState(0);
   const [currentMatchIdx, setCurrentMatchIdx] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Inline feedback state
   const [copied, setCopied] = useState(false);
@@ -470,6 +471,28 @@ export function TranscriptViewer({
       editor.commands.setSearchTerm(searchQuery);
     }
   }, [searchQuery, editor]);
+
+  // Ctrl/Cmd+F opent de in-transcript-find (de knop-tooltip belooft dit). Zonder deze binding
+  // viel de combinatie terug op de browserzoek — een tooltip die iets belooft dat niet gebeurt.
+  // Escape sluit de balk weer. Reikwijdte = zolang een transcriptpagina gemount is.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "f" || e.key === "F")) {
+        e.preventDefault();
+        setShowSearch(true);
+        // focus + selecteer, of de balk nu net opende of al open stond
+        requestAnimationFrame(() => {
+          searchInputRef.current?.focus();
+          searchInputRef.current?.select();
+        });
+      } else if (e.key === "Escape" && showSearch) {
+        setShowSearch(false);
+        setSearchQuery("");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showSearch]);
 
   const navigateMatch = useCallback(
     (direction: "next" | "prev") => {
@@ -1002,6 +1025,7 @@ export function TranscriptViewer({
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-fg-muted" />
                     <Input
+                      ref={searchInputRef}
                       autoFocus
                       placeholder="Search in transcript…"
                       value={searchQuery}
