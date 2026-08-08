@@ -16273,3 +16273,33 @@ tailwind.config.ts
 tsconfig.json
 vercel.json
 ---
+[2026-08-08 13:31] commit: feat(summary): kostenmeting-doorvoer — gemini stap-1, hoofdstuk-splitsing, /20-credits (ADR-090 addendum 2)
+
+Doorvoer van wat de kostenmeting aantoonde. Geverifieerd op 4 transcripts + de 4u-video 3×.
+
+- Stap 1 model: claude-sonnet-4-6 → gemini-2.5-flash (sonnet als fallback). Gelijkwaardige dekking
+  (via validatie volledige content) tegen ~1/5 kost; dekkingsstudie toonde dat béíde modellen even
+  vaak een te groot hoofdstuk opleveren, langs een andere route (gemini: zeldzaam gevouwen gat;
+  sonnet: onder-segmentatie, max/gem tot 15×).
+- Sectie-fallback-id: claude-haiku-4-5 → claude-haiku-4-5-20251001 (kale alias geeft gateway-400).
+- NIEUW: splitsing van een hoofdstuk >2× de mediane hoofdstukduur in gelijke delen <mediaan vóór
+  stap 2 (elk deel eigen call met zelfde kop/omschrijving, samengevoegd zonder dubbele inleiding).
+  Zichtbare indeling ongewijzigd; dekt de verdunning af voor beide modellen. Gedeelde _run_step2.
+- Creditformule: 3 t/m 30min, daarna +1 per begonnen 20min (was /30). Backend calculate_summary_cost
+  + frontend summaryCost identiek geverifieerd; reserve==settle==refund.
+
+Verificatie: verdunnings-gate GEHAALD — fragment (na splitsing) max/mediaan ≤ 2.5× in élke run
+(slechtste 2.32×, ook in de 4u-run met een 3.2× onevenredig hoofdstuk). Marge op alle tiers positief
+(Power@4u +€0.08..0.12). Build 2/2 groen; test_summary_credits 23/23. Thinking = bekende knop:
+57–67% van output = afgerekend reasoning (completion_tokens_details.reasoning_tokens).
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/src/components/library/TranscriptViewer.tsx
+backend/credit_manager.py
+backend/e2e_summary_measure.py
+backend/summary_pipeline.py
+backend/test_summary_credits.py
+docs/LESSONS.md
+docs/wiki/INDEX.md
+docs/wiki/decisions/090-ai-summary-two-step-structured.md
+---

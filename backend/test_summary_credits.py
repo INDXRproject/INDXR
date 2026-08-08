@@ -1,7 +1,7 @@
 """
 LIVE integratie-test voor de AI-summary creditketen (ADR-090). Verifieert dat de summary-flow
 dezelfde reserve→settle→refund-primitieven correct gebruikt, met:
-  - de duur-afhankelijke kost (calculate_summary_cost): 3 t/m 30min, +1 per begonnen 30min
+  - de duur-afhankelijke kost (calculate_summary_cost): 3 t/m 30min, daarna +1 per begonnen 20min
   - settlement gestempeld als product_type='ai_summary' (niet 'ai_transcription')
   - succes: reserve == settle → refund = 0 (marker geschreven, balans één keer bewogen)
   - mislukking: reserve zonder settle → VOLLEDIGE teruggave (refund = reserved)
@@ -76,9 +76,9 @@ def main() -> int:
         return sb.table("credit_transactions").select("id").eq("job_id", jid).eq("kind", "refund").execute().data or []
 
     try:
-        # ── Formule (pure) ──────────────────────────────────────────────────
+        # ── Formule (pure) — 3 t/m 30min, daarna +1 per begonnen 20min (ADR-090-addendum) ─────
         print("Formule calculate_summary_cost:")
-        for d, exp in {0: 3, 900: 3, 1800: 3, 1801: 4, 3600: 4, 3601: 5, 7200: 6, 14400: 10}.items():
+        for d, exp in {0: 3, 900: 3, 1800: 3, 1801: 4, 3000: 4, 3001: 5, 3600: 5, 7200: 8, 14400: 14, 15228: 15}.items():
             check(f"cost({d}s)={exp}", calculate_summary_cost(d) == exp, str(calculate_summary_cost(d)))
 
         # ── A: succes — reserve == settle → refund 0, balans één keer bewogen ─

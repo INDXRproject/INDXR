@@ -25,6 +25,7 @@ import json
 import math
 import asyncio
 import logging
+import statistics
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
@@ -43,12 +44,14 @@ logger = logging.getLogger("indxr-backend")
 LLM_GATEWAY_URL = "https://llm-gateway.eu.assemblyai.com/v1/chat/completions"
 SUMMARY_REGION = "eu"
 
-# Stap 1: structuur = redeneertaak over het volledige transcript → sterkste model.
-STRUCTURE_MODEL = "claude-sonnet-4-6"
-STRUCTURE_FALLBACK = "gemini-2.5-flash"
-# Stap 2: uitwerking = veel goedkope, parallelle calls.
+# Stap 1: structuur. Gemmeten (ADR-090-addendum): gemini-2.5-flash haalt dezelfde volledige dekking met
+# vergelijkbare hoofdstukgrenzen als sonnet-4-6 tegen ~1/5 van de kost → gemini primair, sonnet fallback.
+STRUCTURE_MODEL = "gemini-2.5-flash"
+STRUCTURE_FALLBACK = "claude-sonnet-4-6"
+# Stap 2: uitwerking = veel goedkope, parallelle calls. NB: de gateway weigert de kale alias
+# "claude-haiku-4-5" (400 "model not found"); alleen de gedateerde id werkt.
 SECTION_MODEL = "gemini-2.5-flash"
-SECTION_FALLBACK = "claude-haiku-4-5"
+SECTION_FALLBACK = "claude-haiku-4-5-20251001"
 
 # Max gelijktijdige stap-2-calls (gateway rate-limit is per model per 60s).
 SECTION_CONCURRENCY = int(os.getenv("SUMMARY_SECTION_CONCURRENCY", "4"))
@@ -479,6 +482,89 @@ async def _run_section(client, api_key, sem, section, overview, transcript_data)
     return result
 
 
+def _plan_section_fragments(sections: List[Dict]):
+    """Splitsings-plan (ADR-090-addendum 2). Beide modellen produceren af en toe een hoofdstuk dat veel
+    langer is dan zijn buren (Gemini via een gevouwen gat, Sonnet via onder-segmentatie); dat hoofdstuk
+    zou anders één stap-2-call over soms 17+ minuten krijgen → verdunde uitwerking. Bepaal de MEDIANE
+    hoofdstukduur van deze run; een hoofdstuk > 2× die mediaan wordt in gelijke delen < mediaan gehakt.
+    De ZICHTBARE hoofdstukindeling verandert niet — alleen de verwerking (elk deel een eigen call, daarna
+    samengevoegd onder dezelfde kop). Retourneert (plan, n_splits); plan = [{section, parts:[(a,b),...]}]."""
+    durs = [s["end_time"] - s["start_time"] for s in sections if s["end_time"] > s["start_time"]]
+    if not durs:
+        return [{"section": s, "parts": [(s["start_time"], s["end_time"])]} for s in sections], 0
+    med = statistics.median(durs)
+    plan, n_splits = [], 0
+    for s in sections:
+        dur = s["end_time"] - s["start_time"]
+        if med > 0 and dur > 2 * med:
+            k = max(2, int(dur // med) + 1)  # gelijke delen, elk < mediaan
+            step = dur / k
+            parts = [
+                (int(s["start_time"] + i * step),
+                 (int(s["start_time"] + (i + 1) * step) if i < k - 1 else s["end_time"]))
+                for i in range(k)
+            ]
+            plan.append({"section": s, "parts": parts})
+            n_splits += 1
+            logger.info(f"[summary] hoofdstuk '{s['heading']}' ({dur}s = {round(dur/med, 1)}× mediaan {int(med)}s) "
+                        f"gesplitst in {k} delen voor stap 2")
+        else:
+            plan.append({"section": s, "parts": [(s["start_time"], s["end_time"])]})
+    return plan, n_splits
+
+
+def _merge_parts(section: Dict, part_results: List[Dict]) -> Dict:
+    """Voeg de deel-uitkomsten van een gesplitst hoofdstuk samen onder dezelfde (stap-1-)kop. Vermijdt
+    dat opeenvolgende delen met dezelfde inleidende zin beginnen."""
+    merged, prev_first = [], None
+    for r in part_results:
+        c = (r.get("content") or "").strip()
+        if not c:
+            continue
+        lines = c.split("\n")
+        idx = next((i for i, ln in enumerate(lines) if ln.strip()), -1)
+        first = lines[idx].strip() if idx >= 0 else ""
+        if merged and first and first == prev_first and idx >= 0:
+            del lines[idx]
+            c = "\n".join(lines).strip()
+        prev_first = first
+        if c:
+            merged.append(c)
+    return {
+        "heading": section["heading"], "start_time": section["start_time"], "end_time": section["end_time"],
+        "content": "\n\n".join(merged), "call": None,
+        "calls": [r["call"] for r in part_results if r.get("call")],
+        "json_fallback": any(r.get("json_fallback") for r in part_results),
+        "cleanup": [x for r in part_results for x in (r.get("cleanup") or [])],
+    }
+
+
+async def _run_step2(client, api_key, sections: List[Dict], overview: str, transcript_data: List[Dict],
+                     debug: dict = None) -> List[Dict]:
+    """Stap 2 met splitsing van te grote hoofdstukken (ADR-090-addendum 2). Gedeeld door run_summary
+    (productie) én het meetscript zodat er geen divergentie ontstaat. Elk resultaat draagt een `calls`-
+    lijst (één call bij een ongesplitst hoofdstuk, meerdere bij een gesplitst) voor de kostenlog."""
+    plan, n_splits = _plan_section_fragments(sections)
+    if debug is not None:
+        debug["splits_fired"] = n_splits
+    sem = asyncio.Semaphore(SECTION_CONCURRENCY)
+
+    async def _run_chapter(entry):
+        s, parts = entry["section"], entry["parts"]
+        if len(parts) == 1:
+            r = await _run_section(client, api_key, sem, s, overview, transcript_data)
+            r["calls"] = [r["call"]] if r.get("call") else []
+            return r
+        # Gesplitst: elk deel dezelfde kop+omschrijving als bindende afbakening, eigen [start,end].
+        part_sections = [{**s, "start_time": a, "end_time": b} for (a, b) in parts]
+        prs = await asyncio.gather(*[
+            _run_section(client, api_key, sem, ps, overview, transcript_data) for ps in part_sections
+        ])
+        return _merge_parts(s, prs)
+
+    return await asyncio.gather(*[_run_chapter(e) for e in plan])
+
+
 async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: dict = None) -> Dict:
     """Kern: bouwt de nieuwe ai_summary (schema_version 2). Raise bij een harde fout (fetch leeg,
     structuur-call faalt, geen API-key) zodat de caller kan refunden. Schrijft per gateway-call een
@@ -512,16 +598,13 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: di
             struct["structured"].get("sections") or [], min_sections, max_sections, struct["total_seconds"]
         )
 
-        # Stap 2 — uitwerking, parallel maar begrensd.
-        sem = asyncio.Semaphore(SECTION_CONCURRENCY)
-        section_results = await asyncio.gather(*[
-            _run_section(client, api_key, sem, s, overview, transcript_data) for s in sections
-        ])
+        # Stap 2 — uitwerking, parallel maar begrensd, mét splitsing van te grote hoofdstukken.
+        section_results = await _run_step2(client, api_key, sections, overview, transcript_data, debug=debug)
 
-    # Log stap-2-usage.
+    # Log stap-2-usage (per gesplitst hoofdstuk kunnen dit meerdere calls zijn).
     for r in section_results:
-        if r.get("call"):
-            _log_usage(supabase, transcript_id, user_id, generated_at, r["call"])
+        for c in r.get("calls", []):
+            _log_usage(supabase, transcript_id, user_id, generated_at, c)
 
     # Debug-stats voor de E2E (dekking + kwaliteits-tellers). Worker geeft geen debug mee.
     if debug is not None:

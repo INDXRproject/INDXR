@@ -12,7 +12,7 @@ De oude samenvatting (synchrone `POST /api/summarize`, `maxDuration=60`) stuurde
 
 **Twee modelstappen + assemblage in code, als achtergrondtaak.**
 
-- **Stap 1 (structuur)** — één call naar **`claude-sonnet-4-6`** op het EU-gateway-endpoint over het volledige, getimestampte transcript → een overkoepelende samenvatting + secties (kop + begin/eind-tijdstempel in seconden). Sonnet omdat het bepalen van sectiegrenzen over een heel transcript een redeneertaak is die het sterkste model verdient. Onder-/bovengrens op het aantal secties (`min(20, max(3, ⌈duur_min/10⌉))`), geclampt in code (nooit opsplitsen om een ondergrens te halen — dat zou opvullen zijn).
+- **Stap 1 (structuur)** — één call over het volledige, getimestampte transcript → een overkoepelende samenvatting + secties (kop + begin/eind-tijdstempel in seconden). Onder-/bovengrens op het aantal secties (`min(20, max(3, ⌈duur_min/10⌉))`), geclampt in code (nooit opsplitsen om een ondergrens te halen — dat zou opvullen zijn). **Model: sinds addendum 2 `gemini-2.5-flash` (sonnet-4-6 als fallback)** — de kostenmeting toonde gelijkwaardige dekking tegen ~1/5 kost; oorspronkelijk was dit `claude-sonnet-4-6`.
 - **Stap 2 (uitwerking)** — per sectie een aparte call naar **`gemini-2.5-flash`** met alleen het fragment tussen de tijdstempels + kop + overkoepelende samenvatting als context. Gemini omdat dit veel goedkope, parallelle calls zijn (begrensd met een semafoor; de gateway-rate-limit is per model per 60s). De opdracht is **volledige dekking** van het fragment (elk argument/voorbeeld/cijfer/naam/tussenstap), met als **richting** (niet eis) ~⅓ van het aantal fragmentwoorden, korter bij dun materiaal. `max_tokens` is alleen een ruim vangnet afgeleid van de fragmentlengte — het stuurt niets.
 - **Stap 3 (assemblage)** — in code, geen modelcall.
 
@@ -20,7 +20,7 @@ De oude samenvatting (synchrone `POST /api/summarize`, `maxDuration=60`) stuurde
 
 **Nieuw schema** op `transcripts.ai_summary` (JSONB, geen DDL): `{ schema_version: 2, overview, sections: [{heading, start_time, end_time, content}], generated_at, edited }`. Het oude `{text, action_points, html, edited_html}` vervalt volledig; de bestaande payloads zijn hard gewist (geen legacy-reader, geen backfill — DB gaat vóór launch leeg). De tijdstempels zijn klikbaar en laten de in-app speler seeken (hergebruik van `NocookieYouTubePlayer.seekTo`, dezelfde functie als de transcript-tijdstempels).
 
-**Creditregel** (vervangt de vaste 3): **3 credits t/m 30 minuten videoduur, daarna +1 per begonnen 30 minuten** (`calculate_summary_cost`). Deterministisch uit de duur → reservering == afrekening. Reservering bij job-start, afrekening (settlement gestempeld `product_type='ai_summary'`) bij succes, **volledige teruggave** bij elk faalpad of worker-dood.
+**Creditregel** (vervangt de vaste 3): **3 credits t/m 30 minuten videoduur, daarna +1 per begonnen 20 minuten** (`calculate_summary_cost` — bijgesteld van /30 naar /20 in addendum 2 op basis van de marge-meting). Deterministisch uit de duur → reservering == afrekening. Reservering bij job-start, afrekening (settlement gestempeld `product_type='ai_summary'`) bij succes, **volledige teruggave** bij elk faalpad of worker-dood.
 
 **Achtergrondtaak** in de bestaande ARQ-queue met status-polling vanaf de frontend (`run_summary_job` → `/api/summary/jobs/{id}`), i.p.v. de synchrone 60s-route.
 
@@ -74,3 +74,32 @@ verholpen:
    15→**30**. `TranscriptViewer` hervat bij binnenkomst een nog-lopende summary-job (DB-query op
    `transcription_jobs`) — terugkeren/verversen pikt een na het stoppen afgeronde summary op, **zonder
    herbetaling** (bestaande gereserveerde job).
+
+---
+
+## Addendum 2 (2026-08-08) — kostenmeting: stap-1-model, splitsing, creditformule
+
+Gemeten met `backend/e2e_summary_measure.py` op vier echte transcripts (5min/20min/59min/4u13m).
+
+**Kosten per modelstap** (totaal €, gemini in stap 1; per-model tarief × FX 0.92):
+
+| duur | stap-1 € | stap-2 € | totaal € |
+|---|---|---|---|
+| 5 min | 0.0053 | 0.0071 | 0.012 |
+| 20 min | 0.0078 | 0.0165 | 0.024 |
+| 59 min | 0.0593 | 0.0264 | 0.086 |
+| 4u13m | 0.0464 | 0.1374 | 0.184 |
+
+**Stap 1: sonnet-4-6 → gemini-2.5-flash** (sonnet blijft fallback). Op de 4u-video kost sonnet-stap-1 ~€0.23 tegen gemini ~€0.046 — **~1/5**. Beslissende onderbouwing uit de dekkingsstudie: **beide modellen leveren ongeveer even vaak een te groot hoofdstuk op, maar langs een andere route** — Gemini via een zeldzaam gevouwen gat (1 van 5 4u-runs: 88.7% ruwe dekking, één gat van 1025s), Sonnet via onder-segmentatie (mediaan hoofdstuk max/gem 3.66×, één run zelfs 15.19×, mét 100% dekking en 0 gaten). Sonnet is dus niet duidelijk beter op de metric die telt (verdunning); zijn kostennadeel weegt niet op. `claude-haiku-4-5` viel af op **onvolledige dekking** (91.4% in de eerste vergelijking).
+
+**Spreiding uit de dekkingsstudie** (5× gemini + 3× sonnet per video — **één run is ruis, kijk naar de spreiding**):
+- 20min · gemini: dekking min 95.4 / med 100 / max 100; grootste gat max 54s. Sonnet: 100% altijd.
+- 4u · gemini: dekking min 88.7 / med 99.8 / max 100; grootste gat min 2 / med 3 / **max 1025s**; hoofdstuk max/gem med 2.07 / max 2.81. Sonnet: dekking 100% altijd; hoofdstuk max/gem med 3.66 / **max 15.19**.
+
+**Splitsingsregel (dekt de eigenlijke zwakte af — geldt voor béíde modellen):** ná de validatie wordt de MEDIANE hoofdstukduur van de run bepaald; een hoofdstuk **> 2× die mediaan** wordt in gelijke delen **< mediaan** gehakt, elk deel een eigen stap-2-call met dezelfde kop+omschrijving als bindende afbakening, daarna samengevoegd onder één kop (geen dubbele inleidende zin). De **zichtbare hoofdstukindeling verandert niet** — alleen de verwerking, zodat een gevouwen gat of onder-segmentatie de uitwerking daar niet verdunt. Criterium: geen verwerkings-fragment > 2.5× het mediane fragment. `_plan_section_fragments`/`_merge_parts`/`_run_step2` in `summary_pipeline.py`; gelogd wanneer + hoe vaak een splitsing vuurt.
+
+**Nieuwe creditformule:** 3 credits t/m 30 min, daarna **+1 per begonnen 20 min** (was 30). Netto-marge per pakket (bruto/BTW-incl. lijstprijs, gemini-stap-1 + /20): **alle tiers positief**, ook Power@4u13m (+€0.116); voorheen (/30 + sonnet) sloeg Power vanaf 59min en Plus bij 4u om naar verlies. Financieel pad: `calculate_summary_cost` is de enige backend-bron (reservering==afrekening==teruggave); frontend `TranscriptViewer.summaryCost` spiegelt exact.
+
+**Thinking-tokens = bekende, niet-ingezette knop:** de gateway rapporteert reasoning apart in `usage.completion_tokens_details.reasoning_tokens`. **Ruim de helft van de uitvoertokens is denkwerk** (gemeten 54–84%, afhankelijk van duur/model) en dat wordt gewoon **afgerekend** (het zit in output_tokens). We zetten thinking bewust NIET uit — vastgelegd zodat de volgende lezer weet dat dit een beschikbare kostenknop is.
+
+**Gateway-model-id valkuil:** de kale alias `claude-haiku-4-5` geeft 400 op de gateway; alleen `claude-haiku-4-5-20251001` werkt. De sectie-fallback is daarnaar gecorrigeerd. Zie `docs/LESSONS.md` (verifieer gateway-modelnamen met een echte call).

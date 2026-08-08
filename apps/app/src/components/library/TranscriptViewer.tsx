@@ -365,8 +365,9 @@ export function TranscriptViewer({
       ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
       : 0);
   const ragCost = Math.max(1, Math.ceil(derivedDuration / 600));
-  // AI-summary kost (ADR-090): 3 t/m 30min, +1 per begonnen 30min. Deterministisch uit de duur.
-  const summaryCost = 3 + Math.max(0, Math.ceil(derivedDuration / 1800) - 1);
+  // AI-summary kost (ADR-090-addendum): 3 t/m 30min, daarna +1 per begonnen 20min. MOET exact de
+  // backend-formule calculate_summary_cost spiegelen (financieel pad: weergave == afgerekend bedrag).
+  const summaryCost = 3 + Math.max(0, Math.ceil((derivedDuration - 1800) / 1200));
 
   // Mark as viewed on mount if not already viewed
   useEffect(() => {

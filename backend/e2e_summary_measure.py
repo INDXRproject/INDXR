@@ -29,6 +29,7 @@ import time
 import json
 import random
 import asyncio
+import statistics
 from pathlib import Path
 
 import httpx
@@ -143,20 +144,25 @@ async def run_measured(sb, tid: str, structure_model: str = None, run_step2: boo
                 struct["structured"].get("sections") or [], min_s, max_s, struct["total_seconds"]
             )
             results = []
+            run_debug = {}
             if run_step2:
-                sem = asyncio.Semaphore(sp.SECTION_CONCURRENCY)
-                results = await asyncio.gather(*[
-                    sp._run_section(client, api_key, sem, s, overview, segs) for s in sections
-                ])
+                # Zelfde stap-2-orkestratie als productie (incl. splitsing van te grote hoofdstukken).
+                results = await sp._run_step2(client, api_key, sections, overview, segs, debug=run_debug)
     finally:
         sp.STRUCTURE_MODEL = orig_model
     elapsed = time.monotonic() - t0
+
+    # Verwerkings-fragmenten (na splitsing) — voor de verdunnings-metric (max/mediaan ≤ 2.5).
+    plan, n_splits = sp._plan_section_fragments(sections)
+    frag_durs = [b - a for e in plan for (a, b) in e["parts"]]
 
     return {
         "tid": tid, "duration": duration, "duration_min": round(duration / 60, 1), "user_id": user_id,
         "transcript_words": sum(_words(s.get("text", "")) for s in segs),
         "step1_call": struct["call"], "overview": overview, "sections": sections,
         "coverage": coverage, "results": results, "elapsed": round(elapsed, 1),
+        "raw_sections": struct["structured"].get("sections") or [], "total_seconds": struct["total_seconds"],
+        "splits_fired": n_splits, "frag_durs": frag_durs,
     }
 
 
@@ -181,7 +187,12 @@ async def main(ids):
     # ── Afgeleide per-run-cijfers ──────────────────────────────────────────────
     for r in runs:
         s1 = r["step1_call"]
-        step2_calls = [x["call"] for x in r["results"] if x.get("call")]
+        step2_calls = [c for x in r["results"] for c in x.get("calls", [])]  # gesplitst hoofdstuk = meerdere calls
+        # Verdunning: hoofdstuk max/gemiddeld (zichtbare indeling) + fragment max/mediaan NÁ splitsing (gate).
+        chap_durs = [s["end_time"] - s["start_time"] for s in r["sections"] if s["end_time"] > s["start_time"]]
+        r["chap_ratio"] = round(max(chap_durs) / (sum(chap_durs) / len(chap_durs)), 2) if chap_durs else 0.0
+        fd = r["frag_durs"] or []
+        r["frag_max_med"] = round(max(fd) / statistics.median(fd), 2) if fd else 0.0
         r["s1_in"], r["s1_out"], r["s1_model"] = s1["prompt_tokens"], s1["completion_tokens"], s1["model"]
         r["s2_in"] = sum(c["prompt_tokens"] for c in step2_calls)
         r["s2_out"] = sum(c["completion_tokens"] for c in step2_calls)
@@ -214,6 +225,19 @@ async def main(ids):
     for r in runs:
         print(f"{r['duration_min']:>9} {r['sections_n']:>7} {r['cov_pct']:>8} {r['transcript_words']:>10} "
               f"{r['out_words']:>11} {r['ratio']:>6} {r['elapsed']:>7} {r['credits']:>7}")
+
+    # ── A2. Verdunning + splitsing (ADR-090-addendum 2) ────────────────────────
+    print("\n=== A2. VERDUNNING + SPLITSING ===")
+    print(f"{'duur(min)':>9} {'hoofdst':>7} {'hfdst max/gem':>13} {'FRAGMENT max/med':>16} {'splits':>6} {'uit_woorden':>11} {'kost_€':>8}")
+    GATE = 2.5
+    worst = 0.0
+    for r in runs:
+        worst = max(worst, r["frag_max_med"])
+        flag = "" if r["frag_max_med"] <= GATE else "  ← > 2.5×!"
+        print(f"{r['duration_min']:>9} {r['sections_n']:>7} {r['chap_ratio']:>12}× {r['frag_max_med']:>15}×{flag:<11} "
+              f"{r['splits_fired']:>6} {r['out_words']:>11} {_fmt_eur(r['cost_eur']):>8}")
+    print(f"Criterium: fragment (na splitsing) max/mediaan ≤ {GATE}× in ELKE run. "
+          f"Slechtste = {worst}× → {'GEHAALD' if worst <= GATE else 'NIET GEHAALD — drempel bijstellen en opnieuw meten'}")
 
     # ── B. Kosten per modelstap + marge per pakket ─────────────────────────────
     print("\n=== B1. TOKENS + KOSTEN PER MODELSTAP ===")
@@ -252,7 +276,9 @@ async def main(ids):
         print("output_tokens omvatten dus eventueel intern denkwerk onzichtbaar — de verhouding token↔woord")
         print("is onze enige indicator van hoeveel van de uitvoer denkwerk is.")
 
-    # ── C. Stap-1-modelvergelijking op de LANGSTE video ────────────────────────
+    # ── C. Stap-1-modelvergelijking op de LANGSTE video (optioneel: MEASURE_SKIP_C=1 slaat over) ──
+    if os.getenv("MEASURE_SKIP_C"):
+        return
     longest = runs[-1]
     print(f"\n=== C. STAP-1-MODELVERGELIJKING op de langste video ({longest['duration_min']}min) ===")
     variants = []
@@ -287,12 +313,83 @@ async def main(ids):
             print(f"  {i+1:>2}. [{mm//60}:{mm%60:02d}] {s['heading']}")
 
 
+def _gap_metrics(raw_sections, total):
+    """Gaten in de RUWE stap-1-secties (dát wat de validatie moet vouwen). Retourneert
+    (dekking%, grootste_gat_s, aantal_gaten>=1s)."""
+    secs = []
+    for s in (raw_sections or []):
+        try:
+            st, en = int(s.get("start_time") or 0), int(s.get("end_time") or 0)
+        except (TypeError, ValueError):
+            continue
+        if en > st:
+            secs.append((max(0, st), en))
+    secs.sort()
+    gaps = []
+    if secs:
+        if secs[0][0] > 0:
+            gaps.append(secs[0][0])                       # start-gat (eerste sectie begint > 0)
+        for i in range(len(secs) - 1):
+            g = secs[i + 1][0] - secs[i][1]
+            if g > 0:
+                gaps.append(g)                            # gat tussen twee secties
+        if total and total - secs[-1][1] > 0:
+            gaps.append(total - secs[-1][1])              # eind-gat (laatste sectie stopt te vroeg)
+    covered, ce = 0, None
+    for st, en in secs:
+        if ce is None or st > ce:
+            covered += en - st; ce = en
+        elif en > ce:
+            covered += en - ce; ce = en
+    cov = round(100.0 * covered / total, 1) if total else 0.0
+    real = [g for g in gaps if g >= 1]
+    return cov, (max(real) if real else 0), len(real)
+
+
+def _chapter_ratio(norm_sections):
+    """Grootste hoofdstuk (duur) t.o.v. het gemiddelde NÁ de validatie — meet de verdunning die een
+    gevouwen gat veroorzaakt (een hoofdstuk 2× zo groot als zijn buren verdunt de uitwerking daar)."""
+    durs = [s["end_time"] - s["start_time"] for s in (norm_sections or []) if s["end_time"] > s["start_time"]]
+    if not durs:
+        return 0.0
+    mean = sum(durs) / len(durs)
+    return round(max(durs) / mean, 2) if mean else 0.0
+
+
+def _spread(vals):
+    return f"min {min(vals)} · med {statistics.median(vals)} · max {max(vals)}" if vals else "—"
+
+
+async def coverage_study(sb, video_ids, gemini_n=5, sonnet_n=3):
+    print("=== DEKKINGS-STUDIE (alleen stap 1) — grensprecisie, geen contentverlies ===")
+    print("Per run: dekking%, grootste enkele gat (s), aantal gaten (>=1s), grootste/gemiddeld hoofdstuk NÁ validatie (×)\n")
+    for label, tid in video_ids:
+        for model, n in [("gemini-2.5-flash", gemini_n), ("claude-sonnet-4-6", sonnet_n)]:
+            covs, maxgaps, ngaps, ratios = [], [], [], []
+            print(f"--- {label} · stap-1 = {model} · {n} runs ---")
+            for i in range(n):
+                r = await run_measured(sb, tid, structure_model=model, run_step2=False)
+                cov, mg, ng = _gap_metrics(r["raw_sections"], r["total_seconds"])
+                ratio = _chapter_ratio(r["sections"])
+                covs.append(cov); maxgaps.append(mg); ngaps.append(ng); ratios.append(ratio)
+                print(f"  run {i+1}: dekking {cov}% · grootste gat {mg}s · gaten {ng} · grootste/gem hoofdstuk {ratio}×  "
+                      f"({len(r['raw_sections'])} raw secties, {len(r['sections'])} na validatie)")
+            print(f"  SPREIDING dekking%           : {_spread(covs)}")
+            print(f"  SPREIDING grootste gat (s)   : {_spread(maxgaps)}")
+            print(f"  SPREIDING aantal gaten       : {_spread(ngaps)}")
+            print(f"  SPREIDING grootste/gem hfdst : {_spread(ratios)}×\n")
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("gebruik: venv/bin/python3 e2e_summary_measure.py <transcript_id> [<transcript_id> ...]")
+        print("gebruik: e2e_summary_measure.py <transcript_id> [...]   |   coverage <20min_id> <4u_id>")
         sys.exit(2)
     _load_env()
     if not os.environ.get("ASSEMBLYAI_API_KEY"):
         print("ASSEMBLYAI_API_KEY ontbreekt in backend/.env — de gateway is niet bereikbaar zonder key.")
         sys.exit(3)
-    asyncio.run(main(sys.argv[1:]))
+    if sys.argv[1] == "coverage":
+        sb = get_supabase_client()
+        asyncio.run(coverage_study(sb, [("20min", sys.argv[2]), ("4u", sys.argv[3])]))
+    else:
+        asyncio.run(main(sys.argv[1:]))
