@@ -16174,3 +16174,17 @@ docs/LOG.md
 docs/wiki/decisions/090-ai-summary-two-step-structured.md
 pnpm-lock.yaml
 ---
+[2026-08-08 02:50] commit: chore(measure): uitgebreid meetscript — kosten per modelstap, marge per pakket, stap-1-modelvergelijking, thinking-tokens
+
+Alleen het meetscript (geen productiecode/prompts/formule). Voegt toe:
+- kosten per modelstap (stap 1 vs stap 2, tokens + euro tegen cost_config × FX);
+- werkelijke kostprijs naast opbrengst op de 4 pakketprijzen uit pricing.ts (marge-omslag zichtbaar);
+- stap-1-modelvergelijking (sonnet-4-6 / gemini-2.5-flash / haiku-4-5) via runtime-override van
+  STRUCTURE_MODEL — hoofdstukken, dekking, koppen, stap-1-kost;
+- thinking-tokens: vangt de ruwe gateway-usage en rapporteert reasoning_tokens apart.
+
+Meet-only: wrapt sp._gateway_call at-runtime om ruwe usage te vangen en hergebruikt de pipeline-helpers.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: backend/e2e_summary_measure.py
+---
