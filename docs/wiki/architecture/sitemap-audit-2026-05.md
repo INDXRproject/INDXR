@@ -1,5 +1,7 @@
 # Sitemap Audit — INDXR.AI V2
 
+> **📌 Momentopname (2026-05-03).** De artikelstructuur is op **2026-08-08** geconsolideerd (18 → 10 artikelen; de oude `/articles/*`-slugs die dit document noemt bestaan niet meer, elk 308 → eindpunt). Actuele artikelset: [../business/content-sitemap.md](../business/content-sitemap.md).
+
 > **⚠️ GEARCHIVEERD — punt-in-tijd-audit (2026-05-03).** Vervangen door de doorlopende bron van
 > waarheid `architecture/sitemap.md` (bijgewerkt voor ADR-072/073/074) en `content/content-sitemap.md`.
 > Dit is een momentopname van de codebase op 2026-05-03; niet meer bijwerken en niet als actuele

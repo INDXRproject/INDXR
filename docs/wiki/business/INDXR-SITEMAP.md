@@ -1,5 +1,7 @@
 # INDXR.AI — Master Sitemap & Content Plan
 
+> **📌 Momentopname (2026-04-15).** De artikelstructuur is op **2026-08-08** geconsolideerd (18 → 10 artikelen; de oude `/articles/*`-slugs die dit document noemt bestaan niet meer, elk 308 → eindpunt). Actuele artikelset: [content-sitemap.md](content-sitemap.md).
+
 *Versie 1.0 — 2026-04-15*  
 *Synthese van: SEO-onderzoek, SERP-analyse, competitor gaps, GEO/AI-SEO principes, strategische beslissingen uit sessie*
 

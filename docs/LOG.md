@@ -1,3 +1,5 @@
+[2026-08-08 10:30] chore (opruimen na artikel-consolidatie, 3 losse punten): **(1) root `next.config.ts` verwijderd** — hard geverifieerd dood: root-only redirects (`/youtube-transcript-generator`, `/support`, `/how-it-works`, `/docs/credits`) geven **404 in productie** terwijl de marketing-only consolidatie-redirect **308** geeft → prod leest `apps/marketing/next.config.ts`, nooit de root; root staat buiten de pnpm-workspace, geen `src/app`, turbo delegeert builds naar app-dirs, geen `next`-dep in root-package.json, enige near-ref (`knip.json`) wijst naar niet-bestaande `next.config.js`. Beide apps clean gebuild + prod-deploy groen ná verwijdering. **(2) historische docs met oude slugs**: `CODEBASE_AUDIT.md` **verwijderd** (bidirectioneel superseded door `AUDIT_REPORT_2026-04-26.md` — eigen VEROUDERD-banner + reciproke `supersedes:`; niet in INDEX, alleen historische LOG/WIKI_GAPS-refs); stale-regel (momentopname + 2026-08-08-consolidatie → `content-sitemap.md`) toegevoegd bovenaan `AUDIT_REPORT_2026-04-26.md`, `ROADMAP.md`, `INDXR-SITEMAP.md`, `nachtrapport-2026-07-23.md`, `content-audit-2026-08-02.md`, `sitemap-audit-2026-05.md` — inhoud niet herschreven (momentopnames). **(3) letterlijke `${…}` in gebruikersteksten**: beide apps + shared doorzocht (non-backtick-regel); alle treffers zijn legitieme multi-line template-literals (mail-HTML, className, CSV/JSON-bouw); twee user-facing verdachten (audio-to-text FAQ, PlaylistTab-melding) zijn backtick-templates = correct; groene TS-build sluit niet-bestaande-variabele-interpolatie uit. **Geen bug gevonden** (de gemelde `${spellCount}` was al verdwenen met het TXT-artikel). **Buiten scope, gemeld:** overige legacy root-Next-bestanden (`vercel.json`, `tsconfig.json` met dood `@/*`-pad, `knip.json`, `instrumentation*.ts`, `sentry.*.config.ts`, `tailwind.config.ts`, `postcss.config.mjs`, `next-env.d.ts`, `components.json`, `eslint.config.mjs`) lijken ook dood — niet aangeraakt (taak = alleen next.config.ts); `WIKI_GAPS.md` heeft nu een dangling ref naar de verwijderde CODEBASE_AUDIT (zelf een stale april-doc, buiten scope). Concurrent draaiende samenvattingsronde-wijzigingen (`TranscriptViewer.tsx`, `backend/*.py`, `LESSONS.md`) bewust NIET meegecommit. | gewijzigd: next.config.ts (verwijderd), docs/CODEBASE_AUDIT.md (verwijderd), docs/AUDIT_REPORT_2026-04-26.md, docs/ROADMAP.md, docs/wiki/business/INDXR-SITEMAP.md, docs/wiki/roadmap/nachtrapport-2026-07-23.md, docs/wiki/content/content-audit-2026-08-02.md, docs/wiki/architecture/sitemap-audit-2026-05.md, docs/LOG.md
+---
 [2026-08-07 19:10] refactor (artikel-consolidatie — keyword-demand-2026-08 § Artikeloordeel): 18 → 10 artikelen. **4 samenvoegingen** (structuurtaak, inhoud verhuisd zoals-hij-was + ontdubbeld, géén herschrijf — kwaliteit = latere ronde): (1) **Bulk → Playlist** (unieke "Common bulk extraction use cases"-sectie verplaatst); (2) **Age-Restricted → Not-available** als sectie; (3) **Members-only → Not-available** (alleen feitelijk-unieke inhoud: paywall-respect, creator/YouTube-Studio-note, error-card; audio-upload-workaround niet gedupliceerd); (4) **6× Formats (TXT/Markdown/CSV/SRT/JSON/RAG-JSON) → één hub** `/articles/transcript-export-formats` (elk als sectie, index-volgorde; dubbele RAG-JSON-subsectie + trailing-nav ontdubbeld). AI & RAG-trio ongemoeid. **9 × 308** direct-naar-eindpunt (geen ketens) in de canonieke `apps/marketing/next.config.ts`. Sitemap opnieuw gegenereerd → **39 routes** (was 47), geen omgeleide URL's. Alle interne links (artikelen, `/docs`-reference + guide, artikelindex, `relatedArticles`/`editorialAlts`) → nieuw doel; **geen `llms.txt` in de repo** (clausule n.v.t.). 72 verweesde `public/editorial/`-beelden opgeruimd. `content-sitemap.md` + `architecture/sitemap.md` (redirect-tabel was al ADR-075-stale → gecorrigeerd) bijgewerkt; `keyword-demand-2026-08.md` meegecommit. **Clean uncached `pnpm build` groen** (marketing 51/51; app 2/2). Grep oude slugs = 0 in code behalve redirect-bestand. **Buiten scope, gemeld:** root `next.config.ts` = legacy dead code (buiten pnpm-workspace, pre-ADR-075-redirects) niet aangeraakt; historische point-in-time docs (audit-reports, INDXR-SITEMAP, ROADMAP, nachtrapport) bevatten nog oude slugs — bewust niet herschreven; pre-existing `${spellCount(...)}`-literal-bug in oude TXT-FAQ niet meegenomen naar de hub. | gewijzigd: apps/marketing/next.config.ts, apps/marketing/src/app/articles/** (+transcript-export-formats nieuw, 9 verwijderd, page.tsx + 8 bewerkt), apps/marketing/src/app/docs/** (8 reference/guide), apps/marketing/src/app/sitemap.ts, sitemap-lastmod.ts, src/lib/{relatedArticles,editorialAlts}.ts, public/editorial/** (72 verwijderd), docs/wiki/business/content-sitemap.md, docs/wiki/architecture/sitemap.md, docs/wiki/business/keyword-demand-2026-08.md, docs/LOG.md
 ---
 [2026-08-07 17:30] docs+fix (FASE 5 — vastleggen + carryover): **/about** — eenmanszaak/KvK-bijzin uit de lopende tekst gehaald en "one-person" laten vallen (sluit geen toekomstig team uit); geverifieerd dat KvK 98828762 elders vindbaar is (terms:24-25 + privacy:22 — dus niets te verplaatsen), verwijst nu naar Terms voor bedrijfsdetails. `pnpm build` groen (2/2). **product-truth §8** — marketing-clip + exportdemo-herkomst + ADR-088-regel (geen YouTube-UI in marketing) toegevoegd. **screenshot-machine.md** — pijplijn-pointers naar `apps/video/` (Remotion, hoe je 'm draait) + `export-demos/`. **LESSONS** — pnpm+ESM-standalone-scripts-valkuil (NODE_PATH werkt niet in ESM; import via absoluut `.pnpm`-pad / `playwright-core`). **Carryover mobiele tabbar:** vastgesteld dat account/instellingen/uitloggen op mobiel WÉL bereikbaar zijn via `AppTopbar`→`AvatarDropdown`-sheet (`AppTopbar.tsx:82`, `AvatarDropdown.tsx:47/57/88`, ongated) — geen gat; de TODO-comment in `MobileTabBar.tsx:9` is stale (niet aangeraakt, buiten scope). **OVERGESLAGEN:** btw-nummer staat nergens (about/terms/privacy) — NL-wet vereist het bij online verkoop; niet verzonnen, gemeld voor Khidr. | gewijzigd: apps/marketing/src/app/about/page.tsx, docs/wiki/content/product-truth.md, docs/wiki/content/screenshot-machine.md, docs/LESSONS.md, docs/LOG.md
@@ -16187,4 +16189,41 @@ Meet-only: wrapt sp._gateway_call at-runtime om ruwe usage te vangen en hergebru
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 Changed: backend/e2e_summary_measure.py
+---
+[2026-08-08 11:49] commit: chore: cleanup after article consolidation (dead root config, stale-doc markers, ${} audit)
+
+Three loose ends flagged by the consolidation, none touching app runtime.
+
+1. Deleted the repo-root next.config.ts — hard-verified dead: its redirects
+   (/youtube-transcript-generator, /support, /how-it-works, /docs/credits) all
+   404 in production while the marketing-only consolidation redirect 308s, proving
+   prod reads apps/marketing/next.config.ts. Root is outside the pnpm workspace, has
+   no src/app, turbo delegates builds to app dirs, root package.json has no next dep,
+   and the only near-reference (knip.json) points at a nonexistent next.config.js.
+
+2. Historical docs with vanished slugs: deleted CODEBASE_AUDIT.md (bidirectionally
+   superseded by AUDIT_REPORT_2026-04-26.md, not in INDEX). Added a one-line
+   "snapshot + 2026-08-08 consolidation → content-sitemap.md" marker atop the other
+   six (AUDIT_REPORT, ROADMAP, INDXR-SITEMAP, nachtrapport, content-audit,
+   sitemap-audit). Content not rewritten — they are snapshots.
+
+3. Literal ${...} in user-facing strings: searched both apps + shared. Every hit is
+   a legitimate multi-line template literal; the two user-facing suspects are backtick
+   templates. No bug remained (the reported ${spellCount} left with the deleted TXT
+   article). Green TS build rules out nonexistent-variable interpolation.
+
+Both apps build green (marketing 51/51, app 44/44). Out of scope, reported: other
+legacy root Next files appear dead but were left untouched (task scoped to
+next.config.ts); concurrent summarization-round changes deliberately not committed.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/AUDIT_REPORT_2026-04-26.md
+docs/CODEBASE_AUDIT.md
+docs/LOG.md
+docs/ROADMAP.md
+docs/wiki/architecture/sitemap-audit-2026-05.md
+docs/wiki/business/INDXR-SITEMAP.md
+docs/wiki/content/content-audit-2026-08-02.md
+docs/wiki/roadmap/nachtrapport-2026-07-23.md
+next.config.ts
 ---

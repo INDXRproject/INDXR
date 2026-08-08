@@ -1,4 +1,6 @@
 # Codebase Audit Report — 2026-04-26
+
+> **📌 Momentopname (2026-04-26).** De artikelstructuur is op **2026-08-08** geconsolideerd (18 → 10 artikelen; de oude `/articles/*`-slugs die dit document noemt bestaan niet meer, elk 308 → eindpunt). Actuele artikelset: [wiki/business/content-sitemap.md](wiki/business/content-sitemap.md).
 status: processed  
 generated-by: Claude Code (knip + vulture + ruff + depcheck + handmatige checks)  
 supersedes: docs/CODEBASE_AUDIT.md (2026-04-14, verouderd)

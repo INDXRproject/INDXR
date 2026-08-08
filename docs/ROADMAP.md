@@ -1,5 +1,7 @@
 # Development Roadmap
 
+> **📌 Momentopname.** De artikelstructuur is op **2026-08-08** geconsolideerd (18 → 10 artikelen; de oude `/articles/*`-slugs die dit document noemt bestaan niet meer, elk 308 → eindpunt). Actuele artikelset: [wiki/business/content-sitemap.md](wiki/business/content-sitemap.md).
+
 ## ✅ Completed Phases
 
 ### Phase A: Authentication Enhancement (Jan 2025) ✅

@@ -1,5 +1,7 @@
 # Content-audit — 2026-08-02
 
+> **📌 Momentopname (2026-08-02).** De artikelstructuur is op **2026-08-08** geconsolideerd (18 → 10 artikelen; de route-set en de oude `/articles/*`-slugs die dit document noemt zijn achterhaald, elk verdwenen slug 308 → eindpunt). Actuele artikelset: [../business/content-sitemap.md](../business/content-sitemap.md).
+
 **Aard:** read-only audit van alle user-facing content (marketing + docs + articles). Geen code/tekst gewijzigd. Dit bestand is de enige output; Khidr trekt hieruit fix-batches.
 
 **Bron van waarheid (in volgorde):** (1) broncode + productie-DB — `packages/shared/src/lib/pricing.ts` is single source of truth voor prijzen/credits/pakketten; (2) `docs/wiki/content/product-truth.md`; (3) de ADR's. Bij conflict wint de code; het conflict wordt dan als losse bevinding genoteerd.
