@@ -4,25 +4,32 @@ Local git hooks (not auto-installed; `.git/hooks/` is not version-controlled).
 
 ## post-commit
 
-Appends a one-line commit summary to `docs/LOG.md` and **folds it into the just-made
-commit** (`git commit --amend`) so the working tree stays clean.
+Appends a one-line commit summary to **`docs/COMMITS.md`** — a **gitignored** local mirror of
+`git log`. It does **not** touch `docs/LOG.md` and does **not** `--amend`.
 
-**Concurrency safety (2026-08-08):** before amending, the hook checks whether `docs/LOG.md`
-has any change that is *not* part of the commit that just landed (`git diff HEAD` + `--cached`).
-- **Clean** → only our appended line is new → `git add docs/LOG.md` + `--amend`.
-- **Dirty** (a concurrent session has an uncommitted LOG.md line) → **do not amend**; the line
-  is still written but left uncommitted for the next commit to pick up. Another session's work
-  is never staged or amended. This fixes the bug where a bare `git add docs/LOG.md` swept a
-  summary-round log line into an unrelated commit (`bf9d222`).
+### Why (2026-08-08)
 
-The hook prints which branch it took. A recursion guard (`INDXR_LOG_HOOK`) makes the amend's
-re-fired hook a no-op, so exactly one amend runs.
+This hook used to append to `docs/LOG.md` and fold the append into the commit via
+`git commit --amend`. That had two problems:
+
+1. It bloated `docs/LOG.md` with 700+ machine `commit:`/`Changed:` blocks nobody reads.
+   `LOG.md` is for **hand-written session entries** (read at session start).
+2. The whole-file `git add docs/LOG.md` swept a **concurrent session's** uncommitted `LOG.md`
+   line into an unrelated commit on the amend (this happened — commit `bf9d222`).
+
+Writing to a gitignored `docs/COMMITS.md` with **no amend** fixes both structurally:
+
+- `LOG.md` stays purely hand-written; `git log` is the real history and `docs/COMMITS.md` is
+  just a flat local convenience mirror.
+- No `--amend` → commit SHAs are stable, and the concurrency-sweep bug is **gone**: the hook
+  never runs `git add` and never amends, so it can never stage another session's work.
+- The working tree stays clean because `docs/COMMITS.md` is gitignored (no recursion guard
+  needed — without `--amend`, post-commit doesn't re-fire).
+
+The historical 700+ blocks were removed from `LOG.md`, not migrated; `git log` retains them.
 
 Install (once per clone):
 
 ```bash
 cp scripts/git-hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
 ```
-
-Note: because the hook amends, the commit SHA is finalized *after* the hook runs — read it
-with `git log -1` (post-hook), not from `git commit`'s own stdout.

@@ -80,3 +80,7 @@ ds-bundle/
 .design-sync/learnings/
 .design-sync/node_modules
 tests/playwright/capture/capture-state.json
+
+# Machine commit-log written by scripts/git-hooks/post-commit (local mirror of git log).
+# LOG.md is the curated hand-written log; COMMITS.md is auto-generated noise, not tracked.
+docs/COMMITS.md

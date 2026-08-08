@@ -1,42 +1,27 @@
 #!/bin/bash
-# INDXR post-commit hook — appends a one-line commit summary to docs/LOG.md.
+# INDXR post-commit hook — appends a one-line commit summary to docs/COMMITS.md.
 #
-# Normally it FOLDS that append into the just-made commit via `git commit --amend` so the
-# working tree stays clean afterwards.
+# HISTORY: this used to append to docs/LOG.md and fold the append into the commit via
+# `git commit --amend`. Two problems:
+#   1. It bloated LOG.md with 700+ machine "commit:/Changed:" blocks that nobody reads —
+#      LOG.md is meant for hand-written session entries (read at session start).
+#   2. The whole-file `git add docs/LOG.md` swept a *concurrent session's* uncommitted LOG.md
+#      line into an unrelated commit on the amend (this happened: bf9d222).
 #
-# SAFETY (2026-08-08): a bare `git add docs/LOG.md` stages the WHOLE working copy of the file,
-# so a *concurrent session's* uncommitted LOG.md line would get swept into THIS commit on the
-# amend (this actually happened — commit bf9d222 absorbed a summary-round log line). To prevent
-# that, the hook first checks whether docs/LOG.md has any change that is NOT part of the commit
-# that just landed:
-#   - clean  → the only new content is the line we are about to append → safe to add + --amend.
-#   - dirty  → foreign uncommitted work is present → DO NOT amend. Our line is still written,
-#              but left as an uncommitted change for the next commit to pick up. Another
-#              session's work is never staged or amended by us.
-# It prints what it did in both cases.
+# FIX (2026-08-08): the machine commit-summary now goes to docs/COMMITS.md, which is GITIGNORED
+# and is NOT amended into the commit:
+#   - LOG.md stays purely hand-written (no machine bloat); git log remains the real history and
+#     docs/COMMITS.md is just a flat local convenience mirror of it.
+#   - no `--amend` → commit SHAs are stable, and the concurrency-sweep bug is structurally gone:
+#     the hook never runs `git add` and never amends, so it can never stage another session's work.
+#   - the working tree stays clean because docs/COMMITS.md is gitignored.
 #
-# Recursion guard: the amend re-fires post-commit; INDXR_LOG_HOOK makes that inner run a no-op,
-# so exactly one amend happens per commit (no runaway loop).
+# No recursion guard is needed: without `--amend`, post-commit does not re-fire.
 #
 # This file is the tracked canonical copy. Install it with:
 #   cp scripts/git-hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
-[ -n "$INDXR_LOG_HOOK" ] && exit 0
-export INDXR_LOG_HOOK=1
-
 REPO_ROOT=$(git rev-parse --show-toplevel)
-LOG="docs/LOG.md"
-
-# Is docs/LOG.md clean relative to the commit that just landed — i.e. nothing in the working
-# tree or index that isn't already in HEAD (no foreign uncommitted work)? Checked BEFORE we
-# append our own line. `git diff HEAD` covers unstaged + staged; `--cached` catches the edge
-# where a partial `git commit <path>` left other LOG.md hunks staged but uncommitted.
-if git -C "$REPO_ROOT" diff --quiet HEAD -- "$LOG" \
-   && git -C "$REPO_ROOT" diff --cached --quiet HEAD -- "$LOG"; then
-  CLEAN=1
-else
-  CLEAN=0
-fi
-
+COMMITS="$REPO_ROOT/docs/COMMITS.md"
 CHANGED_FILES=$(git -C "$REPO_ROOT" diff-tree --no-commit-id -r --name-only HEAD)
 COMMIT_MSG=$(git -C "$REPO_ROOT" log -1 --pretty=%B)
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
@@ -45,14 +30,6 @@ TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
   echo "[$TIMESTAMP] commit: $COMMIT_MSG"
   echo "Changed: $CHANGED_FILES"
   echo "---"
-} >> "$REPO_ROOT/$LOG"
+} >> "$COMMITS"
 
-if [ "$CLEAN" = "1" ]; then
-  git -C "$REPO_ROOT" add "$LOG"
-  git -C "$REPO_ROOT" commit --amend --no-edit --no-verify >/dev/null 2>&1
-  echo "post-commit: docs/LOG.md was clean — log line folded into this commit (amended)."
-else
-  echo "post-commit: docs/LOG.md had uncommitted changes that are not part of this commit —" \
-       "log line appended but LEFT UNCOMMITTED (not amended), so another session's work is" \
-       "not swept in. The next commit will pick the line up."
-fi
+echo "post-commit: appended commit summary to docs/COMMITS.md (gitignored, not amended; LOG.md untouched)."
