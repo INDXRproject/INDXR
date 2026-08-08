@@ -16227,3 +16227,49 @@ docs/wiki/content/content-audit-2026-08-02.md
 docs/wiki/roadmap/nachtrapport-2026-07-23.md
 next.config.ts
 ---
+[2026-08-08 04:30] AI-samenvatting kostenmeting-doorvoer (ADR-090 addendum 2): stap-1 model sonnet-4-6 → gemini-2.5-flash (sonnet fallback); sectie-fallback-id → claude-haiku-4-5-20251001 (kale alias geeft gateway-400); creditformule 3 t/m 30min daarna +1/20min (was /30, backend+frontend synchroon); NIEUW: splitsing van een hoofdstuk >2× mediane duur in delen <mediaan vóór stap 2 (_plan_section_fragments/_merge_parts/_run_step2, zichtbare indeling ongewijzigd); meetscript uitgebreid (verdunnings-metric fragment max/mediaan-gate ≤2.5, MEASURE_SKIP_C); ADR-addendum 2 + INDEX + LESSONS | gewijzigd: backend/summary_pipeline.py, backend/credit_manager.py, backend/test_summary_credits.py, backend/e2e_summary_measure.py, apps/app/.../TranscriptViewer.tsx, ADR-090 addendum 2, INDEX, LESSONS
+[2026-08-08 13:29] commit: chore: remove dead pre-monorepo root config files + obsolete WIKI_GAPS.md
+
+Cleanup of leftovers flagged after the article consolidation. Each verified as hard
+as next.config.ts was: no build/lint/test/deploy/CI reads them, and every app has its
+own equivalent config.
+
+Removed (repo-root, all superseded by per-app copies under apps/marketing + apps/app):
+- vercel.json        — Vercel Root Directory is each app dir; apps have their own
+- tsconfig.json      — no app tsconfig extends it; no root build/lint; only a code
+                       comment mentions the name (design-sync). Had a dead @/*->./src path
+- knip.json          — no script/CI runs knip; entries point at nonexistent root paths
+- instrumentation.ts, instrumentation-client.ts — apps have their own; root never built
+- sentry.{client,edge,server}.config.ts — only referenced by the root instrumentation
+                       files above; apps import their own app-relative copies
+- tailwind.config.ts — Tailwind v4 is CSS-based; no @config directive references it
+- postcss.config.mjs — apps have their own; Next reads the app's
+
+Kept (per explicit caution — root-searching tooling, no explicit reference needed):
+- eslint.config.mjs  — ESLint flat config resolved by upward search (IDE / bare eslint)
+- components.json    — the only shadcn config in the repo; shadcn CLI searches root
+- next-env.d.ts      — untracked generated file, not a repo file
+
+docs/WIKI_GAPS.md removed: fully obsolete — built on the now-deleted CODEBASE_AUDIT.md,
+uses pre-monorepo src/ paths, and its findings are all long resolved (BACKEND_API_SECRET
+implemented, credit formula fixed, /alternative pages removed, pricing changed twice,
+welcome 5->25 live). Referenced by nothing.
+
+Both apps build green (marketing + app). Lint runs unchanged: `next lint` is already
+broken repo-wide (removed in Next 16.1.4) — pre-existing, out of scope. LOG.md entry
+deliberately omitted: the file has another terminal's uncommitted work; committing it
+would sweep in changes that aren't mine.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/WIKI_GAPS.md
+instrumentation-client.ts
+instrumentation.ts
+knip.json
+postcss.config.mjs
+sentry.client.config.ts
+sentry.edge.config.ts
+sentry.server.config.ts
+tailwind.config.ts
+tsconfig.json
+vercel.json
+---
