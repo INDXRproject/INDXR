@@ -65,14 +65,84 @@ def _clamp(v: int, lo: int, hi: int) -> int:
     return max(lo, min(hi, v))
 
 
+# Bovengrens op het aantal hoofdstukken. Boven ~SECTION_CAP*SECTION_MINUTES minuten (40*8 = 320min ≈
+# 5u20m) verschuift het plateau: de hoofdstukken worden dan langer i.p.v. talrijker (de per-hoofdstuk-
+# uitwerking blijft meeschalen met de gesproken inhoud). Bovengrens bestaat bewust om kosten en de
+# per-model-per-60s gateway-rate-limit te begrenzen (ADR-090-addendum).
+SECTION_CAP = int(os.getenv("SUMMARY_SECTION_CAP", "40"))
+SECTION_MINUTES = 8.0  # ~1 hoofdstuk per 8 minuten gesproken inhoud
+
+
 def section_bounds(duration_seconds: float) -> tuple:
-    """Onder-/bovengrens op het aantal secties, afgeleid van de duur — zodat een korte video er
-    geen twintig krijgt en een lange video niet ontspoort. Bovengrens schaalt met de duur maar is
-    hard gecapt op 20."""
+    """Onder-/bovengrens op het aantal hoofdstukken, afgeleid van de duur — zodat een korte video er
+    geen twintig krijgt en een lange video MEEGROEIT (i.p.v. hard cappen op 20). Boven de cap worden
+    fragmenten langer i.p.v. talrijker; het plateau ligt dan bij ~SECTION_CAP*SECTION_MINUTES min."""
     duration_min = (duration_seconds or 0) / 60.0
-    max_sections = _clamp(math.ceil(duration_min / 10.0), 3, 20)
+    max_sections = _clamp(math.ceil(duration_min / SECTION_MINUTES), 3, SECTION_CAP)
     min_sections = min(2, max_sections)
     return min_sections, max_sections
+
+
+def _token_overlap(a: str, b: str) -> float:
+    """Jaccard-overlap van woord-sets — voor de 'eerste regel ≈ kop'-detectie."""
+    sa, sb = set(a.split()), set(b.split())
+    if not sa or not sb:
+        return 0.0
+    return len(sa & sb) / len(sa | sb)
+
+
+def _norm_heading(s: str) -> str:
+    """Normaliseer voor vergelijking: strip markdown-tekens + leestekens, lowercase."""
+    s = re.sub(r"[#*_`>~]", "", s or "")
+    s = re.sub(r"[^\w\s]", " ", s)
+    return re.sub(r"\s+", " ", s).strip().lower()
+
+
+# Meta-openingszin die naar de opdracht/het fragment verwijst i.p.v. naar de inhoud.
+_META_OPENING = re.compile(
+    r"^\s*(here (are|is)|the following|below (are|is)|these are|in this (section|part|fragment)"
+    r"|detailed notes|notes (from|on)|this (fragment|section) (covers|contains)|the (fragment|transcript))\b",
+    re.IGNORECASE,
+)
+
+
+def _clean_section_content(content: str, heading: str):
+    """Lichte opschoning (ADR-090-kwaliteitsronde): verwijder (a) een eerste regel die (vrijwel)
+    gelijk is aan de kop — die staat al elders — en (b) een openingszin die naar het fragment/de
+    opdracht verwijst i.p.v. naar de inhoud. Retourneert (cleaned, fired: list[str]) zodat de E2E
+    kan rapporteren of de code-cleanup nog iets moest weghalen (prompt vs code)."""
+    fired = []
+    lines = (content or "").split("\n")
+    norm_head = _norm_heading(heading)
+
+    def first_nonempty(ls):
+        for i, ln in enumerate(ls):
+            if ln.strip():
+                return i
+        return -1
+
+    # Maximaal twee leidende regels weghalen (kop-duplicaat + preambule, in willekeurige volgorde).
+    for _ in range(2):
+        idx = first_nonempty(lines)
+        if idx < 0:
+            break
+        line = lines[idx].strip()
+        norm_line = _norm_heading(line)
+        reason = None
+        if norm_head and (norm_line == norm_head or _token_overlap(norm_line, norm_head) >= 0.8):
+            reason = "heading_dup"
+        elif _META_OPENING.match(line) and (
+            line.rstrip().endswith(":")
+            or re.search(r"\b(fragment|transcript|notes|section)\b", line, re.IGNORECASE)
+        ):
+            reason = "preamble"
+        if not reason:
+            break
+        fired.append(reason)
+        del lines[idx]
+        while idx < len(lines) and not lines[idx].strip():
+            del lines[idx]  # opvolgende lege regels ook weg
+    return "\n".join(lines).strip(), fired
 
 
 def build_timestamped_transcript(transcript_data: List[Dict]) -> str:
@@ -121,9 +191,11 @@ def structure_system_prompt(min_sections: int, max_sections: int, total_seconds:
         "Produce:\n"
         "1. `overview`: a few short paragraphs summarising the whole video.\n"
         "2. `sections`: an ordered list that splits the video where the topic changes. For each "
-        "section give a `heading`, a `start_time` and an `end_time` in whole seconds (taken from the "
-        "[..] timestamps), covering the whole video with no gaps and no overlaps. The first section "
-        "starts at 0 and the last ends at the final timestamp.\n\n"
+        "section give a `heading`, a one-sentence `description` of what that section actually covers, "
+        "and a `start_time` and `end_time` in whole seconds (taken from the [..] timestamps). The "
+        "sections must cover the WHOLE video with no gaps and no overlaps: the first section starts at "
+        f"0 and the last section's `end_time` is the final timestamp (~{total_seconds}s). Never stop "
+        "early — every part of the video, including the final minutes, must belong to a section.\n\n"
         f"Use between {min_sections} and {max_sections} sections. Cut on genuine topic shifts — do not "
         "pad to reach the maximum, and do not force tiny sections. Return only the required JSON."
     )
@@ -132,16 +204,32 @@ def structure_system_prompt(min_sections: int, max_sections: int, total_seconds:
 SECTION_SYSTEM_PROMPT = (
     "You write thorough, worked-out study notes from a transcript fragment — like a diligent student "
     "who writes down everything, not a summariser who compresses.\n\n"
-    "Your task is FULL COVERAGE of the fragment: every argument, example, number, name, definition and "
-    "intermediate step that appears in the fragment must appear in your notes. Do not compress anything "
-    "that is stated as a distinct point into a passing mention. Keep the concrete detail; drop only pure "
-    "filler and verbal tics.\n\n"
-    "As a rough guide, aim for roughly one third of the number of words in the fragment — but this is a "
-    "direction, not a requirement: write SHORTER when the fragment carries little actual content (small "
-    "talk, silence, repetition), and let the length follow the information density of the fragment rather "
-    "than its duration. Do not invent, extrapolate, or pad to hit a length.\n\n"
-    "Write clear prose and lists. Output only the notes for this section — no heading, no preamble."
+    "You are given a TOPIC (a heading and a one-sentence description) and a transcript fragment. Cover "
+    "ONLY what falls under this topic. If the fragment contains content that clearly belongs to a "
+    "different topic — spillover from the previous section, or a lead-in to the next — skip it.\n\n"
+    "FULL COVERAGE within the topic: every argument, example, number, name, definition and intermediate "
+    "step that appears and belongs to the topic must appear in your notes. Do not compress a distinct "
+    "point into a passing mention. Keep the concrete detail; drop only pure filler and verbal tics.\n\n"
+    "As a rough guide, aim for roughly one third of the fragment's word count — a direction, not a "
+    "requirement: write SHORTER when the fragment carries little real content (small talk, silence, "
+    "repetition), and let length follow the information density of the fragment, never the clock. Do "
+    "not invent, extrapolate, or pad to hit a length.\n\n"
+    "Write the notes in Markdown (paragraphs, **bold**, *italic*, and -/1. lists where useful). Begin "
+    "DIRECTLY with the content: do NOT restate the heading (it is shown separately) and do NOT open "
+    "with meta sentences like 'Here are the notes…' or references to 'the fragment'/'the transcript'.\n\n"
+    "Return JSON with exactly two fields:\n"
+    "- `heading`: the given heading, UNLESS the fragment's actual content is clearly about something "
+    "different — then give a corrected heading. Otherwise return the given heading unchanged.\n"
+    "- `content`: the Markdown notes."
 )
+
+
+_SECTION_SCHEMA = {
+    "type": "object",
+    "properties": {"heading": {"type": "string"}, "content": {"type": "string"}},
+    "required": ["heading", "content"],
+    "additionalProperties": False,
+}
 
 
 # ── gateway ───────────────────────────────────────────────────────────────────
@@ -213,10 +301,11 @@ async def _run_structure(client, api_key, transcript_data, min_sections, max_sec
                     "type": "object",
                     "properties": {
                         "heading": {"type": "string"},
+                        "description": {"type": "string"},
                         "start_time": {"type": "integer"},
                         "end_time": {"type": "integer"},
                     },
-                    "required": ["heading", "start_time", "end_time"],
+                    "required": ["heading", "description", "start_time", "end_time"],
                     "additionalProperties": False,
                 },
             },
@@ -230,7 +319,8 @@ async def _run_structure(client, api_key, transcript_data, min_sections, max_sec
             {"role": "system", "content": structure_system_prompt(min_sections, max_sections, total_seconds)},
             {"role": "user", "content": f"Transcript:\n{ts_transcript}"},
         ],
-        "max_tokens": min(8000, 800 + max_sections * 300),
+        # Ruimer: meer secties + een description per sectie moeten in de structuur-JSON passen.
+        "max_tokens": min(16000, 1500 + max_sections * 400),
         "response_format": {
             "type": "json_schema",
             "json_schema": {"name": "summary_structure", "schema": schema, "strict": True},
@@ -243,10 +333,30 @@ async def _run_structure(client, api_key, transcript_data, min_sections, max_sec
     return {"structured": structured, "call": call, "total_seconds": total_seconds}
 
 
-def _normalize_sections(sections: List[Dict], min_sections: int, max_sections: int, total_seconds: int) -> List[Dict]:
-    """Clamp + opschonen: sorteer op start_time, cap op max_sections (merge de staart), zorg dat
-    end_time > start_time en dat de secties het transcript dekken. Ondergrens wordt niet geforceerd
-    door op te splitsen (dat zou verzinnen zijn) — alleen gelogd."""
+def _merged_coverage_seconds(sections: List[Dict]) -> int:
+    """Som van de gedekte tijd (samengevoegde, niet-overlappende intervallen) van de RUWE stap-1-secties."""
+    ivals = sorted(((s["start_time"], s["end_time"]) for s in sections if s["end_time"] > s["start_time"]))
+    covered, cur_s, cur_e = 0, None, None
+    for st, en in ivals:
+        if cur_e is None:
+            cur_s, cur_e = st, en
+        elif st <= cur_e:
+            cur_e = max(cur_e, en)
+        else:
+            covered += cur_e - cur_s
+            cur_s, cur_e = st, en
+    if cur_e is not None:
+        covered += cur_e - cur_s
+    return covered
+
+
+def _normalize_sections(sections: List[Dict], min_sections: int, max_sections: int, total_seconds: int):
+    """Clamp + opschonen + DEKKINGSVALIDATIE (§3b, ADR-090-kwaliteitsronde). Sorteert op start_time,
+    capt op max_sections, en zorgt dat de hoofdstukken de VOLLEDIGE video dekken: geen gat van
+    betekenis tussen hoofdstukken, geen overlap, en een laatste `end_time` bij de videoduur. Elke
+    correctie wordt gelogd. Retourneert (sections, coverage_stats) — de stats gaan naar de E2E zodat
+    het percentage gedekte duur + het aantal correcties controleerbaar is. Een stil weggevallen
+    laatste deel is een ernstiger fout dan een preambule."""
     clean = []
     for s in (sections or []):
         try:
@@ -254,13 +364,18 @@ def _normalize_sections(sections: List[Dict], min_sections: int, max_sections: i
             en = int(s.get("end_time") or 0)
         except (TypeError, ValueError):
             continue
-        head = (s.get("heading") or "").strip() or "Section"
-        clean.append({"heading": head, "start_time": max(0, st), "end_time": en})
+        clean.append({
+            "heading": (s.get("heading") or "").strip() or "Section",
+            "description": (s.get("description") or "").strip(),
+            "start_time": max(0, st), "end_time": en,
+        })
     clean.sort(key=lambda x: x["start_time"])
 
+    total = total_seconds or (clean[-1]["end_time"] if clean else 0)
+    stats = {"raw_covered_pct": 0.0, "gaps_fixed": 0, "overlaps_fixed": 0, "end_stretched_s": 0}
+
     if not clean:
-        # Geen bruikbare structuur → één sectie over het geheel (stap 2 dekt alsnog alles).
-        return [{"heading": "Full video", "start_time": 0, "end_time": total_seconds or 0}]
+        return [{"heading": "Full video", "description": "", "start_time": 0, "end_time": total or 0}], stats
 
     # Cap op max_sections: merge de overtollige staart in de laatste behouden sectie.
     if len(clean) > max_sections:
@@ -271,57 +386,106 @@ def _normalize_sections(sections: List[Dict], min_sections: int, max_sections: i
     if len(clean) < min_sections:
         logger.info(f"[summary] {len(clean)} secties (< ondergrens {min_sections}); niet opgesplitst (geen opvulling)")
 
-    # Dekking sluitend maken: eerste start 0, opeenvolgende end==volgende start, laatste end==totaal.
-    clean[0]["start_time"] = 0
+    # Ruwe stap-1-dekking (vóór correctie) — hoeveel % van de duur dekte stap 1 echt?
+    stats["raw_covered_pct"] = round(100.0 * _merged_coverage_seconds(clean) / total, 1) if total else 0.0
+
+    # Drempel voor een gat/te-vroeg-einde "van betekenis": max(60s, 2% van de duur).
+    thresh = max(60, int(0.02 * total))
+
+    # Eerste hoofdstuk begint bij 0.
+    if clean[0]["start_time"] > 0:
+        clean[0]["start_time"] = 0
+
+    # Gaten + overlap tussen opeenvolgende hoofdstukken sluiten (end[i] == start[i+1]).
     for i in range(len(clean) - 1):
         nxt = clean[i + 1]["start_time"]
-        if clean[i]["end_time"] <= clean[i]["start_time"] or clean[i]["end_time"] > nxt:
+        cur_end = clean[i]["end_time"]
+        if cur_end < nxt - thresh:
+            logger.info(f"[summary] dekking: gat {nxt - cur_end}s na sectie {i} ('{clean[i]['heading']}') — opgerekt")
+            stats["gaps_fixed"] += 1
+        elif cur_end > nxt:
+            stats["overlaps_fixed"] += 1
+        if cur_end != nxt:
             clean[i]["end_time"] = nxt
-    last_end = total_seconds or clean[-1]["end_time"]
-    clean[-1]["end_time"] = max(last_end, clean[-1]["start_time"] + 1)
-    return clean
+        if clean[i]["end_time"] <= clean[i]["start_time"]:
+            clean[i]["end_time"] = clean[i]["start_time"] + 1
+
+    # Laatste hoofdstuk moet tot (ongeveer) de videoduur lopen — nooit stil vroeg stoppen.
+    last = clean[-1]
+    if total and total - last["end_time"] > thresh:
+        logger.info(f"[summary] dekking: laatste sectie eindigt op {last['end_time']}s van {total}s "
+                    f"({total - last['end_time']}s ongedekt) — opgerekt naar de volle duur")
+        stats["end_stretched_s"] = total - last["end_time"]
+    last["end_time"] = max(total or last["end_time"], last["start_time"] + 1)
+
+    return clean, stats
 
 
 async def _run_section(client, api_key, sem, section, overview, transcript_data) -> Dict:
-    """Eén stap-2-call. Faalt de call (ook ná gateway-fallback), dan krijgt de sectie een nette
-    fallback-inhoud i.p.v. de hele run te laten mislukken."""
+    """Eén stap-2-call (structured JSON {heading, content}). Robuust: (1) een onparseerbare JSON valt
+    terug op de ruwe tekst + de stap-1-kop (één kapotte sectie mag nooit een run van 30 laten falen),
+    (2) een gefaalde call (ook ná gateway-fallback) geeft lege inhoud i.p.v. de run te laten mislukken.
+    Past daarna de lichte cleanup toe en gebruikt de (eventueel gecorrigeerde) kop."""
     fragment = extract_fragment(transcript_data, section["start_time"], section["end_time"])
     frag_words = _word_count(fragment)
-    result = {"heading": section["heading"], "start_time": section["start_time"],
-              "end_time": section["end_time"], "content": "", "call": None}
+    step1_heading = section["heading"]
+    result = {"heading": step1_heading, "start_time": section["start_time"],
+              "end_time": section["end_time"], "content": "", "call": None,
+              "json_fallback": False, "cleanup": []}
     if not fragment.strip():
-        result["content"] = ""
         return result
+
+    scope = f"Topic heading: {step1_heading}\nTopic description: {section.get('description', '')}".strip()
     payload = {
         "model": SECTION_MODEL,
         "messages": [
             {"role": "system", "content": SECTION_SYSTEM_PROMPT},
             {"role": "user", "content": (
+                f"{scope}\n\n"
                 f"Overall video summary (context):\n{overview}\n\n"
-                f"Section heading: {section['heading']}\n\n"
-                f"Transcript fragment for this section:\n{fragment}"
+                f"Transcript fragment for this topic:\n{fragment}"
             )},
         ],
         # max_tokens is ALLEEN een ruim vangnet (stuurt niets); hoog genoeg om nooit af te kappen.
         "max_tokens": _clamp(round(frag_words * 2), 1024, 8000),
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {"name": "section_notes", "schema": _SECTION_SCHEMA, "strict": True},
+        },
         "fallbacks": [{"model": SECTION_FALLBACK}],
         "fallback_config": {"retry": True, "depth": 1},
     }
     async with sem:
         try:
             call = await _gateway_call(client, api_key, payload)
-            result["content"] = (call["content"] or "").strip()
             result["call"] = call
+            raw = call["content"] or ""
+            try:
+                parsed = json.loads(_strip_json_fences(raw))
+                heading = (parsed.get("heading") or "").strip() or step1_heading
+                content = (parsed.get("content") or "").strip()
+            except (json.JSONDecodeError, AttributeError):
+                # Onparseerbare JSON — val terug op de ruwe tekst + de stap-1-kop (run gaat door).
+                logger.warning(f"[summary] sectie '{step1_heading}': JSON onparseerbaar -> ruwe-tekst-terugval")
+                result["json_fallback"] = True
+                heading = step1_heading
+                content = raw.strip()
+            content, fired = _clean_section_content(content, heading)
+            result["heading"] = heading
+            result["content"] = content
+            result["cleanup"] = fired
         except Exception as e:
-            logger.warning(f"[summary] sectie '{section['heading']}' faalde (run gaat door): {e}")
-            result["content"] = ""
+            logger.warning(f"[summary] sectie '{step1_heading}' faalde (run gaat door): {e}")
     return result
 
 
-async def run_summary(transcript_id: str, user_id: str, supabase=None) -> Dict:
+async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: dict = None) -> Dict:
     """Kern: bouwt de nieuwe ai_summary (schema_version 2). Raise bij een harde fout (fetch leeg,
     structuur-call faalt, geen API-key) zodat de caller kan refunden. Schrijft per gateway-call een
-    rij in ai_summary_usage_log. Retourneert het ai_summary-dict (nog NIET weggeschreven)."""
+    rij in ai_summary_usage_log. Retourneert het ai_summary-dict (nog NIET weggeschreven).
+
+    `debug`: optionele dict — indien meegegeven vult run_summary hem met dekkings-stats + de cleanup-/
+    JSON-fallback-tellers (de E2E leest dit; de worker geeft niets mee)."""
     supabase = supabase or get_supabase_client()
 
     api_key = os.getenv("ASSEMBLYAI_API_KEY")
@@ -344,7 +508,7 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None) -> Dict:
         struct = await _run_structure(client, api_key, transcript_data, min_sections, max_sections)
         _log_usage(supabase, transcript_id, user_id, generated_at, struct["call"])
         overview = (struct["structured"].get("overview") or "").strip()
-        sections = _normalize_sections(
+        sections, coverage = _normalize_sections(
             struct["structured"].get("sections") or [], min_sections, max_sections, struct["total_seconds"]
         )
 
@@ -358,6 +522,13 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None) -> Dict:
     for r in section_results:
         if r.get("call"):
             _log_usage(supabase, transcript_id, user_id, generated_at, r["call"])
+
+    # Debug-stats voor de E2E (dekking + kwaliteits-tellers). Worker geeft geen debug mee.
+    if debug is not None:
+        debug["coverage"] = coverage
+        debug["sections"] = len(sections)
+        debug["cleanup_fired"] = sum(1 for r in section_results if r.get("cleanup"))
+        debug["json_fallback_fired"] = sum(1 for r in section_results if r.get("json_fallback"))
 
     # Stap 3 — assemblage (geen modelcall).
     ai_summary = {

@@ -295,6 +295,7 @@ export function TranscriptViewer({
   const [showTimestamps, setShowTimestamps] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const playerRef = useRef<YouTubePlayerHandle>(null);
+  const summaryPollingRef = useRef(false); // voorkomt dubbele poll-loops (mount-resume + klik)
 
   // Timestamp click → seek the in-app nocookie player (opening it if needed) instead of
   // navigating to YouTube. The links keep their href as a no-JS fallback.
@@ -679,6 +680,47 @@ export function TranscriptViewer({
     }
   };
 
+  // Poll een lopende AI-samenvatting-job tot terminaal. Herbruikbaar door de start-klik én de
+  // mount-resume. Dubbel-poll-guard zodat er nooit twee loops op dezelfde job draaien. Bij 'complete'
+  // → navigeren naar de Summary-tab; bij 'error' → melding. Lange video's (meer hoofdstukken) kunnen
+  // langer duren, dus ruim plafond (~30 min); de job draait server-side sowieso door.
+  const pollSummaryJob = useCallback(async (jobId: string) => {
+    if (summaryPollingRef.current) return;
+    summaryPollingRef.current = true;
+    try {
+      const POLL_MS = 3000;
+      const MAX_POLLS = 600; // ~30 min
+      for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise((r) => setTimeout(r, POLL_MS));
+        let job;
+        try {
+          const pollRes = await fetch(`/api/summary/jobs/${jobId}?user_id=${user?.id}`);
+          if (!pollRes.ok) continue;
+          job = await pollRes.json();
+        } catch { continue; }
+        if (job.status === 'complete') {
+          try { sessionStorage.removeItem('indxr-active-summary-job'); } catch { /* ignore */ }
+          posthog.capture('summary_completed', { transcript_id: id });
+          await refreshCredits();
+          router.push(`/dashboard/library/${id}?tab=summary`);
+          router.refresh();
+          return;
+        }
+        if (job.status === 'error') {
+          try { sessionStorage.removeItem('indxr-active-summary-job'); } catch { /* ignore */ }
+          await refreshCredits(); // teruggave bij mislukking
+          setSummarizeError(job.error_message || "Failed to generate summary");
+          setIsSummarizing(false);
+          return;
+        }
+      }
+      setSummarizeError("Summary is taking longer than expected — it may still complete. Refresh in a moment.");
+      setIsSummarizing(false);
+    } finally {
+      summaryPollingRef.current = false;
+    }
+  }, [user?.id, id, refreshCredits, router]);
+
   const handleSummarizeConfirm = async () => {
     setShowSummaryDialog(false);
     setIsSummarizing(true);
@@ -703,41 +745,39 @@ export function TranscriptViewer({
         setIsSummarizing(false);
         return;
       }
-
-      // Refresh saldo direct (de reservering is al afgetrokken bij job-start).
+      // Reservering is al afgetrokken bij job-start → saldo verversen.
       await refreshCredits();
-
-      // Poll de job-status (zelfde cadans als transcriptie).
-      const jobId = startData.job_id as string;
-      const POLL_MS = 3000;
-      const MAX_POLLS = 300; // ~15 min plafond
-      for (let i = 0; i < MAX_POLLS; i++) {
-        await new Promise((r) => setTimeout(r, POLL_MS));
-        const pollRes = await fetch(`/api/summary/jobs/${jobId}?user_id=${user?.id}`);
-        if (!pollRes.ok) continue;
-        const job = await pollRes.json();
-        if (job.status === 'complete') {
-          posthog.capture('summary_completed', { transcript_id: id });
-          await refreshCredits();
-          router.push(`/dashboard/library/${id}?tab=summary`);
-          router.refresh();
-          return;
-        }
-        if (job.status === 'error') {
-          await refreshCredits(); // teruggave bij mislukking
-          setSummarizeError(job.error_message || "Failed to generate summary");
-          setIsSummarizing(false);
-          return;
-        }
-      }
-      setSummarizeError("Summary is taking longer than expected — it may still complete. Refresh in a moment.");
+      try { sessionStorage.setItem('indxr-active-summary-job', JSON.stringify({ jobId: startData.job_id, transcriptId: id })); } catch { /* ignore */ }
+      await pollSummaryJob(startData.job_id as string);
     } catch (error) {
       console.error("Summarize error:", error);
       setSummarizeError("Failed to summarize transcript");
-    } finally {
       setIsSummarizing(false);
     }
   };
+
+  // Resume (ADR-090-kwaliteitsronde): pik bij binnenkomst een nog-lopende AI-samenvatting voor dit
+  // transcript op en hervat de polling — zodat een summary die na het stoppen alsnog afrondt wordt
+  // opgepikt zodra de gebruiker terugkeert of ververst. Geen nieuwe POST → geen herbetaling.
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('transcription_jobs')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('transcript_id', id)
+        .eq('source_kind', 'ai_summary')
+        .in('status', ['pending', 'summarizing'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (cancelled || !data || data.length === 0) return;
+      setIsSummarizing(true);
+      pollSummaryJob(data[0].id as string);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, id, supabase, pollSummaryJob]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

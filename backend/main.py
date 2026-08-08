@@ -1181,7 +1181,7 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
 
 # AI-samenvatting als ACHTERGRONDTAAK — twee modelstappen op de EU LLM Gateway (ADR-090).
 # De pipeline zelf leeft in summary_pipeline.py; deze endpoints starten de job en pollen de status.
-SUMMARY_STALE_MINUTES = 15
+SUMMARY_STALE_MINUTES = 30
 
 
 @app.post("/api/summarize", response_model=None)

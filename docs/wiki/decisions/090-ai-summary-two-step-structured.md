@@ -39,3 +39,38 @@ De oude samenvatting (synchrone `POST /api/summarize`, `maxDuration=60`) stuurde
 - Per-call logging (`ai_summary_usage_log`) draagt nu `request_id`/`region`; de gateway-usage-velden zijn `input_tokens`/`output_tokens` (niet `prompt_tokens`/`completion_tokens`).
 - De summary is read-only (overview + secties); het oude in-place HTML-editen van de samenvatting (`edited_html`, `summary_edited`-tab) vervalt.
 - Model-id's `claude-sonnet-4-6`/`gemini-2.5-flash` en de fallback-vorm (`fallbacks` top-level array + `fallback_config {retry,depth}`) zijn geverifieerd tegen de gateway-docs. Bij een gedateerde gateway-variant: bevestigen vóór wiring.
+
+---
+
+## Addendum (2026-08-08) — kwaliteitsronde
+
+Na verificatie op echte video's (5min/20min/4u) zijn zes uitvoergebreken + één structurele beperking
+verholpen:
+
+1. **Markdown veilig renderen.** Stap-2-uitvoer is markdown; de weergave toonde het letterlijk. Nieuw:
+   `SummaryMarkdown.tsx` met **react-markdown** (parseert naar elementen, géén `dangerouslySetInnerHTML`,
+   géén raw-HTML). Beperkt tot koppen/lijsten/vet/cursief/alinea's/blockquote/code; **geen `img`/`a`**
+   uit modeltekst (`unwrapDisallowed`).
+2. **Preambules + dubbele koppen.** Promptkant: begin direct met inhoud, herhaal de kop niet, geen
+   meta-openingen. Codekant: `_clean_section_content` verwijdert een eerste regel ≈ de kop en een
+   meta-openingszin. De E2E rapporteert of de code-cleanup nog moest vuren (prompt vs code).
+3. **Niet-dekkende koppen + doorgelopen inhoud.** Stap-1-schema kreeg een `description` per sectie;
+   stap 2 krijgt kop+omschrijving als **bindende scope** ("behandel alleen wat hieronder valt, sla
+   uitloop over") en geeft een **gecorrigeerde kop** terug (structured `{heading, content}`), die de
+   uiteindelijke uitvoer gebruikt.
+4. **Volledige dekking valideren (belangrijkste).** Stap 1 kan het laatste deel van een lange video
+   stil overslaan (in de 4u-test begon het laatste hoofdstuk op 3:23:57 van 4:13:49). `_normalize_sections`
+   detecteert nu expliciet gaten/overlap/te-vroeg-einde, rekt op naar de volle duur en **logt** het; de
+   E2E rapporteert het gedekte % + het aantal correcties.
+5. **Plafond weg / plateau expliciet.** `section_bounds` = `clamp(⌈duur/8⌉, 3, 40)` (was hard 20).
+   **Plateau:** boven ~`SECTION_CAP × SECTION_MINUTES` = 40 × 8 = **320 min ≈ 5u20m** worden de
+   hoofdstukken langer i.p.v. talrijker. De bovengrens bestaat bewust om **kosten en de per-model-per-60s
+   gateway-rate-limit** te begrenzen (begrensde parallelliteit `SUMMARY_SECTION_CONCURRENCY`, default 5).
+   Boven 5u20m schaalt de per-hoofdstuk-uitwerking nog mee, het aantal hoofdstukken niet.
+6. **JSON-faalpad afgevangen.** Stap 2 is nu structured JSON met een lange markdown-string; een
+   onparseerbaar antwoord valt terug op de ruwe tekst + de stap-1-kop (één kapotte sectie mag nooit een
+   run van 30 laten falen ná betaling). De E2E telt hoe vaak dit vuurde.
+7. **Doorlooptijd + resume.** Frontend `MAX_POLLS` 300→**600** (~30min), backend `SUMMARY_STALE_MINUTES`
+   15→**30**. `TranscriptViewer` hervat bij binnenkomst een nog-lopende summary-job (DB-query op
+   `transcription_jobs`) — terugkeren/verversen pikt een na het stoppen afgeronde summary op, **zonder
+   herbetaling** (bestaande gereserveerde job).

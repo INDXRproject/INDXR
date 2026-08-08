@@ -6,6 +6,7 @@ import { Button } from "@indxr/shared/components/ui/button";
 import { cn } from "@indxr/shared/lib/utils";
 import { useRouter } from "next/navigation";
 import { NocookieYouTubePlayer, YouTubePlayerHandle } from "./NocookieYouTubePlayer";
+import { SummaryMarkdown } from "./SummaryMarkdown";
 
 // Nieuw samenvatting-schema (ADR-090): overkoepelende samenvatting + secties met kop, begin/eind-
 // tijdstempel (seconden) en uitgewerkte notities. Vervangt het oude {text, action_points, edited_html}.
@@ -130,10 +131,8 @@ export function AiSummaryView({ id, initialSummary, videoId, editedContentUpdate
           </div>
         )}
 
-        {/* Overkoepelende samenvatting. */}
-        {overview && (
-          <div className="text-fg/90 leading-relaxed whitespace-pre-wrap">{overview}</div>
-        )}
+        {/* Overkoepelende samenvatting (markdown, veilig gerenderd). */}
+        {overview && <SummaryMarkdown>{overview}</SummaryMarkdown>}
 
         {/* Secties op volgorde: kop + klikbaar tijdstempel + uitgewerkte notities. */}
         <div className="space-y-8">
@@ -157,9 +156,7 @@ export function AiSummaryView({ id, initialSummary, videoId, editedContentUpdate
                   </span>
                 )}
               </div>
-              <div className="text-fg/90 leading-relaxed whitespace-pre-wrap prose prose-sm max-w-none">
-                {sec.content}
-              </div>
+              <SummaryMarkdown>{sec.content}</SummaryMarkdown>
             </section>
           ))}
         </div>

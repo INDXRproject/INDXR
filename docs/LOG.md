@@ -16137,3 +16137,40 @@ supabase/migrations/20260807204305_admin_operations_summary_exclude_ai_summary.s
 supabase/migrations/20260807204306_admin_operations_v3_exclude_ai_summary_unitlevel.sql
 supabase/migrations/20260807204307_wipe_old_ai_summaries.sql
 ---
+[2026-08-08 02:30] kwaliteitsronde AI-samenvatting (ADR-090 addendum): markdown veilig renderen (react-markdown, SummaryMarkdown.tsx); preambule/dubbele-kop-cleanup (prompt+code); stap-1 +description + stap-2 scope-binding + gecorrigeerde kop (structured {heading,content}); dekkingsvalidatie (gaten/overlap/te-vroeg-einde + logging); section_bounds cap 20→40 (/8), plateau ~5u20m expliciet in ADR; JSON-parse-terugval per sectie; MAX_POLLS 300→600 + SUMMARY_STALE_MINUTES 15→30 + mount-resume zonder herbetaling | gewijzigd: backend/summary_pipeline.py, backend/main.py, backend/e2e_summary_measure.py, apps/app/.../SummaryMarkdown.tsx (nieuw), AiSummaryView.tsx, TranscriptViewer.tsx, apps/app/package.json (react-markdown), ADR-090 addendum
+[2026-08-08 02:26] commit: fix(summary): kwaliteitsronde AI-samenvatting (ADR-090 addendum)
+
+Zes uitvoergebreken + één structurele beperking, geverifieerd op 4 echte video's
+(5min/20min/59min/4u13m):
+
+- Markdown veilig renderen: SummaryMarkdown.tsx met react-markdown (elementen, geen
+  dangerouslySetInnerHTML/raw-HTML; geen img/a uit modeltekst). Vervangt whitespace-pre-wrap.
+- Preambules/dubbele koppen: prompt (begin direct, geen kop-herhaling/meta) + code-cleanup
+  _clean_section_content (kop-duplicaat + meta-opening). E2E: cleanup vuurde 0x → prompt loste het op.
+- Niet-dekkende koppen + doorgelopen inhoud: stap-1 +description; stap-2 scope-binding (kop+omschrijving
+  bindend, sla uitloop over) + gecorrigeerde kop terug (structured {heading,content}).
+- Volledige dekking valideren (§3b): _normalize_sections detecteert gaten/overlap/te-vroeg-einde,
+  rekt op naar de volle duur + logt. E2E: 100% dekking op alle 4 video's.
+- Plafond weg: section_bounds cap 20→40 (/8); 4u13m gaf 25 secties/8305 woorden (was gecapt op 20).
+  Plateau ~5u20m expliciet in ADR (kosten + rate-limits).
+- JSON-faalpad: onparseerbare stap-2-JSON valt terug op ruwe tekst + stap-1-kop (nooit run-fail na
+  betaling). E2E: json_fallback 0x.
+- Doorlooptijd + resume: MAX_POLLS 300→600, SUMMARY_STALE_MINUTES 15→30; TranscriptViewer hervat een
+  lopende summary bij binnenkomst (DB-query) zonder herbetaling.
+
+Meting (ratio = uitkomstwoorden/transcriptwoorden): 5min 0.71 · 20min 0.335 · 59min 0.17 · 4u13m 0.22.
+Criterium 4u vs 20min = 0.22 vs 0.335 (1.5×, zelfde orde van grootte) → plateau opgelost. Build 2/2 groen;
+test_summary_credits 21/21 groen.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: apps/app/package.json
+apps/app/src/components/library/AiSummaryView.tsx
+apps/app/src/components/library/SummaryMarkdown.tsx
+apps/app/src/components/library/TranscriptViewer.tsx
+backend/e2e_summary_measure.py
+backend/main.py
+backend/summary_pipeline.py
+docs/LOG.md
+docs/wiki/decisions/090-ai-summary-two-step-structured.md
+pnpm-lock.yaml
+---
