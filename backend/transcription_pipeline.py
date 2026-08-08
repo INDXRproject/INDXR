@@ -283,6 +283,10 @@ async def _submit_and_poll(audio_path: str, *, job_id: Optional[str], heartbeat_
                 provider_processing_ms=ms,
                 assemblyai_language=polled.get('language'),
                 assemblyai_model=polled.get('model'),
+                # Diarisatie stond aan bij de submission (speaker_labels) → +$0,02/u add-on.
+                # Vlag op de jobrij zodat _geld_scope de add-on-COR alleen bij deze jobs telt
+                # (legacy pre-diarisatie jobs blijven false → geen retroactieve COR-verschuiving).
+                diarization=True,
             )
             return {
                 'success': True,
@@ -849,7 +853,12 @@ async def do_assemblyai_transcription(
         await _update_job(status="saving")
 
         transcript = [
-            {'text': item['text'], 'offset': item['offset'], 'duration': item['duration']}
+            {
+                'text': item['text'], 'offset': item['offset'], 'duration': item['duration'],
+                # Spreker-label alleen meenemen als diarisatie het leverde (anders geen key →
+                # bestaande {text,offset,duration}-vorm blijft intact).
+                **({'speaker': item['speaker']} if item.get('speaker') is not None else {}),
+            }
             for item in whisper_result['transcript']
         ]
 

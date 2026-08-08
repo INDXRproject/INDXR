@@ -24,6 +24,7 @@ import {
   RotateCcw,
   Play,
   Pencil,
+  Users,
 } from "lucide-react";
 import posthog from "posthog-js";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -81,6 +82,7 @@ import {
   decodeEntities,
   buildRagJson,
   buildReadingParagraphs,
+  resolveSpeakerName,
   TranscriptItem,
 } from "@indxr/shared/utils/formatTranscript";
 import { deductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
@@ -216,6 +218,8 @@ interface TranscriptViewerProps {
   ragExports?: Array<{ chunk_size: number; exported_at: string; credits_spent: number }> | null;
   userChunkSize?: number;
   duration?: number;
+  /** Spreker-hernoemtoewijzing {"A":"Alice"} uit transcripts.speaker_names — overlay bij tonen+export. */
+  speakerNames?: Record<string, string> | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -230,7 +234,8 @@ function formatUITimestamp(seconds: number): string {
 function transcriptToJSON(
   items: TranscriptItem[],
   videoId: string,
-  isAi: boolean
+  isAi: boolean,
+  speakerNames?: Record<string, string>,
 ): JSONContent {
   const paras = buildReadingParagraphs(items, { isAi });
   // Uploaded audio has no YouTube video_id: keep the timestamp styled + toggleable (same
@@ -239,9 +244,10 @@ function transcriptToJSON(
   const hasVideo = !!videoId;
   return {
     type: "doc",
-    content: paras.map((para) => ({
-      type: "paragraph",
-      content: [
+    content: paras.map((para) => {
+      // Sprekerlabel vet vooraan de alinea (met de eventuele hernoemde naam). Alleen bij diarisatie.
+      const speakerName = resolveSpeakerName(para.speaker, speakerNames);
+      const content: JSONContent[] = [
         {
           type: "text",
           marks: [
@@ -259,9 +265,13 @@ function transcriptToJSON(
           ],
           text: `[${formatUITimestamp(para.startOffset)}]`,
         },
-        { type: "text", text: ` ${para.text}` },
-      ],
-    })),
+      ];
+      if (speakerName) {
+        content.push({ type: "text", marks: [{ type: "bold" }], text: ` ${speakerName}:` });
+      }
+      content.push({ type: "text", text: ` ${para.text}` });
+      return { type: "paragraph", content };
+    }),
   };
 }
 
@@ -285,6 +295,7 @@ export function TranscriptViewer({
   ragExports,
   userChunkSize,
   duration,
+  speakerNames: initialSpeakerNames,
 }: TranscriptViewerProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -393,10 +404,21 @@ export function TranscriptViewer({
 
   // ── Tiptap editor ──────────────────────────────────────────────────────────
 
+  // ── Sprekerherkenning (diarisatie) ──────────────────────────────────────────
+  // De labels ('A','B',…) staan in de segmenten; de hernoemtoewijzing staat APART in
+  // transcripts.speaker_names en wordt als overlay toegepast bij tonen + export (transcripttekst
+  // nooit overschreven → origineel altijd herstelbaar; één keer hernoemen = overal).
+  const speakerLabels = Array.from(new Set(transcript.map((t) => t.speaker).filter((s): s is string => !!s))).sort();
+  const hasSpeakers = speakerLabels.length > 0;
+  const [speakerNames, setSpeakerNames] = useState<Record<string, string>>(initialSpeakerNames ?? {});
+  const [showSpeakerDialog, setShowSpeakerDialog] = useState(false);
+  const [speakerDraft, setSpeakerDraft] = useState<Record<string, string>>({});
+  const [savingSpeakers, setSavingSpeakers] = useState(false);
+
   // Initial content: original JSON or edited JSON based on mode. AI transcripts (AssemblyAI)
   // and captions merge differently — see buildReadingParagraphs.
   const isAiTranscript = !!processingMethod && processingMethod !== "youtube_captions";
-  const originalJSON = transcriptToJSON(transcript, videoId, isAiTranscript);
+  const originalJSON = transcriptToJSON(transcript, videoId, isAiTranscript, speakerNames);
   const initialContent: JSONContent = isEditedMode && editedContent ? editedContent : originalJSON;
 
   const editor = useEditor({
@@ -462,6 +484,42 @@ export function TranscriptViewer({
       setContentSaveFeedback({ type: 'success', message: 'Saved!' });
     }
   }, [editor, id, supabase]);
+
+  // ── Sprekers hernoemen ───────────────────────────────────────────────────────
+
+  const openSpeakerDialog = () => {
+    const draft: Record<string, string> = {};
+    for (const label of speakerLabels) draft[label] = speakerNames[label] ?? "";
+    setSpeakerDraft(draft);
+    setShowSpeakerDialog(true);
+  };
+
+  const handleSaveSpeakers = async () => {
+    setSavingSpeakers(true);
+    // Alleen niet-lege namen bewaren; een leeg veld valt terug op 'Speaker X' (origineel
+    // altijd herstelbaar). We slaan de toewijzing APART op — de transcripttekst blijft ongemoeid.
+    const cleaned: Record<string, string> = {};
+    for (const [label, name] of Object.entries(speakerDraft)) {
+      const trimmed = name.trim();
+      if (trimmed) cleaned[label] = trimmed;
+    }
+    const { error } = await supabase
+      .from("transcripts")
+      .update({ speaker_names: cleaned })
+      .eq("id", id);
+    setSavingSpeakers(false);
+    if (error) {
+      setContentSaveFeedback({ type: "error", message: "Failed to save speaker names" });
+      return;
+    }
+    setSpeakerNames(cleaned);
+    setShowSpeakerDialog(false);
+    // In lees-modus het document verversen zodat de nieuwe namen meteen overal zichtbaar zijn
+    // (de editor herinitialiseert anders pas bij een mode-wissel). Bewerkte tekst laten we met rust.
+    if (isOriginalMode && editor) {
+      editor.commands.setContent(transcriptToJSON(transcript, videoId, isAiTranscript, cleaned));
+    }
+  };
 
   // ── Search ────────────────────────────────────────────────────────────────
 
@@ -530,19 +588,23 @@ export function TranscriptViewer({
     const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase().slice(0, 30);
     try {
       if (format === "txt")
-        downloadFile(generateTxt(transcript, false), `${safe}.txt`, "text/plain");
+        downloadFile(generateTxt(transcript, false, speakerNames), `${safe}.txt`, "text/plain");
       else if (format === "txt-ts")
-        downloadFile(generateTxt(transcript, true), `${safe}_timestamps.txt`, "text/plain");
+        downloadFile(generateTxt(transcript, true, speakerNames), `${safe}_timestamps.txt`, "text/plain");
       else if (format === "md")
-        downloadFile(generateMarkdown(transcript, title, false), `${safe}.md`, "text/markdown");
+        downloadFile(generateMarkdown(transcript, title, false, { speakerNames }), `${safe}.md`, "text/markdown");
       else if (format === "md-ts")
-        downloadFile(generateMarkdown(transcript, title, true), `${safe}_timestamps.md`, "text/markdown");
+        downloadFile(generateMarkdown(transcript, title, true, { speakerNames }), `${safe}_timestamps.md`, "text/markdown");
       else if (format === "json")
         downloadFile(
           JSON.stringify(
             {
               metadata: { title, ...(videoUrl && { videoUrl }), extractedAt: new Date().toISOString() },
-              transcript: transcript.map((t) => ({ ...t, text: decodeEntities(t.text) })),
+              // Sprekerlabel → weergegeven naam (overlay), niet het rauwe label; ontbreekt als er geen spreker is.
+              transcript: transcript.map((t) => {
+                const name = resolveSpeakerName(t.speaker, speakerNames);
+                return { ...t, text: decodeEntities(t.text), ...(name ? { speaker: name } : {}) };
+              }),
             },
             null,
             2
@@ -551,11 +613,11 @@ export function TranscriptViewer({
           "application/json"
         );
       else if (format === "csv")
-        downloadFile(generateCsv(transcript, { title, videoId, channel: channelTitle }), `${safe}.csv`, "text/csv;charset=utf-8");
+        downloadFile(generateCsv(transcript, { title, videoId, channel: channelTitle, speakerNames }), `${safe}.csv`, "text/csv;charset=utf-8");
       else if (format === "srt")
-        downloadFile(generateSrt(transcript, { extractionMethod: processingMethod ?? undefined }), `${safe}.srt`, "text/plain");
+        downloadFile(generateSrt(transcript, { extractionMethod: processingMethod ?? undefined, speakerNames }), `${safe}.srt`, "text/plain");
       else if (format === "vtt")
-        downloadFile(generateVtt(transcript, { title, extractionMethod: processingMethod ?? undefined }), `${safe}.vtt`, "text/vtt");
+        downloadFile(generateVtt(transcript, { title, extractionMethod: processingMethod ?? undefined, speakerNames }), `${safe}.vtt`, "text/vtt");
     } catch (e) {
       console.error(e);
       setDownloadError(`Failed to download ${format.toUpperCase()}`);
@@ -571,6 +633,7 @@ export function TranscriptViewer({
       language: language ?? undefined,
       extractionMethod: processingMethod ?? undefined,
       chunkSize,
+      speakerNames,
     });
     downloadFile(json, `${safe}_rag_${chunkSize}s.json`, "application/json");
   };
@@ -849,6 +912,14 @@ export function TranscriptViewer({
               {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
             </Button>
+
+            {/* Speakers — rename diarisation labels (only when the transcript has speakers) */}
+            {hasSpeakers && (
+              <Button variant="ghost" size="sm" onClick={openSpeakerDialog} className="h-8 gap-1.5 text-fg-muted hover:text-fg" title="Rename speakers">
+                <Users className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Speakers</span>
+              </Button>
+            )}
 
             {/* Export */}
             <DropdownMenu>
@@ -1174,6 +1245,41 @@ export function TranscriptViewer({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── SPEAKER RENAME DIALOG ── */}
+      <Dialog open={showSpeakerDialog} onOpenChange={setShowSpeakerDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename speakers</DialogTitle>
+            <DialogDescription>
+              Give each detected speaker a name. Renaming updates every occurrence in the transcript
+              and exports. Leave a field empty to keep the default label. The original is always kept.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            {speakerLabels.map((label) => (
+              <div key={label} className="flex items-center gap-3">
+                <span className="w-24 shrink-0 text-sm text-fg-muted tabular-nums">Speaker {label}</span>
+                <Input
+                  value={speakerDraft[label] ?? ""}
+                  onChange={(e) => setSpeakerDraft((prev) => ({ ...prev, [label]: e.target.value }))}
+                  placeholder={`Speaker ${label}`}
+                  className="h-9 bg-bg border-border text-fg"
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSpeakerDraft({})} disabled={savingSpeakers}>
+              Reset to defaults
+            </Button>
+            <Button onClick={handleSaveSpeakers} disabled={savingSpeakers} className="gap-2">
+              {savingSpeakers ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save names
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── RAG EXPORT MODAL ── */}
       <Dialog open={showRagModal} onOpenChange={setShowRagModal}>

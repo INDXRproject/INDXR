@@ -55,7 +55,8 @@ import { HexagonEmptyState } from "@indxr/shared/components/icons/HexagonEmptySt
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { generateTxt, generateCsv, generateSrt, generateVtt, generateMarkdown, buildRagJson } from "@indxr/shared/utils/formatTranscript";
+import { generateTxt, generateCsv, generateSrt, generateVtt, generateMarkdown, buildRagJson, resolveSpeakerName, decodeEntities } from "@indxr/shared/utils/formatTranscript";
+import type { TranscriptItem } from "@indxr/shared/utils/formatTranscript";
 import { bulkDeductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 import { cn } from "@indxr/shared/lib/utils";
@@ -275,7 +276,7 @@ export function TranscriptList({
     try {
       const { data, error } = await supabase
         .from("transcripts")
-        .select("id, title, video_id, processing_method, transcript")
+        .select("id, title, video_id, processing_method, transcript, speaker_names")
         .in("id", ids);
       if (error || !data) throw new Error("Failed to fetch transcript data");
 
@@ -284,14 +285,22 @@ export function TranscriptList({
 
       const build = (item: Record<string, unknown>): { content: string; ext: string } => {
         const tx = item.transcript as Parameters<typeof generateTxt>[0];
+        const names = (item.speaker_names as Record<string, string> | null) ?? undefined;
         const videoId = (item.video_id as string) || "unknown";
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        if (format === "txt" || format === "txt-ts") return { content: generateTxt(tx, format === "txt-ts"), ext: "txt" };
-        if (format === "md" || format === "md-ts") return { content: generateMarkdown(tx, item.title as string, format === "md-ts"), ext: "md" };
-        if (format === "json") return { content: JSON.stringify({ metadata: { title: item.title, videoUrl }, transcript: tx }, null, 2), ext: "json" };
-        if (format === "csv") return { content: generateCsv(tx), ext: "csv" };
-        if (format === "srt") return { content: generateSrt(tx, { extractionMethod: (item.processing_method as string) ?? undefined }), ext: "srt" };
-        return { content: generateVtt(tx, { title: item.title as string, extractionMethod: (item.processing_method as string) ?? undefined }), ext: "vtt" };
+        if (format === "txt" || format === "txt-ts") return { content: generateTxt(tx, format === "txt-ts", names), ext: "txt" };
+        if (format === "md" || format === "md-ts") return { content: generateMarkdown(tx, item.title as string, format === "md-ts", { speakerNames: names }), ext: "md" };
+        if (format === "json") return {
+          content: JSON.stringify({
+            metadata: { title: item.title, videoUrl },
+            transcript: (tx as TranscriptItem[]).map((t) => {
+              const name = resolveSpeakerName(t.speaker, names);
+              return { ...t, text: decodeEntities(t.text), ...(name ? { speaker: name } : {}) };
+            }),
+          }, null, 2), ext: "json" };
+        if (format === "csv") return { content: generateCsv(tx, { speakerNames: names }), ext: "csv" };
+        if (format === "srt") return { content: generateSrt(tx, { extractionMethod: (item.processing_method as string) ?? undefined, speakerNames: names }), ext: "srt" };
+        return { content: generateVtt(tx, { title: item.title as string, extractionMethod: (item.processing_method as string) ?? undefined, speakerNames: names }), ext: "vtt" };
       };
 
       if (data.length === 1) {
@@ -391,7 +400,7 @@ export function TranscriptList({
         await refreshCredits();
       }
 
-      const { data, error } = await supabase.from("transcripts").select("id, title, video_id, transcript").in("id", ragTargetIds);
+      const { data, error } = await supabase.from("transcripts").select("id, title, video_id, transcript, speaker_names").in("id", ragTargetIds);
       if (error || !data) throw new Error("fetch failed");
 
       if (data.length === 1) {
@@ -400,6 +409,7 @@ export function TranscriptList({
           videoId: (item.video_id as string) || "unknown",
           title: item.title as string,
           chunkSize: ragChunkSize,
+          speakerNames: (item.speaker_names as Record<string, string> | null) ?? undefined,
         });
         saveAs(new Blob([json], { type: "application/json" }), `${slugify(item.title as string)}_rag_${ragChunkSize}s.json`);
       } else {
@@ -415,6 +425,7 @@ export function TranscriptList({
             videoId: (item.video_id as string) || "unknown",
             title: item.title as string,
             chunkSize: ragChunkSize,
+            speakerNames: (item.speaker_names as Record<string, string> | null) ?? undefined,
           }));
         });
         const content = await zip.generateAsync({ type: "blob" });

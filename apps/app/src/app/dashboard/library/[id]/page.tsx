@@ -98,6 +98,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           ragExports={transcript.rag_exports ?? []}
           userChunkSize={profileData?.rag_chunk_size ?? 60}
           duration={transcript.duration ?? undefined}
+          speakerNames={transcript.speaker_names ?? null}
         />
       ) : activeTab === "summary" && transcript.ai_summary ? (
         <div className="pb-12 bg-bg w-full relative z-10 w-full mt-2">
@@ -116,6 +117,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           title={transcript.title ?? "Untitled"}
           processingMethod={transcript.processing_method}
           ragExports={transcript.rag_exports ?? []}
+          speakerNames={transcript.speaker_names ?? null}
         />
       ) : null}
     </div>

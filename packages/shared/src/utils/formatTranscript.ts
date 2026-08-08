@@ -4,6 +4,21 @@ export interface TranscriptItem {
   text: string;
   duration: number;
   offset: number;
+  /** Diarisatie-label ('A','B',…) — alleen aanwezig bij AI-transcripties met sprekerherkenning.
+   *  Ontbreekt op captions en oude transcripties (die renderen/exporteren zonder sprekerlabel). */
+  speaker?: string;
+}
+
+/** Map een ruw diarisatie-label ('A','B',…) naar de weer te geven naam. Een hernoemde naam uit de
+ *  toewijzing wint; anders een leesbare 'Speaker A'-fallback. Geeft null als er geen spreker is
+ *  (niet-gediariseerde transcripties) zodat callers geen leeg label tonen. */
+export function resolveSpeakerName(
+  label: string | undefined | null,
+  names?: Record<string, string> | null,
+): string | null {
+  if (!label) return null;
+  const custom = names?.[label];
+  return custom && custom.trim() ? custom.trim() : `Speaker ${label}`;
 }
 
 // Decode HTML entities from YouTube caption API
@@ -48,11 +63,24 @@ const formatHHMMSS = (seconds: number): string => {
 
 // Helper: Create paragraph mode (merge granular captions into natural paragraphs)
 // Breaks on: gap > 2s between segments, accumulated duration > 90s, or sentence-ending punctuation
-export const createParagraphMode = (transcript: TranscriptItem[]): string => {
+export const createParagraphMode = (
+  transcript: TranscriptItem[],
+  speakerNames?: Record<string, string>,
+): string => {
   const paragraphs: string[] = [];
   let currentSegments: string[] = [];
   let currentDuration = 0;
+  let currentSpeaker: string | undefined;
   let prevItem: TranscriptItem | null = null;
+
+  const flush = () => {
+    if (currentSegments.length === 0) return;
+    const name = resolveSpeakerName(currentSpeaker, speakerNames);
+    const body = currentSegments.join(' ');
+    paragraphs.push(name ? `${name}: ${body}` : body);
+    currentSegments = [];
+    currentDuration = 0;
+  };
 
   for (const item of transcript) {
     const text = decodeEntities(item.text).trim();
@@ -60,25 +88,22 @@ export const createParagraphMode = (transcript: TranscriptItem[]): string => {
 
     const gap = prevItem ? item.offset - (prevItem.offset + prevItem.duration) : 0;
     const prevEndsWithSentence = prevItem ? /[.!?]$/.test(decodeEntities(prevItem.text).trim()) : false;
+    // Een sprekerwissel breekt altijd af, zodat een alinea nooit twee sprekers bevat.
+    const speakerChanged = currentSegments.length > 0 && item.speaker !== currentSpeaker;
 
     const shouldBreak =
       currentSegments.length > 0 &&
-      (gap > 2 || currentDuration > 90 || prevEndsWithSentence);
+      (gap > 2 || currentDuration > 90 || prevEndsWithSentence || speakerChanged);
 
-    if (shouldBreak) {
-      paragraphs.push(currentSegments.join(' '));
-      currentSegments = [];
-      currentDuration = 0;
-    }
+    if (shouldBreak) flush();
 
+    if (currentSegments.length === 0) currentSpeaker = item.speaker;
     currentSegments.push(text);
     currentDuration += item.duration;
     prevItem = item;
   }
 
-  if (currentSegments.length > 0) {
-    paragraphs.push(currentSegments.join(' '));
-  }
+  flush();
 
   return paragraphs.join('\n\n');
 };
@@ -100,6 +125,9 @@ export const createParagraphMode = (transcript: TranscriptItem[]): string => {
 export interface ReadingParagraph {
   startOffset: number;
   text: string;
+  /** Diarisatie-label van deze alinea ('A','B',…) — alleen bij gediariseerde AI-transcripties.
+   *  De renderer zet dit via resolveSpeakerName om naar een naam. */
+  speaker?: string;
 }
 
 export interface ReadingParagraphConfig {
@@ -119,7 +147,7 @@ export const READING_PARAGRAPH_CONFIG: ReadingParagraphConfig = {
   maxChars: 500,
 };
 
-interface Seg { text: string; offset: number; duration: number }
+interface Seg { text: string; offset: number; duration: number; speaker?: string }
 
 // Sentence-ending punctuation across the scripts we see (Latin, Arabic ؟ ۔, CJK 。！？, ellipsis),
 // followed by optional closing quotes/brackets and whitespace-or-end.
@@ -162,16 +190,17 @@ export function buildReadingParagraphs(
   const segs: Seg[] = [];
   for (const it of transcript) {
     const t = decodeEntities(it.text).trim();
-    if (t) segs.push({ text: t, offset: it.offset, duration: it.duration });
+    if (t) segs.push({ text: t, offset: it.offset, duration: it.duration, speaker: it.speaker });
   }
   if (segs.length === 0) return [];
 
-  // Split at real pauses first — a silence always starts a new paragraph.
+  // Split at real pauses first — a silence always starts a new paragraph. A speaker change also
+  // starts a new paragraph, so each block (and thus each paragraph) belongs to a single speaker.
   const blocks: Seg[][] = [];
   let cur: Seg[] = [segs[0]];
   for (let i = 1; i < segs.length; i++) {
     const gap = segs[i].offset - (segs[i - 1].offset + segs[i - 1].duration);
-    if (gap > cfg.pauseBreakSec) { blocks.push(cur); cur = []; }
+    if (gap > cfg.pauseBreakSec || segs[i].speaker !== segs[i - 1].speaker) { blocks.push(cur); cur = []; }
     cur.push(segs[i]);
   }
   blocks.push(cur);
@@ -193,6 +222,7 @@ export function buildReadingParagraphs(
 
   const paras: ReadingParagraph[] = [];
   for (const block of blocks) {
+    const blockSpeaker = block[0]?.speaker;
     // Reconstruct the block's continuous text with a char-index → segment map.
     let full = "";
     const bounds: { charStart: number; charEnd: number; seg: Seg }[] = [];
@@ -214,7 +244,7 @@ export function buildReadingParagraphs(
     // duration cap — but never mid-sentence. An over-long sentence (unpunctuated run, no boundary
     // to align to) is emitted as its own already-bounded word/segment chunks.
     let texts: string[] = [], startOffset = 0, accChars = 0;
-    const flush = () => { if (texts.length) { paras.push({ startOffset, text: texts.join(' ') }); texts = []; accChars = 0; } };
+    const flush = () => { if (texts.length) { paras.push({ startOffset, text: texts.join(' '), speaker: blockSpeaker }); texts = []; accChars = 0; } };
     const addUnit = (u: { text: string; offset: number }) => {
       if (texts.length > 0) {
         const durSoFar = u.offset - startOffset;
@@ -231,7 +261,7 @@ export function buildReadingParagraphs(
         addUnit({ text: s.text, offset: offsetAt(s.start) });
       } else {
         flush(); // end the grouped sentences, then push the run's bounded chunks as paragraphs
-        for (const c of segmentChunks(overlapping(s.start, s.start + s.text.length))) paras.push({ startOffset: c.offset, text: c.text });
+        for (const c of segmentChunks(overlapping(s.start, s.start + s.text.length))) paras.push({ startOffset: c.offset, text: c.text, speaker: blockSpeaker });
       }
     }
     flush();
@@ -243,6 +273,7 @@ export interface SubtitleBlock {
   startTime: number;
   endTime: number;
   text: string;
+  speaker?: string;
 }
 
 function resegmentTranscript(
@@ -256,10 +287,11 @@ function resegmentTranscript(
   let segTexts: string[] = [];
   let blockStart = transcript[0].offset;
   let blockDuration = 0;
+  let blockSpeaker: string | undefined;
 
   const flush = (endTime: number) => {
     if (segTexts.length === 0) return;
-    blocks.push({ startTime: blockStart, endTime, text: segTexts.join(' ') });
+    blocks.push({ startTime: blockStart, endTime, text: segTexts.join(' '), speaker: blockSpeaker });
     segTexts = [];
     blockDuration = 0;
   };
@@ -269,8 +301,11 @@ function resegmentTranscript(
     const text = decodeEntities(item.text).trim();
     if (!text) continue;
 
+    // Sprekerwissel sluit het lopende cue-blok af (één spreker per ondertitelblok).
+    if (segTexts.length > 0 && item.speaker !== blockSpeaker) flush(item.offset);
+
     const isFirst = segTexts.length === 0;
-    if (isFirst) blockStart = item.offset;
+    if (isFirst) { blockStart = item.offset; blockSpeaker = item.speaker; }
 
     segTexts.push(text);
     blockDuration += item.duration;
@@ -322,21 +357,24 @@ function wrapSubtitleText(text: string, maxChars = 42): string {
 
 export const generateSrt = (
   transcript: TranscriptItem[],
-  meta?: { extractionMethod?: string }
+  meta?: { extractionMethod?: string; speakerNames?: Record<string, string> }
 ): string => {
   const blocks = resegmentTranscript(transcript, meta?.extractionMethod);
   return blocks
     .map((block, index) => {
       const startTime = formatSrtTimestamp(block.startTime);
       const endTime = formatSrtTimestamp(block.endTime);
-      return `${index + 1}\n${startTime} --> ${endTime}\n${wrapSubtitleText(block.text)}\n`;
+      // SRT kent geen sprekerveld — conventie is de naam als prefix in de cue-tekst.
+      const name = resolveSpeakerName(block.speaker, meta?.speakerNames);
+      const body = name ? `${name}: ${block.text}` : block.text;
+      return `${index + 1}\n${startTime} --> ${endTime}\n${wrapSubtitleText(body)}\n`;
     })
     .join("\n");
 };
 
 export const generateVtt = (
   transcript: TranscriptItem[],
-  meta?: { title?: string; language?: string; extractionMethod?: string }
+  meta?: { title?: string; language?: string; extractionMethod?: string; speakerNames?: Record<string, string> }
 ): string => {
   const noteLines: string[] = [];
   if (meta?.title) noteLines.push(`title: ${meta.title}`);
@@ -348,7 +386,11 @@ export const generateVtt = (
     .map((block, index) => {
       const startTime = formatVttTimestamp(block.startTime);
       const endTime = formatVttTimestamp(block.endTime);
-      return `${index + 1}\n${startTime} --> ${endTime}\n${wrapSubtitleText(block.text)}\n`;
+      // WebVTT heeft een native voice-tag <v Naam>…; dat is de correcte sprekerconventie hier.
+      const name = resolveSpeakerName(block.speaker, meta?.speakerNames);
+      const body = wrapSubtitleText(block.text);
+      const cueText = name ? `<v ${name}>${body}` : body;
+      return `${index + 1}\n${startTime} --> ${endTime}\n${cueText}\n`;
     })
     .join("\n");
 
@@ -365,6 +407,7 @@ export const generateCsv = (
     durationSeconds?: number;
     language?: string;
     extractionMethod?: string;
+    speakerNames?: Record<string, string>;
   }
 ): string => {
   const BOM = '﻿';
@@ -385,7 +428,12 @@ export const generateCsv = (
   metaLines.push(`# extracted: ${new Date().toISOString().slice(0, 10)}`);
   const metadataRows = metaLines.join('\n') + '\n';
 
-  const header = 'segment_index,start_time,end_time,duration,word_count,text\n';
+  // Sprekerkolom alleen toevoegen als er daadwerkelijk sprekers zijn — anders blijft het CSV-schema
+  // voor niet-gediariseerde transcripties exact gelijk (geen lege kolom).
+  const hasSpeakers = transcript.some((t) => t.speaker);
+  const header = hasSpeakers
+    ? 'segment_index,start_time,end_time,duration,word_count,speaker,text\n'
+    : 'segment_index,start_time,end_time,duration,word_count,text\n';
 
   const rows = transcript.map((t, i) => {
     const text = decodeEntities(t.text);
@@ -394,22 +442,33 @@ export const generateCsv = (
       : t.offset + t.duration;
     const wordCount = text.split(/\s+/).filter(Boolean).length;
     const escapedText = `"${text.replace(/"/g, '""')}"`;
-    return `${i},${t.offset},${endTime},${t.duration},${wordCount},${escapedText}`;
+    if (!hasSpeakers) {
+      return `${i},${t.offset},${endTime},${t.duration},${wordCount},${escapedText}`;
+    }
+    const name = resolveSpeakerName(t.speaker, meta?.speakerNames) ?? '';
+    const escapedSpeaker = `"${name.replace(/"/g, '""')}"`;
+    return `${i},${t.offset},${endTime},${t.duration},${wordCount},${escapedSpeaker},${escapedText}`;
   }).join('\n');
 
   return BOM + metadataRows + header + rows;
 };
 
-export const generateTxt = (transcript: TranscriptItem[], timestamps: boolean): string => {
+export const generateTxt = (
+  transcript: TranscriptItem[],
+  timestamps: boolean,
+  speakerNames?: Record<string, string>,
+): string => {
   if (timestamps) {
     return transcript
       .map((t) => {
         const timestamp = new Date(t.offset * 1000).toISOString().substr(11, 8);
-        return `${timestamp}  ${decodeEntities(t.text)}`;
+        const name = resolveSpeakerName(t.speaker, speakerNames);
+        const text = decodeEntities(t.text);
+        return name ? `${timestamp}  ${name}: ${text}` : `${timestamp}  ${text}`;
       })
       .join("\n");
   }
-  return createParagraphMode(transcript);
+  return createParagraphMode(transcript, speakerNames);
 };
 
 export interface RagChunk {
@@ -429,6 +488,9 @@ export interface RagChunk {
     start_time: number;
     end_time: number;
     language: string | null;
+    /** Sprekers in dit chunk (weergegeven namen), in volgorde van eerste voorkomen. Alleen aanwezig
+     *  bij gediariseerde transcripties — een chunk kan meerdere sprekers omspannen. */
+    speakers?: string[];
   };
 }
 
@@ -445,9 +507,10 @@ function buildRagChunks(
     channel?: string;
     language?: string;
     extractionMethod?: string;
+    speakerNames?: Record<string, string>;
   }
 ): RagChunk[] {
-  const { videoId, title, channel, language, extractionMethod } = context ?? {};
+  const { videoId, title, channel, language, extractionMethod, speakerNames } = context ?? {};
   const overlapSeconds = Math.round(chunkSizeSeconds * 0.15);
   const useSentenceBoundary = extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai';
 
@@ -477,6 +540,13 @@ function buildRagChunks(
     const deepLink = makeDeepLink(startTime);
     const tokenCount = Math.round(fullText.split(/\s+/).filter(Boolean).length * 1.33);
 
+    // Distinct sprekers in dit chunk (in volgorde van eerste voorkomen), omgezet naar namen.
+    const speakers: string[] = [];
+    for (const seg of chunkSegments) {
+      const name = resolveSpeakerName(seg.speaker, speakerNames);
+      if (name && !speakers.includes(name)) speakers.push(name);
+    }
+
     rawChunks.push({
       chunk_index: idx,
       chunk_id: makeChunkId(idx),
@@ -493,6 +563,7 @@ function buildRagChunks(
         start_time: startTime,
         end_time: chunkEnd,
         language: language ?? null,
+        ...(speakers.length ? { speakers } : {}),
       },
     });
 
@@ -572,58 +643,70 @@ export const generateMarkdown = (
     durationSeconds?: number;
     extractionMethod?: string;
     includeYamlFrontmatter?: boolean;
+    speakerNames?: Record<string, string>;
   }
 ): string => {
   const frontmatter = context?.includeYamlFrontmatter ? buildYamlFrontmatter(title, context) : '';
+  const names = context?.speakerNames;
+  // Markdown-conventie voor sprekers: naam vet vooraan de alinea (**Naam:** …). Alleen als er een
+  // spreker is; anders ongewijzigd.
+  const withSpeaker = (speaker: string | undefined, body: string): string => {
+    const name = resolveSpeakerName(speaker, names);
+    return name ? `**${name}:** ${body}` : body;
+  };
 
   if (withTimestamps) {
     const sections: string[] = [];
     let currentText = '';
     let currentOffset = 0;
-    for (let i = 0; i < transcript.length; i++) {
-      const item = transcript[i];
-      const prev = transcript[i - 1];
-      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
-      if (gap > 5 && currentText) {
-        const ts = formatHHMMSS(currentOffset);
-        const heading = context?.videoId
-          ? `## [${ts}](https://youtu.be/${context.videoId}?t=${Math.floor(currentOffset)})`
-          : `## [${ts}]`;
-        sections.push(`${heading}\n${currentText.trim()}`);
-        currentText = decodeEntities(item.text);
-        currentOffset = item.offset;
-      } else {
-        const text = decodeEntities(item.text);
-        if (!currentText) currentOffset = item.offset;
-        currentText = currentText ? `${currentText} ${text}` : text;
-      }
-    }
-    if (currentText) {
+    let currentSpeaker: string | undefined;
+    const pushSection = () => {
       const ts = formatHHMMSS(currentOffset);
       const heading = context?.videoId
         ? `## [${ts}](https://youtu.be/${context.videoId}?t=${Math.floor(currentOffset)})`
         : `## [${ts}]`;
-      sections.push(`${heading}\n${currentText.trim()}`);
+      sections.push(`${heading}\n${withSpeaker(currentSpeaker, currentText.trim())}`);
+    };
+    for (let i = 0; i < transcript.length; i++) {
+      const item = transcript[i];
+      const prev = transcript[i - 1];
+      const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
+      const speakerChanged = !!currentText && item.speaker !== currentSpeaker;
+      if ((gap > 5 || speakerChanged) && currentText) {
+        pushSection();
+        currentText = decodeEntities(item.text);
+        currentOffset = item.offset;
+        currentSpeaker = item.speaker;
+      } else {
+        const text = decodeEntities(item.text);
+        if (!currentText) { currentOffset = item.offset; currentSpeaker = item.speaker; }
+        currentText = currentText ? `${currentText} ${text}` : text;
+      }
     }
+    if (currentText) pushSection();
     return `${frontmatter}# ${title}\n\n${sections.join('\n\n')}`;
   }
 
-  // Merge segments into paragraphs; break on gaps > 5 seconds
+  // Merge segments into paragraphs; break on gaps > 5 seconds or a speaker change.
   const paragraphs: string[] = [];
   let currentParagraph = '';
+  let currentSpeaker: string | undefined;
   for (let i = 0; i < transcript.length; i++) {
     const item = transcript[i];
     const prev = transcript[i - 1];
     const gap = prev ? item.offset - (prev.offset + prev.duration) : 0;
     const text = decodeEntities(item.text);
-    if (gap > 5 && currentParagraph) {
-      paragraphs.push(currentParagraph.trim());
+    const speakerChanged = !!currentParagraph && item.speaker !== currentSpeaker;
+    if ((gap > 5 || speakerChanged) && currentParagraph) {
+      paragraphs.push(withSpeaker(currentSpeaker, currentParagraph.trim()));
       currentParagraph = text;
+      currentSpeaker = item.speaker;
     } else {
+      if (!currentParagraph) currentSpeaker = item.speaker;
       currentParagraph = currentParagraph ? `${currentParagraph} ${text}` : text;
     }
   }
-  if (currentParagraph) paragraphs.push(currentParagraph.trim());
+  if (currentParagraph) paragraphs.push(withSpeaker(currentSpeaker, currentParagraph.trim()));
   return `${frontmatter}# ${title}\n\n${paragraphs.join('\n\n')}`;
 };
 
@@ -667,12 +750,13 @@ export interface RagJsonContext {
   durationSeconds?: number | null;
   extractionMethod?: string | null;
   chunkSize?: number;
+  speakerNames?: Record<string, string> | null;
 }
 
 export function buildRagJson(transcript: TranscriptItem[], context: RagJsonContext = {}): string {
   const {
     videoId, title, channel, language, publishedAt,
-    durationSeconds, extractionMethod, chunkSize = 60,
+    durationSeconds, extractionMethod, chunkSize = 60, speakerNames,
   } = context;
 
   const isAi = extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai';
@@ -683,6 +767,7 @@ export function buildRagJson(transcript: TranscriptItem[], context: RagJsonConte
     channel: channel ?? undefined,
     language: language ?? undefined,
     extractionMethod: extractionMethod ?? undefined,
+    speakerNames: speakerNames ?? undefined,
   });
 
   const derivedDuration = durationSeconds != null ? durationSeconds : (

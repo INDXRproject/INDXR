@@ -25,6 +25,7 @@ interface RagExportViewProps {
   title: string;
   processingMethod?: string | null;
   ragExports: RagExport[];
+  speakerNames?: Record<string, string> | null;
 }
 
 const CHUNK_LABELS = RAG_CHUNK_LABELS;
@@ -48,6 +49,7 @@ export function RagExportView({
   title,
   processingMethod,
   ragExports,
+  speakerNames,
 }: RagExportViewProps) {
   // Defense-in-depth: this view is only for re-downloads after a paid first export.
   // The page-level render-guard should prevent reaching this state, but we guard
@@ -79,6 +81,7 @@ export function RagExportView({
       title,
       extractionMethod: processingMethod ?? undefined,
       chunkSize,
+      speakerNames: speakerNames ?? undefined,
     });
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);

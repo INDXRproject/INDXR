@@ -19,36 +19,61 @@ _TRANSCRIPTION_CONFIG = aai.TranscriptionConfig(
     language_detection=True,
     punctuate=True,
     format_text=True,
+    # Sprekerherkenning (diarisatie). Async add-on van +$0,02/u bovenop het modeltarief
+    # (NIET in het basistarief — AssemblyAI-prijspagina). We geven GEEN speakers_expected mee:
+    # het model bepaalt zelf het aantal sprekers. Elk woord krijgt hierdoor een .speaker-label
+    # ('A'/'B'/…); _build_segments stempelt dat per segment. Kost per job in transcription_jobs.
+    # diarization=true (COR-add-on via _geld_scope). Captions lopen hier niet langs → geen add-on.
+    speaker_labels=True,
 )
 
 
 def _build_segments(transcript) -> list:
-    """AssemblyAI-woorden → ~5-seconden-segmenten in ons transcript-formaat."""
+    """AssemblyAI-woorden → ~5-seconden-segmenten in ons transcript-formaat.
+
+    Met diarisatie (speaker_labels) draagt elk woord een spreker-label ('A'/'B'/…). We breken een
+    segment óók af zodra de spreker wisselt en stempelen het label op het segment, zodat elk segment
+    precies één spreker bevat (utterances zelf kunnen minutenlang zijn en zouden reading-paragraphs
+    en RAG-chunking breken). Zonder diarisatie is word.speaker None → dan geen 'speaker'-key, en het
+    segment blijft exact {text, offset, duration} (bestaande transcripten/captions ongemoeid)."""
     segments: list = []
-    if not transcript.words:
+    words = transcript.words or []
+    if not words:
         return segments
-    current_segment: list = []
-    segment_start = None
-    for word in transcript.words:
-        if segment_start is None:
-            segment_start = word.start / 1000.0
-        current_segment.append(word.text)
-        word_end = word.end / 1000.0
-        if (word_end - segment_start) >= 5.0:
-            segments.append({
-                'text': ' '.join(current_segment),
-                'offset': segment_start,
-                'duration': word_end - segment_start,
-            })
-            current_segment = []
-            segment_start = None
-    if current_segment and segment_start is not None:
-        last_word = transcript.words[-1]
-        segments.append({
-            'text': ' '.join(current_segment),
-            'offset': segment_start,
-            'duration': (last_word.end / 1000.0) - segment_start,
-        })
+
+    current: list = []
+    seg_start = None
+    seg_speaker = None
+    seg_end = None
+
+    def _flush() -> None:
+        if current and seg_start is not None:
+            seg = {'text': ' '.join(current), 'offset': seg_start, 'duration': seg_end - seg_start}
+            if seg_speaker is not None:
+                seg['speaker'] = seg_speaker
+            segments.append(seg)
+
+    for word in words:
+        w_speaker = getattr(word, 'speaker', None)
+        w_start = word.start / 1000.0
+        w_end = word.end / 1000.0
+        if seg_start is None:
+            seg_start = w_start
+            seg_speaker = w_speaker
+        elif w_speaker != seg_speaker:
+            # Spreker wisselt → sluit het lopende segment af vóór dit woord.
+            _flush()
+            current = []
+            seg_start = w_start
+            seg_speaker = w_speaker
+        current.append(word.text)
+        seg_end = w_end
+        if (seg_end - seg_start) >= 5.0:
+            _flush()
+            current = []
+            seg_start = None
+            seg_speaker = None
+    _flush()
     return segments
 
 
