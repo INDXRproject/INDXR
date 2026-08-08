@@ -16303,3 +16303,27 @@ docs/LESSONS.md
 docs/wiki/INDEX.md
 docs/wiki/decisions/090-ai-summary-two-step-structured.md
 ---
+[2026-08-08 13:53] commit: fix(git-hook): post-commit no longer sweeps another session's uncommitted LOG.md
+
+The post-commit hook did `git add docs/LOG.md` (whole file) + `git commit --amend`,
+which folded a concurrent session's uncommitted LOG.md line into an unrelated commit
+(this happened: bf9d222 absorbed a summary-round log line).
+
+Now the hook checks whether docs/LOG.md has any change that isn't part of the commit
+that just landed (`git diff --quiet HEAD --` + `--cached`):
+- clean → only our appended line is new → add + --amend (unchanged behavior).
+- dirty → foreign uncommitted work present → do NOT amend; the line is written but left
+  uncommitted for the next commit to pick up. Another session's work is never staged.
+It prints which branch it took either way.
+
+Tested in a throwaway detached worktree: clean case folds the line; foreign-line case
+leaves the commit free of docs/LOG.md and preserves the foreign line uncommitted.
+
+Updated the tracked canonical source (scripts/git-hooks/post-commit) + README, installed
+the active copy, and added a LESSONS.md rule.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Changed: docs/LESSONS.md
+scripts/git-hooks/README.md
+scripts/git-hooks/post-commit
+---

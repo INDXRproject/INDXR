@@ -1,12 +1,22 @@
 #!/bin/bash
 # INDXR post-commit hook — appends a one-line commit summary to docs/LOG.md.
 #
-# It FOLDS that append into the just-made commit via `git commit --amend` so the working
-# tree stays clean afterwards. The old version appended without committing, which left a
-# permanent 'M docs/LOG.md' that re-triggered on the next commit — a self-perpetuating loop.
+# Normally it FOLDS that append into the just-made commit via `git commit --amend` so the
+# working tree stays clean afterwards.
 #
-# Recursion guard: the amend below re-fires post-commit; the exported INDXR_LOG_HOOK makes
-# that inner invocation a no-op, so exactly one amend happens per commit (no runaway loop).
+# SAFETY (2026-08-08): a bare `git add docs/LOG.md` stages the WHOLE working copy of the file,
+# so a *concurrent session's* uncommitted LOG.md line would get swept into THIS commit on the
+# amend (this actually happened — commit bf9d222 absorbed a summary-round log line). To prevent
+# that, the hook first checks whether docs/LOG.md has any change that is NOT part of the commit
+# that just landed:
+#   - clean  → the only new content is the line we are about to append → safe to add + --amend.
+#   - dirty  → foreign uncommitted work is present → DO NOT amend. Our line is still written,
+#              but left as an uncommitted change for the next commit to pick up. Another
+#              session's work is never staged or amended by us.
+# It prints what it did in both cases.
+#
+# Recursion guard: the amend re-fires post-commit; INDXR_LOG_HOOK makes that inner run a no-op,
+# so exactly one amend happens per commit (no runaway loop).
 #
 # This file is the tracked canonical copy. Install it with:
 #   cp scripts/git-hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
@@ -14,15 +24,35 @@
 export INDXR_LOG_HOOK=1
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-CHANGED_FILES=$(git diff-tree --no-commit-id -r --name-only HEAD)
-COMMIT_MSG=$(git log -1 --pretty=%B)
+LOG="docs/LOG.md"
+
+# Is docs/LOG.md clean relative to the commit that just landed — i.e. nothing in the working
+# tree or index that isn't already in HEAD (no foreign uncommitted work)? Checked BEFORE we
+# append our own line. `git diff HEAD` covers unstaged + staged; `--cached` catches the edge
+# where a partial `git commit <path>` left other LOG.md hunks staged but uncommitted.
+if git -C "$REPO_ROOT" diff --quiet HEAD -- "$LOG" \
+   && git -C "$REPO_ROOT" diff --cached --quiet HEAD -- "$LOG"; then
+  CLEAN=1
+else
+  CLEAN=0
+fi
+
+CHANGED_FILES=$(git -C "$REPO_ROOT" diff-tree --no-commit-id -r --name-only HEAD)
+COMMIT_MSG=$(git -C "$REPO_ROOT" log -1 --pretty=%B)
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
 
 {
   echo "[$TIMESTAMP] commit: $COMMIT_MSG"
   echo "Changed: $CHANGED_FILES"
   echo "---"
-} >> "$REPO_ROOT/docs/LOG.md"
+} >> "$REPO_ROOT/$LOG"
 
-git -C "$REPO_ROOT" add docs/LOG.md
-git -C "$REPO_ROOT" commit --amend --no-edit --no-verify >/dev/null 2>&1
+if [ "$CLEAN" = "1" ]; then
+  git -C "$REPO_ROOT" add "$LOG"
+  git -C "$REPO_ROOT" commit --amend --no-edit --no-verify >/dev/null 2>&1
+  echo "post-commit: docs/LOG.md was clean — log line folded into this commit (amended)."
+else
+  echo "post-commit: docs/LOG.md had uncommitted changes that are not part of this commit —" \
+       "log line appended but LEFT UNCOMMITTED (not amended), so another session's work is" \
+       "not swept in. The next commit will pick the line up."
+fi
