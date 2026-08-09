@@ -270,30 +270,37 @@ export function buildReadingParagraphs(
 }
 
 // ─── Subtitle generation (SRT/VTT) ───────────────────────────────────────────
-// Broadcast-style constraints, all enforced HARD (verified on a 2400-segment transcript):
-//   - no line exceeds SUBTITLE_MAX_LINE characters;
-//   - no cue exceeds SUBTITLE_MAX_LINES lines (so no cue exceeds MAX_LINE×MAX_LINES chars);
-//   - no cue exceeds SUBTITLE_MAX_CUE_SEC seconds;
-//   - a passage longer than one cue is split ACROSS cues (the old wrap capped at two lines and
-//     dropped the overflow into an unbounded second line) — split on a sentence boundary when one
-//     is in reach, otherwise a word boundary, never mid-word, with cue times running proportionally
-//     with the text;
-//   - reading speed: a cue is lengthened (never shortened) into the following gap so it is not
-//     flashed too briefly to read.
-// The speaker name counts against the character budget and appears ONLY on the first cue of a turn
-// (subtitling convention: the label marks the speaker change, not every cue — it also frees ~a
-// dozen characters per cue across a long uninterrupted turn).
+// Line length, line count and cue duration follow the Netflix Timed Text Style Guide (the most-cited
+// industry spec): max 42 characters per line, max 2 lines per cue, max 7 s per cue — all enforced
+// HARD. Netflix's minimum cue duration is 5/6 s (~0.83 s); we are stricter at 1 s. A passage longer
+// than one cue is split ACROSS cues (the old wrap capped at two lines and spilled the rest into an
+// unbounded second line) — on a sentence boundary when one is in reach, otherwise a word boundary,
+// never mid-word, with cue times running proportionally with the text.
+//
+// Reading speed (see ADR-094): Netflix caps adult English at 20 cps (17 cps is their value for
+// children's content and French). We cannot always meet 20: professional subtitlers reach it by
+// CONDENSING the spoken text (dropping filler, rewriting), whereas we transcribe verbatim — so on
+// fast speech you cannot keep every word, stay under 20 cps AND stay in sync at the same time
+// (forcing 20 was measured to desync a 2.6 h transcript by 247 s). The ceiling is therefore 21 cps,
+// one above the Netflix limit; cues are lengthened toward the target only into silent gaps so this
+// never drifts the timeline. NOTE: 21 is calibrated on one fast English transcript — slower or
+// non-English recordings would tolerate a lower ceiling, but it is currently one constant for all.
+//
+// The speaker name shows only on the first cue of a turn, and its character budget differs by format:
+// SRT carries it as an in-budget "Name: " prefix (SRT has no speaker markup and its file often lands
+// in an editor or upload form), VTT carries it as an out-of-budget <v Name> voice tag (players render
+// who is speaking, and the tag leaves the full 42 characters for spoken text).
 export const SUBTITLE_MAX_LINE = 42;
 export const SUBTITLE_MAX_LINES = 2;
 export const SUBTITLE_MAX_CUE_SEC = 7;
-const SUBTITLE_MIN_CUE_SEC = 1;
-const SUBTITLE_TARGET_CPS = 17; // reading target: cues are lengthened toward this into silent gaps
-const SUBTITLE_CEIL_CPS = 21;   // readability ceiling: no cue is left faster than this
+const SUBTITLE_MIN_CUE_SEC = 1;   // Netflix minimum is 5/6 s (~0.83 s); we are stricter
+const SUBTITLE_TARGET_CPS = 20;   // Netflix adult-English reading limit; cues fill gaps toward this
+const SUBTITLE_CEIL_CPS = 21;     // hard ceiling: one above the limit (verbatim-transcription trade-off, ADR-094)
 
 /** Word that ends a sentence (Unicode terminators + optional closing quote/bracket). */
 const WORD_ENDS_SENTENCE = /[.!?؟۔。！？…]+["')\]»”’]*$/u;
 
-interface SubtitleCue { start: number; end: number; lines: string[] }
+interface SubtitleCue { start: number; end: number; lines: string[]; voice?: string }
 interface TimedWord { text: string; start: number; end: number; speaker?: string; endsSentence: boolean }
 
 /** Greedy word-wrap into at most SUBTITLE_MAX_LINES lines of at most SUBTITLE_MAX_LINE chars.
@@ -361,11 +368,15 @@ function toTimedWords(transcript: TranscriptItem[]): TimedWord[] {
 }
 
 /** Build broadcast-safe cues: pack words into cues bounded by line/char/time, prefer sentence
- *  breaks, keep the speaker name (first cue of a turn only) inside the budget, then lengthen each
- *  cue into the following gap up to the reading-speed target. */
+ *  breaks, then lengthen each cue into the following gap up to the reading-speed target.
+ *  `nameInBudget` decides how the first-cue-of-a-turn speaker label is handled: SRT counts a
+ *  "Name: " prefix against the 42/84 budget (baked into `lines`); VTT keeps the name OUT of the
+ *  budget (returned as `cue.voice` for a <v Name> tag), leaving the full width for spoken text —
+ *  so the two formats segment differently and VTT fits more text per turn-opening cue. */
 function buildSubtitleCues(
   transcript: TranscriptItem[],
-  speakerNames?: Record<string, string>,
+  speakerNames: Record<string, string> | undefined,
+  nameInBudget: boolean,
 ): SubtitleCue[] {
   const words = toTimedWords(transcript);
   const cues: SubtitleCue[] = [];
@@ -375,7 +386,8 @@ function buildSubtitleCues(
     const speaker = words[i].speaker;
     const firstOfTurn = i === 0 || words[i - 1].speaker !== speaker;
     const name = firstOfTurn ? resolveSpeakerName(speaker ?? null, speakerNames) : null;
-    const prefix = name ? `${name}: ` : '';
+    // SRT: the label eats into the line budget. VTT: it is a zero-width <v> tag, so budget is unaffected.
+    const prefix = nameInBudget && name ? `${name}: ` : '';
 
     // Always include at least the first word, then extend while it still fits line/char/time.
     let text = words[i].text;
@@ -404,7 +416,7 @@ function buildSubtitleCues(
     }
 
     const lines = wrapLines(prefix + text) ?? hardWrap(prefix + text);
-    cues.push({ start: words[i].start, end, lines });
+    cues.push({ start: words[i].start, end, lines, voice: !nameInBudget && name ? name : undefined });
     i = j;
   }
 
@@ -444,7 +456,8 @@ export const generateSrt = (
   transcript: TranscriptItem[],
   meta?: { extractionMethod?: string; speakerNames?: Record<string, string> }
 ): string => {
-  const cues = buildSubtitleCues(transcript, meta?.speakerNames);
+  // SRT has no speaker field, so the name is an in-budget "Name: " prefix baked into the cue lines.
+  const cues = buildSubtitleCues(transcript, meta?.speakerNames, true);
   return cues
     .map((cue, index) => {
       const startTime = formatSrtTimestamp(cue.start);
@@ -463,15 +476,18 @@ export const generateVtt = (
   if (meta?.language) noteLines.push(`language: ${meta.language}`);
   const noteBlock = noteLines.length > 0 ? `NOTE\n${noteLines.join('\n')}\n\n` : '';
 
-  // The speaker name is a literal in-budget prefix on the first cue of a turn (see buildSubtitleCues)
-  // rather than a <v> voice tag: the tag does not consume the on-screen line width the requirement
-  // budgets for, and player support for rendering it is inconsistent.
-  const cues = buildSubtitleCues(transcript, meta?.speakerNames);
+  // WebVTT's native <v Name> voice tag on the first cue of a turn: it is zero-width on screen (so the
+  // full 42 characters stay available for spoken text) and a player that ignores it simply shows no
+  // name, which is no loss on video where the viewer can see who is speaking. Name is OUT of budget.
+  const cues = buildSubtitleCues(transcript, meta?.speakerNames, false);
   const body = cues
     .map((cue, index) => {
       const startTime = formatVttTimestamp(cue.start);
       const endTime = formatVttTimestamp(cue.end);
-      return `${index + 1}\n${startTime} --> ${endTime}\n${cue.lines.join('\n')}\n`;
+      const lines = cue.voice
+        ? [`<v ${cue.voice}>${cue.lines[0]}`, ...cue.lines.slice(1)]
+        : cue.lines;
+      return `${index + 1}\n${startTime} --> ${endTime}\n${lines.join('\n')}\n`;
     })
     .join("\n");
 

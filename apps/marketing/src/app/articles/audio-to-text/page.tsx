@@ -221,8 +221,8 @@ export default function AudioToTextPage() {
         your piece. In June a quote is questioned, so you search the transcript for the phrase, jump
         to the timestamp and check what was actually said. In September you want a clip subtitled, so
         you export SRT and the lines come back rebuilt to a maximum of 42 characters across at most
-        two lines, with cues breaking on sentences, which is how professional subtitling is done.
-        Nothing was re-uploaded and none of it cost extra.
+        two lines, with cues breaking on sentence boundaries where they can and on word boundaries
+        otherwise, never mid-word. Nothing was re-uploaded and none of it cost extra.
       </p>
 
       <p>
