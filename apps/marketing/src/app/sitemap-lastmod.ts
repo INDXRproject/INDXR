@@ -32,11 +32,11 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   // Legal-pagina's tracken de legal-versie, niet cosmetische wording. /terms:
   // de 08-01-commit was PUUR de 'auto-captions'→'YouTube captions'-hernoeming (geen
   // wijziging aan rechten/plichten) → 2026-07-20 (= zichtbare "Last updated" op /terms).
-  // /privacy: laatst inhoudelijk gewijzigd op 2026-08-02 (Google-Ads-cookie-disclosure +
-  // cookietabel + Google-Ireland-subverwerker), consistent met de zichtbare "Last updated"
-  // op /privacy én met LEGAL_VERSION=2026-08-02 (bundelversie, ADR-069/ADR-087). Wijzig
-  // deze data alleen samen met LEGAL_VERSION + de zichtbare datum.
-  "/privacy": "2026-08-02",
+  // /privacy: laatst inhoudelijk gewijzigd op 2026-08-09 (AssemblyAI-bewaartermijn-disclosure:
+  // audio hoogstens 1 dag; eerder 2026-08-02 Google-Ads-cookie-disclosure), consistent met de
+  // zichtbare "Last updated" op /privacy én met LEGAL_VERSION=2026-08-09 (bundelversie,
+  // ADR-069/ADR-087). Wijzig deze data alleen samen met LEGAL_VERSION + de zichtbare datum.
+  "/privacy": "2026-08-09",
   "/terms": "2026-07-20",
 
   // Docs — Getting started

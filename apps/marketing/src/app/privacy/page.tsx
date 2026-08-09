@@ -14,7 +14,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-[var(--fg-muted)] mb-10">
-          Last updated: 2026-08-02
+          Last updated: 2026-08-09
         </p>
 
         <div className="prose-content text-[var(--fg-subtle)] leading-relaxed space-y-8">
@@ -133,8 +133,9 @@ export default function PrivacyPage() {
               protect the data they handle. Payments are processed by Stripe. Our database and
               authentication run on Supabase, hosted in the EU. AI transcription and the
               optional AI summary are provided by AssemblyAI, which processes your audio and
-              transcript on servers inside the EU, and does not use your audio to train its
-              models. File storage is provided by Cloudflare. Error monitoring is provided by
+              transcript on servers inside the EU, does not use your audio to train its
+              models, and is configured to keep it for one day at most, the shortest retention
+              period it offers. File storage is provided by Cloudflare. Error monitoring is provided by
               Sentry. We also use providers for proxying public video data, for sending email,
               and for our own product analytics. If you consent to ad measurement,
               <strong> Google Ireland Ltd</strong> provides Google Ads conversion measurement and

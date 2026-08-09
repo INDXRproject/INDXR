@@ -8,8 +8,8 @@
 // zichtbare "Last updated"-datum op het gewijzigde document én diens sitemap-lastmod.
 // De zichtbare datum per document MAG afwijken van deze bundelversie als alleen het
 // andere document wijzigde — dat is bedoeld gedrag (bv. /terms toont 2026-07-20 terwijl
-// de bundel op 2026-08-02 staat na de /privacy Google-Ads-cookie-disclosure).
+// de bundel op 2026-08-09 staat na de /privacy AssemblyAI-bewaartermijn-disclosure).
 //
 // Het veld heet terms_version in terms_acceptances maar draagt deze bundelversie (ADR-069);
 // git is het versiearchief van beide documenten — geen apart archiefmechanisme nodig.
-export const LEGAL_VERSION = "2026-08-02"
+export const LEGAL_VERSION = "2026-08-09"
