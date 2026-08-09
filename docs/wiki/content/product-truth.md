@@ -250,7 +250,7 @@ Bron: `packages/shared/src/lib/ratelimit.ts:32-37`.
 - **login/signup-limiters** worden apart gebruikt in auth-acties (`packages/shared/src/actions/auth-actions.ts:41,114,166,258`).
 - **No-op fallback:** zonder `UPSTASH_REDIS_REST_URL` + `_TOKEN` zijn **alle** limiters uitgeschakeld (`noopLimiter` → altijd success, `ratelimit.ts:7-18`). Alleen bindend als beide env-vars gezet zijn.
 
-### 6.8 Data-retentie & privacy van audio — INDXR-servers + AssemblyAI (geverifieerd 2026-08-08)
+### 6.8 Data-retentie & privacy van audio — INDXR-servers + AssemblyAI (geverifieerd 2026-08-08; AssemblyAI-account-instellingen gecorrigeerd 2026-08-09)
 
 Onderbouwt de pagina-claim (`apps/marketing/src/app/articles/audio-to-text/page.tsx:37`): *"The audio file is processed and then discarded. Only the resulting transcript text is stored in your library. INDXR.AI does not retain uploaded audio files after transcription is complete."*
 
@@ -261,12 +261,13 @@ Onderbouwt de pagina-claim (`apps/marketing/src/app/articles/audio-to-text/page.
 - ⚠️ **Was eerder onwaar** op het geslaagde upload-pad zonder compressie (bestanden <25 MB): daar belandde het temp-bestand nooit in `temp_files` en bleef het staan. Empirisch bevestigd (echte AssemblyAI-run: bestand overleefde) en daarna gefixt + opnieuw bewezen (bestand weg).
 
 **AssemblyAI (wat de provider zelf met de audio doet) — standaard async productie, ons account:**
-- Wij draaien **standaard async** op het **EU-endpoint** (`https://api.eu.assemblyai.com`, `backend/assemblyai_client.py:9`) — EU data-residency. **Geen** BAA, **geen** zero-data-retention-configuratie, en **geen** custom TTL-parameter op de call (onze code zet geen retentie-flag). Wij roepen na afloop **ook geen** DELETE-endpoint aan → AssemblyAI-side geldt de **default productie-retentie**.
-- **Geüploade audio bij AssemblyAI:** verwijderingsproces **begint bij 24 uur en is uiterlijk 48 uur**. De upload-guide stelt daarnaast dat uploads "immediately deleted after transcription" worden en dat AssemblyAI uploads niet opslaat; de **24–48 uur** is de conservatieve, in het productie-retentie-artikel gedocumenteerde SLA.
-- **Transcript-artefacten (tekst/JSON) bij AssemblyAI:** standaard verwijderingsproces **begint bij 72 uur**. Minimum instelbare TTL: **zo laag als 1 uur**. Feitelijke verwijdering loopt via AWS DynamoDB-TTL (minuten tot enkele uren nadat het proces begint).
-- **Zero data retention** biedt AssemblyAI alleen voor **Streaming** (mét model-training opt-out) en voor de **LLM Gateway mét BAA** — geen van beide is ons async-transcriptiepad. Model-training-opt-out staat los van retentie in de async-productieomgeving.
+- Wij draaien **standaard async** op het **EU-endpoint** (`https://api.eu.assemblyai.com`, `backend/assemblyai_client.py:9`) — EU data-residency.
+- **Model-improvement / training: AFGEMELD.** In het AssemblyAI-dashboard onder **Data Controls** staat het model-improvement-programma op **opted out** → AssemblyAI gebruikt onze audio/transcripten **niet** om zijn AI/ML-modellen te trainen. AssemblyAI's default (zonder afmelding) is wél training; opt-out kan alleen op **betaalde** accounts (Data Controls) en is **forward-looking only** — geen retroactieve toepassing op materiaal dat vóór de afmelddatum is verwerkt (daarover doen we geen claim). **Geverifieerd op een dashboard-schermafdruk (Data Controls), 2026-08-09.**
+- **Retentie: op het MINIMUM.** De data-retentie staat in Data Controls ingesteld op **1 dag** — de laagste waarde die AssemblyAI aanbiedt (geverifieerd op dezelfde schermafdruk, 2026-08-09). Ter referentie: de algemene productie-SLA zónder eigen instelling is geüploade audio verwijderd binnen 24–48 u en transcript-artefacten vanaf 72 u (instelbare TTL zo laag als 1 u); onze 1-daagse instelling is dus strenger dan de default.
+- **Geen BAA ondertekend.** Zero-data-retention biedt AssemblyAI formeel alleen voor **Streaming** (mét training-opt-out) of de **LLM Gateway mét BAA**; ons async-transcriptiepad valt daar technisch niet onder, maar de bovenstaande account-instellingen (training-opt-out + 1-daagse retentie) gelden er wél voor.
+- ⚠️ **Correctie 2026-08-09:** de vorige versie van deze paragraaf stelde ten onrechte dat er "geen zero-data-retention-configuratie / geen retentie-flag / default productie-retentie" gold. Dat was onjuist: het account is afgemeld voor training én staat op 1-daagse retentie. Bron = dashboard, niet code (onze call zet geen flag; de instelling is account-niveau in Data Controls).
 
-Bronnen: https://www.assemblyai.com/docs/faq/what-is-your-data-retention-policy · https://support.assemblyai.com/articles/2240096256-does-assemblyai-offer-zero-data-retention · https://docs.assemblyai.com/guides/uploading-audio-files-for-transcription (alle geraadpleegd 2026-08-08)
+Bronnen: dashboard-schermafdruk **Data Controls** (2026-08-09, afgemeld + 1-dag) · https://www.assemblyai.com/docs/faq/how-to-opt-out-of-data-sharing-for-our-model-improvement-program · https://support.assemblyai.com/articles/2240096256-does-assemblyai-offer-zero-data-retention (docs geraadpleegd 2026-08-09; retentie-SLA 2026-08-08)
 
 ### Opgelost sinds ADR-071 (waren eerder "geen code-antwoord")
 1. **Caption-verwerkingsduur** — nu gemeten via `usage_logs.duration_ms` (server-side, cache-hit én miss). Nog geen productie-mediaan (verzamelt vanaf deploy); AI-transcriptie-mediaan staat in §6.4.

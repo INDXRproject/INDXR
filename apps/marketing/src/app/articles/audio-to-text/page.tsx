@@ -23,20 +23,32 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    q: "How do I convert an audio file to text?",
-    a: `Create a free account, upload the file, and the transcript comes back in a few minutes. INDXR runs it through ${transcriptionModelName()}, returns punctuated text split by speaker with timestamps, and stores it in your library to read, edit and export. It costs one credit per minute of audio.`,
+    q: "Is my recording used to train AI models?",
+    a: "No. The file you upload is deleted on our side as soon as the transcription finishes, and only the transcript text stays in your library. Our transcription provider, AssemblyAI, does not use your audio to train its models, because we have opted out of its model-improvement programme, and its own data retention is set to one day, the shortest period it offers. Everything is processed inside the EU.",
   },
   {
-    q: "Can I convert audio to text for free?",
-    a: `Yes, up to a point. A free account includes ${FREE_TIER.WELCOME_CREDITS} credits, which covers ${FREE_TIER.WELCOME_CREDITS} minutes of audio at one credit per minute, with no card required. After that, credits are pay as you go and never expire.`,
+    q: "What happens if the transcription fails?",
+    a: "Your credits are refunded in full. The cost is reserved from your balance when the job starts, and it is booked straight back on any failure, including when the server goes down in the middle of the job, so a transcription that does not complete never costs you anything.",
   },
   {
-    q: "Does it work with video files?",
-    a: "Yes. MP4, WEBM and MPEG video files work directly, and the audio track is extracted for you, so you do not need to convert the video first.",
+    q: "What if I run out of credits partway through a file?",
+    a: "It cannot happen. The full cost of the file is reserved before transcription begins, based on the duration we detect, so a job you cannot fully afford is declined up front rather than started and stranded halfway. You are never left with a half-finished transcript and an empty balance.",
   },
   {
-    q: "How long can a recording be?",
-    a: `Up to ten hours per file, and up to ${UPLOAD_MAX_FILE_MB}MB. Anything longer than ten hours is rejected before any credit is charged, so split it first.`,
+    q: "Can I upload a recording of a meeting or a phone call?",
+    a: "Technically yes, any audio file works. Bear in mind that recording a conversation legally requires the consent of the people taking part in many countries, and making sure you have that consent is your responsibility, not something the tool can check for you.",
+  },
+  {
+    q: "Why are names and technical terms transcribed wrong, and what can I do about it?",
+    a: "Proper names and specialist jargon are the known weak spot of every speech model, because it works from sound and cannot guess a spelling it has never met. The practical fix is to correct it once in the editor: every export you make afterwards carries the correction, and when there are several speakers you rename a speaker label once and it updates everywhere it appears.",
+  },
+  {
+    q: "How long does a two-hour file actually take?",
+    a: "Roughly the upload time plus the transcription time, and nothing after that. The file first uploads from your device, then it is transcribed on the server at around a minute of processing for every ten minutes of audio, and it keeps running if you close the tab. There is no download step to wait for, because you supplied the file yourself; that wait only applies to YouTube videos, which we have to fetch first.",
+  },
+  {
+    q: "Does it work when people talk over each other?",
+    a: "Partly. The model detects who is speaking and labels each speaker, but where voices overlap the boundaries get less precise and a word can end up attached to the wrong speaker. On clean turn-taking the labelling is reliable; through a stretch of crosstalk, expect to fix a few lines.",
   },
   {
     q: "How do I split a file that is too large?",
@@ -45,20 +57,10 @@ const faqs = [
         Use FFmpeg.{" "}
         <code>ffmpeg -i large_file.mp3 -t 3600 part1.mp3 -ss 3600 part2.mp3</code> writes the first
         hour to part1.mp3 and everything after it to part2.mp3, then you upload each part separately.
+        Cut on a silence rather than mid-sentence, because a word landing on the seam can be lost, and
+        the total cost is the same either way, since you pay per minute of audio and not per file.
       </>
     ),
-  },
-  {
-    q: "What happens to my file after transcription?",
-    a: "It is deleted. The upload is processed on European infrastructure and removed once transcription finishes. Only the transcript text stays in your library.",
-  },
-  {
-    q: "Can I edit the transcript?",
-    a: "Yes. You can correct the text in the library, and edits are stored separately from the original, so the untouched version is always one click away.",
-  },
-  {
-    q: "Which languages are supported?",
-    a: "99 languages, detected automatically from the audio, so you do not choose one. Accuracy varies by language, and AssemblyAI publishes a per-language table worth checking before a long recording.",
   },
 ]
 
@@ -157,11 +159,26 @@ export default function AudioToTextPage() {
       <h2>How accurate it is</h2>
 
       <p>
-        English transcription accuracy here is close to the current technical ceiling. AssemblyAI
-        places English in their highest accuracy band, below ten per cent word error rate, and on
-        independent benchmarks {TRANSCRIPTION_MODEL.displayName} posts an English word error rate in
-        the low single digits. The top of that field has converged: on clean audio the best few
-        models are within a percentage point or two of one another.
+        English transcription accuracy here is close to the current technical ceiling.{" "}
+        <a
+          href="https://www.assemblyai.com/docs/getting-started/supported-languages"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          AssemblyAI places English in their highest accuracy band, below ten per cent word error
+          rate
+        </a>
+        , and on{" "}
+        <a
+          href="https://artificialanalysis.ai/speech-to-text"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          independent benchmarks
+        </a>{" "}
+        {TRANSCRIPTION_MODEL.displayName} posts an English word error rate in the low single digits.
+        The top of that field has converged: on clean audio the best few models are within a
+        percentage point or two of one another.
       </p>
 
       <p>
@@ -172,9 +189,16 @@ export default function AudioToTextPage() {
       </p>
 
       <p>
-        For languages other than English, AssemblyAI publishes accuracy per language, and that table
-        is the place to check before committing to a long recording. We would rather point you there
-        than quote a figure for a language we have not measured.
+        For languages other than English,{" "}
+        <a
+          href="https://www.assemblyai.com/docs/getting-started/supported-languages"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          AssemblyAI publishes accuracy per language
+        </a>
+        , and that table is the place to check before committing to a long recording. We would rather
+        point you there than quote a figure for a language we have not measured.
       </p>
 
       <h2>What you can upload</h2>
@@ -275,11 +299,26 @@ export default function AudioToTextPage() {
 
       <p>
         Most transcription services sell a monthly plan instead. Surveys on subscription cancellation
-        consistently find the same pattern: around six in ten people have avoided subscribing to a
-        service because they expected cancelling to be difficult, four in ten who did subscribe could
-        not find the cancellation information when they looked for it, and roughly two thirds have at
-        some point been billed for a trial they meant to cancel. Signing up is designed to take
-        thirty seconds. Leaving is not designed that way at all.
+        consistently find the same pattern:{" "}
+        <a
+          href="https://dealhub.io/glossary/subscription-fatigue/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          around six in ten people have avoided subscribing to a service because they expected
+          cancelling to be difficult
+        </a>
+        ,{" "}
+        <a
+          href="https://dealhub.io/glossary/subscription-fatigue/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          four in ten who did subscribe could not find the cancellation information when they looked
+          for it
+        </a>
+        , and roughly two thirds have at some point been billed for a trial they meant to cancel.
+        Signing up is designed to take thirty seconds. Leaving is not designed that way at all.
       </p>
 
       <p>
@@ -293,7 +332,9 @@ export default function AudioToTextPage() {
       <p>
         Free converters are everywhere and for some jobs they are the right choice. One short
         recording, wording that does not have to be exact, nothing you will need again: use one and
-        think no further about it.
+        think no further about it. For anything you would rather not hand to an unknown service,
+        though, note that here the file is processed inside the EU, is never used to train an AI
+        model, and is kept by the transcription provider for one day at most, its shortest setting.
       </p>
 
       <p>There are three limits worth knowing before you decide.</p>
