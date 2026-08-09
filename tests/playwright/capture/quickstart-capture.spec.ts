@@ -162,6 +162,20 @@ test('library-list', async ({ page }) => {
   await frameShot(page, list, 'library-list')
 })
 
+// ── LIVE: transcript reading pane WITH speaker labels (seeded diarised interview) ─
+// Account seeded with a clean, public 2-speaker interview (screenshot-machine.md seed practice).
+test('transcript-speakers', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: 'Designing for Deep Work' })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  // Wait until a renamed speaker label is painted in the reading pane.
+  await page.getByText('Sarah Chen:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  const pane = page.locator('.ProseMirror:visible').first()
+  await frameShot(page, pane, 'transcript-speakers')
+})
+
 // ── STUBBED: progress card (Downloading audio) ────────────────────────────────
 test('progress-downloading', async ({ page }) => {
   await prep(page)

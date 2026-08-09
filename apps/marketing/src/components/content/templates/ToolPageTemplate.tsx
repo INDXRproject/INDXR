@@ -18,6 +18,8 @@ interface ToolPageTemplateProps {
   children: ReactNode
   faqs: Array<{ q: string; a: ReactNode }>
   sources?: Array<{ label: string; url: string }>
+  /** Absolute URL of the page's main image (screenshot/hero) for JSON-LD. Optional. */
+  image?: string
 }
 
 export function ToolPageTemplate({
@@ -31,6 +33,7 @@ export function ToolPageTemplate({
   children,
   faqs,
   sources,
+  image,
 }: ToolPageTemplateProps) {
   const schemas = [
     {
@@ -47,7 +50,11 @@ export function ToolPageTemplate({
         priceCurrency: "EUR",
         description: "Free for basic use. Credits required for AI transcription.",
       },
+      author: { "@type": "Person", name: author.name },
+      publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
+      datePublished: publishedAt,
       dateModified: updatedAt,
+      ...(image ? { image } : {}),
     },
     articlesBreadcrumb(title),
     ...(faqs.length > 0

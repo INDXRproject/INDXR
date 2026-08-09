@@ -1,14 +1,23 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
+import { DocsFigure } from "@/components/docs/DocsFigure"
+import { DocsTable } from "@/components/docs/DocsTable"
+import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
 import { UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
-import { EXPORT_FORMAT_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+import {
+  EXPORT_FORMAT_COUNT,
+  EXPORT_MENU,
+  exportFormatsProse,
+  spellCount,
+} from "@indxr/shared/lib/exportFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
-import { creditCostEur, getAnchorPackage, FREE_TIER } from "@indxr/shared/lib/pricing"
+import { CREDIT_COSTS, creditCostEur, getAnchorPackage, FREE_TIER } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 
 const anchor = getAnchorPackage()
+const ragPer10Min = CREDIT_COSTS.RAG_JSON_PER_10MIN
 
 const metaDescription =
   `Upload an audio or video file and get the full text back, punctuated, split by speaker and timestamped. ` +
@@ -54,11 +63,13 @@ const faqs = [
     q: "How do I split a file that is too large?",
     a: (
       <>
-        Use FFmpeg.{" "}
-        <code>ffmpeg -i large_file.mp3 -t 3600 part1.mp3 -ss 3600 part2.mp3</code> writes the first
-        hour to part1.mp3 and everything after it to part2.mp3, then you upload each part separately.
-        Cut on a silence rather than mid-sentence, because a word landing on the seam can be lost, and
-        the total cost is the same either way, since you pay per minute of audio and not per file.
+        Split it on a silence, not in the middle of a sentence. A cut lands cleaner at a natural
+        pause, because a word sitting on the seam between two parts can be dropped from both. The
+        cost does not change either way, since you pay per minute of audio rather than per file, so
+        two halves come to exactly what the whole would. FFmpeg makes the cut on the hour as a
+        starting point; shift the numbers to land on a pause:
+        <DocsCodeBlock>ffmpeg -i large_file.mp3 -t 3600 part1.mp3 -ss 3600 part2.mp3</DocsCodeBlock>
+        Then upload each part separately.
       </>
     ),
   },
@@ -95,6 +106,7 @@ export default function AudioToTextPage() {
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
+      image="https://indxr.ai/docs/screenshots/transcript-speakers-light.png"
     >
       <p>
         Upload an audio or video file and get the full text back, punctuated, split by speaker and
@@ -132,6 +144,12 @@ export default function AudioToTextPage() {
         </li>
       </ol>
 
+      <DocsFigure
+        src="/docs/screenshots/uploader-empty.png"
+        alt="The INDXR upload screen: a dashed drop area labelled to upload an audio file, with the accepted formats and the file size limit listed underneath."
+        caption="Step two: drop in an audio or video file. The accepted formats and the size limit are shown on the upload screen itself."
+      />
+
       <h2>What the transcript looks like</h2>
 
       <p>
@@ -150,6 +168,12 @@ export default function AudioToTextPage() {
         time.
       </p>
 
+      <DocsFigure
+        src="/docs/screenshots/transcript-speakers.png"
+        alt="A finished transcript where each paragraph opens with a timestamp and a bold speaker name, here Sarah Chen and Dr. Miguel Ferro, followed by their words."
+        caption="A finished transcript reads back with punctuation, a timestamp per paragraph, and speaker labels you rename once to update everywhere."
+      />
+
       <p>
         That structure does practical work. Punctuation lets subtitle export break lines where a
         sentence ends instead of mid-clause. It lets a chunked export for a vector database cut on
@@ -160,16 +184,16 @@ export default function AudioToTextPage() {
       <h2>How accurate it is</h2>
 
       <p>
-        English transcription accuracy here is close to the current technical ceiling.{" "}
+        English transcription accuracy here is close to the current technical ceiling. AssemblyAI
+        places English in its{" "}
         <a
           href="https://www.assemblyai.com/docs/getting-started/supported-languages"
           target="_blank"
           rel="noopener noreferrer"
         >
-          AssemblyAI places English in their highest accuracy band, below ten per cent word error
-          rate
+          highest accuracy band
         </a>
-        , and on{" "}
+        , below ten per cent word error rate, and on{" "}
         <a
           href="https://artificialanalysis.ai/speech-to-text"
           target="_blank"
@@ -190,16 +214,16 @@ export default function AudioToTextPage() {
       </p>
 
       <p>
-        For languages other than English,{" "}
+        For languages other than English, AssemblyAI publishes a{" "}
         <a
           href="https://www.assemblyai.com/docs/getting-started/supported-languages"
           target="_blank"
           rel="noopener noreferrer"
         >
-          AssemblyAI publishes accuracy per language
-        </a>
-        , and that table is the place to check before committing to a long recording. We would rather
-        point you there than quote a figure for a language we have not measured.
+          per-language accuracy table
+        </a>{" "}
+        worth checking before committing to a long recording. We would rather point you there than
+        quote a figure for a language we have not measured.
       </p>
 
       <h2>What you can upload</h2>
@@ -241,6 +265,12 @@ export default function AudioToTextPage() {
         recording and get something different out of it later.
       </p>
 
+      <DocsFigure
+        src="/docs/screenshots/library-list.png"
+        alt="The library list: rows of saved transcripts, each with its title, how it was made, its duration and date, and all of them openable again."
+        caption="Every transcript stays in your library. A free converter hands you one download; here you keep an archive you can reopen, search and re-export."
+      />
+
       <p>
         Take a two-hour interview transcribed in March. That month you export plain text and write
         your piece. In June a quote is questioned, so you search the transcript for the phrase, jump
@@ -265,11 +295,33 @@ export default function AudioToTextPage() {
       </p>
 
       <p>
-        You can export in {spellCount(EXPORT_FORMAT_COUNT)} formats: plain text with or without
-        timestamps, Markdown with or without timestamps and always with YAML frontmatter for note
-        apps, SRT, VTT, CSV and JSON. A RAG export chunks the transcript with metadata for LangChain,
-        LlamaIndex, Pinecone and similar tools.
+        You can export in {spellCount(EXPORT_FORMAT_COUNT)} formats, and everything is free except
+        the RAG export, which chunks the transcript with metadata for LangChain, LlamaIndex, Pinecone
+        and similar tools.
       </p>
+
+      <DocsTable>
+        <thead>
+          <tr>
+            <th>Group</th>
+            <th>Download</th>
+            <th>Contents</th>
+            <th>Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          {EXPORT_MENU.map((item) => (
+            <tr key={item.id}>
+              <td>{item.group}</td>
+              <td className="whitespace-nowrap font-medium text-[var(--fg)]">{item.label}</td>
+              <td>{item.sub}</td>
+              <td className="whitespace-nowrap">
+                {item.paid ? `${ragPer10Min} credit / 10 min` : "Free"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </DocsTable>
 
       <h2>What it costs</h2>
 
@@ -305,7 +357,7 @@ export default function AudioToTextPage() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          A 2024 survey by A Closer Look
+          One 2024 survey
         </a>{" "}
         found that six in ten people had avoided subscribing to a service because they expected
         cancelling to be difficult, and the same survey found that four in ten who did subscribe could
@@ -329,25 +381,49 @@ export default function AudioToTextPage() {
         model, and is kept by the transcription provider for one day at most, its shortest setting.
       </p>
 
-      <p>There are three limits worth knowing before you decide.</p>
+      <p>Where they fall short is clearest side by side.</p>
 
-      <p>
-        <strong>The output needs work.</strong> Most free tools return words and stop, without
-        reliable punctuation, without paragraphing, without speaker labels, and with timestamps
-        either absent or attached to fragments. The words can be broadly correct and the file still
-        costs half an hour of tidying, and the longer the recording the wider that gap gets.
-      </p>
-
-      <p>
-        <strong>You only get it once.</strong> A free tool gives you a download and that is all it
-        gives you. There is nothing to search later, no second export in a different format, no way
-        to correct a name and keep the correction.
-      </p>
-
-      <p>
-        <strong>Size and length.</strong> Most stop below the length of a single podcast episode or
-        lecture.
-      </p>
+      <DocsTable>
+        <thead>
+          <tr>
+            <th></th>
+            <th>A free converter</th>
+            <th>INDXR</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className="font-medium text-[var(--fg)]">Output</td>
+            <td>Usually raw words: little punctuation, no paragraphs, no speaker labels</td>
+            <td>Punctuated, split into paragraphs, speaker-labelled and timestamped</td>
+          </tr>
+          <tr>
+            <td className="font-medium text-[var(--fg)]">After you download</td>
+            <td>One file, then it is gone</td>
+            <td>Kept in your library to search and re-export</td>
+          </tr>
+          <tr>
+            <td className="font-medium text-[var(--fg)]">Speaker labels</td>
+            <td>None</td>
+            <td>Detected, and renameable once for the whole transcript</td>
+          </tr>
+          <tr>
+            <td className="font-medium text-[var(--fg)]">Export formats</td>
+            <td>Usually one, plain text</td>
+            <td>{spellCount(EXPORT_FORMAT_COUNT)}: {exportFormatsProse("and")}</td>
+          </tr>
+          <tr>
+            <td className="font-medium text-[var(--fg)]">File size limit</td>
+            <td>Often 50 to 100 MB</td>
+            <td>{UPLOAD_MAX_FILE_MB} MB</td>
+          </tr>
+          <tr>
+            <td className="font-medium text-[var(--fg)]">Where it is processed</td>
+            <td>Usually unstated</td>
+            <td>The EU, and never used to train a model</td>
+          </tr>
+        </tbody>
+      </DocsTable>
 
       <h2>Try it on your own recording</h2>
 

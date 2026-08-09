@@ -79,7 +79,7 @@ Runtime: de default-set (20 assets) draait in **~1 min** tegen `app.indxr.ai`.
 
 **Sessie (storageState):** één gedeelde login. `global-setup.ts` mint de Supabase-sessie van `account1` (uit `tests/test_accounts.json`) één keer + zet consent + thema=light, en schrijft dat naar `capture-state.json` (**gitignored** — bevat een sessietoken). Elke test hergebruikt die state; geen login per test (dat haalde de timeout). Viewport 1280×800 @2x. Fixture: video `kBdfcR-8hEY`, playlist `PL30C13C91CFFEFEA6` (zie [product-truth §8](product-truth.md)).
 
-**Library-account geseed — BEWUST, in de PRODUCTIE-DB (2026-08-03):** `library-list` toont een archief, dus het capture-account **`account1`** (`user_id f136104d-2e0a-43ec-aeea-f9e1ed122eb2`, "auto-captions tester" uit `tests/test_accounts.json`) heeft in de **live Supabase-DB** meerdere **schone, publieke** transcripten staan: naast de Justice-fixture 5 handmatig geseede rijen (Feynman/Royal Institution, MIT 6.006, Stanford "Opportunities in AI", CS50, "The Nature of Consciousness"-podcast — colleges/talks, géén testrommel, géén persoonsgegevens). **Dit is opzet en mag blijven staan** — `account1` is en blijft het testaccount; deze rijen zijn er puur zodat de library-lijst als archief leest. Niet "opruimen" als vreemde data. Loopt de lijst leeg of vervuild, seed opnieuw via de DB (INSERT-statement staat in de LOG-entry 2026-08-03) — titels moeten er echt uitzien.
+**Library-account geseed — BEWUST, in de PRODUCTIE-DB (2026-08-03):** `library-list` toont een archief, dus het capture-account **`account1`** (`user_id f136104d-2e0a-43ec-aeea-f9e1ed122eb2`, "auto-captions tester" uit `tests/test_accounts.json`) heeft in de **live Supabase-DB** meerdere **schone, publieke** transcripten staan: naast de Justice-fixture 5 handmatig geseede rijen (Feynman/Royal Institution, MIT 6.006, Stanford "Opportunities in AI", CS50, "The Nature of Consciousness"-podcast — colleges/talks, géén testrommel, géén persoonsgegevens) + (2026-08-09) één **geseede diarisatie-rij** "Designing for Deep Work: An Interview" (2 sprekers, `speaker_names` {A:"Sarah Chen",B:"Dr. Miguel Ferro"}, schone fictieve interviewtekst) puur zodat de `transcript-speakers`-capture sprekerlabels kan tonen. **Dit is opzet en mag blijven staan** — `account1` is en blijft het testaccount; deze rijen zijn er puur zodat de library-lijst als archief leest. Niet "opruimen" als vreemde data. Loopt de lijst leeg of vervuild, seed opnieuw via de DB (INSERT-statement staat in de LOG-entry 2026-08-03) — titels moeten er echt uitzien.
 
 **Dedup-valkuil:** gestubde captures gebruiken een **dummy video-id** (`STUBCARD001`) i.p.v. de fixture, anders onderschept de "you already have this transcript"-dedup-prompt de Extract-klik. De stub negeert tóch welke video het is.
 
@@ -87,7 +87,7 @@ Runtime: de default-set (20 assets) draait in **~1 min** tegen `app.indxr.ai`.
 
 **`sharp` niet geïnstalleerd → PNG-only** (geen `.webp`).
 
-## Assets (20 dual-theme = 10 onderwerpen × licht/donker) — LIVE vs GESTUBD
+## Assets (22 dual-theme = 11 onderwerpen × licht/donker) — LIVE vs GESTUBD
 
 Het onderscheid mag niet verdwijnen: **een gestubde kaart bewijst dat de frontend die state rendert, NIET dat de backend die code in die situatie stuurt.** Dit zijn precies de assets die de docs-pagina's renderen (quickstart, how-indxr-works, de drie guides); ongebruikte captures worden niet meer geschoten.
 
@@ -95,7 +95,7 @@ Het onderscheid mag niet verdwijnen: **een gestubde kaart bewijst dat de fronten
 
 | Type | Onderwerpen (elk `-light` + `-dark`) |
 |------|------|
-| **LIVE** (echte UI / echt backend) | `method-choice` (chooser, client-side), `uploader-empty` (Audio-tab, pure UI), `playlist-review` (alleen fetch, job **nooit** gestart), `library-list` (geseed account, meerdere rijen) |
+| **LIVE** (echte UI / echt backend) | `method-choice` (chooser, client-side), `uploader-empty` (Audio-tab, pure UI), `playlist-review` (alleen fetch, job **nooit** gestart), `library-list` (geseed account, meerdere rijen), `transcript-speakers` (transcriptlezer mét sprekerlabels — geseede diarisatie-rij, zie seed-noot) |
 | **GESTUBD metadata** | `cost-card-ai` (metadata gestubd → deterministische creditkosten, daarna **Cancel** — nooit bevestigd) |
 | **GESTUBD** (`page.route`) | `progress-downloading`, en de 4 ErrorCards die de docs tonen: `error-no_captions`, `error-youtube_restricted`, `error-bot_detection`, `error-storage_full` |
 
