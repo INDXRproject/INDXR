@@ -191,7 +191,7 @@ def extract_youtube_audio(
     proxy_urls: Optional[list] = None,
     timeout_seconds: Optional[float] = None,
     progress_cb: Optional[Callable[[int, int], None]] = None,
-    summary_cb: Optional[Callable[[int, int], None]] = None,
+    summary_cb: Optional[Callable[[int, int, int], None]] = None,
     screen_normal_bytes_per_sec: Optional[float] = None,
 ) -> tuple[str, str, Optional[str], int]:
     """
@@ -358,20 +358,20 @@ def extract_youtube_audio(
             f"throughput_mb_s={tp:.3f} outcome={outcome}{extra}"
         )
 
-    def _emit_summary(final_outcome: str) -> None:
+    def _emit_summary(final_outcome: str, compress_ms: int = 0) -> None:
         if _summary_sent[0]:
             return
         _summary_sent[0] = True
         avg = (cumulative_bytes / (total_download_ms / 1000.0) / 1e6) if total_download_ms > 0 else 0.0
         logger.info(
             f"[YT-DLP-AUDIO-SUMMARY] video={video_id} attempts={job_attempts} "
-            f"egress_bytes={cumulative_bytes} download_ms={total_download_ms} "
+            f"egress_bytes={cumulative_bytes} download_ms={total_download_ms} compress_ms={compress_ms} "
             f"avg_throughput_mb_s={avg:.3f} redownload={'yes' if job_attempts > 1 else 'no'} "
             f"outcome={final_outcome}"
         )
         if summary_cb is not None:
             try:
-                summary_cb(total_download_ms, job_attempts)
+                summary_cb(total_download_ms, job_attempts, compress_ms)
             except Exception:
                 pass  # meten mag de download/uitkomst NOOIT beïnvloeden
 
@@ -460,16 +460,18 @@ def extract_youtube_audio(
                 str(final_output_path)
             ]
             logger.info(f"Running ffmpeg: {' '.join(ffmpeg_cmd)}")
+            _compress_started = time.time()  # ADR-096: meet de transcode-fase (ruw→opus) apart
             result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=120)
             if result.returncode != 0:
                 raise Exception(f"ffmpeg failed: {result.stderr[-500:]}")
+            compress_ms = int((time.time() - _compress_started) * 1000)
 
             os.remove(raw_path)
 
             final_size = os.path.getsize(final_output_path) / 1024 / 1024
-            logger.info(f"[YT-DLP-AUDIO] conversion done: {raw_size:.2f}MB → {final_size:.2f}MB ogg")
+            logger.info(f"[YT-DLP-AUDIO] conversion done: {raw_size:.2f}MB → {final_size:.2f}MB ogg ({compress_ms}ms)")
 
-            _emit_summary('success')
+            _emit_summary('success', compress_ms)
             return final_output_path, video_title, channel, cumulative_bytes
 
         except SlowExitScreened as e:

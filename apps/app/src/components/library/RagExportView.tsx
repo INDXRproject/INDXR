@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Download, Lock } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
 import { buildRagJson } from "@indxr/shared/utils/formatTranscript";
+import { trackExport } from "@indxr/shared/lib/measurement";
 import type { TranscriptItem } from "@indxr/shared/utils/formatTranscript";
 import { RAG_CHUNK_PRESETS, RAG_CHUNK_LABELS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "@indxr/shared/lib/pricing";
 
@@ -75,6 +76,7 @@ export function RagExportView({
   const [selectedChunkSize, setSelectedChunkSize] = useState<RagChunkSize>(lastChunkSize);
 
   const handleDownload = (chunkSize: number) => {
+    trackExport("rag", { transcriptId, source: "rag" });  // ADR-096: gebruik-meting (RAG re-export)
     const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 30) || 'transcript';
     const json = buildRagJson(transcript, {
       videoId,

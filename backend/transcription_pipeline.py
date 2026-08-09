@@ -299,6 +299,9 @@ async def _submit_and_poll(audio_path: str, *, job_id: Optional[str], heartbeat_
                 'duration': polled.get('duration') or 0,
                 'model': polled.get('model'),
                 'language': polled.get('language'),
+                # Kwaliteitssignalen (ADR-096) doorgeven zodat de pipeline ze op de jobrij persisteert.
+                'confidence': polled.get('confidence'),
+                'language_confidence': polled.get('language_confidence'),
             }
         if status == 'error':
             return {'success': False, 'error': polled.get('error', 'transcription failed')}
@@ -626,6 +629,7 @@ async def do_assemblyai_transcription(
                     transcript_id=transcript_id,
                     credits_cost=credit_cost,
                     cache_hit=True,  # B2b: master-cache-hit → COR=0 (geen AssemblyAI/proxy), credits wél gesettled
+                    cost_eur=0,      # ADR-096: cache-hit → geen provider-/proxy-kost
                 )
                 credits_deducted = False  # success — no refund
                 if reservation_mode and credit_cost > 0:
@@ -713,12 +717,12 @@ async def do_assemblyai_transcription(
             # _write_dl_progress). Vuurt op élk eindpunt (succes én mislukking) → throughput
             # (proxy_bytes / download_ms) en her-download-versterking (download_attempts, egress vs
             # download_total_bytes) zijn direct queryebaar i.p.v. via een tijdstempel-benadering.
-            def _write_dl_summary(download_ms: int, attempts: int) -> None:
+            def _write_dl_summary(download_ms: int, attempts: int, compress_ms: int = 0) -> None:
                 if not job_id:
                     return
                 try:
                     supabase.table('transcription_jobs').update(
-                        {'download_ms': download_ms, 'download_attempts': attempts}
+                        {'download_ms': download_ms, 'download_attempts': attempts, 'compress_ms': compress_ms}
                     ).eq('id', job_id).execute()
                 except Exception as _se:
                     logger.debug(f"[pipeline] download-summary write skipped job={job_id}: {_se}")
@@ -868,6 +872,8 @@ async def do_assemblyai_transcription(
         whisper_result = await _submit_and_poll(
             str(audio_path), job_id=job_id, heartbeat_fn=heartbeat_fn, supabase=supabase,
         )
+        # ADR-096: provider-fase (submit→completed, incl. upload+queue+processing).
+        transcribe_ms = int((time.time() - assemblyai_start) * 1000)
 
         if not whisper_result['success']:
             _track(user_id, 'whisper_failed', {
@@ -887,6 +893,7 @@ async def do_assemblyai_transcription(
 
         # ── Step 7: Build transcript ──────────────────────────────────────────
         await _update_job(status="saving")
+        _save_started = time.time()  # ADR-096: meet de opslaan-fase (persist+finaliseren)
 
         transcript = [
             {
@@ -964,6 +971,7 @@ async def do_assemblyai_transcription(
         })
 
         processing_secs = int((datetime.now(timezone.utc) - job_started_at).total_seconds())
+        save_ms = int((time.time() - _save_started) * 1000)  # ADR-096: opslaan-fase
         logger.info(f"[pipeline] Complete: {len(transcript)} segments, {credit_cost}cr, transcript_id={transcript_id}, job={job_id}, {processing_secs}s")
         await _update_job(
             status="complete",
@@ -972,8 +980,20 @@ async def do_assemblyai_transcription(
             credits_cost=credit_cost,
             processing_time_seconds=processing_secs,
             assemblyai_model=whisper_result.get('model'),
+            # ADR-096 meetlaag: fasetijden (provider + opslaan; download_ms/compress_ms zijn al door de
+            # extract-summary_cb geschreven) + kwaliteitssignalen.
+            transcribe_ms=transcribe_ms,
+            save_ms=save_ms,
+            transcript_confidence=whisper_result.get('confidence'),
+            language_confidence=whisper_result.get('language_confidence'),
             **({"error_message": truncation_warning} if truncation_warning else {}),
         )
+        # ADR-096: gedenormaliseerde kostprijs per job opslaan (single-source rates via cost_config).
+        if job_id:
+            try:
+                await asyncio.to_thread(lambda: supabase.rpc('compute_and_store_job_cost', {'p_job_id': job_id}).execute())
+            except Exception as _ce:
+                logger.warning(f"[pipeline] cost_eur berekening faalde job={job_id}: {_ce}")
         credits_deducted = False  # success — no refund
         if reservation_mode and credit_cost > 0:
             # Draw-down uit de reservering: registreer het WERKELIJKE verbruik (balans-neutraal).

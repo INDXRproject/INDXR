@@ -126,15 +126,23 @@ def poll_assemblyai(transcript_id: str) -> dict:
             # Effectief gedraaid model (language-router kiest er één) — voedt de per-model COR-rate
             # (ADR-070): universal-2 = $0.15/hr, universal-3-5-pro = $0.21/hr.
             model_used = getattr(transcript, 'speech_model_used', None)
+            jr = getattr(transcript, 'json_response', None) or {}
             language = getattr(transcript, 'language_code', None)
             if language is None:
-                jr = getattr(transcript, 'json_response', None) or {}
                 language = jr.get('language_code')
+            # Kwaliteitssignalen (ADR-096): overall transcript-confidence (SDK-attr) + de
+            # taaldetectie-zekerheid (alleen in json_response, geen SDK-attr). Beide 0-1; None als afwezig.
+            confidence = getattr(transcript, 'confidence', None)
+            if confidence is None:
+                confidence = jr.get('confidence')
+            language_confidence = jr.get('language_confidence')
             return {
                 'success': True, 'status': 'completed',
                 'transcript': segments, 'duration': duration,
                 'model': str(model_used) if model_used else None,
                 'language': str(language) if language else None,
+                'confidence': float(confidence) if confidence is not None else None,
+                'language_confidence': float(language_confidence) if language_confidence is not None else None,
             }
 
         # queued of processing — nog bezig.

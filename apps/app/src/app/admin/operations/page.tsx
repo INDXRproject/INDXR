@@ -296,6 +296,86 @@ function OccurredErrors({ byType, samples }: { byType: Record<string, number>; s
   )
 }
 
+// ── ADR-096 meetlaag: fasetijd/RTF-percentielen + confidence-trend per taal ──
+type PhasePct = { metric: string; unit: string; n: number; p50: number | null; p90: number | null; p95: number | null; p99: number | null }
+type ConfTrend = { language: string; week: string; avg_confidence: number | null; avg_language_confidence: number | null; n: number }
+type PipelineMetrics = { phase_percentiles: PhasePct[]; confidence_trend: ConfTrend[]; generated_at: string }
+
+const PHASE_LABELS: Record<string, string> = {
+  download_ms: "Download", compress_ms: "Compress", transcribe_ms: "Transcribe (provider)",
+  save_ms: "Save", total_ms: "Total (start→ready)", rtf: "Real-time factor",
+}
+const PHASE_ORDER = ["download_ms", "compress_ms", "transcribe_ms", "save_ms", "total_ms", "rtf"]
+
+function fmtPhase(metric: string, v: number | null): string {
+  if (v == null) return "—"
+  if (metric === "rtf") return `${v.toFixed(3)} (1:${v > 0 ? Math.round(1 / v) : "∞"})`
+  if (v < 1000) return `${Math.round(v)}ms`
+  const s = v / 1000
+  if (s < 90) return `${s.toFixed(1)}s`
+  return `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`
+}
+
+function PipelinePhasePanel({ rows }: { rows: PhasePct[] }) {
+  const byMetric = new Map(rows.map((r) => [r.metric, r]))
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-fg-muted">
+            <th className="py-1 text-left font-medium">Phase</th>
+            <th className="py-1 text-right font-medium">p50</th>
+            <th className="py-1 text-right font-medium">p90</th>
+            <th className="py-1 text-right font-medium">p95</th>
+            <th className="py-1 text-right font-medium">p99</th>
+            <th className="py-1 text-right font-medium">n</th>
+          </tr>
+        </thead>
+        <tbody>
+          {PHASE_ORDER.map((m) => {
+            const r = byMetric.get(m)
+            if (!r) return null
+            return (
+              <tr key={m} className="border-t border-border-subtle tabular-nums">
+                <td className="py-1 text-fg">{PHASE_LABELS[m] ?? m}</td>
+                <td className="py-1 text-right">{fmtPhase(m, r.p50)}</td>
+                <td className="py-1 text-right">{fmtPhase(m, r.p90)}</td>
+                <td className="py-1 text-right">{fmtPhase(m, r.p95)}</td>
+                <td className="py-1 text-right">{fmtPhase(m, r.p99)}</td>
+                <td className="py-1 text-right text-fg-muted">{r.n}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function ConfidenceTrendPanel({ rows }: { rows: ConfTrend[] }) {
+  if (!rows.length) return <p className="py-4 text-sm text-fg-subtle">No confidence data yet — fills as new transcriptions complete.</p>
+  const langs = Array.from(new Set(rows.map((r) => r.language))).sort()
+  return (
+    <div className="space-y-3">
+      {langs.map((lang) => {
+        const series = rows.filter((r) => r.language === lang).sort((a, b) => a.week.localeCompare(b.week))
+        return (
+          <div key={lang}>
+            <p className="mb-1 text-xs uppercase tracking-wide text-fg-muted">{lang}</p>
+            <div className="flex flex-wrap gap-1.5 text-xs tabular-nums">
+              {series.map((s) => (
+                <span key={s.week} className="rounded border border-border-subtle px-1.5 py-0.5" title={`week of ${s.week} · n=${s.n}`}>
+                  {s.week.slice(5)}: <span className="font-semibold text-fg">{s.avg_confidence != null ? `${(s.avg_confidence * 100).toFixed(1)}%` : "—"}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default async function AdminOperationsPage({
   searchParams,
 }: {
@@ -306,12 +386,14 @@ export default async function AdminOperationsPage({
   const excludeInternal = sp.test === "real"
 
   const admin = createAdminClient()
-  const [{ data }, uptime] = await Promise.all([
+  const [{ data }, { data: pipeData }, uptime] = await Promise.all([
     admin.rpc("admin_operations_v3", {
       p_from: win.from, p_to: win.to, p_exclude_internal: excludeInternal,
     }),
+    admin.rpc("admin_pipeline_metrics"), // ADR-096: fasetijd/RTF-percentielen + confidence-trend per taal
     fetchUptime(), // BetterStack live status (option B) — env-gated + graceful
   ])
+  const pipe = pipeData as PipelineMetrics | null
   const o = data as OperationsV3 | null
   if (!o) {
     return <div className="rounded-xl border bg-surface p-6 text-sm text-fg-muted">Operations data unavailable.</div>
@@ -541,6 +623,22 @@ export default async function AdminOperationsPage({
             </div>
           )}
         </Card>
+      </section>
+
+      {/* ── PIPELINE SPEED & QUALITY (ADR-096) — niet window-scoped ── */}
+      <section className="space-y-3">
+        <h2 className="flex items-center text-xs font-semibold uppercase tracking-wider text-fg-muted">
+          Pipeline speed &amp; quality
+          <InfoHint text="Meetlaag (ADR-096), NIET window-scoped. Fasetijden + real-time factor (verwerkingstijd ÷ audioduur) in percentielen over ALLE voltooide echte transcripties. Confidence = AssemblyAI transcript.confidence per taal per week (laatste 12 weken) — een dalende trend signaleert kwaliteitsverlies vóór een klacht. compress/transcribe/save vullen forward-only (vanaf 2026-08-09)." />
+        </h2>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Card title="Phase times & real-time factor (percentiles)">
+            {pipe ? <PipelinePhasePanel rows={pipe.phase_percentiles} /> : <p className="py-4 text-sm text-fg-subtle">Unavailable.</p>}
+          </Card>
+          <Card title="Transcription confidence trend — per language">
+            {pipe ? <ConfidenceTrendPanel rows={pipe.confidence_trend} /> : <p className="py-4 text-sm text-fg-subtle">Unavailable.</p>}
+          </Card>
+        </div>
       </section>
 
       <p className="border-t pt-3 text-[11px] text-fg-subtle">

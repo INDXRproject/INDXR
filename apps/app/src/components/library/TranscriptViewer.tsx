@@ -85,6 +85,7 @@ import {
   resolveSpeakerName,
   TranscriptItem,
 } from "@indxr/shared/utils/formatTranscript";
+import { trackExport, computeEditRatio } from "@indxr/shared/lib/measurement";
 import { deductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
 
 // ─── Search Extension (Prosemirror Decorations) ──────────────────────────────
@@ -468,11 +469,14 @@ export function TranscriptViewer({
     }
 
     setIsSaving(true);
+    // ADR-096: grove bewerkingsgraad t.o.v. het origineel (trend per taal, geen precisie).
+    const originalText = transcript.map((t) => decodeEntities(t.text)).join(" ");
+    const editRatio = computeEditRatio(originalText, plainText);
     const { error } = await supabase
       .from("transcripts")
       // Stamp when edited_content changed so the stale-summary notice can compare against
       // ai_summary.generated_at (must move with every edited_content write — ADR-085).
-      .update({ edited_content: json, edited_content_updated_at: new Date().toISOString() })
+      .update({ edited_content: json, edited_content_updated_at: new Date().toISOString(), edit_ratio: editRatio })
       .eq("id", id);
     setIsSaving(false);
 
@@ -483,7 +487,7 @@ export function TranscriptViewer({
       setHasSavedEdits(true);
       setContentSaveFeedback({ type: 'success', message: 'Saved!' });
     }
-  }, [editor, id, supabase]);
+  }, [editor, id, supabase, transcript]);
 
   // ── Sprekers hernoemen ───────────────────────────────────────────────────────
 
@@ -586,6 +590,7 @@ export function TranscriptViewer({
 
   const handleDownload = (format: "txt" | "txt-ts" | "md" | "md-ts" | "json" | "srt" | "vtt" | "csv") => {
     const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase().slice(0, 30);
+    trackExport(format, { transcriptId: id, source: "viewer" });  // ADR-096: gebruik-meting
     try {
       if (format === "txt")
         downloadFile(generateTxt(transcript, false, speakerNames), `${safe}.txt`, "text/plain");
@@ -635,6 +640,7 @@ export function TranscriptViewer({
       chunkSize,
       speakerNames,
     });
+    trackExport("rag", { transcriptId: id, source: "rag" });  // ADR-096: gebruik-meting (eerste + re-export)
     downloadFile(json, `${safe}_rag_${chunkSize}s.json`, "application/json");
   };
 

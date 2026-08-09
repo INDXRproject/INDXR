@@ -58,6 +58,7 @@ import { saveAs } from "file-saver";
 import { generateTxt, generateCsv, generateSrt, generateVtt, generateMarkdown, buildRagJson, resolveSpeakerName, decodeEntities } from "@indxr/shared/utils/formatTranscript";
 import type { TranscriptItem } from "@indxr/shared/utils/formatTranscript";
 import { bulkDeductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
+import { trackExport } from "@indxr/shared/lib/measurement";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 import { cn } from "@indxr/shared/lib/utils";
 import { Badge, CollectionBadge, transcriptBadges } from "./badges";
@@ -273,6 +274,7 @@ export function TranscriptList({
     setIsDownloading(true);
     setDownloadError(null);
     setDownloadWarning(null);
+    trackExport(format, { source: "bulk" });  // ADR-096: gebruik-meting (één event per bulk-actie)
     try {
       const { data, error } = await supabase
         .from("transcripts")
@@ -387,6 +389,7 @@ export function TranscriptList({
     if (!ragBulkItems) return;
     setRagBulkExecuting(true);
     setRagBulkError(null);
+    trackExport("rag", { source: "bulk" });  // ADR-096: gebruik-meting (bulk RAG-actie)
     try {
       const newExports = ragBulkItems.filter((i) => !i.alreadyExported);
       if (newExports.length > 0) {
