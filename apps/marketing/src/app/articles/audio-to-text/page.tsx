@@ -78,8 +78,8 @@ const sources = [
     url: "https://artificialanalysis.ai/speech-to-text",
   },
   {
-    label: "DealHub, subscription fatigue (citing A Closer Look research)",
-    url: "https://dealhub.io/glossary/subscription-fatigue/",
+    label: "A Closer Look, Subscription Cancellation Customer Experience Study (2024)",
+    url: "https://a-closer-look.com/market-research/subscription-cancellation-customer-experience-study/",
   },
 ]
 
@@ -298,27 +298,18 @@ export default function AudioToTextPage() {
       <p>There is no subscription and credits never expire.</p>
 
       <p>
-        Most transcription services sell a monthly plan instead. Surveys on subscription cancellation
-        consistently find the same pattern:{" "}
+        Most transcription services sell a monthly plan instead.{" "}
         <a
-          href="https://dealhub.io/glossary/subscription-fatigue/"
+          href="https://a-closer-look.com/market-research/subscription-cancellation-customer-experience-study/"
           target="_blank"
           rel="noopener noreferrer"
         >
-          around six in ten people have avoided subscribing to a service because they expected
-          cancelling to be difficult
-        </a>
-        ,{" "}
-        <a
-          href="https://dealhub.io/glossary/subscription-fatigue/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          four in ten who did subscribe could not find the cancellation information when they looked
-          for it
-        </a>
-        , and roughly two thirds have at some point been billed for a trial they meant to cancel.
-        Signing up is designed to take thirty seconds. Leaving is not designed that way at all.
+          A 2024 survey by A Closer Look
+        </a>{" "}
+        found that six in ten people had avoided subscribing to a service because they expected
+        cancelling to be difficult, and the same survey found that four in ten who did subscribe could
+        not find the cancellation information and three in ten had to contact customer service to get
+        out. Signing up is designed to take thirty seconds. Leaving is not designed that way at all.
       </p>
 
       <p>
