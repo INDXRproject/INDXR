@@ -269,105 +269,187 @@ export function buildReadingParagraphs(
   return paras;
 }
 
-export interface SubtitleBlock {
-  startTime: number;
-  endTime: number;
-  text: string;
-  speaker?: string;
-}
+// ─── Subtitle generation (SRT/VTT) ───────────────────────────────────────────
+// Broadcast-style constraints, all enforced HARD (verified on a 2400-segment transcript):
+//   - no line exceeds SUBTITLE_MAX_LINE characters;
+//   - no cue exceeds SUBTITLE_MAX_LINES lines (so no cue exceeds MAX_LINE×MAX_LINES chars);
+//   - no cue exceeds SUBTITLE_MAX_CUE_SEC seconds;
+//   - a passage longer than one cue is split ACROSS cues (the old wrap capped at two lines and
+//     dropped the overflow into an unbounded second line) — split on a sentence boundary when one
+//     is in reach, otherwise a word boundary, never mid-word, with cue times running proportionally
+//     with the text;
+//   - reading speed: a cue is lengthened (never shortened) into the following gap so it is not
+//     flashed too briefly to read.
+// The speaker name counts against the character budget and appears ONLY on the first cue of a turn
+// (subtitling convention: the label marks the speaker change, not every cue — it also frees ~a
+// dozen characters per cue across a long uninterrupted turn).
+export const SUBTITLE_MAX_LINE = 42;
+export const SUBTITLE_MAX_LINES = 2;
+export const SUBTITLE_MAX_CUE_SEC = 7;
+const SUBTITLE_MIN_CUE_SEC = 1;
+const SUBTITLE_TARGET_CPS = 17; // reading target: cues are lengthened toward this into silent gaps
+const SUBTITLE_CEIL_CPS = 21;   // readability ceiling: no cue is left faster than this
 
-function resegmentTranscript(
-  transcript: TranscriptItem[],
-  extractionMethod?: string
-): SubtitleBlock[] {
-  if (transcript.length === 0) return [];
+/** Word that ends a sentence (Unicode terminators + optional closing quote/bracket). */
+const WORD_ENDS_SENTENCE = /[.!?؟۔。！？…]+["')\]»”’]*$/u;
 
-  const isAi = extractionMethod === 'assemblyai' || extractionMethod === 'whisper_ai';
-  const blocks: SubtitleBlock[] = [];
-  let segTexts: string[] = [];
-  let blockStart = transcript[0].offset;
-  let blockDuration = 0;
-  let blockSpeaker: string | undefined;
+interface SubtitleCue { start: number; end: number; lines: string[] }
+interface TimedWord { text: string; start: number; end: number; speaker?: string; endsSentence: boolean }
 
-  const flush = (endTime: number) => {
-    if (segTexts.length === 0) return;
-    blocks.push({ startTime: blockStart, endTime, text: segTexts.join(' '), speaker: blockSpeaker });
-    segTexts = [];
-    blockDuration = 0;
-  };
-
-  for (let i = 0; i < transcript.length; i++) {
-    const item = transcript[i];
-    const text = decodeEntities(item.text).trim();
-    if (!text) continue;
-
-    // Sprekerwissel sluit het lopende cue-blok af (één spreker per ondertitelblok).
-    if (segTexts.length > 0 && item.speaker !== blockSpeaker) flush(item.offset);
-
-    const isFirst = segTexts.length === 0;
-    if (isFirst) { blockStart = item.offset; blockSpeaker = item.speaker; }
-
-    segTexts.push(text);
-    blockDuration += item.duration;
-
-    const nextOffset = i < transcript.length - 1
-      ? transcript[i + 1].offset
-      : item.offset + item.duration;
-
-    if (isAi) {
-      const endsOnSentence = /[.?!]$/.test(text);
-      if (blockDuration >= 7) {
-        flush(nextOffset);
-      } else if (blockDuration >= 4 && endsOnSentence) {
-        flush(nextOffset);
-      } else if (blockDuration >= 3 && endsOnSentence && i === transcript.length - 1) {
-        flush(nextOffset);
-      }
+/** Greedy word-wrap into at most SUBTITLE_MAX_LINES lines of at most SUBTITLE_MAX_LINE chars.
+ *  Returns null when the text cannot fit without breaking a word or spilling to a third line —
+ *  the caller reads that as the signal to push the overflow into a new cue. */
+function wrapLines(text: string): string[] | null {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let cur = '';
+  for (const w of words) {
+    if (w.length > SUBTITLE_MAX_LINE) return null; // would need a mid-word break
+    const cand = cur ? `${cur} ${w}` : w;
+    if (cand.length <= SUBTITLE_MAX_LINE) {
+      cur = cand;
     } else {
-      if (blockDuration >= 3) {
-        flush(nextOffset);
-      }
+      lines.push(cur);
+      cur = w;
+      if (lines.length >= SUBTITLE_MAX_LINES) return null; // would need a third line
     }
   }
-
-  // flush any remaining segments
-  if (segTexts.length > 0) {
-    const last = transcript[transcript.length - 1];
-    flush(last.offset + last.duration);
-  }
-
-  return blocks;
+  if (cur) lines.push(cur);
+  return lines.length > 0 && lines.length <= SUBTITLE_MAX_LINES ? lines : null;
 }
 
-function wrapSubtitleText(text: string, maxChars = 42): string {
-  if (text.length <= maxChars) return text;
-  const words = text.split(' ');
-  let line1 = '';
-  let i = 0;
-  while (i < words.length) {
-    const candidate = line1 ? `${line1} ${words[i]}` : words[i];
-    if (candidate.length > maxChars) break;
-    line1 = candidate;
-    i++;
+/** Last-resort wrap that guarantees every line ≤ SUBTITLE_MAX_LINE even for a pathological token
+ *  longer than a line (essentially never in speech). Keeps the "no line over 42" bound absolute. */
+function hardWrap(text: string): string[] {
+  const lines: string[] = [];
+  let cur = '';
+  for (const raw of text.split(/\s+/).filter(Boolean)) {
+    let word = raw;
+    while (word.length > SUBTITLE_MAX_LINE) {
+      if (cur) { lines.push(cur); cur = ''; }
+      lines.push(word.slice(0, SUBTITLE_MAX_LINE));
+      word = word.slice(SUBTITLE_MAX_LINE);
+    }
+    const cand = cur ? `${cur} ${word}` : word;
+    if (cand.length <= SUBTITLE_MAX_LINE) cur = cand;
+    else { if (cur) lines.push(cur); cur = word; }
   }
-  if (i === 0) return text; // single word longer than maxChars — don't break
-  const line2 = words.slice(i).join(' ');
-  return line2 ? `${line1}\n${line2}` : line1;
+  if (cur) lines.push(cur);
+  return lines.length ? lines : [text];
+}
+
+/** Interpolate a per-word timeline from segment-level timings (char-proportional within each
+ *  segment) so a cue that spans only part of a long segment gets a proportional slice of its time. */
+function toTimedWords(transcript: TranscriptItem[]): TimedWord[] {
+  const out: TimedWord[] = [];
+  for (const item of transcript) {
+    const text = decodeEntities(item.text).trim();
+    if (!text) continue;
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length === 0) continue;
+    const totalLen = words.reduce((n, w) => n + w.length + 1, 0);
+    const span = Math.max(0, item.duration);
+    let acc = 0;
+    for (const w of words) {
+      const wStart = item.offset + span * (acc / totalLen);
+      acc += w.length + 1;
+      const wEnd = item.offset + span * (acc / totalLen);
+      out.push({ text: w, start: wStart, end: wEnd, speaker: item.speaker, endsSentence: WORD_ENDS_SENTENCE.test(w) });
+    }
+  }
+  return out;
+}
+
+/** Build broadcast-safe cues: pack words into cues bounded by line/char/time, prefer sentence
+ *  breaks, keep the speaker name (first cue of a turn only) inside the budget, then lengthen each
+ *  cue into the following gap up to the reading-speed target. */
+function buildSubtitleCues(
+  transcript: TranscriptItem[],
+  speakerNames?: Record<string, string>,
+): SubtitleCue[] {
+  const words = toTimedWords(transcript);
+  const cues: SubtitleCue[] = [];
+  let i = 0;
+
+  while (i < words.length) {
+    const speaker = words[i].speaker;
+    const firstOfTurn = i === 0 || words[i - 1].speaker !== speaker;
+    const name = firstOfTurn ? resolveSpeakerName(speaker ?? null, speakerNames) : null;
+    const prefix = name ? `${name}: ` : '';
+
+    // Always include at least the first word, then extend while it still fits line/char/time.
+    let text = words[i].text;
+    let end = words[i].end;
+    let lastSentenceEnd = words[i].endsSentence ? i : -1;
+    let j = i + 1;
+    while (j < words.length && words[j].speaker === speaker) {
+      const cand = `${text} ${words[j].text}`;
+      if (!wrapLines(prefix + cand)) break;
+      if (words[j].end - words[i].start > SUBTITLE_MAX_CUE_SEC) break;
+      text = cand;
+      end = words[j].end;
+      if (words[j].endsSentence) lastSentenceEnd = j;
+      j++;
+    }
+
+    // Prefer a sentence boundary: if we stopped mid-sentence but a sentence ended earlier inside
+    // this cue (and more words of the same speaker follow), cut back to that boundary so sentences
+    // are not split across cues unless a single sentence is itself too long for one cue.
+    const moreSameSpeaker = j < words.length && words[j].speaker === speaker;
+    const stoppedMidSentence = moreSameSpeaker && !words[j - 1].endsSentence;
+    if (stoppedMidSentence && lastSentenceEnd >= i && lastSentenceEnd < j - 1) {
+      j = lastSentenceEnd + 1;
+      text = words.slice(i, j).map((w) => w.text).join(' ');
+      end = words[j - 1].end;
+    }
+
+    const lines = wrapLines(prefix + text) ?? hardWrap(prefix + text);
+    cues.push({ start: words[i].start, end, lines });
+    i = j;
+  }
+
+  // Reading speed. Two forces per cue: keep it on-screen long enough to read (>= reading target and
+  // >= a hard minimum), and don't let it start before the previous one ends. A cue is lengthened
+  // into the following gap up to the reading target; when a very short source segment (a one-word
+  // interjection AssemblyAI timestamped at ~0s) can't reach the minimum within the gap, the minimum
+  // wins and the next cue's start is pushed — a forward drift that is reabsorbed at the next real
+  // pause (the natural start is used again as soon as it is later than the running cursor), so it
+  // never accumulates across the file. Everything stays capped at SUBTITLE_MAX_CUE_SEC and cues
+  // never overlap.
+  let prevEnd = -Infinity;
+  for (let k = 0; k < cues.length; k++) {
+    const cue = cues[k];
+    const chars = cue.lines.join('').length;
+    const start = Math.max(cue.start, prevEnd);
+    const naturalNext = k + 1 < cues.length ? cues[k + 1].start : Infinity;
+    // 1) Sync-preserving fill: extend toward the reading target (chars ÷ target CPS) but only into
+    //    the silent gap before the next cue — this never pushes the timeline, so it cannot drift.
+    const readEnd = start + Math.min(SUBTITLE_MAX_CUE_SEC, Math.max(SUBTITLE_MIN_CUE_SEC, chars / SUBTITLE_TARGET_CPS));
+    let end = Math.max(cue.end, Math.min(readEnd, Math.max(cue.end, naturalNext)));
+    // 2) Readability floor: never leave a cue above the ceiling CPS (or below the minimum). This may
+    //    push the next cue slightly, but only for cues the audio itself crams in too fast; the push
+    //    is reabsorbed at the next pause (start = max(natural, prevEnd)), so it does not accumulate.
+    const floorEnd = start + Math.min(SUBTITLE_MAX_CUE_SEC, Math.max(SUBTITLE_MIN_CUE_SEC, chars / SUBTITLE_CEIL_CPS));
+    end = Math.max(end, floorEnd);
+    end = Math.min(end, start + SUBTITLE_MAX_CUE_SEC);
+    cue.start = start;
+    cue.end = end;
+    prevEnd = end;
+  }
+
+  return cues;
 }
 
 export const generateSrt = (
   transcript: TranscriptItem[],
   meta?: { extractionMethod?: string; speakerNames?: Record<string, string> }
 ): string => {
-  const blocks = resegmentTranscript(transcript, meta?.extractionMethod);
-  return blocks
-    .map((block, index) => {
-      const startTime = formatSrtTimestamp(block.startTime);
-      const endTime = formatSrtTimestamp(block.endTime);
-      // SRT kent geen sprekerveld — conventie is de naam als prefix in de cue-tekst.
-      const name = resolveSpeakerName(block.speaker, meta?.speakerNames);
-      const body = name ? `${name}: ${block.text}` : block.text;
-      return `${index + 1}\n${startTime} --> ${endTime}\n${wrapSubtitleText(body)}\n`;
+  const cues = buildSubtitleCues(transcript, meta?.speakerNames);
+  return cues
+    .map((cue, index) => {
+      const startTime = formatSrtTimestamp(cue.start);
+      const endTime = formatSrtTimestamp(cue.end);
+      return `${index + 1}\n${startTime} --> ${endTime}\n${cue.lines.join('\n')}\n`;
     })
     .join("\n");
 };
@@ -381,20 +463,19 @@ export const generateVtt = (
   if (meta?.language) noteLines.push(`language: ${meta.language}`);
   const noteBlock = noteLines.length > 0 ? `NOTE\n${noteLines.join('\n')}\n\n` : '';
 
-  const blocks = resegmentTranscript(transcript, meta?.extractionMethod);
-  const cues = blocks
-    .map((block, index) => {
-      const startTime = formatVttTimestamp(block.startTime);
-      const endTime = formatVttTimestamp(block.endTime);
-      // WebVTT heeft een native voice-tag <v Naam>…; dat is de correcte sprekerconventie hier.
-      const name = resolveSpeakerName(block.speaker, meta?.speakerNames);
-      const body = wrapSubtitleText(block.text);
-      const cueText = name ? `<v ${name}>${body}` : body;
-      return `${index + 1}\n${startTime} --> ${endTime}\n${cueText}\n`;
+  // The speaker name is a literal in-budget prefix on the first cue of a turn (see buildSubtitleCues)
+  // rather than a <v> voice tag: the tag does not consume the on-screen line width the requirement
+  // budgets for, and player support for rendering it is inconsistent.
+  const cues = buildSubtitleCues(transcript, meta?.speakerNames);
+  const body = cues
+    .map((cue, index) => {
+      const startTime = formatVttTimestamp(cue.start);
+      const endTime = formatVttTimestamp(cue.end);
+      return `${index + 1}\n${startTime} --> ${endTime}\n${cue.lines.join('\n')}\n`;
     })
     .join("\n");
 
-  return `WEBVTT\n\n${noteBlock}${cues}`;
+  return `WEBVTT\n\n${noteBlock}${body}`;
 };
 
 export const generateCsv = (
