@@ -1,51 +1,83 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
-import { UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
+import { UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
+import { EXPORT_FORMAT_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
-import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
-import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { creditCostEur, getAnchorPackage, FREE_TIER } from "@indxr/shared/lib/pricing"
+import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
+
+const anchor = getAnchorPackage()
+
+const metaDescription =
+  `Upload an audio or video file and get the full text back, punctuated, split by speaker and timestamped. ` +
+  `Runs on ${transcriptionModelName()} across 99 languages at one credit per minute; a free account includes ${FREE_TIER.WELCOME_CREDITS} credits.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/audio-to-text" },
-  title: "Audio File to Text — Upload MP3, MP4, WAV & More | INDXR.AI",
-  description:
-    `Upload any audio or video file and get a full transcript. Supports ${UPLOAD_FORMATS_LIST} up to ${UPLOAD_MAX_FILE_MB}MB. 1 credit per minute, powered by ${transcriptionModelName()}.`,
+  title: "Audio to Text — Transcribe Audio Files to Text | INDXR.AI",
+  description: metaDescription,
   ...editorialOg("audio-to-text"),
 }
 
 const faqs = [
   {
-    q: "Is there a file size limit?",
-    a: "500MB maximum per upload — roughly 8 hours or more of audio, depending on the recording's bitrate. AI transcription also has a 10-hour ceiling per file. For larger or longer files, split them first using a tool like FFmpeg or Audacity.",
+    q: "How do I convert an audio file to text?",
+    a: `Create a free account, upload the file, and the transcript comes back in a few minutes. INDXR runs it through ${transcriptionModelName()}, returns punctuated text split by speaker with timestamps, and stores it in your library to read, edit and export. It costs one credit per minute of audio.`,
   },
   {
-    q: "Does it work for video files as well as audio?",
-    a: "Yes. MP4 and WEBM video files are supported — INDXR.AI extracts the audio track automatically. You don't need to extract audio yourself before uploading.",
+    q: "Can I convert audio to text for free?",
+    a: `Yes, up to a point. A free account includes ${FREE_TIER.WELCOME_CREDITS} credits, which covers ${FREE_TIER.WELCOME_CREDITS} minutes of audio at one credit per minute, with no card required. After that, credits are pay as you go and never expire.`,
   },
   {
-    q: "How accurate is the transcription?",
-    a: `On AssemblyAI's own benchmarks, ${transcriptionModelName()} reaches roughly 4–5% word error rate on clean English audio. For challenging audio — heavy accents, significant background noise, overlapping speakers — accuracy varies by language and conditions, but it typically outperforms YouTube's auto-captions under the same conditions.`,
+    q: "Does it work with video files?",
+    a: "Yes. MP4, WEBM and MPEG video files work directly, and the audio track is extracted for you, so you do not need to convert the video first.",
   },
   {
-    q: "Can I transcribe in languages other than English?",
-    a: "Yes. 99 languages are supported with automatic detection. The transcript will be in the language spoken in the audio.",
+    q: "How long can a recording be?",
+    a: `Up to ten hours per file, and up to ${UPLOAD_MAX_FILE_MB}MB. Anything longer than ten hours is rejected before any credit is charged, so split it first.`,
   },
   {
-    q: "Does the file get stored on INDXR.AI's servers?",
-    a: "The audio file is processed and then discarded. Only the resulting transcript text is stored in your library. INDXR.AI does not retain uploaded audio files after transcription is complete.",
+    q: "How do I split a file that is too large?",
+    a: (
+      <>
+        Use FFmpeg.{" "}
+        <code>ffmpeg -i large_file.mp3 -t 3600 part1.mp3 -ss 3600 part2.mp3</code> writes the first
+        hour to part1.mp3 and everything after it to part2.mp3, then you upload each part separately.
+      </>
+    ),
   },
   {
-    q: "What's the difference between audio upload and YouTube AI Transcription?",
-    a: `The transcription pipeline is identical — both use ${transcriptionModelName()} and cost 1 credit per minute. The difference is the source: YouTube AI Transcription downloads the audio from a YouTube URL automatically, while audio upload lets you bring your own file from any source.`,
+    q: "What happens to my file after transcription?",
+    a: "It is deleted. The upload is processed on European infrastructure and removed once transcription finishes. Only the transcript text stays in your library.",
+  },
+  {
+    q: "Can I edit the transcript?",
+    a: "Yes. You can correct the text in the library, and edits are stored separately from the original, so the untouched version is always one click away.",
+  },
+  {
+    q: "Which languages are supported?",
+    a: "99 languages, detected automatically from the audio, so you do not choose one. Accuracy varies by language, and AssemblyAI publishes a per-language table worth checking before a long recording.",
   },
 ]
 
 const sources = [
   {
+    label: "AssemblyAI supported languages",
+    url: "https://www.assemblyai.com/docs/getting-started/supported-languages",
+  },
+  {
     label: `${transcriptionModelName()} benchmarks`,
-    url: "https://www.assemblyai.com/models",
+    url: "https://www.assemblyai.com/benchmarks",
+  },
+  {
+    label: "Artificial Analysis speech-to-text leaderboard",
+    url: "https://artificialanalysis.ai/speech-to-text",
+  },
+  {
+    label: "DealHub, subscription fatigue (citing A Closer Look research)",
+    url: "https://dealhub.io/glossary/subscription-fatigue/",
   },
 ]
 
@@ -54,91 +86,172 @@ export default function AudioToTextPage() {
     <ToolPageTemplate
       category="Workflows"
       slug="audio-to-text"
-      title="Audio File to Text — Upload Any Audio, Get a Transcript"
-      metaDescription={`Upload any audio or video file and get a full transcript. Supports ${UPLOAD_FORMATS_LIST} up to ${UPLOAD_MAX_FILE_MB}MB. 1 credit per minute, powered by ${transcriptionModelName()}.`}
+      title="Audio to text: transcribe any audio file"
+      metaDescription={metaDescription}
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-08-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
     >
       <p>
-        Not all audio lives on YouTube. Podcast episodes, recorded meetings, lecture recordings, interview
-        files, local video downloads — these don&apos;t have a URL to paste. INDXR.AI&apos;s Audio Upload tab accepts
-        any audio or video file and runs it through the same AI transcription pipeline used for YouTube
-        videos.
+        Upload an audio or video file and get the full text back, punctuated, split by speaker and
+        timestamped. It runs on {transcriptionModelName()} across 99 languages and costs one credit
+        per minute of audio.{" "}
+        <Link href="/signup">A free account</Link> includes {FREE_TIER.WELCOME_CREDITS} credits,
+        enough for {FREE_TIER.WELCOME_CREDITS} minutes, so you can transcribe a real recording before
+        spending anything.
       </p>
 
-      <p>The result is a full text transcript, stored in your library, exportable in every format INDXR.AI supports.</p>
+      <h2>How it works</h2>
 
-      <h2>Supported Formats and Limits</h2>
+      <ol>
+        <li>
+          <strong>Create a free account.</strong> The transcript is stored in a library for you
+          rather than handed over as a single download, which is why an account is needed. The{" "}
+          {FREE_TIER.WELCOME_CREDITS} credits are included and no card is required.
+        </li>
+        <li>
+          <strong>Upload your file.</strong> MP3, MP4, WAV, M4A, WEBM, OGG, FLAC, MPEG or MPGA, up to{" "}
+          {UPLOAD_MAX_FILE_MB}MB and up to ten hours. Video files work directly; the audio track is
+          extracted for you. You do not pick a language, because the model detects it from the audio.
+        </li>
+        <li>
+          <strong>Wait.</strong> Processing takes roughly one minute per ten minutes of audio and
+          runs on the server, so closing the tab or losing your connection does not cost you the job.
+          Everything is processed on European infrastructure, and the uploaded file is deleted once
+          transcription finishes. Only the text stays in your library.
+        </li>
+        <li>
+          <strong>Read, edit, export.</strong> The transcript opens in your library, where you can
+          correct it, search it, summarise it and export it in {spellCount(EXPORT_FORMAT_COUNT)}{" "}
+          formats.
+        </li>
+      </ol>
+
+      <h2>What the transcript looks like</h2>
+
+      <p>
+        Two things determine whether a transcript is usable: how many words are correct, and how the
+        text is structured. Both matter, and most tools only address the first. Word accuracy is
+        covered in the next section; the structure works as follows.
+      </p>
+
+      <p>
+        Transcripts come back punctuated, with sentence boundaries the model determined rather than
+        one continuous block of lowercase text. Speakers are detected and labelled, and you can
+        rename them: change Speaker A to the interviewer&apos;s name once and every occurrence
+        updates, in the transcript and in every export, with the original label always recoverable.
+        Text is grouped into paragraphs for reading, each with a timestamp marking where that passage
+        begins. Exports that include timestamps go down to the individual segment, a few seconds at a
+        time.
+      </p>
+
+      <p>
+        That structure does practical work. Punctuation lets subtitle export break lines where a
+        sentence ends instead of mid-clause. It lets a chunked export for a vector database cut on
+        complete thoughts. Speaker labels make an interview quotable without listening back to work
+        out who said what.
+      </p>
+
+      <h2>How accurate it is</h2>
+
+      <p>
+        English transcription accuracy here is close to the current technical ceiling. AssemblyAI
+        places English in their highest accuracy band, below ten per cent word error rate, and on
+        independent benchmarks {TRANSCRIPTION_MODEL.displayName} posts an English word error rate in
+        the low single digits. The top of that field has converged: on clean audio the best few
+        models are within a percentage point or two of one another.
+      </p>
+
+      <p>
+        Accuracy falls where you would expect: strong accents, overlapping speakers, background
+        noise, technical vocabulary, unfamiliar names. It handles these better than the automatic
+        captions produced by video platforms, but no engine handles them perfectly, and on difficult
+        audio expect to correct a few names.
+      </p>
+
+      <p>
+        For languages other than English, AssemblyAI publishes accuracy per language, and that table
+        is the place to check before committing to a long recording. We would rather point you there
+        than quote a figure for a language we have not measured.
+      </p>
+
+      <h2>What you can upload</h2>
 
       <table>
-        <thead>
-          <tr>
-            <th>Format</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
         <tbody>
-          <tr><td><code>MP3</code></td><td>Most common audio format, fully supported</td></tr>
-          <tr><td><code>MP4</code></td><td>Video file — audio track extracted automatically</td></tr>
-          <tr><td><code>WAV</code></td><td>Uncompressed audio, typically larger files</td></tr>
-          <tr><td><code>M4A</code></td><td>Apple audio format, common from iOS recordings</td></tr>
-          <tr><td><code>OGG</code></td><td>Open format, common from browser and web recordings</td></tr>
-          <tr><td><code>FLAC</code></td><td>Lossless audio, larger files</td></tr>
-          <tr><td><code>WEBM</code></td><td>Web video format, common from browser recordings</td></tr>
+          <tr>
+            <td>Audio formats</td>
+            <td>MP3, WAV, M4A, OGG, FLAC, MPGA</td>
+          </tr>
+          <tr>
+            <td>Video formats</td>
+            <td>MP4, WEBM, MPEG</td>
+          </tr>
+          <tr>
+            <td>Maximum file size</td>
+            <td>{UPLOAD_MAX_FILE_MB}MB</td>
+          </tr>
+          <tr>
+            <td>Maximum length</td>
+            <td>10 hours per file</td>
+          </tr>
+          <tr>
+            <td>Languages</td>
+            <td>99, detected automatically</td>
+          </tr>
         </tbody>
       </table>
 
       <p>
-        Maximum file size: <strong>500MB</strong>. Most web upload tools cap at 50–100MB. INDXR.AI&apos;s
-        upload pipeline handles larger files without that constraint — we&apos;ve tested uploads of over 200MB
-        and 210+ minutes of audio without issues.
+        The {UPLOAD_MAX_FILE_MB}MB limit is worth noting against free browser tools, which commonly
+        stop at 50 or 100MB. A single uncompressed hour of audio exceeds that on its own.
+      </p>
+
+      <h2>What you can do with the transcript</h2>
+
+      <p>
+        Because the transcript is stored rather than downloaded once, you can come back to the same
+        recording and get something different out of it later.
       </p>
 
       <p>
-        If you need to split very large files, FFmpeg handles this cleanly:{" "}
-        <code>ffmpeg -i large_file.mp3 -t 3600 part1.mp3 -ss 3600 part2.mp3</code> splits a file at the
-        1-hour mark.
-      </p>
-
-      <h2>How the Transcription Works</h2>
-
-      <p>
-        Once uploaded, the file is processed through {transcriptionModelName()} — the same model used when INDXR.AI transcribes YouTube videos without captions. The model handles a wide range of audio conditions:
+        Take a two-hour interview transcribed in March. That month you export plain text and write
+        your piece. In June a quote is questioned, so you search the transcript for the phrase, jump
+        to the timestamp and check what was actually said. In September you want a clip subtitled, so
+        you export SRT and the lines come back rebuilt to a maximum of 42 characters across at most
+        two lines, with cues breaking on sentences, which is how professional subtitling is done.
+        Nothing was re-uploaded and none of it cost extra.
       </p>
 
       <p>
-        <strong>Languages:</strong> 99 languages with automatic detection. You don&apos;t need to specify the
-        language; the model identifies it from the audio.
+        You can correct the text without losing the original, because edits are stored separately and
+        the untouched version stays one click away.
       </p>
 
       <p>
-        <strong>Audio quality:</strong> The model is trained on real-world audio including phone
-        recordings, conference recordings with background noise, and studio-quality content. It is
-        noticeably more accurate than YouTube&apos;s auto-captions on hard audio, and on AssemblyAI&apos;s
-        benchmarks {transcriptionModelName()} reaches roughly 4–5% word error rate on clean English audio.
+        You can have the recording summarised. The summary reads the whole thing, splits it into
+        chapters where the subject changes, and writes worked-out notes under each one, with a
+        timestamp per chapter that jumps the player to that moment. A four-hour recording produces a
+        four-hour summary rather than the three paragraphs a fifteen-minute one would give you, so a
+        long lecture becomes an outline you can revise from and a long interview becomes something
+        you can navigate.
       </p>
 
       <p>
-        <strong>Punctuation:</strong> Unlike auto-captions, AssemblyAI output includes proper punctuation
-        and sentence boundaries. This matters for readability, for SRT/VTT timing quality, and for
-        downstream uses like RAG export where sentence detection affects chunk quality.
+        You can export in {spellCount(EXPORT_FORMAT_COUNT)} formats: plain text with or without
+        timestamps, Markdown with or without timestamps and always with YAML frontmatter for note
+        apps, SRT, VTT, CSV and JSON. A RAG export chunks the transcript with metadata for LangChain,
+        LlamaIndex, Pinecone and similar tools.
       </p>
 
-      <p>
-        <strong>Processing time:</strong> Approximately 1 minute of processing time per 10 minutes of
-        audio for most files. You receive a live elapsed timer during processing, and the job continues on
-        the server even if your connection drops briefly.
-      </p>
-
-      <h2>Credit Cost</h2>
+      <h2>What it costs</h2>
 
       <p>
-        Audio Upload transcription costs <strong>1 credit per minute of audio</strong>, with a minimum of
-        1 credit. The credit is charged based on the actual audio duration detected after upload, not the
-        file size.
+        One credit per minute of audio, rounded up, based on the duration detected after upload
+        rather than the file size. Prices below are on the {anchor.name} package, which is €
+        {anchor.priceEur} for {anchor.credits.toLocaleString()} credits.
       </p>
 
       <table>
@@ -146,7 +259,7 @@ export default function AudioToTextPage() {
           <tr>
             <th>Audio length</th>
             <th>Credits</th>
-            <th>Cost at {getAnchorPackage().name} pricing</th>
+            <th>Cost at {anchor.name} pricing</th>
           </tr>
         </thead>
         <tbody>
@@ -158,65 +271,66 @@ export default function AudioToTextPage() {
         </tbody>
       </table>
 
-      <h2>What You Get After Transcription</h2>
+      <p>There is no subscription and credits never expire.</p>
 
       <p>
-        The transcript appears in your library alongside any YouTube transcripts you&apos;ve extracted. From
-        there:
+        Most transcription services sell a monthly plan instead. Surveys on subscription cancellation
+        consistently find the same pattern: around six in ten people have avoided subscribing to a
+        service because they expected cancelling to be difficult, four in ten who did subscribe could
+        not find the cancellation information when they looked for it, and roughly two thirds have at
+        some point been billed for a trial they meant to cancel. Signing up is designed to take
+        thirty seconds. Leaving is not designed that way at all.
       </p>
 
       <p>
-        <strong>Export in any format:</strong> TXT plain, TXT with timestamps, Markdown with YAML
-        frontmatter, SRT, VTT, CSV, JSON, or RAG-optimized JSON. SRT and VTT output is resegmented to
-        3–7 second blocks at 42 characters per line — the professional subtitle standard.
+        If you have one recording this year, you pay for one recording this year. Credits bought in
+        April are still there in October. No charge arrives in a month you did not use the site, and
+        there is no cancellation to remember because nothing recurs.
+      </p>
+
+      <h2>Why not use a free converter</h2>
+
+      <p>
+        Free converters are everywhere and for some jobs they are the right choice. One short
+        recording, wording that does not have to be exact, nothing you will need again: use one and
+        think no further about it.
+      </p>
+
+      <p>There are three limits worth knowing before you decide.</p>
+
+      <p>
+        <strong>The output needs work.</strong> Most free tools return words and stop, without
+        reliable punctuation, without paragraphing, without speaker labels, and with timestamps
+        either absent or attached to fragments. The words can be broadly correct and the file still
+        costs half an hour of tidying, and the longer the recording the wider that gap gets.
       </p>
 
       <p>
-        <strong>Edit in the rich-text editor:</strong> Correct errors, add formatting, and annotate the
-        transcript. Edits are saved separately from the original, so you can always revert.
+        <strong>You only get it once.</strong> A free tool gives you a download and that is all it
+        gives you. There is nothing to search later, no second export in a different format, no way
+        to correct a name and keep the correction.
       </p>
 
       <p>
-        <strong>Generate an AI summary:</strong> An AI-generated summary with key points and action items
-        is available for any transcript in your library, at 3 credits.
+        <strong>Size and length.</strong> Most stop below the length of a single podcast episode or
+        lecture.
+      </p>
+
+      <h2>Try it on your own recording</h2>
+
+      <p>
+        The only reliable way to judge a transcription service is to run something through it that you
+        care about. A free account includes {FREE_TIER.WELCOME_CREDITS} credits, covering{" "}
+        {FREE_TIER.WELCOME_CREDITS} minutes of audio, with no subscription and no card. If the result
+        is not good enough, you have lost nothing. If it is, the credits you buy afterwards do not
+        expire.
       </p>
 
       <p>
-        <strong>Export as RAG JSON:</strong> For podcasts, lectures, or interviews you want to make
-        searchable via a vector database — enable RAG JSON export to get chunked, metadata-rich output
-        ready for LangChain, LlamaIndex, or direct vector database ingestion. See{" "}
-        <Link href="/articles/transcript-export-formats">the export formats reference</Link> for the
-        full pipeline.
+        <Link href="/signup">Create a free account</Link>
       </p>
-
-      <h2>Common Use Cases</h2>
-
       <p>
-        <strong>Podcast transcription:</strong> Upload an episode MP3 directly. Export as Markdown for
-        show notes, TXT for a newsletter, or RAG JSON to build a searchable podcast archive.
-      </p>
-
-      <p>
-        <strong>Recorded lecture notes:</strong> A 90-minute lecture recording becomes a searchable,
-        editable transcript. Export as Markdown for an Obsidian note, or as CSV for analysis alongside
-        other course materials.
-      </p>
-
-      <p>
-        <strong>Interview transcription:</strong> Upload a recorded interview. The transcript is accurate
-        enough to quote from directly — useful for journalists, researchers, and user researchers.
-      </p>
-
-      <p>
-        <strong>Downloaded YouTube videos:</strong> If you&apos;ve downloaded a YouTube video that has no
-        captions, extract the audio and upload it to get a transcript the same way as a live YouTube URL.
-      </p>
-
-      <p>
-        For YouTube videos (where you have a URL rather than a downloaded file), use the{" "}
-        <Link href="/transcribe">YouTube Transcript Generator</Link> instead — it
-        handles YouTube caption extraction for free and AI transcription when captions aren&apos;t available. For
-        credit packages, see the <Link href="/pricing">pricing page</Link>.
+        <Link href="/pricing">See pricing</Link>
       </p>
     </ToolPageTemplate>
   )
