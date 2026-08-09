@@ -39,6 +39,27 @@ class MembersOnlyVideoError(Exception):
     pass
 
 
+class SlowExitScreened(DownloadCancelled):
+    """Raised uit de progress-hook wanneer de vroege snelheidsscreening (ADR-095) een te traag
+    gepind exit-IP detecteert: de gemeten doorvoer zakt onder de progressie-afhankelijke vloer
+    v_floor(p)=v_norm·(1−p)/(1+p). Subclass van DownloadCancelled zodat yt-dlp 'm schoon uit
+    extract_info propageert; de extract-loop vangt 'm APART (vóór DownloadCancelled) en RETRYT met
+    een verse sessie (i.t.t. de deadline-abort, die niet retryt). Draagt de doorvoer + het moment
+    (progress, elapsed) mee voor de meetlaag-log."""
+    def __init__(self, msg: str, throughput: float = 0.0, progress: float = 0.0, elapsed: float = 0.0):
+        super().__init__(msg)
+        self.throughput = throughput
+        self.progress = progress
+        self.elapsed = elapsed
+
+
+# Vroege-screening ruis-drempels (ADR-095) — GEEN economische drempel (die is volledig afgeleid:
+# v_floor(p)=v_norm·(1−p)/(1+p)), maar een meet-stabiliteitsgarantie. We screenen pas nadat er
+# minstens SCREEN_MIN_SAMPLE_SECONDS ná het EERSTE gedownloade byte verstreken zijn (voorbij
+# TCP-slow-start → stabiele gemiddelde doorvoer; << de 120s socket_timeout en een normale download).
+SCREEN_MIN_SAMPLE_SECONDS = 10.0
+
+
 def get_audio_duration(file_path: str) -> float:
     """
     Get audio duration in seconds using ffprobe (fast) with pydub fallback.
@@ -171,6 +192,7 @@ def extract_youtube_audio(
     timeout_seconds: Optional[float] = None,
     progress_cb: Optional[Callable[[int, int], None]] = None,
     summary_cb: Optional[Callable[[int, int], None]] = None,
+    screen_normal_bytes_per_sec: Optional[float] = None,
 ) -> tuple[str, str, Optional[str], int]:
     """
     Extract audio from YouTube video using yt-dlp.
@@ -183,6 +205,14 @@ def extract_youtube_audio(
     pogingen kan persisteren (transcription_jobs.download_ms/download_attempts) — throughput en
     her-download-versterking worden zo direct queryebaar. Session-id is niet geheim en wordt gelogd;
     het wachtwoord blijft gemaskeerd.
+
+    Vroege snelheidsscreening (ADR-095): met `screen_normal_bytes_per_sec` (v_norm) aan breekt een
+    niet-laatste poging vroeg af als de gemeten doorvoer onder de progressie-afhankelijke vloer
+    v_floor(p)=v_norm·(1−p)/(1+p) zakt (afgeleid: afbreken+opnieuw kost evenredig met wat al
+    gedownload is, dus de vloer daalt met de voortgang). Een screening-afbreking retryt met een verse
+    sessie (nooit een job-fout zolang er pogingen over zijn) en logt als `outcome=screen_abort` met de
+    doorvoer + het moment. De laatste poging screent niet (geen verse sessie meer om op over te
+    stappen). None/0 → screening uit (backward-compat).
 
     Args:
         video_id: YouTube video ID
@@ -215,6 +245,14 @@ def extract_youtube_audio(
     overall_deadline = (time.time() + timeout_seconds) if timeout_seconds else None
     _last_progress_write = [0.0]  # mutable cel voor de throttle-timestamp (closure)
 
+    # Vroege-screening state (ADR-095), per-poging gezet in de loop via mutable cellen (de hook is
+    # één keer gedefinieerd maar gedeeld over pogingen). _screen_vnorm[0] > 0 → screening actief voor
+    # deze poging (alleen niet-laatste pogingen). _first_byte_t[0] = tijd van het eerste gedownloade
+    # byte (throughput wordt vanaf DAAR gemeten, niet vanaf metadata-extractie → geen valse afkeuring
+    # van een snelle exit met trage metadata).
+    _screen_vnorm = [0.0]
+    _first_byte_t = [0.0]
+
     def _deadline_hook(status) -> None:
         # Alleen tijdens actief downloaden — nooit een zojuist voltooide download ('finished')
         # weggooien omdat de deadline net verstreek.
@@ -225,6 +263,27 @@ def extract_youtube_audio(
             raise DownloadCancelled(
                 f"download timed out after {timeout_seconds:.0f}s derived budget"
             )
+        # Vroege snelheidsscreening (ADR-095): breek een te traag gepind exit-IP vroeg af (goedkoop)
+        # i.p.v. het uit te zitten tot de deadline. Vloer beweegt mee met de voortgang:
+        # v_floor(p) = v_norm·(1−p)/(1+p) — hoog bij p≈0 (afbreken bijna gratis), → 0 bij p→1 (nooit
+        # afbreken vlak voor het einde). Meet de doorvoer vanaf het eerste byte; screen pas na een
+        # stabiel sample (SCREEN_MIN_SAMPLE_SECONDS). Alleen als het totaal bekend is (p nodig).
+        vnorm = _screen_vnorm[0]
+        if vnorm > 0:
+            downloaded = status.get('downloaded_bytes') or 0
+            total = status.get('total_bytes') or status.get('total_bytes_estimate') or 0
+            if downloaded > 0 and _first_byte_t[0] == 0.0:
+                _first_byte_t[0] = now
+            dl_elapsed = now - _first_byte_t[0] if _first_byte_t[0] > 0 else 0.0
+            if dl_elapsed >= SCREEN_MIN_SAMPLE_SECONDS and downloaded > 0 and total > 0 and downloaded < total:
+                v = downloaded / dl_elapsed
+                p = downloaded / total
+                v_floor = vnorm * (1 - p) / (1 + p)
+                if v < v_floor:
+                    raise SlowExitScreened(
+                        f"slow exit screened: v={v:.0f}B/s < floor={v_floor:.0f}B/s at p={p:.3f}",
+                        throughput=v, progress=p, elapsed=dl_elapsed,
+                    )
         # Point 2: gethrottlede voortgang naar de DB. Totaal = wat yt-dlp zélf rapporteert (exact
         # total_bytes, anders zijn eigen total_bytes_estimate — dezelfde waarde als in yt-dlp's
         # "X% of 82MiB"-regel). Kent yt-dlp het totaal niet, dan schrijven we NIETS → beide kolommen
@@ -290,12 +349,13 @@ def extract_youtube_audio(
     job_attempts = 0
     _summary_sent = [False]
 
-    def _log_attempt(attempt_no: int, session: str, attempt_bytes: int, duration_ms: int, outcome: str) -> None:
+    def _log_attempt(attempt_no: int, session: str, attempt_bytes: int, duration_ms: int, outcome: str, detail: str = "") -> None:
         tp = (attempt_bytes / (duration_ms / 1000.0) / 1e6) if duration_ms > 0 else 0.0
+        extra = f" {detail}" if detail else ""
         logger.info(
             f"[YT-DLP-AUDIO-ATTEMPT] video={video_id} attempt={attempt_no}/{max_attempts} "
             f"session={session} bytes={attempt_bytes} duration_ms={duration_ms} "
-            f"throughput_mb_s={tp:.3f} outcome={outcome}"
+            f"throughput_mb_s={tp:.3f} outcome={outcome}{extra}"
         )
 
     def _emit_summary(final_outcome: str) -> None:
@@ -351,6 +411,11 @@ def extract_youtube_audio(
         job_attempts = attempt
         session = _proxy_session_id(attempt_proxy)
         attempt_started = time.time()
+        # Vroege screening AAN voor deze poging alleen als er een v_norm is én dit NIET de laatste
+        # poging is (ADR-095: de laatste poging screent niet meer — dan is er geen verse sessie meer
+        # om naar over te stappen, dus uitzitten is beter dan falen). Reset de eerste-byte-timer.
+        _screen_vnorm[0] = float(screen_normal_bytes_per_sec) if (screen_normal_bytes_per_sec and attempt < max_attempts) else 0.0
+        _first_byte_t[0] = 0.0
 
         try:
             # Clean up any partial files from a previous attempt so yt-dlp
@@ -406,6 +471,30 @@ def extract_youtube_audio(
 
             _emit_summary('success')
             return final_output_path, video_title, channel, cumulative_bytes
+
+        except SlowExitScreened as e:
+            # ADR-095: vroege screening brak een te traag exit-IP af. Er is per definitie nog een
+            # poging over (screening staat uit op de laatste poging) → RETRY met een verse sessie;
+            # dit mag NOOIT de job doen falen. Egress van de partial telt mee (was echte proxy-kost).
+            attempt_ms = int(e.elapsed * 1000) if e.elapsed else int((time.time() - attempt_started) * 1000)
+            total_download_ms += attempt_ms
+            partial = _measure_partial_egress()
+            cumulative_bytes += partial
+            _log_attempt(
+                attempt, session, partial, attempt_ms, 'screen_abort',
+                detail=f"screen_throughput_mb_s={e.throughput / 1e6:.3f} screen_at_progress={e.progress:.3f}",
+            )
+            last_error = Exception(
+                f"slow-exit screened at p={e.progress:.3f} (v={e.throughput / 1e6:.3f} MB/s)"
+            )
+            delay = 2 ** attempt  # 2s, 4s — zelfde backoff als de andere retryable uitkomsten
+            logger.warning(
+                f"[YT-DLP-AUDIO screen-retry={attempt}/{max_attempts} video={video_id}] "
+                f"traag exit-IP (v={e.throughput / 1e6:.3f} MB/s bij p={e.progress:.2f}), "
+                f"verse sessie over {delay}s"
+            )
+            time.sleep(delay)
+            continue
 
         except DownloadCancelled as e:
             # Fix 3: de deadline-hook brak de download af. Budget is op — NIET retryen (een verse

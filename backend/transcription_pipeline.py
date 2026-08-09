@@ -82,6 +82,11 @@ DOWNLOAD_TIMEOUT_PER_MINUTE_SECONDS = 25     # royale marge per audio-minuut (tr
 DOWNLOAD_TIMEOUT_CEILING_SECONDS = 3600      # absolute bovengrens (60min) — << ARQ 37800s
 DOWNLOAD_TIMEOUT_DEFAULT_MINUTES = 120       # duur onbekend → genereus (nooit een legit download killen)
 
+# ADR-095 vroege-screening: v_norm (verwachte normale-exit-doorvoer) komt uit
+# cost_config.download_normal_bytes_per_sec (afgeleid uit de meetlaag-mediaan). Deze fallback (=2,3
+# Mbit/s = 287500 B/s) geldt alleen als de config-read faalt, zodat screening niet stil uitvalt.
+SCREEN_NORMAL_BYTES_PER_SEC_FALLBACK = 287500.0
+
 
 def _derive_download_timeout(est_minutes: Optional[float]) -> float:
     """Download-wall-clock-budget afgeleid van de geschatte videoduur (minuten). Onbekend → default."""
@@ -677,6 +682,21 @@ async def do_assemblyai_transcription(
             _dl_timeout = _derive_download_timeout(est_minutes)
             logger.info(f"[pipeline] download-budget={_dl_timeout:.0f}s (est_minutes={est_minutes}) video={video_id} job={job_id}")
 
+            # ADR-095: v_norm voor de vroege screening uit cost_config (fallback bij read-fout zodat
+            # screening niet stil uitvalt).
+            _screen_vnorm: float = SCREEN_NORMAL_BYTES_PER_SEC_FALLBACK
+            try:
+                _cc = await asyncio.to_thread(
+                    lambda: supabase.table('cost_config')
+                        .select('download_normal_bytes_per_sec')
+                        .order('effective_from', desc=True).limit(1).execute()
+                )
+                _v = (_cc.data[0].get('download_normal_bytes_per_sec') if _cc.data else None)
+                if _v:
+                    _screen_vnorm = float(_v)
+            except Exception as _ce:
+                logger.warning(f"[pipeline] cost_config v_norm read faalde, fallback {_screen_vnorm:.0f} B/s: {_ce}")
+
             # Point 2: sync progress-writer, aangeroepen (gethrottled) vanuit de yt-dlp progress-hook in
             # de download-thread. Schrijft rauwe bytes; de UI toont "19.2 / 50.4 MB". Faalt nooit hard.
             def _write_dl_progress(done: int, total: int) -> None:
@@ -710,6 +730,7 @@ async def do_assemblyai_transcription(
                         proxy_urls=proxy_urls, timeout_seconds=_dl_timeout,  # harde in-download deadline (Fix 3)
                         progress_cb=_write_dl_progress,                       # point 2: voortgangsbalk
                         summary_cb=_write_dl_summary,                         # meet: download_ms + attempts
+                        screen_normal_bytes_per_sec=_screen_vnorm,            # ADR-095: vroege screening
                     ),
                     heartbeat_fn,
                     timeout=_dl_timeout + 180,  # coarse backstop rond de harde deadline → 'timeout' (retryable)
