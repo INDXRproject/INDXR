@@ -689,12 +689,27 @@ async def do_assemblyai_transcription(
                 except Exception as _pe:
                     logger.debug(f"[pipeline] download-progress write skipped job={job_id}: {_pe}")
 
+            # Meet: per-job downloadduur + aantal pogingen (sync cb uit de download-thread, zoals
+            # _write_dl_progress). Vuurt op élk eindpunt (succes én mislukking) → throughput
+            # (proxy_bytes / download_ms) en her-download-versterking (download_attempts, egress vs
+            # download_total_bytes) zijn direct queryebaar i.p.v. via een tijdstempel-benadering.
+            def _write_dl_summary(download_ms: int, attempts: int) -> None:
+                if not job_id:
+                    return
+                try:
+                    supabase.table('transcription_jobs').update(
+                        {'download_ms': download_ms, 'download_attempts': attempts}
+                    ).eq('id', job_id).execute()
+                except Exception as _se:
+                    logger.debug(f"[pipeline] download-summary write skipped job={job_id}: {_se}")
+
             try:
                 audio_path, video_title, channel, proxy_bytes = await _run_with_heartbeat(
                     asyncio.to_thread(
                         extract_youtube_audio, video_id,
                         proxy_urls=proxy_urls, timeout_seconds=_dl_timeout,  # harde in-download deadline (Fix 3)
                         progress_cb=_write_dl_progress,                       # point 2: voortgangsbalk
+                        summary_cb=_write_dl_summary,                         # meet: download_ms + attempts
                     ),
                     heartbeat_fn,
                     timeout=_dl_timeout + 180,  # coarse backstop rond de harde deadline → 'timeout' (retryable)

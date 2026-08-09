@@ -147,6 +147,22 @@ def estimate_upload_reserve_cost(audio_path: str) -> Dict:
     return {"credits": max(1, math.ceil(est_seconds / 60.0)), "duration": None, "source": "size_fallback"}
 
 
+def _proxy_session_id(proxy_url: Optional[str]) -> str:
+    """Haal het (niet-geheime) Decodo-session-id uit een proxy-URL voor logging. De URL is
+    `http://user-<USER>-session-<SID>:<PASS>@<HOST>:<PORT>`; we geven <SID> terug en raken het
+    wachtwoord NOOIT aan (dat blijft tussen ':' en '@' en wordt niet gelogd). None → 'none'."""
+    if not proxy_url:
+        return 'none'
+    try:
+        cred = proxy_url.split('//', 1)[1].split('@', 1)[0]  # user-<USER>-session-<SID>:<PASS>
+        userpart = cred.split(':', 1)[0]                     # user-<USER>-session-<SID>  (pass weggeknipt)
+        if '-session-' in userpart:
+            return userpart.split('-session-', 1)[1]
+        return 'unknown'
+    except Exception:
+        return 'unknown'
+
+
 def extract_youtube_audio(
     video_id: str,
     output_dir: str = "/tmp",
@@ -154,9 +170,19 @@ def extract_youtube_audio(
     proxy_urls: Optional[list] = None,
     timeout_seconds: Optional[float] = None,
     progress_cb: Optional[Callable[[int, int], None]] = None,
+    summary_cb: Optional[Callable[[int, int], None]] = None,
 ) -> tuple[str, str, Optional[str], int]:
     """
     Extract audio from YouTube video using yt-dlp.
+
+    Meet-instrumentatie (geen gedragswijziging): per download-poging wordt een gestructureerde regel
+    gelogd (`[YT-DLP-AUDIO-ATTEMPT] video= attempt= session= bytes= duration_ms= throughput_mb_s=
+    outcome=`) en per job een samenvatting (`[YT-DLP-AUDIO-SUMMARY]`). `summary_cb(download_ms,
+    attempts)` wordt op ELK eindpunt (succes én mislukking) precies één keer aangeroepen zodat de
+    caller de per-job downloadduur (som van de actieve poging-duren, excl. retry-backoff) en het aantal
+    pogingen kan persisteren (transcription_jobs.download_ms/download_attempts) — throughput en
+    her-download-versterking worden zo direct queryebaar. Session-id is niet geheim en wordt gelogd;
+    het wachtwoord blijft gemaskeerd.
 
     Args:
         video_id: YouTube video ID
@@ -257,6 +283,38 @@ def extract_youtube_audio(
     # 1e/2e poging heeft al bytes over de proxy getrokken (partial download) — die kosten waren echt.
     cumulative_bytes = 0
 
+    # Meet-instrumentatie: per-job aggregaat (geen gedragswijziging). total_download_ms = som van de
+    # ACTIEVE poging-duren (excl. retry-backoff sleep); job_attempts = aantal daadwerkelijk gestarte
+    # pogingen; _summary_sent bewaakt dat summary_cb precies één keer vuurt.
+    total_download_ms = 0
+    job_attempts = 0
+    _summary_sent = [False]
+
+    def _log_attempt(attempt_no: int, session: str, attempt_bytes: int, duration_ms: int, outcome: str) -> None:
+        tp = (attempt_bytes / (duration_ms / 1000.0) / 1e6) if duration_ms > 0 else 0.0
+        logger.info(
+            f"[YT-DLP-AUDIO-ATTEMPT] video={video_id} attempt={attempt_no}/{max_attempts} "
+            f"session={session} bytes={attempt_bytes} duration_ms={duration_ms} "
+            f"throughput_mb_s={tp:.3f} outcome={outcome}"
+        )
+
+    def _emit_summary(final_outcome: str) -> None:
+        if _summary_sent[0]:
+            return
+        _summary_sent[0] = True
+        avg = (cumulative_bytes / (total_download_ms / 1000.0) / 1e6) if total_download_ms > 0 else 0.0
+        logger.info(
+            f"[YT-DLP-AUDIO-SUMMARY] video={video_id} attempts={job_attempts} "
+            f"egress_bytes={cumulative_bytes} download_ms={total_download_ms} "
+            f"avg_throughput_mb_s={avg:.3f} redownload={'yes' if job_attempts > 1 else 'no'} "
+            f"outcome={final_outcome}"
+        )
+        if summary_cb is not None:
+            try:
+                summary_cb(total_download_ms, job_attempts)
+            except Exception:
+                pass  # meten mag de download/uitkomst NOOIT beïnvloeden
+
     def _measure_partial_egress() -> int:
         """Som de bytes van de (partial) downloadbestanden van de zojuist mislukte poging.
         De cleanup aan het begin van de VOLGENDE poging verwijdert ze, dus meet nu."""
@@ -290,6 +348,9 @@ def extract_youtube_audio(
             masked = 'none'
 
         logger.info(f"[YT-DLP-AUDIO attempt={attempt}/{max_attempts} video={video_id} proxy=@{masked}]")
+        job_attempts = attempt
+        session = _proxy_session_id(attempt_proxy)
+        attempt_started = time.time()
 
         try:
             # Clean up any partial files from a previous attempt so yt-dlp
@@ -314,6 +375,11 @@ def extract_youtube_audio(
             raw_path = raw_files[0]
             raw_size_bytes = os.path.getsize(raw_path)  # pre-ffmpeg = true Decodo egress (persisted per job)
             cumulative_bytes += raw_size_bytes  # BLOK C: tel deze (geslaagde) download bij de eerdere pogingen op
+            # Meet: downloadduur van DEZE poging = tot het rauwe bestand binnen is (vóór ffmpeg —
+            # transcodering is geen download en hoort niet in de throughput). Excl. retry-backoff.
+            attempt_ms = int((time.time() - attempt_started) * 1000)
+            total_download_ms += attempt_ms
+            _log_attempt(attempt, session, raw_size_bytes, attempt_ms, 'success')
             raw_size = raw_size_bytes / 1024 / 1024
             logger.info(f"[YT-DLP-AUDIO] downloaded: {raw_path} ({raw_size:.2f}MB)")
 
@@ -338,24 +404,35 @@ def extract_youtube_audio(
             final_size = os.path.getsize(final_output_path) / 1024 / 1024
             logger.info(f"[YT-DLP-AUDIO] conversion done: {raw_size:.2f}MB → {final_size:.2f}MB ogg")
 
+            _emit_summary('success')
             return final_output_path, video_title, channel, cumulative_bytes
 
         except DownloadCancelled as e:
             # Fix 3: de deadline-hook brak de download af. Budget is op — NIET retryen (een verse
             # poging zou de deadline sowieso direct weer overschrijden). Egress van de partial telt mee.
-            cumulative_bytes += _measure_partial_egress()
+            attempt_ms = int((time.time() - attempt_started) * 1000)
+            total_download_ms += attempt_ms
+            partial = _measure_partial_egress()
+            cumulative_bytes += partial
+            _log_attempt(attempt, session, partial, attempt_ms, 'deadline')
             last_error = TimeoutError(f"download timed out after {timeout_seconds:.0f}s derived budget")
             logger.warning(f"[YT-DLP-AUDIO deadline-abort attempt={attempt} video={video_id}] {e}")
+            _emit_summary('deadline')
             break
 
         except Exception as e:
+            attempt_ms = int((time.time() - attempt_started) * 1000)
+            total_download_ms += attempt_ms
             last_error = e
             error_str = str(e).lower()
             # BLOK C: reken de egress van DEZE mislukte poging mee (partial download op disk).
-            cumulative_bytes += _measure_partial_egress()
+            partial = _measure_partial_egress()
+            cumulative_bytes += partial
 
             if any(kw in error_str for kw in MEMBERS_ONLY_KEYWORDS):
+                _log_attempt(attempt, session, partial, attempt_ms, 'members_only')
                 logger.warning(f"[YT-DLP-AUDIO] members-only detected: {video_id}")
+                _emit_summary('members_only')
                 raise MembersOnlyVideoError("This video is only available to channel members and cannot be transcribed.")
 
             # Classify the failure reason to decide whether to retry
@@ -369,10 +446,11 @@ def extract_youtube_audio(
                 'ssl', 'unexpected_eof', 'eof', 'connectionreset',
                 'remotedisconnected', 'broken pipe', 'connection reset',
             ))
+            reason = 'partial_write' if is_partial_write else ('timeout' if is_timeout else ('connection' if is_connection else 'other'))
+            _log_attempt(attempt, session, partial, attempt_ms, reason)
 
             if (is_partial_write or is_timeout or is_connection) and attempt < max_attempts:
                 delay = 2 ** attempt  # 2s, 4s
-                reason = 'partial_write' if is_partial_write else ('timeout' if is_timeout else 'connection')
                 logger.warning(
                     f"[YT-DLP-AUDIO retry={attempt}/{max_attempts} reason={reason} video={video_id}] "
                     f"retrying in {delay}s with fresh proxy session"
@@ -382,6 +460,7 @@ def extract_youtube_audio(
                 break
 
     logger.error(f"[YT-DLP-AUDIO final_fail attempts={attempt} video={video_id} egress={cumulative_bytes}B] {last_error}")
+    _emit_summary('failed')  # no-op als een eerdere tak 'm al stuurde (deadline/members_only)
     # BLOK B+C: geef de gesommeerde egress mee op de exception zodat de pipeline 'm alsnog op de
     # (mislukte) job kan persisteren — de proxy-kost was echt, ook al faalde de download.
     final_err = Exception(f"Failed to extract audio from YouTube: {str(last_error)}")
