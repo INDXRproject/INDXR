@@ -299,7 +299,44 @@ function OccurredErrors({ byType, samples }: { byType: Record<string, number>; s
 // ── ADR-096 meetlaag: fasetijd/RTF-percentielen + confidence-trend per taal ──
 type PhasePct = { metric: string; unit: string; n: number; p50: number | null; p90: number | null; p95: number | null; p99: number | null }
 type ConfTrend = { language: string; week: string; avg_confidence: number | null; avg_language_confidence: number | null; n: number }
-type PipelineMetrics = { phase_percentiles: PhasePct[]; confidence_trend: ConfTrend[]; generated_at: string }
+type DurClass = { label: string; n: number; median_total_s: number | null }
+type PipelineMetrics = { phase_percentiles: PhasePct[]; duration_classes: DurClass[]; confidence_trend: ConfTrend[]; generated_at: string }
+
+function fmtSec(s: number | null): string {
+  if (s == null) return "—"
+  if (s < 90) return `${Math.round(s)}s`
+  return `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`
+}
+
+// Mediane TOTALE doorlooptijd per audioduur-klasse — de bron voor de wachttijd-claim op de
+// artikelpagina. n<20 = te dun om iets te betekenen (zelfde drempel als de latency-banden).
+function DurationClassPanel({ rows }: { rows: DurClass[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-fg-muted">
+            <th className="py-1 text-left font-medium">Audio duration</th>
+            <th className="py-1 text-right font-medium">Median total</th>
+            <th className="py-1 text-right font-medium">n</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.label} className="border-t border-border-subtle tabular-nums">
+              <td className="py-1 text-fg">{r.label}</td>
+              <td className="py-1 text-right">{fmtSec(r.median_total_s)}</td>
+              <td className={`py-1 text-right ${r.n < 20 ? "text-warning" : "text-fg-muted"}`}>{r.n}{r.n < 20 ? " ⚠" : ""}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-[11px] text-fg-subtle">
+        Bron voor de wachttijd-claim op <span className="font-mono">/articles/audio-to-text</span>: &ldquo;een uur &rarr; een paar minuten&rdquo; leunt op de klasse <strong>15 min&ndash;1 h</strong>, &ldquo;twee uur &rarr; ongeveer een kwartier&rdquo; op de klasse <strong>1&ndash;2 h</strong>. Loopt de mediaan hier op, dan loopt de artikeltekst uit de pas &mdash; corrigeer daar. n&lt;20 = te weinig data.
+      </p>
+    </div>
+  )
+}
 
 const PHASE_LABELS: Record<string, string> = {
   download_ms: "Download", compress_ms: "Compress", transcribe_ms: "Transcribe (provider)",
@@ -637,6 +674,9 @@ export default async function AdminOperationsPage({
           </Card>
           <Card title="Transcription confidence trend — per language">
             {pipe ? <ConfidenceTrendPanel rows={pipe.confidence_trend} /> : <p className="py-4 text-sm text-fg-subtle">Unavailable.</p>}
+          </Card>
+          <Card title="Median total time by audio duration — article-claim source" className="lg:col-span-2">
+            {pipe ? <DurationClassPanel rows={pipe.duration_classes} /> : <p className="py-4 text-sm text-fg-subtle">Unavailable.</p>}
           </Card>
         </div>
       </section>

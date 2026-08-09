@@ -87,3 +87,24 @@ recente run (provider-waarden binnen TTL opgehaald).
 - `admin_pipeline_metrics()` levert geldige JSON (RTF-percentielen == handquery; total_ms n=237;
   confidence_trend 1 rij).
 - 14 backend-tests groen; `pnpm build` groen (2/2).
+
+## Addendum 2026-08-09 — verwerkingstijd-claim gecorrigeerd + duurklasse-paneel
+
+De artikelclaim "±1 min per 10 min audio" (ratio, nooit gemeten) is vervangen door wachttijden bij
+herkenbare duren, afgeleid uit de meting en ruim naar boven afgerond zodat de belofte in de staart
+houdbaar is. Gemeten mediane doorlooptijd per duurklasse: ≤15 min → 31s · **15 min–1 h → 83s (p95 6,5m,
+max 9,8m)** · **1–2 h → 239s (p95 10,4m, max 10,6m)** · >2 h → 364s (max 12,5m).
+
+**Nieuwe claim** (op `/articles/audio-to-text`, FAQ + "Wait"-stap): "een uur audio is doorgaans binnen
+een paar minuten klaar, twee uur binnen ongeveer een kwartier; een lange opname of een druk moment kan
+dat oprekken, en het loopt op onze servers door zodat je het tabblad kunt sluiten." Geen ratio,
+breuk of percentiel in de lopende tekst. 2 uur → ~kwartier is tail-safe (traagste ~2u-job ~13m < 15m).
+
+**Bron in het dashboard:** `admin_pipeline_metrics().duration_classes` (mediane totale doorlooptijd +
+n per klasse) → nieuw Operations-paneel "Median total time by audio duration". Het paneel benoemt
+expliciet dat het de bron is voor de artikelclaim, en welke klasse elke anker gebruikt (1 uur = klasse
+15 min–1 h; 2 uur = klasse 1–2 h) — zodat een volgende sessie ziet wanneer de tekst uit de pas loopt.
+
+**Zelfde claim elders gevonden + gecorrigeerd:** alleen in `articles/audio-to-text/page.tsx` (2×, live)
+en in de superseded draft `docs/content/ARTIKEL-youtube-transcript-not-available.md` (de live
+youtube-not-available/playlist/quickstart/pricing-pagina's dragen de claim NIET).

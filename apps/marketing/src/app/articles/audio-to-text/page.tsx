@@ -44,7 +44,7 @@ const faqs = [
   },
   {
     q: "How long does a two-hour file actually take?",
-    a: "Roughly the upload time plus the transcription time, and nothing after that. The file first uploads from your device, then it is transcribed on the server at around a minute of processing for every ten minutes of audio, and it keeps running if you close the tab. There is no download step to wait for, because you supplied the file yourself; that wait only applies to YouTube videos, which we have to fetch first.",
+    a: "Roughly the upload time plus the transcription time, and nothing after that. The file uploads from your device, then transcribes on the server: an hour of audio is usually ready within a few minutes, and two hours within about a quarter of an hour. A long recording or a busy moment can stretch that, and it keeps running on our servers so you can close the tab. There is no download step to wait for, because you supplied the file yourself; that wait only applies to YouTube videos, which we have to fetch first.",
   },
   {
     q: "Does it work when people talk over each other?",
@@ -119,8 +119,9 @@ export default function AudioToTextPage() {
           extracted for you. You do not pick a language, because the model detects it from the audio.
         </li>
         <li>
-          <strong>Wait.</strong> Processing takes roughly one minute per ten minutes of audio and
-          runs on the server, so closing the tab or losing your connection does not cost you the job.
+          <strong>Wait.</strong> An hour of audio is usually ready within a few minutes, and two
+          hours within about a quarter of an hour; a long recording or a busy moment can stretch that.
+          It runs on the server, so closing the tab or losing your connection does not cost you the job.
           Everything is processed on European infrastructure, and the uploaded file is deleted once
           transcription finishes. Only the text stays in your library.
         </li>
