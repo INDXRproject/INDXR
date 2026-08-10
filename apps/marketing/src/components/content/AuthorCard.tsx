@@ -28,7 +28,7 @@ export function AuthorCard({ author, publishedAt, updatedAt }: AuthorCardProps) 
   return (
     <div className="flex items-center gap-3 py-3">
       <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-[var(--accent-subtle)] flex items-center justify-center">
-        {!imgError ? (
+        {author.avatar && !imgError ? (
           <Image
             src={author.avatar}
             alt={author.name}

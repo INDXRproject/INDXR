@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { AuthorCard } from "@/components/content/AuthorCard"
 import { ArticleHero, type ArticleCategory } from "@/components/content/ArticleHero"
+import { ArticleFAQ } from "@/components/content/ArticleFAQ"
 import { RelatedArticles } from "@/components/content/RelatedArticles"
 import type { Author } from "@/lib/authors"
 import { reactNodeToText } from "@/lib/reactNodeToText"
@@ -81,14 +82,7 @@ export function ArticleTemplate({
             <h2 className="text-xl font-semibold text-[var(--fg)] mb-6">
               Frequently Asked Questions
             </h2>
-            <dl className="space-y-6">
-              {faqs.map(({ q, a }, i) => (
-                <div key={i}>
-                  <dt className="font-medium text-[var(--fg)] mb-1">{q}</dt>
-                  <dd className="text-[var(--fg-subtle)] text-sm leading-relaxed">{a}</dd>
-                </div>
-              ))}
-            </dl>
+            <ArticleFAQ faqs={faqs} />
           </section>
         )}
         {sources.length > 0 && (

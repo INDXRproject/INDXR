@@ -63,13 +63,13 @@ const faqs = [
     q: "How do I split a file that is too large?",
     a: (
       <>
-        Split it on a silence, not in the middle of a sentence. A cut lands cleaner at a natural
-        pause, because a word sitting on the seam between two parts can be dropped from both. The
-        cost does not change either way, since you pay per minute of audio rather than per file, so
-        two halves come to exactly what the whole would. FFmpeg makes the cut on the hour as a
-        starting point; shift the numbers to land on a pause:
+        Any everyday audio app can do it: open the recording, cut it into parts and export each one,
+        choosing a quiet moment to cut rather than the middle of a sentence, since a word split
+        across the seam can be lost. Most people never need a terminal for this. If you do work on
+        the command line, FFmpeg splits on the hour in a single line:
         <DocsCodeBlock>ffmpeg -i large_file.mp3 -t 3600 part1.mp3 -ss 3600 part2.mp3</DocsCodeBlock>
-        Then upload each part separately.
+        Either way the cost is the same, because you pay per minute of audio and not per file. Upload
+        each part separately.
       </>
     ),
   },
@@ -116,6 +116,20 @@ export default function AudioToTextPage() {
         enough for {FREE_TIER.WELCOME_CREDITS} minutes, so you can transcribe a real recording before
         spending anything.
       </p>
+
+      <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <Link href="/signup">
+          <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
+            Create a free account
+          </button>
+        </Link>
+        <Link
+          href="/pricing"
+          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+        >
+          See pricing →
+        </Link>
+      </div>
 
       <h2>How it works</h2>
 
@@ -435,12 +449,19 @@ export default function AudioToTextPage() {
         expire.
       </p>
 
-      <p>
-        <Link href="/signup">Create a free account</Link>
-      </p>
-      <p>
-        <Link href="/pricing">See pricing</Link>
-      </p>
+      <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <Link href="/signup">
+          <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
+            Create a free account
+          </button>
+        </Link>
+        <Link
+          href="/pricing"
+          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+        >
+          See pricing →
+        </Link>
+      </div>
     </ToolPageTemplate>
   )
 }
