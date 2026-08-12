@@ -233,7 +233,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-fg mb-2">Authentication Required</h3>
           <p className="text-sm text-amber-200 mb-4">
-            Please <a href={marketingHref('/login')} className="underline font-semibold">sign in</a> to use audio transcription.
+            Please <a href={marketingHref('/login')} className="underline font-semibold">sign in</a> to transcribe your files.
           </p>
         </div>
       </div>
@@ -502,7 +502,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-fg">Audio transcription in progress</p>
+              <p className="text-sm font-semibold text-fg">Transcription in progress</p>
               <p className="text-xs text-fg-muted">
                 &ldquo;{resumeData.filename}&rdquo; is still being transcribed
               </p>
@@ -563,7 +563,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 <Loader2 className="h-8 w-8 text-accent animate-spin" />
               </div>
               <h3 className="text-xl font-semibold text-fg mb-2">Processing file...</h3>
-              <p className="text-fg-muted">Reading audio duration</p>
+              <p className="text-fg-muted">Reading duration</p>
             </>
           ) : file ? (
             <>
@@ -594,8 +594,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               <div className="p-4 bg-surface-elevated rounded-full mb-4 group-hover:scale-110 transition-transform">
                 <UploadCloud className="h-8 w-8 text-fg-muted" />
               </div>
-              <h3 className="text-xl font-semibold text-fg mb-2">Upload Audio File</h3>
-              <p className="text-fg-muted mb-2">Drag and drop your audio file here, or click to browse</p>
+              <h3 className="text-xl font-semibold text-fg mb-2">Upload a file</h3>
+              <p className="text-fg-muted mb-2">Drag and drop your file here, or click to browse</p>
               <p className="text-sm text-fg-muted">Supported: {UPLOAD_FORMATS_LIST} (max {UPLOAD_MAX_FILE_MB}MB)</p>
             </>
           )}
@@ -745,7 +745,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       {!user && (
         <div className="p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
           <p className="text-sm text-amber-200">
-            Please <a href={marketingHref('/login')} className="underline font-semibold">sign in</a> to use audio transcription.
+            Please <a href={marketingHref('/login')} className="underline font-semibold">sign in</a> to transcribe your files.
           </p>
         </div>
       )}

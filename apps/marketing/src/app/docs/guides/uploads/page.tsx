@@ -59,7 +59,7 @@ export default function DocsUploadsPage() {
 
                 <DocsFigure
           src="/docs/screenshots/uploader-empty.png"
-          alt="The empty audio uploader: a drop zone that says to drag a file or click to browse, with the accepted formats and the 500 MB size limit."
+          alt="The empty file uploader: a drop zone that says to drag a file or click to browse, with the accepted formats and the 500 MB size limit."
           caption="Drag a file in or browse; the accepted formats and the 500 MB limit are shown."
         />
 <AnchorHeading as="h2">Uploads are always transcribed with AI</AnchorHeading>

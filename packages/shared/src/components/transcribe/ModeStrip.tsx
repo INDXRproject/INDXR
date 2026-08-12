@@ -22,7 +22,7 @@ import { VideoModeIcon, PlaylistModeIcon, AudioModeIcon } from "../icons/Transcr
 const MODES = [
   { value: "video", label: "Video", Icon: VideoModeIcon },
   { value: "playlist", label: "Playlist", Icon: PlaylistModeIcon },
-  { value: "audio", label: "Audio", Icon: AudioModeIcon },
+  { value: "audio", label: "Upload", Icon: AudioModeIcon },
 ] as const
 
 export function ModeStrip({ className }: { className?: string }) {

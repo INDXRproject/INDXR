@@ -693,7 +693,7 @@ to understand about this topic`}</code></pre>
 
       <p>
         For audio files you&apos;ve already downloaded, the{" "}
-        <Link href="/articles/audio-to-text">Audio Upload tab</Link> accepts {uploadFormatsProse("and")}{" "}
+        <Link href="/articles/audio-to-text">Upload tab</Link> accepts {uploadFormatsProse("and")}{" "}
         files up to {UPLOAD_MAX_FILE_MB}MB and produces the same resegmented SRT/VTT output.
       </p>
 
@@ -1253,7 +1253,7 @@ for i in range(0, len(vectors), 100):
         <Link href="/articles/youtube-playlist-transcript">Playlist tab</Link> processes all
         selected videos in one job, and every format is available in bulk — select the transcripts
         in your library and download a ZIP with one file per video. For audio files from any source,
-        the <Link href="/articles/audio-to-text">Audio Upload tab</Link> accepts {UPLOAD_FORMATS_LIST}{" "}
+        the <Link href="/articles/audio-to-text">Upload tab</Link> accepts {UPLOAD_FORMATS_LIST}{" "}
         up to {UPLOAD_MAX_FILE_MB}MB and produces the same formats.
       </p>
 

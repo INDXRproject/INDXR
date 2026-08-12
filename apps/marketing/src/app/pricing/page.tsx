@@ -37,7 +37,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Does INDXR.AI work for audio files, not just YouTube?",
-    answer: `Yes. Audio Upload accepts ${uploadFormatsProse("and")} files up to ${UPLOAD_MAX_FILE_MB}MB. Same AI transcription pipeline, same credit cost (1 credit per minute), same export options.`,
+    answer: `Yes. The Upload tab accepts ${uploadFormatsProse("and")} files up to ${UPLOAD_MAX_FILE_MB}MB. Same AI transcription pipeline, same credit cost (1 credit per minute), same export options.`,
   },
   {
     question: "Is RAG JSON export included in the standard price?",

@@ -36,7 +36,7 @@ export default function GettingStartedPage() {
         "@type": "HowToStep",
         position: 1,
         name: "Open Transcribe",
-        text: `Open Transcribe in the app sidebar. It has three tabs — Video, Playlist, and Audio — and Video is selected. New accounts get ${welcomeCredits} credits; YouTube captions cost nothing either way.`,
+        text: `Open Transcribe in the app sidebar. It has three tabs — Video, Playlist, and Upload — and Video is selected. New accounts get ${welcomeCredits} credits; YouTube captions cost nothing either way.`,
         url: "https://indxr.ai/docs/quickstart#1-open-transcribe",
       },
       {
@@ -114,7 +114,7 @@ export default function GettingStartedPage() {
           Open{" "}
           <a href="https://app.indxr.ai/dashboard/transcribe" className="text-[var(--accent)] hover:underline">Transcribe</a>{" "}
           in the app sidebar. It has three tabs — <strong>Video</strong>, <strong>Playlist</strong>, and{" "}
-          <strong>Audio</strong> — and <strong>Video</strong> is selected. New accounts get{" "}
+          <strong>Upload</strong> — and <strong>Video</strong> is selected. New accounts get{" "}
           {welcomeCredits} credits, enough for a {welcomeCredits / perMin}-minute AI transcription;
           YouTube captions cost nothing either way.
         </p>

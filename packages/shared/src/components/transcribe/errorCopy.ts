@@ -67,7 +67,7 @@ const buyCredits = (c: ErrorCtx): ErrorCardAction[] =>
 const retryOrAudio = (c: ErrorCtx): ErrorCardAction[] => {
   const out: ErrorCardAction[] = []
   if (c.onRetryUrl) out.push({ label: "Try again", onClick: c.onRetryUrl })
-  if (c.onSwitchToAudio) out.push({ label: "Use Audio Upload", onClick: c.onSwitchToAudio, variant: out.length ? "secondary" : "primary" })
+  if (c.onSwitchToAudio) out.push({ label: "Use Upload", onClick: c.onSwitchToAudio, variant: out.length ? "secondary" : "primary" })
   return out
 }
 
@@ -78,7 +78,7 @@ const audioFetchFailed = (title: string): Entry => ({
   title,
   // No credit claim in the body — the credit outcome is rendered from creditsRefunded (see below).
   body: () =>
-    "We couldn't fetch this video's audio — a temporary connection problem on our side, not the video itself. Try again, or use Audio Upload.",
+    "We couldn't fetch this video's audio — a temporary connection problem on our side, not the video itself. Try again, or use Upload.",
   actions: retryOrAudio,
 })
 
@@ -127,13 +127,13 @@ const COPY: Record<string, Entry> = {
   timeout: {
     title: "The download took too long",
     body: () =>
-      "We couldn't download this video's audio in time — usually a slow connection to YouTube for a longer video. Please try again; it often works on a second attempt, or use Audio Upload.",
+      "We couldn't download this video's audio in time — usually a slow connection to YouTube for a longer video. Please try again; it often works on a second attempt, or use Upload.",
     actions: retryOrAudio,
   },
   connection_error: {
     title: "The connection to YouTube dropped",
     body: () =>
-      "The connection to YouTube dropped before we could fetch the audio. Please try again, or use Audio Upload.",
+      "The connection to YouTube dropped before we could fetch the audio. Please try again, or use Upload.",
     actions: retryOrAudio,
   },
   server_error: audioFetchFailed("YouTube is temporarily unavailable"),
@@ -347,7 +347,7 @@ export function resolveErrorCopy(code: string | null | undefined, ctx: ErrorCtx 
 
   return {
     title: "Something went wrong",
-    body: "We couldn't finish this. Try again, or use Audio Upload.",
+    body: "We couldn't finish this. Try again, or use Upload.",
     actions,
     code: key || null,
     creditsNote,

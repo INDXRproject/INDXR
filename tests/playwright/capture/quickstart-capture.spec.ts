@@ -128,11 +128,11 @@ test('cost-card-ai', async ({ page }) => {
   await frameShot(page, card, 'cost-card-ai')
 })
 
-// ── LIVE UI: empty Audio uploader (accepted formats + size limit in view) ─────
+// ── LIVE UI: empty Upload tab (accepted formats + size limit in view) ─────────
 test('uploader-empty', async ({ page }) => {
   await prep(page)
   await page.goto('/dashboard/transcribe?mode=audio')
-  const hint = page.getByText('Drag and drop your audio file here', { exact: false })
+  const hint = page.getByText('Drag and drop your file here', { exact: false })
   await hint.waitFor({ state: 'visible' })
   const dropzone = hint.locator('xpath=ancestor::div[contains(@class,"border-dashed")][1]')
   await frameShot(page, dropzone, 'uploader-empty')

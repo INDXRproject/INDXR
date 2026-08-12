@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     q: "Can I get a transcript from a private YouTube video?",
-    a: "Not via URL. If you own the video, download the audio from YouTube Studio and upload it to INDXR.AI's Audio Upload tool to generate a transcript from the file directly.",
+    a: "Not via URL. If you own the video, download the audio from YouTube Studio and upload it to INDXR.AI's Upload tool to generate a transcript from the file directly.",
   },
   {
     q: "Can I get a transcript from a YouTube Short?",
@@ -142,7 +142,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
         <Link href="/transcribe">INDXR.AI</Link> can attempt AI transcription
         directly from the URL — this works for most publicly accessible videos. If the URL fails,
         downloading the audio separately and uploading it via the{" "}
-        <Link href="/articles/audio-to-text">Audio Upload tab</Link> is worth trying. If the video is not
+        <Link href="/articles/audio-to-text">Upload tab</Link> is worth trying. If the video is not
         publicly downloadable, there may be no reliable workaround.
       </p>
 
@@ -218,7 +218,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
       <p>
         <strong>What to do:</strong> If you own the video, you can download the audio file from
         YouTube Studio and upload it directly to INDXR.AI&apos;s{" "}
-        <Link href="/articles/audio-to-text">Audio Upload tool</Link>. The full transcript will be generated
+        <Link href="/articles/audio-to-text">Upload tool</Link>. The full transcript will be generated
         from your file without needing the video to be public.
       </p>
 
@@ -348,7 +348,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
 
       <p>
         For audio you already have — a recording, a podcast episode, a downloaded video file — the{" "}
-        <Link href="/articles/audio-to-text">Audio Upload</Link> tab accepts {uploadFormatsProse("and")}{" "}
+        <Link href="/articles/audio-to-text">Upload</Link> tab accepts {uploadFormatsProse("and")}{" "}
         files up to {UPLOAD_MAX_FILE_MB}MB. The same AI pipeline applies; for a full technical overview see{" "}
         <Link href="/docs/how-indxr-works">how INDXR.AI works</Link>.
       </p>
@@ -456,7 +456,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
         </li>
         <li>
           <strong>Upload to INDXR.AI.</strong> Open the{" "}
-          <Link href="/articles/audio-to-text">Audio Upload tab</Link>. Accepted formats: {UPLOAD_FORMATS_LIST},
+          <Link href="/articles/audio-to-text">Upload tab</Link>. Accepted formats: {UPLOAD_FORMATS_LIST},
           up to {UPLOAD_MAX_FILE_MB}MB. The file is sent directly to INDXR.AI&apos;s backend — not
           through Vercel&apos;s size-limited proxy.
         </li>
@@ -512,7 +512,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
         If you have membership and can watch the video, the same audio upload workaround described
         above for age-restricted videos applies: download the audio while logged in with your
         membership, then upload it to the{" "}
-        <Link href="/articles/audio-to-text">Audio Upload tab</Link>. This path is legitimate because
+        <Link href="/articles/audio-to-text">Upload tab</Link>. This path is legitimate because
         you&apos;re transcribing content you have authorized access to — the same principle as transcribing
         a recorded lecture you attended. Cost is 1 credit per minute of audio: a 30-minute
         members-only video costs 30 credits, about {creditCostEur(30)} at {getAnchorPackage().name} pricing.

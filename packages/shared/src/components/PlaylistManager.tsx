@@ -498,7 +498,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         <p className="mb-1 font-medium text-fg">{compRetryableEntries.length} video{compRetryableEntries.length !== 1 ? 's' : ''} could not be fetched</p>
                         <p className="mb-3 text-[13px] leading-relaxed text-fg-subtle">
                           {compStalled
-                            ? "YouTube is structurally blocking these right now. You can keep retrying, but Audio Upload is the reliable alternative."
+                            ? "YouTube is structurally blocking these right now. You can keep retrying, but Upload is the reliable alternative."
                             : "YouTube rate-limited these during extraction, and an automatic retry already failed once. Retrying now uses a fresh connection."}
                         </p>
                         <div className="mb-3 divide-y divide-border-subtle overflow-hidden rounded-lg border border-border">
@@ -539,9 +539,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         <div className="rounded-lg border border-border bg-surface-elevated/50 p-3">
                           <p className="mb-1 font-medium text-fg">{permIds.length} video{permIds.length !== 1 ? 's' : ''} couldn&apos;t be transcribed</p>
                           <p className="mb-2 text-[13px] leading-relaxed text-fg-subtle">
-                            These are private, members-only, age-restricted, or have no captions or speech — retrying won&apos;t help. Any credits held for them were refunded. For ones with audio, Audio Upload is the way in.
+                            These are private, members-only, age-restricted, or have no captions or speech — retrying won&apos;t help. Any credits held for them were refunded. For ones with audio, Upload is the way in.
                           </p>
-                          {onSwitchToAudio && <Button variant="outline" size="sm" onClick={onSwitchToAudio} className="h-9">Audio Upload</Button>}
+                          {onSwitchToAudio && <Button variant="outline" size="sm" onClick={onSwitchToAudio} className="h-9">Upload</Button>}
                         </div>
                       )
                     })()}
@@ -813,7 +813,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                         {videoStatuses[entry.id] === 'youtube_restricted' && (
                           <div className="mt-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
                             <p className="text-xs text-warning-fg dark:text-amber-500 mb-2">
-                              This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload via our Audio Upload tab.
+                              This video's owner has restricted automated access. You can still transcribe it — many browser extensions and download tools let you save audio files, which you can then upload via our Upload tab.
                             </p>
                             {onSwitchToAudio && (
                               <button
@@ -824,7 +824,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                                 className="inline-flex items-center gap-1.5 text-xs font-medium text-warning-fg dark:text-amber-500 hover:text-amber-700 dark:hover:text-warning transition-colors"
                               >
                                 <Mic className="h-3 w-3" />
-                                Try Audio Upload →
+                                Try Upload →
                               </button>
                             )}
                           </div>
