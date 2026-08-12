@@ -3,8 +3,13 @@ import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { DocsTable } from "@/components/docs/DocsTable"
-import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
-import { UPLOAD_MAX_FILE_MB, uploadFormatsProse } from "@indxr/shared/lib/uploadFormats"
+import {
+  UPLOAD_MAX_FILE_MB,
+  UPLOAD_FORMAT_COUNT_WORD,
+  UPLOAD_AUDIO_LABELS,
+  UPLOAD_VIDEO_LABELS,
+  uploadFormatsProse,
+} from "@indxr/shared/lib/uploadFormats"
 import {
   EXPORT_FORMAT_COUNT,
   EXPORT_MENU,
@@ -52,26 +57,12 @@ const faqs = [
     a: "Proper names and specialist jargon are the known weak spot of every speech model, because it works from sound and cannot guess a spelling it has never met. The practical fix is to correct it once in the editor: every export you make afterwards carries the correction, and when there are several speakers you rename a speaker label once and it updates everywhere it appears.",
   },
   {
-    q: "How long does a two-hour file actually take?",
-    a: "Roughly the upload time plus the transcription time, and nothing after that. The file uploads from your device, then transcribes on the server: an hour of audio is usually ready within a few minutes, and two hours within about a quarter of an hour. A long recording or a busy moment can stretch that, and it keeps running on our servers so you can close the tab. There is no download step to wait for, because you supplied the file yourself; that wait only applies to YouTube videos, which we have to fetch first.",
-  },
-  {
     q: "Does it work when people talk over each other?",
     a: "Partly. The model detects who is speaking and labels each speaker, but where voices overlap the boundaries get less precise and a word can end up attached to the wrong speaker. On clean turn-taking the labelling is reliable; through a stretch of crosstalk, expect to fix a few lines.",
   },
   {
     q: "How do I split a file that is too large?",
-    a: (
-      <>
-        Any everyday audio app can do it: open the recording, cut it into parts and export each one,
-        choosing a quiet moment to cut rather than the middle of a sentence, since a word split
-        across the seam can be lost. Most people never need a terminal for this. If you do work on
-        the command line, FFmpeg splits on the hour in a single line:
-        <DocsCodeBlock>ffmpeg -i large_file.mp3 -t 3600 part1.mp3 -ss 3600 part2.mp3</DocsCodeBlock>
-        Either way the cost is the same, because you pay per minute of audio and not per file. Upload
-        each part separately.
-      </>
-    ),
+    a: `This is rarely necessary: at ${UPLOAD_MAX_FILE_MB}MB a single file already holds hours of speech. If you do have a recording that large, what matters is not which program you use but where you cut it. Cut at a pause between sentences rather than in the middle of one, because a word split across the seam can be lost. Any everyday audio editor can trim a recording into parts and export each one. Sending them separately costs nothing extra, because you pay per minute of audio, not per file.`,
   },
 ]
 
@@ -109,12 +100,12 @@ export default function AudioToTextPage() {
       image="https://indxr.ai/docs/screenshots/transcript-speakers-light.png"
     >
       <p>
-        Upload an audio or video file and get the full text back, punctuated, split by speaker and
-        timestamped. It runs on {transcriptionModelName()} across 99 languages and costs one credit
-        per minute of audio.{" "}
-        <Link href="/signup">A free account</Link> includes {FREE_TIER.WELCOME_CREDITS} credits,
-        enough for {FREE_TIER.WELCOME_CREDITS} minutes, so you can transcribe a real recording before
-        spending anything.
+        You have a recording and you want the words in it. Upload the file and you get the full text
+        back: punctuated, so it reads as sentences instead of one long block; split by speaker, so you
+        can tell who said what; and timestamped, so you can jump back to the moment something was said.
+        It costs one credit per minute of audio, and a free account includes {FREE_TIER.WELCOME_CREDITS}{" "}
+        credits, enough for {FREE_TIER.WELCOME_CREDITS} minutes, so you can transcribe a real recording
+        before spending anything.
       </p>
 
       <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -135,21 +126,17 @@ export default function AudioToTextPage() {
 
       <ol>
         <li>
-          <strong>Create a free account.</strong> The transcript is stored in a library for you
-          rather than handed over as a single download, which is why an account is needed. The{" "}
-          {FREE_TIER.WELCOME_CREDITS} credits are included and no card is required.
-        </li>
-        <li>
-          <strong>Upload your file.</strong> {uploadFormatsProse("or")}, up to{" "}
-          {UPLOAD_MAX_FILE_MB}MB and up to ten hours. Video files work directly; the audio track is
-          extracted for you. You do not pick a language, because the model detects it from the audio.
+          <strong>Upload your file.</strong> A free account is needed and takes a moment, no card
+          required, with the {FREE_TIER.WELCOME_CREDITS} credits included. {uploadFormatsProse("or")},
+          up to {UPLOAD_MAX_FILE_MB}MB and up to ten hours. Video files work directly; the audio track
+          is extracted for you. You do not pick a language, because the model detects it from the audio.
         </li>
         <li>
           <strong>Wait.</strong> An hour of audio is usually ready within a few minutes, and two
           hours within about a quarter of an hour; a long recording or a busy moment can stretch that.
           It runs on the server, so closing the tab or losing your connection does not cost you the job.
           Everything is processed on European infrastructure, and the uploaded file is deleted once
-          transcription finishes. Only the text stays in your library.
+          transcription finishes.
         </li>
         <li>
           <strong>Read, edit, export.</strong> The transcript opens in your library, where you can
@@ -189,9 +176,12 @@ export default function AudioToTextPage() {
       />
 
       <p>
-        That structure does practical work. Punctuation lets subtitle export break lines where a
-        sentence ends instead of mid-clause. It lets a chunked export for a vector database cut on
-        complete thoughts. Speaker labels make an interview quotable without listening back to work
+        What you notice first is that it reads. Sentences with punctuation, grouped into paragraphs,
+        are something you can skim and quote straight away, rather than a wall of lowercase you have to
+        repair before it is any use, which spares you the cleaning up that other tools leave you to do.
+        The same structure quietly pays off later: it lets a subtitle export break lines where a
+        sentence ends instead of mid-clause, lets a chunked export for a vector database cut on complete
+        thoughts, and lets the speaker labels make an interview quotable without listening back to work
         out who said what.
       </p>
 
@@ -242,15 +232,21 @@ export default function AudioToTextPage() {
 
       <h2>What you can upload</h2>
 
+      <p>
+        Audio or video, in {UPLOAD_FORMAT_COUNT_WORD} formats. A video file is transcribed exactly like
+        an audio one: the audio track is taken from it for you, so an MP4 or a MOV is as welcome here as
+        an MP3.
+      </p>
+
       <table>
         <tbody>
           <tr>
             <td>Audio formats</td>
-            <td>MP3, WAV, M4A, OGG, FLAC, MPGA</td>
+            <td>{UPLOAD_AUDIO_LABELS.join(", ")}</td>
           </tr>
           <tr>
             <td>Video formats</td>
-            <td>MP4, MOV, MKV, AVI, WEBM, FLV, MPEG</td>
+            <td>{UPLOAD_VIDEO_LABELS.join(", ")}</td>
           </tr>
           <tr>
             <td>Maximum file size</td>
@@ -362,7 +358,11 @@ export default function AudioToTextPage() {
         </tbody>
       </table>
 
-      <p>There is no subscription and credits never expire.</p>
+      <p>
+        There is no subscription, and credits never expire. If you have one recording this year, you
+        pay for one recording this year; credits bought in April are still there in October, and no
+        charge arrives in a month you did not use the site.
+      </p>
 
       <p>
         Most transcription services sell a monthly plan instead.{" "}
@@ -374,25 +374,25 @@ export default function AudioToTextPage() {
           One 2024 survey
         </a>{" "}
         found that six in ten people had avoided subscribing to a service because they expected
-        cancelling to be difficult, and the same survey found that four in ten who did subscribe could
-        not find the cancellation information and three in ten had to contact customer service to get
-        out. Signing up is designed to take thirty seconds. Leaving is not designed that way at all.
-      </p>
-
-      <p>
-        If you have one recording this year, you pay for one recording this year. Credits bought in
-        April are still there in October. No charge arrives in a month you did not use the site, and
-        there is no cancellation to remember because nothing recurs.
+        cancelling to be difficult. Here there is nothing to cancel, because nothing recurs.
       </p>
 
       <h2>Why not use a free converter</h2>
 
       <p>
-        Free converters are everywhere and for some jobs they are the right choice. One short
-        recording, wording that does not have to be exact, nothing you will need again: use one and
-        think no further about it. For anything you would rather not hand to an unknown service,
-        though, note that here the file is processed inside the EU, is never used to train an AI
-        model, and is kept by the transcription provider for one day at most, its shortest setting.
+        Free converters are everywhere, and for some jobs they are the right choice: one short
+        recording, wording that does not have to be exact, nothing you will need again. Use one and
+        think no further about it. What you trade, when the result does matter, is quality and headroom.
+        A free service has to keep its own costs down, which generally means a lighter transcription
+        model and tighter limits on length and file size. That is a fair deal when the words are
+        throwaway, and an expensive one in your own time the moment you have to clean up the result or
+        cut a file down to fit.
+      </p>
+
+      <p>
+        So it is worth saying what runs here. Your file is transcribed by {transcriptionModelName()},
+        processed inside the EU, never used to train an AI model, and kept by the transcription provider
+        for one day at most, its shortest setting. We would rather tell you that than leave you to guess.
       </p>
 
       <p>Where they fall short is clearest side by side.</p>

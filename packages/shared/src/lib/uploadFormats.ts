@@ -20,9 +20,9 @@ export const UPLOAD_EXTENSIONS = [
 /** Per-file upload size cap (matches audio_utils.py MAX_FILE_SIZE_MB). */
 export const UPLOAD_MAX_FILE_MB = 500
 
-/** 9 accepted formats. */
+/** 13 accepted formats. */
 export const UPLOAD_FORMAT_COUNT = UPLOAD_EXTENSIONS.length
-/** "nine" — for prose, so the count and the list can never disagree. */
+/** "thirteen" — for prose, so the count and the list can never disagree. */
 export const UPLOAD_FORMAT_COUNT_WORD = spellCount(UPLOAD_FORMAT_COUNT)
 
 /** For an <input accept="…"> attribute: ".mp3,.mp4,…". */
@@ -30,6 +30,24 @@ export const UPLOAD_ACCEPT_ATTR = UPLOAD_EXTENSIONS.join(",")
 
 /** Uppercase labels: ["MP3","MP4","MPEG",…] */
 export const UPLOAD_FORMAT_LABELS = UPLOAD_EXTENSIONS.map((e) => e.slice(1).toUpperCase())
+
+// Presentation-only split for grouped tables. The backend treats everything as audio
+// (it extracts the track from a video when the provider needs it), so this classification
+// exists purely so content can list audio and video separately. The two label lists always
+// partition UPLOAD_EXTENSIONS, so neither can drift from the accepted set.
+const UPLOAD_VIDEO_EXTENSIONS = new Set<string>([
+  ".mp4", ".mpeg", ".webm", ".mov", ".flv", ".avi", ".mkv",
+])
+
+/** Uppercase audio-format labels, in UPLOAD_EXTENSIONS order: ["MP3","MPGA",…]. */
+export const UPLOAD_AUDIO_LABELS = UPLOAD_EXTENSIONS
+  .filter((e) => !UPLOAD_VIDEO_EXTENSIONS.has(e))
+  .map((e) => e.slice(1).toUpperCase())
+
+/** Uppercase video-format labels, in UPLOAD_EXTENSIONS order: ["MP4","MPEG",…]. */
+export const UPLOAD_VIDEO_LABELS = UPLOAD_EXTENSIONS
+  .filter((e) => UPLOAD_VIDEO_EXTENSIONS.has(e))
+  .map((e) => e.slice(1).toUpperCase())
 
 /** Plain comma list, no conjunction: "MP3, MP4, MPEG, MPGA, M4A, WAV, WEBM, OGG, FLAC". */
 export const UPLOAD_FORMATS_LIST = UPLOAD_FORMAT_LABELS.join(", ")
