@@ -8,7 +8,6 @@ import {
   UPLOAD_FORMAT_COUNT_WORD,
   UPLOAD_AUDIO_LABELS,
   UPLOAD_VIDEO_LABELS,
-  uploadFormatsProse,
 } from "@indxr/shared/lib/uploadFormats"
 import {
   EXPORT_FORMAT_COUNT,
@@ -100,12 +99,12 @@ export default function AudioToTextPage() {
       image="https://indxr.ai/docs/screenshots/transcript-speakers-light.png"
     >
       <p>
-        You have a recording and you want the words in it. Upload the file and you get the full text
-        back: punctuated, so it reads as sentences instead of one long block; split by speaker, so you
-        can tell who said what; and timestamped, so you can jump back to the moment something was said.
-        It costs one credit per minute of audio, and a free account includes {FREE_TIER.WELCOME_CREDITS}{" "}
-        credits, enough for {FREE_TIER.WELCOME_CREDITS} minutes, so you can transcribe a real recording
-        before spending anything.
+        You have an audio file or recording and you want the words in it. INDXR lets you upload the file
+        and gives you the full text back: punctuated, so it reads as sentences instead of one long
+        block; split by speaker, so you can tell who said what; and timestamped, so you can jump back to
+        the moment something was said. It costs one credit per minute of audio, and a free account
+        includes {FREE_TIER.WELCOME_CREDITS} credits, enough for {FREE_TIER.WELCOME_CREDITS} minutes, so
+        you can transcribe a real recording before spending anything.
       </p>
 
       <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -124,31 +123,30 @@ export default function AudioToTextPage() {
 
       <h2>How it works</h2>
 
-      <ol>
-        <li>
-          <strong>Upload your file.</strong> A free account is needed and takes a moment, no card
-          required, with the {FREE_TIER.WELCOME_CREDITS} credits included. {uploadFormatsProse("or")},
-          up to {UPLOAD_MAX_FILE_MB}MB and up to ten hours. Video files work directly; the audio track
-          is extracted for you. You do not pick a language, because the model detects it from the audio.
-        </li>
-        <li>
-          <strong>Wait.</strong> An hour of audio is usually ready within a few minutes, and two
-          hours within about a quarter of an hour; a long recording or a busy moment can stretch that.
-          It runs on the server, so closing the tab or losing your connection does not cost you the job.
-          Everything is processed on European infrastructure, and the uploaded file is deleted once
-          transcription finishes.
-        </li>
-        <li>
-          <strong>Read, edit, export.</strong> The transcript opens in your library, where you can
-          correct it, search it, summarise it and export it in {spellCount(EXPORT_FORMAT_COUNT)}{" "}
-          formats.
-        </li>
-      </ol>
+      <p>
+        <strong>You upload the file.</strong> A free account is needed and takes a moment, no card
+        required, with the {FREE_TIER.WELCOME_CREDITS} credits included. Audio and video files both
+        work, up to {UPLOAD_MAX_FILE_MB}MB and up to ten hours, and for a video the audio track is taken
+        out for you. You do not pick a language, because the model detects it from the audio.
+      </p>
+
+      <p>
+        <strong>It transcribes while you wait.</strong> An hour of audio is usually ready within a few
+        minutes, and two hours within about a quarter of an hour; a long recording or a busy moment can
+        stretch that. It runs on the server, so closing the tab or losing your connection does not cost
+        you the job. Everything is processed on European infrastructure, and the uploaded file is
+        deleted once transcription finishes.
+      </p>
+
+      <p>
+        <strong>You read, edit and export.</strong> The transcript opens in your library, where you can
+        correct it, search it, summarise it and export it in {spellCount(EXPORT_FORMAT_COUNT)} formats.
+      </p>
 
       <DocsFigure
-        src="/docs/screenshots/uploader-empty.png"
-        alt="The INDXR upload screen: a dashed drop area labelled to upload an audio file, with the accepted formats and the file size limit listed underneath."
-        caption="Step two: drop in an audio or video file. The accepted formats and the size limit are shown on the upload screen itself."
+        src="/docs/screenshots/cost-card-ai.png"
+        alt="INDXR's cost panel after a file is added: the recording's title, its length of 54:56, an AI transcription label, and a total of 55 credits shown before you start, with the balance left afterwards."
+        caption="After you add a file, INDXR reads its length and shows the exact cost before anything starts: one credit per minute, here 55 for a recording just under an hour."
       />
 
       <h2>What the transcript looks like</h2>
