@@ -172,7 +172,7 @@ export default function FreeToolPage() {
             ) : (
               <FrictionConversionCard
                 headline="Audio file transcription"
-                body="Upload MP3, WAV, M4A, or other audio. AI transcription via AssemblyAI at 1 credit per minute. Audio is deleted after transcription. Sign up free for 25 credits — no credit card needed."
+                body="Upload audio or video — MP3, MP4, MOV, MKV, WAV, M4A and more. AI transcription via AssemblyAI at 1 credit per minute. The file is deleted after transcription. Sign up free for 25 credits — no credit card needed."
                 primaryCtaLabel="Sign up free →"
                 primaryCtaHref="/signup"
                 secondaryLabel="Or paste a YouTube URL"

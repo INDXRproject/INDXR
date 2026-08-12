@@ -20,7 +20,9 @@ from audio_utils import (
     MEMBERS_ONLY_KEYWORDS,
     compress_audio_if_needed,
     extract_youtube_audio,
+    get_audio_container,
     get_audio_duration,
+    needs_provider_transcode,
     validate_audio_file,
 )
 from assemblyai_client import submit_assemblyai, poll_assemblyai
@@ -845,11 +847,23 @@ async def do_assemblyai_transcription(
                 except Exception:
                     pass
 
-        # ── Step 5: Compress if >25 MB ────────────────────────────────────────
-        if validation['size_mb'] > 25:
-            logger.info(f"[pipeline] Audio exceeds 25MB, compressing (job={job_id})")
+        # ── Step 5: Prepare audio for the provider ────────────────────────────
+        # AssemblyAI accepts most containers raw (mp3/mp4/mov/flv/webm/…) and extracts the audio
+        # itself. AVI and MKV are NOT on its supported list (verified 2026-08-12), so we extract the
+        # audio here first. The DETECTED container (content, via ffprobe) decides — not the extension;
+        # the temp file keeps the original extension, so matroska is split into mkv/webm correctly.
+        # The same ffmpeg step also (legacy) compresses a file above the size cap. Either way -vn
+        # strips video → mono Opus/OGG. This step only runs on the upload path (YouTube audio is
+        # already extracted + compressed during download).
+        must_transcode = False
+        if audio_path:
+            container = await asyncio.to_thread(get_audio_container, audio_path, audio_path)
+            must_transcode = needs_provider_transcode(container)
+        if must_transcode or validation['size_mb'] > 25:
+            reason = f"container '{container}' not accepted raw by AssemblyAI" if must_transcode else "file exceeds 25MB"
+            logger.info(f"[pipeline] Extracting audio ({reason}) (job={job_id})")
             try:
-                compressed = await asyncio.to_thread(compress_audio_if_needed, audio_path)
+                compressed = await asyncio.to_thread(compress_audio_if_needed, audio_path, force=must_transcode)
                 if compressed != audio_path:
                     temp_files.append(compressed)
                     audio_path = compressed

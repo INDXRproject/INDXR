@@ -438,10 +438,15 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     }
   }
 
-  const estimatedCredits = file
-    ? (audioDuration ? calculateCredits(audioDuration) : Math.ceil((file.size / (1024 * 1024)) / 10) || 1)
-    : 0
-  const hasEnoughCredits = credits !== null && credits >= estimatedCredits
+  // Credit estimate only when we actually know the duration. The browser reads it from an <audio>
+  // element (getAudioDuration), which fails for containers it can't decode — typically AVI and MKV.
+  // A file-size heuristic would be wildly wrong for video (bytes ≠ minutes), so rather than show a
+  // misleading number we show nothing and let the server compute the real cost from the duration it
+  // probes. The server stays authoritative either way (it reserves + refunds).
+  const estimatedCredits: number | null =
+    file && audioDuration !== null ? calculateCredits(audioDuration) : null
+  const hasEnoughCredits =
+    credits !== null && (estimatedCredits === null || credits >= estimatedCredits)
   const isOverDurationCap = audioDuration !== null && audioDuration > MAX_AUDIO_DURATION_SECONDS
   const canTranscribe = file && user && hasEnoughCredits && !isTranscribing && !isUploading && !isOverDurationCap
 
@@ -626,16 +631,29 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           </div>
           <div className="flex items-baseline justify-between border-t border-border px-4 py-3">
             <span className="font-medium">Total</span>
-            <span className="text-[20px] font-semibold tabular-nums text-fg-strong">
-              {estimatedCredits} credit{estimatedCredits === 1 ? "" : "s"}
-            </span>
+            {estimatedCredits !== null ? (
+              <span className="text-[20px] font-semibold tabular-nums text-fg-strong">
+                {estimatedCredits} credit{estimatedCredits === 1 ? "" : "s"}
+              </span>
+            ) : (
+              <span className="text-sm text-fg-muted">Calculated from length after upload</span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-3 border-t border-border bg-surface-elevated px-4 py-3">
-            <BalanceLine have={credits} cost={estimatedCredits} />
-            {!hasEnoughCredits && credits !== null && (
-              <a href={appHref('/dashboard/credits')} className="ml-auto">
-                <Button size="sm" className="h-9">Buy credits</Button>
-              </a>
+            {estimatedCredits !== null ? (
+              <>
+                <BalanceLine have={credits} cost={estimatedCredits} />
+                {!hasEnoughCredits && credits !== null && (
+                  <a href={appHref('/dashboard/credits')} className="ml-auto">
+                    <Button size="sm" className="h-9">Buy credits</Button>
+                  </a>
+                )}
+              </>
+            ) : (
+              <span className="text-xs text-fg-muted">
+                Your balance: {credits ?? "—"} credit{credits === 1 ? "" : "s"}. 1 credit per minute is
+                charged after upload and refunded if it fails.
+              </span>
             )}
           </div>
         </div>
@@ -686,7 +704,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               className="w-full disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
               size="lg"
             >
-              Transcribe ({estimatedCredits} credits)
+              {estimatedCredits !== null ? `Transcribe (${estimatedCredits} credits)` : "Transcribe"}
             </Button>
           )}
         </>

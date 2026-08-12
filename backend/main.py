@@ -81,6 +81,7 @@ CACHED_CAPTION_REQUIRED_KEYS = frozenset({
 from audio_utils import (
     get_audio_duration,
     get_audio_container,
+    has_usable_audio,
     estimate_upload_reserve_cost,
     extract_youtube_audio,
     validate_audio_file,
@@ -931,6 +932,19 @@ async def transcribe_with_whisper(
         with tempfile.NamedTemporaryFile(delete=False, prefix="indxr_upload_", suffix=suffix) as tmp:
             tmp.write(audio_content)
             upload_tmp_path = tmp.name
+
+        # Content gate (before any reservation): the format allowlist is extension-only, so a file
+        # renamed to an accepted extension would otherwise slip through and only fail deep in the
+        # pipeline (after a reserve + refund). Reject up front when the file carries no decodable
+        # audio at all. Deliberately lenient: it does NOT require the extension to match the detected
+        # container — only that there is audio to transcribe.
+        if not await asyncio.to_thread(has_usable_audio, upload_tmp_path):
+            _cleanup_tmp(upload_tmp_path)
+            return JSONResponse(status_code=422, content={
+                "error": "This file doesn't contain any audio we can transcribe. Upload an audio or video file that has an audio track.",
+                "code": "no_audio",
+            })
+
         _est = await asyncio.to_thread(estimate_upload_reserve_cost, upload_tmp_path)
         estimated_cost = _est["credits"]
         known_duration = _est["duration"]   # None bij size_fallback → pipeline probet zelf (settle blijft echt)

@@ -21,10 +21,29 @@ DOWNLOAD_PROGRESS_INTERVAL = 3.0
 
 logger = logging.getLogger("indxr-backend")
 
-# Supported audio formats for AssemblyAI compatibility
-SUPPORTED_FORMATS = {'.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', '.ogg', '.flac'}
+# Supported upload formats (extension allowlist — mirrored by the frontend single source
+# packages/shared/src/lib/uploadFormats.ts UPLOAD_EXTENSIONS). MOV and FLV are on AssemblyAI's own
+# supported list (verified 2026-08-12) and are sent raw; AVI and MKV are NOT on that list, so their
+# audio is extracted by us before submit — see PROVIDER_TRANSCODE_CONTAINERS + the pipeline Step 5.
+SUPPORTED_FORMATS = {
+    '.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', '.ogg', '.flac',
+    '.mov', '.flv', '.avi', '.mkv',
+}
 MAX_FILE_SIZE_MB = 500
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+# Containers AssemblyAI does NOT accept raw (not on its supported list, verified 2026-08-12). We
+# extract the audio ourselves (mono Opus) before submit. Keyed on the DETECTED container from
+# get_audio_container (content, not extension), so a mislabelled file is still handled correctly.
+# NB: get_audio_container maps 'mov' → 'mp4' (provider-supported, sent raw), 'flv' → 'flv' (raw),
+# and matroska → 'mkv' (unless the extension says .webm). So only avi/mkv land here.
+PROVIDER_TRANSCODE_CONTAINERS = {'avi', 'mkv'}
+
+
+def needs_provider_transcode(container: str) -> bool:
+    """True when the source container must have its audio extracted before it goes to AssemblyAI
+    (the provider doesn't accept it raw). See PROVIDER_TRANSCODE_CONTAINERS."""
+    return container in PROVIDER_TRANSCODE_CONTAINERS
 
 MEMBERS_ONLY_KEYWORDS = [
     'join this channel to get access to members-only content',
@@ -120,11 +139,16 @@ def get_audio_container(file_path: str, filename_hint: Optional[str] = None) -> 
         )
         if result.returncode == 0 and result.stdout.strip():
             names = set(result.stdout.strip().lower().split(','))  # bv 'mov,mp4,m4a,3gp,3g2,mj2'
-            for fam in ('mp3', 'flac', 'wav', 'ogg', 'webm'):
+            for fam in ('mp3', 'flac', 'wav', 'ogg'):
                 if fam in names:
                     return fam
             if 'matroska' in names:
-                return 'mkv'
+                # ffprobe reports 'matroska,webm' for BOTH .mkv and .webm — one demuxer, so the
+                # content can't tell them apart. Use the extension hint WITHIN the confirmed family
+                # (same pattern as the mp4/m4a branch below): .webm → 'webm' (AssemblyAI-supported,
+                # sent raw), anything else in the family → 'mkv' (we extract the audio first).
+                ext = os.path.splitext(filename_hint or '')[1].lstrip('.').lower()
+                return 'webm' if ext == 'webm' else 'mkv'
             if names & {'mp4', 'm4a', 'mov'}:
                 # mp4-familie (ffprobe kan m4a/mp4 niet los zien) — ext-hint kiest BINNEN de bevestigde
                 # familie, dus geen leugen: de inhoud IS mp4/m4a, alleen het subtype uit de naam.
@@ -134,6 +158,29 @@ def get_audio_container(file_path: str, filename_hint: Optional[str] = None) -> 
     except (subprocess.TimeoutExpired, FileNotFoundError, ValueError) as e:
         logger.warning(f"ffprobe container-detect faalde: {e}")
     return 'unknown'
+
+
+def has_usable_audio(file_path: str) -> bool:
+    """True if the file contains at least one decodable audio stream, per ffprobe (content, not
+    extension). Closes the rename gap: a file renamed to an accepted extension that carries no audio
+    (a text file → .mp3, a silent screen recording with no audio track) is rejected up front instead
+    of being reserved and then refunded. DELIBERATELY LENIENT — it does NOT require the extension to
+    match the detected container (mp4/m4a/mov share a family, matroska covers mkv/webm); it only asks
+    whether there is audio to transcribe at all. ffprobe unreadable → treated as no audio (False)."""
+    try:
+        result = subprocess.run(
+            ['ffprobe', '-v', 'error', '-select_streams', 'a',
+             '-show_entries', 'stream=codec_type',
+             '-of', 'default=noprint_wrappers=1:nokey=1', file_path],
+            capture_output=True, text=True, timeout=15,
+        )
+        if result.returncode == 0 and 'audio' in result.stdout.strip().lower().split():
+            return True
+        logger.info(f"has_usable_audio: no audio stream detected in {file_path} (rc={result.returncode})")
+        return False
+    except (subprocess.TimeoutExpired, FileNotFoundError, ValueError) as e:
+        logger.warning(f"has_usable_audio ffprobe failed: {e}")
+        return False
 
 
 # ADR-050 — reserve-bedrag voor een audio-UPLOAD, server-side + onomzeilbaar bepaald VÓÓR reserve.
@@ -603,23 +650,33 @@ def validate_audio_file(file_path: str) -> Dict[str, any]:
     return result
 
 
-def compress_audio_if_needed(file_path: str, output_dir: str = "/tmp") -> str:
+def compress_audio_if_needed(file_path: str, output_dir: str = "/tmp", force: bool = False) -> str:
     """
-    Compress audio to 64kbps mono if file exceeds 25MB limit.
-    
+    Extract mono Opus/OGG audio via ffmpeg. Returns a new path, or the original unchanged when no
+    work is needed.
+
+    Two callers:
+      - size path (force=False): only runs when the file exceeds MAX_FILE_SIZE_BYTES. NB: uploads are
+        already capped at that same size, so on the upload path this branch is effectively a no-op —
+        the real work below is driven by `force`.
+      - provider-transcode path (force=True): the pipeline sets this for containers AssemblyAI won't
+        accept raw (AVI/MKV), so the audio is extracted regardless of size. Same ffmpeg command; -vn
+        strips any video track.
+
     Args:
-        file_path: Path to audio file
-        output_dir: Directory for compressed file
-        
+        file_path: Path to audio/video file
+        output_dir: Directory for the extracted file
+        force: Run the extraction regardless of file size (used for AVI/MKV)
+
     Returns:
-        Path to compressed file (or original if compression not needed)
-        
+        Path to the extracted file (or the original if no work was needed)
+
     Raises:
-        Exception: If compression fails
+        Exception: If extraction fails
     """
     file_size = os.path.getsize(file_path)
-    
-    if file_size <= MAX_FILE_SIZE_BYTES:
+
+    if not force and file_size <= MAX_FILE_SIZE_BYTES:
         logger.info("Audio file within size limit, no compression needed")
         return file_path
     

@@ -4,7 +4,7 @@ import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplat
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { DocsTable } from "@/components/docs/DocsTable"
 import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
-import { UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
+import { UPLOAD_MAX_FILE_MB, uploadFormatsProse } from "@indxr/shared/lib/uploadFormats"
 import {
   EXPORT_FORMAT_COUNT,
   EXPORT_MENU,
@@ -140,7 +140,7 @@ export default function AudioToTextPage() {
           {FREE_TIER.WELCOME_CREDITS} credits are included and no card is required.
         </li>
         <li>
-          <strong>Upload your file.</strong> MP3, MP4, WAV, M4A, WEBM, OGG, FLAC, MPEG or MPGA, up to{" "}
+          <strong>Upload your file.</strong> {uploadFormatsProse("or")}, up to{" "}
           {UPLOAD_MAX_FILE_MB}MB and up to ten hours. Video files work directly; the audio track is
           extracted for you. You do not pick a language, because the model detects it from the audio.
         </li>
@@ -250,7 +250,7 @@ export default function AudioToTextPage() {
           </tr>
           <tr>
             <td>Video formats</td>
-            <td>MP4, WEBM, MPEG</td>
+            <td>MP4, MOV, MKV, AVI, WEBM, FLV, MPEG</td>
           </tr>
           <tr>
             <td>Maximum file size</td>

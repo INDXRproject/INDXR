@@ -220,7 +220,13 @@ const COPY: Record<string, Entry> = {
     title: "Unsupported file type",
     body: (c) =>
       c.fallbackMessage?.trim() ||
-      "Upload an MP3, WAV, M4A or another common audio file. No credits were used.",
+      "Upload a common audio or video file — MP3, MP4, MOV, MKV, WAV, M4A and more. No credits were used.",
+  },
+  no_audio: {
+    title: "No audio in this file",
+    body: (c) =>
+      c.fallbackMessage?.trim() ||
+      "This file doesn't contain any audio we can transcribe. Upload an audio or video file that has an audio track. No credits were used.",
   },
 
   // ── Our-side failures ──────────────────────────────────────────────────────────

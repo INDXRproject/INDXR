@@ -53,7 +53,7 @@ export function exportFormatsProse(conj: "or" | "and" = "or"): string {
   return `${l.slice(0, -1).join(", ")}, ${conj} ${l[l.length - 1]}`
 }
 
-const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]
+const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen"]
 /** Spell a small count for prose ("seven"), so content stays natural while deriving from code. */
 export function spellCount(n: number): string {
   return WORDS[n] ?? String(n)

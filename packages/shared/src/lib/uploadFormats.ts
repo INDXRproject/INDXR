@@ -5,13 +5,16 @@
 // MPGA), which is exactly the kind of hand-typed drift this file exists to kill.
 //
 // Backend authority: the server rejects anything outside backend/audio_utils.py SUPPORTED_FORMATS
-// (verified 2026-08-03: the same 9 extensions) with MAX_FILE_SIZE_MB = 500. This array must stay in
-// lockstep with that set — the backend is what actually enforces acceptance.
+// (verified 2026-08-12: the same 13 extensions) with MAX_FILE_SIZE_MB = 500. This array must stay in
+// lockstep with that set — the backend is what actually enforces acceptance. MOV and FLV are on
+// AssemblyAI's supported list and are sent raw; AVI and MKV are not, so the backend extracts their
+// audio before submit (transparent to the user).
 
 import { spellCount } from "./exportFormats"
 
 export const UPLOAD_EXTENSIONS = [
   ".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm", ".ogg", ".flac",
+  ".mov", ".flv", ".avi", ".mkv",
 ] as const
 
 /** Per-file upload size cap (matches audio_utils.py MAX_FILE_SIZE_MB). */
