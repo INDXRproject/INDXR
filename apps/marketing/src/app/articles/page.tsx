@@ -26,6 +26,7 @@ const articles = [
   // Workflows & Use Cases
   { href: "/articles/youtube-playlist-transcript", label: "Playlist Transcripts", category: "Workflows", description: "Extract a whole playlist in one job — first 3 YouTube caption videos free." },
   { href: "/articles/audio-to-text", label: "Audio File Transcription", category: "Workflows", description: "Transcribe any audio or video file to text: punctuated, split by speaker, timestamped. One credit per minute." },
+  { href: "/articles/video-to-text", label: "Video File Transcription", category: "Workflows", description: "Transcribe any video file to text: the audio track is taken out for you, punctuated, split by speaker, timestamped, and exportable as subtitles." },
   { href: "/articles/youtube-transcript-obsidian", label: "Obsidian Workflow", category: "Workflows", description: "Markdown export with Dataview-compatible properties — no plugin required." },
 
   // AI & RAG (internal key: Deep Dives)

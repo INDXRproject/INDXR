@@ -8,6 +8,7 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
   // ── Troubleshooting ──
   "youtube-transcript-not-available": [
     { href: "/articles/audio-to-text", label: "Audio file transcription", reason: "the workaround when a URL won't extract — upload the audio" },
+    { href: "/articles/video-to-text", label: "Video to text", reason: "if you have the video file, upload it for the text directly" },
     { href: "/articles/youtube-transcript-non-english", label: "Non-English transcripts", reason: "when the captions come back in the wrong language" },
     { href: "/docs/how-indxr-works", label: "How INDXR works", reason: "the extraction and transcription pipeline in full" },
   ],
@@ -25,6 +26,7 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
   // ── Export Formats ──
   "transcript-export-formats": [
     { href: "/docs/reference/export-formats", label: "Export formats reference", reason: "the exact fields, columns and schema for every format" },
+    { href: "/articles/video-to-text", label: "Video to text", reason: "getting a video file's words out before you export them" },
     { href: "/articles/youtube-transcript-obsidian", label: "Obsidian workflow", reason: "the Markdown export in an end-to-end note-taking setup" },
     { href: "/articles/youtube-transcripts-vector-database", label: "Transcripts in vector databases", reason: "loading the RAG JSON into a database" },
   ],
@@ -37,8 +39,14 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
   ],
   "audio-to-text": [
     { href: "/docs/guides/uploads", label: "Uploads guide", reason: "the exact upload flow, formats and limits" },
+    { href: "/articles/video-to-text", label: "Video to text", reason: "the same for a video file, with subtitles and the picture discarded" },
     { href: "/articles/youtube-transcript-not-available", label: "Transcript not available?", reason: "when a YouTube URL won't extract" },
     { href: "/articles/youtube-transcript-non-english", label: "Non-English transcripts", reason: "transcribing audio in other languages" },
+  ],
+  "video-to-text": [
+    { href: "/articles/audio-to-text", label: "Audio file transcription", reason: "the same for a recording you want the words from, not a video" },
+    { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "every format a video's text exports as" },
+    { href: "/docs/guides/uploads", label: "Uploads guide", reason: "the exact upload flow, formats and limits" },
   ],
   "youtube-transcript-obsidian": [
     { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "the Markdown export Obsidian imports, and every other format" },
