@@ -11,6 +11,7 @@ import {
 } from "@indxr/shared/lib/uploadFormats"
 import { EXPORT_FORMAT_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 import { CREDIT_COSTS, creditCostEur, getAnchorPackage, FREE_TIER } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/articles/video-to-text" },
   title: "Video to Text — Transcribe Video Files to Text | INDXR.AI",
   description: metaDescription,
+  ...editorialOg("video-to-text"),
 }
 
 const faqs = [

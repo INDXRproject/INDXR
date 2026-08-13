@@ -6,12 +6,14 @@ import { spellCount, EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT } from "@indxr/s
 import { uploadFormatsProse, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { editorialOg } from "@/lib/editorialMeta"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/transcript-export-formats" },
   title: "Transcript Export Formats — TXT, Markdown, CSV, SRT, JSON, RAG | INDXR.AI",
   description:
     "Every export format for a YouTube transcript in one place: plain text, Markdown with frontmatter, CSV, SRT/VTT subtitles, structured JSON, and RAG-optimized JSON. Real output, real schemas.",
+  ...editorialOg("transcript-export-formats"),
 }
 
 const faqs = [

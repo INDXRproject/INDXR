@@ -6,6 +6,8 @@
 export const editorialAlts: Record<string, string> = {
   "audio-to-text": "vintage microphone head resting on sandy ground casting long shadow",
   "chunk-youtube-transcripts-for-rag": "amber glass block with ribbed segments glowing on sand",
+  "transcript-export-formats": "five brass measuring cups lined up casting long shadows",
+  "video-to-text": "translucent strip of film laid across pale gritty ground",
   "youtube-channel-knowledge-base": "open drawer packed with tightly filed cards in warm light",
   "youtube-playlist-transcript": "silver film reel with tape trailing across the sand",
   "youtube-transcript-non-english": "row of worn leather books with foreign-script spines",
