@@ -34,6 +34,12 @@ const VIDEO_URL = 'https://www.youtube.com/watch?v=kBdfcR-8hEY'
 // intercepts the Extract click (the stub ignores which video it is — only the rendered card matters).
 const STUB_URL = 'https://www.youtube.com/watch?v=STUBCARD001'
 const PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PL30C13C91CFFEFEA6'
+// Video-to-text article captures. The MP4 lives in the repo (docs/wiki/testing) so the upload
+// captures are reproducible client-side (no cost); the transcript/subtitle captures read a REAL
+// AI transcription of it, seeded once into account1's library (title = the filename). See
+// screenshot-machine.md → "Video-to-text seed". Do NOT delete that library row.
+const VIDEO_FILE = path.resolve(__dirname, '../../../docs/wiki/testing/What Brought Dave Chappelle Back - PowerfulJRE (360p).mp4')
+const VIDEO_TRANSCRIPT_TITLE = 'What Brought Dave Chappelle' // substring to find the seeded upload row
 
 // ── Capture-standard constants ────────────────────────────────────────────────
 const FRAME_W = 1000 // fixed frame width for every capture (CSS px; DSR 2 → 2000px PNG)
@@ -174,6 +180,93 @@ test('transcript-speakers', async ({ page }) => {
   await page.getByText('Sarah Chen:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
   const pane = page.locator('.ProseMirror:visible').first()
   await frameShot(page, pane, 'transcript-speakers')
+})
+
+// ══ Video-to-text article captures (real MP4 upload; seeded real transcription) ══
+// The four figures for /articles/video-to-text. #1/#2 set the real test MP4 client-side (no cost,
+// the browser reads its 319 s duration → 6 credits). #3/#4 read the seeded real AI transcription
+// of that same file (2 speakers, title = the filename). See screenshot-machine.md.
+
+// ── LIVE UI: the upload tab with an MP4 added — accepted, mode strip (Audio tab) in view ──
+test('video-upload-mp4', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/transcribe?mode=audio')
+  await page.setInputFiles('input[type=file]', VIDEO_FILE)
+  // File-added state: the filename heading replaces the empty "Upload Audio File" prompt.
+  await page.getByRole('heading', { name: /Chappelle/ }).waitFor({ state: 'visible', timeout: 20_000 })
+  // Frame the whole workbench card: Video/Playlist/Audio strip + the filled (green) dropzone + cost.
+  const card = page.getByRole('tablist').locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]')
+  await frameShot(page, card, 'video-upload-mp4')
+})
+
+// ── LIVE UI: the upload cost panel — filename, length, and credits before you start ──
+test('video-cost-card', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/transcribe?mode=audio')
+  await page.setInputFiles('input[type=file]', VIDEO_FILE)
+  // Wait until the duration is read and the credit total is computed (not the fallback).
+  const total = page.getByText('Total', { exact: true })
+  await total.waitFor({ state: 'visible', timeout: 20_000 })
+  await page.getByText(/^\d+ credits?$/).first().waitFor({ state: 'visible', timeout: 20_000 })
+  const cost = total.locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]')
+  await frameShot(page, cost, 'video-cost-card')
+})
+
+// ── LIVE: transcript reading pane WITH speaker labels — the real diarised JRE clip ──
+test('video-transcript-speakers', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: VIDEO_TRANSCRIPT_TITLE })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  await page.getByText('Speaker A:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  const pane = page.locator('.ProseMirror:visible').first()
+  // 74 segments would frame metres tall — clip to the first screenful (capture standard: shoot
+  // compacter, don't clamp a full-height subject). cloneNode copies the inline style, so the frame
+  // gets the clipped height; restore the live DOM afterwards.
+  await pane.evaluate((el) => { el.style.maxHeight = '520px'; el.style.overflow = 'hidden' })
+  await frameShot(page, pane, 'video-transcript-speakers')
+  await pane.evaluate((el) => { el.style.maxHeight = ''; el.style.overflow = '' })
+})
+
+// ── LIVE: a real exported subtitle file (SRT) — the result, not the (too tall/narrow) menu ──
+test('video-subtitles-srt', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: VIDEO_TRANSCRIPT_TITLE })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  // Confirm the detail page is loaded (the library LIST has a per-row Export icon button on every
+  // row, so locating Export before navigation completes hits 8 of them). Speaker text only exists
+  // on the reading pane.
+  await page.getByText('Speaker A:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  const exportBtn = page.getByRole('button', { name: 'Export' })
+  await exportBtn.waitFor({ state: 'visible', timeout: 20_000 })
+  await exportBtn.click()
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('menuitem', { name: /^SRT/ }).click(),
+  ])
+  const srt = fs.readFileSync(await download.path(), 'utf8')
+  // First cues → a readable block of the ACTUAL export (Netflix-segmented, HH:MM:SS,mmm timing,
+  // in-budget "Speaker A/B:" prefixes). Rendered in a token-styled block so it reads as the file.
+  const snippet = srt.split(/\r?\n\r?\n/).filter(Boolean).slice(0, 6).join('\n\n')
+  await page.evaluate((text) => {
+    document.getElementById('__srtblock')?.remove()
+    const pre = document.createElement('pre')
+    pre.id = '__srtblock'
+    pre.textContent = text
+    Object.assign(pre.style, {
+      margin: '0', padding: '20px 24px', width: '560px', boxSizing: 'border-box',
+      background: 'var(--surface)', color: 'var(--fg)',
+      border: '1px solid var(--border)', borderRadius: '10px',
+      fontFamily: 'var(--font-ibm-plex-mono, ui-monospace, monospace)',
+      fontSize: '12.5px', lineHeight: '1.55', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+    })
+    document.body.appendChild(pre)
+  }, snippet)
+  await frameShot(page, page.locator('#__srtblock'), 'video-subtitles-srt')
+  await page.evaluate(() => document.getElementById('__srtblock')?.remove())
 })
 
 // ── STUBBED: progress card (Downloading audio) ────────────────────────────────
