@@ -192,7 +192,7 @@ test('video-upload-mp4', async ({ page }) => {
   await prep(page)
   await page.goto('/dashboard/transcribe?mode=audio')
   await page.setInputFiles('input[type=file]', VIDEO_FILE)
-  // File-added state: the filename heading replaces the empty "Upload Audio File" prompt.
+  // File-added state: the filename heading replaces the empty "Upload a file" prompt.
   await page.getByRole('heading', { name: /Chappelle/ }).waitFor({ state: 'visible', timeout: 20_000 })
   // Frame the whole workbench card: Video/Playlist/Audio strip + the filled (green) dropzone + cost.
   const card = page.getByRole('tablist').locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]')
