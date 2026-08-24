@@ -157,15 +157,25 @@ def _clamp(v: int, lo: int, hi: int) -> int:
 # per-model-per-60s gateway-rate-limit te begrenzen (ADR-090-addendum).
 SECTION_CAP = int(os.getenv("SUMMARY_SECTION_CAP", "40"))
 SECTION_MINUTES = float(os.getenv("SUMMARY_SECTION_MINUTES", "8.0"))  # ~1 hoofdstuk per N min gesproken inhoud
+# Ondergrens niet op AANTAL maar op hoofdstukLENGTE: geen hoofdstuk mag veel meer dan ~SECTION_MAX_MINUTES
+# beslaan. Herkomst (geen gekozen getal): onderzoek naar instructievideo toont betrokkenheid die scherp
+# terugloopt voorbij ~6 min, met 6–9 min als ideale segmentlengte (Coursera hanteert 8 min). Ons MAXIMUM
+# van ~1 hoofdstuk per SECTION_MINUTES (8) valt daar precies in en blijft ongewijzigd. De VLOER staat
+# bewust op het DUBBELE (16): zo houdt het model speling om echte onderwerpwissels te volgen — gedwongen
+# knippen op een vast aantal levert willekeurige segmenten die aantoonbaar slechter werken dan
+# betekenisvolle. Zo kreeg een video van 55 min niet langer 2 hoofdstukken van bijna een half uur.
+SECTION_MAX_MINUTES = float(os.getenv("SUMMARY_SECTION_MAX_MINUTES", "16.0"))
 
 
 def section_bounds(duration_seconds: float) -> tuple:
-    """Onder-/bovengrens op het aantal hoofdstukken, afgeleid van de duur — zodat een korte video er
-    geen twintig krijgt en een lange video MEEGROEIT (i.p.v. hard cappen op 20). Boven de cap worden
-    fragmenten langer i.p.v. talrijker; het plateau ligt dan bij ~SECTION_CAP*SECTION_MINUTES min."""
+    """Onder-/bovengrens op het aantal hoofdstukken, afgeleid van de duur. BOVENgrens: ~1 hoofdstuk per
+    SECTION_MINUTES (korte video krijgt er geen twintig; een lange MEEGROEIT tot SECTION_CAP). ONDERgrens:
+    afgeleid van een hoofdstukLENGTE-cap (SECTION_MAX_MINUTES) i.p.v. een vast aantal — genoeg hoofdstukken
+    zodat geen hoofdstuk veel langer dan ~SECTION_MAX_MINUTES wordt — met 2 als absolute vloer voor korte
+    video's en nooit boven het maximum. Stuurt alleen de prompt; er wordt niet opgevuld om de vloer te halen."""
     duration_min = (duration_seconds or 0) / 60.0
     max_sections = _clamp(math.ceil(duration_min / SECTION_MINUTES), 3, SECTION_CAP)
-    min_sections = min(2, max_sections)
+    min_sections = _clamp(math.ceil(duration_min / SECTION_MAX_MINUTES), 2, max_sections)
     return min_sections, max_sections
 
 

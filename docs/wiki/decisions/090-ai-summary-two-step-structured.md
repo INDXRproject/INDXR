@@ -125,3 +125,17 @@ Gemeten met `backend/e2e_summary_measure.py` op vier echte transcripts (5min/20m
 **Validatie.** Nieuw herbruikbaar `backend/summary_health.py` (twee modi: `--generate ... --runs N` en `--check`/`--check-all`, schrijft een gedateerd rapport naar `docs/wiki/testing/summary-health-<datum>.md` — de vorige meetronde ging verloren omdat `e2e_summary_measure.py` alleen printte). Testset (elk ≥2×, eis 0 afgekapt): JRE #32/Firas (2:35:45, het probleemgeval), het 72s-seed-interview, de Justice-lezing (55min, schone referentie), en een ~10min-video (`HwZ3LsdYi7I`). Resultaat: zie het meest recente `summary-health-*`-rapport.
 
 **Bestaande beschadigde samenvattingen** (7 hoofdstukken over 2 samenvattingen) worden NIET weggegooid; voorstel = in-place regenereren met de gefixte pipeline zonder herbetaling (de gebruiker betaalde al). Het geseede transcript blijft.
+
+
+## Addendum 4 (2026-08-24) — ondergrens hoofdstukken: van vast aantal naar hoofdstuklengte
+
+**Symptoom.** `section_bounds` zette `min_sections = min(2, max_sections)` → **2 hoofdstukken toegestaan bij elke duur**. De Justice-lezing (55 min) kreeg daardoor 2 hoofdstukken van ~24 en ~30 min: technisch binnen "2–7 secties, niet opvullen tot het maximum", maar veel te grof.
+
+**Wijziging (`backend/summary_pipeline.py`, `section_bounds`).** De vloer is nu afgeleid van een hoofdstuk**lengte**-cap i.p.v. een vast aantal:
+`min_sections = clamp(⌈duur_min / SECTION_MAX_MINUTES⌉, 2, max_sections)`, met `SECTION_MAX_MINUTES = 16`. Zo zijn er genoeg hoofdstukken zodat geen hoofdstuk ver boven ~16 min uitkomt; 2 blijft de absolute vloer voor korte video's en de vloer gaat nooit boven het bestaande maximum. Het **maximum** (~1 hoofdstuk per `SECTION_MINUTES=8`) is ongewijzigd.
+
+**Herkomst van de 16 (geen gekozen getal).** Onderzoek naar instructievideo: betrokkenheid loopt scherp terug voorbij ~6 min, 6–9 min geldt als ideale segmentlengte, Coursera hanteert 8 min. Ons maximum van ~8 min/hoofdstuk valt daar precies in en blijft. De vloer staat bewust op het **dubbele** (16): zo houdt het model speling om **echte** onderwerpwissels te volgen — gedwongen knippen op een vast aantal levert willekeurige segmenten op die aantoonbaar slechter werken dan betekenisvolle. De prompt-instructie "do not pad to reach the maximum" blijft. De vloer stuurt alleen de prompt; `_normalize_sections` vult **niet** op om 'm te halen (geen forced split).
+
+**Effect op de 7 opgeslagen samenvattingen (oude vloer = 2 voor alle):** nieuwe vloer per duur — d160 16, e753 10, Justice **4**, 4f060d0e 2, 574a10dc 2, aa620f17 2, d96cb56b 2. Alleen **Justice** zat onder de nieuwe vloer (koos 2 < 4); de overige zes kozen al ≥ hun nieuwe vloer, dus daar verandert niets.
+
+**Herbevestiging via een echte generatie** (Justice, zonder herbetaling): **2 → 6 hoofdstukken** (model ging bewust boven de vloer van 4, langs echte onderwerpwissels). Eén hoofdstuk (Dudley & Stephens-debat, 20,6 min) blijft > 16 min: de vloer stuurt het **aantal**, niet een harde split, dus het model kan een samenhangend onderwerp heel houden i.p.v. het te versnijden — precies de bedoelde speling. Generatiekost €0,046 (9 gemini-2.5-flash-calls, 30.543 in / 14.711 out).
