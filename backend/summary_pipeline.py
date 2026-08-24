@@ -72,6 +72,46 @@ SECTION_MIN_RATIO = float(os.getenv("SUMMARY_SECTION_MIN_RATIO", "0.04"))  # min
 SECTION_RATIO_MIN_FRAG = int(os.getenv("SUMMARY_SECTION_RATIO_MIN_FRAG", "150"))  # ratio pas boven dit fragment
 _SENTENCE_END_RE = re.compile(r"[.!?)\]\"'’”»]\s*$")
 
+# ── Harde onderbreker per taak (ADR-098) ────────────────────────────────────────
+# Stopt een run i.p.v. een afgekapte/pathologisch-dure samenvatting te leveren; volledige teruggave.
+# Onderbouwing (over de bestaande taken gemeten, 2026-08-24, EU-tarief 0,33/2,75):
+#   - herstel-aandeel is 0% op ál het verkeer → een cap op 50% vangt systematisch modelfalen (elke sectie
+#     herstelt) zonder ooit op gezond verkeer te vuren;
+#   - kost/minuut ligt tussen €0,0006 en €0,0030; €0,02/min is ~7× de waargenomen piek → zelf-schalend,
+#     straft geen lange video's, en tript alleen bij een echte per-eenheid-explosie;
+#   - de duurste légale generatie is €0,42 (4,2u-video); de absolute backstop €1,50 (~3,5×) vangt een
+#     runaway op willekeurige lengte plus absurd lange input, zonder een geldige lange samenvatting te weigeren.
+# Een vaste absolute cap rond €0,50 zou een legitieme 5u+-video onterecht onderbreken — vandaar de
+# per-minuut-normalisatie als primaire kostengrens en €1,50 puur als vangnet.
+SUMMARY_MAX_RECOVERY_SHARE = float(os.getenv("SUMMARY_MAX_RECOVERY_SHARE", "0.5"))  # >50% secties hersteld → stop
+SUMMARY_MAX_EUR_PER_MIN = float(os.getenv("SUMMARY_MAX_EUR_PER_MIN", "0.02"))  # kost/min audio → stop (zelf-schalend)
+SUMMARY_MAX_COST_EUR = float(os.getenv("SUMMARY_MAX_COST_EUR", "1.50"))  # absolute vangnet-plafond/taak → stop
+# Tarieven voor de kostenschatting van de onderbreker (spiegelen cost_config EU in-region; env-overridebaar).
+# Ruw is genoeg voor een veiligheidsgrens — we vangen een 3×-runaway, geen cent-nauwkeurige boekhouding.
+_LLM_USD_IN = float(os.getenv("SUMMARY_LLM_USD_PER_1M_IN", "0.33"))
+_LLM_USD_OUT = float(os.getenv("SUMMARY_LLM_USD_PER_1M_OUT", "2.75"))
+_USD_EUR = float(os.getenv("SUMMARY_USD_EUR_RATE", "0.92"))
+
+
+class SummaryCostBreaker(Exception):
+    """Harde onderbreker: de run overschreed een veiligheids-/kostengrens → de taak stopt met volledige
+    teruggave. De message is user-facing; `.detail` draagt de technische reden voor de log."""
+    USER_MSG = ("This summary couldn't be completed and you were not charged. Please try again — if it "
+                "keeps happening, contact support@indxr.ai.")
+
+    def __init__(self, detail: str):
+        super().__init__(self.USER_MSG)
+        self.detail = detail
+
+
+def _estimate_cost_eur(calls: List[Dict]) -> float:
+    """Ruwe COR-schatting (euro) van een reeks gateway-calls, voor de onderbreker. Alles tegen het
+    gemini/gateway-tarief (secties + haiku-fallback; stap-1-gemini). Sonnet-fallback is zeldzaam en
+    zou de kost onderschatten, wat de onderbreker alleen conservatiever maakt — acceptabel."""
+    in_tok = sum(int(c.get("prompt_tokens") or 0) for c in calls)
+    out_tok = sum(int(c.get("completion_tokens") or 0) for c in calls)
+    return (in_tok / 1e6 * _LLM_USD_IN + out_tok / 1e6 * _LLM_USD_OUT) * _USD_EUR
+
 
 # ── kleine helpers ────────────────────────────────────────────────────────────
 
@@ -306,10 +346,12 @@ def _strip_code_fences(content: str) -> str:
 _strip_json_fences = _strip_code_fences
 
 
-def _log_usage(supabase, transcript_id: str, user_id: str, generated_at: str, call: Dict) -> None:
+def _log_usage(supabase, transcript_id: str, user_id: str, generated_at: str, call: Dict,
+               is_test: bool = False) -> None:
     """Per-call kostenlog (ai_summary_usage_log) — de gezaghebbende AI-summary COR-bron. Eén rij
     per gateway-call, met request_id/model/region/tijdstempel. Non-fataal: nooit de summary laten
-    falen op een kostenboeking."""
+    falen op een kostenboeking. `is_test=True` markeert meetverkeer (health-script): de kost telt mee
+    in de totaal-COR maar wordt uit de per-user-marge en het Operations-paneel gefilterd."""
     try:
         supabase.table("ai_summary_usage_log").insert({
             "transcript_id": transcript_id,
@@ -327,6 +369,7 @@ def _log_usage(supabase, transcript_id: str, user_id: str, generated_at: str, ca
             "max_tokens_set": call.get("max_tokens_set"),
             "reasoning_tokens": call.get("reasoning_tokens"),
             "recovery": call.get("recovery"),
+            "is_test": is_test,
         }).execute()
     except Exception as e:
         logger.warning(f"ai_summary_usage_log insert failed for {transcript_id}: {e}")
@@ -702,6 +745,37 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: di
         for c in r.get("calls", []):
             _log_usage(supabase, transcript_id, user_id, generated_at, c)
 
+    # ── Harde onderbreker (ADR-098) — vóór de assemblage/retour, ná het loggen (de gateway-kost is al
+    # gemaakt en hoort geboekt). Overschrijding → SummaryCostBreaker → de reservation-aware wrapper
+    # refundt volledig en zet status=error met de user-message. Drie condities:
+    #   (1) een hoofdstuk bleef ná alle pogingen afgekapt (levert nooit een afgekapte betaalde samenvatting);
+    #   (2) meer dan SUMMARY_MAX_RECOVERY_SHARE van de secties moest herstellen (systematisch modelfalen);
+    #   (3) de geschatte kostprijs > SUMMARY_MAX_COST_EUR (runaway).
+    n_sections = max(1, len(section_results))
+    recovered = sum(1 for r in section_results if r.get("recovery"))
+    unresolved = sum(1 for r in section_results if r.get("safety_net"))
+    recovery_share = recovered / n_sections
+    all_calls = [struct["call"]] + [c for r in section_results for c in r.get("calls", [])]
+    est_cost = _estimate_cost_eur(all_calls)
+    minutes = max(1.0, (duration or 0) / 60.0)
+    eur_per_min = est_cost / minutes
+    breach = None
+    if unresolved > 0:
+        breach = f"{unresolved}/{n_sections} sectie(s) bleven afgekapt na alle pogingen"
+    elif recovery_share > SUMMARY_MAX_RECOVERY_SHARE:
+        breach = f"herstel-aandeel {recovery_share:.0%} > cap {SUMMARY_MAX_RECOVERY_SHARE:.0%} ({recovered}/{n_sections})"
+    elif eur_per_min > SUMMARY_MAX_EUR_PER_MIN:
+        breach = f"kost/min €{eur_per_min:.4f} > cap €{SUMMARY_MAX_EUR_PER_MIN:.4f} (est €{est_cost:.3f} over {minutes:.0f} min)"
+    elif est_cost > SUMMARY_MAX_COST_EUR:
+        breach = f"geschatte kostprijs €{est_cost:.3f} > absolute cap €{SUMMARY_MAX_COST_EUR:.2f}"
+    if breach:
+        logger.error(f"[summary] ONDERBREKER {transcript_id}: {breach} "
+                     f"(recovery_share={recovery_share:.0%}, est_cost=€{est_cost:.3f}, "
+                     f"eur_per_min=€{eur_per_min:.4f}, unresolved={unresolved})")
+        if debug is not None:
+            debug["breaker"] = breach
+        raise SummaryCostBreaker(breach)
+
     # Debug-stats voor de E2E (dekking + kwaliteits-tellers). Worker geeft geen debug mee.
     if debug is not None:
         debug["coverage"] = coverage
@@ -789,7 +863,7 @@ async def run_summary_reservation_aware(
         refund_credits(job_id=job_id)  # volledige teruggave (consumed==0)
         _update_summary_job(
             supabase, job_id, status="error", error_type=type(e).__name__,
-            error_message=str(e)[:500], credits_refunded=True,
+            error_message=str(e)[:500], credits_refunded=reserved,  # INTEGER-kolom (aantal), geen bool
             completed_at=datetime.now(timezone.utc).isoformat(),
         )
         return
@@ -807,7 +881,7 @@ async def run_summary_reservation_aware(
         refund_credits(job_id=job_id)
         _update_summary_job(
             supabase, job_id, status="error", error_type="SummaryWriteFailed",
-            error_message=str(e)[:500], credits_refunded=True,
+            error_message=str(e)[:500], credits_refunded=reserved,  # INTEGER-kolom (aantal), geen bool
             completed_at=datetime.now(timezone.utc).isoformat(),
         )
         return

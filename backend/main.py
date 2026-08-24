@@ -1332,7 +1332,9 @@ async def get_summary_job_status(job_id: str, user_id: str, _: None = Depends(ve
             await asyncio.to_thread(
                 lambda: supabase.table('transcription_jobs').update({
                     'status': 'error', 'error_type': 'worker_crashed',
-                    'error_message': 'Summary job timed out', 'credits_refunded': True,
+                    # credits_refunded is een INTEGER-kolom (aantal), geen bool — True gaf 22P02 en liet
+                    # de stale-recovery-update falen zodat de job in 'summarizing' bleef hangen.
+                    'error_message': 'Summary job timed out', 'credits_refunded': job.get('credits_reserved') or 0,
                     'completed_at': now.isoformat(),
                 }).eq('id', job_id).in_('status', ['pending', 'summarizing']).execute()
             )

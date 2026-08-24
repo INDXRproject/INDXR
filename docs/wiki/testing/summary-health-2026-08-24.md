@@ -153,3 +153,45 @@ _Spreiding afgekapte hoofdstukken over 2 runs: min 0 / max 0 / totaal 0._
 
 
 ---
+
+## CHECK — 2 opgeslagen samenvattingen — 2026-08-24 12:14 UTC
+
+**Geen afgekapte hoofdstukken in de opgeslagen samenvattingen.**
+
+
+### `e753e158-965b-4245-9bf4-23af102892cc` · video `xDsoWp743gM` · 155:45 · gegenereerd 2026-08-24T12:10:43.054097+00:00
+
+**17 hoofdstukken · 0 afgekapt.**
+
+| # | Hoofdstuk | woorden | frag | ratio | schoon | budget | denk/zicht | finish | model | herstel |
+|--:|---|--:|--:|--:|:--:|--:|--:|---|---|---|
+| 1 | Tim Tam Massager: Introduction and Ben | 284 | 739 | 0.384 | ✓ | None | None/None | None | 2 |  |
+| 2 | Recovery Techniques and Personal Injur | 442 | 736 | 0.601 | ✓ | None | None/None | None | 2 |  |
+| 3 | Kelly Starrett's Mobility and Alignmen | 703 | 1656 | 0.425 | ✓ | None | None/None | None | 2 |  |
+| 4 | Diet, Inflammation, and the Dangers of | 276 | 1032 | 0.267 | ✓ | None | None/None | None | 2 |  |
+| 5 | George St-Pierre's Metabolism and Body | 488 | 1465 | 0.333 | ✓ | None | None/None | None | 2 |  |
+| 6 | Fighting Styles, Experience, and Smart | 493 | 983 | 0.502 | ✓ | None | None/None | None | 2 |  |
+| 7 | Strategic Recovery and Managing Fighte | 434 | 1398 | 0.31 | ✓ | None | None/None | None | 2 |  |
+| 8 | The Evolution of MMA and Coaching's Ro | 602 | 1378 | 0.437 | ✓ | None | None/None | None | 2 |  |
+| 9 | Strategic Adaptability vs. Predictabil | 617 | 2666 | 0.231 | ✓ | None | None/None | None | 2 |  |
+| 10 | Jiu-Jitsu Techniques and Instructor Pe | 473 | 1033 | 0.458 | ✓ | None | None/None | None | 2 |  |
+| 11 | Training Principles: Flow State and Co | 1695 | 4120 | 0.411 | ✓ | None | None/None | None | 2 |  |
+| 12 | Critique of CrossFit and Personal Cond | 2067 | 4595 | 0.45 | ✓ | None | None/None | None | 2 |  |
+| 13 | Mobility, Yoga, and Ramadan's Impact o | 595 | 1446 | 0.411 | ✓ | None | None/None | None | 2 |  |
+| 14 | Managing In-Fight Stamina and Genetic  | 705 | 2171 | 0.325 | ✓ | None | None/None | None | 2 |  |
+| 15 | Cross-Training Benefits and MMA Style  | 525 | 1402 | 0.374 | ✓ | None | None/None | None | 2 |  |
+| 16 | Philosophy of Narratives, Injuries, an | 551 | 1588 | 0.347 | ✓ | None | None/None | None | 2 |  |
+| 17 | Physics, Randomness, and Determinism i | 2355 | 5590 | 0.421 | ✓ | None | None/None | None | 2 |  |
+
+
+### `d96cb56b-36b5-47ae-999d-ddde15f18b7d` · video `None` · 1:12 · gegenereerd 2026-08-24T12:13:24.485926+00:00
+
+**2 hoofdstukken · 0 afgekapt.**
+
+| # | Hoofdstuk | woorden | frag | ratio | schoon | budget | denk/zicht | finish | model | herstel |
+|--:|---|--:|--:|--:|:--:|--:|--:|---|---|---|
+| 1 | The Challenge of Protecting Deep Work | 90 | 85 | 1.059 | ✓ | None | None/None | None | 2 |  |
+| 2 | Practical Strategies for Enhanced Focu | 166 | 128 | 1.297 | ✓ | None | None/None | None | 2 |  |
+
+
+---

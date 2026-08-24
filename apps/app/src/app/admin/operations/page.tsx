@@ -413,6 +413,113 @@ function ConfidenceTrendPanel({ rows }: { rows: ConfTrend[] }) {
   )
 }
 
+// ── AI-summary kostenpaneel (ADR-098) ──────────────────────────────────────────────────────────────
+type CostClass = {
+  dclass: string; n: number; median_eur: number; p99_eur: number; max_eur: number
+  margin_median_eur: number; margin_worst_eur: number
+}
+type SummaryCostPanel = {
+  days: number; cheapest_eur_per_credit: number
+  by_class: CostClass[]
+  safety_net: {
+    total_calls: number; retry_calls: number; fallback_calls: number
+    retry_share: number; fallback_share: number; breaker_fires: number
+  }
+  finish_reason: Record<string, number>
+  model: Record<string, number>
+}
+
+function eur(n: number | null): string {
+  return n == null ? "—" : `€${n.toFixed(4)}`
+}
+// Marge kleurt de leesbaarheid: <0 = verlies (rood), krap (<1ct) = oranje, anders groen.
+function marginTone(m: number): Health {
+  return m < 0 ? "bad" : m < 0.01 ? "warn" : "good"
+}
+// Vangnet-aandeel: 0 = groen, tot 5% oranje, daarboven rood (systematisch modelfalen).
+function shareTone(s: number): Health {
+  return s <= 0 ? "good" : s < 0.05 ? "warn" : "bad"
+}
+
+function SummaryCost({ cost }: { cost: SummaryCostPanel }) {
+  const sn = cost.safety_net
+  const finishBars = Object.entries(cost.finish_reason)
+    .map(([label, value]) => ({ label, value, cls: label === "length" ? "bg-error" : undefined }))
+    .sort((a, b) => b.value - a.value)
+  const modelBars = Object.entries(cost.model).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value)
+  const anySafetyNet = sn.retry_share + sn.fallback_share
+  return (
+    <section className="space-y-3">
+      <h2 className="flex items-center text-xs font-semibold uppercase tracking-wider text-fg-subtle">
+        Summary cost
+        <InfoHint text={`AI-samenvatting COR over de laatste ${cost.days} dagen (productie-verkeer; health-metingen uitgesloten). Kost per samenvatting als mediaan én p99 per duurklasse — de mediaan toont het normale bereik, p99 legt uitschieters en herhaalpogingen bloot. Marge = opbrengst − kost, berekend op het GOEDKOOPSTE pakket (Power, €${cost.cheapest_eur_per_credit}/credit = worst-case). Rood = verlies op dat pakket.`} />
+      </h2>
+
+      {/* Per duurklasse: kost median/p99/max + marge (mediaan + slechtste geval), gekleurd op marge. */}
+      <Card title="Cost & margin per duration class" info="Marge op het goedkoopste pakket (Power). 'worst' = de slechtste enkele samenvatting in die klasse — daar zie je of één lange video al verliesgevend is.">
+        {cost.by_class.length === 0 ? (
+          <p className="py-4 text-sm text-fg-subtle">No summaries in this window.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs tabular-nums">
+              <thead>
+                <tr className="text-left text-fg-muted">
+                  <th className="py-1 pr-3 font-medium">Duration</th>
+                  <th className="py-1 pr-3 text-right font-medium">n</th>
+                  <th className="py-1 pr-3 text-right font-medium">cost median</th>
+                  <th className="py-1 pr-3 text-right font-medium">cost p99</th>
+                  <th className="py-1 pr-3 text-right font-medium">cost max</th>
+                  <th className="py-1 pr-3 text-right font-medium">margin median</th>
+                  <th className="py-1 text-right font-medium">margin worst</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cost.by_class.map((c) => (
+                  <tr key={c.dclass} className="border-t border-border-subtle">
+                    <td className="py-1.5 pr-3 text-fg">{c.dclass}</td>
+                    <td className="py-1.5 pr-3 text-right text-fg-muted">{c.n}</td>
+                    <td className="py-1.5 pr-3 text-right text-fg">{eur(c.median_eur)}</td>
+                    <td className="py-1.5 pr-3 text-right text-fg">{eur(c.p99_eur)}</td>
+                    <td className="py-1.5 pr-3 text-right text-fg">{eur(c.max_eur)}</td>
+                    <td className={`py-1.5 pr-3 text-right font-semibold ${HEALTH_CLS[marginTone(c.margin_median_eur)]}`}>{eur(c.margin_median_eur)}</td>
+                    <td className={`py-1.5 text-right font-semibold ${HEALTH_CLS[marginTone(c.margin_worst_eur)]}`}>{eur(c.margin_worst_eur)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {/* Vangnet + onderbreker: aandeel calls dat herstelde (retry/fallback), onopgeloste secties (=0
+          by design — de onderbreker stopt+refundt zulke runs), en hoe vaak de onderbreker vuurde. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Safety-net share" value={pct(anySafetyNet)} tone={shareTone(anySafetyNet)}
+          sub={`${pct(sn.retry_share)} retry · ${pct(sn.fallback_share)} fallback`}
+          info="Aandeel van alle summary-calls dat het model-onafhankelijke vangnet nodig had, gesplitst naar retry (zelfde model) en fallback (ander model). Stijgt dit, dan verandert het leverancier-gedrag — het vroegste signaal, vóór het geld kost." />
+        <Stat label="Retry calls" value={num(sn.retry_calls)} tone={shareTone(sn.retry_share)}
+          sub={`of ${num(sn.total_calls)} calls`} info="Aantal calls dat via een retry op hetzelfde model herstelde." />
+        <Stat label="Fallback calls" value={num(sn.fallback_calls)} tone={shareTone(sn.fallback_share)}
+          sub={`of ${num(sn.total_calls)} calls`} info="Aantal calls dat naar het fallback-model moest." />
+        <Stat label="Unresolved / breaker" value={`0 · ${num(sn.breaker_fires)}`}
+          tone={sn.breaker_fires > 0 ? "warn" : "good"}
+          sub={sn.breaker_fires > 0 ? `${num(sn.breaker_fires)} runs gestopt + gerefund` : "0 stopped"}
+          info="Secties die ná alle pogingen nog afgekapt bleven: structureel 0 — de onderbreker (ADR-098) stopt zo'n run en geeft alle credits terug. Het tweede getal is hoe vaak die onderbreker vuurde." />
+      </div>
+
+      {/* Verdeling finish_reason + model: het vroegste signaal dat leverancier-gedrag verandert. */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Card title="Finish reason" info="Waarom het model stopte per call. 'stop' = normaal; 'length' (rood) = afgekapt door het tokenbudget → grens verhogen. 'null' = historische rijen van vóór de diagnostiek-kolom (ADR-090 Addendum 3).">
+          <Bars data={finishBars} />
+        </Card>
+        <Card title="Model used" info="Welk model de calls draaide. Een stijgend fallback-model-aandeel is het vroegste teken dat het primaire model faalt, vóór het de marge raakt.">
+          <Bars data={modelBars} />
+        </Card>
+      </div>
+    </section>
+  )
+}
+
 export default async function AdminOperationsPage({
   searchParams,
 }: {
@@ -423,14 +530,16 @@ export default async function AdminOperationsPage({
   const excludeInternal = sp.test === "real"
 
   const admin = createAdminClient()
-  const [{ data }, { data: pipeData }, uptime] = await Promise.all([
+  const [{ data }, { data: pipeData }, { data: costData }, uptime] = await Promise.all([
     admin.rpc("admin_operations_v3", {
       p_from: win.from, p_to: win.to, p_exclude_internal: excludeInternal,
     }),
     admin.rpc("admin_pipeline_metrics"), // ADR-096: fasetijd/RTF-percentielen + confidence-trend per taal
+    admin.rpc("admin_summary_cost_panel", { p_days: 30 }), // ADR-098: AI-summary COR/marge/vangnet (30d)
     fetchUptime(), // BetterStack live status (option B) — env-gated + graceful
   ])
   const pipe = pipeData as PipelineMetrics | null
+  const cost = costData as SummaryCostPanel | null
   const o = data as OperationsV3 | null
   if (!o) {
     return <div className="rounded-xl border bg-surface p-6 text-sm text-fg-muted">Operations data unavailable.</div>
@@ -494,6 +603,9 @@ export default async function AdminOperationsPage({
           </div>
         </div>
       </Card>
+
+      {/* ── SUMMARY COST (ADR-098) — money side, 30d window independent of the ops window above ── */}
+      {cost && <SummaryCost cost={cost} />}
 
       {/* Windowed detail — hidden when quiet (2b): no wall of empty cards. */}
       {!quiet && (<>

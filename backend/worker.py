@@ -1466,7 +1466,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
         _sum_pending_cutoff = (now - timedelta(minutes=30)).isoformat()
         _dead = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,user_id,status')
+                .select('id,user_id,status,credits_reserved')
                 .eq('source_kind', 'ai_summary')
                 .gt('credits_reserved', 0)
                 .or_(
@@ -1480,11 +1480,13 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             try:
                 r = await asyncio.to_thread(refund_credits, _jid, None)  # volledige teruggave (consumed==0)
                 await asyncio.to_thread(
-                    lambda j=_jid, s=_job['status']: supabase.table('transcription_jobs').update({
+                    lambda j=_jid, s=_job['status'], cr=(_job.get('credits_reserved') or 0): supabase.table('transcription_jobs').update({
                         'status': 'error',
                         'error_type': 'worker_crashed',
                         'error_message': 'Watchdog: summary-job dood (stale/nooit opgepikt) — gerefund',
-                        'credits_refunded': True,
+                        # INTEGER-kolom (aantal), geen bool — True gaf 22P02 zodat de reaper-update faalde
+                        # en de dode job niet als error werd gemarkeerd.
+                        'credits_refunded': cr,
                         'completed_at': now.isoformat(),
                         'updated_at': now.isoformat(),
                     }).eq('id', j).eq('status', s).execute()
@@ -1665,6 +1667,23 @@ async def fetch_service_metrics(ctx: dict) -> str:
         logger.warning(f"[service-metrics] decodo fetch failed: {e}")
         await asyncio.to_thread(lambda: sb.rpc("record_service_fetch", {
             "p_service": "decodo", "p_ok": False, "p_error": str(e)[:500]}).execute())
+
+    # ── ADR-098: rolling-baseline op de AI-summary kost/minuut ──
+    # Onbewaakte bescherming die het paneel aanvult: vergelijkt de kost/min van de laatste 7 dagen met de
+    # basislijn (dag 8–37) en logt een WARNING bij een verdubbeling. De RPC bewaart elke uitkomst in
+    # summary_cost_baseline_log (queryable). Best-effort — een baseline-fout mag de metrics-cron niet breken.
+    try:
+        res = await asyncio.to_thread(lambda: sb.rpc("check_summary_cost_baseline", {}).execute())
+        b = res.data or {}
+        if b.get("breached"):
+            logger.warning(f"[summary-baseline] ⚠ kost/min VERDUBBELD: recent €{b.get('recent_eur_per_min')}/min "
+                           f"vs basislijn €{b.get('prior_eur_per_min')}/min (ratio {b.get('ratio')} > "
+                           f"{b.get('threshold')}); recent n={b.get('recent_n')}, prior n={b.get('prior_n')}")
+        else:
+            logger.info(f"[summary-baseline] ok: recent €{b.get('recent_eur_per_min')}/min vs "
+                        f"€{b.get('prior_eur_per_min')}/min (ratio {b.get('ratio')}) — {b.get('note')}")
+    except Exception as e:
+        logger.warning(f"[summary-baseline] check failed: {e}")
 
     return "ok"
 

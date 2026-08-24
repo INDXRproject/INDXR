@@ -207,6 +207,43 @@ Panelen:
 De oude `admin_operations_summary` blijft bestaan (niet meer door de UI gebruikt). Toegang via de
 admin-service-role-client; route-niveau admin-gating (`ADMIN_EMAIL`).
 
+### Summary cost (ADR-098) — de kostenkant
+
+Los van de Golden-Signals-panelen (die geen geld tonen) staat er nu één **Summary cost**-sectie op
+`/admin/operations`, gevoed door **`admin_summary_cost_panel(p_days=30)`** — alleen productie-verkeer
+(`ai_summary_usage_log.is_test = false`; health-metingen zijn uitgesloten). Wat het toont en **wat rood
+betekent + wat te doen**:
+
+- **Cost & margin per duurklasse** (≤30 / 30–90 / >90 min): kost per samenvatting als **mediaan én p99**
+  (mediaan = normaal bereik, p99 = uitschieters/herhaalpogingen), plus de **marge** = opbrengst − kost op
+  het **goedkoopste pakket** (Power €0,02/credit = worst-case).
+  - 🔴 **marge < 0** = die (klasse van) samenvatting is op het goedkoopste pakket verliesgevend. **Dat is
+    normaal voor >90 min-video's** (een 4,2u-video kost ~€0,42 maar levert op Power 15×€0,02 = €0,30 op) —
+    het is een **prijs**signaal, geen incident. Actie: alleen ingrijpen als een groot déél van het verkeer
+    op Power lange video's is; overweeg dan een prijs-/pakketaanpassing. Eén rode "worst"-cel bij verder
+    gezonde medianen vraagt géén actie.
+  - 🟠 marge < 1 cent = krap. 🟢 = gezond.
+- **Safety-net share** (retry vs fallback) + **breaker fires**: aandeel calls dat het vangnet (ADR-090)
+  nodig had.
+  - 🟢 0% is de norm. 🟠 <5%, 🔴 ≥5% = **systematisch modelfalen** — het model levert structureel
+    afgekapte/lege secties. Actie: check de finish_reason-verdeling en de leverancierstatus; dit is het
+    vroegste signaal vóór het geld kost.
+  - **Unresolved = structureel 0**: een sectie die ná alle pogingen nog afgekapt is, laat de **onderbreker**
+    (ADR-098) de run stoppen + **alle credits teruggeven**. Het tweede getal ("breaker fires") is hoe vaak
+    dat gebeurde; 🟠 >0 = onderzoek waarom (leverancier-regressie of een runaway).
+- **Finish reason / model**: verdeling per call. 🔴 `length` = afgekapt door het tokenbudget → budget
+  verhogen. Een stijgend **fallback-model**-aandeel = het primaire model faalt, vóór het de marge raakt.
+
+**Onbewaakte bescherming (draait zonder dat iemand kijkt):**
+- **Harde onderbreker per taak** (`SummaryCostBreaker`, `summary_pipeline.run_summary`): stopt een run bij
+  een onopgeloste sectie, herstel-aandeel > 50%, kost/min > €0,02 of absolute kost > €1,50 → volledige
+  teruggave + duidelijke user-message. Grenzen env-override­baar. Bewezen via `backend/test_summary_breaker.py`.
+- **Rolling-baseline** (`check_summary_cost_baseline`, nachtelijk in `fetch_service_metrics`): vergelijkt
+  kost/min laatste 7d vs basislijn dag 8–37, logt een WARNING bij ratio > 2,0 (verdubbeling). Elke uitkomst
+  in `summary_cost_baseline_log`. Minimum-sample-guard (recent n≥3, prior n≥5) tegen vals alarm.
+- **Per-user COR** (`admin_summary_cost_per_user`): maakt een account dat structureel meer kost dan het
+  oplevert zichtbaar.
+
 ## Wat nog ontbreekt
 
 - **Uptime monitoring — INGERICHT (2026-07-31), BetterStack.** **3 URL-monitors** ("URL becomes unavailable", 3-min): `indxr.ai`, `app.indxr.ai`, `indxr-production.up.railway.app/health`. Plus **1 Heartbeat** voor de portloze worker (verwacht elke 5 min, grace 5 min): `worker.watchdog_interrupted_jobs` pingt `BETTERSTACK_HEARTBEAT_URL` aan het eind van elke cyclus (elke 2 min → ruim binnen de grace). **`BETTERSTACK_HEARTBEAT_URL` staat ALLEEN op de worker-service** (de API is al gedekt door de `/health`-monitor); code env-gated. Een gemiste ping = worker dood → alarm.

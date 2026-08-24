@@ -63,7 +63,7 @@ def _cost_rates(sb):
                 "out": float(r["assemblyai_llm_usd_per_1m_output_tokens"]),
                 "fx": float(r["usd_eur_rate"])}
     except Exception:
-        return {"in": 0.30, "out": 2.50, "fx": 0.92}
+        return {"in": 0.33, "out": 2.75, "fx": 0.92}  # EU in-region (cost_config)
 
 
 def _eur(in_tok, out_tok, rates):
@@ -72,12 +72,13 @@ def _eur(in_tok, out_tok, rates):
 
 
 def _fetch(sb, tid):
-    row = sb.table("transcripts").select("transcript,duration,video_id,ai_summary").eq("id", tid).single().execute()
+    row = sb.table("transcripts").select(
+        "transcript,duration,video_id,ai_summary,user_id").eq("id", tid).single().execute()
     if not row.data:
         raise RuntimeError(f"transcript {tid} niet gevonden")
     segs = row.data.get("transcript") or []
     dur = row.data.get("duration") or sp.total_transcript_seconds(segs)
-    return segs, dur, row.data.get("video_id"), row.data.get("ai_summary")
+    return segs, dur, row.data.get("video_id"), row.data.get("ai_summary"), row.data.get("user_id")
 
 
 def _chapter_rows_from_results(section_results, segs):
@@ -110,7 +111,7 @@ def _chapter_rows_from_results(section_results, segs):
     return rows
 
 
-async def _generate_once(sb, tid, segs, dur):
+async def _generate_once(sb, tid, segs, dur, user_id):
     api_key = os.environ["ASSEMBLYAI_API_KEY"]
     min_s, max_s = sp.section_bounds(dur)
     t0 = time.time()
@@ -127,6 +128,11 @@ async def _generate_once(sb, tid, segs, dur):
     all_calls = [struct_call] + [c for r in results for c in (r.get("calls") or [])]
     total_in = sum(int(c.get("prompt_tokens") or 0) for c in all_calls)
     total_out = sum(int(c.get("completion_tokens") or 0) for c in all_calls)
+    # ADR-098: boek de gateway-kost als TEST-verkeer. Deze uitgaven zijn echt (AssemblyAI-tokens);
+    # ze horen in de totaal-COR, maar is_test=true houdt ze uit per-user-marge + Operations-paneel.
+    generated_at = datetime.now(timezone.utc).isoformat()
+    for c in all_calls:
+        sp._log_usage(sb, tid, user_id, generated_at, c, is_test=True)
     return {
         "rows": rows, "wall_s": round(wall, 1),
         "coverage_pct": coverage.get("raw_covered_pct"),
@@ -160,12 +166,12 @@ async def cmd_generate(sb, ids, runs):
     lines = []
     grand_trunc = 0
     for tid in ids:
-        segs, dur, vid, _ = _fetch(sb, tid)
+        segs, dur, vid, _, uid = _fetch(sb, tid)
         credits = calculate_summary_cost(dur)
         lines.append(f"\n### transcript `{tid}` · video `{vid}` · {dur//60}:{dur%60:02d} · {credits} credits/run\n")
         run_trunc = []
         for run in range(1, runs + 1):
-            res = await _generate_once(sb, tid, segs, dur)
+            res = await _generate_once(sb, tid, segs, dur, uid)
             rows = res["rows"]
             trunc = sum(1 for r in rows if r["truncated"])
             run_trunc.append(trunc)
@@ -191,7 +197,7 @@ def cmd_check(sb, ids):
     total_trunc = 0
     for tid in ids:
         try:
-            segs, dur, vid, ai = _fetch(sb, tid)
+            segs, dur, vid, ai, _ = _fetch(sb, tid)
         except Exception as e:
             lines.append(f"- `{tid}`: {e}\n"); continue
         if not ai:
