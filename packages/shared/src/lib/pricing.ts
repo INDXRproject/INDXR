@@ -224,7 +224,7 @@ export function anchorPerCreditText(): string {
 // ── Playlist gratis-slots — ENIGE bron voor de "eerste 3 gratis"-regel (frontend-kant). Spiegelt de
 // Python-helper credit_manager.playlist_free_ids EXACT; gesynchroniseerd via de gedeelde fixture
 // test-fixtures/playlist_free_slots.json (geladen door receiptAggregation.test.ts). Er is GEEN CI in
-// deze repo; handhaving = ./scripts/check-playlist-free-slots.sh (draait beide fixture-tests, in de
+// deze repo; handhaving = ./scripts/check-playlist-invariants.sh (draait beide fixture-tests, in de
 // CLAUDE.md-verificatiestap). Retourneert de set video_ids die GRATIS zijn (0 credits). Aan te roepen door
 // PlaylistAvailabilitySummary, receiptAggregation en PlaylistManager i.p.v. eigen inline-kopieën.
 // REGEL (per-methode, ADR gratis-slots): de eerste PLAYLIST_FREE_VIDEOS CAPTION-video's op playlist-

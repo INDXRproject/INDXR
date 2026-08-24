@@ -1,7 +1,7 @@
 // Sync-check: the shared limits mirror (limits.ts) must match test-fixtures/playlist_limits.json,
 // which backend/test_playlist_limits.py also checks against the backend enforcer. No framework — run:
 //   node --experimental-strip-types packages/shared/src/lib/limits.test.ts
-// scripts/check-playlist-free-slots.sh runs this together with the backend side; a divergence fails
+// scripts/check-playlist-invariants.sh runs this together with the backend side; a divergence fails
 // the CLAUDE.md verification gate with a readable message.
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"

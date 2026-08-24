@@ -92,7 +92,7 @@ test("finally-skipped whisper video uses ceil(duration/60) as its rate", () => {
 // ── 5. shared fixture: the TS playlistFreeIds helper must match the Python helper.
 // Both backend/test_playlist_free_slots.py and this test assert against the SAME
 // expected_free in test-fixtures/playlist_free_slots.json. There is NO CI in this repo;
-// ./scripts/check-playlist-free-slots.sh runs both tests and is the enforcement (per the
+// ./scripts/check-playlist-invariants.sh runs both tests and is the enforcement (per the
 // CLAUDE.md verification gate) — it fails the moment the TS and Python rules diverge
 // (per-method, ADR-081).
 test("playlistFreeIds matches the shared cross-language fixture (per-method free slots)", () => {

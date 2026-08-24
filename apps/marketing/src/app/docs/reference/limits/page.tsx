@@ -8,7 +8,7 @@ import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { DocsFigure } from "@/components/docs/DocsFigure"
-import { UPLOAD_EXTENSIONS } from "@indxr/shared/lib/uploadFormats"
+import { UPLOAD_EXTENSIONS, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import {
   LIBRARY_STORAGE_BASE_MB,
   LIBRARY_STORAGE_MAX_MB,
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/limits" },
   title: "Limits — INDXR.AI Docs",
   description:
-    `The hard limits INDXR enforces: AI transcription up to ${MAX_TRANSCRIPTION_HOURS} hours per file, uploads up to 500 MB, a 100 MB library that scales to 500 MB, playlists up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job, ${MAX_CONCURRENT_JOBS} concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.`,
+    `The hard limits INDXR enforces: AI transcription up to ${MAX_TRANSCRIPTION_HOURS} hours per file, uploads up to ${UPLOAD_MAX_FILE_MB} MB, a 100 MB library that scales to 500 MB, playlists up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job, ${MAX_CONCURRENT_JOBS} concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.`,
 }
 
 export default function DocsLimitsPage() {
@@ -52,7 +52,7 @@ export default function DocsLimitsPage() {
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Limits</h1>
         <DefinitionLeadOpening>
           INDXR enforces a few hard limits: AI transcription up to {MAX_TRANSCRIPTION_HOURS} hours per
-          file, uploads up to 500 MB, playlists up to {MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job (a job
+          file, uploads up to {UPLOAD_MAX_FILE_MB} MB, playlists up to {MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job (a job
           is one transcription or playlist run), and {MAX_CONCURRENT_JOBS} jobs running at once. Caption
           extraction — pulling a video&apos;s existing subtitles — has
           no length limit, and requests are rate-limited (each account can only make so many per hour).
@@ -69,7 +69,7 @@ export default function DocsLimitsPage() {
           </thead>
           <tbody>
             <tr><td>AI transcription — max duration</td><td>{MAX_TRANSCRIPTION_HOURS} hours per file</td></tr>
-            <tr><td>Audio/video upload — max size</td><td>500 MB</td></tr>
+            <tr><td>Audio/video upload — max size</td><td>{UPLOAD_MAX_FILE_MB} MB</td></tr>
             <tr><td>Upload — accepted files</td><td>{UPLOAD_EXTENSIONS.join(", ")}</td></tr>
             <tr><td>Playlist — max videos per job</td><td>{MAX_PLAYLIST_VIDEOS_PER_JOB}</td></tr>
             <tr><td>Concurrent jobs (per account)</td><td>{MAX_CONCURRENT_JOBS}</td></tr>

@@ -25,6 +25,7 @@ import yt_dlp
 from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp, _CountingYoutubeDL
 from transcription_pipeline import run_whisper_reservation_aware, MAX_TRANSCRIPTION_SECONDS
+from limits import MAX_PLAYLIST_VIDEOS, MAX_CONCURRENT_JOBS
 from language_utils import normalize_language_code
 
 # Load environment variables
@@ -817,7 +818,7 @@ def _cleanup_tmp(path: Optional[str]) -> None:
             pass
 
 
-MAX_CONCURRENT_JOBS = 3
+# MAX_CONCURRENT_JOBS geïmporteerd uit limits.py (single source, backend-handhaver).
 
 # ADR-071 — AssemblyAI hard ceiling is 10 hours of audio (and 5 GB). Above 10h the provider
 # fails the job, so AI transcription is rejected above this BEFORE any credit reservation.
@@ -827,10 +828,9 @@ MAX_CONCURRENT_JOBS = 3
 # de ARQ job_timeout wordt daar van dezelfde waarde afgeleid, dus de max mag niet meer divergeren.
 # (geïmporteerd bovenaan)
 
-# ADR-071 — hard cap on videos per playlist extraction job, enforced on the extract route
-# BEFORE the job row + reservation (previously 500 only bit at enumeration; extraction was
-# unbounded). Mirrors the 500-item enumeration cap in youtube_client / yt-dlp.
-MAX_PLAYLIST_VIDEOS = 500
+# ADR-071 — hard cap on videos per playlist extraction job, enforced on the extract route BEFORE the
+# job row + reservation (previously 500 only bit at enumeration; extraction was unbounded). Mirrors
+# the 500-item enumeration cap in youtube_client / yt-dlp. MAX_PLAYLIST_VIDEOS geïmporteerd uit limits.py.
 
 def _count_active_jobs(supabase, user_id: str) -> int:
     """

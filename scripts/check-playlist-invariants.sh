@@ -15,7 +15,7 @@
 # enforcement: run it as part of the verification gate before committing a change that touches the
 # free-slots rule, the reservation/receipt, or any of the four hard limits.
 #
-#   Run:  ./scripts/check-playlist-free-slots.sh
+#   Run:  ./scripts/check-playlist-invariants.sh
 #   CI:   none — invoked manually per CLAUDE.md "Verification gates".
 set -euo pipefail
 

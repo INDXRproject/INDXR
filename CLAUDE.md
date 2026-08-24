@@ -64,7 +64,7 @@ Een taak is **niet klaar** tot je het bewezen hebt. Bewijs = build groen + relev
    - Wiki/ADR: verifieer claims tegen broncode (geen referentie-naar-eigen-eerdere-wiki).
 3. **Raak je de playlist gratis-slots-regel, de credit-reservering/bon, of één van de vier harde
    limieten (video's/job, gelijktijdige jobs, duur/video, review-waarschuwingsdrempel) aan?** Draai
-   `./scripts/check-playlist-free-slots.sh` — dit draait vier tests (er is geen CI): de free-slots-fixture
+   `./scripts/check-playlist-invariants.sh` — dit draait vier tests (er is geen CI): de free-slots-fixture
    (Python + TS) én de limieten (backend-literals vs `packages/shared/src/lib/limits.ts`, beide tegen
    `test-fixtures/playlist_limits.json`). Alles moet groen zijn — anders reserveert Python iets anders
    dan de bon toont, of toont een pagina een limiet die de backend niet handhaaft.

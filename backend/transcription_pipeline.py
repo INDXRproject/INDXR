@@ -25,6 +25,7 @@ from audio_utils import (
     needs_provider_transcode,
     validate_audio_file,
 )
+from limits import MAX_TRANSCRIPTION_SECONDS  # single source (backend-handhaver); re-exported hier
 from assemblyai_client import submit_assemblyai, poll_assemblyai
 from credit_manager import (
     add_credits,
@@ -141,7 +142,8 @@ async def _run_with_heartbeat(awaitable, heartbeat_fn, timeout: Optional[float] 
 # bovengrens op de verwerkingstijd; genereus is hier veilig: de poll-loop heeft zijn eigen deadline
 # én tikt elke poll een heartbeat, dus de watchdog (Pass 0b, 10min stale) vangt een écht hangende job
 # ruim vóór deze ARQ-backstop. worker.WorkerSettings.job_timeout leest TRANSCRIPTION_JOB_TIMEOUT_SECONDS.
-MAX_TRANSCRIPTION_SECONDS = 10 * 3600            # 36000 — max geaccepteerde audioduur (single source)
+# MAX_TRANSCRIPTION_SECONDS wordt geïmporteerd uit limits.py (single source, backend-handhaver) en
+# hierboven al beschikbaar; worker.py + main.py importeren 'm nog steeds uit deze module (re-export).
 TRANSCRIPTION_TIMEOUT_MARGIN_SECONDS = 30 * 60  # 1800 — download/upload/overhead-marge
 TRANSCRIPTION_JOB_TIMEOUT_SECONDS = MAX_TRANSCRIPTION_SECONDS + TRANSCRIPTION_TIMEOUT_MARGIN_SECONDS
 ASSEMBLYAI_POLL_INTERVAL_SECONDS = 10           # poll-cadans == heartbeat-cadans in submit+poll

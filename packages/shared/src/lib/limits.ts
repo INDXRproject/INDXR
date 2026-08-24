@@ -2,14 +2,11 @@
 // route, PlaylistManager, the /docs/reference/limits page and the playlist article) reads one value
 // instead of a scattered literal.
 //
-// The BACKEND is the enforcer:
-//   · MAX_PLAYLIST_VIDEOS      — backend/main.py
-//   · MAX_CONCURRENT_JOBS      — backend/main.py
-//   · MAX_TRANSCRIPTION_SECONDS — backend/transcription_pipeline.py
-// These TS values are a MIRROR and must not drift from it. scripts/check-playlist-free-slots.sh
-// asserts both the backend literals (backend/test_playlist_limits.py) and these TS values
-// (limits.test.ts) against test-fixtures/playlist_limits.json, so a divergence fails the verification
-// gate with a readable message.
+// The BACKEND is the enforcer: MAX_PLAYLIST_VIDEOS, MAX_CONCURRENT_JOBS and MAX_TRANSCRIPTION_SECONDS
+// all live in backend/limits.py (imported by main.py + transcription_pipeline.py). These TS values are
+// a MIRROR and must not drift from it. scripts/check-playlist-invariants.sh asserts both the backend
+// constants (backend/test_playlist_limits.py) and these TS values (limits.test.ts) against
+// test-fixtures/playlist_limits.json, so a divergence fails the verification gate with a readable message.
 //
 // PLAYLIST_LARGE_JOB_WARN_AT is UI-only: the review screen warns at or above it. It has no backend
 // counterpart, so only the TS side is checked against the fixture for that one.
