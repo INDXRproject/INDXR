@@ -157,6 +157,85 @@ test('playlist-review', async ({ page }) => {
   await frameShot(page, review, 'playlist-review')
 })
 
+// ── LIVE (opt-in, CAPTURE_PLAYLIST_RUN=1): a REAL ~8-video playlist run with one AI video, so all
+// three credit kinds occur (free caption / paid caption / AI-per-minute). Shoots the three screens
+// the machine was missing: the URL input + cost footer, the running card (per-video rows + counter),
+// and the completion receipt. GATED because it spends real credits on account1 (internal). Fixture:
+// TED-Ed uploads (short, well-captioned). See screenshot-machine.md → "Playlist run captures".
+const PLAYLIST_RUN_URL = 'https://www.youtube.com/playlist?list=UUsooa4yRKGN_zEE8iknghZA'
+test('playlist-run', async ({ page }) => {
+  test.skip(process.env.CAPTURE_PLAYLIST_RUN !== '1', 'opt-in: spends real credits on a live playlist extraction')
+  test.setTimeout(420_000)
+  await prep(page)
+  await page.goto('/dashboard/transcribe?mode=playlist')
+
+  // (1) URL input + cost footer — empty field (placeholder) + the "First N caption videos free…" line,
+  // cloned side by side into one clean frame.
+  const input = page.getByPlaceholder('Paste YouTube Playlist URL...')
+  await input.waitFor({ state: 'visible' })
+  await page.getByText(/First \d+ caption videos free/).waitFor({ state: 'visible' })
+  await page.evaluate(() => {
+    const inp = document.querySelector('input[placeholder="Paste YouTube Playlist URL..."]') as HTMLElement | null
+    const inputRow = inp?.closest('div.flex') as HTMLElement | null
+    const footSpan = [...document.querySelectorAll('span')].find((s) => /caption videos free/.test(s.textContent || ''))
+    const footer = footSpan?.closest('div') as HTMLElement | null
+    const holder = document.createElement('div')
+    holder.id = '__plhold'
+    holder.style.cssText = 'display:flex;flex-direction:column;gap:14px;width:600px;align-items:stretch'
+    if (inputRow) holder.appendChild(inputRow.cloneNode(true))
+    if (footer) holder.appendChild(footer.cloneNode(true))
+    document.body.appendChild(holder)
+  })
+  await frameShot(page, page.locator('#__plhold'), 'playlist-url-input')
+  await page.evaluate(() => document.getElementById('__plhold')?.remove())
+
+  // Start the real run: fetch → trim the preselected 10 down to 8 → toggle the 5th video to AI → Extract.
+  await input.fill(PLAYLIST_RUN_URL)
+  await page.getByRole('button', { name: 'Fetch playlist' }).click()
+  await page.getByRole('button', { name: /Review extraction/ }).waitFor({ state: 'visible', timeout: 120_000 })
+  // Trim the preselected set toward 8: uncheck the last checked ROW checkbox until "N of M selected"
+  // reads <= 8. Select-all reads aria-checked="mixed" when partial, so the "true" filter hits only
+  // rows. A short settle between clicks avoids a re-render eating a click. An unreadable count defaults
+  // to 99 (keep trimming) — NOT 0 (which would stop early and leave the full preselect).
+  const counter = page.getByText(/\d+ of \d+ selected/).first()
+  await counter.waitFor({ state: 'visible' })
+  for (let guard = 0; guard < 12; guard++) {
+    const label = await counter.textContent()
+    const n = parseInt(label?.match(/(\d+)\s+of/)?.[1] ?? '99', 10)
+    if (n <= 8) break
+    const checkedRows = page.locator('[role="checkbox"][aria-checked="true"]')
+    const c = await checkedRows.count()
+    if (c === 0) break
+    await checkedRows.nth(c - 1).click()
+    await page.waitForTimeout(300)
+  }
+  await page.getByRole('button', { name: /Review extraction/ }).click()
+  await page.getByRole('heading', { name: 'Before you start' }).waitFor({ state: 'visible', timeout: 30_000 })
+  // 5th selected video (playlist index 4) → AI; it sits in the default 5 visible progress rows.
+  await page.getByRole('button', { name: 'Use AI' }).nth(4).click()
+  const extractBtn = page.getByRole('button', { name: /^Extract — \d+ credits$/ })
+  await extractBtn.waitFor({ state: 'visible', timeout: 15_000 })
+  await extractBtn.click()
+
+  // (2) Running card — freeze it at the AI-transcribing moment (captions all attempted by then).
+  await page.getByText('Extracting playlist').waitFor({ state: 'visible', timeout: 30_000 })
+  await Promise.race([
+    page.getByText('Transcribing with AI').first().waitFor({ state: 'visible', timeout: 180_000 }),
+    page.getByText(/[1-9] \/ 8/).first().waitFor({ state: 'visible', timeout: 180_000 }),
+  ]).catch(() => {})
+  const runCard = page.getByText('Runs in the background — safe to close this tab.')
+    .locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]')
+  await runCard.waitFor({ state: 'visible' })
+  await frameShot(page, runCard, 'playlist-progress')
+
+  // (3) Completion + receipt.
+  await page.getByRole('button', { name: 'Start new extraction' }).waitFor({ state: 'visible', timeout: 300_000 })
+  await page.getByText('Charged', { exact: false }).first().waitFor({ state: 'visible', timeout: 40_000 }).catch(() => {})
+  const doneCard = page.getByRole('button', { name: 'Start new extraction' })
+    .locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]')
+  await frameShot(page, doneCard, 'playlist-complete')
+})
+
 // ── LIVE: the Library LIST (several rows → reads as an archive; account seeded) ─
 test('library-list', async ({ page }) => {
   await prep(page)
