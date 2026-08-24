@@ -78,7 +78,15 @@ Als een video-job al `status='success'` heeft in `video_results` (bijv. door een
 
 ### Retry-pass
 
-Na de laatste video wordt gecontroleerd of er `bot_detection` of `timeout` fouten zijn. Als ja, wordt `process_playlist_retries` met 30 seconden vertraging geënqueued. Die task pakt de gefaalde video's sequentieel op en overschrijft hun result in Supabase via dezelfde RPC (idempotent).
+Na de laatste video wordt gecontroleerd of er retry-eligible fouten zijn — de set is `bot_detection`, `timeout`, `connection_error`, `server_error` (worker.py, transient netwerk/YouTube-fouten waar een verse exit-IP bij helpt). Als ja, wordt `process_playlist_retries` met 30 seconden vertraging geënqueued. Die task pakt de gefaalde video's sequentieel op en overschrijft hun result in Supabase via dezelfde RPC (idempotent). De frontend spiegelt exact deze set: die vier codes landen in het "Retry all"-blok; al het andere is permanent (2026-08-24: `connection_error`/`server_error` werden in de UI als 'error' gecollapst → permanent — nu retryable, gelijk aan de worker).
+
+### Foutweergave (frontend)
+
+Het playlistpad rendert faalgevallen via dezelfde gedeelde copy-map als het enkel-video-pad (`errorCopy.ts` → `ErrorCard`, ADR-080): één kaart per backend-code. Een niet-gemapte code valt terug op de neutrale kaart (code zichtbaar + PostHog-log) i.p.v. een kaal "Failed". Whole-job-fouten (o.a. `storage_full`, `insufficient_credits`, `too_many_jobs`) tonen dezelfde kaart (2026-08-24; daarvoor toonde het playlistpad rauwe backendtekst en collapste per-video-codes).
+
+### Duurcap in het whisper-pad
+
+Een whisper-video langer dan `MAX_TRANSCRIPTION_SECONDS` (10 u) wordt **overgeslagen** (`error_type='duration_error'`) vóór indienen bij AssemblyAI — pariteit met het enkel-video-pad. De reservering (`_compute_playlist_reservation`) telt zo'n video op 0, en de worker settelt 0: reserve == settle, geen fantoom-refund (2026-08-24; daarvoor liep de video stuk bij de provider en werd daarna teruggeboekt).
 
 ---
 

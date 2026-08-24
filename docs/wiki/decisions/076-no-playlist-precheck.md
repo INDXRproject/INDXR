@@ -60,3 +60,13 @@ De dode route `check-playlist-availability` (beide apps, inclusief de ÷8-bereke
 - Als we ooit tóch een pre-check willen (bijv. om unavailable-video's per stuk te benoemen), is de
   afweging hier vastgelegd: het kost een tweede proxy-ronde en levert geen geldbescherming op die de
   skip-plus-refund niet al biedt. Heropen deze beslissing niet als "bug" zonder die afweging.
+
+## Addendum (2026-08-24) — verwijdering bevestigd compleet
+
+Een later feitenrapport suggereerde dat de route `check-playlist-availability` nog in Next én Python
+zou bestaan. **Dat klopt niet:** een audit tegen `git ls-files` en alle `@app`-decorators in
+`backend/main.py` bevestigt dat de route in géén van beide bestaat — de verwijdering uit deze ADR was
+volledig. Het enige overgebleven spoor was een **stale regel in de CLAUDE.md endpoint-tabel**
+(`/api/check-playlist-availability`), die nu is verwijderd. De client-side simulatie
+`handleCheckAvailability` in `PlaylistManager.tsx` (die géén YouTube probet — zie hierboven) blijft
+bestaan; dat is de "Review extraction"-stap, geen route.

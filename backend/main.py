@@ -625,11 +625,32 @@ def extract_playlist_id(url: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
+def _is_channel_url(url: str) -> bool:
+    """True for a YouTube channel URL (/@handle, /channel/, /c/, /user/). Mirrors the frontend
+    guard (packages/shared/src/utils/youtube.ts, ADR-071 DEEL 4) so a direct API caller can't slip a
+    channel URL past it into the yt-dlp scrape. A channel URL that also carries ?list= is the playlist
+    it points to, so callers check extract_playlist_id() first."""
+    return bool(re.search(r'youtube\.com/(?:@[^/?#\s]+|channel/|c/|user/)', url, re.IGNORECASE))
+
+
 
 @app.post("/api/playlist/info", response_model=PlaylistInfoResponse)
 async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_backend_secret)):
     """Fetch playlist metadata using YouTube Data API (primary) or yt-dlp (fallback)."""
-    
+
+    # Channel guard (ADR-071 DEEL 4) — mirror the frontend: a channel URL is not a playlist. Only
+    # block when there's no ?list= (a channel URL carrying ?list= is the playlist it points to). This
+    # is the server-side twin of the youtube.ts guard, so a channel URL can't reach the yt-dlp scrape.
+    if _is_channel_url(request.videoIdOrUrl) and not extract_playlist_id(request.videoIdOrUrl):
+        return PlaylistInfoResponse(
+            success=False,
+            error=(
+                "INDXR extracts videos and playlists, not entire channels. Create a playlist from "
+                "the channel's videos (YouTube Studio or a public playlist) and paste that playlist "
+                "URL — or paste a single video URL."
+            ),
+        )
+
     # 1. Try YouTube Data API (Industry Standard)
     if youtube_client.youtube:
         playlist_id = extract_playlist_id(request.videoIdOrUrl)
@@ -1382,6 +1403,12 @@ def _compute_playlist_reservation(video_ids, use_whisper_ids, video_metadata, is
     for vid in video_ids:
         if vid in whisper_set:
             d = (meta.get(vid) or {}).get('duration')
+            # Over-length whisper videos are SKIPPED by the worker (never submitted to AssemblyAI —
+            # point 5, worker.py). They must NOT be reserved for, or a single >10h video would reserve
+            # hundreds of credits and could falsely fail the whole job on credits. Same duration source
+            # (video_metadata) as the worker, so reserve == execute.
+            if d and d > MAX_TRANSCRIPTION_SECONDS:
+                continue
             total += calculate_credit_cost(d) if d and d > 0 else 1
         elif vid not in free:
             total += 1

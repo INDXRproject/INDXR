@@ -36,6 +36,7 @@ from transcription_pipeline import (
     _run_with_heartbeat,
     CAPTION_EXTRACT_TIMEOUT,
     TRANSCRIPTION_JOB_TIMEOUT_SECONDS,
+    MAX_TRANSCRIPTION_SECONDS,
     do_assemblyai_transcription,
     run_whisper_reservation_aware,
     refund_with_retry,
@@ -426,7 +427,7 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     try:
         row = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-            .select('user_id,video_ids,use_whisper_ids,collection_id,total_videos,video_results,credits_reserved,is_retry')
+            .select('user_id,video_ids,use_whisper_ids,collection_id,total_videos,video_results,credits_reserved,is_retry,video_metadata')
             .eq('id', playlist_id)
             .single()
             .execute()
@@ -451,6 +452,9 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     use_whisper_ids: set = set(job.get('use_whisper_ids') or [])
     total_videos: int = job['total_videos']
     video_results: dict = job.get('video_results') or {}
+    # Per-video display/duration metadata ({video_id: {title, duration}}) — same source the
+    # reservation used, so the duration-cap skip below matches what was reserved (point 5).
+    video_metadata: dict = job.get('video_metadata') or {}
     # Reservation-mode uit de PLAYLIST-rij (playlist-niveau reservering). NIET uit de
     # per-video whisper_job-rij (die is nooit individueel gereserveerd -> credits_reserved=0).
     reservation_mode: bool = (job.get('credits_reserved') or 0) > 0
@@ -491,7 +495,16 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
         )
 
     try:
-        if is_whisper:
+        _wdur = (video_metadata.get(video_id) or {}).get('duration') if is_whisper else None
+        if is_whisper and _wdur and _wdur > MAX_TRANSCRIPTION_SECONDS:
+            # Duration-cap parity with the single-video path (ADR-071 DEEL 2, main.py:961): AssemblyAI
+            # accepts up to MAX_TRANSCRIPTION_SECONDS. A longer video is SKIPPED here — never submitted —
+            # so it fails fast with a clear reason instead of erroring at the provider after we've paid.
+            # _compute_playlist_reservation excludes these too, so settling 0 (rpc_credit_amount stays 0,
+            # rpc_success stays False) keeps reserve == settle for this video: no phantom refund.
+            logger.info(f"{log_prefix} {video_id} skipped: duration {_wdur}s exceeds {MAX_TRANSCRIPTION_SECONDS}s cap")
+            rpc_error_type = 'duration_error'
+        elif is_whisper:
             # Deterministische job_id: stabiel over worker-restarts, voorkomt rij-duplicaten.
             whisper_job_id = str(_uuid.uuid5(_WHISPER_NS, f"{playlist_id}:{video_id}"))
 

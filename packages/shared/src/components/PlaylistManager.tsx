@@ -15,6 +15,8 @@ import { appHref } from "../lib/cross-host-links";
 import { ResultCardShell } from "./transcribe/ResultCardShell";
 import { CostBreakdown, BalanceLine, type CostSegment } from "./transcribe/CostBreakdown";
 import { MethodBadge } from "./transcribe/MethodBadge";
+import { ErrorCard } from "./transcribe/ErrorCard";
+import { resolveErrorCopy } from "./transcribe/errorCopy";
 import { CREDIT_COSTS, FREE_TIER, playlistFreeIds } from "../lib/pricing";
 import type { ReceiptData } from "../hooks/useCompletionReceipt";
 
@@ -52,6 +54,10 @@ interface PlaylistManagerProps {
   onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string, playlistUrl?: string) => void;
   isExtracting: boolean;
   videoStatuses?: Record<string, VideoStatus>;
+  /** Raw backend error_type per failed video (populated at completion). Lets the failure blocks
+      key each card on the real code via the copy map, so an unmapped code shows the neutral card
+      with the code instead of a bare "Failed" (point 1). */
+  videoErrorCodes?: Record<string, string>;
   freeVideoIds?: Set<string>;
   whisperVideoIds?: Set<string>;
   isAuthenticated: boolean;
@@ -79,7 +85,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0, retryEstimate = null }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, videoErrorCodes = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0, retryEstimate = null }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -528,20 +534,45 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, f
                       </div>
                     )}
 
-                    {/* Permanently unavailable (private / members-only / age-restricted / no captions
-                        / no speech) — one compact note; retrying wouldn't help. Audio Upload where audio exists. */}
+                    {/* Permanent failures — retrying wouldn't help. One ErrorCard per distinct backend
+                        code via the shared copy map (ADR-080), so each reason (members-only, no
+                        captions, duration cap, …) gets its own honest card; an UNMAPPED code falls
+                        through resolveErrorCopy to the neutral card — code shown + PostHog-logged —
+                        instead of a bare "Failed" (point 1). Retryable codes (bot_detection/timeout/
+                        connection_error/server_error) live in the block above, not here. */}
                     {(() => {
                       const permIds = Object.entries(videoStatuses)
                         .filter(([, s]) => s === 'members_only' || s === 'age_restricted' || s === 'youtube_restricted' || s === 'no_captions' || s === 'no_speech' || s === 'error')
                         .map(([id]) => id)
                       if (permIds.length === 0) return null
+                      // Group by resolved backend code. Fallback to the collapsed status (a valid
+                      // copy-map key for the known five) when a raw code wasn't captured (older jobs).
+                      const groups = new Map<string, string[]>()
+                      for (const id of permIds) {
+                        const key = videoErrorCodes[id] || (videoStatuses[id] as string) || 'error'
+                        groups.set(key, [...(groups.get(key) ?? []), id])
+                      }
+                      const titleFor = (id: string) => (playlist?.entries ?? resumePlaylist?.entries ?? []).find(e => e.id === id)?.title ?? id
                       return (
-                        <div className="rounded-lg border border-border bg-surface-elevated/50 p-3">
-                          <p className="mb-1 font-medium text-fg">{permIds.length} video{permIds.length !== 1 ? 's' : ''} couldn&apos;t be transcribed</p>
-                          <p className="mb-2 text-[13px] leading-relaxed text-fg-subtle">
-                            These are private, members-only, age-restricted, or have no captions or speech — retrying won&apos;t help. Any credits held for them were refunded. For ones with audio, Upload is the way in.
-                          </p>
-                          {onSwitchToAudio && <Button variant="outline" size="sm" onClick={onSwitchToAudio} className="h-9">Upload</Button>}
+                        <div className="flex flex-col gap-3">
+                          {Array.from(groups.entries()).map(([code, ids]) => {
+                            const copy = resolveErrorCopy(code, {
+                              onSwitchToAudio,
+                              contactHref: appHref('/dashboard/messages?tab=support'),
+                            })
+                            const names = ids.map(titleFor)
+                            const note = (
+                              <div className="divide-y divide-border-subtle overflow-hidden rounded-lg border border-border">
+                                {names.slice(0, 5).map((n, i) => (
+                                  <p key={i} className="truncate px-3 py-1.5 text-[13px] text-fg-subtle">{n}</p>
+                                ))}
+                                {names.length > 5 && (
+                                  <p className="px-3 py-1.5 text-xs text-fg-muted">+{names.length - 5} more</p>
+                                )}
+                              </div>
+                            )
+                            return <ErrorCard key={code} {...copy} note={note} />
+                          })}
                         </div>
                       )
                     })()}

@@ -62,7 +62,11 @@ Een taak is **niet klaar** tot je het bewezen hebt. Bewijs = build groen + relev
    - Bug fix: reproductie-test + bewijs dat hij groen is.
    - Nieuwe feature: minstens één run (lokaal of productie) met output gerapporteerd.
    - Wiki/ADR: verifieer claims tegen broncode (geen referentie-naar-eigen-eerdere-wiki).
-3. Bij twijfel of het werkt: rapporteer dat expliciet, markeer als `[~]` (in progress), niet `[x]` (done).
+3. **Raak je de playlist gratis-slots-regel, de credit-reservering of de bon aan?** Draai
+   `./scripts/check-playlist-free-slots.sh` — dit draait de Python- én TS-fixture-test tegen
+   `test-fixtures/playlist_free_slots.json` (er is geen CI die dit doet). Beide moeten groen zijn:
+   de helpers mogen niet uiteenlopen, anders reserveert Python iets anders dan de bon in TS toont.
+4. Bij twijfel of het werkt: rapporteer dat expliciet, markeer als `[~]` (in progress), niet `[x]` (done).
 
 Cross-reference: dit gedrag is vereist door wiki-onderhoud-richtlijn in `docs/wiki/INDEX.md`.
 
@@ -350,7 +354,6 @@ Als ze verschijnen: `git rm -r --cached <path>`
 |----------|---------|--------------|
 | `/api/extract` | POST | Caption-extractie (client-facing, proxyt naar `/api/extract/youtube`) |
 | `/api/transcribe/preflight` | POST | Auth/rate-check vóór directe upload naar Railway (bypast Vercel 4.5MB limiet) |
-| `/api/check-playlist-availability` | POST | Captions vs. Whisper check per video in batch |
 
 ---
 

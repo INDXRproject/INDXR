@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from "react"
 import { PlaylistManager, VideoStatus } from "../PlaylistManager"
-import { AlertCircle, Loader2, X } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Button } from "../ui/button"
-import { marketingHref } from "../../lib/cross-host-links"
+import { ErrorCard } from "../transcribe/ErrorCard"
+import { resolveErrorCopy, type ErrorCtx } from "../transcribe/errorCopy"
+import { appHref } from "../../lib/cross-host-links"
 import { useAuth } from "../../hooks/useAuth"
 import { useCompletionReceipt } from "../../hooks/useCompletionReceipt"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
@@ -36,6 +38,12 @@ function mapBackendStatus(res: { status: string; error_type?: string }): VideoSt
   switch (res.error_type) {
     case 'bot_detection':      return 'bot_detection'
     case 'timeout':            return 'timeout'
+    // connection_error / server_error are transient download failures the worker auto-retries
+    // (worker.py:614/710) — the same retry-eligible set as bot_detection/timeout. Mapping them to
+    // 'timeout' lands them in the retryable completion block ("Retry all") instead of the permanent
+    // "couldn't be transcribed" one, so a transient network blip no longer looks permanent (point 1).
+    case 'connection_error':   return 'timeout'
+    case 'server_error':       return 'timeout'
     case 'age_restricted':     return 'age_restricted'
     case 'members_only':       return 'members_only'
     case 'youtube_restricted': return 'youtube_restricted'
@@ -45,10 +53,19 @@ function mapBackendStatus(res: { status: string; error_type?: string }): VideoSt
   }
 }
 
+// Whole-job error surfaced above the playlist card (ADR-080). `code` present → resolved through the
+// shared copy map (unmapped codes get the neutral card + PostHog, point 2); otherwise a plain
+// title/body (e.g. a partial-completion notice that has no backend code).
+type PlaylistError = { code?: string | null; ctx?: Partial<ErrorCtx>; title?: string; body?: string }
+
 export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, onPlaylistComplete, onExtractingChange }: PlaylistTabProps) {
-  const [error, setError] = useState<{ message: string; isCreditsError?: boolean } | null>(null)
+  const [error, setError] = useState<PlaylistError | null>(null)
   const [loading, setLoading] = useState(false)
   const [videoStatuses, setVideoStatuses] = useState<Record<string, VideoStatus>>({})
+  // Raw backend error_type per failed video, captured at completion so the failure blocks can key
+  // each card on the real code via the copy map (point 1). Kept separate from videoStatuses (which
+  // stays the collapsed presentation status used for badges/progress).
+  const [videoErrorCodes, setVideoErrorCodes] = useState<Record<string, string>>({})
   const [freeVideoIds, setFreeVideoIds] = useState<Set<string>>(new Set())
   const [whisperVideoIds, setWhisperVideoIds] = useState<Set<string>>(new Set())
   const [progressMessage, setProgressMessage] = useState<string>("")
@@ -75,7 +92,6 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const [receiptNonce, setReceiptNonce] = useState(0)  // bumped on retry completion → re-fetch the collection-scoped receipt
   const playlistReceipt = useCompletionReceipt('playlist', completedPlaylistId, !!completedPlaylistId, receiptNonce)
   const fallbackMetaRef = useRef<{ title?: string; url?: string; total?: number }>({})
-  const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
 
   const _handlePlaylistUpdate = (job: JobStatusRow) => {
     const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
@@ -113,9 +129,11 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     const vr = (job.video_results ?? {}) as Record<string, { status: string; error_type?: string; free?: boolean }>
     const finalStatuses: Record<string, VideoStatus> = {}
     const finalFreeIds = new Set<string>()
+    const finalErrorCodes: Record<string, string> = {}
     for (const [vid, res] of Object.entries(vr)) {
       finalStatuses[vid] = mapBackendStatus(res)
       if (res.free) finalFreeIds.add(vid)
+      if (res.status !== 'success' && res.error_type) finalErrorCodes[vid] = res.error_type
     }
 
     if (isRetry) {
@@ -125,6 +143,15 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       // targeted one-video re-run, not a full playlist completion.
       setVideoStatuses(prev => ({ ...prev, ...finalStatuses }))
       setFreeVideoIds(prev => { const s = new Set(prev); finalFreeIds.forEach(id => s.add(id)); return s })
+      setVideoErrorCodes(prev => {
+        // A retried video that now succeeded drops out of the failure blocks — clear its stale code.
+        const next = { ...prev }
+        for (const [vid, res] of Object.entries(vr)) {
+          if (res.status === 'success') delete next[vid]
+          else if (res.error_type) next[vid] = res.error_type
+        }
+        return next
+      })
       window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
       refreshCredits()
       // The retry ran as a separate playlist job (same collection_id). Bump the nonce
@@ -143,11 +170,14 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
     setVideoStatuses(finalStatuses)
     setFreeVideoIds(finalFreeIds)
+    setVideoErrorCodes(finalErrorCodes)
 
     window.dispatchEvent(new CustomEvent('indxr-library-refresh'))
 
     if (job.status === 'error') {
-      setError({ message: 'Something went wrong during extraction. Any successfully extracted transcripts have been saved to your library.' })
+      // Whole-job error (no per-video backend code) — rendered in the shared ErrorCard chrome, but
+      // with its own reassurance body rather than the neutral fallback (partial results are saved).
+      setError({ title: 'Extraction stopped', body: 'Something went wrong during extraction. Any successfully extracted transcripts have been saved to your library.' })
     }
 
     const errVids = Object.values(vr)
@@ -240,26 +270,24 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         const restoredEntries: Array<{ id: string; title: string; duration?: number }> =
           jobVideoIds.map(id => ({ id, title: vm[id]?.title || id, duration: vm[id]?.duration }))
 
-        if (job.status === 'error' && job.error_type === 'watchdog_permanent_failure') {
-          sessionStorage.removeItem('indxr-active-playlist-job')
-          setWatchdogRefundNotice(true)
-          return
-        }
-
         if (job.status === 'complete' || job.status === 'error') {
           sessionStorage.removeItem('indxr-active-playlist-job')
           // Restore final statuses — PlaylistManager's allDone useEffect will fire and show the banner
           const finalStatuses: Record<string, VideoStatus> = {}
           const recoveredFreeIds = new Set<string>()
+          const recoveredErrorCodes: Record<string, string> = {}
           for (const [vid, res] of Object.entries(vr)) {
             finalStatuses[vid] = mapBackendStatus(res)
             if (res.free) recoveredFreeIds.add(vid)
+            if (res.status !== 'success' && res.error_type) recoveredErrorCodes[vid] = res.error_type
           }
           setVideoStatuses(finalStatuses)
           setFreeVideoIds(recoveredFreeIds)
+          setVideoErrorCodes(recoveredErrorCodes)
           if (job.status === 'error') {
             setError({
-              message: `Your extraction encountered an error. ${job.completed ?? 0} video${(job.completed ?? 0) !== 1 ? 's' : ''} were saved successfully.`,
+              title: 'Extraction stopped',
+              body: `Your extraction encountered an error. ${job.completed ?? 0} video${(job.completed ?? 0) !== 1 ? 's' : ''} were saved successfully.`,
             })
           }
           const errVids = Object.values(vr)
@@ -426,16 +454,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       .reduce((sum: number, v) => sum + (v.estimatedCredits ?? 0), 0);
 
     if (totalWhisperCredits > 0 && credits !== null && credits < totalWhisperCredits) {
-      const whisperVideoCount = (availabilityData ?? []).filter(
-        (v) => videoIds.includes(v.videoId) && v.status === 'needs_whisper'
-      ).length;
-      const shortfall = totalWhisperCredits - credits;
-      const avgCostPerVideo = totalWhisperCredits / whisperVideoCount;
-      const videosToDeselect = Math.ceil(shortfall / avgCostPerVideo);
-      setError({
-        message: `Not enough credits. You need ${totalWhisperCredits} credits for ${whisperVideoCount} video${whisperVideoCount !== 1 ? 's' : ''} requiring AI transcription, but only have ${credits}. Deselect at least ${videosToDeselect} AI-transcribed video${videosToDeselect !== 1 ? 's' : ''} or top up to proceed.`,
-        isCreditsError: true
-      });
+      setError({ code: 'insufficient_credits', ctx: { requiredCredits: totalWhisperCredits, availableCredits: credits } });
       setProgressMessage("");
       return;
     }
@@ -518,8 +537,11 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       })
 
       if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || 'Failed to start playlist extraction')
+        const err = await response.json().catch(() => ({}))
+        const e = new Error(err.error || 'Failed to start playlist extraction') as Error & { code?: string; ctx?: Partial<ErrorCtx> }
+        e.code = err.code
+        e.ctx = { requiredCredits: err.required_credits, availableCredits: err.available_credits, maxVideos: err.max_videos }
+        throw e
       }
 
       const { job_id } = await response.json()
@@ -541,8 +563,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately
 
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to extract playlist"
-      setError({ message: errorMessage })
+      const e = error as Error & { code?: string; ctx?: Partial<ErrorCtx> }
+      if (e?.code) setError({ code: e.code, ctx: e.ctx })
+      else setError({ title: "Extraction couldn't start", body: e instanceof Error ? e.message : "Failed to extract playlist" })
       setLoading(false)
       setProgressMessage("")
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
@@ -606,9 +629,12 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       })
 
       if (!response.ok) {
-        const err = await response.json()
+        const err = await response.json().catch(() => ({}))
         // Surfaces the concurrency-cap 429 ("You have 3 jobs running…") and credit errors.
-        throw new Error(err.error || 'Failed to retry')
+        const e = new Error(err.error || 'Failed to retry') as Error & { code?: string; ctx?: Partial<ErrorCtx> }
+        e.code = err.code
+        e.ctx = { requiredCredits: err.required_credits, availableCredits: err.available_credits, maxVideos: err.max_videos }
+        throw e
       }
 
       const { job_id } = await response.json()
@@ -627,8 +653,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately
     } catch (error: unknown) {
       retryVideoIdRef.current = null
-      const errorMessage = error instanceof Error ? error.message : 'Failed to retry'
-      setError({ message: errorMessage })
+      const e = error as Error & { code?: string; ctx?: Partial<ErrorCtx> }
+      if (e?.code) setError({ code: e.code, ctx: e.ctx })
+      else setError({ title: "Couldn't retry", body: e instanceof Error ? e.message : 'Failed to retry' })
       setLoading(false)
       setProgressMessage("")
       // Restore original failed statuses so the retry buttons stay available.
@@ -646,27 +673,6 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
   return (
     <div className="animate-in fade-in zoom-in-95 duration-300">
-      {/* Watchdog permanent failure notice — credits already refunded */}
-      {watchdogRefundNotice && (
-        <div
-          aria-live="polite"
-          className="mb-6 p-4 bg-surface border border-border rounded-xl flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2"
-        >
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-4 w-4 text-fg-muted shrink-0 mt-0.5" />
-            <p className="text-sm text-fg-muted">
-              We couldn&apos;t process this playlist after several attempts. Your credits were refunded.
-            </p>
-          </div>
-          <button
-            aria-label="Close"
-            onClick={() => setWatchdogRefundNotice(false)}
-            className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none"
-          >
-            ✕
-          </button>
-        </div>
-      )}
       {/* Resume Banner — shown when a running job is detected on mount */}
       {resumeData && !loading && (
         <div
@@ -707,32 +713,32 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         </div>
       )}
 
-      {/* Error Display */}
-      {error && (
-        <div className="mb-8 p-4 bg-error-subtle border border-error/20 rounded-xl flex items-center justify-between text-left animate-in shake duration-300">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="p-2 bg-error-subtle rounded-lg text-error shrink-0">
-              <AlertCircle className="h-5 w-5" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-error text-sm font-medium">{error.message}</p>
-              {error.isCreditsError && (
-                <a href={marketingHref('/pricing')}>
-                  <Button variant="outline" size="sm" className="h-7 text-xs">
-                    Buy Credits →
-                  </Button>
-                </a>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={() => setError(null)}
-            className="p-1 hover:bg-error/20 rounded-lg transition-colors text-error shrink-0"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {/* Whole-job error — the one shared ErrorCard (ADR-080). A backend `code` resolves through the
+          copy map (unmapped codes → neutral card + PostHog, points 1/2); a codeless notice uses its
+          own title/body. Control flow that produced `error` is untouched — this is display only. */}
+      {error && (() => {
+        const hasCode = error.code !== undefined
+        const resolved = hasCode
+          ? resolveErrorCopy(error.code, {
+              billingHref: appHref('/dashboard/credits'),
+              libraryHref: appHref('/dashboard/library'),
+              accountHref: appHref('/dashboard/account'),
+              contactHref: appHref('/dashboard/messages?tab=support'),
+              onSwitchToAudio,
+              ...error.ctx,
+            })
+          : null
+        return (
+          <ErrorCard
+            className="mb-8"
+            title={resolved?.title ?? error.title ?? 'Something went wrong'}
+            body={resolved?.body ?? error.body ?? ''}
+            actions={resolved?.actions ?? []}
+            code={resolved?.code ?? null}
+            creditsNote={resolved?.creditsNote ?? null}
+          />
+        )
+      })()}
 
       {/* Progress Message — hidden during a run; the progress card is the single status surface (ADR-080) */}
       {progressMessage && !loading && (
@@ -746,11 +752,12 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         onExtract={handlePlaylistExtract}
         isExtracting={loading}
         videoStatuses={videoStatuses}
+        videoErrorCodes={videoErrorCodes}
         freeVideoIds={freeVideoIds}
         whisperVideoIds={whisperVideoIds}
         isAuthenticated={isAuthenticated}
         onAuthRequired={onAuthRequired}
-        onError={(message) => setError(message ? { message } : null)}
+        onError={(message) => setError(message ? { body: message } : null)}
         onSwitchToAudio={onSwitchToAudio}
         onRetryVideo={handleRetryVideo}
         onRetryAll={handleRetryAll}
