@@ -59,6 +59,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/articles/youtube-playlist-transcript",
     "/articles/audio-to-text",
     "/articles/video-to-text",
+    "/articles/youtube-video-summarizer",
     "/articles/youtube-transcript-obsidian",
     "/articles/chunk-youtube-transcripts-for-rag",
     "/articles/youtube-channel-knowledge-base",

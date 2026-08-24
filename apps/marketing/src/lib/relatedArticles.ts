@@ -40,13 +40,19 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
   "audio-to-text": [
     { href: "/docs/guides/uploads", label: "Uploads guide", reason: "the exact upload flow, formats and limits" },
     { href: "/articles/video-to-text", label: "Video to text", reason: "the same for a video file, with subtitles and the picture discarded" },
+    { href: "/articles/youtube-video-summarizer", label: "YouTube video summarizer", reason: "once the recording is transcribed, summarise it into chapter notes" },
     { href: "/articles/youtube-transcript-not-available", label: "Transcript not available?", reason: "when a YouTube URL won't extract" },
-    { href: "/articles/youtube-transcript-non-english", label: "Non-English transcripts", reason: "transcribing audio in other languages" },
   ],
   "video-to-text": [
     { href: "/articles/audio-to-text", label: "Audio file transcription", reason: "the same for a recording you want the words from, not a video" },
+    { href: "/articles/youtube-video-summarizer", label: "YouTube video summarizer", reason: "once you have the transcript, turn it into chapter notes" },
     { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "every format a video's text exports as" },
     { href: "/docs/guides/uploads", label: "Uploads guide", reason: "the exact upload flow, formats and limits" },
+  ],
+  "youtube-video-summarizer": [
+    { href: "/docs/guides/summaries", label: "Summaries", reason: "the exact cost, chapters and timestamps, verified from the code" },
+    { href: "/articles/video-to-text", label: "Video to text", reason: "get the transcript from a video file first, then summarise it" },
+    { href: "/articles/audio-to-text", label: "Audio file transcription", reason: "the same for a recording, when what you have is not a video" },
   ],
   "youtube-transcript-obsidian": [
     { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "the Markdown export Obsidian imports, and every other format" },

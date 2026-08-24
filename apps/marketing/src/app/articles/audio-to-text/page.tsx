@@ -294,7 +294,9 @@ export default function AudioToTextPage() {
       </p>
 
       <p>
-        You can have the recording summarised. The summary reads the whole thing, splits it into
+        You can have the recording{" "}
+        <Link href="/articles/youtube-video-summarizer">summarised</Link>. The summary reads the whole
+        thing, splits it into
         chapters where the subject changes, and writes worked-out notes under each one, with a
         timestamp per chapter that jumps the player to that moment. A four-hour recording produces a
         four-hour summary rather than the three paragraphs a fifteen-minute one would give you, so a

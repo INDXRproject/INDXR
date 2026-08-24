@@ -249,7 +249,8 @@ you're famous everywhere.`}</DocsCodeBlock>
 
       <p>
         <strong>You read, edit and export.</strong> The transcript opens in your library, where you can
-        correct it, search it, rename the speakers, summarise it and export it in{" "}
+        correct it, search it, rename the speakers,{" "}
+        <Link href="/articles/youtube-video-summarizer">summarise it</Link> and export it in{" "}
         {spellCount(EXPORT_FORMAT_COUNT)} formats. Renaming a speaker works once and changes every place
         the label appears, in the transcript and in every export you make afterwards.
       </p>
