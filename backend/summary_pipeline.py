@@ -57,6 +57,21 @@ SECTION_FALLBACK = "claude-haiku-4-5-20251001"
 SECTION_CONCURRENCY = int(os.getenv("SUMMARY_SECTION_CONCURRENCY", "4"))
 GATEWAY_TIMEOUT_S = float(os.getenv("SUMMARY_GATEWAY_TIMEOUT_S", "120"))
 
+# Expliciet denkbudget voor stap 2 (ADR-090-truncatiefix). De sectietaak is BEGRENSDE extractie
+# (lees een fragment, schrijf de notities die zijn punten dekken), geen open redeneren — 2048 denk-
+# tokens is ruim genoeg om de notitiestructuur te plannen, terwijl het het anders ONBEGRENSDE default-
+# denken aftopt dat (Google AI Developers Forum) bijdraagt aan de voortijdige-stop-bug en dat het
+# gedeelde output-budget opeet. Geverifieerd tegen de gateway: `extra_body.google.thinking_config
+# .thinking_budget` werkt en verlaagt reasoning_tokens (`reasoning_effort`/`thinking_level` geeft 400).
+SECTION_THINKING_BUDGET = int(os.getenv("SUMMARY_SECTION_THINKING_BUDGET", "2048"))
+
+# Model-onafhankelijk vangnet (ADR-090): een sectie geldt als AFGEKAPT (dus de call is mislukt, wat het
+# model ook teruggaf) als de inhoud niet op een zin-afsluitend teken eindigt, óf onredelijk kort is
+# t.o.v. het fragment. Bij afkapping: opnieuw (zelfde model), dan het fallback-model voor die ene sectie.
+SECTION_MIN_RATIO = float(os.getenv("SUMMARY_SECTION_MIN_RATIO", "0.04"))  # min inhoud/fragment
+SECTION_RATIO_MIN_FRAG = int(os.getenv("SUMMARY_SECTION_RATIO_MIN_FRAG", "150"))  # ratio pas boven dit fragment
+_SENTENCE_END_RE = re.compile(r"[.!?)\]\"'’”»]\s*$")
+
 
 # ── kleine helpers ────────────────────────────────────────────────────────────
 
@@ -217,22 +232,21 @@ SECTION_SYSTEM_PROMPT = (
     "requirement: write SHORTER when the fragment carries little real content (small talk, silence, "
     "repetition), and let length follow the information density of the fragment, never the clock. Do "
     "not invent, extrapolate, or pad to hit a length.\n\n"
-    "Write the notes in Markdown (paragraphs, **bold**, *italic*, and -/1. lists where useful). Begin "
-    "DIRECTLY with the content: do NOT restate the heading (it is shown separately) and do NOT open "
-    "with meta sentences like 'Here are the notes…' or references to 'the fragment'/'the transcript'.\n\n"
-    "Return JSON with exactly two fields:\n"
-    "- `heading`: the given heading, UNLESS the fragment's actual content is clearly about something "
-    "different — then give a corrected heading. Otherwise return the given heading unchanged.\n"
-    "- `content`: the Markdown notes."
+    "Write the notes in Markdown (paragraphs, **bold**, *italic*, and -/1. lists where useful).\n\n"
+    "OUTPUT FORMAT — reply in PLAIN TEXT, not JSON, not wrapped in a code fence:\n"
+    "- The FIRST line must be exactly `HEADING: <heading>` — normally the given heading, but if the "
+    "fragment's actual content is clearly about something different, give a corrected heading here.\n"
+    "- Then a blank line, then the Markdown notes.\n"
+    "Do NOT restate the heading inside the notes, and do NOT open with meta sentences like 'Here are "
+    "the notes…' or references to 'the fragment'/'the transcript'. Begin the notes directly with content, "
+    "and finish your last sentence — never stop mid-sentence."
 )
 
 
-_SECTION_SCHEMA = {
-    "type": "object",
-    "properties": {"heading": {"type": "string"}, "content": {"type": "string"}},
-    "required": ["heading", "content"],
-    "additionalProperties": False,
-}
+# HEADING-conventie voor de platte-tekst-sectie-uitvoer (ADR-090-truncatiefix): de eerste niet-lege
+# regel `HEADING: <tekst>` draagt de (eventueel gecorrigeerde) kop en wordt uit de notities gehaald;
+# ontbreekt hij, dan blijft de stap-1-kop en is de hele respons de inhoud.
+_HEADING_LINE_RE = re.compile(r"^\s*HEADING\s*:\s*(.+?)\s*$", re.IGNORECASE)
 
 
 # ── gateway ───────────────────────────────────────────────────────────────────
@@ -245,28 +259,51 @@ async def _gateway_call(client: httpx.AsyncClient, api_key: str, payload: Dict) 
     if resp.status_code != 200:
         raise RuntimeError(f"LLM Gateway {payload.get('model')} -> {resp.status_code}: {resp.text[:300]}")
     data = resp.json()
-    content = data["choices"][0]["message"]["content"]
+    choice = (data.get("choices") or [{}])[0]
+    content = (choice.get("message") or {}).get("content") or ""
     usage = data.get("usage") or {}
+    # Reasoning/denk-tokens zitten IN output_tokens maar worden apart gerapporteerd (geverifieerd tegen
+    # de gateway: usage.completion_tokens_details.reasoning_tokens). visible = completion − reasoning.
+    ctd = usage.get("completion_tokens_details") or usage.get("output_tokens_details") or {}
+    reasoning = ctd.get("reasoning_tokens")
+    if reasoning is None:
+        reasoning = usage.get("reasoning_tokens")
     return {
         "content": content,
         # De gateway-usage gebruikt input_tokens/output_tokens; oudere OpenAI-compat gaf
         # prompt_tokens/completion_tokens. Beide defensief lezen.
         "prompt_tokens": int(usage.get("input_tokens") or usage.get("prompt_tokens") or 0),
         "completion_tokens": int(usage.get("output_tokens") or usage.get("completion_tokens") or 0),
+        "reasoning_tokens": int(reasoning) if reasoning is not None else None,
+        # De gateway geeft de reden waarom het model stopte ('stop'/'length'/…). Bij de Gemini-
+        # gestructureerde-uitvoer-bug is dit 'stop' met een midden-in-de-zin afgekapt veld (ADR-090).
+        "finish_reason": choice.get("finish_reason"),
+        "max_tokens_set": payload.get("max_tokens"),
         "request_id": data.get("request_id") or data.get("id"),
         "model": data.get("model") or payload.get("model"),
     }
 
 
-def _strip_json_fences(content: str) -> str:
+def _strip_code_fences(content: str) -> str:
+    """Strip a wrapping ``` fence — LEADING and TRAILING independently. The old version only removed a
+    trailing fence when there was also a leading one, so a model that closed its notes with an orphan
+    ``` left it in the stored content (the §7 finding). Handles ```json / ```markdown opening tags."""
     s = (content or "").strip()
     if s.startswith("```"):
         s = s[3:]
-        if s[:4].lower() == "json":
-            s = s[4:]
-        if s.rstrip().endswith("```"):
-            s = s.rstrip()[:-3]
+        # optionele taal-tag op de openingsregel (json, markdown, md, …)
+        nl = s.find("\n")
+        first = (s[:nl] if nl >= 0 else s).strip()
+        if first and re.fullmatch(r"[A-Za-z0-9_+-]{1,20}", first):
+            s = s[nl + 1:] if nl >= 0 else ""
+    s = s.strip()
+    if s.endswith("```"):
+        s = s[:-3]
     return s.strip()
+
+
+# Backwards-compat alias: step 1 (structured JSON) still calls this name.
+_strip_json_fences = _strip_code_fences
 
 
 def _log_usage(supabase, transcript_id: str, user_id: str, generated_at: str, call: Dict) -> None:
@@ -284,6 +321,12 @@ def _log_usage(supabase, transcript_id: str, user_id: str, generated_at: str, ca
             "cache_hit_tokens": 0,  # gateway Gemini/Claude-modellen hebben geen prompt-cache-tier
             "request_id": call.get("request_id"),
             "region": SUMMARY_REGION,
+            # ADR-090-diagnostiek: de stopreden + het budget + de denk/zichtbaar-splitsing, zodat de
+            # volgende afkap-diagnose geen giswerk is. recovery markeert een vangnet-hercall.
+            "finish_reason": call.get("finish_reason"),
+            "max_tokens_set": call.get("max_tokens_set"),
+            "reasoning_tokens": call.get("reasoning_tokens"),
+            "recovery": call.get("recovery"),
         }).execute()
     except Exception as e:
         logger.warning(f"ai_summary_usage_log insert failed for {transcript_id}: {e}")
@@ -424,61 +467,109 @@ def _normalize_sections(sections: List[Dict], min_sections: int, max_sections: i
     return clean, stats
 
 
+def _parse_section_text(raw: str, step1_heading: str):
+    """Platte-tekst sectie-antwoord → (heading, content, cleanup_fired). Strip een omhullende code-fence,
+    haal de `HEADING:`-eerste-regel eruit (conventie), en pas de lichte cleanup toe."""
+    text = _strip_code_fences(raw).strip()
+    heading = step1_heading
+    lines = text.split("\n")
+    idx = next((k for k, ln in enumerate(lines) if ln.strip()), -1)
+    if idx >= 0:
+        m = _HEADING_LINE_RE.match(lines[idx])
+        if m:
+            cand = m.group(1).strip()
+            if cand:
+                heading = cand
+            del lines[idx]
+            while idx < len(lines) and not lines[idx].strip():
+                del lines[idx]  # opvolgende lege regels ook weg
+    content, fired = _clean_section_content("\n".join(lines).strip(), heading)
+    return heading, content, fired
+
+
+def _section_ok(content: str, frag_words: int):
+    """Model-onafhankelijke inhoudscheck (ADR-090). (ok, reason|None). AFGEKAPT wanneer de inhoud niet
+    op een zin-afsluitend teken eindigt (het bug-symptoom: geldige uitvoer die midden in een zin stopt),
+    of onredelijk kort is t.o.v. een substantieel fragment (een schoon-eindigende maar minieme uitwerking)."""
+    c = _strip_code_fences(content or "").strip()
+    if not c:
+        return False, "empty"
+    if not _SENTENCE_END_RE.search(c):
+        return False, "mid_sentence"
+    if frag_words >= SECTION_RATIO_MIN_FRAG and _word_count(c) < SECTION_MIN_RATIO * frag_words:
+        return False, "too_short"
+    return True, None
+
+
 async def _run_section(client, api_key, sem, section, overview, transcript_data) -> Dict:
-    """Eén stap-2-call (structured JSON {heading, content}). Robuust: (1) een onparseerbare JSON valt
-    terug op de ruwe tekst + de stap-1-kop (één kapotte sectie mag nooit een run van 30 laten falen),
-    (2) een gefaalde call (ook ná gateway-fallback) geeft lege inhoud i.p.v. de run te laten mislukken.
-    Past daarna de lichte cleanup toe en gebruikt de (eventueel gecorrigeerde) kop."""
+    """Eén hoofdstuk-uitwerking (ADR-090-truncatiefix). Stap 2 vraagt nu PLATTE TEKST (geen gestructureerd
+    schema — dat had de sectie nauwelijks nodig en is de bron van de intermitterende Gemini-truncatie:
+    geldige/parseerbare JSON waarvan het tekstveld midden in de zin stopt, ver onder de limiet). De kop
+    komt via de `HEADING:`-conventie. Denkbudget staat expliciet aan (extra_body). Model-onafhankelijk
+    VANGNET: na elke call wordt `_section_ok` gecontroleerd; faalt die, dan is de call mislukt ongeacht
+    wat het model teruggaf → nieuwe poging (zelfde model), en bij een tweede mislukking het fallback-model
+    voor deze ene sectie. Elke hersteltruc wordt gelogd. Álle calls komen in `calls` (kostenlog)."""
     fragment = extract_fragment(transcript_data, section["start_time"], section["end_time"])
     frag_words = _word_count(fragment)
     step1_heading = section["heading"]
     result = {"heading": step1_heading, "start_time": section["start_time"],
-              "end_time": section["end_time"], "content": "", "call": None,
-              "json_fallback": False, "cleanup": []}
+              "end_time": section["end_time"], "content": "", "call": None, "calls": [],
+              "json_fallback": False, "cleanup": [], "frag_words": frag_words,
+              "recovery": None, "safety_net": None}
     if not fragment.strip():
+        result["safety_net"] = "empty_fragment"
         return result
 
     scope = f"Topic heading: {step1_heading}\nTopic description: {section.get('description', '')}".strip()
-    payload = {
-        "model": SECTION_MODEL,
-        "messages": [
-            {"role": "system", "content": SECTION_SYSTEM_PROMPT},
-            {"role": "user", "content": (
-                f"{scope}\n\n"
+    user_msg = (f"{scope}\n\n"
                 f"Overall video summary (context):\n{overview}\n\n"
-                f"Transcript fragment for this topic:\n{fragment}"
-            )},
-        ],
-        # max_tokens is ALLEEN een ruim vangnet (stuurt niets); hoog genoeg om nooit af te kappen.
-        "max_tokens": _clamp(round(frag_words * 2), 1024, 8000),
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {"name": "section_notes", "schema": _SECTION_SCHEMA, "strict": True},
-        },
-        "fallbacks": [{"model": SECTION_FALLBACK}],
-        "fallback_config": {"retry": True, "depth": 1},
-    }
+                f"Transcript fragment for this topic:\n{fragment}")
+    base_max = _clamp(round(frag_words * 2), 1024, 8000)
+
+    # Pogingen: zelfde model, dan een retry, dan het fallback-model voor deze ene sectie.
+    attempts = [(SECTION_MODEL, None), (SECTION_MODEL, "retry"), (SECTION_FALLBACK, "fallback")]
+    best = None  # (words, heading, content, cleanup, reason) — langste behouden als geen enkele slaagt
     async with sem:
-        try:
-            call = await _gateway_call(client, api_key, payload)
-            result["call"] = call
-            raw = call["content"] or ""
+        for model, recovery in attempts:
+            payload = {
+                "model": model,
+                "messages": [{"role": "system", "content": SECTION_SYSTEM_PROMPT},
+                             {"role": "user", "content": user_msg}],
+                "max_tokens": base_max,
+            }
+            # Denkbudget alleen voor Gemini (google.thinking_config); het haiku-fallback-model negeert dit.
+            if model.startswith("gemini"):
+                payload["extra_body"] = {"google": {"thinking_config": {"thinking_budget": SECTION_THINKING_BUDGET}}}
             try:
-                parsed = json.loads(_strip_json_fences(raw))
-                heading = (parsed.get("heading") or "").strip() or step1_heading
-                content = (parsed.get("content") or "").strip()
-            except (json.JSONDecodeError, AttributeError):
-                # Onparseerbare JSON — val terug op de ruwe tekst + de stap-1-kop (run gaat door).
-                logger.warning(f"[summary] sectie '{step1_heading}': JSON onparseerbaar -> ruwe-tekst-terugval")
-                result["json_fallback"] = True
-                heading = step1_heading
-                content = raw.strip()
-            content, fired = _clean_section_content(content, heading)
-            result["heading"] = heading
-            result["content"] = content
-            result["cleanup"] = fired
-        except Exception as e:
-            logger.warning(f"[summary] sectie '{step1_heading}' faalde (run gaat door): {e}")
+                call = await _gateway_call(client, api_key, payload)
+            except Exception as e:
+                logger.warning(f"[summary] sectie '{step1_heading}' call faalde ({recovery or 'initial'}): {e}")
+                continue
+            call["recovery"] = recovery
+            result["calls"].append(call)
+            result["call"] = call
+            heading, content, fired = _parse_section_text(call["content"] or "", step1_heading)
+            ok, reason = _section_ok(content, frag_words)
+            cw = _word_count(content)
+            if ok:
+                result["heading"], result["content"], result["cleanup"] = heading, content, fired
+                result["recovery"] = recovery
+                if recovery:
+                    logger.info(f"[summary] sectie '{step1_heading}': hersteld via {recovery} "
+                                f"(model={call.get('model')}, {cw} woorden)")
+                return result
+            logger.warning(f"[summary] sectie '{step1_heading}': afgekapt ({reason}, {cw} woorden, "
+                           f"finish={call.get('finish_reason')}, model={call.get('model')}) — "
+                           f"{'fallback ook mislukt' if recovery == 'fallback' else 'nieuwe poging'}")
+            if best is None or cw > best[0]:
+                best = (cw, heading, content, fired, reason)
+
+    # Geen enkele poging kwam schoon door — houd de langste, markeer als niet-hersteld (rapportage).
+    if best:
+        result["heading"], result["content"], result["cleanup"] = best[1], best[2], best[3]
+        result["safety_net"] = best[4]
+        logger.warning(f"[summary] sectie '{step1_heading}': ALLE pogingen afgekapt "
+                       f"(rest={best[4]}, {best[0]} woorden) — beste behouden")
     return result
 
 
@@ -533,9 +624,13 @@ def _merge_parts(section: Dict, part_results: List[Dict]) -> Dict:
     return {
         "heading": section["heading"], "start_time": section["start_time"], "end_time": section["end_time"],
         "content": "\n\n".join(merged), "call": None,
-        "calls": [r["call"] for r in part_results if r.get("call")],
+        "calls": [c for r in part_results for c in (r.get("calls") or [])],
         "json_fallback": any(r.get("json_fallback") for r in part_results),
         "cleanup": [x for r in part_results for x in (r.get("cleanup") or [])],
+        "frag_words": sum(int(r.get("frag_words") or 0) for r in part_results),
+        "recovery": next((r["recovery"] for r in part_results if r.get("recovery")), None),
+        "safety_net": next((r["safety_net"] for r in part_results
+                            if r.get("safety_net") and r.get("safety_net") != "empty_fragment"), None),
     }
 
 
@@ -553,7 +648,8 @@ async def _run_step2(client, api_key, sections: List[Dict], overview: str, trans
         s, parts = entry["section"], entry["parts"]
         if len(parts) == 1:
             r = await _run_section(client, api_key, sem, s, overview, transcript_data)
-            r["calls"] = [r["call"]] if r.get("call") else []
+            # _run_section vult zelf `calls` (alle pogingen: initial/retry/fallback) — niet overschrijven.
+            r.setdefault("calls", [r["call"]] if r.get("call") else [])
             return r
         # Gesplitst: elk deel dezelfde kop+omschrijving als bindende afbakening, eigen [start,end].
         part_sections = [{**s, "start_time": a, "end_time": b} for (a, b) in parts]
@@ -612,6 +708,11 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: di
         debug["sections"] = len(sections)
         debug["cleanup_fired"] = sum(1 for r in section_results if r.get("cleanup"))
         debug["json_fallback_fired"] = sum(1 for r in section_results if r.get("json_fallback"))
+        # ADR-090-truncatiefix: hoe vaak het vangnet moest herstellen (retry/fallback), en hoeveel
+        # hoofdstukken ZELFS na alle pogingen nog afgekapt bleven (dat moet 0 zijn).
+        debug["recovered"] = sum(1 for r in section_results if r.get("recovery"))
+        debug["safety_net_unresolved"] = sum(1 for r in section_results if r.get("safety_net"))
+        debug["section_results"] = section_results
 
     # Stap 3 — assemblage (geen modelcall).
     ai_summary = {
