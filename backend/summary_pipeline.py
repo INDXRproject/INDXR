@@ -23,6 +23,7 @@ import os
 import re
 import json
 import math
+import time
 import asyncio
 import logging
 import statistics
@@ -385,7 +386,7 @@ _strip_json_fences = _strip_code_fences
 
 
 def _log_usage(supabase, transcript_id: str, user_id: str, generated_at: str, call: Dict,
-               is_test: bool = False) -> None:
+               is_test: bool = False, chapter_index: int = None, chapter_ms: int = None) -> None:
     """Per-call kostenlog (ai_summary_usage_log) — de gezaghebbende AI-summary COR-bron. Eén rij
     per gateway-call, met request_id/model/region/tijdstempel. Non-fataal: nooit de summary laten
     falen op een kostenboeking. `is_test=True` markeert meetverkeer (health-script): de kost telt mee
@@ -408,6 +409,9 @@ def _log_usage(supabase, transcript_id: str, user_id: str, generated_at: str, ca
             "reasoning_tokens": call.get("reasoning_tokens"),
             "recovery": call.get("recovery"),
             "is_test": is_test,
+            # ADR-096-meetlaag: per-hoofdstuk-timing (alleen op stap-2-sectiecalls; NULL op stap 1).
+            "chapter_index": chapter_index,
+            "chapter_ms": chapter_ms,
         }).execute()
     except Exception as e:
         logger.warning(f"ai_summary_usage_log insert failed for {transcript_id}: {e}")
@@ -720,39 +724,53 @@ def _merge_parts(section: Dict, part_results: List[Dict]) -> Dict:
 
 
 async def _run_step2(client, api_key, sections: List[Dict], overview: str, transcript_data: List[Dict],
-                     debug: dict = None) -> List[Dict]:
+                     debug: dict = None, on_chapter_done=None) -> List[Dict]:
     """Stap 2 met splitsing van te grote hoofdstukken (ADR-090-addendum 2). Gedeeld door run_summary
     (productie) én het meetscript zodat er geen divergentie ontstaat. Elk resultaat draagt een `calls`-
-    lijst (één call bij een ongesplitst hoofdstuk, meerdere bij een gesplitst) voor de kostenlog."""
+    lijst (één call bij een ongesplitst hoofdstuk, meerdere bij een gesplitst) voor de kostenlog.
+
+    `on_chapter_done`: optionele async-callback, aangeroepen zodra een hoofdstuk klaar is (voor de live
+    voortgangsteller). Elk resultaat krijgt `chapter_index` + `chapter_ms` (doorlooptijd) voor de meetlaag.
+    `len(plan) == len(sections)` (één entry per hoofdstuk), dus de teller telt echte hoofdstukken."""
     plan, n_splits = _plan_section_fragments(sections)
     if debug is not None:
         debug["splits_fired"] = n_splits
     sem = asyncio.Semaphore(SECTION_CONCURRENCY)
 
-    async def _run_chapter(entry):
+    async def _run_chapter(idx, entry):
+        t0 = time.monotonic()
         s, parts = entry["section"], entry["parts"]
         if len(parts) == 1:
             r = await _run_section(client, api_key, sem, s, overview, transcript_data)
             # _run_section vult zelf `calls` (alle pogingen: initial/retry/fallback) — niet overschrijven.
             r.setdefault("calls", [r["call"]] if r.get("call") else [])
-            return r
-        # Gesplitst: elk deel dezelfde kop+omschrijving als bindende afbakening, eigen [start,end].
-        part_sections = [{**s, "start_time": a, "end_time": b} for (a, b) in parts]
-        prs = await asyncio.gather(*[
-            _run_section(client, api_key, sem, ps, overview, transcript_data) for ps in part_sections
-        ])
-        return _merge_parts(s, prs)
+        else:
+            # Gesplitst: elk deel dezelfde kop+omschrijving als bindende afbakening, eigen [start,end].
+            part_sections = [{**s, "start_time": a, "end_time": b} for (a, b) in parts]
+            prs = await asyncio.gather(*[
+                _run_section(client, api_key, sem, ps, overview, transcript_data) for ps in part_sections
+            ])
+            r = _merge_parts(s, prs)
+        r["chapter_index"] = idx
+        r["chapter_ms"] = int((time.monotonic() - t0) * 1000)
+        if on_chapter_done is not None:
+            await on_chapter_done()
+        return r
 
-    return await asyncio.gather(*[_run_chapter(e) for e in plan])
+    return await asyncio.gather(*[_run_chapter(i, e) for i, e in enumerate(plan)])
 
 
-async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: dict = None) -> Dict:
+async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: dict = None,
+                      on_total=None, on_chapter_done=None) -> Dict:
     """Kern: bouwt de nieuwe ai_summary (schema_version 2). Raise bij een harde fout (fetch leeg,
     structuur-call faalt, geen API-key) zodat de caller kan refunden. Schrijft per gateway-call een
     rij in ai_summary_usage_log. Retourneert het ai_summary-dict (nog NIET weggeschreven).
 
     `debug`: optionele dict — indien meegegeven vult run_summary hem met dekkings-stats + de cleanup-/
-    JSON-fallback-tellers (de E2E leest dit; de worker geeft niets mee)."""
+    JSON-fallback-tellers (de E2E leest dit; de worker geeft niets mee).
+    `on_total(n)` / `on_chapter_done()`: optionele async-callbacks voor de LIVE voortgangsteller —
+    `on_total` één keer met het aantal hoofdstukken (ná stap 1), `on_chapter_done` per afgerond hoofdstuk.
+    Beide default None (het meetscript geeft ze niet mee → geen divergentie, geen job-writes)."""
     supabase = supabase or get_supabase_client()
 
     api_key = os.getenv("ASSEMBLYAI_API_KEY")
@@ -779,13 +797,20 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: di
             struct["structured"].get("sections") or [], min_sections, max_sections, struct["total_seconds"]
         )
 
-        # Stap 2 — uitwerking, parallel maar begrensd, mét splitsing van te grote hoofdstukken.
-        section_results = await _run_step2(client, api_key, sections, overview, transcript_data, debug=debug)
+        # Live voortgang: hoofdstuk-totaal bekend ná stap 1 (één plan-entry per hoofdstuk).
+        if on_total is not None:
+            await on_total(len(sections))
 
-    # Log stap-2-usage (per gesplitst hoofdstuk kunnen dit meerdere calls zijn).
+        # Stap 2 — uitwerking, parallel maar begrensd, mét splitsing van te grote hoofdstukken.
+        section_results = await _run_step2(client, api_key, sections, overview, transcript_data,
+                                           debug=debug, on_chapter_done=on_chapter_done)
+
+    # Log stap-2-usage (per gesplitst hoofdstuk kunnen dit meerdere calls zijn); tag met de per-hoofdstuk-
+    # timing (chapter_index/chapter_ms) uit _run_step2 zodat de doorlooptijd per hoofdstuk te bevragen is.
     for r in section_results:
         for c in r.get("calls", []):
-            _log_usage(supabase, transcript_id, user_id, generated_at, c)
+            _log_usage(supabase, transcript_id, user_id, generated_at, c,
+                       chapter_index=r.get("chapter_index"), chapter_ms=r.get("chapter_ms"))
 
     # ── Harde onderbreker (ADR-098) — vóór de assemblage/retour, ná het loggen (de gateway-kost is al
     # gemaakt en hoort geboekt). Overschrijding → SummaryCostBreaker → de reservation-aware wrapper
@@ -897,8 +922,25 @@ async def run_summary_reservation_aware(
                     pass
         hb_task = asyncio.create_task(_beat())
 
+    # Live voortgangsteller — schrijft summary_sections_total/done op de job-rij. De increment loopt onder
+    # een Lock (hoofdstukken voltooien gelijktijdig, semafoor=4) zodat er geen tel-races zijn. Raakt de
+    # credit-boeking NIET aan. Bij een fout blijft de teller op zijn laatste waarde staan, maar de UI toont
+    # alleen de teller bij niet-terminale status → op status='error' ziet de gebruiker de foutstaat.
+    _progress_lock = asyncio.Lock()
+    _done = 0
+
+    async def _on_total(n):
+        _update_summary_job(supabase, job_id, summary_sections_total=n, summary_sections_done=0)
+
+    async def _on_chapter_done():
+        nonlocal _done
+        async with _progress_lock:
+            _done += 1
+            _update_summary_job(supabase, job_id, summary_sections_done=_done)
+
     try:
-        ai_summary = await run_summary(transcript_id, user_id, supabase=supabase)
+        ai_summary = await run_summary(transcript_id, user_id, supabase=supabase,
+                                       on_total=_on_total, on_chapter_done=_on_chapter_done)
     except Exception as e:
         logger.error(f"[summary] job {job_id} faalde: {type(e).__name__}: {e}")
         refund_credits(job_id=job_id)  # volledige teruggave (consumed==0)

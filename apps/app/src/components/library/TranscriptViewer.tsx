@@ -11,7 +11,6 @@ import {
   Underline as UnderlineIcon,
   List,
   ListOrdered,
-  Sparkles,
   Search,
   ChevronUp,
   ChevronDown,
@@ -26,7 +25,6 @@ import {
   Pencil,
   Users,
 } from "lucide-react";
-import posthog from "posthog-js";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Extension } from "@tiptap/core";
@@ -35,8 +33,6 @@ import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { JSONContent } from "@tiptap/react";
 
 import { Button } from "@indxr/shared/components/ui/button";
-import { Switch } from "@indxr/shared/components/ui/switch";
-import { Label } from "@indxr/shared/components/ui/label";
 import { Input } from "@indxr/shared/components/ui/input";
 import {
   DropdownMenu,
@@ -65,14 +61,13 @@ import {
   DialogTitle,
 } from "@indxr/shared/components/ui/dialog";
 
-import { marketingHref } from "@indxr/shared/lib/cross-host-links";
 import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard";
 import { useRouter } from "next/navigation";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 import { cn } from "@indxr/shared/lib/utils";
 import { NocookieYouTubePlayer, type YouTubePlayerHandle } from "./NocookieYouTubePlayer";
-import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize, summaryCreditCost } from "@indxr/shared/lib/pricing";
+import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "@indxr/shared/lib/pricing";
 import {
   generateTxt,
   generateSrt,
@@ -212,7 +207,6 @@ interface TranscriptViewerProps {
   language?: string | null;
   thumbnailUrl?: string;
   editedContent: JSONContent | null;
-  aiSummary: JSONContent | null;
   viewedAt: string | null;
   mode: "original" | "edited";
   processingMethod?: string | null;
@@ -289,7 +283,6 @@ export function TranscriptViewer({
   channelTitle,
   language,
   editedContent,
-  aiSummary,
   viewedAt,
   mode,
   processingMethod,
@@ -301,13 +294,11 @@ export function TranscriptViewer({
   const router = useRouter();
   const supabase = createClient();
   const { user, credits, refreshCredits } = useAuth();
-  const [isSummarizing, setIsSummarizing] = useState(false);
 
   // UI state
   const [showTimestamps, setShowTimestamps] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const playerRef = useRef<YouTubePlayerHandle>(null);
-  const summaryPollingRef = useRef(false); // voorkomt dubbele poll-loops (mount-resume + klik)
 
   // Timestamp click → seek the in-app nocookie player (opening it if needed) instead of
   // navigating to YouTube. The links keep their href as a no-JS fallback.
@@ -321,7 +312,6 @@ export function TranscriptViewer({
     playerRef.current?.seekTo(parseInt(m[1], 10));
   };
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showSearch, setShowSearch] = useState(false); // Find is a button, not a permanent field
   const [textSize, setTextSize] = useState<"s" | "m" | "l">("m"); // Display menu → reading size
@@ -344,12 +334,11 @@ export function TranscriptViewer({
   // True when an edited version has been persisted in Supabase
   const [hasSavedEdits, setHasSavedEdits] = useState(editedContent !== null);
 
-  // The ⋯ overflow can degrade to a single item: with no video (no "Watch on YouTube"),
-  // outside original mode (no "Summarise") and without saved edits (no "Revert"), only
-  // "Delete" remains. Rather than a ⋯ that opens one item, show Delete directly then
-  // (same rule as the bulk bar / AiSummaryView).
+  // The ⋯ overflow can degrade to a single item: with no video (no "Watch on YouTube") and without
+  // saved edits (no "Revert"), only "Delete" remains. Rather than a ⋯ that opens one item, show Delete
+  // directly then (same rule as the bulk bar / AiSummaryView).
   const overflowActionCount =
-    (hasVideo ? 1 : 0) + (isOriginalMode ? 1 : 0) + (hasSavedEdits && isEditedMode ? 1 : 0) + 1; // +1 = Delete (always)
+    (hasVideo ? 1 : 0) + (hasSavedEdits && isEditedMode ? 1 : 0) + 1; // +1 = Delete (always)
   const collapseOverflowToDelete = overflowActionCount <= 1;
 
   // Search
@@ -363,7 +352,6 @@ export function TranscriptViewer({
   const [contentSaveFeedback, setContentSaveFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [summarizeError, setSummarizeError] = useState<string | null>(null);
 
   // RAG export modal state
   const [localRagExports, setLocalRagExports] = useState<Array<{ chunk_size: number; exported_at: string; credits_spent: number }>>(ragExports ?? []);
@@ -378,9 +366,6 @@ export function TranscriptViewer({
       ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
       : 0);
   const ragCost = Math.max(1, Math.ceil(derivedDuration / 600));
-  // AI-summary kost (ADR-098 Add.2): 3 t/m 30min, daarna +1 per begonnen 10min. Gedeelde bron
-  // summaryCreditCost spiegelt de backend calculate_summary_cost (financieel pad: weergave == bedrag).
-  const summaryCost = summaryCreditCost(derivedDuration);
 
   // Mark as viewed on mount if not already viewed
   useEffect(() => {
@@ -773,104 +758,8 @@ export function TranscriptViewer({
     }
   };
 
-  // Poll een lopende AI-samenvatting-job tot terminaal. Herbruikbaar door de start-klik én de
-  // mount-resume. Dubbel-poll-guard zodat er nooit twee loops op dezelfde job draaien. Bij 'complete'
-  // → navigeren naar de Summary-tab; bij 'error' → melding. Lange video's (meer hoofdstukken) kunnen
-  // langer duren, dus ruim plafond (~30 min); de job draait server-side sowieso door.
-  const pollSummaryJob = useCallback(async (jobId: string) => {
-    if (summaryPollingRef.current) return;
-    summaryPollingRef.current = true;
-    try {
-      const POLL_MS = 3000;
-      const MAX_POLLS = 600; // ~30 min
-      for (let i = 0; i < MAX_POLLS; i++) {
-        await new Promise((r) => setTimeout(r, POLL_MS));
-        let job;
-        try {
-          const pollRes = await fetch(`/api/summary/jobs/${jobId}?user_id=${user?.id}`);
-          if (!pollRes.ok) continue;
-          job = await pollRes.json();
-        } catch { continue; }
-        if (job.status === 'complete') {
-          try { sessionStorage.removeItem('indxr-active-summary-job'); } catch { /* ignore */ }
-          posthog.capture('summary_completed', { transcript_id: id });
-          await refreshCredits();
-          router.push(`/dashboard/library/${id}?tab=summary`);
-          router.refresh();
-          return;
-        }
-        if (job.status === 'error') {
-          try { sessionStorage.removeItem('indxr-active-summary-job'); } catch { /* ignore */ }
-          await refreshCredits(); // teruggave bij mislukking
-          setSummarizeError(job.error_message || "Failed to generate summary");
-          setIsSummarizing(false);
-          return;
-        }
-      }
-      setSummarizeError("Summary is taking longer than expected — it may still complete. Refresh in a moment.");
-      setIsSummarizing(false);
-    } finally {
-      summaryPollingRef.current = false;
-    }
-  }, [user?.id, id, refreshCredits, router]);
-
-  const handleSummarizeConfirm = async () => {
-    setShowSummaryDialog(false);
-    setIsSummarizing(true);
-    setSummarizeError(null);
-    try {
-      // Start de achtergrondtaak (ADR-090) → { job_id, status }.
-      const startRes = await fetch('/api/ai/summarize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript_id: id, user_id: user?.id })
-      });
-      let startData;
-      try {
-        startData = await startRes.json();
-      } catch {
-        setSummarizeError("Server error: received invalid response.");
-        setIsSummarizing(false);
-        return;
-      }
-      if (!startRes.ok || !startData.job_id) {
-        setSummarizeError(startData?.error || "Failed to start summary");
-        setIsSummarizing(false);
-        return;
-      }
-      // Reservering is al afgetrokken bij job-start → saldo verversen.
-      await refreshCredits();
-      try { sessionStorage.setItem('indxr-active-summary-job', JSON.stringify({ jobId: startData.job_id, transcriptId: id })); } catch { /* ignore */ }
-      await pollSummaryJob(startData.job_id as string);
-    } catch (error) {
-      console.error("Summarize error:", error);
-      setSummarizeError("Failed to summarize transcript");
-      setIsSummarizing(false);
-    }
-  };
-
-  // Resume (ADR-090-kwaliteitsronde): pik bij binnenkomst een nog-lopende AI-samenvatting voor dit
-  // transcript op en hervat de polling — zodat een summary die na het stoppen alsnog afrondt wordt
-  // opgepikt zodra de gebruiker terugkeert of ververst. Geen nieuwe POST → geen herbetaling.
-  useEffect(() => {
-    if (!user?.id) return;
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from('transcription_jobs')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('transcript_id', id)
-        .eq('source_kind', 'ai_summary')
-        .in('status', ['pending', 'summarizing'])
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (cancelled || !data || data.length === 0) return;
-      setIsSummarizing(true);
-      pollSummaryJob(data[0].id as string);
-    })();
-    return () => { cancelled = true; };
-  }, [user?.id, id, supabase, pollSummaryJob]);
+  // AI-samenvatting genereren/pollen leeft niet meer hier maar op de Summary-tab (SummaryTab), waar de
+  // gebruiker de voortgang ziet. Dit tabblad toont enkel het transcript.
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -885,19 +774,34 @@ export function TranscriptViewer({
               <Search className="h-4 w-4" />
             </Button>
 
-            {/* Display options */}
+            {/* View option — Paragraphs | Timestamps. A display toggle for the SAME content, so it is a
+                visible segmented control near the transcript (not buried in a menu, not a tab, not an
+                action). Stays reachable on mobile (short labels, the row wraps). */}
+            <div className="inline-flex items-center rounded-md border border-border p-0.5 text-xs" role="group" aria-label="View">
+              <button
+                onClick={() => setShowTimestamps(false)}
+                aria-pressed={!showTimestamps}
+                className={cn("rounded px-2 py-1 transition-colors", !showTimestamps ? "bg-accent-subtle text-accent font-medium" : "text-fg-muted hover:text-fg")}
+              >
+                Paragraphs
+              </button>
+              <button
+                onClick={() => setShowTimestamps(true)}
+                aria-pressed={showTimestamps}
+                className={cn("rounded px-2 py-1 transition-colors", showTimestamps ? "bg-accent-subtle text-accent font-medium" : "text-fg-muted hover:text-fg")}
+              >
+                Timestamps
+              </button>
+            </div>
+
+            {/* Text size — a rarely-changed display preference, kept in a compact menu. */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" aria-label="Display options">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" aria-label="Text size">
                   <SlidersHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <div className="flex items-center justify-between px-2 py-1.5">
-                  <Label htmlFor="ts-mode" className="text-sm">Timestamps</Label>
-                  <Switch id="ts-mode" checked={showTimestamps} onCheckedChange={setShowTimestamps} />
-                </div>
-                <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text size</DropdownMenuLabel>
                 <div className="flex items-center gap-1 px-2 pb-1.5">
                   {(["s", "m", "l"] as const).map((sz) => (
@@ -1010,21 +914,6 @@ export function TranscriptViewer({
                     </a>
                   </DropdownMenuItem>
                 )}
-                {isOriginalMode && (
-                  <DropdownMenuItem
-                    disabled={isSummarizing || !user}
-                    onClick={() => {
-                      if (!user) { setSummarizeError("Please sign in to summarize."); return; }
-                      if (credits !== null && credits < summaryCost) { setSummarizeError(`Not enough credits — you need ${summaryCost} credits to generate a summary.`); return; }
-                      posthog.capture('summary_requested', { transcript_id: id });
-                      setShowSummaryDialog(true);
-                    }}
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    {aiSummary ? "Regenerate summary" : "Summarise"}
-                    <span className="ml-auto text-xs text-fg-muted">{summaryCost} credits</span>
-                  </DropdownMenuItem>
-                )}
                 {hasSavedEdits && isEditedMode && (
                   <DropdownMenuItem onClick={() => editor?.commands.setContent(originalJSON)}>
                     <RotateCcw className="mr-2 h-4 w-4" /> Revert to original
@@ -1081,21 +970,6 @@ export function TranscriptViewer({
                     onDismiss={() => setDeleteError(null)}
                   />
                 )}
-                {summarizeError && (
-                  <FeedbackCard
-                    variant="error"
-                    message={
-                      <>
-                        {summarizeError}
-                        {summarizeError.includes("credits") && (
-                          <a href={marketingHref('/pricing')} className="ml-2 underline">Buy Credits →</a>
-                        )}
-                      </>
-                    }
-                    onDismiss={() => setSummarizeError(null)}
-                  />
-                )}
-
                 {/* Search bar — toggled by the Find button */}
                 {showSearch && (
                 <div className="flex items-center gap-2">
@@ -1207,29 +1081,6 @@ export function TranscriptViewer({
       </div>
 
       {/* ── ALERTS & DIALOGS ── */}
-      <AlertDialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Generate AI Summary</AlertDialogTitle>
-            <AlertDialogDescription>
-              {aiSummary
-                ? `You already have a summary for this video. Regenerating will cost ${summaryCost} credits and overwrite the current version. Continue?`
-                : `Generating an AI Summary costs ${summaryCost} credits. Would you like to proceed?`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleSummarizeConfirm}
-              className="bg-warning hover:bg-warning/90 text-fg gap-2"
-            >
-              <Sparkles className="h-4 w-4" />
-              Generate Summary
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

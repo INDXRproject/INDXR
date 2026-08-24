@@ -598,3 +598,23 @@ Zie de sectie hierboven (`Sentry.captureException()` in Vercel API-routes arrive
 ## Transcribe ErrorCard: onbekende foutcodes → PostHog i.p.v. Sentry (ADR-080)
 
 De gedeelde transcribe-`ErrorCard` (`packages/shared/src/components/transcribe/errorCopy.ts`) moet onbekende backend-foutcodes loggen zodat er copy voor toegevoegd kan worden. De brief vroeg Sentry; **frontend-Sentry is voor dit pad niet gewired**, dus het logt via `posthog.capture('transcribe_error_unknown_code', { code })` + `console.warn`. Zoek in PostHog op dat event om nieuwe codes te vinden. Wanneer frontend-Sentry breder wordt uitgerold: heroverweeg of dit event daarheen moet. Verwant: de credit-regel op download-fout-kaarten leest `transcription_jobs.credits_refunded` uit de **Realtime**-payload van `useJobStatus`; de polling-fallback `/api/jobs/{id}` (Railway-proxy) bevat dat veld níét — voor volledige dekking zou de proxy `credits_refunded` moeten meesturen.
+
+## Dubbel-start-race op transcriptie- & playlist-jobs (dubbele-afboekingsrisico) — OPEN
+
+**Ernst: hoog (dubbele credit-afboeking).** De job-start-endpoints in `backend/main.py` dedupliceren met
+een **read-then-insert zonder unieke constraint**: eerst een SELECT naar een lopende job, anders INSERT +
+`reserve_credits`. Twee *gelijktijdige* POSTs die beide de SELECT draaien vóór een van beide INSERT landt,
+passeren allebei de dedup en reserveren allebei → de gebruiker betaalt dubbel voor één taak.
+
+- **ai_summary-pad: GEFIXT (2026-08-25).** Partiële unieke index `uniq_active_ai_summary_job` op
+  `(user_id, transcript_id) WHERE source_kind='ai_summary' AND status NOT IN ('complete','error')` maakt een
+  tweede niet-terminale rij onmogelijk; `start_summary` vangt de 23505 en geeft de bestaande job terug
+  (migratie `20260824170000`). Reserve/settle/refund ongewijzigd.
+- **Enkel-video / upload-pad: NOG OPEN.** `start_transcription` (`main.py:~1022-1046`) gebruikt exact
+  hetzelfde read-then-insert-dedup zonder unieke constraint → zelfde race.
+- **Playlist-pad: NOG OPEN.** `start_playlist` reserveert (`main.py:~1509`) na een niet-atomische check.
+
+**Aanbevolen fix (vóór betalende gebruikers):** dezelfde partiële-unieke-index-aanpak op de andere
+`source_kind`s (single/upload: `(user_id, video_id/source-hash)`; playlist: `(user_id, playlist_id)`) +
+23505-afhandeling die de bestaande job teruggeeft. Bewust NIET in deze taak gefixt (scope was alleen de
+summary-generatie); hier vastgelegd omdat een chat verdwijnt en dit een geldrisico is.

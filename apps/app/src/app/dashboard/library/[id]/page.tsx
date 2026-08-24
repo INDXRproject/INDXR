@@ -1,7 +1,7 @@
 import { createClient } from "@indxr/shared/utils/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { TranscriptViewer } from "@/components/library/TranscriptViewer";
-import { AiSummaryView } from "@/components/library/AiSummaryView";
+import { SummaryTab } from "@/components/library/SummaryTab";
 import { EditableSummaryView } from "@/components/library/EditableSummaryView";
 import { RagExportView } from "@/components/library/RagExportView";
 import { TranscriptTabs, ViewTab } from "@/components/library/TranscriptTabs";
@@ -52,7 +52,9 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
   const tabs: ViewTab[] = [
     { id: "original", label: "Transcript" },
     ...(canEdited ? [{ id: "edited", label: "Edited" }] : []),
-    ...(transcript.ai_summary ? [{ id: "summary", label: "Summary" }] : []),
+    // Summary is ALWAYS present — it is the generate/progress/result destination (SummaryTab shows an
+    // empty state with a Generate button when there is no summary yet).
+    { id: "summary", label: "Summary" },
     ...(canSummaryEdit ? [{ id: "summary_edited", label: "Edited summary" }] : []),
     ...(hasRag ? [{ id: "developer", label: "Developer" }] : []),
   ];
@@ -96,7 +98,6 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           language={transcript.language ?? null}
           thumbnailUrl={transcript.thumbnail_url}
           editedContent={transcript.edited_content ?? null}
-          aiSummary={transcript.ai_summary ?? null}
           viewedAt={transcript.viewed_at}
           mode={activeTab as "original" | "edited"}
           processingMethod={transcript.processing_method}
@@ -105,11 +106,11 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           duration={transcript.duration ?? undefined}
           speakerNames={transcript.speaker_names ?? null}
         />
-      ) : activeTab === "summary" && transcript.ai_summary ? (
+      ) : activeTab === "summary" ? (
         <div className="pb-12 bg-bg w-full relative z-10 w-full mt-2">
-          <AiSummaryView
+          <SummaryTab
             id={transcript.id}
-            initialSummary={transcript.ai_summary}
+            initialSummary={transcript.ai_summary ?? null}
             videoId={transcript.video_id ?? undefined}
             editedContentUpdatedAt={transcript.edited_content_updated_at ?? null}
             title={transcript.title || "Untitled Transcript"}

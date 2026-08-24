@@ -1278,17 +1278,38 @@ async def start_summary(request: SummarizeRequest, req: Request, _: None = Depen
     # draagt hier de te-samenvatten transcript: een valide FK, én sluit de rij automatisch uit van de
     # whisper-watchdog-passes die transcript_id IS NULL vereisen.
     job_id = str(uuid.uuid4())
-    await asyncio.to_thread(
-        lambda: supabase.table('transcription_jobs').insert({
-            'id': job_id,
-            'user_id': user_id,
-            'status': 'pending',
-            'source_type': 'summary',
-            'source_kind': 'ai_summary',
-            'transcript_id': transcript_id,
-            'credits_cost': cost,
-        }).execute()
-    )
+    try:
+        await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs').insert({
+                'id': job_id,
+                'user_id': user_id,
+                'status': 'pending',
+                'source_type': 'summary',
+                'source_kind': 'ai_summary',
+                'transcript_id': transcript_id,
+                'credits_cost': cost,
+            }).execute()
+        )
+    except Exception as e:
+        # Atomische dubbel-start-garantie: de partiële unieke index uniq_active_ai_summary_job laat een
+        # tweede NIET-TERMINALE ai_summary-job per (user, transcript) niet toe. Een gelijktijdige tweede
+        # POST botst hier (23505) i.p.v. een tweede rij + tweede reservering te maken — de reservering
+        # staat ná deze insert, dus een gefaalde insert reserveert niets. Geef de bestaande draaiende job
+        # terug; de gebruiker mag nooit een fout zien voor iets wat al loopt.
+        msg = str(e)
+        if '23505' in msg or 'uniq_active_ai_summary_job' in msg or 'duplicate key' in msg:
+            _ex2 = await asyncio.to_thread(
+                lambda: supabase.table('transcription_jobs').select('id,status')
+                    .eq('user_id', user_id).eq('transcript_id', transcript_id).eq('source_kind', 'ai_summary')
+                    .not_.in_('status', ['complete', 'error']).limit(1).execute()
+            )
+            if _ex2.data:
+                _e = _ex2.data[0]
+                return JSONResponse({"job_id": _e['id'], "status": _e['status'], "deduplicated": True})
+            # Zeldzame race: de andere job werd terminaal tussen de botsing en deze select — laat retryen.
+            return JSONResponse(status_code=409, content={"success": False, "error": "Please retry"})
+        logger.error(f"[summary] job-insert faalde voor {transcript_id}: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": "Could not start summary"})
 
     # Reserveren (deduct + credits_reserved + balanscheck). Insufficient => rij opruimen + 402.
     _resv = await asyncio.to_thread(reserve_credits, user_id=user_id, amount=cost, job_id=job_id)
@@ -1380,6 +1401,9 @@ async def get_summary_job_status(job_id: str, user_id: str, _: None = Depends(ve
         "error_message": job.get('error_message'),
         "credits_cost": job.get('credits_cost'),
         "credits_refunded": job.get('credits_refunded'),
+        # Live voortgang (hoofdstuk X van N). NULL vóór stap 1 klaar is → UI toont "Analyzing…".
+        "sections_total": job.get('summary_sections_total'),
+        "sections_done": job.get('summary_sections_done'),
     })
 
 def _compute_playlist_reservation(video_ids, use_whisper_ids, video_metadata, is_retry=False) -> int:

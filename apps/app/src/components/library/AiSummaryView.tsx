@@ -48,6 +48,8 @@ interface AiSummaryViewProps {
   extractionMethod?: string;
   /** Er bestaat een bewerkte versie (ai_summary_edited) → toon de "Edited version"-exportgroep. */
   hasSummaryEdit?: boolean;
+  /** Opnieuw genereren — opent de kostenkaart-bevestiging op de Summary-tab (SummaryTab bezit het pad). */
+  onRegenerate?: () => void;
 }
 
 function formatTimestamp(totalSeconds: number): string {
@@ -70,6 +72,7 @@ export function AiSummaryView({
   durationSeconds,
   extractionMethod,
   hasSummaryEdit = false,
+  onRegenerate,
 }: AiSummaryViewProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -189,6 +192,15 @@ export function AiSummaryView({
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Regenerate — opens the cost-card confirm owned by SummaryTab. Replaces the generated
+                version; the edited version is kept and marked outdated. */}
+            {onRegenerate && (
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5" onClick={onRegenerate} title="Regenerate summary">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Regenerate</span>
+              </Button>
+            )}
+
             {/* Edit routes to the Edited-summary tab (seeded from the generated version) — never edits
                 the generated summary in place. Mirrors the transcript's Edit button. */}
             <Button size="sm" className="h-8 gap-1.5 px-3" onClick={() => router.push(`/dashboard/library/${id}?tab=summary_edited`)}>
@@ -202,7 +214,7 @@ export function AiSummaryView({
           <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
             <span className="flex-1">This summary was written before you last edited the transcript.</span>
             <button
-              onClick={() => router.replace(`/dashboard/library/${id}?tab=original`)}
+              onClick={() => (onRegenerate ? onRegenerate() : router.replace(`/dashboard/library/${id}?tab=original`))}
               className="font-medium underline hover:no-underline shrink-0 cursor-pointer"
             >
               Regenerate

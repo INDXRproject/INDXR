@@ -125,3 +125,33 @@ stempelt zijn instellingen via `summary_pipeline.settings_md()`).
   vangen het af (nooit een afgekapte geleverde samenvatting), maar het kost soms een retry/fallback.
 - **Geen harde duurlimiet** op de samenvatting zelf; boven ~5 uur worden hoofdstukken langer i.p.v.
   talrijker (plateau bij `SECTION_CAP`).
+
+## Generatie-UX & voortgang (2026-08-25)
+
+De samenvatting-generatie leeft op de **Summary-tab** (`apps/app/src/components/library/SummaryTab.tsx`),
+niet meer verstopt in het transcript-overloopmenu. De Summary-tab is nu **altijd aanwezig** (ook zonder
+samenvatting) en is de bestemming voor genereren, voortgang én resultaat.
+
+- **Bevestiging = kostenkaart** (zelfde vorm als de transcriptie-cost-card): kost + saldo-na (`BalanceLine`)
+  + bij tekort een in-app **Buy credits**-knop (`appHref('/dashboard/credits')`) i.p.v. een dode knop of een
+  marketing-`/pricing`-link. Geldt voor eerste generatie én opnieuw genereren. Pure UI — raakt
+  reserve/settle/refund niet.
+- **Live voortgang (hoofdstuk X van N).** De pijplijn schrijft `transcription_jobs.summary_sections_total`
+  (ná stap 1) en `summary_sections_done` (per afgerond hoofdstuk, onder een `asyncio.Lock`); de poll-endpoint
+  geeft ze terug. UI: "Analyzing the transcript…" tot het totaal bekend is, daarna "Writing your summary —
+  chapter k of N" met een echte balk. De teller wordt **alleen bij niet-terminale status** getoond → bij
+  `error`/stale ziet de gebruiker de foutstaat, nooit een bevroren tussenstand.
+- **Per-hoofdstuk-doorlooptijd** staat in de meetlaag `ai_summary_usage_log` (`chapter_index`, `chapter_ms`).
+- **Dubbel-start:** partiële unieke index (zie [known-issues](../operations/known-issues.md)) — een tweede
+  gelijktijdige POST krijgt dezelfde job terug, nooit een tweede reservering.
+
+## Transcript-detailpagina — tabs & toolbar (2026-08-25)
+
+- **Tabs = versies van het document:** Transcript · [Edited] · **Summary (altijd)** · [Edited summary] ·
+  [Developer]. Navigatie, niet acties.
+- **Weergave-optie:** een zichtbare segmented control **Paragraphs | Timestamps** op de transcript-toolbar
+  (was verstopt in het "Display options"-menu). Tekstgrootte blijft in een compact `Aa`-menu.
+- **Acties:** primair zichtbaar Copy · Export · Edit/Save+Revert · Find; **Speakers blijft zichtbaar zodra
+  het transcript sprekers heeft** (propageert door alle exports, eerste handeling bij een interview).
+  Overloop (⋯): alleen Watch on YouTube + Delete. **Summarise/Regenerate is van het transcript-overloopmenu
+  naar de Summary-tab verplaatst** (geen functie verdwenen).
