@@ -1,42 +1,58 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
+import { DocsFigure } from "@/components/docs/DocsFigure"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
-import { creditCostPhrase } from "@indxr/shared/lib/pricing"
+import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
+import { EXPORT_FORMAT_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+import { LIBRARY_STORAGE_BASE_MB, LIBRARY_STORAGE_MAX_MB } from "@indxr/shared/lib/storage"
+
+const freeSlots = FREE_TIER.PLAYLIST_FREE_VIDEOS
+const perCaption = CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS
+const perAiMinute = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
+
+const metaDescription =
+  `Extract transcripts from an entire YouTube playlist in one job. The first ${freeSlots} caption videos ` +
+  `are free, then ${perCaption} credit per video, with AI transcription at ${perAiMinute} credit per ` +
+  `minute for videos that have no captions. Up to 500 videos per job; a free account includes ` +
+  `${FREE_TIER.WELCOME_CREDITS} credits.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-playlist-transcript" },
-  title: "YouTube Playlist Transcript Extractor — Batch Download in Minutes | INDXR.AI",
-  description:
-    "Extract transcripts from entire YouTube playlists in one job. First 3 YouTube caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats.",
+  title: "YouTube Playlist Transcript: Every Video in One Job | INDXR.AI",
+  description: metaDescription,
   ...editorialOg("youtube-playlist-transcript"),
 }
 
 const faqs = [
   {
-    q: "Are the first three videos always free regardless of method?",
-    a: "No — and this is important to understand. The first three videos are free only for YouTube caption extraction. If any of those videos requires AI Transcription (because they have no captions, or because you've specifically toggled AI Transcription for them), that transcription costs 1 credit per minute at the standard rate. The 'free' applies to the per-video caption processing fee, not to AI transcription costs.",
+    q: "Why does the total change when I switch a video to AI transcription?",
+    a: `Because AI transcription is charged by the minute, at ${perAiMinute} credit per minute, while a caption video is a flat ${perCaption} credit. Turning a video over to AI swaps its flat caption charge for a per-minute one, so the total moves by roughly the length of that video: a long one costs more that way, a short one barely differs.`,
   },
   {
-    q: "What happens if I close the browser mid-extraction?",
-    a: "The extraction job continues on INDXR.AI's servers. When you return to the playlist page, a recovery banner shows you the current job status and lets you resume monitoring. Videos that completed before the disconnect are already in your library. That said, staying on the page while the job runs is the recommended approach — you can respond to errors faster and monitor progress directly.",
+    q: "If a free video fails, does its free slot move to the next video?",
+    a: `No. The ${freeSlots} free slots are worked out from the videos you selected before the run starts, so a slot that lands on a video that then fails is simply not used, and the next paid video stays paid. You are not charged for the failed one either way.`,
   },
   {
-    q: "Can I extract transcripts for an entire YouTube channel?",
-    a: "INDXR.AI doesn't accept channel URLs directly. The workaround: create a playlist from the channel's videos in YouTube Studio or use YouTube's playlist feature, then extract that playlist URL. This covers any subset of a channel's content — up to 500 videos per job.",
+    q: "Does retrying failed videos give me fresh free slots?",
+    a: "No. The free slots belong to the original run and are used up there, so a retry job charges for every caption video in it. Retrying is meant for videos that failed on a temporary problem such as rate-limiting, and it runs on a fresh connection.",
   },
   {
-    q: "What if some videos in the playlist are already in my library?",
-    a: "They're detected before extraction starts and excluded from the job by default. You won't be charged for videos you already have. The pre-extraction screen shows exactly which videos are new and which already exist, with links to the existing transcripts.",
+    q: "What happens if some videos in the playlist fail?",
+    a: "The rest of the job carries on, and you are never charged for a video that does not produce a transcript. The completion screen groups the failures by reason, keeping retryable ones like rate-limiting apart from permanent ones like a private video, and the credits held for the failed videos come back.",
   },
   {
-    q: "Does playlist extraction work for unlisted playlists?",
-    a: "Yes, if the playlist URL is accessible with the link. Unlisted playlists (visible to anyone with the URL) work the same as public ones. Private playlists that require YouTube login cannot be accessed.",
+    q: "What if some of the videos are already in my library?",
+    a: "They are detected before the run and left out by default, so you are not charged for a transcript you already have. The review screen shows which selected videos are new and which already exist, with a link to the existing one.",
   },
   {
-    q: "Can I mix YouTube captions and AI Transcription in the same playlist extraction?",
-    a: "Yes. The pre-extraction screen lets you toggle AI Transcription per video. Videos with auto-captions default to caption extraction; you can upgrade individual videos to AI Transcription where higher quality matters — for example, enabling AI Transcription for the key lectures in a course and using free captions for introductory videos you just need to skim.",
+    q: "Can I mix YouTube captions and AI transcription in one playlist?",
+    a: "Yes. On the review screen you set each video to captions or AI, so you can pull free captions for most of a list and spend credits on AI only for the videos that have no captions, or that you want transcribed from the audio for accuracy.",
+  },
+  {
+    q: "Do unlisted playlists work?",
+    a: "Yes, as long as the URL opens the playlist. An unlisted playlist, the kind anyone with the link can open, behaves the same as a public one. A private playlist that needs a YouTube login cannot be reached.",
   },
 ]
 
@@ -45,160 +61,256 @@ export default function YouTubePlaylistTranscriptPage() {
     <ToolPageTemplate
       category="Workflows"
       slug="youtube-playlist-transcript"
-      title="YouTube Playlist Transcript — Extract All Videos at Once"
-      metaDescription="Extract transcripts from entire YouTube playlists in one job. First 3 YouTube caption videos free. AI transcription available per video. Real-time progress, duplicate detection, all formats."
+      title="YouTube playlist transcript: extract every video in one job"
+      metaDescription={metaDescription}
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-08-24"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
+      image="https://indxr.ai/docs/screenshots/playlist-complete-light.png"
     >
       <p>
-        Extracting transcripts from a YouTube playlist one video at a time is slow, repetitive work. A
-        20-video course, a research channel, a conference archive — each video requires its own URL, its
-        own wait, its own download. INDXR.AI&apos;s playlist extraction processes the entire list as a single
-        job, handled on the server while you monitor progress from the same page.
+        You have a YouTube playlist and you want the transcript of everything in it: a course, a
+        conference channel, a research list, a season of a podcast. Doing it a video at a time means a URL,
+        a wait and a download for each one. INDXR takes the playlist URL and runs the whole list as a
+        single job on the server, so you start it once and the finished transcripts arrive in your library
+        as they complete. The first {freeSlots} videos with captions are free, each caption video after
+        that costs {perCaption} credit, and a video with no captions can be transcribed by AI at{" "}
+        {perAiMinute} credit per minute. A free account includes {FREE_TIER.WELCOME_CREDITS} credits.
+      </p>
+
+      <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <Link href="/signup">
+          <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
+            Create a free account
+          </button>
+        </Link>
+        <Link
+          href="/pricing"
+          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+        >
+          See pricing →
+        </Link>
+      </div>
+
+      <h2>How a playlist run works</h2>
+
+      <p>
+        Paste the playlist URL. Before anything starts, INDXR fetches every video in the list with its
+        title and length, and checks which ones you already have in your library. Videos you have already
+        transcribed are left out of the job by default, so you are not charged twice for them.
+      </p>
+
+      <DocsFigure
+        src="/docs/screenshots/playlist-url-input.png"
+        alt="The playlist tab: a field to paste a YouTube playlist URL, a Fetch playlist button, and a line beneath it showing the first three caption videos are free, then one credit per video, with AI at one credit per minute."
+        caption="Paste a playlist URL. The cost rule sits right under the field, before you fetch anything."
+      />
+
+      <p>
+        You pick which videos to include and confirm. Each one starts on captions, and you can switch any
+        of them to AI transcription on the same screen, with the credit total updating as you go. A video
+        that turns out to have no captions is skipped during the run, and the credits held for it come
+        back to your balance.
+      </p>
+
+      <DocsFigure
+        src="/docs/screenshots/playlist-review.png"
+        alt="The review screen listing every selected video with its length, a per-video toggle between captions and AI, the free videos marked, and the total credit cost before starting."
+        caption="The review screen: set each video to captions or AI, see what it costs, and start when it looks right."
+      />
+
+      <p>
+        The job then runs on the server. It runs in the background, so it is safe to close this tab. When
+        you come back the progress replaces the review screen, and any videos that finished while you were
+        away are already in your library.
+      </p>
+
+      <DocsFigure
+        src="/docs/screenshots/playlist-progress.png"
+        alt="A playlist extraction in progress: a heading reading Extracting playlist, a counter of finished over total videos with elapsed time, a progress bar, and a row per video showing done, skipped or queued with a captions or AI badge."
+        caption="While it runs you see each video tick over, with a counter and the note that the tab is safe to close."
+      />
+
+      <h2>What it costs</h2>
+
+      <p>
+        The first {freeSlots} videos with captions in a playlist are free, and each caption video after
+        that costs {perCaption} credit. AI transcription, for videos with no captions, costs{" "}
+        {perAiMinute} credit per minute wherever it is used. AI transcription never takes one of the free
+        caption slots, so the order the videos happen to sit in does not change the total.
+      </p>
+
+      <h2>A real example</h2>
+
+      <p>
+        This is one of our own test extractions, run to check the numbers, not a customer&apos;s. We ran a
+        ten-video playlist, nine of the videos on captions and one on AI transcription. Twelve credits
+        were reserved at the start, ten were charged, and two came back, with the whole job finished in
+        under four minutes. Two of the three free videos succeeded, and the third dropped out on a network
+        error. The four paid caption videos all succeeded. The one AI video, five minutes and fifty-one
+        seconds long, cost six credits. Two of the videos turned out to have no captions and were skipped,
+        which is where the two refunded credits came from.
+      </p>
+
+      <DocsFigure
+        src="/docs/screenshots/playlist-complete.png"
+        alt="The completion screen for the run: seven of ten videos transcribed, a receipt showing six caption videos, one AI transcription and three not fetched with two credits refunded, a charged total of ten credits, and cards explaining the two failure reasons."
+        caption="The completion receipt: what was charged, what came back, and a card for each failure reason."
+      />
+
+      <h2>When a video cannot be transcribed</h2>
+
+      <p>
+        One video failing never stops the rest of the job, and you are never charged for a video that does
+        not produce a transcript. What the run shows you depends on why it failed.
+      </p>
+
+      <div className="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>What went wrong</th>
+              <th>What the run shows</th>
+              <th>Does retrying help</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The video has no captions</td>
+              <td>&ldquo;This video has no captions&rdquo;</td>
+              <td>No, but AI transcription can read it from the audio</td>
+            </tr>
+            <tr>
+              <td>Private or removed</td>
+              <td>&ldquo;This video isn&apos;t available&rdquo;</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>Age-restricted</td>
+              <td>&ldquo;This video is age-restricted&rdquo;</td>
+              <td>No, though you can upload the audio yourself</td>
+            </tr>
+            <tr>
+              <td>Rate-limited by YouTube</td>
+              <td>&ldquo;YouTube rate-limited this request&rdquo;</td>
+              <td>Usually, a retry goes out on a fresh connection</td>
+            </tr>
+            <tr>
+              <td>A network problem on our side</td>
+              <td>&ldquo;We couldn&apos;t reach this video&apos;s audio&rdquo;</td>
+              <td>Sometimes, retry it or upload the audio</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Rate-limited and network failures are grouped together on the completion screen with a Retry all
+        button, which re-runs just those videos on a fresh connection. The permanent ones, a private video
+        or a video with no captions, are listed separately, because retrying them would not change the
+        result.
+      </p>
+
+      <h2>Limits and channels</h2>
+
+      <p>
+        A few <Link href="/docs/reference/limits">hard limits</Link> are worth knowing before you start a
+        large playlist.
+      </p>
+
+      <table>
+        <tbody>
+          <tr>
+            <td>Videos per job</td>
+            <td>500</td>
+          </tr>
+          <tr>
+            <td>Jobs running at once</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>Length per AI-transcribed video</td>
+            <td>10 hours (caption extraction has no length limit)</td>
+          </tr>
+          <tr>
+            <td>Library storage</td>
+            <td>{LIBRARY_STORAGE_BASE_MB} MB free, up to {LIBRARY_STORAGE_MAX_MB} MB</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        A playlist larger than 500 videos is split into batches of 500, and every batch lands in the same
+        library. Selecting fifty or more videos shows a note that the job will take a while and can run in
+        the background; that is a heads-up, not a limit.
       </p>
 
       <p>
-        A playlist of a dozen or more videos — many hours of total audio — runs as a single background
-        job. You can start it, close the tab, and the finished transcripts appear in your library as they
-        complete.
+        A channel URL is not accepted. To transcribe a channel, make a playlist of the videos you want in
+        YouTube and paste that playlist URL instead. A channel URL that already carries a playlist
+        parameter is treated as the playlist it points to.
       </p>
 
-      <h2>How Playlist Extraction Works</h2>
+      <h2>What people use it for</h2>
 
       <p>
-        Paste a YouTube playlist URL. Before any extraction begins, INDXR.AI fetches complete metadata for
-        every video in the list: titles, durations, and whether you&apos;ve already
-        extracted any of them before. You see the full picture before committing to anything.
-      </p>
-
-      <p>
-        The pre-extraction screen shows each video with two indicators: whether auto-captions are
-        available, and whether a transcript already exists in your library. Videos already in your library
-        are flagged with colored badges — amber for existing YouTube caption transcripts, violet for existing
-        AI transcriptions — and excluded from the extraction count by default. No duplicate charges.
+        <strong>Course transcription.</strong> Extract all the lectures from an educational playlist and
+        export each as Markdown for an Obsidian or Notion knowledge base, or as a merged CSV for analysis.
       </p>
 
       <p>
-        You select which videos to extract. For videos without captions, you toggle AI Transcription
-        individually — INDXR.AI shows the credit cost per video, and the total updates as you make
-        selections.
+        <strong>Research corpus.</strong> Transcribe a conference archive, a speaker&apos;s body of work,
+        or a topic-specific playlist, then export the set as a single merged CSV or{" "}
+        <Link href="/articles/youtube-transcripts-vector-database">RAG JSON</Link> to get one queryable
+        dataset.
       </p>
 
       <p>
-        Once you confirm, the job runs on INDXR.AI&apos;s servers. Progress updates in real time: which video
-        is being processed, how many are complete, and any errors with specific explanations.{" "}
-        <strong>Stay on the page while the job runs</strong> — the system is designed to handle crashes and
-        disconnects as a fallback, but active monitoring gives you the best experience.
+        <strong>Your own archive.</strong> Extract your own video playlist and export it as plain
+        Markdown, ready to feed into an assistant for a blog post, a newsletter or social content.
       </p>
 
-      <h2>Pricing: What&apos;s Actually Free and What Costs Credits</h2>
+      <h2>Exporting a whole playlist</h2>
 
       <p>
-        The first three videos with <strong>auto-captions</strong> in any playlist extraction are free.
-        From video four onwards, YouTube caption extraction costs 1 credit per video. AI Transcription always
-        costs 1 credit per minute regardless of position in the playlist.
-      </p>
-
-      <p><strong>Example 1: 20-video course, all auto-captions available</strong></p>
-      <ul>
-        <li>Videos 1–3 (YouTube captions): Free</li>
-        <li>Videos 4–20 (YouTube captions): 17 credits</li>
-        <li>Total: <strong>17 credits</strong> ({creditCostPhrase(17)})</li>
-      </ul>
-
-      <p><strong>Example 2: 20-video course, 5 videos without captions averaging 15 minutes each</strong></p>
-      <ul>
-        <li>Videos 1–3 (YouTube captions): Free</li>
-        <li>Videos 4–15 (YouTube captions): 12 credits</li>
-        <li>5 videos × AI Transcription × 15 min: 75 credits</li>
-        <li>Total: <strong>87 credits</strong> ({creditCostPhrase(87)})</li>
-      </ul>
-
-      <p><strong>Example 3: 19-video Harvard lecture series, all AI Transcription, 783 total minutes</strong></p>
-      <ul>
-        <li>All 19 videos via AI Transcription: 783 credits</li>
-        <li>Total: <strong>783 credits</strong> ({creditCostPhrase(783)}) — 13 hours of professional-grade transcription</li>
-      </ul>
-
-      <p>
-        That last example is real data from a test extraction of the Justice with Michael Sandel course by
-        Harvard University.
-      </p>
-
-      <h2>Error Handling and Retries</h2>
-
-      <p>
-        Videos that fail due to bot detection or timeout are retried once after a 30-second pause. The
-        retry succeeds for most temporary issues. If a video fails after both attempts, it&apos;s marked with a
-        specific error type in the completion screen — not a generic failure message. The completion screen
-        groups failures by type: bot detection, timeout, age-restricted, members-only, and so on.
-      </p>
-
-      <h2>Export Options After Extraction</h2>
-
-      <p>
-        Each extracted video becomes an individual transcript in your library. Export options are the same
-        as any other transcript: TXT, Markdown with YAML frontmatter, SRT, VTT, CSV, JSON, or
-        RAG-optimized JSON.
+        Every video becomes its own transcript in your library, and each one exports in{" "}
+        {spellCount(EXPORT_FORMAT_COUNT)} formats: plain text, Markdown, SRT, VTT, CSV, JSON and a
+        RAG-optimised JSON for AI pipelines. See the{" "}
+        <Link href="/articles/transcript-export-formats">export formats</Link> reference for the schema
+        and what each one is for.
       </p>
 
       <p>
-        For bulk export of the entire playlist: select all relevant transcripts in your library, choose a
-        format, and download a ZIP file with one file per video. Consistent naming:{" "}
-        <code>video-title_video-id.ext</code>.
+        To take a whole playlist at once, select the transcripts in your library, pick a format, and
+        download a ZIP with one file per video, named consistently as{" "}
+        <code>video-title_video-id.ext</code>. For AI pipelines the RAG JSON export can be merged into a
+        single array across the playlist, so a course or a channel becomes one dataset rather than a
+        folder of files.
       </p>
+
+      <h2>Try it on a playlist</h2>
 
       <p>
-        For AI pipelines, RAG JSON export is available per video or in bulk, with a merge option that
-        combines all playlist transcripts into a single JSON array. See{" "}
-        <Link href="/articles/transcript-export-formats">the export formats reference</Link> for the
-        schema and integration examples.
+        The way to judge this is to run a real playlist through it. A free account includes{" "}
+        {FREE_TIER.WELCOME_CREDITS} credits, enough to pull captions from a playlist and try AI
+        transcription on a video or two, with no subscription and no card. For how the wider pipeline
+        fits together, see <Link href="/docs/how-indxr-works">how INDXR works</Link>.
       </p>
 
-      <h2>Common Bulk Extraction Use Cases</h2>
-
-      <p>
-        <strong>Course transcription:</strong> Extract all lectures from an educational playlist. Export
-        each as Markdown with YAML frontmatter for an Obsidian or Notion knowledge base, or as a merged
-        CSV for analysis.
-      </p>
-
-      <p>
-        <strong>Research corpus:</strong> Download transcripts from a conference archive, a speaker&apos;s body
-        of work, or a topic-specific playlist. The merged CSV or merged RAG JSON gives you a single,
-        queryable dataset.
-      </p>
-
-      <p>
-        <strong>Content repurposing:</strong> Extract your own video playlist and export as plain Markdown
-        — ready to feed into an AI assistant for blog post generation, newsletter writing, or social
-        content.
-      </p>
-
-      <p>
-        <strong>AI knowledge base:</strong> Extract a playlist as RAG-optimized JSON and load into a
-        vector database for semantic search. See{" "}
-        <Link href="/articles/youtube-transcripts-vector-database">YouTube Transcripts in Vector Databases</Link> for a
-        complete implementation guide.
-      </p>
-
-      <h2>Playlist Size and Practical Limits</h2>
-
-      <p>
-        INDXR.AI processes up to 500 videos per job. For larger playlists, split into batches of up to
-        500 videos — all results accumulate in the same library. Processing time scales with content: a
-        playlist of 20 short videos finishes faster than 20 hour-long lectures. The real-time progress
-        tracker shows you exactly where the job stands at all times.
-      </p>
-
-      <p>
-        To start a playlist extraction, paste any YouTube playlist URL in the Playlist tab
-        on the <Link href="/transcribe">transcript generator</Link>. For credit costs
-        and package options, see the <Link href="/pricing">pricing page</Link>. For a full overview of
-        the extraction pipeline, see <Link href="/docs/how-indxr-works">how INDXR.AI works</Link>.
-      </p>
+      <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <Link href="/signup">
+          <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
+            Create a free account
+          </button>
+        </Link>
+        <Link
+          href="/pricing"
+          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+        >
+          See pricing →
+        </Link>
+      </div>
     </ToolPageTemplate>
   )
 }
