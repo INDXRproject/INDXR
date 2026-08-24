@@ -65,6 +65,13 @@ GATEWAY_TIMEOUT_S = float(os.getenv("SUMMARY_GATEWAY_TIMEOUT_S", "120"))
 # .thinking_budget` werkt en verlaagt reasoning_tokens (`reasoning_effort`/`thinking_level` geeft 400).
 SECTION_THINKING_BUDGET = int(os.getenv("SUMMARY_SECTION_THINKING_BUDGET", "2048"))
 
+# Denkbudget voor stap 1 (structuur). Default None = géén budget zetten (historisch gedrag: de
+# structuur-call liet het denken ongebounded). Env `SUMMARY_STRUCTURE_THINKING_BUDGET` (incl. "0")
+# activeert een plafond — die call leest het VOLLEDIGE transcript en is bij lange video's de duurste
+# enkele call, dus een budget hier snijdt het meest in de kosten. Wordt gemeten (ADR-098-tuning).
+_stb = os.getenv("SUMMARY_STRUCTURE_THINKING_BUDGET")
+STRUCTURE_THINKING_BUDGET = int(_stb) if _stb is not None and _stb != "" else None
+
 # Model-onafhankelijk vangnet (ADR-090): een sectie geldt als AFGEKAPT (dus de call is mislukt, wat het
 # model ook teruggaf) als de inhoud niet op een zin-afsluitend teken eindigt, óf onredelijk kort is
 # t.o.v. het fragment. Bij afkapping: opnieuw (zelfde model), dan het fallback-model voor die ene sectie.
@@ -128,7 +135,7 @@ def _clamp(v: int, lo: int, hi: int) -> int:
 # uitwerking blijft meeschalen met de gesproken inhoud). Bovengrens bestaat bewust om kosten en de
 # per-model-per-60s gateway-rate-limit te begrenzen (ADR-090-addendum).
 SECTION_CAP = int(os.getenv("SUMMARY_SECTION_CAP", "40"))
-SECTION_MINUTES = 8.0  # ~1 hoofdstuk per 8 minuten gesproken inhoud
+SECTION_MINUTES = float(os.getenv("SUMMARY_SECTION_MINUTES", "8.0"))  # ~1 hoofdstuk per N min gesproken inhoud
 
 
 def section_bounds(duration_seconds: float) -> tuple:
@@ -417,6 +424,10 @@ async def _run_structure(client, api_key, transcript_data, min_sections, max_sec
         "fallbacks": [{"model": STRUCTURE_FALLBACK}],
         "fallback_config": {"retry": True, "depth": 1},
     }
+    # Denkbudget alleen zetten wanneer geconfigureerd (default None = ongewijzigd) en het primaire model
+    # Gemini is; het Sonnet-fallback-model negeert google.thinking_config.
+    if STRUCTURE_THINKING_BUDGET is not None and STRUCTURE_MODEL.startswith("gemini"):
+        payload["extra_body"] = {"google": {"thinking_config": {"thinking_budget": STRUCTURE_THINKING_BUDGET}}}
     call = await _gateway_call(client, api_key, payload)
     structured = json.loads(_strip_json_fences(call["content"]))
     return {"structured": structured, "call": call, "total_seconds": total_seconds}

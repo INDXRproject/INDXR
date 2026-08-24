@@ -195,3 +195,86 @@ _Spreiding afgekapte hoofdstukken over 2 runs: min 0 / max 0 / totaal 0._
 
 
 ---
+
+## KOSTEN-TUNING (ADR-098-vervolg) — 2026-08-24 14:03 UTC
+
+Drie knoppen op dezelfde twee lange video's; per instelling kost + kwaliteit. Pipeline-stappen rechtstreeks aangeroepen (geen ai_summary/credits/usage-log). Tarief EU in-region 0,33/2,75 USD/1M ×0,92. 'afgekapt' = secties onopgelost ná alle pogingen (moet 0). 'uitw./min' = output-woorden / videominuten (uitwerkingsdichtheid). Reproduceren via env `SUMMARY_STRUCTURE_THINKING_BUDGET` / `SUMMARY_SECTION_THINKING_BUDGET` / `SUMMARY_SECTION_MINUTES`.
+
+### video `hCepzIrkbDE` (`538de5ec-46c2-45d6-878f-f0235d8c243f`) · 271:29 · transcript 49882 woorden
+
+| instelling | hoofdst. | splits | **totaal €** | stap1 € | stap2 € | s1 denk-tok | s2 denk-tok | out-woorden | ratio | uitw./min | afgekapt | herstel | dekking | s1 finish | wall |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:--:|--:|--:|---|--:|
+| BASELINE s1=unbounded s2=2048 secmin=8 | 21 | 0 | **€0.2009** | €0.0445 | €0.1564 | 2135 | 35059 | 12308 | 0.2467 | 45.3 | 0 | 0 | 99.9% | stop | 149.9s |
+| s2=512 | 14 | 0 | **€0.1539** (-23%) | €0.0440 | €0.1099 | 2629 | 21752 | 9206 | 0.1846 | 33.9 | 0 | 0 | 99.9% | stop | 116.7s |
+| s2=0 | 15 | 1 | **€0.1588** (-21%) | €0.0400 | €0.1187 | 956 | 23875 | 9070 | 0.1818 | 33.4 | **1** | 0 | 99.9% | stop | 90.3s |
+| s1=2048 | 19 | 1 | **€0.1909** (-5%) | €0.0508 | €0.1401 | 4784 | 26707 | 11853 | 0.2376 | 43.7 | **1** | 2 | 100.0% | stop | 150.9s |
+| s1=512 | 18 | 1 | **€0.1780** (-11%) | €0.0484 | €0.1297 | 4062 | 25931 | 10863 | 0.2178 | 40.0 | 0 | 1 | 99.9% | stop | 124.7s |
+| s1=256 | 19 | 0 | **€0.1549** (-23%) | €0.0473 | €0.1076 | 3556 | 16422 | 11940 | 0.2394 | 44.0 | 0 | 0 | 100.0% | stop | 109.5s |
+| s1=0 | 19 | 0 | **€0.1644** (-18%) | €0.0465 | €0.1179 | 3159 | 22495 | 10623 | 0.213 | 39.1 | 0 | 0 | 99.9% | stop | 184.5s |
+| secmin=12 | 21 | 3 | **€0.1886** (-6%) | €0.0440 | €0.1446 | 2180 | 29024 | 13021 | 0.261 | 48.0 | 0 | 0 | 99.9% | stop | 143.0s |
+| secmin=16 | 9 | 2 | **€0.1399** (-30%) | €0.0414 | €0.0985 | 2181 | 17531 | 8842 | 0.1773 | 32.6 | 0 | 0 | 100.0% | stop | 127.0s |
+
+### video `4J5CdUmBx7A` (`34092b73-f98d-4a93-9550-9099b8e4fc5b`) · 270:21 · transcript 49643 woorden
+
+| instelling | hoofdst. | splits | **totaal €** | stap1 € | stap2 € | s1 denk-tok | s2 denk-tok | out-woorden | ratio | uitw./min | afgekapt | herstel | dekking | s1 finish | wall |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:--:|--:|--:|---|--:|
+| BASELINE s1=unbounded s2=2048 secmin=8 | 26 | 2 | **€0.2333** | €0.0455 | €0.1878 | 1721 | 38959 | 17839 | 0.3593 | 66.0 | 0 | 0 | 100.0% | stop | 165.0s |
+| s2=512 | 31 | 2 | **€0.2624** (+12%) | €0.0542 | €0.2082 | 4807 | 41565 | 21588 | 0.4349 | 79.9 | 0 | 0 | 100.0% | stop | 213.1s |
+| s2=256 | 31 | 5 | **€0.2898** (+24%) | €0.0494 | €0.2403 | 2752 | 52151 | 20847 | 0.4199 | 77.1 | **1** | 3 | 100.0% | stop | 207.0s |
+| s2=0 | 25 | 2 | **€0.2292** (-2%) | €0.0475 | €0.1817 | 2302 | 30737 | 20697 | 0.4169 | 76.6 | 0 | 0 | 99.9% | stop | 273.1s |
+| s1=2048 | 30 | 5 | **€0.2802** (+20%) | €0.0523 | €0.2279 | 3944 | 46216 | 23030 | 0.4639 | 85.2 | 0 | 0 | 99.9% | stop | 214.7s |
+| s1=512 | 34 | 4 | **€0.2855** (+22%) | €0.0499 | €0.2356 | 2493 | 50026 | 22033 | 0.4438 | 81.5 | 0 | 1 | 100.0% | stop | 222.0s |
+| s1=0 | 20 | 3 | **€0.2359** (+1%) | €0.0501 | €0.1858 | 3956 | 37406 | 17941 | 0.3614 | 66.4 | 0 | 1 | 100.0% | stop | 172.2s |
+| secmin=12 | 18 | 1 | **€0.2166** (-7%) | €0.0473 | €0.1692 | 2988 | 32432 | 17563 | 0.3538 | 65.0 | 0 | 0 | 100.0% | stop | 176.1s |
+| secmin=16 | 17 | 2 | **€0.1970** (-16%) | €0.0508 | €0.1461 | 4705 | 25974 | 15912 | 0.3205 | 58.9 | 0 | 0 | 100.0% | stop | 183.0s |
+
+---
+
+## KOSTEN-TUNING — BEVINDINGEN & AANBEVELING (2026-08-24)
+
+**Kernbevinding: de kost wordt gedreven door output-volume (hoofdstukken × uitwerking), niet door het denkbudget.** Het hoofdstukaantal is sterk ruizig (9–34 voor dezelfde video, model kiest binnen [min,max] op topic-shifts), en de **kost per 1000 output-woorden is vlak (~€12–17/1k) over álle instellingen**. Het denkbudget verandert de kostenefficiëntie dus niet — de zichtbare "besparingen" in de totaalkolom zijn hoofdstuk-ruis, geen budget-effect.
+
+**Per knop:**
+
+- **Stap-2-denkbudget (2048 → 512 → 256 → 0): inerte/zwakke knop.** Geen betrouwbare kost/woord-reductie. De denk-tokens per hoofdstuk dalen nauwelijks (V1: 1670→1554→1592 tok/hfdst bij 2048/512/0) — de gateway honoreert het budget niet als harde kost-hendel. **Budget 0 én 256 veroorzaakten elk 1 afkapping** (V1 s2=0, V2 s2=256) — precies het gedrag dat ADR-090 net repareerde. → **Houd 2048. Geen besparing beschikbaar, verlagen herbreekt de truncatiefix.**
+- **Stap-1-denkbudget (geen/2048/512/256/0): geen besparing.** De stap-1-kost is €0,044–0,052 ongeacht de instelling — die call wordt gedomineerd door het LEZEN van het volledige transcript (~65k input-tokens ≈ €0,020), niet door denken (het denken is al ~2000 tok, en het budget wordt niet gehonoreerd: "256" gaf méér denk-tokens dan unbounded). Structuur-kwaliteit bleef gelijk (dekking 99,9–100% overal). → **Voeg géén stap-1-budget toe: geen baat, alleen truncatierisico.** (De env-knop `SUMMARY_STRUCTURE_THINKING_BUDGET` blijft bestaan voor reproduceerbaarheid, default None = ongewijzigd.)
+- **Hoofdstuk-ondergrens (SECTION_MINUTES 8 → 12 → 16): de enige echte kost-hendel, maar niet gratis.** `secmin=16` → −16 tot −30% kost, 0 afkapping, **maar de uitwerking/min daalt 11–28%** (V1 45,3→32,6; minder maar bredere hoofdstukken = minder totale diepte). `secmin=12` → −6 tot −7% kost terwijl de uitwerking/min ~gelijk blijft (V1 45,3→48,0 mét méér woorden; V2 66,0→65,0) — de splitsingsregel houdt de dichtheid binnen hoofdstukken op peil, je hebt alleen minder hoofdstukkoppen. Boven secmin≈12 gaat het ten koste van diepte.
+
+**Goedkoopste kwaliteit-behoudende combinatie:** huidige denkbudgetten (s2=2048, geen s1-budget) **+ `secmin=12`**. Dat trimt ~6–7% zónder de uitwerkingsdichtheid te raken; verder gaan (secmin≥16) verlaagt de diepte. **Nieuwe 4-uur-kostprijs: ~€0,20–0,22** (mediaan, van ~€0,21–0,23), met een tail tot ~€0,42 op output-rijke/fallback-runs. Er is geen verspild denken om weg te snijden op deze gateway; de kostenstijging van de truncatiefix is echte uitwerking, geen ruis.
+
+**Conclusie: de kost kan hooguit ~6% veilig omlaag — niet genoeg om lange video's op het goedkoopste pakket gezond te maken. Een formule-aanpassing is daarvoor nodig.**
+
+### Marge @ Power (goedkoopste, €0,02/credit) — netto na 21% btw
+
+Netto opbrengst/credit = €0,02 / 1,21 = €0,01653. Kost = gemeten (mediaan; tail = p99/worst ~€0,42 voor 4u).
+
+**Huidige formule (+1 credit per 20 min boven 30 min):**
+
+| duur | credits | bruto € | netto € | kost mediaan | marge mediaan | % netto | tail-kost | marge tail |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 30 min | 3 | 0,060 | 0,0496 | 0,011 | +0,039 | 78% | 0,062 | −0,012 |
+| 60 min | 5 | 0,100 | 0,0826 | 0,025 | +0,058 | 70% | 0,055 | +0,028 |
+| 90 min | 6 | 0,120 | 0,0992 | 0,060 | +0,039 | 40% | 0,090 | +0,009 |
+| 120 min | 8 | 0,160 | 0,1322 | 0,100 | +0,032 | 24% | 0,150 | −0,018 |
+| 180 min | 11 | 0,220 | 0,1818 | 0,150 | +0,032 | 18% | 0,220 | −0,038 |
+| 240 min | 14 | 0,280 | 0,2314 | 0,210 | +0,021 | **9%** | 0,420 | **−0,189** |
+| 270 min | 15 | 0,300 | 0,2479 | 0,230 | +0,018 | **7%** | 0,420 | **−0,172** |
+
+→ Marge gezond voor korte video's (78%) maar **stort in tot 7–9% (mediaan) en wordt negatief op de tail vanaf ~2u**. Niet gezond over het lange-duur-bereik.
+
+**Voorstel (+1 credit per 10 min boven 30 min) — de formule die wél gezond is:**
+
+| duur | credits | bruto € | netto € | kost mediaan | marge mediaan | % netto | tail-kost | marge tail |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 30 min | 3 | 0,060 | 0,0496 | 0,011 | +0,039 | 78% | 0,062 | −0,012 |
+| 60 min | 6 | 0,120 | 0,0992 | 0,025 | +0,074 | 75% | 0,055 | +0,044 |
+| 120 min | 12 | 0,240 | 0,1983 | 0,100 | +0,098 | 50% | 0,150 | +0,048 |
+| 180 min | 18 | 0,360 | 0,2975 | 0,150 | +0,148 | 50% | 0,220 | +0,078 |
+| 240 min | 24 | 0,480 | 0,3967 | 0,210 | +0,187 | 47% | 0,420 | −0,023 |
+| 270 min | 27 | 0,540 | 0,4463 | 0,230 | +0,216 | 48% | 0,420 | +0,026 |
+
+→ **~47–50% netto marge over het hele bereik, tail rond break-even.** Verdubbelt de credit-kost van lange video's (4u: 14→24) — fors, maar gedekt door de gemeten kost. Een lichtere variant (+1/12 min: 4u=21 cr) geeft ~40% mediaan maar houdt de tail nog licht negatief bij 4u+ (−€0,04 tot −€0,07). Alternatief zonder formulewijziging: het Power-tarief minder diep korten, of lange samenvattingen op Power als loss-leader accepteren (hogere pakketten Try/Starter/Plus zijn wél gezond).
+
+**Aanbeveling: pas de denkbudgetten NIET aan (inert + risico); optioneel `secmin=12` voor ~6% trim; en pas voor gezonde marge de creditformule aan naar +1 credit per 10 min boven 30 min. Creditformule nog niet gewijzigd — dit is de onderbouwing.**
+
+---

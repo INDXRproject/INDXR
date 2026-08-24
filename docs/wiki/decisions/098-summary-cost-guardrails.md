@@ -99,3 +99,13 @@ wanneer niemand kijkt.
 - Lange video's op het goedkoopste pakket zijn zichtbaar verliesgevend; of dat een prijsaanpassing vergt
   is een aparte beslissing — het paneel levert nu de data.
 - **Wat rood betekent + wat te doen:** zie `docs/wiki/operations/monitoring.md` (sectie Summary cost).
+
+## Addendum 1 (2026-08-24): kosten-tuning lange samenvattingen — onderzoek vóór prijsaanpassing
+
+Vraag: kan de kostprijs van lange samenvattingen omlaag vóór we de prijs aanpassen? Drie knoppen gemeten op twee ~4,5u-video's (10 instellingen × 2 = 20 runs; volledige tabellen + marge-analyse in `docs/wiki/testing/summary-health-2026-08-24.md`, reproduceerbaar via `SUMMARY_STRUCTURE_THINKING_BUDGET` / `SUMMARY_SECTION_THINKING_BUDGET` / `SUMMARY_SECTION_MINUTES`).
+
+**Uitkomst:**
+- **Denkbudget (stap 1 én stap 2) is een inerte/zwakke kost-hendel op deze gateway.** Kost/1000-output-woorden is vlak (~€12–17/1k) over álle budgetten; de gateway honoreert `thinking_budget` niet als harde cap (budget "256" gaf soms méér denk-tokens dan unbounded). Budget 0/256 herintroduceerde afkapping (het ADR-090-gedrag). → **Budgetten NIET verlaagd; géén stap-1-budget toegevoegd.** De twee env-knoppen zijn wél toegevoegd (default-behoudend: `SECTION_MINUTES` nu env-tunable; `STRUCTURE_THINKING_BUDGET` default None = ongewijzigd) puur voor meetbaarheid/reproductie.
+- **Enige echte hendel = hoofdstuk-ondergrens (`SECTION_MINUTES`), maar niet gratis:** secmin=16 → −16 tot −30% kost maar uitwerking/min −11 tot −28% (diepteverlies); secmin=12 → −6 tot −7% mét gelijke uitwerkingsdichtheid. Goedkoopste kwaliteit-behoudende combinatie = huidige budgetten + optioneel secmin=12. **Gemeten 4-uur-kostprijs blijft ~€0,20–0,22 (mediaan), tail ~€0,42.** Geen verspild denken om weg te snijden — de truncatiefix-kost is echte uitwerking.
+
+**Marge-gevolg (Power €0,02/cr, netto na 21% btw):** de huidige formule (+1 credit/20 min boven 30 min) geeft 78% marge op 30 min maar zakt naar **7–9% (mediaan) en negatief op de tail vanaf ~2u**. Omdat de kost níet omlaag kan, is een formule-aanpassing nodig voor gezonde marge over het hele duurbereik. **Voorstel: +1 credit per 10 min boven 30 min** → ~47–50% netto marge, tail rond break-even (4u: 14→24 credits). Lichter alternatief +1/12 min (4u→21 cr) laat de 4u+-tail licht negatief. **Creditformule bewust NOG NIET gewijzigd — dit addendum is de onderbouwing voor die beslissing.**
