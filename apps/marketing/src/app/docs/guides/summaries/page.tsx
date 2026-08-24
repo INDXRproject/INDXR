@@ -7,16 +7,17 @@ import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
-import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
+import { CREDIT_COSTS, AI_SUMMARY_BASE_MINUTES, AI_SUMMARY_STEP_MINUTES, summaryCreditCost } from "@indxr/shared/lib/pricing"
 import { summaryModelName } from "@indxr/shared/lib/models"
 
-const summaryCost = CREDIT_COSTS.AI_SUMMARY
+const baseCost = CREDIT_COSTS.AI_SUMMARY
+const oneHourCost = summaryCreditCost(60 * 60)
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/summaries" },
   title: "Summaries — INDXR.AI Docs",
   description:
-    "Turn a transcript into an AI summary with key points. A summary costs a flat 3 credits regardless of the video's length, is saved alongside the transcript, can be edited without losing the AI's version, and can be regenerated — which replaces the current summary.",
+    "Turn a transcript into an AI summary organised into chapters with clickable timestamps. A summary starts at 3 credits and scales with the video's length, is saved alongside the transcript, and can be regenerated — which replaces the current summary.",
   robots: { index: true, follow: true },
 }
 
@@ -42,46 +43,52 @@ export default function DocsSummariesPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Summaries</h1>
         <DefinitionLeadOpening>
-          A summary is a short AI-written overview of a transcript, with the key points pulled out. It
-          turns an hour of talking into something you can read in a minute — useful for deciding whether
-          a video is worth watching in full, or for capturing the gist for your notes. You generate it
-          from a transcript you already have.
+          A summary is an AI-written breakdown of a transcript: a short overview of the whole video,
+          followed by chapters — each with its own heading, a clickable timestamp that jumps the player
+          to that moment, and worked-out notes of what was said. It turns an hour of talking into
+          something you can skim in a minute, to decide whether a video is worth watching in full or to
+          capture the gist for your notes. You generate it from a transcript you already have.
         </DefinitionLeadOpening>
 
-        <AnchorHeading as="h2">A summary costs a flat 3 credits</AnchorHeading>
+        <AnchorHeading as="h2">What a summary costs</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Every summary costs {summaryCost} credits, whatever the length of the video — a five-minute
-          clip and a two-hour talk cost the same. If generation fails, the credits are refunded
-          automatically.
+          A summary costs {baseCost} credits for a video up to {AI_SUMMARY_BASE_MINUTES} minutes, then
+          1 more credit for each additional {AI_SUMMARY_STEP_MINUTES} minutes (or part of them) — so the
+          price scales with how much there is to read. A {AI_SUMMARY_BASE_MINUTES}-minute video costs
+          {" "}{summaryCreditCost(AI_SUMMARY_BASE_MINUTES * 60)} credits, a one-hour talk {oneHourCost}{" "}
+          credits, and a four-hour video {summaryCreditCost(4 * 60 * 60)} credits. If generation fails,
+          the credits are refunded automatically.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Summaries run on {summaryModelName()} — an AI model reached through an EU-based gateway, so
           the transcript text stays in the EU while it&apos;s summarised.
         </p>
 
-        <AnchorHeading as="h2">Where it&apos;s saved, and editing it</AnchorHeading>
+        <AnchorHeading as="h2">Where it&apos;s saved</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           The summary is saved with its transcript, so it&apos;s there whenever you open it in your
-          library. You can edit the summary text, and — as with the transcript itself — your edits are
-          kept separately from the AI&apos;s original version, which stays intact underneath.
+          library. It&apos;s read-only — to refresh it after editing the transcript, or to get a
+          different take, you regenerate it rather than editing the text in place.
         </p>
 
         <AnchorHeading as="h2">Regenerating replaces the current summary</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          You can generate a fresh summary for the same transcript. Regenerating costs another
-          {" "}{summaryCost} credits and <strong>overwrites</strong> the current summary — the previous
-          one is not kept. INDXR asks you to confirm before it does.
+          You can generate a fresh summary for the same transcript. Regenerating costs the same as the
+          first time — {baseCost} credits plus the length-based amount above — and{" "}
+          <strong>overwrites</strong> the current summary; the previous one is not kept. INDXR asks you
+          to confirm before it does.
         </p>
         <DocsCallout variant="costs-credits">
-          Regenerating is a new {summaryCost}-credit charge and replaces what&apos;s there. If
-          you&apos;ve edited a summary you want to keep, copy it out before regenerating.
+          Regenerating is a fresh credit charge (the same length-based amount) and replaces what&apos;s
+          there. If there&apos;s a summary you want to keep, copy it out before regenerating.
         </DocsCallout>
 
         <SourcesBlock
           sources={[
-            { publisher: "INDXR (own code)", supports: "flat 3-credit cost regardless of length, refund on failure", verifiedAgainst: "packages/shared/src/lib/pricing.ts (AI_SUMMARY); backend/main.py:1145-1156,1249,1179" },
+            { publisher: "INDXR (own code)", supports: "cost of 3 credits up to 30 min, +1 per started 20 min after, refund on failure", verifiedAgainst: "packages/shared/src/lib/pricing.ts (summaryCreditCost); backend/credit_manager.py:90-108 (calculate_summary_cost)" },
+            { publisher: "INDXR (own code)", supports: "two-step chapters + clickable timestamps, read-only", verifiedAgainst: "backend/summary_pipeline.py; apps/app/src/components/library/AiSummaryView.tsx; ADR-090" },
             { publisher: "INDXR (own code)", supports: "model + EU gateway", verifiedAgainst: "packages/shared/src/lib/models.ts:41-43 (summaryModelName); backend/main.py:1126-1132" },
-            { publisher: "INDXR (own code)", supports: "saved with transcript, edited kept separately, regenerate overwrites", verifiedAgainst: "backend/main.py:1257-1269; apps/app/src/components/library/AiSummaryView.tsx:87-96; TranscriptViewer.tsx:1127" },
+            { publisher: "INDXR (own code)", supports: "saved with transcript, regenerate overwrites", verifiedAgainst: "backend/summary_pipeline.py (run_summary_reservation_aware); apps/app/src/components/library/TranscriptViewer.tsx" },
           ]}
         />
         <RelatedTopicsList

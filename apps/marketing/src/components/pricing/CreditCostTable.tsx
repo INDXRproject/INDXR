@@ -4,7 +4,7 @@
 "use client"
 
 import { useState } from "react"
-import { PACKAGES, CREDIT_COSTS, PricingPackage, costInTier, formatEur } from "@indxr/shared/lib/pricing"
+import { PACKAGES, PricingPackage, costInTier, formatEur, summaryCreditCost } from "@indxr/shared/lib/pricing"
 import { STORAGE_BLOCK_MB, STORAGE_BLOCK_COST_CREDITS } from "@indxr/shared/lib/storage"
 
 const TASKS = [
@@ -12,7 +12,7 @@ const TASKS = [
   { name: "AI Transcription, 30 min", credits: 30 },
   { name: "AI Transcription, 1 hour", credits: 60 },
   { name: "Playlist, 20 videos (YouTube captions)", credits: 17 }, // 20 - 3 free
-  { name: "AI Summary", credits: CREDIT_COSTS.AI_SUMMARY },
+  { name: "AI Summary, 1-hour video", credits: summaryCreditCost(60 * 60) },
   { name: "RAG JSON export, 1-hour video", credits: 6 }, // 60 min / 10
   { name: "1-hour AI Transcription + RAG JSON", credits: 66 }, // 60 + 6
   // Storage is also a credit spend (ADR-078): a permanent library-space block. Derived from storage.ts.
@@ -79,7 +79,7 @@ export function CreditCostTable() {
         </table>
       </div>
       <p className="text-xs text-[var(--fg-muted)] mt-3 text-center">
-        Playlist: first 3 caption videos free, then 1 credit/video. AI transcription is 1 credit/min (no free videos). Every account starts with 100 MB of library storage free; the row above is for buying more. All prices VAT included.
+        Playlist: first 3 caption videos free, then 1 credit/video. AI transcription is 1 credit/min (no free videos). AI summary is 3 credits up to 30 min, then +1 per 20 min. Every account starts with 100 MB of library storage free; the row above is for buying more. All prices VAT included.
       </p>
     </div>
   )

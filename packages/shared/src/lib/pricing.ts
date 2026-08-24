@@ -99,10 +99,26 @@ export const VALID_PLAN_IDS: ReadonlySet<string> = new Set(PACKAGES.map((p) => p
 export const CREDIT_COSTS = {
   AI_TRANSCRIPTION_PER_MIN: 1,
   PLAYLIST_VIDEO_AUTO_CAPTIONS: 1, // per video voorbij eerste 3 free
-  AI_SUMMARY: 3,
+  AI_SUMMARY: 3, // BASISkost (t/m AI_SUMMARY_BASE_MINUTES); NIET vlak — zie summaryCreditCost (ADR-090)
   RAG_JSON_PER_10MIN: 1, // 1 credit per 10 min video (ADR-058, was per 15 min); formule ⌈duur/600⌉ min 1
   SINGLE_VIDEO_AUTO_CAPTIONS: 0, // altijd gratis
 } as const
+
+// AI-samenvatting-creditregel (ADR-090, kostenmeting-addendum): AI_SUMMARY credits t/m 30 min
+// videoduur, daarna +1 per BEGONNEN 20 min. Deterministisch uit de duur → reservering == afrekening.
+export const AI_SUMMARY_BASE_MINUTES = 30
+export const AI_SUMMARY_STEP_MINUTES = 20
+
+// Credits voor een AI-samenvatting van een video van `durationSeconds`. ENIGE TS-bron van de
+// summary-creditkost — spiegelt de backend `calculate_summary_cost` exact (financieel pad).
+// Onbekende/0 duur → basiskost (mirror van de backend-baseline).
+export function summaryCreditCost(durationSeconds: number): number {
+  if (!durationSeconds || durationSeconds <= 0) return CREDIT_COSTS.AI_SUMMARY
+  return (
+    CREDIT_COSTS.AI_SUMMARY +
+    Math.max(0, Math.ceil((durationSeconds - AI_SUMMARY_BASE_MINUTES * 60) / (AI_SUMMARY_STEP_MINUTES * 60)))
+  )
+}
 
 // Free-tier limits
 export const FREE_TIER = {

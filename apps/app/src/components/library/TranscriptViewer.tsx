@@ -72,7 +72,7 @@ import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
 import { cn } from "@indxr/shared/lib/utils";
 import { NocookieYouTubePlayer, type YouTubePlayerHandle } from "./NocookieYouTubePlayer";
-import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "@indxr/shared/lib/pricing";
+import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize, summaryCreditCost } from "@indxr/shared/lib/pricing";
 import {
   generateTxt,
   generateSrt,
@@ -378,9 +378,9 @@ export function TranscriptViewer({
       ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
       : 0);
   const ragCost = Math.max(1, Math.ceil(derivedDuration / 600));
-  // AI-summary kost (ADR-090-addendum): 3 t/m 30min, daarna +1 per begonnen 20min. MOET exact de
-  // backend-formule calculate_summary_cost spiegelen (financieel pad: weergave == afgerekend bedrag).
-  const summaryCost = 3 + Math.max(0, Math.ceil((derivedDuration - 1800) / 1200));
+  // AI-summary kost (ADR-090-addendum): 3 t/m 30min, daarna +1 per begonnen 20min. Gedeelde bron
+  // summaryCreditCost spiegelt de backend calculate_summary_cost (financieel pad: weergave == bedrag).
+  const summaryCost = summaryCreditCost(derivedDuration);
 
   // Mark as viewed on mount if not already viewed
   useEffect(() => {
