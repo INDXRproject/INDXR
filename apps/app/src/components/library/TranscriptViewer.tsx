@@ -378,7 +378,7 @@ export function TranscriptViewer({
       ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration
       : 0);
   const ragCost = Math.max(1, Math.ceil(derivedDuration / 600));
-  // AI-summary kost (ADR-090-addendum): 3 t/m 30min, daarna +1 per begonnen 20min. Gedeelde bron
+  // AI-summary kost (ADR-098 Add.2): 3 t/m 30min, daarna +1 per begonnen 10min. Gedeelde bron
   // summaryCreditCost spiegelt de backend calculate_summary_cost (financieel pad: weergave == bedrag).
   const summaryCost = summaryCreditCost(derivedDuration);
 

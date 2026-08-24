@@ -179,11 +179,13 @@ async def main_async(v1, v2, one):
     return all_blocks
 
 
-def _write(blocks):
+def _write(blocks, base_settings):
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = REPORT_DIR / f"summary-health-{date.today().isoformat()}.md"
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     header = (f"\n## KOSTEN-TUNING (ADR-098-vervolg) — {stamp}\n\n"
+              f"{base_settings}_(De sweep hieronder OVERSCHRIJFT deze baseline per rij — zie de "
+              "instelling-kolom.)_\n\n"
               "Drie knoppen op dezelfde twee lange video's; per instelling kost + kwaliteit. Pipeline-stappen "
               "rechtstreeks aangeroepen (geen ai_summary/credits/usage-log). Tarief EU in-region 0,33/2,75 "
               "USD/1M ×0,92. 'afgekapt' = secties onopgelost ná alle pogingen (moet 0). 'uitw./min' = "
@@ -203,8 +205,9 @@ def main():
     ap.add_argument("--video2", default=VIDEO2)
     ap.add_argument("--one", action="store_true", help="alleen video1 (sanity)")
     a = ap.parse_args()
+    base_settings = sp.settings_md()  # vastleggen VÓÓR de sweep de globals monkeypatcht
     blocks = asyncio.run(main_async(a.video1, a.video2, a.one))
-    path = _write(blocks)
+    path = _write(blocks, base_settings)
     print(f"\n→ rapport: {path}")
 
 

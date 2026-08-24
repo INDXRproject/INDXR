@@ -1,6 +1,18 @@
-# Summary-health metingen (ADR-090-truncatiefix)
+# Summary-health metingen (ADR-090/098)
 
-Elke run een tijdgestempelde sectie; nieuwste onderaan. Bron: `backend/summary_health.py`. Afgekapt = inhoud eindigt niet op een zin-teken of is onredelijk kort t.o.v. het fragment (`_section_ok`). Model/instelling: SECTION_MODEL=gemini-2.5-flash, FALLBACK=claude-haiku-4-5-20251001, thinking_budget=2048, min_ratio=0.04.
+Elke run een tijdgestempelde sectie; nieuwste onderaan. Bron: `backend/summary_health.py` (check/generate) + `backend/summary_cost_tuning.py` (kosten-tuning). Afgekapt = inhoud eindigt niet op een zin-teken of is onredelijk kort t.o.v. het fragment (`_section_ok`). **Elke run stempelt sinds ADR-098 zijn eigen instellingen** (via `summary_pipeline.settings_md()`), zodat runs — ook van verschillende dagen — naast elkaar te leggen zijn.
+
+## Instellingen waaronder de metingen van dit bestand draaiden
+
+De pijplijn-instellingen waren constant over álle metingen hieronder; alleen de **creditformule** wijzigde ná de tuning (17:00 UTC): de check/generate/tuning-runs draaiden onder de oude **/20**-formule, de marge-analyse rekent zowel oud (/20) als het doorgevoerde **/10** (ADR-098 Add.2). De kosten-tuning-sweep varieert bewust drie knoppen per rij (zie de instelling-kolom daar); de waarden hieronder zijn de baseline.
+
+- Modellen: structuur `gemini-2.5-flash` (fallback `claude-sonnet-4-6`), sectie `gemini-2.5-flash` (fallback `claude-haiku-4-5-20251001`)
+- Denkbudget: stap 1 = unbounded (geen), stap 2 = 2048
+- Hoofdstuk-ondergrens: 8 min/hoofdstuk (cap 40); sectie-min-ratio 0.04
+- Onderbreker: herstel > 50% / kost/min > €0,02 / absoluut > €1,50
+- Creditformule bij meting: **/20** (3 t/m 30 min, +1 per 20 min) → doorgevoerd naar **/10** (30/60/120/240 min = 3/6/12/24 cr)
+
+Dit was de eerste meetronde vóór de settings-stempel bestond; latere runs dragen hun eigen `settings_md()`-blok per sectie.
 
 ---
 

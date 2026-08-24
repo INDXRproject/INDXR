@@ -230,13 +230,13 @@ def _write_report(title, body_lines, verdict):
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     header = ""
     if not path.exists():
-        header = ("# Summary-health metingen (ADR-090-truncatiefix)\n\n"
+        header = ("# Summary-health metingen (ADR-090/098)\n\n"
                   "Elke run een tijdgestempelde sectie; nieuwste onderaan. Bron: `backend/summary_health.py`. "
                   "Afgekapt = inhoud eindigt niet op een zin-teken of is onredelijk kort t.o.v. het fragment "
-                  f"(`_section_ok`). Model/instelling: SECTION_MODEL={sp.SECTION_MODEL}, "
-                  f"FALLBACK={sp.SECTION_FALLBACK}, thinking_budget={sp.SECTION_THINKING_BUDGET}, "
-                  f"min_ratio={sp.SECTION_MIN_RATIO}.\n\n---\n")
-    block = f"\n## {title} — {stamp}\n\n{verdict}\n\n" + "\n".join(body_lines) + "\n\n---\n"
+                  "(`_section_ok`). Elke run stempelt de instellingen waaronder hij draaide, zodat runs "
+                  "(ook van verschillende dagen) naast elkaar te leggen zijn.\n\n---\n")
+    # Elke run stempelt zijn eigen instellingen (settings_md) → altijd vergelijkbaar met een latere run.
+    block = f"\n## {title} — {stamp}\n\n{sp.settings_md()}\n{verdict}\n\n" + "\n".join(body_lines) + "\n\n---\n"
     with open(path, "a", encoding="utf-8") as f:
         if header:
             f.write(header)

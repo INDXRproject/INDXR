@@ -120,6 +120,27 @@ def _estimate_cost_eur(calls: List[Dict]) -> float:
     return (in_tok / 1e6 * _LLM_USD_IN + out_tok / 1e6 * _LLM_USD_OUT) * _USD_EUR
 
 
+def settings_md() -> str:
+    """Markdown-blok met de pijplijn-instellingen zoals ze NU staan — modellen, denkbudgetten, hoofdstuk-
+    ondergrens, de onderbreker-grenzen en de creditformule (afgeleid uit `calculate_summary_cost`, niet
+    hardcoded). De meetscripts stempelen dit bij elke run in het gezondheidsrapport, zodat twee runs (ook
+    van verschillende dagen) naast elkaar te leggen zijn — zonder deze stempel is een tweede rapport niet
+    met het eerste te vergelijken (de fout die de vorige meetronde verloren deed gaan)."""
+    s1b = "unbounded (geen)" if STRUCTURE_THINKING_BUDGET is None else str(STRUCTURE_THINKING_BUDGET)
+    samples = " · ".join(f"{m}min={calculate_summary_cost(m * 60)}cr" for m in (30, 60, 120, 240))
+    return (
+        "**Instellingen bij deze run** (spiegelt `summary_pipeline` + `calculate_summary_cost` op dit moment):\n"
+        f"- Modellen: structuur `{STRUCTURE_MODEL}` (fallback `{STRUCTURE_FALLBACK}`), "
+        f"sectie `{SECTION_MODEL}` (fallback `{SECTION_FALLBACK}`)\n"
+        f"- Denkbudget: stap 1 = {s1b}, stap 2 = {SECTION_THINKING_BUDGET}\n"
+        f"- Hoofdstuk-ondergrens: {SECTION_MINUTES:g} min/hoofdstuk (cap {SECTION_CAP}); "
+        f"sectie-min-ratio {SECTION_MIN_RATIO:g}\n"
+        f"- Onderbreker: herstel > {SUMMARY_MAX_RECOVERY_SHARE:.0%} / kost/min > €{SUMMARY_MAX_EUR_PER_MIN:.4f} "
+        f"/ absoluut > €{SUMMARY_MAX_COST_EUR:.2f}\n"
+        f"- Creditformule: `calculate_summary_cost` → {samples}\n"
+    )
+
+
 # ── kleine helpers ────────────────────────────────────────────────────────────
 
 def _word_count(text: str) -> int:
