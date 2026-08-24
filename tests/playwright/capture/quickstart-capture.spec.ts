@@ -269,6 +269,66 @@ test('video-subtitles-srt', async ({ page }) => {
   await page.evaluate(() => document.getElementById('__srtblock')?.remove())
 })
 
+// ══ AI summary captures (real generated summary of the seeded Justice lecture) ══
+// The figures for /articles (summaries). Read a REAL AI summary (ADR-090: overview + chapters, each
+// with a clickable timestamp) generated on the seeded Justice transcript (videoId → amber timestamps).
+// See screenshot-machine.md → "AI-summary seed". Do NOT delete that summary/transcript.
+const SUMMARY_TRANSCRIPT_ID = '0798fa30-8056-4343-9e02-c50d93c00e4a' // Justice lecture (kBdfcR-8hEY)
+
+// Frame a TALL subject and shoot only its top `heightCss` px, in both themes. Unlike frameShot's
+// clone+maxHeight (a React re-render wipes an inline maxHeight on the live card), this builds the same
+// centred frame at the viewport origin and uses page.screenshot({clip}) — a fixed viewport region —
+// so the height is guaranteed regardless of the cloned content's own height. The bottom edge is a
+// clean cut (the subject continues below), which is the capture standard for a disproportionate one.
+async function topShot(page: Page, subject: Locator, name: string, heightCss: number) {
+  await subject.scrollIntoViewIfNeeded().catch(() => {})
+  await subject.evaluate((node, { FRAME_W, PAD }) => {
+    document.getElementById('__capframe')?.remove()
+    const wrap = document.createElement('div')
+    wrap.id = '__capframe'
+    Object.assign(wrap.style, {
+      position: 'fixed', left: '0px', top: '0px', zIndex: '2147483647',
+      width: FRAME_W + 'px', boxSizing: 'border-box', padding: PAD + 'px',
+      display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
+      background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '14px',
+      overflow: 'hidden',
+    })
+    const clone = node.cloneNode(true) as HTMLElement
+    clone.style.margin = '0'; clone.style.maxWidth = '100%'; clone.style.flex = '0 1 auto'
+    wrap.appendChild(clone)
+    document.body.appendChild(wrap)
+  }, { FRAME_W, PAD })
+  await page.locator('#__capframe').waitFor({ state: 'visible' })
+  for (const theme of ['light', 'dark'] as const) {
+    await setTheme(page, theme)
+    await page.waitForTimeout(150)
+    await page.screenshot({ path: path.join(OUT, `${name}-${theme}.png`), clip: { x: 0, y: 0, width: FRAME_W, height: heightCss } })
+  }
+  await page.evaluate(() => document.getElementById('__capframe')?.remove())
+  await setTheme(page, 'light')
+  console.log(`  ✔ ${name}-{light,dark}.png`)
+}
+
+// ── LIVE: the summary overview + the chapter list beneath it (clipped to one screen) ──
+test('summary-overview', async ({ page }) => {
+  await prep(page)
+  await page.goto(`/dashboard/library/${SUMMARY_TRANSCRIPT_ID}?tab=summary`)
+  await page.getByText('AI Summary', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  const card = page.locator('#ai-summary .rounded-xl').first()
+  await card.waitFor({ state: 'visible' })
+  // 1794 words would frame metres tall — show the overview + the first chapter heading + timestamp.
+  await topShot(page, card, 'summary-overview', 720)
+})
+
+// ── LIVE: one chapter — heading, its clickable timestamp, and the worked-out notes ──
+test('summary-chapter', async ({ page }) => {
+  await prep(page)
+  await page.goto(`/dashboard/library/${SUMMARY_TRANSCRIPT_ID}?tab=summary`)
+  const section = page.locator('#ai-summary section').first()
+  await section.waitFor({ state: 'visible', timeout: 30_000 })
+  await topShot(page, section, 'summary-chapter', 560)
+})
+
 // ── STUBBED: progress card (Downloading audio) ────────────────────────────────
 test('progress-downloading', async ({ page }) => {
   await prep(page)

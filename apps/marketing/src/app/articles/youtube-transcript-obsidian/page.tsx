@@ -4,6 +4,7 @@ import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplat
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcript-obsidian" },
@@ -204,9 +205,10 @@ SORT created DESC`}</code></pre>
       </p>
 
       <p>
-        <strong>Optional:</strong> before exporting, use INDXR.AI&apos;s AI Summary (3 credits) to
-        generate a summary and key points. Export the summary and the full transcript as separate
-        files, or paste the summary at the top of the note as your own writing.
+        <strong>Optional:</strong> before exporting, use INDXR.AI&apos;s AI Summary (from{" "}
+        {CREDIT_COSTS.AI_SUMMARY} credits) to generate a chapter-by-chapter summary. Export the summary
+        and the full transcript as separate files, or paste the summary at the top of the note as your
+        own writing.
       </p>
 
       <h2>Why Plugins Keep Breaking</h2>
