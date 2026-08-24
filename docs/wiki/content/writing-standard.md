@@ -120,6 +120,7 @@ Per regel: **[BRON]** en of het een **beslissing** of **aanname** is. `[TE VERIF
 
 ### C5 — Bronvermelding
 - **Elke externe feitelijke claim** (taal-tellingen, WER-tiers, subtitle-standaarden, vector-DB-compat) → een gelinkte bron in **`SourcesBlock`** (onderaan, boven RelatedTopicsList). **[ADR-073; reference-doc.md §8]**
+- **Een artikel waarvan élke claim eigen productgedrag is, krijgt GÉÉN bronnenblok.** Alleen extern verifieerbare claims rechtvaardigen bronnen; interne feiten (prijs, limieten, flow) horen bij een gedeelde constante of een interne link, niet bij een externe bronnenlijst. Voorbeeld: `youtube-video-summarizer` en `youtube-playlist-transcript` hebben geen `sources`, `video-to-text` wél (WER-tiers, taal-tabel). **[beslissing 2026-08-24]**
 - **SPEC-pagina's** noemen de code-bron via `verifiedAgainst` (het bestand waaruit de spec gedestilleerd is). **[docs-page-contract; ADR-073]**
 
 ### C6 — Schema per paginatype

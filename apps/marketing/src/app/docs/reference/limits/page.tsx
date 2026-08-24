@@ -16,12 +16,17 @@ import {
   STORAGE_BLOCK_COST_CREDITS,
   STORAGE_MAX_UPGRADES,
 } from "@indxr/shared/lib/storage"
+import {
+  MAX_PLAYLIST_VIDEOS_PER_JOB,
+  MAX_CONCURRENT_JOBS,
+  MAX_TRANSCRIPTION_HOURS,
+} from "@indxr/shared/lib/limits"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/limits" },
   title: "Limits — INDXR.AI Docs",
   description:
-    "The hard limits INDXR enforces: AI transcription up to 10 hours per file, uploads up to 500 MB, a 100 MB library that scales to 500 MB, playlists up to 500 videos per job, 3 concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.",
+    `The hard limits INDXR enforces: AI transcription up to ${MAX_TRANSCRIPTION_HOURS} hours per file, uploads up to 500 MB, a 100 MB library that scales to 500 MB, playlists up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job, ${MAX_CONCURRENT_JOBS} concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.`,
 }
 
 export default function DocsLimitsPage() {
@@ -46,9 +51,10 @@ export default function DocsLimitsPage() {
         />
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Limits</h1>
         <DefinitionLeadOpening>
-          INDXR enforces a few hard limits: AI transcription up to 10 hours per file, uploads up to
-          500 MB, playlists up to 500 videos per job (a job is one transcription or playlist run), and
-          3 jobs running at once. Caption extraction — pulling a video&apos;s existing subtitles — has
+          INDXR enforces a few hard limits: AI transcription up to {MAX_TRANSCRIPTION_HOURS} hours per
+          file, uploads up to 500 MB, playlists up to {MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job (a job
+          is one transcription or playlist run), and {MAX_CONCURRENT_JOBS} jobs running at once. Caption
+          extraction — pulling a video&apos;s existing subtitles — has
           no length limit, and requests are rate-limited (each account can only make so many per hour).
           There is no public REST API, the kind of programmatic interface other apps could plug into.
         </DefinitionLeadOpening>
@@ -62,19 +68,20 @@ export default function DocsLimitsPage() {
             </tr>
           </thead>
           <tbody>
-            <tr><td>AI transcription — max duration</td><td>10 hours per file</td></tr>
+            <tr><td>AI transcription — max duration</td><td>{MAX_TRANSCRIPTION_HOURS} hours per file</td></tr>
             <tr><td>Audio/video upload — max size</td><td>500 MB</td></tr>
             <tr><td>Upload — accepted files</td><td>{UPLOAD_EXTENSIONS.join(", ")}</td></tr>
-            <tr><td>Playlist — max videos per job</td><td>500</td></tr>
-            <tr><td>Concurrent jobs (per account)</td><td>3</td></tr>
+            <tr><td>Playlist — max videos per job</td><td>{MAX_PLAYLIST_VIDEOS_PER_JOB}</td></tr>
+            <tr><td>Concurrent jobs (per account)</td><td>{MAX_CONCURRENT_JOBS}</td></tr>
             <tr><td>Caption extraction — duration</td><td>No limit</td></tr>
           </tbody>
         </DocsTable>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Audio over 10 hours is rejected before any credits are reserved — you are never charged for a
-          file the provider can&apos;t process. A playlist over 500 videos is rejected the same way;
-          split it into batches of 500. &ldquo;Concurrent jobs&rdquo; means how many transcriptions or
-          extractions can run at the same time — you can have up to 3 going at once.
+          Audio over {MAX_TRANSCRIPTION_HOURS} hours is rejected before any credits are reserved — you
+          are never charged for a file the provider can&apos;t process. A playlist over{" "}
+          {MAX_PLAYLIST_VIDEOS_PER_JOB} videos is rejected the same way; split it into batches of{" "}
+          {MAX_PLAYLIST_VIDEOS_PER_JOB}. &ldquo;Concurrent jobs&rdquo; means how many transcriptions or
+          extractions can run at the same time — you can have up to {MAX_CONCURRENT_JOBS} going at once.
         </p>
 
         <AnchorHeading as="h2">Library storage</AnchorHeading>
@@ -142,7 +149,7 @@ export default function DocsLimitsPage() {
 
         <SourcesBlock
           sources={[
-            { publisher: "INDXR (own code)", supports: "duration, playlist, concurrency and upload limits", verifiedAgainst: "backend/main.py (MAX_TRANSCRIPTION_SECONDS, MAX_PLAYLIST_VIDEOS, MAX_CONCURRENT_JOBS); backend/audio_utils.py (SUPPORTED_FORMATS, MAX_FILE_SIZE_MB)" },
+            { publisher: "INDXR (own code)", supports: "duration, playlist, concurrency and upload limits", verifiedAgainst: "backend/main.py (MAX_TRANSCRIPTION_SECONDS, MAX_PLAYLIST_VIDEOS, MAX_CONCURRENT_JOBS); backend/audio_utils.py (SUPPORTED_FORMATS, MAX_FILE_SIZE_MB); packages/shared/src/lib/limits.ts (TS mirror, sync-checked)" },
             { publisher: "INDXR (own code)", supports: "library storage base, maximum, buy-space ratio and full-library enforcement (ADR-078)", verifiedAgainst: "packages/shared/src/lib/storage.ts; supabase migrations 20260723140000_library_storage_limit, 20260724013956_library_storage_max_cap; backend is_library_full" },
             { publisher: "INDXR (own code)", supports: "rate limits and the after-purchase bypass", verifiedAgainst: "packages/shared/src/lib/ratelimit.ts; apps/marketing/src/app/api/extract/route.ts" },
           ]}

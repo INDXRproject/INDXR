@@ -2,19 +2,18 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@indxr/shared/utils/supabase/server';
 import { checkRateLimit } from '@indxr/shared/lib/ratelimit';
+import { MAX_PLAYLIST_VIDEOS_PER_JOB } from '@indxr/shared/lib/limits';
 
 export const maxDuration = 60;
 
 const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
 
-// ADR-071 — hard cap on videos per job (mirrors backend MAX_PLAYLIST_VIDEOS). The backend
-// re-enforces this before any credit reservation; this is the fast client-facing guard.
-const MAX_PLAYLIST_VIDEOS = 500;
-
+// ADR-071 — hard cap on videos per job (mirrors backend MAX_PLAYLIST_VIDEOS via the shared limits
+// source). The backend re-enforces this before any credit reservation; this is the fast client-facing guard.
 const requestSchema = z.object({
   video_ids: z.array(z.string())
     .min(1, 'At least one video ID is required')
-    .max(MAX_PLAYLIST_VIDEOS, `A playlist job can process at most ${MAX_PLAYLIST_VIDEOS} videos. Split into smaller batches.`),
+    .max(MAX_PLAYLIST_VIDEOS_PER_JOB, `A playlist job can process at most ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos. Split into smaller batches.`),
   collection_id: z.string().nullable().optional(),
   use_whisper_ids: z.array(z.string()).optional(),
   playlist_title: z.string().nullable().optional(),

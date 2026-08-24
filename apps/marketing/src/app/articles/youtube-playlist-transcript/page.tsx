@@ -5,8 +5,14 @@ import { DocsFigure } from "@/components/docs/DocsFigure"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
-import { EXPORT_FORMAT_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+import { EXPORT_FORMAT_COUNT, exportFormatsProse, spellCount } from "@indxr/shared/lib/exportFormats"
 import { LIBRARY_STORAGE_BASE_MB, LIBRARY_STORAGE_MAX_MB } from "@indxr/shared/lib/storage"
+import {
+  MAX_PLAYLIST_VIDEOS_PER_JOB,
+  MAX_CONCURRENT_JOBS,
+  MAX_TRANSCRIPTION_HOURS,
+  PLAYLIST_LARGE_JOB_WARN_AT,
+} from "@indxr/shared/lib/limits"
 
 const freeSlots = FREE_TIER.PLAYLIST_FREE_VIDEOS
 const perCaption = CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS
@@ -15,7 +21,7 @@ const perAiMinute = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 const metaDescription =
   `Extract transcripts from an entire YouTube playlist in one job. The first ${freeSlots} caption videos ` +
   `are free, then ${perCaption} credit per video, with AI transcription at ${perAiMinute} credit per ` +
-  `minute for videos that have no captions. Up to 500 videos per job; a free account includes ` +
+  `minute for videos that have no captions. Up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job; a free account includes ` +
   `${FREE_TIER.WELCOME_CREDITS} credits.`
 
 export const metadata: Metadata = {
@@ -223,15 +229,15 @@ export default function YouTubePlaylistTranscriptPage() {
         <tbody>
           <tr>
             <td>Videos per job</td>
-            <td>500</td>
+            <td>{MAX_PLAYLIST_VIDEOS_PER_JOB}</td>
           </tr>
           <tr>
             <td>Jobs running at once</td>
-            <td>3</td>
+            <td>{MAX_CONCURRENT_JOBS}</td>
           </tr>
           <tr>
             <td>Length per AI-transcribed video</td>
-            <td>10 hours (caption extraction has no length limit)</td>
+            <td>{MAX_TRANSCRIPTION_HOURS} hours (caption extraction has no length limit)</td>
           </tr>
           <tr>
             <td>Library storage</td>
@@ -241,9 +247,10 @@ export default function YouTubePlaylistTranscriptPage() {
       </table>
 
       <p>
-        A playlist larger than 500 videos is split into batches of 500, and every batch lands in the same
-        library. Selecting fifty or more videos shows a note that the job will take a while and can run in
-        the background; that is a heads-up, not a limit.
+        A playlist larger than {MAX_PLAYLIST_VIDEOS_PER_JOB} videos is split into batches of{" "}
+        {MAX_PLAYLIST_VIDEOS_PER_JOB}, and every batch lands in the same library. Selecting{" "}
+        {PLAYLIST_LARGE_JOB_WARN_AT} or more videos shows a note that the job will take a while and can
+        run in the background; that is a heads-up, not a limit.
       </p>
 
       <p>
@@ -275,8 +282,7 @@ export default function YouTubePlaylistTranscriptPage() {
 
       <p>
         Every video becomes its own transcript in your library, and each one exports in{" "}
-        {spellCount(EXPORT_FORMAT_COUNT)} formats: plain text, Markdown, SRT, VTT, CSV, JSON and a
-        RAG-optimised JSON for AI pipelines. See the{" "}
+        {spellCount(EXPORT_FORMAT_COUNT)} formats: {exportFormatsProse("and")}. See the{" "}
         <Link href="/articles/transcript-export-formats">export formats</Link> reference for the schema
         and what each one is for.
       </p>

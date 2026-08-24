@@ -1,0 +1,7 @@
+{
+  "_comment": "GEDEELDE fixture voor de harde playlist/job-limieten. De backend is de HANDHAVER; de TS-bron packages/shared/src/lib/limits.ts is de SPIEGEL. backend/test_playlist_limits.py checkt de backend-literals (main.py MAX_PLAYLIST_VIDEOS + MAX_CONCURRENT_JOBS, transcription_pipeline.py MAX_TRANSCRIPTION_SECONDS) tegen deze waarden; packages/shared/src/lib/limits.test.ts checkt de TS-constanten tegen deze waarden. scripts/check-playlist-free-slots.sh draait beide in de CLAUDE.md-verificatiepoort en wordt ROOD bij divergentie. Wijzig je een limiet: pas backend, deze fixture en limits.ts in dezelfde commit aan, en draai het script. large_job_warn_at is UI-only (geen backend-tegenhanger) -> alleen de TS-zijde vergelijkt die.",
+  "videos_per_job": 500,
+  "concurrent_jobs": 3,
+  "transcription_max_seconds": 36000,
+  "large_job_warn_at": 50
+}

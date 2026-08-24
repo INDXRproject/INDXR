@@ -18,6 +18,7 @@ import { MethodBadge } from "./transcribe/MethodBadge";
 import { ErrorCard } from "./transcribe/ErrorCard";
 import { resolveErrorCopy } from "./transcribe/errorCopy";
 import { CREDIT_COSTS, FREE_TIER, playlistFreeIds } from "../lib/pricing";
+import { MAX_PLAYLIST_VIDEOS_PER_JOB, PLAYLIST_LARGE_JOB_WARN_AT } from "../lib/limits";
 import type { ReceiptData } from "../hooks/useCompletionReceipt";
 
 interface PlaylistEntry {
@@ -403,8 +404,8 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
     [playlist, whisperVideoIds],
   );
 
-  const isOverHardCap = selectedCount > 500;
-  const isLargeJob = selectedCount >= 50 && !isOverHardCap;
+  const isOverHardCap = selectedCount > MAX_PLAYLIST_VIDEOS_PER_JOB;
+  const isLargeJob = selectedCount >= PLAYLIST_LARGE_JOB_WARN_AT && !isOverHardCap;
   const estimatedMinutes = Math.max(1, Math.round(selectedCount * 11 / 60));
 
   return (
@@ -701,14 +702,14 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
           {/* Explain the default preselection — it's a starting point, not a limit (the cap is 500). */}
           {!hasExtracted && availableCount > 10 && (
             <div className="px-6 py-2 border-b border-border text-xs text-fg-muted">
-              The first videos are preselected to get you started — tick any others below. Up to 500 videos per job.
+              The first videos are preselected to get you started — tick any others below. Up to {MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job.
             </div>
           )}
 
           {!hasExtracted && isOverHardCap && (
             <div className="px-6 py-2 bg-error/10 border-b border-border flex items-center gap-2 text-error text-xs font-medium">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              <span>You&apos;ve selected {selectedCount} videos. INDXR processes up to 500 per job — deselect some, or split into batches of 500.</span>
+              <span>You&apos;ve selected {selectedCount} videos. INDXR processes up to {MAX_PLAYLIST_VIDEOS_PER_JOB} per job — deselect some, or split into batches of {MAX_PLAYLIST_VIDEOS_PER_JOB}.</span>
             </div>
           )}
 

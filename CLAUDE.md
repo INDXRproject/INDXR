@@ -62,10 +62,12 @@ Een taak is **niet klaar** tot je het bewezen hebt. Bewijs = build groen + relev
    - Bug fix: reproductie-test + bewijs dat hij groen is.
    - Nieuwe feature: minstens één run (lokaal of productie) met output gerapporteerd.
    - Wiki/ADR: verifieer claims tegen broncode (geen referentie-naar-eigen-eerdere-wiki).
-3. **Raak je de playlist gratis-slots-regel, de credit-reservering of de bon aan?** Draai
-   `./scripts/check-playlist-free-slots.sh` — dit draait de Python- én TS-fixture-test tegen
-   `test-fixtures/playlist_free_slots.json` (er is geen CI die dit doet). Beide moeten groen zijn:
-   de helpers mogen niet uiteenlopen, anders reserveert Python iets anders dan de bon in TS toont.
+3. **Raak je de playlist gratis-slots-regel, de credit-reservering/bon, of één van de vier harde
+   limieten (video's/job, gelijktijdige jobs, duur/video, review-waarschuwingsdrempel) aan?** Draai
+   `./scripts/check-playlist-free-slots.sh` — dit draait vier tests (er is geen CI): de free-slots-fixture
+   (Python + TS) én de limieten (backend-literals vs `packages/shared/src/lib/limits.ts`, beide tegen
+   `test-fixtures/playlist_limits.json`). Alles moet groen zijn — anders reserveert Python iets anders
+   dan de bon toont, of toont een pagina een limiet die de backend niet handhaaft.
 4. Bij twijfel of het werkt: rapporteer dat expliciet, markeer als `[~]` (in progress), niet `[x]` (done).
 
 Cross-reference: dit gedrag is vereist door wiki-onderhoud-richtlijn in `docs/wiki/INDEX.md`.
