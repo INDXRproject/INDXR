@@ -1,22 +1,26 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Sparkles, Copy, Check, Download, Play, ChevronUp, Clock } from "lucide-react";
+import { Sparkles, Copy, Check, Download, Play, ChevronUp, Clock, Pencil } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@indxr/shared/components/ui/dropdown-menu";
-import { generateSummaryMarkdown, type TranscriptItem } from "@indxr/shared/utils/formatTranscript";
+import { generateSummaryMarkdown } from "@indxr/shared/utils/formatTranscript";
+import { tiptapDocToText, tiptapDocToMarkdown, type TNode } from "@indxr/shared/utils/summaryDoc";
+import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { NocookieYouTubePlayer, YouTubePlayerHandle } from "./NocookieYouTubePlayer";
 import { SummaryMarkdown } from "./SummaryMarkdown";
 
-// Nieuw samenvatting-schema (ADR-090): overkoepelende samenvatting + secties met kop, begin/eind-
-// tijdstempel (seconden) en uitgewerkte notities. Vervangt het oude {text, action_points, edited_html}.
+// Samenvatting-schema (ADR-090): overkoepelende samenvatting + secties met kop, begin/eind-
+// tijdstempel (seconden) en uitgewerkte notities. De bewerkte versie leeft APART in de kolom
+// ai_summary_edited (zie EditableSummaryView) — niet meer inline in dit object.
 interface SummarySection {
   heading: string;
   start_time: number;
@@ -30,7 +34,6 @@ interface AiSummaryViewProps {
     overview: string;
     sections: SummarySection[];
     generated_at: string;
-    edited?: boolean;
   };
   /** YouTube video-id — nodig voor de in-app speler + klikbare tijdstempels (seek). */
   videoId?: string;
@@ -43,9 +46,8 @@ interface AiSummaryViewProps {
   durationSeconds?: number;
   /** processing_method van het transcript → transcript_source in de front matter. */
   extractionMethod?: string;
-  /** Het volledige transcript — voor de optie "Markdown + transcript" (transcript onder de samenvatting). */
-  transcript?: TranscriptItem[];
-  speakerNames?: Record<string, string> | null;
+  /** Er bestaat een bewerkte versie (ai_summary_edited) → toon de "Edited version"-exportgroep. */
+  hasSummaryEdit?: boolean;
 }
 
 function formatTimestamp(totalSeconds: number): string {
@@ -67,10 +69,10 @@ export function AiSummaryView({
   language,
   durationSeconds,
   extractionMethod,
-  transcript,
-  speakerNames,
+  hasSummaryEdit = false,
 }: AiSummaryViewProps) {
   const router = useRouter();
+  const supabase = createClient();
   const playerRef = useRef<YouTubePlayerHandle>(null);
   const [showVideo, setShowVideo] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -107,26 +109,34 @@ export function AiSummaryView({
     download(plainText(), `summary_${id}.txt`, "text/plain");
   };
 
-  // Markdown-export van de samenvatting: front matter in dezelfde stijl als de transcript-export, dan
-  // overview + hoofdstukken met klikbare tijdstempels. `withTranscript` voegt het volledige transcript
-  // onder de samenvatting toe in hetzelfde bestand (niet standaard).
-  const handleExportMarkdown = (withTranscript: boolean) => {
+  // Markdown-export van de GEGENEREERDE samenvatting: front matter in dezelfde stijl als de transcript-
+  // export, dan overview + hoofdstukken met klikbare tijdstempels. Eén artefact = twee formaten (md/txt);
+  // het transcript heeft zijn eigen exports.
+  const handleExportMarkdown = () => {
     const md = generateSummaryMarkdown(
       { overview, sections },
       title || "YouTube Video",
-      {
-        videoId,
-        channel,
-        language,
-        durationSeconds,
-        extractionMethod,
-        includeYamlFrontmatter: true,
-        includeTranscript: withTranscript,
-        transcript: transcript ?? undefined,
-        speakerNames: speakerNames ?? undefined,
-      },
+      { videoId, channel, language, durationSeconds, extractionMethod, includeYamlFrontmatter: true },
     );
     download(md, `summary_${id}.md`, "text/markdown");
+  };
+
+  // "Edited version"-exports — spiegelt de transcript-regel: de bewerkte versie is een APARTE, gelabelde
+  // exportgroep (de gegenereerde export blijft de gegenereerde versie). Haalt de laatst opgeslagen
+  // ai_summary_edited (Tiptap-JSON) uit de DB en serialiseert 'm, net als handleDownloadEditedTxt/Md
+  // van het transcript.
+  const fetchEdited = async (): Promise<TNode | null> => {
+    const { data, error } = await supabase.from("transcripts").select("ai_summary_edited").eq("id", id).single();
+    if (error || !data?.ai_summary_edited) return null;
+    return data.ai_summary_edited as unknown as TNode;
+  };
+  const handleExportEditedTxt = async () => {
+    const doc = await fetchEdited();
+    if (doc) download(tiptapDocToText(doc), `summary_${id}_edited.txt`, "text/plain");
+  };
+  const handleExportEditedMd = async () => {
+    const doc = await fetchEdited();
+    if (doc) download(`# ${title || "YouTube Video"}\n\n${tiptapDocToMarkdown(doc)}`, `summary_${id}_edited.md`, "text/markdown");
   };
 
   // Klik op een sectie-tijdstempel → speler openen (privacy: geen cookie tot playback) + seeken.
@@ -163,19 +173,27 @@ export function AiSummaryView({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => handleExportMarkdown(false)}>
-                  Markdown (.md)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleExportMarkdown(true)}
-                  disabled={!transcript || transcript.length === 0}
-                >
-                  Markdown + transcript (.md)
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {/* Edited version — a separate labelled group, only when an edit exists (same as the
+                    transcript's export menu). The generated exports below are unaffected. */}
+                {hasSummaryEdit && (
+                  <>
+                    <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Edited version</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleExportEditedTxt}>Edited — plain text (.txt)</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportEditedMd}>Edited — Markdown (.md)</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Generated</DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleExportMarkdown}>Markdown (.md)</DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExportTxt}>Plain text (.txt)</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Edit routes to the Edited-summary tab (seeded from the generated version) — never edits
+                the generated summary in place. Mirrors the transcript's Edit button. */}
+            <Button size="sm" className="h-8 gap-1.5 px-3" onClick={() => router.push(`/dashboard/library/${id}?tab=summary_edited`)}>
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </Button>
           </div>
         </div>
 

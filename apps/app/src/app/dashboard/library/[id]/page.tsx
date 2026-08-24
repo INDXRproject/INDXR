@@ -2,6 +2,7 @@ import { createClient } from "@indxr/shared/utils/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { TranscriptViewer } from "@/components/library/TranscriptViewer";
 import { AiSummaryView } from "@/components/library/AiSummaryView";
+import { EditableSummaryView } from "@/components/library/EditableSummaryView";
 import { RagExportView } from "@/components/library/RagExportView";
 import { TranscriptTabs, ViewTab } from "@/components/library/TranscriptTabs";
 import { TranscriptHeader } from "@/components/library/TranscriptHeader";
@@ -39,16 +40,20 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
 
   // Tabs appear only when their content exists. A requested ?tab whose content is gone (an edit
   // reverted, an export that never happened) falls back to Transcript — never a dead tab.
-  // ADR-090: het nieuwe samenvatting-schema is read-only (overview + secties) — geen edited_html-tab meer.
   const hasRag = Array.isArray(transcript.rag_exports) && transcript.rag_exports.length > 0;
   const requestedTab = resolvedSearchParams.tab as string | undefined;
   // The Edited tab may be entered fresh (?tab=edited) to START an edit — it is seeded from the
   // original, so the edit happens on the Edited tab, never in edit-mode on the original.
   const canEdited = !!transcript.edited_content || requestedTab === "edited";
+  // Same rule for the summary: the Edited-summary tab can be entered fresh (?tab=summary_edited) to
+  // start an edit — seeded from the generated summary, never editing it in place. Only when a summary
+  // exists to edit.
+  const canSummaryEdit = !!transcript.ai_summary && (!!transcript.ai_summary_edited || requestedTab === "summary_edited");
   const tabs: ViewTab[] = [
     { id: "original", label: "Transcript" },
     ...(canEdited ? [{ id: "edited", label: "Edited" }] : []),
     ...(transcript.ai_summary ? [{ id: "summary", label: "Summary" }] : []),
+    ...(canSummaryEdit ? [{ id: "summary_edited", label: "Edited summary" }] : []),
     ...(hasRag ? [{ id: "developer", label: "Developer" }] : []),
   ];
   const activeTab = tabs.some((t) => t.id === requestedTab) ? (requestedTab as string) : "original";
@@ -70,7 +75,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
         processingMethod={transcript.processing_method}
         hasEdit={!!transcript.edited_content}
         hasSummary={!!transcript.ai_summary}
-        hasSummaryEdit={false}
+        hasSummaryEdit={!!transcript.ai_summary_edited}
         hasRag={hasRag}
         duration={transcript.duration ?? null}
         characterCount={transcript.character_count ?? null}
@@ -112,8 +117,16 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             language={transcript.language ?? undefined}
             durationSeconds={transcript.duration ?? undefined}
             extractionMethod={transcript.processing_method ?? undefined}
-            transcript={transcript.transcript ?? undefined}
-            speakerNames={transcript.speaker_names ?? null}
+            hasSummaryEdit={!!transcript.ai_summary_edited}
+          />
+        </div>
+      ) : activeTab === "summary_edited" && transcript.ai_summary ? (
+        <div className="pb-12 bg-bg w-full relative z-10 w-full mt-2">
+          <EditableSummaryView
+            id={transcript.id}
+            generatedSummary={transcript.ai_summary}
+            editedContent={transcript.ai_summary_edited ?? null}
+            editedUpdatedAt={transcript.ai_summary_edited_updated_at ?? null}
           />
         </div>
       ) : activeTab === "developer" && Array.isArray(transcript.rag_exports) && (transcript.rag_exports as unknown[]).length > 0 ? (

@@ -840,7 +840,6 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: di
             for r in section_results
         ],
         "generated_at": generated_at,
-        "edited": False,
     }
     return ai_summary
 

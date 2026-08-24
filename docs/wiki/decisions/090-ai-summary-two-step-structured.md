@@ -139,3 +139,36 @@ Gemeten met `backend/e2e_summary_measure.py` op vier echte transcripts (5min/20m
 **Effect op de 7 opgeslagen samenvattingen (oude vloer = 2 voor alle):** nieuwe vloer per duur — d160 16, e753 10, Justice **4**, 4f060d0e 2, 574a10dc 2, aa620f17 2, d96cb56b 2. Alleen **Justice** zat onder de nieuwe vloer (koos 2 < 4); de overige zes kozen al ≥ hun nieuwe vloer, dus daar verandert niets.
 
 **Herbevestiging via een echte generatie** (Justice, zonder herbetaling): **2 → 6 hoofdstukken** (model ging bewust boven de vloer van 4, langs echte onderwerpwissels). Eén hoofdstuk (Dudley & Stephens-debat, 20,6 min) blijft > 16 min: de vloer stuurt het **aantal**, niet een harde split, dus het model kan een samenhangend onderwerp heel houden i.p.v. het te versnijden — precies de bedoelde speling. Generatiekost €0,046 (9 gemini-2.5-flash-calls, 30.543 in / 14.711 out).
+
+
+## Addendum 5 (2026-08-24) — bewerkbare samenvatting terug (aparte kolom, spiegelt het transcript)
+
+De ADR-090-herbouw maakte de samenvatting read-only en verwijderde de bewerkbare versie. Nu hersteld,
+maar **volgens het transcript-patroon** i.p.v. het oude ontwerp. Het oude ontwerp bewaarde de bewerking
+INLINE in `ai_summary.edited_html`; dat kan een regeneratie niet overleven (regenereren doet
+`UPDATE transcripts SET ai_summary = <nieuw object>` en zou de bewerking wissen). Daarom een **aparte
+kolom** `ai_summary_edited` (+ `ai_summary_edited_updated_at`), exact zoals `edited_content` /
+`edited_content_updated_at` voor het transcript (migratie `20260824160000_ai_summary_edited.sql`).
+
+- **Tab** `summary_edited` ("Edited summary"), naast Summary — verschijnt zodra er een bewerking is, of
+  vers bij `?tab=summary_edited` (geseed uit de gegenereerde samenvatting; nooit in-place bewerkt).
+- **Bewerken** in een Tiptap-editor (`EditableSummaryView`), geseed via `summaryToTiptapDoc` (nieuw,
+  `packages/shared/src/utils/summaryDoc.ts` — kleine deterministische markdown→Tiptap; geen md-lib). Save
+  schrijft `ai_summary_edited`; de gegenereerde versie blijft ongemoeid.
+- **Regenereren** vervangt `ai_summary`; `ai_summary_edited` blijft staan en wordt **verouderd**
+  gemarkeerd met dezelfde regel als de bestaande stale-notice (bewerkte versie ouder dan de nieuwe
+  `generated_at`).
+- **Export** volgt de transcript-regel: de bewerkte versie is een APARTE "Edited version"-groep in het
+  exportmenu (Edited — plain text / Edited — Markdown), de gegenereerde export blijft de gegenereerde
+  versie.
+- **Badge** `has_summary_edit` (view `transcripts_list`) leest nu de aparte kolom (was `edited_html`);
+  detail-header niet meer hardcoded false. Badgetekst ongewijzigd ("SUM"/"AI summary · edited").
+- **Opslagmeter** telt `ai_summary_edited` mee (byte-trigger + kolom-scope uitgebreid).
+- **Financieel:** niets — bewerken is gratis, regenereren gebruikt het bestaande pad.
+- Dode resten opgeruimd: `"edited": False` uit het gegenereerde object, `edited?: boolean` uit de
+  AiSummaryView-prop, `edited_html`-viewafleiding, en de "Markdown + transcript"-mengexport (één artefact
+  = twee formaten).
+
+**Scenario geverifieerd (echte Justice-samenvatting):** edit opgeslagen → gegenereerde versie ongewijzigd,
+badge/view true, library_bytes +53 KB; regenereren → gegenereerde versie vervangen (nieuwe generated_at,
+6 secties), bewerkte versie bewaard, verouderd-markering gezet. VERDICT PASS.
