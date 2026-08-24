@@ -89,14 +89,17 @@ def calculate_credit_cost(duration_seconds: float) -> int:
 
 def calculate_summary_cost(duration_seconds: float) -> int:
     """
-    Credit-kost voor een AI-samenvatting (ADR-090, bijgesteld na kostenmeting — ADR-090-addendum):
+    Credit-kost voor een AI-samenvatting (ADR-090, bijgesteld na kostenmeting — ADR-098 Addendum 1/2):
 
-        3 credits t/m 30 minuten videoduur, daarna +1 credit per BEGONNEN 20 minuten (was 30).
-        (0–30min=3, 31–50min=4, 51–70min=5, …; 60min=5, 4u13m=15)
+        3 credits t/m 30 minuten videoduur, daarna +1 credit per BEGONNEN 10 minuten (was 20).
+        (0–30min=3, 31–40min=4, 41–50min=5, …; 60min=6, 2u=12, 4u=24)
 
-    De stap naar /20 sluit het margeverlies op de kortingstiers (Plus/Power) bij lange video's, waar de
-    tokenkost sneller groeit dan de credits. Deterministisch uit de videoduur → reservering == afrekening
-    (geen actual-vs-estimate-gat). NULL/0/onbekende duur → minimum 3 (mirror de oude flat-3-baseline).
+    De stap naar /10 herstelt een gezonde netto-marge-na-btw (~50%) over het HELE duurbereik, ook op het
+    goedkoopste pakket (Power) en in de kost-staart. Onderbouwing: de kostprijs kán niet omlaag — de kost
+    per 1000 uitvoerwoorden is vlak over alle pijplijn-instellingen (denkbudget inert, zie ADR-098 Add.1),
+    dus er is geen verspilling om weg te snijden en moet de credit-slope de tokenkost bijhouden.
+    Deterministisch uit de videoduur → reservering == afrekening (geen actual-vs-estimate-gat).
+    NULL/0/onbekende duur → minimum 3 (mirror de oude flat-3-baseline).
 
     LET OP (financieel pad): dit is de ENIGE bron van het summary-bedrag in de backend — reservering,
     afrekening en teruggave lezen alle drie de uitkomst hiervan (main.py start_summary). De frontend
@@ -105,7 +108,7 @@ def calculate_summary_cost(duration_seconds: float) -> int:
     """
     if not duration_seconds or duration_seconds <= 0:
         return 3
-    return 3 + max(0, math.ceil((duration_seconds - 1800) / 1200.0))
+    return 3 + max(0, math.ceil((duration_seconds - 1800) / 600.0))
 
 
 def playlist_free_ids(video_ids, whisper_ids, is_retry: bool = False) -> set:

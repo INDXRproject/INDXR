@@ -122,7 +122,7 @@ export default function YouTubeVideoSummarizerPage() {
         really is in two parts, and that division comes from the material rather than from the clock. The
         first chapter covers the trolley problem and its variants. The second begins at 24:40 with
         Bentham&apos;s utilitarianism and the case of Dudley and Stephens. It took about 35 seconds and
-        cost 5 credits.
+        cost {summaryCreditCost(55 * 60)} credits.
       </p>
 
       <DocsFigure
@@ -164,8 +164,12 @@ export default function YouTubeVideoSummarizerPage() {
 
       <p>
         The price scales because the work scales: a longer video means more chapters and more text to
-        write. A flat price would mean short videos paying for the long ones. There is no subscription,
-        and credits never expire.
+        write. A flat price would mean short videos paying for the long ones. Even so, a summary is far
+        cheaper than a transcript — about{" "}
+        {Math.round((60 * CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN) / summaryCreditCost(60 * 60))}× less
+        ({summaryCreditCost(60 * 60)} credits to summarise an hour against{" "}
+        {60 * CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} to transcribe it). There is no subscription, and
+        credits never expire.
       </p>
 
       <h2>How to summarize a YouTube video</h2>

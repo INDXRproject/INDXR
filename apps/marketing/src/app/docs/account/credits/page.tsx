@@ -8,7 +8,7 @@ import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
-import { CREDIT_COSTS, FREE_TIER, summaryCreditCost } from "@indxr/shared/lib/pricing"
+import { CREDIT_COSTS, FREE_TIER, summaryCreditCost, AI_SUMMARY_BASE_MINUTES, AI_SUMMARY_STEP_MINUTES } from "@indxr/shared/lib/pricing"
 
 // Volatile numbers render from pricing.ts (single source of truth), never hardcoded.
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
@@ -59,7 +59,7 @@ export default function DocsCreditsPage() {
         <ul className="space-y-2 text-[var(--fg-subtle)] leading-relaxed">
           <li><strong className="text-[var(--fg)]">Caption extraction — free.</strong> Reading a video&apos;s existing captions never costs credits, with or without an account.</li>
           <li><strong className="text-[var(--fg)]">AI transcription — {perMin} credit per minute.</strong> Rounded up to the next minute, minimum {perMin}. A 12-minute video costs 12 credits.</li>
-          <li><strong className="text-[var(--fg)]">AI summary — from {summaryCost} credits.</strong> {summaryCost} credits for a video up to 30 minutes, then 1 more for each additional 20 minutes; a one-hour video is {summaryCreditCost(60 * 60)} credits.</li>
+          <li><strong className="text-[var(--fg)]">AI summary — from {summaryCost} credits.</strong> {summaryCost} credits for a video up to {AI_SUMMARY_BASE_MINUTES} minutes, then 1 more for each additional {AI_SUMMARY_STEP_MINUTES} minutes; a one-hour video is {summaryCreditCost(60 * 60)} credits.</li>
           <li><strong className="text-[var(--fg)]">RAG JSON export — {ragPer10} credit per 10 minutes.</strong> RAG JSON is the transcript split into bite-size chunks formatted for feeding into an AI search or chatbot; only this chunked export costs credits, while the plain JSON download is free. After a transcript&apos;s first RAG export, re-downloading its other chunk presets is free.</li>
           <li><strong className="text-[var(--fg)]">Playlists — first {freeVideos} caption videos free.</strong> After that, each caption video costs {perVideo} credit. A video you switch to AI transcription is billed per minute instead, with no free-video discount.</li>
         </ul>

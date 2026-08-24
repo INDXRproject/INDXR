@@ -217,11 +217,13 @@ betekent + wat te doen**:
 - **Cost & margin per duurklasse** (≤30 / 30–90 / >90 min): kost per samenvatting als **mediaan én p99**
   (mediaan = normaal bereik, p99 = uitschieters/herhaalpogingen), plus de **marge** = opbrengst − kost op
   het **goedkoopste pakket** (Power €0,02/credit = worst-case).
-  - 🔴 **marge < 0** = die (klasse van) samenvatting is op het goedkoopste pakket verliesgevend. **Dat is
-    normaal voor >90 min-video's** (een 4,2u-video kost ~€0,42 maar levert op Power 15×€0,02 = €0,30 op) —
-    het is een **prijs**signaal, geen incident. Actie: alleen ingrijpen als een groot déél van het verkeer
-    op Power lange video's is; overweeg dan een prijs-/pakketaanpassing. Eén rode "worst"-cel bij verder
-    gezonde medianen vraagt géén actie.
+  - 🔴 **marge < 0** = die (klasse van) samenvatting is op het goedkoopste pakket verliesgevend. **Sinds
+    de creditformule +1/10 min (ADR-098 Add.2) horen lange video's hier NIET meer rood te staan** — de
+    marge is nu gezond over het hele duurbereik (>90 min worst ~+€0,10, mediaan ~+€0,18). Als hier tóch
+    rood verschijnt is dat een echt signaal: óf de tokenkost is structureel gestegen (check finish_reason
+    + de rolling-baseline-WARNING), óf een run had een dure Sonnet-fallback. Actie: onderzoek, niet
+    negeren. (De ≤30 min-klasse kan één break-even-uitschieter tonen: ≤30 min is altijd 3 credits, dus de
+    formule raakt die niet — géén actie nodig bij één zulke cel.)
   - 🟠 marge < 1 cent = krap. 🟢 = gezond.
 - **Safety-net share** (retry vs fallback) + **breaker fires**: aandeel calls dat het vangnet (ADR-090)
   nodig had.

@@ -4,7 +4,7 @@
 "use client"
 
 import { useState } from "react"
-import { PACKAGES, PricingPackage, costInTier, formatEur, summaryCreditCost } from "@indxr/shared/lib/pricing"
+import { PACKAGES, PricingPackage, costInTier, formatEur, summaryCreditCost, CREDIT_COSTS, AI_SUMMARY_BASE_MINUTES, AI_SUMMARY_STEP_MINUTES } from "@indxr/shared/lib/pricing"
 import { STORAGE_BLOCK_MB, STORAGE_BLOCK_COST_CREDITS } from "@indxr/shared/lib/storage"
 
 const TASKS = [
@@ -79,7 +79,7 @@ export function CreditCostTable() {
         </table>
       </div>
       <p className="text-xs text-[var(--fg-muted)] mt-3 text-center">
-        Playlist: first 3 caption videos free, then 1 credit/video. AI transcription is 1 credit/min (no free videos). AI summary is 3 credits up to 30 min, then +1 per 20 min. Every account starts with 100 MB of library storage free; the row above is for buying more. All prices VAT included.
+        Playlist: first 3 caption videos free, then 1 credit/video. AI transcription is {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min (no free videos). AI summary is {CREDIT_COSTS.AI_SUMMARY} credits up to {AI_SUMMARY_BASE_MINUTES} min, then +1 per {AI_SUMMARY_STEP_MINUTES} min. Every account starts with 100 MB of library storage free; the row above is for buying more. All prices VAT included.
       </p>
     </div>
   )

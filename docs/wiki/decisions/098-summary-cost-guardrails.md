@@ -109,3 +109,19 @@ Vraag: kan de kostprijs van lange samenvattingen omlaag vóór we de prijs aanpa
 - **Enige echte hendel = hoofdstuk-ondergrens (`SECTION_MINUTES`), maar niet gratis:** secmin=16 → −16 tot −30% kost maar uitwerking/min −11 tot −28% (diepteverlies); secmin=12 → −6 tot −7% mét gelijke uitwerkingsdichtheid. Goedkoopste kwaliteit-behoudende combinatie = huidige budgetten + optioneel secmin=12. **Gemeten 4-uur-kostprijs blijft ~€0,20–0,22 (mediaan), tail ~€0,42.** Geen verspild denken om weg te snijden — de truncatiefix-kost is echte uitwerking.
 
 **Marge-gevolg (Power €0,02/cr, netto na 21% btw):** de huidige formule (+1 credit/20 min boven 30 min) geeft 78% marge op 30 min maar zakt naar **7–9% (mediaan) en negatief op de tail vanaf ~2u**. Omdat de kost níet omlaag kan, is een formule-aanpassing nodig voor gezonde marge over het hele duurbereik. **Voorstel: +1 credit per 10 min boven 30 min** → ~47–50% netto marge, tail rond break-even (4u: 14→24 credits). Lichter alternatief +1/12 min (4u→21 cr) laat de 4u+-tail licht negatief. **Creditformule bewust NOG NIET gewijzigd — dit addendum is de onderbouwing voor die beslissing.**
+
+## Addendum 2 (2026-08-24): creditformule doorgevoerd — +1 per 10 min
+
+Beslissing uit Addendum 1 doorgevoerd. **`calculate_summary_cost` / `summaryCreditCost`: 3 credits t/m 30 min, daarna +1 per BEGONNEN 10 min** (was /20). Bron: `backend/credit_manager.py` + `packages/shared/src/lib/pricing.ts` (`AI_SUMMARY_STEP_MINUTES = 10`). Reden: de kostprijs kán niet omlaag (kost/1000-uitvoerwoorden vlak over alle instellingen, Add.1), dus de credit-slope moet de tokenkost bijhouden om ~50% netto-marge-na-btw over het hele duurbereik te houden, ook op Power.
+
+**Financieel pad geborgd:** het bedrag komt uit één bron (`calculate_summary_cost`) → reservering, afrekening en teruggave lezen alle drie hetzelfde; de app-weergave (`TranscriptViewer.summaryCost`, credits-pagina, kostentabel, artikel) rendert uit `summaryCreditCost` = exact dezelfde formule. `test_summary_credits.py` groen (23/23, nieuwe verwachtingen). De marge-RPC's (`admin_summary_cost_panel`, `admin_summary_cost_per_user`) spiegelen /600 mee (migratie `20260824150000`), anders toont het paneel een andere marge dan geheven.
+
+**Effect op het paneel (Power, bruto €0,02/cr):** de rode cellen op lange video's zijn weg:
+
+| Duurklasse | marge mediaan (oud → nieuw) | marge worst (oud → nieuw) |
+|---|---|---|
+| ≤30 min | €0,049 (ongewijzigd — altijd 3 cr) | −€0,0015 (ongewijzigd; één uitschieter, break-even) |
+| 30–90 min | €0,068 → **€0,088** | €0,011 → **€0,031** |
+| >90 min | €0,032 → **€0,179** | **−€0,120 → +€0,100** |
+
+De enige resterende niet-positieve cel is de ≤30 min-worst (−€0,15 cent, één 20-min-video die uitzonderlijk veel output gaf) — die valt buiten de formule want ≤30 min = altijd 3 credits (basiskost). Verder alles positief; de netto-na-btw-marge (~50%) staat in `docs/wiki/testing/summary-health-2026-08-24.md`.

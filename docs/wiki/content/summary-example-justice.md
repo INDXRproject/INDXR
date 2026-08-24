@@ -14,7 +14,7 @@
 | Samenvattingswoorden | **1,794** (overview 203 + hoofdstukken 1591) |
 | Verhouding samenvatting : transcript | **0.257** — de samenvatting is ~25.7% van het transcript (≈ 1 samenvattingswoord per 3.9 transcriptwoorden) |
 | Doorlooptijd (start→klaar) | **~35 s** (09:19:44 → 09:20:19 UTC) |
-| In rekening gebrachte credits | **5** (= `calculate_summary_cost(3282)` = 3 + ⌈(3282−1800)/1200⌉) |
+| In rekening gebrachte credits | **6** (= `calculate_summary_cost(3282)` = 3 + ⌈(3282−1800)/600⌉, ADR-098 Add.2; was 5 onder de oude /1200-formule) |
 | Model / schema | `gemini-2.5-flash` (twee-staps, ADR-090) / schema_version 2 |
 | Job-id | `153894f1-2ac0-44f3-bcbb-5b56814a13b8` |
 
@@ -91,4 +91,4 @@ The course begins by exploring a series of moral dilemmas to introduce foundatio
 
 ---
 
-**Niet opruimen.** De samenvatting op de Justice-rij (transcript `0798fa30-…`) is de bron voor de `summary-overview`- en `summary-chapter`-captures — laat het transcript **en** zijn samenvatting staan, net als het geseede "Designing for Deep Work"-interview. Verdwijnt hij, regenereer via het product (Regenerate summary op die rij; ~5 credits) — model-uitvoer is niet deterministisch, dus hoofdstukindeling/tekst kunnen licht verschillen.
+**Niet opruimen.** De samenvatting op de Justice-rij (transcript `0798fa30-…`) is de bron voor de `summary-overview`- en `summary-chapter`-captures — laat het transcript **en** zijn samenvatting staan, net als het geseede "Designing for Deep Work"-interview. Verdwijnt hij, regenereer via het product (Regenerate summary op die rij; ~6 credits) — model-uitvoer is niet deterministisch, dus hoofdstukindeling/tekst kunnen licht verschillen.

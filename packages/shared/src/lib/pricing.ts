@@ -104,10 +104,11 @@ export const CREDIT_COSTS = {
   SINGLE_VIDEO_AUTO_CAPTIONS: 0, // altijd gratis
 } as const
 
-// AI-samenvatting-creditregel (ADR-090, kostenmeting-addendum): AI_SUMMARY credits t/m 30 min
-// videoduur, daarna +1 per BEGONNEN 20 min. Deterministisch uit de duur → reservering == afrekening.
+// AI-samenvatting-creditregel (ADR-090 → ADR-098 Add.1/2): AI_SUMMARY credits t/m 30 min videoduur,
+// daarna +1 per BEGONNEN 10 min (was 20 — /10 herstelt ~50% netto-marge-na-btw over het hele duurbereik,
+// ook op Power; de kostprijs kán niet omlaag). Deterministisch uit de duur → reservering == afrekening.
 export const AI_SUMMARY_BASE_MINUTES = 30
-export const AI_SUMMARY_STEP_MINUTES = 20
+export const AI_SUMMARY_STEP_MINUTES = 10
 
 // Credits voor een AI-samenvatting van een video van `durationSeconds`. ENIGE TS-bron van de
 // summary-creditkost — spiegelt de backend `calculate_summary_cost` exact (financieel pad).

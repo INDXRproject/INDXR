@@ -85,7 +85,7 @@ export default function DocsSummariesPage() {
 
         <SourcesBlock
           sources={[
-            { publisher: "INDXR (own code)", supports: "cost of 3 credits up to 30 min, +1 per started 20 min after, refund on failure", verifiedAgainst: "packages/shared/src/lib/pricing.ts (summaryCreditCost); backend/credit_manager.py:90-108 (calculate_summary_cost)" },
+            { publisher: "INDXR (own code)", supports: "cost of 3 credits up to 30 min, +1 per started 10 min after, refund on failure", verifiedAgainst: "packages/shared/src/lib/pricing.ts (summaryCreditCost); backend/credit_manager.py:90-108 (calculate_summary_cost)" },
             { publisher: "INDXR (own code)", supports: "two-step chapters + clickable timestamps, read-only", verifiedAgainst: "backend/summary_pipeline.py; apps/app/src/components/library/AiSummaryView.tsx; ADR-090" },
             { publisher: "INDXR (own code)", supports: "model + EU gateway", verifiedAgainst: "packages/shared/src/lib/models.ts:41-43 (summaryModelName); backend/main.py:1126-1132" },
             { publisher: "INDXR (own code)", supports: "saved with transcript, regenerate overwrites", verifiedAgainst: "backend/summary_pipeline.py (run_summary_reservation_aware); apps/app/src/components/library/TranscriptViewer.tsx" },

@@ -76,16 +76,16 @@ def main() -> int:
         return sb.table("credit_transactions").select("id").eq("job_id", jid).eq("kind", "refund").execute().data or []
 
     try:
-        # ── Formule (pure) — 3 t/m 30min, daarna +1 per begonnen 20min (ADR-090-addendum) ─────
+        # ── Formule (pure) — 3 t/m 30min, daarna +1 per begonnen 10min (ADR-098 Add.1/2) ─────
         print("Formule calculate_summary_cost:")
-        for d, exp in {0: 3, 900: 3, 1800: 3, 1801: 4, 3000: 4, 3001: 5, 3600: 5, 7200: 8, 14400: 14, 15228: 15}.items():
+        for d, exp in {0: 3, 900: 3, 1800: 3, 1801: 4, 3000: 5, 3001: 6, 3600: 6, 7200: 12, 14400: 24, 15228: 26}.items():
             check(f"cost({d}s)={exp}", calculate_summary_cost(d) == exp, str(calculate_summary_cost(d)))
 
         # ── A: succes — reserve == settle → refund 0, balans één keer bewogen ─
         print("A — succes: reserve->settle(ai_summary)->refund 0:")
         set_balance(100)
         b0 = balance()
-        cost = calculate_summary_cost(3601)  # 5 credits
+        cost = calculate_summary_cost(3601)  # 7 credits (60min: 3 + ceil(1801/600)=3+4)
         jid = new_summary_job()
         r = reserve_credits(user_id=USER, amount=cost, job_id=jid)
         check("A: reservering geslaagd", bool(r.get("success")), str(r))
