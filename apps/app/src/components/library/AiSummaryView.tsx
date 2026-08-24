@@ -3,7 +3,14 @@
 import React, { useRef, useState } from "react";
 import { Sparkles, Copy, Check, Download, Play, ChevronUp, Clock } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
-import { cn } from "@indxr/shared/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@indxr/shared/components/ui/dropdown-menu";
+import { generateSummaryMarkdown, type TranscriptItem } from "@indxr/shared/utils/formatTranscript";
 import { useRouter } from "next/navigation";
 import { NocookieYouTubePlayer, YouTubePlayerHandle } from "./NocookieYouTubePlayer";
 import { SummaryMarkdown } from "./SummaryMarkdown";
@@ -29,6 +36,16 @@ interface AiSummaryViewProps {
   videoId?: string;
   /** Wanneer edited_content voor het laatst geschreven werd — summary is stale als hij ouder is (ADR-085). */
   editedContentUpdatedAt?: string | null;
+  /** Metadata voor de Markdown-export-front-matter (zelfde stijl als de transcript-export). */
+  title?: string;
+  channel?: string;
+  language?: string;
+  durationSeconds?: number;
+  /** processing_method van het transcript → transcript_source in de front matter. */
+  extractionMethod?: string;
+  /** Het volledige transcript — voor de optie "Markdown + transcript" (transcript onder de samenvatting). */
+  transcript?: TranscriptItem[];
+  speakerNames?: Record<string, string> | null;
 }
 
 function formatTimestamp(totalSeconds: number): string {
@@ -40,7 +57,19 @@ function formatTimestamp(totalSeconds: number): string {
   return hh > 0 ? `${hh}:${pad(mm)}:${pad(ss)}` : `${mm}:${pad(ss)}`;
 }
 
-export function AiSummaryView({ id, initialSummary, videoId, editedContentUpdatedAt = null }: AiSummaryViewProps) {
+export function AiSummaryView({
+  id,
+  initialSummary,
+  videoId,
+  editedContentUpdatedAt = null,
+  title,
+  channel,
+  language,
+  durationSeconds,
+  extractionMethod,
+  transcript,
+  speakerNames,
+}: AiSummaryViewProps) {
   const router = useRouter();
   const playerRef = useRef<YouTubePlayerHandle>(null);
   const [showVideo, setShowVideo] = useState(false);
@@ -64,13 +93,40 @@ export function AiSummaryView({ id, initialSummary, videoId, editedContentUpdate
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const handleExportTxt = () => {
-    const blob = new Blob([plainText()], { type: "text/plain" });
+  const download = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `summary_${id}.txt`;
+    a.download = filename;
     a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportTxt = () => {
+    download(plainText(), `summary_${id}.txt`, "text/plain");
+  };
+
+  // Markdown-export van de samenvatting: front matter in dezelfde stijl als de transcript-export, dan
+  // overview + hoofdstukken met klikbare tijdstempels. `withTranscript` voegt het volledige transcript
+  // onder de samenvatting toe in hetzelfde bestand (niet standaard).
+  const handleExportMarkdown = (withTranscript: boolean) => {
+    const md = generateSummaryMarkdown(
+      { overview, sections },
+      title || "YouTube Video",
+      {
+        videoId,
+        channel,
+        language,
+        durationSeconds,
+        extractionMethod,
+        includeYamlFrontmatter: true,
+        includeTranscript: withTranscript,
+        transcript: transcript ?? undefined,
+        speakerNames: speakerNames ?? undefined,
+      },
+    );
+    download(md, `summary_${id}.md`, "text/markdown");
   };
 
   // Klik op een sectie-tijdstempel → speler openen (privacy: geen cookie tot playback) + seeken.
@@ -99,10 +155,27 @@ export function AiSummaryView({ id, initialSummary, videoId, editedContentUpdate
               {copied ? <Check className="mr-2 h-3.5 w-3.5 text-success" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
               {copied ? "Copied!" : "Copy"}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportTxt} className="h-8 gap-2">
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Export .txt</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-2">
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => handleExportMarkdown(false)}>
+                  Markdown (.md)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleExportMarkdown(true)}
+                  disabled={!transcript || transcript.length === 0}
+                >
+                  Markdown + transcript (.md)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExportTxt}>Plain text (.txt)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

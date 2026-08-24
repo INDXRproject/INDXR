@@ -142,7 +142,7 @@ ADR-formaat:
 | Database | PostgreSQL via Supabase (RLS op alle public tabellen — 25 met RLS aan, 2026-07-24) |
 | Backend | FastAPI Python 3.12 op Railway (Docker) |
 | Transcriptie | YouTube captions (yt-dlp) + AssemblyAI fallback |
-| AI Samenvatting | Gemini 2.5 Flash via AssemblyAI EU LLM Gateway (fallback Claude Haiku 4.5) — ADR-068 |
+| AI Samenvatting | Gemini 2.5 Flash via AssemblyAI EU LLM Gateway — twee modelstappen (ADR-090). Primair Gemini 2.5 Flash in beide stappen; per-call gateway-fallback: **stap 1 (structuur) → Claude Sonnet 4-6**, **stap 2 (uitwerking) → Claude Haiku 4.5** (`claude-haiku-4-5-20251001`). Bron: `backend/summary_pipeline.py` (`STRUCTURE_MODEL`/`STRUCTURE_FALLBACK`, `SECTION_MODEL`/`SECTION_FALLBACK`). ADR-068 (single-pass, haiku-only fallback) is hierdoor achterhaald. |
 | Rate limiting | Upstash Redis (sliding window) — **uit in prod** tot Upstash env-vars terug (noopLimiter) |
 | Payments | Stripe (Checkout Sessions, eenmalig, EUR) — live + getest |
 | Analytics | PostHog (session replay uit) |

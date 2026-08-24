@@ -1,7 +1,9 @@
 # Beslissing 068: AI-summary provider DeepSeek → AssemblyAI EU LLM Gateway (GDPR/EU-residency)
 
-**Status:** Geaccepteerd
+**Status:** Geaccepteerd — model-/pijplijnkeuze deels **achterhaald door ADR-090**
 **Datum:** 2026-07-19
+
+> **Let op (2026-08-24):** de provider-keuze (AssemblyAI EU LLM Gateway) staat nog; de **model-/fallback-vorm hieronder is niet meer actueel**. ADR-090 verving de single-pass door **twee modelstappen** met per-call gateway-fallback: stap 1 (structuur) valt terug op **`claude-sonnet-4-6`**, stap 2 (uitwerking) op **`claude-haiku-4-5-20251001`** — beide met `gemini-2.5-flash` als primair. De "fallback = claude-haiku-4-5-20251001, single-pass"-regel hieronder geldt dus alleen als historische context. Gezaghebbende bron = `backend/summary_pipeline.py`.
 **Gerelateerde code:** `backend/main.py` (`summarize_transcript`), `backend/worker.py` (`fetch_service_metrics`), migraties `20260719120000`–`20260719122000`, `apps/app/src/app/admin/finance/*`, `apps/app/src/app/admin/operations/page.tsx`, `apps/app/src/app/admin/adminTypes.ts`
 
 ## Context

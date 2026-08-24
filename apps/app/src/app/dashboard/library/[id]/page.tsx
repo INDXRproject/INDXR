@@ -107,6 +107,13 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
             initialSummary={transcript.ai_summary}
             videoId={transcript.video_id ?? undefined}
             editedContentUpdatedAt={transcript.edited_content_updated_at ?? null}
+            title={transcript.title || "Untitled Transcript"}
+            channel={transcript.channel ?? undefined}
+            language={transcript.language ?? undefined}
+            durationSeconds={transcript.duration ?? undefined}
+            extractionMethod={transcript.processing_method ?? undefined}
+            transcript={transcript.transcript ?? undefined}
+            speakerNames={transcript.speaker_names ?? null}
           />
         </div>
       ) : activeTab === "developer" && Array.isArray(transcript.rag_exports) && (transcript.rag_exports as unknown[]).length > 0 ? (

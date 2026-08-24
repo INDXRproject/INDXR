@@ -816,7 +816,11 @@ function buildYamlFrontmatter(
     publishedAt?: string;
     durationSeconds?: number;
     extractionMethod?: string;
-  }
+  },
+  // Enige variabele t.o.v. de transcript-front-matter: de tags-regel. De summary-export geeft hier
+  // 'tags: [youtube, summary]' mee zodat een notitie-app een samenvatting van een transcript kan
+  // onderscheiden. Default = de transcript-tags, zodat generateMarkdown BYTE-IDENTIEK blijft.
+  tagsLine: string = 'tags: [youtube, transcript]',
 ): string {
   const lines: string[] = ['---'];
   lines.push(`title: "${(title || 'YouTube Video').replace(/"/g, '\\"')}"`);
@@ -833,9 +837,87 @@ function buildYamlFrontmatter(
   }
   lines.push(`created: "${new Date().toISOString().slice(0, 10)}"`);
   lines.push('type: youtube');
-  lines.push('tags: [youtube, transcript]');
+  lines.push(tagsLine);
   lines.push('---');
   return lines.join('\n') + '\n\n';
+};
+
+// ─── AI-samenvatting → Markdown ───────────────────────────────────────────────
+// De AI-samenvatting is intern al gestructureerd (overview + hoofdstukken met kop, begin/eind-
+// tijdstempel en uitgewerkte notities). Deze exporter geeft dat als een .md-notitie:
+//   • Front matter in EXACT dezelfde stijl/veldvolgorde/weglaat-conventie als de transcript-export
+//     (buildYamlFrontmatter), alleen met `tags: [youtube, summary]` als aanduiding.
+//   • `# titel` (H1), dan `## Overview` (H2), dan per hoofdstuk een H2 met hetzelfde klikbare
+//     tijdstempel-formaat als generateMarkdown (`## [HH:MM:SS](youtu.be/<id>?t=N) <kop>`), gevolgd
+//     door de uitgewerkte notities. H2 = het invouw-niveau, gelijk aan de transcript-secties.
+//   • Optioneel (niet standaard): het VOLLEDIGE transcript onder een `## Full transcript`-kop, met de
+//     tijdstempel-koppen één niveau verlaagd (### ) zodat het geheel als één blok invouwt.
+
+export interface SummarySection {
+  heading: string;
+  start_time: number;
+  end_time: number;
+  content: string;
+}
+
+export interface SummaryMarkdownContext {
+  videoId?: string;
+  channel?: string;
+  language?: string;
+  publishedAt?: string;
+  durationSeconds?: number;
+  extractionMethod?: string;
+  includeYamlFrontmatter?: boolean;
+  /** Het volledige transcript, nodig wanneer includeTranscript aanstaat. */
+  transcript?: TranscriptItem[];
+  /** Neem het transcript onder de samenvatting mee in hetzelfde bestand. Default: false. */
+  includeTranscript?: boolean;
+  speakerNames?: Record<string, string>;
+}
+
+export const generateSummaryMarkdown = (
+  summary: { overview?: string; sections?: SummarySection[] },
+  title: string,
+  context?: SummaryMarkdownContext,
+): string => {
+  const frontmatter = context?.includeYamlFrontmatter
+    ? buildYamlFrontmatter(title, context, 'tags: [youtube, summary]')
+    : '';
+  const overview = (summary?.overview || '').trim();
+  const sections = Array.isArray(summary?.sections) ? summary.sections : [];
+
+  const parts: string[] = [`${frontmatter}# ${title}`];
+  if (overview) parts.push(`## Overview\n\n${overview}`);
+
+  for (const sec of sections) {
+    const ts = formatHHMMSS(sec.start_time);
+    const heading = context?.videoId
+      ? `## [${ts}](https://youtu.be/${context.videoId}?t=${Math.floor(sec.start_time)}) ${sec.heading}`
+      : `## [${ts}] ${sec.heading}`;
+    parts.push(`${heading}\n\n${(sec.content || '').trim()}`);
+  }
+
+  let out = parts.join('\n\n');
+
+  if (context?.includeTranscript && context.transcript && context.transcript.length > 0) {
+    // Hergebruik generateMarkdown ONgewijzigd (zwarte doos) voor het transcriptblok; strip alleen zijn
+    // eigen H1-titel en verlaag de tijdstempel-koppen (## [.. → ### [..) zodat ze onder "Full transcript"
+    // invouwen. De regex raakt uitsluitend echte tijdstempel-koppen, nooit transcript-tekst.
+    const tBlock = generateMarkdown(context.transcript, title, true, {
+      videoId: context.videoId,
+      channel: context.channel,
+      language: context.language,
+      publishedAt: context.publishedAt,
+      durationSeconds: context.durationSeconds,
+      extractionMethod: context.extractionMethod,
+      includeYamlFrontmatter: false,
+      speakerNames: context.speakerNames,
+    });
+    const body = tBlock.replace(/^# [^\n]*\n\n/, '').replace(/^## (\[)/gm, '### $1');
+    out += `\n\n## Full transcript\n\n${body}`;
+  }
+
+  return out;
 };
 
 export interface RagJsonContext {
