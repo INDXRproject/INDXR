@@ -408,6 +408,22 @@ test('summary-chapter', async ({ page }) => {
   await topShot(page, section, 'summary-chapter', 560)
 })
 
+// ── LIVE: the summary EDIT mode — tab strip (Edited summary active), the editor with its formatting
+//    toolbar, and the seeded chapters WITH timestamps. Seeded from the generated summary; nothing is
+//    saved, so the fixture row keeps no edit (no demo text left in production). ──
+test('summary-edit', async ({ page }) => {
+  await prep(page)
+  await page.goto(`/dashboard/library/${SUMMARY_TRANSCRIPT_ID}?tab=summary_edited`)
+  // Editor mounts client-side (immediatelyRender:false) and seeds from the generated summary.
+  await page.getByText('AI Summary — edited', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  await page.locator('.ProseMirror:visible').first().waitFor({ state: 'visible' })
+  await page.getByRole('heading', { name: 'Overview' }).first().waitFor({ state: 'visible' })
+  // Frame from the tab strip down through the editor, so the active "Edited summary" tab, the toolbar
+  // and a timestamped chapter heading all land in one shot.
+  const container = page.locator('[role="tablist"]').first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]')
+  await topShot(page, container, 'summary-edit', 900)
+})
+
 // ── STUBBED: progress card (Downloading audio) ────────────────────────────────
 test('progress-downloading', async ({ page }) => {
   await prep(page)

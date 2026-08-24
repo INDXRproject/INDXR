@@ -98,9 +98,19 @@ export function markdownToBlocks(md: string): TNode[] {
   return blocks;
 }
 
+/** `[H:MM:SS]` / `[M:SS]` for a chapter start — same reading style the summary view shows, so the
+ *  editable copy is a faithful picture of the generated summary (chapters WITH their timestamps). */
+function chapterTimestamp(seconds?: number): string | null {
+  if (seconds == null || seconds < 0) return null;
+  const t = Math.floor(seconds);
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
 /** The generated summary as a Tiptap doc — the SEED for the editable version. Overview under an
- *  "Overview" H2, then each chapter as an H2 heading followed by its notes. */
-export function summaryToTiptapDoc(summary: { overview?: string; sections?: { heading: string; content: string }[] }): TNode {
+ *  "Overview" H2, then each chapter as an H2 heading (prefixed with its timestamp) + its notes. */
+export function summaryToTiptapDoc(summary: { overview?: string; sections?: { heading: string; content: string; start_time?: number }[] }): TNode {
   const content: TNode[] = [];
   const overview = (summary?.overview || "").trim();
   if (overview) {
@@ -108,7 +118,9 @@ export function summaryToTiptapDoc(summary: { overview?: string; sections?: { he
     content.push(...markdownToBlocks(overview));
   }
   for (const sec of summary?.sections ?? []) {
-    content.push({ type: "heading", attrs: { level: 2 }, content: parseInline((sec.heading || "").trim() || "Section") });
+    const ts = chapterTimestamp(sec.start_time);
+    const headingText = `${ts ? `[${ts}] ` : ""}${(sec.heading || "").trim() || "Section"}`;
+    content.push({ type: "heading", attrs: { level: 2 }, content: parseInline(headingText) });
     content.push(...markdownToBlocks(sec.content || ""));
   }
   if (!content.length) content.push({ type: "paragraph" });

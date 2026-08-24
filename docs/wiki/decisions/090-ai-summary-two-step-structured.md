@@ -172,3 +172,13 @@ kolom** `ai_summary_edited` (+ `ai_summary_edited_updated_at`), exact zoals `edi
 **Scenario geverifieerd (echte Justice-samenvatting):** edit opgeslagen → gegenereerde versie ongewijzigd,
 badge/view true, library_bytes +53 KB; regenereren → gegenereerde versie vervangen (nieuwe generated_at,
 6 secties), bewerkte versie bewaard, verouderd-markering gezet. VERDICT PASS.
+
+**Seed toont tijdstempels.** `summaryToTiptapDoc` zet de hoofdstuktijdstempel (`[M:SS]`/`[H:MM:SS]`, dezelfde leesstijl als de samenvattingsweergave) vóór elke hoofdstukkop, zodat de bewerkbare kopie een volledig beeld van de gegenereerde samenvatting is (hoofdstukken mét tijdstempels) — ook zichtbaar in de `summary-edit`-capture.
+
+**Bewuste keuze — geneste lijstinspringing vlakt af naar één niveau.** De markdown→Tiptap-seed
+(`summaryDoc.ts`) rendert geneste opsommingstekens op één niveau i.p.v. de inspringing te bewaren. Dit
+blijft zo. Reden: onze samenvattingen gebruiken in de praktijk één niveau; wie tóch wil nesten kan in de
+editor zelf inspringen; en een markdown-parser-bibliotheek binnenhalen (er is er geen in de repo — de seed
+is een kleine, deterministische, unit-geteste subset) weegt niet op tegen het bewaren van dat ene
+inspringniveau. Bij verlies van inhoud zou het anders liggen, maar de tekst zelf blijft volledig behouden —
+alleen het inspringniveau vlakt af.

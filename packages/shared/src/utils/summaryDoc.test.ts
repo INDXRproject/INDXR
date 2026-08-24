@@ -33,6 +33,10 @@ const doc = summaryToTiptapDoc({
 ok(doc.type === "doc", "produces a doc node");
 const headings = (doc.content ?? []).filter((n) => n.type === "heading");
 ok(headings.length === 3, "Overview + 2 chapter headings = 3 heading nodes");
+
+// Timestamp prefix on chapter headings (seed shows chapters WITH timestamps)
+const tsDoc = summaryToTiptapDoc({ sections: [{ heading: "Intro", content: "x", start_time: 1480 }] });
+ok(tiptapDocToMarkdown(tsDoc).includes("## [24:40] Intro"), "chapter heading carries its timestamp");
 const md = tiptapDocToMarkdown(doc);
 ok(md.includes("## Overview"), "markdown has Overview heading");
 ok(md.includes("## Chapter One") && md.includes("## Chapter Two"), "markdown has both chapter headings");
