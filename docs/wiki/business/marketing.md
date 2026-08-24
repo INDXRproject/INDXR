@@ -171,7 +171,7 @@ Backend events (handmatig getracked):
 
 ## Betaalde zoekcampagne (Ads) — richtlijnen
 
-Afgeleid uit de keyword-meting van 2026-08-02 (bron + cijfers: [keyword-demand-2026-08.md](keyword-demand-2026-08.md)). Nog niet live; dit zijn de vastgelegde keuzes vóór de campagne draait.
+Afgeleid uit de keyword-meting van 2026-08-02, aangevuld met Meting 3 (2026-08-24) (bron + cijfers: [keyword-demand-2026-08.md](keyword-demand-2026-08.md)). Nog niet live; dit zijn de vastgelegde keuzes vóór de campagne draait.
 
 - **Geo-targeting = US + CA + AU**, expliciet **zónder VK** en zonder de andere geblokkeerde landen (ADR-062: `GB/CH/KR/TR/IN/BR/UY/OM/RS`). India is de grootste zoekmarkt maar kan niet afrekenen → niet targeten. ~44% van de meetbare wereldvraag is structureel niet-converteerbaar.
 - **Niet bieden op de kop** (`youtube transcript` e.d.): de top-10 is een gratis-markt (tien concurrenten met "Free" in de title) tegen ~€1,30/klik. Gratis caption-extractie is onze funnel, maar die haal je **organisch** binnen.
@@ -180,6 +180,10 @@ Afgeleid uit de keyword-meting van 2026-08-02 (bron + cijfers: [keyword-demand-2
   - Merken: `notegpt`, `tactiq`, `turboscribe`, `downsub`, `youtubetranscript`, `youtubetotranscript`, `ytscribe`, `kome`, `transcript.io`.
   - Ondertitel-piraterijbuurt (uit de `srt`/`subtitle`-seed): `subscene`, `opensubtitles`, `yify`, `yts`, `movie`, `series`.
   - `api` — wij hebben geen publieke API (zelfde grond als [ADR-039](../decisions/039-llms-txt-low-priority.md)).
+  - *(Meting 3, Discover)* Amerikaans belastingtranscript — "transcript" betekent daar een fiscaal document: `irs`, `tax`, `w2`, `4506`.
+  - *(Meting 3, Discover)* Diploma-/cijferlijstvertaling: `academic`, `university`, `diploma`, `certified translation`.
+  - *(Meting 3, Discover)* Fonetiek: `phonetic`, `ipa`, `cyrillic`.
+  - *(Meting 3, Discover)* Video-editors + ondertitels inbranden (wij branden niet in, wij leveren het bestand): `kapwing`, `veed`, `capcut`, `premiere`, `davinci`, `canva`, `embed`, `burn`.
 - **Waar de vraag wél zit:** het `video to text`-cluster (~19k+ impressies, groter dan de hele YouTube-transcript-staart) → het terrein van `/articles/audio-to-text` (betaald AI-transcriptieproduct). Prioriteitskandidaat.
 - **Long-tail workflow-termen** (playlist/bulk/rag/srt/markdown/obsidian/csv/json) waren in Bing **niet meetbaar** (meetgrens, geen afwezige vraag) → valideren via Google Keyword Planner + het search terms report zodra de campagne draait, niet vanuit deze meting concluderen.
 - **Niet-Engelse vraag** (Spaans 17k, Indonesisch, JP/CN) raakt de native-anchored differentiator, maar de site is Engels-only en het gros komt uit (deels geblokkeerd) Latijns-Amerika → **kans, geen actie zonder omzetdata**.

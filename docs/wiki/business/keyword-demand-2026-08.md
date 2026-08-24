@@ -169,7 +169,7 @@ Gelijkspel over vier tot zes termen aan beide kanten. De aanname waarop de retar
 | | youtube transcript with timestamps 100–1K · youtube transcript srt 10–100 | |
 | **Zoeken** | search youtube transcript · youtube transcript search: beide 1K–10K, index 1 | intentie = zoeken bínnen één transcript (bestaat al) |
 | **Playlist/bulk** | youtube playlist transcript 100–1K (YoY +900%) · youtube channel transcript 100–1K · bulk youtube transcript 10–100 | klein, groeiend, nul concurrentie |
-| **Notities** | transcript to notes 100–1K, bid **€4,69** (hoogste van de set) · youtube to obsidian 10–100 · youtube transcript obsidian 10–100 (YoY ∞, vanaf nul) | |
+| **Notities** | transcript to notes 100–1K, bid **€3,43** (hoogste van de set; Meting 3-correctie — was €4,69, venster een maand opgeschoven, oordeel ongewijzigd) · youtube to obsidian 10–100 · youtube transcript obsidian 10–100 (YoY ∞, vanaf nul) | |
 | **Vertalen** | translate youtube transcript · youtube transcript translate: beide 10–100 | dood |
 
 Let op de trendkolom: `ai video summarizer` doet −90% (3-maands én YoY) terwijl de YouTube-specifieke varianten vlak zijn. → **anker het samenvat-artikel op YouTube, niet op generiek "AI video summarizer".**
@@ -188,7 +188,7 @@ Let op de trendkolom: `ai video summarizer` doet −90% (3-maands én YoY) terwi
 | Playlist Transcripts | youtube playlist transcript, 100–1K, +900% | **Houden, absorbeert Bulk.** |
 | YouTube Transcript Not Available? | hangt onder de 5M-kop | **Houden, absorbeert Age-Restricted.** Beste funnel-artikel. |
 | Non-English Transcripts | Spaans/Indonesisch groot (Bing §5) | **Houden, retargeten** naar de taalfix als product. |
-| Obsidian Workflow | transcript to notes 100–1K, bid €4,69 | **Houden, retargeten** naar notitie-workflow; Obsidian als voorbeeld. |
+| Obsidian Workflow | transcript to notes 100–1K, bid €3,43 (gecorrigeerd, was €4,69) | **Houden, retargeten** naar notitie-workflow; Obsidian als voorbeeld. *(Meting 3: herankerd op `youtube to notes` — zie Meting 3.)* |
 | Bulk Transcript Extraction | bulk youtube transcript 10–100 | **Samenvoegen** met Playlist (kannibalisatie). |
 | 6× Formats (TXT/Markdown/CSV/SRT/JSON/RAG JSON) | alle <100; srt-volume = verkeerde intentie | **Samenvoegen tot één** hub; /docs heeft de referentie al. |
 | 3× AI & RAG (Chunking/Knowledge Base/Vector DBs) | nul op vijf RAG-termen | **Parkeren.** Blijven live, geen investering, post-launch heroverwegen. |
@@ -211,6 +211,154 @@ Let op de trendkolom: `ai video summarizer` doet −90% (3-maands én YoY) terwi
 
 ## Openstaand
 
-- **Geo-verdieping**: per-land runs (US / IN / GB) op de overgebleven termen, om de blocklist-impact per cluster te wegen. Aftreksom kan niet met buckets.
-- **Discover-run per nieuwe pillar** voor subkoppen en FAQ-vragen — gebundeld, niet per artikel.
+- **Geo-verdieping**: per-land runs (US / IN / GB) op de overgebleven termen, om de blocklist-impact per cluster te wegen. Aftreksom kan niet met buckets. → **gedaan in Meting 3.**
+- **Discover-run per nieuwe pillar** voor subkoppen en FAQ-vragen — gebundeld, niet per artikel. → **gedaan in Meting 3.**
 - **Search terms report** blijft de enige echte intentiemeting zodra de campagne draait.
+
+---
+
+# Meting 3 — Google Keyword Planner geo + Discover (2026-08-24)
+
+**Bron:** Google Ads Keyword Planner, twee soorten runs:
+- **Geo-forecast** — één plan, 13 locaties, 12 termen, forecast 1–30 sep 2026 bij het maximaal geaccepteerde bod (**€85,55**). Plantotaal: **1.046.781 impressies**, **€619.595 kosten**.
+- **Discover (keyword ideas)** — vijf runs, All locations, Engels, venster aug 2025 – jul 2026.
+
+**Bouwt voort op Meting 2** en sluit de twee openstaande punten daarvan: de geo-verdieping (de aftreksom kon niet met buckets — nu per-land uit de forecast) en de Discover-run per pillar.
+
+## Leesregel (Meting 3)
+
+- **Locatiesegmentatie geeft échte landverhoudingen; het plantotaal niet.** Het plantotaal is de som van bucketmiddens (zie Meting 2-leesregel) — bruikbaar voor grootteorde, niet voor onderlinge vergelijking binnen een bucket. De per-land-splitsing van de forecast omzeilt dat: het is één gemodelleerde run, verdeeld over de locaties.
+- **De forecast draait bij het verzadigingspunt.** Google accepteert geen hoger bod dan ~€83–85 (hier €85,55); daarboven groeit het bereik niet meer. De tabel is dus het *maximale* bereik, geen verwachting bij een realistisch bod.
+- **Reproduceerbaar.** De VS is twee keer los gemeten met **1,1%** verschil → de forecast is stabiel.
+- **De historische export toont maximaal vijf locatierijen** — een limiet van dat exporttype. De 13-landen-tabel hieronder komt daarom uit de forecast, niet uit de historische export.
+
+## Landtabel (run 5 — forecast, 13 locaties)
+
+| Land | Impressies | Aandeel vraag | Waarde | Aandeel waarde | Gem. CPC |
+|---|---|---|---|---|---|
+| Verenigde Staten | 395.243 | 37,8% | €381.388 | 61,6% | €8,85 |
+| India | 214.202 | 20,5% | €28.530 | 4,6% | €0,75 |
+| Verenigd Koninkrijk | 97.582 | 9,3% | €51.173 | 8,3% | €5,38 |
+| Brazilië | 63.724 | 6,1% | €12.755 | 2,1% | €1,28 |
+| Canada | 57.011 | 5,4% | €38.463 | 6,2% | €6,08 |
+| Australië | 49.882 | 4,8% | €36.797 | 5,9% | €5,95 |
+| Duitsland | 43.110 | 4,1% | €18.619 | 3,0% | €3,79 |
+| Nederland | 31.595 | 3,0% | €12.727 | 2,1% | €3,51 |
+| Spanje | 26.737 | 2,6% | €10.303 | 1,7% | €2,66 |
+| Frankrijk | 26.710 | 2,6% | €12.901 | 2,1% | €3,82 |
+| Italië | 24.540 | 2,3% | €8.098 | 1,3% | €2,51 |
+| Ierland | 8.526 | 0,8% | €3.998 | 0,6% | €4,11 |
+| Nieuw-Zeeland | 7.919 | 0,8% | €3.844 | 0,6% | €4,13 |
+
+**Leesregel bij "Waarde":** dit is wat adverteerders zouden uitgeven om dat verkeer te kopen — de beste beschikbare maat voor **commerciële waarde per markt**. Het is **nadrukkelijk geen omzetvoorspelling voor ons**.
+
+## De blocklist kost 35,9% van de vraag, maar slechts 15,0% van de waarde
+
+De Stripe Radar-blocklist ([ADR-062](../decisions/062-market-scope-and-country-guard.md)) raakt drie landen uit deze tabel: **India, VK, Brazilië**.
+
+- Vraag geblokkeerd: 20,5% + 9,3% + 6,1% = **35,9%**.
+- Waarde geblokkeerd: 4,6% + 8,3% + 2,1% = **15,0%**.
+
+De blocklist snijdt dus vooral **laagwaardige** vraag weg: India is 20,5% van de vraag maar 4,6% van de waarde (CPC €0,75), Brazilië is klein op beide. Dat bevestigt de geo-keuze — de niet-converteerbare markten zijn grotendeels ook de commercieel dunne.
+
+**Uitzondering: het VK.** 9,3% van de vraag maar **8,3% van de waarde** (CPC €5,38) — bijna even waardevol per impressie als de andere Engelstalige markten. Het VK is daarmee **het enige geblokkeerde stuk dat heroverweging verdient**; India en Brazilië niet. (Blokkade-grond blijft ADR-062: NETP €0-drempel — een handelsbeslissing, geen keyword-beslissing. Hier alleen vastgelegd dat de *waarde* die het VK kost niet verwaarloosbaar is.)
+
+## Geschatte conversieratio — per plan, niet per land
+
+Google's conversieschatting geldt **per run/plan**, over de hele locatieset — **niet** per land. Zo lezen:
+
+| Run | Locaties | Geschatte conversieratio |
+|---|---|---|
+| Run 1 | Verenigde Staten | 2,11% |
+| Run 2 | Canada, Australië, Nieuw-Zeeland, Ierland | 1,25% |
+| Run 3 | Duitsland, Frankrijk, Spanje, Italië, Nederland | 0,99% |
+| Run 4 | Verenigd Koninkrijk, India, Brazilië | 0,76% |
+| Run 5 | alle 13 | 1,25% |
+| Run 6 | nieuwe productfuncties, 10 landen | 1,23% |
+
+De VS-only-run (2,11%) ligt ruim boven de rest; de Engelstalige tweede ring (CA/AU/NZ/IE, 1,25%) boven de niet-Engelse EU-set (0,99%). Richtinggevend, niet exact — het is Google's modelschatting, geen gemeten funnel.
+
+## Besluit: niet-Engelse markten worden geparkeerd
+
+De vijf niet-Engelse markten in de tabel (DE, NL, ES, FR, IT) zijn samen **10,1% van de waarde**, en **geen enkele komt boven 3%** (Duitsland is de grootste, op 3,0%).
+
+Waarom parkeren dat rechtvaardigt:
+- Klein per markt → een Engels-only site die deze bezoekers toch niet in hun taal bedient, laat weinig liggen.
+- **Adaptive Pricing helpt hier niet:** het zet alleen de valuta om en legt er 2–4% op — het maakt de markt niet toegankelijk, want de site en de content blijven Engels.
+
+**Voorwaarde die dit heropent:** Search Console-data die **niet-Engels verkeer laat zien dat al binnenkomt zonder dat we ervoor schrijven**. Pas dán is er bewijs dat de vraag ons organisch bereikt — en wordt content in die talen een gefundeerde keuze in plaats van een gok. Tot die data er is: **parkeren, niet schrappen**.
+
+## Discover-uitkomsten per groep
+
+Vijf Discover-runs (keyword ideas), All locations, Engels, venster aug 2025 – jul 2026.
+
+### Groep 1 — Playlist (661 ideeën)
+
+De playlistvraag is bevestigd **microscopisch**: elke variant met *playlist*, *channel* of *bulk* staat op 10–100, concurrentie-index 0–7, zonder biedingen (`download subtitles from youtube playlist`, `youtube playlist subtitle downloader`, `transcribe youtube playlist`). **Bevestigt het Meting 2-oordeel: kort, strak artikel — geen pillar.**
+
+**Onverwachte vondst — de vraagvorm, niet de zelfstandignaamwoordvorm.** Een groot cluster over *hoe* je aan een transcript komt, vijf bijna identieke formuleringen op **10K–100K, index 51, bod €1,60**: `how to get a transcript of a youtube video` / `how to get transcript from youtube video` / `how to get the script of a youtube video` / `how to get a transcript from a youtube video` / `how to get script from youtube video`. Plus een tweede laag op 1K–10K (`how to download transcript from youtube` index 36, `how to copy transcript from youtube` index 28). Ter contrast: de kale term `youtube transcript` staat op index 3. **Adverteerders kopen de vraagvorm, niet de zelfstandignaamwoordvorm.** (Zie het open punt onderaan.)
+
+Ook aanwezig: `savesubs` op 10K–100K (concurrentmerk in de kop) en het volledige `download youtube subtitles`-cluster op index 1 (gratis-funnel).
+
+### Groep 3 — Notities (67 ideeën)
+
+**Twee gescheiden markten.**
+
+*Vergadernotulen — niet de onze:* `ai note taking` 10K–100K index 100 bod €8,85, `fireflies ai note taker` €32,74, `fireflies note taker` €47,16, `zoom ai notetaker`, `ai meeting note taker` index 96.
+
+*YouTube-naar-notities — wél de onze:*
+
+| Term | Volume | Index | Bod |
+|---|---|---|---|
+| youtube notes | 1K–10K | 2 | €1,49 |
+| make notes from youtube video | 1K–10K | 26 | €1,81 |
+| notes from youtube video | 1K–10K | 24 | €2,54 |
+| youtube to notes | 1K–10K | 15 | €1,51 |
+| youtube video to notes | 1K–10K | 18 | €1,41 |
+| take notes from youtube videos | 100–1K | 40 | €2,25 |
+| transcript to notes | 100–1K | 31 | €3,43 |
+
+**Conclusie:** het Meting 2-anker (`transcript to notes`) is een **grootteorde kleiner** dan het cluster dat ernaast lag → herankeren op `youtube to notes` (zie artikeloordeel-bijwerking).
+
+### Groep 4 — Formaten (148 ideeën)
+
+Grootste cluster is de **omgekeerde richting**: `text to srt` en `convert txt file to srt` op 10K–100K, index 1, €2,09 — mensen die al tekst hebben en er een ondertitelbestand van willen maken. Daarnaast `srt to text` en `convert srt to text` op 1K–10K index 1–2, die juist SRT **consumeren**. **Beide niet ons product.**
+
+Wel van ons: `create an srt file` 1K–10K index 15 €1,81, `transcript download` 1K–10K index 6, `download transcripts` 1K–10K index 13 (**+900% jaar op jaar**).
+
+**Nieuwe ruisbron:** het Amerikaanse **belastingtranscript** (`download irs transcript`, `download tax transcript`, `get w2 transcript from irs`, `irs form 4506`) — daar betekent "transcript" een fiscaal document. → negatief (zie [marketing.md](marketing.md)).
+
+**Conclusie:** de formats-hub blijft **referentie zonder investering** (klein).
+
+### Groep 5 — Ondertiteling (1699 ideeën)
+
+**Veel groter dan de veertien termen van run 6 lieten zien.** Bovenlaag op 10K–100K: `subtitle generator` index 28, `video subtitle generator` index 36, `auto captions` / `automatic captions` index 20, `captions for videos` index 11, `generate subtitles for video` index 36, `auto caption generator` index 20, `editing subtitles` index 14.
+
+Onze eigen laag:
+
+| Term | Volume | Index | Bod |
+|---|---|---|---|
+| srt generator | 1K–10K | 27 | €0,67 |
+| create srt file | 1K–10K | 15 | €1,81 |
+| srt file generator | 1K–10K | 21 | €0,66 |
+| mp4 to srt | 1K–10K | 21 | €0,32 |
+| generate srt file from video | 100–1K | 50 | €0,88 |
+| create srt file from audio | 100–1K | 51 | €1,91 |
+| ai srt generator | 100–1K | 32 | €3,58 |
+| create vtt file | 100–1K | 17 | €3,99 |
+
+**Verkeerde buurt, groot:** `add subtitles to video`, `add srt to mp4`, `embed srt in mp4`, `attach srt to mp4` (inbranden en koppelen), plus een zwaar merkencluster van video-editors — **Kapwing, VEED, CapCut, DaVinci Resolve, Premiere Pro** (Premiere alleen al zes termen op 5.000). → negatief (zie [marketing.md](marketing.md)). Deze eigen laag rechtvaardigt een **nieuw ondertitelartikel**, bewust weg van de inbrand-buurt (zie artikeloordeel-bijwerking).
+
+## Artikeloordeel — bijwerking na Meting 3
+
+Bouwt voort op het Meting 2-artikeloordeel; alleen de wijzigingen:
+
+- **Nieuw: `/articles/srt-generator`** — een ondertitelbestand maken uit audio of video (**niet** ondertitels in beeld branden). Primair anker `srt generator` (1K–10K, index 27); secundaire ankers `create srt file`, `srt file generator`, `create srt file from audio`, `generate srt file from video`, `ai srt generator`, `create vtt file`. **Bewust NIET ankeren op** `subtitle generator` of `add subtitles to video` — groter, maar dat zijn video-editors die ondertitels in beeld branden (dat doen wij niet). **Dragend onderscheid:** segmentatie volgens de Netflix-specificatie ([ADR-094](../decisions/094-subtitle-segmentation-netflix.md)) tegenover generatoren die op tekenaantal knippen. **Negatieven:** `kapwing`, `veed`, `capcut`, `premiere`, `davinci`, `canva`, `embed`, `burn`, `mp4`. **Status: nieuw, nog niet geschreven.**
+- **Herankering notitieartikel** (Meting 2 "Obsidian Workflow"): van `transcript to notes` → **`youtube to notes`** (1K–10K, index 15, bod €1,51). Reden: Discover groep 3 toont dat `transcript to notes` (100–1K) een grootteorde kleiner is dan het YouTube-naar-notities-cluster ernaast. Oordeel verder ongewijzigd (houden, retargeten naar notitie-workflow).
+- **Playlist bevestigd klein** (Discover groep 1): kort, strak artikel, geen pillar. Absorbeert Bulk (ongewijzigd t.o.v. Meting 2).
+- **Formats-hub bevestigd klein** (Discover groep 4): referentie zonder investering.
+
+## Openstaand (Meting 3)
+
+- **[~] `how-to-get-a-youtube-transcript` — heroverwegen als H2/FAQ, geen besluit.** Discover groep 1 laat zien dat dit geschrapte artikel commercieel aantrekkelijker is dan gedacht: de vraagvorm staat op **index 51, bod €1,60, vijf formuleringen van 10K–100K**. Maar de schrapgrond (concurrentie met Google's eigen documentatie) is **niet weggenomen**. **Voorstel ter beslissing bij Khidr:** het artikel *niet* terugbrengen, maar deze vraagvormen als H2 + FAQ opnemen in `youtube-transcript-not-available` en in de quickstart. Markeer als `[~]`, niet `[x]`.
+- **Search terms report** blijft de enige echte intentiemeting zodra de campagne draait (ongewijzigd sinds Meting 1/2).
