@@ -328,14 +328,18 @@ Eén **68ch-leeskolom** (`max-w-3xl`, `[&_.ProseMirror]:max-w-[68ch]`). Structuu
 - **Toolbar** (sticky, rechts-uitgelijnd, `flex-wrap` zodat niets van het scherm valt):
   - **Find** — toggelt een zoekbalk (niet permanent zichtbaar); zoekt in-transcript via een custom
     ProseMirror `SearchExtension` (highlight + prev/next teller "n / N").
-  - **Display** — dropdown met **Timestamps**-switch + **Text size** (Small / Default / Large).
+  - **Paragraphs | Timestamps** — zichtbare **segmented control** (weergave-optie, geen menu meer) die
+    de tijdstempels in-/uitschakelt (`hide-timestamps`-class). **Aa** — compact menu met alleen **Text
+    size** (Small / Default / Large).
+  - **Speakers** — zichtbaar zodra het transcript sprekers heeft (`hasSpeakers`); opent de hernoemdialoog.
   - **Copy** — eigen knop (kopieert de editor-tekst).
   - **Export** — dropdown met de 8 formats (Text/Data/Subtitles) + RAG JSON; plus "Edited version"
     (Edited .txt / .md) bovenaan als er opgeslagen edits zijn.
   - **Edit** (original-mode) → routeert naar `?tab=edited` (bewerkt nooit het origineel in-place).
     **Save** (edited-mode) → schrijft `edited_content` + `edited_content_updated_at`.
-  - **⋯ overflow** — Watch on YouTube (alleen met `video_id`) · Summarise/Regenerate (3 credits) ·
-    Revert to original (edited-mode) · Delete transcript.
+  - **⋯ overflow** — Watch on YouTube (alleen met `video_id`) · Revert to original (edited-mode) ·
+    Delete transcript. (Summarise/Regenerate is naar de **Summary-tab** verplaatst — `SummaryTab.tsx`,
+    kostenkaart + live "chapter X of N"-voortgang.)
 - **Video** — **0px dicht**. "Watch video"-knop opent een sticky, in-app **nocookie** speler
   (`NocookieYouTubePlayer`): lazy `youtube-nocookie.com` IFrame-Player; geen YouTube-load/cookie tot de
   user hem opent. **Alleen bij een YouTube-bron** (`video_id` niet leeg); geüploade audio heeft geen
@@ -344,7 +348,7 @@ Eén **68ch-leeskolom** (`max-w-3xl`, `[&_.ProseMirror]:max-w-[68ch]`). Structuu
   **`buildReadingParagraphs`**: segmenten worden tot leesbare alinea's samengevoegd met één
   leidend tijdstempel per alinea (i.p.v. één segment per regel). Bij `video_id` is het tijdstempel een
   `.ts-link`; bij geüploade audio een inerte `.ts-static`-marker. Timestamps zichtbaar/verborgen via de
-  Display-switch (`hide-timestamps`-class).
+  zichtbare **Paragraphs | Timestamps** segmented control (`hide-timestamps`-class).
 - **Edit-mode** toont een formatting-toolbar (Bold/Italic/Underline/Bullet/Numbered).
 - **Client-state:** `showTimestamps`, `showVideo`, `textSize` (s/m/l), `showSearch` + `searchQuery`,
   `isDirty`/`isSaving`/`hasSavedEdits`, RAG-modal-state. Bij mount: `viewed_at` gestampt als nog leeg

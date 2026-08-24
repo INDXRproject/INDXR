@@ -610,11 +610,32 @@ passeren allebei de dedup en reserveren allebei → de gebruiker betaalt dubbel 
   `(user_id, transcript_id) WHERE source_kind='ai_summary' AND status NOT IN ('complete','error')` maakt een
   tweede niet-terminale rij onmogelijk; `start_summary` vangt de 23505 en geeft de bestaande job terug
   (migratie `20260824170000`). Reserve/settle/refund ongewijzigd.
-- **Enkel-video / upload-pad: NOG OPEN.** `start_transcription` (`main.py:~1022-1046`) gebruikt exact
-  hetzelfde read-then-insert-dedup zonder unieke constraint → zelfde race.
-- **Playlist-pad: NOG OPEN.** `start_playlist` reserveert (`main.py:~1509`) na een niet-atomische check.
+- **Enkel-video (YouTube): NOG OPEN — bewust NIET zomaar gefixt (2026-08-25).** Sleutel = `(user_id,
+  video_url)` scoped op `source_kind='single'`. Maar: de bestaande dedup (`main.py:~1022-1046`) gebruikt
+  een **tijd-gebaseerde freshness-filter** (`created_at<30min OR last_heartbeat_at<10min`) om een gebruiker
+  bewust een **vastgelopen/dode job te laten OVERdoen**. Een STATISCHE partiële unieke index kan "binnen
+  30 min aangemaakt" niet uitdrukken → een dode-maar-nog-niet-gereapte `pending`-rij zou een legitieme
+  retry blokkeren (23505 → geeft de dode job terug), tot de watchdog hem reapt. De summary-fix had dit
+  probleem NIET (die dedup had géén freshness-filter + poll-stale-detectie ruimt vast op). Veilig maken
+  vereist óf de poll/`get_job_status`-stale-detectie uitbreiden naar `pending/downloading/...` (raakt het
+  refund-pad → financieel-kritiek), óf de watchdog-reap-latentie als acceptabele blokkade aanvaarden.
+- **Upload: NOG OPEN — GEEN natuurlijke sleutel.** Uploads hebben `video_url = NULL` en worden bewust NIET
+  gededupliceerd ("upload-pad is per definitie uniek"). Er is geen `video_id`/content-hash/idempotency-key,
+  dus een unieke index is onmogelijk zonder eerst zo'n **client-idempotency-key** te introduceren (grotere
+  ontwerpwijziging). De dubbel-klik-race op één upload blijft tot die key er is.
+- **Playlist: NOG OPEN.** Aparte tabel `playlist_extraction_jobs`, GEEN dedup-pre-select. Sleutel =
+  `(user_id, playlist_url)` over niet-terminale statussen kán, en retries (`parent_playlist_id`, nieuwe
+  ronde) mogen omdat de parent dan terminaal is. Maar dezelfde tijd-gebaseerde activeness-notie
+  (`_count_active_jobs`, heartbeat/freshness) + de `interrupted`-recovery-status maken een statische index
+  even subtiel als bij single; te verifiëren vóór toepassing.
 
-**Aanbevolen fix (vóór betalende gebruikers):** dezelfde partiële-unieke-index-aanpak op de andere
-`source_kind`s (single/upload: `(user_id, video_id/source-hash)`; playlist: `(user_id, playlist_id)`) +
-23505-afhandeling die de bestaande job teruggeeft. Bewust NIET in deze taak gefixt (scope was alleen de
-summary-generatie); hier vastgelegd omdat een chat verdwijnt en dit een geldrisico is.
+**Bestaande dubbele niet-terminale rijen: GEEN** (gecontroleerd 2026-08-25 — 0 op alle paden; de tabel was
+leeg). Een index kan dus zonder data-conflict worden aangemaakt; de bezwaren zijn puur RUNTIME-gedrag.
+
+**Waarom niet gefixt in deze ronde (financieel-kritiek → bij twijfel stoppen + rapporteren):** de
+summary-oplossing is NIET 1-op-1 overdraagbaar. Uploads hebben geen sleutel; single/playlist gebruiken
+tijd-gebaseerde activeness die een statische unieke index niet kan spiegelen zonder een legitieme
+stuck-job-retry te blokkeren of het refund-pad aan te raken. De veilige route is per-soort verschillend
+(single: stale-detectie op alle niet-terminale statussen → dan pas de index; upload: eerst een
+idempotency-key; playlist: index + verifieer `interrupted`-semantiek). Dat is een aparte, zorgvuldige
+taak — hier vastgelegd, blijft OPEN.

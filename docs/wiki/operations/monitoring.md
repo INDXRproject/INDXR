@@ -246,6 +246,15 @@ betekent + wat te doen**:
 - **Per-user COR** (`admin_summary_cost_per_user`): maakt een account dat structureel meer kost dan het
   oplevert zichtbaar.
 
+### AI-summary chapter duration (ADR-096) — leespaneel, geen alarmen
+In "Pipeline speed & quality": **per-hoofdstuk-doorlooptijd** van AI-samenvattingen. Bron:
+`admin_chapter_duration_panel(30)` op `ai_summary_usage_log.chapter_ms` (per-hoofdstuk-tijd, gedeeld met
+de meetlaag; testverkeer `is_test` uitgesloten, net als de kostenpanelen). Toont: (1) percentielen
+p50/p90/p95/p99/max van de hoofdstukduur — hoe lang een hoofdstuk normaal/traagst duurt; (2) het aandeel
+van de totale samenvattings-tijd dat naar het traagste hoofdstuk gaat (mediaan + p90); (3) op welke
+**positie** (chapter-index) het traagste hoofdstuk zit. **Bewust geen drempels/alarmen** — er is nog te
+weinig data om "normaal" te kennen; dit paneel is er juist om dat te leren.
+
 ## Wat nog ontbreekt
 
 - **Uptime monitoring — INGERICHT (2026-07-31), BetterStack.** **3 URL-monitors** ("URL becomes unavailable", 3-min): `indxr.ai`, `app.indxr.ai`, `indxr-production.up.railway.app/health`. Plus **1 Heartbeat** voor de portloze worker (verwacht elke 5 min, grace 5 min): `worker.watchdog_interrupted_jobs` pingt `BETTERSTACK_HEARTBEAT_URL` aan het eind van elke cyclus (elke 2 min → ruim binnen de grace). **`BETTERSTACK_HEARTBEAT_URL` staat ALLEEN op de worker-service** (de API is al gedekt door de `/health`-monitor); code env-gated. Een gemiste ping = worker dood → alarm.

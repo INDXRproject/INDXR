@@ -296,11 +296,77 @@ function OccurredErrors({ byType, samples }: { byType: Record<string, number>; s
   )
 }
 
+// Per-hoofdstuk-doorlooptijd van AI-samenvattingen (leespaneel, geen alarmen). Beantwoordt: normale/
+// traagste hoofdstukduur (percentielen), welk aandeel van de totale tijd naar het traagste hoofdstuk
+// gaat, en op welke POSITIE het traagste hoofdstuk zit. Bron: admin_chapter_duration_panel (is_test uit).
+function ChapterDurationPanel({ data }: { data: ChapterDur }) {
+  const o = data.overall
+  const sh = data.slowest_share
+  const pos = data.slowest_position ?? []
+  return (
+    <div className="space-y-3 text-xs">
+      <table className="w-full tabular-nums">
+        <thead>
+          <tr className="text-fg-muted">
+            <th className="py-1 text-left font-medium">Per chapter</th>
+            <th className="py-1 text-right font-medium">p50</th>
+            <th className="py-1 text-right font-medium">p90</th>
+            <th className="py-1 text-right font-medium">p95</th>
+            <th className="py-1 text-right font-medium">p99</th>
+            <th className="py-1 text-right font-medium">max</th>
+            <th className="py-1 text-right font-medium">n</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-t border-border-subtle">
+            <td className="py-1 text-fg">duration</td>
+            <td className="py-1 text-right">{ms(o?.p50 ?? null)}</td>
+            <td className="py-1 text-right">{ms(o?.p90 ?? null)}</td>
+            <td className="py-1 text-right">{ms(o?.p95 ?? null)}</td>
+            <td className="py-1 text-right">{ms(o?.p99 ?? null)}</td>
+            <td className="py-1 text-right">{ms(o?.max ?? null)}</td>
+            <td className="py-1 text-right text-fg-muted">{o?.n ?? 0}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="text-fg-subtle">
+        Slowest chapter&apos;s share of a summary&apos;s total time:{" "}
+        <span className="tabular-nums text-fg">{sh?.share_p50_pct ?? "—"}%</span> median ·{" "}
+        <span className="tabular-nums text-fg">{sh?.share_p90_pct ?? "—"}%</span> p90{" "}
+        <span className="text-fg-muted">(n={sh?.n ?? 0} summaries)</span>
+      </p>
+      <div>
+        <p className="mb-1 text-fg-muted">Where the slowest chapter sits (chapter index → count):</p>
+        {pos.length === 0 ? (
+          <p className="text-fg-subtle">No data yet.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {pos.map((p) => (
+              <span key={p.slowest_index} className="rounded border border-border px-2 py-0.5 tabular-nums text-fg-subtle">
+                #{p.slowest_index} · {p.n}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── ADR-096 meetlaag: fasetijd/RTF-percentielen + confidence-trend per taal ──
 type PhasePct = { metric: string; unit: string; n: number; p50: number | null; p90: number | null; p95: number | null; p99: number | null }
 type ConfTrend = { language: string; week: string; avg_confidence: number | null; avg_language_confidence: number | null; n: number }
 type DurClass = { label: string; n: number; median_total_s: number | null }
 type PipelineMetrics = { phase_percentiles: PhasePct[]; duration_classes: DurClass[]; confidence_trend: ConfTrend[]; generated_at: string }
+
+// ── ADR-096 meetlaag: per-hoofdstuk-doorlooptijd van AI-samenvattingen (leespaneel) ──
+type ChapterDur = {
+  days: number
+  overall: { n: number; p50: number | null; p90: number | null; p95: number | null; p99: number | null; max: number | null } | null
+  slowest_share: { n: number; share_p50_pct: number | null; share_p90_pct: number | null } | null
+  slowest_position: { slowest_index: number; n: number }[]
+  generated_at: string
+}
 
 function fmtSec(s: number | null): string {
   if (s == null) return "—"
@@ -530,16 +596,18 @@ export default async function AdminOperationsPage({
   const excludeInternal = sp.test === "real"
 
   const admin = createAdminClient()
-  const [{ data }, { data: pipeData }, { data: costData }, uptime] = await Promise.all([
+  const [{ data }, { data: pipeData }, { data: costData }, { data: chapData }, uptime] = await Promise.all([
     admin.rpc("admin_operations_v3", {
       p_from: win.from, p_to: win.to, p_exclude_internal: excludeInternal,
     }),
     admin.rpc("admin_pipeline_metrics"), // ADR-096: fasetijd/RTF-percentielen + confidence-trend per taal
     admin.rpc("admin_summary_cost_panel", { p_days: 30 }), // ADR-098: AI-summary COR/marge/vangnet (30d)
+    admin.rpc("admin_chapter_duration_panel", { p_days: 30 }), // ADR-096: per-hoofdstuk-doorlooptijd (leespaneel)
     fetchUptime(), // BetterStack live status (option B) — env-gated + graceful
   ])
   const pipe = pipeData as PipelineMetrics | null
   const cost = costData as SummaryCostPanel | null
+  const chap = chapData as ChapterDur | null
   const o = data as OperationsV3 | null
   if (!o) {
     return <div className="rounded-xl border bg-surface p-6 text-sm text-fg-muted">Operations data unavailable.</div>
@@ -789,6 +857,9 @@ export default async function AdminOperationsPage({
           </Card>
           <Card title="Median total time by audio duration — article-claim source" className="lg:col-span-2">
             {pipe ? <DurationClassPanel rows={pipe.duration_classes} /> : <p className="py-4 text-sm text-fg-subtle">Unavailable.</p>}
+          </Card>
+          <Card title="AI-summary chapter duration (percentiles)" className="lg:col-span-2">
+            {chap ? <ChapterDurationPanel data={chap} /> : <p className="py-4 text-sm text-fg-subtle">Unavailable.</p>}
           </Card>
         </div>
       </section>

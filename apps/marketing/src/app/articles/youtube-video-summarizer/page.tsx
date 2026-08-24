@@ -177,8 +177,8 @@ export default function YouTubeVideoSummarizerPage() {
       <p>
         Transcribe the video first, with YouTube&apos;s own captions, which are free, or with AI
         transcription at {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit per minute if it has no captions.
-        Open the transcript in your library and choose Summarise. It runs in the background, so you can
-        close the tab, and an hour-long video is usually ready within a minute. The summary works on any
+        Open the transcript in your library, go to the Summary tab, and generate it. It runs in the
+        background, so you can close the tab, and an hour-long video is usually ready within a minute. The summary works on any
         transcript in your library, whatever its source: YouTube captions, AI transcription, or a file
         you uploaded yourself.
       </p>
