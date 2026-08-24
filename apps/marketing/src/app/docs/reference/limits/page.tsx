@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/limits" },
   title: "Limits — INDXR.AI Docs",
   description:
-    `The hard limits INDXR enforces: AI transcription up to ${MAX_TRANSCRIPTION_HOURS} hours per file, uploads up to ${UPLOAD_MAX_FILE_MB} MB, a 100 MB library that scales to 500 MB, playlists up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job, ${MAX_CONCURRENT_JOBS} concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.`,
+    `The hard limits INDXR enforces: AI transcription up to ${MAX_TRANSCRIPTION_HOURS} hours per file, uploads up to ${UPLOAD_MAX_FILE_MB} MB, a ${LIBRARY_STORAGE_BASE_MB} MB library that scales to ${LIBRARY_STORAGE_MAX_MB} MB, playlists up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job, ${MAX_CONCURRENT_JOBS} concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.`,
 }
 
 export default function DocsLimitsPage() {
