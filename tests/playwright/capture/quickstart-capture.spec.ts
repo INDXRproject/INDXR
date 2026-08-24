@@ -421,7 +421,12 @@ test('summary-edit', async ({ page }) => {
   // Frame from the tab strip down through the editor, so the active "Edited summary" tab, the toolbar
   // and a timestamped chapter heading all land in one shot.
   const container = page.locator('[role="tablist"]').first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]')
-  await topShot(page, container, 'summary-edit', 900)
+  // Tall on purpose: the overview sits between the toolbar and the first chapter, so the frame must
+  // reach past it to land a timestamped chapter heading ([0:00] …) in the same shot. page.screenshot's
+  // clip is clamped to the viewport, so grow the viewport height first (width/scale unchanged).
+  await page.setViewportSize({ width: 1280, height: 1460 })
+  await page.waitForTimeout(150)
+  await topShot(page, container, 'summary-edit', 1320)
 })
 
 // ── STUBBED: progress card (Downloading audio) ────────────────────────────────
