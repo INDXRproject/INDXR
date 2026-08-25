@@ -117,6 +117,7 @@ export default function DocsSrtPage() {
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },
             { label: "VTT", href: "/docs/reference/export-formats/vtt" },
+            { label: "Article: SRT generator", href: "/articles/srt-generator" },
             { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
           ]}
         />

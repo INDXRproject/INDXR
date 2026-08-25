@@ -100,6 +100,43 @@ uit de slug. Bestanden staan in `apps/marketing/public/editorial/`.
 3. Zonder beeld valt de hero terug op het seeded hexagon-veld (`HexField`, accent) en toont de
    kaart een lege surface-tegel.
 
+## Openstaand — te leveren beeld
+
+**`srt-generator`** (`/articles/srt-generator`) heeft nog géén redactioneel beeld. De pagina draait
+live op de hexagon-fallback (hero) + een productscreenshot als social-card
+(`video-subtitles-srt-light.png`, gezet via `openGraph`/`twitter` + de `image`-prop in
+`articles/srt-generator/page.tsx`). Bewust **geen** `editorialAlts`-entry en **geen**
+placeholder-bestanden: `EditorialImage` rendert een ongeguarde `<picture>`/`<img src>` naar
+`/editorial/<slug>-…` zónder bestaanscontrole, dus een alt-entry zónder de bestanden zou een
+**kapotte beeldverwijzing** (404) op de hero én de kaart geven — én de hexagon-fallback onderdrukken.
+De entry hoort er daarom pas bij zodra de acht bestanden bestaan.
+
+**Bedoeld onderwerp (rekwisiet-metafoor):** een **messing metronoom** — timing/tempo, passend bij
+de kern van het artikel (cues op leesbaarheid/leessnelheid getimed), niet het artikelonderwerp zelf.
+Volg het recept hierboven (Leonardo, Lucid Realism, 16:9, warm woestijnlicht, één onderwerp op
+zand/steen, geen tekst/mensen/logo's).
+
+**De acht bestanden** (naam = de slug `srt-generator`), in `apps/marketing/public/editorial/`:
+
+- `srt-generator-400.avif`
+- `srt-generator-400.webp`
+- `srt-generator-800.avif`
+- `srt-generator-800.webp`
+- `srt-generator-1440.avif`
+- `srt-generator-1440.webp`
+- `srt-generator-800.jpg` (laatste `<img>`-fallback)
+- `srt-generator-og.jpg` (**1200×630**, voor `og:image`/`twitter:image`)
+
+**Zodra de bestanden staan**, twee kleine code-wijzigingen (niet eerder, anders 404):
+
+1. Voeg in `apps/marketing/src/lib/editorialAlts.ts` toe (alt = wat zichtbaar is, herhaal de titel
+   niet):
+   `"srt-generator": "brass metronome mid-swing casting a long shadow on gritty ground",`
+   Daarmee toont de hero de 21:9-band en de `/articles`-kaart de foto (i.p.v. de lege tegel).
+2. Optioneel in `apps/marketing/src/app/articles/srt-generator/page.tsx`: vervang de handmatige
+   `openGraph`/`twitter`/`image`-screenshot door `...editorialOg("srt-generator")` zodat de
+   social-card `srt-generator-og.jpg` gebruikt (consistent met de andere artikelen).
+
 ## Pricing & billing (zelfde systeem)
 
 `/pricing` (marketing) en `/dashboard/billing` (app) gebruiken nu **dezelfde** header,
