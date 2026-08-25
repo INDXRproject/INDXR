@@ -24,7 +24,7 @@
 
 export const SITEMAP_LASTMOD: Record<string, string> = {
   // Marketing
-  "": "2026-08-01",
+  "": "2026-08-26",
   "/pricing": "2026-08-01",
   "/transcribe": "2026-08-01",
   "/about": "2026-05-03",
@@ -57,8 +57,8 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/docs/reference/export-formats/txt": "2026-07-23",
   "/docs/reference/export-formats/markdown": "2026-08-01",
   "/docs/reference/export-formats/csv": "2026-07-23",
-  "/docs/reference/export-formats/srt": "2026-07-23",
-  "/docs/reference/export-formats/vtt": "2026-07-23",
+  "/docs/reference/export-formats/srt": "2026-08-26",
+  "/docs/reference/export-formats/vtt": "2026-08-26",
   "/docs/reference/export-formats/json": "2026-07-23",
   "/docs/reference/accuracy": "2026-08-01",
   "/docs/reference/limits": "2026-07-23",
@@ -69,11 +69,12 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/docs/account/settings": "2026-07-23",
 
   // Articles
-  "/articles": "2026-08-07",
+  "/articles": "2026-08-26",
   "/articles/youtube-transcript-not-available": "2026-08-07",
   "/articles/youtube-transcript-non-english": "2026-07-23",
   "/articles/youtube-transcript-without-extension": "2026-07-23",
-  "/articles/transcript-export-formats": "2026-08-07",
+  "/articles/transcript-export-formats": "2026-08-26",
+  "/articles/srt-generator": "2026-08-26",
   "/articles/youtube-playlist-transcript": "2026-08-07",
   "/articles/audio-to-text": "2026-08-01",
   "/articles/youtube-to-notes": "2026-08-25",

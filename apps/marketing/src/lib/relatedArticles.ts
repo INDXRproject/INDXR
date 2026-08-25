@@ -26,9 +26,15 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
   // ── Export Formats ──
   "transcript-export-formats": [
     { href: "/docs/reference/export-formats", label: "Export formats reference", reason: "the exact fields, columns and schema for every format" },
+    { href: "/articles/srt-generator", label: "SRT generator", reason: "create the subtitle file itself, SRT or VTT, from a video or recording" },
     { href: "/articles/video-to-text", label: "Video to text", reason: "getting a video file's words out before you export them" },
     { href: "/articles/youtube-to-notes", label: "YouTube to notes", reason: "the Markdown export in an end-to-end note-taking setup" },
-    { href: "/articles/youtube-transcripts-vector-database", label: "Transcripts in vector databases", reason: "loading the RAG JSON into a database" },
+  ],
+  "srt-generator": [
+    { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "every other export format, and importing subtitles into a specific editor" },
+    { href: "/docs/reference/export-formats/srt", label: "SRT format spec", reason: "the exact cue and comma-millisecond timestamp shape" },
+    { href: "/docs/reference/export-formats/vtt", label: "VTT format spec", reason: "the WEBVTT header and the <v> voice tag" },
+    { href: "/articles/video-to-text", label: "Video to text", reason: "get the words out of a video file before you export subtitles" },
   ],
 
   // ── Workflows ──
@@ -44,10 +50,10 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
     { href: "/articles/youtube-transcript-not-available", label: "Transcript not available?", reason: "when a YouTube URL won't extract" },
   ],
   "video-to-text": [
+    { href: "/articles/srt-generator", label: "SRT generator", reason: "when what you want from the video is just the subtitle file" },
     { href: "/articles/audio-to-text", label: "Audio file transcription", reason: "the same for a recording you want the words from, not a video" },
     { href: "/articles/youtube-video-summarizer", label: "YouTube video summarizer", reason: "once you have the transcript, turn it into chapter notes" },
     { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "every format a video's text exports as" },
-    { href: "/docs/guides/uploads", label: "Uploads guide", reason: "the exact upload flow, formats and limits" },
   ],
   "youtube-video-summarizer": [
     { href: "/docs/guides/summaries", label: "Summaries", reason: "the exact cost, chapters and timestamps, verified from the code" },

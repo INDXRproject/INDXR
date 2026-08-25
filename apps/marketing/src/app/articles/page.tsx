@@ -22,6 +22,7 @@ const articles = [
 
   // Formats (internal key: Export Formats)
   { href: "/articles/transcript-export-formats", label: "Transcript Export Formats", category: "Export Formats", description: "Every export format — plain text, Markdown, CSV, SRT/VTT, JSON, and RAG-optimized JSON." },
+  { href: "/articles/srt-generator", label: "SRT Generator", category: "Export Formats", description: "Create an SRT or VTT subtitle file from a video, a link or an audio recording: re-timed per word and regrouped into readable, broadcast-standard cues." },
 
   // Workflows & Use Cases
   { href: "/articles/youtube-playlist-transcript", label: "Playlist Transcripts", category: "Workflows", description: "Extract a whole playlist in one job — first 3 YouTube caption videos free." },
