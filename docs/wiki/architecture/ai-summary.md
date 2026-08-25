@@ -156,9 +156,13 @@ samenvatting) en is de bestemming voor genereren, voortgang én resultaat.
   Overloop (⋯): alleen Watch on YouTube + Delete. **Summarise/Regenerate is van het transcript-overloopmenu
   naar de Summary-tab verplaatst** (geen functie verdwenen).
 
-## OPEN — lengtespreiding van samenvattingen (2026-08-25, geen besluit)
+## GESLOTEN — lengtespreiding van samenvattingen (2026-08-25, besluit onderaan)
 
-**Openstaand punt, niet opgelost.** De samenvattingslengte spreidt sterk, zowel tussen video's als tussen
+> **Status: GESLOTEN (2026-08-25).** Twee harde grenzen ingevoerd (hoofdstuk ≤ fragment, overview ≤
+> transcript); de kortste video blijft op 121% en dat is aanvaard gedrag. Besluit + heropenvoorwaarde staan
+> onderaan deze sectie. De rest is de onderbouwende meting.
+
+**Onderzoek (achtergrond).** De samenvattingslengte spreidt sterk, zowel tussen video's als tussen
 generaties van dezelfde video. Bij KORTE video's is de samenvatting LANGER dan het transcript; bij LANGE
 video's komt hij op ~40% uit. Dezelfde Justice-video, tweemaal door dezelfde pijplijn, gaf 6 hoofdstukken /
 1794 woorden (26%) versus 5 hoofdstukken / 3282 woorden (47%) — bijna een verdubbeling. Over 8 generaties
@@ -203,11 +207,16 @@ BEIDE grenzen actief:
 | Deep Work (72s, kortste) | ov 96w / sec 178w = 129% | ov **85w** / sec 173w = 258w | **121%** — nog steeds > 100% |
 | Justice (3282s, lang, fixture) | — | ov 125w / sec 3507w = 3632w | **52%** — binnen natuurlijke spreiding, onaangetast |
 
-**Deel BLIJFT OPEN — de kortste video komt NIET onder 100% (121%).** De overview-grens "≤ transcript" is op
-Deep Work bijna niet-bindend: de overview (96w) zat al ruim onder het transcript (213w) en zakte slechts
-marginaal naar 85w. De resterende > 100% is STRUCTUREEL: de secties (173w, ~81% van het transcript, elk
-gecapt op hun fragment) plus welke overview dan ook sommeren boven het transcript. Een grens die elk DEEL
-aan zijn eigen bron (fragment / transcript) hangt, kan de SOM niet onder 100% dwingen — daarvoor zou een
-strakkere-dan-de-bron grens nodig zijn, die deze twee ingrepen bewust niet aanbrengen. Conclusie zonder
-verder bewijs: op zeer korte video's blijft de samenvatting iets langer dan het transcript. Markering: OPEN
-(nieuwe cijfers hierboven).
+**BESLUIT (2026-08-25): GESLOTEN.** De kortste video komt niet onder 100% (121%) en dat blijft zo — bewust.
+De onderbouwing: een grens die elk DEEL aan zijn eigen bron hangt (hoofdstuk ≤ fragment, overview ≤
+transcript) kan de SOM van die delen niet onder 100% dwingen — op Deep Work zaten zowel de secties (173w,
+~81%) als de overview (85w) al onder hun eigen bron, en tóch sommeren ze boven het transcript. De enige knop
+die het wél onder 100% zou brengen is een grens die STRAKKER is dan de bron, en die voeren we bewust niet in:
+zo'n grens zou inhoud kosten bij LANGE video's (waar de dichtheid de lengte hoort te sturen) puur om een
+randgeval van 72 seconden te repareren. Bij zeer korte video's is een gestructureerde notitie die iets langer
+is dan de ruwe tekst geen defect — de structuur (koppen, tijdstempels, opsomming) heeft waarde die de ruwe
+transcriptlengte niet meet.
+
+**Voorwaarde die dit heropent:** gebruikersklachten over te lange samenvattingen bij korte video's, óf
+productcopy die expliciet COMPRESSIE belooft (bijv. "korter dan het transcript"). Zolang geen van beide
+bestaat, is 121% op een 72-seconden-clip aanvaard gedrag en is dit punt dicht.

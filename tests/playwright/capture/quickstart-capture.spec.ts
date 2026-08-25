@@ -355,7 +355,9 @@ test('video-subtitles-srt', async ({ page }) => {
 // FROZEN FIXTURE (2026-08-25): this summary feeds the three captures below — it must NEVER be
 // regenerated for a proof or a measurement (doing so silently ages these screenshots; it has bitten
 // us three times). For length/quality experiments use a THROWAWAY transcript, not this one. Frozen
-// state: 5 chapters, 3632-word summary vs 6987-word transcript (52%), 54:42, 55 credits. See LESSONS.
+// state: 5 chapters, 3632-word summary vs 6987-word transcript (52%), 54:42. The transcript is from
+// YouTube captions (0 credits — free); the SUMMARY costs 6 credits (calculate_summary_cost(3282)). NOT
+// the 1-cr/min AI-transcription price. Full numbers: docs/wiki/content/summary-example-justice.md. See LESSONS.
 const SUMMARY_TRANSCRIPT_ID = '0798fa30-8056-4343-9e02-c50d93c00e4a' // Justice lecture (kBdfcR-8hEY)
 
 // Frame a TALL subject and shoot only its top `heightCss` px, in both themes. Unlike frameShot's
