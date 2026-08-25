@@ -9,6 +9,7 @@ import { TranscriptMetadata, PROCESSING_METHODS } from "../../types/transcript"
 import { validateYouTubeUrl, YouTubeUrlType } from "../../utils/youtube"
 import Link from "next/link"
 import { marketingHref, appHref } from "../../lib/cross-host-links"
+import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
 import { createClient } from "../../utils/supabase/client"
 import { CardSkeleton } from "../ui/loading-skeleton"
 import { cn } from "../../lib/utils"
@@ -755,11 +756,14 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       formData.append('video_id', videoId)
       if (pendingWhisperData.title) formData.append('title', pendingWhisperData.title)
       if (pendingWhisperData.duration > 0) formData.append('duration', String(pendingWhisperData.duration))
+      const _idemAction = `single:${videoId}`
+      formData.append('idempotency_key', idempotencyKey(_idemAction))
 
       const response = await fetch('/api/transcribe/whisper', {
         method: 'POST',
         body: formData,
       })
+      clearIdempotencyKey(_idemAction)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -853,8 +857,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       formData.append('source_type', 'youtube')
       formData.append('video_id', currentVideoId)
       if (videoTitle) formData.append('title', videoTitle)
+      const _idemAction = `single:${currentVideoId}`
+      formData.append('idempotency_key', idempotencyKey(_idemAction))
 
       const response = await fetch('/api/transcribe/whisper', { method: 'POST', body: formData })
+      clearIdempotencyKey(_idemAction)
 
       if (!response.ok) {
         const errorData = await response.json()

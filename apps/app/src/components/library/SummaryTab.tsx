@@ -13,6 +13,7 @@ import {
 } from "@indxr/shared/components/ui/dialog";
 import { BalanceLine } from "@indxr/shared/components/transcribe/CostBreakdown";
 import { summaryCreditCost } from "@indxr/shared/lib/pricing";
+import { idempotencyKey, clearIdempotencyKey } from "@indxr/shared/lib/idempotency";
 import { appHref } from "@indxr/shared/lib/cross-host-links";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
@@ -141,23 +142,29 @@ export function SummaryTab(props: SummaryTabProps) {
     setShowConfirm(false);
     setSubmitting(true);
     setError(null);
+    // Idempotency (ADR-019): één sleutel per generatie-handeling, gewist bij job-id of fout (choice 1).
+    const idemAction = `summary:${id}`;
+    const idem = idempotencyKey(idemAction);
     try {
       const res = await fetch("/api/ai/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript_id: id, user_id: user?.id }),
+        body: JSON.stringify({ transcript_id: id, user_id: user?.id, idempotency_key: idem }),
       });
       const data = await res.json();
       if (!res.ok || !data.job_id) {
+        clearIdempotencyKey(idemAction);
         setError(data.error || "Could not start the summary.");
         setSubmitting(false);
         return;
       }
+      clearIdempotencyKey(idemAction);
       await refreshCredits(); // reservation already deducted
       try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ jobId: data.job_id, transcriptId: id })); } catch { /* ignore */ }
       setPoll({ status: "pending", sectionsTotal: null, sectionsDone: null });
       pollJob(data.job_id as string);
     } catch {
+      clearIdempotencyKey(idemAction);
       setError("Could not start the summary.");
     } finally {
       setSubmitting(false);

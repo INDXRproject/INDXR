@@ -1701,6 +1701,17 @@ async def fetch_service_metrics(ctx: dict) -> str:
     return "ok"
 
 
+async def cleanup_idempotency_keys(ctx: dict) -> str:
+    """Nightly: verwijder verlopen idempotentiesleutels (24u-TTL, ADR-019). Non-fataal."""
+    try:
+        sb = get_supabase_client()
+        res = await asyncio.to_thread(lambda: sb.rpc('cleanup_idempotency_keys').execute())
+        logger.info(f"[idempotency] cleanup verwijderde {res.data} verlopen sleutel(s)")
+    except Exception as e:
+        logger.warning(f"[idempotency] cleanup failed: {e}")
+    return "ok"
+
+
 class WorkerSettings:
     functions = [
         noop_task,
@@ -1710,6 +1721,7 @@ class WorkerSettings:
         arq_func(process_playlist_retries, keep_result=0),
         watchdog_interrupted_jobs,
         fetch_service_metrics,
+        cleanup_idempotency_keys,
     ]
     cron_jobs = [
         # Elke 2 minuten: detecteer crashed jobs en start crash-recovery.
@@ -1717,6 +1729,8 @@ class WorkerSettings:
         # F17 nightly 02:00 UTC: Decodo billed traffic (Finance reconciliation). One run/day is enough —
         # Decodo settles within hours and the day-keyed upsert makes overlap free (see nightly-jobs.md).
         cron(fetch_service_metrics, hour={2}, minute={0}),
+        # Nightly 03:00 UTC: verlopen idempotentiesleutels opruimen (24u-TTL, ADR-019).
+        cron(cleanup_idempotency_keys, hour={3}, minute={0}),
     ]
     redis_settings = RedisSettings.from_dsn(
         os.getenv("ARQ_REDIS_URL") or "redis://localhost:6379"

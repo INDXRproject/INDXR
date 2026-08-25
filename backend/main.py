@@ -25,6 +25,7 @@ import yt_dlp
 from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp, _CountingYoutubeDL
 from transcription_pipeline import run_whisper_reservation_aware, MAX_TRANSCRIPTION_SECONDS
+from idempotency import request_hash, content_hash, claim_idempotency, lookup_idempotency, release_idempotency
 from limits import MAX_PLAYLIST_VIDEOS, MAX_CONCURRENT_JOBS
 from language_utils import normalize_language_code
 
@@ -244,6 +245,7 @@ class PlaylistExtractRequest(BaseModel):
     video_metadata: Optional[dict] = {}  # {video_id: {title, duration, thumbnail}}
     is_retry: bool = False  # retry-/retry-all-job: onderdrukt de gratis-3 (die is al in de originele run verbruikt)
     parent_playlist_id: Optional[str] = None  # B: originele playlist-job bij een Retry-all (lineage voor ronde-telling)
+    idempotency_key: Optional[str] = None  # ADR-019: één sleutel per handeling; een retry is een NIEUWE handeling → nieuwe sleutel
 
 class WhisperRequest(BaseModel):
     user_id: str
@@ -262,6 +264,7 @@ class WhisperResponse(BaseModel):
 class SummarizeRequest(BaseModel):
     transcript_id: str
     user_id: str
+    idempotency_key: Optional[str] = None
 
 # Helper function to extract video ID from URL
 def extract_video_id(input_str: str) -> str:
@@ -878,6 +881,7 @@ async def transcribe_with_whisper(
     user_id: Optional[str] = Form(None),  # youtube path only (server-to-server); ignored for upload
     duration: Optional[float] = Form(None),  # forwarded by Next.js when known upfront
     origin: Optional[str] = Form(None),  # deel 4: herkomst van de job (bv. 'error_card_ai'); frontend vult later
+    idempotency_key: Optional[str] = Form(None),  # ADR-019: één sleutel per handeling → geen dubbele reservering
     _: None = Depends(verify_backend_secret),
 ):
     """
@@ -1026,7 +1030,9 @@ async def transcribe_with_whisper(
     #   created_at < 30min: verse pending job (ARQ pikt op in seconden)
     #   last_heartbeat_at < 10min: actief lopende standalone job
     # Playlist-video-jobs met NULL heartbeat + oude created_at worden correct uitgesloten.
-    if source_type == "youtube" and video_id:
+    # Legacy tijd-gebaseerde resource-dedup — ALLEEN zonder idempotentiesleutel. Met een sleutel is die de
+    # énige dedup (een bewuste retry met een nieuwe sleutel wordt niet geblokkeerd door een vastgelopen job).
+    if source_type == "youtube" and video_id and not idempotency_key:
         _video_url_check = f"https://www.youtube.com/watch?v={video_id}"
         _dedup_fresh = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
         _dedup_hb = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
@@ -1045,6 +1051,23 @@ async def transcribe_with_whisper(
             logger.info(f"[dedup] Returning existing job {_ex['id']} status={_ex['status']} for {video_id} (user={user_id})")
             return JSONResponse({"job_id": _ex['id'], "status": _ex['status'], "deduplicated": True})
 
+    # Idempotency (ADR-019). Sleutel = de handeling; request_hash bindt 'm aan de INHOUD (single: video_url;
+    # upload: content-hash, zodat één sleutel niet twee verschillende bestanden dekt). Eerst een LEES vóór de
+    # cap zodat een duplicaat-van-een-lopende-job niet tegen de concurrency-cap aanloopt; de atomische claim
+    # volgt ná de cap. Alleen actief als de client een sleutel meestuurt.
+    _idem_kind = 'upload' if source_type == 'upload' else 'single'
+    _idem_hash = None
+    if idempotency_key:
+        _idem_hash = (request_hash(user_id, 'upload', content_hash(audio_content)) if source_type == 'upload'
+                      else request_hash(user_id, 'single', f"https://www.youtube.com/watch?v={video_id}" if video_id else ""))
+        _look = await asyncio.to_thread(lookup_idempotency, supabase, idempotency_key, _idem_hash)
+        if _look and _look.get('mismatch'):
+            _cleanup_tmp(upload_tmp_path)
+            return JSONResponse(status_code=422, content={"error": "This action key was already used for a different request.", "code": "idempotency_mismatch"})
+        if _look and _look.get('existing'):
+            _cleanup_tmp(upload_tmp_path)
+            return JSONResponse({"job_id": _look['existing'], "status": "pending", "deduplicated": True})
+
     # Concurrency cap (ADR-050) — reject BEFORE reserving credits, and after dedup so
     # a dedup-hit doesn't count. A denied job never inserts a row and never reserves.
     _active = await asyncio.to_thread(_count_active_jobs, supabase, user_id)
@@ -1054,6 +1077,20 @@ async def transcribe_with_whisper(
 
     # Insert job row into Supabase transcription_jobs
     job_id = str(uuid.uuid4())
+    # Atomische claim (ná de cap): een gelijktijdig tweede verzoek met dezelfde sleutel botst hier op de PK
+    # en krijgt hetzelfde job_id terug — nooit een tweede reservering.
+    if idempotency_key:
+        _claim = await asyncio.to_thread(claim_idempotency, supabase, idempotency_key, user_id, _idem_hash, _idem_kind, job_id)
+        if _claim.get('mismatch'):
+            _cleanup_tmp(upload_tmp_path)
+            return JSONResponse(status_code=422, content={"error": "This action key was already used for a different request.", "code": "idempotency_mismatch"})
+        if _claim.get('retry'):
+            _cleanup_tmp(upload_tmp_path)
+            return JSONResponse(status_code=409, content={"error": "Please retry"})
+        if _claim.get('existing'):
+            _cleanup_tmp(upload_tmp_path)
+            return JSONResponse({"job_id": _claim['existing'], "status": "pending", "deduplicated": True})
+        # claimed → door naar de job-insert + reservering met dit job_id.
     video_url = f"https://www.youtube.com/watch?v={video_id}" if source_type == "youtube" and video_id else None
     file_size_bytes = len(audio_content) if audio_content else 0
     # Uploads: ECHT containerformaat uit de inhoud (ffprobe), niet de bestandsnaam (die kan liegen).
@@ -1090,6 +1127,8 @@ async def transcribe_with_whisper(
             await asyncio.to_thread(
                 lambda: supabase.table('transcription_jobs').delete().eq('id', job_id).execute()
             )
+            if idempotency_key:
+                await asyncio.to_thread(release_idempotency, supabase, idempotency_key)
             _cleanup_tmp(upload_tmp_path)
             return JSONResponse(status_code=402, content={
                 "error": "Insufficient credits",
@@ -1252,10 +1291,10 @@ async def start_summary(request: SummarizeRequest, req: Request, _: None = Depen
     transcript_id = request.transcript_id
     supabase = get_supabase_client()
 
-    # Duur ophalen voor de kostberekening.
+    # Duur + bestaande samenvatting ophalen (duur → kost; ai_summary.generated_at → idempotency-hash).
     try:
         row = await asyncio.to_thread(
-            lambda: supabase.table('transcripts').select('duration').eq('id', transcript_id).single().execute()
+            lambda: supabase.table('transcripts').select('duration, ai_summary').eq('id', transcript_id).single().execute()
         )
     except Exception as e:
         logger.warning(f"[summary] transcript {transcript_id} niet gevonden: {e}")
@@ -1264,20 +1303,42 @@ async def start_summary(request: SummarizeRequest, req: Request, _: None = Depen
         return JSONResponse(status_code=404, content={"success": False, "error": "Transcript not found"})
     cost = calculate_summary_cost(row.data.get('duration') or 0)
 
-    # Dedup: bestaande actieve summary-job voor deze transcript → teruggeven (geen dubbele reservering).
-    _existing = await asyncio.to_thread(
-        lambda: supabase.table('transcription_jobs').select('id,status')
-            .eq('user_id', user_id).eq('transcript_id', transcript_id).eq('source_kind', 'ai_summary')
-            .in_('status', ['pending', 'summarizing']).limit(1).execute()
-    )
-    if _existing.data:
-        _ex = _existing.data[0]
-        return JSONResponse({"job_id": _ex['id'], "status": _ex['status'], "deduplicated": True})
+    # Legacy resource-dedup — ALLEEN wanneer de client GEEN idempotentiesleutel meestuurt. Met een sleutel
+    # is die sleutel de énige dedup: een bewuste tweede poging (nieuwe sleutel) na een vastgelopen job mag
+    # NIET door deze resource-dedup geblokkeerd worden (dat was blokkade A).
+    if not request.idempotency_key:
+        _existing = await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs').select('id,status')
+                .eq('user_id', user_id).eq('transcript_id', transcript_id).eq('source_kind', 'ai_summary')
+                .in_('status', ['pending', 'summarizing']).limit(1).execute()
+        )
+        if _existing.data:
+            _ex = _existing.data[0]
+            return JSONResponse({"job_id": _ex['id'], "status": _ex['status'], "deduplicated": True})
+
+    # Idempotency (ADR-019): claim de sleutel ATOMISCH vóór de reservering. Een gelijktijdig tweede verzoek
+    # met dezelfde sleutel botst hier en krijgt hetzelfde job_id terug — nooit een tweede reservering. De
+    # hash bevat de bron (origineel) én de generated_at van een bestaande samenvatting, zodat regenereren
+    # een ANDER verzoek is dan de eerste generatie. Alleen als de client een sleutel meestuurt (oude
+    # clients vallen terug op de dedup hierboven).
+    job_id = str(uuid.uuid4())
+    if request.idempotency_key:
+        _existing_gen = (row.data.get('ai_summary') or {}).get('generated_at') if isinstance(row.data.get('ai_summary'), dict) else None
+        _rh = request_hash(user_id, 'ai_summary', transcript_id, 'original', _existing_gen or 'none')
+        _claim = await asyncio.to_thread(
+            claim_idempotency, supabase, request.idempotency_key, user_id, _rh, 'ai_summary', job_id
+        )
+        if _claim.get('mismatch'):
+            return JSONResponse(status_code=422, content={"success": False, "error": "This action key was already used for a different request.", "code": "idempotency_mismatch"})
+        if _claim.get('retry'):
+            return JSONResponse(status_code=409, content={"success": False, "error": "Please retry"})
+        if _claim.get('existing'):
+            return JSONResponse({"job_id": _claim['existing'], "status": "pending", "deduplicated": True})
+        # claimed → door naar de job-insert + reservering met dit job_id.
 
     # Job-rij op de gedeelde tabel (discriminator source_kind='ai_summary', ADR-090). De transcript_id-kolom
     # draagt hier de te-samenvatten transcript: een valide FK, én sluit de rij automatisch uit van de
     # whisper-watchdog-passes die transcript_id IS NULL vereisen.
-    job_id = str(uuid.uuid4())
     try:
         await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs').insert({
@@ -1315,6 +1376,9 @@ async def start_summary(request: SummarizeRequest, req: Request, _: None = Depen
     _resv = await asyncio.to_thread(reserve_credits, user_id=user_id, amount=cost, job_id=job_id)
     if not _resv.get('success'):
         await asyncio.to_thread(lambda: supabase.table('transcription_jobs').delete().eq('id', job_id).execute())
+        # Sleutel vrijgeven: het werk mislukte na de claim, dus de sleutel mag niet naar een verwijderde job blijven wijzen.
+        if request.idempotency_key:
+            await asyncio.to_thread(release_idempotency, supabase, request.idempotency_key)
         if _resv.get('error') == 'insufficient_credits' or _resv.get('available') is not None:
             return JSONResponse(status_code=402, content={
                 "success": False, "error": "Insufficient credits", "code": "insufficient_credits",
@@ -1474,6 +1538,19 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
 
     supabase = get_supabase_client()
 
+    # Idempotency (ADR-019). Sleutel = de handeling; hash bindt 'm aan playlist_url + de (gesorteerde) set
+    # video's + whisper-keuze. Een RETRY/retry-all is een BEWUSTE nieuwe handeling → de client stuurt een
+    # NIEUWE sleutel → niet geblokkeerd. Lees vóór de cap (duplicaat telt niet mee); atomische claim ná de cap.
+    _pl_hash = None
+    if request.idempotency_key:
+        _pl_hash = request_hash(request.user_id, 'playlist', request.playlist_url or '',
+                                ','.join(sorted(request.video_ids or [])), ','.join(sorted(request.use_whisper_ids or [])))
+        _look = await asyncio.to_thread(lookup_idempotency, supabase, request.idempotency_key, _pl_hash)
+        if _look and _look.get('mismatch'):
+            return JSONResponse(status_code=422, content={"error": "This action key was already used for a different request.", "code": "idempotency_mismatch"})
+        if _look and _look.get('existing'):
+            return JSONResponse({"job_id": _look['existing'], "status": "running", "deduplicated": True})
+
     # Concurrency cap (ADR-050) — reject BEFORE the job row + reservation, so a denied
     # job (incl. a retry / retry-all that would exceed the cap) never reserves credits.
     _active = await asyncio.to_thread(_count_active_jobs, supabase, request.user_id)
@@ -1481,6 +1558,15 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
         return _too_many_jobs_response()
 
     job_id = str(uuid.uuid4())
+    if request.idempotency_key:
+        _claim = await asyncio.to_thread(claim_idempotency, supabase, request.idempotency_key, request.user_id, _pl_hash, 'playlist', job_id)
+        if _claim.get('mismatch'):
+            return JSONResponse(status_code=422, content={"error": "This action key was already used for a different request.", "code": "idempotency_mismatch"})
+        if _claim.get('retry'):
+            return JSONResponse(status_code=409, content={"error": "Please retry"})
+        if _claim.get('existing'):
+            return JSONResponse({"job_id": _claim['existing'], "status": "running", "deduplicated": True})
+        # claimed → door naar de job-insert + reservering met dit job_id.
 
     # B: retry-lineage. Elke 'Retry all'-actie = één ronde; koppel aan de parent en tel door.
     retry_round = 0
@@ -1537,6 +1623,8 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
             await asyncio.to_thread(
                 lambda: supabase.table('playlist_extraction_jobs').delete().eq('id', job_id).execute()
             )
+            if request.idempotency_key:
+                await asyncio.to_thread(release_idempotency, supabase, request.idempotency_key)
             return JSONResponse(status_code=402, content={
                 "error": "Insufficient credits",
                 "code": "insufficient_credits",

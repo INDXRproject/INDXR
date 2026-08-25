@@ -22,6 +22,7 @@ import { BalanceLine } from "../transcribe/CostBreakdown"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy } from "../transcribe/errorCopy"
 import { CREDIT_COSTS } from "../../lib/pricing"
+import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
 import { UPLOAD_EXTENSIONS, UPLOAD_ACCEPT_ATTR, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "../../lib/uploadFormats"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
@@ -362,6 +363,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       const formData = new FormData()
       formData.append('source_type', 'upload')
       formData.append('audio_file', file)
+      // Idempotency (ADR-019): één sleutel per upload-handeling. De backend bindt 'm bovendien aan de
+      // content-hash, zodat één sleutel niet twee verschillende bestanden kan dekken.
+      const _idemAction = `upload:${file.name}:${file.size}`
+      formData.append('idempotency_key', idempotencyKey(_idemAction))
 
       const backendUrl = process.env.NEXT_PUBLIC_AUDIO_UPLOAD_URL || 'http://localhost:8000'
 
@@ -397,6 +402,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         xhr.ontimeout = () => reject(new Error('Upload timed out. Please try again.'))
         xhr.send(formData)
       })
+      clearIdempotencyKey(_idemAction) // handeling afgerond (response terug)
 
       if (httpStatus !== 200 && httpStatus !== 201) {
         if (httpStatus === 413 && data.code === 'storage_full') {

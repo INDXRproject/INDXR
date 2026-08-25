@@ -6,6 +6,7 @@ import { VideoTab } from "@indxr/shared/components/free-tool/VideoTab"
 import { PlaylistTab, PlaylistStats } from "@indxr/shared/components/free-tool/PlaylistTab"
 import { AudioTab } from "@indxr/shared/components/free-tool/AudioTab"
 import { createClient } from "@indxr/shared/utils/supabase/client"
+import { idempotencyKey, clearIdempotencyKey } from "@indxr/shared/lib/idempotency"
 import { TranscriptItem } from "@indxr/shared/components/TranscriptCard"
 import { TranscriptMetadata } from "@indxr/shared/types/transcript"
 import { SaveErrorModal } from "@/components/SaveErrorModal"
@@ -246,11 +247,15 @@ export default function TranscribePage() {
            formData.append('source_type', 'youtube');
            formData.append('video_id', videoId);
            formData.append('transcript_id', transcriptId); // Pass the transcript ID
-           
+           // Idempotency (ADR-019): één sleutel per transcriptie-handeling van deze video.
+           const _idemAction = `single:${videoId}`;
+           formData.append('idempotency_key', idempotencyKey(_idemAction));
+
            response = await fetch('/api/transcribe/whisper', {
                method: 'POST',
                body: formData,
            });
+           clearIdempotencyKey(_idemAction); // handeling afgerond (job-id of fout volgt uit de response)
         } else {
            // Default to caption extraction
             response = await fetch('/api/extract', {

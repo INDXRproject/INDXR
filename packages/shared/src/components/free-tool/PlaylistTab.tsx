@@ -7,6 +7,7 @@ import { Button } from "../ui/button"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy, type ErrorCtx } from "../transcribe/errorCopy"
 import { appHref } from "../../lib/cross-host-links"
+import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
 import { useAuth } from "../../hooks/useAuth"
 import { useCompletionReceipt } from "../../hooks/useCompletionReceipt"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
@@ -522,7 +523,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         videoMetadata[id] = { title: av?.title ?? '', duration: av?.duration }
       }
 
-      // Start extraction job on the backend
+      // Start extraction job on the backend. Idempotency (ADR-019): één sleutel per start-handeling.
+      const _idemAction = `playlist:${playlistUrl ?? ''}`
       const response = await fetch('/api/playlist/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -533,8 +535,10 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           playlist_title: playlistTitle ?? null,
           playlist_url: playlistUrl ?? null,
           video_metadata: videoMetadata,
+          idempotency_key: idempotencyKey(_idemAction),
         }),
       })
+      clearIdempotencyKey(_idemAction)
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
@@ -615,6 +619,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         }
       }
 
+      // Een retry is een BEWUSTE nieuwe handeling → een eigen actie-id, dus een nieuwe sleutel t.o.v. de start.
+      const _idemAction = `playlist-retry:${fallbackMetaRef.current.url ?? ''}`
       const response = await fetch('/api/playlist/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -625,8 +631,10 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           playlist_title: title ?? null,
           playlist_url: fallbackMetaRef.current.url ?? null,
           is_retry: true,  // onderdrukt de gratis-3 server-side (die is al in de originele run verbruikt)
+          idempotency_key: idempotencyKey(_idemAction),
         }),
       })
+      clearIdempotencyKey(_idemAction)
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
