@@ -352,6 +352,10 @@ test('video-subtitles-srt', async ({ page }) => {
 // The figures for /articles (summaries). Read a REAL AI summary (ADR-090: overview + chapters, each
 // with a clickable timestamp) generated on the seeded Justice transcript (videoId → amber timestamps).
 // See screenshot-machine.md → "AI-summary seed". Do NOT delete that summary/transcript.
+// FROZEN FIXTURE (2026-08-25): this summary feeds the three captures below — it must NEVER be
+// regenerated for a proof or a measurement (doing so silently ages these screenshots; it has bitten
+// us three times). For length/quality experiments use a THROWAWAY transcript, not this one. Frozen
+// state: 5 chapters, 3632-word summary vs 6987-word transcript (52%), 54:42, 55 credits. See LESSONS.
 const SUMMARY_TRANSCRIPT_ID = '0798fa30-8056-4343-9e02-c50d93c00e4a' // Justice lecture (kBdfcR-8hEY)
 
 // Frame a TALL subject and shoot only its top `heightCss` px, in both themes. Unlike frameShot's

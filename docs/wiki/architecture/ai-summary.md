@@ -188,12 +188,26 @@ bindend, bij lange verandert er niets — grondige notities zitten daar al ruim 
 binnen die grens, net als de vrijheid om lengte de informatiedichtheid te laten volgen. Gemeten (één
 regeneratie per kant):
 
-| video | oud | nieuw | wat er gebeurde |
+| video | oud | na stap-2-cap | wat er gebeurde |
 |---|---|---|---|
-| Deep Work (72s, kortste) | 172% | **129%** | stap-2-secties nu 178w < transcript 213w (elk hoofdstuk onder zijn fragment); de grens BINDT |
-| Justice (3282s, lang) | 47% | 36% | 36% ≪ 100%-grens → de grens is niet-bindend; binnen Justice' natuurlijke spreiding (26–47%) → onaangetast |
+| Deep Work (72s, kortste) | 172% | 129% | stap-2-secties naar 178w < transcript 213w (elk hoofdstuk onder zijn fragment); de grens BINDT |
+| Justice (3282s, lang) | 47% | 36% | 36% ≪ 100%-grens → niet-bindend; binnen Justice' natuurlijke spreiding → onaangetast |
 
-**Deel BLIJFT OPEN.** De hoofdstuk-uitwerking is nu wél begrensd (Deep Work-secties 178w < 213w transcript),
-maar de TOTALE korte-video-ratio blijft > 100% (129%) omdat de **overkoepelende overview** (step 1, 96w)
-buiten deze ene stap-2-ingreep valt en niet begrensd is. De bovenkant-spreiding is dus VERKLEIND, niet
-weggenomen; de resterende hefboom is de overview. Markering: OPEN.
+**Ingreep 2 (2026-08-25): dezelfde harde grens op de stap-1-overview.** De structuur-prompt kreeg een HARDE
+grens tied aan de transcript-lengte: de overview mag nooit langer zijn dan het transcript zelf (bij korte
+video's bindend, bij lange niets — een echte high-level overview zit daar ver onder). Opnieuw gemeten met
+BEIDE grenzen actief:
+
+| video | vóór | ná beide grenzen | ratio |
+|---|---|---|---|
+| Deep Work (72s, kortste) | ov 96w / sec 178w = 129% | ov **85w** / sec 173w = 258w | **121%** — nog steeds > 100% |
+| Justice (3282s, lang, fixture) | — | ov 125w / sec 3507w = 3632w | **52%** — binnen natuurlijke spreiding, onaangetast |
+
+**Deel BLIJFT OPEN — de kortste video komt NIET onder 100% (121%).** De overview-grens "≤ transcript" is op
+Deep Work bijna niet-bindend: de overview (96w) zat al ruim onder het transcript (213w) en zakte slechts
+marginaal naar 85w. De resterende > 100% is STRUCTUREEL: de secties (173w, ~81% van het transcript, elk
+gecapt op hun fragment) plus welke overview dan ook sommeren boven het transcript. Een grens die elk DEEL
+aan zijn eigen bron (fragment / transcript) hangt, kan de SOM niet onder 100% dwingen — daarvoor zou een
+strakkere-dan-de-bron grens nodig zijn, die deze twee ingrepen bewust niet aanbrengen. Conclusie zonder
+verder bewijs: op zeer korte video's blijft de samenvatting iets langer dan het transcript. Markering: OPEN
+(nieuwe cijfers hierboven).
