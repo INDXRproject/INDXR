@@ -1,4 +1,12 @@
 import sbd from 'sbd';
+import {
+  SUBTITLE_MAX_LINE,
+  SUBTITLE_MAX_LINES,
+  SUBTITLE_MAX_CUE_SEC,
+  SUBTITLE_MIN_CUE_SEC,
+  SUBTITLE_TARGET_CPS,
+  SUBTITLE_CEIL_CPS,
+} from '../lib/subtitleConfig';
 
 export interface TranscriptItem {
   text: string;
@@ -290,12 +298,9 @@ export function buildReadingParagraphs(
 // SRT carries it as an in-budget "Name: " prefix (SRT has no speaker markup and its file often lands
 // in an editor or upload form), VTT carries it as an out-of-budget <v Name> voice tag (players render
 // who is speaking, and the tag leaves the full 42 characters for spoken text).
-export const SUBTITLE_MAX_LINE = 42;
-export const SUBTITLE_MAX_LINES = 2;
-export const SUBTITLE_MAX_CUE_SEC = 7;
-const SUBTITLE_MIN_CUE_SEC = 1;   // Netflix minimum is 5/6 s (~0.83 s); we are stricter
-const SUBTITLE_TARGET_CPS = 20;   // Netflix adult-English reading limit; cues fill gaps toward this
-const SUBTITLE_CEIL_CPS = 21;     // hard ceiling: one above the limit (verbatim-transcription trade-off, ADR-094)
+// Segmentation constants (line/line-count/duration/reading-speed) are the single source of truth in
+// ../lib/subtitleConfig — imported above, and interpolated into the SRT/VTT spec pages so the docs
+// cannot drift from these values.
 
 /** Word that ends a sentence (Unicode terminators + optional closing quote/bracket). */
 const WORD_ENDS_SENTENCE = /[.!?؟۔。！？…]+["')\]»”’]*$/u;

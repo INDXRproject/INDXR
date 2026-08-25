@@ -7,24 +7,33 @@ import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import {
+  SUBTITLE_MAX_LINE,
+  SUBTITLE_MAX_LINES,
+  SUBTITLE_MAX_CUE_SEC,
+  SUBTITLE_MIN_CUE_SEC,
+  SUBTITLE_TARGET_CPS,
+  SUBTITLE_CEIL_CPS,
+} from "@indxr/shared/lib/subtitleConfig"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats/srt" },
   title: "SRT Subtitle Export — INDXR.AI Docs",
   description:
-    "INDXR exports SubRip (.srt) subtitles: numbered cues with HH:MM:SS,mmm timestamps, re-segmented into readable blocks and wrapped to ~42 characters per line so they load cleanly into editors and players.",
+    "INDXR exports SubRip (.srt) subtitles: numbered cues with HH:MM:SS,mmm timestamps, re-segmented into readable blocks and wrapped to 42 characters per line so they load cleanly into editors and players.",
 }
 
-// Real output of generateSrt() (packages/shared/src/utils/formatTranscript.ts). First two cues.
-const srtSample = `1
-00:00:00,000 --> 00:00:07,500
-Welcome to this short introduction to
-vector databases. A vector database stores embeddings and retrieves them by similarity.
+// Real generateSrt() output — cues 3–4 of the fixture from video kBdfcR-8hEY ("Justice… Episode 01"),
+// packages/shared/src/utils/formatTranscript.ts. Regenerated 2026-08-26; every line ≤ SUBTITLE_MAX_LINE.
+const srtSample = `3
+00:00:33,509 --> 00:00:38,799
+This is a course about Justice and we
+begin with a story suppose you're the
 
-2
-00:00:07,500 --> 00:00:12,099
-That makes it the backbone of most
-retrieval augmented generation systems.`
+4
+00:00:38,799 --> 00:00:43,760
+driver of a trolley car, and your trolley
+car is hurdling down the track at sixty`
 
 export default function DocsSrtPage() {
   const schema = {
@@ -70,17 +79,38 @@ export default function DocsSrtPage() {
 
         <AnchorHeading as="h2">Re-segmentation &amp; line wrapping</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Segments are merged into cues rather than shown one raw fragment at a time. For AI
-          transcription a cue closes at about 7 seconds — or at ~4 seconds if the text already ends on a
-          sentence; for auto-captions a cue closes at about 3 seconds. Each cue is then wrapped to at
-          most <strong>42 characters</strong> per line (a single word longer than that is left intact).
+          Segments are re-cut into cues rather than shown one raw fragment at a time. INDXR builds a
+          per-word timeline, then packs words into a cue until the text would need more than{" "}
+          <strong>{SUBTITLE_MAX_LINES} lines</strong> of <strong>{SUBTITLE_MAX_LINE} characters</strong>{" "}
+          or the cue would run past <strong>{SUBTITLE_MAX_CUE_SEC} seconds</strong>. It prefers to end a
+          cue on a sentence boundary: if a cue stopped mid-sentence but a sentence ended earlier inside
+          it, the cue is cut back to that boundary, so a sentence is never split across cues unless it is
+          itself too long for one. A change of speaker always starts a new cue.
+        </p>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          Each cue is then held on screen long enough to read: at least{" "}
+          <strong>{SUBTITLE_MIN_CUE_SEC} second</strong>, lengthened toward{" "}
+          <strong>{SUBTITLE_TARGET_CPS} characters per second</strong> by filling the silent gap before
+          the next cue (which never shifts the timeline), and never left above{" "}
+          <strong>{SUBTITLE_CEIL_CPS} characters per second</strong>. A single word longer than{" "}
+          {SUBTITLE_MAX_LINE} characters is left intact rather than broken.
+        </p>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          When a transcript has speaker labels, the name shows on the first cue of each turn. SRT has no
+          speaker field, so the name is baked in as a <code>Name: </code> prefix that counts against the{" "}
+          {SUBTITLE_MAX_LINE}-character line budget — unlike{" "}
+          <a href="/docs/reference/export-formats/vtt" className="text-[var(--accent)] hover:underline">VTT</a>,
+          which carries it out of budget as a <code>&lt;v Name&gt;</code> voice tag. Because SRT spends
+          characters on the name and VTT does not, a turn-opening cue fits less spoken text in SRT than in
+          VTT, so the two files break into cues slightly differently.
         </p>
         <DocsCodeBlock>{srtSample}</DocsCodeBlock>
 
         <SourcesBlock
           sources={[
             { publisher: "Matroska / SubRip (.srt)", supports: "the SRT cue + comma-millisecond timestamp convention", href: "https://www.matroska.org/technical/subtitles.html" },
-            { publisher: "INDXR (own code)", supports: "re-segmentation thresholds, 42-char line wrap", verifiedAgainst: "packages/shared/src/utils/formatTranscript.ts (generateSrt, resegmentTranscript, wrapSubtitleText)" },
+            { publisher: "Netflix Timed Text Style Guide", supports: `the ${SUBTITLE_MAX_LINE}-char / ${SUBTITLE_MAX_LINES}-line / ${SUBTITLE_MAX_CUE_SEC}s cue conventions and reading-speed target`, href: "https://partnerhelp.netflixstudios.com/hc/en-us/articles/217350977" },
+            { publisher: "INDXR (own code)", supports: "segmentation constants, sentence-aware cue packing, 42-char line wrap", verifiedAgainst: "packages/shared/src/lib/subtitleConfig.ts + packages/shared/src/utils/formatTranscript.ts (generateSrt, buildSubtitleCues, wrapLines)" },
           ]}
         />
         <RelatedTopicsList

@@ -9,7 +9,8 @@
 //                    { videoId, channel:"Harvard University", language:"en", durationSeconds:3282,
 //                      extractionMethod:"youtube_captions", includeYamlFrontmatter:true })
 //                  → frontmatter + the [00:00:33] section (text truncated).
-//   • SRT        = generateSrt(transcript, { extractionMethod:"youtube_captions" }) → cues 3–5.
+//   • SRT        = generateSrt(transcript, { extractionMethod:"youtube_captions" }) → cues 3–5
+//                  (re-run 2026-08-26 against the current buildSubtitleCues algorithm).
 //   • RAG JSON   = buildRagJson(transcript, { videoId, title, channel, language, durationSeconds:3282,
 //                    extractionMethod:"youtube_captions" }) → chunk 5 of 60 (text truncated).
 // The `deep_link` / `chunk_id` / `token_count_estimate` / `total_chunks` fields are exactly what the
@@ -36,20 +37,19 @@ driver of a trolley car, and your trolley car is hurdling down the track at
 sixty miles an hour and at the end of the track you notice five workers …`
 
 export const HOME_SAMPLE_SRT = `3
-00:00:33,509 --> 00:00:37,750
+00:00:33,509 --> 00:00:38,799
 This is a course about Justice and we
-begin with a story
+begin with a story suppose you're the
 
 4
-00:00:37,750 --> 00:00:44,640
-suppose you're the driver of a trolley
-car, and your trolley car is hurdling down
-the track at sixty miles an hour
+00:00:38,799 --> 00:00:43,760
+driver of a trolley car, and your trolley
+car is hurdling down the track at sixty
 
 5
-00:00:44,640 --> 00:00:49,390
-and at the end of the track you notice
-five workers working on the track`
+00:00:43,760 --> 00:00:48,999
+miles an hour and at the end of the track
+you notice five workers working on the`
 
 export const HOME_SAMPLE_RAG = `{
   "chunk_index": 5,

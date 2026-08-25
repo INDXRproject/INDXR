@@ -6,6 +6,14 @@ import { spellCount, EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT } from "@indxr/s
 import { uploadFormatsProse, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { creditCostEur, getAnchorPackage } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
+import {
+  SUBTITLE_MAX_LINE,
+  SUBTITLE_MAX_LINES,
+  SUBTITLE_MAX_CUE_SEC,
+  SUBTITLE_MIN_CUE_SEC,
+  SUBTITLE_TARGET_CPS,
+  SUBTITLE_CEIL_CPS,
+} from "@indxr/shared/lib/subtitleConfig"
 import { editorialOg } from "@/lib/editorialMeta"
 
 export const metadata: Metadata = {
@@ -47,7 +55,7 @@ const faqs = [
   },
   {
     q: "Why don't raw YouTube SRT files work well in video editors?",
-    a: "YouTube creates subtitle entries every 2–4 seconds for display synchronization during playback. Editors need longer segments — 3–7 seconds — for readable on-screen text. The difference is between a subtitle file designed for watching and one designed for editing. INDXR.AI resegments to the editing standard.",
+    a: `YouTube creates subtitle entries every 2–4 seconds for display synchronization during playback. Editors need longer, readable blocks. INDXR.AI resegments to at most ${SUBTITLE_MAX_LINE} characters per line, at most ${SUBTITLE_MAX_LINES} lines, and no block longer than ${SUBTITLE_MAX_CUE_SEC} seconds — each held on screen long enough to read (a reading-speed target of ${SUBTITLE_TARGET_CPS} characters per second). The difference is between a subtitle file designed for watching and one designed for editing.`,
   },
   {
     q: "What's the maximum characters per line in INDXR.AI's SRT output?",
@@ -591,8 +599,10 @@ df <- read_csv("transcript.csv", locale = locale(encoding = "UTF-8"))`}</code></
 
       <p>
         INDXR.AI resegments the output before you download. The result follows broadcast subtitle
-        standards: 3–7 seconds per block, maximum 42 characters per line, no mid-sentence cuts.
-        Import it into your editor and it&apos;s clean enough to use without manual cleanup.
+        standards: at most {SUBTITLE_MAX_LINE} characters per line, at most {SUBTITLE_MAX_LINES} lines
+        per block, no block longer than {SUBTITLE_MAX_CUE_SEC} seconds, and cuts that prefer sentence
+        boundaries over mid-sentence breaks. Import it into your editor and it&apos;s clean enough to use
+        without manual cleanup.
       </p>
 
       <h3>The problem with raw YouTube subtitle files</h3>
@@ -624,9 +634,10 @@ is that it changes depending on`}</code></pre>
         Professional subtitle standards (
         <a href="https://www.bbc.co.uk/accessibility/forproducts/guides/subtitles/" target="_blank" rel="noopener noreferrer">BBC Subtitle Guidelines</a>,{" "}
         <a href="https://partnerhelp.netflixstudios.com/hc/en-us/articles/215758617" target="_blank" rel="noopener noreferrer">Netflix Timed Text Style Guide</a>,
-        EBU Tech 3264) call for blocks of 3–7 seconds, a maximum of two lines, and 42 characters
-        per line. These standards exist because human readers need time to read and comprehend text
-        before it disappears.
+        EBU Tech 3264) call for a maximum of {SUBTITLE_MAX_LINES} lines, {SUBTITLE_MAX_LINE} characters
+        per line, and cues that stay on screen long enough to read (Netflix caps a single cue at{" "}
+        {SUBTITLE_MAX_CUE_SEC} seconds). These standards exist because human readers need time to read
+        and comprehend text before it disappears.
       </p>
 
       <h3>What INDXR.AI exports</h3>
@@ -643,19 +654,23 @@ to understand about this topic`}</code></pre>
       </p>
 
       <p>
-        The resegmentation algorithm respects sentence boundaries — it doesn&apos;t merge segments across
-        full stops or question marks. A sentence that ends at 5.2 seconds won&apos;t be forced into the
-        previous block just to hit a duration target.
+        The algorithm prefers to end a block on a sentence boundary: if a block would stop
+        mid-sentence but a sentence ended earlier inside it, the block is cut back to that boundary,
+        so a sentence is only split across blocks when it is itself too long for one. A sentence that
+        ends at 5.2 seconds won&apos;t be forced into the previous block just to hit a duration target.
       </p>
 
       <p>
-        The resegmentation strategy depends on the transcript source. For AI Transcription
-        (AssemblyAI), segments are merged until a sentence boundary is detected — a block closes on
-        a period, question mark, or exclamation point, producing semantically complete subtitle units
-        of 3–7 seconds. For auto-captions, which have no punctuation, a time-based merge is used
-        instead: segments accumulate until the block reaches 3 seconds. Both approaches are a
-        significant improvement over raw 2-second YouTube segments, but AI Transcription produces
-        cleaner sentence-aligned blocks.
+        INDXR uses <strong>one</strong> resegmentation algorithm for every transcript, whatever the
+        source. It builds a per-word timeline from the segment timings, then packs words into a block
+        until adding the next would need more than {SUBTITLE_MAX_LINES} lines of {SUBTITLE_MAX_LINE}{" "}
+        characters or push the block past {SUBTITLE_MAX_CUE_SEC} seconds. A change of speaker always
+        starts a new block. Each block is then held on screen long enough to read — at least{" "}
+        {SUBTITLE_MIN_CUE_SEC} second, lengthened toward {SUBTITLE_TARGET_CPS} characters per second by
+        filling the silent gap before the next block (which never shifts the timeline), and never left
+        above {SUBTITLE_CEIL_CPS} characters per second. AI Transcription still produces cleaner blocks
+        than auto-captions, because its punctuation gives the algorithm real sentence boundaries to cut
+        on.
       </p>
 
       <p>

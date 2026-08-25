@@ -8,8 +8,8 @@ the app's own generators in `packages/shared/src/utils/formatTranscript.ts`. Not
 ## Real exports — `fixture/`
 | File | What | Generator |
 |------|------|-----------|
-| `justice.srt` | 62 KB, real cues | `generateSrt` |
-| `justice.vtt` | WEBVTT sibling | `generateVtt` |
+| `justice.srt` | real cues (630, re-run 2026-08-26 against `buildSubtitleCues`) | `generateSrt` |
+| `justice.vtt` | WEBVTT sibling (same 630 cues) | `generateVtt` |
 | `justice.md` | 39 KB, YAML frontmatter + timestamped sections | `generateMarkdown` |
 | `justice.rag.json` | **60 chunks**, `deep_link`/`chunk_id`/`token_count_estimate` (no `source_url`) | `buildRagJson` |
 | `neutral-player.mp4` | dark 60 s filler for the SRT player (no YouTube frame — ADR-088) | ffmpeg |

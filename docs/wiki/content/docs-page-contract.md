@@ -157,13 +157,13 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **Type:** SPEC.
 
 ### /docs/reference/export-formats/srt
-- **BEZIT:** `HH:MM:SS,mmm`-timestamp, index-nummering, resegmentatie-regel (3–7s, ≤42 chars/regel).
+- **BEZIT:** `HH:MM:SS,mmm`-timestamp, index-nummering, cue-segmentatie (≤42 tekens/regel, ≤2 regels/cue, 1–7s, leessnelheid-doel 20 / plafond 21 CPS).
 - **HERHAALT NIET:** resegmentatie-verhaal + editor-compatibiliteit (→ artikel `youtube-srt-download`).
 - **LINKT:** artikel `youtube-srt-download`; sibling `vtt`; hub.
 - **BRON:** eigen code (format) + **extern** voor de regel-lengte-standaard (BBC/Netflix/EBU 3264) — alleen als de pagina die norm noemt.
 - **FIGUUR-SLOTS:** (1) SRT-blok. **Bijschrift:** "SRT output: numbered cues with comma-millisecond timestamps." **Alt:** "SRT subtitle file with cue numbers and HH:MM:SS,mmm timestamps."
 - **SCHEMA:** `TechArticle`.
-- **BRONMATERIAAL:** `formatTranscript.ts` → `generateSrt` (167), `formatSrtTimestamp` (24), `resegmentTranscript` (92). Artikel `youtube-srt-download`.
+- **BRONMATERIAAL:** `formatTranscript.ts` → `generateSrt`, `formatSrtTimestamp`, `buildSubtitleCues`; segmentatie-constanten in `packages/shared/src/lib/subtitleConfig.ts`. Artikel `youtube-srt-download`.
 - **Type:** SPEC.
 
 ### /docs/reference/export-formats/vtt
@@ -173,7 +173,7 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 - **BRON:** eigen code.
 - **FIGUUR-SLOTS:** (1) VTT-blok met `WEBVTT`-header. **Bijschrift:** "WebVTT output with the WEBVTT header and dot-millisecond timestamps." **Alt:** "VTT file starting with WEBVTT and cues using HH:MM:SS.mmm."
 - **SCHEMA:** `TechArticle`.
-- **BRONMATERIAAL:** `formatTranscript.ts` → `generateVtt` (181), `formatVttTimestamp` (33), `resegmentTranscript` (92). Artikel `youtube-srt-download`.
+- **BRONMATERIAAL:** `formatTranscript.ts` → `generateVtt`, `formatVttTimestamp`, `buildSubtitleCues`; segmentatie-constanten in `packages/shared/src/lib/subtitleConfig.ts`. Artikel `youtube-srt-download`.
 - **Type:** SPEC.
 
 ### /docs/reference/export-formats/json
