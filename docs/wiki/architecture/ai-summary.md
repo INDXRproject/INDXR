@@ -176,10 +176,24 @@ Ratio (samenvattingswoorden ÷ transcriptwoorden) over alle productie-samenvatti
 | Hamza Yusuf interview | 15231s | 20 | 44% |
 | JRE MMA #32 | 9345s | 17 | 39% |
 
-**Conclusie (voor als dit ooit getemd wordt):** de knop is de **stap-2-prompt** — die stuurt op VOLLEDIGE
-dekking met "≈⅓ van de fragment-woorden" expliciet als niet-bindende richting en ZONDER harde lengtegrens
-(`max_tokens` stuurt niets). Niet de hoofdstukindeling (minder/langere hoofdstukken gaven juist méér
-woorden) en niet het denkbudget (raakt reasoning-tokens, niet de uitvoerlengte). Financieel onschadelijk:
-de COR-spreiding is ~€0,026–0,049/samenvatting, ruim binnen de onderbreker (kost/min-cap €0,02/min = €1,10
-voor een 55-min-video; de duurste generatie zit op €0,0009/min). **Markering: OPEN — bewust nog geen
-ingreep.**
+**Conclusie:** de knop is de **stap-2-prompt** — die stuurde op VOLLEDIGE dekking met "≈⅓ van de
+fragment-woorden" als niet-bindende richting en ZONDER lengtegrens. Niet de hoofdstukindeling
+(minder/langere hoofdstukken gaven juist méér woorden) en niet het denkbudget (raakt reasoning-tokens,
+niet de uitvoerlengte). Financieel onschadelijk: COR-spreiding ~€0,026–0,049/samenvatting, ruim binnen de
+onderbreker.
+
+**Ingreep (2026-08-25): harde bovengrens op de stap-2-uitwerking.** De sectie-prompt kreeg een HARDE
+grens: de uitwerking van een hoofdstuk mag nooit langer zijn dan het fragment zelf (bij korte fragmenten
+bindend, bij lange verandert er niets — grondige notities zitten daar al ruim onder). De ≈⅓-richting blijft
+binnen die grens, net als de vrijheid om lengte de informatiedichtheid te laten volgen. Gemeten (één
+regeneratie per kant):
+
+| video | oud | nieuw | wat er gebeurde |
+|---|---|---|---|
+| Deep Work (72s, kortste) | 172% | **129%** | stap-2-secties nu 178w < transcript 213w (elk hoofdstuk onder zijn fragment); de grens BINDT |
+| Justice (3282s, lang) | 47% | 36% | 36% ≪ 100%-grens → de grens is niet-bindend; binnen Justice' natuurlijke spreiding (26–47%) → onaangetast |
+
+**Deel BLIJFT OPEN.** De hoofdstuk-uitwerking is nu wél begrensd (Deep Work-secties 178w < 213w transcript),
+maar de TOTALE korte-video-ratio blijft > 100% (129%) omdat de **overkoepelende overview** (step 1, 96w)
+buiten deze ene stap-2-ingreep valt en niet begrensd is. De bovenkant-spreiding is dus VERKLEIND, niet
+weggenomen; de resterende hefboom is de overview. Markering: OPEN.
