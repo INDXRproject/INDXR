@@ -76,7 +76,7 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/articles/transcript-export-formats": "2026-08-07",
   "/articles/youtube-playlist-transcript": "2026-08-07",
   "/articles/audio-to-text": "2026-08-01",
-  "/articles/youtube-transcript-obsidian": "2026-08-01",
+  "/articles/youtube-to-notes": "2026-08-25",
   "/articles/chunk-youtube-transcripts-for-rag": "2026-07-23",
   "/articles/youtube-channel-knowledge-base": "2026-07-23",
   "/articles/youtube-transcripts-vector-database": "2026-07-23",

@@ -125,7 +125,7 @@ route. Alleen deze twee blijven:
 | `/articles/transcript-export-formats` | Live | Formats-hub: TXT·Markdown·CSV·SRT/VTT·JSON·RAG-JSON (samenvoeging 2026-08-07) |
 | `/articles/youtube-playlist-transcript` | Live | Workflow: playlist extractie (+ bulk-sectie, 2026-08-07) |
 | `/articles/audio-to-text` | Live | Workflow: audio naar tekst |
-| `/articles/youtube-transcript-obsidian` | Live | Workflow: Obsidian integratie |
+| `/articles/youtube-to-notes` | Live | Workflow: YouTube to notes (herankerd van Obsidian, Meting 3) |
 | `/articles/chunk-youtube-transcripts-for-rag` | Live | Deep dive: chunking voor RAG |
 | `/articles/youtube-channel-knowledge-base` | Live | Deep dive: channel knowledge base |
 | `/articles/youtube-transcripts-vector-database` | Live | Deep dive: vector database |

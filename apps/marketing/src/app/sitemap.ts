@@ -60,7 +60,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/articles/audio-to-text",
     "/articles/video-to-text",
     "/articles/youtube-video-summarizer",
-    "/articles/youtube-transcript-obsidian",
+    "/articles/youtube-to-notes",
     "/articles/chunk-youtube-transcripts-for-rag",
     "/articles/youtube-channel-knowledge-base",
     "/articles/youtube-transcripts-vector-database",

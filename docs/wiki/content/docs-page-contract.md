@@ -138,8 +138,8 @@ Per pagina: **BEZIT** · **HERHAALT NIET** · **LINKT** · **BRON** · **FIGUUR-
 
 ### /docs/reference/export-formats/markdown
 - **BEZIT:** exacte YAML-frontmatter-keys (titel/URL/datum/duur), timestamps-variant, paragraaf-split-regel (>5s).
-- **HERHAALT NIET:** Obsidian/Notion-use-case-verhaal (→ artikelen `youtube-transcript-markdown` + `youtube-transcript-obsidian`).
-- **LINKT:** artikel `youtube-transcript-markdown` (+ `-obsidian` als workflow); hub.
+- **HERHAALT NIET:** Obsidian/Notion-use-case-verhaal (→ artikelen `youtube-transcript-markdown` + `youtube-to-notes`).
+- **LINKT:** artikel `youtube-transcript-markdown` (+ `youtube-to-notes` als workflow); hub.
 - **BRON:** eigen code.
 - **FIGUUR-SLOTS:** (1) Markdown-frontmatter + body gerenderd in Obsidian. **Bijschrift:** "Exported Markdown with YAML frontmatter, rendered in Obsidian." **Alt:** "Markdown note showing a YAML frontmatter block above the transcript body in Obsidian."
 - **SCHEMA:** `TechArticle`.

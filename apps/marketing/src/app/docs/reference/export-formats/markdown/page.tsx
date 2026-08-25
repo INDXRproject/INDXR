@@ -110,7 +110,7 @@ export default function DocsMarkdownPage() {
             { label: "All export formats", href: "/docs/reference/export-formats" },
             { label: "Plain text (TXT)", href: "/docs/reference/export-formats/txt" },
             { label: "Article: Transcript export formats", href: "/articles/transcript-export-formats" },
-            { label: "Article: Obsidian workflow", href: "/articles/youtube-transcript-obsidian" },
+            { label: "Article: YouTube to notes", href: "/articles/youtube-to-notes" },
           ]}
         />
       </DocsShell>

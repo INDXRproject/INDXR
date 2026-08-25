@@ -137,7 +137,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 | `transcript-export-formats` | Formats (hub) | **Samenvoeging van 6 format-artikelen** (TXT·Markdown·CSV·SRT/VTT·JSON·RAG-JSON), elk als sectie. "six export formats, nine export options"; UTF-8 BOM; resegment 3–7s/≤42 chars; RAG-JSON 1cr/10min; frontmatter-velden. ⚠ oude "8 vs 9"-telling-botsing blijft (latere kwaliteitsronde). | live (nieuw) |
 | `youtube-playlist-transcript` | Workflows | 3-gratis; failed retry na 30s; batch ≤500; **geen channel-URL's**; dedup-badges (amber=captions, violet=AI); **absorbeert bulk** (use-cases-sectie). | live |
 | `audio-to-text` | Workflows | 500MB (~8u); "94–96%+ clean audio"; 99+ talen; summary 3cr; SRT/VTT 3–7s/42 chars. | live |
-| `youtube-transcript-obsidian` | Workflows | Markdown/frontmatter; summary 3cr; "19 lectures/13 hours" ZIP; youtube-transcript-api geblokt op cloud-IP's, INDXR = yt-dlp+residential proxy. | live |
+| `youtube-to-notes` | Workflows | Gestructureerde samenvatting (hoofdstukken + tijdstempels); edit-into-your-own; Markdown-export voor Obsidian/Notion/elke note-app; summary vanaf 3cr (schaalt met duur); "geen plugin"-betrouwbaarheidshoek. Herankerd op `youtube to notes` (keyword-demand Meting 3). | live |
 | `chunk-youtube-transcripts-for-rag` | AI & RAG | RAG 30/60/90/120s presets, 15% overlap, sentence-snap (AI) vs segment-snap (captions). | live (grotendeels topic) |
 | `youtube-channel-knowledge-base` | AI & RAG | **Alleen playlist-URL's, geen channel-URL's**; "up to 500 videos"; dedup gratis; voorbeeld 50×30min = 1.650 credits. | live |
 | `youtube-transcripts-vector-database` | AI & RAG | RAG via Playlist-tab-toggle; chunks 90–120s (~300–400 tokens); embedding-kosten zijn OpenAI's, niet INDXR's. | live (grotendeels topic) |
@@ -200,7 +200,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 | Onderwerp | DOCS-pagina (spec) — draagt | ARTIKEL (bron) — draagt |
 |---|---|---|
 | **Plain text / TXT** | `…/export-formats/txt` — TXT-varianten (met/zonder timestamps), `[HH:MM:SS]`-format, "anoniem-only" | `transcript-export-formats` § Plain text — waarom plain text, wat-je-krijgt |
-| **Markdown** | `…/export-formats/markdown` — exacte YAML-frontmatter-keys, paragraaf-split-regel | `transcript-export-formats` § Markdown · (`youtube-transcript-obsidian` = workflow-variant) |
+| **Markdown** | `…/export-formats/markdown` — exacte YAML-frontmatter-keys, paragraaf-split-regel | `transcript-export-formats` § Markdown · (`youtube-to-notes` = workflow-variant) |
 | **CSV** | `…/export-formats/csv` — kolomnamen (`segment_index,start,end,duration,text,word_count`), UTF-8 BOM | `transcript-export-formats` § CSV — pandas/Sheets/Voyant use-case |
 | **SRT** | `…/export-formats/srt` — `HH:MM:SS,mmm`, index-nummering | `transcript-export-formats` § SRT/VTT — resegmentatie (3–7s/42chars), editor-compat |
 | **VTT** | `…/export-formats/vtt` — `WEBVTT`-header, `HH:MM:SS.mmm` | `transcript-export-formats` § SRT/VTT (dekt SRT **én** VTT) |

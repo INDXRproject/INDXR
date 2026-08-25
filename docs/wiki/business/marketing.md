@@ -43,7 +43,7 @@ INDXR.AI richt zich op problem-aware zoekintentie: mensen die een specifiek YouT
 |-------|----------|
 | `/youtube-to-text` | ToolPageTemplate |
 | `/youtube-transcript-markdown` | ToolPageTemplate |
-| `/youtube-transcript-obsidian` | ToolPageTemplate |
+| `/articles/youtube-to-notes` | ToolPageTemplate |
 | `/youtube-transcript-csv` | ToolPageTemplate |
 | `/youtube-srt-download` | ToolPageTemplate |
 | `/youtube-transcript-json` | ToolPageTemplate |

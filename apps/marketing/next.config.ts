@@ -46,6 +46,11 @@ const nextConfig: NextConfig = {
       { source: '/articles/youtube-srt-download', destination: '/articles/transcript-export-formats', permanent: true },
       { source: '/articles/youtube-transcript-json', destination: '/articles/transcript-export-formats', permanent: true },
       { source: '/articles/youtube-transcript-for-rag', destination: '/articles/transcript-export-formats', permanent: true },
+
+      // Slug rename (2026-08-25): article rewritten from an Obsidian-specific angle to the broader
+      // "YouTube to notes" keyword (keyword-demand-2026-08 § Meting 3). Single 308 hop; the old slug
+      // was never a redirect destination, so no chain.
+      { source: '/articles/youtube-transcript-obsidian', destination: '/articles/youtube-to-notes', permanent: true },
     ]
   },
   images: {

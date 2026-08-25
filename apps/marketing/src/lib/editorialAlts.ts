@@ -12,7 +12,7 @@ export const editorialAlts: Record<string, string> = {
   "youtube-playlist-transcript": "silver film reel with tape trailing across the sand",
   "youtube-transcript-non-english": "row of worn leather books with foreign-script spines",
   "youtube-transcript-not-available": "clear cassette tape with unspooled ribbon on sandy ground",
-  "youtube-transcript-obsidian": "glossy black obsidian shard glinting on gritty ground",
+  "youtube-to-notes": "glossy black volcanic glass shard glinting on gritty ground",
   "youtube-transcripts-vector-database": "brass armillary sphere casting circular shadow on pale floor",
   "youtube-transcript-without-extension": "edge of a glass pane standing on stone floor",
 }

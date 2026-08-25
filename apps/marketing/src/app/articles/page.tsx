@@ -28,7 +28,7 @@ const articles = [
   { href: "/articles/audio-to-text", label: "Audio File Transcription", category: "Workflows", description: "Transcribe any audio or video file to text: punctuated, split by speaker, timestamped. One credit per minute." },
   { href: "/articles/video-to-text", label: "Video File Transcription", category: "Workflows", description: "Transcribe any video file to text: the audio track is taken out for you, punctuated, split by speaker, timestamped, and exportable as subtitles." },
   { href: "/articles/youtube-video-summarizer", label: "YouTube Video Summarizer", category: "Workflows", description: "Summarize a YouTube video into chapter notes with clickable timestamps: an overview plus worked-out chapters that scale with the video's length." },
-  { href: "/articles/youtube-transcript-obsidian", label: "Obsidian Workflow", category: "Workflows", description: "Markdown export with Dataview-compatible properties — no plugin required." },
+  { href: "/articles/youtube-to-notes", label: "YouTube to Notes", category: "Workflows", description: "Turn a video into a structured summary with chapters and timestamps, edit it into your own version, and export it as Markdown for Obsidian, Notion or any note app." },
 
   // AI & RAG (internal key: Deep Dives)
   { href: "/articles/chunk-youtube-transcripts-for-rag", label: "Chunking Transcripts for RAG", category: "Deep Dives", description: "The chunk size you pick matters more than your embedding model." },

@@ -27,7 +27,7 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
   "transcript-export-formats": [
     { href: "/docs/reference/export-formats", label: "Export formats reference", reason: "the exact fields, columns and schema for every format" },
     { href: "/articles/video-to-text", label: "Video to text", reason: "getting a video file's words out before you export them" },
-    { href: "/articles/youtube-transcript-obsidian", label: "Obsidian workflow", reason: "the Markdown export in an end-to-end note-taking setup" },
+    { href: "/articles/youtube-to-notes", label: "YouTube to notes", reason: "the Markdown export in an end-to-end note-taking setup" },
     { href: "/articles/youtube-transcripts-vector-database", label: "Transcripts in vector databases", reason: "loading the RAG JSON into a database" },
   ],
 
@@ -54,8 +54,8 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
     { href: "/articles/video-to-text", label: "Video to text", reason: "get the transcript from a video file first, then summarise it" },
     { href: "/articles/audio-to-text", label: "Audio file transcription", reason: "the same for a recording, when what you have is not a video" },
   ],
-  "youtube-transcript-obsidian": [
-    { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "the Markdown export Obsidian imports, and every other format" },
+  "youtube-to-notes": [
+    { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "the Markdown export note apps import, and every other format" },
     { href: "/docs/reference/export-formats/markdown", label: "Markdown format spec", reason: "the exact frontmatter keys" },
     { href: "/articles/youtube-channel-knowledge-base", label: "Channel knowledge base", reason: "turning your vault into searchable knowledge" },
   ],

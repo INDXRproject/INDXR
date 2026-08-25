@@ -349,8 +349,8 @@ SORT created DESC`}</code></pre>
         >
           blacksmithgu.github.io/obsidian-dataview
         </a>
-        . For the full end-to-end Obsidian setup, see{" "}
-        <Link href="/articles/youtube-transcript-obsidian">YouTube Transcript to Obsidian</Link>.
+        . For the full end-to-end note-taking setup, see{" "}
+        <Link href="/articles/youtube-to-notes">YouTube to notes</Link>.
       </p>
 
       <h3>The Notion workflow</h3>
