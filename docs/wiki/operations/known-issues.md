@@ -599,43 +599,22 @@ Zie de sectie hierboven (`Sentry.captureException()` in Vercel API-routes arrive
 
 De gedeelde transcribe-`ErrorCard` (`packages/shared/src/components/transcribe/errorCopy.ts`) moet onbekende backend-foutcodes loggen zodat er copy voor toegevoegd kan worden. De brief vroeg Sentry; **frontend-Sentry is voor dit pad niet gewired**, dus het logt via `posthog.capture('transcribe_error_unknown_code', { code })` + `console.warn`. Zoek in PostHog op dat event om nieuwe codes te vinden. Wanneer frontend-Sentry breder wordt uitgerold: heroverweeg of dit event daarheen moet. Verwant: de credit-regel op download-fout-kaarten leest `transcription_jobs.credits_refunded` uit de **Realtime**-payload van `useJobStatus`; de polling-fallback `/api/jobs/{id}` (Railway-proxy) bevat dat veld níét — voor volledige dekking zou de proxy `credits_refunded` moeten meesturen.
 
-## Dubbel-start-race op transcriptie- & playlist-jobs (dubbele-afboekingsrisico) — OPEN
+## Dubbel-start-race op credit-reserverende jobs (dubbele-afboekingsrisico) — GEFIXT 2026-08-25 (commit 962856d)
 
-**Ernst: hoog (dubbele credit-afboeking).** De job-start-endpoints in `backend/main.py` dedupliceren met
-een **read-then-insert zonder unieke constraint**: eerst een SELECT naar een lopende job, anders INSERT +
-`reserve_credits`. Twee *gelijktijdige* POSTs die beide de SELECT draaien vóór een van beide INSERT landt,
-passeren allebei de dedup en reserveren allebei → de gebruiker betaalt dubbel voor één taak.
+**Was: ernst hoog (dubbele credit-afboeking).** De job-start-endpoints deduupliceerden met een
+**read-then-insert zonder unieke constraint**: twee *gelijktijdige* POSTs passeerden allebei de SELECT vóór
+een INSERT landde en reserveerden allebei → dubbele afboeking voor één taak.
 
-- **ai_summary-pad: GEFIXT (2026-08-25).** Partiële unieke index `uniq_active_ai_summary_job` op
-  `(user_id, transcript_id) WHERE source_kind='ai_summary' AND status NOT IN ('complete','error')` maakt een
-  tweede niet-terminale rij onmogelijk; `start_summary` vangt de 23505 en geeft de bestaande job terug
-  (migratie `20260824170000`). Reserve/settle/refund ongewijzigd.
-- **Enkel-video (YouTube): NOG OPEN — bewust NIET zomaar gefixt (2026-08-25).** Sleutel = `(user_id,
-  video_url)` scoped op `source_kind='single'`. Maar: de bestaande dedup (`main.py:~1022-1046`) gebruikt
-  een **tijd-gebaseerde freshness-filter** (`created_at<30min OR last_heartbeat_at<10min`) om een gebruiker
-  bewust een **vastgelopen/dode job te laten OVERdoen**. Een STATISCHE partiële unieke index kan "binnen
-  30 min aangemaakt" niet uitdrukken → een dode-maar-nog-niet-gereapte `pending`-rij zou een legitieme
-  retry blokkeren (23505 → geeft de dode job terug), tot de watchdog hem reapt. De summary-fix had dit
-  probleem NIET (die dedup had géén freshness-filter + poll-stale-detectie ruimt vast op). Veilig maken
-  vereist óf de poll/`get_job_status`-stale-detectie uitbreiden naar `pending/downloading/...` (raakt het
-  refund-pad → financieel-kritiek), óf de watchdog-reap-latentie als acceptabele blokkade aanvaarden.
-- **Upload: NOG OPEN — GEEN natuurlijke sleutel.** Uploads hebben `video_url = NULL` en worden bewust NIET
-  gededupliceerd ("upload-pad is per definitie uniek"). Er is geen `video_id`/content-hash/idempotency-key,
-  dus een unieke index is onmogelijk zonder eerst zo'n **client-idempotency-key** te introduceren (grotere
-  ontwerpwijziging). De dubbel-klik-race op één upload blijft tot die key er is.
-- **Playlist: NOG OPEN.** Aparte tabel `playlist_extraction_jobs`, GEEN dedup-pre-select. Sleutel =
-  `(user_id, playlist_url)` over niet-terminale statussen kán, en retries (`parent_playlist_id`, nieuwe
-  ronde) mogen omdat de parent dan terminaal is. Maar dezelfde tijd-gebaseerde activeness-notie
-  (`_count_active_jobs`, heartbeat/freshness) + de `interrupted`-recovery-status maken een statische index
-  even subtiel als bij single; te verifiëren vóór toepassing.
+**GEFIXT via idempotentiesleutels (ADR-019)** — één sleutel per handeling, atomisch geclaimd (PK-insert),
+op ALLE credit-reserverende routes: `/api/summarize`, `/api/transcribe/whisper` (single + upload),
+`/api/playlist/extract` (+ retry). Migraties `20260825020000` (tabel + cron) en `20260825030000`
+(verwijdert de tussentijdse summary-index `uniq_active_ai_summary_job`, die anders blokkade A veroorzaakte).
+De sleutel lost de drie eerdere blokkades in één keer op: geen tijdvenster nodig (een bewuste retry na een
+vastgelopen job is een nieuwe sleutel → niet geblokkeerd), en upload heeft geen natuurlijke sleutel meer
+nodig (de sleutel is er zelf een; de content-hash in `request_hash` voorkomt dat één sleutel twee bestanden
+dekt). Reserve/settle/refund ongewijzigd.
 
-**Bestaande dubbele niet-terminale rijen: GEEN** (gecontroleerd 2026-08-25 — 0 op alle paden; de tabel was
-leeg). Een index kan dus zonder data-conflict worden aangemaakt; de bezwaren zijn puur RUNTIME-gedrag.
-
-**Waarom niet gefixt in deze ronde (financieel-kritiek → bij twijfel stoppen + rapporteren):** de
-summary-oplossing is NIET 1-op-1 overdraagbaar. Uploads hebben geen sleutel; single/playlist gebruiken
-tijd-gebaseerde activeness die een statische unieke index niet kan spiegelen zonder een legitieme
-stuck-job-retry te blokkeren of het refund-pad aan te raken. De veilige route is per-soort verschillend
-(single: stale-detectie op alle niet-terminale statussen → dan pas de index; upload: eerst een
-idempotency-key; playlist: index + verifieer `interrupted`-semantiek). Dat is een aparte, zorgvuldige
-taak — hier vastgelegd, blijft OPEN.
+**Bewezen** (per jobsoort, twee gelijktijdige verzoeken via twee backend-instances): zelfde sleutel → één
+job + één reservering + hetzelfde job_id; verschillende sleutels → twee jobs; retry na vastgelopen job
+(nieuwe sleutel) → niet geblokkeerd; zelfde sleutel + andere inhoud → 422. Bestaande dubbele niet-terminale
+rijen bij aanvang: geen (0 op alle paden). Zie ADR-019 + `backend/idempotency.py`.

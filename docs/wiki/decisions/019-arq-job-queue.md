@@ -182,22 +182,43 @@ ARQ ondersteunt de `_job_id` parameter die enqueue-uniqueness garandeert totdat 
 
 ---
 
-## Schema: idempotency_keys tabel (⚠️ Nooit geïmplementeerd)
+## Schema: idempotency_keys tabel (✅ Gebouwd 2026-08-25)
 
-**Status: Gepland, nooit aangemaakt.** De `idempotency_keys` tabel is beschreven als onderdeel van Fase 4 maar is nooit gemigreerd naar de productie-DB (geverifieerd 2026-04-30 via `information_schema.tables`). De geplande schema was:
+**Status: geïmplementeerd** (migratie `20260825020000_idempotency_keys.sql`). Vervangt het jaren-op-de-
+backlog-plan. Eén sleutel per LOGISCHE handeling: de client (`packages/shared/src/lib/idempotency.ts`)
+munt 'm bij intentie, stuurt 'm mee, en wist 'm zodra er een job-id of een fout terug is; een bewuste
+tweede poging (nieuwe klik) munt een nieuwe sleutel. De server claimt ATOMISCH (`backend/idempotency.py`).
+
+Afwijkingen t.o.v. het oude plan: **geen `cached_response`** (choice 3 — we slaan het `job_id` op; de poll
+levert het resultaat), en een `kind`-kolom (discriminator) + het `job_id` bij de claim (vooraf gegenereerd,
+zodat een gelijktijdig tweede verzoek dat de PK-botsing krijgt ALTIJD een job_id ziet — geen NULL-venster):
 
 ```sql
 CREATE TABLE idempotency_keys (
-  key TEXT PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  request_hash TEXT NOT NULL,
-  cached_response JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours')
+  key          TEXT PRIMARY KEY,
+  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  request_hash TEXT NOT NULL,   -- zelfde sleutel + ander hash = clientfout → 422 (geen stille herhaling)
+  kind         TEXT NOT NULL,   -- single | upload | playlist | ai_summary
+  job_id       UUID NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at   TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours')
 );
 ```
 
-Huidige bescherming tegen duplicate submissions: `deduct_credits_atomic` RPC (row-level locking voorkomt race conditions) + `credits_deducted` boolean op `transcription_jobs` (Fase 4, voorkomt dubbele aftrek bij worker-restart). POST-endpoint-level idempotency staat op de backlog.
+- **Routes:** alle credit-reserverende POSTs — `/api/summarize`, `/api/transcribe/whisper` (single + upload),
+  `/api/playlist/extract` (+ retry). Een gelijktijdig tweede verzoek met dezelfde sleutel → hetzelfde job_id
+  terug, nooit een tweede reservering. `request_hash` per soort: summary = transcript + bron (origineel) +
+  generated_at van een bestaande samenvatting (zodat regenereren ≠ eerste generatie); single = video_url;
+  upload = content-hash (één sleutel dekt niet twee bestanden); playlist = url + gesorteerde video-ids + whisper-keuze.
+- **Sleutel = énige dedup wanneer aanwezig:** de oude tijd-gebaseerde resource-dedup wordt overgeslagen als
+  er een sleutel is, zodat een bewuste retry na een vastgelopen job (nieuwe sleutel) niet geblokkeerd wordt.
+- **Opruimen:** 24u-TTL, nachtelijke ARQ-cron `cleanup_idempotency_keys` (03:00 UTC).
+- **De partiële unieke index op samenvattingen (`uniq_active_ai_summary_job`, migratie 20260824170000) is
+  verwijderd** (migratie `20260825030000`, ná go-live) — die dedupliceerde op resource-staat en zou samen
+  met de sleutel blokkade A veroorzaken. De sleutel is nu de enige dubbel-start-garantie.
+
+Reserve/settle/refund zijn NIET aangeraakt; de sleutel is een laag vóór de reservering, die wordt
+vrijgegeven als het werk ná een winnende claim alsnog faalt.
 
 ---
 

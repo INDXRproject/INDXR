@@ -155,3 +155,31 @@ samenvatting) en is de bestemming voor genereren, voortgang én resultaat.
   het transcript sprekers heeft** (propageert door alle exports, eerste handeling bij een interview).
   Overloop (⋯): alleen Watch on YouTube + Delete. **Summarise/Regenerate is van het transcript-overloopmenu
   naar de Summary-tab verplaatst** (geen functie verdwenen).
+
+## OPEN — lengtespreiding van samenvattingen (2026-08-25, geen besluit)
+
+**Openstaand punt, niet opgelost.** De samenvattingslengte spreidt sterk, zowel tussen video's als tussen
+generaties van dezelfde video. Bij KORTE video's is de samenvatting LANGER dan het transcript; bij LANGE
+video's komt hij op ~40% uit. Dezelfde Justice-video, tweemaal door dezelfde pijplijn, gaf 6 hoofdstukken /
+1794 woorden (26%) versus 5 hoofdstukken / 3282 woorden (47%) — bijna een verdubbeling. Over 8 generaties
+van Justice liepen de output-tokens van 7.310 tot 15.890 (2,2×). Dit is dus GEDRAG, geen toeval.
+
+Ratio (samenvattingswoorden ÷ transcriptwoorden) over alle productie-samenvattingen (2026-08-25):
+
+| video | duur | hfdst | ratio |
+|---|---|---|---|
+| Designing for Deep Work | 72s | 2 | **172%** |
+| Every Wife of the Prophet | 1238s | 3 | 99% |
+| Malcolm X (Islam) | 297s | 2 | 94% |
+| Pharaoh (Nouman Ali Khan) | 1095s | 2 | 62% |
+| Justice | 3282s | 5 | 47% |
+| Hamza Yusuf interview | 15231s | 20 | 44% |
+| JRE MMA #32 | 9345s | 17 | 39% |
+
+**Conclusie (voor als dit ooit getemd wordt):** de knop is de **stap-2-prompt** — die stuurt op VOLLEDIGE
+dekking met "≈⅓ van de fragment-woorden" expliciet als niet-bindende richting en ZONDER harde lengtegrens
+(`max_tokens` stuurt niets). Niet de hoofdstukindeling (minder/langere hoofdstukken gaven juist méér
+woorden) en niet het denkbudget (raakt reasoning-tokens, niet de uitvoerlengte). Financieel onschadelijk:
+de COR-spreiding is ~€0,026–0,049/samenvatting, ruim binnen de onderbreker (kost/min-cap €0,02/min = €1,10
+voor een 55-min-video; de duurste generatie zit op €0,0009/min). **Markering: OPEN — bewust nog geen
+ingreep.**
