@@ -17,6 +17,10 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
+    q: "How do I get a transcript of a YouTube video?",
+    a: "Paste the video's link into INDXR. If the video already has captions, you get the transcript straight back as text to read, copy or download, free and with no account. If it has no captions, you transcribe the audio instead and still get a clean, punctuated transcript. There is nothing to install.",
+  },
+  {
     q: "Why is the \"Show transcript\" button greyed out or missing?",
     a: "It's almost always an interface issue, not a missing transcript. A browser extension is the most common cause: ad blockers and privacy extensions stop the transcript panel from rendering even though the captions exist. Open the video in an incognito window, and if the transcript appears, an extension on your normal profile is the culprit. The YouTube mobile app also hides transcripts that the mobile browser shows.",
   },
@@ -84,6 +88,17 @@ export default function YouTubeTranscriptNotAvailablePage() {
         &quot;no transcript available,&quot; take it literally: the video has no caption track, and no
         amount of refreshing will change that. The second case is the one this page mostly solves, and
         it&apos;s further down.
+      </p>
+
+      <h2>How to get a transcript of a YouTube video</h2>
+
+      <p>
+        The direct answer, before the troubleshooting below: paste the video&apos;s link into a tool that
+        reads its captions, and you get the transcript back as text you can read, copy, search or
+        download. INDXR does this in the browser, with no extension, and no account when the video
+        already has captions. If the video has no captions, you transcribe its audio instead and still
+        get the script of the video as clean, readable text. The rest of this page is for when that
+        transcript is missing or hidden.
       </p>
 
       <h2>Fixes that cost nothing</h2>

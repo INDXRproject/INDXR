@@ -109,6 +109,14 @@ export default function GettingStartedPage() {
           Captions are free and good enough for the rest.
         </p>
 
+        <AnchorHeading as="h2">How to get a transcript of a YouTube video</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          In short: paste the video&apos;s link into Transcribe and pick a method. YouTube captions give
+          you the script of the video for free in seconds; AI transcription reads the audio when you want
+          punctuation or when the video has no captions. Either way you get text you can read, copy,
+          search, download or export. The steps below walk through it.
+        </p>
+
         <AnchorHeading as="h2">1. Open Transcribe</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Open{" "}

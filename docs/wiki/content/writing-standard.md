@@ -184,6 +184,11 @@ De opening is voor élk paginatype gelijk; het middenstuk verschilt per categori
 - **Sitemap** blijft één bestand (46 URL's); segmentatie onnodig. **[TE VERIFIËREN of ooit nodig]**
 - **Bing/IndexNow** niet gebouwd; waarde = **[TE VERIFIËREN]**.
 
+### C13 — Geen implementatie in publieke content (hard) ✅ 2026-08-26
+- Publieke content (artikelen, docs, marketing) beschrijft **wat de gebruiker krijgt**, niet **hoe het intern werkt**. Geen interne beslisregels, geen volgorde van fallbacks, geen beschrijving van welke bron wint bij een conflict. Reden: de lezer wil weten wat hij krijgt, en een concurrent mag een pagina niet als **bouwtekening** kunnen gebruiken. **[beslist 2026-08-26]**
+- **Aanleiding:** het taalartikel (`/articles/youtube-transcript-non-english`) had een sectie die de **detectievolgorde** uitlegde — audio-provider vs. tekstdetectie en wie wint bij onenigheid. Dat is eruit gehaald.
+- **Waar zulke details WÉL horen:** in een **ADR** (hier [ADR-099](../decisions/099-language-detection-provider-plus-text.md)). De ADR is de bouwtekening, de content is de etalage. Concreet buiten publieke content: welke ondertiteltrack op welke grond geweigerd wordt, dat er een aparte tekstdetectie naast de provider draait, de reconcile-/tie-break-regel, en de exacte fallback-modelketen.
+
 ---
 
 ## §D — [TE VERIFIËREN]-lijst (extern te toetsen)
