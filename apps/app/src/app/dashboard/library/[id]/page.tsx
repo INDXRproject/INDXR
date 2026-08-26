@@ -82,6 +82,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
         duration={transcript.duration ?? null}
         characterCount={transcript.character_count ?? null}
         createdAt={transcript.created_at}
+        language={transcript.language ?? null}
       />
       <div className="mb-6">
         <TranscriptTabs tabs={tabs} activeId={activeTab} transcriptId={id} />

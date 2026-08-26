@@ -932,15 +932,20 @@ async def do_assemblyai_transcription(
         if truncation_warning:
             logger.warning(f"[pipeline] Truncation: audio={audio_duration:.1f}s end={transcript_end:.1f}s gap={gap:.1f}s job={job_id}")
 
-        sample_text = ' '.join(item['text'] for item in transcript[:20])
-        language: Optional[str] = None
-        if sample_text.strip():
-            try:
-                detected = _lingua_detector.detect_language_of(sample_text)
-                if detected:
-                    language = normalize_language_code(detected.iso_code_639_1.name.lower())
-            except Exception:
-                pass
+        # Language: AssemblyAI's own detection (99 languages, with a confidence) is the SOURCE OF
+        # TRUTH. The local lingua re-detection knows only 13 languages, so it is used ONLY as a
+        # fallback when the provider returned nothing — never to overwrite a provider value (doing so
+        # left 79% of transcripts with no language, and mis-labelled some, e.g. Hebrew stored as 'en').
+        language: Optional[str] = normalize_language_code(whisper_result.get('language'))
+        if not language:
+            sample_text = ' '.join(item['text'] for item in transcript[:20])
+            if sample_text.strip():
+                try:
+                    detected = _lingua_detector.detect_language_of(sample_text)
+                    if detected:
+                        language = normalize_language_code(detected.iso_code_639_1.name.lower())
+                except Exception:
+                    pass
 
         # ── Step 8: Save to Supabase ─────────────────────────────────────────
         char_count = sum(len(item.get('text', '')) for item in transcript)
@@ -957,6 +962,14 @@ async def do_assemblyai_transcription(
             insert_data['channel'] = channel
         if language:
             insert_data['language'] = language
+        # Store the provider confidence WITH the transcript (not only on the job row), so the detected
+        # language and how sure the provider was travel together. No threshold — we store what we know.
+        _tconf = whisper_result.get('confidence')
+        _lconf = whisper_result.get('language_confidence')
+        if _tconf is not None:
+            insert_data['transcript_confidence'] = _tconf
+        if _lconf is not None:
+            insert_data['language_confidence'] = _lconf
         if collection_id:
             insert_data['collection_id'] = collection_id
 
@@ -966,7 +979,8 @@ async def do_assemblyai_transcription(
         transcript_id = result.data[0]['id']
 
         # Best-effort master cache write — YouTube-pad only (privacy-grens), alleen als
-        # taal bekend is (language TEXT NOT NULL; 'unknown' forceren vervuilt de cache).
+        # taal bekend is. (transcripts.language is NULLABLE en blijft dat; we schrijven alleen een
+        # bekende taal naar de cache — een verzonnen 'unknown' zou de cache vervuilen.)
         if video_id is not None and language:
             asyncio.create_task(master_transcripts_write(
                 video_id=video_id,

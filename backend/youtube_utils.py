@@ -236,8 +236,10 @@ async def extract_via_youtube_transcript_api(
         logger.info(f"[YT-API] success for {video_id} native={native!r} lang={fetched.language_code} generated={chosen.is_generated} proxy_bytes={_egress['bytes']}")
         _delivered = True  # success → proxy_bytes logged to usage_logs by the caller (not overhead)
         return {
+            # Normalize like the yt-dlp route does (both routes must agree): a raw code such as
+            # 'en-GB' becomes 'en', so the same video never lands under two language values.
             "transcript": transcript,
-            "language": fetched.language_code,
+            "language": normalize_language_code(fetched.language_code),
             "model": "youtube_transcript_api",
             "proxy_bytes": _egress["bytes"],
         }

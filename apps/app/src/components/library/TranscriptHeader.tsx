@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Clock, FileText, Calendar } from "lucide-react";
+import { ChevronLeft, Clock, FileText, Calendar, Languages } from "lucide-react";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { cn } from "@indxr/shared/lib/utils";
 import { Badge, CollectionBadge, transcriptBadges } from "./badges";
@@ -28,6 +28,18 @@ function formatDuration(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+/** ISO code → full English language name ("ru" → "Russian"). Returns null for a missing or unknown
+ *  code so the caller omits the field rather than showing a bare code or "Unknown". */
+function languageName(code: string | null | undefined): string | null {
+  if (!code) return null;
+  try {
+    const name = new Intl.DisplayNames(["en"], { type: "language", fallback: "none" }).of(code);
+    return name && name.toLowerCase() !== code.toLowerCase() ? name : null;
+  } catch {
+    return null;
+  }
+}
+
 interface TranscriptHeaderProps {
   id: string;
   title: string;
@@ -41,6 +53,8 @@ interface TranscriptHeaderProps {
   duration: number | null;
   characterCount: number | null;
   createdAt: string;
+  /** Detected language code (ISO 639-1), or null when none is stored. Shown as the full name. */
+  language: string | null;
 }
 
 /**
@@ -74,6 +88,7 @@ export function TranscriptHeader(props: TranscriptHeaderProps) {
   } as unknown as Transcript;
   const badges = transcriptBadges(badgeRow);
   const words = props.characterCount ? Math.round(props.characterCount / 5).toLocaleString() : null;
+  const langName = languageName(props.language);
 
   return (
     <div className="mb-5">
@@ -138,6 +153,12 @@ export function TranscriptHeader(props: TranscriptHeaderProps) {
           <span className="inline-flex items-center gap-1 tabular-nums">
             <FileText className="h-3.5 w-3.5 text-fg-subtle" />
             {words} words
+          </span>
+        )}
+        {langName && (
+          <span className="inline-flex items-center gap-1">
+            <Languages className="h-3.5 w-3.5 text-fg-subtle" />
+            {langName}
           </span>
         )}
         <span className="inline-flex items-center gap-1 tabular-nums">
