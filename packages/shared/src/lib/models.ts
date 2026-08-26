@@ -18,6 +18,11 @@ export const TRANSCRIPTION_MODEL = {
   // backend/assemblyai_client.py `speech_models` EXACTLY — universal-3-pro is deliberately not run
   // (ADR-071), so this single source must not list a model that never executes.
   chain: ["universal-3-5-pro", "universal-2"] as const,
+  // Language coverage — the single source for these counts (do NOT hardcode them in content; the
+  // same numbers live in a backend/assemblyai_client.py comment). The top model covers
+  // `nativeLanguages` natively; the router falls back to Universal-2 for `totalLanguages`.
+  nativeLanguages: 18,
+  totalLanguages: 99,
 } as const
 
 // --- AI summarization ---------------------------------------------------------
@@ -36,7 +41,7 @@ export function transcriptionModelName(): string {
 // Honest capability phrase for accuracy/language content: we route to the best
 // model for the language, rather than claiming one model covers everything.
 export function transcriptionRouterPhrase(): string {
-  return `INDXR automatically uses the best available model for the language of your video — our highest-quality model, ${transcriptionModelName()}, for the languages it supports, with broad coverage across 99+ languages`
+  return `INDXR automatically uses the best available model for the language of your video — our highest-quality model, ${transcriptionModelName()}, for the languages it supports, with broad coverage across ${TRANSCRIPTION_MODEL.totalLanguages}+ languages`
 }
 
 // "Gemini 2.5 Flash via the AssemblyAI EU LLM Gateway"

@@ -6,7 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
-import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 
 const accDescription = `INDXR gives you two ways to produce text — reading a video's existing captions or transcribing the audio — and the accuracy of each differs. Captions are as accurate as their source; AI transcription runs on ${transcriptionModelName()}, which picks the best model for the detected language.`
 
@@ -72,8 +72,9 @@ export default function DocsAccuracyPage() {
         <AnchorHeading as="h2">Which languages, and how accurate</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           For AI transcription, INDXR automatically uses the best model for your video&apos;s language —
-          it is a language router, not a fault fallback. {transcriptionModelName()} natively covers 18
-          languages; a broader model, Universal-2, covers 99, and the language is detected automatically.
+          it is a language router, not a fault fallback. {transcriptionModelName()} natively covers{" "}
+          {TRANSCRIPTION_MODEL.nativeLanguages} languages; a broader model, Universal-2, covers{" "}
+          {TRANSCRIPTION_MODEL.totalLanguages}, and the language is detected automatically.
           Caption extraction works for any language YouTube provides captions for.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed mt-4">
@@ -117,7 +118,7 @@ export default function DocsAccuracyPage() {
           sources={[
             {
               publisher: "AssemblyAI — supported languages",
-              supports: "18 languages on Universal-3.5 Pro, 99 on Universal-2, and the four WER accuracy bands with their languages (verified 2026-07-23)",
+              supports: `${TRANSCRIPTION_MODEL.nativeLanguages} languages on ${TRANSCRIPTION_MODEL.displayName}, ${TRANSCRIPTION_MODEL.totalLanguages} on Universal-2, and the four WER accuracy bands with their languages (verified 2026-07-23)`,
               href: "https://www.assemblyai.com/docs/supported-languages",
             },
             {

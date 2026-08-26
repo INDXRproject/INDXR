@@ -60,7 +60,7 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/docs/reference/export-formats/srt": "2026-08-26",
   "/docs/reference/export-formats/vtt": "2026-08-26",
   "/docs/reference/export-formats/json": "2026-07-23",
-  "/docs/reference/accuracy": "2026-08-01",
+  "/docs/reference/accuracy": "2026-08-26",
   "/docs/reference/limits": "2026-07-23",
 
   // Docs — Account
@@ -71,7 +71,7 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   // Articles
   "/articles": "2026-08-26",
   "/articles/youtube-transcript-not-available": "2026-08-07",
-  "/articles/youtube-transcript-non-english": "2026-07-23",
+  "/articles/youtube-transcript-non-english": "2026-08-26",
   "/articles/youtube-transcript-without-extension": "2026-07-23",
   "/articles/transcript-export-formats": "2026-08-26",
   "/articles/srt-generator": "2026-08-26",

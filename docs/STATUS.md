@@ -21,7 +21,7 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 
 - **Single Video**: YouTube captions (XML/Text) extraction via YouTube Data API v3
 - **Playlist**: Full playlist extraction with video selection and availability pre-scan
-- **AI Transcription**: Two-step audio pipeline (yt-dlp + ffmpeg → AssemblyAI Universal-3 Pro)
+- **AI Transcription**: Two-step audio pipeline (yt-dlp + ffmpeg → AssemblyAI Universal-3.5 Pro)
   - Format selector `bestaudio/best` via iOS + web_embedded player clients
   - IPRoyal residential proxy with per-job sticky session (`_session-{job_id[:8]}_lifetime-10m`) — each job gets a unique exit IP slot; one-off requests (captions, metadata) use `secrets.token_hex(4)` random sessions
   - bgutil-pot Rust binary (`/usr/local/bin/bgutil-pot`) provides GVS PO tokens via HTTP server at `127.0.0.1:4416`
@@ -87,7 +87,7 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 ### AI Transcription Background Job Architecture (Phase N + Phase O)
 
 - **Backend** (`backend/main.py`): POST `/api/transcribe/whisper` returns `{"job_id": ..., "status": "pending"}` immediately after a basic credit balance check and `asyncio.create_task`. Background task `run_whisper_job` runs the full pipeline (download → transcribe → deduct credits → save) and updates the **Supabase `transcription_jobs` table** at each step. Status progression: `pending → downloading → transcribing → saving → complete` (or `error`). Credit deduction happens after duration is known; automatic refund via `add_credits` on any failure post-deduction.
-- **Transcription engine**: AssemblyAI Universal-3 Pro (`assemblyai_client.py`). Falls back to Universal-2. No file size limit, no truncation. The SDK polls internally until the job completes.
+- **Transcription engine**: AssemblyAI Universal-3.5 Pro (`assemblyai_client.py`). Falls back to Universal-2. No file size limit, no truncation. The SDK polls internally until the job completes.
 - **Job tracking columns** (`transcription_jobs`): `started_at`, `completed_at`, `processing_time_seconds`, `file_size_bytes`, `file_format` (e.g. `mp3`, `wav`, `youtube`), `error_type` (structured failure category). Frontend shows a live elapsed timer and "Completed in M:SS" on finish.
 - **Truncation detection**: Retained in code but effectively inactive with AssemblyAI — no 25MB limit means no truncation.
 - **Audio codec**: ffmpeg converts downloaded audio to **Opus/OGG at 12kbps mono** (`libopus`, `-application voip`). Output extension: `.ogg`.

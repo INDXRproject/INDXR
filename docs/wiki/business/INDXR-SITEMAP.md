@@ -142,7 +142,7 @@ YouTube video-URL of playlist-URL. We halen direct metadata op: titel, duur, bes
 
 **Stap 2 — Auto-captions or AI transcription**
 - Auto-captions: gratis, seconden, werkt voor ~80% van video's
-- AI transcription: AssemblyAI Universal-3 Pro, 99%+ accuracy, 1 credit per minute
+- AI transcription: AssemblyAI Universal-3.5 Pro, 99%+ accuracy, 1 credit per minute
 - Audio upload: eigen audiobestand, tot 500MB, zelfde AI-pipeline
 - Eerlijk vermeld: members-only en age-restricted video's worden herkend en duidelijk gecommuniceerd
 
@@ -162,7 +162,7 @@ Per format kort uitgelegd:
 
 **Credits uitgelegd:** Transparante tabel. Vergelijking met concurrenten.
 
-**Technische noten (voor vertrouwen):** AssemblyAI Universal-3 Pro, yt-dlp, waarom de accuratesse hoog is.
+**Technische noten (voor vertrouwen):** AssemblyAI Universal-3.5 Pro, yt-dlp, waarom de accuratesse hoog is.
 
 **Schema markup:** HowTo + FAQPage
 
@@ -590,7 +590,7 @@ transcripts in 8 formats including RAG-optimized JSON for AI pipelines.
 ## What INDXR.AI does
 
 - Extracts YouTube auto-captions instantly (free, no account required for single videos)
-- AI transcription via AssemblyAI Universal-3 Pro for videos without captions (1 credit/minute)
+- AI transcription via AssemblyAI Universal-3.5 Pro for videos without captions (1 credit/minute)
 - Playlist batch extraction (first 3 videos free, 1 credit/video after)
 - Audio file upload transcription (up to 500MB)
 - AI summary + action points (3 credits)

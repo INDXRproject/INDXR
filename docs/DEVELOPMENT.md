@@ -133,7 +133,7 @@ Full flow when debugging transcription issues:
 3. `run_whisper_job` background task begins: for YouTube, `extract_youtube_audio()` in `audio_utils.py`; for uploads, the file is already in memory
 4. yt-dlp downloads audio-only stream (`bestaudio/best` via iOS + web_embedded clients) via IPRoyal sticky-session proxy (`session_id=job_id[:8]`); bgutil-pot provides GVS PO tokens for `web_embedded`
 5. ffmpeg converts to **mono 12kbps Opus/OGG** (`libopus`, `-application voip`, output `.ogg`)
-6. OGG file sent to AssemblyAI Universal-3 Pro (`assemblyai_client.py`); SDK polls until complete
+6. OGG file sent to AssemblyAI Universal-3.5 Pro (`assemblyai_client.py`); SDK polls until complete
 7. Truncation check: retained in code but inactive — AssemblyAI has no 25MB limit
 8. Transcript inserted into Supabase `transcripts` (with `video_id`, `title`, `duration`, `processing_method: 'assemblyai'`, `character_count`), credits deducted atomically; `transcript_id` stored in `transcription_jobs`
 9. `transcription_jobs` row updated to `status: complete` with `completed_at`, `processing_time_seconds`, and `transcript_id`
