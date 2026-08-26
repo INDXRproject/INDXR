@@ -25,7 +25,7 @@ const ragPer10Min = CREDIT_COSTS.RAG_JSON_PER_10MIN
 
 const metaDescription =
   `Upload an audio or video file and get the full text back, punctuated, split by speaker and timestamped. ` +
-  `Runs on ${transcriptionModelName()} across 99 languages at one credit per minute; a free account includes ${FREE_TIER.WELCOME_CREDITS} credits.`
+  `Runs on ${transcriptionModelName()} across ${TRANSCRIPTION_MODEL.totalLanguages} languages at one credit per minute; a free account includes ${FREE_TIER.WELCOME_CREDITS} credits.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/audio-to-text" },
@@ -256,7 +256,7 @@ export default function AudioToTextPage() {
           </tr>
           <tr>
             <td>Languages</td>
-            <td>99, detected automatically</td>
+            <td>{TRANSCRIPTION_MODEL.totalLanguages}, detected automatically</td>
           </tr>
         </tbody>
       </table>

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { ArticleTemplate } from "@/components/content/templates/ArticleTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
-import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
@@ -117,7 +117,7 @@ export default function YouTubeTranscriptWithoutExtensionPage() {
         <li>Videos with auto-captions (instant, free)</li>
         <li>Videos without auto-captions (AI transcription, 1 credit per minute)</li>
         <li>Videos in any language YouTube auto-captions support</li>
-        <li>Videos in up to 99 languages via AssemblyAI when auto-captions aren&apos;t available</li>
+        <li>Videos in up to {TRANSCRIPTION_MODEL.totalLanguages} languages via AssemblyAI when auto-captions aren&apos;t available</li>
       </ul>
 
       <h2>Works in Any Browser</h2>

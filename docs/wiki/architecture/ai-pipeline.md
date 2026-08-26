@@ -252,20 +252,23 @@ yt-dlp ondersteunt meerdere YouTube "player clients" die elk anders worden behan
 
 ## AssemblyAI Modellen
 
-INDXR.AI gebruikt de volgende modellen voor AI-transcriptie:
+AI-transcriptie draait op een **taal-router**: `speech_models = ["universal-3-5-pro", "universal-2"]`
+(`backend/assemblyai_client.py`). AssemblyAI kiest per gedetecteerde taal het beste van deze twee
+modellen; `universal-3-pro` zit **bewust niet** in de router (ADR-071). De talenaantallen zijn de
+single source in `packages/shared/src/lib/models.ts` (`TRANSCRIPTION_MODEL.nativeLanguages` = 18 /
+`.totalLanguages` = 99) — hieronder met de hand gespiegeld, want een `.md` kan de TS-constante niet importeren.
 
-| Model | Talen | Gebruik |
-|-------|-------|---------|
-| **Universal-3 Pro** | EN, ES, DE, FR, PT, IT | Primair — voor de zes ondersteunde talen |
+| Model | Talendekking | Gebruik |
+|-------|--------------|---------|
+| **Universal-3.5 Pro** | 18 talen natief (incl. Arabisch) | Primair — voor de talen die het natief dekt |
 | **Universal-2** | 99 talen | Automatisch fallback — voor alle overige talen |
 
 **Waarom beter dan YouTube auto-captions:**
 - Verwerkt de audio opnieuw (vervangt niet bestaande captions)
 - Beter bij accenten, achtergrondgeluid, snel gesproken tekst
-- Universal-3 Pro heeft tot 99% woordnauwkeurigheid op helder gesproken Engels
+- Hoge woordnauwkeurigheid op helder gesproken Engels; de per-taal-nauwkeurigheid verschilt (WER-banden op `/docs/reference/accuracy`, uit de provider, geen eigen headline-getal)
 
-**FAQ-tekst voor gebruikers:**
-> "INDXR.AI's AI-transcriptie gebruikt AssemblyAI Universal-3 Pro, een van de meest nauwkeurige spraakherkenningsmodellen ter wereld. Voor video's in Engels, Spaans, Duits, Frans, Portugees of Italiaans wordt Universal-3 Pro gebruikt. Voor alle andere talen schakelt het systeem automatisch over naar Universal-2, dat 99 talen ondersteunt."
+Model- en talenclaims voor content renderen uit `models.ts` (`transcriptionModelName()` = "AssemblyAI Universal-3.5 Pro", `transcriptionRouterPhrase()`), nooit hardgecodeerd in proza.
 
 ---
 

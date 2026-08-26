@@ -4,6 +4,7 @@ import { TutorialTemplate } from "@/components/content/templates/TutorialTemplat
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
+import { TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcripts-vector-database" },
@@ -28,7 +29,7 @@ const faqs = [
   },
   {
     q: "Does this work for non-English content?",
-    a: "Yes. Use a multilingual embedding model (text-embedding-3-small handles multiple languages; Cohere's embed-multilingual-v3.0 is purpose-built for this). INDXR.AI's AI Transcription supports 99 languages and produces properly punctuated text regardless of language.",
+    a: `Yes. Use a multilingual embedding model (text-embedding-3-small handles multiple languages; Cohere's embed-multilingual-v3.0 is purpose-built for this). INDXR.AI's AI Transcription supports ${TRANSCRIPTION_MODEL.totalLanguages} languages and produces properly punctuated text regardless of language.`,
   },
   {
     q: "What if I want to filter results by video or channel?",

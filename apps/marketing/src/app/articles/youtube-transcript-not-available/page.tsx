@@ -5,7 +5,7 @@ import { DocsFigure } from "@/components/docs/DocsFigure"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { creditCostEur, getAnchorPackage, anchorPerCreditText, FREE_TIER } from "@indxr/shared/lib/pricing"
-import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcript-not-available" },
@@ -210,7 +210,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
         When there genuinely are no captions, the way to get the text is to transcribe the audio
         directly, and that&apos;s what INDXR does. Paste the same URL, and instead of pulling captions
         that don&apos;t exist, it downloads the audio and runs it through {transcriptionModelName()},
-        which detects the language automatically across up to 99 languages and returns clean sentences
+        which detects the language automatically across up to {TRANSCRIPTION_MODEL.totalLanguages} languages and returns clean sentences
         with punctuation and timestamps.
       </p>
 
