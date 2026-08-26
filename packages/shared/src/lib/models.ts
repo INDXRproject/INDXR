@@ -14,8 +14,10 @@ export const TRANSCRIPTION_MODEL = {
   // Public-facing name of our highest-quality speech-to-text model.
   displayName: "Universal-3.5 Pro",
   vendor: "AssemblyAI",
-  // The live AssemblyAI router chain (API ids, dashes), highest quality first.
-  chain: ["universal-3-5-pro", "universal-3-pro", "universal-2"] as const,
+  // The live AssemblyAI router chain (API ids, dashes), highest quality first. Must match
+  // backend/assemblyai_client.py `speech_models` EXACTLY — universal-3-pro is deliberately not run
+  // (ADR-071), so this single source must not list a model that never executes.
+  chain: ["universal-3-5-pro", "universal-2"] as const,
 } as const
 
 // --- AI summarization ---------------------------------------------------------

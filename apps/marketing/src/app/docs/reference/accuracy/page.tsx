@@ -104,6 +104,15 @@ export default function DocsAccuracyPage() {
           these bands can change as their models improve.
         </p>
 
+        <AnchorHeading as="h2">How the language is set</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          You don&apos;t set the language — INDXR detects it automatically and shows it on your transcript
+          in the library, next to its length and date. It travels into your exports too: the VTT header,
+          the Markdown frontmatter and the CSV metadata each carry the detected language. You can&apos;t
+          choose a language before transcribing, and you can&apos;t change the detected one afterwards. INDXR
+          transcribes in the language that was spoken; it does not translate.
+        </p>
+
         <SourcesBlock
           sources={[
             {
