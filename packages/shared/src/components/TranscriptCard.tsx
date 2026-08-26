@@ -3,7 +3,7 @@
 import { useState, useMemo, Fragment } from "react";
 import { Copy, FileText, FileJson, FileType, Film, Video, FileCode, Download, ChevronDown, Check, LogIn, Loader2, Lock, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { decodeEntities, createParagraphMode, buildRagJson, generateSrt, generateVtt, generateCsv, generateMarkdown, generateTxt, buildReadingParagraphs } from "../utils/formatTranscript";
+import { createParagraphMode, buildRagJson, generateSrt, generateVtt, generateCsv, generateJson, generateMarkdown, generateTxt, buildReadingParagraphs } from "../utils/formatTranscript";
 import { deductRagExportCreditsAction } from "../actions/rag-export";
 import { appHref } from "../lib/cross-host-links";
 import { Button } from "./ui/button";
@@ -194,27 +194,8 @@ export function TranscriptCard({
     if (!requireAuth()) return;
     posthog.capture('export_clicked', { format: 'json' });
 
-    const metadata: Record<string, unknown> = {
-      video_id: videoId ?? null,
-      title: videoTitle ?? null,
-      duration_seconds: Math.round(derivedDuration),
-      extracted_at: new Date().toISOString(),
-    };
-    if (channel) metadata.channel = channel;
-    if (language) metadata.language = language;
-    if (publishedAt) metadata.published_at = publishedAt;
-    if (extractionMethod) metadata.extraction_method = extractionMethod;
-
-    const segments = transcript.map((t, i) => ({
-      text: decodeEntities(t.text),
-      start_time: t.offset,
-      end_time: i < transcript.length - 1
-        ? transcript[i + 1].offset
-        : t.offset + t.duration,
-    }));
-
     downloadFile(
-      JSON.stringify({ metadata, segments }, null, 2),
+      generateJson(transcript, { videoId, title: videoTitle, channel, language, publishedAt, durationSeconds: derivedDuration, extractionMethod }),
       `${safeTitle()}.json`,
       "application/json"
     );

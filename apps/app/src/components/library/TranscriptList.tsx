@@ -55,8 +55,7 @@ import { HexagonEmptyState } from "@indxr/shared/components/icons/HexagonEmptySt
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { generateTxt, generateCsv, generateSrt, generateVtt, generateMarkdown, buildRagJson, resolveSpeakerName, decodeEntities } from "@indxr/shared/utils/formatTranscript";
-import type { TranscriptItem } from "@indxr/shared/utils/formatTranscript";
+import { generateTxt, generateCsv, generateJson, generateSrt, generateVtt, generateMarkdown, buildRagJson } from "@indxr/shared/utils/formatTranscript";
 import { bulkDeductRagExportCreditsAction } from "@indxr/shared/actions/rag-export";
 import { trackExport } from "@indxr/shared/lib/measurement";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
@@ -278,7 +277,7 @@ export function TranscriptList({
     try {
       const { data, error } = await supabase
         .from("transcripts")
-        .select("id, title, video_id, processing_method, transcript, speaker_names")
+        .select("id, title, video_id, channel, language, duration, processing_method, transcript, speaker_names")
         .in("id", ids);
       if (error || !data) throw new Error("Failed to fetch transcript data");
 
@@ -289,17 +288,14 @@ export function TranscriptList({
         const tx = item.transcript as Parameters<typeof generateTxt>[0];
         const names = (item.speaker_names as Record<string, string> | null) ?? undefined;
         const videoId = (item.video_id as string) || "unknown";
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
         if (format === "txt" || format === "txt-ts") return { content: generateTxt(tx, format === "txt-ts", names), ext: "txt" };
         if (format === "md" || format === "md-ts") return { content: generateMarkdown(tx, item.title as string, format === "md-ts", { speakerNames: names }), ext: "md" };
         if (format === "json") return {
-          content: JSON.stringify({
-            metadata: { title: item.title, videoUrl },
-            transcript: (tx as TranscriptItem[]).map((t) => {
-              const name = resolveSpeakerName(t.speaker, names);
-              return { ...t, text: decodeEntities(t.text), ...(name ? { speaker: name } : {}) };
-            }),
-          }, null, 2), ext: "json" };
+          content: generateJson(tx, {
+            videoId, title: item.title as string, channel: item.channel as string | null,
+            language: item.language as string | null, durationSeconds: item.duration as number | null,
+            extractionMethod: item.processing_method as string, speakerNames: names,
+          }), ext: "json" };
         if (format === "csv") return { content: generateCsv(tx, { speakerNames: names }), ext: "csv" };
         if (format === "srt") return { content: generateSrt(tx, { extractionMethod: (item.processing_method as string) ?? undefined, speakerNames: names }), ext: "srt" };
         return { content: generateVtt(tx, { title: item.title as string, extractionMethod: (item.processing_method as string) ?? undefined, speakerNames: names }), ext: "vtt" };

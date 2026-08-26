@@ -573,6 +573,50 @@ export const generateTxt = (
   return createParagraphMode(transcript, speakerNames);
 };
 
+// Standard JSON export — the ONE shape every JSON download must produce (free tool, library single,
+// bulk). Before this existed the three call sites each hand-built their own object and drifted: some
+// emitted `segments` with start_time/end_time and a full metadata wrapper, others emitted `transcript`
+// with raw offset/duration and only {title, videoUrl}. This is the richer form — video metadata +
+// explicit start_time/end_time — matching what the free tool produced and what the docs/JSON spec
+// describes. `end_time` is the next segment's start (its own duration for the last), same as CSV.
+export const generateJson = (
+  transcript: TranscriptItem[],
+  meta?: {
+    videoId?: string | null;
+    title?: string | null;
+    channel?: string | null;
+    language?: string | null;
+    publishedAt?: string | null;
+    durationSeconds?: number | null;
+    extractionMethod?: string | null;
+    speakerNames?: Record<string, string>;
+  },
+): string => {
+  const m = meta ?? {};
+  const metadata: Record<string, unknown> = {
+    video_id: m.videoId ?? null,
+    title: m.title ?? null,
+    duration_seconds: typeof m.durationSeconds === 'number' ? Math.round(m.durationSeconds) : null,
+    extracted_at: new Date().toISOString(),
+  };
+  if (m.channel) metadata.channel = m.channel;
+  if (m.language) metadata.language = m.language;
+  if (m.publishedAt) metadata.published_at = m.publishedAt;
+  if (m.extractionMethod) metadata.extraction_method = m.extractionMethod;
+
+  const segments = transcript.map((t, i) => {
+    const name = resolveSpeakerName(t.speaker, m.speakerNames);
+    return {
+      text: decodeEntities(t.text),
+      start_time: t.offset,
+      end_time: i < transcript.length - 1 ? transcript[i + 1].offset : t.offset + t.duration,
+      ...(name ? { speaker: name } : {}),
+    };
+  });
+
+  return JSON.stringify({ metadata, segments }, null, 2);
+};
+
 export interface RagChunk {
   chunk_index: number;
   chunk_id: string;

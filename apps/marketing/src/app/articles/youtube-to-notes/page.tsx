@@ -359,8 +359,8 @@ export default function YouTubeToNotesPage() {
         the summary cost {summaryCreditCost(3282)} credits. Every text and Markdown export is
         included, for the transcript and for the summary. RAG JSON, meant for feeding a vector
         database rather than a note app, is priced separately at {CREDIT_COSTS.RAG_JSON_PER_10MIN}{" "}
-        credit for every 10 minutes of video, rounded up; the first {FREE_TIER.RAG_FREE_EXPORTS} are
-        free.
+        credit for every 10 minutes of video, rounded up. Re-downloading a transcript you have
+        already exported is free.
       </p>
 
       <p>No subscription, and credits never expire.</p>

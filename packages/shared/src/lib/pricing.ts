@@ -125,7 +125,6 @@ export function summaryCreditCost(durationSeconds: number): number {
 export const FREE_TIER = {
   WELCOME_CREDITS: 25,
   PLAYLIST_FREE_VIDEOS: 3, // eerste 3 CAPTION-video's van elke playlist gratis (per-methode, ADR-081)
-  RAG_FREE_EXPORTS: 3, // eerste 3 RAG exports gratis
 } as const
 
 // RAG JSON export — chunk-size presets. Single source of truth for both Settings

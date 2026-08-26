@@ -70,6 +70,7 @@ import { NocookieYouTubePlayer, type YouTubePlayerHandle } from "./NocookieYouTu
 import { RAG_CHUNK_PRESETS, RAG_CHUNK_DEFAULT, type RagChunkSize } from "@indxr/shared/lib/pricing";
 import {
   generateTxt,
+  generateJson,
   generateSrt,
   generateVtt,
   generateCsv,
@@ -587,18 +588,7 @@ export function TranscriptViewer({
         downloadFile(generateMarkdown(transcript, title, true, { speakerNames }), `${safe}_timestamps.md`, "text/markdown");
       else if (format === "json")
         downloadFile(
-          JSON.stringify(
-            {
-              metadata: { title, ...(videoUrl && { videoUrl }), extractedAt: new Date().toISOString() },
-              // Sprekerlabel → weergegeven naam (overlay), niet het rauwe label; ontbreekt als er geen spreker is.
-              transcript: transcript.map((t) => {
-                const name = resolveSpeakerName(t.speaker, speakerNames);
-                return { ...t, text: decodeEntities(t.text), ...(name ? { speaker: name } : {}) };
-              }),
-            },
-            null,
-            2
-          ),
+          generateJson(transcript, { videoId, title, channel: channelTitle, language, durationSeconds: derivedDuration, extractionMethod: processingMethod, speakerNames }),
           `${safe}.json`,
           "application/json"
         );
