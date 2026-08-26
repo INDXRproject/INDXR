@@ -14,23 +14,12 @@ from typing import List, Optional
 import httpx
 import sentry_sdk
 import yt_dlp
-from lingua import Language, LanguageDetectorBuilder
+from language_detection import detect_language
 
 from audio_utils import MembersOnlyVideoError, MEMBERS_ONLY_KEYWORDS
 from language_utils import normalize_language_code
 
 logger = logging.getLogger("indxr-youtube-utils")
-
-_lingua_detector = (
-    LanguageDetectorBuilder
-    .from_languages(
-        Language.ENGLISH, Language.DUTCH, Language.GERMAN,
-        Language.FRENCH, Language.SPANISH, Language.PORTUGUESE,
-        Language.ITALIAN, Language.TURKISH, Language.INDONESIAN,
-        Language.ARABIC, Language.CHINESE, Language.JAPANESE, Language.KOREAN,
-    )
-    .build()
-)
 
 _PROXY_HOST = os.getenv("PROXY_HOST", "")
 _PROXY_PORT = os.getenv("PROXY_PORT", "")
@@ -471,15 +460,12 @@ async def extract_with_ytdlp(
                 language = normalize_language_code(raw_language)
                 language_detected = False
             else:
-                sample = ' '.join(item['text'] for item in transcript[:80])
-                sample = ' '.join(sample.split()[:500])
-                try:
-                    detected = _lingua_detector.detect_language_of(sample)
-                    if detected:
-                        language = normalize_language_code(detected.iso_code_639_1.name.lower())
-                        language_detected = True
-                except Exception:
-                    pass
+                # No declared track language → detect over the transcript TEXT (shared responsible
+                # set + text budget in language_detection.py, same as the AI path). See ADR-099.
+                detected = detect_language(transcript)
+                if detected:
+                    language = detected
+                    language_detected = True
 
             raw_date = info.get('upload_date')
             iso_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}" if raw_date else None
