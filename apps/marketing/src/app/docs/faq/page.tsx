@@ -152,7 +152,7 @@ const faqs: { question: string; answer: ReactNode }[] = [
       <>
         No. INDXR runs entirely in the browser — there is nothing to install, no extension or plugin.
         Open the site, paste a URL, and extract. See{" "}
-        <Link href="/articles/youtube-transcript-without-extension" className={A}>Transcribe without an extension</Link>.
+        <Link href="/docs/quickstart" className={A}>Get your first transcript</Link>.
       </>
     ),
   },

@@ -18,7 +18,6 @@ const articles = [
   // Troubleshooting
   { href: "/articles/youtube-transcript-not-available", label: "YouTube Transcript Not Available?", category: "Troubleshooting", description: "Missing or not showing? Every reason — and how to get the text anyway." },
   { href: "/articles/youtube-transcript-non-english", label: "Non-English Transcripts", category: "Troubleshooting", description: "Arabic, Spanish, Portuguese, Indonesian, Turkish — captions vs. AI transcription." },
-  { href: "/articles/youtube-transcript-without-extension", label: "Without Browser Extension", category: "Troubleshooting", description: "Chrome extensions break when YouTube changes its UI. INDXR works in any browser." },
 
   // Formats (internal key: Export Formats)
   { href: "/articles/transcript-export-formats", label: "Transcript Export Formats", category: "Export Formats", description: "Every export format — plain text, Markdown, CSV, SRT/VTT, JSON, and RAG-optimized JSON." },

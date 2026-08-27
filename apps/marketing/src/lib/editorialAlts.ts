@@ -14,7 +14,6 @@ export const editorialAlts: Record<string, string> = {
   "youtube-transcript-not-available": "clear cassette tape with unspooled ribbon on sandy ground",
   "youtube-to-notes": "glossy black volcanic glass shard glinting on gritty ground",
   "youtube-transcripts-vector-database": "brass armillary sphere casting circular shadow on pale floor",
-  "youtube-transcript-without-extension": "edge of a glass pane standing on stone floor",
 }
 
 export function hasEditorialImage(slug?: string): boolean {

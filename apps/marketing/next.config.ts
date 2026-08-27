@@ -51,6 +51,11 @@ const nextConfig: NextConfig = {
       // "YouTube to notes" keyword (keyword-demand-2026-08 § Meting 3). Single 308 hop; the old slug
       // was never a redirect destination, so no chain.
       { source: '/articles/youtube-transcript-obsidian', destination: '/articles/youtube-to-notes', permanent: true },
+
+      // "Without extension" article removed (2026-08-27): no search-query or unique value beyond the
+      // core "no plugin, runs in the browser" message, which the FAQ carries verbatim. 308 straight to
+      // that Q&A anchor (a live 200 page → single hop, no chain).
+      { source: '/articles/youtube-transcript-without-extension', destination: '/docs/faq#do-i-need-a-browser-extension', permanent: true },
     ]
   },
   images: {

@@ -133,7 +133,7 @@ Volledig uitgebouwd. In de code gegroepeerd als 4 built-in labels (*General · Y
 |---|---|---|---|
 | `youtube-transcript-not-available` | Troubleshooting | 67 talen captions / 99+ AI; AssemblyAI "94.1% English, 9.97% WER vs 24.73% Amazon"; live-captions EN-only + 1000+ subs; **absorbeert age-restricted + members-only als secties** (audio-upload-workaround, error-cards, 0 credits). | live |
 | `youtube-transcript-non-english` | Troubleshooting | YouTube CDN forceert `tlang=en` (niet override-baar); **model-routing: Universal-2 voor non-EN, Universal-3 Pro alleen EN/ES/DE/FR/PT/IT** (⚠ botst met "Universal-3 Pro" elders). | live |
-| `youtube-transcript-without-extension` | Troubleshooting | **"8 export formats"** (⚠ botst); geen extensie ("post-launch roadmap"); yt-dlp + interne API; 67/99+ talen. | live |
+| ~~`youtube-transcript-without-extension`~~ | Troubleshooting | *Verwijderd 2026-08-27* — geen zoekvraag/unieke waarde; de FAQ draagt "geen extensie / werkt in de browser". 308 → `/docs/faq#do-i-need-a-browser-extension`. | verwijderd |
 | `transcript-export-formats` | Formats (hub) | **Samenvoeging van 6 format-artikelen** (TXT·Markdown·CSV·SRT/VTT·JSON·RAG-JSON), elk als sectie. "six export formats, nine export options"; UTF-8 BOM; resegment 3–7s/≤42 chars; RAG-JSON 1cr/10min; frontmatter-velden. ⚠ oude "8 vs 9"-telling-botsing blijft (latere kwaliteitsronde). | live (nieuw) |
 | `youtube-playlist-transcript` | Workflows | 3-gratis; failed retry na 30s; batch ≤500; **geen channel-URL's**; dedup-badges (amber=captions, violet=AI); **absorbeert bulk** (use-cases-sectie). | live |
 | `audio-to-text` | Workflows | 500MB (~8u); "94–96%+ clean audio"; 99+ talen; summary 3cr; SRT/VTT 3–7s/42 chars. | live |

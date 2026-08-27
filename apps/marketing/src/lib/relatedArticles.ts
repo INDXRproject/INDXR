@@ -17,12 +17,6 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
     { href: "/articles/audio-to-text", label: "Audio file transcription", reason: "for non-English audio that isn't on YouTube" },
     { href: "/articles/youtube-transcript-not-available", label: "Transcript not available?", reason: "when there's no caption track at all" },
   ],
-  "youtube-transcript-without-extension": [
-    { href: "/articles/youtube-transcript-not-available", label: "Transcript not available?", reason: "when the transcript is missing, not just the extension" },
-    { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "every format you can get a video's text out as" },
-    { href: "/docs/quickstart", label: "Quickstart", reason: "your first transcript in a few minutes" },
-  ],
-
   // ── Export Formats ──
   "transcript-export-formats": [
     { href: "/docs/reference/export-formats", label: "Export formats reference", reason: "the exact fields, columns and schema for every format" },

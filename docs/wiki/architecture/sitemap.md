@@ -121,7 +121,6 @@ route. Alleen deze twee blijven:
 | `/articles` | Live | Index van alle articles (gecategoriseerd) |
 | `/articles/youtube-transcript-not-available` | Live | Troubleshooting: captions unavailable (+ age-restricted + members-only secties, 2026-08-07) |
 | `/articles/youtube-transcript-non-english` | Live | Troubleshooting: niet-Engelstalige video |
-| `/articles/youtube-transcript-without-extension` | Live | Troubleshooting: geen browser extension |
 | `/articles/transcript-export-formats` | Live | Formats-hub: TXT·Markdown·CSV·SRT/VTT·JSON·RAG-JSON (samenvoeging 2026-08-07) |
 | `/articles/youtube-playlist-transcript` | Live | Workflow: playlist extractie (+ bulk-sectie, 2026-08-07) |
 | `/articles/audio-to-text` | Live | Workflow: audio naar tekst |
