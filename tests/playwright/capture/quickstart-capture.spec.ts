@@ -261,6 +261,34 @@ test('transcript-speakers', async ({ page }) => {
   await frameShot(page, pane, 'transcript-speakers')
 })
 
+// ── LIVE: the library as an ORGANISED archive (landing "Your library") — search box + Filters/Sort
+// controls, a selected-collection chip, and rows carrying the collection badge. Selecting the seeded
+// "Uploads from TED-Ed" collection (account1 seed) guarantees the chip + badges + a bounded row count.
+test('library-organized', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library?collection=7f1ec96e-9f5e-4922-b869-5fbce7bd9d5b')
+  await page.getByText('Collection:', { exact: false }).first().waitFor({ state: 'visible', timeout: 20_000 })
+  await page.locator('a[href*="/dashboard/library/"]').first().waitFor({ state: 'visible', timeout: 20_000 })
+  // The content column: h1 + controls + collection chip + rows. Clip to one screen (controls + a few
+  // rows) rather than the full list.
+  const col = page.locator('div.flex-1.space-y-0').first()
+  await topShot(page, col, 'library-organized', 640)
+})
+
+// ── LIVE: a transcript open in the plain reading view (landing "What you get") — the Justice fixture
+// has no diarisation, so it reads as clean paragraphs with timestamps (distinct from the speaker shot). ─
+test('transcript-reader', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: 'Justice' })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  const pane = page.locator('.ProseMirror:visible').first()
+  await pane.waitFor({ state: 'visible', timeout: 30_000 })
+  await page.getByText('trolley', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  await topShot(page, pane, 'transcript-reader', 640)
+})
+
 // ══ Video-to-text article captures (real MP4 upload; seeded real transcription) ══
 // The four figures for /articles/video-to-text. #1/#2 set the real test MP4 client-side (no cost,
 // the browser reads its 319 s duration → 6 credits). #3/#4 read the seeded real AI transcription

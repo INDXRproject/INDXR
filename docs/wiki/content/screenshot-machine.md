@@ -99,6 +99,8 @@ Het onderscheid mag niet verdwijnen: **een gestubde kaart bewijst dat de fronten
 
 **Homepage (2026-08-03):** de landing (`/`) hergebruikt `playlist-review` in blok 2 (via `DocsFigure`, dual-theme). De homepage-blokken 3/4/5 zijn **géén** screenshots maar **echte export-output** in een `CodeSample`-codeblok (exports zijn bestanden, geen UI) — herkomst in [product-truth §8](product-truth.md). Er zijn dus geen nieuwe assets bijgekomen; de set blijft 20 dual-theme.
 
+**Homepage-herontwerp (2026-08-27):** de landing is visueel afgewerkt en gebruikt nu vier product-captures i.p.v. de codeblokken — `summary-chapter` ("What people bring"), `transcript-reader` + `summary-edit` ("What you get") en `library-organized` ("Your library"). **Twee nieuwe LIVE dual-theme captures bijgekomen** (tests `library-organized`, `transcript-reader` in de spec): `library-organized` schiet de bibliotheek als georganiseerd archief (zoekbox + Filter/Sort + de "Collection: …"-chip + collectiebadges, via de geseede collectie `Uploads from TED-Ed` op `account1`); `transcript-reader` schiet de Justice-fixture (géén diarisatie) in de leesweergave — schone paragrafen met tijdstempels, `topShot` op 640px. De set is nu 22 dual-theme.
+
 | Type | Onderwerpen (elk `-light` + `-dark`) |
 |------|------|
 | **LIVE** (echte UI / echt backend) | `method-choice` (chooser, client-side), `uploader-empty` (Upload-tab leeg, pure UI), `playlist-review` (alleen fetch, job **nooit** gestart), `library-list` (geseed account, meerdere rijen), `transcript-speakers` (transcriptlezer mét sprekerlabels — geseede diarisatie-rij, zie seed-noot) |

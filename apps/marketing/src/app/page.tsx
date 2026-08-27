@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Puzzle, Infinity as InfinityIcon, Library, Files } from "lucide-react"
 import { HeroImage } from "@/components/marketing/HeroImage"
 import { FreeToolEmbed } from "@/components/marketing/FreeToolEmbed"
 import { DocsFigure } from "@/components/docs/DocsFigure"
@@ -20,18 +20,53 @@ const aiPerMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 const summaryPer10 = CREDIT_COSTS.AI_SUMMARY_PER_10MIN
 const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
 
+// One consistent section separator across the whole page: a hairline top-to-next border
+// (--border-subtle) over a uniform --bg surface, with uniform vertical padding. No alternating
+// background colours, no ad-hoc dividers.
+const SECTION = "w-full border-b border-[var(--border-subtle)] bg-[var(--bg)]"
+
+const usps = [
+  {
+    icon: Puzzle,
+    heading: "No plugin, ever breaks.",
+    body: "Works straight from your browser. No extension to install, nothing that stops working when YouTube changes its interface.",
+  },
+  {
+    icon: InfinityIcon,
+    heading: "Credits never expire.",
+    body: "No subscription. Buy once, use whenever you need to.",
+  },
+  {
+    icon: Library,
+    heading: "One library, not a downloads folder.",
+    body: "Every transcript stays searchable, months later, in the same place.",
+  },
+  {
+    icon: Files,
+    heading: "Get every format, one price.",
+    body: `${EXPORT_FORMAT_COUNT} formats, ${EXPORT_DOWNLOAD_COUNT} downloads, all included.`,
+  },
+]
+
 export default function LandingPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative w-full overflow-hidden border-b border-[var(--border)] bg-[var(--bg)] pt-[110px] pb-20 lg:pt-[150px] lg:pb-28">
-        <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%),var(--bg)] pointer-events-none" />
+      <section className="relative w-full overflow-hidden border-b border-[var(--border-subtle)] bg-[var(--bg)] pt-[110px] pb-20 lg:pt-[150px] lg:pb-28">
         <HeroImage />
+        {/* Readability scrim: a --bg wash over the photo, strongest behind the centred text and
+            fading toward the edges so the image still reads as an ambient background. Uses only the
+            --bg token, so it flips with the theme and keeps hero text at WCAG-AA contrast on both. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_82%,transparent)_0%,color-mix(in_oklch,var(--bg)_66%,transparent)_42%,color-mix(in_oklch,var(--bg)_30%,transparent)_72%,transparent_100%)]"
+        />
+        <div className="absolute inset-0 z-[1] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%)] pointer-events-none" />
         <div className="container relative z-10 mx-auto flex flex-col items-center px-4 text-center">
-          <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg)] sm:text-5xl lg:text-6xl">
+          <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl">
             One library for everything you need to read instead of watch
           </h1>
-          <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg-subtle)] sm:text-xl">
+          <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
             Lectures, interviews, podcasts, your own recordings. INDXR turns them into accurate text you
             can search, summarise, edit and export, and keeps them in one place instead of scattered
             across downloads and tabs.
@@ -46,7 +81,7 @@ export default function LandingPage() {
               </button>
             </Link>
             <Link href="/pricing" className="w-full sm:w-auto">
-              <button className="h-12 w-full cursor-pointer rounded-lg border border-[var(--border)] bg-transparent px-8 py-3 text-base font-medium text-[var(--fg)] transition-all duration-150 ease-out hover:bg-[var(--surface)] sm:w-auto">
+              <button className="h-12 w-full cursor-pointer rounded-lg border border-[var(--border-strong)] bg-[var(--surface)]/70 px-8 py-3 text-base font-medium text-[var(--fg)] transition-all duration-150 ease-out hover:bg-[var(--surface)] sm:w-auto">
                 See pricing
               </button>
             </Link>
@@ -55,8 +90,8 @@ export default function LandingPage() {
       </section>
 
       {/* Try it — the live tool, directly below the fold */}
-      <section id="try" className="w-full scroll-mt-24 border-b border-[var(--border)] bg-[var(--bg)]">
-        <div className="container mx-auto max-w-4xl px-4 py-16">
+      <section id="try" className={`${SECTION} scroll-mt-24`}>
+        <div className="container mx-auto max-w-4xl px-4 py-20 lg:py-24">
           <h2 className="mb-3 text-center text-2xl font-bold text-[var(--fg)] sm:text-3xl">
             Paste a link and see for yourself
           </h2>
@@ -69,9 +104,27 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Why INDXR — four USP lines */}
+      <section className={SECTION}>
+        <div className="container mx-auto max-w-5xl px-4 py-20 lg:py-24">
+          <div className="grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+            {usps.map((u) => {
+              const Icon = u.icon
+              return (
+                <div key={u.heading}>
+                  <Icon className="mb-3 h-6 w-6 text-[var(--accent)]" strokeWidth={1.75} aria-hidden="true" />
+                  <h3 className="mb-1.5 font-semibold text-[var(--fg)]">{u.heading}</h3>
+                  <p className="text-sm leading-relaxed text-[var(--fg-subtle)]">{u.body}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* The problem */}
-      <section className="w-full border-b border-[var(--border)] bg-[var(--bg-subtle)]">
-        <div className="container mx-auto max-w-3xl px-4 py-16">
+      <section className={SECTION}>
+        <div className="container mx-auto max-w-3xl px-4 py-20 lg:py-24">
           <h2 className="mb-4 text-2xl font-bold text-[var(--fg)] sm:text-3xl">
             The problem is not getting the text. It is what happens after
           </h2>
@@ -88,8 +141,8 @@ export default function LandingPage() {
       </section>
 
       {/* What people bring to it */}
-      <section className="w-full border-b border-[var(--border)] bg-[var(--bg)]">
-        <div className="container mx-auto max-w-5xl px-4 py-16">
+      <section className={SECTION}>
+        <div className="container mx-auto max-w-5xl px-4 py-20 lg:py-24">
           <h2 className="mb-10 text-2xl font-bold text-[var(--fg)] sm:text-3xl">What people bring to it</h2>
           <div className="grid items-start gap-10 lg:grid-cols-2">
             <div className="space-y-6">
@@ -141,8 +194,8 @@ export default function LandingPage() {
       </section>
 
       {/* What you get from a single transcript */}
-      <section className="w-full border-b border-[var(--border)] bg-[var(--bg-subtle)]">
-        <div className="container mx-auto max-w-5xl px-4 py-16">
+      <section className={SECTION}>
+        <div className="container mx-auto max-w-5xl px-4 py-20 lg:py-24">
           <h2 className="mb-2 text-2xl font-bold text-[var(--fg)] sm:text-3xl">
             What you get from a single transcript
           </h2>
@@ -184,9 +237,9 @@ export default function LandingPage() {
             </div>
             <div className="space-y-6">
               <DocsFigure
-                src="/docs/screenshots/transcript-speakers.png"
-                alt="A transcript in the reader: text in real paragraphs with speaker labels down the left and clickable timestamps."
-                caption="Paragraphs, not fragments, with speakers separated and named."
+                src="/docs/screenshots/transcript-reader.png"
+                alt="An open transcript in reading view: the text in clean, readable paragraphs with clickable timestamps down the side."
+                caption="A transcript opens in a clean reading view, in real paragraphs."
               />
               <DocsFigure
                 src="/docs/screenshots/summary-edit.png"
@@ -199,8 +252,8 @@ export default function LandingPage() {
       </section>
 
       {/* Your library */}
-      <section className="w-full border-b border-[var(--border)] bg-[var(--bg)]">
-        <div className="container mx-auto max-w-5xl px-4 py-16">
+      <section className={SECTION}>
+        <div className="container mx-auto max-w-5xl px-4 py-20 lg:py-24">
           <div className="grid items-start gap-10 lg:grid-cols-2">
             <div>
               <h2 className="mb-4 text-2xl font-bold text-[var(--fg)] sm:text-3xl">
@@ -216,17 +269,17 @@ export default function LandingPage() {
               </p>
             </div>
             <DocsFigure
-              src="/docs/screenshots/library-list.png"
-              alt="The library: rows of saved transcripts with titles, durations and source badges, plus search and filter controls."
-              caption="Every transcript in one place, searchable and grouped into collections."
+              src="/docs/screenshots/library-organized.png"
+              alt="The library: a search box and filter controls above rows of saved transcripts, with named collections in the sidebar."
+              caption="Search, filter, and collections turn a list into an organised library."
             />
           </div>
         </div>
       </section>
 
       {/* What it costs */}
-      <section className="w-full bg-[var(--bg-subtle)]">
-        <div className="container mx-auto max-w-3xl px-4 py-16">
+      <section className={SECTION}>
+        <div className="container mx-auto max-w-3xl px-4 py-20 lg:py-24">
           <h2 className="mb-4 text-2xl font-bold text-[var(--fg)] sm:text-3xl">What it costs</h2>
           <p className="mb-8 leading-relaxed text-[var(--fg-subtle)]">
             No subscription. You buy credits, you spend them when you need them, and they never expire.
@@ -236,21 +289,21 @@ export default function LandingPage() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
               <tbody>
-                <tr className="border-b border-[var(--border)]">
+                <tr className="border-b border-[var(--border-subtle)]">
                   <td className="py-3 pr-4 align-top text-[var(--fg)]">YouTube videos with captions</td>
                   <td className="py-3 align-top text-[var(--fg-subtle)]">Free, no limit</td>
                 </tr>
-                <tr className="border-b border-[var(--border)]">
+                <tr className="border-b border-[var(--border-subtle)]">
                   <td className="py-3 pr-4 align-top text-[var(--fg)]">AI transcription</td>
                   <td className="py-3 align-top text-[var(--fg-subtle)]">{aiPerMin} credit per minute</td>
                 </tr>
-                <tr className="border-b border-[var(--border)]">
+                <tr className="border-b border-[var(--border-subtle)]">
                   <td className="py-3 pr-4 align-top text-[var(--fg)]">Chapter summary</td>
                   <td className="py-3 align-top text-[var(--fg-subtle)]">
                     {summaryPer10} credit per 10 minutes of video
                   </td>
                 </tr>
-                <tr className="border-b border-[var(--border)]">
+                <tr className="border-b border-[var(--border-subtle)]">
                   <td className="py-3 pr-4 align-top text-[var(--fg)]">RAG JSON, for vector databases</td>
                   <td className="py-3 align-top text-[var(--fg-subtle)]">
                     {ragPer10} credit per 10 minutes of video, and the only export that costs anything
