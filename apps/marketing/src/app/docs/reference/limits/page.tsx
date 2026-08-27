@@ -139,6 +139,14 @@ export default function DocsLimitsPage() {
             <tr><td>Signed in, after any purchase</td><td>No limit</td></tr>
           </tbody>
         </DocsTable>
+        {/* TEMPORARY NOTE — remove this whole <p> once the rate limiter is re-enabled in production
+            (set UPSTASH_REDIS_REST_URL / _TOKEN). Until then packages/shared/src/lib/ratelimit.ts
+            falls back to noopLimiter, so none of the limits in the table above are actually enforced. */}
+        <p className="mt-3 rounded-[var(--radius)] border border-[var(--warning)]/30 bg-[var(--warning-subtle)] px-4 py-3 text-sm text-[var(--fg-subtle)]">
+          <strong className="text-[var(--fg)]">Not enforced right now.</strong> These rate limits describe how
+          requests will be capped once the limiter is switched on. It is currently off in production, so no request
+          is rate-limited today — treat the numbers above as the intended limits, not the current behaviour.
+        </p>
 
         <AnchorHeading as="h2">No public API</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/summaries" },
   title: "Summaries — INDXR.AI Docs",
   description:
-    "Turn a transcript into an AI summary organised into chapters with clickable timestamps. A summary starts at 3 credits and scales with the video's length, is saved alongside the transcript, and can be regenerated — which replaces the current summary.",
+    `Turn a transcript into an AI summary organised into chapters with clickable timestamps. A summary costs ${perTenMin} credit per 10 minutes of video (rounded up, minimum 1), is saved alongside the transcript, and can be regenerated — which replaces the current summary.`,
   robots: { index: true, follow: true },
 }
 

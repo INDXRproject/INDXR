@@ -114,7 +114,7 @@ export default function DocsCreditsPage() {
           sources={[
             {
               publisher: "INDXR (own code)",
-              supports: "credit costs (caption 0, AI 1/min, summary 3, RAG 1/10min, playlist first-3-free then 1/video), the reserve/settle/refund model, and auto-refund on failed AI work",
+              supports: "credit costs (caption 0, AI 1/min, summary 1/10min, RAG 1/10min, playlist first-3-free then 1/video), the reserve/settle/refund model, and auto-refund on failed AI work",
               verifiedAgainst: "packages/shared/src/lib/pricing.ts (CREDIT_COSTS, FREE_TIER); backend/credit_manager.py:71,84,242-331",
             },
           ]}
