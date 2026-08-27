@@ -5,7 +5,6 @@ import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
 import { DocsTable } from "@/components/docs/DocsTable"
-import { DocsFigure } from "@/components/docs/DocsFigure"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
@@ -95,10 +94,10 @@ export default function DocsMarkdownPage() {
         </p>
         <DocsCodeBlock>{mdSample}</DocsCodeBlock>
 
-        <DocsFigure
-          alt="An exported Markdown transcript rendered in Obsidian, showing the YAML frontmatter block above the transcript body"
-          caption="How the Markdown export renders in Obsidian — frontmatter properties above the linked transcript."
-        />
+        {/* Reserved figure slot: a screenshot of justice.md rendered in Obsidian (frontmatter → Properties,
+            clickable timestamps). Obsidian is desktop-only, so this needs one hand-taken photo from Khidr.
+            The empty <DocsFigure> was removed so no blank box shows until the image lands. Single source of
+            truth for what the image must show + where the file goes: apps/video/export-demos/README.md §3. */}
 
         <SourcesBlock
           sources={[

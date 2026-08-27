@@ -578,26 +578,33 @@ export function TranscriptViewer({
     const safe = title.replace(/[^a-z0-9]/gi, "_").toLowerCase().slice(0, 30);
     trackExport(format, { transcriptId: id, source: "viewer" });  // ADR-096: gebruik-meting
     try {
+      // Every metadata-bearing export gets the SAME wrapper (matching the free tool, the standard the
+      // spec pages describe). Markdown/CSV/JSON carry the full metadata; SRT/VTT only take what their
+      // headers support (VTT: title + language; SRT has no header). See the export spec pages.
+      const exportMeta = {
+        videoId,
+        channel: channelTitle,
+        language: language ?? undefined,
+        durationSeconds: derivedDuration,
+        extractionMethod: processingMethod ?? undefined,
+        speakerNames,
+      };
       if (format === "txt")
         downloadFile(generateTxt(transcript, false, speakerNames), `${safe}.txt`, "text/plain");
       else if (format === "txt-ts")
         downloadFile(generateTxt(transcript, true, speakerNames), `${safe}_timestamps.txt`, "text/plain");
       else if (format === "md")
-        downloadFile(generateMarkdown(transcript, title, false, { speakerNames }), `${safe}.md`, "text/markdown");
+        downloadFile(generateMarkdown(transcript, title, false, { ...exportMeta, includeYamlFrontmatter: true }), `${safe}.md`, "text/markdown");
       else if (format === "md-ts")
-        downloadFile(generateMarkdown(transcript, title, true, { speakerNames }), `${safe}_timestamps.md`, "text/markdown");
+        downloadFile(generateMarkdown(transcript, title, true, { ...exportMeta, includeYamlFrontmatter: true }), `${safe}_timestamps.md`, "text/markdown");
       else if (format === "json")
-        downloadFile(
-          generateJson(transcript, { videoId, title, channel: channelTitle, language, durationSeconds: derivedDuration, extractionMethod: processingMethod, speakerNames }),
-          `${safe}.json`,
-          "application/json"
-        );
+        downloadFile(generateJson(transcript, { title, ...exportMeta }), `${safe}.json`, "application/json");
       else if (format === "csv")
-        downloadFile(generateCsv(transcript, { title, videoId, channel: channelTitle, speakerNames }), `${safe}.csv`, "text/csv;charset=utf-8");
+        downloadFile(generateCsv(transcript, { title, ...exportMeta }), `${safe}.csv`, "text/csv;charset=utf-8");
       else if (format === "srt")
         downloadFile(generateSrt(transcript, { extractionMethod: processingMethod ?? undefined, speakerNames }), `${safe}.srt`, "text/plain");
       else if (format === "vtt")
-        downloadFile(generateVtt(transcript, { title, extractionMethod: processingMethod ?? undefined, speakerNames }), `${safe}.vtt`, "text/vtt");
+        downloadFile(generateVtt(transcript, { title, language: language ?? undefined, extractionMethod: processingMethod ?? undefined, speakerNames }), `${safe}.vtt`, "text/vtt");
     } catch (e) {
       console.error(e);
       setDownloadError(`Failed to download ${format.toUpperCase()}`);

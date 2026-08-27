@@ -288,17 +288,23 @@ export function TranscriptList({
         const tx = item.transcript as Parameters<typeof generateTxt>[0];
         const names = (item.speaker_names as Record<string, string> | null) ?? undefined;
         const videoId = (item.video_id as string) || "unknown";
+        const title = item.title as string;
+        // Same metadata wrapper for every format (matching the free tool). Markdown/CSV/JSON carry the
+        // full set; SRT/VTT only take what their headers support (VTT: title + language; SRT: none).
+        const meta = {
+          videoId,
+          channel: (item.channel as string | null) ?? undefined,
+          language: (item.language as string | null) ?? undefined,
+          durationSeconds: (item.duration as number | null) ?? undefined,
+          extractionMethod: (item.processing_method as string | null) ?? undefined,
+          speakerNames: names,
+        };
         if (format === "txt" || format === "txt-ts") return { content: generateTxt(tx, format === "txt-ts", names), ext: "txt" };
-        if (format === "md" || format === "md-ts") return { content: generateMarkdown(tx, item.title as string, format === "md-ts", { speakerNames: names }), ext: "md" };
-        if (format === "json") return {
-          content: generateJson(tx, {
-            videoId, title: item.title as string, channel: item.channel as string | null,
-            language: item.language as string | null, durationSeconds: item.duration as number | null,
-            extractionMethod: item.processing_method as string, speakerNames: names,
-          }), ext: "json" };
-        if (format === "csv") return { content: generateCsv(tx, { speakerNames: names }), ext: "csv" };
-        if (format === "srt") return { content: generateSrt(tx, { extractionMethod: (item.processing_method as string) ?? undefined, speakerNames: names }), ext: "srt" };
-        return { content: generateVtt(tx, { title: item.title as string, extractionMethod: (item.processing_method as string) ?? undefined, speakerNames: names }), ext: "vtt" };
+        if (format === "md" || format === "md-ts") return { content: generateMarkdown(tx, title, format === "md-ts", { ...meta, includeYamlFrontmatter: true }), ext: "md" };
+        if (format === "json") return { content: generateJson(tx, { title, ...meta }), ext: "json" };
+        if (format === "csv") return { content: generateCsv(tx, { title, ...meta }), ext: "csv" };
+        if (format === "srt") return { content: generateSrt(tx, { extractionMethod: meta.extractionMethod ?? undefined, speakerNames: names }), ext: "srt" };
+        return { content: generateVtt(tx, { title, language: meta.language ?? undefined, extractionMethod: meta.extractionMethod ?? undefined, speakerNames: names }), ext: "vtt" };
       };
 
       if (data.length === 1) {

@@ -44,3 +44,13 @@ Publish" is hosting, not the editor. So this one can't be driven in the browser.
 
 That single image replaces the Markdown code block; the SRT and RAG PNGs replace the other two.
 None of these are wired into the homepage yet — they're prepared assets for review.
+
+**Same image, second home — the docs Markdown spec page.** The reserved figure slot on
+`apps/marketing/src/app/docs/reference/export-formats/markdown/page.tsx` (under the `## Output`
+code block) waits for this exact screenshot. Until it exists the slot renders nothing (the `<DocsFigure>`
+was removed so there is no empty box). When the photo lands: save it as
+`apps/marketing/public/docs/screenshots/markdown-obsidian-{light,dark}.png` (the capture standard is
+two themes — but a hand-shot Obsidian photo may ship a single `markdown-obsidian.png` used for both),
+then restore on that page: `<DocsFigure src="/docs/screenshots/markdown-obsidian.png" alt="…" caption="…" />`
+(alt/caption text is preserved in this file's git history at the removal commit). This README §3 is the
+single source of truth for what that image must show — both the homepage block and the docs figure use it.
