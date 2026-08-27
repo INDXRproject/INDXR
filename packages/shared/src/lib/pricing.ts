@@ -99,16 +99,10 @@ export const VALID_PLAN_IDS: ReadonlySet<string> = new Set(PACKAGES.map((p) => p
 export const CREDIT_COSTS = {
   AI_TRANSCRIPTION_PER_MIN: 1,
   PLAYLIST_VIDEO_AUTO_CAPTIONS: 1, // per video voorbij eerste 3 free
-  AI_SUMMARY: 3, // BASISkost (t/m AI_SUMMARY_BASE_MINUTES); NIET vlak — zie summaryCreditCost (ADR-090)
+  AI_SUMMARY_PER_10MIN: 1, // 1 credit per 10 min video (ADR-098 Add.3); formule ⌈duur/600⌉ min 1
   RAG_JSON_PER_10MIN: 1, // 1 credit per 10 min video (ADR-058, was per 15 min); formule ⌈duur/600⌉ min 1
   SINGLE_VIDEO_AUTO_CAPTIONS: 0, // altijd gratis
 } as const
-
-// AI-samenvatting-creditregel (ADR-090 → ADR-098 Add.1/2): AI_SUMMARY credits t/m 30 min videoduur,
-// daarna +1 per BEGONNEN 10 min (was 20 — /10 herstelt ~50% netto-marge-na-btw over het hele duurbereik,
-// ook op Power; de kostprijs kán niet omlaag). Deterministisch uit de duur → reservering == afrekening.
-export const AI_SUMMARY_BASE_MINUTES = 30
-export const AI_SUMMARY_STEP_MINUTES = 10
 
 // Credits voor een AI-samenvatting van een video van `durationSeconds` (ADR-098 Add.3): 1 credit per
 // 10 min videoduur, naar boven afgerond, minimum 1 — ⌈duur/600⌉, min 1 (dezelfde vorm als de RAG-export).

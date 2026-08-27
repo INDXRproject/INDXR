@@ -85,10 +85,12 @@ bescherming die zónder toezicht ingrijpt; het Operations-paneel en de nachtelij
 
 ## De creditformule
 
-`calculate_summary_cost(duration)` = **3 credits t/m 30 min videoduur, daarna +1 credit per BEGONNEN 10
-min** (30/60/120/240 min = 3/6/12/24 credits). `packages/shared/src/lib/pricing.ts` `summaryCreditCost`
-spiegelt dit exact; de app-weergave (`TranscriptViewer`, credits-pagina, kostentabel, artikel) rendert uit
-die ene bron.
+`calculate_summary_cost(duration)` = **1 credit per 10 min videoduur, naar boven afgerond, minimum 1**
+(⌈duur/600⌉ min 1; 30/60/120/240 min = 3/6/12/24 credits) — ADR-098 Add.3, vereenvoudigd van de oude
+basis-3-t/m-30min-staffel (rekenkundig identiek vanaf 30 min; alleen kortere video's werden goedkoper).
+`packages/shared/src/lib/pricing.ts` `summaryCreditCost` spiegelt dit exact, geborgd via de gedeelde fixture
+`test-fixtures/summary_cost.json` en `scripts/check-playlist-invariants.sh`; de app-weergave (`SummaryTab`,
+credits-pagina, kostentabel, artikel) rendert uit die ene bron.
 
 **Financieel pad:** het bedrag komt uit één bron. `POST /api/ai/summarize` berekent `cost` één keer →
 `credits_cost` + `reserve_credits`; afrekening en teruggave lezen `credits_reserved` → **reservering ==

@@ -6,8 +6,6 @@ import { AUTHORS } from "@/lib/authors"
 import {
   CREDIT_COSTS,
   summaryCreditCost,
-  AI_SUMMARY_BASE_MINUTES,
-  AI_SUMMARY_STEP_MINUTES,
   FREE_TIER,
 } from "@indxr/shared/lib/pricing"
 import { summaryModelName } from "@indxr/shared/lib/models"
@@ -19,7 +17,7 @@ const OG_IMAGE = "https://indxr.ai/docs/screenshots/summary-overview-light.png"
 const metaDescription =
   `Summarize any YouTube video into chapter notes with clickable timestamps. INDXR reads the whole ` +
   `transcript and writes worked-out notes under each chapter, a YouTube summary generator for material ` +
-  `you work through rather than a one-line video summarizer. From ${CREDIT_COSTS.AI_SUMMARY} credits, ` +
+  `you work through rather than a one-line video summarizer. From ${CREDIT_COSTS.AI_SUMMARY_PER_10MIN} credit per 10 minutes of video, ` +
   `and a free account includes ${FREE_TIER.WELCOME_CREDITS} credits.`
 
 export const metadata: Metadata = {
@@ -75,9 +73,8 @@ export default function YouTubeVideoSummarizerPage() {
         the substance of, a course you are working through, or something you came across and do not
         have an hour for. INDXR reads the whole transcript, splits it into chapters at the points where
         the subject changes, and writes worked-out notes under each one, with a timestamp that jumps the
-        player to that moment. It costs {CREDIT_COSTS.AI_SUMMARY} credits for a video up to{" "}
-        {AI_SUMMARY_BASE_MINUTES} minutes and 1 more for each additional {AI_SUMMARY_STEP_MINUTES}{" "}
-        minutes, and a free account includes {FREE_TIER.WELCOME_CREDITS} credits.
+        player to that moment. It costs {CREDIT_COSTS.AI_SUMMARY_PER_10MIN} credit per 10 minutes of
+        video (rounded up, minimum 1), and a free account includes {FREE_TIER.WELCOME_CREDITS} credits.
       </p>
 
       <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -143,8 +140,8 @@ export default function YouTubeVideoSummarizerPage() {
       <h2>What it costs</h2>
 
       <p>
-        A summary costs {CREDIT_COSTS.AI_SUMMARY} credits for a video up to {AI_SUMMARY_BASE_MINUTES}{" "}
-        minutes, and 1 more credit for each additional {AI_SUMMARY_STEP_MINUTES} minutes.
+        A summary costs {CREDIT_COSTS.AI_SUMMARY_PER_10MIN} credit for every 10 minutes of video,
+        rounded up (minimum 1) — the same simple rate whatever the length.
       </p>
 
       <table>
@@ -155,7 +152,8 @@ export default function YouTubeVideoSummarizerPage() {
           </tr>
         </thead>
         <tbody>
-          <tr><td>Up to {AI_SUMMARY_BASE_MINUTES} minutes</td><td>{summaryCreditCost(AI_SUMMARY_BASE_MINUTES * 60)} credits</td></tr>
+          <tr><td>Up to 10 minutes</td><td>{summaryCreditCost(10 * 60)} credit</td></tr>
+          <tr><td>30 minutes</td><td>{summaryCreditCost(30 * 60)} credits</td></tr>
           <tr><td>1 hour</td><td>{summaryCreditCost(60 * 60)} credits</td></tr>
           <tr><td>2 hours</td><td>{summaryCreditCost(2 * 60 * 60)} credits</td></tr>
           <tr><td>4 hours</td><td>{summaryCreditCost(4 * 60 * 60)} credits</td></tr>

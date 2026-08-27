@@ -7,10 +7,10 @@ import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
-import { CREDIT_COSTS, AI_SUMMARY_BASE_MINUTES, AI_SUMMARY_STEP_MINUTES, summaryCreditCost } from "@indxr/shared/lib/pricing"
+import { CREDIT_COSTS, summaryCreditCost } from "@indxr/shared/lib/pricing"
 import { summaryModelName } from "@indxr/shared/lib/models"
 
-const baseCost = CREDIT_COSTS.AI_SUMMARY
+const perTenMin = CREDIT_COSTS.AI_SUMMARY_PER_10MIN
 const oneHourCost = summaryCreditCost(60 * 60)
 
 export const metadata: Metadata = {
@@ -52,10 +52,9 @@ export default function DocsSummariesPage() {
 
         <AnchorHeading as="h2">What a summary costs</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          A summary costs {baseCost} credits for a video up to {AI_SUMMARY_BASE_MINUTES} minutes, then
-          1 more credit for each additional {AI_SUMMARY_STEP_MINUTES} minutes (or part of them) — so the
-          price scales with how much there is to read. A {AI_SUMMARY_BASE_MINUTES}-minute video costs
-          {" "}{summaryCreditCost(AI_SUMMARY_BASE_MINUTES * 60)} credits, a one-hour talk {oneHourCost}{" "}
+          A summary costs {perTenMin} credit for every 10 minutes of video, rounded up (minimum 1) — so
+          the price scales with how much there is to read. A 30-minute video costs
+          {" "}{summaryCreditCost(30 * 60)} credits, a one-hour talk {oneHourCost}{" "}
           credits, and a four-hour video {summaryCreditCost(4 * 60 * 60)} credits. If generation fails,
           the credits are refunded automatically.
         </p>
@@ -74,7 +73,7 @@ export default function DocsSummariesPage() {
         <AnchorHeading as="h2">Regenerating replaces the current summary</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           You can generate a fresh summary for the same transcript. Regenerating costs the same as the
-          first time — {baseCost} credits plus the length-based amount above — and{" "}
+          first time — the same length-based amount above — and{" "}
           <strong>overwrites</strong> the current summary; the previous one is not kept. INDXR asks you
           to confirm before it does.
         </p>
@@ -85,7 +84,7 @@ export default function DocsSummariesPage() {
 
         <SourcesBlock
           sources={[
-            { publisher: "INDXR (own code)", supports: "cost of 3 credits up to 30 min, +1 per started 10 min after, refund on failure", verifiedAgainst: "packages/shared/src/lib/pricing.ts (summaryCreditCost); backend/credit_manager.py:90-108 (calculate_summary_cost)" },
+            { publisher: "INDXR (own code)", supports: "cost of 1 credit per 10 min of video (rounded up, min 1), refund on failure", verifiedAgainst: "packages/shared/src/lib/pricing.ts (summaryCreditCost); backend/credit_manager.py (calculate_summary_cost)" },
             { publisher: "INDXR (own code)", supports: "two-step chapters + clickable timestamps, read-only", verifiedAgainst: "backend/summary_pipeline.py; apps/app/src/components/library/AiSummaryView.tsx; ADR-090" },
             { publisher: "INDXR (own code)", supports: "model + EU gateway", verifiedAgainst: "packages/shared/src/lib/models.ts:41-43 (summaryModelName); backend/main.py:1126-1132" },
             { publisher: "INDXR (own code)", supports: "saved with transcript, regenerate overwrites", verifiedAgainst: "backend/summary_pipeline.py (run_summary_reservation_aware); apps/app/src/components/library/SummaryTab.tsx (generate/regenerate + progress)" },

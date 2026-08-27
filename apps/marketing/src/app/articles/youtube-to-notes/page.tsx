@@ -7,8 +7,6 @@ import { editorialOg } from "@/lib/editorialMeta"
 import {
   CREDIT_COSTS,
   FREE_TIER,
-  AI_SUMMARY_BASE_MINUTES,
-  AI_SUMMARY_STEP_MINUTES,
   summaryCreditCost,
 } from "@indxr/shared/lib/pricing"
 
@@ -342,8 +340,7 @@ export default function YouTubeToNotesPage() {
             <tr>
               <td>Summary</td>
               <td>
-                {CREDIT_COSTS.AI_SUMMARY} credits up to {AI_SUMMARY_BASE_MINUTES} minutes, then +1
-                per {AI_SUMMARY_STEP_MINUTES} minutes after that
+                {CREDIT_COSTS.AI_SUMMARY_PER_10MIN} credit per 10 minutes of video (rounded up, minimum 1)
               </td>
             </tr>
             <tr>

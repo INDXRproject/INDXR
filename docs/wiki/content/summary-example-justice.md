@@ -14,7 +14,7 @@
 | Hoofdstukken | **5** |
 | Samenvattingswoorden | **3.632** (overview 125 + hoofdstukken 3.507) |
 | Verhouding samenvatting : transcript | **0,520** — de samenvatting is ~52% van het transcript (≈ 1 samenvattingswoord per 1,9 transcriptwoorden) |
-| **Samenvatting-kosten** | **6 credits** (= `calculate_summary_cost(3282)` = 3 + ⌈(3282−1800)/600⌉, ADR-098 Add.2; was 5 onder de oude /20-min-formule). Dit is de **enige** kost van deze fixture — het transcript zelf was gratis. |
+| **Samenvatting-kosten** | **6 credits** (= `calculate_summary_cost(3282)` = ⌈3282/600⌉, ADR-098 Add.3 — 1 credit per 10 min; ongewijzigd t.o.v. de oude staffel omdat >30 min identiek is). Dit is de **enige** kost van deze fixture — het transcript zelf was gratis. |
 | Model / schema | `gemini-2.5-flash` (twee-staps, ADR-090) / schema_version 2 |
 
 **Hoofdstukken (5 — kop + tijdspanne):**
