@@ -3,7 +3,9 @@ import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
-import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
+import { creditCostEur, getAnchorPackage, anchorPerCreditText, RAG_CHUNK_DEFAULT } from "@indxr/shared/lib/pricing"
+
+const defaultChunk = RAG_CHUNK_DEFAULT
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-channel-knowledge-base" },
@@ -54,7 +56,7 @@ const steps = [
   },
   {
     name: "Understand the RAG JSON output",
-    text: "Each video's RAG JSON file contains 90–120 second chunks with everything a vector database needs: chunk text, start and end timestamps, a pre-constructed deep link to the exact moment in the video, token count estimate, and a flat metadata object with video ID, title, channel, and chunk index.",
+    text: `Each video's RAG JSON file contains ${RAG_CHUNK_DEFAULT}-second chunks by default (30, 90 and 120 second presets are also available) with everything a vector database needs: chunk text, start and end timestamps, a pre-constructed deep link to the exact moment in the video, token count estimate, and a flat metadata object with video ID, title, channel, and chunk index.`,
   },
   {
     name: "Build the vector index",
@@ -164,31 +166,44 @@ export default function YouTubeChannelKnowledgeBasePage() {
       <h2>Step 3: Understand the RAG JSON Output</h2>
 
       <p>
-        Each video&apos;s <Link href="/articles/transcript-export-formats">RAG JSON</Link> file contains 90–120 second
-        chunks with everything a vector database needs:
+        Each video&apos;s <Link href="/articles/transcript-export-formats">RAG JSON</Link> file contains {defaultChunk}-second
+        chunks (by default) with everything a vector database needs:
       </p>
 
       <pre className="prose-content-pre"><code>{`{
-  "video": {
+  "metadata": {
     "video_id": "kBdfcR-8hEY",
-    "title": "Justice: What's the Right Thing to Do? Episode 1",
+    "title": "Justice: What's The Right Thing To Do? Episode 01 …",
+    "duration_seconds": 3282,
+    "extracted_at": "2026-08-27T12:43:09.393Z",
+    "chunking_config": {
+      "chunk_size_seconds": 60,
+      "overlap_seconds": 9,
+      "overlap_strategy": "segment_boundary",
+      "total_chunks": 60
+    },
     "channel": "Harvard University",
-    "source_url": "https://www.youtube.com/watch?v=kBdfcR-8hEY",
-    "duration": 3421
+    "language": "en",
+    "extraction_method": "youtube_captions"
   },
   "chunks": [
     {
+      "chunk_index": 0,
       "chunk_id": "kBdfcR-8hEY_chunk_000",
-      "text": "Suppose the brakes on your trolley fail...",
-      "start_time": 0.0,
-      "end_time": 118.4,
-      "deep_link": "https://youtu.be/kBdfcR-8hEY?t=0",
-      "token_count_estimate": 312,
+      "text": "This is a course about Justice and we begin with a story suppose you're the driver of a trolley car, and your trolley car is hurdling down the track at sixty miles an hour …",
+      "start_time": 4.2,
+      "end_time": 65.08,
+      "deep_link": "https://youtu.be/kBdfcR-8hEY?t=4",
+      "token_count_estimate": 128,
       "metadata": {
         "video_id": "kBdfcR-8hEY",
-        "title": "Justice: What's the Right Thing to Do? Episode 1",
+        "title": "Justice: What's The Right Thing To Do? Episode 01 …",
         "channel": "Harvard University",
-        "chunk_index": 0
+        "chunk_index": 0,
+        "start_time": 4.2,
+        "end_time": 65.08,
+        "language": "en",
+        "total_chunks": 60
       }
     }
   ]
@@ -332,7 +347,7 @@ print(answer)`}</code></pre>
       </p>
 
       <p>
-        For the full chunking research behind the 90–120 second default chunk size, see{" "}
+        For the full chunking research behind the {defaultChunk}-second default chunk size, see{" "}
         <Link href="/blog/chunk-youtube-transcripts-for-rag">
           How to Chunk YouTube Transcripts for RAG
         </Link>

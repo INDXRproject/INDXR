@@ -3,7 +3,9 @@ import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
-import { creditCostEur, getAnchorPackage, anchorPerCreditText } from "@indxr/shared/lib/pricing"
+import { creditCostEur, getAnchorPackage, anchorPerCreditText, RAG_CHUNK_DEFAULT } from "@indxr/shared/lib/pricing"
+
+const defaultChunk = RAG_CHUNK_DEFAULT
 import { TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
@@ -33,7 +35,7 @@ const faqs = [
   },
   {
     q: "What if I want to filter results by video or channel?",
-    a: "Both ChromaDB and Pinecone support metadata filtering. Add a where clause (ChromaDB) or filter (Pinecone) to restrict results: {\"channel\": \"AI Explained\"} or {\"video_id\": \"dQw4w9WgXcQ\"}.",
+    a: "Both ChromaDB and Pinecone support metadata filtering. Add a where clause (ChromaDB) or filter (Pinecone) to restrict results: {\"channel\": \"Justin Sung\"} or {\"video_id\": \"okHkUIW46ks\"}.",
   },
 ]
 
@@ -55,11 +57,11 @@ const sources = [
 const steps = [
   {
     name: "Extract transcripts as RAG JSON",
-    text: "Extract your target playlist in INDXR.AI's Playlist tab with the RAG JSON toggle enabled. Download the bulk ZIP file. Each JSON file contains 90–120 second chunks with text, timestamps, deep links, and metadata — pre-processed and sized for the optimal dense retrieval range.",
+    text: `Extract your target playlist in INDXR.AI's Playlist tab with the RAG JSON toggle enabled. Download the bulk ZIP file. Each JSON file contains ${RAG_CHUNK_DEFAULT}-second chunks by default with text, timestamps, deep links, and metadata — pre-processed for dense retrieval.`,
   },
   {
     name: "Load and parse JSON files",
-    text: "Load all RAG JSON files from the ZIP directory. For each chunk, enrich the metadata with deep_link, token_count, is_auto_generated flag, and source_url. These fields enable precise citation and source filtering in retrieval results.",
+    text: "Load all RAG JSON files from the ZIP directory. For each chunk, enrich the metadata with the chunk's deep_link, token_count_estimate, and the video's extraction_method. These fields enable precise citation and source filtering in retrieval results.",
   },
   {
     name: "Embed and index in ChromaDB (local) or Pinecone (production)",
@@ -145,45 +147,48 @@ Semantic search + LLM-generated answers with timestamp citations`}</code></pre>
       </p>
 
       <pre className="prose-content-pre"><code>{`{
-  "video": {
-    "video_id": "dQw4w9WgXcQ",
-    "title": "Understanding Transformers — Part 1",
-    "channel": "AI Explained",
-    "source_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "duration": 2847,
+  "metadata": {
+    "video_id": "okHkUIW46ks",
+    "title": "How to Remember Everything You Read",
+    "duration_seconds": 1574,
+    "extracted_at": "2026-08-27T12:43:09.577Z",
+    "chunking_config": {
+      "chunk_size_seconds": 60,
+      "overlap_seconds": 9,
+      "overlap_strategy": "segment_boundary",
+      "total_chunks": 30
+    },
+    "channel": "Justin Sung",
     "language": "en",
-    "is_auto_generated": false
-  },
-  "chunking_config": {
-    "strategy": "time_based_sentence_snap",
-    "target_duration_seconds": 120,
-    "overlap_seconds": 18,
-    "total_chunks": 24
+    "extraction_method": "youtube_captions"
   },
   "chunks": [
     {
-      "chunk_id": "dQw4w9WgXcQ_chunk_000",
-      "text": "Today we're going to build up the transformer architecture from scratch...",
-      "start_time": 0.0,
-      "end_time": 118.4,
-      "deep_link": "https://youtu.be/dQw4w9WgXcQ?t=0",
-      "token_count_estimate": 312,
+      "chunk_index": 0,
+      "chunk_id": "okHkUIW46ks_chunk_000",
+      "text": "in this video I'll teach you a system for remembering everything you read study or learn I've been using the system for the last 7 years …",
+      "start_time": 0.04,
+      "end_time": 61.519,
+      "deep_link": "https://youtu.be/okHkUIW46ks?t=0",
+      "token_count_estimate": 209,
       "metadata": {
-        "video_id": "dQw4w9WgXcQ",
-        "title": "Understanding Transformers — Part 1",
-        "channel": "AI Explained",
+        "video_id": "okHkUIW46ks",
+        "title": "How to Remember Everything You Read",
+        "channel": "Justin Sung",
         "chunk_index": 0,
-        "total_chunks": 24,
-        "start_time": 0.0,
-        "end_time": 118.4
+        "start_time": 0.04,
+        "end_time": 61.519,
+        "language": "en",
+        "total_chunks": 30
       }
     }
   ]
 }`}</code></pre>
 
       <p>
-        Each chunk is 90–120 seconds of speech (~300–400 tokens), sized for the optimal dense retrieval
-        range established by NVIDIA&apos;s chunking benchmark and the Vectara NAACL 2025 study. See{" "}
+        Each chunk is {defaultChunk} seconds of speech by default (adjustable to 30, 90 or 120), which
+        lands in the dense-retrieval range established by NVIDIA&apos;s chunking benchmark and the Vectara
+        NAACL 2025 study. See{" "}
         <Link href="/blog/chunk-youtube-transcripts-for-rag">
           How to Chunk YouTube Transcripts for RAG
         </Link>{" "}
@@ -204,16 +209,15 @@ def load_rag_json_files(directory: str) -> list[dict]:
         with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
 
-        video_info = data.get("video", {})
-        chunks = data.get("chunks", [])
+        video = data["metadata"]
+        chunks = data["chunks"]
 
         for chunk in chunks:
             enriched_metadata = {
                 **chunk["metadata"],
                 "deep_link": chunk["deep_link"],
-                "token_count": chunk.get("token_count_estimate", 0),
-                "is_auto_generated": video_info.get("is_auto_generated", True),
-                "source_url": video_info.get("source_url", "")
+                "token_count": chunk["token_count_estimate"],
+                "extraction_method": video.get("extraction_method"),
             }
 
             all_chunks.append({
@@ -431,7 +435,7 @@ if new_chunks:
 
       <p>
         To start: <Link href="/articles/transcript-export-formats">extract any YouTube video as RAG JSON</Link>.
-        For the chunking research behind the 90–120 second default, see{" "}
+        For the chunking research behind the {defaultChunk}-second default, see{" "}
         <Link href="/blog/chunk-youtube-transcripts-for-rag">
           How to Chunk YouTube Transcripts for RAG
         </Link>

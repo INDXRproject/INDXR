@@ -4,6 +4,11 @@ import { TutorialTemplate } from "@/components/content/templates/TutorialTemplat
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
+import { RAG_CHUNK_PRESETS } from "@indxr/shared/lib/pricing"
+
+// Token estimates rendered from the pricing source (RAG_CHUNK_PRESETS), never hardcoded.
+const tok = (v: number) => RAG_CHUNK_PRESETS.find((p) => p.value === v)!.tokens.replace(" tokens", "")
+const t120 = RAG_CHUNK_PRESETS.find((p) => p.value === 120)!.tokens
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/chunk-youtube-transcripts-for-rag" },
@@ -74,7 +79,7 @@ const steps = [
   },
   {
     name: "Choose your chunk duration",
-    text: "Target 60–90 seconds per chunk (~200–300 tokens) for most use cases, or 120 seconds (~400 tokens) for lectures and long-form analysis. INDXR.AI's RAG JSON export offers 30s, 60s, 90s, and 120s presets.",
+    text: `Target 60–90 seconds per chunk (~200–300 tokens) for most use cases, or 120 seconds (${t120}) for lectures and long-form analysis. INDXR.AI's RAG JSON export offers 30s, 60s, 90s, and 120s presets.`,
   },
   {
     name: "Apply sentence-boundary snapping",
@@ -146,10 +151,10 @@ export default function ChunkYouTubeTranscriptsForRAGPage() {
           </tr>
         </thead>
         <tbody>
-          <tr><td>30s</td><td>~75</td><td>~100</td><td>❌ Below 256-token floor</td></tr>
-          <tr><td>60s</td><td>~150</td><td>~200</td><td>⚠️ Minimum viable</td></tr>
-          <tr><td>90s</td><td>~225</td><td>~300</td><td>✅ Inside sweet spot</td></tr>
-          <tr><td>120s</td><td>~300</td><td>~400</td><td>✅ Research-backed optimum</td></tr>
+          <tr><td>30s</td><td>~75</td><td>{tok(30)}</td><td>❌ Below 256-token floor</td></tr>
+          <tr><td>60s</td><td>~150</td><td>{tok(60)}</td><td>⚠️ Minimum viable</td></tr>
+          <tr><td>90s</td><td>~225</td><td>{tok(90)}</td><td>✅ Inside sweet spot</td></tr>
+          <tr><td>120s</td><td>~300</td><td>{tok(120)}</td><td>✅ Research-backed optimum</td></tr>
         </tbody>
       </table>
 
