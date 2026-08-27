@@ -184,11 +184,18 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-            <DocsFigure
-              src="/docs/screenshots/summary-chapter.png"
-              alt="A chapter of an AI summary: a heading, a timestamp, and worked-out notes underneath, generated from a lecture transcript."
-              caption="A playlist becomes lectures you can skim: each one gets a chapter summary."
-            />
+            <div className="space-y-6">
+              <DocsFigure
+                src="/docs/screenshots/summary-chapter.png"
+                alt="A chapter of an AI summary: a heading, a timestamp, and worked-out notes underneath, generated from a lecture transcript."
+                caption="A playlist becomes lectures you can skim: each one gets a chapter summary."
+              />
+              <DocsFigure
+                src="/docs/screenshots/rag-json.png"
+                alt="A RAG JSON export in use: a search query returns the best-matching chunk with its timestamp and a deep link back to that moment in the video."
+                caption="Chunked JSON with timestamps and deep links: a query returns the exact passage and its source."
+              />
+            </div>
           </div>
         </div>
       </section>

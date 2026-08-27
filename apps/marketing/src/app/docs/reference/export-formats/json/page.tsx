@@ -4,6 +4,7 @@ import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
+import { DocsFigure } from "@/components/docs/DocsFigure"
 import { DocsTable } from "@/components/docs/DocsTable"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
@@ -188,6 +189,12 @@ export default function DocsJsonPage() {
         </DocsCallout>
 
         <DocsCodeBlock>{ragSample}</DocsCodeBlock>
+
+        <DocsFigure
+          src="/docs/screenshots/rag-json.png"
+          alt="A RAG JSON export in use: a search query over the 60 chunks returns the best-matching chunk with its timestamp and a deep link back to that moment in the video."
+          caption="The same file in use: a query returns the best-matching chunk with its timestamp and a deep link to the source."
+        />
 
         <SourcesBlock
           sources={[

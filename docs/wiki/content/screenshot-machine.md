@@ -44,6 +44,8 @@ De `copy-source` pre-hook kopieert de canonieke opname uit `recordings/` naar `p
 
 De drie homepage-exportblokken (Markdown/SRT/RAG) als **beeld van het bestand in gebruik**, op de **echte** fixture-export (`fixture/justice.{srt,vtt,md,rag.json}`, 60-chunk RAG): `srt-demo.html` (ondertitels over een neutrale speler — géén YouTube-frame, [ADR-088](../decisions/088-youtube-ui-in-marketing.md)) en `rag-demo.html` (query → chunk mét tijdstempel), elk geschoten via `capture-{srt,rag}.mjs` (light+dark). Markdown → Obsidian heeft **geen** webversie; de exacte één-screenshot-instructie staat in `export-demos/README.md`.
 
+**RAG-figuur geplaatst (2026-08-27):** de `rag-demo`-opname (query "the driver of a trolley car" → chunk 4 of 60, ▶ 3:45, deep link `youtu.be/kBdfcR-8hEY?t=225`) is de RAG-JSON-figuur op de site. Reproductie: `node apps/video/export-demos/capture-rag.mjs` → `rag-demo-{light,dark}.png`, dan gekopieerd naar `apps/marketing/public/docs/screenshots/rag-json-{light,dark}.png` (DocsFigure-naamgeving). Geplaatst op de **landing** ("Text you want to build on", `page.tsx`) en op de **JSON-specpagina** (`/docs/reference/export-formats/json`, onder het RAG-codeblok). Dit was de laatste ontbrekende figuur op de site.
+
 ## Opnamestandaard (2026-08-03) — geldt voor ELKE opname
 
 De reden voor deze standaard: eerder waren de docs-beelden een systeemfout (dubbele randen, geen dark mode, wild uiteenlopende formaten, een horizontaal scrollend diagram). De helper `frameShot()` dwingt nu één norm af, zodat een latere batch niet opnieuw scheve beelden maakt:
