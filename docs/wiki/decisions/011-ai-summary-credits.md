@@ -1,5 +1,7 @@
 # Beslissing 011: AI Samenvatting Kost 3 Credits (was 1)
 
+> **Achterhaald** — de vlakke 3-credit-prijs is vervangen door een duur-afhankelijke formule (ADR-090) en uiteindelijk vereenvoudigd naar **1 credit per 10 min video** (`⌈duur/600⌉`, min 1 — ADR-098 Addendum 3). Onderstaande tekst is historisch.
+
 **Status:** Geaccepteerd (pending implementatie)
 **Datum:** 2026-04-14
 **Gerelateerde code:** `backend/main.py` (summarization), `src/app/api/ai/summarize/route.ts`

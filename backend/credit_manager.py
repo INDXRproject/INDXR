@@ -89,26 +89,26 @@ def calculate_credit_cost(duration_seconds: float) -> int:
 
 def calculate_summary_cost(duration_seconds: float) -> int:
     """
-    Credit-kost voor een AI-samenvatting (ADR-090, bijgesteld na kostenmeting — ADR-098 Addendum 1/2):
+    Credit-kost voor een AI-samenvatting (ADR-098 Addendum 3 — vereenvoudigd van basis+staffel naar één regel):
 
-        3 credits t/m 30 minuten videoduur, daarna +1 credit per BEGONNEN 10 minuten (was 20).
-        (0–30min=3, 31–40min=4, 41–50min=5, …; 60min=6, 2u=12, 4u=24)
+        1 credit per 10 minuten videoduur, naar boven afgerond, minimum 1.  ⌈duur_sec / 600⌉, min 1.
+        (0–10min=1, 11–20min=2, 21–30min=3; 60min=6, 2u=12, 4u=24)
 
-    De stap naar /10 herstelt een gezonde netto-marge-na-btw (~50%) over het HELE duurbereik, ook op het
-    goedkoopste pakket (Power) en in de kost-staart. Onderbouwing: de kostprijs kán niet omlaag — de kost
-    per 1000 uitvoerwoorden is vlak over alle pijplijn-instellingen (denkbudget inert, zie ADR-098 Add.1),
-    dus er is geen verspilling om weg te snijden en moet de credit-slope de tokenkost bijhouden.
+    Rekenkundig IDENTIEK aan de oude basis-3-t/m-30min-formule vanaf 30 minuten; alleen kortere video's
+    worden goedkoper (30 min blijft 3, geen enkele bestaande prijs stijgt). Eén regel is eerlijker en
+    begrijpelijker dan een basis met een staffel. Dezelfde ⌈duur/600⌉-vorm als de RAG-export.
     Deterministisch uit de videoduur → reservering == afrekening (geen actual-vs-estimate-gat).
-    NULL/0/onbekende duur → minimum 3 (mirror de oude flat-3-baseline).
+    NULL/0/onbekende duur → minimum 1.
 
     LET OP (financieel pad): dit is de ENIGE bron van het summary-bedrag in de backend — reservering,
     afrekening en teruggave lezen alle drie de uitkomst hiervan (main.py start_summary). De frontend
-    (TranscriptViewer `summaryCost`) MOET exact deze formule spiegelen, anders toont de app een ander
-    bedrag dan de backend rekent.
+    (SummaryTab `summaryCost`) MOET exact deze formule spiegelen (packages/shared/src/lib/pricing.ts
+    `summaryCreditCost`), geborgd via de gedeelde fixture test-fixtures/summary_cost.json en
+    scripts/check-playlist-invariants.sh — anders toont de app een ander bedrag dan de backend rekent.
     """
     if not duration_seconds or duration_seconds <= 0:
-        return 3
-    return 3 + max(0, math.ceil((duration_seconds - 1800) / 600.0))
+        return 1
+    return max(1, math.ceil(duration_seconds / 600.0))
 
 
 def playlist_free_ids(video_ids, whisper_ids, is_retry: bool = False) -> set:

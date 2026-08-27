@@ -110,15 +110,15 @@ export const CREDIT_COSTS = {
 export const AI_SUMMARY_BASE_MINUTES = 30
 export const AI_SUMMARY_STEP_MINUTES = 10
 
-// Credits voor een AI-samenvatting van een video van `durationSeconds`. ENIGE TS-bron van de
-// summary-creditkost — spiegelt de backend `calculate_summary_cost` exact (financieel pad).
-// Onbekende/0 duur → basiskost (mirror van de backend-baseline).
+// Credits voor een AI-samenvatting van een video van `durationSeconds` (ADR-098 Add.3): 1 credit per
+// 10 min videoduur, naar boven afgerond, minimum 1 — ⌈duur/600⌉, min 1 (dezelfde vorm als de RAG-export).
+// Rekenkundig identiek aan de oude basis-3-t/m-30min-formule vanaf 30 min; alleen kortere video's werden
+// goedkoper (geen bestaande prijs steeg). ENIGE TS-bron van de summary-creditkost — spiegelt de backend
+// `calculate_summary_cost` exact (financieel pad), geborgd via test-fixtures/summary_cost.json en
+// scripts/check-playlist-invariants.sh. Onbekende/0 duur → minimum 1.
 export function summaryCreditCost(durationSeconds: number): number {
-  if (!durationSeconds || durationSeconds <= 0) return CREDIT_COSTS.AI_SUMMARY
-  return (
-    CREDIT_COSTS.AI_SUMMARY +
-    Math.max(0, Math.ceil((durationSeconds - AI_SUMMARY_BASE_MINUTES * 60) / (AI_SUMMARY_STEP_MINUTES * 60)))
-  )
+  if (!durationSeconds || durationSeconds <= 0) return 1
+  return Math.max(1, Math.ceil(durationSeconds / 600))
 }
 
 // Free-tier limits

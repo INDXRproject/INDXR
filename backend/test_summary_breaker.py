@@ -64,7 +64,7 @@ def main() -> int:
     try:
         sb.table("user_credits").upsert({"user_id": USER, "credits": 100}).execute()
         b0 = balance()
-        cost = calculate_summary_cost(68)  # 3 credits (min)
+        cost = calculate_summary_cost(68)  # 1 credit (min)
         sb.table("transcription_jobs").insert({
             "id": jid, "user_id": USER, "status": "pending",
             "source_type": "summary", "source_kind": "ai_summary", "transcript_id": TRANSCRIPT_ID,

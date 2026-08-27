@@ -1,0 +1,23 @@
+{
+  "_comment": "GEDEELDE fixture voor de AI-samenvatting-creditformule (ADR-098 Add.3): 1 credit per 10 min videoduur, naar boven afgerond, minimum 1 -> ceil(duur_sec/600), min 1. De backend backend/credit_manager.calculate_summary_cost en de TS-spiegel packages/shared/src/lib/pricing.summaryCreditCost MOETEN beide exact deze (duration_seconds -> credits)-paren opleveren; divergentie is een echt-geld-bug (reservering != wat de app toont). backend/test_summary_cost.py checkt de backend, packages/shared/src/lib/summaryCost.test.ts checkt de TS-bron, allebei tegen dit bestand. scripts/check-playlist-invariants.sh draait beide in de CLAUDE.md-verificatiepoort en wordt ROOD bij divergentie. Wijzig je de formule: pas backend, TS-bron en dit bestand in dezelfde commit aan, en draai het script. Cases dekken het 30-min-scharnier (waar de nieuwe = oude formule) en de goedkoper geworden sub-30-min-punten.",
+  "formula": "ceil(duration_seconds / 600), minimum 1; duration <= 0 -> 1",
+  "cases": [
+    { "duration_seconds": 0, "credits": 1 },
+    { "duration_seconds": 1, "credits": 1 },
+    { "duration_seconds": 300, "credits": 1 },
+    { "duration_seconds": 600, "credits": 1 },
+    { "duration_seconds": 601, "credits": 2 },
+    { "duration_seconds": 900, "credits": 2 },
+    { "duration_seconds": 1200, "credits": 2 },
+    { "duration_seconds": 1201, "credits": 3 },
+    { "duration_seconds": 1800, "credits": 3 },
+    { "duration_seconds": 1801, "credits": 4 },
+    { "duration_seconds": 2400, "credits": 4 },
+    { "duration_seconds": 3000, "credits": 5 },
+    { "duration_seconds": 3282, "credits": 6 },
+    { "duration_seconds": 3600, "credits": 6 },
+    { "duration_seconds": 7200, "credits": 12 },
+    { "duration_seconds": 14400, "credits": 24 },
+    { "duration_seconds": 36000, "credits": 60 }
+  ]
+}

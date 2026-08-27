@@ -1284,7 +1284,7 @@ SUMMARY_STALE_MINUTES = 30
 @app.post("/api/summarize", response_model=None)
 async def start_summary(request: SummarizeRequest, req: Request, _: None = Depends(verify_backend_secret)):
     """Start een AI-samenvatting als achtergrondtaak (ADR-090). Berekent de duur-afhankelijke kost
-    (3 t/m 30min, +1 per begonnen 30min), plaatst een transcription_jobs-rij met source_kind='ai_summary',
+    (1 credit per 10min video, ⌈duur/600⌉, min 1 — ADR-098 Add.3), plaatst een transcription_jobs-rij met source_kind='ai_summary',
     reserveert de credits en enqueued run_summary_job. Retourneert {job_id, status:'pending'}; de frontend
     pollt /api/summary/jobs/{job_id}."""
     user_id = request.user_id
