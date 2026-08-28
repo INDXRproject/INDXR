@@ -111,6 +111,16 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* See it in action — the product walkthrough, moved up to sit right after the tool: the video
+          shows in motion what the tool just promised, before the feature sections. Same shared
+          CONTENT width as every other section (click to play, no autoplay). */}
+      <section className={SECTION}>
+        <div className={CONTENT}>
+          <h2 className="mb-6 text-2xl font-bold text-[var(--fg)] sm:text-3xl">See it in action</h2>
+          <HomeClipVideo />
+        </div>
+      </section>
+
       {/* Why INDXR — four USP lines */}
       <section className={SECTION}>
         <div className={CONTENT}>
@@ -263,12 +273,6 @@ export default function LandingPage() {
                 caption="Edit the transcript or the summary; your version is kept next to the original."
               />
             </div>
-          </div>
-
-          {/* See it in action — the product walkthrough (click to play, no autoplay) */}
-          <div className="mt-16 max-w-3xl mx-auto">
-            <h3 className="mb-6 text-center text-xl font-semibold text-[var(--fg)]">See it in action</h3>
-            <HomeClipVideo />
           </div>
         </div>
       </section>
