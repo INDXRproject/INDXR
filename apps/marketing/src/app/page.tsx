@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowRight, Puzzle, Infinity as InfinityIcon, Library, Files } from "lucide-react"
 import { HeroImage } from "@/components/marketing/HeroImage"
 import { FreeToolEmbed } from "@/components/marketing/FreeToolEmbed"
+import { HomeClipVideo } from "@/components/marketing/HomeClipVideo"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
@@ -254,6 +255,12 @@ export default function LandingPage() {
                 caption="Edit the transcript or the summary; your version is kept next to the original."
               />
             </div>
+          </div>
+
+          {/* See it in action — the product walkthrough (click to play, no autoplay) */}
+          <div className="mt-16 max-w-3xl mx-auto">
+            <h3 className="mb-6 text-center text-xl font-semibold text-[var(--fg)]">See it in action</h3>
+            <HomeClipVideo />
           </div>
         </div>
       </section>

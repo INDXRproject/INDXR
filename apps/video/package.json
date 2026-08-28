@@ -4,13 +4,13 @@
   "private": true,
   "description": "Standalone Remotion workspace for INDXR marketing clips — deliberately OUTSIDE the Turborepo build graph (ADR-089). Own node_modules, own install, never deploys.",
   "scripts": {
-    "copy-source": "mkdir -p public && cp ../../tests/playwright/capture/recordings/core-flow.webm public/core-flow.webm && cp ../../tests/playwright/capture/recordings/core-flow-dark.webm public/core-flow-dark.webm",
+    "copy-source": "mkdir -p public && cp ../../tests/playwright/capture/recordings/core-flow.webm public/core-flow.webm && cp ../../tests/playwright/capture/recordings/core-flow-dark.webm public/core-flow-dark.webm && cp ../../apps/marketing/public/docs/screenshots/library-organized-*.png public/ && cp ../../apps/marketing/public/docs/screenshots/transcript-speakers-*.png public/ && cp ../../apps/marketing/public/docs/screenshots/summary-chapter-*.png public/ && cp ../../apps/marketing/public/docs/screenshots/export-menu-*.png public/",
     "prestudio": "npm run copy-source",
     "prerender": "npm run copy-source",
     "prestill": "npm run copy-source",
     "studio": "remotion studio",
     "render": "remotion render HomeClip out/home-clip.mp4",
-    "still": "remotion still HomeClip out/home-clip-poster.png --frame=609"
+    "still": "remotion still HomeClip out/home-clip-poster.png --frame=130"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

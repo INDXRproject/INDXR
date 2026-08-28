@@ -376,6 +376,39 @@ test('video-subtitles-srt', async ({ page }) => {
   await page.evaluate(() => document.getElementById('__srtblock')?.remove())
 })
 
+// ── LIVE: the export menu OPEN, showing the format list — moment-5 asset for the home-clip video.
+// Unlike frameShot's clone-into-frame, a Radix dropdown is portalled to <body> and absolutely
+// positioned, so we shoot the LIVE [role=menu] element itself (not the page). Re-theming via
+// setTheme keeps the menu open (no outside click), and the portal is a descendant of <html>, so
+// [data-theme] restyles it live. No menuitem is clicked → no download, no credit. ──
+test('export-menu', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: VIDEO_TRANSCRIPT_TITLE })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  // Same guard as video-subtitles-srt: the list has a per-row Export button, so wait for the detail
+  // pane (speaker text only exists there) before locating the single Export control.
+  await page.getByText('Speaker A:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  const exportBtn = page.getByRole('button', { name: 'Export' })
+  await exportBtn.waitFor({ state: 'visible', timeout: 20_000 })
+  await exportBtn.click()
+  const menu = page.getByRole('menu')
+  await menu.waitFor({ state: 'visible', timeout: 10_000 })
+
+  await setTheme(page, 'light')
+  await page.waitForTimeout(150)
+  await menu.screenshot({ path: path.join(OUT, 'export-menu-light.png') })
+
+  await setTheme(page, 'dark')
+  await page.waitForTimeout(150)
+  await menu.screenshot({ path: path.join(OUT, 'export-menu-dark.png') })
+
+  await page.keyboard.press('Escape')
+  await setTheme(page, 'light')
+  console.log('  ✔ export-menu-{light,dark}.png')
+})
+
 // ══ AI summary captures (real generated summary of the seeded Justice lecture) ══
 // The figures for /articles (summaries). Read a REAL AI summary (ADR-090: overview + chapters, each
 // with a clickable timestamp) generated on the seeded Justice transcript (videoId → amber timestamps).
