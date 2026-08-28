@@ -25,6 +25,12 @@ const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
 // (--border-subtle) over a uniform --bg surface, with uniform vertical padding. No alternating
 // background colours, no ad-hoc dividers.
 const SECTION = "w-full border-b border-[var(--border-subtle)] bg-[var(--bg)]"
+// One shared content container so every section lines up on desktop: same max-width, same
+// horizontal padding, same vertical rhythm. The hero is the deliberate full-bleed exception.
+// Single-column prose sections keep their reading width with an inner PROSE wrapper that is
+// LEFT-aligned inside CONTENT — so their left edge still matches the wider grid sections.
+const CONTENT = "container mx-auto max-w-5xl px-4 py-20 lg:py-24"
+const PROSE = "max-w-3xl"
 
 const usps = [
   {
@@ -92,7 +98,7 @@ export default function LandingPage() {
 
       {/* Try it — the live tool, directly below the fold */}
       <section id="try" className={`${SECTION} scroll-mt-24`}>
-        <div className="container mx-auto max-w-4xl px-4 py-20 lg:py-24">
+        <div className={CONTENT}>
           <h2 className="mb-3 text-center text-2xl font-bold text-[var(--fg)] sm:text-3xl">
             Paste a link and see for yourself
           </h2>
@@ -107,7 +113,7 @@ export default function LandingPage() {
 
       {/* Why INDXR — four USP lines */}
       <section className={SECTION}>
-        <div className="container mx-auto max-w-5xl px-4 py-20 lg:py-24">
+        <div className={CONTENT}>
           <div className="grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {usps.map((u) => {
               const Icon = u.icon
@@ -125,25 +131,27 @@ export default function LandingPage() {
 
       {/* The problem */}
       <section className={SECTION}>
-        <div className="container mx-auto max-w-3xl px-4 py-20 lg:py-24">
-          <h2 className="mb-4 text-2xl font-bold text-[var(--fg)] sm:text-3xl">
-            The problem is not getting the text. It is what happens after
-          </h2>
-          <p className="mb-4 leading-relaxed text-[var(--fg-subtle)]">
-            You can find the words of one video in a dozen places. What you cannot find is all of them
-            together, in the same format, still searchable next month.
-          </p>
-          <p className="leading-relaxed text-[var(--fg-subtle)]">
-            That is what INDXR is. Not a converter you use once and forget, but the place your sources
-            live: every transcript in one library, with the same structure, the same export formats and
-            the same search across all of them.
-          </p>
+        <div className={CONTENT}>
+          <div className={PROSE}>
+            <h2 className="mb-4 text-2xl font-bold text-[var(--fg)] sm:text-3xl">
+              The problem is not getting the text. It is what happens after
+            </h2>
+            <p className="mb-4 leading-relaxed text-[var(--fg-subtle)]">
+              You can find the words of one video in a dozen places. What you cannot find is all of them
+              together, in the same format, still searchable next month.
+            </p>
+            <p className="leading-relaxed text-[var(--fg-subtle)]">
+              That is what INDXR is. Not a converter you use once and forget, but the place your sources
+              live: every transcript in one library, with the same structure, the same export formats and
+              the same search across all of them.
+            </p>
+          </div>
         </div>
       </section>
 
       {/* What people bring to it */}
       <section className={SECTION}>
-        <div className="container mx-auto max-w-5xl px-4 py-20 lg:py-24">
+        <div className={CONTENT}>
           <h2 className="mb-10 text-2xl font-bold text-[var(--fg)] sm:text-3xl">What people bring to it</h2>
           <div className="grid items-start gap-10 lg:grid-cols-2">
             <div className="space-y-6">
@@ -203,7 +211,7 @@ export default function LandingPage() {
 
       {/* What you get from a single transcript */}
       <section className={SECTION}>
-        <div className="container mx-auto max-w-5xl px-4 py-20 lg:py-24">
+        <div className={CONTENT}>
           <h2 className="mb-2 text-2xl font-bold text-[var(--fg)] sm:text-3xl">
             What you get from a single transcript
           </h2>
@@ -267,7 +275,7 @@ export default function LandingPage() {
 
       {/* Your library */}
       <section className={SECTION}>
-        <div className="container mx-auto max-w-5xl px-4 py-20 lg:py-24">
+        <div className={CONTENT}>
           <div className="grid items-start gap-10 lg:grid-cols-2">
             <div>
               <h2 className="mb-4 text-2xl font-bold text-[var(--fg)] sm:text-3xl">
@@ -293,7 +301,8 @@ export default function LandingPage() {
 
       {/* What it costs */}
       <section className={SECTION}>
-        <div className="container mx-auto max-w-3xl px-4 py-20 lg:py-24">
+        <div className={CONTENT}>
+          <div className={PROSE}>
           <h2 className="mb-4 text-2xl font-bold text-[var(--fg)] sm:text-3xl">What it costs</h2>
           <p className="mb-8 leading-relaxed text-[var(--fg-subtle)]">
             No subscription. You buy credits, you spend them when you need them, and they never expire.
@@ -352,6 +361,7 @@ export default function LandingPage() {
             >
               See pricing
             </Link>
+          </div>
           </div>
         </div>
       </section>
