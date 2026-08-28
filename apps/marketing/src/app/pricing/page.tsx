@@ -4,7 +4,6 @@ import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/upload
 import { JsonLd } from "@/components/seo/JsonLd"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { PricingHero } from "@/components/pricing/PricingHero"
-import { AlwaysFreeBlock } from "@/components/pricing/AlwaysFreeBlock"
 import { PricingTiers } from "@indxr/shared/components/pricing/PricingTiers"
 import { BuyButton } from "@/components/pricing/BuyButton"
 import { CreditCostTable } from "@/components/pricing/CreditCostTable"
@@ -114,9 +113,6 @@ export default function PricingPage() {
 
           {/* Section 2 — Hero */}
           <PricingHero />
-
-          {/* Section 3 — Always-free disclosure */}
-          <AlwaysFreeBlock />
 
           {/* Section 4+5 — 3 main tier cards (Starter / Plus★ / Power) + Try secondary strip.
               Gedeelde presentatie met app-billing; CTA = auth-aware marketing BuyButton. */}

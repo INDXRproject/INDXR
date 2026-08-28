@@ -15,7 +15,7 @@
 // (where the radio's checked/onChange come from the parent's state).
 
 import type { ReactNode } from "react"
-import { PricingPackage, PACKAGES, formatEur, pricePerCredit, costInTier } from "../../lib/pricing"
+import { PricingPackage, PACKAGES, formatEur, formatEurExact, pricePerCredit } from "../../lib/pricing"
 
 /**
  * Gedeelde CTA-knop-chroom zodat beide oppervlakken visueel identieke knoppen renderen (geen
@@ -157,7 +157,6 @@ function stateClasses(pkg: PricingPackage, selectMode: boolean, selected: boolea
 
 function CardInner({ pkg }: { pkg: PricingPackage }) {
   const ppc = pricePerCredit(pkg)
-  const hourCost = costInTier(60, pkg)
   return (
     <>
       {/* Fixed illustration tile: identical size + vertical position across all three cards,
@@ -178,8 +177,7 @@ function CardInner({ pkg }: { pkg: PricingPackage }) {
 
       <div className="mb-4 space-y-1">
         <p className="text-base font-medium text-[var(--accent)]">{pkg.credits.toLocaleString()} credits</p>
-        <p className="text-xs text-[var(--fg-muted)]">{formatEur(ppc)}/credit · {formatEur(ppc)}/min AI transcription</p>
-        <p className="text-xs text-[var(--fg-muted)] italic">1-hour AI transcription = 60 credits ({formatEur(hourCost)})</p>
+        <p className="text-xs text-[var(--fg-muted)]">{formatEurExact(ppc)}/credit · {formatEurExact(ppc)}/min AI transcription</p>
       </div>
 
       <p className="text-sm text-[var(--fg-subtle)] mb-6 flex-1">{pkg.audience}</p>

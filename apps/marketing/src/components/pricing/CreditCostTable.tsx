@@ -4,7 +4,7 @@
 "use client"
 
 import { useState } from "react"
-import { PACKAGES, PricingPackage, costInTier, formatEur, summaryCreditCost, CREDIT_COSTS } from "@indxr/shared/lib/pricing"
+import { PACKAGES, PricingPackage, costInTier, formatEurExact, summaryCreditCost, CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 import { STORAGE_BLOCK_MB, STORAGE_BLOCK_COST_CREDITS } from "@indxr/shared/lib/storage"
 
 const TASKS = [
@@ -19,9 +19,11 @@ const TASKS = [
   { name: `Extra library storage, +${STORAGE_BLOCK_MB} MB (permanent)`, credits: STORAGE_BLOCK_COST_CREDITS },
 ]
 
+// Exact euro-format so the worked example never hides rounding: 17 credits at Plus reads €0.425,
+// not €0.43 — a rekenvoorbeeld, geen factuur (see formatEurExact).
 function formatCost(credits: number, pkg: PricingPackage): string {
   if (credits === 0) return "Free"
-  return formatEur(costInTier(credits, pkg))
+  return formatEurExact(costInTier(credits, pkg))
 }
 
 export function CreditCostTable() {

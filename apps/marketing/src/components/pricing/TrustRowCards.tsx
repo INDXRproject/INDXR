@@ -1,5 +1,14 @@
 // Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
 import { CreditCard, Clock, Gift } from "lucide-react"
+import { FREE_TIER, CREDIT_COSTS, summaryCreditCost } from "@indxr/shared/lib/pricing"
+
+// Welcome-credit examples derived from pricing.ts — never typed numbers. Both examples anchor to the
+// SAME video length so they stay mutually consistent: the welcome credits buy either one AI
+// transcription of `welcomeMinutes` minutes (1 credit/min), OR as many AI summaries of a video that
+// length as those credits cover (each ⌈min/10⌉ credits → 3 for a 25-min video → 25/3 → 8).
+const welcomeCredits = FREE_TIER.WELCOME_CREDITS
+const welcomeMinutes = welcomeCredits / CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
+const welcomeSummaries = Math.floor(welcomeCredits / summaryCreditCost(welcomeMinutes * 60))
 
 const trustItems = [
   {
@@ -14,8 +23,8 @@ const trustItems = [
   },
   {
     Icon: Gift,
-    heading: "25 free credits on signup",
-    body: "No credit card required. Enough for a 25-minute AI transcription or 8 AI summaries.",
+    heading: `${welcomeCredits} free credits on signup`,
+    body: `No credit card required. Enough for a ${welcomeMinutes}-minute AI transcription, or ${welcomeSummaries} AI summaries of the same length.`,
   },
 ]
 

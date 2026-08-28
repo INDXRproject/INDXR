@@ -153,6 +153,20 @@ export function formatEur(amount: number): string {
   return `€${amount.toFixed(2)}`
 }
 
+// Exact euro-format for worked cost examples (credit-cost table, per-credit rates on the tier
+// cards) where a fixed 2-decimal `formatEur` would HIDE rounding — e.g. 17 credits at Plus is
+// €0.425, not €0.43; €0.0375/credit at Starter, not €0.04. Shows the true value: at least 2
+// decimals, extended only as far as the number needs (up to 4). Every `costInTier`/`pricePerCredit`
+// value is credits × a terminating €/credit rate (0.05 / 0.0375 / 0.025 / 0.02), so it always
+// terminates within 4 decimals; rounding to 4dp first clears floating-point noise, then trailing
+// zeros are trimmed while keeping a minimum of 2 decimals. This is a rekenvoorbeeld, geen factuur —
+// it must be exact, not merely look rounded.
+export function formatEurExact(amount: number): string {
+  const [int, dec = ""] = amount.toFixed(4).split(".")
+  const trimmed = dec.replace(/0+$/, "")
+  return `€${int}.${trimmed.padEnd(2, "0")}`
+}
+
 export function pricePerCredit(pkg: PricingPackage): number {
   return pkg.priceEur / pkg.credits
 }
