@@ -4,7 +4,7 @@
   "private": true,
   "description": "Standalone Remotion workspace for INDXR marketing clips — deliberately OUTSIDE the Turborepo build graph (ADR-089). Own node_modules, own install, never deploys.",
   "scripts": {
-    "copy-source": "mkdir -p public && cp ../../tests/playwright/capture/recordings/core-flow.webm public/core-flow.webm && cp ../../tests/playwright/capture/recordings/core-flow-dark.webm public/core-flow-dark.webm && cp ../../apps/marketing/public/docs/screenshots/library-organized-*.png public/ && cp ../../apps/marketing/public/docs/screenshots/transcript-speakers-*.png public/ && cp ../../apps/marketing/public/docs/screenshots/summary-chapter-*.png public/ && cp ../../apps/marketing/public/docs/screenshots/export-page-*.png public/",
+    "copy-source": "mkdir -p public && cp ../../tests/playwright/capture/recordings/core-flow.webm public/core-flow.webm && cp ../../tests/playwright/capture/recordings/core-flow-dark.webm public/core-flow-dark.webm && for n in input-empty progress-downloading error-no_captions cost-card-ai success-card library-unread transcript-speakers speaker-dialog timestamps-on export-page; do cp ../../apps/marketing/public/docs/screenshots/$n-light.png ../../apps/marketing/public/docs/screenshots/$n-dark.png public/; done",
     "prestudio": "npm run copy-source",
     "prerender": "npm run copy-source",
     "prestill": "npm run copy-source",

@@ -552,3 +552,85 @@ for (const code of ERROR_CODES) {
     await frameShot(page, card, `error-${code}`)
   })
 }
+
+// ══ Home-clip walkthrough stills — the five moments the scenario needs that weren't captured ══
+// All dual-theme via frameShot/topShot. No credits (metadata + whisper + jobs are STUBBED where a job
+// would run). The one DB-dependent shot (library-unread) is fed a viewed_at=NULL row by the runner and
+// restored afterwards — the test itself only reads.
+
+// ── Moment 1: the empty Video-tab input (nothing typed yet) ──
+test('input-empty', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').waitFor({ state: 'visible' })
+  const card = page.getByRole('tablist').locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]')
+  await frameShot(page, card, 'input-empty')
+})
+
+// ── Moment 9: the success card (STUBBED job → complete, no credits) ──
+test('success-card', async ({ page }) => {
+  await prep(page)
+  await page.route('**/api/video/metadata/**', (r) =>
+    r.fulfill({ json: { duration: 3296, title: 'Justice: What’s The Right Thing To Do? — Episode 01' } }))
+  await page.route('**/api/transcribe/whisper', (r) =>
+    r.fulfill({ json: { job_id: 'stub-success', status: 'pending' } }))
+  await page.route('**/api/jobs/stub-success**', (r) =>
+    r.fulfill({ json: { status: 'complete', duration_seconds: 3296, credits_cost: 55, transcript_id: 'stub-success-transcript', channel: 'Harvard University', language: 'en', transcript: [{ offset: 33.5, duration: 4.2, text: 'This is a course about Justice and we begin with a story' }] } }))
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
+  await page.getByRole('radio', { name: /AI transcription/ }).click()
+  await page.getByRole('button', { name: /Extract|Checking/ }).click()
+  await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click()
+  const ready = page.getByText('Transcript ready', { exact: true })
+  await ready.waitFor({ state: 'visible', timeout: 20_000 })
+  const header = ready.locator('xpath=ancestor::div[contains(@class,"justify-between")][1]')
+  await frameShot(page, header, 'success-card')
+})
+
+// ── Moment 11: the library with an UNREAD top row (warning dot + bold). The runner nulls one row's
+// viewed_at before this test and restores it after; the test only reads. ──
+test('library-unread', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const firstRow = page.locator('a[href*="/dashboard/library/"]').first()
+  await firstRow.waitFor({ state: 'visible', timeout: 20_000 })
+  const list = firstRow.locator('xpath=ancestor::div[contains(@class,"divide-y")][1]')
+  await topShot(page, list, 'library-unread', 560)
+})
+
+// ── Moment 13: the speaker-rename dialog (open a diarised transcript → Speakers) ──
+test('speaker-dialog', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: VIDEO_TRANSCRIPT_TITLE })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  await page.getByText('Speaker A:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  await page.getByRole('button', { name: 'Speakers' }).click()
+  const dialog = page.getByRole('dialog')
+  await page.getByText('Rename speakers').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.waitForTimeout(300)
+  // Radix dialog is portalled + animated — frameShot's clone comes out blank, so shoot the LIVE element.
+  await setTheme(page, 'light')
+  await page.waitForTimeout(200)
+  await dialog.screenshot({ path: path.join(OUT, 'speaker-dialog-light.png') })
+  await setTheme(page, 'dark')
+  await page.waitForTimeout(200)
+  await dialog.screenshot({ path: path.join(OUT, 'speaker-dialog-dark.png') })
+  await setTheme(page, 'light')
+  console.log('  ✔ speaker-dialog-{light,dark}.png')
+})
+
+// ── Moment 14: the transcript in Timestamps view (toggle on) ──
+test('timestamps-on', async ({ page }) => {
+  await prep(page)
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: 'Justice' })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  const pane = page.locator('.ProseMirror:visible').first()
+  await pane.waitFor({ state: 'visible', timeout: 30_000 })
+  await page.getByRole('button', { name: 'Timestamps' }).click()
+  await page.waitForTimeout(400)
+  await topShot(page, pane, 'timestamps-on', 640)
+})
