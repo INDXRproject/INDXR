@@ -396,17 +396,24 @@ test('export-menu', async ({ page }) => {
   const menu = page.getByRole('menu')
   await menu.waitFor({ state: 'visible', timeout: 10_000 })
 
-  await setTheme(page, 'light')
-  await page.waitForTimeout(150)
-  await menu.screenshot({ path: path.join(OUT, 'export-menu-light.png') })
+  // Menu position (fractions of a 1280x720 frame) — the home-clip's beat 5 zooms the full page INTO
+  // this rect, so it needs the coordinates. Logged for the composition to hardcode.
+  const rect = await menu.evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height } })
+  console.log('  EXPORT-PAGE menu rect px (in 1280x800 viewport):', JSON.stringify(rect))
 
-  await setTheme(page, 'dark')
-  await page.waitForTimeout(150)
-  await menu.screenshot({ path: path.join(OUT, 'export-menu-dark.png') })
+  for (const theme of ['light', 'dark'] as const) {
+    await setTheme(page, theme)
+    await page.waitForTimeout(150)
+    // Full viewport (1280x800): the transcript screen with the Export button AND the whole open menu.
+    // beat 5 renders this (objectFit contain) and zooms into the menu — no separate motion still.
+    await page.screenshot({ path: path.join(OUT, `export-page-${theme}.png`), clip: { x: 0, y: 0, width: 1280, height: 800 } })
+    // Tight crop of the menu (kept as a standalone docs asset).
+    await menu.screenshot({ path: path.join(OUT, `export-menu-${theme}.png`) })
+  }
 
   await page.keyboard.press('Escape')
   await setTheme(page, 'light')
-  console.log('  ✔ export-menu-{light,dark}.png')
+  console.log('  ✔ export-page-{light,dark}.png + export-menu-{light,dark}.png')
 })
 
 // ══ AI summary captures (real generated summary of the seeded Justice lecture) ══

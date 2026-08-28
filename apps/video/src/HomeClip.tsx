@@ -39,15 +39,18 @@ export type HomeClipProps = {
 type Beat =
   | { kind: 'video'; caption: string }
   | { kind: 'still'; name: string; caption: string }
+  | { kind: 'zoom'; name: string; caption: string }
 
 // Still names match the capture machine's <name>-<theme>.png assets (staged into public/ by
 // copy-source). Captions are short pills, no sentences — the same style as the on-clip labels.
+// Beat 5 is a 'zoom': it starts on the full transcript page (Export button + open menu) and pushes
+// into the menu, instead of showing a bare crop.
 const BEATS: Beat[] = [
   { kind: 'video', caption: 'Paste a link' },
   { kind: 'still', name: 'library-organized', caption: 'Your library' },
   { kind: 'still', name: 'transcript-speakers', caption: 'Read it properly' },
   { kind: 'still', name: 'summary-chapter', caption: 'Chapter summaries' },
-  { kind: 'still', name: 'export-menu', caption: 'Every format' },
+  { kind: 'zoom', name: 'export-page', caption: 'Every format' },
 ]
 
 // Ken Burns: a slow zoom (1.0 → 1.06) with a small horizontal drift that alternates direction per
@@ -64,6 +67,36 @@ const KenBurns: React.FC<{ src: string; index: number; tokens: Tokens }> = ({ sr
         src={staticFile(src)}
         style={{ width: '100%', height: '100%', objectFit: 'contain', transform: `scale(${scale}) translateX(${tx}%)` }}
       />
+    </AbsoluteFill>
+  )
+}
+
+// ── Beat 5: zoom the full export page INTO the open menu ──────────────────────────────────────────
+// export-page is the whole transcript screen (Export button + open menu) at EXPORT_PAGE_W×EXPORT_PAGE_H,
+// rendered objectFit contain in the WIDTH×HEIGHT frame. MENU is the menu's rect within that still (px,
+// logged by the capture machine). We start on the full page and pan+scale so the menu ends centred and
+// filling ~92% of the frame height — the same interpolate technique as the KenBurns beats.
+const EXPORT_PAGE_W = 1280
+const EXPORT_PAGE_H = 800
+const MENU = { x: 808.5, y: 309.5, w: 224, h: 457 }
+const zoomFit = Math.min(WIDTH / EXPORT_PAGE_W, HEIGHT / EXPORT_PAGE_H)
+const menuCx = (WIDTH - EXPORT_PAGE_W * zoomFit) / 2 + (MENU.x + MENU.w / 2) * zoomFit // menu centre, scale 1
+const menuCy = (HEIGHT - EXPORT_PAGE_H * zoomFit) / 2 + (MENU.y + MENU.h / 2) * zoomFit
+const ZOOM_END = (HEIGHT / (MENU.h * zoomFit)) * 0.92 // scale so the menu fills ~92% of the frame height
+const ZOOM_TX = WIDTH / 2 - ZOOM_END * menuCx          // translate that centres the menu at the end
+const ZOOM_TY = HEIGHT / 2 - ZOOM_END * menuCy
+
+const ZoomInto: React.FC<{ src: string; tokens: Tokens }> = ({ src, tokens }) => {
+  const frame = useCurrentFrame()
+  const p = interpolate(frame, [0, BEAT], [0, 1], { extrapolateRight: 'clamp' })
+  const scale = 1 + (ZOOM_END - 1) * p
+  const tx = ZOOM_TX * p
+  const ty = ZOOM_TY * p
+  return (
+    <AbsoluteFill style={{ background: tokens.bg }}>
+      <AbsoluteFill style={{ transformOrigin: '0 0', transform: `translate(${tx}px, ${ty}px) scale(${scale})` }}>
+        <Img src={staticFile(src)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      </AbsoluteFill>
     </AbsoluteFill>
   )
 }
@@ -123,10 +156,13 @@ export const HomeClip: React.FC<HomeClipProps> = ({ theme }) => {
         <Sequence key={i} from={i * STEP} durationInFrames={BEAT}>
           <BeatLayer>
             {b.kind === 'video' ? (
-              // Gentle crop: scale a touch so the outer edges tuck in, keeping the workbench the focus.
-              <AbsoluteFill style={{ background: tokens.bg, transform: 'scale(1.04)', transformOrigin: 'center center' }}>
+              // Full frame, no crop: the recording is exactly WIDTH×HEIGHT, so it fills edge to edge —
+              // the whole app interface breathes (sidebar + topbar edges visible), no scale-in.
+              <AbsoluteFill style={{ background: tokens.bg }}>
                 <OffthreadVideo src={staticFile(recording)} playbackRate={PLAYBACK_RATE} />
               </AbsoluteFill>
+            ) : b.kind === 'zoom' ? (
+              <ZoomInto src={`${b.name}-${theme}.png`} tokens={tokens} />
             ) : (
               <KenBurns src={`${b.name}-${theme}.png`} index={i} tokens={tokens} />
             )}
