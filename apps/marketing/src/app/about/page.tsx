@@ -41,10 +41,21 @@ export default function AboutPage() {
 
           <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Who builds INDXR.AI</h2>
           <p>
-            INDXR.AI is built and operated by Tiny Web Ventures, a company based in the
-            Netherlands. We keep the attention on the product rather than a personal brand —
-            so you won&apos;t find a founder story here, just a tool that does what it says.
-            Full company details are in our <a href="/terms" className="text-[var(--accent)] hover:underline">Terms</a>.
+            I built INDXR.AI out of my own use. Captions aren&apos;t always good enough to actually learn
+            from, and when you&apos;re working through lectures, interviews, or a whole playlist, you end
+            up with transcripts scattered across tabs, half-finished notes, and one-off exports. I wanted
+            an archive instead: one place to keep everything, with summaries and export formats built for
+            linking into your own notes, and AI transcription for when the captions aren&apos;t accurate
+            enough to trust.
+          </p>
+          <p>
+            It&apos;s operated by Tiny Web Ventures, based in the Netherlands. Full company details are in
+            our <a href="/terms" className="text-[var(--accent)] hover:underline">Terms</a>.
+          </p>
+          <p>
+            I&apos;m genuinely curious how people use it and what would make it better.{" "}
+            <a href="/contact" className="text-[var(--accent)] hover:underline">Send feedback</a>. I read
+            all of it myself.
           </p>
 
           <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Where it runs</h2>
