@@ -24,7 +24,10 @@ import { installCursor, clickLikeHuman, typeLikeHuman, moveMouseXY, beat, TEMPO 
 
 const STORAGE_STATE = path.resolve(__dirname, 'capture-state.json')
 const OUT_DIR = path.resolve(__dirname, 'recordings')
-const OUT_FILE = path.join(OUT_DIR, 'core-flow.webm')
+// CAPTURE_THEME=dark records the SAME flow in dark mode → core-flow-dark.webm, the sibling of the
+// light core-flow.webm. Default is light, so the existing one-command run is byte-for-byte unchanged.
+const THEME: 'light' | 'dark' = process.env.CAPTURE_THEME === 'dark' ? 'dark' : 'light'
+const OUT_FILE = path.join(OUT_DIR, THEME === 'dark' ? 'core-flow-dark.webm' : 'core-flow.webm')
 
 // The fixture, kBdfcR-8hEY — "Justice: What's The Right Thing To Do? Episode 01" (Harvard University).
 // Duration 3296 s → ceil(3296/60) = 55 credits (product-truth §8). We type the real watch URL into our
@@ -52,16 +55,17 @@ test('core-flow', async ({ browser }) => {
     storageState: STORAGE_STATE,
     viewport: VIEW,
     deviceScaleFactor: 1,
-    colorScheme: 'light',
+    colorScheme: THEME,
     recordVideo: { dir: OUT_DIR, size: VIEW },
   })
   const page = await context.newPage()
   await installCursor(page)
 
-  // Pin light theme before first paint (matches the still machine).
-  await page.addInitScript(() => {
-    try { document.documentElement.setAttribute('data-theme', 'light'); localStorage.setItem('theme', 'light') } catch {}
-  })
+  // Pin the chosen theme before first paint (matches the still machine); the ThemeProvider reads
+  // localStorage 'theme', so setting it here in an init script beats the storageState's light value.
+  await page.addInitScript((theme) => {
+    try { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme) } catch {}
+  }, THEME)
 
   // ── Deterministic backend (page.route intercepts before the network) ─────────
   // Metadata → fixture title + duration, so the cost card reads the fixture's 55 credits.

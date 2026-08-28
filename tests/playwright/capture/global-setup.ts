@@ -14,7 +14,11 @@ export default async function globalSetup() {
   const ctx = await browser.newContext({ baseURL })
   const page = await ctx.newPage()
   await loginAs(page, account1) // mints the Supabase session, injects cookies, lands on /dashboard
-  await page.evaluate(() => {
+  // next-themes (attribute="data-theme", defaultTheme="system") reads localStorage 'theme'; an explicit
+  // stored value wins over colorScheme. The session persisted here carries it, so a CAPTURE_THEME=dark
+  // run records in dark. Default stays light → the still machine and the default video run are unchanged.
+  const theme = process.env.CAPTURE_THEME === "dark" ? "dark" : "light"
+  await page.evaluate((theme) => {
     localStorage.setItem(
       "indxr_consent",
       JSON.stringify({
@@ -22,8 +26,8 @@ export default async function globalSetup() {
         ad_personalization: "granted", version: "1", ts: 1785000000000,
       }),
     )
-    localStorage.setItem("theme", "light")
-  })
+    localStorage.setItem("theme", theme)
+  }, theme)
   await ctx.storageState({ path: STORAGE_STATE })
   await browser.close()
 }
