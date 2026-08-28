@@ -6,6 +6,7 @@ import {
   Sequence,
   staticFile,
   interpolate,
+  Easing,
   useCurrentFrame,
 } from 'remotion'
 import { loadFont } from '@remotion/google-fonts/IBMPlexSans'
@@ -13,74 +14,118 @@ import { tokensFor, type Theme, type Tokens } from './tokens'
 
 const { fontFamily } = loadFont()
 
-// A simulated walkthrough: a cursor clicks through the whole product story across framed stills, in
-// fifteen moments. Bookended by a brand frame (the core-flow recording full-frame at the open — the
-// beat-1 edge fix carried over — and a wordmark card at the close). The export beat keeps the
-// full-page → menu zoom from the previous task. Only remotion's interpolate is used (cursor motion,
-// click pulses, cross-dissolves, Ken-Burns-style zoom) — no extra package.
+// A simulated walkthrough, rebuilt as fifteen self-contained moments. Each moment is one coherent
+// unit — the cursor MOVES to the control, ARRIVES, the click pulse fires on that exact frame, the
+// screen switches to the result, then a real HOLD lets it read before the next move begins. Cursor
+// and screen never run on separate clocks: a move phase keeps its screen fixed, and every screen
+// change lands on a frame where the cursor has already come to rest. Bookended by a brand frame (the
+// core-flow recording full-frame at the open — the beat-1 edge fix — and a wordmark card at the
+// close), and the export beat keeps the full-page → menu zoom. Only remotion interpolate/Easing — no
+// extra package.
 export const FPS = 30
 export const WIDTH = 1280
 export const HEIGHT = 720
 export const PLAYBACK_RATE = 1.25 // the intro recording plays a touch faster
-
-const XFADE = 6                    // quick cross-dissolve between screens
-const HOLD = 48                    // ~1.5 s hold on a screen (twelve of these)
-const CUR = 20                     // ~0.7 s for a pure cursor-click moment (no own screen)
-const ZOOMD = 62                   // the export full-page → menu zoom
-const INTRO = 30
-const OUTRO = 30
+const XFADE = 6                   // quick cross-dissolve, only ever while the cursor is at rest
+const SETTLE = 0                  // the move ends exactly on the phase boundary, so the arrival frame IS the
+                                  // pulse/change frame, and the cursor is at rest from that frame on (it won't move next frame)
 
 export type HomeClipProps = { theme: Theme }
 
-// The scenario, in order. cx/cy = where the cursor sits during the scene (fraction of the frame);
-// click = fraction of the scene at which a click pulse fires. The three pure cursor-click moments
-// (m3 re-Extract, m7 re-extract, m10 to-library) reuse the previous screen as background.
-type Kind = 'brandVideo' | 'brandCard' | 'still' | 'zoom'
-type RawScene = { id: string; kind: Kind; dur: number; asset?: string; cx?: number; cy?: number; click?: number }
+// Cursor rest points on each screen (fraction of the frame), aimed at the real control being clicked.
+const POS: Record<string, [number, number]> = {
+  FIELD: [0.43, 0.44],
+  EXTRACT_A: [0.77, 0.44],
+  EXTRACT_D: [0.55, 0.66],
+  VIEWLIB: [0.76, 0.50],
+  ROW: [0.25, 0.12],
+  DIALOG: [0.55, 0.55],
+  EXPORT: [0.66, 0.30],
+}
+const V = '__video'
+const CARD = '__card'
 
-const RAW: RawScene[] = [
-  { id: 'intro', kind: 'brandVideo', dur: INTRO },
-  // m1–m3 share the full Video-tab workbench (input-empty), which has both the URL field and the
-  // Extract button, so the cursor can type at the field and then click the real Extract control.
-  { id: 'm1-empty', kind: 'still', dur: HOLD, asset: 'input-empty', cx: 0.43, cy: 0.44 },
-  { id: 'm2-url', kind: 'still', dur: HOLD, asset: 'input-empty', cx: 0.43, cy: 0.44 },
-  { id: 'm3-extract', kind: 'still', dur: CUR, asset: 'input-empty', cx: 0.77, cy: 0.44, click: 0.5 },
-  { id: 'm4-loading', kind: 'still', dur: HOLD, asset: 'progress-downloading', cx: 0.5, cy: 0.5 },
-  { id: 'm5-error', kind: 'still', dur: HOLD, asset: 'error-no_captions', cx: 0.5, cy: 0.5 },
-  { id: 'm6-ai', kind: 'still', dur: HOLD, asset: 'cost-card-ai', cx: 0.45, cy: 0.5 },
-  { id: 'm7-reextract', kind: 'still', dur: CUR, asset: 'cost-card-ai', cx: 0.55, cy: 0.66, click: 0.5 },
-  { id: 'm8-aibar', kind: 'still', dur: HOLD, asset: 'progress-downloading', cx: 0.5, cy: 0.5 },
-  { id: 'm9-success', kind: 'still', dur: HOLD, asset: 'success-card', cx: 0.76, cy: 0.50 },
-  { id: 'm10-tolibrary', kind: 'still', dur: CUR, asset: 'success-card', cx: 0.76, cy: 0.50, click: 0.5 },
-  { id: 'm11-library', kind: 'still', dur: HOLD, asset: 'library-unread', cx: 0.25, cy: 0.11, click: 0.72 },
-  { id: 'm12-viewer', kind: 'still', dur: HOLD, asset: 'transcript-speakers', cx: 0.45, cy: 0.4 },
-  { id: 'm13-speakers', kind: 'still', dur: HOLD, asset: 'speaker-dialog', cx: 0.56, cy: 0.5 },
-  { id: 'm14-timestamps', kind: 'still', dur: HOLD, asset: 'timestamps-on', cx: 0.4, cy: 0.3 },
-  { id: 'm15-export', kind: 'zoom', dur: ZOOMD, asset: 'export-page', cx: 0.68, cy: 0.30, click: 0.18 },
-  { id: 'outro', kind: 'brandCard', dur: OUTRO },
+// The scenario as phases. A `move` phase glides the cursor to POS[move] over its duration (keeping its
+// screen fixed); a `pulse` phase fires the click ring on its FIRST frame, at the point the cursor just
+// reached, and shows the click's result screen; plain phases are holds. Screen changes only ever occur
+// at a phase boundary where the cursor is at rest.
+type Phase = { d: number; s: string; move?: keyof typeof POS; pulse?: boolean; zoom?: boolean }
+const PHASES: Phase[] = [
+  { d: 30, s: V },                                             // brand intro (recording, full frame)
+  { d: 20, s: 'input-empty' },                                 // m1/m2: cursor appears at the field, types (no empty-field rest)
+  { d: 28, s: 'input-empty', move: 'EXTRACT_A' },              // m3: move to Extract
+  { d: 44, s: 'progress-downloading', pulse: true },           // m3 click → m4 loading (pulse on arrival)
+  { d: 54, s: 'error-no_captions' },                           // m5: no-captions error
+  { d: 54, s: 'cost-card-ai' },                                // m6: AI chosen → cost card
+  { d: 28, s: 'cost-card-ai', move: 'EXTRACT_D' },             // m7: move to Extract
+  { d: 44, s: 'progress-downloading', pulse: true },           // m7 click → m8 AI loading
+  { d: 54, s: 'success-card' },                                // m9: success
+  { d: 28, s: 'success-card', move: 'VIEWLIB' },               // m10: move to View in Library
+  { d: 54, s: 'library-unread', pulse: true },                 // m10 click → m11 library
+  { d: 28, s: 'library-unread', move: 'ROW' },                 // m11: move to the unread row
+  { d: 54, s: 'transcript-speakers', pulse: true },            // m11 click → m12 viewer
+  { d: 28, s: 'transcript-speakers', move: 'DIALOG' },         // reposition for the dialog
+  { d: 48, s: 'speaker-dialog' },                              // m13: rename-speakers dialog
+  { d: 54, s: 'timestamps-on' },                               // m14: timestamps view
+  { d: 22, s: 'export-page' },                                 // m15: export page appears
+  { d: 28, s: 'export-page', move: 'EXPORT' },                 // m15: move to Export
+  { d: 54, s: 'export-page', pulse: true, zoom: true },        // m15 click → zoom into the menu
+  { d: 24, s: 'export-page' },                                 // m15: hold on the framed menu
+  { d: 42, s: CARD },                                          // brand outro (wordmark)
 ]
 
-type Scene = RawScene & { from: number }
-let _acc = 0
-const SCENES: Scene[] = RAW.map((s) => {
-  const scene = { ...s, from: _acc }
-  _acc += s.dur
-  return scene
-})
-export const DURATION_IN_FRAMES = _acc // 710 (~23.7 s)
+type Seg = { from: number; dur: number; s: string; zoomFrom: number; zoomTo: number }
+type KF = { f: number; x: number; y: number }
+const SEGMENTS: Seg[] = []
+const CUR_KF: KF[] = []
+const PULSES: { f: number; x: number; y: number }[] = []
+;(() => {
+  let t = 0
+  let pos: [number, number] = POS.FIELD
+  CUR_KF.push({ f: 0, x: pos[0] * WIDTH, y: pos[1] * HEIGHT })
+  let zoomFrom = -1
+  let zoomTo = -1
+  PHASES.forEach((p) => {
+    const from = t
+    if (p.move) {
+      const target = POS[p.move]
+      CUR_KF.push({ f: from, x: pos[0] * WIDTH, y: pos[1] * HEIGHT })
+      CUR_KF.push({ f: from + p.d - SETTLE, x: target[0] * WIDTH, y: target[1] * HEIGHT })
+      pos = target
+    }
+    if (p.pulse) PULSES.push({ f: from, x: pos[0] * WIDTH, y: pos[1] * HEIGHT })
+    if (p.zoom) { zoomFrom = from; zoomTo = from + p.d }
+    const last = SEGMENTS[SEGMENTS.length - 1]
+    if (last && last.s === p.s) last.dur += p.d
+    else SEGMENTS.push({ from, dur: p.d, s: p.s, zoomFrom: -1, zoomTo: -1 })
+    t += p.d
+  })
+  const k = SEGMENTS.find((sg) => sg.s === 'export-page')!
+  k.zoomFrom = zoomFrom
+  k.zoomTo = zoomTo
+})()
+export const DURATION_IN_FRAMES = SEGMENTS.reduce((m, s) => Math.max(m, s.from + s.dur), 0)
+const CURSOR_APPEAR = PHASES[0].d
+const EXPORT_PULSE = PULSES[PULSES.length - 1].f
 
-const CUR_SCENES = SCENES.filter((s) => s.cx != null)
-const KF_F = CUR_SCENES.map((s) => s.from + s.dur / 2)
-const KF_X = CUR_SCENES.map((s) => (s.cx as number) * WIDTH)
-const KF_Y = CUR_SCENES.map((s) => (s.cy as number) * HEIGHT)
-const PULSES = SCENES.filter((s) => s.click != null).map((s) => ({
-  f: s.from + s.dur * (s.click as number), x: (s.cx as number) * WIDTH, y: (s.cy as number) * HEIGHT,
-}))
-const CURSOR_START = KF_F[0]
-const CURSOR_END = (() => { const m = SCENES.find((s) => s.id === 'm15-export')!; return m.from + m.dur })()
+// Ease only when the two keyframes differ (a real move); a same-point pair stays perfectly still.
+function cursorAt(frame: number): [number, number] {
+  if (frame <= CUR_KF[0].f) return [CUR_KF[0].x, CUR_KF[0].y]
+  for (let i = 0; i < CUR_KF.length - 1; i++) {
+    const a = CUR_KF[i]
+    const b = CUR_KF[i + 1]
+    if (frame >= a.f && frame <= b.f) {
+      if (a.x === b.x && a.y === b.y) return [a.x, a.y]
+      const raw = (frame - a.f) / (b.f - a.f)
+      const e = Easing.inOut(Easing.ease)(raw)
+      return [a.x + (b.x - a.x) * e, a.y + (b.y - a.y) * e]
+    }
+  }
+  const last = CUR_KF[CUR_KF.length - 1]
+  return [last.x, last.y]
+}
 
-// ── Beat 15 zoom (unchanged from the previous task): export-page is 1280×800, contain-fit into the
-// frame; pan+scale from the full page to the menu centred at ~92% of the frame height. ──
+// ── export-page zoom (unchanged geometry) ──
 const EXPORT_PAGE_W = 1280
 const EXPORT_PAGE_H = 800
 const MENU = { x: 808.5, y: 309.5, w: 224, h: 457 }
@@ -91,21 +136,27 @@ const ZOOM_END = (HEIGHT / (MENU.h * zoomFit)) * 0.92
 const ZOOM_TX = WIDTH / 2 - ZOOM_END * menuCx
 const ZOOM_TY = HEIGHT / 2 - ZOOM_END * menuCy
 
-const ZoomInto: React.FC<{ src: string; tokens: Tokens; startAt: number }> = ({ src, tokens, startAt }) => {
+const Still: React.FC<{ src: string; tokens: Tokens }> = ({ src, tokens }) => (
+  <AbsoluteFill style={{ background: tokens.bg, justifyContent: 'center', alignItems: 'center' }}>
+    <Img src={staticFile(src)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+  </AbsoluteFill>
+)
+
+const ExportZoom: React.FC<{ theme: Theme; tokens: Tokens; zoomStart: number; zoomEnd: number }> = ({ theme, tokens, zoomStart, zoomEnd }) => {
   const frame = useCurrentFrame()
-  const p = interpolate(frame, [startAt, startAt + ZOOMD], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  const p = interpolate(frame, [zoomStart, zoomEnd], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   return (
     <AbsoluteFill style={{ background: tokens.bg }}>
       <AbsoluteFill style={{ transformOrigin: '0 0', transform: `translate(${ZOOM_TX * p}px, ${ZOOM_TY * p}px) scale(${1 + (ZOOM_END - 1) * p})` }}>
-        <Img src={staticFile(src)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        <Img src={staticFile(`export-page-${theme}.png`)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </AbsoluteFill>
     </AbsoluteFill>
   )
 }
 
-const Still: React.FC<{ src: string; tokens: Tokens }> = ({ src, tokens }) => (
-  <AbsoluteFill style={{ background: tokens.bg, justifyContent: 'center', alignItems: 'center' }}>
-    <Img src={staticFile(src)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+const BrandVideo: React.FC<{ theme: Theme; tokens: Tokens }> = ({ theme, tokens }) => (
+  <AbsoluteFill style={{ background: tokens.bg }}>
+    <OffthreadVideo src={staticFile(theme === 'dark' ? 'core-flow-dark.webm' : 'core-flow.webm')} playbackRate={PLAYBACK_RATE} trimBefore={55} />
   </AbsoluteFill>
 )
 
@@ -118,32 +169,25 @@ const BrandCard: React.FC<{ tokens: Tokens }> = ({ tokens }) => (
   </AbsoluteFill>
 )
 
-// Fade the incoming scene in over its first `xfade` frames; it paints on top of the still-opaque
-// previous scene (a clean cross-dissolve, no background bleed). xfade 0 = hard cut (the intro).
 const FadeIn: React.FC<{ xfade: number; children: React.ReactNode }> = ({ xfade, children }) => {
   const frame = useCurrentFrame()
   const opacity = xfade > 0 ? interpolate(frame, [0, xfade], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) : 1
   return <AbsoluteFill style={{ opacity }}>{children}</AbsoluteFill>
 }
 
-// A single click pulse: an accent ring that grows and fades once, around frame `p.f`.
 const Ring: React.FC<{ p: { f: number; x: number; y: number }; accent: string }> = ({ p, accent }) => {
   const frame = useCurrentFrame()
   if (frame < p.f - 1 || frame > p.f + 20) return null
   const t = interpolate(frame, [p.f, p.f + 18], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-  const scale = 0.4 + t * 1.4
-  const opacity = interpolate(t, [0, 1], [0.55, 0])
   return (
-    <div style={{ position: 'absolute', left: p.x, top: p.y, width: 60, height: 60, marginLeft: -30, marginTop: -30, borderRadius: '50%', border: `3px solid ${accent}`, transform: `scale(${scale})`, opacity }} />
+    <div style={{ position: 'absolute', left: p.x, top: p.y, width: 60, height: 60, marginLeft: -30, marginTop: -30, borderRadius: '50%', border: `3px solid ${accent}`, transform: `scale(${0.4 + t * 1.4})`, opacity: interpolate(t, [0, 1], [0.55, 0]) }} />
   )
 }
 
 const Cursor: React.FC<{ accent: string }> = ({ accent }) => {
   const frame = useCurrentFrame()
-  const x = interpolate(frame, KF_F, KF_X, { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-  const y = interpolate(frame, KF_F, KF_Y, { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-  const opacity = interpolate(frame, [CURSOR_START - 6, CURSOR_START + 2, CURSOR_END - 2, CURSOR_END + 5], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-  // Press dip: the cursor shrinks a touch at each click.
+  const [x, y] = cursorAt(frame)
+  const opacity = interpolate(frame, [CURSOR_APPEAR + 4, CURSOR_APPEAR + 12, EXPORT_PULSE + 8, EXPORT_PULSE + 24], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const press = PULSES.reduce((m, p) => Math.min(m, interpolate(frame, [p.f - 4, p.f, p.f + 6], [1, 0.82, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })), 1)
   return (
     <AbsoluteFill style={{ pointerEvents: 'none' }}>
@@ -157,34 +201,24 @@ const Cursor: React.FC<{ accent: string }> = ({ accent }) => {
   )
 }
 
-function renderBg(s: Scene, theme: Theme, tokens: Tokens): React.ReactNode {
-  if (s.kind === 'brandVideo') {
-    const recording = theme === 'dark' ? 'core-flow-dark.webm' : 'core-flow.webm'
-    // Full frame, no crop (the beat-1 edge fix): the recording is exactly WIDTH×HEIGHT. trimBefore
-    // skips the recording's blank page-load so the brand open lands on the painted workbench.
-    return (
-      <AbsoluteFill style={{ background: tokens.bg }}>
-        <OffthreadVideo src={staticFile(recording)} playbackRate={PLAYBACK_RATE} trimBefore={55} />
-      </AbsoluteFill>
-    )
-  }
-  if (s.kind === 'brandCard') return <BrandCard tokens={tokens} />
-  if (s.kind === 'zoom') return <ZoomInto src={`${s.asset}-${theme}.png`} tokens={tokens} startAt={XFADE} />
-  return <Still src={`${s.asset}-${theme}.png`} tokens={tokens} />
+function renderSeg(seg: Seg, theme: Theme, tokens: Tokens): React.ReactNode {
+  if (seg.s === V) return <BrandVideo theme={theme} tokens={tokens} />
+  if (seg.s === CARD) return <BrandCard tokens={tokens} />
+  // The export-page Sequence starts XFADE frames early (cross-dissolve lead), so its local clock is
+  // shifted by +XFADE relative to the segment start.
+  if (seg.s === 'export-page') return <ExportZoom theme={theme} tokens={tokens} zoomStart={seg.zoomFrom - seg.from + XFADE} zoomEnd={seg.zoomTo - seg.from + XFADE} />
+  return <Still src={`${seg.s}-${theme}.png`} tokens={tokens} />
 }
 
 export const HomeClip: React.FC<HomeClipProps> = ({ theme }) => {
   const tokens = tokensFor(theme)
   return (
     <AbsoluteFill style={{ background: tokens.bg }}>
-      {SCENES.map((s, i) => {
-        const lead = i === 0 ? 0 : XFADE
-        return (
-          <Sequence key={s.id} from={s.from - lead} durationInFrames={s.dur + lead}>
-            <FadeIn xfade={lead}>{renderBg(s, theme, tokens)}</FadeIn>
-          </Sequence>
-        )
-      })}
+      {SEGMENTS.map((seg, i) => (
+        <Sequence key={i} from={i === 0 ? 0 : seg.from - XFADE} durationInFrames={i === 0 ? seg.dur : seg.dur + XFADE}>
+          <FadeIn xfade={i === 0 ? 0 : XFADE}>{renderSeg(seg, theme, tokens)}</FadeIn>
+        </Sequence>
+      ))}
       <Sequence from={0} durationInFrames={DURATION_IN_FRAMES}>
         <Cursor accent={tokens.accent} />
       </Sequence>
