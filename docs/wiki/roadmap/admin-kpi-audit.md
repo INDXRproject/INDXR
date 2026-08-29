@@ -11,7 +11,7 @@
 | Pijler | Volwassenheid | Kernoordeel |
 |---|---|---|
 | **Finance** | 🟢 Volwassen | Top-down P&L, per-methode COR, recognized/deferred, VAT-per-land, bank-brug. Getal-voor-getal geaudit: **31 JA / 0 NEE** (`finance-audit.md`). Weinig te doen. |
-| **Growth** | 🟡 Structuur klaar, leeg by design | Funnel (acquisitie→activatie→conversie→retentie) + LTV bestaat. Pre-launch grotendeels 0. **CAC = NULL** tot ad-spend bestaat. Mist: churn, DAU/WAU/MAU, cohort-retentie, ARPU-over-all. |
+| **Growth** | 🟡 Structuur klaar, leeg by design | Funnel (acquisitie→activatie→conversie→retentie) + LTV bestaat. Pre-launch grotendeels 0. **CAC nu berekend** (2026-08-29): ad-spend `opex 'ads'` (via `opex_accrual`, per venster) ÷ nieuwe betalers; NULL alleen zonder ad-spend/betalers of lifetime-venster. Mist: churn, DAU/WAU/MAU, cohort-retentie, ARPU-over-all. |
 | **Operations** | 🟢 Werkt, één regressie-gat | Job-success, error-types, queue-depth, latency, watchdog. **Provider-saldi-widget is verwijderd** (ADR-068 dropte DeepSeek-poll). Geen uptime-monitoring in-house. |
 | **Launch-readiness** | 🟡 Betaalketen live, randvoorwaarden open | Stripe live+getest, finance klopt. Open: uptime-alerting, anti-abuse, rate-limiting (noop in prod), DB-backups, cookie-consent, chargeback-capture. |
 
@@ -78,12 +78,12 @@ Test/intern wordt overal geweerd: auto-flag trigger `flag_internal_test_account(
 | 3 Monetization | `conversion` | dedup Stripe-sessies `paying / total` |
 | — | LTV avg/total | `Σ amount_paid` (dedup sessie) / payers |
 | 4 Retention | `repeat_rate` | `count(users HAVING ≥2 sessies) / paying` |
-| Unit econ | CAC · LTV:CAC | **CAC = hardcoded NULL** tot ad-spend in `opex_expenses`; ratio client-side |
+| Unit econ | CAC · LTV:CAC | **CAC = ad-spend `opex 'ads'` (via `opex_accrual`, per venster) ÷ nieuwe betalers** (2026-08-29); NULL bij geen ad-spend/betalers of lifetime-venster; ratio client-side |
 
 Ook berekend maar niet prominent getoond: `acquisition.by_utm` (UTM-breakdown).
 
 **Wat groei MIST (niet berekend door de RPC):**
-- **CAC** — NULL; wacht op ad-spend-invoer + attributie (input-gat, geen capture-gat).
+- **CAC** — nu berekend uit ad-spend (`opex 'ads'`, per venster) ÷ nieuwe betalers (2026-08-29). Toont een getal zodra ad-spend via Finance → Expenses is ingevoerd én er ≥1 betaler in het venster is; anders NULL (streepje). Per-bron-attributie ontbreekt nog (ad-spend is niet per kanaal aan omzet gekoppeld).
 - **Churn / dormancy** — n.v.t.-achtig voor een credit-model, maar "kocht ooit, al 90d inactief" wordt niet berekend.
 - **DAU/WAU/MAU** — niet berekend; en de bron ontbreekt in-house (§7.2).
 - **Cohort-retentie (D1/D7/D30)** — niet berekend.
@@ -128,7 +128,7 @@ Drie toestanden per KPI:
 | UTM-breakdown | 🟡 | `by_utm` berekend, nauwelijks getoond |
 | Marketing-traffic → signup-conversie | 🟡 | PostHog pageviews (retained); niet in DB/RPC |
 | Anoniem tool-gebruik → signup | 🟡 | PostHog `transcript_extracted` (anon distinct_id); niet geaggregeerd |
-| CAC | 🔴* | NULL tot ad-spend in `opex_expenses` — *input-gat, niet capture-gat |
+| CAC | ✅ | `admin_growth_summary`: ad-spend `opex 'ads'` (via `opex_accrual`, per venster) ÷ nieuwe betalers (2026-08-29); NULL zonder ad-spend/betalers — input-gat, geen capture-gat |
 
 ### Activatie & engagement
 | KPI | Status | Bron / opmerking |
