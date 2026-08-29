@@ -390,7 +390,7 @@ Openstaande punten na de money-model-/BTW-/markt-scope-sessies (ADR-055 t/m ADR-
 
 - [ ] Google Search Console: domein verifiëren, sitemap indienen
 - [x] ~~Google Analytics 4: opzetten naast PostHog~~ — **besloten NIET te doen ([ADR-087](../decisions/087-google-ads-measurement-and-consent.md), 2026-08-02).** De Google Ads-tag meet conversies zelf; PostHog doet product-analytics; GA4 = extra cookies + subverwerker zonder meerwaarde. **Meetlaag + Consent Mode v2-banner (Basic) gebouwd** — geo-gesplitst, headless geverifieerd (0 requests/0 `_gcl_*` vóór consent).
-- [~] **Google Ads account aanmaken + eerste campagne voorbereiden** (US+CA+AU, richtlijnen + negatieven in [keyword-demand-2026-08](../business/keyword-demand-2026-08.md) + marketing.md). **Code-kant klaar (ADR-087):** tag, consent, purchase- + signup-conversies gebouwd en gating geverifieerd. **Rest = Khidr:** Ads-account/campagne aanmaken + één echte testaankoop (bewijst tegelijk de keten checkout→webhook→`add_credits` én de purchase-conversie — zie testen-sectie).
+- [~] **Google Ads account aanmaken + eerste campagne voorbereiden** (US+CA+AU, richtlijnen + negatieven in [keyword-demand-2026-08](../business/keyword-demand-2026-08.md) + marketing.md). **Code-kant klaar (ADR-087):** tag, consent, purchase- + signup-conversies gebouwd en gating geverifieerd. **Env-vars hard bevestigd in de LIVE productie-bundle (2026-08-29):** `NEXT_PUBLIC_GOOGLE_ADS_ID=AW-18366544433`, `NEXT_PUBLIC_GADS_LABEL_SIGNUP=PLFPCOOLztocELH07LVE` (onboarding-chunk), `NEXT_PUBLIC_GADS_LABEL_PURCHASE=sie1COCLztocELH07LVE` (app success-chunk). **Rest = Khidr:** Ads-account/campagne aanmaken + één echte testaankoop (bewijst tegelijk de keten checkout→webhook→`add_credits` én de purchase-conversie — zie testen-sectie).
 
 ### Pre-launch — testen
 
@@ -435,8 +435,8 @@ Zie ook `docs/wiki/architecture/page-structures/free-tool.md` voor context.
 
 - [ ] **Opus 249 audio format valideren en deployen** — kwaliteitstest op 50 diverse video's, dan format selector aanpassen. Zie ADR-016. ~63% reductie in proxy-bandbreedte.
 - [ ] **Website copy volledig herschrijven** — landing page, pricing, FAQ, onboarding, error messages. Plaats: vóór 1.20 (polish heeft definitieve copy nodig).
-- [ ] **RAG JSON: Settings chunk size ✓ feedback zichtbaarheid** — zie known-issues. Kleine fix in `DeveloperExportsCard.tsx`.
-- [ ] **RAG JSON export (30-seconden chunks)** — kernfeature voor AI/developer doelgroep, zie ADR-015.
+- [x] **RAG JSON: Settings chunk size ✓ feedback zichtbaarheid** ✅ **Opgelost + geverifieerd 2026-07-24** (`DeveloperExportsCard.tsx` toont groene Check 2s na opslaan; zie known-issues.md §RAG JSON en de reeds-afgevinkte regel verderop in deze lijst — dit was een dubbele open-marker).
+- [x] **RAG JSON export (30-seconden chunks)** ✅ **Live** — kernfeature gebouwd: `apps/app/src/components/library/RagExportView.tsx` + `packages/shared/src/actions/rag-export.ts` + Developer Exports in Settings (`DeveloperExportsCard.tsx`), configureerbare chunk-grootte (`profiles.rag_chunk_size`), plus bulk-RAG-export. Zie ADR-015.
 
 ---
 
