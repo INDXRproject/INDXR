@@ -1,17 +1,18 @@
 /**
- * Home-clip VIDEO capture (NOT a functional test). Records the WHOLE 12-moment product story as ONE
- * continuous, real, scripted run — the same machine that makes core-flow.webm, extended end to end:
+ * Home-clip VIDEO capture (NOT a functional test). Records the product story as ONE continuous, real,
+ * scripted run — the same machine that makes core-flow.webm, extended end to end:
  * paste → choose AI → downloading → transcribing → saving → Transcript ready → click "View in Library"
- * → the library list (Justice on top) → open it → the diarised reading pane (BEFORE) → rename two
- * speakers for real (type in the fields) → the pane shows the new names (AFTER) → Timestamps → the AI
- * summary → the Export menu. Real navigation, real clicks on LIVE element boxes (no reused fractions),
- * a visible cursor (installCursor), NO zoom anywhere. Every screen is full in view.
+ * → the library list (Justice on top) → open it → the diarised reading pane → rename two speakers in one
+ * fluid gesture (only the two show, no flash of the others) → the renamed labels move through the running
+ * text → Timestamps → the Export menu, on the SAME transcript with the speakers still visible. Real
+ * navigation, real clicks on LIVE element boxes (no reused fractions), a visible cursor (installCursor),
+ * NO zoom anywhere. Every screen is full in view. NO summary step in this version. The brand intro/outro
+ * frames are added to the final mp4 with ffmpeg (not recorded here).
  *
  * Deterministic + free: the transcribe backend is STUBBED (metadata/whisper/jobs + the dedup query), so
- * the run spends no credits. The library/viewer/rename/timestamps use the REAL diarised Justice AI
- * transcript (AI_ID, 14 speakers); the summary uses the caption transcript that carries the REAL
- * 5-chapter summary (SUM_ID) — same lecture, same title. The rename writes speaker_names; the runner
- * reverts it (and the library-top-row created_at seed) afterwards.
+ * the run spends no credits. Library/viewer/rename/timestamps/export all use the REAL diarised Justice AI
+ * transcript (AI_ID, 14 speakers). The rename writes speaker_names; the runner reverts it (and the
+ * library-top-row created_at seed) afterwards.
  *
  * Run (ONE command, per theme):
  *   BASE_URL=https://app.indxr.ai CAPTURE_THEME=light|dark NODE_PATH=... \
@@ -30,8 +31,7 @@ const THEME: 'light' | 'dark' = process.env.CAPTURE_THEME === 'dark' ? 'dark' : 
 const OUT_FILE = path.join(OUT_DIR, THEME === 'dark' ? 'home-clip-dark.webm' : 'home-clip.webm')
 
 // Real Justice fixtures (account1 owns both; same lecture, same title).
-const AI_ID = '9d072903-15d7-4722-9140-d64ee3efad59'   // diarised AI transcript (14 speakers) → viewer/rename/timestamps
-const SUM_ID = '0798fa30-8056-4343-9e02-c50d93c00e4a'  // caption transcript that carries the real 5-chapter summary
+const AI_ID = '9d072903-15d7-4722-9140-d64ee3efad59'   // diarised AI transcript (14 speakers) → viewer/rename/timestamps/export
 const VIDEO_URL = 'https://www.youtube.com/watch?v=kBdfcR-8hEY'
 const FIXTURE_TITLE = "Justice: What's The Right Thing To Do? — Episode 01"
 const FIXTURE_DURATION = 3296
@@ -134,37 +134,36 @@ test('home-clip', async ({ browser }) => {
   await page.getByText('Speaker B:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
   await beat(page, TEMPO.beatLong) // BEFORE: the diarised reading pane (Speaker A:/B: …)
 
-  // ══ 7) Rename two speakers for real — dialog trimmed to B + D via nth-child CSS (survives re-render,
-  //       unlike DOM removal which each keystroke's re-render would restore), type real names, Save ══
+  // ══ 7) Rename two speakers — ONE fluid gesture. Hide every row but B (2nd) + D (4th) BEFORE the
+  //       dialog opens, so it shows only those two from first paint — no flash of the other detected
+  //       speakers. Then type straight through: professor field → student field, no pause on the others.
+  await page.addStyleTag({ content: '[role="dialog"] .space-y-3.py-1 > div:not(:nth-child(2)):not(:nth-child(4)){display:none!important}' })
   await clickLikeHuman(page, page.getByRole('button', { name: 'Speakers' }))
   await page.getByText('Rename speakers').waitFor({ state: 'visible', timeout: 10_000 })
-  // Sorted speakerLabels are A,B,C,D,… so B = 2nd row, D = 4th row. Show only those two.
-  await page.addStyleTag({ content: '[role="dialog"] .space-y-3.py-1 > div:not(:nth-child(2)):not(:nth-child(4)){display:none!important}' })
   await beat(page, TEMPO.beatShort)
   const inputB = page.locator('[role="dialog"] div.flex.items-center.gap-3', { has: page.getByText('Speaker B', { exact: true }) }).getByRole('textbox')
   const inputD = page.locator('[role="dialog"] div.flex.items-center.gap-3', { has: page.getByText('Speaker D', { exact: true }) }).getByRole('textbox')
   await typeLikeHuman(page, inputB, 'Prof. Sandel')
-  await beat(page, TEMPO.beatShort)
   await typeLikeHuman(page, inputD, 'Anna Reyes')
   await beat(page, TEMPO.beatShort)
   await clickLikeHuman(page, page.getByRole('button', { name: 'Save names' }))
   await page.getByText('Prof. Sandel:', { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 })
-  await beat(page, TEMPO.beatLong) // AFTER: the pane now reads "Prof. Sandel:" / "Anna Reyes:"
+  await beat(page, TEMPO.beatLong) // the pane now labels those paragraphs "Prof. Sandel:" / "Anna Reyes:"
+  // Show the effect in the running text: scroll the transcript so the renamed labels move through it.
+  await page.evaluate(() => {
+    const pm = document.querySelector('.ProseMirror') as HTMLElement | null
+    let el: HTMLElement | null = pm
+    while (el && el !== document.body) { const o = getComputedStyle(el).overflowY; if (o === 'auto' || o === 'scroll') break; el = el.parentElement }
+    if (el && el !== document.body) el.scrollBy({ top: 520, behavior: 'smooth' }); else window.scrollBy({ top: 520, behavior: 'smooth' })
+  })
+  await beat(page, TEMPO.beatLong)
 
-  // ══ 8) Timestamps view ══
+  // ══ 8) Timestamps view — same transcript ══
   await clickLikeHuman(page, page.getByRole('button', { name: 'Timestamps' }))
   await beat(page, TEMPO.beatLong)
 
-  // ══ 9) The AI summary — the caption transcript that carries the real 5-chapter summary (same title) ══
-  await page.goto(`/dashboard/library/${SUM_ID}?tab=summary`)
-  await page.getByText('AI Summary', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
-  await moveMouseXY(page, 640, 220, 1)
-  await beat(page, TEMPO.beatLong)
-
-  // ══ 10) The Export menu (all formats) — back on the transcript tab, open the menu, don't click a file ══
-  await clickLikeHuman(page, page.getByRole('tab', { name: 'Transcript' }).or(page.getByRole('button', { name: /^Transcript$/ })).first())
-  await page.locator('.ProseMirror:visible').first().waitFor({ state: 'visible', timeout: 20_000 })
-  await beat(page, TEMPO.beatShort)
+  // ══ 9) The Export menu (all formats) — SAME transcript, speakers still visible. Open the menu only;
+  //       do NOT click a format (no download) and do NOT click Edit (it stays a visible option). ══
   await clickLikeHuman(page, page.getByRole('button', { name: 'Export' }))
   await page.getByRole('menu').waitFor({ state: 'visible', timeout: 10_000 })
   await beat(page, TEMPO.beatLong)
