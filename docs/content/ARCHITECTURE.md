@@ -269,7 +269,6 @@ Suspended users receive HTTP 403 with `"Account suspended. Contact support@indxr
 | `whisper_completed` | Python backend | `video_id`, `processing_time_ms`, `credits_used` |
 | `whisper_failed` | Python backend | `video_id`, `error_type`, `error_message` |
 | `credits_deducted` | Python backend | `amount`, `reason`, `balance_after` |
-| `summarization_completed` | Python backend | `video_id`, `duration_ms` |
 
 **Error Tracking**: PostHog handles both analytics and error tracking. Sentry is explicitly excluded from this project.
 

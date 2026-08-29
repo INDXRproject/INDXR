@@ -163,7 +163,6 @@ Frontend events (automatisch):
 Backend events (handmatig getracked):
 - `credits_purchased` — bij Stripe webhook
 - `credits_deducted` — per verbruik
-- `summarization_completed` — per samenvatting
 
 **Post-launch:** Google Search Console instellen voor SEO-monitoring.
 

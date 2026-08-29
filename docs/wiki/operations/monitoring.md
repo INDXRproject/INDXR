@@ -17,7 +17,15 @@ INDXR.AI gebruikt PostHog voor product analytics. Events worden getracked op zow
 |-------|---------|------------|
 | `credits_purchased` | Stripe webhook `checkout.session.completed` | `amount`, `credits_added`, `currency`, `session_id` |
 | `credits_deducted` | Na succesvolle credit-aftrek | `amount`, `reason`, `balance_after` |
-| `summarization_completed` | Na succesvolle DeepSeek samenvatting | `transcript_id`, `processing_time_ms` |
+
+> **Geen `summarization_completed`-event (bewust, 2026-08-29).** Eerder stond hier een
+> `summarization_completed`-regel ("na succesvolle DeepSeek samenvatting") — die was nooit
+> geïmplementeerd én verwees naar het verwijderde DeepSeek-model (ADR-090). Niet alsnog gebouwd:
+> de voltooiing van een samenvatting wordt al **rijker** vastgelegd in de DB-laag — `ai_summary_usage_log`
+> (per gateway-call: model, tokens, `chapter_ms`, kosten, regio, finish_reason, `is_test`) voedt de
+> admin-panelen *AI-summary cost* (`admin_summary_cost_panel`), *chapter duration* (`admin_chapter_duration_panel`)
+> en *per-user COR* (`admin_summary_cost_per_user`), plus de rolling-baseline en de kosten-breaker. Een enkel
+> PostHog-event zou een strikt armere duplicatie zijn; PostHog is hier bovendien cookieless/`identified_only`.
 
 ### PostHog Configuratie
 

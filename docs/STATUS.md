@@ -166,7 +166,7 @@ INDXR.AI is a premium YouTube transcript extraction tool. The core product is fu
 - **PostHog** (Frontend): Pageviews, clicks, user identification
 - **Tracked Events (Frontend)**: `signup_source`, `credits_purchased`, `transcript_extracted`
 - **PostHog** (Backend): Implemented — Python FastAPI tracks all Whisper and credit events
-- **Tracked Events (Backend)**: `whisper_started`, `whisper_completed`, `whisper_failed`, `credits_deducted`, `summarization_completed`
+- **Tracked Events (Backend)**: `whisper_started`, `whisper_completed`, `whisper_failed`, `credits_deducted` (geen `summarization_completed` — bewust niet gebouwd; summary-voltooiing zit rijker in `ai_summary_usage_log` + admin-panelen, zie `monitoring.md`)
 
 ### Security (RLS Audit)
 
