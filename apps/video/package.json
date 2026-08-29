@@ -4,7 +4,7 @@
   "private": true,
   "description": "Standalone Remotion workspace for INDXR marketing clips — deliberately OUTSIDE the Turborepo build graph (ADR-089). Own node_modules, own install, never deploys.",
   "scripts": {
-    "copy-source": "mkdir -p public && cp ../../tests/playwright/capture/recordings/core-flow.webm public/core-flow.webm && cp ../../tests/playwright/capture/recordings/core-flow-dark.webm public/core-flow-dark.webm && for n in dw-empty dw-loading dw-error dw-cost dw-success dw-library dw-viewer dw-speakers dw-timestamps dw-summary dw-export; do cp ../../apps/marketing/public/docs/screenshots/$n-light.png ../../apps/marketing/public/docs/screenshots/$n-dark.png public/; done",
+    "copy-source": "mkdir -p public && cp ../../tests/playwright/capture/recordings/core-flow.webm public/core-flow.webm && cp ../../tests/playwright/capture/recordings/core-flow-dark.webm public/core-flow-dark.webm && for n in justice-empty justice-paste justice-cost justice-download justice-transcribe justice-success justice-library justice-viewer justice-speakers justice-timestamps justice-summary justice-export; do cp ../../apps/marketing/public/docs/screenshots/$n-light.png ../../apps/marketing/public/docs/screenshots/$n-dark.png public/; done",
     "prestudio": "npm run copy-source",
     "prerender": "npm run copy-source",
     "prestill": "npm run copy-source",

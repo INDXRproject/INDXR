@@ -63,20 +63,22 @@ export default function LandingPage() {
         <HeroImage />
         {/* Readability scrim: a --bg wash over the photo, strongest behind the centred text and
             fading toward the edges so the image still reads as an ambient background. Uses only the
-            --bg token, so it flips with the theme and keeps hero text at WCAG-AA contrast on both. */}
+            --bg token, so it flips with the theme. Strength tuned to the lightest/darkest pixel
+            anywhere behind the hero text: at these stops the single worst pixel still clears WCAG-AA
+            (~4.7:1, dark theme at 1280 is the binding case), so the photo is as visible as it can be
+            without dropping any text region below 4.5:1. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_82%,transparent)_0%,color-mix(in_oklch,var(--bg)_66%,transparent)_42%,color-mix(in_oklch,var(--bg)_30%,transparent)_72%,transparent_100%)]"
+          className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_59%,transparent)_0%,color-mix(in_oklch,var(--bg)_48%,transparent)_42%,color-mix(in_oklch,var(--bg)_22%,transparent)_72%,transparent_100%)]"
         />
         <div className="absolute inset-0 z-[1] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%)] pointer-events-none" />
         <div className="container relative z-10 mx-auto flex flex-col items-center px-4 text-center">
           <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl">
-            One library for everything you need to read instead of watch
+            One place for every source you read instead of watch.
           </h1>
           <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
-            Lectures, interviews, podcasts, your own recordings. INDXR turns them into accurate text you
-            can search, summarise, edit and export, and keeps them in one place instead of scattered
-            across downloads and tabs.
+            Lectures, interviews, podcasts, your own recordings, turned into accurate text you can
+            search, summarise, edit and export. No more downloads scattered across tabs.
           </p>
           <p className="mb-10 text-base font-medium text-[var(--fg)]">
             Pay per minute, no subscription, and credits never expire.

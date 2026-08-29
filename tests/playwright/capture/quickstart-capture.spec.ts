@@ -765,3 +765,144 @@ test('dw-export', async ({ page }) => {
   await page.waitForTimeout(300)
   await fullShot(page, 'dw-export')
 })
+
+// ══ JUSTICE home-clip stills — FULL-VIEWPORT (1280x720 @DSR2 → 2560x1440), the 12 moments of the
+// scenario, NO error step. One coherent journey through the Michael Sandel "Justice" lecture:
+//  • transcribe flow (empty → paste → cost → downloading → transcribing → success) is STUBBED with the
+//    Justice title/duration/credits — no job runs, no credits spent.
+//  • library/viewer/speakers/timestamps/export read the REAL diarised AI transcript (J_AI_ID, 14 speakers).
+//  • summary reads the REAL 5-chapter summary on the caption transcript (J_SUM_ID) — same lecture, same title.
+//  • the rename dialog is deliberately trimmed to the two speakers the scenario names — the professor
+//    (Speaker B → "Prof. Sandel") and one prominent student (Speaker D → a student name); the other twelve
+//    detected speakers are removed from the shot (the user asked NOT to force a 14-row screen). The two
+//    inputs are filled through the real UI (so React keeps the values); only then are the other rows
+//    dropped from the DOM, and the theme flip is CSS-only, so the trim survives to both screenshots.
+const J_AI_ID = '9d072903-15d7-4722-9140-d64ee3efad59'   // diarised AI transcript (speakers)
+const J_SUM_ID = '0798fa30-8056-4343-9e02-c50d93c00e4a'  // caption transcript with the 5-chapter summary
+const J_META = { duration: 3282, title: 'Justice: What’s The Right Thing To Do? — Episode 01' }
+const J_SEGS = [
+  { offset: 33.5, duration: 5, text: 'This is a course about justice, and we begin with a story.', speaker: 'B' },
+  { offset: 39, duration: 7, text: "Suppose you're the driver of a trolley car hurtling down the track at sixty miles an hour.", speaker: 'B' },
+]
+function jStubJob(page: Page, status: string, extra: Record<string, unknown> = {}) {
+  page.route('**/api/video/metadata/**', (r) => r.fulfill({ json: J_META }))
+  page.route('**/api/transcribe/whisper', (r) => r.fulfill({ json: { job_id: 'stub-j', status: 'pending' } }))
+  page.route('**/api/jobs/stub-j**', (r) => r.fulfill({ json: { status, duration_seconds: 3282, credits_cost: 55, ...extra } }))
+}
+async function jRunToProgress(page: Page) {
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
+  await page.getByRole('radio', { name: /AI transcription/ }).click()
+  await page.getByRole('button', { name: /Extract|Checking/ }).click()
+  await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click()
+}
+async function openJusticeAI(page: Page) {
+  await page.goto(`/dashboard/library/${J_AI_ID}`)
+  await page.locator('.ProseMirror:visible').first().waitFor({ state: 'visible', timeout: 30_000 })
+  await page.getByText('Speaker B:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+}
+
+test('justice-empty', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').waitFor({ state: 'visible' })
+  await fullShot(page, 'justice-empty')
+})
+test('justice-paste', async ({ page }) => {
+  // STUB_URL (an unowned id) keeps the URL consistent with the cost/downloading/transcribing beats and
+  // avoids the "already in your library" dedup prompt the real Justice id triggers (it IS seeded).
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
+  await page.waitForTimeout(400)
+  await fullShot(page, 'justice-paste')
+})
+test('justice-cost', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.route('**/api/video/metadata/**', (r) => r.fulfill({ json: J_META }))
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
+  await page.getByRole('radio', { name: /AI transcription/ }).click()
+  await page.getByRole('button', { name: /Extract|Checking/ }).click()
+  await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).waitFor({ state: 'visible' })
+  await fullShot(page, 'justice-cost')
+})
+test('justice-download', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  jStubJob(page, 'downloading', { download_bytes: 12_400_000, download_total_bytes: 22_355_365 })
+  await jRunToProgress(page)
+  await page.getByText('Downloading audio', { exact: true }).waitFor({ state: 'visible', timeout: 20_000 })
+  await fullShot(page, 'justice-download')
+})
+test('justice-transcribe', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  jStubJob(page, 'transcribing', { download_bytes: 22_355_365, download_total_bytes: 22_355_365 })
+  await jRunToProgress(page)
+  await page.getByText('Transcribing', { exact: true }).waitFor({ state: 'visible', timeout: 20_000 })
+  await fullShot(page, 'justice-transcribe')
+})
+test('justice-success', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  jStubJob(page, 'complete', { transcript_id: 'stub-j-t', channel: 'Harvard University', language: 'en', transcript: J_SEGS })
+  await jRunToProgress(page)
+  await page.getByText('Transcript ready', { exact: true }).waitFor({ state: 'visible', timeout: 20_000 })
+  await fullShot(page, 'justice-success')
+})
+test('justice-library', async ({ page }) => {
+  // The runner bumps J_AI_ID.created_at = now() (viewed_at already NULL → unread) before this test and
+  // restores the original created_at after, so Justice is the fresh top row for this shot only.
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto('/dashboard/library')
+  await page.getByText('Justice', { exact: false }).first().waitFor({ state: 'visible', timeout: 20_000 })
+  await fullShot(page, 'justice-library')
+})
+test('justice-viewer', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await openJusticeAI(page)
+  await fullShot(page, 'justice-viewer')
+})
+test('justice-speakers', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await openJusticeAI(page)
+  await page.getByRole('button', { name: 'Speakers' }).click()
+  await page.getByText('Rename speakers').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.waitForTimeout(300)
+  // Fill the two named speakers through the real UI so React keeps the values…
+  const rowB = page.locator('[role="dialog"] div.flex.items-center.gap-3', { has: page.getByText('Speaker B', { exact: true }) })
+  const rowD = page.locator('[role="dialog"] div.flex.items-center.gap-3', { has: page.getByText('Speaker D', { exact: true }) })
+  await rowB.getByRole('textbox').fill('Prof. Sandel')
+  await rowD.getByRole('textbox').fill('Anna Reyes')
+  // …then drop every other detected-speaker row from the DOM and blur, so no re-render restores them.
+  await page.evaluate(() => {
+    const cont = document.querySelector('[role="dialog"] .space-y-3.py-1')
+    if (cont) cont.querySelectorAll(':scope > div').forEach((r) => {
+      const lbl = r.querySelector('span')?.textContent?.trim()
+      if (lbl !== 'Speaker B' && lbl !== 'Speaker D') r.remove()
+    })
+    ;(document.activeElement as HTMLElement | null)?.blur()
+  })
+  await page.waitForTimeout(150)
+  await fullShot(page, 'justice-speakers')
+})
+test('justice-timestamps', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await openJusticeAI(page)
+  await page.getByRole('button', { name: 'Timestamps' }).click()
+  await page.waitForTimeout(400)
+  await fullShot(page, 'justice-timestamps')
+})
+test('justice-summary', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto(`/dashboard/library/${J_SUM_ID}?tab=summary`)
+  await page.getByText('AI Summary', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+  await page.waitForTimeout(400)
+  await fullShot(page, 'justice-summary')
+})
+test('justice-export', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await openJusticeAI(page)
+  await page.getByRole('button', { name: 'Export' }).click()
+  await page.getByRole('menu').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.waitForTimeout(300)
+  await fullShot(page, 'justice-export')
+})

@@ -15,10 +15,10 @@ import { tokensFor, type Theme, type Tokens } from './tokens'
 const { fontFamily } = loadFont()
 
 // One continuous camera through one app. Every screen is a FULL-VIEWPORT still of the same source —
-// "Designing for Deep Work" — captured at 2560x1440. Per moment the camera starts wide (the whole
-// screen), zooms into the action region, plays the cursor's move → arrive → pulse-on-that-frame →
-// screen-change → hold sequence, then pulls back out to the full screen before the next change. Bookend
-// brand frames kept. Only remotion interpolate/Easing — no extra package.
+// the Michael Sandel "Justice" lecture (Harvard) — captured at 2560x1440. Per moment the camera starts
+// wide (the whole screen), zooms into the action region, plays the cursor's move → arrive →
+// pulse-on-that-frame → screen-change → hold sequence, then pulls back out to the full screen before the
+// next change. Twelve moments, NO error step. Bookend brand frames kept. Only remotion interpolate/Easing.
 export const FPS = 30
 export const WIDTH = 1280
 export const HEIGHT = 720
@@ -38,19 +38,22 @@ const OUTRO = 40
 export type HomeClipProps = { theme: Theme }
 
 type Beat = { s: string; f: [number, number, number]; cur?: [number, number]; pulse?: boolean; endZoom?: boolean }
+// Twelve Justice moments — no error step. Same app chrome as the DW pass, so the focus/cursor fractions
+// carry over screen-for-screen; the pulses land on the same controls (AI method card, Extract, View in
+// Library, the top library row, Export). Screens 3–4 are the two loading phases (download → transcribe).
 const BEATS: Beat[] = [
-  { s: 'dw-empty', f: [0.72, 0.43, 1.9], cur: [0.78, 0.43], pulse: true },       // click Extract
-  { s: 'dw-loading', f: [0.5, 0.56, 1.7] },                                       // downloading
-  { s: 'dw-error', f: [0.5, 0.45, 1.7] },                                         // no-captions error
-  { s: 'dw-cost', f: [0.58, 0.6, 1.85], cur: [0.6, 0.62], pulse: true },          // click Extract (AI)
-  { s: 'dw-loading', f: [0.5, 0.56, 1.7] },                                       // AI progress
-  { s: 'dw-success', f: [0.66, 0.31, 1.85], cur: [0.82, 0.31], pulse: true },     // click View in Library
-  { s: 'dw-library', f: [0.4, 0.4, 1.75], cur: [0.33, 0.4], pulse: true },        // click the top row
-  { s: 'dw-viewer', f: [0.5, 0.5, 1.7] },                                         // reading pane + speakers
-  { s: 'dw-speakers', f: [0.5, 0.5, 1.45] },                                      // rename dialog
-  { s: 'dw-timestamps', f: [0.5, 0.45, 1.7] },                                    // timestamps view
-  { s: 'dw-summary', f: [0.55, 0.55, 1.7] },                                      // chapter summary
-  { s: 'dw-export', f: [0.64, 0.42, 2.0], cur: [0.7, 0.3], pulse: true, endZoom: true }, // click Export → menu
+  { s: 'justice-empty', f: [0.6, 0.42, 1.5] },                                          // establish the workbench
+  { s: 'justice-paste', f: [0.62, 0.5, 1.7], cur: [0.72, 0.56], pulse: true },          // choose AI transcription
+  { s: 'justice-cost', f: [0.58, 0.6, 1.85], cur: [0.6, 0.62], pulse: true },           // click Extract — 55 credits
+  { s: 'justice-download', f: [0.5, 0.56, 1.7] },                                       // downloading audio
+  { s: 'justice-transcribe', f: [0.5, 0.56, 1.7] },                                     // transcribing
+  { s: 'justice-success', f: [0.66, 0.31, 1.85], cur: [0.82, 0.31], pulse: true },      // click View in Library
+  { s: 'justice-library', f: [0.4, 0.4, 1.75], cur: [0.33, 0.4], pulse: true },         // click the top (Justice) row
+  { s: 'justice-viewer', f: [0.5, 0.5, 1.7] },                                          // reading pane + speaker labels
+  { s: 'justice-speakers', f: [0.5, 0.5, 1.45] },                                       // rename dialog (2 speakers)
+  { s: 'justice-timestamps', f: [0.5, 0.45, 1.7] },                                     // timestamps view
+  { s: 'justice-summary', f: [0.55, 0.55, 1.7] },                                       // AI chapter summary
+  { s: 'justice-export', f: [0.64, 0.42, 2.0], cur: [0.7, 0.3], pulse: true, endZoom: true }, // click Export → menu
 ]
 const WALK_START = INTRO
 const WALK_END = WALK_START + BEATS.length * BEAT
