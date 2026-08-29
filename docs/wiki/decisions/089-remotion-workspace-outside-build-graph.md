@@ -1,6 +1,6 @@
 # Beslissing 089: Remotion-workspace (`apps/video`) buiten de Turborepo-build-graph
 
-**Status:** Geaccepteerd
+**Status:** Geaccepteerd · **deels achterhaald door [ADR-100](100-demo-video-real-recording.md)** — de Remotion-**compositie** voor de landings-demo is verwijderd (de demo is nu een échte schermopname + ffmpeg). Deze beslissing (workspace buiten de build-graph) blijft gelden: `apps/video` bestaat nog, enkel voor `export-demos/`.
 **Datum:** 2026-08-07
 **Gerelateerde code:** `apps/video/*`, `pnpm-workspace.yaml`
 

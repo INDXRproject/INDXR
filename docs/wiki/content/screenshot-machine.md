@@ -26,25 +26,33 @@ BASE_URL=https://app.indxr.ai NODE_PATH=node_modules/.pnpm/node_modules \
 ```
 De twee configs delen `global-setup.ts` maar hebben een gescheiden `testMatch`, dus de beeldmachine en de videomachine raken elkaar niet, en de 9 functionele specs (andere testDir) evenmin.
 
-### Van opname naar clip — `apps/video/` (Remotion)
+### Van opname naar clip — échte schermopname + ffmpeg ([ADR-100](../decisions/100-demo-video-real-recording.md))
 
-De ruwe WebM is grondstof; de montage gebeurt in de **standalone Remotion-workspace** `apps/video/`, bewust **buiten** de Turborepo-build-graph ([ADR-089](../decisions/089-remotion-workspace-outside-build-graph.md)) — eigen `node_modules`, eigen install, raakt de app-builds/deploys nooit.
+De landings-demo (`/video/home-clip-{light,dark}.mp4`) is **géén Remotion-montage meer**. De oude aanpak —
+een Remotion-compositie `HomeClip` die een camera pande/zoomde over stills met een nep-cursor — is
+verwijderd: de cursor-doelen waren hergebruikte fracties die bij elke layout-wijziging verkeerd vielen
+(ADR-100). De demo is nu **één doorlopende échte Playwright-schermopname** van het hele scenario, opgebouwd
+op dezelfde infra als core-flow, **zonder enige zoom**.
 
 ```bash
-cd apps/video
-npm install            # eenmalig, standalone (niet via pnpm root)
-npm run render         # → out/home-clip.mp4  (compositie HomeClip: crop + tempo + tekst-overlays)
-npm run still          # → out/home-clip-poster.png  (stilstaand frame voor no-autoplay)
-npm run studio         # interactieve Remotion-preview
+# 1) Opnemen (beide thema's) — legt het hele scenario in één run vast + schrijft timings.json
+BASE_URL=https://app.indxr.ai CAPTURE_THEME=light node <@playwright/test cli> test --config=playwright.homeclip.config.ts
+BASE_URL=https://app.indxr.ai CAPTURE_THEME=dark  node <@playwright/test cli> test --config=playwright.homeclip.config.ts
+#    → tests/playwright/capture/recordings/home-clip{,-dark}.webm  + …timings.json
+# 2) Monteren met ffmpeg — merk-intro/outro (bestaand logo op de thema-`--bg`) + twee trims
+#    (account-laadsplash weg via reveal_ms; bibliotheek-laad ≤0,5 s via libnav_ms/liblist_ms)
+#    → apps/marketing/public/video/home-clip-{light,dark}.mp4 + posters
 ```
 
-De `copy-source` pre-hook kopieert de canonieke opname uit `recordings/` naar `public/` (gitignored — niet dubbel gecommit). Tokens/fonts komen uit onze eigen `tokens.ts` (OKLCH, licht) + IBM Plex — geen externe template.
+De exacte opname-seed (Justice-toprij), de merkkader-render en de ffmpeg-commando's staan in
+**`tests/playwright/capture/home-clip-assemble.md`**. `apps/video/` host nu **alleen** nog de
+`export-demos/` (hieronder); de Remotion-render/studio/copy-source-scripts bestaan niet meer.
 
 ### Exportblok-demo's — `apps/video/export-demos/`
 
 De drie homepage-exportblokken (Markdown/SRT/RAG) als **beeld van het bestand in gebruik**, op de **echte** fixture-export (`fixture/justice.{srt,vtt,md,rag.json}`, 60-chunk RAG): `srt-demo.html` (ondertitels over een neutrale speler — géén YouTube-frame, [ADR-088](../decisions/088-youtube-ui-in-marketing.md)) en `rag-demo.html` (query → chunk mét tijdstempel), elk geschoten via `capture-{srt,rag}.mjs` (light+dark). Markdown → Obsidian heeft **geen** webversie; de exacte één-screenshot-instructie staat in `export-demos/README.md`.
 
-**RAG-figuur geplaatst (2026-08-27):** de `rag-demo`-opname (query "the driver of a trolley car" → chunk 4 of 60, ▶ 3:45, deep link `youtu.be/kBdfcR-8hEY?t=225`) is de RAG-JSON-figuur op de site. Reproductie: `node apps/video/export-demos/capture-rag.mjs` → `rag-demo-{light,dark}.png`, dan gekopieerd naar `apps/marketing/public/docs/screenshots/rag-json-{light,dark}.png` (DocsFigure-naamgeving). Geplaatst op de **landing** ("Text you want to build on", `page.tsx`) en op de **JSON-specpagina** (`/docs/reference/export-formats/json`, onder het RAG-codeblok). Dit was de laatste ontbrekende figuur op de site.
+**RAG-figuur geplaatst (2026-08-27):** de `rag-demo`-opname (query "the driver of a trolley car" → chunk 4 of 60, ▶ 3:45, deep link `youtu.be/kBdfcR-8hEY?t=225`) is de RAG-JSON-figuur op de site. Reproductie: `node apps/video/export-demos/capture-rag.mjs` → `rag-demo-{light,dark}.png`, dan gekopieerd naar `apps/marketing/public/docs/screenshots/rag-json-{light,dark}.png` (DocsFigure-naamgeving). Geplaatst op de **JSON-specpagina** (`/docs/reference/export-formats/json`, onder het RAG-codeblok). (Stond eerder ook op de landing onder "Text you want to build on"; die sectie toont sinds ADR-100/de Justice-beeldenronde alleen nog `justice-summary` — er bestaat nog geen volledige-viewport-RAG-still, dus de landing heeft daar géén RAG-beeld meer.)
 
 ## Opnamestandaard (2026-08-03) — geldt voor ELKE opname
 

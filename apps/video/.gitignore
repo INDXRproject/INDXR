@@ -1,6 +1,7 @@
 node_modules/
 package-lock.json
 .remotion/
-# The source recording is the canonical file in tests/playwright/capture/recordings/ — it's copied
-# into public/ by the pre-hooks (copy-source), not committed twice.
+# Legacy Remotion output dir + any staging copies (the Remotion demo composition was removed — ADR-100;
+# the demo mp4 is now a real recording assembled with ffmpeg, see tests/playwright/capture/home-clip-assemble.md).
+out/
 public/
