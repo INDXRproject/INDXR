@@ -57,10 +57,34 @@ test('home-clip', async ({ browser }) => {
     recordVideo: { dir: OUT_DIR, size: VIEW },
   })
   const page = await context.newPage()
+  // recordVideo starts at page creation; t0 anchors the assembly's trims to the recording clock.
+  const t0 = Date.now()
+  const marks: Record<string, number> = {}
   await installCursor(page)
   await page.addInitScript((theme) => {
     try { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme) } catch {}
   }, THEME)
+  // Cover ONLY the first page load with a solid theme-bg splash, so the credit balance loading from 0→N
+  // is never on screen. It's torn down (window.__revealApp) once the real balance is painted; a
+  // sessionStorage flag keeps it to the first load, so later navigations (the library fetch, #3) show
+  // their own real loading. Colour = the theme's --bg (light/dark), so it flows from the brand intro.
+  const SPLASH_BG = THEME === 'dark' ? 'oklch(0.165 0.008 70)' : 'oklch(0.985 0.004 70)'
+  await page.addInitScript((bg) => {
+    try { if (sessionStorage.getItem('__splashDone')) return } catch { return }
+    const add = () => {
+      if (document.getElementById('__splash') || !document.documentElement) return
+      const o = document.createElement('div')
+      o.id = '__splash'
+      o.style.cssText = `position:fixed;inset:0;z-index:2147483645;background:${bg};`
+      document.documentElement.appendChild(o)
+    }
+    ;(window as unknown as { __revealApp: () => void }).__revealApp = () => {
+      document.getElementById('__splash')?.remove()
+      try { sessionStorage.setItem('__splashDone', '1') } catch {}
+    }
+    add()
+    document.addEventListener('DOMContentLoaded', add)
+  }, SPLASH_BG)
 
   // ── Deterministic transcribe backend (page.route intercepts before the network) ──
   await page.route('**/api/video/metadata/**', (r) =>
@@ -96,12 +120,25 @@ test('home-clip', async ({ browser }) => {
     await route.fulfill({ json: body })
   })
 
-  // ══ 1) Paste the link ══
+  // ══ 1) Open the workbench — but only reveal it once the credit balance has REALLY loaded (its real
+  //       value is present, not the 0 placeholder), so the 0→N flash never shows on screen. ══
   await page.goto('/dashboard/transcribe')
-  await page.waitForLoadState('networkidle').catch(() => {})
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').waitFor({ state: 'visible', timeout: 20_000 })
+  await page.waitForFunction(() => {
+    const el = document.querySelector('a[aria-label$="credits — buy more"]')
+    const m = el?.getAttribute('aria-label')?.match(/^(\d+) credits/)
+    return !!m && parseInt(m[1], 10) > 0
+  }, { timeout: 15_000 }).catch(() => {})
+  await page.evaluate(() => (window as unknown as { __revealApp?: () => void }).__revealApp?.())
+  marks.reveal_ms = Date.now() - t0 // the splash is torn down here → the assembly trims everything before it
   await moveMouseXY(page, 220, 170, 1)
   await beat(page, TEMPO.beatLong)
-  await typeLikeHuman(page, page.getByPlaceholder('https://www.youtube.com/watch?v=...'), VIDEO_URL)
+
+  // ══ 2) The link lands in the field — filled in one go (a real action on the real field, without the
+  //       time a character-by-character type would cost). ══
+  const urlField = page.getByPlaceholder('https://www.youtube.com/watch?v=...')
+  await clickLikeHuman(page, urlField, 120)
+  await urlField.fill(VIDEO_URL)
   await beat(page, TEMPO.beatLong)
 
   // ══ 2) Choose AI transcription ══
@@ -120,10 +157,13 @@ test('home-clip', async ({ browser }) => {
   await page.getByText(SEGMENTS[0].text, { exact: false }).waitFor({ state: 'visible', timeout: 30_000 })
   await beat(page, TEMPO.beatLong)
 
-  // ══ 5) Click "View in Library" (real <a href="/dashboard/library">) ══
+  // ══ 5) Click "View in Library" (real <a href="/dashboard/library">). The library then shows a real
+  //       loading step; the assembly caps how much of it is on screen to ≤0.5 s (libnav → liblist). ══
   await clickLikeHuman(page, page.getByRole('link', { name: 'View in Library' }))
+  marks.libnav_ms = Date.now() - t0
   await page.waitForURL('**/dashboard/library', { timeout: 20_000 })
   await page.locator('a[href*="/dashboard/library/"]').first().waitFor({ state: 'visible', timeout: 20_000 })
+  marks.liblist_ms = Date.now() - t0
   await beat(page, TEMPO.beatLong)
 
   // ══ 6) The library list — Justice is the seeded top row → open it ══
@@ -134,29 +174,32 @@ test('home-clip', async ({ browser }) => {
   await page.getByText('Speaker B:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
   await beat(page, TEMPO.beatLong) // BEFORE: the diarised reading pane (Speaker A:/B: …)
 
-  // ══ 7) Rename two speakers — ONE fluid gesture. Hide every row but B (2nd) + D (4th) BEFORE the
-  //       dialog opens, so it shows only those two from first paint — no flash of the other detected
-  //       speakers. Then type straight through: professor field → student field, no pause on the others.
-  await page.addStyleTag({ content: '[role="dialog"] .space-y-3.py-1 > div:not(:nth-child(2)):not(:nth-child(4)){display:none!important}' })
+  // ══ 7) Rename FOUR speakers in one fluid gesture — the professor (B) plus three students with real,
+  //       multi-sentence contributions (D, E, K). Two would under-sell the diarisation; all fourteen
+  //       would be noise (eight are one-word "Yes."/"What?" speakers with no meaningful name). Hide every
+  //       OTHER detected-speaker row BEFORE the dialog opens, so only these four ever show (no flash),
+  //       then type straight through all four. Sorted labels A,B,C,D,E,…,K → rows 2,4,5,11.
+  await page.addStyleTag({ content: '[role="dialog"] .space-y-3.py-1 > div:not(:nth-child(2)):not(:nth-child(4)):not(:nth-child(5)):not(:nth-child(11)){display:none!important}' })
   await clickLikeHuman(page, page.getByRole('button', { name: 'Speakers' }))
   await page.getByText('Rename speakers').waitFor({ state: 'visible', timeout: 10_000 })
   await beat(page, TEMPO.beatShort)
-  const inputB = page.locator('[role="dialog"] div.flex.items-center.gap-3', { has: page.getByText('Speaker B', { exact: true }) }).getByRole('textbox')
-  const inputD = page.locator('[role="dialog"] div.flex.items-center.gap-3', { has: page.getByText('Speaker D', { exact: true }) }).getByRole('textbox')
-  await typeLikeHuman(page, inputB, 'Prof. Sandel')
-  await typeLikeHuman(page, inputD, 'Anna Reyes')
+  const NAMES: [string, string][] = [['Speaker B', 'Prof. Sandel'], ['Speaker D', 'Anna Reyes'], ['Speaker E', 'Marcus Lee'], ['Speaker K', 'Priya Shah']]
+  for (const [label, name] of NAMES) {
+    const input = page.locator('[role="dialog"] div.flex.items-center.gap-3', { has: page.getByText(label, { exact: true }) }).getByRole('textbox')
+    await typeLikeHuman(page, input, name)
+  }
   await beat(page, TEMPO.beatShort)
   await clickLikeHuman(page, page.getByRole('button', { name: 'Save names' }))
   await page.getByText('Prof. Sandel:', { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 })
-  await beat(page, TEMPO.beatLong) // the pane now labels those paragraphs "Prof. Sandel:" / "Anna Reyes:"
-  // Show the effect in the running text: scroll the transcript so the renamed labels move through it.
-  await page.evaluate(() => {
-    const pm = document.querySelector('.ProseMirror') as HTMLElement | null
-    let el: HTMLElement | null = pm
-    while (el && el !== document.body) { const o = getComputedStyle(el).overflowY; if (o === 'auto' || o === 'scroll') break; el = el.parentElement }
-    if (el && el !== document.body) el.scrollBy({ top: 520, behavior: 'smooth' }); else window.scrollBy({ top: 520, behavior: 'smooth' })
-  })
-  await beat(page, TEMPO.beatLong)
+  await beat(page, TEMPO.beatLong) // the professor's paragraphs now read "Prof. Sandel:"
+  // Show the effect in the RUNNING text: the professor is already at the top; smooth-scroll to each of the
+  // three renamed students in turn so all four new names appear in the flowing transcript.
+  for (const name of ['Anna Reyes', 'Marcus Lee', 'Priya Shah']) {
+    const lbl = page.getByText(`${name}:`, { exact: false }).first()
+    await lbl.waitFor({ state: 'attached', timeout: 10_000 }).catch(() => {})
+    await lbl.evaluate((el) => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => {})
+    await beat(page, TEMPO.beatLong)
+  }
 
   // ══ 8) Timestamps view — same transcript ══
   await clickLikeHuman(page, page.getByRole('button', { name: 'Timestamps' }))
@@ -168,13 +211,14 @@ test('home-clip', async ({ browser }) => {
   await page.getByRole('menu').waitFor({ state: 'visible', timeout: 10_000 })
   await beat(page, TEMPO.beatLong)
 
-  // Finalize the video.
+  // Finalize the video + the trim marks the assembly reads (splash removal + library-load cap).
   const video = page.video()
   await context.close()
   if (video) {
     await video.saveAs(OUT_FILE)
     await video.delete().catch(() => {})
+    fs.writeFileSync(OUT_FILE.replace(/\.webm$/, '.timings.json'), JSON.stringify(marks))
   }
   // eslint-disable-next-line no-console
-  console.log(`  ✔ ${path.relative(process.cwd(), OUT_FILE)}`)
+  console.log(`  ✔ ${path.relative(process.cwd(), OUT_FILE)}  marks=${JSON.stringify(marks)}`)
 })
