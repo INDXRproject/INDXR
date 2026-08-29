@@ -1,8 +1,19 @@
 # Beslissing 089: Remotion-workspace (`apps/video`) buiten de Turborepo-build-graph
 
-**Status:** Geaccepteerd · **deels achterhaald door [ADR-100](100-demo-video-real-recording.md)** — de Remotion-**compositie** voor de landings-demo is verwijderd (de demo is nu een échte schermopname + ffmpeg). Deze beslissing (workspace buiten de build-graph) blijft gelden: `apps/video` bestaat nog, enkel voor `export-demos/`.
+**Status:** Geaccepteerd, **deels achterhaald** (2026-08-29) — zie [ADR-100](100-demo-video-real-recording.md).
 **Datum:** 2026-08-07
-**Gerelateerde code:** `apps/video/*`, `pnpm-workspace.yaml`
+**Gerelateerde code:** `apps/video/*` (Remotion-compositie verwijderd 2026-08-29 — enkel nog `export-demos/`), `pnpm-workspace.yaml`
+
+> ⚠️ **Achterhaald voor de landings-demovideo (2026-08-29).** De Remotion-montage die deze ADR beschrijft
+> is verwijderd. De gesimuleerde aanpak had structurele problemen — cursor-timing op een aparte klok en een
+> camera-zoom die met hergebruikte fractie-coördinaten telkens verkeerd viel — en is vervangen door één
+> échte Playwright-schermopname (ffmpeg-montage), zie [ADR-100](100-demo-video-real-recording.md). Concreet
+> weg: `apps/video/src/*` (o.a. `HomeClip.tsx`), `remotion.config.ts`, `tsconfig.json` en de
+> `render`/`studio`/`still`/`copy-source`-scripts; `apps/video/package.json` is nu een minimale
+> **export-demos**-workspace. Wat van deze ADR **overeind blijft**: de reden om `apps/video` buiten de
+> Turborepo-build-graph te houden (eigen install, raakt app-builds/deploys nooit) — dat geldt nog voor de
+> resterende `export-demos/`. De tekst hieronder is het **oorspronkelijke record** en beschrijft de
+> inmiddels-verwijderde Remotion-render.
 
 ## Context
 

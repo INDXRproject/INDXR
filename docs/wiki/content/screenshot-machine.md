@@ -2,7 +2,7 @@
 
 **Aangemaakt:** 2026-08-02 · **Beeldstandaard herzien:** 2026-08-03 · **Video-opname toegevoegd:** 2026-08-07
 **Beeld (stills):** spec `tests/playwright/capture/quickstart-capture.spec.ts` · config `playwright.capture.config.ts` · assets `apps/marketing/public/docs/screenshots/*.png`
-**Video (bewegend):** spec `tests/playwright/capture/core-flow-video.spec.ts` · config `playwright.video.config.ts` · helpers `tests/playwright/capture/video-helpers.ts` · output `tests/playwright/capture/recordings/*.webm`
+**Video (bewegend):** de **homepage-demo** komt uit spec `tests/playwright/capture/home-clip-video.spec.ts` · config `playwright.homeclip.config.ts` (ADR-100 — de hele 12-momenten-flow, echte opname + ffmpeg-montage). `core-flow-video.spec.ts` · `playwright.video.config.ts` blijft bestaan als kortere **referentie-opname** (4 momenten) maar voedt de homepage-video **niet meer**. Beide delen helpers `tests/playwright/capture/video-helpers.ts` · output `tests/playwright/capture/recordings/*.webm`
 
 Eén Playwright-spec die géén gedrag test maar de docs-beelden vastlegt. Hij is **tegelijk een routecheck**: hij stuurt de echte UI aan op ARIA-rollen + exacte zichtbare tekst, dus een hernoemde knop of verplaatste control laat de bijbehorende capture **omvallen**. Dat is de bedoeling — de capture die faalt is het regressiesignaal. Sinds 2026-08-07 heeft de machine een **tweede tak**: bewegende opnames (`recordVideo`) voor marketing, met een eigen standaard hieronder.
 
@@ -29,24 +29,28 @@ De twee configs delen `global-setup.ts` maar hebben een gescheiden `testMatch`, 
 ### Van opname naar clip — échte schermopname + ffmpeg ([ADR-100](../decisions/100-demo-video-real-recording.md))
 
 De landings-demo (`/video/home-clip-{light,dark}.mp4`) is **géén Remotion-montage meer**. De oude aanpak —
-een Remotion-compositie `HomeClip` die een camera pande/zoomde over stills met een nep-cursor — is
-verwijderd: de cursor-doelen waren hergebruikte fracties die bij elke layout-wijziging verkeerd vielen
-(ADR-100). De demo is nu **één doorlopende échte Playwright-schermopname** van het hele scenario, opgebouwd
-op dezelfde infra als core-flow, **zonder enige zoom**.
+een Remotion-compositie `HomeClip` die een camera pande/zoomde over stills met een geïnjecteerde nep-cursor
+— is verwijderd: de cursor-doelen waren hergebruikte fractie-coördinaten die bij elke layout-wijziging
+verkeerd vielen, en de camera-zoom hoorde er sowieso niet (ADR-100).
 
-```bash
-# 1) Opnemen (beide thema's) — legt het hele scenario in één run vast + schrijft timings.json
-BASE_URL=https://app.indxr.ai CAPTURE_THEME=light node <@playwright/test cli> test --config=playwright.homeclip.config.ts
-BASE_URL=https://app.indxr.ai CAPTURE_THEME=dark  node <@playwright/test cli> test --config=playwright.homeclip.config.ts
-#    → tests/playwright/capture/recordings/home-clip{,-dark}.webm  + …timings.json
-# 2) Monteren met ffmpeg — merk-intro/outro (bestaand logo op de thema-`--bg`) + twee trims
-#    (account-laadsplash weg via reveal_ms; bibliotheek-laad ≤0,5 s via libnav_ms/liblist_ms)
-#    → apps/marketing/public/video/home-clip-{light,dark}.mp4 + posters
-```
+De demo is nu **één doorlopende, échte browsersessie**. `tests/playwright/capture/home-clip-video.spec.ts`
+(config `playwright.homeclip.config.ts`) legt de **hele twaalf-momenten-flow** in één run vast — plakken →
+AI kiezen → laden → succes → naar bibliotheek → Justice-rij openen → sprekers hernoemen (met zichtbaar
+effect in de tekst) → Timestamps → Export — met dezelfde helpers als de core-flow-tak: `recordVideo` (één
+WebM per run over álle echte navigaties), `installCursor` (zichtbare cursor die de echte muis volgt), en
+`clickLikeHuman`/`typeLikeHuman` die op de **live bounding box** van elk element sturen (nooit hergebruikte
+fracties). **Geen zoom** — elk scherm vol in beeld. Beide thema's via `CAPTURE_THEME`.
 
-De exacte opname-seed (Justice-toprij), de merkkader-render en de ffmpeg-commando's staan in
-**`tests/playwright/capture/home-clip-assemble.md`**. `apps/video/` host nu **alleen** nog de
-`export-demos/` (hieronder); de Remotion-render/studio/copy-source-scripts bestaan niet meer.
+De WebM wordt daarna met **ffmpeg** naar mp4 geconverteerd, en de **merkkaders** (het bestaande logo op de
+effen thema-`--bg`) worden er als **losse fragmenten** vóór (intro) en ná (outro) aan geplakt; twee trims
+poetsen de account-laadsplash aan het begin weg en cappen het bibliotheek-laadmoment op ≤0,5 s
+(gestuurd door recording-klok-marks in `home-clip{,-dark}.timings.json`). Het **exacte assemblageproces**
+(opname-seed, merkkader-render, ffmpeg-commando's) staat in **[`home-clip-assemble.md`](../../../tests/playwright/capture/home-clip-assemble.md)**
+— zie dáár, hier niet gedupliceerd.
+
+`apps/video/` host sindsdien **alleen** nog de `export-demos/` (hieronder); de Remotion-compositie
+(`HomeClip.tsx`, `Root.tsx`, `tokens.ts`, `index.ts`, `remotion.config.ts`) en de
+`render`/`studio`/`still`/`copy-source`-scripts bestaan niet meer.
 
 ### Exportblok-demo's — `apps/video/export-demos/`
 

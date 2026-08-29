@@ -291,9 +291,9 @@ De `/docs/how-indxr-works`-sectie is **15 → 11 pagina's**: `credits` weg (301 
 
 ---
 
-## 8. Fixture-video voor docs-screenshots + Remotion (vastgelegd 2026-08-02)
+## 8. Fixture-video voor docs-screenshots + video-opnames (vastgelegd 2026-08-02)
 
-Eén vaste voorbeeldvideo voor álle documentatie-screenshots en Remotion-opnames, zodat de docs/Remotion-batch niet opnieuw hoeft te zoeken. **Live geverifieerd via yt-dlp door de Decodo-proxy (2026-08-02).**
+Eén vaste voorbeeldvideo voor álle documentatie-screenshots en video-opnames (de marketing-schermopnames), zodat de docs/video-batch niet opnieuw hoeft te zoeken. **Live geverifieerd via yt-dlp door de Decodo-proxy (2026-08-02).**
 
 **Video:** `kBdfcR-8hEY` — https://www.youtube.com/watch?v=kBdfcR-8hEY
 - **Titel (verbatim):** *Justice: What's The Right Thing To Do? Episode 01 "THE MORAL SIDE OF MURDER"* — kanaal **Harvard University**.
@@ -313,4 +313,4 @@ Gebruik deze getallen voor de playlist-reviewscreenshot. Video's zonder captions
 
 **Capture-account seeding (prod-DB, bewust).** `account1` (`f136104d-…`) draagt in de **live** DB 5 handmatig geseede publieke transcripten (Feynman/MIT/Stanford/CS50/consciousness-podcast) naast de fixture, zodat de `library-list`-screenshot als archief leest. Opzet, mag blijven — zie [screenshot-machine.md](screenshot-machine.md#library-account-geseed).
 
-**Marketing-clip + exportdemo's (herkomst — 2026-08-07).** De homepage-conversieronde vervangt stills door beweging. De kernflow-opname (`tests/playwright/capture/recordings/core-flow.webm`) is een **gestubde, deterministische** Playwright-opname (nul credits); de gemonteerde clip staat in `apps/video/` (Remotion, buiten de build-graph — [ADR-089](../decisions/089-remotion-workspace-outside-build-graph.md)). De drie exportblok-demo's (`apps/video/export-demos/`) draaien op de **echte** fixture-export (SRT/VTT/MD + 60-chunk RAG JSON), opnieuw gegenereerd uit de opgeslagen transcript via dezelfde generators — **niets nagemaakt**. **Regel (marketing, [ADR-088](../decisions/088-youtube-ui-in-marketing.md)):** YouTube's interface (pagina/speler/logo) komt **niet** in beeld in marketingmateriaal — dat vereist voorafgaande goedkeuring; opnames beginnen bij ons eigen invoerveld. Nominatieve tekst ("transcribe YouTube videos") blijft toegestaan.
+**Marketing-clip + exportdemo's (herkomst — 2026-08-07, video-aanpak herzien 2026-08-29).** De homepage-conversieronde vervangt stills door beweging. De **homepage-demovideo** is een **gestubde, deterministische** Playwright-**schermopname** van de hele 12-momenten-flow (`tests/playwright/capture/home-clip-video.spec.ts`, nul credits), met ffmpeg naar mp4 gemonteerd + merkkaders ervoor/erna — **niet meer** de oude Remotion-montage ([ADR-100](../decisions/100-demo-video-real-recording.md); de Remotion-compositie in `apps/video/` is verwijderd). De oudere `core-flow.webm` blijft als kortere referentie-opname. `apps/video/` host nog enkel de **export-demos**. De drie exportblok-demo's (`apps/video/export-demos/`) draaien op de **echte** fixture-export (SRT/VTT/MD + 60-chunk RAG JSON), opnieuw gegenereerd uit de opgeslagen transcript via dezelfde generators — **niets nagemaakt**. **Regel (marketing, [ADR-088](../decisions/088-youtube-ui-in-marketing.md)):** YouTube's interface (pagina/speler/logo) komt **niet** in beeld in marketingmateriaal — dat vereist voorafgaande goedkeuring; opnames beginnen bij ons eigen invoerveld. Nominatieve tekst ("transcribe YouTube videos") blijft toegestaan.
