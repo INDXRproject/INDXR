@@ -14,142 +14,142 @@ import { tokensFor, type Theme, type Tokens } from './tokens'
 
 const { fontFamily } = loadFont()
 
-// A simulated walkthrough, rebuilt as fifteen self-contained moments. Each moment is one coherent
-// unit — the cursor MOVES to the control, ARRIVES, the click pulse fires on that exact frame, the
-// screen switches to the result, then a real HOLD lets it read before the next move begins. Cursor
-// and screen never run on separate clocks: a move phase keeps its screen fixed, and every screen
-// change lands on a frame where the cursor has already come to rest. Bookended by a brand frame (the
-// core-flow recording full-frame at the open — the beat-1 edge fix — and a wordmark card at the
-// close), and the export beat keeps the full-page → menu zoom. Only remotion interpolate/Easing — no
-// extra package.
+// One continuous camera through one app. Every screen is a FULL-VIEWPORT still of the same source —
+// "Designing for Deep Work" — captured at 2560x1440. Per moment the camera starts wide (the whole
+// screen), zooms into the action region, plays the cursor's move → arrive → pulse-on-that-frame →
+// screen-change → hold sequence, then pulls back out to the full screen before the next change. Bookend
+// brand frames kept. Only remotion interpolate/Easing — no extra package.
 export const FPS = 30
 export const WIDTH = 1280
 export const HEIGHT = 720
-export const PLAYBACK_RATE = 1.25 // the intro recording plays a touch faster
-const XFADE = 6                   // quick cross-dissolve, only ever while the cursor is at rest
-const SETTLE = 0                  // the move ends exactly on the phase boundary, so the arrival frame IS the
-                                  // pulse/change frame, and the cursor is at rest from that frame on (it won't move next frame)
+export const PLAYBACK_RATE = 1.25
+
+// Per-beat camera timing (frames): wide hold, zoom-in, focus hold (transition happens here), zoom-out.
+const H = 30
+const ZI = 22
+const M = 16
+const ZO = 22
+const BEAT = H + ZI + M + ZO // 90
+const APEX = H + ZI          // 52 — cursor arrival, pulse, screen change all land here
+const XF = 8                 // screen cross-dissolve at the apex
+const INTRO = 30
+const OUTRO = 40
 
 export type HomeClipProps = { theme: Theme }
 
-// Cursor rest points on each screen (fraction of the frame), aimed at the real control being clicked.
-const POS: Record<string, [number, number]> = {
-  FIELD: [0.43, 0.44],
-  EXTRACT_A: [0.77, 0.44],
-  EXTRACT_D: [0.55, 0.66],
-  VIEWLIB: [0.76, 0.50],
-  ROW: [0.25, 0.12],
-  DIALOG: [0.55, 0.55],
-  EXPORT: [0.66, 0.30],
-}
-const V = '__video'
-const CARD = '__card'
-
-// The scenario as phases. A `move` phase glides the cursor to POS[move] over its duration (keeping its
-// screen fixed); a `pulse` phase fires the click ring on its FIRST frame, at the point the cursor just
-// reached, and shows the click's result screen; plain phases are holds. Screen changes only ever occur
-// at a phase boundary where the cursor is at rest.
-type Phase = { d: number; s: string; move?: keyof typeof POS; pulse?: boolean; zoom?: boolean }
-const PHASES: Phase[] = [
-  { d: 30, s: V },                                             // brand intro (recording, full frame)
-  { d: 20, s: 'input-empty' },                                 // m1/m2: cursor appears at the field, types (no empty-field rest)
-  { d: 28, s: 'input-empty', move: 'EXTRACT_A' },              // m3: move to Extract
-  { d: 44, s: 'progress-downloading', pulse: true },           // m3 click → m4 loading (pulse on arrival)
-  { d: 54, s: 'error-no_captions' },                           // m5: no-captions error
-  { d: 54, s: 'cost-card-ai' },                                // m6: AI chosen → cost card
-  { d: 28, s: 'cost-card-ai', move: 'EXTRACT_D' },             // m7: move to Extract
-  { d: 44, s: 'progress-downloading', pulse: true },           // m7 click → m8 AI loading
-  { d: 54, s: 'success-card' },                                // m9: success
-  { d: 28, s: 'success-card', move: 'VIEWLIB' },               // m10: move to View in Library
-  { d: 54, s: 'library-unread', pulse: true },                 // m10 click → m11 library
-  { d: 28, s: 'library-unread', move: 'ROW' },                 // m11: move to the unread row
-  { d: 54, s: 'transcript-speakers', pulse: true },            // m11 click → m12 viewer
-  { d: 28, s: 'transcript-speakers', move: 'DIALOG' },         // reposition for the dialog
-  { d: 48, s: 'speaker-dialog' },                              // m13: rename-speakers dialog
-  { d: 54, s: 'timestamps-on' },                               // m14: timestamps view
-  { d: 22, s: 'export-page' },                                 // m15: export page appears
-  { d: 28, s: 'export-page', move: 'EXPORT' },                 // m15: move to Export
-  { d: 54, s: 'export-page', pulse: true, zoom: true },        // m15 click → zoom into the menu
-  { d: 24, s: 'export-page' },                                 // m15: hold on the framed menu
-  { d: 42, s: CARD },                                          // brand outro (wordmark)
+type Beat = { s: string; f: [number, number, number]; cur?: [number, number]; pulse?: boolean; endZoom?: boolean }
+const BEATS: Beat[] = [
+  { s: 'dw-empty', f: [0.72, 0.43, 1.9], cur: [0.78, 0.43], pulse: true },       // click Extract
+  { s: 'dw-loading', f: [0.5, 0.56, 1.7] },                                       // downloading
+  { s: 'dw-error', f: [0.5, 0.45, 1.7] },                                         // no-captions error
+  { s: 'dw-cost', f: [0.58, 0.6, 1.85], cur: [0.6, 0.62], pulse: true },          // click Extract (AI)
+  { s: 'dw-loading', f: [0.5, 0.56, 1.7] },                                       // AI progress
+  { s: 'dw-success', f: [0.66, 0.31, 1.85], cur: [0.82, 0.31], pulse: true },     // click View in Library
+  { s: 'dw-library', f: [0.4, 0.4, 1.75], cur: [0.33, 0.4], pulse: true },        // click the top row
+  { s: 'dw-viewer', f: [0.5, 0.5, 1.7] },                                         // reading pane + speakers
+  { s: 'dw-speakers', f: [0.5, 0.5, 1.45] },                                      // rename dialog
+  { s: 'dw-timestamps', f: [0.5, 0.45, 1.7] },                                    // timestamps view
+  { s: 'dw-summary', f: [0.55, 0.55, 1.7] },                                      // chapter summary
+  { s: 'dw-export', f: [0.64, 0.42, 2.0], cur: [0.7, 0.3], pulse: true, endZoom: true }, // click Export → menu
 ]
+const WALK_START = INTRO
+const WALK_END = WALK_START + BEATS.length * BEAT
+export const DURATION_IN_FRAMES = WALK_END + OUTRO
 
-type Seg = { from: number; dur: number; s: string; zoomFrom: number; zoomTo: number }
-type KF = { f: number; x: number; y: number }
-const SEGMENTS: Seg[] = []
-const CUR_KF: KF[] = []
-const PULSES: { f: number; x: number; y: number }[] = []
-;(() => {
-  let t = 0
-  let pos: [number, number] = POS.FIELD
-  CUR_KF.push({ f: 0, x: pos[0] * WIDTH, y: pos[1] * HEIGHT })
-  let zoomFrom = -1
-  let zoomTo = -1
-  PHASES.forEach((p) => {
-    const from = t
-    if (p.move) {
-      const target = POS[p.move]
-      CUR_KF.push({ f: from, x: pos[0] * WIDTH, y: pos[1] * HEIGHT })
-      CUR_KF.push({ f: from + p.d - SETTLE, x: target[0] * WIDTH, y: target[1] * HEIGHT })
-      pos = target
-    }
-    if (p.pulse) PULSES.push({ f: from, x: pos[0] * WIDTH, y: pos[1] * HEIGHT })
-    if (p.zoom) { zoomFrom = from; zoomTo = from + p.d }
-    const last = SEGMENTS[SEGMENTS.length - 1]
-    if (last && last.s === p.s) last.dur += p.d
-    else SEGMENTS.push({ from, dur: p.d, s: p.s, zoomFrom: -1, zoomTo: -1 })
-    t += p.d
-  })
-  const k = SEGMENTS.find((sg) => sg.s === 'export-page')!
-  k.zoomFrom = zoomFrom
-  k.zoomTo = zoomTo
-})()
-export const DURATION_IN_FRAMES = SEGMENTS.reduce((m, s) => Math.max(m, s.from + s.dur), 0)
-const CURSOR_APPEAR = PHASES[0].d
-const EXPORT_PULSE = PULSES[PULSES.length - 1].f
-
-// Ease only when the two keyframes differ (a real move); a same-point pair stays perfectly still.
-function cursorAt(frame: number): [number, number] {
-  if (frame <= CUR_KF[0].f) return [CUR_KF[0].x, CUR_KF[0].y]
-  for (let i = 0; i < CUR_KF.length - 1; i++) {
-    const a = CUR_KF[i]
-    const b = CUR_KF[i + 1]
-    if (frame >= a.f && frame <= b.f) {
-      if (a.x === b.x && a.y === b.y) return [a.x, a.y]
-      const raw = (frame - a.f) / (b.f - a.f)
-      const e = Easing.inOut(Easing.ease)(raw)
-      return [a.x + (b.x - a.x) * e, a.y + (b.y - a.y) * e]
-    }
-  }
-  const last = CUR_KF[CUR_KF.length - 1]
-  return [last.x, last.y]
+// Beat index + local frame. `frame` here is already WALK-LOCAL (the Walk/Cursor sequences start at
+// WALK_START, so useCurrentFrame is 0 at the walk's first frame).
+function beatOf(frame: number) {
+  const i = Math.min(BEATS.length - 1, Math.max(0, Math.floor(frame / BEAT)))
+  return { i, local: frame - i * BEAT }
 }
+// Camera trapezoid: 0 (wide) → 1 (focus) → 1 → 0 (wide). endZoom beats stay at focus (no pull-back).
+function camP(i: number, local: number) {
+  const b = BEATS[i]
+  if (local < H) return 0
+  if (local < APEX) return interpolate(local, [H, APEX], [0, 1], { easing: Easing.inOut(Easing.ease) })
+  if (b.endZoom) return 1
+  if (local < APEX + M) return 1
+  return interpolate(local, [APEX + M, BEAT], [1, 0], { easing: Easing.inOut(Easing.ease) })
+}
+// Camera transform (lerp identity → focus) for a beat at progress p.
+function camState(i: number, p: number) {
+  const [fx, fy, fs] = BEATS[i].f
+  const S = 1 + (fs - 1) * p
+  const tx = (WIDTH / 2 - fs * fx * WIDTH) * p
+  const ty = (HEIGHT / 2 - fs * fy * HEIGHT) * p
+  return { S, tx, ty }
+}
+const applyCam = (px: number, py: number, c: { S: number; tx: number; ty: number }) => [c.S * px + c.tx, c.S * py + c.ty]
 
-// ── export-page zoom (unchanged geometry) ──
-const EXPORT_PAGE_W = 1280
-const EXPORT_PAGE_H = 800
-const MENU = { x: 808.5, y: 309.5, w: 224, h: 457 }
-const zoomFit = Math.min(WIDTH / EXPORT_PAGE_W, HEIGHT / EXPORT_PAGE_H)
-const menuCx = (WIDTH - EXPORT_PAGE_W * zoomFit) / 2 + (MENU.x + MENU.w / 2) * zoomFit
-const menuCy = (HEIGHT - EXPORT_PAGE_H * zoomFit) / 2 + (MENU.y + MENU.h / 2) * zoomFit
-const ZOOM_END = (HEIGHT / (MENU.h * zoomFit)) * 0.92
-const ZOOM_TX = WIDTH / 2 - ZOOM_END * menuCx
-const ZOOM_TY = HEIGHT / 2 - ZOOM_END * menuCy
+// Cursor: only on pulse beats. It glides in to the control (in still-space) and arrives exactly at the
+// apex, where the pulse fires; then it fades as the camera pulls back.
+type Pulse = { f: number; bi: number }
+const PULSES: Pulse[] = BEATS.map((b, i) => (b.pulse ? { f: i * BEAT + APEX, bi: i } : null)).filter(Boolean) as Pulse[]
 
-const Still: React.FC<{ src: string; tokens: Tokens }> = ({ src, tokens }) => (
-  <AbsoluteFill style={{ background: tokens.bg, justifyContent: 'center', alignItems: 'center' }}>
-    <Img src={staticFile(src)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+// ── screens ──
+const Screen: React.FC<{ src: string; theme: Theme; c: { S: number; tx: number; ty: number }; opacity: number }> = ({ src, theme, c, opacity }) => (
+  <AbsoluteFill style={{ opacity }}>
+    <AbsoluteFill style={{ transformOrigin: '0 0', transform: `translate(${c.tx}px, ${c.ty}px) scale(${c.S})` }}>
+      <Img src={staticFile(`${src}-${theme}.png`)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    </AbsoluteFill>
   </AbsoluteFill>
 )
 
-const ExportZoom: React.FC<{ theme: Theme; tokens: Tokens; zoomStart: number; zoomEnd: number }> = ({ theme, tokens, zoomStart, zoomEnd }) => {
+const Walk: React.FC<{ theme: Theme; tokens: Tokens }> = ({ theme, tokens }) => {
   const frame = useCurrentFrame()
-  const p = interpolate(frame, [zoomStart, zoomEnd], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  const { i, local } = beatOf(frame)
+  const p = camP(i, local)
+  const c = camState(i, p)
+  const b = BEATS[i]
+  const nextSrc = i < BEATS.length - 1 ? BEATS[i + 1].s : null
+  // At the apex the base screen cross-dissolves to the next screen (then the camera pulls back onto it).
+  const xfO = nextSrc && !b.endZoom ? interpolate(local, [APEX, APEX + XF], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) : 0
   return (
     <AbsoluteFill style={{ background: tokens.bg }}>
-      <AbsoluteFill style={{ transformOrigin: '0 0', transform: `translate(${ZOOM_TX * p}px, ${ZOOM_TY * p}px) scale(${1 + (ZOOM_END - 1) * p})` }}>
-        <Img src={staticFile(`export-page-${theme}.png`)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-      </AbsoluteFill>
+      <Screen src={b.s} theme={theme} c={c} opacity={1} />
+      {nextSrc && xfO > 0 ? <Screen src={nextSrc} theme={theme} c={c} opacity={xfO} /> : null}
+    </AbsoluteFill>
+  )
+}
+
+const Ring: React.FC<{ x: number; y: number; pf: number; accent: string }> = ({ x, y, pf, accent }) => {
+  const frame = useCurrentFrame()
+  if (frame < pf - 1 || frame > pf + 20) return null
+  const t = interpolate(frame, [pf, pf + 18], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  return <div style={{ position: 'absolute', left: x, top: y, width: 60, height: 60, marginLeft: -30, marginTop: -30, borderRadius: '50%', border: `3px solid ${accent}`, transform: `scale(${0.4 + t * 1.4})`, opacity: interpolate(t, [0, 1], [0.55, 0]) }} />
+}
+
+const CursorLayer: React.FC<{ accent: string }> = ({ accent }) => {
+  const frame = useCurrentFrame()
+  const { i, local } = beatOf(frame)
+  const b = BEATS[i]
+  return (
+    <AbsoluteFill style={{ pointerEvents: 'none' }}>
+      {PULSES.map((pl) => {
+        const beat = BEATS[pl.bi]
+        const p = camP(pl.bi, APEX) // p=1 at apex
+        const c = camState(pl.bi, p)
+        const [rx, ry] = applyCam(beat.cur![0] * WIDTH, beat.cur![1] * HEIGHT, c)
+        return <Ring key={pl.bi} x={rx} y={ry} pf={pl.f} accent={accent} />
+      })}
+      {b.pulse && b.cur ? (() => {
+        // glide in over the zoom-in, arriving at the control exactly at the apex
+        const prog = interpolate(local, [H, APEX], [0, 1], { easing: Easing.inOut(Easing.ease), extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+        const startX = b.cur[0] + 0.13, startY = b.cur[1] + 0.09
+        const fracX = startX + (b.cur[0] - startX) * prog
+        const fracY = startY + (b.cur[1] - startY) * prog
+        const c = camState(i, camP(i, local))
+        const [x, y] = applyCam(fracX * WIDTH, fracY * HEIGHT, c)
+        const opacity = interpolate(local, [H - 6, H + 2, APEX + M, APEX + M + 8], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+        const press = interpolate(local, [APEX - 4, APEX, APEX + 6], [1, 0.82, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+        return (
+          <div style={{ position: 'absolute', left: x, top: y, transform: `scale(${press})`, transformOrigin: '4px 3px', opacity, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))' }}>
+            <svg width="27" height="27" viewBox="0 0 26 26" style={{ display: 'block' }}>
+              <path d="M5 2 L5 20 L10 15.5 L13 22 L16 20.5 L13 14.5 L19.5 14.5 Z" fill="#ffffff" stroke="#111111" strokeWidth="1.4" strokeLinejoin="round" />
+            </svg>
+          </div>
+        )
+      })() : null}
     </AbsoluteFill>
   )
 }
@@ -159,7 +159,6 @@ const BrandVideo: React.FC<{ theme: Theme; tokens: Tokens }> = ({ theme, tokens 
     <OffthreadVideo src={staticFile(theme === 'dark' ? 'core-flow-dark.webm' : 'core-flow.webm')} playbackRate={PLAYBACK_RATE} trimBefore={55} />
   </AbsoluteFill>
 )
-
 const BrandCard: React.FC<{ tokens: Tokens }> = ({ tokens }) => (
   <AbsoluteFill style={{ background: tokens.bg, justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: 14 }}>
     <div style={{ fontFamily, fontSize: 68, fontWeight: 800, letterSpacing: '-0.03em', color: tokens.fgStrong }}>
@@ -168,59 +167,31 @@ const BrandCard: React.FC<{ tokens: Tokens }> = ({ tokens }) => (
     <div style={{ fontFamily, fontSize: 24, fontWeight: 500, color: tokens.fgMuted }}>One library for everything you read instead of watch</div>
   </AbsoluteFill>
 )
-
 const FadeIn: React.FC<{ xfade: number; children: React.ReactNode }> = ({ xfade, children }) => {
   const frame = useCurrentFrame()
   const opacity = xfade > 0 ? interpolate(frame, [0, xfade], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) : 1
   return <AbsoluteFill style={{ opacity }}>{children}</AbsoluteFill>
 }
 
-const Ring: React.FC<{ p: { f: number; x: number; y: number }; accent: string }> = ({ p, accent }) => {
-  const frame = useCurrentFrame()
-  if (frame < p.f - 1 || frame > p.f + 20) return null
-  const t = interpolate(frame, [p.f, p.f + 18], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-  return (
-    <div style={{ position: 'absolute', left: p.x, top: p.y, width: 60, height: 60, marginLeft: -30, marginTop: -30, borderRadius: '50%', border: `3px solid ${accent}`, transform: `scale(${0.4 + t * 1.4})`, opacity: interpolate(t, [0, 1], [0.55, 0]) }} />
-  )
-}
-
-const Cursor: React.FC<{ accent: string }> = ({ accent }) => {
-  const frame = useCurrentFrame()
-  const [x, y] = cursorAt(frame)
-  const opacity = interpolate(frame, [CURSOR_APPEAR + 4, CURSOR_APPEAR + 12, EXPORT_PULSE + 8, EXPORT_PULSE + 24], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-  const press = PULSES.reduce((m, p) => Math.min(m, interpolate(frame, [p.f - 4, p.f, p.f + 6], [1, 0.82, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })), 1)
-  return (
-    <AbsoluteFill style={{ pointerEvents: 'none' }}>
-      {PULSES.map((p, i) => <Ring key={i} p={p} accent={accent} />)}
-      <div style={{ position: 'absolute', left: x, top: y, transform: `scale(${press})`, transformOrigin: '4px 3px', opacity, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))' }}>
-        <svg width="27" height="27" viewBox="0 0 26 26" style={{ display: 'block' }}>
-          <path d="M5 2 L5 20 L10 15.5 L13 22 L16 20.5 L13 14.5 L19.5 14.5 Z" fill="#ffffff" stroke="#111111" strokeWidth="1.4" strokeLinejoin="round" />
-        </svg>
-      </div>
-    </AbsoluteFill>
-  )
-}
-
-function renderSeg(seg: Seg, theme: Theme, tokens: Tokens): React.ReactNode {
-  if (seg.s === V) return <BrandVideo theme={theme} tokens={tokens} />
-  if (seg.s === CARD) return <BrandCard tokens={tokens} />
-  // The export-page Sequence starts XFADE frames early (cross-dissolve lead), so its local clock is
-  // shifted by +XFADE relative to the segment start.
-  if (seg.s === 'export-page') return <ExportZoom theme={theme} tokens={tokens} zoomStart={seg.zoomFrom - seg.from + XFADE} zoomEnd={seg.zoomTo - seg.from + XFADE} />
-  return <Still src={`${seg.s}-${theme}.png`} tokens={tokens} />
-}
-
 export const HomeClip: React.FC<HomeClipProps> = ({ theme }) => {
   const tokens = tokensFor(theme)
   return (
     <AbsoluteFill style={{ background: tokens.bg }}>
-      {SEGMENTS.map((seg, i) => (
-        <Sequence key={i} from={i === 0 ? 0 : seg.from - XFADE} durationInFrames={i === 0 ? seg.dur : seg.dur + XFADE}>
-          <FadeIn xfade={i === 0 ? 0 : XFADE}>{renderSeg(seg, theme, tokens)}</FadeIn>
-        </Sequence>
-      ))}
-      <Sequence from={0} durationInFrames={DURATION_IN_FRAMES}>
-        <Cursor accent={tokens.accent} />
+      <Sequence from={0} durationInFrames={INTRO + 6}>
+        <BrandVideo theme={theme} tokens={tokens} />
+      </Sequence>
+      <Sequence from={WALK_START} durationInFrames={WALK_END - WALK_START}>
+        <FadeIn xfade={XF}>
+          <Walk theme={theme} tokens={tokens} />
+        </FadeIn>
+      </Sequence>
+      <Sequence from={WALK_START} durationInFrames={WALK_END - WALK_START}>
+        <CursorLayer accent={tokens.accent} />
+      </Sequence>
+      <Sequence from={WALK_END - XF} durationInFrames={OUTRO + XF}>
+        <FadeIn xfade={XF}>
+          <BrandCard tokens={tokens} />
+        </FadeIn>
       </Sequence>
     </AbsoluteFill>
   )

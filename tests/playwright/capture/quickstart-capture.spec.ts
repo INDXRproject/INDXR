@@ -634,3 +634,134 @@ test('timestamps-on', async ({ page }) => {
   await page.waitForTimeout(400)
   await topShot(page, pane, 'timestamps-on', 640)
 })
+
+// ══ Deep-Work demo: FULL-VIEWPORT stills (whole app, sidebar + topbar), one anchor title, for the
+// camera-move rebuild. Viewport 1280x720 @ DSR2 → 2560x1440, so the composition can zoom into a
+// region and stay crisp. Every transcript/library/summary/export screen is "Designing for Deep Work".
+const DW_TITLE = 'Designing for Deep Work: An Interview'
+const DW_META = { duration: 72, title: DW_TITLE }
+const DW_SEGS = [
+  { offset: 0.5, duration: 6, text: "Welcome back. Today I'm sitting down with Dr. Miguel Ferro to talk about attention, and why deep work has become so hard to protect.", speaker: 'A' },
+  { offset: 7, duration: 8, text: 'Thanks for having me. The honest answer is that our environment changed faster than our attention did.', speaker: 'B' },
+]
+async function fullShot(page: Page, name: string) {
+  for (const theme of ['light', 'dark'] as const) {
+    await setTheme(page, theme)
+    await page.waitForTimeout(200)
+    await page.screenshot({ path: path.join(OUT, `${name}-${theme}.png`), clip: { x: 0, y: 0, width: 1280, height: 720 } })
+  }
+  await setTheme(page, 'light')
+  console.log(`  ✔ ${name}-{light,dark}.png (full viewport)`)
+}
+async function openDW(page: Page) {
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: 'Designing for Deep Work' })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  await page.getByText('Sarah Chen:', { exact: false }).first().waitFor({ state: 'visible', timeout: 30_000 })
+}
+
+test('dw-empty', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').waitFor({ state: 'visible' })
+  await fullShot(page, 'dw-empty')
+})
+test('dw-url', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill('https://www.youtube.com/watch?v=deep-work-interview')
+  await page.waitForTimeout(200)
+  await fullShot(page, 'dw-url')
+})
+test('dw-loading', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.route('**/api/video/metadata/**', (r) => r.fulfill({ json: DW_META }))
+  await page.route('**/api/transcribe/whisper', (r) => r.fulfill({ json: { job_id: 'stub-dw', status: 'pending' } }))
+  await page.route('**/api/jobs/stub-dw**', (r) => r.fulfill({ json: { status: 'downloading', duration_seconds: 72, credits_cost: 2, download_bytes: 900000, download_total_bytes: 2000000 } }))
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
+  await page.getByRole('radio', { name: /AI transcription/ }).click()
+  await page.getByRole('button', { name: /Extract|Checking/ }).click()
+  await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click()
+  await page.getByText('Downloading audio', { exact: true }).waitFor({ state: 'visible', timeout: 20_000 })
+  await fullShot(page, 'dw-loading')
+})
+test('dw-error', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.route('**/api/extract', (r) => r.fulfill({ status: 400, json: { success: false, error_type: 'no_captions', error: 'stub', required_credits: 2 } }))
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
+  await page.getByRole('button', { name: /^Extract$/ }).click()
+  await page.locator('.border-l-error').first().waitFor({ state: 'visible', timeout: 15_000 })
+  await fullShot(page, 'dw-error')
+})
+test('dw-cost', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.route('**/api/video/metadata/**', (r) => r.fulfill({ json: DW_META }))
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
+  await page.getByRole('radio', { name: /AI transcription/ }).click()
+  await page.getByRole('button', { name: /Extract|Checking/ }).click()
+  await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).waitFor({ state: 'visible' })
+  await fullShot(page, 'dw-cost')
+})
+test('dw-success', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.route('**/api/video/metadata/**', (r) => r.fulfill({ json: DW_META }))
+  await page.route('**/api/transcribe/whisper', (r) => r.fulfill({ json: { job_id: 'stub-dw', status: 'pending' } }))
+  await page.route('**/api/jobs/stub-dw**', (r) => r.fulfill({ json: { status: 'complete', duration_seconds: 72, credits_cost: 2, transcript_id: 'stub-dw-t', channel: 'Interview', language: 'en', transcript: DW_SEGS } }))
+  await page.goto('/dashboard/transcribe')
+  await page.getByPlaceholder('https://www.youtube.com/watch?v=...').fill(STUB_URL)
+  await page.getByRole('radio', { name: /AI transcription/ }).click()
+  await page.getByRole('button', { name: /Extract|Checking/ }).click()
+  await page.getByRole('button', { name: /^Extract — \d+\+? credits$/ }).click()
+  await page.getByText('Transcript ready', { exact: true }).waitFor({ state: 'visible', timeout: 20_000 })
+  await fullShot(page, 'dw-success')
+})
+test('dw-library', async ({ page }) => {
+  // The runner seeds DW as the fresh top row (created_at = today, viewed_at = null) and reverts after.
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto('/dashboard/library')
+  await page.getByText(DW_TITLE, { exact: false }).first().waitFor({ state: 'visible', timeout: 20_000 })
+  await fullShot(page, 'dw-library')
+})
+test('dw-viewer', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await openDW(page)
+  await fullShot(page, 'dw-viewer')
+})
+test('dw-speakers', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await openDW(page)
+  await page.getByRole('button', { name: 'Speakers' }).click()
+  await page.getByText('Rename speakers').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.waitForTimeout(300)
+  await fullShot(page, 'dw-speakers')
+})
+test('dw-timestamps', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await openDW(page)
+  await page.getByRole('button', { name: 'Timestamps' }).click()
+  await page.waitForTimeout(400)
+  await fullShot(page, 'dw-timestamps')
+})
+test('dw-summary', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto('/dashboard/library')
+  const row = page.locator('a[href*="/dashboard/library/"]', { hasText: 'Designing for Deep Work' })
+  await row.first().waitFor({ state: 'visible', timeout: 20_000 })
+  await row.first().click()
+  await page.locator('a,button,[role="tab"]', { hasText: /^Summary$/ }).first().click()
+  await page.getByText('The Challenge to Deep Work', { exact: false }).waitFor({ state: 'visible', timeout: 20_000 })
+  await page.waitForTimeout(300)
+  await fullShot(page, 'dw-summary')
+})
+test('dw-export', async ({ page }) => {
+  await prep(page); await page.setViewportSize({ width: 1280, height: 720 })
+  await openDW(page)
+  await page.getByRole('button', { name: 'Export' }).click()
+  await page.getByRole('menu').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.waitForTimeout(300)
+  await fullShot(page, 'dw-export')
+})
