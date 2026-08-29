@@ -63,13 +63,14 @@ export default function LandingPage() {
         <HeroImage />
         {/* Readability scrim: a --bg wash over the photo, strongest behind the centred text and
             fading toward the edges so the image still reads as an ambient background. Uses only the
-            --bg token, so it flips with the theme. Strength tuned to the lightest/darkest pixel
-            anywhere behind the hero text: at these stops the single worst pixel still clears WCAG-AA
-            (~4.7:1, dark theme at 1280 is the binding case), so the photo is as visible as it can be
-            without dropping any text region below 4.5:1. */}
+            --bg token, so it flips with the theme. Strength tuned to a GLYPH-MASKED measurement — the
+            worst background pixel under the actual letter strokes (not the empty space inside the text
+            box): at these stops that worst glyph pixel still clears WCAG-AA (~4.5:1, dark theme at 1280
+            is the binding case), so the photo is as visible as it can be without dropping any real text
+            pixel below 4.5:1. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_59%,transparent)_0%,color-mix(in_oklch,var(--bg)_48%,transparent)_42%,color-mix(in_oklch,var(--bg)_22%,transparent)_72%,transparent_100%)]"
+          className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_49%,transparent)_0%,color-mix(in_oklch,var(--bg)_40%,transparent)_42%,color-mix(in_oklch,var(--bg)_18%,transparent)_72%,transparent_100%)]"
         />
         <div className="absolute inset-0 z-[1] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%)] pointer-events-none" />
         <div className="container relative z-10 mx-auto flex flex-col items-center px-4 text-center">
@@ -207,14 +208,9 @@ export default function LandingPage() {
             </div>
             <div className="space-y-6">
               <DocsFigure
-                src="/docs/screenshots/summary-chapter.png"
-                alt="A chapter of an AI summary: a heading, a timestamp, and worked-out notes underneath, generated from a lecture transcript."
+                src="/docs/screenshots/justice-summary.png"
+                alt="A lecture open on its Summary tab: an AI summary of the Harvard 'Justice' lecture, with an overview paragraph beneath the heading, inside the app with its sidebar."
                 caption="A playlist becomes lectures you can skim: each one gets a chapter summary."
-              />
-              <DocsFigure
-                src="/docs/screenshots/rag-json.png"
-                alt="A RAG JSON export in use: a search query returns the best-matching chunk with its timestamp and a deep link back to that moment in the video."
-                caption="Chunked JSON with timestamps and deep links: a query returns the exact passage and its source."
               />
             </div>
           </div>
@@ -265,14 +261,14 @@ export default function LandingPage() {
             </div>
             <div className="space-y-6">
               <DocsFigure
-                src="/docs/screenshots/transcript-reader.png"
-                alt="An open transcript in reading view: the text in clean, readable paragraphs with clickable timestamps down the side."
-                caption="A transcript opens in a clean reading view, in real paragraphs."
+                src="/docs/screenshots/justice-viewer.png"
+                alt="An open transcript in reading view: the Harvard 'Justice' lecture in clean paragraphs, each labelled with its speaker, inside the app with its sidebar and toolbar."
+                caption="A transcript opens in a clean reading view, in real paragraphs with speaker labels."
               />
               <DocsFigure
-                src="/docs/screenshots/summary-edit.png"
-                alt="The summary open in the editor, with a formatting toolbar and chapter headings that keep their timestamps."
-                caption="Edit the transcript or the summary; your version is kept next to the original."
+                src="/docs/screenshots/justice-export.png"
+                alt="The export menu open on a transcript: the full list of formats — plain text, Markdown, JSON, CSV, SRT, VTT — with and without timestamps."
+                caption="Take it anywhere: the export menu, every format included, one click away."
               />
             </div>
           </div>
@@ -297,8 +293,8 @@ export default function LandingPage() {
               </p>
             </div>
             <DocsFigure
-              src="/docs/screenshots/library-organized.png"
-              alt="The library: a search box and filter controls above rows of saved transcripts, with named collections in the sidebar."
+              src="/docs/screenshots/justice-library.png"
+              alt="The library: a search box and filter controls above rows of saved transcripts, the Harvard 'Justice' lecture at the top, with named collections in the sidebar."
               caption="Search, filter, and collections turn a list into an organised library."
             />
           </div>
