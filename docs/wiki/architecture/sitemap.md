@@ -39,8 +39,9 @@ De INDXR.AI site is ingedeeld in drie lagen met duidelijke URL-grenzen en verant
 |-------|------|------|--------------|
 | `/login` | CLIENT | — | E-mail + wachtwoord; Google OAuth |
 | `/signup` | CLIENT | — | Registratie |
-| `/forgot-password` | CLIENT | — | E-mailinvoer → bevestigingsview |
-| `/onboarding` | CLIENT | Ingelogd | Username/role form → 25 welcome credits |
+| `/forgot-password` | CLIENT | — | E-mailinvoer → reset-link (via `/auth/callback?recovery=1`) |
+| `/reset-password` | CLIENT | Recovery-sessie | Nieuw wachtwoord + confirm → `updateUser`; noindex (geen zoeklandingspagina) |
+| `/onboarding` | CLIENT | Ingelogd | Username/role form → 50 welcome credits |
 | `/suspended` | SERVER | — | "Account paused" foutpagina |
 | `/auth/callback` | API route | — | Supabase OAuth callback |
 

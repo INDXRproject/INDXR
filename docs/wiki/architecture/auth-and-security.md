@@ -214,6 +214,10 @@ Supabase email verificatie staat **AAN** (`mailer_autoconfirm=false` — geverif
 
 **Gebrande auth-mail-templates** (confirm signup + reset password) staan versiebeheerd in `docs/email-templates/` in de `send.indxr.ai`-huisstijl; `{{ .ConfirmationURL }}` is de PKCE-verify-link en moet exact behouden blijven. De live-kopie leeft in het Supabase-dashboard (Auth → Emails) — plak opnieuw bij wijziging. Magic-link is niet in gebruik (geen `signInWithOtp`) en blijft Supabase-default.
 
+**Wachtwoord-reset-flow (2026-08-31).** `resetPasswordAction` → `resetPasswordForEmail(redirectTo=/auth/callback?recovery=1)`. De recovery-link gaat door `/auth/callback`, dat de PKCE-code inwisselt (recovery-sessie) en — bij `recovery=1` — **direct** doorstuurt naar `/reset-password`, vóór en dus mét overslaan van de onboarding-gate + disposable/acquisitie-logica. `/reset-password` (nieuw, noindex, `reset-password/page.tsx`) toont nieuw-wachtwoord + confirm → `updateUser({password})` → `signOut` → `/login?message=…`; een sessie-guard (`getSession`) toont "invalid or expired" zonder recovery-sessie. **Let op — generieke valkuil:** vóór deze fix ging de reset-link naar `/auth/callback?next=/dashboard/settings?reset=true` en werd door de **universele onboarding-gate** ingeslikt (gebruiker belandde ingelogd op onboarding, kon nooit een wachtwoord zetten; settings had bovendien geen reset-UI). Elke speciale auth-flow (recovery, e-mailwissel) moet vóór de onboarding-gate herkend + kortgesloten worden. Zie `docs/LESSONS.md` (2026-08-31 auth-callback-gate).
+
+**Signup-bestaand-account (2026-08-31).** `signupAction` leest `data.user.identities` uit `signUp`: lengte 0 = bestaand-bevestigd account (Supabase-obfuscatie, geen mail) → toont "account bestaat al, log in" i.p.v. een valse "check your email". Signup heeft twee wachtwoordvelden (confirm) tegen typo's; login rendert een `?message`-succesbanner (post-signup / post-reset). Google-knop = gedeeld `GoogleSignInButton` (echte merk-G). Zie `docs/LESSONS.md` (supabase-auth).
+
 ---
 
 ## Wegwerpemails
