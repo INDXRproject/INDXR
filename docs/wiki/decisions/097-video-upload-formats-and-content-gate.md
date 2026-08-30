@@ -1,6 +1,6 @@
 # Beslissing 097: MOV/FLV/AVI/MKV-uploads + inhoud-gebaseerde audio-poort
 
-**Status:** Geaccepteerd
+**Status:** Geaccepteerd — **formaataantal achterhaald (13 → 15), zie addendum 2026-08-31**
 **Datum:** 2026-08-12
 **Gerelateerde code:** `backend/audio_utils.py`, `backend/transcription_pipeline.py`, `backend/main.py`, `packages/shared/src/lib/uploadFormats.ts`, `packages/shared/src/components/free-tool/AudioTab.tsx`, `packages/shared/src/components/transcribe/errorCopy.ts`, `packages/shared/src/lib/exportFormats.ts`, `apps/marketing/src/app/articles/audio-to-text/page.tsx`, `apps/marketing/src/app/transcribe/page.tsx`, `apps/marketing/src/app/docs/guides/uploads/page.tsx`, `docs/wiki/content/product-truth.md`, `backend/verify_video_formats.py`
 
@@ -47,3 +47,21 @@ Echte end-to-end runs (`backend/verify_video_formats.py`, echte AssemblyAI EU + 
 | MKV | ✓ | ✓ | ja | geaccepteerd | correct |
 
 Inhoud-poort: video-zonder-audio (`.mp4`) → `has_usable_audio=False` (geweigerd); tekstbestand → `.mp3` → False (geweigerd); mkv-inhoud genaamd `.mp4` → True (geaccepteerd, container=mkv); flac-inhoud genaamd `.mp3` → True (geaccepteerd). Regressie: 7 bestaande formaten detecteren correct (**webm → webm**, niet mkv, na de matroska-fix); 19 backend-tests groen; `pnpm build` 2/2 groen.
+
+## Addendum 2026-08-31 — het aantal is 13 → 15 (OPUS + AAC toegevoegd)
+
+De "13 totaal" uit Beslissing-punt 1 is **achterhaald**. Twee formaten zijn er ná deze ADR bijgekomen,
+allebei rauw doorgestuurd (op AssemblyAI's lijst, geen transcode):
+
+- **`.opus`** — commit `661d776` (2026-08-30): WhatsApp exporteert spraakmemo's als `.opus`. Zelfde
+  Ogg-Opus-container als `.ogg` (ffprobe → `format_name=ogg`).
+- **`.aac`** — commit `0d9c85c` (2026-08-30): rauwe ADTS, eigen container `'aac'`.
+
+**Nu 15 accepteerde formaten.** De poort-mechaniek (container boven extensie, transcode alleen voor
+`{avi, mkv}`, inhoud-gebaseerde audio-poort vóór reservering) is ongewijzigd — alleen de allowlist is
+gegroeid. Bron van waarheid: `packages/shared/src/lib/uploadFormats.ts` (`UPLOAD_EXTENSIONS`, 15 items) +
+`backend/audio_utils.py` `SUPPORTED_FORMATS`, in lockstep gehouden door `test-fixtures/upload_formats.json`
+(fixture-guard in `check-playlist-invariants.sh`). Het aantal wordt in proza afgeleid uit
+`UPLOAD_FORMAT_COUNT_WORD` ("fifteen") — nooit met de hand geteld, dus de tekst en de lijst kunnen niet
+uiteenlopen. De Google Ads-advertentieteksten ("Fifteen formats supported") kloppen hiermee; zie
+[business/google-ads-campagne.md](../business/google-ads-campagne.md).
