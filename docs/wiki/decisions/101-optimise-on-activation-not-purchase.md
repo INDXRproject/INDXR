@@ -100,3 +100,24 @@ De activatie-conversie is nu aan Google Ads gekoppeld (`trackActivation`, label
   (`persistence:'memory'`) schrijft niets → ongemoeid. Cookietabel + privacytekst bijgewerkt;
   `LEGAL_VERSION` blijft 2026-08-30 (zelfde dag, praktijk wordt beschermender, geen nieuwe verwerking).
   Zie `docs/LESSONS.md` (consent-device-storage) + `priorities.md` (klik-ID-retentie, AVG 5(1)(e)).
+
+## Addendum 2026-08-31 — campagne opgezet (uitwerking)
+
+De campagne is opgezet; de volledige uitwerking (advertentiegroepen, bods, keywords, negatieven,
+advertentieteksten, evaluatiecriteria) staat in **[business/google-ads-campagne.md](../business/google-ads-campagne.md)**.
+Deze ADR blijft de *waarom*; die pagina is de *wat*. Concreet vastgelegd, aanvullend op de tekst
+hierboven:
+
+- **Cluster:** bestandsformaat-termen (audio/video-uploads), gekozen omdat het het enige cluster is
+  **zonder gratis uitweg** — een bestandsupload kan niet via de gratis captionroute, dus elke klik landt
+  bij het betaalde product. Vijf probleem-/foutmeldingsclusters (58 termen) + de generieke
+  YouTube-transcript-cluster zijn definitief afgewezen (cijfers op de campagnepagina §3).
+- **Biedstrategie operationeel:** **Manual CPC** bij start (uiteenlopende bods €1,00–€1,80 per groep +
+  geen conversiehistorie) → **Maximize Conversion Value** zodra 30+ activaties/30 dagen binnenkomen. Dit
+  concretiseert de "~30 conversies/30d"-drempel uit de Rationale tot een expliciete overgangsregel.
+- **Instellingen:** Search-only (geen Partners/Display), **US-only op Presence** (smaller dan de
+  US+CA+AU-richtlijn in marketing.md — schoonste eerste meting), Engels, budget **€25/dag** (plafond,
+  promo-gedreven: €400 vóór 1 okt = €400 krediet). Campagnedoel "Begin checkout" aangevinkt zodat de
+  Activation-conversie meetelt.
+- **Evaluatie vooraf vastgelegd:** beslispunt na 28 dagen of 500 klikken; <€25/aankoop → opschalen,
+  €25–60 dalend → verlengen + budget verschuiven, >€60 of nul activaties → **stoppen, niet harder bieden**.

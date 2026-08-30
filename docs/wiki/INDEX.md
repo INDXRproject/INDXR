@@ -192,6 +192,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | [unit-economics.md](business/unit-economics.md) | Geverifieerde kostenbasis: AssemblyAI + Decodo per credit, vaste infra, prijs-rationale |
 | [positioning.md](business/positioning.md) | Marktpositie, doelgroep, onderscheid t.o.v. concurrenten |
 | [marketing.md](business/marketing.md) | SEO-strategie, conversie funnel, channel FAQ, copy anchors, **betaalde-zoekcampagne-richtlijnen** |
+| [google-ads-campagne.md](business/google-ads-campagne.md) | **Google Ads-campagne (opzet 2026-08-31):** meetinstrument (geen groeikanaal) op het bestandsformaat-cluster (geen gratis uitweg); 4 advertentiegroepen (voice memo / M4A-WAV / open formaten / videocontainers) met bods, keywords en advertentieteksten; afgewezen clusters mét gemeten cijfers; Manual CPC → Max Conversion Value bij 30+ activaties; vooraf vastgelegde evaluatiecriteria (harder bieden = géén optie). Uitwerking van [ADR-101](decisions/101-optimise-on-activation-not-purchase.md). |
 | [keyword-demand-2026-08.md](business/keyword-demand-2026-08.md) | **Keyword-vraag-metingen (aug 2026):** Meting 1 (Bing WMT) leesregel + geo-blocklist + merkenmarkt + niet-Engelse vraag; Meting 2 (Google KP) twee-markten + artikeloordeel; **Meting 3 (Google KP geo + Discover, 2026-08-24):** 13-landen-forecast, blocklist kost 35,9% vraag / 15,0% waarde (VK enige heroverweging), niet-Engelse markten geparkeerd, Discover per groep, nieuw srt-generator-artikel |
 
 ---
