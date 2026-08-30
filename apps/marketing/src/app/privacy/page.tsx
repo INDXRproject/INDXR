@@ -14,7 +14,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-[var(--fg-muted)] mb-10">
-          Last updated: 2026-08-09
+          Last updated: 2026-08-30
         </p>
 
         <div className="prose-content text-[var(--fg-subtle)] leading-relaxed space-y-8">
@@ -62,12 +62,17 @@ export default function PrivacyPage() {
               Do-Not-Track setting.
             </p>
             <p className="mt-4">
-              Separately, if you arrive from a Google ad and <strong>give consent</strong>, we use
-              Google Ads to measure which ad led to a signup or purchase. That sets one cookie
-              (<code>_gcl_au</code>) and nothing else — no advertising profile, no data sold. Without
-              your consent this cookie is never placed and no request goes to Google. You can accept,
-              decline, or withdraw at any time via <strong>“Cookie settings”</strong> in the footer
-              (withdrawing also deletes the cookie). See the cookie table below.
+              Separately, if you arrive from a Google ad, the ad’s landing URL includes a click
+              identifier — Google’s <code>gclid</code>, or <code>gbraid</code> or <code>wbraid</code> on
+              some devices. If you go on to create an account, we add that identifier and the time of your
+              visit to your profile, so we can measure which ads lead to people who actually use the
+              service; it is never stored for visitors who do not create an account, and it is kept as
+              part of your account data and deleted when you delete your account. If you also
+              {" "}<strong>give consent</strong>, Google Ads sets one cookie (<code>_gcl_au</code>) — no
+              advertising profile, no data sold — to attribute a signup or purchase to the ad you came
+              from; without your consent this cookie is never placed and no request goes to Google. You
+              can accept, decline, or withdraw at any time via <strong>“Cookie settings”</strong> in the
+              footer (withdrawing also deletes the cookie). See the cookie table below.
             </p>
             <p className="mt-4">
               A saved transcript can show the original video in an embedded player. Nothing from

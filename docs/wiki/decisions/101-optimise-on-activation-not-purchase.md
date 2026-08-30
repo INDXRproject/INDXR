@@ -80,6 +80,12 @@ De activatie-conversie is nu aan Google Ads gekoppeld (`trackActivation`, label
   acquisitie-cookie → signup → trigger) zodat een server-side upload later mogelijk blijft zonder dat
   vroege klikken verloren zijn. Nog géén upload/API/dashboard gebouwd — alleen opslag. Persoonsgegeven:
   alleen bewaard bij een echt aangemaakt account, niet in de URL tussen pagina's doorgegeven.
-  **Privacybeoordeling:** de /privacy-tekst ("one cookie `_gcl_au` and nothing else") is hierdoor
-  onvolledig geworden en vraagt een aanpassing (nieuwe categorie: klik-ID op het profiel + doel: latere
-  server-side conversiemeting) — gerapporteerd, tekst niet in deze taak gewijzigd.
+  **Privacyverklaring — bijgewerkt 2026-08-30.** De /privacy-tekst ("one cookie `_gcl_au` and nothing
+  else") was onvolledig geworden. Gecorrigeerd: de "nothing else"-claim vervangen door een feitelijke
+  beschrijving (welke identifiers: `gclid`/`gbraid`/`wbraid` van een advertentieklik; alleen opgeslagen
+  bij aanmaken van een account, niet bij anonieme bezoekers; doel: meten welke advertenties tot
+  daadwerkelijk gebruik leiden; retentie: bewaard als accountgegeven, verwijderd bij accountverwijdering —
+  aansluitend op het bestaande profiel-retentiebeleid). Dezelfde "nothing else"-claim in de
+  cookiebanner (`ConsentBanner`) ook gecorrigeerd. `LEGAL_VERSION` 2026-08-09 → 2026-08-30 (inhoudelijke
+  wijziging; forceert geen heracceptatie — `LEGAL_VERSION` wordt alleen bij checkout vastgelegd, dat
+  vraagt sowieso elke keer het vinkje) + zichtbare "Last updated" + sitemap-lastmod meegetrokken.

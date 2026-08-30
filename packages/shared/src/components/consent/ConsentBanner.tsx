@@ -28,7 +28,7 @@ export function ConsentBanner({
           <div className="text-sm text-[var(--fg-subtle)] leading-relaxed">
             <p>
               <span className="font-semibold text-[var(--fg)]">Help us see which ad brought you here.</span>{" "}
-              One cookie from Google Ads, nothing else — no profile, no tracking across sites. You can change this
+              One cookie from Google Ads — no profile, no tracking across sites. You can change this
               any time under Cookie settings.{" "}
               <a
                 href={marketingHref("/privacy")}

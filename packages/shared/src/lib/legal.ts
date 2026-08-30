@@ -12,4 +12,4 @@
 //
 // Het veld heet terms_version in terms_acceptances maar draagt deze bundelversie (ADR-069);
 // git is het versiearchief van beide documenten — geen apart archiefmechanisme nodig.
-export const LEGAL_VERSION = "2026-08-09"
+export const LEGAL_VERSION = "2026-08-30"
