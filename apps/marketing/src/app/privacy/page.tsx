@@ -178,7 +178,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold text-[var(--fg)] mb-3">Cookies</h2>
             <p>
-              We keep cookies to a minimum. There are exactly two, and they are different in
+              We keep cookies to a minimum. There are three, and they are different in
               kind:
             </p>
             <div className="mt-4 overflow-x-auto">
@@ -198,11 +198,17 @@ export default function PrivacyPage() {
                     <td className="py-2 pr-4">~90 days</td>
                     <td className="py-2"><strong>Only with your consent.</strong> Not placed until you accept.</td>
                   </tr>
-                  <tr className="align-top">
+                  <tr className="border-b border-[var(--border)] align-top">
                     <td className="py-2 pr-4"><code>indxr_consent</code></td>
                     <td className="py-2 pr-4">Remembers your cookie choice across our sites (indxr.ai and app.indxr.ai). Holds only your choice — no identifier, nothing that can recognise you.</td>
                     <td className="py-2 pr-4">Up to 6 months</td>
                     <td className="py-2">Strictly necessary — placed without consent. It exists so we can honour “no”, and because it can’t track you, the ePrivacy consent rule doesn’t apply.</td>
+                  </tr>
+                  <tr className="align-top">
+                    <td className="py-2 pr-4"><code>indxr_acq</code></td>
+                    <td className="py-2 pr-4">Remembers where your visit came from — the campaign or ad it started with (utm tags, and from a Google ad the click identifier <code>gclid</code>/<code>gbraid</code>/<code>wbraid</code>) — so that, if you create an account, we can attribute your signup to its source. First-party.</td>
+                    <td className="py-2 pr-4">Up to 6 months</td>
+                    <td className="py-2">First-party attribution — set on the marketing site, not gated behind the prompt. Used only to attribute your own signup to its source.</td>
                   </tr>
                 </tbody>
               </table>
