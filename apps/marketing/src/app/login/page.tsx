@@ -15,6 +15,8 @@ import { GoogleSignInButton } from "@indxr/shared/components/auth/GoogleSignInBu
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const nextParam = searchParams?.get('next')
+  // Info message passed from signup ("check your email…") or password reset ("password updated…").
+  const message = searchParams?.get('message')
 
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3000'
 
@@ -81,6 +83,11 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {message && (
+            <div className="mb-4 rounded-lg border border-success/20 bg-success-subtle p-3 text-sm font-medium text-success">
+              {message}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>

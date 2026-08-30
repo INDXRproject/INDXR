@@ -16,6 +16,13 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
+      // Password recovery: the exchange above established a (recovery) session so the user can set a new
+      // password. Route to the set-new-password page and SKIP the onboarding gate + acquisition/disposable
+      // logic below — this is a recovery, not a login/signup.
+      if (requestUrl.searchParams.get('recovery') === '1') {
+        return NextResponse.redirect(`${MARKETING_URL}/reset-password`)
+      }
+
       // Security Check: Disposable Email
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.email) {

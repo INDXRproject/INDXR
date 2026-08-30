@@ -275,11 +275,13 @@ export async function resetPasswordAction(formData: FormData) {
   const supabase = await createClient()
 
   const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3000'
-  const finalTarget = encodeURIComponent(`${APP_URL}/dashboard/settings?reset=true`)
 
+  // The recovery link points at our callback (which exchanges the PKCE code and establishes the
+  // recovery session), flagged `recovery=1` so the callback routes to the set-new-password page —
+  // NOT the normal login/onboarding path. Previously it targeted /dashboard/settings?reset=true, which
+  // the onboarding gate swallowed (user landed logged-in on onboarding, never able to set a password).
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${MARKETING_URL}/auth/callback?next=${finalTarget}`,
+    redirectTo: `${MARKETING_URL}/auth/callback?recovery=1`,
   })
 
   if (error) {

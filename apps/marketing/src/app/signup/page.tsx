@@ -21,6 +21,7 @@ export default function SignupPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -37,7 +38,15 @@ export default function SignupPage() {
 
     setIsSubmitting(true)
     setError(null)
-    
+
+    // Two password fields must match — catches a typo before we create the account (a mistyped
+    // password would otherwise only surface later, at login).
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Please re-enter them.")
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const formData = new FormData()
       formData.append('email', email)
@@ -54,7 +63,7 @@ export default function SignupPage() {
         setError(result.error)
         setIsSubmitting(false)
       } else {
-        const q = new URLSearchParams({ message: 'Check your email to verify your account' })
+        const q = new URLSearchParams({ message: 'Check your email to verify your account, then log in here.' })
         if (nextParam) q.set('next', nextParam)
         router.push(`/login?${q.toString()}`)
       }
@@ -117,9 +126,8 @@ export default function SignupPage() {
             
             <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input 
+            <PasswordInput
                 id="password"
-                type="password"
                 placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -130,6 +138,19 @@ export default function SignupPage() {
             <p className="text-xs text-fg-muted">
                 Must be at least 8 characters
             </p>
+            </div>
+
+            <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <PasswordInput
+                id="confirmPassword"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="h-11 bg-bg"
+                required
+                minLength={8}
+            />
             </div>
             
             {error && (
