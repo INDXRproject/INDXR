@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/uploads" },
   title: "Audio & video uploads — INDXR.AI Docs",
   description:
-    "Upload an audio or video file you already have and INDXR transcribes it with AI. Thirteen formats, up to 500 MB and 10 hours per file, 1 credit per minute. The file is deleted from the server as soon as it is processed.",
+    "Upload an audio or video file you already have and INDXR transcribes it with AI. Fourteen formats, up to 500 MB and 10 hours per file, 1 credit per minute. The file is deleted from the server as soon as it is processed.",
   robots: { index: true, follow: true },
 }
 

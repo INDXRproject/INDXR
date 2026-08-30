@@ -5,24 +5,28 @@
 // MPGA), which is exactly the kind of hand-typed drift this file exists to kill.
 //
 // Backend authority: the server rejects anything outside backend/audio_utils.py SUPPORTED_FORMATS
-// (verified 2026-08-12: the same 13 extensions) with MAX_FILE_SIZE_MB = 500. This array must stay in
+// (verified 2026-08-30: the same 14 extensions) with MAX_FILE_SIZE_MB = 500. This array must stay in
 // lockstep with that set — the backend is what actually enforces acceptance. MOV and FLV are on
 // AssemblyAI's supported list and are sent raw; AVI and MKV are not, so the backend extracts their
-// audio before submit (transparent to the user).
+// audio before submit (transparent to the user). OGG and OPUS are the same Ogg-Opus container
+// (WhatsApp exports voice notes as .opus); both are on AssemblyAI's supported list and sent raw.
+// Validation is extension-only across every layer (frontend accept-attr + guard, backend
+// validate_audio_file), never MIME — .opus MIME is unreliable (audio/opus, audio/ogg,
+// application/octet-stream depending on OS/browser), so the extension is the sole ground.
 
 import { spellCount } from "./exportFormats"
 
 export const UPLOAD_EXTENSIONS = [
-  ".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm", ".ogg", ".flac",
+  ".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm", ".ogg", ".opus", ".flac",
   ".mov", ".flv", ".avi", ".mkv",
 ] as const
 
 /** Per-file upload size cap (matches audio_utils.py MAX_FILE_SIZE_MB). */
 export const UPLOAD_MAX_FILE_MB = 500
 
-/** 13 accepted formats. */
+/** 14 accepted formats. */
 export const UPLOAD_FORMAT_COUNT = UPLOAD_EXTENSIONS.length
-/** "thirteen" — for prose, so the count and the list can never disagree. */
+/** "fourteen" — for prose, so the count and the list can never disagree. */
 export const UPLOAD_FORMAT_COUNT_WORD = spellCount(UPLOAD_FORMAT_COUNT)
 
 /** For an <input accept="…"> attribute: ".mp3,.mp4,…". */

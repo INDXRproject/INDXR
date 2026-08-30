@@ -187,7 +187,7 @@ Het `edited` veld wordt `true` zodra de gebruiker de samenvatting aanpast in de 
 
 ### Audio Upload path
 
-Gebruikers kunnen een lokaal audiobestand uploaden (MP3, MP4, WAV, M4A, OGG, FLAC, WEBM, MPEG, MPGA — max 500MB). Dit gaat via een aparte flow die de Vercel bodylimiet van 4.5MB omzeilt:
+Gebruikers kunnen een lokaal audio- of videobestand uploaden (14 formaten — audio: MP3, MPGA, M4A, WAV, OGG, OPUS, FLAC; video: MP4, MPEG, WEBM, MOV, FLV, AVI, MKV — max 500MB). Enige bron: `packages/shared/src/lib/uploadFormats.ts` (`UPLOAD_EXTENSIONS`), gespiegeld door `backend/audio_utils.py` (`SUPPORTED_FORMATS`). OPUS is dezelfde Ogg-Opus-container als OGG (WhatsApp-spraakberichten zijn `.opus`) → ffprobe rapporteert `format_name=ogg`, dus raw doorgestuurd naar AssemblyAI. Validatie is extensie-only op elke laag (nooit MIME). Dit gaat via een aparte flow die de Vercel bodylimiet van 4.5MB omzeilt:
 
 ```
 Frontend (AudioTab.tsx)

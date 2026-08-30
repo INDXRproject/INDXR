@@ -25,8 +25,11 @@ logger = logging.getLogger("indxr-backend")
 # packages/shared/src/lib/uploadFormats.ts UPLOAD_EXTENSIONS). MOV and FLV are on AssemblyAI's own
 # supported list (verified 2026-08-12) and are sent raw; AVI and MKV are NOT on that list, so their
 # audio is extracted by us before submit — see PROVIDER_TRANSCODE_CONTAINERS + the pipeline Step 5.
+# .ogg and .opus are the same Ogg-Opus container (WhatsApp exports voice notes as .opus); ffprobe
+# reports format_name=ogg for both, so get_audio_container returns 'ogg' → sent raw (AssemblyAI
+# lists .opus/.ogg/.oga as supported, verified 2026-08-30). Extension-only, never MIME.
 SUPPORTED_FORMATS = {
-    '.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', '.ogg', '.flac',
+    '.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', '.ogg', '.opus', '.flac',
     '.mov', '.flv', '.avi', '.mkv',
 }
 MAX_FILE_SIZE_MB = 500

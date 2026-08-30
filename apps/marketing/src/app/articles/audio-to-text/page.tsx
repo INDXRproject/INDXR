@@ -8,6 +8,7 @@ import {
   UPLOAD_FORMAT_COUNT_WORD,
   UPLOAD_AUDIO_LABELS,
   UPLOAD_VIDEO_LABELS,
+  uploadFormatsProse,
 } from "@indxr/shared/lib/uploadFormats"
 import {
   EXPORT_FORMAT_COUNT,
@@ -264,6 +265,39 @@ export default function AudioToTextPage() {
       <p>
         The {UPLOAD_MAX_FILE_MB}MB limit is worth noting against free browser tools, which commonly
         stop at 50 or 100MB. A single uncompressed hour of audio exceeds that on its own.
+      </p>
+
+      <h2>Common questions about uploading</h2>
+
+      <h3>Which audio and video formats can I upload?</h3>
+      <p>
+        {uploadFormatsProse("and")}, up to {UPLOAD_MAX_FILE_MB} MB per file. You do not need to convert
+        anything first — upload the file as it came off your phone, recorder or meeting tool.
+      </p>
+
+      <h3>Can I transcribe a voice memo from my iPhone?</h3>
+      <p>
+        Yes. iPhone voice memos are M4A files, which upload directly. A recording of an hour or more is
+        fine; the limits are the same as for any file, up to {UPLOAD_MAX_FILE_MB} MB and up to ten hours.
+      </p>
+
+      <h3>Can I transcribe a WhatsApp voice message?</h3>
+      <p>
+        Yes. WhatsApp exports voice messages as OPUS files, which are supported. Export the message from
+        the chat and upload the file as it is.
+      </p>
+
+      <h3>What happens if my file has no speech in parts of it?</h3>
+      <p>
+        Silence and background noise are skipped in the transcript. You are charged per minute of audio,
+        rounded up to the nearest minute, so a recording with long pauses costs the same as one without.
+      </p>
+
+      <h3>Do I need an account to upload a file?</h3>
+      <p>
+        Yes, uploads require an account, because transcription runs on credits. New accounts start with a
+        credit balance so you can transcribe a full recording before deciding whether to{" "}
+        <Link href="/pricing">buy more</Link>.
       </p>
 
       <h2>What you can do with the transcript</h2>
