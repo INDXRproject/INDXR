@@ -112,9 +112,13 @@ hierboven:
   **zonder gratis uitweg** — een bestandsupload kan niet via de gratis captionroute, dus elke klik landt
   bij het betaalde product. Vijf probleem-/foutmeldingsclusters (58 termen) + de generieke
   YouTube-transcript-cluster zijn definitief afgewezen (cijfers op de campagnepagina §3).
-- **Biedstrategie operationeel:** **Manual CPC** bij start (uiteenlopende bods €1,00–€1,80 per groep +
-  geen conversiehistorie) → **Maximize Conversion Value** zodra 30+ activaties/30 dagen binnenkomen. Dit
-  concretiseert de "~30 conversies/30d"-drempel uit de Rationale tot een expliciete overgangsregel.
+- **Biedstrategie operationeel (bijgewerkt 2026-08-31, gepubliceerde staat):** de campagne draait op
+  **Maximize clicks met één campagnebrede maximum-CPC van €1,80**, **niet** op Manual CPC met bods per
+  advertentiegroep. Dat plan (bods €1,80/€1,80/€1,00/€1,20 per groep) bleek in de huidige Google
+  Ads-interface niet mogelijk: onder Maximize clicks bestaat er geen bewerkbaar bod-veld per groep. Alle
+  vier de groepen delen dus het €1,80-plafond; sturen op groepniveau kan alleen via pauzeren of keywords,
+  niet via bods. De **"~30 conversies/30d"-drempel** uit de Rationale blijft de overgangsregel: bij 30+
+  activaties/30 dagen switchen naar een conversie-gestuurde strategie (**Maximize Conversion Value**).
 - **Instellingen:** Search-only (geen Partners/Display), **US-only op Presence** (smaller dan de
   US+CA+AU-richtlijn in marketing.md — schoonste eerste meting), Engels, budget **€25/dag** (plafond,
   promo-gedreven: €400 vóór 1 okt = €400 krediet). Campagnedoel "Begin checkout" aangevinkt zodat de

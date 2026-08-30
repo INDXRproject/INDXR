@@ -1,6 +1,6 @@
-# Google Ads-campagne — bestandsformaat-cluster (opzet 2026-08-31)
+# Google Ads-campagne — bestandsformaat-cluster (gepubliceerd 2026-08-31)
 
-**Status:** Opgezet, nog niet live
+**Status:** **Gepubliceerd 2026-08-31** — deze pagina beschrijft de **werkelijk gepubliceerde opzet**, niet het oorspronkelijke plan
 **Datum:** 2026-08-31
 **Beslissing:** [ADR-101](../decisions/101-optimise-on-activation-not-purchase.md) (stuurt op activatie, niet op aankoop) — dit is de uitwerking, geen nieuwe beslissing
 **Bron voor de keyword-cijfers:** [keyword-demand-2026-08.md](keyword-demand-2026-08.md)
@@ -9,6 +9,12 @@
 Deze pagina is bewust zelfstandig leesbaar: elke keuze, elk gemeten getal, elke advertentietekst
 staat hier. De waarde zit erin dat niemand deze clusters of deze redenering over een jaar opnieuw hoeft
 te reconstrueren.
+
+> **Let op — gepubliceerde staat, niet het plan.** Een paar dingen wijken af van de oorspronkelijke
+> opzet doordat de huidige Google Ads-interface het plan niet één-op-één toestond. De grootste: de
+> biedstrategie is **niet** Manual CPC met bods per advertentiegroep geworden, maar **Maximize clicks met
+> één campagnebrede maximum-CPC (€1,80)** — bods per groep bestaan onder die strategie niet (zie §4.1 en
+> §5). Waar deze pagina en het plan uiteenlopen, wint wat er feitelijk draait.
 
 ---
 
@@ -80,47 +86,59 @@ concurrenten "Free" roepen). Zie keyword-demand-2026-08.md §4 (Bing) + Meting 2
 
 ## 4. De campagne zelf
 
-### 4.1 Instellingen
+### 4.1 Instellingen (zoals gepubliceerd)
 
 | Instelling | Waarde |
 |---|---|
 | Type | Search |
-| Netwerk | **Alleen Google Search** — Search Partners uit, Display uit |
-| Locatie | **Verenigde Staten**, instelling **Presence** (niet "presence or interest") |
+| Netwerk | **Alleen Google Search Network** — Search Partners uit, Display uit |
+| Locatie | **Verenigde Staten**, instelling **Presence** (niet "presence or interest"); **Nederland expliciet uitgesloten** |
 | Taal | Engels |
 | Budget | **€25/dag** (plafond, niet doel — zie §1) |
-| Biedstrategie | **Manual CPC** bij start (zie §5) |
-| Campagnedoel bij aanmaak | **"Begin checkout" aangevinkt** — anders telt de Activation-conversie niet mee |
-| Auto-apply recommendations | **Uit** |
+| Biedstrategie | **Maximize clicks** met **campagnebrede maximum-CPC-limiet €1,80** (zie §5) |
+| Conversiedoelen | **Begin checkout** én **Purchases** |
+| AI Max | **Uit** — inclusief **asset optimization** en **Final URL expansion** |
+| Broad match keywords | **Uit** |
+| Automatically created assets | **Uit** |
+| Ad rotation | **Rotate indefinitely** (geen auto-optimalisatie naar "beste" ad) |
 | Match types | **Alleen exact en phrase** — geen broad match |
+
+> **Waarom Nederland is uitgesloten.** De campagne draait US-only op Presence. Nederland (onze eigen
+> locatie) wordt apart uitgesloten zodat eigen bezoeken en die van bekenden de meting niet vervuilen —
+> Presence-op-VS zou een NL-klik strikt al buitensluiten, maar de expliciete exclusie is de zekere
+> ondergrens.
 
 > **Geo is bewust smaller dan de algemene richtlijn.** [marketing.md](marketing.md#betaalde-zoekcampagne-ads--richtlijnen)
 > noemt US + CA + AU als toegestane geo. Deze eerste meting draait **US-only op Presence** — één markt,
 > schoonst mogelijke aflezing (de VS-only conversieschatting lag met 2,11% ook ruim boven de tweede ring;
-> Meting 3). CA/AU kunnen later toegevoegd worden; elke geo-wijziging reset de recalibratie (§6).
+> Meting 3). CA/AU kunnen later toegevoegd worden; elke geo-wijziging reset de leerfase (§7).
 
 ### 4.2 Advertentiegroepen
 
-Vier groepen, allemaal binnen het bestandsformaat-cluster, gescheiden op formaat-familie zodat bod en
-advertentietekst bij het zoekwoord passen. Alleen exact `[…]` en phrase `"…"` match.
+Vier groepen, allemaal binnen het bestandsformaat-cluster, gescheiden op formaat-familie zodat de
+advertentietekst bij het zoekwoord past. **31 keywords totaal** (7 / 8 / 9 / 7), alleen exact `[…]` en
+phrase `"…"` match — geen broad match.
 
-| Groep | Bod | Landingspagina | Keywords |
+| Groep | # keywords | Landingspagina | Keywords |
 |---|---|---|---|
-| **AG1 — Voice memo** | €1,80 | `/articles/audio-to-text` | `[transcribe voice memo]` `[voice memo to text]` `[transcribe voice memo to text]` `[iphone voice memo to text]` · `"transcribe voice memo"` `"voice memo transcription"` `"voice recording to text"` |
-| **AG2 — M4A en WAV** | €1,80 | `/articles/audio-to-text` | `[transcribe m4a file]` `[m4a to text]` `[transcribe wav file to text]` `[wav to text]` · `"transcribe m4a"` `"m4a file to text"` `"transcribe wav file"` `"wav file to text"` |
-| **AG3 — Open formaten** | €1,00 | `/articles/audio-to-text` | `[ogg to text]` `[transcribe ogg audio]` `[transcribe opus file]` `[transcribe flac to text]` `[flac to text]` `[transcribe whatsapp voice note]` · `"whatsapp voice message to text"` `"transcribe opus"` `"ogg audio to text"` |
-| **AG4 — Videocontainers** | €1,20 | `/articles/video-to-text` | `[transcribe mkv file]` `[transcribe webm to text]` `[transcribe mov file]` `[transcribe avi file]` · `"mkv to text"` `"webm to text"` `"transcribe video file to text"` |
+| **Ad group 1 — Voice Memos** | 7 | `/articles/audio-to-text` | `[transcribe voice memo]` `[voice memo to text]` `[transcribe voice memo to text]` `[iphone voice memo to text]` · `"transcribe voice memo"` `"voice memo transcription"` `"voice recording to text"` |
+| **Ad group 2 — M4A and WAV** | 8 | `/articles/audio-to-text` | `[transcribe m4a file]` `[m4a to text]` `[transcribe wav file to text]` `[wav to text]` · `"transcribe m4a"` `"m4a file to text"` `"transcribe wav file"` `"wav file to text"` |
+| **Ad group 3 — Open formats** | 9 | `/articles/audio-to-text` | `[ogg to text]` `[transcribe ogg audio]` `[transcribe opus file]` `[transcribe flac to text]` `[flac to text]` `[transcribe whatsapp voice note]` · `"whatsapp voice message to text"` `"transcribe opus"` `"ogg audio to text"` |
+| **Ad group 4 — Video containers** | 7 | `/articles/video-to-text` | `[transcribe mkv file]` `[transcribe webm to text]` `[transcribe mov file]` `[transcribe avi file]` · `"mkv to text"` `"webm to text"` `"transcribe video file to text"` |
 
-Bod-logica: voice memo en M4A/WAV zijn de sterkste koopintenties (€1,80); open formaten (OGG/OPUS/FLAC/
-WhatsApp) zijn dunner en goedkoper (€1,00); videocontainers zitten ertussenin (€1,20). De bods liggen
-rond de geschatte cluster-CPC van €1,21 — het search terms report corrigeert ze straks naar de echte CPC.
+**Geen bods per advertentiegroep.** Onder de gekozen strategie (Maximize clicks, §5) deelt élke groep
+dezelfde campagnebrede maximum-CPC (€1,80); een bod-veld per groep bestaat niet en is niet bewerkbaar.
+Sturen op groepniveau kan daardoor **alleen via pauzeren of het aanpassen van keywords**, niet via bods.
+De €1,80-limiet ligt boven de geschatte cluster-CPC van €1,21 — het search terms report toont straks de
+werkelijke CPC.
 
-### 4.3 Negatievenlijst (campagneniveau)
+### 4.3 Negatievenlijst — 51 negatieven, alle op campagneniveau
 
-Deze lijst staat **bovenop** de vaste negatieven in
-[marketing.md](marketing.md#betaalde-zoekcampagne-ads--richtlijnen) (merken, ondertitel-piraterij,
-`api`, IRS-belastingtranscript, diploma-vertaling, fonetiek, video-editors/inbranden). Specifiek voor
-dit bestandsformaat-cluster:
+**51 negatieven, allemaal op campagneniveau** (niet per advertentiegroep). Ze overlappen bewust met de
+vaste negatieven in [marketing.md](marketing.md#betaalde-zoekcampagne-ads--richtlijnen) (merken,
+ondertitel-piraterij, `api`, IRS-belastingtranscript, diploma-vertaling, fonetiek,
+video-editors/inbranden) en zijn toegespitst op dit bestandsformaat-cluster. De volledige lijst zoals
+gepubliceerd:
 
 ```
 free, gratis, "open source", github, crack, apk, torrent, api, python,
@@ -184,30 +202,38 @@ vrij combineren.
 - Export as SRT or VTT for subtitles, or TXT, Markdown, CSV and JSON.
 - A free account includes 50 credits. No subscription, credits never expire.
 
-### 4.5 Assets (campagneniveau)
+### 4.5 Assets
 
-- **Sitelinks:** Pricing → `/pricing` · Supported formats → `/docs/guides/uploads` · How it works → `/docs` · Free YouTube transcripts → `/transcribe`
-- **Callouts:** No subscription · Credits never expire · Processed in the EU · Files up to 500 MB · Fifteen formats
+**Op campagneniveau, niet per advertentiegroep** — 4 sitelinks en 5 callouts, gedeeld door alle vier de
+groepen.
+
+- **Sitelinks (4):** Pricing → `/pricing` · Supported formats → `/docs/guides/uploads` · How it works → `/docs` · Free YouTube transcripts → `/transcribe`
+- **Callouts (5):** No subscription · Credits never expire · Processed in the EU · Files up to 500 MB · Fifteen formats
 - **Structured snippet (Types):** TXT, Markdown, SRT, VTT, CSV, JSON
 
 ---
 
 ## 5. Biedstrategie en wanneer die verandert
 
-**Start: Manual CPC.** Twee redenen:
+**Zoals gepubliceerd: Maximize clicks met één campagnebrede maximum-CPC van €1,80.** Er is **geen
+conversiehistorie** — een conversie-gestuurde strategie heeft nog niets om op te leren; Maximize clicks
+koopt zoveel mogelijk verkeer binnen de CPC-limiet, wat voor de meetfase precies is wat we willen (zoveel
+mogelijk search terms + funnel-aflezingen).
 
-1. De vier groepen vragen **uiteenlopende bods** (€1,00–€1,80) — Manual CPC laat elk bod bij de
-   koopintentie van de groep passen;
-2. er is **geen conversiehistorie** — een geautomatiseerde strategie heeft niets om op te leren.
+**Wat dit betekent voor sturing:**
 
-**Overgang naar Maximize Conversion Value** zodra er **30+ activaties per 30 dagen** binnenkomen. Dat is
-de drempel waarop Google's Smart Bidding genoeg signaal heeft (zie ADR-101 §Rationale). Vóór die drempel
-zou automatisch bieden gokken op ruis.
+- **Alle vier de advertentiegroepen delen hetzelfde plafond** (€1,80). Onder Maximize clicks bestaat er
+  **geen bod-veld per groep** — dat veld is in de huidige interface niet bewerkbaar. De oorspronkelijk
+  geplande bods per groep (€1,80 / €1,80 / €1,00 / €1,20) zijn dus **niet** actief.
+- **Bijsturen op groepniveau kan alleen via pauzeren of keywords aanpassen, niet via bods.** Wie één
+  groep zwakker wil laten meewegen, pauzeert hem of snoeit zijn keywords; harder/zachter bieden per groep
+  is geen beschikbare knop.
 
-> **Manual CPC is geen uitgefaseerde optie.** Manual CPC is in 2026 volledig beschikbaar en staat sinds
-> januari 2026 **direct in de campagne-setup** (niet meer verstopt achter "Portfolio-strategieën"). We
-> gebruiken dus geen legacy-knop — dit is de aanbevolen startstrategie voor een campagne zonder
-> conversiehistorie.
+**Overgang naar een conversie-gestuurde strategie** (Maximize Conversion Value) zodra er **30+ activaties
+per 30 dagen** binnenkomen. Dat is de drempel waarop Google's Smart Bidding genoeg signaal heeft (zie
+[ADR-101](../decisions/101-optimise-on-activation-not-purchase.md) §Rationale). Vóór die drempel zou
+conversie-gestuurd bieden op ruis gokken — daarom nu Maximize clicks. **Let op:** die overgang is een
+strategiewijziging en reset de leerfase (§7).
 
 ---
 
@@ -224,7 +250,7 @@ per activatie**.
 | Uitkomst per groep | Actie |
 |---|---|
 | **< €25** kosten per aankoop | **Opschalen** binnen die groep |
-| **€25–€60** met **dalende** trend | **Vier weken verlengen**, budget verschuiven van de zwakste naar de sterkste groep |
+| **€25–€60** met **dalende** trend | **Vier weken verlengen**; verkeer verschuiven naar de sterkste groep — onder Maximize clicks kan dat **alleen via pauzeren van de zwakste of het snoeien/uitbreiden van keywords**, niet via bods per groep (§5) |
 | **> €60**, óf **nul activaties in alle groepen** | **Stoppen** — niet harder bieden |
 
 > **Harder bieden bij tegenvallende resultaten is géén optie.** Dit is de fout die deze pagina moet
@@ -234,15 +260,49 @@ per activatie**.
 
 ---
 
-## 7. Beheer
+## 7. De eerste twee weken — niet aan de knoppen
+
+Deze sectie staat hier om te voorkomen dat iemand — **inclusief ikzelf** — over een week gaat zitten
+sleutelen. Staande praktijk voor een verse campagne in de leerfase:
+
+- **Dagelijkse schommelingen zijn betekenisloos.** Klik- en kostencijfers stuiteren per dag; er zit geen
+  signaal in één dag. Niet reageren op een slechte (of goede) dag.
+- **Bod-, budget- en structuurwijzigingen resetten de leerfase.** Elke aanpassing aan biedstrategie,
+  CPC-limiet, budget, keywords of advertenties zet Google's leerproces terug naar nul — en daarmee de
+  meting. Wie in week 1 "even optimaliseert", gooit de data weg die de campagne juist moest opleveren.
+- **Negatieven zijn de enige veilige ingreep** — ze sturen alleen wélk verkeer binnenkomt, niet hoe er
+  geboden wordt, dus ze resetten de leerfase niet. Maar **gebatcht in twee of drie momenten, niet
+  dagelijks**: verzamel de ruis uit het search terms report en voeg 'm in een paar rondes toe.
+- **Het eerste beslispunt ligt op dag 8 tot 14** — niet eerder. Pas dan is er genoeg data om iets te
+  zeggen (het formele beslispunt uit §6 — 28 dagen of 500 klikken — komt daarna).
+
+---
+
+## 8. Beheer
 
 **Wekelijks, en niet meer dan dat:**
 
-- **Search terms report lezen** en de **negatievenlijst aanvullen** met wat er aan ruis binnenkwam.
+- **Search terms report lezen** en de **negatievenlijst aanvullen** met wat er aan ruis binnenkwam
+  (gebatcht — zie §7).
 
-**Verder niets aanraken.** Elke wijziging van **bod, budget of target reset de recalibratie** — Google
-begint het leerproces (en de meting) opnieuw. Wie tussentijds aan de knoppen draait, gooit de meting weg
-die de campagne juist moest opleveren.
+**Verder niets aanraken.** Elke wijziging van **biedstrategie, CPC-limiet, budget, keywords of
+advertenties reset de leerfase** — Google begint het leerproces (en de meting) opnieuw. Wie tussentijds
+aan de knoppen draait, gooit de meting weg die de campagne juist moest opleveren.
+
+---
+
+## 9. Open verificatiepunt — activatieconversie nog niet met echt verkeer getest
+
+**De gtag-activatieconversie is nooit met echt verkeer geverifieerd.** De verificatie in commit `e5110b6`
+gebruikte een **gemockte gtag** — die bewijst dat de code vuurt tegen een nep-gtag, niet dat de echte
+Google Ads-conversie binnenkomt.
+
+**Actie zodra de eerste echte activatie binnenkomt:** controleer in Google Ads onder **Goals →
+Conversions** dat de actie **"Activation"** van **"Unverified"** naar een geregistreerde conversie
+overgaat. Gebeurt dat niet, dan **vuurt de gtag niet** en is de **hele campagnemeting blind** — dan meten
+we klikken en kosten, maar niet het enige getal waar de campagne op stuurt (kosten per activatie). Dit is
+een blokkerende check, geen nice-to-have: zonder werkende activatieconversie kan geen enkel beslispunt uit
+§6 betrouwbaar worden afgelezen.
 
 ---
 
