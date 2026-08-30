@@ -23,6 +23,8 @@ import os
 import re
 import json
 import math
+
+from premium_actions import record_premium_action
 import time
 import asyncio
 import logging
@@ -991,3 +993,13 @@ async def run_summary_reservation_aware(
         completed_at=datetime.now(timezone.utc).isoformat(),
     )
     logger.info(f"[summary] job {job_id} voltooid ({reserved} credits) voor transcript {transcript_id}")
+
+    # Activation event (campaign, ADR-101): a generated AI summary is a premium action. Fires once —
+    # the al-terminale-job skip at the top of run_summary_reservation_aware guarantees one completion
+    # per job (a worker restart re-enters and skips the already-'complete' row).
+    try:
+        _tr = supabase.table("transcripts").select("duration").eq("id", transcript_id).single().execute()
+        _dur = (_tr.data or {}).get("duration")
+    except Exception:
+        _dur = None
+    record_premium_action(supabase, user_id, "ai_summary", source_seconds=_dur, credits_used=reserved)

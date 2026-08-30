@@ -23,7 +23,7 @@ Credits zijn de interne valuta van INDXR.AI. Gebruikers kopen credits via Stripe
 | RAG JSON export (re-download) | **Gratis** | Altijd gratis na eerste betaalde export |
 | Bulk RAG JSON export (nieuwe transcripts) | **1 credit per 15 min** | Per niet-eerder-geëxporteerd transcript |
 | Bulk RAG JSON export (al geëxporteerde transcripts) | **Gratis** | Re-download-pad ook in bulk |
-| Welcome bonus (eenmalig bij registratie) | **+25 credits** | — |
+| Welcome bonus (eenmalig bij registratie) | **+50 credits** | — |
 
 **Geen dubbele rekening bij AI-transcriptie in playlists:** Als een playlist-video geen captions heeft, betaalt de gebruiker alleen het AI-transcriptie tarief (1 cr/min) — niet bovenop de 1 credit/video voor captions. Zie [ADR-010](../decisions/010-playlist-pricing.md).
 
@@ -205,8 +205,18 @@ De frontend (`PlaylistAvailabilitySummary.tsx`) spiegelt deze logica:
 3. RPC-guards (atomisch, FOR UPDATE-lock):
    a. welcome_reward_claimed (per-account boolean) → 1× per account
    b. Canoniek-e-mail-dedup → 1× per CANONIEK adres (zie hieronder)
-4. +25 credits + welkomstbericht (alleen als beide guards doorlaten)
+4. +50 credits + welkomstbericht (alleen als beide guards doorlaten)
 ```
+
+**Bedrag = 50 (verhoogd van 25 op 2026-08-30, migratie `welcome_credits_25_to_50`).** Reden: een nieuwe
+gebruiker moet één volledige opname (bv. een college van 40 min) kunnen transcriberen vóór het
+bevestigingsscherm — de bezoeker die de Google Ads-campagne inkoopt. Grandfather-safe: al-geclaimde
+accounts houden hun 25; nieuwe krijgen 50. **Let op — twee gekoppelde bronnen:** het grant-bedrag staat
+zowel als SQL-literal in de RPC `claim_welcome_reward` (de handhaver) als in `FREE_TIER.WELCOME_CREDITS`
+(`packages/shared/src/lib/pricing.ts`, voedt alle UI-teksten). SQL kan de TS-constante niet importeren,
+dus ze zijn met de hand gekoppeld — wijzig je het bedrag, pas **beide** aan (zie `docs/LESSONS.md`
+2026-08-30 over los gedefinieerde validatie/waarden die uiteenlopen). Alle user-facing "25"-teksten zijn ge-single-sourced
+naar `FREE_TIER.WELCOME_CREDITS` (onboarding, pricing-FAQ, transcribe-FAQ).
 
 **Anti-abuse: canoniek-e-mail-dedup (migratie `20260712220428_welcome_reward_canonical_email_dedup`).**
 Zonder deze laag kon één Gmail-user via `naam+test1@`, `naam+test2@`, `na.am@` … oneindig "nieuwe"
@@ -294,7 +304,7 @@ Wat de bedoeling is (nog te implementeren):
 - `has_ever_purchased = true` in `profiles` na eerste Stripe-aankoop
 - `isPaidUser: boolean` in AuthContext
 
-Welcome credits (25 gratis) geven GEEN paid user status.
+Welcome credits (50 gratis) geven GEEN paid user status.
 
 Zie [ADR-013](../decisions/013-welcome-credits-freemium.md).
 

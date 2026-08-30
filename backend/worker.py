@@ -24,6 +24,7 @@ from arq.connections import RedisSettings
 from dotenv import load_dotenv
 
 from audio_utils import MembersOnlyVideoError
+from premium_actions import record_premium_action
 from credit_manager import (
     check_user_balance,
     refund_credits,
@@ -578,6 +579,27 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
 
     rpc_result = await _call_progress_rpc(supabase, playlist_id, video_id, rpc_success, rpc_transcript_id, rpc_error_type,
                               amount=rpc_credit_amount)
+
+    # Activation event (campaign, ADR-101): fire premium_action_completed ONCE per playlist, on the
+    # first PAID video to complete — "the moment past the free three". Free videos (the first 3 caption
+    # slots) never count. `video_results` here is the state BEFORE this video (its success is written to
+    # the DB by the RPC above, and the already-'success' skip at the top of this function reads that
+    # back), so a restart/replay/retry re-enters, skips, and never re-fires. is_first_premium_action
+    # stays atomic per account via mark_first_premium_action.
+    if rpc_success and not is_free:
+        _free_ids = playlist_free_ids(video_ids, use_whisper_ids, is_retry)
+        _prior_paid = any(r.get('status') == 'success' and v not in _free_ids
+                          for v, r in video_results.items())
+        if not _prior_paid:
+            _charged = rpc_credit_amount
+            if is_whisper:
+                try:
+                    _charged = result.get('credit_cost')
+                except Exception:
+                    _charged = None
+            _vdur = (video_metadata.get(video_id) or {}).get('duration')
+            record_premium_action(supabase, user_id, 'playlist_video',
+                                  source_seconds=_vdur, credits_used=_charged)
 
     # Build final video_results for the last-video retry check
     final_video_results = {**video_results}

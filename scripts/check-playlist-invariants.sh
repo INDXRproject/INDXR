@@ -50,4 +50,12 @@ echo "── Summary cost · TypeScript mirror (packages/shared/src/lib/summaryC
 node --experimental-strip-types packages/shared/src/lib/summaryCost.test.ts
 
 echo
-echo "✅ All invariants agree — free-slots helpers, the four hard limits, and the summary cost formula are in sync."
+echo "── Upload formats · Python vs backend (backend/test_upload_formats.py) ──"
+( cd backend && venv/bin/python3 test_upload_formats.py )
+
+echo
+echo "── Upload formats · TypeScript mirror (packages/shared/src/lib/uploadFormats.test.ts) ──"
+node --experimental-strip-types packages/shared/src/lib/uploadFormats.test.ts
+
+echo
+echo "✅ All invariants agree — free-slots helpers, the four hard limits, the summary cost formula, and the upload-format allowlist are in sync."

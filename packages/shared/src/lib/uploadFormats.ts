@@ -4,29 +4,30 @@
 // the copy at once. The label used to list only 7 of the 9 accepted formats (it dropped MPEG and
 // MPGA), which is exactly the kind of hand-typed drift this file exists to kill.
 //
-// Backend authority: the server rejects anything outside backend/audio_utils.py SUPPORTED_FORMATS
-// (verified 2026-08-30: the same 14 extensions) with MAX_FILE_SIZE_MB = 500. This array must stay in
-// lockstep with that set — the backend is what actually enforces acceptance. MOV and FLV are on
-// AssemblyAI's supported list and are sent raw; AVI and MKV are not, so the backend extracts their
-// audio before submit (transparent to the user). OGG and OPUS are the same Ogg-Opus container
-// (WhatsApp exports voice notes as .opus); both are on AssemblyAI's supported list and sent raw.
-// Validation is extension-only across every layer (frontend accept-attr + guard, backend
-// validate_audio_file), never MIME — .opus MIME is unreliable (audio/opus, audio/ogg,
-// application/octet-stream depending on OS/browser), so the extension is the sole ground.
+// Backend authority: the server rejects anything outside backend/audio_utils.py SUPPORTED_FORMATS.
+// The two lists are kept in lockstep by test-fixtures/upload_formats.json — the fixture guard
+// (backend/test_upload_formats.py + uploadFormats.test.ts, run by scripts/check-playlist-invariants.sh)
+// goes red if this array and SUPPORTED_FORMATS ever diverge from the fixture. MAX_FILE_SIZE_MB = 500.
+// MOV and FLV are on AssemblyAI's supported list and are sent raw; AVI and MKV are not, so the backend
+// extracts their audio before submit (transparent to the user). OGG and OPUS are the same Ogg-Opus
+// container (WhatsApp exports voice notes as .opus); AAC (raw ADTS) rides its own container — all three
+// are on AssemblyAI's supported list and sent raw. Validation is extension-only across every layer
+// (frontend accept-attr + guard, backend validate_audio_file), never MIME — audio MIME is unreliable
+// (audio/opus, audio/ogg, audio/aac, application/octet-stream by OS/browser), so extension is the sole ground.
 
-import { spellCount } from "./exportFormats"
+import { spellCount } from "./exportFormats.ts"
 
 export const UPLOAD_EXTENSIONS = [
-  ".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm", ".ogg", ".opus", ".flac",
+  ".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".aac", ".wav", ".webm", ".ogg", ".opus", ".flac",
   ".mov", ".flv", ".avi", ".mkv",
 ] as const
 
 /** Per-file upload size cap (matches audio_utils.py MAX_FILE_SIZE_MB). */
 export const UPLOAD_MAX_FILE_MB = 500
 
-/** 14 accepted formats. */
+/** 15 accepted formats. */
 export const UPLOAD_FORMAT_COUNT = UPLOAD_EXTENSIONS.length
-/** "fourteen" — for prose, so the count and the list can never disagree. */
+/** "fifteen" — for prose, so the count and the list can never disagree. */
 export const UPLOAD_FORMAT_COUNT_WORD = spellCount(UPLOAD_FORMAT_COUNT)
 
 /** For an <input accept="…"> attribute: ".mp3,.mp4,…". */

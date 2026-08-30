@@ -4,6 +4,17 @@
 
 > **De één regel die er het meest toe doet:** UI kun je later bouwen over data die je bewaard hebt; **niet-gecaptureerde data is permanent verloren**. De hoogste-waarde pre-launch actie is daarom **capture-gaten dichten**, niet dashboards bouwen. Dit document eindigt met precies die lijst (§7).
 
+> **Update 2026-08-30 (campagne-meetlaag, ADR-101):** Growth-tab (`admin/growth/page.tsx`,
+> `admin_growth_summary`) uitgebreid met drie campagne-cijfers: **cost per activation** (ad-spend ÷
+> eerste premium-acties in venster), **activatie→aankoop weekcohort** (per week van
+> `first_premium_action_at`), en een misbruikmetriek **welkomstcredit burn-and-ghost** (aandeel accounts
+> ≥7d oud dat ≥80% van de welkomstcredits opmaakte én nooit terugkwam — % mét noemer). Nieuwe
+> capture-laag: `profiles.first_premium_action_at` + event `premium_action_completed`. Audit-bevindingen
+> (niet gefixt want niet stuk): CAC toont `—` in Overview (no-args → lifetime → NULL by design) en tot er
+> een `ads`-OPEX-regel is; `has_ever_purchased`-cache bestaat maar Growth leidt "betaald" live af uit
+> `credit_transactions` (twee bronnen, latente drift). Gefixt want aantoonbaar fout: `credits_purchased`
+> vuurde dubbel (client + webhook) → client-kant verwijderd.
+
 ---
 
 ## 1. Executive summary

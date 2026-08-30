@@ -8,15 +8,29 @@ INDXR.AI gebruikt PostHog voor product analytics. Events worden getracked op zow
 
 - Paginaweergaven (automatisch)
 - Navigatie / routewijzigingen
-- User identify bij login: `{email, source, created_at}`
+- User identify bij login: `{source, created_at}` — **géén e-mail/PII** (alleen het pseudonieme
+  `user.id` als distinct_id; `AuthContext.tsx`). *(Correctie 2026-08-30: dit stond eerder als `{email,
+  source, created_at}` — de code stuurt e-mail bewust niet mee.)*
 - User reset bij logout
+- `signup_source` is **geen PostHog-event** maar een `profiles`-kolom (acquisitie-attribuut, gezet via
+  `AcquisitionCapture`/`auth-actions`). *(STATUS.md noemde het abusievelijk een event.)*
 
 ### Backend Events (handmatig getracked)
 
 | Event | Trigger | Properties |
 |-------|---------|------------|
-| `credits_purchased` | Stripe webhook `checkout.session.completed` | `amount`, `credits_added`, `currency`, `session_id` |
-| `credits_deducted` | Na succesvolle credit-aftrek | `amount`, `reason`, `balance_after` |
+| `premium_action_completed` | **Voltooide betaalde actie** (backend, `premium_actions.record_premium_action`): AI-transcriptie klaar, AI-samenvatting gegenereerd, of playlist-video voorbij de gratis drie. NIET bij signup/caption/pageview/gefaalde job. | `action_type` (`ai_transcription`/`ai_summary`/`playlist_video`), `source_minutes`, `credits_used`, `is_first_premium_action` |
+| `whisper_started` / `whisper_completed` / `whisper_failed` | AssemblyAI submit / succes / fout (`transcription_pipeline.py`). `whisper_completed` draagt nu `playlist_id` (None = losse upload/YouTube, gezet = playlist-video) zodat losse vs playlist onderscheidbaar is. | `video_id`, `source_type`, `playlist_id`, `duration_seconds`, `credits_used`, … |
+| `credits_purchased` | Stripe webhook `checkout.session.completed` (**gezaghebbend, server-side**). | `amount`, `credits_added`, `currency`, `session_id` |
+| `credits_deducted` | *Legacy — vuurt in de praktijk (bijna) niet meer:* alleen op het niet-reservering-pad, en productie draait op reserve/settle (ADR-050). De echte aftrek is de settlement; geen actie nodig. | `amount`, `reason`, `balance_after` |
+
+> **`is_first_premium_action` is de campagne-KPI.** Bepaald server-side, atomisch, via
+> `mark_first_premium_action` (conditionele UPDATE op `profiles.first_premium_action_at IS NULL`); exact
+> één call per account wint. De DB-kolom is de bron voor admin *cost per activation* + activatie→aankoop-cohort;
+> het event spiegelt 'm. Waarom activatie i.p.v. aankoop: zie ADR-101.
+>
+> **Dubbeltelling `credits_purchased` opgeheven (2026-08-30):** de success-pagina vuurde 'm ook
+> client-side (ongeguard → opnieuw bij reload, dunnere props). Verwijderd; alleen de webhook telt nu.
 
 > **Geen `summarization_completed`-event (bewust, 2026-08-29).** Eerder stond hier een
 > `summarization_completed`-regel ("na succesvolle DeepSeek samenvatting") — die was nooit

@@ -1,0 +1,7 @@
+{
+  "_comment": "GEDEELDE fixture voor de geaccepteerde upload-extensies. Twee bronnen die feitelijk moeten matchen maar niet dezelfde taal delen: de backend-HANDHAVER backend/audio_utils.py SUPPORTED_FORMATS (Python set) en de frontend-SPIEGEL packages/shared/src/lib/uploadFormats.ts UPLOAD_EXTENSIONS (TS array, voedt accept-attr + client-guard + alle content). backend/test_upload_formats.py checkt de backend-set tegen deze lijst; packages/shared/src/lib/uploadFormats.test.ts checkt de TS-array tegen deze lijst. scripts/check-playlist-invariants.sh draait beide en wordt ROOD bij divergentie (er is geen CI). Volgorde doet er niet toe (als set vergeleken). Wijzig je de geaccepteerde formaten: pas backend/audio_utils.py, uploadFormats.ts EN deze fixture in dezelfde commit aan, en draai het script.",
+  "extensions": [
+    ".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".aac", ".wav", ".webm", ".ogg", ".opus", ".flac",
+    ".mov", ".flv", ".avi", ".mkv"
+  ]
+}

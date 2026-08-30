@@ -4,6 +4,7 @@ import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { ClosingCTASection } from "@/components/marketing/ClosingCTASection"
 import { transcriptionRouterPhrase } from "@indxr/shared/lib/models"
 import { exportFormatsProse } from "@indxr/shared/lib/exportFormats"
+import { FREE_TIER } from "@indxr/shared/lib/pricing"
 
 const faqItems: FAQItem[] = [
   {
@@ -12,7 +13,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Why would I sign up if the tool is free?",
-    answer: "The free tier covers single videos with YouTube captions. Signing up (free, no card) adds 25 credits, playlists, AI transcription, every export format beyond TXT, and your personal library.",
+    answer: `The free tier covers single videos with YouTube captions. Signing up (free, no card) adds ${FREE_TIER.WELCOME_CREDITS} credits, playlists, AI transcription, every export format beyond TXT, and your personal library.`,
   },
   {
     question: "What if my video doesn't have captions?",
@@ -20,7 +21,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Can I extract a full playlist without an account?",
-    answer: "Playlist extraction needs a free account. Signing up is free, includes 25 credits, and needs no credit card.",
+    answer: `Playlist extraction needs a free account. Signing up is free, includes ${FREE_TIER.WELCOME_CREDITS} credits, and needs no credit card.`,
   },
   {
     question: "What languages are supported?",
@@ -62,7 +63,7 @@ export default function FreeToolPage() {
 
       <ClosingCTASection
         headline="Ready for more than single videos?"
-        oneLiner="Sign up free — 25 credits included, no credit card needed. Unlock playlists, AI transcription, and your library."
+        oneLiner={`Sign up free — ${FREE_TIER.WELCOME_CREDITS} credits included, no credit card needed. Unlock playlists, AI transcription, and your library.`}
         primaryCtaLabel="Sign up free"
         primaryCtaHref="/signup"
         secondaryLabel="Or keep using the free tool above"

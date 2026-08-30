@@ -12,6 +12,7 @@ import { updateProfileAction } from "@indxr/shared/actions/auth-actions"
 import { appHref } from "@indxr/shared/lib/cross-host-links"
 import { safeAppRedirect } from "@indxr/shared/lib/safe-redirect"
 import { trackSignup } from "@indxr/shared/lib/gtag"
+import { FREE_TIER } from "@indxr/shared/lib/pricing"
 import { CheckCircle2, Circle } from "lucide-react"
 
 export default function OnboardingPage() {
@@ -70,7 +71,7 @@ export default function OnboardingPage() {
             <div>
               <h1 className="text-4xl font-semibold text-[var(--fg)] mb-3">Welcome to INDXR</h1>
               <p className="text-[var(--fg-subtle)] text-lg leading-relaxed">
-                Your account is ready. We&apos;ve added 25 welcome credits to get you started.
+                Your account is ready. We&apos;ve added {FREE_TIER.WELCOME_CREDITS} welcome credits to get you started.
               </p>
             </div>
 
@@ -79,7 +80,7 @@ export default function OnboardingPage() {
                 <CheckCircle2 className="h-6 w-6 text-[var(--success)] mt-0.5 shrink-0" />
                 <div>
                   <h3 className="font-medium text-[var(--fg)]">Account created</h3>
-                  <p className="text-sm text-[var(--fg-muted)]">You&apos;re signed in and your 25 welcome credits are in your account.</p>
+                  <p className="text-sm text-[var(--fg-muted)]">You&apos;re signed in and your {FREE_TIER.WELCOME_CREDITS} welcome credits are in your account.</p>
                 </div>
               </div>
 
@@ -108,7 +109,7 @@ export default function OnboardingPage() {
             <CardHeader>
               <CardTitle className="text-[var(--fg)]">Welcome to INDXR</CardTitle>
               <CardDescription className="text-[var(--fg-muted)]">
-                25 welcome credits are in your account — let&apos;s set up your profile.
+                {FREE_TIER.WELCOME_CREDITS} welcome credits are in your account — let&apos;s set up your profile.
               </CardDescription>
             </CardHeader>
             <CardContent>

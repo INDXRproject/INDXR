@@ -27,6 +27,7 @@ from audio_utils import (
 )
 from limits import MAX_TRANSCRIPTION_SECONDS  # single source (backend-handhaver); re-exported hier
 from assemblyai_client import submit_assemblyai, poll_assemblyai
+from premium_actions import record_premium_action
 from credit_manager import (
     add_credits,
     calculate_credit_cost,
@@ -980,9 +981,16 @@ async def do_assemblyai_transcription(
         processing_ms = int((time.time() - assemblyai_start) * 1000)
         _track(user_id, 'whisper_completed', {
             'video_id': video_id, 'source_type': 'youtube' if video_id else 'upload',
+            'playlist_id': playlist_id,  # None for a single upload/YouTube job; set for playlist videos
             'duration_seconds': duration, 'processing_time_ms': processing_ms,
             'credits_used': credit_cost,
         })
+        # Activation event (campaign, ADR-101): a completed SINGLE AI transcription is a premium action.
+        # Playlist videos fire from the worker on the first paid video, so exclude them here (playlist_id
+        # is set) to avoid double-counting. This is the success path, reached once per job → one event.
+        if playlist_id is None:
+            record_premium_action(supabase, user_id, 'ai_transcription',
+                                  source_seconds=duration, credits_used=credit_cost)
 
         processing_secs = int((datetime.now(timezone.utc) - job_started_at).total_seconds())
         save_ms = int((time.time() - _save_started) * 1000)  # ADR-096: opslaan-fase

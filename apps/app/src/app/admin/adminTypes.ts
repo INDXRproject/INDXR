@@ -57,10 +57,12 @@ export interface GeldSummary {
 
 export interface GrowthSummary {
   external_total: number
-  acquisition: { by_source: Record<string, number>; by_utm: Record<string, number>; cac: number | null }
-  activation: { activated: number; rate: number | null }
+  acquisition: { by_source: Record<string, number>; by_utm: Record<string, number>; cac: number | null; cost_per_activation: number | null }
+  activation: { activated: number; rate: number | null; first_activated: number }
   monetization: { paying: number; conversion: number | null; ltv_total: number; ltv_avg: number | null }
   retention: { repeat_buyers: number; repeat_rate: number | null }
+  abuse: { welcome_burn_ghost: { ghosted: number; burned: number; rate: number | null } }
+  cohorts: { activation_to_purchase: Array<{ week: string; activated: number; purchased: number; rate: number | null }> }
   window: { from: string | null; to: string | null }
 }
 

@@ -117,7 +117,10 @@ export function summaryCreditCost(durationSeconds: number): number {
 
 // Free-tier limits
 export const FREE_TIER = {
-  WELCOME_CREDITS: 25,
+  // MUST match the grant literal in the claim_welcome_reward RPC (SQL cannot import this TS constant,
+  // so the two are coupled by hand — change both together, see credit-system.md). Raised 25 -> 50 so
+  // a new user can transcribe one full recording before the confirm screen (campaign activation).
+  WELCOME_CREDITS: 50,
   PLAYLIST_FREE_VIDEOS: 3, // eerste 3 CAPTION-video's van elke playlist gratis (per-methode, ADR-081)
 } as const
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
+import { FREE_TIER } from "@indxr/shared/lib/pricing"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
 import { PricingHero } from "@/components/pricing/PricingHero"
@@ -24,7 +25,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: "Do I need an account to get started?",
-    answer: "No. Extracting a single video with YouTube captions is free without an account. A free account gives you 25 welcome credits and unlocks all export formats.",
+    answer: `No. Extracting a single video with YouTube captions is free without an account. A free account gives you ${FREE_TIER.WELCOME_CREDITS} welcome credits and unlocks all export formats.`,
   },
   {
     question: "What happens when I run out of credits?",

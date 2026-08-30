@@ -10,7 +10,6 @@ import { useAuth } from '@indxr/shared/hooks/useAuth'
 import { createClient } from '@indxr/shared/utils/supabase/client'
 import { eurForCredits } from '@indxr/shared/lib/pricing'
 import { trackPurchase } from '@indxr/shared/lib/gtag'
-import posthog from 'posthog-js'
 
 // Poll onze eigen credit_transactions (RLS: eigen rijen) op de aankoop-rij die de
 // Stripe-webhook wegschrijft. Dat bevestigt dat de webhook verwerkte én levert het
@@ -45,10 +44,11 @@ export default function BillingSuccessPage() {
       return
     }
 
-    posthog.capture('credits_purchased', {
-      source: 'stripe_checkout_success',
-      session_id: sessionId,
-    })
+    // NB: the authoritative `credits_purchased` PostHog event fires server-side in the Stripe webhook
+    // (api/stripe/webhook, with amount/credits/currency). This page used to ALSO capture it client-side
+    // on every mount (unguarded → double/again-on-reload, and a thinner property shape), inflating the
+    // count. Removed to keep one event per purchase. The Google Ads purchase conversion below is
+    // separate and stays (localStorage-guarded per session).
 
     let cancelled = false
     let attempts = 0
