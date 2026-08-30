@@ -15,7 +15,10 @@ async function readAcquisitionMetadata(): Promise<Record<string, string>> {
     if (!raw) return {}
     const acq = JSON.parse(decodeURIComponent(raw)) as Record<string, unknown>
     const out: Record<string, string> = {}
-    for (const key of ['signup_source', 'utm_source', 'utm_medium', 'utm_campaign', 'referrer', 'landing_path'] as const) {
+    // gclid/gbraid/wbraid/click_id_at pass through unrenamed (same names on profiles) — the acquisition
+    // trigger copies them from raw_user_meta_data. Only ever persisted here, at real account creation.
+    for (const key of ['signup_source', 'utm_source', 'utm_medium', 'utm_campaign', 'referrer', 'landing_path',
+      'gclid', 'gbraid', 'wbraid', 'click_id_at'] as const) {
       const v = acq[key]
       if (typeof v === 'string' && v) out[key === 'referrer' ? 'signup_referrer' : key === 'landing_path' ? 'signup_landing_path' : key] = v
     }

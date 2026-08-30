@@ -41,6 +41,31 @@ INDXR.AI gebruikt PostHog voor product analytics. Events worden getracked op zow
 > en *per-user COR* (`admin_summary_cost_per_user`), plus de rolling-baseline en de kosten-breaker. Een enkel
 > PostHog-event zou een strikt armere duplicatie zijn; PostHog is hier bovendien cookieless/`identified_only`.
 
+## Google Ads-conversies (ADR-087, ADR-101)
+
+Drie conversieacties, alle client-side via `gtag` (`packages/shared/src/lib/gtag.ts`), Consent Mode v2
+**Basic** (niets vuurt vóór toestemming; zonder toestemming laadt gtag.js niet → de push wordt gedropt,
+geen fout). Labels in beide Vercel-projecten als env-var; lege var → stille no-op.
+
+| Actie | Helper | Vuurpunt | Window | Waarde | Count | Categorie |
+|-------|--------|----------|--------|--------|-------|-----------|
+| **purchase** | `trackPurchase` | success-pagina, ná bevestigde Stripe-sessie (localStorage-guard + `transaction_id`=session) | 90 dagen | werkelijke bruto EUR-lijstprijs (`pricing.ts`, ADR-087) | Every | Purchase |
+| **activation** | `trackActivation` | `useJobStatus.onComplete` als `job.first_premium_action===true` (server-truth), localStorage-guard per job | 30 dagen | **€1** (`value:1, currency:EUR`) — zodat de biedstrategie activatie (€1) vs aankoop (werkelijke waarde) kan wegen | One | Begin checkout |
+| **signup** | `trackSignup` | onboarding-voltooiing, `event_callback`-redirect | secundair, observatie-only | geen | — | — |
+
+**Enhanced Conversions staat bewust UIT** — zelfde reden als Consent Mode **Advanced** uit staat (ADR-087):
+Enhanced Conversions hasht en uploadt e-mail/telefoon naar Google voor betere matching; dat is precies de
+extra PII-deling naar Google die we vermijden. Basic + geen enhanced = minimale data naar Google.
+
+**Bron vs conversie is bewust asymmetrisch (aanvulling op ADR-101):** de activatie-conversie vuurt
+**client-side** terwijl de bron (`premium_action_completed`) **server-side** is. Google telt daardoor
+**minder** activaties dan het admin-dashboard wanneer iemand zijn tab sluit tijdens een lange job (de
+server voltooit + telt, de client vuurt nooit). Dat is geaccepteerd, niet weg te werken: de server-side
+route (offline conversion import) bouwen we NIET, want Google ontdubbelt niet tussen een Website-actie en
+een Import-from-clicks-actie → twee routes zou dubbeltellen. De **klik-ID's** (`gclid`/`gbraid`/`wbraid`
++ `click_id_at` op `profiles`, gezet bij signup via de acquisitie-trigger) worden nú opgeslagen zodat een
+server-side upload later alsnog mogelijk blijft zonder dat vroege klikken onherstelbaar verloren zijn.
+
 ### PostHog Configuratie
 
 ```bash

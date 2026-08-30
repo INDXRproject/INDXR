@@ -64,3 +64,22 @@ kan activeren.
 - `credits_purchased` dubbeltelling (client + webhook) opgeheven; `whisper_completed` draagt nu
   `playlist_id`.
 - CAC blijft, maar wordt geïnterpreteerd als achterlopend; cost-per-activation is het primaire signaal.
+
+## Addendum 2026-08-30 — Google Ads-koppeling + klik-ID's
+
+De activatie-conversie is nu aan Google Ads gekoppeld (`trackActivation`, label
+`NEXT_PUBLIC_GADS_LABEL_ACTIVATION`, €1). Twee gevolgen om vast te leggen:
+
+- **Client-side conversie vs server-side bron is bewust asymmetrisch.** `trackActivation` vuurt
+  client-side wanneer `useJobStatus` de eindstatus ziet met `first_premium_action===true` (server-truth,
+  op de jobrij gezet); de bron `premium_action_completed` is server-side. Google telt dus **minder**
+  activaties dan het dashboard als iemand zijn tab sluit tijdens een lange job. Geaccepteerd. De
+  server-side variant (offline conversion import) bouwen we NIET: Google ontdubbelt niet tussen een
+  Website-conversieactie en een Import-from-clicks-actie → twee routes tegelijk telt dubbel.
+- **Klik-ID's worden nu opgeslagen** (`profiles.gclid/gbraid/wbraid` + `click_id_at`, first-touch via de
+  acquisitie-cookie → signup → trigger) zodat een server-side upload later mogelijk blijft zonder dat
+  vroege klikken verloren zijn. Nog géén upload/API/dashboard gebouwd — alleen opslag. Persoonsgegeven:
+  alleen bewaard bij een echt aangemaakt account, niet in de URL tussen pagina's doorgegeven.
+  **Privacybeoordeling:** de /privacy-tekst ("one cookie `_gcl_au` and nothing else") is hierdoor
+  onvolledig geworden en vraagt een aanpassing (nieuwe categorie: klik-ID op het profiel + doel: latere
+  server-side conversiemeting) — gerapporteerd, tekst niet in deze taak gewijzigd.

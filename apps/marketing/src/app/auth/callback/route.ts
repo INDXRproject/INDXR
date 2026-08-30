@@ -42,6 +42,12 @@ export async function GET(request: Request) {
               utm_campaign: 'utm_campaign',
               referrer: 'signup_referrer',
               landing_path: 'signup_landing_path',
+              // Google Ads click identifiers (ADR-101) — OAuth signups don't carry the cookie into
+              // user_metadata, so fill them here too, first-touch-guarded like the rest.
+              gclid: 'gclid',
+              gbraid: 'gbraid',
+              wbraid: 'wbraid',
+              click_id_at: 'click_id_at',
             }
             const patch: Record<string, string> = {}
             for (const [key, col] of Object.entries(colMap)) {

@@ -24,6 +24,15 @@ export function AcquisitionCapture() {
       const referrer = document.referrer || undefined
       const landing_path = window.location.pathname || undefined
 
+      // Google Ads click identifiers (gclid, or gbraid/wbraid on iOS). Captured first-touch like the
+      // rest and only ever persisted to a profile at signup (never for anonymous visitors, never passed
+      // in the URL between pages). Kept now so a later server-side conversion upload stays possible;
+      // click_id_at records the arrival moment — without it a click id is useless later. (ADR-101.)
+      const gclid = params.get('gclid') || undefined
+      const gbraid = params.get('gbraid') || undefined
+      const wbraid = params.get('wbraid') || undefined
+      const click_id_at = (gclid || gbraid || wbraid) ? new Date().toISOString() : undefined
+
       // signup_source: utm_source wins; else the referrer host; else 'direct'.
       let signup_source = utm_source
       if (!signup_source && referrer) {
@@ -35,7 +44,8 @@ export function AcquisitionCapture() {
       }
       signup_source = signup_source || 'direct'
 
-      const data = { signup_source, utm_source, utm_medium, utm_campaign, referrer, landing_path }
+      const data = { signup_source, utm_source, utm_medium, utm_campaign, referrer, landing_path,
+        gclid, gbraid, wbraid, click_id_at }
       const value = encodeURIComponent(JSON.stringify(data))
       const maxAge = 60 * 60 * 24 * 180 // 180 days
       const domain = window.location.hostname.endsWith('indxr.ai') ? '; domain=.indxr.ai' : ''

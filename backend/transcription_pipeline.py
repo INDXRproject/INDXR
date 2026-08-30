@@ -988,9 +988,13 @@ async def do_assemblyai_transcription(
         # Activation event (campaign, ADR-101): a completed SINGLE AI transcription is a premium action.
         # Playlist videos fire from the worker on the first paid video, so exclude them here (playlist_id
         # is set) to avoid double-counting. This is the success path, reached once per job → one event.
+        # Capture whether this was the account's FIRST premium action and stamp it on the job row below,
+        # so the job-status poll can hand it to the frontend for the Google Ads activation conversion.
+        first_premium_action = None
         if playlist_id is None:
-            record_premium_action(supabase, user_id, 'ai_transcription',
-                                  source_seconds=duration, credits_used=credit_cost)
+            first_premium_action = record_premium_action(
+                supabase, user_id, 'ai_transcription',
+                source_seconds=duration, credits_used=credit_cost)
 
         processing_secs = int((datetime.now(timezone.utc) - job_started_at).total_seconds())
         save_ms = int((time.time() - _save_started) * 1000)  # ADR-096: opslaan-fase
@@ -1001,6 +1005,9 @@ async def do_assemblyai_transcription(
             duration_seconds=int(duration),
             credits_cost=credit_cost,
             processing_time_seconds=processing_secs,
+            # Only set on a real first-premium-action determination (single job); None for playlist
+            # videos and if the marker call failed — the frontend treats anything but true as "don't fire".
+            **({"first_premium_action": first_premium_action} if first_premium_action is not None else {}),
             assemblyai_model=whisper_result.get('model'),
             # ADR-096 meetlaag: fasetijden (provider + opslaan; download_ms/compress_ms zijn al door de
             # extract-summary_cb geschreven) + kwaliteitssignalen.

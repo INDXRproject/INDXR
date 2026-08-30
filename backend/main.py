@@ -1272,6 +1272,10 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         "error_type": job.get('error_type'),
         # error_code verwijderd: stond hardcoded op None (dood veld). error_type is de echte sleutel.
         "required_credits": job.get('credits_cost'),  # jobkost (jobspecifiek) — voor de insufficient-credits-kaart
+        # Server truth voor de Google Ads-activatieconversie (ADR-101): true alleen op de job die de
+        # EERSTE premium-actie van dit account was (atomisch gezet). De frontend vuurt hierop 1× de
+        # activatie-conversie. Read-only, geen creditlogica.
+        "first_premium_action": job.get('first_premium_action'),
         # available_credits VERWIJDERD: de frontend heeft het live saldo al via useAuth; een gekopieerd
         # saldo in een poll-respons is per definitie ouder dan wat de user ziet -> geen tweede bron.
     })

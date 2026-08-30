@@ -2,6 +2,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createClient } from '../utils/supabase/client'
 import { getPollingInterval } from '../lib/pollingBackoff'
+import { trackActivation } from '../lib/gtag'
 
 export interface JobStatusRow {
   status: string
@@ -9,6 +10,10 @@ export interface JobStatusRow {
   transcript_id?: string | null
   channel?: string | null
   language?: string | null
+  // Server truth (set once, atomically, by mark_first_premium_action): true only on the job that was
+  // this account's FIRST premium action → the frontend fires the Google Ads activation conversion once
+  // (ADR-101). Absent/false for later actions and for playlist jobs. Never derived client-side.
+  first_premium_action?: boolean | null
   // Raw DB column names (ADR/priorities 2.0 — alias phase-out step 2). The old curated
   // aliases `duration`/`credits_used` came back empty on a Realtime UPDATE (which carries the
   // raw row), so we read the raw columns the backend now emits on both channels (since 669a0c1).
@@ -62,6 +67,23 @@ const ENDPOINT = {
 const TERMINAL = new Set(['complete', 'error'])
 const MAX_CONSECUTIVE_ERRORS = 3
 
+// Google Ads activation conversion — fire once when the completed job is the account's first premium
+// action (server truth). is_first is decided server-side; here we only guard against a reload re-firing
+// the SAME job (localStorage, mirroring the purchase guard). trackActivation itself is a no-op without
+// consent or the env label, so this never throws.
+function fireActivationOnce(job: JobStatusRow, jobId: string): void {
+  if (job.first_premium_action !== true || typeof window === 'undefined') return
+  const key = `gads_activation_${jobId}`
+  try {
+    if (localStorage.getItem(key)) return
+    trackActivation()
+    localStorage.setItem(key, '1')
+  } catch {
+    // localStorage blocked (private mode) — fire anyway; Google's One-per counting dedupes the click.
+    trackActivation()
+  }
+}
+
 /**
  * Subscribes to a job via Supabase Realtime (primary) + polling loop (fallback).
  * Both paths share the same handlers — React state updates are idempotent.
@@ -96,8 +118,9 @@ export function useJobStatus({ jobId, jobType, onUpdate, onComplete, onError }: 
           fetch(endpoint)
             .then(r => (r.ok ? r.json() : job) as Promise<JobStatusRow>)
             .catch(() => job as JobStatusRow)
-            .then(fullJob => cbRef.current.onComplete(fullJob))
+            .then(fullJob => { fireActivationOnce(fullJob, jobId); cbRef.current.onComplete(fullJob) })
         } else {
+          fireActivationOnce(job, jobId)
           cbRef.current.onComplete(job)
         }
       } else if (TERMINAL.has(job.status)) {
