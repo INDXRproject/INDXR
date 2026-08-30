@@ -6,10 +6,11 @@ import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
-import { Chrome } from "lucide-react"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { loginAction, loginWithGoogleAction } from "@indxr/shared/actions/auth-actions"
+import { loginAction } from "@indxr/shared/actions/auth-actions"
+import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
+import { GoogleSignInButton } from "@indxr/shared/components/auth/GoogleSignInButton"
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
@@ -70,8 +71,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-bg px-4">
-      <Card className="w-full max-w-sm border shadow-sm">
+    <div className="relative flex items-center justify-center min-h-screen bg-bg px-4 overflow-hidden">
+      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
+      <Card className="relative w-full max-w-sm border shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
@@ -130,16 +132,7 @@ export default function LoginPage() {
             </div>
 
             {/* OAuth Buttons */}
-            <form action={loginWithGoogleAction}>
-              {nextParam && <input type="hidden" name="next" value={nextParam} />}
-              <Button
-                type="submit"
-                variant="outline"
-                className="w-full"
-              >
-                <Chrome className="mr-2 h-4 w-4" /> Google
-              </Button>
-            </form>
+            <GoogleSignInButton next={nextParam} />
 
         </CardContent>
         <CardFooter>

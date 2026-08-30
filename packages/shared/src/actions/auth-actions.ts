@@ -140,7 +140,7 @@ export async function signupAction(prevState: unknown, formData: FormData) {
   const safeNext = safeAppRedirect(rawRedirectTo)
   const callbackUrl = `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -151,6 +151,16 @@ export async function signupAction(prevState: unknown, formData: FormData) {
 
   if (error) {
     return { error: error.message }
+  }
+
+  // With email confirmation on, Supabase does NOT error when you sign up with an email that already
+  // has a confirmed account — to prevent email-enumeration it returns a fake success: a user object with
+  // an EMPTY `identities` array, and it sends no email. Without this check the user is told to "check
+  // your email" for a mail that never arrives, and no account is created. Surface it instead so they log
+  // in. (A real new signup returns exactly one identity.) Trade-off: this does reveal that an email is
+  // registered — the accepted, expected UX for a consumer signup; see LESSONS if we ever need to hide it.
+  if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    return { error: 'An account with this email already exists. Please log in instead.', code: 'account_exists' as const }
   }
 
   // 4. Success - Client handles redirect/message
