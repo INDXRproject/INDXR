@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createClient } from '../utils/supabase/client'
 import { getPollingInterval } from '../lib/pollingBackoff'
 import { trackActivation } from '../lib/gtag'
+import { isAdTagLoaded } from '../lib/consent'
 
 export interface JobStatusRow {
   status: string
@@ -73,6 +74,10 @@ const MAX_CONSECUTIVE_ERRORS = 3
 // consent or the env label, so this never throws.
 function fireActivationOnce(job: JobStatusRow, jobId: string): void {
   if (job.first_premium_action !== true || typeof window === 'undefined') return
+  // No consent → the ad tag was never loaded → the conversion can't transmit and there's nothing to
+  // dedupe. Return before touching localStorage, so the dedup flag is never non-essential storage
+  // written without consent (ePrivacy art. 5(3)).
+  if (!isAdTagLoaded()) return
   const key = `gads_activation_${jobId}`
   try {
     if (localStorage.getItem(key)) return

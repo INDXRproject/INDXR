@@ -5,6 +5,7 @@ import {
   ConsentChoice,
   DENIED,
   GRANTED,
+  clearAcquisitionCookie,
   clearGoogleAdsCookies,
   ensureGtag,
   loadGoogleTag,
@@ -22,6 +23,10 @@ interface ConsentContextValue {
   /** The stored explicit choice, or null if none has been made. */
   choice: ConsentChoice | null
   region: Region
+  /** Whether non-essential ad/marketing storage is currently allowed. EEA: only after an explicit
+   *  grant. ROW: implied-granted unless explicitly declined. Single source of truth for the acquisition
+   *  cookie and any other consent-gated marketing storage. */
+  adStorageGranted: boolean
   grantAll: () => void
   denyAll: () => void
   openManager: () => void
@@ -87,15 +92,19 @@ export function ConsentProvider({
     writeStoredChoice(c)
     pushConsentUpdate(DENIED)
     clearGoogleAdsCookies() // a withdrawal that leaves cookies is not a withdrawal
+    clearAcquisitionCookie() // ... and that includes the first-party attribution cookie
     setChoice(c)
     setManagerOpen(false)
   }, [])
 
   const openManager = useCallback(() => setManagerOpen(true), [])
 
+  // EEA: only an explicit grant permits ad storage. ROW: implied-granted unless explicitly declined.
+  const adStorageGranted = region === "row" ? choice?.ad_storage !== "denied" : choice?.ad_storage === "granted"
+
   const value = useMemo<ConsentContextValue>(
-    () => ({ choice, region, grantAll, denyAll, openManager }),
-    [choice, region, grantAll, denyAll, openManager],
+    () => ({ choice, region, adStorageGranted, grantAll, denyAll, openManager }),
+    [choice, region, adStorageGranted, grantAll, denyAll, openManager],
   )
 
   // Show the banner when the user opened the manager, or (EEA + no choice yet).

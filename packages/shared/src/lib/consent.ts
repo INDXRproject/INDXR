@@ -145,6 +145,17 @@ export function clearGoogleAdsCookies(): void {
   }
 }
 
+/** Delete the first-party acquisition cookie (`indxr_acq`) on both the host and `.indxr.ai`. It is
+ *  non-essential marketing/attribution storage (utm + ad click id), so a withdrawal of consent must
+ *  remove it too — a withdrawal that leaves it behind is not a withdrawal. */
+export function clearAcquisitionCookie(): void {
+  if (!isBrowser()) return
+  const domains = ["", cookieDomainSuffix(), `; domain=${window.location.hostname}`]
+  for (const d of domains) {
+    document.cookie = `indxr_acq=; path=/; max-age=0; SameSite=Lax${d}`
+  }
+}
+
 // ── gtag / dataLayer bootstrap ──────────────────────────────────────────────
 declare global {
   interface Window {
@@ -176,6 +187,13 @@ export function pushConsentUpdate(state: ConsentState): void {
 }
 
 let tagRequested = false
+/** True once the real gtag.js has been loaded — i.e. ad consent is effectively granted (ROW default,
+ *  or after an explicit grant). The one non-reactive client-side signal that non-essential ad/marketing
+ *  storage is now permitted; used to gate the activation-conversion dedup flag. */
+export function isAdTagLoaded(): boolean {
+  return tagRequested
+}
+
 /** Inject gtag.js (only after consent / for ROW default-granted). Idempotent; no-op without an Ads id. */
 export function loadGoogleTag(adsId: string | undefined): void {
   if (!isBrowser() || !adsId || tagRequested) return

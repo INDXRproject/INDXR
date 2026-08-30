@@ -64,15 +64,15 @@ export default function PrivacyPage() {
             <p className="mt-4">
               Separately, if you arrive from a Google ad, the ad’s landing URL includes a click
               identifier — Google’s <code>gclid</code>, or <code>gbraid</code> or <code>wbraid</code> on
-              some devices. If you go on to create an account, we add that identifier and the time of your
-              visit to your profile, so we can measure which ads lead to people who actually use the
-              service; it is never stored for visitors who do not create an account, and it is kept as
-              part of your account data and deleted when you delete your account. If you also
-              {" "}<strong>give consent</strong>, Google Ads sets one cookie (<code>_gcl_au</code>) — no
+              some devices. If you <strong>give consent</strong> and go on to create an account, we add
+              that identifier and the time of your visit to your profile, so we can measure which ads lead
+              to people who actually use the service; it is never stored if you decline or do not create
+              an account, and it is kept as part of your account data and deleted when you delete your
+              account. With that consent, Google Ads also sets one cookie (<code>_gcl_au</code>) — no
               advertising profile, no data sold — to attribute a signup or purchase to the ad you came
-              from; without your consent this cookie is never placed and no request goes to Google. You
-              can accept, decline, or withdraw at any time via <strong>“Cookie settings”</strong> in the
-              footer (withdrawing also deletes the cookie). See the cookie table below.
+              from; without your consent neither is placed and no request goes to Google. You can accept,
+              decline, or withdraw at any time via <strong>“Cookie settings”</strong> in the footer
+              (withdrawing deletes them). See the cookie table below.
             </p>
             <p className="mt-4">
               A saved transcript can show the original video in an embedded player. Nothing from
@@ -208,7 +208,7 @@ export default function PrivacyPage() {
                     <td className="py-2 pr-4"><code>indxr_acq</code></td>
                     <td className="py-2 pr-4">Remembers where your visit came from — the campaign or ad it started with (utm tags, and from a Google ad the click identifier <code>gclid</code>/<code>gbraid</code>/<code>wbraid</code>) — so that, if you create an account, we can attribute your signup to its source. First-party.</td>
                     <td className="py-2 pr-4">Up to 6 months</td>
-                    <td className="py-2">First-party attribution — set on the marketing site, not gated behind the prompt. Used only to attribute your own signup to its source.</td>
+                    <td className="py-2"><strong>Only with your consent.</strong> First-party; not placed until you accept, and removed if you withdraw.</td>
                   </tr>
                 </tbody>
               </table>

@@ -1,19 +1,41 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useConsent } from '../providers/ConsentProvider'
 
-// First-touch acquisition capture. On the first marketing landing (no cookie yet) this records
-// utm_source/medium/campaign + referrer + landing path into a long-lived cookie. The signup server
-// action reads this cookie and threads it into signUp options.data → raw_user_meta_data → profiles
-// (via the on_auth_user_created_acquisition trigger). First-touch: never overwritten on later pages.
+// First-touch acquisition capture, GATED ON CONSENT (ePrivacy art. 5(3): storing non-essential info on
+// the device needs prior consent — first-party or not, personal data or not; legitimate interest is not
+// a valid basis for this category). Marketing attribution (utm, referrer, ad click id) is not strictly
+// necessary, so the whole indxr_acq cookie waits for consent.
 //
-// ADR-036 keeps auth on the marketing host, so a cookie set here on indxr.ai is same-host at signup.
-// The domain is widened to .indxr.ai in production so the value also survives a marketing→app hop.
+// The problem: the values are in the landing URL at arrival, but the banner appears after and the visitor
+// may click on before deciding. Solution: capture the values into MODULE-LEVEL MEMORY (a JS variable, not
+// device storage — runtime memory is not "storage in the terminal equipment" under 5(3)). That memory
+// survives Next.js client-side navigation because the module is not re-evaluated on route changes, so a
+// visitor who lands with ?gclid, clicks to another page, and only then accepts still gets attributed. A
+// hard reload / cross-origin nav before consent loses it — acceptable: without device storage there is no
+// compliant way to hold it across a full reload, and the values only matter if the visitor consents.
+//
+// When ad storage becomes allowed (EEA: explicit grant; ROW: implied unless declined) we write the cookie
+// from memory. Declined or undecided → no cookie, so no acquisition data reaches the profile at signup —
+// the intended outcome. First-touch preserved: a later visit never overwrites an existing cookie.
+//
+// Exception: the consent cookie itself (indxr_consent) stays unconditional — it is strictly necessary to
+// remember the choice, holds only the choice, and cannot track. See consent.ts.
 
 const COOKIE = 'indxr_acq'
 
+// Held in memory (not on the device) until consent. Module-level so it survives client-side navigation.
+let pendingAcq: string | null = null
+let captured = false
+
 export function AcquisitionCapture() {
+  const { adStorageGranted } = useConsent()
+
+  // Read the URL once, into memory only. First-touch: skip entirely if a cookie already exists.
   useEffect(() => {
+    if (captured) return
+    captured = true
     try {
       if (document.cookie.split('; ').some((c) => c.startsWith(COOKIE + '='))) return
 
@@ -24,10 +46,7 @@ export function AcquisitionCapture() {
       const referrer = document.referrer || undefined
       const landing_path = window.location.pathname || undefined
 
-      // Google Ads click identifiers (gclid, or gbraid/wbraid on iOS). Captured first-touch like the
-      // rest and only ever persisted to a profile at signup (never for anonymous visitors, never passed
-      // in the URL between pages). Kept now so a later server-side conversion upload stays possible;
-      // click_id_at records the arrival moment — without it a click id is useless later. (ADR-101.)
+      // Google Ads click identifiers (gclid, or gbraid/wbraid on iOS) + the arrival moment.
       const gclid = params.get('gclid') || undefined
       const gbraid = params.get('gbraid') || undefined
       const wbraid = params.get('wbraid') || undefined
@@ -46,14 +65,28 @@ export function AcquisitionCapture() {
 
       const data = { signup_source, utm_source, utm_medium, utm_campaign, referrer, landing_path,
         gclid, gbraid, wbraid, click_id_at }
-      const value = encodeURIComponent(JSON.stringify(data))
-      const maxAge = 60 * 60 * 24 * 180 // 180 days
-      const domain = window.location.hostname.endsWith('indxr.ai') ? '; domain=.indxr.ai' : ''
-      document.cookie = `${COOKIE}=${value}; path=/; max-age=${maxAge}; SameSite=Lax${domain}`
+      pendingAcq = encodeURIComponent(JSON.stringify(data))
     } catch {
       /* best-effort — a layout-level capture must never throw */
     }
   }, [])
+
+  // Write the cookie only once ad storage is allowed. Re-runs when consent changes (grant flips it true).
+  useEffect(() => {
+    if (!pendingAcq || !adStorageGranted) return
+    try {
+      if (document.cookie.split('; ').some((c) => c.startsWith(COOKIE + '='))) {
+        pendingAcq = null
+        return
+      }
+      const maxAge = 60 * 60 * 24 * 180 // 180 days
+      const domain = window.location.hostname.endsWith('indxr.ai') ? '; domain=.indxr.ai' : ''
+      document.cookie = `${COOKIE}=${pendingAcq}; path=/; max-age=${maxAge}; SameSite=Lax${domain}`
+      pendingAcq = null
+    } catch {
+      /* best-effort */
+    }
+  }, [adStorageGranted])
 
   return null
 }

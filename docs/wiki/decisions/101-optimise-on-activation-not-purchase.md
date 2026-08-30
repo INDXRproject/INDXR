@@ -89,3 +89,14 @@ De activatie-conversie is nu aan Google Ads gekoppeld (`trackActivation`, label
   cookiebanner (`ConsentBanner`) ook gecorrigeerd. `LEGAL_VERSION` 2026-08-09 → 2026-08-30 (inhoudelijke
   wijziging; forceert geen heracceptatie — `LEGAL_VERSION` wordt alleen bij checkout vastgelegd, dat
   vraagt sowieso elke keer het vinkje) + zichtbare "Last updated" + sitemap-lastmod meegetrokken.
+
+  **Addendum 2026-08-30 (2) — acquisitie-opslag achter toestemming (ePrivacy 5(3)).** De hele
+  acquisitie-cookie `indxr_acq` (utm + klik-ID) is niet strikt noodzakelijk maar werd onvoorwaardelijk
+  gezet — strijdig met art. 5(3). Nu consent-gated: `AcquisitionCapture` houdt de URL-waarden bij
+  binnenkomst in **module-memory** (geen device-opslag; overleeft client-side nav) en schrijft de cookie
+  pas als `adStorageGranted` (EEA: expliciete grant; ROW: implied tenzij geweigerd). Weigeren/niet-beslissen
+  → geen cookie → geen acquisitiedata op het profiel. Intrekken wist `indxr_acq` (naast `_gcl_*`). De
+  activatie-dedup-flag (`gads_activation_*` localStorage) staat óók achter `isAdTagLoaded()`. PostHog
+  (`persistence:'memory'`) schrijft niets → ongemoeid. Cookietabel + privacytekst bijgewerkt;
+  `LEGAL_VERSION` blijft 2026-08-30 (zelfde dag, praktijk wordt beschermender, geen nieuwe verwerking).
+  Zie `docs/LESSONS.md` (consent-device-storage) + `priorities.md` (klik-ID-retentie, AVG 5(1)(e)).
