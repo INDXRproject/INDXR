@@ -293,9 +293,11 @@ aan de knoppen draait, gooit de meting weg die de campagne juist moest opleveren
 
 ## 9. Open verificatiepunt — activatieconversie nog niet met echt verkeer getest
 
-**De gtag-activatieconversie is nooit met echt verkeer geverifieerd.** De verificatie in commit `e5110b6`
-gebruikte een **gemockte gtag** — die bewijst dat de code vuurt tegen een nep-gtag, niet dat de echte
-Google Ads-conversie binnenkomt.
+**De gtag-activatieconversie is nooit met echt verkeer geverifieerd.** De verificatie in commit `ea2ee77`
+(de gtag-activatieconversie + klik-ID-opslag) gebruikte een **gemockte `window.gtag`**; het rapport
+noteert onder *ECHTE CALL* expliciet dat een **volledige browser-e2e van het netwerkverzoek niet is
+gedraaid**. De mock bewijst dat de code vuurt tegen een nep-gtag, niet dat de echte Google Ads-conversie
+binnenkomt.
 
 **Actie zodra de eerste echte activatie binnenkomt:** controleer in Google Ads onder **Goals →
 Conversions** dat de actie **"Activation"** van **"Unverified"** naar een geregistreerde conversie
