@@ -9,19 +9,17 @@ import { useEffect, useState } from "react"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { TranscribeWorkbench } from "@indxr/shared/components/transcribe/TranscribeWorkbench"
 import { VideoTab } from "@indxr/shared/components/free-tool/VideoTab"
-import { PlaylistTab } from "@indxr/shared/components/free-tool/PlaylistTab"
-import { AudioTab } from "@indxr/shared/components/free-tool/AudioTab"
 import { TranscriptItem } from "@indxr/shared/components/TranscriptCard"
 import { TranscriptMetadata } from "@indxr/shared/types/transcript"
 import { MicroTrustRow } from "@indxr/shared/components/MicroTrustRow"
 import { FrictionConversionCard } from "@indxr/shared/components/FrictionConversionCard"
+import { appHref } from "@indxr/shared/lib/cross-host-links"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 
 const WELCOME = FREE_TIER.WELCOME_CREDITS
 const PER_MIN = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 
 export function FreeToolEmbed() {
-  const [showPlaylistFriction, setShowPlaylistFriction] = useState(false)
   const [showVideoAiFriction, setShowVideoAiFriction] = useState(false)
   const [user, setUser] = useState<unknown>(null)
   const [hasMounted, setHasMounted] = useState(false)
@@ -36,7 +34,7 @@ export function FreeToolEmbed() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) { setShowPlaylistFriction(false); setShowVideoAiFriction(false) }
+      if (session?.user) { setShowVideoAiFriction(false) }
     })
 
     return () => subscription.unsubscribe()
@@ -113,28 +111,41 @@ export function FreeToolEmbed() {
           </>
         )}
         renderPlaylist={({ switchMode }) => (
-          <>
-            <PlaylistTab
-              isAuthenticated={!!user}
-              onAuthRequired={() => setShowPlaylistFriction(true)}
-              onSwitchToAudio={() => switchMode("audio")}
-            />
-            {!user && showPlaylistFriction && (
-              <FrictionConversionCard
-                className="mt-6"
-                headline="Get the full playlist"
-                body={`Sign up free — ${WELCOME} credits included, no credit card needed. Extract any playlist, not just single videos. Credits never expire.`}
-                primaryCtaLabel="Sign up free →"
-                primaryCtaHref="/signup"
-                secondaryLabel="Or extract a single video"
-                secondaryHref="#"
-              />
-            )}
-          </>
-        )}
-        renderAudio={() => (
+          // Gate on tab activation — no network call. Playlist extraction has no route in the marketing
+          // app (/api/playlist/info lives only in the app), so mounting PlaylistTab here 404'd and
+          // surfaced a raw SyntaxError to anonymous Ads traffic. Anonymous → sign-up friction; logged-in
+          // → hand off to the app (playlists run there). The deferred "first 3 free" FOMO preview is not
+          // built yet, so we do not preview here. (ADR-079/080 follow-up.)
           user ? (
-            <AudioTab onTranscriptLoaded={handleTranscriptLoaded} />
+            <FrictionConversionCard
+              headline="Playlists open in the app"
+              body="Playlist transcription runs in your INDXR workspace — open the app to paste a playlist and pick your videos."
+              primaryCtaLabel="Open the app →"
+              primaryCtaHref={appHref("/transcribe?mode=playlist")}
+            />
+          ) : (
+            <FrictionConversionCard
+              headline="Playlist transcription"
+              body={`Transcribe a whole YouTube playlist in one go. The first 3 videos are free — after that it's 1 credit per video for captions, or ${PER_MIN} credit per minute for AI transcription. Sign up free for ${WELCOME} credits — no credit card needed.`}
+              primaryCtaLabel="Sign up free →"
+              primaryCtaHref="/signup"
+              secondaryLabel="Or paste a single YouTube URL"
+              secondaryOnClick={() => switchMode("video")}
+            />
+          )
+        )}
+        renderAudio={({ switchMode }) => (
+          // Gate on tab activation. Upload has no route in the marketing app (/api/transcribe/preflight
+          // lives only in the app). Anonymous → sign-up friction (unchanged, verified). Logged-in → hand
+          // off to the app; a File object can't cross the origin boundary, so we send them before they
+          // pick a file, not after.
+          user ? (
+            <FrictionConversionCard
+              headline="Uploads open in the app"
+              body="File uploads run in your INDXR workspace — open the app to upload audio or video and transcribe it."
+              primaryCtaLabel="Open the app →"
+              primaryCtaHref={appHref("/transcribe?mode=audio")}
+            />
           ) : (
             <FrictionConversionCard
               headline="File transcription"
@@ -142,7 +153,7 @@ export function FreeToolEmbed() {
               primaryCtaLabel="Sign up free →"
               primaryCtaHref="/signup"
               secondaryLabel="Or paste a YouTube URL"
-              secondaryHref="#"
+              secondaryOnClick={() => switchMode("video")}
             />
           )
         )}

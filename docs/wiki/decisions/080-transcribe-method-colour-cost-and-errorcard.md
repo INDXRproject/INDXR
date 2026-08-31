@@ -62,3 +62,28 @@ Na ADR-079 stond de basis, maar de afwerking lekte semantiek: de methodekeuze ha
 - **`error_code` verwijderd uit `JobStatusRow`.** Het veld stond backend-zijde hardcoded op `null` en betekende niets; de enige consumer (`VideoTab` whisper-poll, insufficient-credits-tak) keyt nu op `error_type === 'insufficient_credits'`. Kanaal-consistent met de rest van de download-fout-afhandeling die al op `error_type` leunt.
 - **`available_credits` verwijderd uit `JobStatusRow`.** Een saldo gekopieerd uit een poll-respons is per definitie ouder dan wat de gebruiker al ziet; de frontend heeft het live saldo via `useAuth`. De insufficient-credits-kaart leest het saldo nu uit `useAuth` (`availableCredits: user ? credits : null` in de `resolveErrorCopy`-ctx van VideoTab én AudioTab). `errorCopy.insufficient_credits` kreeg een "alleen saldo"-tak ("You have Y credits, which isn't enough") zodat de kaart het live saldo toont zolang `requiredCredits` nog niet meekomt. `required_credits` **blijft** in het contract (wordt binnenkort backend-zijde gevuld); zodra dat er is, upgradet de copy vanzelf naar "This needs X and you have Y".
 - **Pending (bewust niet gedaan):** standaardiseren op de rauwe `duration_seconds` + `credits_cost` i.p.v. de hernoemde aliassen in de curated dict (de hernoeming was de oorzaak dat beide leeg zijn op een Realtime-update) — pas doen zodra de backend die rauwe namen náást de aliassen emit; nagevraagd, niet vooruitgelopen.
+
+## Follow-up 4 (2026-08-31, ErrorCard-vangnet + modus-bewuste copy)
+
+- **Vangnetlaag tegen rauwe `SyntaxError`:** nieuwe helper `packages/shared/src/lib/http.ts` `readJson()`
+  controleert **status én content-type** vóór het parsen. Een niet-JSON-body (404 HTML, proxy-fout) gooit
+  een getypte `ResponseError` met een `code` (`unexpected_response` / `http_<status>`) i.p.v. de rauwe
+  "Unexpected token '<'". Toegepast op de bron van de bug (`PlaylistManager` playlist-info fetch) en op de
+  `AudioTab`-preflight. Nieuwe copy-entry `unexpected_response` in `errorCopy.ts`. Blijft nodig ook nadat de
+  404's weg zijn — het is de vangnetlaag.
+- **ErrorCard-anatomie (pt.3) hersteld:** de foutcode was al zichtbaar; de **neutrale fallback** onderdrukte
+  echter de contact-actie zodra er een retry-actie was (`if (!actions.length && contactHref)`). Nu wordt
+  "Contact support" **altijd** toegevoegd naast retry op de neutrale kaart — de kaart waar "wie vraag ik dit?"
+  het meest telt. Waaróm de code/contact eerder "niet renderden": de rauwe `SyntaxError` bereikte
+  `resolveErrorCopy`/`ErrorCard` nooit (hij ontstond bij het parsen, vóór de kaart) — dat pad is nu dichtgezet.
+- **Modus-bewuste copy:** `ErrorCtx` kreeg `mode`. "…, or use Upload" (body) en de "Use Upload"-actie
+  vervallen op de Upload-tab (`mode: "audio"`) — onzinnig advies daar. `AudioTab` geeft nu `mode: "audio"` mee.
+- **Stale-foutkaart:** `AudioTab` wist de foutstaat aan het **enige** nieuwe-bestand-entrypunt
+  (`validateAndSetFile`), zodat een oude kaart niet boven een geldige bevestigingsstap blijft staan.
+  Modus-wissel wist de staat al via Radix' unmount van de inactieve tab.
+- **Bevestigde eigenschap (nagegaan, geen aanname):** de 404's veroorzaakten **geen** credit-reserveringen —
+  het 404 valt op het Next.js-routingniveau, vóór FastAPI (waar `reserve_credits`/`deduct_credits_atomic`
+  draaien). DB-controle 2026-08-31: geen reserverings-/settlement-rijen rond de pogingen, saldi intact.
+- **[~] `PlaylistManager` inline-fout toont geen code** (eigen inline-error-patroon, niet de ErrorCard);
+  de boodschap is nu wél schoon (geen rauwe `SyntaxError`). Volledige code-zichtbaarheid daar = losse
+  follow-up. **[~] Live browser-verificatie** van de ingelogde paden staat open (zie taakrapport/LOG).

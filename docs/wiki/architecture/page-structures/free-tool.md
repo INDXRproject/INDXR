@@ -183,4 +183,39 @@ kaart (max-w-[640px], gecentreerd, dichte --surface)
 - [x] Mobile pass (bottom tab bar + avatar/hamburger sheets)
 - [ ] Content writing (FAQ-antwoorden + kopij)
 - [ ] Format-export gating (3c) — deferred
-- [ ] Playlist eerste-3-free UI — deferred
+- [ ] Playlist eerste-3-free UI (FOMO-preview) — deferred; tot dan toont anonieme playlist meteen de conversiekaart (zie "Marketing-app gating per modus × auth")
+
+---
+
+## Marketing-app gating per modus × auth (2026-08-31)
+
+De gedeelde `TranscribeWorkbench` (ADR-079) staat op zowel de marketing-app als de app. De bijbehorende
+API-routes staan **niet** in beide apps: `/api/playlist/info` en `/api/transcribe/preflight` bestaan
+alléén in `apps/app`. Op marketing 404'de dat → de frontend parste de Next.js HTML-foutpagina als JSON →
+rauwe `SyntaxError` ("Unexpected token '<'") zichtbaar in de UI (publiek, op Ads-verkeer). Fix: gaten
+worden op **tab-activatie** afgevangen, zonder netwerkcall. Bron: `FreeToolEmbed.tsx`.
+
+| Modus | Uitgelogd (marketing) | Ingelogd (marketing) |
+|---|---|---|
+| **Video** | Werkt, ononderbroken (VideoTab) — **ongewijzigd** | Werkt, transcript landt in library — **ongewijzigd** |
+| **Playlist** | `FrictionConversionCard` (signup) op tab-activatie, **geen** netwerkcall | Doorverwijskaart → `app.indxr.ai/transcribe?mode=playlist` |
+| **Upload** | `FrictionConversionCard` (signup) — **ongewijzigd, geverifieerd goed** | Doorverwijskaart → `app.indxr.ai/transcribe?mode=audio` |
+
+- **Anonieme playlist-preview is teruggedraaid.** De eerdere strategie mountte `PlaylistTab` voor anonieme
+  bezoekers (met een `onAuthRequired`-friction ná een actie); dat was de bron van de 404/SyntaxError. Tot
+  de **deferred FOMO-UI** (eerste 3 video's "Free", rest "Sign up to extract") daadwerkelijk gebouwd is,
+  toont de playlist-tab voor anonieme bezoekers meteen de conversiekaart — geen preview, geen call.
+- **Doorverwijskaart (ingelogd):** hergebruikt `FrictionConversionCard` met andere props (cross-host
+  `<a>` via `appHref`), geen nieuw component. De kaart verschijnt **bij tab-activatie, niet na een actie**:
+  een `File`-object overleeft de origin-grens niet, dus wie eerst een bestand kiest en dán wordt
+  doorgestuurd zou het opnieuw moeten zoeken.
+
+### Bevindingen bij deze fix (nagegaan, geen aanname)
+
+- **De Ads-landingspagina's waren nooit geraakt.** `/articles/audio-to-text` en `/articles/video-to-text`
+  (de live Ads-final-URLs) dragen `ToolPageTemplate` — content, FAQ, figuren, JSON-LD — **geen**
+  `TranscribeWorkbench` en **geen** upload-widget. Nagegaan in de bron; ze vielen dus buiten de 404-bug.
+- **De 404's veroorzaakten geen credit-reserveringen.** Het 404 valt op het Next.js-routingniveau in
+  `apps/marketing`, vóór FastAPI; reserveringen worden pas in de Python-backend gemaakt
+  (`reserve_credits`/`deduct_credits_atomic`). DB-controle (2026-08-31): geen reserverings-/settlement-rijen
+  rond de pogingen; testsaldi intact. Zie ADR-080 follow-up.

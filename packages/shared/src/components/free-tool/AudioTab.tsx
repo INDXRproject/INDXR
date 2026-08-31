@@ -21,6 +21,7 @@ import { MethodBadge } from "../transcribe/MethodBadge"
 import { BalanceLine } from "../transcribe/CostBreakdown"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy } from "../transcribe/errorCopy"
+import { readJson, ResponseError } from "../../lib/http"
 import { CREDIT_COSTS } from "../../lib/pricing"
 import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
 import { UPLOAD_EXTENSIONS, UPLOAD_ACCEPT_ATTR, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "../../lib/uploadFormats"
@@ -269,6 +270,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   const validateAndSetFile = async (selectedFile: File) => {
     setIsUploading(true)
+    // Point 7: clear any stale error card before validating a fresh file. Without this, a previous
+    // error (e.g. "unsupported file type") stayed pinned above a now-valid file + active Transcribe
+    // button. One clear here, at the single entry point for a new file (drop and picker both route here).
+    setError(null)
 
     // Check file type
     const validTypes: readonly string[] = UPLOAD_EXTENSIONS
@@ -345,8 +350,17 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       // Step 1: Preflight — auth, suspended check, rate limit (no file involved)
       const preflightRes = await fetch('/api/transcribe/preflight', { method: 'POST' })
       if (!preflightRes.ok) {
-        const preflightData = await preflightRes.json()
-        setError({ message: preflightData.error || 'Request blocked. Please try again.' })
+        // Point 4: never JSON.parse a non-JSON body. If the route is absent (404 HTML), readJson throws
+        // a coded ResponseError → a clean card, never a raw SyntaxError.
+        let msg = 'Request blocked. Please try again.'
+        let code: string | undefined
+        try {
+          const preflightData = await readJson<{ error?: string }>(preflightRes)
+          msg = preflightData.error || msg
+        } catch (e) {
+          if (e instanceof ResponseError) code = e.code
+        }
+        setError({ message: msg, code })
         return
       }
 
@@ -482,6 +496,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       {error && (
         <ErrorCard
           {...resolveErrorCopy(error.code, {
+            mode: "audio",
             fallbackMessage: error.message,
             availableCredits: user ? credits : null,
             billingHref: appHref('/dashboard/credits'),

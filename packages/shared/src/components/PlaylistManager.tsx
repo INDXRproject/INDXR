@@ -12,6 +12,7 @@ import { useAuth } from "../hooks/useAuth";
 import { createClient } from "../utils/supabase/client";
 import { cn } from "../lib/utils";
 import { appHref } from "../lib/cross-host-links";
+import { readJson } from "../lib/http";
 import { ResultCardShell } from "./transcribe/ResultCardShell";
 import { CostBreakdown, BalanceLine, type CostSegment } from "./transcribe/CostBreakdown";
 import { MethodBadge } from "./transcribe/MethodBadge";
@@ -194,7 +195,10 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
       });
       clearTimeout(timeoutId);
 
-      const data = await response.json();
+      // Never JSON.parse a non-JSON body (e.g. a 404 HTML page when the route is absent) — that used
+      // to surface a raw "Unexpected token '<'" SyntaxError in the UI. readJson throws a clean,
+      // typed error instead; a structured backend error (JSON with a status) still flows through below.
+      const data = await readJson<{ title: string; entries: PlaylistEntry[]; total_count?: number; unavailable_count?: number; error?: string }>(response);
 
       if (!response.ok) throw new Error(data.error || "Failed to fetch playlist");
 

@@ -52,3 +52,20 @@ Bevinding vooraf: `VideoTab`/`PlaylistTab`/`AudioTab` waren al gedeeld in `packa
 - `min-h-full` op beide `DashboardBackdrop`-lagen houdt de volledige-hoogte-keten zodat Library's textuur byte-identiek reikt.
 - **Uitgesteld (POST-LAUNCH):** job/progress-state uit de drie tab-monolieten naar één gedeeld slot — raakt live job-/SSE-/resume-/dedup-logica en vereist verificatie met echte jobs.
 - **Niet in dit environment verifieerbaar:** de echte-job-test (tabwissel + refresh mid-job met credit-verbruik) en browser-checks (WCAG-contrast, 390px, dark mode) — gemarkeerd `[~]` in het taakrapport.
+
+## Follow-up (2026-08-31, route-pariteit marketing vs app)
+
+- **Route-pariteitsfout:** de gedeelde workbench kwam mee naar `apps/marketing`, maar de API-routes die
+  hij aanroept niet. `/api/playlist/info` (via `PlaylistManager`) en `/api/transcribe/preflight` (via
+  `AudioTab`) bestaan alléén in `apps/app`. Op marketing 404'de dat → HTML-foutpagina → JSON-parse →
+  rauwe `SyntaxError` in de UI (uitgelogd playlist, publiek zichtbaar) resp. 404 (ingelogd playlist/upload).
+  Les vastgelegd in `docs/LESSONS.md` (gedeelde component ⇏ gedeelde route; per app verifiëren).
+- **Oplossing:** de niet-ondersteunde modi worden op **tab-activatie** afgevangen in `FreeToolEmbed`
+  (geen netwerkcall). Uitgelogd → signup-`FrictionConversionCard`; ingelogd → doorverwijskaart naar
+  `app.indxr.ai/transcribe?mode=…`. Video-modus **ongewijzigd** in beide auth-states. Matrix + reden:
+  `architecture/page-structures/free-tool.md`.
+- **[~] Live nog te verifiëren (kon niet in dit environment — vereist ingelogde sessie op productie):**
+  ingelogd-op-marketing playlist/upload doorverwijskaart zonder 404; ingelogd video → transcript in library;
+  >5MB upload op `app.indxr.ai` start een job. **Machinaal wél bewezen (lokale prod-build + Playwright):**
+  uitgelogd playlist toont de kaart met **0 `/api/`-calls / 0 `SyntaxError`**, video-input werkt, upload-kaart
+  ongewijzigd.

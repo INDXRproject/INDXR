@@ -6,6 +6,7 @@ import { FreeToolEmbed } from "@/components/marketing/FreeToolEmbed"
 import { HomeClipVideo } from "@/components/marketing/HomeClipVideo"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { createClient } from "@indxr/shared/utils/supabase/server"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
 import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT } from "@indxr/shared/lib/exportFormats"
@@ -92,7 +93,14 @@ const usps = [
   },
 ]
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Auth-aware section copy (point 8): a logged-in visitor already has an account, so the
+  // "a free account comes with 50 credits" promise is wrong for them. The ANONYMOUS copy is the
+  // verified Ads-landing variant and is left byte-for-byte unchanged; only the logged-in branch differs.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const loggedIn = !!user
+
   return (
     <>
       <JsonLd schemas={homeSchemas} />
@@ -144,9 +152,18 @@ export default function LandingPage() {
             Paste a link and see for yourself
           </h2>
           <p className="mx-auto mb-10 max-w-2xl text-center text-[var(--fg-subtle)]">
-            No account, no card. Paste a link or upload a recording and see the transcript for yourself. A
-            free account comes with {welcomeCredits} credits, enough for {welcomeMinutes} minutes of AI
-            transcription.
+            {loggedIn ? (
+              <>
+                Paste a link or upload a recording and see the transcript for yourself. Playlists and file
+                uploads open in the app.
+              </>
+            ) : (
+              <>
+                No account, no card. Paste a link or upload a recording and see the transcript for yourself.
+                A free account comes with {welcomeCredits} credits, enough for {welcomeMinutes} minutes of AI
+                transcription.
+              </>
+            )}
           </p>
           <FreeToolEmbed />
         </div>
@@ -381,8 +398,14 @@ export default function LandingPage() {
           </div>
 
           <p className="mt-6 text-[var(--fg-subtle)]">
-            A free account starts with {welcomeCredits} credits — and extracting captions from a YouTube
-            video that already has them is free, however many you do.
+            {loggedIn ? (
+              <>Extracting captions from a YouTube video that already has them is free, however many you do.</>
+            ) : (
+              <>
+                A free account starts with {welcomeCredits} credits — and extracting captions from a YouTube
+                video that already has them is free, however many you do.
+              </>
+            )}
           </p>
 
           <p className="mt-8 text-sm text-[var(--fg-muted)]">

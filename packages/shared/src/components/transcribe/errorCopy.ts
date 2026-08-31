@@ -21,6 +21,10 @@ import type { ErrorCardAction } from "./ErrorCard"
  */
 
 export type ErrorCtx = {
+  // The active workbench mode, so the copy can drop advice that makes no sense there — e.g. "or use
+  // Upload" is nonsense when you are already on the Upload tab (ADR-080 follow-up). Omitted = video-era
+  // default (Upload stays a valid escape from a YouTube-fetch failure).
+  mode?: "video" | "playlist" | "audio"
   requiredCredits?: number | null
   availableCredits?: number | null
   // Read from transcription_jobs.credits_refunded, not asserted. When present and > 0, a "N credits
@@ -63,13 +67,17 @@ const buyCredits = (c: ErrorCtx): ErrorCardAction[] =>
   c.billingHref ? [{ label: "Buy credits", href: c.billingHref }] : []
 
 // Try again + Audio Upload — Audio Upload is the real way in when YouTube fetching fails,
-// so it is offered here (contact support is not the escape for these).
+// so it is offered here (contact support is not the escape for these). On the Upload tab itself
+// (mode === "audio") the "Use Upload" action is dropped — you're already there.
 const retryOrAudio = (c: ErrorCtx): ErrorCardAction[] => {
   const out: ErrorCardAction[] = []
   if (c.onRetryUrl) out.push({ label: "Try again", onClick: c.onRetryUrl })
-  if (c.onSwitchToAudio) out.push({ label: "Use Upload", onClick: c.onSwitchToAudio, variant: out.length ? "secondary" : "primary" })
+  if (c.onSwitchToAudio && c.mode !== "audio") out.push({ label: "Use Upload", onClick: c.onSwitchToAudio, variant: out.length ? "secondary" : "primary" })
   return out
 }
+
+// "…, or use Upload" tail — only when Upload is a different place than where we are.
+const orUpload = (c: ErrorCtx) => (c.mode === "audio" ? "" : ", or use Upload")
 
 // The download-failure family (timeout / partial_write / proxy_error / ytdlp_parse /
 // extraction_error): fetching the audio from YouTube failed for a connection reason — not the
@@ -77,8 +85,8 @@ const retryOrAudio = (c: ErrorCtx): ErrorCardAction[] => {
 const audioFetchFailed = (title: string): Entry => ({
   title,
   // No credit claim in the body — the credit outcome is rendered from creditsRefunded (see below).
-  body: () =>
-    "We couldn't fetch this video's audio — a temporary connection problem on our side, not the video itself. Try again, or use Upload.",
+  body: (c) =>
+    `We couldn't fetch this video's audio — a temporary connection problem on our side, not the video itself. Try again${orUpload(c)}.`,
   actions: retryOrAudio,
 })
 
@@ -287,6 +295,15 @@ const COPY: Record<string, Entry> = {
       "We couldn't complete this because of a problem on our end — not your video. No credits were used. Please try again.",
     actions: retryOrAudio,
   },
+  // unexpected_response / http_404 etc. (readJson, lib/http.ts): the server returned something that
+  // wasn't the JSON we expected — a routing/deploy problem on our side, before anything ran or was
+  // charged. Never let the raw "Unexpected token '<'" reach the user; this is the mapped copy for it.
+  unexpected_response: {
+    title: "Something went wrong on our side",
+    body: (c) =>
+      `We couldn't read the server's response — a problem on our end, not your file. No credits were used. Please try again${orUpload(c)}.`,
+    actions: retryOrAudio,
+  },
   // watchdog_permanent_failure: the job was interrupted and auto-recovery failed, so the watchdog
   // gave up. The refund is GUARANTEED before this code is ever set: worker.py:800-838 books the
   // refund FIRST and only then claims status=error — a failed refund leaves the job 'interrupted'
@@ -342,12 +359,16 @@ export function resolveErrorCopy(code: string | null | undefined, ctx: ErrorCtx 
   // Never surface the raw backend/provider string as the body — an unmapped code could carry a
   // yt-dlp stack trace with a "report an issue" URL. The body is always our own safe copy; the
   // code (when present) is shown small so support can still identify it.
+  //
+  // ADR-080 pt.3: the neutral fallback ALWAYS offers a contact route. It used to be added only when
+  // no other action existed, so an unmapped code that still had a retry hid the contact link — the
+  // one card where "who do I ask?" matters most. Contact is now appended alongside retry.
   const actions: ErrorCardAction[] = [...retryOrAudio(ctx)]
-  if (!actions.length && ctx.contactHref) actions.push({ label: "Contact support", href: ctx.contactHref })
+  if (ctx.contactHref) actions.push({ label: "Contact support", href: ctx.contactHref, variant: actions.length ? "secondary" : "primary" })
 
   return {
     title: "Something went wrong",
-    body: "We couldn't finish this. Try again, or use Upload.",
+    body: `We couldn't finish this. Please try again${orUpload(ctx)}.`,
     actions,
     code: key || null,
     creditsNote,

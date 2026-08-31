@@ -125,11 +125,15 @@ export function Header() {
           <a href={marketingHref('/articles')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-accent">
             Articles
           </a>
-          <a href={marketingHref('/transcribe')}>
-            <Button size="sm" className="bg-accent text-fg-on-accent hover:bg-accent-hover">
-              Try it free
-            </Button>
-          </a>
+          {/* "Try it free" is a signup nudge — hide it for a logged-in user, who already has "Go to app"
+              on the right (point 8: the two shouldn't sit side by side). */}
+          {!user && (
+            <a href={marketingHref('/transcribe')}>
+              <Button size="sm" className="bg-accent text-fg-on-accent hover:bg-accent-hover">
+                Try it free
+              </Button>
+            </a>
+          )}
         </nav>
 
         {/* Right-side controls */}
