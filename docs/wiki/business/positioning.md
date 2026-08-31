@@ -2,13 +2,15 @@
 
 ## Wat INDXR doet
 
-INDXR.AI extraheert transcripten van YouTube-video's en maakt ze doorzoekbaar, exporteerbaar, en samenvatbaar met AI.
+INDXR.AI maakt van audio, video en YouTube-links **accurate, van sprekerlabels voorziene transcripten** die je kunt bewerken, doorzoeken, samenvatten en exporteren. Je uploadt een opname of plakt een link; INDXR levert een schoon transcript in je bibliotheek.
+
+Het **betaalde AI-transcriptieproduct** (uploads en AI-transcriptie, 1 credit/minuut) draagt de positionering. Gratis caption-extractie uit YouTube-video's die al ondertitels hebben blijft bestaan, maar is een **funnel/instap, geen kernbelofte** — die markt is een gratis-markt (keyword-meting: `youtube transcript` competition-index 3–9, top-10 vol "Free"). Zie [ADR-102](../decisions/102-transcription-first-homepage-positioning.md).
 
 **Core use cases:**
-- Onderzoekers die video-content willen citeren of verwerken
-- Content creators die hun eigen video's willen hergebruiken
-- Studenten die lange lectures willen samenvatten
-- Marketeers die YouTube-content willen analyseren
+- Onderzoekers die interviews en bronmateriaal transcriberen en citeren (sprekerlabels + tijdstempels)
+- Mensen met eigen opnames (voice memo's, M4A/WAV, videobestanden) die accurate tekst willen
+- Studenten die lange lectures willen lezen en samenvatten
+- Content creators die ondertitels (SRT/VTT) of herbruikbare tekst uit hun video's willen
 
 ---
 
@@ -79,14 +81,12 @@ Vs. ChatGPT/handmatig: omslachtig, geen bibliotheek, geen playlist/RAG.
 
 ---
 
-## SEO Strategie (Phase I)
+## SEO Strategie — long-tail, niet merkpositionering
 
-URL-structuur ontworpen voor long-tail SEO:
-- `/youtube-transcript-extractor`
-- `/youtube-to-text`
-- `/youtube-captions-download`
-- etc. (meerdere `/youtube-*` routes zichtbaar in `src/app/`)
+De `youtube-*`-artikelen (live onder `/articles/youtube-*`: `youtube-transcript-not-available`, `youtube-playlist-transcript`, `youtube-to-notes`, `youtube-video-summarizer`, `youtube-transcript-non-english`, e.a.) bedienen elk een **specifieke long-tail-zoekintentie**. Ze zijn een acquisitiekanaal, geen identiteit.
 
-Elk route target een specifiek zoekterm-cluster. Content wordt aangevuld met semantisch relevante FAQ's en voorbeelden.
+**Belangrijk (ADR-102):** deze routes **dragen niet de merkpositionering**. De generieke YouTube-transcript-kop (`youtube transcript`, `youtube transcript extractor`) is een gratis-markt (competition-index 3–9, top-10 vol "Free") en botst met de live betaalde Ads-campagne, die op audio/video-upload-termen biedt. De **homepage draagt het betaalde transcriptieproduct** (audio + video + YouTube); de `/youtube-*`-artikelen blijven bestaan als long-tail-funnel maar bepalen niet wat het merk *is*. De oude framing (site = "YouTube Transcript Extractor") is achterhaald — dat was ook de SERP-/AI-Overview-misbranding die ADR-102 corrigeert.
 
-Zie ook: `marketing.md`
+Content per route wordt aangevuld met semantisch relevante FAQ's en voorbeelden. Bron voor de marktcijfers: [keyword-demand-2026-08.md](keyword-demand-2026-08.md).
+
+Zie ook: `marketing.md`, [ADR-102](../decisions/102-transcription-first-homepage-positioning.md)

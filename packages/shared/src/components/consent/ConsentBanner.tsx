@@ -27,10 +27,9 @@ export function ConsentBanner({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-[var(--fg-subtle)] leading-relaxed">
             <p>
-              <span className="font-semibold text-[var(--fg)]">Help us see which ad brought you here.</span>{" "}
-              If you accept, we set two attribution cookies — one from Google Ads and one of our own —
-              only to connect your visit to the ad or campaign it started with. No profile, no tracking
-              across sites. You can change this any time under Cookie settings.{" "}
+              <span className="font-semibold text-[var(--fg)]">We&apos;d like to know which ad or link brought you here.</span>{" "}
+              That&apos;s the only thing these cookies do — we don&apos;t build a profile of you or follow
+              you around the web.{" "}
               <a
                 href={marketingHref("/privacy")}
                 className="underline text-[var(--fg)] hover:text-[var(--accent)]"

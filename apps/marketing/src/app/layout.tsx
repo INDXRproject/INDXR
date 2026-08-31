@@ -27,8 +27,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://indxr.ai'),
-  title: "INDXR.AI - YouTube Transcript Extractor",
-  description: "Extract transcripts from YouTube videos and playlists instantly",
+  title: "INDXR.AI — Accurate transcripts from audio, video and YouTube",
+  description: "Upload a recording or paste a link. Get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

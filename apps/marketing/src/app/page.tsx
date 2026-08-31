@@ -5,13 +5,50 @@ import { HeroImage } from "@/components/marketing/HeroImage"
 import { FreeToolEmbed } from "@/components/marketing/FreeToolEmbed"
 import { HomeClipVideo } from "@/components/marketing/HomeClipVideo"
 import { DocsFigure } from "@/components/docs/DocsFigure"
+import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
 import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
+  title: "INDXR.AI — Accurate transcripts from audio, video and YouTube",
+  description:
+    "Upload a recording or paste a link. Get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
   alternates: { canonical: "/" },
 }
+
+// Homepage structured data. Two distinct @types (Organization + SoftwareApplication), never two of
+// the same type on this page. Both carry name "INDXR.AI" and a transcription-first description so
+// Google's AI Overview stops conflating the brand with the unrelated open-source project
+// github.com/bahdotsh/indxr. See ADR-102.
+const homeSchemas: Record<string, unknown>[] = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "INDXR.AI",
+    url: "https://indxr.ai",
+    logo: "https://indxr.ai/apple-touch-icon.png",
+    description:
+      "INDXR.AI turns audio, video and YouTube links into accurate, speaker-labelled transcripts you can edit, search and export.",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "INDXR.AI",
+    applicationCategory: "UtilitiesApplication",
+    operatingSystem: "Web",
+    url: "https://indxr.ai",
+    description:
+      "Upload a recording or paste a link and get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "EUR",
+      description: "Free for basic use. Credits required for AI transcription.",
+    },
+    publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
+  },
+]
 
 // Every number on this page renders from a constant:
 const welcomeCredits = FREE_TIER.WELCOME_CREDITS
@@ -58,6 +95,7 @@ const usps = [
 export default function LandingPage() {
   return (
     <>
+      <JsonLd schemas={homeSchemas} />
       {/* Hero */}
       <section className="relative w-full overflow-hidden border-b border-[var(--border-subtle)] bg-[var(--bg)] pt-[110px] pb-20 lg:pt-[150px] lg:pb-28">
         <HeroImage />
@@ -75,11 +113,11 @@ export default function LandingPage() {
         <div className="absolute inset-0 z-[1] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%)] pointer-events-none" />
         <div className="container relative z-10 mx-auto flex flex-col items-center px-4 text-center">
           <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl">
-            One place for every source you read instead of watch.
+            Accurate transcripts from your audio, video and YouTube links
           </h1>
           <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
-            Lectures, interviews, podcasts, your own recordings, turned into accurate text you can
-            search, summarise, edit and export. No more downloads scattered across tabs.
+            Upload a recording or paste a link. INDXR gives you a clean transcript with speaker labels,
+            ready to edit, search and export.
           </p>
           <p className="mb-10 text-base font-medium text-[var(--fg)]">
             Pay per minute, no subscription, and credits never expire.
@@ -106,9 +144,9 @@ export default function LandingPage() {
             Paste a link and see for yourself
           </h2>
           <p className="mx-auto mb-10 max-w-2xl text-center text-[var(--fg-subtle)]">
-            No account, no card. Any video that already has captions is free to extract, however many you
-            do. To try the paid side, a free account comes with {welcomeCredits} credits, which is enough
-            for {welcomeMinutes} minutes of AI transcription.
+            No account, no card. Paste a link or upload a recording and see the transcript for yourself. A
+            free account comes with {welcomeCredits} credits, enough for {welcomeMinutes} minutes of AI
+            transcription.
           </p>
           <FreeToolEmbed />
         </div>
@@ -343,7 +381,8 @@ export default function LandingPage() {
           </div>
 
           <p className="mt-6 text-[var(--fg-subtle)]">
-            A free account starts with {welcomeCredits} credits.
+            A free account starts with {welcomeCredits} credits — and extracting captions from a YouTube
+            video that already has them is free, however many you do.
           </p>
 
           <p className="mt-8 text-sm text-[var(--fg-muted)]">
