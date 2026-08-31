@@ -201,7 +201,7 @@ export default function SupportedFormatsPage() {
         MKV.
       </p>
       <p>
-        It is also the format most transcription tools refuse, because handling it properly means dealing
+        It is also the format that most often has nowhere to go, because handling it properly means dealing
         with a container that makes very few assumptions. Upload the MKV.
       </p>
 

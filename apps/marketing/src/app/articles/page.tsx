@@ -8,8 +8,8 @@ import { editorialAlt, hasEditorialImage } from "@/lib/editorialAlts"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles" },
-  title: "Articles — YouTube Transcript Guides & Tutorials | INDXR.AI",
-  description: "Guides, tutorials, and reference articles on YouTube transcripts — formats, workflows, troubleshooting, and AI transcription.",
+  title: "Articles — Audio, Video and YouTube Transcript Guides | INDXR.AI",
+  description: "Guides, tutorials, and reference on transcribing audio, video and YouTube — formats, workflows, troubleshooting, and AI transcription.",
 }
 
 // description = the article's own metadata description (opening line), not newly written.
@@ -64,7 +64,7 @@ export default function ArticlesPage() {
         <PageHeader
           eyebrow="Library"
           title="Articles"
-          lead="Guides, tutorials, and reference on YouTube transcripts — formats, workflows, troubleshooting, and AI transcription."
+          lead="Guides, tutorials, and reference on transcribing audio, video and YouTube — formats, workflows, troubleshooting, and AI transcription."
         />
 
         <div className="space-y-14">
