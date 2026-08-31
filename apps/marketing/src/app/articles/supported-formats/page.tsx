@@ -9,19 +9,21 @@ import {
 import { TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 import { FREE_TIER } from "@indxr/shared/lib/pricing"
 import { AUTHORS } from "@/lib/authors"
+import { editorialOg } from "@/lib/editorialMeta"
 
 const metaDescription =
   "M4A, WAV, OGG, OPUS, FLAC, MP4, MKV, MOV and seven more upload directly, with no converting step. " +
   "What each format is, where it comes from, and what happens to it."
 
-// OG image: this page has no bespoke editorial render and no fitting screenshot, so no og:image is set
-// (rather than point at a 404 — /editorial/supported-formats-og.jpg does not exist yet). The article
-// hero is the auto-generated ArticleHero SVG banner, which needs no file. See the task report.
+// OG/hero image: recovered 2026-08-31 (git history — the editorial photo of the merged-away
+// "bulk-youtube-transcript" article, re-slugged to supported-formats): a receding row of clear
+// cassette tapes. editorialOg wires /editorial/supported-formats-og.jpg (1200×630); the same photo
+// set drives the /articles card and the ArticleHero band via editorialAlts.
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/supported-formats" },
   title: "Supported formats — transcribe M4A, WAV, OGG, OPUS and more | INDXR.AI",
   description: metaDescription,
-  openGraph: { type: "article" },
+  ...editorialOg("supported-formats"),
 }
 
 // Sources rendered by the template (the five external references, each verified 200).

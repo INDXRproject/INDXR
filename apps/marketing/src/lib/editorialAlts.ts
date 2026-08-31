@@ -14,6 +14,11 @@ export const editorialAlts: Record<string, string> = {
   "youtube-transcript-not-available": "clear cassette tape with unspooled ribbon on sandy ground",
   "youtube-to-notes": "glossy black volcanic glass shard glinting on gritty ground",
   "youtube-transcripts-vector-database": "brass armillary sphere casting circular shadow on pale floor",
+  // Recovered 2026-08-31 from the images of three articles merged away on 2026-08-07 (git history),
+  // re-slugged onto these three cards. Alt text describes the actual photo, not the topic.
+  "srt-generator": "corner of a vintage black typewriter with round glass keys resting on sandy ground",
+  "supported-formats": "long receding row of clear cassette tapes standing on sunlit sand, shadows trailing into the distance",
+  "youtube-video-summarizer": "close-up of a black and gold fountain pen nib resting on grainy sand",
 }
 
 export function hasEditorialImage(slug?: string): boolean {
