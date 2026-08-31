@@ -31,6 +31,14 @@ export const RELATED_ARTICLES: Record<string, Related[]> = {
     { href: "/articles/video-to-text", label: "Video to text", reason: "get the words out of a video file before you export subtitles" },
   ],
 
+  // ── Reference ──
+  "supported-formats": [
+    { href: "/articles/audio-to-text", label: "Audio to text", reason: "the full walkthrough for a recording you want the words from" },
+    { href: "/articles/video-to-text", label: "Video to text", reason: "the same for a video file, with subtitles" },
+    { href: "/articles/transcript-export-formats", label: "Transcript export formats", reason: "what comes out, rather than what goes in" },
+    { href: "/articles/srt-generator", label: "SRT generator", reason: "when the subtitle file is all you want" },
+  ],
+
   // ── Workflows ──
   "youtube-playlist-transcript": [
     { href: "/docs/guides/playlists", label: "Playlists guide", reason: "the exact playlist flow and limits" },

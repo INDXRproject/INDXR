@@ -266,6 +266,10 @@ export default function AudioToTextPage() {
         The {UPLOAD_MAX_FILE_MB}MB limit is worth noting against free browser tools, which commonly
         stop at 50 or 100MB. A single uncompressed hour of audio exceeds that on its own.
       </p>
+      <p>
+        For what each of these formats is and where it comes from, see{" "}
+        <Link href="/articles/supported-formats">Supported formats</Link>.
+      </p>
 
       <h2>Common questions about uploading</h2>
 

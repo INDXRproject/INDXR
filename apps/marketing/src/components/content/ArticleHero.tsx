@@ -9,7 +9,7 @@ import { EditorialImage } from "./EditorialImage"
 import { HexField } from "./HexField"
 import { editorialAlt, hasEditorialImage } from "@/lib/editorialAlts"
 
-export type ArticleCategory = "Troubleshooting" | "Export Formats" | "Workflows" | "Deep Dives"
+export type ArticleCategory = "Troubleshooting" | "Export Formats" | "Workflows" | "Deep Dives" | "Reference"
 
 // Display eyebrow per category (the union keys stay as stable internal identifiers; only the
 // shown label changed — Formats, AI & RAG). No per-category colour any more.
@@ -18,6 +18,7 @@ const CATEGORY_EYEBROW: Record<ArticleCategory, string> = {
   "Export Formats": "Formats",
   "Workflows": "Workflows",
   "Deep Dives": "AI & RAG",
+  "Reference": "Reference",
 }
 
 export function ArticleHero({

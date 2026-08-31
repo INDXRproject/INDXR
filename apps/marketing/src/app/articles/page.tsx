@@ -23,6 +23,9 @@ const articles = [
   { href: "/articles/transcript-export-formats", label: "Transcript Export Formats", category: "Export Formats", description: "Every export format — plain text, Markdown, CSV, SRT/VTT, JSON, and RAG-optimized JSON." },
   { href: "/articles/srt-generator", label: "SRT Generator", category: "Export Formats", description: "Create an SRT or VTT subtitle file from a video, a link or an audio recording: re-timed per word and regrouped into readable, broadcast-standard cues." },
 
+  // Reference
+  { href: "/articles/supported-formats", label: "Supported Formats", category: "Reference", description: "Every input format INDXR transcribes — M4A, WAV, OGG, OPUS, FLAC, MP4, MKV, MOV and more. What each one is, where it comes from, and what happens to it." },
+
   // Workflows & Use Cases
   { href: "/articles/youtube-playlist-transcript", label: "Playlist Transcripts", category: "Workflows", description: "Extract a whole playlist in one job — first 3 YouTube caption videos free." },
   { href: "/articles/audio-to-text", label: "Audio File Transcription", category: "Workflows", description: "Transcribe any audio or video file to text: punctuated, split by speaker, timestamped. One credit per minute." },

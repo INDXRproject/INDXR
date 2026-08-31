@@ -56,6 +56,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/articles/youtube-transcript-non-english",
     "/articles/transcript-export-formats",
     "/articles/srt-generator",
+    "/articles/supported-formats",
     "/articles/youtube-playlist-transcript",
     "/articles/audio-to-text",
     "/articles/video-to-text",

@@ -142,7 +142,9 @@ export default function VideoToTextPage() {
 
       <p>
         MOV is what an iPhone records. MKV is what most downloads arrive as. Both work, along with
-        everything else in that list, and you do not tell us which one you have.
+        everything else in that list, and you do not tell us which one you have. For what each format
+        is and where it comes from, see{" "}
+        <Link href="/articles/supported-formats">Supported formats</Link>.
       </p>
 
       <DocsFigure
