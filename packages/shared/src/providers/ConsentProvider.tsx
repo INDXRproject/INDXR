@@ -16,6 +16,7 @@ import {
   writeStoredChoice,
 } from "../lib/consent"
 import { ConsentBanner } from "../components/consent/ConsentBanner"
+import posthog from "posthog-js"
 
 type Region = "eea" | "row"
 
@@ -83,6 +84,11 @@ export function ConsentProvider({
     writeStoredChoice(c)
     pushConsentUpdate(GRANTED)
     loadGoogleTag(ADS_ID)
+    // FIX B: upgrade PostHog to persistent storage so the distinct_id survives page loads and the
+    // indxr.ai↔app.indxr.ai hop (cross-subdomain cookie on `.indxr.ai`). Known caveat (posthog-js
+    // #3130): switching persistence mints a new session_id, so pre/post-consent activity counts as
+    // separate sessions — documented in monitoring.md, no workaround built.
+    posthog.set_config({ persistence: "localStorage+cookie", cross_subdomain_cookie: true })
     setChoice(c)
     setManagerOpen(false)
   }, [])
@@ -93,6 +99,8 @@ export function ConsentProvider({
     pushConsentUpdate(DENIED)
     clearGoogleAdsCookies() // a withdrawal that leaves cookies is not a withdrawal
     clearAcquisitionCookie() // ... and that includes the first-party attribution cookie
+    // FIX B: back to cookieless — a withdrawal must stop the persistent device-id too.
+    posthog.set_config({ persistence: "memory" })
     setChoice(c)
     setManagerOpen(false)
   }, [])

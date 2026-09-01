@@ -1,5 +1,10 @@
+"use client"
+
+import { useRef } from "react"
+import posthog from "posthog-js"
 import { Button } from "../ui/button"
 import { loginWithGoogleAction } from "../../actions/auth-actions"
+import { PH_DID_PARAM } from "../../lib/posthog-identity"
 
 /** Official multi-colour Google "G" mark (Google brand guidelines). Explicit fills so it stays
  *  full-colour on any button variant/theme. */
@@ -32,10 +37,22 @@ function GoogleG() {
  * generic Lucide Chrome icon + "Google", which read as unfinished).
  */
 export function GoogleSignInButton({ next }: { next?: string | null }) {
+  const didRef = useRef<HTMLInputElement>(null)
   return (
     <form action={loginWithGoogleAction}>
       {next ? <input type="hidden" name="next" value={next} /> : null}
-      <Button variant="outline" type="submit" className="w-full h-11 gap-3 font-medium">
+      {/* The anonymous PostHog distinct_id, read at click time and carried through the OAuth roundtrip
+          so the pre-signup identity can be aliased into the user on return (persistence:'memory' resets
+          it on the hard reload to Google). See lib/posthog-identity. */}
+      <input ref={didRef} type="hidden" name={PH_DID_PARAM} />
+      <Button
+        variant="outline"
+        type="submit"
+        className="w-full h-11 gap-3 font-medium"
+        onClick={() => {
+          if (didRef.current) didRef.current.value = posthog.get_distinct_id?.() ?? ""
+        }}
+      >
         <GoogleG />
         Continue with Google
       </Button>

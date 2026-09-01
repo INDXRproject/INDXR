@@ -9,6 +9,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { validatePassword } from "@indxr/shared/utils/validation"
 import { useRouter, useSearchParams } from "next/navigation"
+import posthog from "posthog-js"
 import { signupAction } from "@indxr/shared/actions/auth-actions"
 import { Alert, AlertDescription } from "@indxr/shared/components/ui/alert"
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
@@ -51,6 +52,9 @@ export default function SignupPage() {
       const formData = new FormData()
       formData.append('email', email)
       formData.append('password', password)
+      // Carry the anonymous PostHog distinct_id into the verification link so the pre-signup identity
+      // can be aliased into the user after the click (persistence:'memory' resets it on the hard load).
+      formData.append('ph_did', posthog.get_distinct_id?.() ?? '')
       // Thread het checkout-doel mee → belandt in de e-mailverificatie-link
       // (emailRedirectTo → /auth/callback?next=…) zodat de user na verificatie +
       // onboarding op billing landt i.p.v. /dashboard.

@@ -41,6 +41,13 @@ export default function OnboardingPage() {
       const formData = new FormData()
       formData.append('username', username)
       formData.append('role', role)
+      // FIX C: the real device timezone (IANA, e.g. "Europe/Amsterdam") — recorded once at account
+      // completion. Unlike PostHog's IP-derived $geoip_time_zone this survives a VPN, and it lives in
+      // our DB next to credits/payments where PostHog can't reach. See ADR-103 / monitoring.md.
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+        if (tz) formData.append('device_timezone', tz)
+      } catch { /* Intl unavailable — skip, column stays null */ }
 
       const result = await updateProfileAction(formData)
 

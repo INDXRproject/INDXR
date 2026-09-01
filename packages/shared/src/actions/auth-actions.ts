@@ -6,6 +6,20 @@ import { headers, cookies } from 'next/headers'
 import { isDisposableEmail } from '../utils/disposable-email'
 import { redirect } from 'next/navigation'
 import { safeAppRedirect } from '../lib/safe-redirect'
+import { PH_DID_PARAM, isValidDistinctId } from '../lib/posthog-identity'
+
+// Build the /auth/callback URL, threading the checkout `next` target and the anonymous PostHog
+// distinct_id (validated) through the OAuth / email-verification roundtrip. Both survive as query
+// params (Supabase appends ?code=… to redirectTo, keeping ours). ph_did is stripped on the client
+// after it is aliased into the user (lib/posthog-identity).
+function buildCallbackUrl(safeNext: string | null, rawPhDid: unknown): string {
+  const base = `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback`
+  const params = new URLSearchParams()
+  if (safeNext) params.set('next', safeNext)
+  if (isValidDistinctId(rawPhDid)) params.set(PH_DID_PARAM, rawPhDid)
+  const qs = params.toString()
+  return qs ? `${base}?${qs}` : base
+}
 
 // Read the first-touch acquisition cookie (set client-side by AcquisitionCapture on the marketing
 // landing) and shape it into signUp user_metadata → copied to profiles by the acquisition trigger.
@@ -136,9 +150,9 @@ export async function signupAction(prevState: unknown, formData: FormData) {
   // acquisition trigger can persist it onto profiles (utm/referrer/source per channel).
   const acquisition = await readAcquisitionMetadata()
 
-  // Thread het checkout-doel via de e-mailverificatie-link → callback → onboarding.
+  // Thread het checkout-doel + de anonieme PostHog-id via de e-mailverificatie-link → callback → onboarding.
   const safeNext = safeAppRedirect(rawRedirectTo)
-  const callbackUrl = `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
+  const callbackUrl = buildCallbackUrl(safeNext, formData.get('ph_did'))
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -184,9 +198,9 @@ export async function loginWithGoogleAction(formData: FormData) {
 
   const supabase = await createClient()
 
-  // Thread het checkout-doel via de OAuth-callback → onboarding.
+  // Thread het checkout-doel + de anonieme PostHog-id via de OAuth-callback → onboarding.
   const safeNext = safeAppRedirect(formData?.get('next') as string)
-  const callbackUrl = `${process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`
+  const callbackUrl = buildCallbackUrl(safeNext, formData?.get('ph_did'))
 
   // 2. Init OAuth
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -211,6 +225,10 @@ export async function loginWithGoogleAction(formData: FormData) {
 export async function updateProfileAction(formData: FormData) {
   const username = formData.get('username') as string
   const role = formData.get('role') as string
+  // FIX C: device timezone (IANA), captured client-side at onboarding. Sanity-bounded so a crafted
+  // value can't bloat the row; a missing/oversized value simply leaves the column untouched.
+  const rawTz = formData.get('device_timezone')
+  const deviceTimezone = typeof rawTz === 'string' && rawTz.length > 0 && rawTz.length <= 64 ? rawTz : null
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -236,6 +254,7 @@ export async function updateProfileAction(formData: FormData) {
     role,
     onboarding_completed: true,
     updated_at: new Date().toISOString(),
+    ...(deviceTimezone ? { device_timezone: deviceTimezone } : {}),
   })
 
   if (error) {

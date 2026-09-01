@@ -32,6 +32,7 @@ interface UserRow {
   lastActive: string | null
   suspended: boolean
   isInternal: boolean
+  deviceTimezone: string | null
 }
 
 interface TranscriptDetail {
@@ -424,6 +425,9 @@ function UserRowItem({
             ? new Date(user.lastActive).toLocaleDateString()
             : "—"}
         </TableCell>
+        <TableCell className="text-xs text-fg-muted font-mono">
+          {user.deviceTimezone ?? "—"}
+        </TableCell>
         <TableCell>
           <div className="flex flex-col items-start gap-1">
             <Badge
@@ -497,7 +501,7 @@ function UserRowItem({
 
       {expanded && (
         <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={9} className="p-0">
+          <TableCell colSpan={10} className="p-0">
             <UserDetail userId={user.id} />
           </TableCell>
         </TableRow>
@@ -548,6 +552,7 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
               <TableHead>Purchased</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead>Last Active</TableHead>
+              <TableHead>Timezone</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -556,7 +561,7 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
             {users.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={10}
                   className="text-center text-fg-muted py-8"
                 >
                   No users found

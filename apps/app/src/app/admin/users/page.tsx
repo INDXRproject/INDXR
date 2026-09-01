@@ -34,9 +34,9 @@ export default async function AdminUsersPage({
     userIds.length > 0
       ? admin
           .from("profiles")
-          .select("id, username, role, suspended, is_internal")
+          .select("id, username, role, suspended, is_internal, device_timezone")
           .in("id", userIds)
-      : Promise.resolve({ data: [] as { id: string; username: string | null; role: string | null; suspended: boolean; is_internal: boolean }[] }),
+      : Promise.resolve({ data: [] as { id: string; username: string | null; role: string | null; suspended: boolean; is_internal: boolean; device_timezone: string | null }[] }),
     userIds.length > 0
       ? admin.from("user_credits").select("user_id, credits").in("user_id", userIds)
       : Promise.resolve({ data: [] as { user_id: string; credits: number }[] }),
@@ -73,6 +73,7 @@ export default async function AdminUsersPage({
       lastActive: authUser.last_sign_in_at ?? null,
       suspended: profile?.suspended ?? false,
       isInternal: profile?.is_internal ?? false,
+      deviceTimezone: profile?.device_timezone ?? null,
     }
   })
 

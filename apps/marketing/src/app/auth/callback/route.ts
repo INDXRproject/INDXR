@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { isDisposableEmail } from '@indxr/shared/utils/disposable-email'
 import { safeAppRedirect } from '@indxr/shared/lib/safe-redirect'
+import { PH_DID_PARAM, isValidDistinctId } from '@indxr/shared/lib/posthog-identity'
 
 const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3000'
@@ -10,6 +11,18 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3000'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+
+  // Carry the anonymous PostHog distinct_id through to the first identified page so the client can
+  // alias the pre-signup identity into the user (lib/posthog-identity). Validated; forwarded onto the
+  // login/signup destinations only (never the recovery route). Stripped on the client after use.
+  const rawPhDid = requestUrl.searchParams.get(PH_DID_PARAM)
+  const phDid = isValidDistinctId(rawPhDid) ? rawPhDid : null
+  const withPhDid = (url: string): string => {
+    if (!phDid) return url
+    const u = new URL(url)
+    u.searchParams.set(PH_DID_PARAM, phDid)
+    return u.toString()
+  }
 
   if (code) {
     const supabase = await createClient()
@@ -82,16 +95,16 @@ export async function GET(request: Request) {
 
       if (!profile || !profile.onboarding_completed) {
         // Thread het doel dóór de onboarding-gate i.p.v. het te laten vallen.
-        return NextResponse.redirect(
+        return NextResponse.redirect(withPhDid(
           safeNext ? `${MARKETING_URL}/onboarding?next=${encodeURIComponent(safeNext)}` : `${MARKETING_URL}/onboarding`
-        )
+        ))
       }
 
       if (safeNext) {
-        return NextResponse.redirect(safeNext)
+        return NextResponse.redirect(withPhDid(safeNext))
       }
 
-      return NextResponse.redirect(`${APP_URL}/dashboard`)
+      return NextResponse.redirect(withPhDid(`${APP_URL}/dashboard`))
     }
   }
 

@@ -81,6 +81,59 @@ Backend tracking: `backend/main.py:33-40` (`track_event()` functie)
 
 ---
 
+## Identiteit over de OAuth-/verificatie-grens (ADR-103)
+
+**Probleem.** posthog-js draait standaard op `persistence:'memory'` (cookieless, ePrivacy 5(3)). Een
+*harde* page-load genereert dan een **nieuwe** anonieme `distinct_id`. De redirect naar
+`accounts.google.com` — en de klik op een e-mailverificatielink — is precies zo'n harde load. Zonder
+maatregel merged `identify(user.id)` op de terugkeer alléén de *huidige* (post-reload) anonieme id; de
+pre-signup id blijft wees. Eén echte gebruiker werd zo 3 losse PostHog-personen en elke
+ad-klik→activatie-funnel las structureel nul.
+
+**FIX A — id-brug via de URL (werkt voor IEDEREEN, ook zónder consent).** Bij de klik op "Continue with
+Google" / bij het versturen van het signup-formulier lezen we `posthog.get_distinct_id()` en hangen we
+het als `ph_did` aan de callback-URL (`buildCallbackUrl` in `actions/auth-actions.ts`). Supabase
+appendt zijn eigen `?code=…` en behoudt onze param (bewezen door de bestaande `next`-param). De callback
+(`apps/marketing/src/app/auth/callback/route.ts`) forwardt `ph_did` naar de login/signup-bestemmingen —
+**nooit** naar de recovery-route. Op de bestemming leest `AuthContext.tsx` de param **één keer bij mount
+in een lazy `useRef`** (vóór enig effect hem kan strippen) en roept ná `identify(user.id)`
+`posthog.alias(ph_did)` aan. Daarna `history.replaceState` → param gestript, ref genulld (draait exact
+één keer). Er wordt **niets op het apparaat opgeslagen** — de id reist alleen in de URL (5(3) gaat over
+opslag, niet URL-params). Guards: alleen een geldig UUID-formaat (`isValidDistinctId`) en `≠` de huidige
+distinct_id, zodat een gedeeld toestel / gekopieerde link / dubbel geopende mail nooit twee vreemden
+merged. Volgorde klopt óók bij een koude load: de sessie komt uit de cookie → `onAuthStateChange` vuurt
+`INITIAL_SESSION` → `identify` → `alias`, en de ref is bij first render al gevuld.
+
+**FIX B — persistente opslag ná consent.** Default blijft `'memory'`. Bij expliciete consent
+(`ConsentProvider.grantAll`) → `posthog.set_config({persistence:'localStorage+cookie',
+cross_subdomain_cookie:true})`; bij intrekking (`denyAll`) → terug naar `'memory'`. Een terugkerende,
+al-toestemming-gegeven gebruiker start meteen persistent: `PostHogProvider` leest bij init de
+cross-subdomein `indxr_consent`-cookie (`analytics_storage==='granted'`). De **cookie** op `.indxr.ai`
+(niet localStorage) is wat de distinct_id over `indxr.ai ↔ app.indxr.ai` deelt.
+
+**Wat wél/niet meetbaar is:**
+- *Met consent:* de distinct_id overleeft álle hops (artikel → signup → activatie) via de
+  cross-subdomein cookie. Volledige funnel meetbaar.
+- *Zónder consent:* FIX A brugt de OAuth/verificatie-hop (pre-signup-id → post-login), dus de
+  pageview net vóór signup merged met de activatie. Een eerdere **artikel-klik** die zélf een aparte
+  harde load was, kan als losse anonieme persoon blijven staan — die hop heeft geen `ph_did`-brug.
+
+**Bekende meet-beperking (posthog-js #3130, open).** `set_config` dat `persistence` wisselt mint een
+**nieuwe `session_id`**. Daardoor telt pre- vs. post-consent-activiteit als aparte *sessies* (de
+*persoon*/distinct_id blijft wél intact). Bewust geen workaround gebouwd; documenteer het hier zodat
+sessie-telling rond het consent-moment niet verkeerd geïnterpreteerd wordt.
+
+**Verificatie (handmatig — niet headless automatiseerbaar).** Een echte person-merge-meting vereist een
+interactieve Google-login (of een echte inbox voor de verificatielink) + prod-PostHog, en de
+ad-klik→activatie-funnel vult zich pas over dagen. Recept: (1) schone browser, klik een ad-link →
+artikel → signup via Google; (2) na login, in PostHog: open de persoon `= user.id` en controleer dat het
+`$pageview`-event van vóór de signup én een `premium_action_completed` van erna op **dezelfde** persoon
+staan. API: `GET /api/projects/:id/persons/?distinct_id=<user.id>` → `distinct_ids[]` moet de anonieme
+pre-signup UUID bevatten. (3) Herhaal met consent geweigerd: de OAuth-hop merged nog steeds; een losse
+artikel-klik-pageview kan apart blijven.
+
+---
+
 ## Logging (Backend)
 
 ### Log Niveaus

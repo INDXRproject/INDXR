@@ -1,10 +1,11 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react"
 import { createClient } from "../utils/supabase/client"
 import { User } from "@supabase/supabase-js"
 import type { RagChunkSize } from "../lib/pricing"
 import posthog from 'posthog-js'
+import { PH_DID_PARAM, isValidDistinctId } from "../lib/posthog-identity"
 
 export interface UserCredits {
   credits: number
@@ -47,6 +48,20 @@ export function AuthProvider({
   const [quota, setQuota] = useState<UserCredits | null>(null)
   const [loading, setLoading] = useState(!initialUser) // If we have user, we are not loading auth (credits still async)
   const supabase = createClient()
+
+  // FIX A — bridge the pre-signup anonymous PostHog id across the OAuth / email-verification hard reload.
+  // Read the URL param ONCE at first render (lazy useRef initialiser runs before any effect, so nothing
+  // — not even a pageview/replaceState — can strip it first) and validate it. On return the user is
+  // always identified; after identify(userId) we alias this id in so the pre-signup pageviews merge into
+  // the user. Then we strip the param and null the ref so it fires exactly once. See lib/posthog-identity.
+  const bridgeDidRef = useRef<string | null>(
+    typeof window !== 'undefined'
+      ? (() => {
+          const v = new URLSearchParams(window.location.search).get(PH_DID_PARAM)
+          return isValidDistinctId(v) ? v : null
+        })()
+      : null
+  )
 
   const fetchCredits = useCallback(async (userId: string) => {
       // ... existing fetchCredits logic ...
@@ -127,10 +142,35 @@ export function AuthProvider({
       
       if (session?.user) {
         // Identify in PostHog — alleen het pseudonieme user.id; geen e-mail/PII in het profiel.
+        // FIX C: device timezone as a person property (real device tz, unlike IP-derived $geoip_time_zone).
+        // Reuses this existing identify call — no new capture/event.
         posthog.identify(session.user.id, {
             source: session.user.app_metadata.provider, // 'google', 'email', etc. (geen PII)
-            created_at: session.user.created_at
+            created_at: session.user.created_at,
+            device_timezone: typeof Intl !== 'undefined'
+              ? Intl.DateTimeFormat().resolvedOptions().timeZone
+              : undefined,
         });
+
+        // FIX A: alias the bridged pre-signup id into this now-identified user. Runs AFTER identify (so the
+        // current distinct_id is already userId), once (ref nulled below). Guard: skip if it equals the
+        // current id (no-op / self), and isValidDistinctId already rejected non-UUIDs — together these stop
+        // two strangers on a shared device or a copied link from being merged.
+        const bridgeDid = bridgeDidRef.current
+        if (bridgeDid) {
+          if (bridgeDid !== posthog.get_distinct_id?.()) {
+            posthog.alias(bridgeDid)
+          }
+          bridgeDidRef.current = null
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href)
+            if (url.searchParams.has(PH_DID_PARAM)) {
+              url.searchParams.delete(PH_DID_PARAM)
+              window.history.replaceState(window.history.state, '', url.toString())
+            }
+          }
+        }
+
         fetchCredits(session.user.id)
       } else {
         // Reset PostHog
