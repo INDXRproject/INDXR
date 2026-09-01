@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@indxr/shared/contexts/AuthContext";
@@ -34,6 +34,26 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: "/site.webmanifest",
+  // iOS reads these instead of the manifest — without them the home-screen icon opens Safari with the
+  // address bar (Next emits apple-mobile-web-app-capable/-title/-status-bar-style + mobile-web-app-capable).
+  appleWebApp: {
+    capable: true,
+    title: "INDXR",
+    statusBarStyle: "default",
+  },
+  // Next 16 emits only the modern `mobile-web-app-capable`; iOS Safari still primarily reads the
+  // legacy `apple-mobile-web-app-capable`, so add it explicitly (else the icon opens Safari with the bar).
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
+};
+
+// Theme-aware chrome for the live app; the manifest splash background_color uses the dark --bg token.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fcfaf7" },
+    { media: "(prefers-color-scheme: dark)", color: "#110e0b" },
+  ],
 };
 
 export default async function RootLayout({
