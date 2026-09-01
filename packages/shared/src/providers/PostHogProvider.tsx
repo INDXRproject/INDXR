@@ -19,7 +19,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // Cookieless: in-memory persistence zet géén cookie/localStorage device-id →
       // geen herkenning over sessies heen. Privacy-by-design (roadmap 1.32).
       persistence: 'memory',
-      capture_pageview: false,
+      // Pageviews AAN (2026-09-01): losstaand event, raakt de cookieless keuze niet (persistence blijft
+      // 'memory' — geen persistent device-id). Ingelogde gebruikers: identify stitcht de events; anonieme
+      // bezoekers: aggregaten zonder persoon (person_profiles:'identified_only'). Zonder dit was de stap
+      // "app geopend / transcribe-pagina bezocht" volledig onzichtbaar in de activatiefunnel.
+      capture_pageview: true,
       // Geen session replay — records DOM/inputs, botst met cookieless/privacy.
       disable_session_recording: true,
       // IP nooit opslaan: expliciet $ip=null → PostHog-ingestion slaat geen IP op en

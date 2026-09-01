@@ -63,7 +63,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-bg px-4 overflow-hidden">
+    <div className="auth-shell relative flex items-center justify-center min-h-screen bg-bg px-4 overflow-hidden">
       <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
       <Card className="relative w-full max-w-sm border shadow-sm">
         <CardHeader>

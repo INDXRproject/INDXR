@@ -30,8 +30,35 @@ export const UPLOAD_FORMAT_COUNT = UPLOAD_EXTENSIONS.length
 /** "fifteen" — for prose, so the count and the list can never disagree. */
 export const UPLOAD_FORMAT_COUNT_WORD = spellCount(UPLOAD_FORMAT_COUNT)
 
-/** For an <input accept="…"> attribute: ".mp3,.mp4,…". */
-export const UPLOAD_ACCEPT_ATTR = UPLOAD_EXTENSIONS.join(",")
+// MIME type per extension, derived here from the one extension list (kept in this file so the two
+// never drift). iOS Safari filters unreliably on extensions alone — an accept="" with only extensions
+// can yield a greyed-out/empty file picker on iPhone (LESSONS 2026-09-01). So the accept string carries
+// BOTH: the extensions (desktop file dialogs) AND MIME types. Every UPLOAD_EXTENSIONS entry must have a
+// mapping below; the guard asserts it so a new format can't silently ship without its MIME.
+const EXT_MIME: Record<(typeof UPLOAD_EXTENSIONS)[number], string> = {
+  ".mp3": "audio/mpeg", ".mpga": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac",
+  ".wav": "audio/wav", ".ogg": "audio/ogg", ".opus": "audio/ogg", ".flac": "audio/flac",
+  ".mp4": "video/mp4", ".mpeg": "video/mpeg", ".webm": "video/webm", ".mov": "video/quicktime",
+  ".flv": "video/x-flv", ".avi": "video/x-msvideo", ".mkv": "video/x-matroska",
+}
+// Fail loudly at import if a format lacks a MIME mapping (drift guard).
+for (const e of UPLOAD_EXTENSIONS) {
+  if (!EXT_MIME[e]) throw new Error(`uploadFormats: missing MIME for ${e}`)
+}
+
+/** Unique MIME types, derived from the extension list. */
+export const UPLOAD_MIME_TYPES = [...new Set(UPLOAD_EXTENSIONS.map((e) => EXT_MIME[e]))]
+
+// For an <input accept="…"> attribute. Extensions + specific MIME + the broad audio/* video/*
+// families. The broad families keep the mobile picker from showing NOTHING selectable (a picker that
+// shows all audio/video and lets our own extension + content validation reject the rest is far better
+// than a picker that opens empty). Order: extensions first (desktop dialogs prefer them).
+export const UPLOAD_ACCEPT_ATTR = [
+  ...UPLOAD_EXTENSIONS,
+  ...UPLOAD_MIME_TYPES,
+  "audio/*",
+  "video/*",
+].join(",")
 
 /** Uppercase labels: ["MP3","MP4","MPEG",…] */
 export const UPLOAD_FORMAT_LABELS = UPLOAD_EXTENSIONS.map((e) => e.slice(1).toUpperCase())

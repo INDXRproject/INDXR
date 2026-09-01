@@ -75,7 +75,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 bg-bg overflow-hidden">
+    <div className="auth-shell relative min-h-screen flex items-center justify-center px-4 py-12 bg-bg overflow-hidden">
       <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
       <Card className="relative w-full max-w-md p-8 border shadow-sm">
 

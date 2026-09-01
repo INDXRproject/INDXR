@@ -529,6 +529,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     // If showDuplicateChoices is true here, user clicked "Toch extraheren"
     setShowDuplicateChoices(false)
 
+    // Funnel: a valid video source was submitted (one event across all three modes).
+    posthog.capture('source_selected', { mode: 'video' })
+
     // Proceed with extraction. Default action is normal insert
     setLoading(true)
     setTranscript(null)
@@ -607,6 +610,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
     // Standard auto-captions extraction path
     try {
+      posthog.capture('job_started', { mode: 'video', method: 'captions' })
       const response = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -751,6 +755,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     const { videoId } = pendingWhisperData
 
     try {
+      posthog.capture('job_started', { mode: 'video', method: 'ai' })
       const formData = new FormData()
       formData.append('source_type', 'youtube')
       formData.append('video_id', videoId)

@@ -110,6 +110,16 @@ export function ConsentProvider({
   // Show the banner when the user opened the manager, or (EEA + no choice yet).
   const showBanner = ready && (managerOpen || (region === "eea" && choice === null))
 
+  // Signal the banner's presence on <html> so pages that centre content in the viewport (the auth
+  // shells) can reserve space for the fixed 213px banner. Without this the banner overlapped the
+  // "Confirm password" field and covered "Create account" on mobile (LESSONS 2026-09-01).
+  useEffect(() => {
+    const el = document.documentElement
+    if (showBanner) el.dataset.consentBanner = ""
+    else delete el.dataset.consentBanner
+    return () => { delete el.dataset.consentBanner }
+  }, [showBanner])
+
   return (
     <ConsentContext.Provider value={value}>
       {children}

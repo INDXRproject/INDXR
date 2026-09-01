@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import posthog from "posthog-js"
 import { PlaylistManager, VideoStatus } from "../PlaylistManager"
 import { Loader2 } from "lucide-react"
 import { Button } from "../ui/button"
@@ -449,6 +450,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     setRetryRound(0)
     setProgressMessage("Initializing...")
 
+    // Funnel: a playlist source was submitted for extraction (one event across all three modes).
+    posthog.capture('source_selected', { mode: 'playlist', video_count: videoIds.length })
+
     // ── Pre-flight credit check ────────────────────────────────────────────
     const totalWhisperCredits = (availabilityData ?? [])
       .filter((v) => videoIds.includes(v.videoId) && v.status === 'needs_whisper')
@@ -525,6 +529,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
       // Start extraction job on the backend. Idempotency (ADR-019): één sleutel per start-handeling.
       const _idemAction = `playlist:${playlistUrl ?? ''}`
+      posthog.capture('job_started', { mode: 'playlist', video_count: extractableIds.length })
       const response = await fetch('/api/playlist/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

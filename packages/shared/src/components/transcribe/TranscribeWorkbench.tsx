@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react"
 import { useSearchParams } from "next/navigation"
+import posthog from "posthog-js"
 
 import { cn } from "../../lib/utils"
 import { Tabs, TabsContent } from "../ui/tabs"
@@ -63,6 +64,15 @@ function TranscribeWorkbenchInner({
     const onPop = () => setMode(normalizeMode(new URLSearchParams(window.location.search).get("mode")))
     window.addEventListener("popstate", onPop)
     return () => window.removeEventListener("popstate", onPop)
+  }, [])
+
+  // Funnel entry point: the transcribe surface was rendered. This is the step that was invisible
+  // between "signed up" and "first upload" (the activation funnel). Fires once per mount; `path`
+  // separates the app tool from the marketing tool / landing embed.
+  useEffect(() => {
+    posthog.capture("transcribe_page_viewed", {
+      path: typeof window !== "undefined" ? window.location.pathname : undefined,
+    })
   }, [])
 
   const handleChange = useCallback((next: string) => {

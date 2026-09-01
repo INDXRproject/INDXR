@@ -220,3 +220,17 @@
 .prose-content-table tr:last-child td {
   border-bottom: none;
 }
+
+/* Consent banner space reservation (LESSONS 2026-09-01). The fixed cookie banner is ~213px tall on
+   mobile and was overlapping the "Confirm password" field and covering the "Create account" button on
+   the auth pages (they centre a tall form in the viewport). When the banner is actually shown
+   (ConsentProvider sets data-consent-banner on <html>) and only on small screens (desktop's banner is
+   short and clears the content), top-align the auth shell and reserve bottom space so the submit button
+   stays above the banner and the page can scroll. */
+@media (max-width: 640px) {
+  :root[data-consent-banner] .auth-shell {
+    align-items: flex-start;
+    padding-top: 1.5rem;
+    padding-bottom: 15rem;
+  }
+}

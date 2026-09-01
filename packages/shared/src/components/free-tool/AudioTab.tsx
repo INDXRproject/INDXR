@@ -296,10 +296,13 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     setFile(selectedFile)
     setTranscript(null) // Clear previous transcript
 
-    // Track audio upload started
-    posthog.capture('audio_upload_started', {
+    // Funnel event: a file was ACTUALLY selected (the input's onChange fired). This is the signal that
+    // distinguishes "picker opened and a file was chosen" from "picker never opened" (the iOS case where
+    // taps produced clicks but no selection). One event across all three modes — mode:'upload' here.
+    posthog.capture('source_selected', {
+      mode: 'upload',
       file_type: fileExt,
-      file_size_mb: selectedFile.size / (1024 * 1024)
+      file_size_mb: selectedFile.size / (1024 * 1024),
     })
 
     // Get actual audio duration
@@ -371,6 +374,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         setError({ message: 'Session expired. Please sign in again.', code: 'unauthorized' })
         return
       }
+
+      // Funnel event: the job actually reaches the backend now (preflight + session passed, uploading).
+      posthog.capture('job_started', { mode: 'upload' })
 
       // Step 3: POST file directly to Railway (bypasses Vercel 4.5MB body limit)
       // Using XHR instead of fetch() to get upload progress events
@@ -556,9 +562,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => !isUploading && fileInputRef.current?.click()}
         className={`
-          p-12 rounded-2xl border-2 border-dashed transition-all cursor-pointer
+          p-12 rounded-2xl border-2 border-dashed transition-all
           ${isDragging
             ? 'border-primary bg-accent/10 scale-105'
             : file
@@ -568,12 +573,18 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           ${isUploading ? 'opacity-50 cursor-wait' : ''}
         `}
       >
+        {/* Visually hidden but IN the document (sr-only, NOT display:none) and opened by a native
+            <label htmlFor> below — iOS Safari refuses a programmatic .click() on a display:none input,
+            which is why three taps opened nothing (LESSONS 2026-09-01). Drag-and-drop stays on the div. */}
         <input
+          id="audio-upload-input"
           ref={fileInputRef}
           type="file"
           accept={UPLOAD_ACCEPT_ATTR}
           onChange={handleFileSelect}
-          className="hidden"
+          // Off-screen, NOT display:none, and NOT `sr-only` (a focus-revealing sr-only would flash the
+          // focused input). The native <label htmlFor> below opens it — iOS-safe.
+          className="absolute -left-[9999px] top-0 h-px w-px opacity-0"
           disabled={isUploading}
         />
 
@@ -611,14 +622,15 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               </Button>
             </>
           ) : (
-            <>
+            // Native label opens the picker on a real user gesture — iOS-safe (no JS .click()).
+            <label htmlFor="audio-upload-input" className="flex flex-col items-center justify-center text-center cursor-pointer">
               <div className="p-4 bg-surface-elevated rounded-full mb-4 group-hover:scale-110 transition-transform">
                 <UploadCloud className="h-8 w-8 text-fg-muted" />
               </div>
               <h3 className="text-xl font-semibold text-fg mb-2">Upload a file</h3>
-              <p className="text-fg-muted mb-2">Drag and drop your file here, or click to browse</p>
+              <p className="text-fg-muted mb-2">Drag and drop your file here, or tap to choose a file</p>
               <p className="text-sm text-fg-muted">Supported: {UPLOAD_FORMATS_LIST} (max {UPLOAD_MAX_FILE_MB}MB)</p>
-            </>
+            </label>
           )}
         </div>
       </div>

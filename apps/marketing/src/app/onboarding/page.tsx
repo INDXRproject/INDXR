@@ -50,7 +50,9 @@ export default function OnboardingPage() {
       } else {
         // Honoreer het door de auth-flow gethread checkout-doel (bv. billing?checkout=plus);
         // ongeldig/ontbrekend → gewone dashboard-landing. Open-redirect-guard via safeAppRedirect.
-        const target = safeAppRedirect(searchParams.get('next')) ?? appHref('/dashboard')
+        // Land new users straight on the transcribe tool, not a cold dashboard — the "what do I do
+        // now?" gap after onboarding (a checkout `next` target still takes priority when present).
+        const target = safeAppRedirect(searchParams.get('next')) ?? appHref('/dashboard/transcribe')
         // Google Ads signup-conversie (geen waarde). Vuurt alleen bij consent; de redirect
         // gebeurt in de callback (met timeout-fallback) zodat 'ie nooit wordt afgekapt.
         trackSignup(() => { window.location.href = target })
@@ -64,9 +66,22 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[var(--bg)] px-4">
-       <div className="w-full max-w-4xl grid md:grid-cols-2 gap-8 items-center">
+       <div className="w-full max-w-4xl grid md:grid-cols-2 gap-6 md:gap-8 items-center">
 
-          {/* Left side: Welcome message */}
+          {/* Mobile-only guidance. The desktop left column below is hidden on phones (md:block), and
+              100% of the ad traffic is mobile — so the "you're set up + here's what's next" context and
+              the next-step nudge have to live here too. It also fills the empty gap above the card. */}
+          <div className="md:hidden space-y-2">
+            <h1 className="text-2xl font-semibold text-[var(--fg)]">
+              You&apos;re in — {FREE_TIER.WELCOME_CREDITS} credits added
+            </h1>
+            <p className="text-[var(--fg-subtle)] leading-relaxed">
+              One quick step, then you land straight on the transcribe page: paste a YouTube URL or upload
+              a recording. Extracting existing captions is always free.
+            </p>
+          </div>
+
+          {/* Left side: Welcome message (desktop) */}
           <div className="space-y-6 hidden md:block">
             <div>
               <h1 className="text-4xl font-semibold text-[var(--fg)] mb-3">Welcome to INDXR</h1>
@@ -152,7 +167,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
                 <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : "Get Started →"}
+                  {isSubmitting ? "Saving..." : "Start transcribing →"}
                 </Button>
               </form>
             </CardContent>
