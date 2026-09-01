@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Mail, Plus } from "lucide-react"
+import { Mail } from "lucide-react"
 import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
 import { Button } from "@indxr/shared/components/ui/button"
 import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
@@ -65,18 +65,15 @@ export function AppTopbar() {
           </a>
         </Button>
 
-        {/* Credits — coin + count + a buy affordance, one pill. The only route to buy credits
-            on both desktop and mobile, so it carries an explicit "+". */}
+        {/* Credits — coin + balance. Clicking opens the credits page (view balance + buy); the account
+            menu also has a Credits entry. No standalone "+" buy affordance next to the balance any more. */}
         <a
           href="/dashboard/credits"
-          className="group flex items-center gap-1.5 h-9 pl-1.5 pr-1.5 rounded-full border border-border bg-surface-elevated text-fg hover:border-border-strong transition-colors"
-          aria-label={`${credits ?? 0} credits — buy more`}
+          className="flex items-center gap-1.5 h-9 px-2.5 rounded-full border border-border bg-surface-elevated text-fg hover:border-border-strong transition-colors"
+          aria-label={`Credits: ${credits ?? 0}`}
         >
           <HexagonCreditIcon className="size-5" />
           <span className="text-sm font-medium tabular-nums">{credits ?? 0}</span>
-          <span className="flex items-center justify-center h-5 w-5 rounded-full bg-accent text-fg-on-accent group-hover:bg-accent-hover transition-colors">
-            <Plus className="h-3.5 w-3.5" />
-          </span>
         </a>
 
         <AvatarDropdown />
