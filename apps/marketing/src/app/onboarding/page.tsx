@@ -64,8 +64,9 @@ export default function OnboardingPage() {
     }
   }
 
+  // pt-16 reserves the fixed 64px header so the centred content clears it (was in the header band).
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[var(--bg)] px-4">
+    <div className="flex items-center justify-center min-h-screen bg-[var(--bg)] px-4 pt-16">
        <div className="w-full max-w-4xl grid md:grid-cols-2 gap-6 md:gap-8 items-center">
 
           {/* Mobile-only guidance. The desktop left column below is hidden on phones (md:block), and

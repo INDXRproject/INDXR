@@ -230,7 +230,10 @@
 @media (max-width: 640px) {
   :root[data-consent-banner] .auth-shell {
     align-items: flex-start;
-    padding-top: 1.5rem;
+    /* Clear the fixed 64px (h-16) header — 1.5rem top-aligned the card *under* it, so its title/logo
+       sat in the header band. 4.5rem drops the card below the header while still keeping the form high
+       enough to stay above the reserved consent banner. */
+    padding-top: 4.5rem;
     padding-bottom: 15rem;
   }
 }

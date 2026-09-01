@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { marketingHref, appHref } from "../lib/cross-host-links"
 import { Menu, User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { useAuth } from "../hooks/useAuth"
@@ -70,20 +69,15 @@ function AvatarDropdown() {
 
 export function Header() {
   const { user } = useAuth()
-  const [scrolled, setScrolled] = useState(false)
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
+  // Unconditionally opaque (bg-bg + border), like the app topbar. The old scroll-state background
+  // (transparent until window.scrollY > 60) was a race condition on iOS: the scroll event throttles
+  // during momentum scroll, so the opaque background lagged and page content was seen through the
+  // header (e.g. the /login card title over the logo). A threshold that "usually" fires in time is not
+  // a fix — the cover has to be structural. Sacrifice: the header no longer floats transparently over
+  // the top of the homepage hero; it is a solid band at all scroll positions.
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 w-full border-b transition-colors duration-300 ${
-      scrolled
-        ? "border-border bg-bg/80 backdrop-blur-sm"
-        : "border-transparent bg-transparent"
-    }`}>
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border bg-bg">
       <div className="container flex h-16 items-center px-4 mx-auto">
 
         {/* Logo — left */}
