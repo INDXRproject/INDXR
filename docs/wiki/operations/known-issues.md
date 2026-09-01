@@ -121,6 +121,17 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 
 ## Kritieke TODO's (blokkeren live launch)
 
+### [~] HIBP-lekwachtwoordcontrole inschakelen (Supabase-instelling — vraag voor Khidr)
+**Geregistreerd:** 2026-09-02 (Supabase security-audit, zie [supabase-security-audit.md](supabase-security-audit.md)).
+De advisor-WARN `auth_leaked_password_protection` staat nog open: Supabase Auth controleert wachtwoorden
+niet tegen HaveIBeenPwned. Dit is een **projectinstelling** die alleen via het dashboard of de Management
+API (persoonlijke `sbp_`-token) aan kan — niet via de MCP of de service-role key, die geen van beide in de
+CC-omgeving beschikbaar zijn. **Actie Khidr:** Supabase Dashboard → Authentication → Sign In / Providers →
+(Password) → **"Prevent use of leaked passwords"** aanzetten. De frontend is er al op voorbereid: de
+gedeelde mapper `packages/shared/src/lib/passwordErrors.ts` is aangesloten op signup, `/reset-password` én
+`SecuritySettingsCard`, zodat de HIBP-afwijzing daar leesbare inline copy toont i.p.v. een rauwe
+Supabase-string (unit-getest). Inschakelen is dus een veilige één-klik-actie.
+
 ### ~~Per-job kosten-capture ontbreekt — LAUNCH-BLOCKER~~ ✅ Capture-laag live (ADR-054); rest = ondergrens post-launch
 **Geregistreerd:** 2026-07-09 (bij ADR-052 pricing-herstructurering).
 **Update 2026-07-24 (geverifieerd tegen code):** de capture-laag bestaat sinds **ADR-054** — per-job

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useState } from "react"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { validatePassword } from "@indxr/shared/utils/validation"
+import { mapPasswordError } from "@indxr/shared/lib/passwordErrors"
 import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard"
 
 export function SecuritySettingsCard() {
@@ -36,7 +37,8 @@ export function SecuritySettingsCard() {
     try {
         const { error } = await supabase.auth.updateUser({ password: newPassword })
         if (error) {
-            setPasswordFeedback({ type: 'error', message: error.message })
+            // Readable inline copy — same GoTrue rejection (incl. HIBP leaked-password) as signup/reset.
+            setPasswordFeedback({ type: 'error', message: mapPasswordError(error) })
         } else {
             setPasswordFeedback({ type: 'success', message: 'Password updated successfully' })
             setNewPassword("")

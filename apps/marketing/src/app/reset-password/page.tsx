@@ -9,6 +9,7 @@ import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { createClient } from "@indxr/shared/utils/supabase/client"
+import { mapPasswordError } from "@indxr/shared/lib/passwordErrors"
 
 // Set-new-password page. The recovery link goes through /auth/callback?recovery=1, which exchanges the
 // PKCE code and establishes a recovery session, then redirects here. So on arrival the user is already
@@ -48,7 +49,8 @@ export default function ResetPasswordPage() {
       const supabase = createClient()
       const { error: updateError } = await supabase.auth.updateUser({ password })
       if (updateError) {
-        setError(updateError.message)
+        // Readable inline copy — HIBP/leaked-password rejection here is the same GoTrue error as signup.
+        setError(mapPasswordError(updateError))
         setIsSubmitting(false)
         return
       }

@@ -7,6 +7,7 @@ import { isDisposableEmail } from '../utils/disposable-email'
 import { redirect } from 'next/navigation'
 import { safeAppRedirect } from '../lib/safe-redirect'
 import { PH_DID_PARAM, isValidDistinctId, appendPhDid } from '../lib/posthog-identity'
+import { leakedPasswordMessage } from '../lib/passwordErrors'
 
 // Build the /auth/callback URL, threading the checkout `next` target and the anonymous PostHog
 // distinct_id (validated) through the OAuth / email-verification roundtrip. Both survive as query
@@ -165,7 +166,9 @@ export async function signupAction(prevState: unknown, formData: FormData) {
   })
 
   if (error) {
-    return { error: error.message }
+    // If HIBP leaked-password protection is on, a compromised password rejects here with
+    // weak_password — surface readable copy instead of the raw GoTrue string; other errors unchanged.
+    return { error: leakedPasswordMessage(error) ?? error.message }
   }
 
   // With email confirmation on, Supabase does NOT error when you sign up with an email that already
