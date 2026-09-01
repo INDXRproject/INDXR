@@ -139,7 +139,7 @@ ADR-formaat:
 | Frontend | Next.js 16, React 19.2.3, App Router |
 | Styling | Tailwind CSS v4 + Radix + Shadcn/ui |
 | Auth | Supabase Auth (email + Google OAuth) |
-| Database | PostgreSQL via Supabase (RLS op alle public tabellen — 25 met RLS aan, 2026-07-24) |
+| Database | PostgreSQL via Supabase (RLS aan op alle 30 public tabellen, geverifieerd 2026-09-01) |
 | Backend | FastAPI Python 3.12 op Railway (Docker) |
 | Transcriptie | YouTube captions (yt-dlp) + AssemblyAI fallback |
 | AI Samenvatting | Gemini 2.5 Flash via AssemblyAI EU LLM Gateway — twee modelstappen (ADR-090). Primair Gemini 2.5 Flash in beide stappen; per-call gateway-fallback: **stap 1 (structuur) → Claude Sonnet 4-6**, **stap 2 (uitwerking) → Claude Haiku 4.5** (`claude-haiku-4-5-20251001`). Bron: `backend/summary_pipeline.py` (`STRUCTURE_MODEL`/`STRUCTURE_FALLBACK`, `SECTION_MODEL`/`SECTION_FALLBACK`). ADR-068 (single-pass, haiku-only fallback) is hierdoor achterhaald. |
@@ -241,7 +241,7 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 
 ### Database
 
-- Alle user-facing tabellen hebben RLS — gebruikers zien alleen eigen data (25 public tabellen met RLS, geverifieerd 2026-07-24)
+- Alle user-facing tabellen hebben RLS — gebruikers zien alleen eigen data (alle 30 public tabellen met RLS aan, geverifieerd 2026-09-01; backend-only tabellen hebben RLS zonder policies + REVOKE anon/authenticated)
 - `SUPABASE_SERVICE_ROLE_KEY` alleen in Python backend (bypass RLS) — nooit in browser of Next.js client
 - **Balans-bron:** `user_credits.credits` is de **gezaghebbende, gematerialiseerde balans** — onderhouden door 4 RPC's (`deduct_credits_atomic`, `add_credits`, `claim_welcome_reward`, `update_playlist_video_progress`) onder `FOR UPDATE`-rijlock. `get_user_credits` leest deze kolom → dat is wat de user ziet. Reserveringen/aftrek altijd hierop opereren.
 - `credit_transactions` is een **audit-log, GEEN balans-bron**. Herleid de balans **niet** uit `SUM(amount)` — de balans is gematerialiseerd in `user_credits.credits` (gezaghebbend). De vroegere sign-bug (caption-debits negatief) is **gefixt** in migratie `20260706172045_fix_caption_debit_sign.sql`: `amount` is nu **altijd positief** en de kolom `type` (`'debit'`/`'credit'`) draagt de richting. Reden om alsnog niet te sommeren: `SUM(amount)` telt met altijd-positieve bedragen sowieso fout, en reserverings-/settlement-/refund-`kind`s (ADR-050) kunnen dubbeltellen. Lees dus altijd `user_credits.credits` via `get_user_credits`. (Geverifieerd tegen migraties + RPC's, 2026-07-10.)
@@ -301,7 +301,7 @@ Als ze verschijnen: `git rm -r --cached <path>`
 
 ### Supabase
 - **Email verificatie staat AAN** (`mailer_autoconfirm=false`, geverifieerd 2026-07-15 via Management API). Nieuwe email/password-signups zijn PKCE en moeten de verificatielink klikken → `/auth/callback?code=…` → sessie. LET OP: custom SMTP (Resend, `smtp.resend.com`, sender `no-reply@send.indxr.ai`) is gekoppeld met auth-rate-limit 30/u (geverifieerd 2026-07-20) — niet meer de ingebouwde 2/u mailer. **Nieuwe signups met `@indxr-test.com` worden door Supabase geweigerd** ("Email address invalid"); gebruik `@indxr.ai` (of een echt domein met MX) voor E2E-signup-tests, of maak accounts admin-side aan (`admin.createUser` met `email_confirm:true` accepteert `@indxr-test.com`).
-- RLS staat aan op alle 25 public tabellen (geverifieerd 2026-07-24)
+- RLS staat aan op alle 30 public tabellen (geverifieerd 2026-09-01; was eerder 25 op 2026-07-24 — `summary_cost_baseline_log` was per abuis zonder RLS aangemaakt, gedicht in migratie `20260901210140`)
 - Database backups nog niet geconfigureerd — **open voor launch**
 
 ### Railway

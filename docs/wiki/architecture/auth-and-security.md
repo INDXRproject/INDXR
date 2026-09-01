@@ -122,7 +122,7 @@ Geconfigureerd in `packages/shared/src/lib/ratelimit.ts` via Upstash Redis (slid
 
 ## Row-Level Security (RLS)
 
-Alle 6 user-facing tabellen hebben RLS ingeschakeld. Gebruikers kunnen **alleen hun eigen data** lezen/schrijven, zelfs bij een bug in de applicatielogica.
+**Alle 30 public tabellen hebben RLS ingeschakeld** (geverifieerd 2026-09-01: `relrowsecurity = true` op alle 30, 0 zonder). Twee patronen: de user-facing tabellen dragen `auth.uid()`-policies zodat gebruikers **alleen hun eigen data** lezen/schrijven (zelfs bij een bug in de applicatielogica); de backend-only tabellen (bv. `proxy_usage_log`, `service_metrics`, `decodo_daily_usage`, `summary_cost_baseline_log`) hebben RLS aan **zonder policies** + `REVOKE ALL FROM anon, authenticated` (belt-and-braces: RLS dekt de rij-toegang, REVOKE dekt de PostgREST-exposure) en worden alleen via de service-role key of SECURITY DEFINER-RPC's benaderd. Voorbeeld van de eerste soort:
 
 | Tabel | RLS Policy |
 |-------|-----------|
