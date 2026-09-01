@@ -55,6 +55,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const transcribeBtnRef = useRef<HTMLButtonElement>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
   const activeFilenameRef = useRef<string>('Audio Upload')
   const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
   const [error, setError] = useState<{ message: string; code?: string } | null>(null)
@@ -162,6 +164,22 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [isTranscribing])
+
+  // A selected file pushes the Transcribe button below the fold on a phone (the drop zone + cost card
+  // are tall). Bring the primary action into view so the next step is never off-screen — this was the
+  // silent stall diagnosed for a real user: file accepted, filename shown, but the button unseen for
+  // minutes. block:'center' clears the fixed bottom nav bar.
+  useEffect(() => {
+    if (file && !isTranscribing && uploadPhase === 'idle') {
+      transcribeBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [file, audioDuration, isTranscribing, uploadPhase])
+
+  // Errors render at the top of the card; if the user scrolled down to the button, scroll the error
+  // back into view so a failure is never a silent off-screen card.
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [error])
 
   // Auto-resume countdown: when resume banner appears, resume automatically after 5 s
   useEffect(() => {
@@ -444,6 +462,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         return
       }
 
+      // Funnel: the backend accepted the job (job_id returned). Closes the interval
+      // file-chosen (source_selected) -> upload-started (job_started) -> job-accepted. A job_started
+      // with no following job_accepted means the upload reached us but the backend didn't take it.
+      posthog.capture('job_accepted', { mode: 'upload' })
+
       // Persist job so page refresh can recover it
       sessionStorage.setItem(AUDIO_JOB_KEY, JSON.stringify({ jobId: job_id, filename: file.name }))
       setResumeData(null)
@@ -500,6 +523,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         </div>
       )}
       {error && (
+        <div ref={errorRef}>
         <ErrorCard
           {...resolveErrorCopy(error.code, {
             mode: "audio",
@@ -516,6 +540,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             onRetryUrl: () => { setError(null); if (file) handleTranscribe() },
           })}
         />
+        </div>
       )}
 
       {/* Resume Banner — shown when a running job is detected on mount */}
@@ -563,7 +588,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          p-12 rounded-2xl border-2 border-dashed transition-all
+          ${file ? 'p-5' : 'p-12'} rounded-2xl border-2 border-dashed transition-all
           ${isDragging
             ? 'border-primary bg-accent/10 scale-105'
             : file
@@ -732,6 +757,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           {/* Transcribe button — shown only when idle */}
           {uploadPhase === 'idle' && (
             <Button
+              ref={transcribeBtnRef}
               onClick={handleTranscribe}
               disabled={!canTranscribe}
               className="w-full disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"

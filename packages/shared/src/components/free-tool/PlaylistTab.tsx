@@ -554,6 +554,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       }
 
       const { job_id } = await response.json()
+      posthog.capture('job_accepted', { mode: 'playlist' })
       playlistJobIdRef.current = job_id
       // sessionStorage holds only pointers/timers — the per-video entry list is
       // now sourced from the DB (video_metadata) on resume, not cached here.

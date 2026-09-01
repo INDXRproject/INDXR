@@ -791,6 +791,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       const jobData = await response.json()
       if (!jobData.job_id) throw new Error('Failed to start transcription job')
+      posthog.capture('job_accepted', { mode: 'video', method: 'ai' })
 
       const isDedup = !!jobData.deduplicated
       const initialStatus = (isDedup ? jobData.status : 'pending') as WhisperStatus
@@ -889,6 +890,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       const jobData = await response.json()
       if (!jobData.job_id) throw new Error('Failed to start transcription job')
+      posthog.capture('job_accepted', { mode: 'video', method: 'ai' })
 
       const isDedup = !!jobData.deduplicated
       const initialStatus = (isDedup ? jobData.status : 'pending') as WhisperStatus
