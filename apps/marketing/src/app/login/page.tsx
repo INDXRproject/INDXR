@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Link from "next/link"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
+import posthog from "posthog-js"
 import { loginAction } from "@indxr/shared/actions/auth-actions"
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { GoogleSignInButton } from "@indxr/shared/components/auth/GoogleSignInButton"
@@ -54,6 +55,10 @@ export default function LoginPage() {
       // Always pass resolved target — server action redirects directly,
       // avoiding the RSC stream abort caused by concurrent window.location.href.
       formData.append('redirectTo', resolvePostLoginTarget())
+      // Carry the anonymous PostHog distinct_id so a RETURNING user who arrived via an ad and logs in
+      // (email/password) still gets their pre-login pageviews aliased into the account on the destination
+      // (persistence:'memory' resets the id on the hard redirect to the app). See lib/posthog-identity.
+      formData.append('ph_did', posthog.get_distinct_id?.() ?? '')
 
       // Call Server Action — redirects on success, returns { error } on failure.
       const result = await loginAction(null, formData)

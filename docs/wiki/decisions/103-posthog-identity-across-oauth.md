@@ -29,6 +29,16 @@ id reist alléén in de URL (5(3) gaat over opslag, niet URL-params). Guards: UU
 vóór enig effect. `alias` (niet bootstrap) omdat de terugkeer altijd al geïdentificeerd is — daardoor
 kan de bootstrap-"genegeerd-als-er-al-opslag-is"-valkuil structureel niet optreden.
 
+**FIX A — verzendkant dekt ALLE geïdentificeerde eindpunten (aanvulling 2e commit).** De eerste ronde
+hing `ph_did` alleen aan de Google-knop en het signup-formulier; e-mail/wachtwoord-**login** miste het,
+waardoor de terugkerende ad-bezoeker (heeft account, logt in) alsnog brak. Nu draagt ook `loginAction`
+de id: `appendPhDid()` (in `posthog-identity.ts`, padonafhankelijk) hangt hem aan de post-login-redirect
+(zowel de relatieve `/onboarding?next=…` als de absolute `${APP_URL}/dashboard`), en de login-pagina
+leest `posthog.get_distinct_id()` bij submit. Bestemmingskant (AuthContext) is ongewijzigd — die is
+padonafhankelijk. Geïnventariseerde eindpunten: **Google OAuth** ✓, **signup/verificatielink** ✓,
+**login** ✓; **reset-password** eindigt in `signOut()`→`/login` (geen ingelogde staat) → de login-brug
+dekt het, geen eigen brug nodig; **magic link** bestaat niet in deze codebase.
+
 **FIX B — persistente opslag ná consent.** Default `'memory'`; ná expliciete consent →
 `'localStorage+cookie'` + `cross_subdomain_cookie:true`; terug naar `'memory'` bij intrekking. De cookie
 op `.indxr.ai` deelt de distinct_id over `indxr.ai ↔ app.indxr.ai` (localStorage doet dat niet).
@@ -57,5 +67,13 @@ nieuwe tabel/service/event.
 - **Bekende meet-beperking (posthog-js #3130, open):** `set_config` dat `persistence` wisselt mint een
   nieuwe `session_id` → pre/post-consent-activiteit telt als aparte *sessies* (de persoon blijft intact).
   Bewust geen workaround; gedocumenteerd in `monitoring.md`.
-- De live person-merge-meting is niet headless automatiseerbaar (interactieve Google-login / echte inbox
-  + prod-PostHog, funnel vult over dagen). Verificatierecept staat in `monitoring.md`.
+- **Verificatiestatus.** Bewezen: build 2/2 groen, migratie toegepast, en de plumbing-guard
+  (`posthog-identity.test.ts`: UUID-guard weigert getrunceerd/injectie/non-UUID; `appendPhDid` threadt
+  geldig, dropt ongeldig; strip behoudt andere params). Een volledig geautomatiseerde E2E-harness die de
+  echte server-side merge bewijst — zonder Google, via admin `createUser` + `generateLink` + Playwright +
+  de PostHog persons-API — staat klaar in `scripts/verify-posthog-bridge.mjs` (login granted/denied,
+  ongeldige ph_did, verificatielink; met cleanup van Supabase-user én PostHog-persoon). Die harness is
+  **nog niet uitgevoerd**: hij is geblokkeerd op een PostHog **personal API key** (`phx_…`, scopes
+  `person:read` + `person:delete`) die niet in de omgeving zit, plus bevestiging van de juiste
+  API-regio-host (config is tegenstrijdig: `.env.local` = `us.i.posthog.com`, provider `ui_host` =
+  `eu.posthog.com`). De harness gate't hierop en maakt zónder de key niets aan. Zie `monitoring.md`.

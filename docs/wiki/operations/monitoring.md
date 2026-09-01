@@ -123,14 +123,32 @@ cross-subdomein `indxr_consent`-cookie (`analytics_storage==='granted'`). De **c
 *persoon*/distinct_id blijft wél intact). Bewust geen workaround gebouwd; documenteer het hier zodat
 sessie-telling rond het consent-moment niet verkeerd geïnterpreteerd wordt.
 
-**Verificatie (handmatig — niet headless automatiseerbaar).** Een echte person-merge-meting vereist een
-interactieve Google-login (of een echte inbox voor de verificatielink) + prod-PostHog, en de
-ad-klik→activatie-funnel vult zich pas over dagen. Recept: (1) schone browser, klik een ad-link →
-artikel → signup via Google; (2) na login, in PostHog: open de persoon `= user.id` en controleer dat het
-`$pageview`-event van vóór de signup én een `premium_action_completed` van erna op **dezelfde** persoon
-staan. API: `GET /api/projects/:id/persons/?distinct_id=<user.id>` → `distinct_ids[]` moet de anonieme
-pre-signup UUID bevatten. (3) Herhaal met consent geweigerd: de OAuth-hop merged nog steeds; een losse
-artikel-klik-pageview kan apart blijven.
+**Verzendkant dekt alle geïdentificeerde eindpunten.** `ph_did` rijdt mee op Google OAuth, de
+signup/verificatielink, én e-mail/wachtwoord-**login** (`appendPhDid` op de post-login-redirect). Reset-
+password eindigt in `signOut()`→`/login` (geen ingelogde staat) → de login-brug dekt de terugkeer; magic
+link bestaat niet. Dit sluit het gat waarbij een terugkerende ad-bezoeker die inlogt (niet signup't)
+alsnog brak.
+
+**Verificatie — geautomatiseerde harness, zónder Google.** De brug zit aan de bestemmingskant
+(AuthContext) en is dus padonafhankelijk; hij is te bewijzen zonder OAuth. `scripts/verify-posthog-
+bridge.mjs` doet het volledig: admin `createUser` (`email_confirm:true`) → Playwright leest de anonieme
+distinct_id op `/articles/video-to-text` → login (of de admin-`generateLink({type:'signup'})`-actielink,
+zó ook het e-mailpad zónder inbox) met `ph_did` → `GET {host}/api/projects/298689/persons/?distinct_id=
+<user.id>` en assert dat `distinct_ids[]` **zowel** de anonieme UUID **als** de user-id bevat. Scenario's:
+login-consent-granted (merge), login-consent-denied (merge — de bestemmings-alias is consent-
+onafhankelijk), ongeldige `ph_did` truncated/injectie (géén merge), verificatielink (merge). Ruimt op:
+Supabase-user én PostHog-persoon.
+
+**Status: nog niet uitgevoerd — geblokkeerd.** De harness heeft twee dingen nodig die niet in de omgeving
+zitten: (1) een PostHog **personal API key** (`phx_…`, géén `phc_` project-key), scopes **`person:read`**
+(verifiëren) + **`person:delete`** (opruimen), aan te maken op `{host}/settings/user-api-keys`; (2)
+bevestiging van de juiste **API-regio-host** — de config spreekt zichzelf tegen: `apps/*/.env.local` zet
+`NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com`, terwijl `PostHogProvider` `ui_host=eu.posthog.com`
+hardcodet en `next.config` naar `eu.i.posthog.com` default. De persons-API moet de regio raken waar
+project 298689 echt leeft (check Project settings; zet `POSTHOG_API_HOST` op `eu.posthog.com` óf
+`us.posthog.com`). De harness gate't op de key en maakt zónder deze secrets **niets** aan in productie —
+bewust, omdat een persoon die we niet kunnen lezen we ook niet kunnen opruimen. Zet de secrets en draai
+`node scripts/verify-posthog-bridge.mjs`; dat levert het echte bewijs (de API-respons met beide id's).
 
 ---
 

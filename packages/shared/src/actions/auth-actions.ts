@@ -6,7 +6,7 @@ import { headers, cookies } from 'next/headers'
 import { isDisposableEmail } from '../utils/disposable-email'
 import { redirect } from 'next/navigation'
 import { safeAppRedirect } from '../lib/safe-redirect'
-import { PH_DID_PARAM, isValidDistinctId } from '../lib/posthog-identity'
+import { PH_DID_PARAM, isValidDistinctId, appendPhDid } from '../lib/posthog-identity'
 
 // Build the /auth/callback URL, threading the checkout `next` target and the anonymous PostHog
 // distinct_id (validated) through the OAuth / email-verification roundtrip. Both survive as query
@@ -46,6 +46,7 @@ export async function loginAction(prevState: unknown, formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const rawRedirectTo = formData.get('redirectTo') as string
+  const rawPhDid = formData.get('ph_did')
 
   // 1. Rate Limiting Check
   const headersList = await headers()
@@ -87,7 +88,7 @@ export async function loginAction(prevState: unknown, formData: FormData) {
      // brengt de user daar naartoe i.p.v. hardcoded /dashboard. Ongeldig/ontbrekend
      // doel → gewone /onboarding (valt daarna terug op /dashboard).
      const safeNext = safeAppRedirect(rawRedirectTo)
-     redirect(safeNext ? `/onboarding?next=${encodeURIComponent(safeNext)}` : '/onboarding')
+     redirect(appendPhDid(safeNext ? `/onboarding?next=${encodeURIComponent(safeNext)}` : '/onboarding', rawPhDid))
   }
 
   // 4. Resolve and validate the post-login redirect target.
@@ -113,7 +114,7 @@ export async function loginAction(prevState: unknown, formData: FormData) {
     }
   }
 
-  redirect(finalTarget)
+  redirect(appendPhDid(finalTarget, rawPhDid))
 }
 
 export async function signupAction(prevState: unknown, formData: FormData) {

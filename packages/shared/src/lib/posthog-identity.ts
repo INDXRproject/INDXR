@@ -22,3 +22,14 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export function isValidDistinctId(v: unknown): v is string {
   return typeof v === "string" && UUID_RE.test(v)
 }
+
+// Append the (validated) anonymous distinct_id to a post-login redirect target so AuthContext on the
+// destination aliases the pre-login identity into the user. Email/password login has no OAuth callback —
+// the server action redirects straight to the destination — so the id rides on that target instead of a
+// callback URL. Works for relative ('/onboarding?next=…') and absolute ('https://app.indxr.ai/dashboard')
+// targets. isValidDistinctId guarantees a bare UUID, so direct interpolation needs no further encoding;
+// an invalid/absent id returns the target untouched (no merge).
+export function appendPhDid(target: string, rawPhDid: unknown): string {
+  if (!isValidDistinctId(rawPhDid)) return target
+  return `${target}${target.includes("?") ? "&" : "?"}${PH_DID_PARAM}=${rawPhDid}`
+}
