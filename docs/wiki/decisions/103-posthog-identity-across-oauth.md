@@ -90,6 +90,21 @@ nieuwe tabel/service/event.
     **niet** met de hand een alias-event verstuurd om het groen te forceren (dat zou PostHog's alias
     bewijzen, niet onze code). Zie `monitoring.md`.
 
+- **Phase 2 bevestigd + reset-bug gefixt (2026-09-02, deel 2).** Khidr's prod-export toont Phase 2
+  **groen**: een echte Google-login-sessie produceerde `$create_alias` + `$identify`
+  (`$anon_distinct_id`) op één persoon — de brug werkt server-side. Maar de merge reikte maar **één hop**
+  terug: alleen de `/login`-id, niet de artikel-landingspagina-id. Oorzaak (bewezen met echte-browser-
+  cookie-observatie vóór wijziging): `posthog.reset()` in `AuthContext` draaide onvoorwaardelijk in de
+  anonieme (geen-sessie) tak. `onAuthStateChange` vuurt `INITIAL_SESSION`/`session=null` op elke anonieme
+  paginalading, en `reset()` mint een nieuwe anonieme `distinct_id` → de id wisselde binnen ~0,2s op de
+  artikelpagina (`ec88` → `ed0f`, geen navigatie) en opnieuw op `/login`, waardoor de landings-id wees
+  werd. Dit defeatte óók FIX B (de consent-cookie wérd geschreven en gelezen — persistence werkte — maar
+  `reset()` gooide de id daarna weg). **Fix:** `posthog.reset()` alléén nog bij `event === 'SIGNED_OUT'`
+  (echte uitlog), nooit voor anonieme bezoekers → id stabiel van landing → login → de brug aliast de echte
+  landingspagina-id. Single `posthog.init` (dubbele init uitgesloten). Apart gemeld (niet in deze fix):
+  `$rageclick` op `/login` vlak vóór "Continue with Google" — de Google-knop heeft geen pending-state, dus
+  geen tap-feedback tijdens de OAuth-redirect.
+
 - **Config-fix (2026-09-02).** `NEXT_PUBLIC_POSTHOG_HOST` stond in lokale `.env.local` op
   `us.i.posthog.com` terwijl `next.config` naar `eu.i.posthog.com` default en `PostHogProvider.ui_host`
   correct `eu.posthog.com` is. De committed `.env.local.example`'s zetten nu expliciet

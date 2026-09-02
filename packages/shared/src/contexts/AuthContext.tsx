@@ -173,18 +173,28 @@ export function AuthProvider({
 
         fetchCredits(session.user.id)
       } else {
-        // Reset PostHog
-        posthog.reset();
         setCredits(null)
         setQuota(null)
         setProfile(null)
 
-        // On app host, redirect to marketing domain login after sign-out
-        if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
-          const hostname = window.location.hostname
-          if (hostname === 'app.indxr.ai' || hostname.startsWith('app.localhost')) {
-            const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'
-            window.location.href = `${marketingUrl}/login`
+        // Clear the PostHog identity ONLY on an actual sign-out — never for an anonymous visitor.
+        // onAuthStateChange fires INITIAL_SESSION with session=null on EVERY anonymous page load, and
+        // posthog.reset() re-mints the anonymous distinct_id. Running it here unconditionally threw away
+        // the ad-landing-page id and generated a fresh one on each page (article, /login), orphaning every
+        // pre-signup pageview and defeating the persistent-consent id — so the alias only ever reached one
+        // hop back. Guarding on SIGNED_OUT keeps the id stable from landing → login, so the bridge (ADR-103)
+        // aliases the true landing-page id. (Verified 2026-09-02: unguarded reset changed the id within
+        // ~0.2s on the article page.)
+        if (event === 'SIGNED_OUT') {
+          posthog.reset();
+
+          // On app host, redirect to marketing domain login after sign-out
+          if (typeof window !== 'undefined') {
+            const hostname = window.location.hostname
+            if (hostname === 'app.indxr.ai' || hostname.startsWith('app.localhost')) {
+              const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000'
+              window.location.href = `${marketingUrl}/login`
+            }
           }
         }
       }

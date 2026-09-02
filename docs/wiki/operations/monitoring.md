@@ -162,6 +162,13 @@ Supabase-user én PostHog-persoon.
 - **Om PHASE 2 alsnog te meten:** draai `scripts/verify-posthog-bridge.mjs` vanaf een echte
   (niet-geautomatiseerde) browser/omgeving, of vanuit een omgeving waar posthog-js niet als bot filtert.
   De harness is idempotent en ruimt Supabase-user én PostHog-persoon op.
+- **UPDATE 2026-09-02 (deel 2): PHASE 2 groen bevestigd + reset-bug gefixt.** Een echte prod-export
+  (Google-login) toont `$create_alias` + `$identify` op één persoon → de brug werkt server-side. Maar de
+  merge reikte maar één hop terug omdat `posthog.reset()` in `AuthContext` op elke anonieme paginalading
+  draaide (`INITIAL_SESSION`/`session=null`) en de anonieme `distinct_id` telkens hergenereerde — bewezen
+  met cookie-observatie (id wisselde binnen ~0,2s op de artikelpagina). Gefixt: `reset()` nu alléén bij
+  `SIGNED_OUT`. Zie ADR-103. Los gemeld: `$rageclick` op de Google-knop (geen pending-state → geen
+  tap-feedback tijdens de OAuth-redirect).
 
 ---
 
