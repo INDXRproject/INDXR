@@ -101,9 +101,17 @@ nieuwe tabel/service/event.
   werd. Dit defeatte óók FIX B (de consent-cookie wérd geschreven en gelezen — persistence werkte — maar
   `reset()` gooide de id daarna weg). **Fix:** `posthog.reset()` alléén nog bij `event === 'SIGNED_OUT'`
   (echte uitlog), nooit voor anonieme bezoekers → id stabiel van landing → login → de brug aliast de echte
-  landingspagina-id. Single `posthog.init` (dubbele init uitgesloten). Apart gemeld (niet in deze fix):
-  `$rageclick` op `/login` vlak vóór "Continue with Google" — de Google-knop heeft geen pending-state, dus
-  geen tap-feedback tijdens de OAuth-redirect.
+  landingspagina-id. Single `posthog.init` (dubbele init uitgesloten).
+
+- **$rageclick-correctie (2026-09-02, deel 3).** Mijn eerdere vermoeden dat de `/login`-`$rageclick` de
+  Google-knop was, is **onjuist** gebleken (grond-waarheid uit de PostHog-UI): het waren "clicked input"-
+  events op de **e-mail/wachtwoord-velden**, en de tweede `$rageclick` (transcribe-audio) was de "Upload"-
+  label. Beide zijn **label/input-dubbelvuur-artefacten**: een `<label htmlFor>` vuurt 2 clicks per tap
+  (label + gesynthetiseerde control-click) → autocapture telt dubbel → 2 taps = 4 = `$rageclick`. Er is
+  **geen** UI-probleem en **geen** pending-state op de Google-knop nodig (die aanbeveling verviel).
+  Gefixt met `ph-no-capture` op het redundante element (shadcn `<Label>`-primitive app-breed; native
+  labels in support/contact; en op de off-screen `input#audio-upload-input` zodat de leesbare "Upload"-
+  label het enige event blijft). Gedrag onaangeroerd. Zie LESSONS 2026-09-02.
 
 - **Config-fix (2026-09-02).** `NEXT_PUBLIC_POSTHOG_HOST` stond in lokale `.env.local` op
   `us.i.posthog.com` terwijl `next.config` naar `eu.i.posthog.com` default en `PostHogProvider.ui_host`

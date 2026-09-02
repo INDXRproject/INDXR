@@ -609,7 +609,11 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           onChange={handleFileSelect}
           // Off-screen, NOT display:none, and NOT `sr-only` (a focus-revealing sr-only would flash the
           // focused input). The native <label htmlFor> below opens it — iOS-safe.
-          className="absolute -left-[9999px] top-0 h-px w-px opacity-0"
+          // ph-no-capture: tapping the visible label fires a real click on it PLUS a browser-synthesised
+          // click on THIS off-screen input — PostHog would autocapture both, double-counting every upload
+          // tap (LESSONS 2026-09-02). Since this input is never tapped directly (it is off-screen), we
+          // suppress ITS click and keep the readable "Upload" label as the single autocapture event.
+          className="ph-no-capture absolute -left-[9999px] top-0 h-px w-px opacity-0"
           disabled={isUploading}
         />
 

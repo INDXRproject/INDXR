@@ -178,7 +178,7 @@ export function SupportClient({ transcripts }: Props) {
 
           {/* Subject */}
           <div className="space-y-1.5">
-            <label htmlFor="subject" className="text-sm font-medium text-fg">
+            <label htmlFor="subject" className="ph-no-capture text-sm font-medium text-fg">
               Subject
             </label>
             <input
@@ -199,7 +199,7 @@ export function SupportClient({ transcripts }: Props) {
 
           {/* Body */}
           <div className="space-y-1.5">
-            <label htmlFor="body" className="text-sm font-medium text-fg">
+            <label htmlFor="body" className="ph-no-capture text-sm font-medium text-fg">
               Message
             </label>
             <textarea
@@ -221,7 +221,7 @@ export function SupportClient({ transcripts }: Props) {
           {/* Transcript (optional) */}
           {transcripts.length > 0 && (
             <div className="space-y-1.5">
-              <label htmlFor="transcript" className="text-sm font-medium text-fg">
+              <label htmlFor="transcript" className="ph-no-capture text-sm font-medium text-fg">
                 Related transcript{" "}
                 <span className="text-fg-muted font-normal">(optional)</span>
               </label>

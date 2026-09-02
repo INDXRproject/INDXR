@@ -124,7 +124,7 @@ export default function ContactPage() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="name" className="text-sm font-medium text-[var(--fg)]">Name</label>
+                  <label htmlFor="name" className="ph-no-capture text-sm font-medium text-[var(--fg)]">Name</label>
                   <input
                     id="name"
                     type="text"
@@ -137,7 +137,7 @@ export default function ContactPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-sm font-medium text-[var(--fg)]">Email</label>
+                  <label htmlFor="email" className="ph-no-capture text-sm font-medium text-[var(--fg)]">Email</label>
                   <input
                     id="email"
                     type="email"
@@ -152,7 +152,7 @@ export default function ContactPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="message" className="text-sm font-medium text-[var(--fg)]">{active.prompt}</label>
+                <label htmlFor="message" className="ph-no-capture text-sm font-medium text-[var(--fg)]">{active.prompt}</label>
                 <textarea
                   id="message"
                   value={message}
