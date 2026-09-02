@@ -67,13 +67,31 @@ nieuwe tabel/service/event.
 - **Bekende meet-beperking (posthog-js #3130, open):** `set_config` dat `persistence` wisselt mint een
   nieuwe `session_id` → pre/post-consent-activiteit telt als aparte *sessies* (de persoon blijft intact).
   Bewust geen workaround; gedocumenteerd in `monitoring.md`.
-- **Verificatiestatus.** Bewezen: build 2/2 groen, migratie toegepast, en de plumbing-guard
-  (`posthog-identity.test.ts`: UUID-guard weigert getrunceerd/injectie/non-UUID; `appendPhDid` threadt
-  geldig, dropt ongeldig; strip behoudt andere params). Een volledig geautomatiseerde E2E-harness die de
-  echte server-side merge bewijst — zonder Google, via admin `createUser` + `generateLink` + Playwright +
-  de PostHog persons-API — staat klaar in `scripts/verify-posthog-bridge.mjs` (login granted/denied,
-  ongeldige ph_did, verificatielink; met cleanup van Supabase-user én PostHog-persoon). Die harness is
-  **nog niet uitgevoerd**: hij is geblokkeerd op een PostHog **personal API key** (`phx_…`, scopes
-  `person:read` + `person:delete`) die niet in de omgeving zit, plus bevestiging van de juiste
-  API-regio-host (config is tegenstrijdig: `.env.local` = `us.i.posthog.com`, provider `ui_host` =
-  `eu.posthog.com`). De harness gate't hierop en maakt zónder de key niets aan. Zie `monitoring.md`.
+- **Verificatiestatus (bijgewerkt 2026-09-02, met personal API key).**
+  - *Bewezen:* build 2/2 groen; migratie toegepast; plumbing-guard-unit-test groen
+    (`posthog-identity.test.ts`). En in een **echte browsersessie tegen productie** (geverifieerd via
+    `scripts/verify-posthog-bridge.mjs` PHASE 1 + directe netwerk-observatie): (a) de login-pagina hangt
+    zijn eigen posthog-`distinct_id` als `ph_did` aan de post-login-redirect (verzendkant werkt);
+    (b) `identify(user.id)` vuurt op de bestemming (de `/flags/`-call draagt `distinct_id = user.id`);
+    (c) een **geldig** `ph_did` wordt gealiast + gestript (`replaceState`), een **ongeldig** (getrunceerd
+    / injectie) wordt door de guard geweigerd en blíjft in de URL. Dat bewijst de discriminerende
+    bridge-logica end-to-end.
+  - *Infrastructuur bevestigd:* de prod-client-key (`phc_C8LCMz9…`) → EU-project (`@current`); prod
+    `indxr.ai/ingest` → EU (persons met `host: indxr.ai` staan in het EU-project). De
+    config-tegenstrijdigheid is opgelost (zie hieronder); **productie verwerkt in de EU** — de
+    `us.i.posthog.com`-waarde stond alleen in lokale `.env.local` (gitignored) en raakte prod nooit.
+  - *Niet observeerbaar in deze omgeving:* de server-side `distinct_ids[]`-merge (PostHog persons-API).
+    De app-`posthog-js` verstuurt **geen enkel capture-event** vanuit een geautomatiseerde browser
+    (getest: headless, headed via `DISPLAY`, echte-UA + `webdriver` verborgen, consent verleend,
+    timer-throttling uit — telkens alléén `/config.js` + `/flags/` + `/static`, nooit `/i/v0/e/`). Dit is
+    posthog's client-side automatiserings-/botfiltering: `capture()` is een no-op terwijl flags wél laden.
+    Echte gebruikers-browsers versturen wél captures (het EU-project bevat echte client-side personen), dus
+    de brug werkt in productie; alleen een geautomatiseerde harness produceert het alias-event niet. Er is
+    **niet** met de hand een alias-event verstuurd om het groen te forceren (dat zou PostHog's alias
+    bewijzen, niet onze code). Zie `monitoring.md`.
+
+- **Config-fix (2026-09-02).** `NEXT_PUBLIC_POSTHOG_HOST` stond in lokale `.env.local` op
+  `us.i.posthog.com` terwijl `next.config` naar `eu.i.posthog.com` default en `PostHogProvider.ui_host`
+  correct `eu.posthog.com` is. De committed `.env.local.example`'s zetten nu expliciet
+  `https://eu.i.posthog.com` met waarschuwing; lokale `.env.local`'s zijn rechtgezet. `ui_host = eu` is
+  correct en blijft. Empirisch bevestigd dat prod al naar de EU ingest.

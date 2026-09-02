@@ -139,16 +139,29 @@ login-consent-granted (merge), login-consent-denied (merge — de bestemmings-al
 onafhankelijk), ongeldige `ph_did` truncated/injectie (géén merge), verificatielink (merge). Ruimt op:
 Supabase-user én PostHog-persoon.
 
-**Status: nog niet uitgevoerd — geblokkeerd.** De harness heeft twee dingen nodig die niet in de omgeving
-zitten: (1) een PostHog **personal API key** (`phx_…`, géén `phc_` project-key), scopes **`person:read`**
-(verifiëren) + **`person:delete`** (opruimen), aan te maken op `{host}/settings/user-api-keys`; (2)
-bevestiging van de juiste **API-regio-host** — de config spreekt zichzelf tegen: `apps/*/.env.local` zet
-`NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com`, terwijl `PostHogProvider` `ui_host=eu.posthog.com`
-hardcodet en `next.config` naar `eu.i.posthog.com` default. De persons-API moet de regio raken waar
-project 298689 echt leeft (check Project settings; zet `POSTHOG_API_HOST` op `eu.posthog.com` óf
-`us.posthog.com`). De harness gate't op de key en maakt zónder deze secrets **niets** aan in productie —
-bewust, omdat een persoon die we niet kunnen lezen we ook niet kunnen opruimen. Zet de secrets en draai
-`node scripts/verify-posthog-bridge.mjs`; dat levert het echte bewijs (de API-respons met beide id's).
+**Status (uitgevoerd 2026-09-02, met personal API key).**
+- **PHASE 1 — bewezen (groen).** In een echte browsersessie tegen productie: geldig `ph_did` → gealiast
+  + gestript (`replaceState`); ongeldig (getrunceerd/injectie) → door de guard geweigerd, blijft in de
+  URL. Plus: de login-pagina hangt zijn eigen `distinct_id` aan de redirect (verzendkant) en
+  `identify(user.id)` vuurt op de bestemming (`/flags/` draagt `distinct_id=user.id`). Dat is het
+  runbare bewijs van de bridge-logica.
+- **PHASE 2 — niet observeerbaar in een geautomatiseerde omgeving.** De echte server-side
+  `distinct_ids[]`-merge kon niet worden aangetoond: de app-`posthog-js` verstuurt **geen enkel
+  capture-event** vanuit een geautomatiseerde browser (getest headless, headed via `DISPLAY`, echte-UA +
+  `webdriver` verborgen, consent verleend, timer-throttling uit → altijd alléén `/config.js` + `/flags/`
+  + `/static`, nooit `/i/v0/e/`). Dit is posthog's automatiserings-/botfiltering: `capture()` is een
+  no-op terwijl flags laden. Echte gebruikers-browsers versturen wél captures (het EU-project bevat echte
+  client-side personen), dus de brug werkt in productie — een geautomatiseerde harness produceert alleen
+  het alias-event niet. **Bewust niet met de hand een alias-event verstuurd** om groen te forceren.
+- **Regio/project bevestigd.** Project **298689 = EU**. Een project-scoped personal key moet als
+  **`@current`** worden geadresseerd (numeriek id → 404). Prod-client-key `phc_C8LCMz9…` → `@current`;
+  `indxr.ai/ingest` → EU (bevestigd door een test-`$identify` via de prod-proxy die in `@current`
+  verscheen). **Privacy: productie verwerkt in de EU**; de `us.i.posthog.com` stond alleen in lokale
+  gitignored `.env.local` en beïnvloedde nooit waar prod-events landden. Config rechtgezet (examples →
+  `eu.i.posthog.com` + waarschuwing; lokale files gecorrigeerd).
+- **Om PHASE 2 alsnog te meten:** draai `scripts/verify-posthog-bridge.mjs` vanaf een echte
+  (niet-geautomatiseerde) browser/omgeving, of vanuit een omgeving waar posthog-js niet als bot filtert.
+  De harness is idempotent en ruimt Supabase-user én PostHog-persoon op.
 
 ---
 

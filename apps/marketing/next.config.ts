@@ -5,6 +5,10 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3001';
 
 // PostHog first-party reverse proxy (EU). Ingest-target env-gedreven met EU-fallback;
 // assets-host per PostHog-docs (eu-assets.i.posthog.com). Zie posthog.com/docs/advanced/proxy/nextjs.
+// LET OP: project 298689 leeft in de EU. NEXT_PUBLIC_POSTHOG_HOST MOET de EU-ingest-host zijn
+// (eu.i.posthog.com) — nooit us.i.posthog.com, anders verlaten events de EU (privacyverklaring claimt
+// EU-verwerking). Leeg laten = de EU-default hieronder. (2026-09-02: lokale .env.local stond fout op us;
+// prod bleek al EU — geverifieerd dat indxr.ai/ingest in het EU-project landt.)
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
 const POSTHOG_ASSETS = 'https://eu-assets.i.posthog.com';
 
