@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.email !== process.env.ADMIN_EMAIL) {
+  if (!user || user.id !== process.env.ADMIN_USER_ID) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   // Prevent deleting the admin account by email
   const { data: targetUser } = await admin.auth.admin.getUserById(userId)
-  if (targetUser.user?.email === process.env.ADMIN_EMAIL) {
+  if (targetUser.user?.id === process.env.ADMIN_USER_ID) {
     return NextResponse.json({ error: "Cannot delete admin account" }, { status: 403 })
   }
 

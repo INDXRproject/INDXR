@@ -16,7 +16,7 @@ export default async function AdminLayout({
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user || user.email !== process.env.ADMIN_EMAIL) {
+  if (!user || user.id !== process.env.ADMIN_USER_ID) {
     redirect("/dashboard")
   }
 

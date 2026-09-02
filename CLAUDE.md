@@ -340,7 +340,7 @@ Als ze verschijnen: `git rm -r --cached <path>`
 | `/api/playlist/jobs/{job_id}` | GET | Poll playlist-job status |
 | `/health` | GET | `{"status": "healthy"}` |
 
-### Next.js Admin (vereist `ADMIN_EMAIL` sessie)
+### Next.js Admin (vereist `ADMIN_USER_ID`-sessie — gate op `user.id === process.env.ADMIN_USER_ID`, sinds 2026-09-02; `ADMIN_EMAIL` is niet meer toegangscontrole)
 
 | Endpoint | Methode | Beschrijving |
 |----------|---------|--------------|

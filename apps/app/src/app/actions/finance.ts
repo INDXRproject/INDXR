@@ -7,7 +7,7 @@ import { createAdminClient } from "@indxr/shared/utils/supabase/admin"
 async function requireAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.email !== process.env.ADMIN_EMAIL) throw new Error("Unauthorized")
+  if (!user || user.id !== process.env.ADMIN_USER_ID) throw new Error("Unauthorized")
   return createAdminClient()
 }
 

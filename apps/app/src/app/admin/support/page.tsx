@@ -6,7 +6,7 @@ import { TicketsTable } from "./TicketsTable"
 export default async function AdminTicketsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.email !== process.env.ADMIN_EMAIL) redirect("/dashboard")
+  if (!user || user.id !== process.env.ADMIN_USER_ID) redirect("/dashboard")
 
   const admin = createAdminClient()
   const { data: tickets } = await admin
