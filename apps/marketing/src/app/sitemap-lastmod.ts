@@ -75,8 +75,17 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/articles/youtube-transcript-non-english": "2026-08-26",
   "/articles/transcript-export-formats": "2026-08-27",
   "/articles/srt-generator": "2026-08-26",
+  // supported-formats: aangemaakt + laatst inhoudelijk gewijzigd op 2026-08-31 (3fdb483 create →
+  // e466b72 index-herordening + MKV-regel verzacht → 8055f7e editorial-foto's op de kaarten).
+  "/articles/supported-formats": "2026-08-31",
   "/articles/youtube-playlist-transcript": "2026-08-07",
   "/articles/audio-to-text": "2026-08-01",
+  // video-to-text: laatste zichtbare-copy-wijziging op 2026-08-31 (3fdb483 — cross-link-zin naar
+  // Supported formats toegevoegd aan de body-prose; creatie 2b60919 2026-08-13).
+  "/articles/video-to-text": "2026-08-31",
+  // youtube-video-summarizer: laatste content-commit 2026-08-27 (0f82ac7 — zichtbare prijs-prose
+  // herschreven naar "1 credit per 10 minutes"; creatie 116bd1d 2026-08-24).
+  "/articles/youtube-video-summarizer": "2026-08-27",
   "/articles/youtube-to-notes": "2026-08-25",
   "/articles/chunk-youtube-transcripts-for-rag": "2026-07-23",
   "/articles/youtube-channel-knowledge-base": "2026-07-23",
