@@ -81,3 +81,44 @@ DPR; daarom blijft 1290 in de srcset.
 de hoogte van de sectie hangt niet van het beeld af — noch bij het laden, noch bij het passeren van de
 768px-grens (waar de uitsnede/ratio wisselt) verschuift er iets. De `aspect-[…]`-classes leggen de
 geserveerde ratio per breakpoint vast als hint.
+
+## Leesbaarheid & overlay-stack (theme-aware, 2026-09-05)
+
+De overlay-stack over de foto laat de tekst leesbaar zijn zonder de foto weg te wassen. Historisch keerde
+**élke** overlaylaag op `var(--bg)` — wat in dark mode het (donkere) beeld verdiept (goed), maar in light
+mode het (high-key) beeld **wit-waste** tot textuur: de bron-lucht is intrinsiek ~lum 215/255, en een
+stapel bijna-witte `--bg`-lagen (top-fade + onderste-helft-naar-vol-`--bg` + links/rechts-vignet + 49%
+radiale scrim) drukte alles naar wit. Zwarte tekst hoefde dat niet: donker-op-licht haalt van nature ruim
+contrast.
+
+**Nu theme-gesplitst** (`HeroImage.tsx` + hero-sectie in `page.tsx`):
+- **Top-fade → `--bg`**: beide themes (houdt de nav leesbaar).
+- **Onderste dissolve → `--bg`**: DARK ongewijzigd (`from-50%`, onderste helft); LIGHT alleen de
+  onderste ~22% (`from-[78%]`) — genoeg om de onderrand in de pagina te laten oplossen, niet om de foto
+  te wassen.
+- **Links/rechts-vignet → `--bg`**: **DARK-only** (in light was dit mede-oorzaak van de was).
+- **Radiale leesscrim**: DARK exact als voorheen (`49/40/18%` `--bg`); LIGHT fors verlaagd (`18/10/4%`).
+- **Lokale scrim onder de onderste tekst** (LIGHT-only, `page.tsx`): een begrensde, zachte ellips (géén
+  globale laag, géén blur) die alleen achter subkop/prijsregel/knoppen ligt, waar die over het donkerdere
+  bureau/laptop-deel vallen. Tilt daar het worst-case-pixel boven WCAG-AA.
+- **Ambient top-glow**: DARK-only, nu de amber `--accent` via `color-mix` (OKLCH-token) i.p.v. een losse
+  `rgba(167,139,250)` violet; alpha op 6% zodat de luminantie de oude violet evenaart → dark-contrast
+  ongewijzigd.
+
+**Onderrand / mockup-snee.** De hero heeft **geen `border-b`** meer; de onderrand vloeit via de dissolve
+zacht in `--bg`, zodat de (door `object-cover` op een sectie met vaste hoogte) afgesneden bureau/laptop-
+voorgrond **oplost** i.p.v. op een harde lijn te eindigen. `object-position` is **niet** verschoven:
+elke opwaartse verschuiving trekt de heldere melkweg onder de dark-`h1` en verlaagt daar het contrast
+(gemeten), en door de vaste-hoogte-`object-cover`-zoom is er sowieso **geen** `object-position` die de
+laptop over álle breedtes "heel of uit beeld" houdt (bij 1280–1440 is de laptop geometrisch altijd deels
+in beeld). De dissolve lost het zichtbare defect (de harde snee) op; de laptop lost breedte-afhankelijk
+op in de fade (heel op mobiel 4:5; oplossend/uit beeld naar 1920–2560).
+
+**Contrast (glyph-masked worst / P1, productie-build 2026-09-05).** Light `h1` 6.4–12.9 / P1 ≥8.9; light
+subkop 7.8–12.7 / P1 ≥8.1 — overal ≥ WCAG-AA. Dark ongewijzigd t.o.v. baseline op de stabiele P1 (h1 P1
+≈12; subkop P1 ≥6.7); het losse worst-pixel van de dark-subkop (~3.9–4.0 bij 1440/1920) is een
+pré-bestaand sterretje-onder-een-glyphrand, gelijk aan of beter dan de oude productie (3.1–3.9).
+
+**Dode ruimte hero → try-blok.** Hero-`pb` van `pb-20 lg:pb-28` naar `pb-10 lg:pb-14`; de gestapelde
+lege ruimte tussen de knoppen en de volgende sectiekop ging van **209px → 152px**, en de onderste
+hero-band is nu een oplossende foto i.p.v. een wit gat.

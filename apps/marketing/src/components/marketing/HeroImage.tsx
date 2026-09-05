@@ -45,9 +45,18 @@ export function HeroImage({ className }: HeroImageProps) {
     <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className ?? ""}`}>
       <HeroPicture variant="light" hiddenClass="dark:hidden" />
       <HeroPicture variant="dark" hiddenClass="hidden dark:block" />
+      {/* Overlay stack is now THEME-AWARE: the old stack keyed every layer on --bg, which darkens the
+          (dark) photo in dark mode — good — but WHITEWASHES the (high-key) photo in light mode. Dark keeps
+          its exact original layers; light gets only what it needs so the photo reads as an image. */}
+      {/* Top fade → --bg, both themes: keeps the fixed nav legible over the photo. */}
       <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg)] via-transparent to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent from-50% to-[var(--bg)]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg)]/70 via-transparent to-[var(--bg)]/70" />
+      {/* Bottom dissolve into the page --bg (so the cropped desk/laptop foreground melts into the page
+          instead of ending on a hard border-b line). DARK: unchanged — bottom HALF fades to --bg. LIGHT:
+          only the bottom ~22% dissolves, so the photo is NOT washed away. */}
+      <div className="absolute inset-0 hidden dark:block bg-gradient-to-b from-transparent from-50% to-[var(--bg)]" />
+      <div className="absolute inset-0 dark:hidden bg-gradient-to-b from-transparent from-[78%] to-[var(--bg)]" />
+      {/* Left/right vignette → --bg: DARK ONLY. In light this was part of the wash-out — removed. */}
+      <div className="absolute inset-0 hidden dark:block bg-gradient-to-r from-[var(--bg)]/70 via-transparent to-[var(--bg)]/70" />
     </div>
   )
 }

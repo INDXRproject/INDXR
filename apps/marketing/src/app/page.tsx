@@ -105,20 +105,30 @@ export default async function LandingPage() {
     <>
       <JsonLd schemas={homeSchemas} />
       {/* Hero */}
-      <section className="relative w-full overflow-hidden border-b border-[var(--border-subtle)] bg-[var(--bg)] pt-[110px] pb-20 lg:pt-[150px] lg:pb-28">
+      {/* No border-b: the hero's bottom now dissolves into --bg (HeroImage bottom fade), so a hard
+          separator line would cut across that dissolve. Bottom padding trimmed (was pb-20/pb-28) so it
+          no longer stacks a big empty band on top of the next section's top padding. */}
+      <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[150px] lg:pb-14">
         <HeroImage />
-        {/* Readability scrim: a --bg wash over the photo, strongest behind the centred text and
-            fading toward the edges so the image still reads as an ambient background. Uses only the
-            --bg token, so it flips with the theme. Strength tuned to a GLYPH-MASKED measurement — the
-            worst background pixel under the actual letter strokes (not the empty space inside the text
-            box): at these stops that worst glyph pixel still clears WCAG-AA (~4.5:1, dark theme at 1280
-            is the binding case), so the photo is as visible as it can be without dropping any real text
-            pixel below 4.5:1. */}
+        {/* Readability scrim behind the centred text. THEME-AWARE (the old single --bg wash whitewashed
+            the light photo): DARK keeps its exact original strength (49/40/18% --bg); LIGHT is dropped hard
+            (18/10/4%) because dark text over the bright sky already has ample contrast — the scrim only has
+            to tame the brightest pixels, not carry the contrast. Tuned to a GLYPH-MASKED measurement (worst
+            background pixel under the actual letter strokes) so every real text pixel clears WCAG-AA 4.5:1. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_49%,transparent)_0%,color-mix(in_oklch,var(--bg)_40%,transparent)_42%,color-mix(in_oklch,var(--bg)_18%,transparent)_72%,transparent_100%)]"
+          className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_18%,transparent)_0%,color-mix(in_oklch,var(--bg)_10%,transparent)_42%,color-mix(in_oklch,var(--bg)_4%,transparent)_72%,transparent_100%)] dark:bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_49%,transparent)_0%,color-mix(in_oklch,var(--bg)_40%,transparent)_42%,color-mix(in_oklch,var(--bg)_18%,transparent)_72%,transparent_100%)]"
         />
-        <div className="absolute inset-0 z-[1] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(167,139,250,0.08)_0%,transparent_70%)] pointer-events-none" />
+        {/* LIGHT ONLY, LOCALLY BOUNDED scrim under the lower text (subhead + price line + buttons), which
+            overlaps the darker desk/laptop foreground where dark text would otherwise drop below AA. NOT a
+            global layer and no blur — a soft ellipse confined to the lower-centre text band. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-[36%] bottom-0 z-[1] dark:hidden pointer-events-none bg-[radial-gradient(ellipse_120%_95%_at_50%_60%,color-mix(in_oklch,var(--bg)_82%,transparent)_0%,color-mix(in_oklch,var(--bg)_55%,transparent)_55%,transparent_84%)]"
+        />
+        {/* Ambient top glow, DARK ONLY. Was a loose rgba(167,139,250) violet (off the amber brand + not a
+            token); now the amber --accent via color-mix, matching the warm skyline. OKLCH, tokenised. */}
+        <div className="absolute inset-0 z-[1] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,color-mix(in_oklch,var(--accent)_6%,transparent)_0%,transparent_70%)] pointer-events-none" />
         <div className="container relative z-10 mx-auto flex flex-col items-center px-4 text-center">
           <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl">
             Accurate transcripts from your audio, video and YouTube links
