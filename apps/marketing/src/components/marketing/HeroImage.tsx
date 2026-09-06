@@ -34,7 +34,7 @@ function HeroPicture({ variant, hiddenClass }: { variant: "light" | "dark"; hidd
         alt=""
         fetchPriority="high"
         decoding="async"
-        className={`absolute inset-0 w-full h-full object-cover object-[center_20%] lg:object-[center_30%] aspect-[4/5] md:aspect-[1392/752] ${hiddenClass}`}
+        className={`absolute inset-0 w-full h-full object-cover object-[center_20%] lg:object-[center_50%] aspect-[4/5] md:aspect-[1392/752] ${hiddenClass}`}
       />
     </picture>
   )

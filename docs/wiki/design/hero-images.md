@@ -174,3 +174,18 @@ mix-blend of pseudo-element was aanwezig. De foto rendert nu **onbewerkt op voll
 (Khidr beslist):** in dark verliezen subkop/prijsregel contrast waar de lichte tekst de heldere
 city-lights-band / het laptopscherm kruist — er ligt geen scrim meer en de halo is light-only. Fix is
 tekst-zijdig (halo ook in dark, of kleur/gewicht), nooit een laag over het beeld.
+
+### Correctie 2026-09-07 — containerhoogte schaalt mee met breedte
+
+De hero-sectie had een vaste hoogte (~555px, content-gedreven) op elke breedte, terwijl de foto 1.851:1
+is. `object-fit: cover` sneed daardoor op brede schermen een groeiend deel weg (28.7% op 1440, 46.5% op
+1920). Fix: `lg:min-h-[42vw]` op de sectie → gerenderde container-AR is nu constant **~2.381:1** (1/0.42)
+op alle brede schermen; het beeld wordt niet extremer bijgesneden. `min-h` is een **bodem**, dus onder de
+crossover (~1332px) wint de content-hoogte en blijft de **<768px mobiele 4:5-weergave onaangeroerd**
+(zelfde bestandsvariant + object-position). `lg:flex … justify/items-center` centreert de tekst verticaal
+in de hogere box (blijft op elke breedte ~61px boven hero-center → schuift niet weg); pt/pb blijven
+header-clearance. object-position lg herijkt naar `center_50%` op basis van de nieuwe zichtbare fractie.
+
+**Zichtbare fractie van de bronhoogte (object-position 50%):** 1024 → 100%; 1280 → 80.3% (9.9/9.9 weg);
+1440/1920/2560 → 77.7% (11.1% boven / 11.1% onder). Was: 1440 71.3%, 1920 53.5%, en liep verder op met
+de breedte. Geen overlay/gradient toegevoegd — contrast blijft van de per-glyph text-shadow op de tekst.

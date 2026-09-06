@@ -105,10 +105,13 @@ export default async function LandingPage() {
     <>
       <JsonLd schemas={homeSchemas} />
       {/* Hero */}
-      {/* No border-b: the hero's bottom now dissolves into --bg (HeroImage bottom fade), so a hard
-          separator line would cut across that dissolve. Bottom padding trimmed (was pb-20/pb-28) so it
-          no longer stacks a big empty band on top of the next section's top padding. */}
-      <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[150px] lg:pb-14">
+      {/* Height scales with WIDTH from lg up: lg:min-h-[42vw] keeps the rendered container aspect-ratio a
+          constant ~2.38:1 (1 / 0.42) on every wide screen, instead of a fixed 555px that got ever more
+          extreme (2.6:1 at 1440, 3.5:1 at 1920) and cropped a growing slice of the 1.851:1 photo. Below lg
+          the content-driven height wins (min-h is a floor, not a fixed height), so the <768px mobile 4:5
+          view is untouched. lg:flex + justify/items-center vertically centres the text in the taller box so
+          it stays balanced (never top-heavy); pt/pb remain as header-clearance padding. */}
+      <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[150px] lg:pb-14 lg:flex lg:flex-col lg:items-center lg:justify-center lg:min-h-[42vw]">
         <HeroImage />
         {/* No layer sits over the photo in EITHER theme — the dark readability scrim and the amber top
             glow that used to darken/tint the image here have been removed (they burned the dark image's
