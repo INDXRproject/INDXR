@@ -54,7 +54,9 @@ export function HeroImage({ className }: HeroImageProps) {
           instead of ending on a hard border-b line). DARK: unchanged — bottom HALF fades to --bg. LIGHT:
           only the bottom ~22% dissolves, so the photo is NOT washed away. */}
       <div className="absolute inset-0 hidden dark:block bg-gradient-to-b from-transparent from-50% to-[var(--bg)]" />
-      <div className="absolute inset-0 dark:hidden bg-gradient-to-b from-transparent from-[78%] to-[var(--bg)]" />
+      {/* LIGHT: only the very last edge dissolves into --bg (from 90%), so the photo runs unbroken almost
+          to the bottom instead of the lower half washing to white. */}
+      <div className="absolute inset-0 dark:hidden bg-gradient-to-b from-transparent from-[90%] to-[var(--bg)]" />
       {/* Left/right vignette → --bg: DARK ONLY. In light this was part of the wash-out — removed. */}
       <div className="absolute inset-0 hidden dark:block bg-gradient-to-r from-[var(--bg)]/70 via-transparent to-[var(--bg)]/70" />
     </div>

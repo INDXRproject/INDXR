@@ -111,37 +111,31 @@ export default async function LandingPage() {
       <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[150px] lg:pb-14">
         <HeroImage />
         {/* Readability scrim behind the centred text — DARK ONLY (49/40/18% --bg, unchanged). In LIGHT
-            there is deliberately NO --bg scrim over the middle of the photo: a broad --bg wash whitewashes
-            the image (it filled the transparent centre window and drowned the skyline/dunes; see LESSONS
-            2026-09-06). Dark text over the bright sky already clears AA on its own; the only real-contrast
-            risk — the price line + buttons over the darker desk/laptop foreground — is handled locally on
-            the text itself (a tight glyph-halo text-shadow) instead of by covering the image. */}
+            there is deliberately NO --bg layer over the photo at all — not a global wash and not a band.
+            Any --bg fill reads as a visible bar/plane over the image (LESSONS 2026-09-06). The photo runs
+            unbroken top to bottom; light-mode text contrast is carried entirely by a per-glyph text-shadow
+            halo on the text itself (see the h1/subhead/price below), which touches only the letters, not
+            the image. */}
         <div
           aria-hidden="true"
           className="absolute inset-0 z-[1] pointer-events-none dark:bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_49%,transparent)_0%,color-mix(in_oklch,var(--bg)_40%,transparent)_42%,color-mix(in_oklch,var(--bg)_18%,transparent)_72%,transparent_100%)]"
-        />
-        {/* LIGHT ONLY — contrast protection confined to a TIGHT BAND over just the lower two text lines
-            (subhead + price line), which fall over the darker mullions/desk/laptop. Image damage is
-            area × strength; yesterday's mistake was a huge ellipse (64% of the hero) — here the SAME
-            strength is confined to the ~text-line band, so the middle window (above the subhead) and the
-            broad image stay open. On the 4:5 mobile crop the subhead sits higher, so the band starts
-            higher there (max-md). Soft L/R and top/bottom edges keep it off the surrounding photo. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 top-[52%] bottom-[16%] max-md:top-[43%] max-md:bottom-[20%] z-[1] dark:hidden pointer-events-none bg-[radial-gradient(ellipse_68%_120%_at_50%_50%,color-mix(in_oklch,var(--bg)_82%,transparent)_0%,color-mix(in_oklch,var(--bg)_54%,transparent)_58%,transparent_84%)]"
         />
         {/* Ambient top glow, DARK ONLY. Was a loose rgba(167,139,250) violet (off the amber brand + not a
             token); now the amber --accent via color-mix, matching the warm skyline. OKLCH, tokenised. */}
         <div className="absolute inset-0 z-[1] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,color-mix(in_oklch,var(--accent)_6%,transparent)_0%,transparent_70%)] pointer-events-none" />
         <div className="container relative z-10 mx-auto flex flex-col items-center px-4 text-center">
-          <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl">
+          {/* Light-mode contrast is carried by a per-glyph --bg halo (text-shadow), NOT a --bg layer over
+              the photo. The halo is invisible over the bright sky and lifts the dark text only where it
+              crosses the darker mullions/laptop — it touches the letters, never the image. DARK ONLY: no
+              shadow (the dark scrim already carries contrast there), so dark is unchanged. */}
+          <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl [text-shadow:0_0_4px_var(--bg),0_0_10px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:none]">
             Accurate transcripts from your audio, video and YouTube links
           </h1>
-          <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
+          <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:none]">
             Upload a recording or paste a link. INDXR gives you a clean transcript with speaker labels,
             ready to edit, search and export.
           </p>
-          <p className="mb-10 text-base font-medium text-[var(--fg)]">
+          <p className="mb-10 text-base font-medium text-[var(--fg)] [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:none]">
             Pay per minute, no subscription, and credits never expire.
           </p>
           <div className="flex w-full flex-col items-center justify-center gap-4 sm:w-auto sm:flex-row">

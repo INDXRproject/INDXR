@@ -146,3 +146,19 @@ price 6.3–12.5 (≫ AA). **Dark mode is byte-identiek ongewijzigd** (radiale s
 tekst ≥ de vorige waarden" is onverenigbaar met een open midden-venster voor de h1 (die op de middenlijn
 staat) — de h1 blijft boven zijn eigen AA-drempel maar onder de vorige (gewassen) waarde; dat is de
 prijs van een leesbaar beeld en een bewuste keuze.
+
+### Correctie 2026-09-06 (2) — geen enkele --bg-laag over de foto; contrast via text-shadow
+
+De op 2026-09-06 beschreven "strak begrensde band" over subkop/prijs bleek alsnog een zichtbare
+horizontale **balk** over de skyline (dekking ~0.79 op 70% diepte). Les: ook een smalle --bg-band leest
+als een balk — de was was verplaatst, niet weggehaald. **Definitieve aanpak:** in light mode ligt er
+**geen enkele --bg-laag** over de foto (geen wash, geen band, geen ellips); het beeld loopt ononderbroken
+van boven tot onder. De light-dissolve onderaan is verzwakt naar `from-[90%]` (alleen de allerlaatste
+rand). Tekstcontrast wordt volledig gedragen door een **per-glyph text-shadow-halo** (kleur `--bg`) op
+h1/subkop/prijsregel, met `dark:[text-shadow:none]` zodat **dark byte-identiek** blijft. De halo is
+onzichtbaar over de heldere lucht en licht de donkere letters alleen op waar ze de raamstijlen/laptop
+kruisen — hij raakt de letters, niet het beeld.
+
+**Verificatie = het screenshot** (geen contrasttabel als hoofdbewijs): 1440 + 1920 light tonen de foto
+ononderbroken. Metriek ter aanvulling (tekstkleur-luminantie vs **gemiddelde** achtergrond onder de
+regel): h1 ~15.6:1, subkop ~8.7–9.5:1, price ~8.3–9.0:1. Zie LESSONS 2026-09-06.
