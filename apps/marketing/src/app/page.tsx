@@ -110,21 +110,25 @@ export default async function LandingPage() {
           no longer stacks a big empty band on top of the next section's top padding. */}
       <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[150px] lg:pb-14">
         <HeroImage />
-        {/* Readability scrim behind the centred text. THEME-AWARE (the old single --bg wash whitewashed
-            the light photo): DARK keeps its exact original strength (49/40/18% --bg); LIGHT is dropped hard
-            (18/10/4%) because dark text over the bright sky already has ample contrast — the scrim only has
-            to tame the brightest pixels, not carry the contrast. Tuned to a GLYPH-MASKED measurement (worst
-            background pixel under the actual letter strokes) so every real text pixel clears WCAG-AA 4.5:1. */}
+        {/* Readability scrim behind the centred text — DARK ONLY (49/40/18% --bg, unchanged). In LIGHT
+            there is deliberately NO --bg scrim over the middle of the photo: a broad --bg wash whitewashes
+            the image (it filled the transparent centre window and drowned the skyline/dunes; see LESSONS
+            2026-09-06). Dark text over the bright sky already clears AA on its own; the only real-contrast
+            risk — the price line + buttons over the darker desk/laptop foreground — is handled locally on
+            the text itself (a tight glyph-halo text-shadow) instead of by covering the image. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_18%,transparent)_0%,color-mix(in_oklch,var(--bg)_10%,transparent)_42%,color-mix(in_oklch,var(--bg)_4%,transparent)_72%,transparent_100%)] dark:bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_49%,transparent)_0%,color-mix(in_oklch,var(--bg)_40%,transparent)_42%,color-mix(in_oklch,var(--bg)_18%,transparent)_72%,transparent_100%)]"
+          className="absolute inset-0 z-[1] pointer-events-none dark:bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_49%,transparent)_0%,color-mix(in_oklch,var(--bg)_40%,transparent)_42%,color-mix(in_oklch,var(--bg)_18%,transparent)_72%,transparent_100%)]"
         />
-        {/* LIGHT ONLY, LOCALLY BOUNDED scrim under the lower text (subhead + price line + buttons), which
-            overlaps the darker desk/laptop foreground where dark text would otherwise drop below AA. NOT a
-            global layer and no blur — a soft ellipse confined to the lower-centre text band. */}
+        {/* LIGHT ONLY — contrast protection confined to a TIGHT BAND over just the lower two text lines
+            (subhead + price line), which fall over the darker mullions/desk/laptop. Image damage is
+            area × strength; yesterday's mistake was a huge ellipse (64% of the hero) — here the SAME
+            strength is confined to the ~text-line band, so the middle window (above the subhead) and the
+            broad image stay open. On the 4:5 mobile crop the subhead sits higher, so the band starts
+            higher there (max-md). Soft L/R and top/bottom edges keep it off the surrounding photo. */}
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 top-[36%] bottom-0 z-[1] dark:hidden pointer-events-none bg-[radial-gradient(ellipse_120%_95%_at_50%_60%,color-mix(in_oklch,var(--bg)_82%,transparent)_0%,color-mix(in_oklch,var(--bg)_55%,transparent)_55%,transparent_84%)]"
+          className="absolute inset-x-0 top-[52%] bottom-[16%] max-md:top-[43%] max-md:bottom-[20%] z-[1] dark:hidden pointer-events-none bg-[radial-gradient(ellipse_68%_120%_at_50%_50%,color-mix(in_oklch,var(--bg)_82%,transparent)_0%,color-mix(in_oklch,var(--bg)_54%,transparent)_58%,transparent_84%)]"
         />
         {/* Ambient top glow, DARK ONLY. Was a loose rgba(167,139,250) violet (off the amber brand + not a
             token); now the amber --accent via color-mix, matching the warm skyline. OKLCH, tokenised. */}

@@ -122,3 +122,27 @@ pré-bestaand sterretje-onder-een-glyphrand, gelijk aan of beter dan de oude pro
 **Dode ruimte hero → try-blok.** Hero-`pb` van `pb-20 lg:pb-28` naar `pb-10 lg:pb-14`; de gestapelde
 lege ruimte tussen de knoppen en de volgende sectiekop ging van **209px → 152px**, en de onderste
 hero-band is nu een oplossende foto i.p.v. een wit gat.
+
+### Correctie 2026-09-06 — light-mode wit-was hersteld
+
+De op 2026-09-05 beschreven "theme-aware scrim 18/10/4%" + lokale ellips bleek de foto in light
+mode alsnog weg te wassen (git-diagnose: de brede radiale `--bg`-scrim, toegevoegd 27-08 in `682ed01`
+om tekst-AA te halen, vulde het transparante midden-venster; mijn eigen lokale ellips van 05-09 —
+64% van de hero, 82% centrum — waste het midden juist erger, middenlijn 50% diepte van 0.48 → 0.69).
+
+**Herstel:** in light mode **geen radiale `--bg`-scrim en geen brede lokale scrim** over het midden.
+De middenlijn-dekking op 50% diepte is nu **0** — skyline en duinen lezen weer als beeld. Tekstcontrast
+wordt **lokaal** geborgd met één **strak begrensde band** (radiale ellips, `top-52% bottom-16%`, hoger
+op de 4:5-mobielcrop via `max-md`) **alleen** over de subkop + prijsregel, die over de donkere
+raamstijlen/laptop vallen. Kern-inzicht: **beeldschade = oppervlak × dekking** — dezelfde sterkte, maar
+op ~⅓ van het oppervlak, wast de tekst even leesbaar zónder het beeld te raken. De **h1** is large-text
+(WCAG-AA **3:1**, niet 4.5:1) en haalt dat zelf op de heldere lucht → geen was erachter, het venster
+blijft open.
+
+**Contrast (productie-build 2026-09-06, glyph-masked worst / P1):** light middenlijn-dekking
+30/50/70/85% = 0.40 / **0.00** / 0.79 / 0.32; h1 3.1–4.0 (≥ AA-large 3.0); subkop 7.0–12.6 (≫ AA);
+price 6.3–12.5 (≫ AA). **Dark mode is byte-identiek ongewijzigd** (radiale scrim dark-only op de exacte
+49/40/18%; de band en de verwijderde scrim zijn `dark:hidden`). Spanning die inherent blijft: "alle
+tekst ≥ de vorige waarden" is onverenigbaar met een open midden-venster voor de h1 (die op de middenlijn
+staat) — de h1 blijft boven zijn eigen AA-drempel maar onder de vorige (gewassen) waarde; dat is de
+prijs van een leesbaar beeld en een bewuste keuze.
