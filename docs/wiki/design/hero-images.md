@@ -162,3 +162,15 @@ kruisen — hij raakt de letters, niet het beeld.
 **Verificatie = het screenshot** (geen contrasttabel als hoofdbewijs): 1440 + 1920 light tonen de foto
 ononderbroken. Metriek ter aanvulling (tekstkleur-luminantie vs **gemiddelde** achtergrond onder de
 regel): h1 ~15.6:1, subkop ~8.7–9.5:1, price ~8.3–9.0:1. Zie LESSONS 2026-09-06.
+
+### Correctie 2026-09-06 (3) — alle overlays verwijderd, foto onbewerkt
+
+Alle `--bg`-lagen over/rond de hero-foto zijn verwijderd (light én dark): de top-fade, de dark
+onderste-helft-dissolve (die de onderkant zwart inbrandde), de light onderrand-dissolve, het dark
+L/R-vignet, de dark radiale scrim (49/40/18%) en de dark amber top-glow. Geen filter, mask, opacity,
+mix-blend of pseudo-element was aanwezig. De foto rendert nu **onbewerkt op volle opacity**, met een
+**harde rand** tegen de pagina-achtergrond. De enige overgebleven laag is de per-glyph
+**text-shadow-halo** op h1/subkop/prijs (op de letters, niet op het beeld; light-only). **Open punt
+(Khidr beslist):** in dark verliezen subkop/prijsregel contrast waar de lichte tekst de heldere
+city-lights-band / het laptopscherm kruist — er ligt geen scrim meer en de halo is light-only. Fix is
+tekst-zijdig (halo ook in dark, of kleur/gewicht), nooit een laag over het beeld.

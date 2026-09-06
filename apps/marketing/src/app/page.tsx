@@ -110,19 +110,10 @@ export default async function LandingPage() {
           no longer stacks a big empty band on top of the next section's top padding. */}
       <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[150px] lg:pb-14">
         <HeroImage />
-        {/* Readability scrim behind the centred text — DARK ONLY (49/40/18% --bg, unchanged). In LIGHT
-            there is deliberately NO --bg layer over the photo at all — not a global wash and not a band.
-            Any --bg fill reads as a visible bar/plane over the image (LESSONS 2026-09-06). The photo runs
-            unbroken top to bottom; light-mode text contrast is carried entirely by a per-glyph text-shadow
-            halo on the text itself (see the h1/subhead/price below), which touches only the letters, not
-            the image. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 z-[1] pointer-events-none dark:bg-[radial-gradient(ellipse_82%_70%_at_50%_46%,color-mix(in_oklch,var(--bg)_49%,transparent)_0%,color-mix(in_oklch,var(--bg)_40%,transparent)_42%,color-mix(in_oklch,var(--bg)_18%,transparent)_72%,transparent_100%)]"
-        />
-        {/* Ambient top glow, DARK ONLY. Was a loose rgba(167,139,250) violet (off the amber brand + not a
-            token); now the amber --accent via color-mix, matching the warm skyline. OKLCH, tokenised. */}
-        <div className="absolute inset-0 z-[1] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,color-mix(in_oklch,var(--accent)_6%,transparent)_0%,transparent_70%)] pointer-events-none" />
+        {/* No layer sits over the photo in EITHER theme — the dark readability scrim and the amber top
+            glow that used to darken/tint the image here have been removed (they burned the dark image's
+            bottom to black). The image renders raw; text contrast comes only from the per-glyph
+            text-shadow on the text below. See LESSONS 2026-09-06. */}
         <div className="container relative z-10 mx-auto flex flex-col items-center px-4 text-center">
           {/* Light-mode contrast is carried by a per-glyph --bg halo (text-shadow), NOT a --bg layer over
               the photo. The halo is invisible over the bright sky and lifts the dark text only where it
