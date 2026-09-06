@@ -111,7 +111,7 @@ export default async function LandingPage() {
           the content-driven height wins (min-h is a floor, not a fixed height), so the <768px mobile 4:5
           view is untouched. lg:flex + justify/items-center vertically centres the text in the taller box so
           it stays balanced (never top-heavy); pt/pb remain as header-clearance padding. */}
-      <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[150px] lg:pb-14 lg:flex lg:flex-col lg:items-center lg:justify-center lg:min-h-[42vw]">
+      <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[76px] lg:pb-14 lg:flex lg:flex-col lg:items-center lg:justify-start min-[1024px]:min-h-[49rem] min-[1867px]:min-h-[42vw]">
         <HeroImage />
         {/* No layer sits over the photo in EITHER theme — the dark readability scrim and the amber top
             glow that used to darken/tint the image here have been removed (they burned the dark image's
@@ -122,7 +122,10 @@ export default async function LandingPage() {
               the photo. The halo is invisible over the bright sky and lifts the dark text only where it
               crosses the darker mullions/laptop — it touches the letters, never the image. DARK ONLY: no
               shadow (the dark scrim already carries contrast there), so dark is unchanged. */}
-          <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl [text-shadow:0_0_4px_var(--bg),0_0_10px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:none]">
+          {/* Halo applies in BOTH themes (was light-only). After moving the text up, the h1 sits over the
+              bright milky-way core in dark mode; the --bg halo (dark in dark) is a text-side fix (no layer
+              over the image) that keeps the white h1 legible there. Light halo unchanged. */}
+          <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl [text-shadow:0_0_4px_var(--bg),0_0_10px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_6px_var(--bg),0_0_14px_var(--bg),0_2px_3px_var(--bg)]">
             Accurate transcripts from your audio, video and YouTube links
           </h1>
           <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:none]">

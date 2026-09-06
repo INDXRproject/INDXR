@@ -189,3 +189,24 @@ header-clearance. object-position lg herijkt naar `center_50%` op basis van de n
 **Zichtbare fractie van de bronhoogte (object-position 50%):** 1024 → 100%; 1280 → 80.3% (9.9/9.9 weg);
 1440/1920/2560 → 77.7% (11.1% boven / 11.1% onder). Was: 1440 71.3%, 1920 53.5%, en liep verder op met
 de breedte. Geen overlay/gradient toegevoegd — contrast blijft van de per-glyph text-shadow op de tekst.
+
+### Correctie 2026-09-07 — tekstblok boven de laptop + zachte onderrand
+
+**Tekstblok omhoog.** De verticaal gecentreerde tekst viel over het laptopscherm. Opgelost door de
+tekst boven te ankeren (`lg:justify-start`, `lg:pt-[76px]`) en de containerhoogte een floor te geven:
+`min-[1024px]:min-h-[49rem] min-[1867px]:min-h-[42vw]` (= `max(49rem, 42vw)`, maar comma-vrij: een
+Tailwind arbitrary value `min-h-[max(49rem,42vw)]` mét komma breekt de gegenereerde CSS — splits in twee
+op px geordende min-width-breakpoints). Reden voor de 49rem-floor: het tekstblok is 349px hoog en de
+laptop-lid staat op ~57% van de container, dus op de smalste desktops (1024/1280) is een container van
+~784px nodig om de knoppen mét gap boven de laptop te krijgen. Gemeten gap knoppen→laptop: 23px
+(1024/1280/1440), 53px (1920), 211px (2560). AR blijft ≤2.4 (1.31→2.38). **Tradeoff:** bij 1024 is de
+hero hoog (AR 1.31) met ~14.7%/zijde crop van de buitenste gordijnen; bij 1280 ~5.9%/zijde; 1440+
+verwaarloosbaar — onvermijdelijk om het tekstblok boven de laptop te passen.
+
+**Zachte onderrand.** `HeroImage` heeft nu één onderrand-fade: `absolute inset-x-0 bottom-0 h-[8%]
+bg-gradient-to-b from-transparent to-[var(--bg)]` — alleen onder, exact 8% (63–86px), lineair (geen
+radiaal), beide themes. Dit is de ENIGE toegestane --bg-overgang over de foto (zie LESSONS 2026-09-07).
+
+**Dark-contrast na de verplaatsing:** de h1 valt nu over de melkweg (worst 20×20-blok 2.35–2.60, onder
+4.5); tekst-zijdig gefixt met een dark text-shadow-halo op de h1 (geen laag over het beeld). Subkop
+(4.56–5.34) en prijsregel (6.79–6.86) halen de norm.

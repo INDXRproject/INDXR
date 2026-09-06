@@ -50,6 +50,12 @@ export function HeroImage({ className }: HeroImageProps) {
     <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className ?? ""}`}>
       <HeroPicture variant="light" hiddenClass="dark:hidden" />
       <HeroPicture variant="dark" hiddenClass="hidden dark:block" />
+      {/* The ONLY permitted --bg transition over the photo: a strictly bounded bottom EDGE strip — the
+          bottom 8% of the container, one side only, no radial and nothing over the middle. It softens the
+          hard cut where the photo meets the page background. Identical in light and dark; only --bg's
+          value differs. Per the sharpened LESSONS rule (2026-09-06): a --bg transition is allowed solely
+          as a ≤8% edge strip on one side, never as a layer over the image field. */}
+      <div className="absolute inset-x-0 bottom-0 h-[8%] bg-gradient-to-b from-transparent to-[var(--bg)]" />
     </div>
   )
 }
