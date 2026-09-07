@@ -128,7 +128,7 @@ export default async function LandingPage() {
           <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl [text-shadow:0_0_4px_var(--bg),0_0_10px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_6px_var(--bg),0_0_14px_var(--bg),0_2px_3px_var(--bg)]">
             Transcripts you pay for by the minute, no subscription
           </h1>
-          <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_4px_var(--bg),0_0_9px_var(--bg),0_1px_2px_var(--bg)]">
+          <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_3px_var(--bg),0_0_3px_var(--bg),0_0_5px_var(--bg),0_0_5px_var(--bg),0_0_9px_var(--bg),0_0_13px_var(--bg)]">
             Paste a YouTube link or upload a recording. You get a clean transcript with speaker labels and
             timestamps, ready to edit, search and export.
           </p>
