@@ -85,7 +85,7 @@ export default function DocsCreditsPage() {
           If an AI transcription or summary fails, the credits held for it are returned to your balance
           automatically — you are never charged for work that didn&apos;t produce a transcript. You&apos;ll
           see a &quot;Refund&quot; line in your transaction history on the{" "}
-          <a href={appHref("/dashboard/account")} className="text-[var(--accent)] hover:underline">Account page</a>.
+          <a href={appHref("/dashboard/account")} className="text-[var(--link)] hover:underline">Account page</a>.
         </p>
 
         <AnchorHeading as="h2">Library storage, and buying more</AnchorHeading>
@@ -93,7 +93,7 @@ export default function DocsCreditsPage() {
           Every account gets 100 MB of library storage — the space your saved transcripts, edits,
           summaries and exports take up. Since transcripts are text, 100 MB holds a lot. You can see how
           much you&apos;ve used on your{" "}
-          <a href="/dashboard/account" className="text-[var(--accent)] hover:underline">Account page</a>.
+          <a href="/dashboard/account" className="text-[var(--link)] hover:underline">Account page</a>.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed mt-3">
           If you fill it, new transcripts pause until you free up space — your existing transcripts are
@@ -107,7 +107,7 @@ export default function DocsCreditsPage() {
           Purchased credits stay in your account until you use them — there is no monthly reset and no
           subscription. Refunds on a purchase itself (as opposed to the automatic refund of failed AI
           work above) are covered in the{" "}
-          <a href="/terms" className="text-[var(--accent)] hover:underline">Terms</a>.
+          <a href="/terms" className="text-[var(--link)] hover:underline">Terms</a>.
         </p>
 
         <SourcesBlock

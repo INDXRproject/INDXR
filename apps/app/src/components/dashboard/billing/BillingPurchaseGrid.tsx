@@ -70,11 +70,11 @@ export function BillingPurchaseGrid() {
       />
       <span id="terms-consent-text">
         I agree to the{" "}
-        <a href={marketingHref("/terms")} target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">
+        <a href={marketingHref("/terms")} target="_blank" rel="noopener noreferrer" className="text-[var(--link)] hover:underline">
           Terms of Service
         </a>{" "}
         and{" "}
-        <a href={marketingHref("/privacy")} target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">
+        <a href={marketingHref("/privacy")} target="_blank" rel="noopener noreferrer" className="text-[var(--link)] hover:underline">
           Privacy Policy
         </a>
         .

@@ -116,7 +116,7 @@ export default function AudioToTextPage() {
         </Link>
         <Link
           href="/pricing"
-          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+          className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
         >
           See pricing →
         </Link>
@@ -412,7 +412,9 @@ export default function AudioToTextPage() {
           One 2024 survey
         </a>{" "}
         found that six in ten people had avoided subscribing to a service because they expected
-        cancelling to be difficult. Here there is nothing to cancel, because nothing recurs.
+        cancelling to be difficult. Here there is nothing to cancel, because nothing recurs. If you
+        are weighing this against a subscription tool, we set the two out side by side in{" "}
+        <Link href="/alternatives/otter-ai">INDXR vs Otter.ai</Link>.
       </p>
 
       <h2>Why not use a free converter</h2>
@@ -495,7 +497,7 @@ export default function AudioToTextPage() {
         </Link>
         <Link
           href="/pricing"
-          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+          className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
         >
           See pricing →
         </Link>

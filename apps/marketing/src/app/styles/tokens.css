@@ -27,6 +27,8 @@
   --color-accent-subtle: var(--accent-subtle);
   --color-accent-fg: var(--accent-fg);
   --color-accent-ring: var(--accent-ring);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
   /* Semantic — success */
   --color-success: var(--success);
   --color-success-subtle: var(--success-subtle);
@@ -116,6 +118,12 @@
   --accent-subtle: oklch(0.955 0.030 80);
   --accent-fg: oklch(0.380 0.090 60);
   --accent-ring: oklch(0.720 0.140 75 / 0.45);
+  /* Inline link text. Distinct from --accent (a mid-amber FILL behind --fg-on-accent on buttons):
+     --accent as link text on --bg is only 2.43:1 in light, below WCAG AA. --link is a darker amber
+     that clears AA on --bg (measured 5.21:1 light) while staying recognisably the brand hue. Buttons
+     keep using --accent as background, so they are unaffected. */
+  --link: oklch(0.530 0.150 72);
+  --link-hover: oklch(0.480 0.150 72);
   /* Semantic — success */
   --success: oklch(0.620 0.140 150);
   --success-subtle: oklch(0.955 0.030 150);
@@ -200,6 +208,10 @@
   --accent-subtle: oklch(0.290 0.060 78);
   --accent-fg: oklch(0.880 0.110 80);
   --accent-ring: oklch(0.760 0.150 78 / 0.55);
+  /* Inline link text (see light block). In dark, --accent already clears AA as text on --bg
+     (measured 8.79:1), so --link mirrors it; hover lifts lightness like --accent-hover. */
+  --link: oklch(0.760 0.150 78);
+  --link-hover: oklch(0.800 0.145 78);
   /* Semantic — success */
   --success: oklch(0.700 0.150 150);
   --success-subtle: oklch(0.290 0.060 150);

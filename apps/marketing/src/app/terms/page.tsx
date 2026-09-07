@@ -23,7 +23,7 @@ export default function TermsPage() {
             <p>
               INDXR.AI is operated by Tiny Web Ventures, a sole proprietorship registered in
               the Netherlands (KvK 98828762). You can reach us at{" "}
-              <a href="mailto:support@indxr.ai" className="text-[var(--accent)] hover:underline">
+              <a href="mailto:support@indxr.ai" className="text-[var(--link)] hover:underline">
                 support@indxr.ai
               </a>. These terms govern your use of our website (indxr.ai) and app
               (app.indxr.ai) — together, the “Service.” By creating an account or using the
@@ -178,7 +178,7 @@ export default function TermsPage() {
               mandatory protections of the country you live in, and you can bring a dispute
               before the competent court there or in the Netherlands. If you have a complaint,
               please email us first at{" "}
-              <a href="mailto:support@indxr.ai" className="text-[var(--accent)] hover:underline">
+              <a href="mailto:support@indxr.ai" className="text-[var(--link)] hover:underline">
                 support@indxr.ai
               </a>{" "}
               — we’ll do our best to resolve it.
@@ -190,7 +190,7 @@ export default function TermsPage() {
             <p>
               Tiny Web Ventures (INDXR.AI), Oranjeplein 9, 3331XM Zwijndrecht, the Netherlands.
               Email:{" "}
-              <a href="mailto:support@indxr.ai" className="text-[var(--accent)] hover:underline">
+              <a href="mailto:support@indxr.ai" className="text-[var(--link)] hover:underline">
                 support@indxr.ai
               </a>.
             </p>

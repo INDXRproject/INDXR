@@ -36,7 +36,7 @@ export default function AboutPage() {
             INDXR.AI turns YouTube videos into text you can work with — captions when
             they exist, AI transcription when they don&apos;t, and exports in the format
             your work needs. This page is about who runs it and how; for what the tool
-            does, start on the <a href="/" className="text-[var(--accent)] hover:underline">homepage</a>.
+            does, start on the <a href="/" className="text-[var(--link)] hover:underline">homepage</a>.
           </p>
 
           <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Who builds INDXR.AI</h2>
@@ -50,11 +50,11 @@ export default function AboutPage() {
           </p>
           <p>
             It&apos;s operated by Tiny Web Ventures, based in the Netherlands. Full company details are in
-            our <a href="/terms" className="text-[var(--accent)] hover:underline">Terms</a>.
+            our <a href="/terms" className="text-[var(--link)] hover:underline">Terms</a>.
           </p>
           <p>
             I&apos;m genuinely curious how people use it and what would make it better.{" "}
-            <a href="/contact" className="text-[var(--accent)] hover:underline">Send feedback</a>. I read
+            <a href="/contact" className="text-[var(--link)] hover:underline">Send feedback</a>. I read
             all of it myself.
           </p>
 
@@ -69,9 +69,9 @@ export default function AboutPage() {
 
           <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Contact</h2>
           <p>
-            Questions? Use our <a href="/contact" className="text-[var(--accent)] hover:underline">contact form</a>,
+            Questions? Use our <a href="/contact" className="text-[var(--link)] hover:underline">contact form</a>,
             or email us directly at{" "}
-            <a href="mailto:support@indxr.ai" className="text-[var(--accent)] hover:underline">support@indxr.ai</a>.
+            <a href="mailto:support@indxr.ai" className="text-[var(--link)] hover:underline">support@indxr.ai</a>.
           </p>
         </section>
       </main>

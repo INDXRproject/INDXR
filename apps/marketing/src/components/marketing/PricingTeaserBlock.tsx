@@ -15,7 +15,7 @@ export function PricingTeaserBlock() {
         </p>
         <Link
           href="/pricing"
-          className="text-sm font-medium text-[var(--accent)] hover:underline underline-offset-2"
+          className="text-sm font-medium text-[var(--link)] hover:underline underline-offset-2"
         >
           See pricing →
         </Link>

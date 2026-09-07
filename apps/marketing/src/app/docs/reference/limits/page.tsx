@@ -111,7 +111,7 @@ export default function DocsLimitsPage() {
           transcripts are left untouched. Free up space by deleting transcripts you no longer need, or buy
           more room: {STORAGE_BLOCK_COST_CREDITS} credits adds a permanent {STORAGE_BLOCK_MB} MB, up to a{" "}
           {LIBRARY_STORAGE_MAX_MB} MB total. See{" "}
-          <a className="text-[var(--accent)] hover:underline" href="/docs/account/credits#library-storage-and-buying-more">Credits</a>{" "}
+          <a className="text-[var(--link)] hover:underline" href="/docs/account/credits#library-storage-and-buying-more">Credits</a>{" "}
           for how buying space works.
         </p>
         <DocsFigure
@@ -152,7 +152,7 @@ export default function DocsLimitsPage() {
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           INDXR is a web app — there is no public REST API, the kind of endpoint other programs could
           call directly to automate it. Everything runs through the interface; the export formats
-          (including <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/json">JSON and RAG JSON</a>) are how you get the data out programmatically — that is, into your own scripts or tools.
+          (including <a className="text-[var(--link)] hover:underline" href="/docs/reference/export-formats/json">JSON and RAG JSON</a>) are how you get the data out programmatically — that is, into your own scripts or tools.
         </p>
 
         <SourcesBlock

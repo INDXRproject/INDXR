@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 }
 
 const P = "text-[var(--fg-subtle)] leading-relaxed mb-4"
-const A = "text-[var(--accent)] hover:underline"
+const A = "text-[var(--link)] hover:underline"
 
 export default function DocsOverviewPage() {
   const techArticleSchema = {

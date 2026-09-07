@@ -109,7 +109,7 @@ export default function SrtGeneratorPage() {
         </Link>
         <Link
           href="/pricing"
-          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+          className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
         >
           See pricing →
         </Link>
@@ -315,7 +315,7 @@ begin with a story suppose you're the`}</DocsCodeBlock>
         </Link>
         <Link
           href="/pricing"
-          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+          className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
         >
           See pricing →
         </Link>

@@ -104,6 +104,17 @@ export default function ArticlesPage() {
             </section>
           ))}
         </div>
+
+        {/* Comparisons live in the separate /alternatives namespace (ADR-105), not as articles. Linked
+            here as a distinct line rather than a card so the article grid stays purely editorial while
+            the comparison page still gets an inbound link from this well-crawled hub. */}
+        <div className="mt-14 border-t border-[var(--border)] pt-8 text-sm text-[var(--fg-muted)]">
+          Comparing INDXR with another tool?{" "}
+          <a href="/alternatives/otter-ai" className="text-[var(--link)] underline-offset-2 hover:underline">
+            INDXR vs Otter.ai
+          </a>
+          .
+        </div>
       </main>
     </div>
   )

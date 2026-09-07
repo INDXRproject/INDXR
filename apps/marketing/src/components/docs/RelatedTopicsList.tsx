@@ -23,7 +23,7 @@ export function RelatedTopicsList({ topics, title = "See also" }: RelatedTopicsL
           <li key={topic.href}>
             <Link
               href={topic.href}
-              className="text-sm text-[var(--accent)] hover:underline underline-offset-4"
+              className="text-sm text-[var(--link)] hover:underline underline-offset-4"
             >
               {topic.label}
             </Link>

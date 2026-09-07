@@ -120,7 +120,7 @@ export default function GettingStartedPage() {
         <AnchorHeading as="h2">1. Open Transcribe</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Open{" "}
-          <a href="https://app.indxr.ai/dashboard/transcribe" className="text-[var(--accent)] hover:underline">Transcribe</a>{" "}
+          <a href="https://app.indxr.ai/dashboard/transcribe" className="text-[var(--link)] hover:underline">Transcribe</a>{" "}
           in the app sidebar. It has three tabs — <strong>Video</strong>, <strong>Playlist</strong>, and{" "}
           <strong>Upload</strong> — and <strong>Video</strong> is selected. New accounts get{" "}
           {welcomeCredits} credits, enough for a {welcomeCredits / perMin}-minute AI transcription;
@@ -128,7 +128,7 @@ export default function GettingStartedPage() {
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           You can also extract captions without an account on the{" "}
-          <a href="https://indxr.ai/transcribe" className="text-[var(--accent)] hover:underline">free tool</a>{" "}
+          <a href="https://indxr.ai/transcribe" className="text-[var(--link)] hover:underline">free tool</a>{" "}
           at indxr.ai/transcribe, but that route gives you plain text only and saves nothing to a library.
         </p>
 
@@ -154,7 +154,7 @@ export default function GettingStartedPage() {
           If YouTube refuses the request, you get a card with <strong>Try again</strong> (each retry
           goes out over a different connection) and the option to switch to AI transcription; no
           credits are charged. The{" "}
-          <a href="/docs/guides/single-video" className="text-[var(--accent)] hover:underline">single-video guide</a>{" "}
+          <a href="/docs/guides/single-video" className="text-[var(--link)] hover:underline">single-video guide</a>{" "}
           covers the rest — no captions, private videos, the wrong language.
         </p>
 
@@ -201,7 +201,7 @@ export default function GettingStartedPage() {
           and <strong>Developer</strong> (RAG JSON) — {formatCount} formats, {downloadCount} downloads. Everything is free
           except RAG JSON, at {ragPer10Min} credit per 10 minutes of transcript, and re-downloading
           something you already exported is always free. What each file contains is on{" "}
-          <a href="/docs/reference/export-formats" className="text-[var(--accent)] hover:underline">Export formats</a>.
+          <a href="/docs/reference/export-formats" className="text-[var(--link)] hover:underline">Export formats</a>.
         </p>
         {/* Rendered from the export descriptor (EXPORT_MENU) — the same array that builds the real
             Export menu — so the {downloadCount} downloads and the one paid format can never drift from

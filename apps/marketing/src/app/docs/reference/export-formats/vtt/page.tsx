@@ -80,7 +80,7 @@ export default function DocsVttPage() {
         <AnchorHeading as="h2">Re-segmentation &amp; line wrapping</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           The cue text is segmented the same way as{" "}
-          <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/srt">SRT</a>:
+          <a className="text-[var(--link)] hover:underline" href="/docs/reference/export-formats/srt">SRT</a>:
           words are packed into a cue until they would need more than{" "}
           <strong>{SUBTITLE_MAX_LINES} lines</strong> of <strong>{SUBTITLE_MAX_LINE} characters</strong>{" "}
           or run past <strong>{SUBTITLE_MAX_CUE_SEC} seconds</strong>; cues prefer to end on a sentence

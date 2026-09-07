@@ -70,7 +70,7 @@ export default function DocsLibraryPage() {
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Delete a single transcript from its page, or select several in the list and delete them
           together; both ask you to confirm first. A storage meter on your{" "}
-          <a className="text-[var(--accent)] hover:underline" href="/docs/account/settings">account page</a>{" "}
+          <a className="text-[var(--link)] hover:underline" href="/docs/account/settings">account page</a>{" "}
           shows how much your saved transcripts add up to, so you can see your library&apos;s footprint at
           a glance.
         </p>

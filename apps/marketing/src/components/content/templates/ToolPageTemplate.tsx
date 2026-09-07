@@ -103,7 +103,7 @@ export function ToolPageTemplate({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[var(--accent)] hover:underline"
+                    className="text-[var(--link)] hover:underline"
                   >
                     {label}
                   </a>

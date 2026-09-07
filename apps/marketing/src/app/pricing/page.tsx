@@ -137,13 +137,13 @@ export default function PricingPage() {
               declined at the till (ADR-062: a Stripe Radar rule blocks a few countries pre-charge). */}
           <p className="mt-4 text-center text-sm text-[var(--fg-muted)]">
             Payment isn&apos;t available in every country yet.{" "}
-            <a href="#faq" className="text-[var(--accent)] hover:underline">See who can buy</a>.
+            <a href="#faq" className="text-[var(--link)] hover:underline">See who can buy</a>.
           </p>
 
           {/* Comparison landing page — surfaced for people weighing INDXR against another tool (ADR-105). */}
           <p className="mt-2 text-center text-sm text-[var(--fg-muted)]">
             Coming from another tool?{" "}
-            <Link href="/alternatives/otter-ai" className="text-[var(--accent)] hover:underline">
+            <Link href="/alternatives/otter-ai" className="text-[var(--link)] hover:underline">
               INDXR vs Otter.ai
             </Link>
             .

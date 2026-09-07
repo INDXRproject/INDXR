@@ -191,7 +191,7 @@ export default function TranscriptExportFormatsPage() {
         </Link>
         <Link
           href="/pricing"
-          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+          className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
         >
           See pricing →
         </Link>
@@ -474,7 +474,7 @@ export default function TranscriptExportFormatsPage() {
         </Link>
         <Link
           href="/pricing"
-          className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+          className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
         >
           See pricing →
         </Link>

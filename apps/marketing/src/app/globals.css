@@ -126,12 +126,12 @@
 }
 
 .prose-content a {
-  color: var(--accent);
+  color: var(--link);
   text-decoration: underline;
 }
 
 .prose-content a:hover {
-  color: var(--accent-hover);
+  color: var(--link-hover);
 }
 
 .prose-content code {

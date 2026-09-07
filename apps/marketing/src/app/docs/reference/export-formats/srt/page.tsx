@@ -67,7 +67,7 @@ export default function DocsSrtPage() {
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Reach for SRT when you want subtitles <em>on</em> a video — burned in during editing, or added
           as a selectable track. If you&apos;re publishing to the web instead, its sibling{" "}
-          <a href="/docs/reference/export-formats/vtt" className="text-[var(--accent)] hover:underline">VTT</a>{" "}
+          <a href="/docs/reference/export-formats/vtt" className="text-[var(--link)] hover:underline">VTT</a>{" "}
           is the HTML5 equivalent. The rest of this page is the exact shape of the file.
         </p>
 
@@ -99,7 +99,7 @@ export default function DocsSrtPage() {
           When a transcript has speaker labels, the name shows on the first cue of each turn. SRT has no
           speaker field, so the name is baked in as a <code>Name: </code> prefix that counts against the{" "}
           {SUBTITLE_MAX_LINE}-character line budget — unlike{" "}
-          <a href="/docs/reference/export-formats/vtt" className="text-[var(--accent)] hover:underline">VTT</a>,
+          <a href="/docs/reference/export-formats/vtt" className="text-[var(--link)] hover:underline">VTT</a>,
           which carries it out of budget as a <code>&lt;v Name&gt;</code> voice tag. Because SRT spends
           characters on the name and VTT does not, a turn-opening cue fits less spoken text in SRT than in
           VTT, so the two files break into cues slightly differently.

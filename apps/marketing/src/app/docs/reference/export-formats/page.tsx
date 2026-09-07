@@ -30,7 +30,7 @@ export default function DocsExportFormatsPage() {
     url: "https://indxr.ai/docs/reference/export-formats",
   }
 
-  const linkClass = "text-[var(--accent)] hover:underline"
+  const linkClass = "text-[var(--link)] hover:underline"
 
   return (
     <>

@@ -170,7 +170,7 @@ export default function OtterAlternativePage() {
               </Link>
               <Link
                 href="/pricing"
-                className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+                className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
               >
                 See pricing →
               </Link>
@@ -262,7 +262,7 @@ export default function OtterAlternativePage() {
                 href={OTTER_PRICING_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[var(--accent)] underline-offset-2 hover:underline"
+                className="text-[var(--link)] underline-offset-2 hover:underline"
               >
                 otter.ai/pricing
               </a>
@@ -311,7 +311,7 @@ export default function OtterAlternativePage() {
             </div>
             <p className="mt-3 text-sm text-[var(--fg-subtle)]">
               Prices include VAT. For the full breakdown and what credits cost per action, see the{" "}
-              <Link href="/pricing" className="text-[var(--accent)] underline-offset-2 hover:underline">
+              <Link href="/pricing" className="text-[var(--link)] underline-offset-2 hover:underline">
                 pricing page
               </Link>
               .
@@ -358,7 +358,7 @@ export default function OtterAlternativePage() {
               </Link>
               <Link
                 href="/pricing"
-                className="text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+                className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
               >
                 See pricing →
               </Link>

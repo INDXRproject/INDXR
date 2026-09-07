@@ -55,7 +55,7 @@ export default function DocsSingleVideoPage() {
         <ol className="list-decimal pl-5 space-y-1.5 text-[var(--fg-subtle)] leading-relaxed">
           <li>Paste a single video URL into the box. A whole-channel URL is not accepted — INDXR works on videos and playlists, so make a playlist and paste that instead.</li>
           <li>INDXR fetches the captions and groups the raw fragments into readable paragraphs.</li>
-          <li>Read it on the page, or download it — see the <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats">export formats</a>.</li>
+          <li>Read it on the page, or download it — see the <a className="text-[var(--link)] hover:underline" href="/docs/reference/export-formats">export formats</a>.</li>
         </ol>
 
                 <DocsFigure
@@ -87,7 +87,7 @@ export default function DocsSingleVideoPage() {
         <ul className="list-disc pl-5 space-y-1.5 text-[var(--fg-subtle)] leading-relaxed">
           <li><strong>Members-only</strong> — locked behind a channel membership; INDXR can&apos;t access it.</li>
           <li><strong>Age-restricted</strong> — needs a signed-in YouTube account to watch; AI transcription can&apos;t work around this either.</li>
-          <li><strong>Removed, private, or geo-blocked</strong> — the video is unavailable. If you have the file, an <a className="text-[var(--accent)] hover:underline" href="/docs/guides/uploads">upload</a> is the way in.</li>
+          <li><strong>Removed, private, or geo-blocked</strong> — the video is unavailable. If you have the file, an <a className="text-[var(--link)] hover:underline" href="/docs/guides/uploads">upload</a> is the way in.</li>
         </ul>
 
         <AnchorHeading as="h2">What you get without an account</AnchorHeading>

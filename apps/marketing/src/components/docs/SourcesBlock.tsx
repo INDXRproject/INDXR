@@ -30,7 +30,7 @@ export function SourcesBlock({ sources }: { sources: DocSource[] }) {
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-[var(--accent)] hover:underline inline-flex items-center gap-1"
+                className="font-medium text-[var(--link)] hover:underline inline-flex items-center gap-1"
               >
                 {s.publisher}
                 <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />

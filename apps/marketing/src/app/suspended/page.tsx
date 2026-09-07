@@ -15,7 +15,7 @@ export default function SuspendedPage() {
         </p>
         <p className="text-sm text-[var(--fg-muted)]">
           If you have questions, email us at{" "}
-          <a href="mailto:support@indxr.ai" className="text-[var(--accent)] hover:underline">
+          <a href="mailto:support@indxr.ai" className="text-[var(--link)] hover:underline">
             support@indxr.ai
           </a>.
         </p>

@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
 }
 
-const A = "text-[var(--accent)] hover:underline"
+const A = "text-[var(--link)] hover:underline"
 const P = "text-[var(--fg-subtle)] leading-relaxed mb-4"
 
 const faqs: { question: string; answer: ReactNode }[] = [

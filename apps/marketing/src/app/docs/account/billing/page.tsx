@@ -50,7 +50,7 @@ export default function DocsBillingPage() {
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Credits come in one-time packages — you pay once and the credits are added to your balance.
           There is no subscription and nothing to cancel. Prices are shown on the{" "}
-          <a href="/pricing" className="text-[var(--accent)] hover:underline">pricing page</a>, VAT
+          <a href="/pricing" className="text-[var(--link)] hover:underline">pricing page</a>, VAT
           included, and payment runs through Stripe&apos;s secure checkout — no card details ever touch
           our servers. Credits appear on your balance within about a minute of a successful payment.
         </p>
@@ -61,9 +61,9 @@ export default function DocsBillingPage() {
           VAT where you&apos;re entitled to. The invoice is generated on demand, the moment you click to
           download it — nothing is emailed automatically. You&apos;ll find the download and your full
           purchase history on your{" "}
-          <a href={appHref("/dashboard/account")} className="text-[var(--accent)] hover:underline">Account page</a>,
+          <a href={appHref("/dashboard/account")} className="text-[var(--link)] hover:underline">Account page</a>,
           alongside your credit transaction history. Refunds on a purchase are covered in the{" "}
-          <a href="/terms" className="text-[var(--accent)] hover:underline">Terms</a>.
+          <a href="/terms" className="text-[var(--link)] hover:underline">Terms</a>.
         </p>
 
         <AnchorHeading as="h2">Where you can buy</AnchorHeading>
@@ -73,7 +73,7 @@ export default function DocsBillingPage() {
           and Switzerland — require a separate local VAT registration from the very first sale, with no
           minimum. Until we do that properly, we&apos;d
           rather not sell to you than sell to you incorrectly. If you want access from your country,{" "}
-          <a href="/contact" className="text-[var(--accent)] hover:underline">email us</a> — enough
+          <a href="/contact" className="text-[var(--link)] hover:underline">email us</a> — enough
           interest and we&apos;ll register.
         </p>
 

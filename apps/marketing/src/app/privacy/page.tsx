@@ -22,7 +22,7 @@ export default function PrivacyPage() {
             INDXR.AI is operated by Tiny Web Ventures (KvK 98828762), registered in
             the Netherlands. We are the data controller for your personal data. You can
             reach us at{" "}
-            <a href="mailto:privacy@indxr.ai" className="text-[var(--accent)] hover:underline">
+            <a href="mailto:privacy@indxr.ai" className="text-[var(--link)] hover:underline">
               privacy@indxr.ai
             </a>.
           </p>
@@ -157,7 +157,7 @@ export default function PrivacyPage() {
               delete it, object to how we process it, and receive a copy in a portable format.
               You can delete your account and its data from your settings, or by emailing us. To
               request a copy of your data, email{" "}
-              <a href="mailto:privacy@indxr.ai" className="text-[var(--accent)] hover:underline">
+              <a href="mailto:privacy@indxr.ai" className="text-[var(--link)] hover:underline">
                 privacy@indxr.ai
               </a>{" "}
               and we’ll provide it. You can withdraw marketing consent through the unsubscribe

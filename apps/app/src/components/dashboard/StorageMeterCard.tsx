@@ -83,7 +83,7 @@ export function StorageMeterCard({
           <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full.</p>
           <p className="text-sm text-fg-subtle mt-1">
             New transcripts are paused until you free up space. Delete some transcripts from your{" "}
-            <a href="/dashboard/library" className="text-[var(--accent)] hover:underline">library</a>
+            <a href="/dashboard/library" className="text-[var(--link)] hover:underline">library</a>
             {atMax ? "" : ", or buy more room below"}. Your existing transcripts are safe.
           </p>
         </div>

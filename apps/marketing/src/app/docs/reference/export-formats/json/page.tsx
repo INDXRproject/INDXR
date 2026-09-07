@@ -161,7 +161,7 @@ export default function DocsJsonPage() {
           You choose the target chunk length when you export — {RAG_CHUNK_PRESETS.map((p) => p.value).join(", ")}{" "}
           seconds. Sixty seconds is the default. Shorter chunks are tighter and better for pulling exact
           quotes; longer chunks keep more surrounding context per vector. Your preferred size is remembered
-          in <a className="text-[var(--accent)] hover:underline" href="/docs/account/settings">Settings</a>.
+          in <a className="text-[var(--link)] hover:underline" href="/docs/account/settings">Settings</a>.
         </p>
         <DocsTable>
           <thead>

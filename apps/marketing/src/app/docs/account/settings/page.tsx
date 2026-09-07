@@ -83,7 +83,7 @@ export default function DocsSettingsPage() {
           </tbody>
         </DocsTable>
         <p className="text-[var(--fg-muted)] text-sm">
-          See <a className="text-[var(--accent)] hover:underline" href="/docs/reference/export-formats/json">JSON &amp; RAG JSON</a> for what the chunks look like.
+          See <a className="text-[var(--link)] hover:underline" href="/docs/reference/export-formats/json">JSON &amp; RAG JSON</a> for what the chunks look like.
         </p>
 
         <AnchorHeading as="h2">Deleting your account</AnchorHeading>
@@ -91,7 +91,7 @@ export default function DocsSettingsPage() {
           The danger zone deletes your account and everything in it — transcripts, credits, summaries,
           history — and can&apos;t be undone. You type <code>DELETE</code> to confirm. For exactly what
           is removed and what happens to your data, see the{" "}
-          <a className="text-[var(--accent)] hover:underline" href="/privacy">privacy policy</a>.
+          <a className="text-[var(--link)] hover:underline" href="/privacy">privacy policy</a>.
         </p>
 
         <SourcesBlock
