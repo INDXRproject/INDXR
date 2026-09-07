@@ -222,6 +222,7 @@ Structuur, componenten en beslissingen per page-type. Bron van waarheid voor wat
 | [known-issues.md](operations/known-issues.md) | Openstaande TODOs, bekende bugs, workarounds, pre-launch checklist |
 | [supabase-security-audit.md](operations/supabase-security-audit.md) | Volledige Supabase security-advisor-audit (2026-09-02): beginstand per lint, cross-user-lek + credit-RPC-drift gedicht, DEFINER-lockdown, eindstand, herhaalrecept. Bron voor RLS/DEFINER-status. |
 | [railway-cli.md](operations/railway-cli.md) | Railway CLI setup + log-recepten voor worker/api (CC-gebruik) |
+| [privacy-claims-verification.md](operations/privacy-claims-verification.md) | Per privacy-/dataverwerkingsclaim op publieke pagina's (m.n. `/alternatives/otter-ai`) de bron van verificatie + datum. Verifieer tegen werkelijke config (code/endpoints/provider-API), niet de wiki. VERIFIED = AssemblyAI EU-endpoint, EU LLM-gateway, Supabase eu-west-1, PostHog EU cookieless, audio nooit in R2 (temp-bestand, verwijderd). NIET geverifieerd/weggelaten: 24u audio-lifecycle (geen audio-bucket), AAI retention/opt-out (dashboard), Railway/Vercel-regio, Resend. |
 | [test-reports.md](operations/test-reports.md) | Handmatige testrapporten per feature |
 | [cross-host-smoke-tests.md](operations/cross-host-smoke-tests.md) | 13 smoke tests post-migratie (8 geautomatiseerd via Playwright) |
 | [testing.md](operations/testing.md) | Testaccounts (admin-side aanmaken, `@indxr-test.com`), Playwright draaien (cookie-login), herbruikbare prod-check |

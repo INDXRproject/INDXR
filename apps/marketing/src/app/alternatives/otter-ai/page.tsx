@@ -14,9 +14,12 @@ import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
 import { UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 
 // Commercial comparison landing page (NOT an article — own /alternatives namespace, ADR-105).
-// Otter's numbers are entered by hand, checked against otter.ai/pricing on a stated date (no scraper,
-// ADR-105). Every INDXR number below renders from pricing.ts / limits.ts / uploadFormats.ts — never
-// hardcoded here.
+// Wedge = the subscription model itself (ADR-105, revised 2026-09-07): you pay for idle months and the
+// monthly allowance is the provider's to change; INDXR credits are bought, owned, never expiring, with
+// no monthly allowance. Otter's numbers are entered by hand, checked against otter.ai/pricing on a
+// stated date (no scraper, ADR-105). Every INDXR number renders from pricing.ts / limits.ts /
+// uploadFormats.ts — never hardcoded. Privacy claims are code/config-verified (see
+// docs/wiki/operations/privacy-claims-verification.md); nothing unverifiable is asserted.
 
 const OTTER_PRICING_CHECKED = "7 September 2026"
 const OTTER_PRICING_URL = "https://otter.ai/pricing"
@@ -26,18 +29,18 @@ const cheapest = cheapestPackage()
 
 export const metadata: Metadata = {
   alternates: { canonical: "/alternatives/otter-ai" },
-  title: "Otter.ai alternative for uploaded recordings | INDXR.AI",
+  title: "An Otter.ai alternative without a monthly plan | INDXR.AI",
   description:
-    "An Otter.ai alternative for people who upload recordings rather than run live meetings. " +
-    "No upload limit, pay per minute, and credits that never expire. Otter pricing checked on " +
-    `${OTTER_PRICING_CHECKED}.`,
+    "An Otter.ai alternative with no monthly plan: buy credits that never expire and pay per minute, " +
+    "instead of a subscription with a monthly allowance you can lose. INDXR is not a live meeting tool. " +
+    `Otter pricing checked on ${OTTER_PRICING_CHECKED}.`,
   openGraph: {
     type: "website",
     url: "https://indxr.ai/alternatives/otter-ai",
-    title: "Otter.ai alternative for uploaded recordings",
+    title: "An Otter.ai alternative without a monthly plan",
     description:
-      "Otter is built for live meetings. If you upload recordings, the limit you hit first is the " +
-      "number of uploads, not the number of minutes. INDXR has no upload limit and credits never expire.",
+      "With a subscription you pay for the months you do not use, and the monthly allowance is set by " +
+      "the provider. With INDXR you buy credits that are yours and never expire, and pay per minute.",
   },
 }
 
@@ -70,6 +73,16 @@ const OTTER_TIERS = [
 // readable at 375px with no horizontal scroll. INDXR values that are numbers come from live code.
 const COMPARISON = [
   {
+    feature: "Pricing model",
+    otter: "A subscription, priced per user per month.",
+    indxr: `Pay per minute, no subscription. ${perMinute} credit per minute of audio or video.`,
+  },
+  {
+    feature: "Unused allowance",
+    otter: "A monthly allowance that resets. What you do not use is gone, and the allowance is the provider's to set.",
+    indxr: "No monthly allowance. Credits are bought, they are yours, and they never expire.",
+  },
+  {
     feature: "Built for",
     otter: "Live meetings — a bot joins your Zoom, Teams or Meet call and transcribes as people talk.",
     indxr: "Working from a recording you already have: an interview, a lecture, a podcast, a video.",
@@ -78,16 +91,6 @@ const COMPARISON = [
     feature: "File uploads",
     otter: "Basic: 3 for the account's lifetime. Pro: 10 per month. Only Business makes uploads unlimited.",
     indxr: "No upload limit. You pay per minute of what you transcribe, nothing for the upload itself.",
-  },
-  {
-    feature: "Pricing model",
-    otter: "A subscription, priced per user per month.",
-    indxr: `Pay per minute, no subscription. ${perMinute} credit per minute of audio or video.`,
-  },
-  {
-    feature: "Unused allowance",
-    otter: "Minutes reset every month. What you do not use is gone.",
-    indxr: "Credits never expire. Buy once, use whenever.",
   },
   {
     feature: "Free tier",
@@ -116,8 +119,18 @@ const COMPARISON = [
   },
 ]
 
-// Where Otter is genuinely the better choice. This section is not optional (ADR-105): a comparison
-// page that only lists wins reads as a sales sheet and loses the reader's trust.
+// Where INDXR is the genuinely better choice. Placed ABOVE the Otter section so the page ends on the
+// rule the reader can apply. Every claim here is demonstrably true; numbers render from live code.
+const INDXR_WINS = [
+  "Your use is irregular. A month with nothing to transcribe, then ten recordings in a week. A subscription bills you through the quiet months; credits sit and wait, and you spend them only when you transcribe something.",
+  "You already have a stack of recordings. Interviews, lectures, podcasts you want the text of. This is where an upload limit hits on the first day, and INDXR has none.",
+  `Your files are long. INDXR transcribes up to ${MAX_TRANSCRIPTION_HOURS} hours in a single file, against Otter's 90 minutes per meeting on Pro.`,
+  "You want the transcript as a document, not a conversation about it. INDXR gives you an editable transcript you correct once and export in several formats, rather than a chat interface over the recording.",
+]
+
+// Where Otter is genuinely the better choice. Not optional (ADR-105): a comparison page that only lists
+// wins reads as a sales sheet. The first point also does the "not for you" filtering the meeting-tool
+// searcher needs.
 const OTTER_WINS = [
   "You need the text while the conversation is happening. Live captions for a deaf or hard-of-hearing participant, or a reply you have to form during a sales call, need transcription in real time. INDXR cannot do that.",
   "You do not want to record anything yourself. Otter slips in as a bot on your Zoom, Teams or Meet call and captures it for you. With INDXR you supply the recording.",
@@ -154,12 +167,13 @@ export default function OtterAlternativePage() {
               Comparison
             </p>
             <h1 className="mt-3 text-3xl font-bold leading-tight text-[var(--fg-strong)] sm:text-4xl">
-              An Otter.ai alternative for people who work from recordings
+              An Otter.ai alternative without a monthly plan
             </h1>
             <p className="mt-5 text-lg leading-relaxed text-[var(--fg-muted)]">
-              Otter is built for live meetings. If your work starts with a file you already have, a
-              recorded interview, a lecture, a podcast, a video, the limit you hit first is not the
-              number of minutes. It is the number of uploads Otter lets you make.
+              A subscription charges you every month, including the months you transcribe nothing, and
+              the monthly allowance that comes with it is set by the provider, not by you. INDXR works
+              the other way round: you buy credits, they are yours, they never expire, and there is no
+              monthly allowance that can change underneath you.
             </p>
 
             <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -176,21 +190,32 @@ export default function OtterAlternativePage() {
               </Link>
             </div>
 
-            {/* The core argument */}
-            <h2 className="mt-14 text-2xl font-bold text-[var(--fg-strong)]">
-              The upload limit, not the minute limit
-            </h2>
+            {/* Not-a-meeting-tool filter — stated early and plainly so someone looking to replace a
+                meeting bot sees within seconds that this is not that tool and leaves. */}
+            <div className="mt-8 rounded-xl border border-[var(--border)] bg-[var(--surface-sunken)] p-5">
+              <p className="leading-relaxed text-[var(--fg)]">
+                <strong className="font-semibold">INDXR is not a live meeting notetaker.</strong> There
+                is no bot that joins your Zoom, Teams or Meet calls. You give it a recording you already
+                have and it transcribes that. If what you want is to replace the bot in your calls, Otter
+                is the right tool and this one is not.
+              </p>
+            </div>
+
+            {/* The core argument — the subscription pattern; the upload limit as one example of it */}
+            <h2 className="mt-14 text-2xl font-bold text-[var(--fg-strong)]">No monthly plan</h2>
             <p className="mt-4 leading-relaxed text-[var(--fg)]">
-              Otter Basic gives you 3 audio or video uploads for the whole lifetime of the account, not
-              3 a month. Pro raises that to 10 per month. Uploads only become unlimited on Business. For
-              someone who transcribes recordings, that is not a difference in price. It is a wall: once
-              you have used your uploads, the minutes you are paying for do not help.
+              With INDXR you pay {perMinute} credit per minute of what you actually transcribe, and
+              nothing in a month you do not use the site. Credits you have bought stay on your account
+              until you spend them, so a balance you buy today is still there next year, and there is no
+              monthly allowance to run down or to be revised. If you have ever watched an allowance
+              shrink or paid for months you did not use, that is the pattern this avoids.
             </p>
             <p className="mt-4 leading-relaxed text-[var(--fg)]">
-              INDXR has no upload limit. You pay {perMinute} credit per minute of what you transcribe,
-              and nothing for the upload itself. There is no subscription, and credits never expire, so
-              a balance you buy today is still there next year. Otter&apos;s minutes reset every month,
-              and what you do not use is gone.
+              The upload limit is the same pattern in miniature. Otter&apos;s free tier has no meeting
+              bot, so a free user has to upload recordings, and Otter Basic allows 3 audio or video
+              uploads for the whole lifetime of the account, not 3 a month. Pro raises that to 10 per
+              month; uploads only become unlimited on Business. INDXR has no upload limit at any tier:
+              you pay per minute of what you transcribe, and nothing for the upload itself.
             </p>
 
             {/* Comparison table — two data columns, mobile-first */}
@@ -235,8 +260,8 @@ export default function OtterAlternativePage() {
             {/* Otter pricing — exact, dated */}
             <h2 className="mt-14 text-2xl font-bold text-[var(--fg-strong)]">Otter&apos;s pricing</h2>
             <p className="mt-4 leading-relaxed text-[var(--fg)]">
-              These are Otter&apos;s published plans. The figure to read for uploaded recordings is not
-              the price, it is the upload allowance on each tier.
+              These are Otter&apos;s published plans. Each paid tier is a monthly subscription, and the
+              allowance and upload count are what change between them.
             </p>
             <div className="mt-5 space-y-3">
               {OTTER_TIERS.map((tier) => (
@@ -316,6 +341,73 @@ export default function OtterAlternativePage() {
               </Link>
               .
             </p>
+
+            {/* Privacy — every claim verified against the actual configuration, not the wiki. No blanket
+                "all EU" line: only the components confirmed EU are named as such. */}
+            <h2 className="mt-14 text-2xl font-bold text-[var(--fg-strong)]">
+              Privacy and how your recording is handled
+            </h2>
+            <p className="mt-4 leading-relaxed text-[var(--fg)]">
+              Otter&apos;s most common privacy complaint is about a bot that sits in a call and records
+              people who did not choose to be there. INDXR has no bot. You supply a recording you already
+              have, so no one is captured by us without your involvement.
+            </p>
+            <p className="mt-4 leading-relaxed text-[var(--fg)]">What happens to the file you upload:</p>
+            <ul className="mt-4 space-y-4">
+              <li className="flex gap-3 leading-relaxed text-[var(--fg-muted)]">
+                <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--fg-subtle)]" />
+                <span>
+                  We do not keep it. On our side the upload exists only as a temporary file while the job
+                  runs, and it is deleted when the job finishes; a file left behind by an interrupted job
+                  is cleared on the next restart. We never store a copy of your audio. Only the
+                  transcript text is saved, to your library.
+                </span>
+              </li>
+              <li className="flex gap-3 leading-relaxed text-[var(--fg-muted)]">
+                <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--fg-subtle)]" />
+                <span>
+                  It is transcribed by our provider, AssemblyAI, on its EU endpoint; AI summaries run on
+                  AssemblyAI&apos;s EU model gateway.
+                </span>
+              </li>
+              <li className="flex gap-3 leading-relaxed text-[var(--fg-muted)]">
+                <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--fg-subtle)]" />
+                <span>
+                  Your transcripts and account data are stored in our database in the EU, hosted in
+                  Ireland.
+                </span>
+              </li>
+              <li className="flex gap-3 leading-relaxed text-[var(--fg-muted)]">
+                <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--fg-subtle)]" />
+                <span>Product analytics run on an EU instance and set no tracking cookies.</span>
+              </li>
+            </ul>
+            <p className="mt-4 leading-relaxed text-[var(--fg)]">
+              One thing is yours, not ours: because you provide the recording, getting the consent of the
+              people in it is your responsibility. Recording a conversation legally needs the consent of
+              those taking part in many places, and securing that is down to you. The full detail is in
+              our{" "}
+              <Link href="/privacy" className="text-[var(--link)] underline-offset-2 hover:underline">
+                privacy policy
+              </Link>
+              .
+            </p>
+
+            {/* Where INDXR wins — placed before the Otter section so the page ends on the rule */}
+            <h2 className="mt-14 text-2xl font-bold text-[var(--fg-strong)]">
+              Where INDXR is the better choice
+            </h2>
+            <p className="mt-4 leading-relaxed text-[var(--fg)]">
+              INDXR fits some ways of working much better than a subscription meeting tool.
+            </p>
+            <ul className="mt-5 space-y-4">
+              {INDXR_WINS.map((point) => (
+                <li key={point} className="flex gap-3 leading-relaxed text-[var(--fg-muted)]">
+                  <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--fg-subtle)]" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
 
             {/* Honesty section — where Otter wins */}
             <h2 className="mt-14 text-2xl font-bold text-[var(--fg-strong)]">

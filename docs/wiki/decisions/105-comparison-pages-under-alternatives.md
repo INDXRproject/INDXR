@@ -30,6 +30,14 @@ Twee vaste ontwerpregels voor deze namespace:
 
 Aanvullend, overgenomen van de bestaande productregels: alle eigen (INDXR-)getallen — credits, prijzen, formaten, limieten — renderen uit levende code (`pricing.ts`, `limits.ts`, `uploadFormats.ts`), nooit hardcoded in de paginatekst. En elke pagina bevat verplicht een eerlijke sectie over waar de concurrent beter is; een pagina die alleen wint leest als verkoopblad en verliest vertrouwen.
 
+### Wig van de Otter-pagina (herzien 2026-09-07)
+
+De eerste versie zette de **uploadlimiet** centraal. Herzien: de wig is het **abonnementsmodel** zelf. Onderzoek naar wat gebruikers werkelijk aan Otter storend vinden (G2/Trustpilot/Reddit-syntheses 2026) laat zien dat de uploadlimiet niet de hoofdklacht is; de grootste klachten zijn (a) de zichtbare bot die niet-instemmende deelnemers opneemt, (b) een maandelijkse toewijzing die achteraf werd verlaagd zonder prijsverlaging, en (c) facturatieverrassingen. Klacht (a) komt van vergadergebruikers — die bedienen wij niet en willen we niet trekken (de pagina zegt daarom **prominent en vroeg** dat INDXR géén live meeting-notitietool is, zodat die zoeker binnen seconden wegklikt: bespaarde ad-spend + geen teleurstelling). Klacht (b) en (c) zijn prijsmodel-klachten, en dáár heeft INDXR een structureel antwoord op: credits die je koopt zijn van jou, verlopen niet, en er is geen maandelijkse toewijzing die de aanbieder kan wijzigen. De uploadlimiet blijft op de pagina, maar als **voorbeeld** van datzelfde patroon (met het scherpe detail dat Otter's gratis laag geen bot heeft → gratis gebruikers moeten uploaden → muur na 3 bestanden).
+
+**Bewust NIET op de pagina** (harde regels bovenop de "geen scraper"-regel): geen niet-verifieerbare bewering over een verlaging van Otter's Pro-minuten (komt van review-sites, geen primaire Otter-bron → precies het risico dat deze pagina niet mag lopen); de wig wordt positief geformuleerd vanuit onze eigen eigenschap (credits verlopen niet, geen maandelijkse toewijzing) en de lezer die het meemaakte herkent het zelf. Ook de lopende rechtszaak tegen Otter wordt **niet** genoemd — onbeslist, en marketing bouwen op een lopende procedure past niet bij de rest van de site.
+
+Twee nieuwe verplichte secties op deze (en toekomstige) pagina's waar van toepassing: **"Where INDXR is the better choice"** (direct bóven de "Where the competitor is better"-sectie, zodat de pagina eindigt op de toepasbare regel) en een **privacy-/dataverwerkingssectie**. Voor privacy geldt een aparte harde regel: **elke claim wordt geverifieerd tegen de werkelijke configuratie** (code/endpoints/provider-API), niet tegen de wiki, en alleen bevestigde claims worden opgeschreven — een onjuiste privacyclaim op een pagina die een concurrent noemt is het enige echte risico daar. Verificatie per dienst gelogd in [privacy-claims-verification.md](../operations/privacy-claims-verification.md).
+
 ---
 
 ## Rationale
