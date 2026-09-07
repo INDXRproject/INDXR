@@ -210,3 +210,37 @@ radiaal), beide themes. Dit is de ENIGE toegestane --bg-overgang over de foto (z
 **Dark-contrast na de verplaatsing:** de h1 valt nu over de melkweg (worst 20×20-blok 2.35–2.60, onder
 4.5); tekst-zijdig gefixt met een dark text-shadow-halo op de h1 (geen laag over het beeld). Subkop
 (4.56–5.34) en prijsregel (6.79–6.86) halen de norm.
+
+### Hero-copy herzien 2026-09-07 (reden + regels)
+
+**Reden.** De onderscheidende eigenschap van het product — **pay per minute** en **credits never
+expire** — stond in het kleinste lettertype (de prijsregel onderaan), terwijl de generieke output-claim
+("Accurate transcripts…") het grootst was. Bovendien stond er nergens **voor wie** het product bedoeld
+is. De nieuwe copy zet het onderscheidende model in de h1 en voegt een doelgroepregel toe.
+
+**Regels (exact):**
+- **h1:** Transcripts you pay for by the minute, no subscription
+- **subkop:** Paste a YouTube link or upload a recording. You get a clean transcript with speaker labels
+  and timestamps, ready to edit, search and export.
+- **regel 3:** Credits never expire. No monthly minimum.
+- **regel 4 (nieuw):** For interviews, lectures, podcasts and long-form video. — zelfde grootte/gewicht
+  als regel 3, maar `--fg-muted` (visueel ondergeschikt). Sentence case, geen em-dashes.
+
+**Gevolg voor de containerhoogte.** Regel 4 maakte het tekstblok hoger: **349px → 381px** (knoppen-
+onderkant 425 → 457). De hoogte-floor is daarom herberekend van `min-h-[49rem]` (784px) naar
+`min-h-[52.5rem]` (**840px**, = (457 + ~23px gap) / 0.571-laptopfractie), met de vw-crossover verschoven
+naar `min-[2000px]:min-h-[42vw]` (waar 42vw = 840). Knoppen→laptop-gap blijft ≥23px op alle breedtes
+(23/23/23/37/179px bij 1024/1280/1440/1920/2560), AR ≤2.38.
+
+**Hergebruik oude h1 (gemeld, NIET gewijzigd):** de oude kop staat als metadata-title in
+`apps/marketing/src/app/page.tsx` (`metadata.title`, homepage-`<title>`/og:title) en in
+`apps/marketing/src/app/layout.tsx` (site-brede default title), telkens als "INDXR.AI — Accurate
+transcripts from audio, video and YouTube" (net iets anders geformuleerd dan de oude h1). De exacte
+h1-string zat alleen in de hero. De structured-data-schemas bevatten géén `headline` met de h1.
+`articles/page.tsx` gebruikt "audio, video and YouTube" in een eigen beschrijving (los van de hero).
+
+**Dark-contrast (worst 20×20-blok onder de regel, achtergrondmetriek):** 1440 → h1 4.76 / subkop 3.93 /
+regel3 6.04 / regel4 2.78; 1920 → h1 2.31 / subkop 4.06 / regel3 6.19 / regel4 3.44. De regels over de
+melkweg/stadslichten (h1@1920, subkop, regel4) staan onder 4.5 in de achtergrondmetriek — **tekst-zijdig**
+geborgd met een dark text-shadow-halo per regel (regel4 iets sterker, want `--fg-muted`); geen laag over
+het beeld. Leesbaarheid bevestigd op de dark-screenshots.

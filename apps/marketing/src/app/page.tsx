@@ -111,7 +111,7 @@ export default async function LandingPage() {
           the content-driven height wins (min-h is a floor, not a fixed height), so the <768px mobile 4:5
           view is untouched. lg:flex + justify/items-center vertically centres the text in the taller box so
           it stays balanced (never top-heavy); pt/pb remain as header-clearance padding. */}
-      <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[76px] lg:pb-14 lg:flex lg:flex-col lg:items-center lg:justify-start min-[1024px]:min-h-[49rem] min-[1867px]:min-h-[42vw]">
+      <section className="relative w-full overflow-hidden bg-[var(--bg)] pt-[110px] pb-10 lg:pt-[76px] lg:pb-14 lg:flex lg:flex-col lg:items-center lg:justify-start min-[1024px]:min-h-[52.5rem] min-[2000px]:min-h-[42vw]">
         <HeroImage />
         {/* No layer sits over the photo in EITHER theme — the dark readability scrim and the amber top
             glow that used to darken/tint the image here have been removed (they burned the dark image's
@@ -126,14 +126,19 @@ export default async function LandingPage() {
               bright milky-way core in dark mode; the --bg halo (dark in dark) is a text-side fix (no layer
               over the image) that keeps the white h1 legible there. Light halo unchanged. */}
           <h1 className="mb-6 max-w-4xl text-4xl font-[800] leading-[1.1] tracking-[-0.03em] text-[var(--fg-strong)] sm:text-5xl lg:text-6xl [text-shadow:0_0_4px_var(--bg),0_0_10px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_6px_var(--bg),0_0_14px_var(--bg),0_2px_3px_var(--bg)]">
-            Accurate transcripts from your audio, video and YouTube links
+            Transcripts you pay for by the minute, no subscription
           </h1>
-          <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:none]">
-            Upload a recording or paste a link. INDXR gives you a clean transcript with speaker labels,
-            ready to edit, search and export.
+          <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_4px_var(--bg),0_0_9px_var(--bg),0_1px_2px_var(--bg)]">
+            Paste a YouTube link or upload a recording. You get a clean transcript with speaker labels and
+            timestamps, ready to edit, search and export.
           </p>
-          <p className="mb-10 text-base font-medium text-[var(--fg)] [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:none]">
-            Pay per minute, no subscription, and credits never expire.
+          <p className="mb-2 text-base font-medium text-[var(--fg)] [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_4px_var(--bg),0_0_9px_var(--bg),0_1px_2px_var(--bg)]">
+            Credits never expire. No monthly minimum.
+          </p>
+          {/* Line 4: the target audience — same size/weight as line 3 but visually subordinate
+              (--fg-muted). Light halo like the other lines; dark-mode contrast handled text-side below. */}
+          <p className="mb-10 text-base font-medium text-[var(--fg-muted)] [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_5px_var(--bg),0_0_11px_var(--bg),0_1px_2px_var(--bg)]">
+            For interviews, lectures, podcasts and long-form video.
           </p>
           <div className="flex w-full flex-col items-center justify-center gap-4 sm:w-auto sm:flex-row">
             <Link href="#try" className="w-full sm:w-auto">
