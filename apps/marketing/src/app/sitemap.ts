@@ -24,6 +24,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/privacy",
     "/terms",
 
+    // Alternatives (commercial comparison pages — ADR-105)
+    "/alternatives/otter-ai",
+
     // Docs — Getting started
     "/docs",
     "/docs/quickstart",

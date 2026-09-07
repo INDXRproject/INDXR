@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { FREE_TIER } from "@indxr/shared/lib/pricing"
@@ -137,6 +138,15 @@ export default function PricingPage() {
           <p className="mt-4 text-center text-sm text-[var(--fg-muted)]">
             Payment isn&apos;t available in every country yet.{" "}
             <a href="#faq" className="text-[var(--accent)] hover:underline">See who can buy</a>.
+          </p>
+
+          {/* Comparison landing page — surfaced for people weighing INDXR against another tool (ADR-105). */}
+          <p className="mt-2 text-center text-sm text-[var(--fg-muted)]">
+            Coming from another tool?{" "}
+            <Link href="/alternatives/otter-ai" className="text-[var(--accent)] hover:underline">
+              INDXR vs Otter.ai
+            </Link>
+            .
           </p>
 
           {/* Section 9 — FAQ */}

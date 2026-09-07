@@ -40,6 +40,10 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/privacy": "2026-08-30",
   "/terms": "2026-07-20",
 
+  // Alternatives (commercial comparison pages — ADR-105). New page created 2026-09-07; for a brand-new
+  // page the creation date IS its real last-content date (this is the one legitimate use of "today").
+  "/alternatives/otter-ai": "2026-09-07",
+
   // Docs — Getting started
   "/docs": "2026-07-23",
   "/docs/quickstart": "2026-08-26",
