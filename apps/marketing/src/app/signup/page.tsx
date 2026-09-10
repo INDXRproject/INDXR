@@ -78,8 +78,11 @@ export default function SignupPage() {
     }
   }
 
+  // pt-20 (5rem) clears the fixed h-16 (4rem) header with breathing room: the sign-up form is tall
+  // enough to overflow common viewports, so it pins near the top rather than centering, and py-12 alone
+  // left the logo only ~16px below the navbar. Bottom stays pb-12 for scroll clearance.
   return (
-    <div className="auth-shell relative min-h-screen flex items-center justify-center px-4 py-12 bg-bg overflow-hidden">
+    <div className="auth-shell relative min-h-screen flex items-center justify-center px-4 pt-20 pb-12 bg-bg overflow-hidden">
       <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
       <Card className="relative w-full max-w-md p-8 border shadow-sm">
 

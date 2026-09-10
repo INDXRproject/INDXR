@@ -22,13 +22,19 @@ export default async function CreditsPage() {
   const parsedCredits = creditsData as { credits?: number }
   const credits = parsedCredits?.credits || 0
 
-  // Full credit ledger (deductions, refunds, grants, purchases).
+  // Credit ledger for the activity view. We fetch every row EXCEPT settlements: settlements are
+  // record-only (settle_credits / the reserved-playlist branch never move user_credits.credits — verified
+  // against the RPCs), and TransactionHistoryCard drops them anyway. Excluding them server-side keeps all
+  // balance-moving rows (reservation/refund/grant/purchase/legacy debit) — so the grouped view still sums
+  // to the authoritative balance — while dropping the bulk of the rows, keeping us well under PostgREST's
+  // 1000-row cap for any realistic user. RLS scopes this to the user's own rows.
   const { data: transactions } = await supabase
     .from("credit_transactions")
     .select("*")
     .eq("user_id", user.id)
+    .or("kind.is.null,kind.neq.settlement")
     .order("created_at", { ascending: false })
-    .limit(20)
+    .limit(1000)
 
   // Purchases: 'credit'-transacties met een Stripe-session in metadata (met factuurknop).
   const { data: purchaseRows } = await supabase

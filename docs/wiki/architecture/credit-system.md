@@ -406,3 +406,27 @@ Het admin-dashboard toont een volledige P&L-keten uit één auditeerbare RPC. In
 **Admin herontwerp (ADR-056):** test-accounts worden nu **automatisch** intern geflagd bij aanmaak (BEFORE INSERT-trigger: `@indxr-test.com` + elk `+test`-adres), plus een handmatige "Mark internal/external"-toggle in de Users-tabel. Handmatige grant-redenen: Testing / Bug report / Billing / Feedback / Goodwill (Welcome + Refund gebeuren automatisch). Groei/systeem-cijfers: `admin_growth_summary()` (funnel, externe users) + `admin_operations_summary()` (job-health, alle jobs).
 
 **Finance-tab periode-model (ADR-059/060, 2026-07-15):** de all-time `admin_geld_summary` is range-aware gemaakt (`_geld_scope(p_internal,p_from,p_to)`, regressie byte-identiek) en gevoed in een onherstelbare nachtelijke `finance_daily_snapshot` (pg_cron, DST-aware Amsterdam-dag). De live Finance-tab draait op `admin_finance_summary(from,to)`: Revenue(delivered) − COR = Gross − OPEX = Net per periode, met bankbrug, cache-savings, deferred-schatting en honest `vat_computed`. OPEX splitst **measured** (funnels, goodwill, Stripe-fee op verkoopdatum) vs **entered** (infra/ads/eenmalig via `opex_expenses`-accrual, external-only). Point-in-time paid/internal wordt nu op élke debit gestempeld (trigger `stamp_credit_debit_point_in_time`), niet alleen bij captions. Stripe-fee komt uit `balance_transaction.fee_details` (geen hardcoded rates) — zie [database-schema.md](database-schema.md#finance-tab-capture--accrual-2026-07-15-adr-059060).
+
+---
+
+## Gebruiker-zichtbare geschiedenis — weergavelaag (2026-09-10)
+
+**Weergave, geen datamigratie.** De ledger (`credit_transactions`) blijft append-only en compleet met álle boekingsstappen. Wat de gebruiker ziet op `/dashboard/credits` (component `TransactionHistoryCard`) is een **read-only afgeleide**: het netto resultaat per operatie, niet de losse stappen.
+
+**Welke rijen bewegen het saldo** (geverifieerd tegen de RPC-broncode, 2026-09-10):
+
+| kind | beweegt `user_credits.credits`? | rol |
+|------|-------------------------------|-----|
+| `reservation` | **ja** (`credits − reserved`) | hold bij jobstart |
+| `settlement` | **nee** (alleen INSERT) | record van verbruik per (video); `settle_credits` én de gereserveerde tak van `update_playlist_video_progress` |
+| `refund` | **ja** (`credits + (reserved − consumed)`) | afsluitregel, verrekent |
+| `grant` / `purchase` / `null`-credit | ja (`+`) | toekenning/aankoop |
+| `null`-debit | ja (`−`) | directe aftrek (legacy summary/storage; ongereserveerde `update_playlist_video_progress`-tak) |
+
+Netto per operatie = `−reserved + refund = −consumed`. Eén afgeronde 1-credit-transcriptie is 3 rijen (−1 reservation, −1 settlement record, +0 refund) die naïef −2 optellen terwijl het saldo −1 bewoog.
+
+**De regel (`packages/shared/src/lib/creditHistory.ts`, `buildCreditActivity`):** groepeer `reservation`+`refund` op `job_id`/`playlist_id`, som de saldo-bewegende rijen per groep tot één regel (settlements = 0, dus weggelaten zonder de som te raken), label uit de refund-`metadata` (`consumed/refunded/failed_count/total` — werkt voor Engelse én legacy-Nederlandse rijen). Pending (reservering zonder refund) = aparte "in progress"-regel met de hold. Labels bevatten **geen** ledger-jargon (reservation/settlement/reserved/refunded) → "used"/"returned"/"in progress". **Invariant:** Σ(zichtbare regels) == `user_credits.credits`. Bewezen read-only tegen productie: **12/13 users reconcileren exact**; 1 legacy/test-account (mbelabas, eerste activiteit 2026-06-30) reconcilieert niet — z'n ledger telt zelfs in ruwe SQL niet op tot het saldo (settlement-semantiek veranderde over migraties). Geen fallback verzonnen; het saldo blijft gezaghebbend uit `user_credits.credits`.
+
+**Fetch:** de credits-pagina haalt alle rijen **behalve settlements** op (`.or('kind.is.null,kind.neq.settlement')`) — die worden toch weggelaten, en dit houdt de fetch onder PostgREST's 1000-rij-cap voor elke realistische gebruiker.
+
+**Admin blijft volledig:** `/api/admin/user-detail?type=transactions` + `admin/users/UsersTable.tsx` tonen de rauwe, ongegroepeerde rijen (elke reservation/settlement/refund met hun rauwe `reason`) voor support — bewust niet gedeeld met de gebruikersweergave. Zie [[docs/LESSONS.md]] 2026-09-10 credit-ledger-display.
