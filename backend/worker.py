@@ -1153,10 +1153,19 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
 
     # Elke pass hieronder vangt zijn eigen query-fout als WARNING en gaat door — bedoeld,
     # zodat één dode pass de andere niet blokkeert. Maar een pass die STIL niets doet is
-    # erger dan geen watchdog. We verzamelen hier welke passes hun werk niet konden doen en
-    # geven aan het eind één expliciet ERROR-signaal af (zie onderaan) — zo is een
-    # structureel falende cron onderscheidbaar van een incidentele netwerkhik.
-    _pass_failures: list[str] = []
+    # erger dan geen watchdog. We verzamelen hier welke passes hun werk niet konden doen —
+    # mét het exception-type en de message — en geven aan het eind één expliciet ERROR-
+    # signaal af (zie onderaan) — zo is een structureel falende cron onderscheidbaar van een
+    # incidentele netwerkhik, én is DIRECT uit het DEGRADED-event te zien WAAROM een pass viel
+    # (type queryable als tag, message in de context) zonder naar de losse WARNING te hoeven.
+    _pass_failures: list[dict] = []
+
+    def _record_pass_failure(name: str, exc: Exception) -> None:
+        _pass_failures.append({
+            "pass": name,
+            "error_type": type(exc).__name__,
+            "error_message": str(exc)[:500],
+        })
 
     # ── Pass 0: Reaper — sluit stuck jobs in niet-terminale status ────────
     # Twee strikt gescheiden branches om playlist-video-jobs NOOIT te rapen.
@@ -1202,7 +1211,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "0a")
             scope.set_level("warning")
         sentry_sdk.capture_exception(_e)
-        _pass_failures.append("0a")
+        _record_pass_failure("0a", _e)
 
     # Pass 0b: stuck active — standalone job die gecrashed is tijdens verwerking.
     # IS NOT NULL op last_heartbeat_at sluit playlist-video-jobs uit (hun heartbeat
@@ -1240,7 +1249,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "0b")
             scope.set_level("warning")
         sentry_sdk.capture_exception(_e)
-        _pass_failures.append("0b")
+        _record_pass_failure("0b", _e)
 
     # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
     try:
@@ -1302,7 +1311,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "1a")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
-        _pass_failures.append("1a")
+        _record_pass_failure("1a", e)
 
     # ── Pass 1b: playlist_extraction_jobs re-enqueue ──────────────────────
     # Handles two cases:
@@ -1415,7 +1424,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "1b")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
-        _pass_failures.append("1b")
+        _record_pass_failure("1b", e)
 
     # ── Pass 2: auto-refund — heartbeat stale na re-enqueue ──────────────
     # Selecteert transcription_jobs met watchdog_attempts>=1 en heartbeat stale.
@@ -1457,7 +1466,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "2")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
-        _pass_failures.append("2")
+        _record_pass_failure("2", e)
 
     # ── Pass 2b: playlist auto-refund — gecrashte GERESERVEERDE playlist ─────
     # Een playlist die NA re-enqueue (Pass 1b, watchdog_attempts>=1) opnieuw stale
@@ -1494,7 +1503,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "2b")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
-        _pass_failures.append("2b")
+        _record_pass_failure("2b", e)
 
     # ── Pass 2c: reconciliatie-vangnet — gemiste terminale refunds ────────────────
     # Dekt het residuele gat dat de bounded-retry NIET dekt: een worker-crash tussen de
@@ -1554,7 +1563,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "summary-reaper")
             scope.set_level("warning")
         sentry_sdk.capture_exception(_e)
-        _pass_failures.append("summary-reaper")
+        _record_pass_failure("summary-reaper", _e)
 
     # ── Pass 3: reap stale RUNNING playlists (stuck-playlist fix) ──────────────
     # Een 'running' playlist waarvan de ARQ-keten stierf is onzichtbaar voor Pass 1b/2b (die query'en
@@ -1592,7 +1601,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "reap-running")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
-        _pass_failures.append("reap-running")
+        _record_pass_failure("reap-running", e)
 
     # ── Run-status signaal ────────────────────────────────────────────────────
     # Elke pass hierboven vangt zijn query-fout als WARNING en gaat door. Een structureel
@@ -1601,15 +1610,23 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # signaal zodra een pass zijn werk NIET kon doen: herhaalt dit elke run, dan is het
     # structureel (queryable op tag watchdog_run:degraded), niet één blip.
     if _pass_failures:
+        _names = [f["pass"] for f in _pass_failures]
+        # error_type is laag-cardinaal → queryable tag; de message is hoog-cardinaal → context,
+        # niet als tag (anders ontploft de tag-index). Beide óók in de logregel zodat Railway-logs
+        # de diagnose alleen al dragen.
+        _types = sorted({f["error_type"] for f in _pass_failures})
+        _detail = "; ".join(f'{f["pass"]}:{f["error_type"]}: {f["error_message"]}' for f in _pass_failures)
         _msg = (
             f"[WATCHDOG] run DEGRADED — {len(_pass_failures)} pass(es) konden niet draaien: "
-            f"{', '.join(_pass_failures)}"
+            f"{', '.join(_names)} ({_detail})"
         )
         logger.error(_msg)
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("watchdog_run", "degraded")
-            scope.set_tag("failed_passes", ",".join(_pass_failures))
+            scope.set_tag("failed_passes", ",".join(_names))
+            scope.set_tag("failed_pass_types", ",".join(_types))
+            scope.set_context("watchdog_pass_failures", {"failures": _pass_failures})
             scope.set_level("error")
             sentry_sdk.capture_message(_msg, level="error")
     else:
