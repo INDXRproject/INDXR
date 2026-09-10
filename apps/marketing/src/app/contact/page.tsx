@@ -70,7 +70,8 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg)]">
-      <div className="max-w-3xl mx-auto px-4 py-20">
+      {/* pt-28 clears the fixed h-16 header + a 3rem gap (matches About/Privacy/Terms/Compare). */}
+      <div className="max-w-3xl mx-auto px-4 pt-28 pb-20">
         <div className="text-center mb-14">
           <h1 className="text-3xl font-semibold text-[var(--fg)] mb-3">How can we help?</h1>
           <p className="text-[var(--fg-subtle)]">Tell us what&apos;s on your mind — we read and reply to everything.</p>

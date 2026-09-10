@@ -160,7 +160,8 @@ export default function OtterAlternativePage() {
       <div className="relative min-h-screen bg-[var(--bg)]">
         <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
 
-        <div className="relative container mx-auto px-4 pb-24 pt-12 sm:px-6 lg:px-8">
+        {/* pt-28 clears the fixed h-16 header + a 3rem gap (matches About/Privacy/Terms/Contact). */}
+        <div className="relative container mx-auto px-4 pb-24 pt-28 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl">
             {/* Hero */}
             <p className="text-sm font-medium uppercase tracking-wide text-[var(--fg-subtle)]">

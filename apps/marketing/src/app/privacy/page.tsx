@@ -9,7 +9,8 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <>
-      <main className="container mx-auto px-4 py-16 max-w-2xl">
+      {/* pt-28 clears the fixed h-16 header + a 3rem gap (matches About/Terms/Compare/Contact). */}
+      <main className="container mx-auto px-4 pt-28 pb-16 max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight text-[var(--fg)] mb-2">
           Privacy Policy
         </h1>
