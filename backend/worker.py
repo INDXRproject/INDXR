@@ -1151,6 +1151,13 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     stale_before = (now - timedelta(minutes=5)).isoformat()
     cutoff_24h = (now - timedelta(hours=24)).isoformat()
 
+    # Elke pass hieronder vangt zijn eigen query-fout als WARNING en gaat door — bedoeld,
+    # zodat één dode pass de andere niet blokkeert. Maar een pass die STIL niets doet is
+    # erger dan geen watchdog. We verzamelen hier welke passes hun werk niet konden doen en
+    # geven aan het eind één expliciet ERROR-signaal af (zie onderaan) — zo is een
+    # structureel falende cron onderscheidbaar van een incidentele netwerkhik.
+    _pass_failures: list[str] = []
+
     # ── Pass 0: Reaper — sluit stuck jobs in niet-terminale status ────────
     # Twee strikt gescheiden branches om playlist-video-jobs NOOIT te rapen.
     # Zie ADR-049. Volgorde: Pass 0 vóór Pass 1a zodat credits_deducted=True
@@ -1195,6 +1202,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "0a")
             scope.set_level("warning")
         sentry_sdk.capture_exception(_e)
+        _pass_failures.append("0a")
 
     # Pass 0b: stuck active — standalone job die gecrashed is tijdens verwerking.
     # IS NOT NULL op last_heartbeat_at sluit playlist-video-jobs uit (hun heartbeat
@@ -1232,6 +1240,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "0b")
             scope.set_level("warning")
         sentry_sdk.capture_exception(_e)
+        _pass_failures.append("0b")
 
     # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
     try:
@@ -1293,6 +1302,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "1a")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
+        _pass_failures.append("1a")
 
     # ── Pass 1b: playlist_extraction_jobs re-enqueue ──────────────────────
     # Handles two cases:
@@ -1405,6 +1415,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "1b")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
+        _pass_failures.append("1b")
 
     # ── Pass 2: auto-refund — heartbeat stale na re-enqueue ──────────────
     # Selecteert transcription_jobs met watchdog_attempts>=1 en heartbeat stale.
@@ -1446,6 +1457,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "2")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
+        _pass_failures.append("2")
 
     # ── Pass 2b: playlist auto-refund — gecrashte GERESERVEERDE playlist ─────
     # Een playlist die NA re-enqueue (Pass 1b, watchdog_attempts>=1) opnieuw stale
@@ -1482,6 +1494,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "2b")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
+        _pass_failures.append("2b")
 
     # ── Pass 2c: reconciliatie-vangnet — gemiste terminale refunds ────────────────
     # Dekt het residuele gat dat de bounded-retry NIET dekt: een worker-crash tussen de
@@ -1541,6 +1554,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "summary-reaper")
             scope.set_level("warning")
         sentry_sdk.capture_exception(_e)
+        _pass_failures.append("summary-reaper")
 
     # ── Pass 3: reap stale RUNNING playlists (stuck-playlist fix) ──────────────
     # Een 'running' playlist waarvan de ARQ-keten stierf is onzichtbaar voor Pass 1b/2b (die query'en
@@ -1578,6 +1592,28 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
             scope.set_tag("pass", "reap-running")
             scope.set_level("warning")
         sentry_sdk.capture_exception(e)
+        _pass_failures.append("reap-running")
+
+    # ── Run-status signaal ────────────────────────────────────────────────────
+    # Elke pass hierboven vangt zijn query-fout als WARNING en gaat door. Een structureel
+    # falende cron (bv. de HTTP/2-GOAWAY-bug die elke run Pass 1b sloopte) zag er in Sentry
+    # dáárdoor identiek uit aan een eenmalige netwerkhik. Daarom hier één expliciet ERROR-
+    # signaal zodra een pass zijn werk NIET kon doen: herhaalt dit elke run, dan is het
+    # structureel (queryable op tag watchdog_run:degraded), niet één blip.
+    if _pass_failures:
+        _msg = (
+            f"[WATCHDOG] run DEGRADED — {len(_pass_failures)} pass(es) konden niet draaien: "
+            f"{', '.join(_pass_failures)}"
+        )
+        logger.error(_msg)
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("task_name", "watchdog_interrupted_jobs")
+            scope.set_tag("watchdog_run", "degraded")
+            scope.set_tag("failed_passes", ",".join(_pass_failures))
+            scope.set_level("error")
+            sentry_sdk.capture_message(_msg, level="error")
+    else:
+        logger.info("[WATCHDOG] run ok — alle passes voltooid")
 
     # BetterStack worker-heartbeat (env-gated: inert tot BETTERSTACK_HEARTBEAT_URL op de worker-service
     # staat). Draait aan het EIND van elke watchdog-cyclus (elke 2 min); een geslaagde ping bewijst dat

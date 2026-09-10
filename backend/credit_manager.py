@@ -7,7 +7,8 @@ import os
 import math
 import logging
 from typing import Dict, Optional
-from supabase import create_client, Client
+import httpx
+from supabase import create_client, Client, ClientOptions
 
 logger = logging.getLogger("indxr-backend")
 
@@ -33,9 +34,28 @@ def get_supabase_client() -> Client:
         
         if not supabase_url or not supabase_key:
             raise Exception("Supabase credentials not configured in .env")
-        
-        _supabase_client = create_client(supabase_url, supabase_key)
-        logger.info("Supabase client initialized")
+
+        # HTTP/2 UIT op de langlevende worker-singleton. PostgREST's SyncPostgrestClient
+        # zet default `http2=True`; met h2 geïnstalleerd wordt HTTP/2 onderhandeld met
+        # Supabase's edge. Die edge sluit een idle HTTP/2-connectie met een GOAWAY-frame
+        # (ConnectionTerminated, error_code NO_ERROR). httpx 0.28.1 detecteert dat niet en
+        # hergebruikt de dode connectie → RemoteProtocolError bij de eerstvolgende call.
+        # Dit trof de watchdog-cron (elke 2 min, lange idle-gaten) structureel. Bekend,
+        # nog-open httpx-issue #2112; de server-side fix (keepalive_requests) is Supabase-
+        # beheerd, buiten onze controle. HTTP/1.1 retireert een server-gesloten idle
+        # keep-alive connectie wél correct (socket-readable-check in httpcore). HTTP/2-
+        # multiplexing levert deze worker (sequentiële REST-calls) niets op. Zie LESSONS.md.
+        _httpx_client = httpx.Client(
+            http2=False,
+            timeout=httpx.Timeout(120.0),  # gelijk aan DEFAULT_POSTGREST_CLIENT_TIMEOUT
+            follow_redirects=True,          # PostgREST's eigen client zet dit ook
+        )
+        _supabase_client = create_client(
+            supabase_url,
+            supabase_key,
+            options=ClientOptions(httpx_client=_httpx_client),
+        )
+        logger.info("Supabase client initialized (HTTP/2 disabled — GOAWAY-safe)")
     
     return _supabase_client
 
