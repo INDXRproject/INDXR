@@ -39,6 +39,14 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // IP nooit opslaan: expliciet $ip=null → PostHog-ingestion slaat geen IP op en
       // doet geen GeoIP. In-code (robuuster dan de org-level toggle).
       before_send: (event) => {
+        // Google's landing-page-checker bot ("Google-AdWords-Express" in de UA, res 1024x768, tz
+        // America/Los_Angeles, 2 events/sessie, 0 pageleaves) vervuilde 66/122 homepage-pageviews en
+        // 64/99 transcribe_page_viewed op / (export deze week). Drop ALLE events van die client op de
+        // UA (niet op de gclid-vorm — die is legitiem verkeer) → ze tellen nooit in funnels mee.
+        if (typeof navigator !== 'undefined' && navigator.userAgent &&
+            navigator.userAgent.includes('Google-AdWords-Express')) {
+          return null
+        }
         if (event && event.properties) {
           event.properties.$ip = null
         }

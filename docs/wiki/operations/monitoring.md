@@ -79,6 +79,33 @@ Backend tracking: `backend/main.py:33-40` (`track_event()` functie)
 
 **Fire-and-forget:** PostHog tracking blokkeert nooit de hoofdflow. Failures worden gelogd als warnings.
 
+### Botfilter — Google-AdWords-Express (2026-09-11)
+
+Google's landing-page-checker bot (user-agent bevat **`Google-AdWords-Express`**, resolutie 1024×768,
+tz America/Los_Angeles, exact 2 events/sessie, 0 pageleaves) vervuilde 66 van 122 homepage-pageviews en
+64 van 99 `transcribe_page_viewed` op `/` (export deze week). Gefilterd in **`PostHogProvider.before_send`**:
+events waarvan `navigator.userAgent` `Google-AdWords-Express` bevat → `return null` (gedropt, bereiken
+PostHog nooit → tellen niet in funnels). **Bewust op de user-agent, niet op de gclid-vorm** — een `?gclid=`
+is legitiem advertentieverkeer. Gedeelde provider → geldt voor marketing én app.
+
+### Crawler-policy & sitemap (verificatie 2026-09-11)
+
+- **robots.txt** (`apps/marketing/public/robots.txt`): geen blanket `Disallow` onder `User-agent: *`
+  (alleen `/api,/dashboard,/admin,/auth`); OAI-SearchBot / ChatGPT-User / Claude-SearchBot zijn toegestaan
+  **via `*`** — GEEN named `Allow: /`-groepen toevoegen (die erven de Disallows niet → heropenen stil de
+  private paden; LESSONS 2026-08-02 / ADR-077). Sitemap gedeclareerd. `apps/app/public/robots.txt` is
+  bewust `Disallow: /` (het app-subdomein is volledig privé, geen publieke inhoud).
+- **Sitemap** (`https://indxr.ai/sitemap.xml`): alle 43 URL's → **200** (geen redirect-bron in de sitemap,
+  getest 2026-09-11). De Search Console-melding "Page with redirect" is een **domein-niveau canonical
+  redirect** (`www.indxr.ai` → 301 → apex, `http` → 308 → https) — correct gedrag, niet in de sitemap →
+  niets te verwijderen.
+- **Google Ads click-ID's** (campagne-attributie): `profiles.gclid`/`gbraid`/`wbraid` + `click_id_at`
+  worden server-side bij signup vastgelegd (12/20 profielen, 2026-09-11) — dit is de duurzame,
+  campagne-kritieke bron (offline-upload-klaar), onafhankelijk van PostHog. PostHog's `$initial_gclid`
+  (person-property) is een aparte, secundaire analytics-waarde; die is minder betrouwbaar over de
+  domeingrens door `persistence:'memory'` + `person_profiles:'identified_only'` (zie ADR-103) en raakt de
+  Google Ads-attributie niet.
+
 ---
 
 ## Identiteit over de OAuth-/verificatie-grens (ADR-103)
