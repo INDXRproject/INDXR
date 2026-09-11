@@ -6,6 +6,19 @@ INDXR.AI maakt van audio, video en YouTube-links **accurate, van sprekerlabels v
 
 Het **betaalde AI-transcriptieproduct** (uploads en AI-transcriptie, 1 credit/minuut) draagt de positionering. Gratis caption-extractie uit YouTube-video's die al ondertitels hebben blijft bestaan, maar is een **funnel/instap, geen kernbelofte** — die markt is een gratis-markt (keyword-meting: `youtube transcript` competition-index 3–9, top-10 vol "Free"). Zie [ADR-102](../decisions/102-transcription-first-homepage-positioning.md).
 
+### Transcribe-oppervlak: Upload-first (2026-09-11)
+
+De positionering is **"audio- en videobestanden transcriberen, plus YouTube-links"** — niet
+"YouTube-transcripties". Bewijs uit gebruik + spend: 16 van 17 AI-transcriptiejobs deze week hadden
+`source_type=upload` (de enige "youtube"-job was een intern backend-event), en beide Google Ads-campagnes
+bieden op file-keywords ("transcribe video file to text" alleen = 57% van de spend). De transcribe-tab
+(gedeelde `TranscribeWorkbench`/`ModeStrip`, marketing én app) staat daarom in de volgorde
+**Upload → YouTube → Playlist**, met **Upload als default-tab** (bare `/transcribe` → Upload;
+`?mode=video`/`?mode=playlist` deep-linken nog naar die tabs). De middelste tab heet **"YouTube"**
+(was "Video") omdat Upload nu óók videobestanden verwerkt — "YouTube" benoemt de bron (een link)
+ondubbelzinnig tegenover de bestand-upload. Copy op de homepage-hero en `/transcribe` leidt met upload;
+YouTube is één van de bronnen, niet de kernbelofte. Prijs/credit-claims ongewijzigd.
+
 **Core use cases:**
 - Onderzoekers die interviews en bronmateriaal transcriberen en citeren (sprekerlabels + tijdstempels)
 - Mensen met eigen opnames (voice memo's, M4A/WAV, videobestanden) die accurate tekst willen

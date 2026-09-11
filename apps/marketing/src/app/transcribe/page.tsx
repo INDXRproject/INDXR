@@ -39,10 +39,10 @@ export default function FreeToolPage() {
       {/* Hero + tool */}
       <div className="container max-w-4xl py-24 px-4 mx-auto text-center">
         <h1 className="text-4xl font-bold text-[var(--fg)] mb-6">
-          Free YouTube transcript generator
+          Free transcript generator for audio, video and YouTube
         </h1>
         <p className="text-[var(--fg-muted)] mb-10 text-lg max-w-2xl mx-auto">
-          Extract YouTube transcripts instantly. Free for videos with captions. AI transcription for videos without. Export as {exportFormatsProse("or")}. No extension needed.
+          Upload an audio or video file, or paste a YouTube link. YouTube videos with captions are free; AI transcription handles everything else. Export as {exportFormatsProse("or")}. No extension needed.
         </p>
 
         <FreeToolEmbed />

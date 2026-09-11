@@ -19,10 +19,14 @@ import { VideoModeIcon, PlaylistModeIcon, AudioModeIcon } from "../icons/Transcr
  * Must be rendered inside a <Tabs> (TabsPrimitive.Root) — it only supplies the List.
  */
 
+// Order Upload → YouTube → Playlist with Upload first (Taak 6, 2026-09-11): the product is used
+// ~16:1 for file uploads and the ad spend bids on file keywords, so Upload leads. The middle tab is
+// relabelled "Video" → "YouTube" because Upload now also handles video files — "YouTube" names the
+// SOURCE (a link) unambiguously against the file-upload tab.
 const MODES = [
-  { value: "video", label: "Video", Icon: VideoModeIcon },
-  { value: "playlist", label: "Playlist", Icon: PlaylistModeIcon },
   { value: "audio", label: "Upload", Icon: AudioModeIcon },
+  { value: "video", label: "YouTube", Icon: VideoModeIcon },
+  { value: "playlist", label: "Playlist", Icon: PlaylistModeIcon },
 ] as const
 
 export function ModeStrip({ className }: { className?: string }) {

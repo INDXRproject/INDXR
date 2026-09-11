@@ -129,8 +129,8 @@ export default async function LandingPage() {
             Transcripts you pay for by the minute, no subscription
           </h1>
           <p className="mx-auto mb-4 max-w-[720px] text-lg leading-relaxed text-[var(--fg)] sm:text-xl [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_3px_var(--bg),0_0_3px_var(--bg),0_0_5px_var(--bg),0_0_5px_var(--bg),0_0_9px_var(--bg),0_0_13px_var(--bg)]">
-            Paste a YouTube link or upload a recording. You get a clean transcript with speaker labels and
-            timestamps, ready to edit, search and export.
+            Upload an audio or video file — or paste a YouTube link. You get a clean transcript with speaker
+            labels and timestamps, ready to edit, search and export.
           </p>
           <p className="mb-2 text-base font-medium text-[var(--fg)] [text-shadow:0_0_3px_var(--bg),0_0_6px_var(--bg),0_1px_2px_var(--bg)] dark:[text-shadow:0_0_4px_var(--bg),0_0_9px_var(--bg),0_1px_2px_var(--bg)]">
             Credits never expire. No monthly minimum.
@@ -159,19 +159,19 @@ export default async function LandingPage() {
       <section id="try" className={`${SECTION} scroll-mt-24`}>
         <div className={CONTENT}>
           <h2 className="mb-3 text-center text-2xl font-bold text-[var(--fg)] sm:text-3xl">
-            Paste a link and see for yourself
+            Upload a file and see for yourself
           </h2>
           <p className="mx-auto mb-10 max-w-2xl text-center text-[var(--fg-subtle)]">
             {loggedIn ? (
               <>
-                Paste a link or upload a recording and see the transcript for yourself. Playlists and file
-                uploads open in the app.
+                Upload an audio or video file — or paste a link — and see the transcript for yourself.
+                Playlists and file uploads open in the app.
               </>
             ) : (
               <>
-                No account, no card. Paste a link or upload a recording and see the transcript for yourself.
-                A free account comes with {welcomeCredits} credits, enough for {welcomeMinutes} minutes of AI
-                transcription.
+                No account, no card. Upload an audio or video file — or paste a link — and see the transcript
+                for yourself. A free account comes with {welcomeCredits} credits, enough for {welcomeMinutes}
+                minutes of AI transcription.
               </>
             )}
           </p>

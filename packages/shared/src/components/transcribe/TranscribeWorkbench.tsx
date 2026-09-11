@@ -12,7 +12,10 @@ export type TranscribeMode = "video" | "playlist" | "audio"
 const MODES: TranscribeMode[] = ["video", "playlist", "audio"]
 
 function normalizeMode(raw: string | null): TranscribeMode {
-  return raw && (MODES as string[]).includes(raw) ? (raw as TranscribeMode) : "video"
+  // Default = "audio" (Upload). The product is used ~16:1 for file uploads over YouTube links and the
+  // ad spend bids on file keywords, so Upload is the primary path (Taak 6, 2026-09-11). ?mode=video /
+  // ?mode=playlist still deep-link to those tabs; a bare URL now lands on Upload.
+  return raw && (MODES as string[]).includes(raw) ? (raw as TranscribeMode) : "audio"
 }
 
 /**
@@ -79,9 +82,9 @@ function TranscribeWorkbenchInner({
     const value = normalizeMode(next)
     setMode(value)
     const params = new URLSearchParams(window.location.search)
-    // video is the default — keep the URL bare so the marketing canonical (ADR-077)
+    // audio (Upload) is the default — keep the URL bare so the marketing canonical (ADR-077)
     // and the common case carry no query.
-    if (value === "video") params.delete("mode")
+    if (value === "audio") params.delete("mode")
     else params.set("mode", value)
     const query = params.toString()
     const url = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`
