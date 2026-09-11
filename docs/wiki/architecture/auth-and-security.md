@@ -242,6 +242,21 @@ signup-block: breekt geen bestaande accounts en geen legitieme `+addressing`-geb
 `authenticated`+`service_role`-only (zie RPC EXECUTE-tabel hierboven). Detail + credit-flow in
 [credit-system.md](credit-system.md#welcome-reward).
 
+**Onboarding-gate op twee plekken (2026-09-11).** Username/role + de 50 welkomst-credits worden gezet door
+`updateProfileAction` (`auth-actions.ts`), bereikbaar via "Start transcribing →". De auth-callback
+(`auth/callback/route.ts`) redirect een `!onboarding_completed`-profiel al naar `/onboarding` — maar
+**alleen op het callback-pad** (verse login/verify). Een user die /onboarding anders verliet (de navbar
+"Go to app", een directe `/dashboard`-URL, browser-back) sprong met een al-geauthenticeerde sessie
+rechtstreeks de app in, langs die gate → geen role, 0 credits (taibarashid14, 2026-09-04; 1 van 13
+signups). **Fix:** dezelfde gate staat nu óók in de dashboard-layout (`apps/app/.../dashboard/layout.tsx`)
+— het enige chokepoint waar élke dashboard-route doorheen rendert: `!onboarding_completed` → redirect naar
+`${MARKETING_URL}/onboarding` (absolute URL, subdomain-split), plus een claim-safety-net (`!welcome_
+reward_claimed` → `claim_welcome_reward`) voor de completed-maar-ongeclaimd-edge (de grant in
+`updateProfileAction` is best-effort). Zo convergeert élke onboarding-uitgang op een compleet account
+(role + 50 credits). Geverifieerd 2026-09-11: geen legacy-user heeft `onboarding_completed=false` terwijl
+'ie is ingericht → de gate bounced alleen echt-incomplete profielen. Financieel-kritiek: altijd via de
+idempotente `claim_welcome_reward`-RPC, nooit een directe INSERT/UPDATE.
+
 **Eerlijke, geaccepteerde grens:** dit stopt de `+`/puntjes-truc, **niet** tien écht verschillende
 mailadressen — inherent aan een gratis-instapmodel zonder betaalmuur. Zwaardere lagen
 (device-fingerprint / betaalmethode-vereiste, ADR-024) zijn bewust **niet** nu gebouwd → backlog.
