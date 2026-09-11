@@ -527,6 +527,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         <ErrorCard
           {...resolveErrorCopy(error.code, {
             mode: "audio",
+            step: 'audio_upload',
+            sourceType: 'upload',
+            fileType: file ? (file.name.split('.').pop()?.toLowerCase() ?? null) : null,
             fallbackMessage: error.message,
             availableCredits: user ? credits : null,
             billingHref: appHref('/dashboard/credits'),

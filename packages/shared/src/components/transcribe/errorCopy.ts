@@ -43,6 +43,12 @@ export type ErrorCtx = {
   accountHref?: string
   loginHref?: string
   contactHref?: string
+  // Diagnostics for the transcribe_error_unknown_code event (point 3): the step in the flow that
+  // produced the error, and what the user was transcribing. Without these an unmapped code is
+  // undiagnosable. sourceType = youtube | upload | playlist; fileType = upload extension (mp3/mp4/…).
+  step?: string
+  sourceType?: "youtube" | "upload" | "playlist" | string
+  fileType?: string | null
 }
 
 export type ResolvedError = {
@@ -349,8 +355,17 @@ export function resolveErrorCopy(code: string | null | undefined, ctx: ErrorCtx 
   }
 
   // Unknown / infra code → neutral, honest fallback. Never a dead end, never raw red text.
+  // Enriched (point 3): the real code plus the step in the flow and source/file type, so an unmapped
+  // code is diagnosable. Client-side validation (empty/invalid URL) no longer reaches here — the tabs
+  // render those inline — so a "(none)" code now means a genuinely codeless backend/network failure,
+  // which the step + source_type still make actionable.
   try {
-    posthog.capture("transcribe_error_unknown_code", { code: key || "(none)" })
+    posthog.capture("transcribe_error_unknown_code", {
+      code: key || "(none)",
+      step: ctx.step ?? null,
+      source_type: ctx.sourceType ?? null,
+      file_type: ctx.fileType ?? null,
+    })
   } catch {
     // posthog may be uninitialised (e.g. SSR) — non-fatal.
   }

@@ -50,7 +50,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [showSignupCard, setShowSignupCard] = useState(false)
   const [videoTitle, setVideoTitle] = useState<string>("")
   const [videoUrl, setVideoUrl] = useState<string>("")
-  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType, isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean, errorType?: string, creditsRefunded?: number | null, requiredCredits?: number | null } | null>(null)
+  const [error, setError] = useState<{ message: string, type?: YouTubeUrlType | 'EMPTY', isYouTubeRestricted?: boolean, isCreditsError?: boolean, isMembersOnly?: boolean, isNoSpeech?: boolean, errorType?: string, creditsRefunded?: number | null, requiredCredits?: number | null } | null>(null)
   const [isPlaylistUrl, setIsPlaylistUrl] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState("")
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -453,7 +453,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     setIsPlaylistUrl(validation.type === 'PLAYLIST_IN_VIDEO')
 
     // Clear validation-only errors when URL changes
-    if (error && ['NON_YOUTUBE', 'MALFORMED', 'PLAYLIST_IN_VIDEO', 'CHANNEL'].includes(error.type || '')) {
+    if (error && ['NON_YOUTUBE', 'MALFORMED', 'PLAYLIST_IN_VIDEO', 'CHANNEL', 'EMPTY'].includes(error.type || '')) {
       setError(null)
     }
   }
@@ -491,8 +491,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   }
 
   const handleExtract = async (videoIdOrUrl?: string) => {
-    const targetUrl = videoIdOrUrl || url
-    if (!targetUrl) return
+    const targetUrl = (videoIdOrUrl || url).trim()
+    // Empty field → a VISIBLE inline error, never a silent no-op (Enter-key or click both land here).
+    // Analytics (source_selected/job_started) fire only once the backend confirms a job — see below.
+    if (!targetUrl) {
+      setError({ message: "Please enter a YouTube video URL to extract.", type: 'EMPTY' })
+      return
+    }
 
     // Remember exactly what was attempted so the error card's "Try again" can re-run the SAME
     // extraction (point 1) — it used to clear the field, forcing a re-paste. handleExtract routes
@@ -529,8 +534,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     // If showDuplicateChoices is true here, user clicked "Toch extraheren"
     setShowDuplicateChoices(false)
 
-    // Funnel: a valid video source was submitted (one event across all three modes).
-    posthog.capture('source_selected', { mode: 'video' })
+    // NB: source_selected/job_started are NOT fired here (that was "on the click" → phantoms when the
+    // backend created no job). They fire once the backend CONFIRMS a job/extraction — see the captions
+    // and AI paths below.
 
     // Proceed with extraction. Default action is normal insert
     setLoading(true)
@@ -610,7 +616,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
     // Standard auto-captions extraction path
     try {
-      posthog.capture('job_started', { mode: 'video', method: 'captions' })
       const response = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -648,6 +653,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         setError({ message: data.error || 'Failed to extract transcript', errorType: errType ?? undefined })
         return
       }
+
+      // Funnel: the backend CONFIRMED a successful captions extraction (a real job outcome), not the click.
+      posthog.capture('source_selected', { mode: 'video' })
+      posthog.capture('job_started', { mode: 'video', method: 'captions' })
 
       setTranscript(data.transcript)
       setVideoTitle(data.title || "")
@@ -755,7 +764,6 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     const { videoId } = pendingWhisperData
 
     try {
-      posthog.capture('job_started', { mode: 'video', method: 'ai' })
       const formData = new FormData()
       formData.append('source_type', 'youtube')
       formData.append('video_id', videoId)
@@ -791,6 +799,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       const jobData = await response.json()
       if (!jobData.job_id) throw new Error('Failed to start transcription job')
+      // Funnel: the backend CONFIRMED the AI job (job_id returned), not the click. source_selected +
+      // job_started fire here — alongside job_accepted — so all three reflect a real job.
+      posthog.capture('source_selected', { mode: 'video' })
+      posthog.capture('job_started', { mode: 'video', method: 'ai' })
       posthog.capture('job_accepted', { mode: 'video', method: 'ai' })
 
       const isDedup = !!jobData.deduplicated
@@ -1068,7 +1080,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               size="lg"
               className="h-12 px-6 shrink-0 min-w-[132px] justify-center disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
               onClick={() => handleExtract()}
-              disabled={loading || !url || isCheckingDuplicate}
+              // Enabled on an empty field on purpose: a click then surfaces the inline "enter a URL"
+              // validation (point 1) instead of a silent no-op (the app bug). loading/checking still gate.
+              disabled={loading || isCheckingDuplicate}
             >
               {loading || isCheckingDuplicate ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               {loading && isFetchingMeta ? "Checking…" : loading ? "Extracting…" : isCheckingDuplicate ? "Checking…" : "Extract"}
@@ -1216,6 +1230,15 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    </a>
                  </div>
                </div>
+             ) : error && ['EMPTY', 'NON_YOUTUBE', 'MALFORMED', 'PLAYLIST_IN_VIDEO'].includes(error.type || '') ? (
+               // Client-side validation (empty/invalid/playlist-in-video URL): a clean inline message at
+               // the field. NOT routed through resolveErrorCopy — that has no code for these, so it fired
+               // transcribe_error_unknown_code:"(none)" (the 20 undiagnosable events). Nothing hit the
+               // backend, so there is no code to show.
+               <div className="p-3 rounded-lg bg-surface-elevated/60 border border-error flex items-start gap-2 w-full">
+                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
+                 <p className="text-sm text-fg/90">{error.message}</p>
+               </div>
              ) : error ? (
                (() => {
                  // Map VideoTab's error flags to a backend code, then render the one shared
@@ -1230,6 +1253,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    : error.type === 'CHANNEL' ? 'channel_url'
                    : null)
                  const copy = resolveErrorCopy(errCode, {
+                   step: 'video_transcribe',
+                   sourceType: 'youtube',
                    fallbackMessage: error.message,
                    creditsRefunded: error.creditsRefunded,
                    availableCredits: user ? credits : null,
