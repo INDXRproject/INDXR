@@ -185,6 +185,36 @@ Let the length be determined by the content."
 
 Het `edited` veld wordt `true` zodra de gebruiker de samenvatting aanpast in de Tiptap editor.
 
+> ⚠️ **Het flow-blok hierboven is vereenvoudigd/verouderd** (pre-ADR-090). De echte pijplijn is
+> **twee-staps** (structuur + per-sectie uitwerking, `run_summary` in `summary_pipeline.py`),
+> draait als **achtergrond-ARQ-job op een gereserveerde `transcription_jobs`-rij**
+> (`source_kind='ai_summary'`, reserve→settle→refund i.p.v. `deduct_credits_atomic`), en de
+> creditprijs is **duur-afhankelijk** (`calculate_summary_cost`, niet vast 3). Zie ADR-090.
+
+### Betrouwbaarheid & kosten-onderbreker (ADR-098, herzien ADR-106)
+
+Gemini 2.5 Flash **trunceert intermitterend**: een geldige HTTP-200 (finish_reason `stop`/`max_tokens`)
+waarvan het tekstveld midden in de zin stopt (#202). Beide staps zijn daartegen gehard met een
+**model-onafhankelijk vangnet** — na elke call een volledigheidscheck (`_section_ok` / JSON-parse +
+secties), dan opnieuw (zelfde model), dan het fallback-model:
+
+- **Stap 2 (secties):** platte tekst + `_run_section` retry→fallback (bestaand sinds ADR-090).
+- **Stap 1 (structuur):** JSON-schema; sinds ADR-106 óók retry→fallback op een **afgekapte 200**
+  (`json.loads` → `JSONDecodeError`) i.p.v. de hele job te laten sterven — de gateway-`fallbacks`
+  vangen alleen een non-200, niet een afgekapte 200.
+
+De **harde onderbreker** (`SummaryCostBreaker` in `run_summary`) stopt de run + **volledige refund** bij:
+1. **≥1 sectie ná alle pogingen nog afgekapt** (`unresolved > 0`) — nooit een afgekapte betaalde samenvatting;
+2. **kost/min > €0,02** (zelf-schalend, per-eenheid-explosie);
+3. **absolute kost > €1,50** (runaway-vangnet).
+
+**Herzien in ADR-106:** `recovery_share > 50%` is **géén abort-conditie meer** (alleen health-metriek). Een
+sectie die na een retry/fallback alsnog schoon doorkwam (`unresolved=0`) is de vangnet-machinerie die
+**wérkt** — de samenvatting is compleet. De ADR-098-aanname "herstel-aandeel is 0%" gold niet meer
+(Gemini trunceert nu vaak), en op een korte video (3 secties) tript een 50%-cap al bij 2 herstelde
+secties → een goede betaalde samenvatting werd weggegooid. De kostenkant van die retries zit al in
+kost/min (bewezen €0,0008–0,0043/min = ruim onder de cap). De refund-tak is ongewijzigd.
+
 ### Audio Upload path
 
 Gebruikers kunnen een lokaal audio- of videobestand uploaden (15 formaten — audio: MP3, MPGA, M4A, AAC, WAV, OGG, OPUS, FLAC; video: MP4, MPEG, WEBM, MOV, FLV, AVI, MKV — max 500MB). Twee bronnen die feitelijk moeten matchen maar geen taal delen: `packages/shared/src/lib/uploadFormats.ts` (`UPLOAD_EXTENSIONS`, TS) en `backend/audio_utils.py` (`SUPPORTED_FORMATS`, Python — de handhaver). Ze worden gepind aan `test-fixtures/upload_formats.json` door een **fixture-guard** (`backend/test_upload_formats.py` + `uploadFormats.test.ts`, gedraaid door `scripts/check-playlist-invariants.sh`) — divergentie = rood. OPUS is dezelfde Ogg-Opus-container als OGG (WhatsApp-spraakberichten zijn `.opus`) → ffprobe `format_name=ogg`; AAC is rauw ADTS (container `aac`). Alle drie staan op AssemblyAI's lijst → raw doorgestuurd. Validatie is extensie-only op elke laag (nooit MIME). Dit gaat via een aparte flow die de Vercel bodylimiet van 4.5MB omzeilt:

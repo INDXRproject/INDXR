@@ -85,15 +85,18 @@ _SENTENCE_END_RE = re.compile(r"[.!?)\]\"'’”»]\s*$")
 # ── Harde onderbreker per taak (ADR-098) ────────────────────────────────────────
 # Stopt een run i.p.v. een afgekapte/pathologisch-dure samenvatting te leveren; volledige teruggave.
 # Onderbouwing (over de bestaande taken gemeten, 2026-08-24, EU-tarief 0,33/2,75):
-#   - herstel-aandeel is 0% op ál het verkeer → een cap op 50% vangt systematisch modelfalen (elke sectie
-#     herstelt) zonder ooit op gezond verkeer te vuren;
+#   - HERZIEN (ADR-106, 2026-09-11): de vroegere `recovery_share > 50%`-abort is VERWIJDERD. De aanname
+#     "herstel-aandeel is 0% op ál het verkeer" gold in 08-24 maar niet meer — Gemini 2.5 Flash trunceert
+#     intermitterend (#202), dus herstel vuurt nu vaak en RESOLVET meestal (unresolved=0 = complete,
+#     correcte samenvatting). Die afbreken op een 50%-cap gooide op korte video's (3 secties → tript al bij
+#     2 herstelde secties) goede betaalde samenvattingen weg. De echte kostenkant van die retries zit al in
+#     kost/min. `recovery_share` blijft een health-metriek (log/debug/paneel), geen constante-drempel meer.
 #   - kost/minuut ligt tussen €0,0006 en €0,0030; €0,02/min is ~7× de waargenomen piek → zelf-schalend,
 #     straft geen lange video's, en tript alleen bij een echte per-eenheid-explosie;
 #   - de duurste légale generatie is €0,42 (4,2u-video); de absolute backstop €1,50 (~3,5×) vangt een
 #     runaway op willekeurige lengte plus absurd lange input, zonder een geldige lange samenvatting te weigeren.
 # Een vaste absolute cap rond €0,50 zou een legitieme 5u+-video onterecht onderbreken — vandaar de
 # per-minuut-normalisatie als primaire kostengrens en €1,50 puur als vangnet.
-SUMMARY_MAX_RECOVERY_SHARE = float(os.getenv("SUMMARY_MAX_RECOVERY_SHARE", "0.5"))  # >50% secties hersteld → stop
 SUMMARY_MAX_EUR_PER_MIN = float(os.getenv("SUMMARY_MAX_EUR_PER_MIN", "0.02"))  # kost/min audio → stop (zelf-schalend)
 SUMMARY_MAX_COST_EUR = float(os.getenv("SUMMARY_MAX_COST_EUR", "1.50"))  # absolute vangnet-plafond/taak → stop
 # Tarieven voor de kostenschatting van de onderbreker (spiegelen cost_config EU in-region; env-overridebaar).
@@ -138,8 +141,8 @@ def settings_md() -> str:
         f"- Denkbudget: stap 1 = {s1b}, stap 2 = {SECTION_THINKING_BUDGET}\n"
         f"- Hoofdstuk-ondergrens: {SECTION_MINUTES:g} min/hoofdstuk (cap {SECTION_CAP}); "
         f"sectie-min-ratio {SECTION_MIN_RATIO:g}\n"
-        f"- Onderbreker: herstel > {SUMMARY_MAX_RECOVERY_SHARE:.0%} / kost/min > €{SUMMARY_MAX_EUR_PER_MIN:.4f} "
-        f"/ absoluut > €{SUMMARY_MAX_COST_EUR:.2f}\n"
+        f"- Onderbreker: onopgeloste sectie / kost/min > €{SUMMARY_MAX_EUR_PER_MIN:.4f} "
+        f"/ absoluut > €{SUMMARY_MAX_COST_EUR:.2f} (herstel-aandeel = health-metriek, geen abort — ADR-106)\n"
         f"- Creditformule: `calculate_summary_cost` → {samples}\n"
     )
 
@@ -453,28 +456,67 @@ async def _run_structure(client, api_key, transcript_data, min_sections, max_sec
         "required": ["overview", "sections"],
         "additionalProperties": False,
     }
-    payload = {
-        "model": STRUCTURE_MODEL,
-        "messages": [
-            {"role": "system", "content": structure_system_prompt(min_sections, max_sections, total_seconds)},
-            {"role": "user", "content": f"Transcript:\n{ts_transcript}"},
-        ],
-        # Ruimer: meer secties + een description per sectie moeten in de structuur-JSON passen.
-        "max_tokens": min(16000, 1500 + max_sections * 400),
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {"name": "summary_structure", "schema": schema, "strict": True},
-        },
-        "fallbacks": [{"model": STRUCTURE_FALLBACK}],
-        "fallback_config": {"retry": True, "depth": 1},
-    }
-    # Denkbudget alleen zetten wanneer geconfigureerd (default None = ongewijzigd) en het primaire model
-    # Gemini is; het Sonnet-fallback-model negeert google.thinking_config.
-    if STRUCTURE_THINKING_BUDGET is not None and STRUCTURE_MODEL.startswith("gemini"):
-        payload["extra_body"] = {"google": {"thinking_config": {"thinking_budget": STRUCTURE_THINKING_BUDGET}}}
-    call = await _gateway_call(client, api_key, payload)
-    structured = json.loads(_strip_json_fences(call["content"]))
-    return {"structured": structured, "call": call, "total_seconds": total_seconds}
+    system_msg = structure_system_prompt(min_sections, max_sections, total_seconds)
+    user_msg = f"Transcript:\n{ts_transcript}"
+    # Ruimer: meer secties + een description per sectie moeten in de structuur-JSON passen.
+    max_tokens = min(16000, 1500 + max_sections * 400)
+
+    # Model-onafhankelijk VANGNET tegen intermitterende truncatie (#202, ADR-090 Addendum 3 / ADR-106):
+    # de gestructureerde stap-1-JSON kan als geldige HTTP-200 mét finish_reason='stop' tóch midden in een
+    # string afbreken → `json.loads` gooit JSONDecodeError en de HELE job stierf (stap 1 had, anders dan
+    # stap 2, geen hardening). De gateway-`fallbacks` vangen alleen een non-200, niet een afgekapte 200.
+    # Daarom hier hetzelfde patroon als `_run_section`: opnieuw (zelfde model), dan het fallback-model,
+    # vóór we opgeven. Álle calls (ook de afgekapte) tellen mee in de kostenlog — ze verbruikten tokens.
+    attempts = [(STRUCTURE_MODEL, None), (STRUCTURE_MODEL, "retry"), (STRUCTURE_FALLBACK, "fallback")]
+    all_calls: List[Dict] = []
+    last_exc: Exception = None
+    for model, recovery in attempts:
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ],
+            "max_tokens": max_tokens,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {"name": "summary_structure", "schema": schema, "strict": True},
+            },
+        }
+        # Denkbudget alleen voor Gemini (google.thinking_config); het Sonnet-fallback-model negeert dit.
+        if model.startswith("gemini") and STRUCTURE_THINKING_BUDGET is not None:
+            payload["extra_body"] = {"google": {"thinking_config": {"thinking_budget": STRUCTURE_THINKING_BUDGET}}}
+        try:
+            call = await _gateway_call(client, api_key, payload)
+        except Exception as e:  # non-200 na server-side fallbacks / netwerkfout → volgende poging
+            last_exc = e
+            logger.warning(f"[summary] structuur-call {recovery or 'initial'} (model={model}) faalde: "
+                           f"{type(e).__name__}: {str(e)[:160]} — volgende poging")
+            continue
+        all_calls.append(call)  # kostte tokens, ook als de parse hierna faalt
+        try:
+            structured = json.loads(_strip_json_fences(call["content"]))
+        except json.JSONDecodeError as e:
+            last_exc = e
+            logger.warning(f"[summary] structuur-JSON {recovery or 'initial'} (model={call.get('model')}) "
+                           f"afgekapt: {e} (finish={call.get('finish_reason')}) — volgende poging")
+            continue
+        # Structurele volledigheid: overview + minstens één sectie. Een geldige-maar-lege structuur is
+        # net zo onbruikbaar als een parse-fout → zelfde vangnet.
+        if not (isinstance(structured, dict) and isinstance(structured.get("sections"), list)
+                and len(structured["sections"]) > 0):
+            last_exc = ValueError("structuur-JSON zonder secties")
+            logger.warning(f"[summary] structuur {recovery or 'initial'} (model={call.get('model')}): "
+                           f"geen secties — volgende poging")
+            continue
+        call["recovery"] = recovery
+        if recovery:
+            logger.info(f"[summary] structuur hersteld via {recovery} (model={call.get('model')}, "
+                        f"{len(structured['sections'])} secties)")
+        return {"structured": structured, "call": call, "calls": all_calls, "total_seconds": total_seconds}
+
+    # Alle pogingen faalden → laat de fout door naar run_summary_reservation_aware (volledige refund).
+    raise last_exc or RuntimeError("structuur-call faalde zonder exception")
 
 
 def _merged_coverage_seconds(sections: List[Dict]) -> int:
@@ -798,9 +840,10 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: di
     generated_at = datetime.now(timezone.utc).isoformat()
 
     async with httpx.AsyncClient(timeout=GATEWAY_TIMEOUT_S) as client:
-        # Stap 1 — structuur.
+        # Stap 1 — structuur. Log ÁLLE calls (ook afgekapte retries — die verbruikten tokens).
         struct = await _run_structure(client, api_key, transcript_data, min_sections, max_sections)
-        _log_usage(supabase, transcript_id, user_id, generated_at, struct["call"])
+        for _c in (struct.get("calls") or [struct["call"]]):
+            _log_usage(supabase, transcript_id, user_id, generated_at, _c)
         overview = (struct["structured"].get("overview") or "").strip()
         sections, coverage = _normalize_sections(
             struct["structured"].get("sections") or [], min_sections, max_sections, struct["total_seconds"]
@@ -821,25 +864,38 @@ async def run_summary(transcript_id: str, user_id: str, supabase=None, debug: di
             _log_usage(supabase, transcript_id, user_id, generated_at, c,
                        chapter_index=r.get("chapter_index"), chapter_ms=r.get("chapter_ms"))
 
-    # ── Harde onderbreker (ADR-098) — vóór de assemblage/retour, ná het loggen (de gateway-kost is al
-    # gemaakt en hoort geboekt). Overschrijding → SummaryCostBreaker → de reservation-aware wrapper
-    # refundt volledig en zet status=error met de user-message. Drie condities:
-    #   (1) een hoofdstuk bleef ná alle pogingen afgekapt (levert nooit een afgekapte betaalde samenvatting);
-    #   (2) meer dan SUMMARY_MAX_RECOVERY_SHARE van de secties moest herstellen (systematisch modelfalen);
-    #   (3) de geschatte kostprijs > SUMMARY_MAX_COST_EUR (runaway).
+    # ── Harde onderbreker (ADR-098, herzien ADR-106) — vóór de assemblage/retour, ná het loggen (de
+    # gateway-kost is al gemaakt en hoort geboekt). Overschrijding → SummaryCostBreaker → de reservation-
+    # aware wrapper refundt volledig en zet status=error met de user-message. Drie condities — allemaal
+    # over de UITKOMST, niet over de moeite:
+    #   (1) een hoofdstuk bleef ná alle pogingen afgekapt (unresolved>0) → nooit een afgekapte betaalde
+    #       samenvatting leveren (kwaliteitsgrens);
+    #   (2) kost/min > SUMMARY_MAX_EUR_PER_MIN (per-eenheid-explosie, zelf-schalend);
+    #   (3) geschatte kostprijs > SUMMARY_MAX_COST_EUR (absolute runaway).
+    # BEWUST GÉÉN abort meer op `recovery_share` (ADR-106): een sectie die na een retry/fallback ALSNOG
+    # schoon doorkwam (unresolved=0) is de vangnet-machinerie die WÉRKT — de samenvatting is compleet en
+    # correct. Die afbreken gooit goed, al-betaald werk weg. De ADR-098-aanname "herstel-aandeel is 0% op
+    # ál het verkeer" (gemeten 2026-08-24) geldt niet meer: Gemini 2.5 Flash trunceert intermitterend
+    # (#202), dus herstel vuurt nu vaak — en op een korte video (3 secties) tript een 50%-cap al bij 2
+    # herstelde secties. De échte kostenkant van die extra retries zit al in `eur_per_min`/`est_cost`
+    # (bleef bewezen €0,0016–0,0033/min = ruim onder de cap). `recovery_share` blijft een health-metriek
+    # (log + debug + rolling baseline), geen abort.
     n_sections = max(1, len(section_results))
     recovered = sum(1 for r in section_results if r.get("recovery"))
     unresolved = sum(1 for r in section_results if r.get("safety_net"))
     recovery_share = recovered / n_sections
-    all_calls = [struct["call"]] + [c for r in section_results for c in r.get("calls", [])]
+    all_calls = struct.get("calls") or [struct["call"]]
+    all_calls = all_calls + [c for r in section_results for c in r.get("calls", [])]
     est_cost = _estimate_cost_eur(all_calls)
     minutes = max(1.0, (duration or 0) / 60.0)
     eur_per_min = est_cost / minutes
+    if debug is not None:  # kosten/herstel-tellers ook bij succes zichtbaar voor de E2E
+        debug.update({"est_cost_eur": round(est_cost, 4), "eur_per_min": round(eur_per_min, 4),
+                      "recovery_share": round(recovery_share, 3), "recovered": recovered,
+                      "unresolved": unresolved, "n_sections": n_sections})
     breach = None
     if unresolved > 0:
         breach = f"{unresolved}/{n_sections} sectie(s) bleven afgekapt na alle pogingen"
-    elif recovery_share > SUMMARY_MAX_RECOVERY_SHARE:
-        breach = f"herstel-aandeel {recovery_share:.0%} > cap {SUMMARY_MAX_RECOVERY_SHARE:.0%} ({recovered}/{n_sections})"
     elif eur_per_min > SUMMARY_MAX_EUR_PER_MIN:
         breach = f"kost/min €{eur_per_min:.4f} > cap €{SUMMARY_MAX_EUR_PER_MIN:.4f} (est €{est_cost:.3f} over {minutes:.0f} min)"
     elif est_cost > SUMMARY_MAX_COST_EUR:
