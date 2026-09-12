@@ -106,6 +106,19 @@ const audioFetchFailed = (title: string): Entry => ({
 })
 
 const COPY: Record<string, Entry> = {
+  // Client-side integrity gate (AudioTab): some mobile pickers hand back a 0-byte / unreadable File
+  // for a real file (Samsung Internet, 2026-09-11). Mapped here so the ErrorCard shows a clear cause
+  // instead of the generic "Something went wrong" — and so it is NOT treated as an unknown code
+  // (which would fire transcribe_error_unknown_code for a handled validation case).
+  empty_file: {
+    title: "That file looks empty",
+    body: () =>
+      "We couldn't read any data from this file — some phone file pickers hand back an empty file. Choose it again, or pick a different one. No credits were used.",
+    actions: (c) =>
+      c.onSwitchToAudio && c.mode !== "audio"
+        ? [{ label: "Choose a file", onClick: c.onSwitchToAudio }]
+        : [],
+  },
   no_captions: {
     title: "This video has no captions",
     body: () =>
