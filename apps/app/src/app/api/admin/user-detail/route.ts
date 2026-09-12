@@ -33,12 +33,15 @@ export async function GET(req: NextRequest) {
   }
 
   if (type === "transactions") {
+    // Full fields so the admin view can group per operation via buildCreditActivity (same logic as the
+    // user-facing credits page) while still exposing the raw ledger rows. Higher limit so the grouped
+    // net lines sum correctly (a reservation and its refund must both be in the window).
     const { data, error } = await admin
       .from("credit_transactions")
-      .select("id, amount, type, reason, created_at")
+      .select("id, amount, type, reason, kind, job_id, playlist_id, metadata, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(50)
+      .limit(500)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ data })

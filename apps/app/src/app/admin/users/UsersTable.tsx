@@ -20,6 +20,7 @@ import {
 } from "@indxr/shared/components/ui/dialog"
 import { Input } from "@indxr/shared/components/ui/input"
 import { Label } from "@indxr/shared/components/ui/label"
+import { buildCreditActivity, type RawCreditTx } from "@indxr/shared/lib/creditHistory"
 
 interface UserRow {
   id: string
@@ -47,6 +48,10 @@ interface TransactionDetail {
   amount: number
   type: string
   reason: string
+  kind?: string | null
+  job_id?: string | null
+  playlist_id?: string | null
+  metadata?: Record<string, unknown> | null
   created_at: string
 }
 
@@ -257,6 +262,7 @@ function UserDetail({ userId }: { userId: string }) {
   const [transactions, setTransactions] = useState<TransactionDetail[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [showRawLedger, setShowRawLedger] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -306,33 +312,76 @@ function UserDetail({ userId }: { userId: string }) {
           )}
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">
-            Credit History ({transactions?.length ?? 0})
-          </p>
-          {transactions?.length === 0 ? (
-            <p className="text-xs text-fg-muted">None</p>
-          ) : (
-            <div className="space-y-1 max-h-36 overflow-y-auto">
-              {transactions?.map((tx) => (
-                <div key={tx.id} className="text-xs flex gap-3">
-                  <span className="text-fg-muted shrink-0">
-                    {new Date(tx.created_at).toLocaleDateString()}
-                  </span>
-                  <span
-                    className={`font-mono shrink-0 ${
-                      tx.type === "credit" ? "text-success-fg" : "text-error"
-                    }`}
-                  >
-                    {tx.type === "credit" ? "+" : "-"}
-                    {tx.amount}
-                  </span>
-                  <span className="truncate text-fg-muted">
-                    {tx.reason}
-                  </span>
+          {/* Grouped per-operation view (same buildCreditActivity logic as the user-facing credits page):
+              one net line per operation so the visible amounts sum to get_user_credits, with no internal
+              reservation/settlement jargon. The full raw ledger (audit) stays available via the toggle —
+              credit_transactions is untouched. */}
+          {(() => {
+            const activity = buildCreditActivity((transactions ?? []) as unknown as RawCreditTx[])
+            return (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+                    Credit activity ({activity.length})
+                  </p>
+                  {(transactions?.length ?? 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowRawLedger((v) => !v)}
+                      className="text-[11px] text-fg-muted hover:text-fg underline underline-offset-2"
+                    >
+                      {showRawLedger ? "Hide raw ledger" : `Raw ledger (${transactions?.length ?? 0})`}
+                    </button>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
+                {(transactions?.length ?? 0) === 0 ? (
+                  <p className="text-xs text-fg-muted">None</p>
+                ) : showRawLedger ? (
+                  <div className="space-y-1 max-h-36 overflow-y-auto">
+                    {transactions?.map((tx) => (
+                      <div key={tx.id} className="text-xs flex gap-3">
+                        <span className="text-fg-muted shrink-0">
+                          {new Date(tx.created_at).toLocaleDateString()}
+                        </span>
+                        <span
+                          className={`font-mono shrink-0 ${
+                            tx.type === "credit" ? "text-success-fg" : "text-error"
+                          }`}
+                        >
+                          {tx.type === "credit" ? "+" : "-"}
+                          {tx.amount}
+                        </span>
+                        <span className="truncate text-fg-muted">
+                          {tx.kind ? `[${tx.kind}] ` : ""}
+                          {tx.reason}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-1 max-h-36 overflow-y-auto">
+                    {activity.map((row) => (
+                      <div key={row.id} className="text-xs flex gap-3">
+                        <span className="text-fg-muted shrink-0">
+                          {new Date(row.created_at).toLocaleDateString()}
+                        </span>
+                        <span
+                          className={`font-mono shrink-0 ${
+                            row.pending ? "text-warning" : row.direction === "in" ? "text-success-fg" : "text-error"
+                          }`}
+                        >
+                          {row.direction === "none" ? "0" : `${row.amount > 0 ? "+" : "-"}${Math.abs(row.amount)}`}
+                        </span>
+                        <span className="truncate text-fg-muted">
+                          {row.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       </div>
     </div>
