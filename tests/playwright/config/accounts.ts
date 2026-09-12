@@ -1,37 +1,27 @@
-import * as fs from 'fs'
-import * as path from 'path'
+/**
+ * Test accounts for the authed specs. Sourced from the ephemeral runtime file that global-setup
+ * writes after provisioning (helpers/provision.ts) — NOT from a committed credentials file. The old
+ * tests/test_accounts.json (static emails + a shared password) is deprecated: those accounts were
+ * cleaned up (verified gone from auth.users on 2026-09-13) and storing passwords in a file caused
+ * silent credential drift. See docs/LESSONS.md.
+ */
+import { readRuntimeAccounts, type ProvisionedAccount } from '../helpers/provision'
 
-interface RawAccount {
-  email: string
-  user_id: string
-  credits: number
-}
-
-interface RawAccountFile {
-  password: string
-  accounts: RawAccount[]
-}
-
-export interface TestAccount {
-  email: string
-  password: string
-  userId: string
-  credits: number
-  role: 'auto-captions' | 'whisper' | 'playlist' | 'stress'
-}
-
-const ROLES: TestAccount['role'][] = ['auto-captions', 'whisper', 'playlist', 'stress']
+export type TestAccount = Pick<ProvisionedAccount, 'email' | 'password' | 'userId' | 'credits' | 'role'>
 
 function loadAccounts(): TestAccount[] {
-  const filePath = path.resolve(__dirname, '../../test_accounts.json')
-  const raw: RawAccountFile = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
-
-  return raw.accounts.map((a, i) => ({
+  const accounts = readRuntimeAccounts()
+  if (accounts.length === 0) {
+    // global-setup couldn't provision (no service-role key / no fallback). Specs that use these
+    // accounts should guard with `test.skip(!account, ...)` rather than crash at import.
+    return []
+  }
+  return accounts.map((a) => ({
     email: a.email,
-    password: raw.password,
-    userId: a.user_id,
+    password: a.password,
+    userId: a.userId,
     credits: a.credits,
-    role: ROLES[i] ?? 'stress',
+    role: a.role,
   }))
 }
 

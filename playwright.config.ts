@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   globalSetup: './tests/playwright/global-setup.ts',
+  globalTeardown: './tests/playwright/global-teardown.ts',
   testDir: './tests/playwright/specs',
   fullyParallel: false,           // run spec files sequentially by default
   forbidOnly: !!process.env.CI,

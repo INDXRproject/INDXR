@@ -17,6 +17,7 @@
     "build:app": "pnpm --filter @indxr/app build",
     "test:smoke": "playwright test --config=playwright.smoke.config.ts",
     "test:smoke:headed": "playwright test --config=playwright.smoke.config.ts --headed",
+    "test:e2e": "node tests/playwright/e2e-runner.mjs",
     "test:unit": "node --experimental-strip-types packages/shared/src/utils/buildReadingParagraphs.test.ts"
   },
   "devDependencies": {
