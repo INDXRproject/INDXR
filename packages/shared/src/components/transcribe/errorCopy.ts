@@ -2,6 +2,15 @@ import posthog from "posthog-js"
 
 import type { ErrorCardAction } from "./ErrorCard"
 
+// resolveErrorCopy() runs INSIDE render, so one error can re-invoke it across re-renders — the
+// transcribe_error_unknown_code event then fires more than once for a single failure (observed on the
+// 2026-09-11 upload bug: two events one frame / 16ms apart). Dedupe identical signatures within a short
+// window so one error = one event; a real retry (seconds later) has the same signature but falls outside
+// the window and still counts. Module-scoped (survives re-renders; the tabs share this module).
+let _lastUnknownSig = ""
+let _lastUnknownAt = 0
+const _UNKNOWN_DEDUPE_MS = 500
+
 /**
  * Central copy map for the transcribe flow (ADR-080), keyed on the backend error
  * code. The backend speaks three overlapping vocabularies for the same failures:
@@ -359,15 +368,22 @@ export function resolveErrorCopy(code: string | null | undefined, ctx: ErrorCtx 
   // code is diagnosable. Client-side validation (empty/invalid URL) no longer reaches here — the tabs
   // render those inline — so a "(none)" code now means a genuinely codeless backend/network failure,
   // which the step + source_type still make actionable.
-  try {
-    posthog.capture("transcribe_error_unknown_code", {
-      code: key || "(none)",
-      step: ctx.step ?? null,
-      source_type: ctx.sourceType ?? null,
-      file_type: ctx.fileType ?? null,
-    })
-  } catch {
-    // posthog may be uninitialised (e.g. SSR) — non-fatal.
+  const _sig = `${key || "(none)"}|${ctx.step ?? ""}|${ctx.sourceType ?? ""}|${ctx.fileType ?? ""}`
+  const _now = typeof Date !== "undefined" ? Date.now() : 0
+  const _isDupe = _sig === _lastUnknownSig && _now - _lastUnknownAt < _UNKNOWN_DEDUPE_MS
+  if (!_isDupe) {
+    _lastUnknownSig = _sig
+    _lastUnknownAt = _now
+    try {
+      posthog.capture("transcribe_error_unknown_code", {
+        code: key || "(none)",
+        step: ctx.step ?? null,
+        source_type: ctx.sourceType ?? null,
+        file_type: ctx.fileType ?? null,
+      })
+    } catch {
+      // posthog may be uninitialised (e.g. SSR) — non-fatal.
+    }
   }
   if (key) console.warn(`[transcribe] unmapped error code: ${key}`)
 

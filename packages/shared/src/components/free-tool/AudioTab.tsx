@@ -311,17 +311,33 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       return
     }
 
-    setFile(selectedFile)
-    setTranscript(null) // Clear previous transcript
-
     // Funnel event: a file was ACTUALLY selected (the input's onChange fired). This is the signal that
     // distinguishes "picker opened and a file was chosen" from "picker never opened" (the iOS case where
     // taps produced clicks but no selection). One event across all three modes — mode:'upload' here.
+    // file_size_bytes is the RAW size (not the MB rounding) so a truly 0-byte pick is distinguishable
+    // from a small file that rounds to 0.0 MB — the exact ambiguity in the 2026-09-11 Samsung report.
     posthog.capture('source_selected', {
       mode: 'upload',
       file_type: fileExt,
+      file_size_bytes: selectedFile.size,
       file_size_mb: selectedFile.size / (1024 * 1024),
     })
+
+    // File-INTEGRITY gate (not just the type/size checks above): a 0-byte or size-unknown File is what
+    // some mobile pickers (Samsung Internet, 2026-09-11) hand back — it uploads to a codeless failure.
+    // Reject it here, BEFORE any upload, with a visible message, and do NOT set the file so no job can
+    // start. "Passed the type check" is not the same as "the file is readable".
+    if (!selectedFile.size || selectedFile.size <= 0) {
+      setError({
+        message: "We couldn't read this file — it looks empty. Choose it again, or try a different file.",
+        code: 'empty_file',
+      })
+      setIsUploading(false)
+      return
+    }
+
+    setFile(selectedFile)
+    setTranscript(null) // Clear previous transcript
 
     // Get actual audio duration
     try {
@@ -393,8 +409,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         return
       }
 
-      // Funnel event: the job actually reaches the backend now (preflight + session passed, uploading).
-      posthog.capture('job_started', { mode: 'upload' })
+      // NB: job_started is NOT fired here (upload-start) — three job_started with no job (a failed /
+      // 0-byte upload) was the 2026-09-11 phantom. It fires once the backend CONFIRMS the job (job_id),
+      // below, next to job_accepted.
 
       // Step 3: POST file directly to Railway (bypasses Vercel 4.5MB body limit)
       // Using XHR instead of fetch() to get upload progress events
@@ -432,12 +449,13 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           try {
             resolve({ status: xhr.status, data: JSON.parse(xhr.responseText) as Record<string, unknown> })
           } catch {
-            reject(new Error('Invalid response from server'))
+            // Carry a real code so the error event isn't "(none)" — this path lands the ad budget.
+            reject(Object.assign(new Error('Invalid response from server'), { code: 'upload_bad_response' }))
           }
         }
 
-        xhr.onerror = () => reject(new Error('Upload failed. Please check your connection.'))
-        xhr.ontimeout = () => reject(new Error('Upload timed out. Please try again.'))
+        xhr.onerror = () => reject(Object.assign(new Error('Upload failed. Please check your connection.'), { code: 'upload_network_error' }))
+        xhr.ontimeout = () => reject(Object.assign(new Error('Upload timed out. Please try again.'), { code: 'upload_timeout' }))
         xhr.send(formData)
       })
       clearIdempotencyKey(_idemAction) // handeling afgerond (response terug)
@@ -452,19 +470,22 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           setError({ message: 'Not enough credits to transcribe this file.', code: 'insufficient_credits' })
           return
         }
-        setError({ message: (data.user_friendly_message as string) || (data.error as string) || 'Transcription failed', code: (data.code as string | undefined) })
+        // 1b: fall back to the HTTP status when the backend sent no code — never a codeless error on the
+        // path the ad budget lands on.
+        setError({ message: (data.user_friendly_message as string) || (data.error as string) || 'Transcription failed', code: (data.code as string) || `http_${httpStatus}` })
         return
       }
 
       const job_id = data.job_id as string | undefined
       if (!job_id) {
-        setError({ message: 'Failed to start transcription job' })
+        setError({ message: 'Failed to start transcription job', code: 'no_job_id' })
         return
       }
 
-      // Funnel: the backend accepted the job (job_id returned). Closes the interval
-      // file-chosen (source_selected) -> upload-started (job_started) -> job-accepted. A job_started
-      // with no following job_accepted means the upload reached us but the backend didn't take it.
+      // Funnel: the backend CONFIRMED the job (job_id returned), not the click/upload-start. job_started
+      // fires HERE now — with job_accepted — so both reflect a real job. source_selected (file chosen) is
+      // the only earlier funnel step.
+      posthog.capture('job_started', { mode: 'upload' })
       posthog.capture('job_accepted', { mode: 'upload' })
 
       // Persist job so page refresh can recover it
@@ -479,7 +500,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       // Completion handled by useJobStatus onComplete/onError callbacks
     } catch (error) {
       console.error('Transcription error:', error)
-      setError({ message: error instanceof Error ? error.message : 'Something went wrong. Please try again.' })
+      // 1b: carry a real code (from the XHR reject, or a generic upload_failed) so the event is
+      // diagnosable instead of "(none)".
+      const code = (error && typeof error === 'object' && 'code' in error)
+        ? String((error as { code: unknown }).code)
+        : 'upload_failed'
+      setError({ message: error instanceof Error ? error.message : 'Something went wrong. Please try again.', code })
       setIsTranscribing(false)
       setWhisperStatus('idle')
       setUploadPhase('idle')
