@@ -4,9 +4,8 @@ Unit tests voor watchdog_interrupted_jobs.
 Mock Supabase en Redis; verifieer query-logica en re-enqueue idempotentie.
 Run: venv/bin/python -m pytest test_watchdog.py -v
 """
-import asyncio
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -65,39 +64,108 @@ def _make_playlist_job(
 
 
 def _supabase_mock(transcription_data=None, playlist_data=None, refund_data=None):
-    """Build a mock supabase client that returns supplied data per query chain."""
-    mock = MagicMock()
+    """Table- + filter-aware mock of the Supabase client.
 
-    def _chain(data):
+    The watchdog runs many passes over two tables (Pass 0a/0b reaper, 1a transcription re-enqueue,
+    1b playlist re-enqueue, 2/2b refund, 2c reconciliation, 3 reaper), so a positional "1st call =
+    transcription, 2nd = playlist, 3rd = refund" mock no longer maps to reality — it feeds the
+    fixture into the wrong pass. Instead we route each .execute() by (table, status-filter,
+    watchdog_attempts-filter), mirroring the real queries in worker.py:
+
+      transcription_jobs, status='interrupted', watchdog_attempts==0  → Pass 1a  → transcription_data
+      transcription_jobs, status='interrupted', watchdog_attempts>=1  → Pass 2   → refund_data
+      playlist_extraction_jobs, status in (interrupted, retry_pending) → Pass 1b → playlist_data
+      everything else (pending/active reaper selects, other tables/passes)        → []
+
+    CAS-claim UPDATE chains for the matched pass return the same rows so `if not claim.data: skip`
+    passes and the re-enqueue proceeds. The .rpc() path (Pass 2c reconciliation) returns [] so it
+    never spuriously books a refund the tests assert against.
+    """
+    transcription_data = transcription_data or []
+    playlist_data = playlist_data or []
+    refund_data = refund_data or []
+
+    def _make_chain(table_name):
+        state = {"is_update": False, "status_eq": None, "status_in": None,
+                 "attempts_eq": None, "attempts_gte": None}
         chain = MagicMock()
-        chain.select.return_value = chain
-        chain.eq.return_value = chain
-        chain.in_.return_value = chain
-        chain.is_.return_value = chain
-        chain.lt.return_value = chain
-        chain.gt.return_value = chain
-        chain.gte.return_value = chain
-        chain.update.return_value = chain
-        execute_result = MagicMock()
-        execute_result.data = data
-        chain.execute.return_value = execute_result
+
+        def _update(*a, **k):
+            state["is_update"] = True
+            return chain
+
+        def _eq(col, val):
+            if col == "status":
+                state["status_eq"] = val
+            elif col == "watchdog_attempts":
+                state["attempts_eq"] = val
+            return chain
+
+        def _in(col, vals):
+            if col == "status":
+                state["status_in"] = list(vals)
+            return chain
+
+        def _gte(col, val):
+            if col == "watchdog_attempts":
+                state["attempts_gte"] = val
+            return chain
+
+        def _passthrough(*a, **k):
+            return chain
+
+        chain.select.side_effect = _passthrough
+        chain.update.side_effect = _update
+        chain.upsert.side_effect = _passthrough
+        chain.eq.side_effect = _eq
+        chain.in_.side_effect = _in
+        chain.gte.side_effect = _gte
+        chain.lt.side_effect = _passthrough
+        chain.gt.side_effect = _passthrough
+        chain.is_.side_effect = _passthrough
+        chain.or_.side_effect = _passthrough
+        chain.order.side_effect = _passthrough
+        chain.limit.side_effect = _passthrough
+        # Pass 0b uses .not_.is_(...)
+        not_obj = MagicMock()
+        not_obj.is_.side_effect = _passthrough
+        chain.not_ = not_obj
+
+        def _resolve():
+            if table_name == "transcription_jobs":
+                # Pass 1a select (status=interrupted, attempts=0) and its CAS claim (attempts=0).
+                if state["attempts_eq"] == 0 and (state["is_update"] or state["status_eq"] == "interrupted"):
+                    return transcription_data
+                # Pass 2 refund select (status=interrupted, attempts>=1).
+                if state["status_eq"] == "interrupted" and (state["attempts_gte"] or 0) >= 1:
+                    return refund_data
+                return []
+            if table_name == "playlist_extraction_jobs":
+                si = state["status_in"] or []
+                # Pass 1b select (status in interrupted/retry_pending) or its CAS claim update.
+                if "interrupted" in si or "retry_pending" in si:
+                    return playlist_data
+                if state["is_update"]:
+                    return playlist_data
+                return []
+            return []
+
+        def _execute(*a, **k):
+            r = MagicMock()
+            r.data = _resolve()
+            return r
+
+        chain.execute.side_effect = _execute
         return chain
 
-    # State machine: first call = transcription re-enqueue, second = playlist re-enqueue,
-    # third = refund query. Each returns its own chain.
-    call_count = [0]
-    result_sequence = [
-        _chain(transcription_data or []),
-        _chain(playlist_data or []),
-        _chain(refund_data or []),
-    ]
-
-    def _table_side_effect(name):
-        idx = call_count[0]
-        call_count[0] += 1
-        return result_sequence[min(idx, len(result_sequence) - 1)]
-
-    mock.table.side_effect = _table_side_effect
+    mock = MagicMock()
+    mock.table.side_effect = lambda name: _make_chain(name)
+    # Pass 2c reconciliation: supabase.rpc('watchdog_unrefunded_reserved', ...).execute().data
+    rpc_result = MagicMock()
+    rpc_result.data = []
+    rpc_chain = MagicMock()
+    rpc_chain.execute.return_value = rpc_result
+    mock.rpc.return_value = rpc_chain
     return mock
 
 
@@ -117,7 +185,8 @@ async def test_transcription_job_reenqueued():
     supabase = _supabase_mock(transcription_data=[job])
 
     with patch("worker.get_supabase_client", return_value=supabase), \
-         patch("worker.add_credits") as mock_add_credits:
+         patch("worker.refund_credits") as mock_refund, \
+         patch("worker.refund_credits_flat") as mock_refund_flat:
 
         from worker import watchdog_interrupted_jobs
         await watchdog_interrupted_jobs({"redis": redis})
@@ -133,7 +202,10 @@ async def test_transcription_job_reenqueued():
     # title en video_url horen niet in de enqueue-call — die kolommen bestaan niet in transcription_jobs
     assert "title" not in call_kwargs.kwargs
     assert "video_url" not in call_kwargs.kwargs
-    mock_add_credits.assert_not_called()  # refund alleen voor attempts>=1 + old jobs
+    # Pass 1 (re-enqueue, attempts=0) mag NIET refunden — de refund is Pass 2 (attempts>=1). Refund
+    # loopt sinds ADR-050 via refund_credits/refund_credits_flat (worker.add_credits bestaat niet meer).
+    mock_refund.assert_not_called()
+    mock_refund_flat.assert_not_called()
 
 
 @pytest.mark.anyio
@@ -232,14 +304,18 @@ async def test_pass2_refund_when_heartbeat_stale():
     supabase = _supabase_mock(transcription_data=[], refund_data=[job])
 
     with patch("worker.get_supabase_client", return_value=supabase), \
-         patch("worker.add_credits") as mock_add_credits:
+         patch("worker.refund_credits") as mock_refund, \
+         patch("worker.refund_credits_flat", return_value={"success": True}) as mock_refund_flat:
 
         from worker import watchdog_interrupted_jobs
         await watchdog_interrupted_jobs({"redis": redis})
 
-    mock_add_credits.assert_called_once_with(
-        "user-888", 5, f"Refund: watchdog crash-recovery (job {job['id']})"
+    # ADR-050: Pass 2 refunds via _refund_then_claim_job. The fixture has no credits_reserved and
+    # credits_cost=5 → the flat-refund branch: refund_credits_flat(user, job_id, amount, reason).
+    mock_refund_flat.assert_called_once_with(
+        "user-888", job['id'], 5, f"Refund: watchdog crash-recovery (job {job['id']})"
     )
+    mock_refund.assert_not_called()
     redis.enqueue_job.assert_not_awaited()
 
 
@@ -253,13 +329,15 @@ async def test_pass2_no_refund_when_heartbeat_fresh():
     supabase = _supabase_mock(transcription_data=[], refund_data=[])  # filter sluit job uit
 
     with patch("worker.get_supabase_client", return_value=supabase), \
-         patch("worker.add_credits") as mock_add_credits:
+         patch("worker.refund_credits") as mock_refund, \
+         patch("worker.refund_credits_flat") as mock_refund_flat:
 
         from worker import watchdog_interrupted_jobs
         await watchdog_interrupted_jobs({"redis": redis})
 
-    mock_add_credits.assert_not_called()
-    redis.enqueue_job.assert_not_awaited()
+    # Fresh heartbeat → Supabase Pass-2 filter excludes the job → no refund of any kind.
+    mock_refund.assert_not_called()
+    mock_refund_flat.assert_not_called()
 
 
 @pytest.mark.anyio
