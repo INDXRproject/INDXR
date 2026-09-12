@@ -346,11 +346,19 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
         .filter(r => r.status === 'has_captions' || r.status === 'needs_whisper')
         .map(r => r.videoId);
 
-      // Inject method-aware duplicate logic into the results that go back up
+      // Inject duplicate logic into the results that go back up (Task 3 dedup-gap fix, 2026-09-12).
+      // Dedup on the VIDEO, not just the same method:
+      //  - caption wanted (has_captions): skip if ANY transcript already exists for this video — a
+      //    caption OR an AI transcript. Re-extracting a caption when the video is already in the library
+      //    (even as the better AI transcript) just makes a second, inferior copy and costs a credit/slot.
+      //    Link to the AI transcript when present, else the caption.
+      //  - AI wanted (needs_whisper): skip only if an AI transcript already exists. A caption-only video
+      //    is an UPGRADE to AI, not a duplicate — allow it.
       const enhancedResults = finalResults.map(r => {
         const existingEntries = existingDuplicates[r.videoId] || [];
-        const effectiveMethod = r.status === 'needs_whisper' ? 'whisper_ai' : 'youtube_captions';
-        const matchingEntry = existingEntries.find(e => e.processingMethod === effectiveMethod);
+        const aiEntry = existingEntries.find(e => e.processingMethod === 'whisper_ai' || e.processingMethod === 'assemblyai');
+        const captionEntry = existingEntries.find(e => e.processingMethod === 'youtube_captions');
+        const matchingEntry = r.status === 'needs_whisper' ? aiEntry : (aiEntry ?? captionEntry);
         return {
           ...r,
           duplicateId: matchingEntry?.transcriptId,

@@ -44,9 +44,13 @@ interface PlaylistAvailabilitySummaryProps {
 export function PlaylistAvailabilitySummary({ results, userCredits, unavailableCount, existingDuplicates, onProceed, onCancel }: PlaylistAvailabilitySummaryProps) {
   const [expandedSection, setExpandedSection] = useState<'captions' | 'unavailable' | null>('unavailable')
 
+  // Dedup on the VIDEO, not just the same method (Task 3 dedup-gap fix, 2026-09-12). Must match the
+  // skip logic in PlaylistManager's enhancedResults: caption extraction is a duplicate if ANY transcript
+  // (caption OR AI) already exists for the video; AI transcription is a duplicate only if an AI
+  // transcript already exists (a caption-only video is an upgrade to AI, so it is NOT a duplicate).
   const isDuplicateForStatus = (videoId: string, status: string): boolean => {
     const entries = existingDuplicates[videoId] || [];
-    if (status === 'has_captions') return entries.some(e => e.processingMethod === 'youtube_captions');
+    if (status === 'has_captions') return entries.length > 0;
     if (status === 'needs_whisper') return entries.some(e => e.processingMethod === 'whisper_ai' || e.processingMethod === 'assemblyai');
     return false;
   };
