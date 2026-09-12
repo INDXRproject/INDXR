@@ -55,8 +55,14 @@ export function trackActivation(): void {
  * Signup-completed conversion (no value). Because the caller navigates away right
  * after (window.location.href), we redirect via `event_callback` with a timeout
  * fallback so the redirect never gets cut off if the tag isn't loaded/consented.
+ *
+ * `userId` (the Supabase account id) yields a stable `transaction_id` of `signup_<id>`
+ * so Google dedupes a re-submit (a user who completes onboarding twice — e.g. reload +
+ * resubmit — counts once). Unlike a random per-call id or a localStorage guard, the
+ * account id is one-per-account by nature, so no client-side guard is needed. Omitted
+ * when userId is absent (auth not yet loaded) — the event still fires, just undeduped.
  */
-export function trackSignup(onDone?: () => void): void {
+export function trackSignup(userId?: string, onDone?: () => void): void {
   if (!isBrowser() || !ADS_ID || !SIGNUP_LABEL || !window.gtag) {
     onDone?.()
     return
@@ -69,6 +75,7 @@ export function trackSignup(onDone?: () => void): void {
   }
   window.gtag("event", "conversion", {
     send_to: `${ADS_ID}/${SIGNUP_LABEL}`,
+    ...(userId ? { transaction_id: `signup_${userId}` } : {}),
     event_callback: done,
   })
   setTimeout(done, 1200)

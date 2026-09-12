@@ -62,7 +62,8 @@ export default function OnboardingPage() {
         const target = safeAppRedirect(searchParams.get('next')) ?? appHref('/dashboard/transcribe')
         // Google Ads signup-conversie (geen waarde). Vuurt alleen bij consent; de redirect
         // gebeurt in de callback (met timeout-fallback) zodat 'ie nooit wordt afgekapt.
-        trackSignup(() => { window.location.href = target })
+        // user.id → stabiele transaction_id (signup_<id>) zodat Google een her-submit dedupet.
+        trackSignup(user?.id, () => { window.location.href = target })
       }
     } catch (err) {
       console.error(err)
