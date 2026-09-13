@@ -74,3 +74,17 @@ fallback-model, vóór de fout doorvalt naar `run_summary_reservation_aware` (vo
   per-sectie `max_tokens`-cap (`base_max`) kan voor sommige fragmenten te krap zijn, wat de herstelfrequentie
   opdrijft. Het vangnet vangt het en de kosten blijven laag; een ruimere `base_max` zou de herstelfrequentie
   kunnen verlagen (aparte afweging, kan kost verhogen).
+
+## Addendum 2026-09-13 — stap-2 retry overslaan bij `finish_reason=max_tokens`
+
+**Context:** de "Observatie" hierboven is opgevolgd. Meting (`docs/wiki/testing/2026-09-12-max-tokens-cap-measurement.md`, `ai_summary_usage_log`): stap-2 truncateert op 28/63 calls (44%) op de `base_max`-cap; het herstelpatroon was **initieel trunceert → retry met HETZELFDE model + dezelfde cap trunceert opnieuw (11/17) → Haiku-fallback rondt schoon af**. Die same-model retry is dus een deterministisch verspilde call.
+
+**Beslissing:** in `_run_section` (summary_pipeline.py) wordt na een `finish_reason ∈ {max_tokens, length}`-truncatie de resterende poging(en) met HETZELFDE model overgeslagen → direct naar het fallback-model. ALLEEN voor max_tokens/length; andere faaloorzaken (te-korte uitwerking met `finish=stop`, netwerk-/gateway-fouten) houden hun normale retry (die zijn niet-deterministisch).
+
+**Rationale:** een retry met identiek model + identieke `base_max` op hetzelfde fragment produceert dezelfde truncatie (11/17 bewezen). De fallback (Haiku) was toch al het eindpad; we bereiken het één call eerder.
+
+**Consequenties:**
+- **Kost:** kan alleen omlaag — per getruncateerde sectie verdwijnt ~1 call (de meetreeks had 11 zulke verspilde retries). Coverage/kwaliteit ongewijzigd (de fallback was al het uiteindelijke pad; de overgeslagen call droeg nooit bij aan de output).
+- **Refund-tak + ledger + SummaryCostBreaker ongewijzigd** — dit is puur control-flow in de sectie-recovery.
+- **`recovery`-labeling:** een getruncateerde sectie draagt nu `recovery='fallback'` i.p.v. eerst `recovery='retry'`; het `recovery_share`-health-signaal blijft werken.
+- **Verificatie:** `test_summary_section_retry.py` (2 tests): max_tokens → precies 2 calls (initieel + fallback, retry overgeslagen); niet-truncatie-fail (`finish=stop`, mid-sentence) → 3 calls (retry behouden). Live-run [~] post-deploy: de meetbare handtekening is dat nieuwe runs geen `recovery='retry'`-rijen mét `finish_reason='max_tokens'` meer produceren in `ai_summary_usage_log`.

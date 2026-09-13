@@ -670,7 +670,10 @@ async def _run_section(client, api_key, sem, section, overview, transcript_data)
     attempts = [(SECTION_MODEL, None), (SECTION_MODEL, "retry"), (SECTION_FALLBACK, "fallback")]
     best = None  # (words, heading, content, cleanup, reason) — langste behouden als geen enkele slaagt
     async with sem:
-        for model, recovery in attempts:
+        idx = 0
+        while idx < len(attempts):
+            model, recovery = attempts[idx]
+            idx += 1
             payload = {
                 "model": model,
                 "messages": [{"role": "system", "content": SECTION_SYSTEM_PROMPT},
@@ -703,6 +706,17 @@ async def _run_section(client, api_key, sem, section, overview, transcript_data)
                            f"{'fallback ook mislukt' if recovery == 'fallback' else 'nieuwe poging'}")
             if best is None or cw > best[0]:
                 best = (cw, heading, content, fired, reason)
+            # ADR-106 addendum (2026-09-13): een max_tokens-truncatie is DETERMINISTISCH — een retry met
+            # HETZELFDE model + dezelfde base_max-cap trunceert opnieuw (gemeten: 11/17 retries her-truncatie,
+            # docs/wiki/testing/2026-09-12-max-tokens-cap-measurement.md). Sla daarom resterende pogingen met
+            # hetzelfde model over en spring direct naar het fallback-model — scheelt één verspilde call per
+            # getruncateerde sectie. ALLEEN voor max_tokens/length; andere faaloorzaken (te-kort → andere
+            # _section_ok-reason met finish='stop'; netwerk/gateway → de except hierboven) houden hun retry.
+            if call.get("finish_reason") in ("max_tokens", "length"):
+                while idx < len(attempts) and attempts[idx][0] == model:
+                    logger.info(f"[summary] sectie '{step1_heading}': max_tokens-truncatie → poging "
+                                f"'{attempts[idx][1]}' met zelfde model overgeslagen (deterministisch) → fallback")
+                    idx += 1
 
     # Geen enkele poging kwam schoon door — houd de langste, markeer als niet-hersteld (rapportage).
     if best:
