@@ -12,6 +12,8 @@ Upload-pad blijft op asyncio.create_task in main.py — bytes zijn niet queue-se
 import asyncio
 import logging
 import os
+import random
+import time
 import urllib.parse
 import uuid as _uuid
 from datetime import datetime, timedelta, timezone, date
@@ -962,8 +964,9 @@ async def _reconcile_unrefunded_reserved(supabase, limit: int = 50) -> None:
     dat is een structureel signaal, geen routine. `limit` capt de rijen/cyclus (drainen over
     meerdere 2-min-cycli bij achterstand)."""
     try:
-        rows = await asyncio.to_thread(
-            lambda: supabase.rpc('watchdog_unrefunded_reserved', {'p_limit': limit}).execute()
+        rows = await _retry_read(
+            lambda: supabase.rpc('watchdog_unrefunded_reserved', {'p_limit': limit}).execute(),
+            "2c",
         )
     except Exception as e:
         logger.warning(f"[WATCHDOG reconcile 2c] query failed (transient, retry in 2min): {e}")
@@ -1112,6 +1115,74 @@ async def _reap_stale_running_playlist(supabase, job: dict) -> None:
         )
 
 
+# ── Transiente Supabase-edge-fouten (504/502/503 + connectie-timeouts) ─────────────────
+# De Supabase-edge geeft intermitterend een 504 Gateway Timeout of "JSON could not be generated"
+# (INDXR-BACKEND-90/-96, 11+12-09-2026). Op een LEESquery is dat idempotent → opnieuw proberen.
+# Alert-drempel (3b): één gedegradeerde run = WARNING (kan een langere blip zijn die de volgende
+# cron-run over 2 min herstelt); pas ERROR bij `_DEGRADED_ERROR_AT` OPEENVOLGENDE gedegradeerde runs
+# (structureel, bv. de HTTP/2-GOAWAY-bug die élke run sloopte). Streak in Redis, TTL dekt idle-resets.
+_DEGRADED_STREAK_KEY = "watchdog:degraded_streak"
+_DEGRADED_ERROR_AT = 3
+_DEGRADED_STREAK_TTL = 3600
+
+_RETRYABLE_STATUS = (500, 502, 503, 504)
+_TRANSIENT_MARKERS = (
+    "gateway timeout", "json could not be generated", "timed out", "timeout",
+    "connection reset", "connection aborted", "temporarily unavailable",
+    "server disconnected", "remoteprotocolerror", "connecterror", "readerror",
+)
+
+
+def _is_transient(exc: Exception) -> bool:
+    """True voor transiente server-/netwerkfouten die veilig te herhalen zijn op een leesquery."""
+    code = getattr(exc, "code", None)
+    if code is not None:
+        try:
+            if int(code) in _RETRYABLE_STATUS:
+                return True
+        except (ValueError, TypeError):
+            pass
+    msg = str(exc).lower()
+    if any(str(s) in msg for s in _RETRYABLE_STATUS):
+        return True
+    return any(m in msg for m in _TRANSIENT_MARKERS)
+
+
+async def _retry_read(fn, pass_name: str, *, max_attempts: int = 4,
+                      base: float = 0.5, cap: float = 8.0, deadline: float = 20.0):
+    """Voer een IDEMPOTENTE leesquery uit met truncated exponential backoff + full jitter.
+
+    `fn` is een zero-arg callable die de (synchrone) supabase-query uitvoert; draait in een thread.
+    Wachttijd = random(0, min(cap, base * 2**n)) (full jitter, AWS-aanbeveling: dempt thundering herd
+    en spreidt de retry-druk). Begrensd op `max_attempts` én een harde `deadline` (s) — de watchdog
+    draait elke 2 min, dus we blokkeren nooit lang. Elke retry wordt als WARNING gelogd. Niet-transiente
+    fouten en de laatste poging her-raisen → de pass-except vangt ze en markeert de pass als gefaald.
+    ALLEEN voor leesquery's; muterende stappen niet blind herhalen (zie per-pass keuzes)."""
+    start = time.monotonic()
+    last: Optional[Exception] = None
+    for attempt in range(max_attempts):
+        try:
+            return await asyncio.to_thread(fn)
+        except Exception as e:  # noqa: BLE001 — classificeren, dan her-raisen indien niet-transient
+            last = e
+            if not _is_transient(e):
+                raise
+            delay = random.uniform(0, min(cap, base * (2 ** attempt)))  # full jitter
+            elapsed = time.monotonic() - start
+            if attempt == max_attempts - 1 or elapsed + delay > deadline:
+                logger.warning(
+                    f"[WATCHDOG retry] pass {pass_name}: transiente {type(e).__name__} na "
+                    f"{attempt + 1} poging(en), opgegeven (elapsed {elapsed:.1f}s): {e}"
+                )
+                raise
+            logger.warning(
+                f"[WATCHDOG retry] pass {pass_name}: transiente {type(e).__name__} "
+                f"(poging {attempt + 1}/{max_attempts}), retry over {delay:.2f}s: {e}"
+            )
+            await asyncio.sleep(delay)
+    raise last  # pragma: no cover — de lus raiset al binnen
+
+
 async def watchdog_interrupted_jobs(ctx: dict) -> None:
     """
     ARQ cron: crash-recovery voor interrupted Whisper- en playlist-jobs.
@@ -1177,13 +1248,14 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # Pass 0a: stuck pending — ARQ heeft de job nooit opgepikt.
     # Playlist-jobs verlaten 'pending' binnen seconden → vallen buiten 30min drempel.
     try:
-        _p0a = await asyncio.to_thread(
+        _p0a = await _retry_read(
             lambda: supabase.table('transcription_jobs')
                 .select('id,credits_deducted,source_kind')
                 .eq('status', 'pending')
                 .is_('last_heartbeat_at', 'null')
                 .lt('created_at', _pending_cutoff)
-                .execute()
+                .execute(),
+            "0a",
         )
         for _job in (_p0a.data or []):
             # ai_summary-jobs (ADR-090) hebben eigen reaper (refundt de reservering); nooit via de
@@ -1217,13 +1289,14 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # IS NOT NULL op last_heartbeat_at sluit playlist-video-jobs uit (hun heartbeat
     # schrijft naar playlist_extraction_jobs, nooit naar transcription_jobs).
     try:
-        _p0b = await asyncio.to_thread(
+        _p0b = await _retry_read(
             lambda: supabase.table('transcription_jobs')
                 .select('id,credits_deducted,source_kind')
                 .in_('status', ['downloading', 'transcribing', 'saving'])
                 .not_.is_('last_heartbeat_at', 'null')
                 .lt('last_heartbeat_at', _active_stale)
-                .execute()
+                .execute(),
+            "0b",
         )
         for _job in (_p0b.data or []):
             if _job.get('source_kind') == 'ai_summary':  # eigen reaper (ADR-090)
@@ -1253,7 +1326,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
 
     # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
     try:
-        result = await asyncio.to_thread(
+        result = await _retry_read(
             lambda: supabase.table('transcription_jobs')
                 .select('id,user_id,video_url,source_kind')
                 .eq('status', 'interrupted')
@@ -1262,7 +1335,8 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 .eq('watchdog_attempts', 0)
                 .lt('last_heartbeat_at', stale_before)
                 .gt('created_at', cutoff_24h)
-                .execute()
+                .execute(),
+            "1a",
         )
         for job in (result.data or []):
             if job.get('source_kind') == 'ai_summary':  # nooit als whisper-job her-indienen (ADR-090)
@@ -1319,13 +1393,14 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     #   'retry_pending' — ADR-030 Gap 1; retry-pass stale → re-enqueue retry-pass
     # Both statuses use the same query (same columns needed) then branch on status.
     try:
-        result = await asyncio.to_thread(
+        result = await _retry_read(
             lambda: supabase.table('playlist_extraction_jobs')
                 .select('id,user_id,video_ids,video_results,completed,failed,total_videos,status,last_heartbeat_at,watchdog_attempts')
                 .in_('status', ['interrupted', 'retry_pending'])
                 .lt('watchdog_attempts', MAX_PLAYLIST_WATCHDOG_ATTEMPTS)
                 .gt('created_at', cutoff_24h)
-                .execute()
+                .execute(),
+            "1b",
         )
         for job in (result.data or []):
             playlist_id = job['id']
@@ -1433,7 +1508,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # Refund binnen ~10 min na mislukte re-enqueue (geen 24u-wacht).
     # Vangt zowel oude-modus (credits_deducted) als gereserveerde jobs (credits_reserved>0).
     try:
-        result = await asyncio.to_thread(
+        result = await _retry_read(
             lambda: supabase.table('transcription_jobs')
                 .select('id,user_id,credits_cost,credits_reserved,source_kind')
                 .eq('status', 'interrupted')
@@ -1441,7 +1516,8 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                 .gte('watchdog_attempts', 1)
                 .lt('last_heartbeat_at', stale_before)
                 .or_('credits_deducted.eq.true,credits_reserved.gt.0')
-                .execute()
+                .execute(),
+            "2",
         )
         for job in (result.data or []):
             if job.get('source_kind') == 'ai_summary':  # eigen reaper (ADR-090)
@@ -1476,14 +1552,15 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # NIET vroegtijdig refundt (ADR-050 fase 2). Idempotent via (playlist_id,'refund');
     # de status-flip (CAS) stopt her-selectie in volgende cycli.
     try:
-        result = await asyncio.to_thread(
+        result = await _retry_read(
             lambda: supabase.table('playlist_extraction_jobs')
                 .select('id,user_id')
                 .eq('status', 'interrupted')
                 .gte('watchdog_attempts', 1)
                 .lt('last_heartbeat_at', stale_before)
                 .gt('credits_reserved', 0)
-                .execute()
+                .execute(),
+            "2b",
         )
         for job in (result.data or []):
             playlist_id = job['id']
@@ -1521,7 +1598,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # overschrijven van een net-voltooide job. NIET re-enqueuen (gebruiker triggert zelf opnieuw).
     try:
         _sum_pending_cutoff = (now - timedelta(minutes=30)).isoformat()
-        _dead = await asyncio.to_thread(
+        _dead = await _retry_read(
             lambda: supabase.table('transcription_jobs')
                 .select('id,user_id,status,credits_reserved')
                 .eq('source_kind', 'ai_summary')
@@ -1530,7 +1607,8 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
                     f'and(status.eq.summarizing,last_heartbeat_at.lt.{stale_before}),'
                     f'and(status.eq.pending,last_heartbeat_at.is.null,created_at.lt.{_sum_pending_cutoff})'
                 )
-                .execute()
+                .execute(),
+            "summary-reaper",
         )
         for _job in (_dead.data or []):
             _jid = _job['id']
@@ -1573,14 +1651,15 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # sluit een levende worker (trage whisper) uit → geen latere settlement → geen money-loss.
     try:
         _reap_progress_cutoff = (now - timedelta(minutes=REAP_PROGRESS_STALE_MIN)).isoformat()
-        result = await asyncio.to_thread(
+        result = await _retry_read(
             lambda: supabase.table('playlist_extraction_jobs')
                 .select('id,user_id,video_ids,video_results,completed,failed,total_videos,'
                         'credits_reserved,last_heartbeat_at,last_progress_at,created_at')
                 .eq('status', 'running')
                 .or_(f'last_progress_at.lt.{_reap_progress_cutoff},last_progress_at.is.null')
                 .limit(200)
-                .execute()
+                .execute(),
+            "reap-running",
         )
         for job in (result.data or []):
             if not _should_reap_running_playlist(job, now):
@@ -1603,33 +1682,49 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
         sentry_sdk.capture_exception(e)
         _record_pass_failure("reap-running", e)
 
-    # ── Run-status signaal ────────────────────────────────────────────────────
-    # Elke pass hierboven vangt zijn query-fout als WARNING en gaat door. Een structureel
-    # falende cron (bv. de HTTP/2-GOAWAY-bug die elke run Pass 1b sloopte) zag er in Sentry
-    # dáárdoor identiek uit aan een eenmalige netwerkhik. Daarom hier één expliciet ERROR-
-    # signaal zodra een pass zijn werk NIET kon doen: herhaalt dit elke run, dan is het
-    # structureel (queryable op tag watchdog_run:degraded), niet één blip.
+    # ── Run-status signaal + alert-drempel (3b) ────────────────────────────────
+    # Elke pass hierboven vangt zijn query-fout af; transiente 5xx worden nu eerst door _retry_read
+    # opgeslokt (WARNING per retry), dus een pass belandt alleen in _pass_failures als hij ook ná alle
+    # retries faalde. Om mail-moeheid te voorkomen escaleren we niet elke gedegradeerde run naar ERROR:
+    #   • 1..(_DEGRADED_ERROR_AT-1) opeenvolgende gedegradeerde runs → WARNING (zelf-herstellend pad:
+    #     de volgende cron-run over 2 min pakt het idempotent opnieuw op);
+    #   • ≥ _DEGRADED_ERROR_AT opeenvolgende → ERROR (structureel, zoals de HTTP/2-GOAWAY-bug).
+    # De streak staat in Redis; een schone run reset hem. Faalt Redis, dan escaleren we fail-safe naar
+    # ERROR (liever alarmeren dan stil blijven).
     if _pass_failures:
         _names = [f["pass"] for f in _pass_failures]
-        # error_type is laag-cardinaal → queryable tag; de message is hoog-cardinaal → context,
-        # niet als tag (anders ontploft de tag-index). Beide óók in de logregel zodat Railway-logs
-        # de diagnose alleen al dragen.
         _types = sorted({f["error_type"] for f in _pass_failures})
         _detail = "; ".join(f'{f["pass"]}:{f["error_type"]}: {f["error_message"]}' for f in _pass_failures)
+        try:
+            _streak = int(await redis.incr(_DEGRADED_STREAK_KEY))
+            await redis.expire(_DEGRADED_STREAK_KEY, _DEGRADED_STREAK_TTL)
+        except Exception as _re:  # noqa: BLE001
+            logger.warning(f"[WATCHDOG] kon degraded-streak niet bijwerken in Redis: {_re}")
+            _streak = _DEGRADED_ERROR_AT  # fail-safe → ERROR
+        _structural = _streak >= _DEGRADED_ERROR_AT
+        _level = "error" if _structural else "warning"
         _msg = (
-            f"[WATCHDOG] run DEGRADED — {len(_pass_failures)} pass(es) konden niet draaien: "
-            f"{', '.join(_names)} ({_detail})"
+            f"[WATCHDOG] run DEGRADED (streak {_streak}) — {len(_pass_failures)} pass(es) konden niet "
+            f"draaien: {', '.join(_names)} ({_detail})"
         )
-        logger.error(_msg)
+        (logger.error if _structural else logger.warning)(_msg)
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("task_name", "watchdog_interrupted_jobs")
             scope.set_tag("watchdog_run", "degraded")
+            scope.set_tag("degraded_structural", str(_structural).lower())
             scope.set_tag("failed_passes", ",".join(_names))
             scope.set_tag("failed_pass_types", ",".join(_types))
-            scope.set_context("watchdog_pass_failures", {"failures": _pass_failures})
-            scope.set_level("error")
-            sentry_sdk.capture_message(_msg, level="error")
+            scope.set_context("watchdog_pass_failures", {"failures": _pass_failures, "streak": _streak})
+            scope.set_level(_level)
+            sentry_sdk.capture_message(_msg, level=_level)
     else:
+        # Schone run → streak resetten (set 0 i.p.v. delete: delete is voorbehouden aan de arq-keys van
+        # de re-enqueue) zodat een losse blip niet meetelt richting de ERROR-drempel; alleen OPEENVOLGENDE
+        # gedegradeerde runs escaleren.
+        try:
+            await redis.set(_DEGRADED_STREAK_KEY, 0, ex=_DEGRADED_STREAK_TTL)
+        except Exception as _re:  # noqa: BLE001
+            logger.warning(f"[WATCHDOG] kon degraded-streak niet resetten in Redis: {_re}")
         logger.info("[WATCHDOG] run ok — alle passes voltooid")
 
     # BetterStack worker-heartbeat (env-gated: inert tot BETTERSTACK_HEARTBEAT_URL op de worker-service
