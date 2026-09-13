@@ -3,47 +3,50 @@
 Praktische gids: hoe kom je aan werkende testaccounts en hoe draai je de E2E-specs +
 de herbruikbare authenticated productie-check.
 
-## Testaccounts
+## Testaccounts — per-run provisioning (sinds 2026-09-13)
 
-`tests/test_accounts.json` (gitignored — **nooit committen**) bevat 4 accounts op het
-`@indxr-test.com`-domein, wachtwoord `TestPassword123!`. Deze zijn geflagd als testaccount in de
-admin (op `+test`/`@indxr-test.com`, ADR-056), dus ze vervuilen de finance/growth-cijfers niet.
+**Er worden GEEN wachtwoorden meer in de repo opgeslagen.** Het oude `tests/test_accounts.json`
+(vaste `test1-4@indxr-test.com` + gedeeld wachtwoord) is **verlaten**: die accounts waren opgeruimd
+uit `auth.users`, en een opgeslagen wachtwoord drift stil (een inlogfout is niet te onderscheiden van
+een verwijderd account → check ALTIJD eerst `auth.users`). Zie [[docs/LESSONS.md]] 2026-09-13.
 
-| Account | Rol (config/accounts.ts) | Notitie |
-|---------|--------------------------|---------|
-| test1 | auto-captions | Het "hoofd"-account; heeft doorgaans data/credits |
-| test2 | whisper | isolatie-tegenpartij |
-| test3 | playlist | |
-| test4 | stress | |
+`global-setup.ts` provisioneert nu **per run** verse accounts via de admin-API
+(`helpers/provision.ts`):
 
-**Belangrijk:** `@indxr-test.com` heeft geen echte MX, dus **signup via de UI/anon-API weigert
-Supabase het** ("Email address invalid"). Testaccounts worden daarom **admin-side** aangemaakt met
-`admin.createUser({ email, password, email_confirm: true })` — dat accepteert het domein wél en zet
-de mailbevestiging meteen goed.
+- `admin.createUser({ email, password, email_confirm: true })` met run-prefix
+  `e2e-<runId>-<n>@indxr.ai`, één per rol (`auto-captions` / `whisper` / `playlist` / `stress`).
+- Profiel gezet op `is_internal = true` (buiten de finance/growth-dashboards) + onboarding voltooid
+  (`username` + `onboarding_completed = true` — anders bounce `/dashboard` → `/onboarding` en faalt
+  elke spec) + 200 credits via de `add_credits`-RPC.
+- Het wachtwoord wordt **per run gegenereerd** en staat alleen in de ephemere, git-genegeerde
+  `tests/playwright/.e2e-run-accounts.json` (die `config/accounts.ts` per run leest — niet meer
+  `test_accounts.json`).
+- **Fallback** als de omgeving geen users kan aanmaken (geen service-role key): een vast account uit
+  env-vars `E2E_FALLBACK_EMAIL` / `E2E_FALLBACK_PASSWORD` / `E2E_FALLBACK_USER_ID`. Credentials komen
+  dus uit env-vars, nóóit uit een repo-bestand.
 
-### Accounts kwijt of wachtwoord onbekend? Opnieuw aanmaken
+De service-role key + `NEXT_PUBLIC_SUPABASE_URL` komen uit env-vars (of, lokaal, repo-root `.env.local`).
 
-Als een account niet meer bestaat (verwijderd) of het wachtwoord is geroteerd, maak het opnieuw aan
-met de service-role key. Minimaal script:
+### Draaien
 
-```js
-const { createClient } = require("@supabase/supabase-js");
-// URL + SUPABASE_SERVICE_ROLE_KEY uit .env.local (root)
-const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false } });
-const { data } = await admin.auth.admin.createUser({
-  email: "test2@indxr-test.com", password: "TestPassword123!", email_confirm: true,
-});
-// credits materialiseren via de RPC (nooit direct INSERT):
-await admin.rpc("add_credits", { p_user_id: data.user.id, p_amount: 50, p_reason: "Test account seed" });
+pnpm-isolatie hoist `@playwright/test`/`@supabase/supabase-js` niet naar de repo-root → `playwright test`
+aan root faalt. Draai daarom via de shim:
+
+```bash
+BASE_URL=https://app.indxr.ai pnpm test:e2e specs/00-provisioning-smoke.spec.ts
 ```
 
-Werk daarna **`tests/test_accounts.json`** bij met het nieuwe `user_id` (de `config/accounts.ts`-loader
-leest die file). `global-setup.ts` topt bij elke run credits bij tot ≥ 50; als een `user_id` niet meer
-in `auth.users` bestaat faalt die top-up met een FK-error op `user_credits_user_id_fkey` — dat is de
-tell dat het account opnieuw aangemaakt moet worden.
+`specs/00-provisioning-smoke.spec.ts` is de canary: bewijst dat een verse account inlogt en op
+`/dashboard` blijft. Rood daar = authed-specs kunnen niet draaien.
 
-> **Historie:** test2–4 waren 2026-08-01 verwijderd (FK-fout in global-setup) en zijn toen opnieuw
-> aangemaakt met bovenstaand recept. test1 (`f136104d-…`) is al die tijd blijven bestaan.
+### Teardown (rule #227 — standaard UIT)
+
+`global-teardown.ts` somt de aangemaakte accounts op en **verwijdert niets** tenzij `E2E_TEARDOWN=1`
+expliciet gezet is. Aangemaakte `e2e-<runId>-*`-accounts zijn `is_internal=true` → ze vervuilen de
+dashboards niet; opruimen doet Khidr bewust met de flag na controle van de geprinte lijst.
+
+> **Historie:** de oude `test1-4@indxr-test.com` bestonden 2026-09-13 niet meer in `auth.users`;
+> `test_accounts.json` verwees naar opgeruimde accounts. Vervangen door bovenstaande provisioning.
 
 ## Playwright E2E-specs
 
