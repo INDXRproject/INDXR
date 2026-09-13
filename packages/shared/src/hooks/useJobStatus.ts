@@ -15,6 +15,9 @@ export interface JobStatusRow {
   // this account's FIRST premium action → the frontend fires the Google Ads activation conversion once
   // (ADR-101). Absent/false for later actions and for playlist jobs. Never derived client-side.
   first_premium_action?: boolean | null
+  // Account id (server-provided, == the authenticated caller) → stable `activation_<user_id>`
+  // transaction_id so Google dedupes a cross-device/session re-fire of the activation conversion.
+  user_id?: string | null
   // Raw DB column names (ADR/priorities 2.0 — alias phase-out step 2). The old curated
   // aliases `duration`/`credits_used` came back empty on a Realtime UPDATE (which carries the
   // raw row), so we read the raw columns the backend now emits on both channels (since 669a0c1).
@@ -79,13 +82,14 @@ function fireActivationOnce(job: JobStatusRow, jobId: string): void {
   // written without consent (ePrivacy art. 5(3)).
   if (!isAdTagLoaded()) return
   const key = `gads_activation_${jobId}`
+  const userId = job.user_id ?? undefined  // stable transaction_id source (activation_<user_id>)
   try {
     if (localStorage.getItem(key)) return
-    trackActivation()
+    trackActivation(userId)
     localStorage.setItem(key, '1')
   } catch {
     // localStorage blocked (private mode) — fire anyway; Google's One-per counting dedupes the click.
-    trackActivation()
+    trackActivation(userId)
   }
 }
 

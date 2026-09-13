@@ -42,12 +42,17 @@ export function trackPurchase({
  * trackPurchase. Same Consent Mode Basic behaviour as purchase/signup: pushing before consent queues
  * the event (dropped if consent never comes); missing label / no window.gtag → silent no-op, no throw.
  */
-export function trackActivation(): void {
+export function trackActivation(userId?: string): void {
   if (!isBrowser() || !ADS_ID || !ACTIVATION_LABEL || !window.gtag) return
   window.gtag("event", "conversion", {
     send_to: `${ADS_ID}/${ACTIVATION_LABEL}`,
     value: 1,
     currency: "EUR",
+    // Activation is one-per-account (server-truth first_premium_action), so `activation_<userId>` is a
+    // stable id: Google dedupes a cross-device/session re-fire on it (the localStorage guard only covers
+    // the same browser). Omitted when userId is absent — the event still fires, just undeduped. NB: exact
+    // value, no prefix/suffix/whitespace changes — Google matches server-side on this literal string.
+    ...(userId ? { transaction_id: `activation_${userId}` } : {}),
   })
 }
 

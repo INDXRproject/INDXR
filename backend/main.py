@@ -1276,6 +1276,9 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         # EERSTE premium-actie van dit account was (atomisch gezet). De frontend vuurt hierop 1× de
         # activatie-conversie. Read-only, geen creditlogica.
         "first_premium_action": job.get('first_premium_action'),
+        # Account-id (== geauthenticeerde caller) → stabiele transaction_id `activation_<user_id>` voor
+        # de activatie-conversie, zodat Google een her-fire cross-device dedupet. Read-only.
+        "user_id": user_id,
         # available_credits VERWIJDERD: de frontend heeft het live saldo al via useAuth; een gekopieerd
         # saldo in een poll-respons is per definitie ouder dan wat de user ziet -> geen tweede bron.
     })
