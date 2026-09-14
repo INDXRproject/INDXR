@@ -6,6 +6,16 @@ import logging
 
 logger = logging.getLogger("indxr-backend")
 
+
+class VideoNotFoundError(Exception):
+    """De YouTube Data API gaf AUTORITATIEF 0 items terug: de video bestaat niet (verwijderd/privé).
+    Dit is een betrouwbaar permanent signaal (de API is niet onderhevig aan de yt-dlp-bot-block, TAAK 1a)
+    → de caller mag hierop een onbeschikbare video weigeren VÓÓR de credit-reservering (TAAK 2), i.p.v.
+    een reserveer→mislukt→refund-cyclus. Onderscheiden van transiente API-fouten (quota/netwerk), die
+    NIET permanent zijn en dus niet mogen weigeren."""
+    pass
+
+
 class YouTubeClient:
     def __init__(self):
         self.api_key = os.getenv("YOUTUBE_API_KEY")
@@ -146,7 +156,8 @@ class YouTubeClient:
             
             items = response.get("items", [])
             if not items:
-                raise Exception("Video not found")
+                # Autoritatief: de API kent deze id niet (verwijderd/privé) → permanent, betrouwbaar.
+                raise VideoNotFoundError(f"Video not found: {video_id}")
                 
             item = items[0]
             snippet = item["snippet"]

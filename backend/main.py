@@ -618,7 +618,7 @@ async def extract_youtube_transcript(request: ExtractRequest, _: None = Depends(
             error_type=error_type
         )
 
-from youtube_client import YouTubeClient
+from youtube_client import YouTubeClient, VideoNotFoundError
 
 # Initialize YouTube Client
 youtube_client = YouTubeClient()
@@ -769,7 +769,17 @@ async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_sec
         try:
             result = youtube_client.get_video_details(video_id)
             return result
+        except VideoNotFoundError:
+            # TAAK 2: autoritatief permanent (de API kent de id niet = verwijderd/privé). GEEN yt-dlp-
+            # fallback — die verspilt proxy-egress én kan bot-blocken (false negative op een echte video).
+            # De frontend weigert hierop VÓÓR de credit-reservering → geen reserveer→mislukt→refund-cyclus.
+            logger.info(f"[metadata] {video_id}: YouTube API not-found → video_not_found (geen fallback)")
+            return JSONResponse(status_code=404, content={
+                "success": False, "code": "video_not_found",
+                "error": "This video is unavailable — it's private, removed, or never existed.",
+            })
         except Exception as e:
+            # Transiente API-fout (quota/netwerk) — NIET permanent → val terug op yt-dlp (kan alsnog lukken).
             logger.warning(f"API Metadata Fetch failed for {video_id}: {e}")
             # Fallthrough
             

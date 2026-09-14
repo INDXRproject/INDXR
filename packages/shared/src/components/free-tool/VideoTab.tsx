@@ -566,6 +566,17 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
         const metaData = await metaResponse.json()
 
+        // TAAK 2 pre-flight: the YouTube Data API authoritatively reported this video doesn't exist
+        // (private/removed) — reject BEFORE reserving credits, so the user gets a direct, free message
+        // instead of a reserve→fail→refund cycle. Only this specific code rejects; any OTHER metadata
+        // failure falls through to the estimate path below (the download + its retry handle a transient
+        // block, so we never wrongly reject an available-but-momentarily-unreachable video).
+        if (metaResponse.status === 404 && metaData?.code === 'video_not_found') {
+          setError({ message: "This video isn't available — it's private, removed, or never existed. Try another video. No credits were used.", errorType: 'youtube_restricted' })
+          setLoading(false)
+          return
+        }
+
         // Calculate credits required
         let creditsRequired = 1 // Minimum
         let fetchedDuration = 0
