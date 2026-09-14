@@ -751,6 +751,15 @@ async def do_assemblyai_transcription(
                     await _update_job(status="error", error_message="members_only", error_type="members_only", proxy_bytes=err_bytes)
                     return {"success": False, "error_type": "members_only", "credit_cost": 0}
                 error_type = _classify_download_error(error_msg, video_id=video_id, job_id=job_id)
+                # TAAK 1c: een KALE "Video unavailable" is meestal een bot-block (TAAK 1a bewees: video
+                # publiek beschikbaar, maar de residentiële exit-IP werd geweigerd), niet een verwijderde
+                # video. De download-laag markeert de finale fout permanent (verwijderd/privé/geo) of
+                # transient (block/SSL/timeout na alle retries). Was 'ie transient maar leverde de
+                # string-classificatie 'youtube_restricted' op (bare 'unavailable'), corrigeer naar
+                # 'bot_detection' → de user krijgt de "we konden het niet ophalen, probeer opnieuw"-melding
+                # i.p.v. de onterechte "deze video is niet beschikbaar". Permanente fouten blijven staan.
+                if error_type == 'youtube_restricted' and not getattr(e, 'permanent', False):
+                    error_type = 'bot_detection'
                 # bot_detection/timeout/members_only zijn verwachte operationele uitkomsten, geen bugs.
                 if error_type not in ('bot_detection', 'timeout', 'connection_error', 'server_error', 'members_only', 'no_captions'):
                     with sentry_sdk.push_scope() as scope:

@@ -5,6 +5,7 @@ Handles audio duration detection, YouTube audio extraction, and file validation
 
 import os
 import math
+import random
 import subprocess
 import logging
 import time
@@ -56,6 +57,77 @@ MEMBERS_ONLY_KEYWORDS = [
     'unplayable',
     'members-only',
 ]
+
+# AANTOONBAAR PERMANENTE fouten — sneller falen, NIET retryen (een verse exit-IP verandert niets aan
+# een verwijderde/privé/geo-geblokkeerde video). yt-dlp geeft hiervoor een SPECIFIEKE reden.
+PERMANENT_KEYWORDS = [
+    'private video',
+    'this video is private',
+    'removed by the uploader',
+    'video has been removed',
+    'no longer available',
+    'account associated with this video has been terminated',
+    'not available in your country',
+    'blocked it in your country',
+    'who has blocked it',
+    'video is unavailable on this device',
+    'age-restricted',
+    'inappropriate for some users',
+]
+# BOT-BLOCK / rate-limit-signatuur: YouTube weigert dit residentiële exit-IP (0B egress) en geeft een
+# KALE "Video unavailable" of een expliciete bot-check. Dit is TRANSIENT — een verse sticky sessie
+# (ander exit-IP) lost het meestal op. Bewezen 2026-09-14 (TAAK 1a): dTAcaazDp-U gaf via de proxy
+# "Video unavailable" terwijl de video publiek + beschikbaar is (directe yt-dlp: availability=public).
+BOT_BLOCK_KEYWORDS = [
+    "sign in to confirm you're not a bot",
+    "sign in to confirm you’re not a bot",
+    'confirm you are not a bot',
+    'http error 429',
+    'too many requests',
+    "this content isn't available",
+]
+
+
+def _retry_backoff_delay(attempt: int, base: float = 1.0, cap: float = 8.0) -> float:
+    """Truncated exponential backoff met FULL jitter (AWS-aanbeveling): random(0, min(cap, base·2^n)).
+    Dempt thundering herd en spreidt de retry-druk. De harde wall-clock-deadline (overall_deadline)
+    begrenst het totaal — dus nooit lang blokkeren."""
+    return random.uniform(0, min(cap, base * (2 ** attempt)))
+
+
+def _classify_ytdlp_error(error_str: str) -> tuple[str, bool, bool]:
+    """Classificeer een yt-dlp-downloadfout → (reason, is_permanent, is_transient).
+
+    `error_str` is de lowercased foutmelding. PERMANENT eerst (specifieke yt-dlp-reden: verwijderd/
+    privé/geo/terminated) → nooit retryen. Een KALE "video unavailable" zonder permanente reden, of een
+    expliciete bot-check/429, is een bot-block (transient → retry met verse exit-IP; TAAK 1a). SSL/EOF/
+    timeout/5xx blijven transient. `is_transient` bepaalt of we (binnen max_attempts) retryen."""
+    is_permanent = any(kw in error_str for kw in PERMANENT_KEYWORDS)
+    is_partial_write = any(kw in error_str for kw in (
+        'bytes read', 'more expected', 'incomplete read', 'content-length',
+    ))
+    is_timeout = any(kw in error_str for kw in (
+        'timed out', 'timeout', 'read timeout', 'connectionpool',
+    ))
+    is_connection = any(kw in error_str for kw in (
+        'ssl', 'unexpected_eof', 'eof', 'connectionreset',
+        'remotedisconnected', 'broken pipe', 'connection reset',
+    ))
+    is_server = 'http error 5' in error_str  # 5xx: transient server-side
+    is_bot_block = (not is_permanent) and (
+        'video unavailable' in error_str or any(kw in error_str for kw in BOT_BLOCK_KEYWORDS)
+    )
+    is_transient = is_partial_write or is_timeout or is_connection or is_server or is_bot_block
+    reason = (
+        'permanent' if is_permanent else
+        'bot_block' if is_bot_block else
+        'partial_write' if is_partial_write else
+        'timeout' if is_timeout else
+        'connection' if is_connection else
+        'server' if is_server else
+        'other'
+    )
+    return reason, is_permanent, is_transient
 
 
 class MembersOnlyVideoError(Exception):
@@ -541,7 +613,7 @@ def extract_youtube_audio(
             last_error = Exception(
                 f"slow-exit screened at p={e.progress:.3f} (v={e.throughput / 1e6:.3f} MB/s)"
             )
-            delay = 2 ** attempt  # 2s, 4s — zelfde backoff als de andere retryable uitkomsten
+            delay = _retry_backoff_delay(attempt)  # truncated exp backoff + full jitter (zelfde als andere retries)
             logger.warning(
                 f"[YT-DLP-AUDIO screen-retry={attempt}/{max_attempts} video={video_id}] "
                 f"traag exit-IP (v={e.throughput / 1e6:.3f} MB/s bij p={e.progress:.2f}), "
@@ -578,36 +650,38 @@ def extract_youtube_audio(
                 _emit_summary('members_only')
                 raise MembersOnlyVideoError("This video is only available to channel members and cannot be transcribed.")
 
-            # Classify the failure reason to decide whether to retry
-            is_partial_write = any(kw in error_str for kw in (
-                'bytes read', 'more expected', 'incomplete read', 'content-length',
-            ))
-            is_timeout = any(kw in error_str for kw in (
-                'timed out', 'timeout', 'read timeout', 'connectionpool',
-            ))
-            is_connection = any(kw in error_str for kw in (
-                'ssl', 'unexpected_eof', 'eof', 'connectionreset',
-                'remotedisconnected', 'broken pipe', 'connection reset',
-            ))
-            reason = 'partial_write' if is_partial_write else ('timeout' if is_timeout else ('connection' if is_connection else 'other'))
+            # Classify the failure reason to decide whether to retry (transient) of sneller te falen
+            # (permanent). Onthoud de permanentie van de LAATSTE fout → de caller kiest de juiste
+            # user-melding (TAAK 1c).
+            reason, is_permanent, is_transient = _classify_ytdlp_error(error_str)
+            last_error_permanent = is_permanent
             _log_attempt(attempt, session, partial, attempt_ms, reason)
 
-            if (is_partial_write or is_timeout or is_connection) and attempt < max_attempts:
-                delay = 2 ** attempt  # 2s, 4s
+            if is_permanent:
+                logger.warning(f"[YT-DLP-AUDIO permanent-fail attempt={attempt} video={video_id} reason={reason}] {e}")
+                break
+            if is_transient and attempt < max_attempts:
+                delay = _retry_backoff_delay(attempt)  # truncated exp backoff + full jitter
                 logger.warning(
                     f"[YT-DLP-AUDIO retry={attempt}/{max_attempts} reason={reason} video={video_id}] "
-                    f"retrying in {delay}s with fresh proxy session"
+                    f"retrying in {delay:.2f}s with fresh proxy session"
                 )
                 time.sleep(delay)
             else:
                 break
 
-    logger.error(f"[YT-DLP-AUDIO final_fail attempts={attempt} video={video_id} egress={cumulative_bytes}B] {last_error}")
+    logger.error(
+        f"[YT-DLP-AUDIO final_fail attempts={attempt} video={video_id} egress={cumulative_bytes}B "
+        f"permanent={locals().get('last_error_permanent', False)}] {last_error}"
+    )
     _emit_summary('failed')  # no-op als een eerdere tak 'm al stuurde (deadline/members_only)
     # BLOK B+C: geef de gesommeerde egress mee op de exception zodat de pipeline 'm alsnog op de
     # (mislukte) job kan persisteren — de proxy-kost was echt, ook al faalde de download.
     final_err = Exception(f"Failed to extract audio from YouTube: {str(last_error)}")
     final_err.proxy_bytes = cumulative_bytes
+    # TAAK 1c: permanent (verwijderd/privé/geo/…) vs transient (block/timeout/SSL na alle retries) →
+    # de pipeline kiest hierop de user-melding. Default False (transient) als er geen classificatie was.
+    final_err.permanent = bool(locals().get('last_error_permanent', False))
     raise final_err
 
 
