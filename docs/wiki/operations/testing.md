@@ -3,29 +3,44 @@
 Praktische gids: hoe kom je aan werkende testaccounts en hoe draai je de E2E-specs +
 de herbruikbare authenticated productie-check.
 
-## Testaccounts — per-run provisioning (sinds 2026-09-13)
+## Testaccounts — VASTE POOL (sinds 2026-09-14)
 
-**Er worden GEEN wachtwoorden meer in de repo opgeslagen.** Het oude `tests/test_accounts.json`
-(vaste `test1-4@indxr-test.com` + gedeeld wachtwoord) is **verlaten**: die accounts waren opgeruimd
-uit `auth.users`, en een opgeslagen wachtwoord drift stil (een inlogfout is niet te onderscheiden van
-een verwijderd account → check ALTIJD eerst `auth.users`). Zie [[docs/LESSONS.md]] 2026-09-13.
+**Er worden GEEN wachtwoorden in de repo opgeslagen en GEEN accounts opgestapeld.** Historie: het oude
+`tests/test_accounts.json` (vaste `test1-4@indxr-test.com` + gedeeld wachtwoord) dreef stil weg (accounts
+verwijderd, wachtwoord verlopen); de daaropvolgende per-run-provisioning (`e2e-<runId>-<n>@…`) loste de
+drift op maar liet in 6 runs 24 accounts achter (teardown stond default uit). Beide zijn vervangen.
 
-`global-setup.ts` provisioneert nu **per run** verse accounts via de admin-API
-(`helpers/provision.ts`):
+`global-setup.ts` bereidt nu een **VASTE POOL van 4 accounts** voor die één keer bestaan en BLIJVEN
+bestaan (`helpers/provision.ts`, `preparePool`):
 
-- `admin.createUser({ email, password, email_confirm: true })` met run-prefix
-  `e2e-<runId>-<n>@indxr.ai`, één per rol (`auto-captions` / `whisper` / `playlist` / `stress`).
-- Profiel gezet op `is_internal = true` (buiten de finance/growth-dashboards) + onboarding voltooid
-  (`username` + `onboarding_completed = true` — anders bounce `/dashboard` → `/onboarding` en faalt
-  elke spec) + 200 credits via de `add_credits`-RPC.
-- Het wachtwoord wordt **per run gegenereerd** en staat alleen in de ephemere, git-genegeerde
-  `tests/playwright/.e2e-run-accounts.json` (die `config/accounts.ts` per run leest — niet meer
-  `test_accounts.json`).
-- **Fallback** als de omgeving geen users kan aanmaken (geen service-role key): een vast account uit
-  env-vars `E2E_FALLBACK_EMAIL` / `E2E_FALLBACK_PASSWORD` / `E2E_FALLBACK_USER_ID`. Credentials komen
-  dus uit env-vars, nóóit uit een repo-bestand.
+| Account | Rol |
+|---------|-----|
+| `e2e-1@indxr.ai` | auto-captions |
+| `e2e-2@indxr.ai` | whisper |
+| `e2e-3@indxr.ai` | playlist |
+| `e2e-4@indxr.ai` | stress |
 
+Per run, per poolaccount (find-or-create, self-healing):
+- **Wachtwoord roteren** via `admin.updateUserById` (nieuw account → `createUser`). Per run gegenereerd,
+  alleen in de ephemere, git-genegeerde `tests/playwright/.e2e-run-accounts.json` (die `config/accounts.ts`
+  leest) — nergens duurzaam bewaard, dus geen drift/lek.
+- **State reset**: prior-run-transcripts van DIT poolaccount wissen (strikt op eigen `user_id`; nooit een
+  echte user — rule #227 gaat over ACCOUNTS, transcripts mogen); credits terug tot de startvloer (200) via
+  de `add_credits`-RPC (nooit directe INSERT/UPDATE).
+- `is_internal = true` + onboarding voltooid (`username` + `onboarding_completed`) → buiten de dashboards
+  en geen `/dashboard`→`/onboarding`-bounce.
+
+**Geen teardown, geen accumulatie** → rule #227 wordt niet eens benaderd (er wordt nooit een account
+verwijderd). De `E2E_TEARDOWN`-flag en `global-teardown.ts` zijn verwijderd.
+
+**Fallback** (geen service-role key): één vast account uit env-vars `E2E_FALLBACK_EMAIL` /
+`E2E_FALLBACK_PASSWORD` / `E2E_FALLBACK_USER_ID`. Credentials dus uit env-vars, nooit uit een repo-bestand.
 De service-role key + `NEXT_PUBLIC_SUPABASE_URL` komen uit env-vars (of, lokaal, repo-root `.env.local`).
+
+**Parallelle runs:** Playwright draait hier serieel (`workers:1`, `fullyParallel:false`) en runs worden
+handmatig één-voor-één gestart (single-dev repo). Twee GELIJKTIJDIGE `pnpm test:e2e`-invocaties zouden
+op dezelfde 4 accounts racen (beide roteren wachtwoord + resetten) — dat scenario gebruikt deze repo
+niet. Voor CI-sharding: geef elke shard een eigen pool-suffix (`e2e-<shard>-1..4`) via een env-var.
 
 ### Draaien
 
@@ -36,14 +51,8 @@ aan root faalt. Draai daarom via de shim:
 BASE_URL=https://app.indxr.ai pnpm test:e2e specs/00-provisioning-smoke.spec.ts
 ```
 
-`specs/00-provisioning-smoke.spec.ts` is de canary: bewijst dat een verse account inlogt en op
+`specs/00-provisioning-smoke.spec.ts` is de canary: bewijst dat een poolaccount inlogt en op
 `/dashboard` blijft. Rood daar = authed-specs kunnen niet draaien.
-
-### Teardown (rule #227 — standaard UIT)
-
-`global-teardown.ts` somt de aangemaakte accounts op en **verwijdert niets** tenzij `E2E_TEARDOWN=1`
-expliciet gezet is. Aangemaakte `e2e-<runId>-*`-accounts zijn `is_internal=true` → ze vervuilen de
-dashboards niet; opruimen doet Khidr bewust met de flag na controle van de geprinte lijst.
 
 > **Historie:** de oude `test1-4@indxr-test.com` bestonden 2026-09-13 niet meer in `auth.users`;
 > `test_accounts.json` verwees naar opgeruimde accounts. Vervangen door bovenstaande provisioning.

@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   globalSetup: './tests/playwright/global-setup.ts',
-  globalTeardown: './tests/playwright/global-teardown.ts',
+  // No globalTeardown: the fixed pool (e2e-1..4) persists across runs — nothing to clean up.
   testDir: './tests/playwright/specs',
   fullyParallel: false,           // run spec files sequentially by default
   forbidOnly: !!process.env.CI,

@@ -180,10 +180,15 @@ venv/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 **Playwright tests:**
 ```bash
-npx playwright test                        # alle 9 specs headless
-npx playwright test specs/01-single-video  # één spec
+# Draai via de shim (pnpm-isolatie hoist @playwright/test niet naar root):
+pnpm test:e2e specs/00-provisioning-smoke.spec.ts   # canary
+BASE_URL=https://app.indxr.ai pnpm test:e2e         # tegen prod
 ```
-Vereist: `pnpm dev:marketing` + backend draaiend + `tests/test_accounts.json` aanwezig.
+Testaccounts: **vaste pool** `e2e-1..4@indxr.ai` (`is_internal=true`, persistent). `global-setup`
+roteert elke run hun wachtwoord + reset hun state via de admin-API (service-role uit env/`.env.local`);
+wachtwoorden worden per run gegenereerd en nergens duurzaam bewaard (`tests/test_accounts.json`
+BESTAAT NIET MEER). Zie `tests/playwright/helpers/provision.ts` + `docs/wiki/operations/testing.md`.
+Geen teardown/accumulatie (rule #227 blijft intact).
 
 **Python packages updaten:**
 ```bash
