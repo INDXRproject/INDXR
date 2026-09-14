@@ -49,16 +49,21 @@ export default async function AdminCreditsPage({
   const { data: transactions, count } = await query
 
   // Summary totals (unfiltered)
-  const [purchasedRes, consumedRes] = await Promise.all([
-    // Purchased = credit-toevoegingen behalve refunds (kind='refund'). NULL-kind (bestaande
-    // purchases/grants) blijft meetellen; na ADR-050-activering zouden de vele refund-credits
-    // dit anders inflaten.
+  const [issuedRes, purchasedRes, consumedRes] = await Promise.all([
+    // UITGEGEVEN credits (excl. refunds) — de systeem-float-bron voor Net Balance (uitgegeven −
+    // verbruikt). NULL-kind (oude purchases/grants) telt mee; refunds niet (die zouden na ADR-050
+    // de float inflaten). Dit is bewust NIET "gekocht".
     admin.from("credit_transactions").select("amount").eq("type", "credit").or("kind.is.null,kind.neq.refund"),
+    // ECHT GEKOCHT = alleen Stripe-aankopen (stripe_session_id in metadata — zelfde autoritatieve bron
+    // als de finance-RPC's + paid-users; kind='purchase' mist legacy-aankopen). Niet welkomst/grants/
+    // refunds — anders toont "Total Purchased" credits die niemand kocht (zelfde bug als admin-users).
+    admin.from("credit_transactions").select("amount").eq("type", "credit").not("metadata->>stripe_session_id", "is", null),
     // Consumed = werkelijk verbruik = kind='settlement'. NIET SUM(type='debit'): dat telt na
     // activering reservering + settlement dubbel (beide type='debit').
     admin.from("credit_transactions").select("amount").eq("kind", "settlement"),
   ])
 
+  const totalIssued = issuedRes.data?.reduce((s, r) => s + r.amount, 0) ?? 0
   const totalPurchased = purchasedRes.data?.reduce((s, r) => s + r.amount, 0) ?? 0
   const totalConsumed = consumedRes.data?.reduce((s, r) => s + r.amount, 0) ?? 0
 
@@ -84,7 +89,7 @@ export default async function AdminCreditsPage({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard label="Total Purchased" value={totalPurchased.toLocaleString()} />
         <MetricCard label="Total Consumed" value={totalConsumed.toLocaleString()} />
-        <MetricCard label="Net Balance" value={(totalPurchased - totalConsumed).toLocaleString()} />
+        <MetricCard label="Net Balance" value={(totalIssued - totalConsumed).toLocaleString()} />
         <MetricCard label="Transactions" value={(count ?? 0).toLocaleString()} />
       </div>
 

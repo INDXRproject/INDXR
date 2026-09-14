@@ -578,9 +578,11 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
   const [status, setStatus] = useState<Status | null>(null)
 
   function updateUserBalance(userId: string, addedAmount: number) {
+    // Een handmatige admin-toekenning is een GRANT, geen aankoop → alleen de balans ophogen, NIET
+    // "purchased" (dat telt uitsluitend echte Stripe-aankopen, kind='purchase'). Zie users/page.tsx.
     setUsers((prev) =>
       prev.map((u) =>
-        u.id === userId ? { ...u, balance: u.balance + addedAmount, purchased: u.purchased + addedAmount } : u
+        u.id === userId ? { ...u, balance: u.balance + addedAmount } : u
       )
     )
   }

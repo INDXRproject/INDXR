@@ -43,8 +43,14 @@ export default async function AdminUsersPage({
     userIds.length > 0
       ? admin
           .from("credit_transactions")
+          // "Purchased" = ALLEEN echte Stripe-aankopen. Autoritatief signaal = een stripe_session_id in
+          // de metadata (ZELFDE bron als de finance-RPC's `is_purchase` + de paid-users-pagina). NB
+          // kind='purchase' mist legacy-aankopen zonder gezette kind (1 zo'n rij in prod). Zonder deze
+          // filter telde de som ook welkomstcredits + refunds mee (christopherrocillo3: 50 welkomst +
+          // 19 refund = 69 "gekocht" zonder ooit te kopen).
           .select("user_id, amount")
           .eq("type", "credit")
+          .not("metadata->>stripe_session_id", "is", null)
           .in("user_id", userIds)
       : Promise.resolve({ data: [] as { user_id: string; amount: number }[] }),
   ])
