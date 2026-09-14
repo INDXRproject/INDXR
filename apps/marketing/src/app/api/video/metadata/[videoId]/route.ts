@@ -18,7 +18,10 @@ export async function GET(
     )
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Failed to fetch metadata' }, { status: response.status })
+      // Forward the backend's body (incl. codes like `video_not_found`) so the client can gate on it —
+      // e.g. reject an unavailable video BEFORE reserving credits (TAAK 2). A generic error would hide it.
+      const body = await response.json().catch(() => ({ error: 'Failed to fetch metadata' }))
+      return NextResponse.json(body, { status: response.status })
     }
 
     const data = await response.json()
