@@ -185,6 +185,7 @@ async def test_transcription_job_reenqueued():
     supabase = _supabase_mock(transcription_data=[job])
 
     with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.get_watchdog_read_client", return_value=supabase), \
          patch("worker.refund_credits") as mock_refund, \
          patch("worker.refund_credits_flat") as mock_refund_flat:
 
@@ -218,7 +219,8 @@ async def test_job_with_watchdog_attempts_1_not_reenqueued():
     redis.enqueue_job = AsyncMock()
     supabase = _supabase_mock(transcription_data=[])  # leeg: filter sluit job uit
 
-    with patch("worker.get_supabase_client", return_value=supabase):
+    with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.get_watchdog_read_client", return_value=supabase):
         from worker import watchdog_interrupted_jobs
         await watchdog_interrupted_jobs({"redis": redis})
 
@@ -233,7 +235,8 @@ async def test_job_with_transcript_id_not_reenqueued():
     # transcript_id IS NULL filter → lege resultset
     supabase = _supabase_mock(transcription_data=[])
 
-    with patch("worker.get_supabase_client", return_value=supabase):
+    with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.get_watchdog_read_client", return_value=supabase):
         from worker import watchdog_interrupted_jobs
         await watchdog_interrupted_jobs({"redis": redis})
 
@@ -255,7 +258,8 @@ async def test_playlist_interrupted_all_done_skipped():
     redis.enqueue_job = AsyncMock()
     supabase = _supabase_mock(playlist_data=[job])
 
-    with patch("worker.get_supabase_client", return_value=supabase):
+    with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.get_watchdog_read_client", return_value=supabase):
         from worker import watchdog_interrupted_jobs
         await watchdog_interrupted_jobs({"redis": redis})
 
@@ -277,7 +281,8 @@ async def test_playlist_finds_correct_video_index():
     redis.enqueue_job = AsyncMock()
     supabase = _supabase_mock(playlist_data=[job])
 
-    with patch("worker.get_supabase_client", return_value=supabase):
+    with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.get_watchdog_read_client", return_value=supabase):
         from worker import watchdog_interrupted_jobs
         await watchdog_interrupted_jobs({"redis": redis})
 
@@ -304,6 +309,7 @@ async def test_pass2_refund_when_heartbeat_stale():
     supabase = _supabase_mock(transcription_data=[], refund_data=[job])
 
     with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.get_watchdog_read_client", return_value=supabase), \
          patch("worker.refund_credits") as mock_refund, \
          patch("worker.refund_credits_flat", return_value={"success": True}) as mock_refund_flat:
 
@@ -329,6 +335,7 @@ async def test_pass2_no_refund_when_heartbeat_fresh():
     supabase = _supabase_mock(transcription_data=[], refund_data=[])  # filter sluit job uit
 
     with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.get_watchdog_read_client", return_value=supabase), \
          patch("worker.refund_credits") as mock_refund, \
          patch("worker.refund_credits_flat") as mock_refund_flat:
 
@@ -348,7 +355,8 @@ async def test_second_watchdog_run_idempotent():
     redis.enqueue_job = AsyncMock()
     supabase = _supabase_mock(transcription_data=[])  # lege resultset
 
-    with patch("worker.get_supabase_client", return_value=supabase):
+    with patch("worker.get_supabase_client", return_value=supabase), \
+         patch("worker.get_watchdog_read_client", return_value=supabase):
         from worker import watchdog_interrupted_jobs
         # Eerste run
         await watchdog_interrupted_jobs({"redis": redis})

@@ -32,6 +32,7 @@ from credit_manager import (
     refund_credits,
     refund_credits_flat,
     get_supabase_client,
+    get_watchdog_read_client,
     playlist_free_ids,
 )
 from transcription_pipeline import (
@@ -1217,6 +1218,9 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     re-enqueued process_playlist_retries.
     """
     supabase = get_supabase_client()
+    # Bounded leesquery's (alle _retry_read-callsites hieronder) op de aparte 10s-read-client —
+    # niet op `supabase` (120s, voor de claim-/refund-writes) — zie get_watchdog_read_client.
+    supabase_r = get_watchdog_read_client()
     redis = ctx['redis']
     now = datetime.now(timezone.utc)
     stale_before = (now - timedelta(minutes=5)).isoformat()
@@ -1249,7 +1253,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # Playlist-jobs verlaten 'pending' binnen seconden → vallen buiten 30min drempel.
     try:
         _p0a = await _retry_read(
-            lambda: supabase.table('transcription_jobs')
+            lambda: supabase_r.table('transcription_jobs')
                 .select('id,credits_deducted,source_kind')
                 .eq('status', 'pending')
                 .is_('last_heartbeat_at', 'null')
@@ -1290,7 +1294,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # schrijft naar playlist_extraction_jobs, nooit naar transcription_jobs).
     try:
         _p0b = await _retry_read(
-            lambda: supabase.table('transcription_jobs')
+            lambda: supabase_r.table('transcription_jobs')
                 .select('id,credits_deducted,source_kind')
                 .in_('status', ['downloading', 'transcribing', 'saving'])
                 .not_.is_('last_heartbeat_at', 'null')
@@ -1327,7 +1331,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # ── Pass 1a: transcription_jobs re-enqueue ────────────────────────────
     try:
         result = await _retry_read(
-            lambda: supabase.table('transcription_jobs')
+            lambda: supabase_r.table('transcription_jobs')
                 .select('id,user_id,video_url,source_kind')
                 .eq('status', 'interrupted')
                 .eq('credits_deducted', True)
@@ -1394,7 +1398,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # Both statuses use the same query (same columns needed) then branch on status.
     try:
         result = await _retry_read(
-            lambda: supabase.table('playlist_extraction_jobs')
+            lambda: supabase_r.table('playlist_extraction_jobs')
                 .select('id,user_id,video_ids,video_results,completed,failed,total_videos,status,last_heartbeat_at,watchdog_attempts')
                 .in_('status', ['interrupted', 'retry_pending'])
                 .lt('watchdog_attempts', MAX_PLAYLIST_WATCHDOG_ATTEMPTS)
@@ -1509,7 +1513,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # Vangt zowel oude-modus (credits_deducted) als gereserveerde jobs (credits_reserved>0).
     try:
         result = await _retry_read(
-            lambda: supabase.table('transcription_jobs')
+            lambda: supabase_r.table('transcription_jobs')
                 .select('id,user_id,credits_cost,credits_reserved,source_kind')
                 .eq('status', 'interrupted')
                 .is_('transcript_id', 'null')
@@ -1553,7 +1557,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # de status-flip (CAS) stopt her-selectie in volgende cycli.
     try:
         result = await _retry_read(
-            lambda: supabase.table('playlist_extraction_jobs')
+            lambda: supabase_r.table('playlist_extraction_jobs')
                 .select('id,user_id')
                 .eq('status', 'interrupted')
                 .gte('watchdog_attempts', 1)
@@ -1587,7 +1591,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     # terminal-status-set en de refund-retries. Zulke jobs zijn al 'complete'/'error' → buiten
     # Pass 2/2b. De anti-join (credits_reserved>0 + geen refund-rij) levert precies die gemiste
     # refunds; Pass 2c boekt ze idempotent zonder de status te muteren (cap = 50 rijen/cyclus/tabel).
-    await _reconcile_unrefunded_reserved(supabase, limit=50)
+    await _reconcile_unrefunded_reserved(supabase_r, limit=50)
 
     # ── Pass S: ai_summary reaper (ADR-090) ───────────────────────────────────
     # Summary-jobs (source_kind='ai_summary') worden NIET door de whisper-reaper/re-enqueue passes
@@ -1599,7 +1603,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         _sum_pending_cutoff = (now - timedelta(minutes=30)).isoformat()
         _dead = await _retry_read(
-            lambda: supabase.table('transcription_jobs')
+            lambda: supabase_r.table('transcription_jobs')
                 .select('id,user_id,status,credits_reserved')
                 .eq('source_kind', 'ai_summary')
                 .gt('credits_reserved', 0)
@@ -1652,7 +1656,7 @@ async def watchdog_interrupted_jobs(ctx: dict) -> None:
     try:
         _reap_progress_cutoff = (now - timedelta(minutes=REAP_PROGRESS_STALE_MIN)).isoformat()
         result = await _retry_read(
-            lambda: supabase.table('playlist_extraction_jobs')
+            lambda: supabase_r.table('playlist_extraction_jobs')
                 .select('id,user_id,video_ids,video_results,completed,failed,total_videos,'
                         'credits_reserved,last_heartbeat_at,last_progress_at,created_at')
                 .eq('status', 'running')

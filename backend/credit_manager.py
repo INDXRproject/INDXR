@@ -23,6 +23,46 @@ RESERVATION_ENABLED = os.environ.get("CREDIT_RESERVATION_ENABLED", "true").lower
 # Supabase client (singleton)
 _supabase_client: Optional[Client] = None
 
+# Tweede, kortlevende client — alleen voor de watchdog's bounded leesquery's (_retry_read in
+# worker.py). INDXR-BACKEND-? (Sentry 95ce43205e864621bf91ff672dc16b4b, 2026-10-14 14:50 UTC):
+# die queries deelden tot nu toe de schrijf-client hierboven (timeout=120s) → een ReadTimeout
+# verbruikt per definitie de VOLLEDIGE 120s voor hij raiset, ruim boven _retry_read's eigen 20s-
+# deadline → "opgegeven na 1 poging(en)" (de bedoelde 4x-backoff-retry vond dus NOOIT plaats) en
+# die ene pass blokkeerde ~120s van de 2-minuten cron-cadans. EXPLAIN ANALYZE op de getroffen
+# query (playlist_extraction_jobs Pass 2b, 2026-10-15) gaf 0,109ms execution op 37 rijen — geen
+# trage query/ontbrekende index, dus de fix is een passende timeout, niet een hogere. read=10s is
+# ruim (10.000x) boven de gemeten queryduur maar ruim onder de 120s-schrijftimeout, zodat
+# _retry_read binnen zijn 20s-deadline daadwerkelijk meerdere pogingen kan doen. De schrijf-/RPC-
+# paden (refund/settle/claim) blijven op de 120s-client — die zijn niet retried en verdienen de
+# marge. Zie docs/LESSONS.md 2026-10-15.
+_watchdog_read_client: Optional[Client] = None
+
+
+def get_watchdog_read_client() -> Client:
+    """Eigen Supabase-client voor de watchdog's leesquery's — kort, expliciet timeout (zie boven)."""
+    global _watchdog_read_client
+
+    if _watchdog_read_client is None:
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_SERVICE_KEY")
+
+        if not supabase_url or not supabase_key:
+            raise Exception("Supabase credentials not configured in .env")
+
+        _httpx_client = httpx.Client(
+            http2=False,  # zelfde GOAWAY-fix als de hoofdclient, zie get_supabase_client hieronder
+            timeout=httpx.Timeout(connect=5.0, read=10.0, write=10.0, pool=5.0),
+            follow_redirects=True,
+        )
+        _watchdog_read_client = create_client(
+            supabase_url,
+            supabase_key,
+            options=ClientOptions(httpx_client=_httpx_client),
+        )
+        logger.info("Watchdog read-client initialized (read-timeout=10s, HTTP/2 disabled)")
+
+    return _watchdog_read_client
+
 
 def get_supabase_client() -> Client:
     """Get or create Supabase client."""
