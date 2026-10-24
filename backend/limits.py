@@ -18,3 +18,17 @@ MAX_CONCURRENT_JOBS = 3
 # Max geaccepteerde audioduur voor AI-transcriptie (AssemblyAI-plafond, ADR-071). Caption-extractie
 # heeft GEEN duurcap. De ARQ job_timeout wordt hiervan afgeleid in transcription_pipeline.py.
 MAX_TRANSCRIPTION_SECONDS = 10 * 3600  # 36000
+
+# Snelle-balie per-bestand-tarief (growth-plan.md §6.2 Onderdeel B, goedgekeurd 2026-10-24).
+# MUST match packages/shared/src/lib/pricing.ts PER_FILE_EUR_PER_MIN/PER_FILE_MIN_EUR — SQL/TS
+# kunnen elkaar niet importeren, dus hand-gekoppeld (zelfde patroon als FREE_TIER.WELCOME_CREDITS,
+# zie credit-system.md). Wijzig je het tarief, pas BEIDE bronnen aan.
+PER_FILE_EUR_PER_MIN = 0.10
+PER_FILE_MIN_EUR = 2.00
+
+# Max bestanden per snelle-balie-offerte (growth-plan.md §6.2).
+MAX_QUICK_QUOTE_FILES = 5
+
+# Gratis voorproefje: eerste N seconden van elk bestand, direct getranscribeerd en getoond
+# vóór betaling (begrenst anonieme kosten tot centen per bestand).
+QUICK_QUOTE_PREVIEW_SECONDS = 180

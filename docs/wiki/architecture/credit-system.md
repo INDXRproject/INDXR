@@ -290,6 +290,26 @@ Credits = wat de **user** betaalt. Daarnaast meet de backend de **werkelijke kos
 
 ---
 
+## Snelle balie — anonieme per-bestand-aankoop (2026-10-25, ADR-107)
+
+Naast account+pakketten: upload zonder account → offerte (duur+prijs) → gratis voorproefje
+(eerste 3 min) → betalen per bestand. Zie [ADR-107](../decisions/107-quick-checkout-guest-accounts.md)
+voor de volledige architectuur. Kort:
+
+- **Offerte vóór betaling** in `quick_quotes` (RLS dicht, alleen service-role + publiek
+  `access_token`). Bestand gaat meteen naar R2 — overleeft een Stripe-redirect.
+- **Credits toekennen = `add_credits` met `p_kind='purchase'`**, exact zoals een pakketaankoop —
+  idempotent op `stripe_session_id` (zelfde DB-invariant als Onderdeel A hierboven).
+- **Guest-account**: een ECHTE Supabase Auth-user (`admin.createUser`, geen wachtwoord) op het
+  Checkout-e-mailadres, `profiles.is_guest=true`. Canonical-email-dedup (RPC
+  `find_canonical_account`, hergebruikt ADR-024's `normalize_email`) crediteert een bestaand
+  account i.p.v. een nieuwe guest aan te maken bij een `+tag`/puntjes-alias.
+- **Reservering/settlement/refund per bestand** lopen via de bestaande `reserve_credits` +
+  `run_whisper_reservation_aware`-wrapper (ADR-050) — geen nieuwe financiële primitief, alleen een
+  nieuwe aanroeper (`backend/main.py` `/api/quote/{id}/dispatch`).
+- **Secure transcript-link**: `transcripts.guest_access_token` + `/t/[token]` (server-side,
+  service-role, geen RLS-policy nodig).
+
 ## Paid User Status
 
 **⚠️ Gedeeltelijk geïmplementeerd.** De `isPremium`-check in API routes werkt via `total_credits_purchased > 0` (uit de `get_user_credits` RPC). Een apart `has_ever_purchased` veld in `profiles` en een `isPaidUser` boolean in AuthContext bestaan **nog niet** in de code.

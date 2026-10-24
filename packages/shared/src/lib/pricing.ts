@@ -115,6 +115,18 @@ export function summaryCreditCost(durationSeconds: number): number {
   return Math.max(1, Math.ceil(durationSeconds / 600))
 }
 
+// Snelle-balie per-bestand-tarief (growth-plan.md §6.2 Onderdeel B, goedgekeurd 2026-10-24):
+// max(PER_FILE_MIN_EUR, PER_FILE_EUR_PER_MIN * ceil(minuten)), BTW-inclusief. MUST match
+// backend/limits.py PER_FILE_EUR_PER_MIN/PER_FILE_MIN_EUR — SQL/TS kunnen elkaar niet
+// importeren, dus hand-gekoppeld (zelfde patroon als FREE_TIER.WELCOME_CREDITS hieronder).
+export const PER_FILE_EUR_PER_MIN = 0.10
+export const PER_FILE_MIN_EUR = 2.00
+
+export function quickQuotePriceEur(durationSeconds: number): number {
+  const minutes = Math.max(1, Math.ceil(durationSeconds / 60))
+  return Math.max(PER_FILE_MIN_EUR, minutes * PER_FILE_EUR_PER_MIN)
+}
+
 // Free-tier limits
 export const FREE_TIER = {
   // MUST match the grant literal in the claim_welcome_reward RPC (SQL cannot import this TS constant,

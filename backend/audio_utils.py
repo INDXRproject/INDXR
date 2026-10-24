@@ -292,6 +292,24 @@ def estimate_upload_reserve_cost(audio_path: str) -> Dict:
     return {"credits": max(1, math.ceil(est_seconds / 60.0)), "duration": None, "source": "size_fallback"}
 
 
+def extract_preview_clip(src_path: str, dest_path: str, seconds: int) -> str:
+    """Trim the first `seconds` of audio from `src_path` into `dest_path` (growth-plan.md §6.2
+    Onderdeel B — the quick-checkout free preview, capped so anonymous usage costs us only cents).
+    Same ffmpeg audio-extraction command as compress_audio_if_needed, with -t added to cap duration;
+    -ss 0 is implicit. Raises on ffmpeg failure (caller decides how to degrade)."""
+    ffmpeg_cmd = [
+        'ffmpeg', '-i', str(src_path),
+        '-t', str(seconds),
+        '-vn', '-map_metadata', '-1', '-ac', '1',
+        '-c:a', 'libopus', '-b:a', '12k', '-application', 'voip',
+        str(dest_path),
+    ]
+    result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=60)
+    if result.returncode != 0:
+        raise Exception(f"ffmpeg preview-clip extraction failed: {result.stderr[-500:]}")
+    return dest_path
+
+
 def _proxy_session_id(proxy_url: Optional[str]) -> str:
     """Haal het (niet-geheime) Decodo-session-id uit een proxy-URL voor logging. De URL is
     `http://user-<USER>-session-<SID>:<PASS>@<HOST>:<PORT>`; we geven <SID> terug en raken het

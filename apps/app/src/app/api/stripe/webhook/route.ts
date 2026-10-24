@@ -210,7 +210,11 @@ export async function POST(req: Request) {
     if (session.payment_status !== 'paid') {
       return new NextResponse(null, { status: 200 })
     }
-    await grantCreditsForSession(session)
+    if (session.metadata?.productType === 'quick_purchase') {
+      await handleQuickPurchaseSession(session)
+    } else {
+      await grantCreditsForSession(session)
+    }
   }
 
   if (event.type === 'checkout.session.async_payment_failed') {
@@ -339,4 +343,145 @@ async function grantCreditsForSession(session: Stripe.Checkout.Session) {
       }
   })
   await client.shutdown()
+}
+
+// normalize_email mirror (supabase/migrations/20260712220428_welcome_reward_canonical_email_dedup.sql)
+// — SQL kan deze TS-functie niet aanroepen en omgekeerd, dus hand-gekoppeld (zelfde patroon als
+// FREE_TIER.WELCOME_CREDITS). Alleen gebruikt om een guest-account NIET aan te maken als er al een
+// account bestaat op een +tag/puntjes-alias van hetzelfde adres (ADR-024) — de DB-RPC
+// find_canonical_account is de autoritatieve check; dit is puur voor logging/leesbaarheid hier.
+function normalizeEmailMirror(email: string): string {
+  const [local, domain] = email.toLowerCase().trim().split('@')
+  if (!domain) return email.toLowerCase().trim()
+  let l = local.split('+')[0]
+  let d = domain
+  if (d === 'gmail.com' || d === 'googlemail.com') {
+    l = l.replace(/\./g, '')
+    d = 'gmail.com'
+  }
+  return `${l}@${d}`
+}
+
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000'
+
+// Snelle-balie-afrekening (growth-plan.md §6.2 Onderdeel B). Anders dan grantCreditsForSession:
+// geen vaste userId in metadata (tenzij de koper al ingelogd was met te weinig saldo) — de koper
+// kan hier voor het EERST een account krijgen, op het e-mailadres dat Stripe Checkout verzamelde.
+// Eén grootboek: de guest krijgt een gewone user_credits-rij via de bestaande add_credits-RPC,
+// idempotent op stripe_session_id net als elke andere aankoop (Onderdeel A).
+async function handleQuickPurchaseSession(session: Stripe.Checkout.Session) {
+  const supabase = createAdminClient()
+  const quoteId = session.metadata?.quoteId
+  if (!quoteId) {
+    Sentry.captureMessage('Stripe webhook: quick_purchase session missing quoteId', {
+      level: 'error',
+      tags: { route: 'api/stripe/webhook', step: 'quick_purchase_missing_quote' },
+      extra: { stripe_session_id: session.id },
+    })
+    return
+  }
+
+  const { data: quote } = await supabase
+    .from('quick_quotes')
+    .select('id,status,total_credits,email')
+    .eq('id', quoteId)
+    .single()
+
+  if (!quote) {
+    Sentry.captureException(new Error(`Stripe webhook: quick_quotes row not found for ${quoteId}`), {
+      tags: { route: 'api/stripe/webhook', step: 'quick_purchase_quote_missing' },
+      extra: { stripe_session_id: session.id },
+    })
+    return
+  }
+  if (quote.status !== 'pending') {
+    return // al verwerkt (herhaalde webhook-delivery) — dispatch is idempotent op quick_quotes.status
+  }
+
+  const email = session.customer_details?.email ?? quote.email
+  let userId = session.metadata?.userId || undefined
+
+  if (!userId) {
+    if (!email) {
+      Sentry.captureException(new Error(`Stripe webhook: quick_purchase session ${session.id} has no email`), {
+        tags: { route: 'api/stripe/webhook', step: 'quick_purchase_no_email' },
+      })
+      return
+    }
+    // ADR-024-canonicalisatie: bestaat er al een account (guest of echt) op dit canonieke adres?
+    // Zo ja, crediteer DAT account — geen tweede account per +tag/puntjes-alias.
+    const { data: existingUserId } = await supabase.rpc('find_canonical_account', { p_email: email })
+    if (existingUserId) {
+      userId = existingUserId as string
+    } else {
+      const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+        email,
+        email_confirm: true, // guest: geen wachtwoord, geen verificatiemail — koopbevestiging IS de verificatie
+      })
+      if (createErr || !created.user) {
+        Sentry.captureException(new Error(`Stripe webhook: guest user creation failed: ${createErr?.message}`), {
+          tags: { route: 'api/stripe/webhook', step: 'quick_purchase_guest_create' },
+          extra: { stripe_session_id: session.id, canonical_email: normalizeEmailMirror(email) },
+        })
+        return
+      }
+      userId = created.user.id
+      await supabase.from('profiles').update({ is_guest: true }).eq('id', userId)
+    }
+  }
+
+  const { data: grantResult, error: grantErr } = await supabase.rpc('add_credits', {
+    p_user_id: userId,
+    p_amount: quote.total_credits,
+    p_reason: `Quick checkout — ${quote.total_credits} credits`,
+    p_metadata: { stripe_session_id: session.id, quote_id: quoteId },
+    p_kind: 'purchase',
+  })
+  if (grantErr) {
+    Sentry.captureException(new Error(`Stripe webhook: quick_purchase add_credits failed: ${grantErr.message}`), {
+      tags: { route: 'api/stripe/webhook', step: 'quick_purchase_add_credits', user_id: userId },
+      extra: { stripe_session_id: session.id, quote_id: quoteId },
+    })
+    return
+  }
+  const alreadyProcessed = (grantResult as { already_processed?: boolean } | null)?.already_processed === true
+
+  await supabase.from('quick_quotes').update({ email }).eq('id', quoteId)
+
+  if (!alreadyProcessed) {
+    const dispatchForm = new FormData()
+    dispatchForm.append('user_id', userId)
+    try {
+      await fetch(`${PYTHON_BACKEND_URL}/api/quote/${quoteId}/dispatch`, {
+        method: 'POST',
+        headers: { 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' },
+        body: dispatchForm,
+      })
+    } catch (dispatchErr) {
+      Sentry.captureException(dispatchErr, {
+        level: 'error',
+        tags: { route: 'api/stripe/webhook', step: 'quick_purchase_dispatch', user_id: userId },
+        extra: { stripe_session_id: session.id, quote_id: quoteId },
+      })
+    }
+
+    const { PostHog } = require('posthog-node')
+    const client = new PostHog(
+      process.env.NEXT_PUBLIC_POSTHOG_KEY!,
+      { host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com', disableGeoip: true }
+    )
+    client.capture({
+      distinctId: userId,
+      event: 'quick_purchase_completed',
+      properties: {
+        amount: session.amount_total ? session.amount_total / 100 : 0,
+        credits_added: quote.total_credits,
+        currency: session.currency,
+        source: 'stripe_webhook',
+        session_id: session.id,
+        quote_id: quoteId,
+      },
+    })
+    await client.shutdown()
+  }
 }

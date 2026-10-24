@@ -26,8 +26,15 @@ from master_cache import master_transcripts_read, master_transcripts_write
 from youtube_utils import get_proxy_url, extract_via_youtube_transcript_api, extract_with_ytdlp, _CountingYoutubeDL
 from transcription_pipeline import run_whisper_reservation_aware, MAX_TRANSCRIPTION_SECONDS
 from idempotency import request_hash, content_hash, claim_idempotency, lookup_idempotency, release_idempotency
-from limits import MAX_PLAYLIST_VIDEOS, MAX_CONCURRENT_JOBS
+from limits import (
+    MAX_PLAYLIST_VIDEOS, MAX_CONCURRENT_JOBS,
+    PER_FILE_EUR_PER_MIN, PER_FILE_MIN_EUR, MAX_QUICK_QUOTE_FILES, QUICK_QUOTE_PREVIEW_SECONDS,
+)
 from language_utils import normalize_language_code
+from storage import r2_write_bytes, r2_read_bytes, r2_delete_object
+from ratelimit import check_ip_rate_limit, client_ip_from_request, hash_ip
+from assemblyai_client import submit_assemblyai, poll_assemblyai
+from mailer import send_quick_checkout_ready_email
 
 # Load environment variables
 load_dotenv()
@@ -85,6 +92,7 @@ from audio_utils import (
     get_audio_container,
     has_usable_audio,
     estimate_upload_reserve_cost,
+    extract_preview_clip,
     extract_youtube_audio,
     validate_audio_file,
     compress_audio_if_needed,
@@ -1292,6 +1300,352 @@ async def get_job_status(job_id: str, user_id: str, _: None = Depends(verify_bac
         # available_credits VERWIJDERD: de frontend heeft het live saldo al via useAuth; een gekopieerd
         # saldo in een poll-respons is per definitie ouder dan wat de user ziet -> geen tweede bron.
     })
+
+# ── Snelle balie (growth-plan.md §6.2 Onderdeel B) ──────────────────────────────────────────
+# Anonieme upload → offerte → gratis voorproefje (eerste QUICK_QUOTE_PREVIEW_SECONDS) → betalen
+# per bestand. Geen auth, geen verify_backend_secret — dit IS het publieke, anonieme pad; de
+# enige bescherming is IP-rate-limiting + max open quotes. Het bestand overleeft een Stripe-
+# redirect omdat het meteen naar R2 gaat (niet naar browser-geheugen); de Next.js-checkout-route
+# herberekent de prijs zelf uit `quick_quotes.total_price_cents` — nooit uit de client.
+QUICK_QUOTE_R2_BUCKET = "indxr-transcripts"  # zelfde bucket als master-transcripts, eigen prefix
+QUICK_QUOTE_MAX_OPEN_PER_IP = 2  # growth-plan.md: "max 2 openstaande onbetaalde voorproefjes"
+
+
+async def _run_quick_quote_preview(quote_id: str, file_index: int, preview_path: str) -> None:
+    """Achtergrondtaak: dien het voorproefje-fragment in bij AssemblyAI en poll tot klaar, dan
+    schrijf het resultaat terug naar quick_quotes.files[file_index]. Best-effort — een mislukt
+    voorproefje blokkeert de offerte niet (de prijs staat al vast); de koper ziet gewoon geen
+    preview-tekst voor dat bestand. Nooit credits/reservering hier — voorproefjes zijn gratis."""
+    supabase = get_supabase_client()
+    try:
+        submit_result = await asyncio.to_thread(submit_assemblyai, preview_path)
+        if not submit_result.get("success"):
+            logger.warning(f"[quick-quote preview] submit failed for quote={quote_id} file={file_index}: {submit_result.get('error')}")
+            return
+        transcript_id = submit_result["transcript_id"]
+
+        polled = None
+        for _ in range(30):  # 30 * 10s = 5 min ceiling — a 180s clip is normally done in well under 1 min
+            await asyncio.sleep(10)
+            polled = await asyncio.to_thread(poll_assemblyai, transcript_id)
+            if not polled.get("success"):
+                logger.warning(f"[quick-quote preview] poll failed for quote={quote_id} file={file_index}: {polled.get('error')}")
+                return
+            if polled["status"] in ("completed", "error"):
+                break
+
+        if not polled or polled["status"] != "completed":
+            logger.warning(f"[quick-quote preview] did not complete for quote={quote_id} file={file_index}: {polled}")
+            return
+
+        preview_text = " ".join(seg["text"] for seg in polled.get("transcript", []))
+        row = await asyncio.to_thread(
+            lambda: supabase.table('quick_quotes').select('files').eq('id', quote_id).single().execute()
+        )
+        files = row.data["files"]
+        files[file_index]["preview_text"] = preview_text
+        files[file_index]["preview_status"] = "ready"
+        await asyncio.to_thread(
+            lambda: supabase.table('quick_quotes').update({'files': files}).eq('id', quote_id).execute()
+        )
+    except Exception as e:
+        logger.warning(f"[quick-quote preview] unexpected failure quote={quote_id} file={file_index}: {e}")
+    finally:
+        _cleanup_tmp(preview_path)
+
+
+@app.post("/api/quote/create")
+async def create_quick_quote(request: Request, files: List[UploadFile] = File(...)):
+    """Anonieme offerte: upload tot MAX_QUICK_QUOTE_FILES bestanden, krijg per bestand duur+prijs
+    + een gratis voorproefje (achtergrond, poll via GET /api/quote/{id}). Geen credits/reservering
+    hier — dat gebeurt pas na betaling (Next.js webhook)."""
+    client_ip = client_ip_from_request(request.headers, request.client.host if request.client else "unknown")
+    ip_h = hash_ip(client_ip)
+
+    if not await check_ip_rate_limit(client_ip, "quote_create", max_requests=20, window_seconds=86400):
+        return JSONResponse(status_code=429, content={"error": "Too many quote requests from this network today. Try again tomorrow.", "code": "rate_limited"})
+
+    if len(files) > MAX_QUICK_QUOTE_FILES:
+        return JSONResponse(status_code=400, content={"error": f"Maximum {MAX_QUICK_QUOTE_FILES} files per quote.", "code": "too_many_files"})
+    if not files:
+        return JSONResponse(status_code=400, content={"error": "No files provided.", "code": "invalid_request"})
+
+    supabase = get_supabase_client()
+
+    # Abuse-limiet: max N openstaande onbetaalde offertes per IP.
+    open_count = await asyncio.to_thread(
+        lambda: supabase.table('quick_quotes').select('id', count='exact', head=True)
+            .eq('ip_hash', ip_h).eq('status', 'pending')
+            .gt('expires_at', datetime.now(timezone.utc).isoformat())
+            .execute()
+    )
+    if (open_count.count or 0) >= QUICK_QUOTE_MAX_OPEN_PER_IP:
+        return JSONResponse(status_code=429, content={
+            "error": "You already have open quotes waiting for payment. Pay or let them expire before starting a new one.",
+            "code": "too_many_open_quotes",
+        })
+
+    quote_id = str(uuid.uuid4())
+    quote_files = []
+    tmp_paths_to_clean: List[str] = []
+    preview_tasks = []
+
+    try:
+        for idx, f in enumerate(files):
+            content = await f.read()
+            max_bytes = 500 * 1024 * 1024
+            if len(content) > max_bytes:
+                return JSONResponse(status_code=413, content={"error": f"'{f.filename}' is too large (max 500MB).", "code": "file_too_large"})
+
+            suffix = os.path.splitext(f.filename or "")[1] or ".mp3"
+            with tempfile.NamedTemporaryFile(delete=False, prefix="indxr_quote_", suffix=suffix) as tmp:
+                tmp.write(content)
+                tmp_path = tmp.name
+            tmp_paths_to_clean.append(tmp_path)
+
+            if not await asyncio.to_thread(has_usable_audio, tmp_path):
+                return JSONResponse(status_code=422, content={
+                    "error": f"'{f.filename}' doesn't contain any audio we can transcribe.",
+                    "code": "no_audio",
+                })
+
+            est = await asyncio.to_thread(estimate_upload_reserve_cost, tmp_path)
+            duration = est["duration"]
+            credits = est["credits"]  # 1 credit == 1 minute, same formula as AI transcription elsewhere
+            price_cents = max(round(PER_FILE_MIN_EUR * 100), round(credits * PER_FILE_EUR_PER_MIN * 100))
+
+            r2_key = f"quick-quotes/{quote_id}/{idx}-{f.filename or 'upload'}"
+            await asyncio.to_thread(r2_write_bytes, QUICK_QUOTE_R2_BUCKET, r2_key, content)
+
+            quote_files.append({
+                "filename": f.filename,
+                "r2_key": r2_key,
+                "duration_seconds": duration,
+                "credits": credits,
+                "price_cents": price_cents,
+                "preview_status": "pending",
+                "preview_text": None,
+            })
+
+            # Gratis voorproefje: trim + submit in de achtergrond, blokkeert de offerte-response niet.
+            preview_path = tmp_path + "_preview.ogg"
+            try:
+                await asyncio.to_thread(extract_preview_clip, tmp_path, preview_path, QUICK_QUOTE_PREVIEW_SECONDS)
+                preview_tasks.append(asyncio.create_task(_run_quick_quote_preview(quote_id, idx, preview_path)))
+            except Exception as e:
+                logger.warning(f"[quick-quote] preview-clip extraction failed for {f.filename}: {e}")
+                quote_files[-1]["preview_status"] = "failed"
+
+        total_credits = sum(qf["credits"] for qf in quote_files)
+        total_price_cents = sum(qf["price_cents"] for qf in quote_files)
+
+        await asyncio.to_thread(
+            lambda: supabase.table('quick_quotes').insert({
+                'id': quote_id,
+                'ip_hash': ip_h,
+                'files': quote_files,
+                'total_credits': total_credits,
+                'total_price_cents': total_price_cents,
+            }).execute()
+        )
+
+        row = await asyncio.to_thread(
+            lambda: supabase.table('quick_quotes').select('access_token,expires_at').eq('id', quote_id).single().execute()
+        )
+
+        return JSONResponse({
+            "quote_id": quote_id,
+            "access_token": row.data["access_token"],
+            "expires_at": row.data["expires_at"],
+            "files": [{k: v for k, v in qf.items() if k != "r2_key"} for qf in quote_files],
+            "total_credits": total_credits,
+            "total_price_cents": total_price_cents,
+        })
+    finally:
+        for p in tmp_paths_to_clean:
+            _cleanup_tmp(p)
+
+
+@app.get("/api/quote/{quote_id}")
+async def get_quick_quote(quote_id: str, token: str):
+    """Publieke statusroute voor de offerte-/voorproefje-pagina. Beveiligd door het
+    access_token (niet de PK) — geen auth, dit IS het anonieme pad."""
+    supabase = get_supabase_client()
+    try:
+        result = await asyncio.to_thread(
+            lambda: supabase.table('quick_quotes').select(
+                'id,status,email,files,total_credits,total_price_cents,expires_at,access_token'
+            ).eq('id', quote_id).single().execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    quote = result.data
+    if not quote or quote["access_token"] != token:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    return JSONResponse({
+        "quote_id": quote["id"],
+        "status": quote["status"],
+        "email": quote["email"],
+        "files": [{k: v for k, v in qf.items() if k != "r2_key"} for qf in quote["files"]],
+        "total_credits": quote["total_credits"],
+        "total_price_cents": quote["total_price_cents"],
+        "expires_at": quote["expires_at"],
+    })
+
+
+async def _dispatch_one_quick_quote_file(job_id: str, user_id: str, tmp_path: str, filename: Optional[str], known_duration: Optional[float]) -> None:
+    """Draait de reservation-aware whisper-pipeline voor één snelle-balie-bestand. settle+refund
+    gebeurt AL binnen run_whisper_reservation_aware (zelfde wrapper als het normale upload-pad) —
+    hier alleen de heartbeat erbij, identiek aan de bestaande /api/transcribe/whisper upload-tak."""
+    async def _hb() -> None:
+        supabase = get_supabase_client()
+        await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs')
+                .update({'last_heartbeat_at': datetime.now(timezone.utc).isoformat()})
+                .eq('id', job_id).execute()
+        )
+    await run_whisper_reservation_aware(
+        user_id, None,
+        job_id=job_id,
+        audio_path=tmp_path,
+        audio_title=filename,
+        known_duration_seconds=known_duration,
+        heartbeat_fn=_hb,
+    )
+
+
+async def _finalize_quick_quote_emails(quote_id: str, email: Optional[str], job_index_map: Dict[str, int], tasks: list) -> None:
+    """Wacht tot alle gedispatchte bestanden van een offerte terminal zijn, zet dan per succesvolle
+    job een guest_access_token op het transcript (veilige, onraadbare link) + de secure_url terug op
+    quick_quotes.files (zodat de statuspagina 'm kan tonen/pollen), en stuurt ÉÉN e-mail met alle
+    links. Best-effort: een mislukte email/update blokkeert nooit de al-betaalde/al-verwerkte job."""
+    await asyncio.gather(*tasks, return_exceptions=True)
+    supabase = get_supabase_client()
+    app_url = os.getenv("NEXT_PUBLIC_APP_URL", "https://app.indxr.ai")
+    secure_links = []
+    try:
+        row = await asyncio.to_thread(
+            lambda: supabase.table('quick_quotes').select('files').eq('id', quote_id).single().execute()
+        )
+        quote_files = row.data["files"]
+    except Exception as e:
+        logger.warning(f"[quick-quote finalize] could not re-read quote {quote_id}: {e}")
+        quote_files = None
+
+    for job_id, idx in job_index_map.items():
+        try:
+            jrow = await asyncio.to_thread(
+                lambda: supabase.table('transcription_jobs').select('status,transcript_id').eq('id', job_id).single().execute()
+            )
+            job = jrow.data
+            if quote_files is not None:
+                quote_files[idx]["job_status"] = job.get('status') if job else 'unknown'
+            if job and job.get('status') == 'complete' and job.get('transcript_id'):
+                token = secrets.token_hex(24)
+                t_row = await asyncio.to_thread(
+                    lambda: supabase.table('transcripts').select('filename,title').eq('id', job['transcript_id']).single().execute()
+                )
+                await asyncio.to_thread(
+                    lambda: supabase.table('transcripts').update({'guest_access_token': token}).eq('id', job['transcript_id']).execute()
+                )
+                name = (t_row.data or {}).get('title') or (t_row.data or {}).get('filename') or 'Transcript'
+                secure_url = f"{app_url}/t/{token}"
+                if quote_files is not None:
+                    quote_files[idx]["secure_url"] = secure_url
+                if email:
+                    secure_links.append({'filename': name, 'url': secure_url})
+        except Exception as e:
+            logger.warning(f"[quick-quote finalize] failed for job {job_id}: {e}")
+
+    if quote_files is not None:
+        await asyncio.to_thread(
+            lambda: supabase.table('quick_quotes').update({'files': quote_files}).eq('id', quote_id).execute()
+        )
+    if email and secure_links:
+        await asyncio.to_thread(send_quick_checkout_ready_email, email, secure_links)
+
+
+@app.post("/api/quote/{quote_id}/dispatch")
+async def dispatch_quick_quote(quote_id: str, user_id: str = Form(...), _: None = Depends(verify_backend_secret)):
+    """Interne endpoint (ALLEEN backend-secret — nooit anoniem aanroepbaar): dispatcht de
+    transcriptie-jobs voor een BETAALDE offerte. Aangeroepen door de Next.js Stripe-webhook (na
+    credit-grant) of de 'betaal met credits'-route (na balanscheck). Idempotent op
+    quick_quotes.status — een tweede aanroep voor een al-'paid'/'failed' quote dispatcht niets opnieuw."""
+    supabase = get_supabase_client()
+    result = await asyncio.to_thread(
+        lambda: supabase.table('quick_quotes').select('*').eq('id', quote_id).single().execute()
+    )
+    quote = result.data
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    if quote['status'] != 'pending':
+        return JSONResponse({"status": quote['status'], "already_dispatched": True})
+
+    await asyncio.to_thread(
+        lambda: supabase.table('quick_quotes').update({'status': 'paid', 'claimed_by_user_id': user_id}).eq('id', quote_id).execute()
+    )
+
+    job_index_map: Dict[str, int] = {}
+    tasks: list = []
+    quote_files = quote['files']
+    for idx, qf in enumerate(quote_files):
+        content = await asyncio.to_thread(r2_read_bytes, QUICK_QUOTE_R2_BUCKET, qf['r2_key'])
+        if content is None:
+            logger.error(f"[quick-quote dispatch] R2 object missing for quote={quote_id} file={idx}: {qf['r2_key']}")
+            quote_files[idx]["job_status"] = "missing_file"
+            continue
+
+        job_id = str(uuid.uuid4())
+        suffix = os.path.splitext(qf.get('filename') or "")[1] or ".mp3"
+        with tempfile.NamedTemporaryFile(delete=False, prefix="indxr_quote_dispatch_", suffix=suffix) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+        file_format = await asyncio.to_thread(get_audio_container, tmp_path, qf.get('filename'))
+
+        await asyncio.to_thread(
+            lambda: supabase.table('transcription_jobs').insert({
+                'id': job_id,
+                'user_id': user_id,
+                'status': 'pending',
+                'source_type': 'upload',
+                'file_size_bytes': len(content),
+                'file_format': file_format,
+                'source_kind': 'upload',
+                'origin': 'quick_checkout',
+            }).execute()
+        )
+
+        resv = await asyncio.to_thread(reserve_credits, user_id=user_id, amount=qf['credits'], job_id=job_id)
+        if not resv.get('success'):
+            # Mag normaliter niet gebeuren (credits zijn net gegrant/gecheckt vóór dispatch) — een
+            # concurrent balans-wijziging is de enige realistische oorzaak. Job-rij opruimen, door
+            # naar het volgende bestand i.p.v. de hele offerte te laten vallen.
+            logger.error(f"[quick-quote dispatch] reserve failed quote={quote_id} job={job_id}: {resv.get('error')}")
+            await asyncio.to_thread(lambda: supabase.table('transcription_jobs').delete().eq('id', job_id).execute())
+            _cleanup_tmp(tmp_path)
+            quote_files[idx]["job_status"] = "reserve_failed"
+            continue
+
+        quote_files[idx]["job_id"] = job_id
+        quote_files[idx]["job_status"] = "pending"
+        job_index_map[job_id] = idx
+        tasks.append(asyncio.create_task(_dispatch_one_quick_quote_file(
+            job_id=job_id, user_id=user_id, tmp_path=tmp_path,
+            filename=qf.get('filename'), known_duration=qf.get('duration_seconds'),
+        )))
+        # Origineel niet langer nodig in R2 — hierboven al lokaal gelezen voor dispatch.
+        await asyncio.to_thread(r2_delete_object, QUICK_QUOTE_R2_BUCKET, qf['r2_key'])
+
+    await asyncio.to_thread(
+        lambda: supabase.table('quick_quotes').update({'files': quote_files}).eq('id', quote_id).execute()
+    )
+
+    asyncio.create_task(_finalize_quick_quote_emails(quote_id, quote.get('email'), job_index_map, tasks))
+
+    return JSONResponse({"status": "paid", "job_ids": list(job_index_map.keys())})
+
 
 # AI-samenvatting als ACHTERGRONDTAAK — twee modelstappen op de EU LLM Gateway (ADR-090).
 # De pipeline zelf leeft in summary_pipeline.py; deze endpoints starten de job en pollen de status.

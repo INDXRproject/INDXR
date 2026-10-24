@@ -90,3 +90,38 @@ def r2_generate_presigned_url(bucket: str, key: str, expires_in: int = 3600) -> 
         Params={"Bucket": bucket, "Key": key},
         ExpiresIn=expires_in,
     )
+
+
+def r2_write_bytes(bucket: str, key: str, data: bytes, content_type: str = "application/octet-stream") -> None:
+    """Upload raw bytes to R2 (quick-checkout uploads survive a Stripe redirect this way). No-op if
+    R2 is unavailable — the caller (quote-create) must treat that as a hard failure, not swallow it."""
+    client = r2_client()
+    if client is None:
+        return
+    client.put_object(Bucket=bucket, Key=key, Body=data, ContentType=content_type)
+
+
+def r2_read_bytes(bucket: str, key: str) -> Optional[bytes]:
+    """Fetch raw bytes from R2 (quick-checkout: pull an uploaded file back after payment).
+    Returns None on 404 or if R2 is unavailable."""
+    client = r2_client()
+    if client is None:
+        return None
+    try:
+        resp = client.get_object(Bucket=bucket, Key=key)
+        return resp["Body"].read()
+    except client.exceptions.NoSuchKey:
+        return None
+    except Exception as e:
+        from botocore.exceptions import ClientError
+        if isinstance(e, ClientError) and e.response["Error"]["Code"] in ("NoSuchKey", "404"):
+            return None
+        raise
+
+
+def r2_delete_object(bucket: str, key: str) -> None:
+    """Delete an R2 object (expired/paid quick-checkout uploads). No-op if R2 is unavailable."""
+    client = r2_client()
+    if client is None:
+        return
+    client.delete_object(Bucket=bucket, Key=key)

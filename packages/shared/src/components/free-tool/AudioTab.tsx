@@ -25,6 +25,7 @@ import { readJson, ResponseError } from "../../lib/http"
 import { CREDIT_COSTS } from "../../lib/pricing"
 import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
 import { UPLOAD_EXTENSIONS, UPLOAD_ACCEPT_ATTR, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "../../lib/uploadFormats"
+import { QuickCheckoutPanel } from "./QuickCheckoutPanel"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
 // ADR-071 — DEEL 4: mirrors the server's AssemblyAI cap (backend/main.py MAX_TRANSCRIPTION_SECONDS).
@@ -247,17 +248,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
   // Auth required message (no flash because loading state above)
   if (!user) {
-    return (
-      <div className="mt-8">
-        <div className="p-8 rounded-lg border border-amber-500/50 bg-amber-500/10 text-center">
-          <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-fg mb-2">Authentication Required</h3>
-          <p className="text-sm text-amber-200 mb-4">
-            Please <a href={marketingHref('/login')} className="underline font-semibold">sign in</a> to transcribe your files.
-          </p>
-        </div>
-      </div>
-    )
+    // Snelle balie (growth-plan.md §6.2): anonieme bezoekers krijgen nu een prijs + gratis
+    // voorproefje + afrekenen per bestand, in plaats van een harde login-wall.
+    return <QuickCheckoutPanel />
   }
 
   const handleDragOver = (e: React.DragEvent) => {

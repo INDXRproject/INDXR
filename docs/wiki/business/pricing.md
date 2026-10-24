@@ -30,6 +30,16 @@ Alle prijzen zijn **BTW-inclusief** (EU B2C, 21% NL-tarief als referentie; OSS r
 
 ★ = center-stage anker in de UI. De tier heet **Try** (live Stripe-product + `pricing.ts` `name`), niet "Test".
 
+### Snelle balie — per-bestand-tarief (toegevoegd 2026-10-25, ADR-107)
+
+Naast de pakketten: **€0,10/minuut, minimum €2 per bestand**, incl. BTW
+(`PER_FILE_EUR_PER_MIN`/`PER_FILE_MIN_EUR` in `pricing.ts` + `backend/limits.py`, hand-gekoppeld
+zoals `FREE_TIER.WELCOME_CREDITS`). Geen account nodig; één Stripe Checkout per offerte. Ligt 2×
+boven het Try-tarief (€0,05/min) zodat pakketten logisch blijven — zie
+[growth-plan.md §2](growth-plan.md). Credits-equivalent per bestand = dezelfde formule als
+AI-transcriptie (`ceil(duur/60)`, min 1); het bestand koopt dus geen aparte "balie-credits", het is
+hetzelfde credit-grootboek tegen een ander €/credit-tarief.
+
 **BTW is doorstroom, geen marge.** De klant betaalt de lijstprijs incl. BTW; wij dragen de BTW af. De **netto omzet = prijs ÷ 1,21**. Alle marge-/winstberekeningen hieronder rekenen op de **netto** €/cr, nooit op de bruto lijstprijs. Input-BTW is verwaarloosbaar: onze zwaarste leveranciers (AssemblyAI, Decodo) zijn US-bedrijven → **reverse-charge**, geen NL-input-BTW om te verrekenen.
 
 ### Kortingsstructuur (volume-ladder per credit)
