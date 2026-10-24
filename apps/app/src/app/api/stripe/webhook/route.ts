@@ -199,108 +199,144 @@ export async function POST(req: Request) {
 
   const session = event.data.object as Stripe.Checkout.Session
 
-  if (event.type === 'checkout.session.completed') {
-    // Service-role client: add_credits is locked to service_role (RPC privilege hardening).
-    // The webhook has no user session anyway; it grants credits server-side.
-    const supabase = createAdminClient()
-
-    const userId = session.metadata?.userId
-    const credits = parseInt(session.metadata?.credits || '0')
-    const amountPaid = session.amount_total ? session.amount_total / 100 : 0
-
-    if (!userId || !credits) {
-      return new NextResponse('Missing metadata', { status: 200 }) // Return 200 to acknowledge receipt even if invalid logic to stop retries
+  if (
+    event.type === 'checkout.session.completed' ||
+    event.type === 'checkout.session.async_payment_succeeded'
+  ) {
+    // `checkout.session.completed` vuurt ook voor delayed payment methods (SEPA, iDEAL e.d.) met
+    // payment_status='unpaid' zolang de betaling nog niet bevestigd is — credits toekennen op dat
+    // moment zou geven vóórdat het geld er is. Pas toekennen bij 'paid'; voor delayed methods komt
+    // dat via het aparte async_payment_succeeded-event (zelfde payment_status-check hier geldt dan).
+    if (session.payment_status !== 'paid') {
+      return new NextResponse(null, { status: 200 })
     }
+    await grantCreditsForSession(session)
+  }
 
-    // Net-revenue capture (BTW + Stripe fee + EUR settlement) so net = gross − BTW − fee is exactly
-    // reconstructable later. BEST-EFFORT: any failure here MUST NOT block the credit grant — we log a
-    // warning and proceed with gross-only metadata. balance_transaction is sometimes not available
-    // synchronously; when absent the fee fields are simply omitted (backfillable from Stripe later).
-    const purchaseMeta: Record<string, unknown> = {
-      stripe_session_id: session.id,
-      amount_paid: amountPaid, // presentment (klant-valuta); P&L rekent op settlement_amount (EUR)
-      currency: session.currency, // presentment-valuta
-    }
-    try {
-      // BTW + tax_status + factuuradres-land uit de GEDEELDE extractor (zelfde velden als reconcile).
-      // tax_status='complete' bewijst dat automatic_tax echt BTW berekende (ook een legitieme 0 bij US/verlegd);
-      // zonder 'complete' is de BTW ONBEKEND, niet "geen BTW" — het dashboard markeert die sales apart.
-      Object.assign(purchaseMeta, extractSessionTax(session))
-
-      const piId = typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : session.payment_intent?.id
-      if (piId) {
-        // B4: Stripe's EIGEN fee_details + betaalmethode + net settlement (geen hardcoded rates).
-        // De balance_transaction is soms nog niet settled → fee-velden ontbreken dan; het reconcile-pad
-        // (/api/admin/reconcile-stripe-fees) vult ze later alsnog aan. amount_tax blijft altijd bewaard.
-        Object.assign(purchaseMeta, await captureStripeFees(piId))
-      }
-    } catch (feeErr) {
-      const msg = feeErr instanceof Error ? feeErr.message : 'unknown'
-      console.warn('Stripe webhook: net/fee capture failed (grant proceeds with gross-only):', msg)
-      Sentry.captureException(feeErr, {
-        level: 'warning',
-        tags: { route: 'api/stripe/webhook', step: 'fee_capture', user_id: userId ?? 'unknown' },
-        extra: { stripe_session_id: session.id },
-      })
-    }
-
-    // Add credits securely via RPC. Facturen worden niet hier aangemaakt maar on-demand
-    // vanuit de account-betaalhistorie (api/stripe/invoice) — invoice_url wordt daar bijgeschreven.
-    const { error } = await supabase.rpc('add_credits', {
-      p_user_id: userId,
-      p_amount: credits,
-      p_reason: `Purchased ${credits} Credits`,
-      p_metadata: purchaseMeta,
-      p_kind: 'purchase',
+  if (event.type === 'checkout.session.async_payment_failed') {
+    // Delayed payment method die alsnog mislukte. Er zijn nooit credits toegekend voor deze sessie
+    // (completed sloeg de grant over toen payment_status nog 'unpaid' was) — niets om terug te draaien.
+    Sentry.captureMessage('Stripe webhook: async payment failed', {
+      level: 'warning',
+      tags: { route: 'api/stripe/webhook', step: 'async_payment_failed' },
+      extra: { stripe_session_id: session.id, user_id: session.metadata?.userId ?? 'unknown' },
     })
-
-    if (error) {
-      Sentry.captureException(new Error(`Stripe webhook: failed to add credits: ${error.message}`), {
-        tags: { route: 'api/stripe/webhook', step: 'add_credits_rpc', user_id: userId ?? 'unknown' },
-        extra: { stripe_session_id: session.id, credits, error },
-      })
-      await Sentry.flush(2000);
-      console.error('Failed to add credits:', error)
-      return new NextResponse('Database Error', { status: 500 })
-    }
-
-    // Betaald-status cachen (gemaksvlag; paid/free is altijd herafleidbaar uit credit_transactions).
-    // Alleen echte aankopen zetten 'm — daarom hier, niet in add_credits (dat draait ook voor grants/refunds).
-    // Best-effort: de credits zijn al toegekend; een gefaalde cache-update mag de webhook niet laten falen.
-    const { error: flagError } = await supabase
-      .from('profiles')
-      .update({ has_ever_purchased: true })
-      .eq('id', userId)
-    if (flagError) {
-      Sentry.captureException(new Error(`Stripe webhook: has_ever_purchased update failed: ${flagError.message}`), {
-        level: 'warning',
-        tags: { route: 'api/stripe/webhook', step: 'has_ever_purchased', user_id: userId },
-        extra: { stripe_session_id: session.id },
-      })
-    }
-
-    // Track in PostHog (Server-side)
-    const { PostHog } = require('posthog-node')
-    const client = new PostHog(
-        process.env.NEXT_PUBLIC_POSTHOG_KEY!,
-        { host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com', disableGeoip: true }
-    )
-
-    client.capture({
-        distinctId: userId,
-        event: 'credits_purchased',
-        properties: {
-            amount: amountPaid,
-            credits_added: credits,
-            currency: session.currency,
-            source: 'stripe_webhook',
-            session_id: session.id
-        }
-    })
-    await client.shutdown()
   }
 
   return new NextResponse(null, { status: 200 })
+}
+
+// Credit-grant-logica voor een betaalde checkout-sessie. Gedeeld tussen `checkout.session.completed`
+// (payment_status==='paid', de normale directe-betaalmethode-flow) en
+// `checkout.session.async_payment_succeeded` (delayed methods die na completed alsnog bevestigen).
+async function grantCreditsForSession(session: Stripe.Checkout.Session) {
+  // Service-role client: add_credits is locked to service_role (RPC privilege hardening).
+  // The webhook has no user session anyway; it grants credits server-side.
+  const supabase = createAdminClient()
+
+  const userId = session.metadata?.userId
+  const credits = parseInt(session.metadata?.credits || '0')
+  const amountPaid = session.amount_total ? session.amount_total / 100 : 0
+
+  if (!userId || !credits) {
+    return // Niets te doen; de aanroeper geeft hoe dan ook 200 terug om retries te stoppen.
+  }
+
+  // Net-revenue capture (BTW + Stripe fee + EUR settlement) so net = gross − BTW − fee is exactly
+  // reconstructable later. BEST-EFFORT: any failure here MUST NOT block the credit grant — we log a
+  // warning and proceed with gross-only metadata. balance_transaction is sometimes not available
+  // synchronously; when absent the fee fields are simply omitted (backfillable from Stripe later).
+  const purchaseMeta: Record<string, unknown> = {
+    stripe_session_id: session.id,
+    amount_paid: amountPaid, // presentment (klant-valuta); P&L rekent op settlement_amount (EUR)
+    currency: session.currency, // presentment-valuta
+  }
+  try {
+    // BTW + tax_status + factuuradres-land uit de GEDEELDE extractor (zelfde velden als reconcile).
+    // tax_status='complete' bewijst dat automatic_tax echt BTW berekende (ook een legitieme 0 bij US/verlegd);
+    // zonder 'complete' is de BTW ONBEKEND, niet "geen BTW" — het dashboard markeert die sales apart.
+    Object.assign(purchaseMeta, extractSessionTax(session))
+
+    const piId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id
+    if (piId) {
+      // B4: Stripe's EIGEN fee_details + betaalmethode + net settlement (geen hardcoded rates).
+      // De balance_transaction is soms nog niet settled → fee-velden ontbreken dan; het reconcile-pad
+      // (/api/admin/reconcile-stripe-fees) vult ze later alsnog aan. amount_tax blijft altijd bewaard.
+      Object.assign(purchaseMeta, await captureStripeFees(piId))
+    }
+  } catch (feeErr) {
+    const msg = feeErr instanceof Error ? feeErr.message : 'unknown'
+    console.warn('Stripe webhook: net/fee capture failed (grant proceeds with gross-only):', msg)
+    Sentry.captureException(feeErr, {
+      level: 'warning',
+      tags: { route: 'api/stripe/webhook', step: 'fee_capture', user_id: userId ?? 'unknown' },
+      extra: { stripe_session_id: session.id },
+    })
+  }
+
+  // Add credits securely via RPC. Idempotent op stripe_session_id (DB-unique-index + add_credits
+  // vangt unique_violation op) — een herhaalde webhook-delivery voor dezelfde sessie muteert de
+  // balans niet opnieuw. Facturen worden niet hier aangemaakt maar on-demand vanuit de
+  // account-betaalhistorie (api/stripe/invoice) — invoice_url wordt daar bijgeschreven.
+  const { data, error } = await supabase.rpc('add_credits', {
+    p_user_id: userId,
+    p_amount: credits,
+    p_reason: `Purchased ${credits} Credits`,
+    p_metadata: purchaseMeta,
+    p_kind: 'purchase',
+  })
+
+  if (error) {
+    Sentry.captureException(new Error(`Stripe webhook: failed to add credits: ${error.message}`), {
+      tags: { route: 'api/stripe/webhook', step: 'add_credits_rpc', user_id: userId ?? 'unknown' },
+      extra: { stripe_session_id: session.id, credits, error },
+    })
+    await Sentry.flush(2000);
+    console.error('Failed to add credits:', error)
+    return
+  }
+
+  const alreadyProcessed = (data as { already_processed?: boolean } | null)?.already_processed === true
+  if (alreadyProcessed) {
+    // Deze sessie werd al eerder volledig verwerkt (vorige webhook-delivery) — balans is niet
+    // opnieuw gemuteerd. Side-effects (has_ever_purchased, PostHog) zijn toen al gelopen; niet herhalen.
+    return
+  }
+
+  // Betaald-status cachen (gemaksvlag; paid/free is altijd herafleidbaar uit credit_transactions).
+  // Alleen echte aankopen zetten 'm — daarom hier, niet in add_credits (dat draait ook voor grants/refunds).
+  // Best-effort: de credits zijn al toegekend; een gefaalde cache-update mag de webhook niet laten falen.
+  const { error: flagError } = await supabase
+    .from('profiles')
+    .update({ has_ever_purchased: true })
+    .eq('id', userId)
+  if (flagError) {
+    Sentry.captureException(new Error(`Stripe webhook: has_ever_purchased update failed: ${flagError.message}`), {
+      level: 'warning',
+      tags: { route: 'api/stripe/webhook', step: 'has_ever_purchased', user_id: userId },
+      extra: { stripe_session_id: session.id },
+    })
+  }
+
+  // Track in PostHog (Server-side)
+  const { PostHog } = require('posthog-node')
+  const client = new PostHog(
+      process.env.NEXT_PUBLIC_POSTHOG_KEY!,
+      { host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com', disableGeoip: true }
+  )
+
+  client.capture({
+      distinctId: userId,
+      event: 'credits_purchased',
+      properties: {
+          amount: amountPaid,
+          credits_added: credits,
+          currency: session.currency,
+          source: 'stripe_webhook',
+          session_id: session.id
+      }
+  })
+  await client.shutdown()
 }
