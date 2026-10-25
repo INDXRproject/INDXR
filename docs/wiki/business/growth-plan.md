@@ -140,7 +140,18 @@ Beschrijvingen: "Upload a file, see the price, read the first 3 minutes free, th
 
 ## 5a. Bewaking eerste balie-aankopen
 
-3. **RESEND_API_KEY/RESEND_FROM op Railway (api + worker) — NIET geverifieerd (2026-10-25).** `backend/mailer.py` verwacht exact deze twee namen (bevestigd tegen de code). Kon niet gecontroleerd worden: Railway-login lukt niet — Khidr's enige inlogmethode is Google, en die faalt herhaaldelijk (`GOOGLE_CONNECTION_FAILED`), zowel via de CLI-pairing-flow (3 pogingen, 2 browsers incl. guest-mode) als rechtstreeks op het Railway-dashboard. Railway's eigen statuspagina toont Google-login als 100% beschikbaar, dus dit lijkt account-specifiek, niet een platformbrede storing. Zonder deze twee variabelen verstuurt de balie geen bevestigingsmail na een aankoop (faalt stil, geen crash — zie `mailer.py`). **Actie Khidr:** opnieuw proberen in te loggen op Railway zodra mogelijk (evt. via een ander account-herstelpad bij Railway support), dan deze check herhalen.
+3. **RESEND_API_KEY/RESEND_FROM op Railway (api + worker) — status 2026-10-25, zie
+   [incident-2026-10-railway-secrets.md](../operations/incident-2026-10-railway-secrets.md).**
+   Railway-login lukte alsnog (device-code-flow werkte, de eerdere Google-fout bleek een
+   voorbijgaand probleem). Bevestigd via de Railway-variabelenlijst (namen, geen waarden): beide
+   namen ontbreken op `api` én `worker` — nooit "uitgelekt", gewoon nooit gezet, `mailer.py` is
+   pas deze sessie gebouwd. **Geblokkeerd op een andere manier dan gedacht:** de bestaande waarden
+   staan wél op Vercel (beide apps), maar zijn daar als Vercel's **"sensitive"**-type variabele
+   opgeslagen — write-only, door NIEMAND ooit terug uit te lezen, ook niet de accounteigenaar, ook
+   niet via de Management API. Er is dus geen "kopieer de bestaande waarde"-pad meer, voor
+   niemand. **Actie Khidr:** een nieuwe Resend API-key aanmaken (Resend heeft geen CLI/device-
+   flow — dit is een dashboard-actie) en die ÉÉN keer doorgeven; die wordt dan direct doorgezet
+   naar Railway en Vercel zonder ooit elders bewaard te worden.
 
 ## 6. Uitvoering via Claude Code
 

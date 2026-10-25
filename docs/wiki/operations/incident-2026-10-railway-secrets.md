@@ -1,7 +1,10 @@
 # Incident: Railway-beveiligingsmelding 21-10-2026 — secrets-inventarisatie + rotatieplan
 
-**Status:** Stap 1 (inventarisatie) afgerond 2026-10-25. Stap 2 (rotatie) nog niet uitgevoerd — Khidr
-maakt zelf nieuwe sleutels aan, niemand roteert vanuit deze sessie.
+**Status:** Stap 1 (inventarisatie) afgerond 2026-10-25. Stap 2 (rotatie) **gedeeltelijk
+uitgevoerd 2026-10-25** op Khidr's expliciete keuze ("ik doe niets handmatig behalve CLI-logins
+goedkeuren, doe de rest zelf via CLI's/API's") — zie "Stap 2 — uitvoeringslog" onderaan voor wat
+gedaan is, en wat geblokkeerd is op een actie die GEEN CLI-login is (Resend/Supabase hebben geen
+device-flow; dat vereist één dashboard-actie van Khidr, eenmalig).
 **Aanleiding:** Railway meldde op 2026-10-21 een beveiligingsincident waarbij omgevingsvariabelen
 mogelijk zijn uitgelekt, en adviseert alle variabelen te roteren. Railway's eigen statuspagina
 noemt daarnaast een gerelateerd incident 21-23 okt waarbij een batch API-keys is ingetrokken
@@ -138,3 +141,79 @@ zeg het en dan pak ik het als eigen taak op.
 5. Los van deze ronde: RESEND_API_KEY/RESEND_FROM alsnog toevoegen (nooit bestaan, geen rotatie).
 6. Los van deze ronde (bijvangst): BACKEND_API_SECRET-gat in de nieuwe watchdog-pass (worker.py)
    — apart te fixen als Khidr akkoord geeft.
+
+---
+
+## Stap 2 — uitvoeringslog (2026-10-25, Khidr-keuze: alles via CLI/API, alleen logins goedkeuren)
+
+**Methode herhaald:** elke waarde is gegenereerd of opgehaald en DIRECT doorgepiped naar het
+doel — nooit naar een bestand geschreven dat in git terechtkomt, nooit op het scherm getoond,
+nooit in een log-regel beland. Eén tijdelijk bestand (`vercel env pull`-output) stond kort in de
+scratchpad-map (buiten de repo) en is meteen na gebruik verwijderd (`shred -u`).
+
+### ✅ 1. BACKEND_API_SECRET — volledig geroteerd
+Eén nieuwe waarde (`openssl rand -hex 32`), rechtstreeks gezet op: Railway `api`, Railway
+`worker`, Vercel `indxr-app` (production), Vercel `indxr-marketing` (production). Preview-
+environment op Vercel kon niet in dezelfde stap worden bijgewerkt (`vercel env rm ... preview`
+gaf een foutmelding — vermoedelijk omdat Vercel production+preview als één gecombineerde entry
+beheert als ze oorspronkelijk samen zijn aangemaakt); dit raakt geen live productieverkeer, maar
+is nog niet opgeruimd. Beide Railway-services + (via de volgende git-push) beide Vercel-apps
+herdeployen om de nieuwe waarde actief te maken.
+**Verificatie:** `watchdog_stuck_quick_quotes` (de nieuwe cron uit de H2-herstelronde, elke 2 min)
+draaide na de herdeploy twee keer zonder fout (`'ok (none stuck)'`, 07:09 en 07:11 UTC) — de
+pass zelf crasht niet meer. Er was op dat moment geen vastgelopen offerte om de daadwerkelijke
+HTTP-aanroep (met het nieuwe secret) tegen te testen; dat bewijs volgt pas bij een echte
+vastgelopen offerte of een losse handmatige test.
+
+### ⛔ 2. RESEND_API_KEY/RESEND_FROM — geblokkeerd (geen tooling-gat, een Vercel-ontwerpkeuze)
+Oorspronkelijk plan: bestaande waarde uit Vercel overnemen via `vercel env pull`. Bij uitvoering
+bleek: `RESEND_API_KEY`, `RESEND_FROM` (en ook `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`) staan op Vercel met `type:"sensitive"` (gecontroleerd via
+`vercel env ls production -F json`, alleen het `type`-veld gelezen, nooit een waarde). Sensitive
+Vercel-variabelen zijn **write-only**: ze zijn NA het aanmaken door NIEMAND meer terug uit te
+lezen, ook niet de accounteigenaar, ook niet via de Management API — dat is het hele
+beveiligingsdoel van dat Vercel-type. `vercel env pull` gaf dan ook een lege string terug voor
+elk van deze variabelen (gecontroleerd op lengte, nooit op inhoud).
+**Gevolg:** er bestaat geen "kopieer 'm over" meer voor deze specifieke sleutels, voor wie dan
+ook. **Enige weg vooruit:** een NIEUWE Resend API-key aanmaken. Resend heeft geen CLI en geen
+device-code-inlogflow (zoals Railway/Vercel) — het aanmaken van een nieuwe key is onvermijdelijk
+één keer een dashboard-bezoek. **Actie Khidr:** log in op resend.com, maak een nieuwe API-key
+aan, en geef die ÉÉN keer door (plak 'm in de chat of stuur anders) — die wordt dan direct
+doorgezet naar Railway (api+worker) zonder ergens anders bewaard te worden.
+
+### ✅ 3. OPENAI_API_KEY + UPSTASH_REDIS_URL — verwijderd van Railway
+Nogmaals bevestigd ongebruikt (`grep` op alle backend-`.py`-bestanden + `requirements.txt`, nul
+treffers voor beide) vlak vóór verwijdering. `OPENAI_API_KEY` verwijderd van zowel `api` als
+`worker`; `UPSTASH_REDIS_URL` verwijderd van `api` (stond niet op `worker`). Beide services
+herdeployed; `/health` bevestigd gezond na de deploy.
+
+### ⛔ 4. SUPABASE_SERVICE_ROLE_KEY — geblokkeerd, STOP zoals gevraagd
+Twee onafhankelijke blokkades, allebei bevestigd, geen van beide een CLI-login-probleem:
+- **Geen manier om een nieuwe secret key aan te maken** zonder de Supabase-dashboard-UI: er is
+  geen MCP-tool die secret keys aanmaakt/beheert (`get_publishable_keys` bestaat, een
+  schrijf-equivalent niet), en `supabase login` ondersteunt in deze CLI-versie (2.108.0) geen
+  device-code-flow — alleen `--token` met een vooraf aangemaakt Personal Access Token, dat zelf
+  ook weer alleen via het dashboard (Account → Access Tokens) is aan te maken.
+- **De huidige waarde is ook op Vercel niet terug te lezen** — `SUPABASE_SERVICE_ROLE_KEY` is
+  daar eveneens `type:"sensitive"` (zelfde bevinding als bij Resend hierboven).
+- **Positief nieuws uit de documentatie-check (wél gedaan, geen dashboard nodig):** het project
+  heeft al een moderne `sb_publishable_...`-sleutel naast de legacy anon-JWT (bevestigd via
+  `get_publishable_keys`) — dat betekent dat het project al op het nieuwe sleutelsysteem is
+  voorbereid. Supabase's eigen migratiegids bevestigt: een nieuwe `sb_secret_...`-sleutel aanmaken
+  kan **ZONDER gebruikers uit te loggen en zonder de anon/publishable-sleutel te wijzigen** —
+  beide sleuteltypes werken naast elkaar, de nieuwe secret key vervangt alleen
+  `SUPABASE_SERVICE_ROLE_KEY` op de backend. `supabase-py` 2.27.2 en `@supabase/supabase-js`
+  2.90.1 (geïnstalleerde versies, gecontroleerd in `requirements.txt`/`package.json`) zijn beide
+  ruim nieuw genoeg — de nieuwe sleutel werkt als drop-in vervanging via dezelfde header, geen
+  codewijziging nodig.
+- **Wat nog wél ontbreekt:** de legacy `service_role`-sleutel apart intrekken (zonder de hele JWT-
+  signing-sleutel te roteren, wat WEL alle sessies zou breken) kon niet bevestigd worden binnen de
+  beschikbare documentatie — dat vergt een losse check op het moment dat de nieuwe sleutel er is.
+
+**Conclusie, exact zoals gevraagd: STOP, geen verdere pogingen.** Twee opties voor Khidr:
+(a) eenmalig op het Supabase-dashboard (Settings → API Keys → tab "Publishable and secret API
+keys" → "Create new API keys") de nieuwe sleutels laten aanmaken — daarna kan ik de nieuwe
+secret key zelf ophalen/verwerken (als daar alsnog een MCP-tool of Management-API-pad voor komt)
+of Khidr geeft 'm één keer door; of (b) een Supabase Personal Access Token aanmaken (Account →
+Access Tokens) en die doorgeven, waarna ik verder via de Management API kan — dat is de
+eenmalige "inlog"-achtige actie die Supabase helaas vereist in plaats van een device-code-flow.
