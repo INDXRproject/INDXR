@@ -1,7 +1,7 @@
 # Eindrapport — snelle balie + betaalveiligheid (2026-10-25)
 
 Cold-read voor Khidr. Prompt uit `growth-plan.md` §6.2, uitgevoerd A→F, elk onderdeel los commit +
-push + deploy-verificatie.
+push + deploy-verificatie. **Addendum onderaan: herstelronde §6.3 (H1-H11), zelfde dag.**
 
 ## Per onderdeel
 
@@ -64,3 +64,73 @@ letterlijk het pad dat de opdracht noemt ("upload ... op `/transcribe`"). Live b
 Geen wijzigingen aan creditpakketten/-prijzen/landenblokkade, geen nieuwe loginproviders, geen
 playlist/YouTube-padwijzigingen. Google Ads-campagne staat nog UIT (gaat pas aan na Khidr's
 expliciete akkoord, groeiplan.md §3).
+
+---
+
+## Addendum — herstelronde §6.3 (H1-H11, zelfde dag)
+
+Na een eigen anonieme browser-doorloop op `app.indxr.ai/transcribe` vond de piloot 11 gebreken,
+vastgelegd in `growth-plan.md` §6.3. H8 wacht op Khidr's akkoord (§7 punt 7 staat "open") →
+overgeslagen, niet gebouwd.
+
+| # | Punt | Status | Commit(s) |
+|---|------|--------|-----------|
+| H1 | Webhook-retry-semantiek (financieel-kritiek) | ✅ done | `f293ddf` |
+| H2 | Dispatch-garantie per bestand + watchdog | ✅ done | `f293ddf` |
+| H3 | Voorproefje pollen + renderen | ✅ done | `46e73b9` |
+| H4 | Duur per bestand tonen | ✅ done | `46e73b9` |
+| H5 | Eerlijk goedkoopste-pakket-alternatief | ✅ done | `46e73b9` |
+| H6 | Dropzone-pariteit met AudioTab + paginatitel | ✅ done | `46e73b9` |
+| H7 | Marketing-copy "free" → eerlijk | ✅ done | `46e73b9` |
+| H8 | Apart herroepingsrecht-vinkje | ⏭️ OVERGESLAGEN | §7 punt 7 staat "open" — wacht op Khidr |
+| H9 | "Claim this account"-knop | ✅ done | `7c941c3` |
+| H10 | Ontbrekend migratiebestand + 2 bijkomende versie-driften | ✅ done | `01612c2` |
+| H11 | Resend-env-vars + Stripe-configuratie — onderzoek | ✅ done (bevindingen hieronder) | — |
+
+### Bewijs
+- **H1/H2:** 4 nieuwe pure-function-tests (`backend/test_quick_quote_dispatch.py`) bewijzen de
+  per-bestand-idempotentie; volledige backend-suite 97 passed/6 pre-existing fails (geen
+  regressie); `pnpm build:app` groen.
+- **H3-H7:** echte Playwright-browserrun tegen `app.indxr.ai` (geautoriseerd door Khidr —
+  schrijft een echte `quick_quotes`-rij + één AssemblyAI-call op een 3-seconden testtoon),
+  `tests/playwright/specs/06-quick-checkout-anonymous.spec.ts`: mobiel (375px) licht + donker
+  liepen de VOLLEDIGE flow door (upload → prijs → "Total" zichtbaar); desktop licht + donker
+  toonden de dropzone + foutmelding correct gestyled in beide kleurschema's — de 3e/4e
+  offerte-poging vanaf hetzelfde IP werd terecht geblokkeerd door de bestaande misbruik-limiet
+  ("max 2 open onbetaalde offertes per IP", al gebouwd in Onderdeel B) — geen bug, bewijst juist
+  dat die limiet werkt.
+- **H9:** build groen; geen live claim-doorloop (vereist een echte afgeronde aankoop + e-mail,
+  niet reproduceerbaar zonder een volledige Stripe-betaling).
+- **H10:** `schema_migrations`-rijencount ongewijzigd vóór/na (172) — puur een hernoeming/bestand-
+  toevoeging, geen nieuwe DB-wijziging.
+- **H11-bevindingen:**
+  - `RESEND_API_KEY`/`RESEND_FROM` op Railway: **nog steeds niet verifieerbaar** — de
+    `RAILWAY_API_TOKEN` in deze omgeving is dood (`railway whoami` → Unauthorized), onveranderd
+    t.o.v. het eerdere rapport. Khidr: controleer handmatig in het Railway-dashboard (api én
+    worker-service) of deze twee env-vars gezet zijn — zonder staat de secure-link-e-mail van de
+    balie stilzwijgend uit (best-effort, geen crash, maar ook geen e-mail).
+  - Stripe-payment-method-configuratie: de LIVE, actieve configuratie (`pmc_1Stnug2Kp4hD6x9KTWldlyPN`,
+    `is_default=true`, enige configuratie op het account) toont via de Stripe API
+    `ideal=off`, `sepa_debit=off`, `wero=off` — exact zoals in het vorige rapport. Dit is de
+    configuratie die Checkout Sessions in deze code daadwerkelijk gebruiken (geen
+    `payment_method_types` gezet in `checkout/route.ts`, dus Stripe's dynamic-payment-methods
+    volgt deze configuratie). Als het Stripe-Dashboard elders "iDEAL | Wero ingeschakeld" toont,
+    is dat waarschijnlijk een ANDERE instellingenpagina (bv. een account-brede
+    beschikbaarheids-toggle, niet deze specifieke configuratie se aan/uit-stand) — kan niet
+    visueel bevestigd worden zonder browsertoegang tot het Dashboard. Advies: Khidr checkt zelf
+    Settings → Payment methods en kijkt specifiek naar de aan/uit-stand van iDEAL/Wero binnen
+    deze Default-configuratie.
+
+### Kritieke bevinding (H10-bijvangst, niet in de oorspronkelijke lijst)
+Bij het schrijven van het H10-migratiebestand bleek dezelfde versie-drift te bestaan op TWEE
+migraties die de piloot zelf eerder op 2026-10-25 aanmaakte (Onderdeel A/B) — hun lokale
+bestandsnaam-timestamp kwam niet overeen met de `version` die Supabase's `apply_migration` (MCP)
+er daadwerkelijk aan toekende. Beide hernoemd naar hun echte versie; zie `docs/LESSONS.md`
+2026-10-25 voor de regel ("controleer na elke apply_migration-call `list_migrations`").
+
+### Open punten (ongewijzigd of nieuw)
+- H8 blijft open — Khidr's beslissing in §7 punt 7.
+- H11: Resend-env-vars op Railway en de Stripe-payment-method-discrepantie blijven open voor
+  Khidr om zelf te bevestigen (zie bevindingen hierboven).
+- Geen volledige Stripe-testmodus-betaal-klikdoorloop (zou een echte testkaart-betaling vergen).
+- `is_guest→false`-claim-flow is nu gebouwd maar niet live doorlopen (zie H9-bewijs).

@@ -23,10 +23,11 @@
 
 ## 2. De kern: eerst een betaalmoment, dan pas verkeer
 
-**Status: gebouwd (2026-10-25, commits f34a923…3348b75, ADR-107).** Zie
+**Status: hersteld (2026-10-25, herstelronde §6.3, commits f293ddf…7c941c3, ADR-107).** Zie
 [session-2026-10-25-remote-control-report.md](../roadmap/session-2026-10-25-remote-control-report.md)
-voor het volledige eindrapport (per-onderdeel bewijs + open punten). Live, nog niet geverifieerd
-met een echte browser-klikdoorloop in Stripe-testmodus.
+voor het volledige eindrapport (per-onderdeel bewijs + open punten). Live browser-geverifieerd
+(Playwright tegen `app.indxr.ai`, 375px+desktop, licht+donker) — nog geen volledige
+Stripe-testmodus-betaal-klikdoorloop.
 
 **De snelle balie (Khidr, 2026-10-24).** Naast het volledige product (account, library, credits voor terugkerende gebruikers) komt een snelle balie: één of een paar bestanden, geen account nodig, prijs zien, voorproefje van de eerste 3 minuten, afrekenen per bestand (€0,10/min, min. €2), transcript via veilige link + e-mail, met één klik alsnog een account. Het voorproefje beperkt zich tot 3 minuten zodat anoniem gebruik ons hooguit centen kost.
 
@@ -79,6 +80,19 @@ Het lek is niet het verkeer maar dat niemand hoefde te betalen. Bezoekers lazen 
 
 **Verwachting:** ~6 klikken/dag ≈ 180/maand. Bij de gemeten ~5% activatie ≈ 9 activaties/maand. Aantal betalers = onbekend; dat is precies wat we meten.
 
+**Advertentieteksten (concept 2026-10-25, Engels, ≤30/≤90 tekens; prijsclaims handmatig bijwerken als de balieprijs verandert — staan niet in code):**
+
+*Gedeeld (alle groepen):* Pay per File, No Subscription · See the Price Before You Pay · Free 3-Minute Preview · No Account Needed · Speaker Labels Included · Timestamps Throughout · Processed in the EU · Files Up to 10 Hours · From €2 per File
+Beschrijvingen: "Upload a file, see the price, read the first 3 minutes free, then pay for that file." · "No subscription and no account needed. Pay once per file, from €2." · "Speaker labels and timestamps, ready to export as TXT, SRT, VTT or JSON." · "Coming back often? Buy credits that never expire and keep a searchable library."
+
+*Groep Video to text:* Video to Text in Minutes · Transcribe Video to Text · Video Transcription Online · MP4, MOV, MKV and More · Export SRT, VTT and TXT · Upload, Preview, Pay
+*Groep Audio to text:* MP3 to Text Converter · Transcribe Audio Files · Voice Memo to Text · Audio File to Text · MP3, M4A, WAV and More
+*Groep Captions:* Auto Captions for Any Video · Subtitle Generator Online · Download SRT and VTT Files · Captions with Timestamps
+
+*Sitelinks:* Pricing → `/pricing` · Supported formats → `/articles/supported-formats` · How it works → `/docs` · Credit packs → `/pricing`
+*Callouts:* No subscription · Pay per file · Free 3-minute preview · Processed in the EU
+*Landingspagina:* de balie, na herstel H7 (definitieve URL invullen zodra live).
+
 **Beslisregel (vooraf vast):** na €300 uitgave of 30 dagen:
 - ≥3 betalende klanten → doorgaan, budget naar €15.
 - 1–2 → niet opschalen; offerte-/betaalpagina verbeteren met de PostHog-funnel.
@@ -92,6 +106,27 @@ Het lek is niet het verkeer maar dat niemand hoefde te betalen. Bezoekers lazen 
 2. **Dunne pagina's uit de index** (`noindex` + uit sitemap): `/docs/account/credits`, `/docs/account/billing`, `/docs/account/settings`. Ze trekken crawl-aandacht weg van pagina's die tellen.
 3. **Externe links via directories** (gratis, accounts maakt Khidr; alle teksten maakt Claude). **Eerst AlternativeTo** (keuze Khidr): vermelding + als alternatief bij concurrenten waarvan de hoofdtaak echt overeenkomt (AlternativeTo weigert en blokkeert spam). Daarna SaaSHub, BetaList, Uneed, There's An AI For That, Futurepedia. Product Hunt: geparkeerd. Let op: links op directories zijn vaak nofollow; de waarde zit in ontdekking door Google (crawl), verwijzingsverkeer en vermeldingen, niet in linkkracht.
 4. **Content op converterende intentie**: zoekwoordvolume meten in Keyword Planner voor *video to text*, *auto captions / subtitle generator*, *mp3 to text*. Bestaande artikelen (`video-to-text`, `srt-generator`, `audio-to-text`) aanscherpen naar het nieuwe model en een directe tool-CTA; pas daarna nieuwe artikelen. Publicatie van nieuwe pagina's: eerst akkoord Khidr.
+**Zoekvolume (Keyword Planner, VS, okt 2025–sep 2026, gemeten 2026-10-25; bandbreedtes omdat er geen actieve campagne is):**
+
+| Zoekterm | Volume/mnd | Concurrentie | Top-bod (laag–hoog) |
+|---|---|---|---|
+| transcribe video to text | 10K–100K | Medium | €0,99–5,14 |
+| video transcription | 10K–100K | Medium | €0,75–4,31 |
+| audio to text / audio file to text | 10K–100K | Medium | €0,92–4,46 |
+| auto captions | 1K–10K | **Low** | €0,76–3,25 |
+| subtitle generator | 1K–10K | Medium | €0,75–2,98 |
+| mp3 to text / mp3 to text converter | 1K–10K | Medium | €0,42–3,09 |
+| video to text | 1K–10K | Medium | €0,28–3,19 |
+| transcribe audio file | 1K–10K | High | €1,95–7,36 |
+| extract text from video · generate subtitles from video · srt generator · voice memo to text | 100–1K | Medium | €0,58–4,14 |
+| transcription no subscription · pay per minute transcription | geen meetbaar volume | — | — |
+
+**Contentvolgorde die hieruit volgt:**
+1. `/articles/video-to-text` aanscherpen op *transcribe video to text* / *video transcription* (grootste volume, converteerde in Ads).
+2. `/articles/srt-generator` verbreden naar *subtitle generator* + *auto captions* (lage concurrentie, converteerde in Ads). Staat al in Google.
+3. Nieuw: *mp3 to text* (goedkoopste biedingen, gezond volume) — publicatie pas na akkoord Khidr.
+4. "Geen abonnement" blijft verkoopargument op de pagina, geen zoekwoord: er is geen zoekvolume op.
+
 5. **Interne links** vanaf de homepage en `/transcribe` naar de commerciële artikelen.
 
 ## 5. Vast ritme
@@ -204,6 +239,38 @@ Commit per onderdeel, A eerst. Commit en push zelf; verifieer deploy groen; rapp
 
 Sluit af met een platte-tekst samenvatting zonder opmaak voor Khidr: wat gebouwd is, wat getest is met bewijs, wat overgeslagen is en waarom, en open punten.
 
+### 6.3 Herstelronde snelle balie (gevonden bij controle 2026-10-25, Claude-piloot) — moet vóór Ads aan
+
+Gevonden door de piloot na de bouw: code nagelezen + anonieme browser-doorloop op `app.indxr.ai/transcribe` met een testbestand van 9 min (betaling zelf niet doorlopen).
+
+**Prompt voor Claude Code (klaar om te plakken):**
+
+Start in Plan Mode. Lees `growth-plan.md` §2, §6.2 en deze §6.3, ADR-107 en het eindrapport `session-2026-10-25-remote-control-report.md`. Herstel de onderstaande punten in één reeks, elk onderdeel los committen. Financieel-kritiek (H1, H2): bij twijfel stoppen en rapporteren; geen DELETE/UPDATE op gebruikersdata of bestaande `credit_transactions`. Wat je niet kunt beslissen: overslaan en rapporteren onder "OVERGESLAGEN — vraag voor Khidr".
+
+H1 — Webhook: mislukte toekenning moet opnieuw geprobeerd worden. `grantCreditsForSession` en `handleQuickPurchaseSession` doen bij een fout (add_credits-fout, quote niet gevonden, guest-aanmaak mislukt) alleen `return`, waarna de route 200 teruggeeft. Stripe probeert dan nooit opnieuw: klant betaald, geen credits. Nu de toekenning idempotent is (Onderdeel A), moet elke tijdelijke fout een 500 opleveren zodat Stripe retryt. Alleen echt onherstelbare gevallen (ontbrekende metadata) mogen 200 + Sentry error.
+
+H2 — Snelle balie: betaald bestand mag nooit blijven hangen. Nu wordt de dispatch naar `/api/quote/{id}/dispatch` alleen uitgevoerd als `already_processed` false is, de response wordt niet gecontroleerd (`res.ok`), en een mislukte dispatch wordt alleen gelogd. Bij een Stripe-retry ziet de webhook "already_processed" en slaat de dispatch over → betaald, nooit getranscribeerd. Maak de dispatch idempotent op `quick_quotes.status` (dispatch zolang status ≠ dispatched/done, ongeacht already_processed), controleer `res.ok`, en geef 500 terug bij een mislukte dispatch zodat Stripe opnieuw aflevert. Voeg daarnaast een watchdog-pass toe die betaalde quotes zonder dispatch na N minuten alsnog dispatcht. Bewijs met test: (a) dispatch faalt eerste keer → retry dispatcht alsnog, één keer; (b) dubbele webhook → één toekenning, één dispatch.
+
+H3 — Voorproefje wordt nooit getoond. `QuickCheckoutPanel` pollt niet: na `quote/create` blijft elk bestand op "Preparing free preview…" staan (gemeten: >2 min, nul netwerkverzoeken). `preview_text` wordt bovendien nergens gerenderd. Bouw polling op `GET /api/quote/{id}?token=` (met backoff en maximum), toon de voorproeftekst per bestand leesbaar (eerste ~3 min, met tijdcodes of sprekers als beschikbaar), en toon duidelijk wanneer het voorproefje mislukt. `preview_viewed` moet pas vuren als de tekst echt in beeld is.
+
+H4 — Offerte toont geen duur. Toon per bestand de gemeten duur ("9 min") naast de prijs.
+
+H5 — "Goedkoopste alternatief" is niet het goedkoopste. Het panel toont altijd het `mostPopular`-pakket (1.000 min voor €25), ook bij een offerte van €2. Toon het goedkoopste pakket dat de offerte dekt en alleen als dat per saldo logisch is ("Of 100 minuten voor €5 — houd 91 minuten over"); toon niets als per bestand goedkoper én voldoende is. Waarden uit `PACKAGES`, nooit hardcoded.
+
+H6 — Het moet er goed uitzien (eis Khidr). Het anonieme panel is nu een kale native `<input type=file>`. Breng het op het niveau van de bestaande AudioTab: dropzone met slepen, bestandskaart met naam/grootte/duur, dezelfde tokens en componenten, mobiel eerst. Paginatitel van `app.indxr.ai/transcribe` is nu "INDXR.AI - Dashboard" → "Transcribe a file — INDXR.AI". Meet op 375px en desktop, licht en donker.
+
+H7 — Weg van de bezoeker naar de balie. `indxr.ai/transcribe` heeft als H1 "Free transcript generator…" en de uploadtab vraagt eerst een klik op "Try it now →" naar een andere host. Voor betaald verkeer is "free" in de kop precies het lek uit de eerste campagne. Herschrijf H1/subkop voor het upload-pad naar de betaalde balie (gratis blijft gelden voor YouTube-captions, eerlijk benoemd), en laat de uploadtab zo direct mogelijk naar de balie gaan (minimale klikken). Geen implementatiedetails in copy (C13).
+
+H8 — Herroepingsrecht bij betalen per bestand (ADR-069 §7). Advies piloot (geen juridisch advies): neem in het label van de bestaande akkoord-checkbox bij de balie-checkout letterlijk op dat de koper vraagt om directe levering en dat hij daarmee zijn herroepingsrecht van 14 dagen verliest zodra het transcript is geleverd (één checkbox, de tekst moet in het label zelf staan — alleen verwijzen naar de voorwaarden is niet genoeg). Voorbeeld (sentence case, premium toon, Engels): "I agree to the Terms of Service and Privacy Policy, and I ask INDXR to start right away. I understand I lose my 14-day right of withdrawal once my transcript is delivered." Bevestig deze instemming ook in de bevestigingsmail (Resend) na betaling, en leg vast in ADR-069 en `terms`. **Akkoord Khidr 2026-10-25 (§7 punt 7).**
+
+H9 — "Met één klik een account" ontbreekt. De secure transcript-pagina moet de knop hebben om het gast-account te claimen (wachtwoord instellen of Google-login op hetzelfde e-mailadres, `is_guest` → false, transcript in library). Dit was beloofd in de balie-copy.
+
+H10 — Migratiedrift. De migratie `welcome_credits_50_to_10` staat live in de database maar het bestand ontbreekt in `supabase/migrations/`. Schrijf het bestand met exact de toegepaste SQL (via Supabase MCP `list_migrations`/functiedefinitie ophalen), niet opnieuw toepassen.
+
+H11 — Controleer `RESEND_API_KEY`/`RESEND_FROM` op Railway (api én worker) via de Railway CLI; ontbreken ze, rapporteren (niet zelf aanmaken). Controleer ook de tegenstrijdigheid: het eindrapport zegt dat iDEAL uit staat, het Stripe-dashboard toont iDEAL | Wero als ingeschakeld. Rapporteer welke configuratie Checkout echt gebruikt.
+
+Klaar als: build groen; alle deploys groen; H1/H2 bewezen met tests; H3–H7 live gecontroleerd met een echte browser (Playwright, anonieme sessie, 375px + desktop, licht + donker, screenshots in het rapport); LOG-regel per onderdeel; LESSONS-regel "webhook: idempotent ≠ altijd 200 — tijdelijke fouten moeten 500 geven"; ADR-107 bijgewerkt; §2-status in dit plan → "hersteld". Commit en push zelf; verifieer deploy groen; rapporteer commit-hashes. Sluit af met een platte-tekst samenvatting voor Khidr.
+
 ## 7. Beslissingen (2026-10-24)
 1. Prijs per bestand €0,10/min, minimum €2 — akkoord.
 2. Ads €10/dag, beslisregel na €300 of 30 dagen — akkoord. Campagne gaat pas aan ná livegang snelle balie en met akkoord op het aanzetten.
@@ -211,3 +278,4 @@ Sluit af met een platte-tekst samenvatting zonder opmaak voor Khidr: wat gebouwd
 4. Landenblokkade (ADR-062): ongewijzigd.
 5. Product Hunt: geparkeerd. AlternativeTo eerst.
 6. Apple-login: nu niet.
+7. Herroepingsrecht bij betalen per bestand (§6.3 H8): **akkoord** (2026-10-25) — tekst in het label van de bestaande akkoord-checkbox, plus bevestiging in de mail.

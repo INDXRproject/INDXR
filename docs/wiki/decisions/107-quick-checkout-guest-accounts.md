@@ -1,8 +1,8 @@
 # Beslissing 107: Snelle balie — guest-accounts via admin-created Supabase users, één grootboek
 
-**Status:** Geaccepteerd
+**Status:** Geaccepteerd — **herstelronde (H1/H2/H9) toegevoegd 2026-10-25, zie addendum**
 **Datum:** 2026-10-25
-**Gerelateerde code:** `supabase/migrations/20261025020000_quick_checkout.sql`, `backend/main.py` (`/api/quote/create`, `/api/quote/{id}`, `/api/quote/{id}/dispatch`), `apps/app/src/app/api/quick-checkout/route.ts`, `apps/app/src/app/api/stripe/webhook/route.ts` (`handleQuickPurchaseSession`), `apps/app/src/app/t/[token]/page.tsx`, `apps/app/src/app/quick/[quoteId]/page.tsx`, `backend/storage.py`, `backend/ratelimit.py`, `backend/mailer.py`
+**Gerelateerde code:** `supabase/migrations/20261024233643_quick_checkout.sql`, `backend/main.py` (`/api/quote/create`, `/api/quote/{id}`, `/api/quote/{id}/dispatch`, `_pending_quick_quote_file_indices`), `backend/worker.py` (`watchdog_stuck_quick_quotes`), `apps/app/src/app/api/quick-checkout/route.ts`, `apps/app/src/app/api/stripe/webhook/route.ts` (`handleQuickPurchaseSession`, `grantCreditsForSession`), `apps/app/src/app/t/[token]/page.tsx`, `apps/app/src/app/quick/[quoteId]/page.tsx`, `apps/app/src/components/ClaimAccountButton.tsx`, `backend/storage.py`, `backend/ratelimit.py`, `backend/mailer.py`
 
 ## Context
 
@@ -80,9 +80,41 @@ refund per bestand lopen via de BESTAANDE `reserve_credits`/`run_whisper_reserva
   en een backend→Next.js-callback alleen voor een e-mail zou meer koppeling toevoegen dan het
   oplost. **Vereist `RESEND_API_KEY`/`RESEND_FROM` ook op Railway** — zie eindrapport (te
   verifiëren door Khidr of deze al gezet zijn).
-- **`is_guest`-claim-UI (wachtwoord instellen, `is_guest→false`) is NIET gebouwd in deze sessie** —
-  de guest-account-aanmaak en de dedup zijn er, de "met één klik een account claimen"-knop op de
-  secure transcript-pagina is een losse, kleinere vervolgtaak.
 - **Juridisch open punt (ongewijzigd van groeiplan.md §6.1):** of een per-bestand-aankoop een
   EIGEN, aparte "ik verlies mijn herroepingsrecht"-bevestiging vereist (los van de Terms-checkbox
   uit ADR-069) is niet door code te beslissen — gerapporteerd als open vraag voor Khidr.
+
+## Addendum 2026-10-25 — herstelronde (growth-plan.md §6.3 H1/H2/H9)
+
+Een anonieme browser-doorloop na de eerste bouw vond drie structurele gaten; gerepareerd in
+dezelfde sessie, los gecommit:
+
+- **H1 (webhook-retry-semantiek).** `grantCreditsForSession`/`handleQuickPurchaseSession` gaven bij
+  élke fout stilzwijgend `200` terug — idempotentie (Onderdeel A) maakt een retry VEILIG, maar
+  onderdrukte retries betekenen dat een tijdelijke DB-hik "betaald, nooit geleverd" wordt. Beide
+  functies retourneren nu een `boolean`: permanent-onherstelbaar/succes → `true` (200), tijdelijke
+  fout → `false` (500, Stripe retryt).
+- **H2 (dispatch-garantie).** De dispatch-aanroep was gated op `!alreadyProcessed`, dus een retry na
+  een MISLUKTE eerste dispatch-poging probeerde nooit opnieuw. `dispatch_quick_quote` (backend) is
+  nu per-bestand-idempotent op `job_id` (`_pending_quick_quote_file_indices`), niet op
+  `quick_quotes.status` — een herhaalde aanroep pakt precies de ontbrekende bestanden op. Nieuwe
+  watchdog-cron `watchdog_stuck_quick_quotes` (worker.py, elke 2 min) als laatste vangnet voor
+  betaalde offertes die na 5 min nog niet volledig gedispatcht zijn.
+- **H9 (claim-account-UI).** De "met één klik een account claimen"-knop ontbrak, beloofd in de
+  balie-copy maar niet gebouwd. Nu: `ClaimAccountButton` op `/t/[token]` stuurt een standaard
+  wachtwoord-reset-link naar het guest-e-mailadres (zelfde `/auth/callback?recovery=1`-pad als de
+  normale forgot-password-flow); `reset-password/page.tsx` zet `is_guest=false` na een succesvolle
+  wachtwoord-set.
+
+**Bijvangst (H10):** de `welcome_credits_50_to_10`-migratie bleek al toegepast maar nooit lokaal
+weggeschreven — en bij het repareren bleek dezelfde versie-drift te bestaan op de twee migraties
+die deze ADR aanmaakte (`credit_transactions_session_idempotency`, `quick_checkout`): hun
+bestandsnaam-timestamp kwam niet overeen met de `version` die Supabase's `apply_migration` er
+zelf aan toekende. Alle drie hernoemd naar hun echte versie (zie `docs/LESSONS.md` 2026-10-25).
+
+**Live browser-geverifieerd** (Playwright, `tests/playwright/specs/06-quick-checkout-anonymous.spec.ts`,
+tegen `app.indxr.ai`, geautoriseerd door Khidr): 375px + desktop, licht + donker. De volledige
+offerte-flow (upload → prijs → "Total") slaagde op mobiel; op desktop blokkeerde de bestaande
+misbruik-limiet ("max 2 open onbetaalde offertes per IP") de 3e/4e poging vanaf hetzelfde
+testmachine-IP — correct gedrag, geen bug, en de dropzone/foutmelding-UI was in beide
+kleurschema's op desktop-breedte zichtbaar correct gestyled.
