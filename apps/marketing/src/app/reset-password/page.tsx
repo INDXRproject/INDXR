@@ -54,6 +54,14 @@ export default function ResetPasswordPage() {
         setIsSubmitting(false)
         return
       }
+      // H9 (growth-plan.md §6.3): this page doubles as the snelle-balie "claim this account" flow
+      // (ClaimAccountButton sends the same recovery link to a guest account). A guest who sets a
+      // password here is claiming their account — flip is_guest off. No-op for a normal password
+      // reset (already false). Best-effort: the password is already set either way.
+      const { data: userData } = await supabase.auth.getUser()
+      if (userData.user) {
+        await supabase.from("profiles").update({ is_guest: false }).eq("id", userData.user.id)
+      }
       // Password set — end the recovery session and send them to log in fresh with the new password.
       await supabase.auth.signOut()
       router.push(`/login?message=${encodeURIComponent("Your password has been updated. Please log in.")}`)
