@@ -1,10 +1,13 @@
 # Incident: Railway-beveiligingsmelding 21-10-2026 — secrets-inventarisatie + rotatieplan
 
-**Status:** Stap 1 (inventarisatie) afgerond 2026-10-25. Stap 2 (rotatie) **gedeeltelijk
-uitgevoerd 2026-10-25** op Khidr's expliciete keuze ("ik doe niets handmatig behalve CLI-logins
-goedkeuren, doe de rest zelf via CLI's/API's") — zie "Stap 2 — uitvoeringslog" onderaan voor wat
-gedaan is, en wat geblokkeerd is op een actie die GEEN CLI-login is (Resend/Supabase hebben geen
-device-flow; dat vereist één dashboard-actie van Khidr, eenmalig).
+**Status:** Stap 1 (inventarisatie) afgerond 2026-10-25. Stap 2 (rotatie) nu **grotendeels
+afgerond 2026-10-25**: BACKEND_API_SECRET, RESEND_API_KEY/RESEND_FROM en
+SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SERVICE_KEY zijn allemaal geroteerd en geverifieerd tegen
+productie (Resend/Supabase liepen eerst vast op dashboard-only acties, Khidr heeft die twee zelf
+aangemaakt en doorgegeven — zie "Stap 2 — uitvoeringslog"). Resterende Groep 1/2-sleutels
+(AssemblyAI, Decodo, Stripe, R2, Upstash, YouTube, PostHog, BetterStack, Sentry-DSN) staan nog
+open. Stap 3 (onderzoek publishable-key-overstap, nodig vóór de oude legacy service_role-sleutel
+veilig kan worden ingetrokken) is afgerond — onderzoek alleen, geen uitvoering.
 **Aanleiding:** Railway meldde op 2026-10-21 een beveiligingsincident waarbij omgevingsvariabelen
 mogelijk zijn uitgelekt, en adviseert alle variabelen te roteren. Railway's eigen statuspagina
 noemt daarnaast een gerelateerd incident 21-23 okt waarbij een batch API-keys is ingetrokken
@@ -217,3 +220,87 @@ secret key zelf ophalen/verwerken (als daar alsnog een MCP-tool of Management-AP
 of Khidr geeft 'm één keer door; of (b) een Supabase Personal Access Token aanmaken (Account →
 Access Tokens) en die doorgeven, waarna ik verder via de Management API kan — dat is de
 eenmalige "inlog"-achtige actie die Supabase helaas vereist in plaats van een device-code-flow.
+
+### ✅ 2+4 afgerond — Khidr gaf de nieuwe waarden zelf door (2026-10-25, later die dag)
+Khidr maakte zelf een nieuwe Resend API-key en een nieuwe Supabase `sb_secret_...`-key aan via de
+respectievelijke dashboards (optie (a) hierboven voor Supabase) en gaf beide rechtstreeks door.
+Verwerking: elke waarde ging in één bash-sessie meteen in een shell-variabele, direct
+`echo -n "$VAR" | railway variable set NAAM --stdin --service <svc>` naar Railway en
+`vercel env add NAAM production --sensitive` naar Vercel, en de shell-variabelen zijn aan het
+einde van dezelfde opdracht geünset. Geen waarde is getoond, gelogd, of naar een bestand in de
+repo geschreven.
+
+- **RESEND_API_KEY + RESEND_FROM** → gezet op Railway `api` + `worker`. `RESEND_FROM` is bewust
+  **hetzelfde adres gekozen dat de Vercel-apps al gebruiken** voor transactionele mail:
+  `INDXR.AI <no-reply@send.indxr.ai>` (afgeleid uit `apps/app/src/lib/mail.ts`, dat `RESEND_FROM`
+  ongewijzigd doorgeeft aan Resend's `from`-veld — geen reverse-engineering van de waarde zelf
+  nodig, alleen het adres-patroon op `send.indxr.ai` is hergebruikt).
+- **SUPABASE_SERVICE_ROLE_KEY + SUPABASE_SERVICE_KEY** (beide namen, zie Stap 1-noot over de
+  legacy fallback-naam in de code) → gezet op Railway `api` + `worker`, en
+  **SUPABASE_SERVICE_ROLE_KEY** → gezet op Vercel `indxr-app` **production only** (de oude
+  Vercel-sensitive-variabele is eerst verwijderd, dan de nieuwe waarde toegevoegd — "overschrijven"
+  is bij een sensitive var geen losse operatie).
+
+**Herdeploy:** Railway `api` + `worker` beide herdeployed (`railway redeploy --yes`), beide
+teruggekomen in `Online`-status. Vercel `indxr-app` production pakt de nieuwe waarde op bij de
+volgende deploy — dat is deze documentatie-commit (sanctioned pad: git push → auto-deploy, geen
+losse `vercel --prod`-aanroep, zie LESSONS over het path-doubling-probleem bij directe CLI-deploys
+vanuit een gelinkt subdirectory).
+
+**Verificatie (productie, 2026-10-25):**
+| Test | Resultaat |
+|---|---|
+| `GET /health` | `{"status":"healthy", ...}` — groen na beide herdeploys |
+| Testmail via `backend/mailer.py` `send_quick_checkout_ready_email` naar `contact@indxr.ai`, uitgevoerd via `railway run --service api` (injecteert Railway's levende env, ik heb de sleutel zelf nooit gezien) | Geen warning/exception (de functie logt een warning bij een non-2xx Resend-response of een ontbrekende key — die bleef uit) → verzend geslaagd |
+| Balie-offerte: `POST /api/quote/create` met een echt (gegenereerd, 3s toon-wav) testbestand tegen productie | `201`-achtig succes, `quote_id` + prijsberekening correct; bewijst dat de nieuwe service-role-key `quick_quotes`-inserts + R2-writes nog steeds mag doen |
+| `GET /api/quote/{id}?token=` terug-lezen | Zelfde data terug — bevestigt read-pad ook werkt |
+| Credit-RPC: `deduct_credits_atomic` (1 credit) direct gevolgd door `add_credits` (1 credit terug) op een vast testaccount (`e2e-1@indxr.ai`), uitgevoerd via `railway run` met de live Railway-sleutel | Saldo vóór en na exact gelijk (250 → 249 → 250), beide RPC's `"success": true` |
+| Admin-pagina (`createAdminClient()` in `packages/shared/src/utils/supabase/admin.ts`) | Geen live browser-login uitgevoerd (geen admin-testaccount beschikbaar in deze sessie) — wel bevestigd dat deze factory exact `SUPABASE_SERVICE_ROLE_KEY` leest, dezelfde variabele die zojuist via de credit-RPC-test en de balie-offerte-test al bewezen werkt tegen dezelfde database. Indirect bewijs, geen directe UI-klik. |
+
+Testdata opgeruimd: de testofferte-rij is na verificatie verwijderd uit `quick_quotes`
+(`DELETE ... WHERE id = ...`), het lokale testbestand (wav) en de testscripts zijn ge-`shred -u`'d
+uit de scratchpad-map (nooit in de repo geweest).
+
+**Nog open na deze ronde:**
+- De **oude legacy `SUPABASE_SERVICE_ROLE_KEY`** (de JWT die net vervangen is door de nieuwe
+  `sb_secret_...`-waarde) staat nog niet ingetrokken bij Supabase — dat kan pas zodra ook de
+  frontend van de legacy `anon`-JWT af is (zie Stap 3 hieronder). Tot die tijd blijven beide
+  sleutelsystemen naast elkaar bestaan, wat Supabase expliciet ondersteunt.
+- Vercel preview-environment `BACKEND_API_SECRET` (zie punt 1 hierboven) — nog steeds niet
+  opgeruimd, nog steeds niet blokkerend.
+- `OPENAI_API_KEY`/`UPSTASH_REDIS_URL` al verwijderd (punt 3) — geen actie meer nodig.
+- Resterende Groep 1/2-sleutels (AssemblyAI, Decodo, Stripe, R2, Upstash REST, YouTube, PostHog,
+  BetterStack, Sentry-DSN) zijn in deze ronde NIET geroteerd — dat was buiten de scope van dit
+  specifieke vervolg (alleen Resend + Supabase waren aan de beurt). Zie de checklist hierboven voor
+  de resterende volgorde.
+
+---
+
+## Stap 3 — Onderzoek (geen uitvoering): kan de frontend naar de nieuwe publishable-key?
+
+**Vraag:** kan de oude legacy `service_role`-sleutel ingetrokken worden zonder ook de legacy
+`anon`-sleutel aan te raken, of moet de frontend eerst over naar de nieuwe `sb_publishable_...`-
+sleutel voordat intrekken van de oude service_role-sleutel veilig is?
+
+**Bevinding (alleen code gelezen, niets aangepast):** de frontend heeft precies drie plekken die
+de anon-sleutel gebruiken, en alle drie op exact dezelfde manier:
+`packages/shared/src/utils/supabase/client.ts`, `server.ts` en `middleware.ts` lezen allemaal
+`process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY` en geven die ongewijzigd door aan
+`createClient(url, key, ...)` uit `@supabase/supabase-js` (versie `^2.90.1` in alle drie
+`package.json`'s, ruim nieuw genoeg voor publishable keys). `createClient` behandelt die sleutel
+als een ondoorzichtige string — er is geen formaatcheck, geen aparte code-pad voor "oude JWT" vs.
+"nieuwe `sb_publishable_...`". **Conclusie: de overstap is een pure env-var-waardewissel, geen
+codewijziging.** Zodra Khidr op het Supabase-dashboard een `sb_publishable_...`-sleutel aanmaakt
+(kan gelijk met de secret key, zie Stap 2-noot hierboven — die bestaat mogelijk al, bevestigd via
+`get_publishable_keys` in de vorige ronde), is de enige vervolgstap het vervangen van de waarde
+van `NEXT_PUBLIC_SUPABASE_ANON_KEY` op Vercel (beide apps) door die nieuwe publishable-sleutel,
+gevolgd door een herdeploy.
+
+**Wat dit NIET oplost:** dit raakt alleen de vraag of de FRONTEND van de legacy anon-sleutel af
+kan. Het is losstaand van de vraag of de legacy `service_role`-sleutel apart (zonder de hele
+JWT-signing-sleutel te roteren, wat alle sessies breekt) kan worden ingetrokken bij Supabase —
+dat vergt een losse check in de Supabase-documentatie/-dashboard op het moment dat beide nieuwe
+sleutels (publishable + secret) daadwerkelijk in gebruik zijn, niet eerder.
+
+**Geen uitvoering in deze sessie** — dit is puur onderzoek, zoals gevraagd. Khidr beslist wanneer
+de publishable-key-overstap wordt ingepland.

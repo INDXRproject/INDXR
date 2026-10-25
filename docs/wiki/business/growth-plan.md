@@ -140,18 +140,25 @@ Beschrijvingen: "Upload a file, see the price, read the first 3 minutes free, th
 
 ## 5a. Bewaking eerste balie-aankopen
 
-3. **RESEND_API_KEY/RESEND_FROM op Railway (api + worker) — status 2026-10-25, zie
-   [incident-2026-10-railway-secrets.md](../operations/incident-2026-10-railway-secrets.md).**
-   Railway-login lukte alsnog (device-code-flow werkte, de eerdere Google-fout bleek een
-   voorbijgaand probleem). Bevestigd via de Railway-variabelenlijst (namen, geen waarden): beide
-   namen ontbreken op `api` én `worker` — nooit "uitgelekt", gewoon nooit gezet, `mailer.py` is
-   pas deze sessie gebouwd. **Geblokkeerd op een andere manier dan gedacht:** de bestaande waarden
-   staan wél op Vercel (beide apps), maar zijn daar als Vercel's **"sensitive"**-type variabele
-   opgeslagen — write-only, door NIEMAND ooit terug uit te lezen, ook niet de accounteigenaar, ook
-   niet via de Management API. Er is dus geen "kopieer de bestaande waarde"-pad meer, voor
-   niemand. **Actie Khidr:** een nieuwe Resend API-key aanmaken (Resend heeft geen CLI/device-
-   flow — dit is een dashboard-actie) en die ÉÉN keer doorgeven; die wordt dan direct doorgezet
-   naar Railway en Vercel zonder ooit elders bewaard te worden.
+3. **RESEND_API_KEY/RESEND_FROM op Railway (api + worker) — ✅ afgerond 2026-10-25**, zie
+   [incident-2026-10-railway-secrets.md](../operations/incident-2026-10-railway-secrets.md).
+   Beide namen ontbraken op `api` én `worker` — nooit "uitgelekt", gewoon nooit gezet, `mailer.py`
+   is pas deze sessie gebouwd. De bestaande Vercel-waarden waren niet terug te lezen (Vercel's
+   "sensitive"-variabeletype is write-only). Khidr heeft zelf een nieuwe Resend API-key aangemaakt
+   en doorgegeven; direct doorgezet naar Railway `api`+`worker` zonder ooit elders bewaard te
+   worden. `RESEND_FROM` is gezet op `INDXR.AI <no-reply@send.indxr.ai>` — hetzelfde adres dat de
+   Vercel-apps al gebruiken. Geverifieerd met een echte testmail via `backend/mailer.py` naar
+   `contact@indxr.ai` (geen fout gelogd → verzend geslaagd).
+4. **SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SERVICE_KEY — ✅ afgerond 2026-10-25.** De nieuwe
+   Supabase-sleutelsystemen (`sb_secret_...`) vereisten een eenmalige dashboard-actie om een
+   nieuwe secret key aan te maken (geen MCP-tool, geen CLI-device-flow voor Supabase). Khidr heeft
+   die zelf aangemaakt en doorgegeven; gezet op Railway `api`+`worker` (beide variabelenamen,
+   zie incident-doc) en op Vercel `indxr-app` production. Geverifieerd met een balie-offerte
+   (`POST /api/quote/create` + terug-lezen) en een credit-RPC-test (reserve+refund, netto nul op
+   een testaccount) tegen productie — beide geslaagd. De oude legacy service_role-sleutel staat
+   nog niet ingetrokken; dat kan pas nadat de frontend ook van de legacy anon-sleutel af is (zie
+   incident-doc §"Stap 3" voor het onderzoek — een pure env-var-wissel, geen codewijziging, nog
+   niet uitgevoerd).
 
 ## 6. Uitvoering via Claude Code
 
