@@ -135,10 +135,12 @@ export function FreeToolEmbed() {
           )
         )}
         renderAudio={({ switchMode }) => (
-          // Gate on tab activation. Upload has no route in the marketing app (/api/transcribe/preflight
-          // lives only in the app). Anonymous → sign-up friction (unchanged, verified). Logged-in → hand
-          // off to the app; a File object can't cross the origin boundary, so we send them before they
-          // pick a file, not after.
+          // Gate on tab activation. Upload has no route in the marketing app (QuickCheckoutPanel's
+          // /api/quote/create + /api/quick-checkout calls are app-only) — a File object also can't
+          // cross the origin boundary, so both anonymous and logged-in visitors are sent to the app
+          // before they pick a file, not after. growth-plan.md §6.2 Onderdeel E: anonymous visitors
+          // now land on the real "no account needed" quick-checkout flow instead of a sign-up wall —
+          // the homepage's "No account, no card" promise now holds for file uploads too.
           user ? (
             <FrictionConversionCard
               headline="Uploads open in the app"
@@ -149,9 +151,9 @@ export function FreeToolEmbed() {
           ) : (
             <FrictionConversionCard
               headline="File transcription"
-              body={`Upload audio or video — MP3, MP4, MOV, MKV, WAV, M4A and more. AI transcription via AssemblyAI at ${PER_MIN} credit per minute. The file is deleted after transcription. Sign up free for ${WELCOME} credits — no credit card needed.`}
-              primaryCtaLabel="Sign up free →"
-              primaryCtaHref="/signup"
+              body={`Upload audio or video — MP3, MP4, MOV, MKV, WAV, M4A and more, no account needed. See the price and a free 3-minute preview before you pay. AI transcription runs at ${PER_MIN} credit per minute.`}
+              primaryCtaLabel="Try it now →"
+              primaryCtaHref={appHref("/transcribe?mode=audio")}
               secondaryLabel="Or paste a YouTube URL"
               secondaryOnClick={() => switchMode("video")}
             />

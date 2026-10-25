@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/account/billing" },
   title: "Billing and Invoices — INDXR.AI Docs",
   description,
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: true },
 }
 
 export default function DocsBillingPage() {

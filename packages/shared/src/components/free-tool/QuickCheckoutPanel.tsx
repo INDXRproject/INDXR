@@ -108,6 +108,9 @@ export function QuickCheckoutPanel() {
     const acq = readAcquisitionCookie()
     posthog.capture("checkout_started", { quote_id: quote.quote_id, total_price_cents: quote.total_price_cents, ...acq })
     try {
+      // /api/quick-checkout is an apps/app route. QuickCheckoutPanel only renders inside the app
+      // (AudioTab) — not embedded on the marketing domain, see FreeToolEmbed.tsx — so this is
+      // always same-origin; a relative path is correct and avoids a cross-origin/CORS/cookie path.
       const res = await fetch("/api/quick-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

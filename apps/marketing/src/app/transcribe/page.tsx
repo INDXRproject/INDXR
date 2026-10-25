@@ -51,6 +51,14 @@ export default function FreeToolPage() {
         <p className="mt-6 text-sm text-[var(--fg-muted)]">
           <a href="/docs" className="hover:text-[var(--fg)] transition-colors">Learn how transcription works →</a>
         </p>
+
+        {/* growth-plan.md §6.2 Onderdeel E: internal links to the three commercial articles whose
+            CTA now points back at this tool — closes the loop in both directions. */}
+        <p className="mt-2 text-sm text-[var(--fg-muted)]">
+          Read more: <a href="/articles/video-to-text" className="underline hover:text-[var(--fg)]">video to text</a>,{" "}
+          <a href="/articles/audio-to-text" className="underline hover:text-[var(--fg)]">audio to text</a>, or{" "}
+          <a href="/articles/srt-generator" className="underline hover:text-[var(--fg)]">generating SRT subtitles</a>.
+        </p>
       </div>
 
       {/* Below-fold sections */}

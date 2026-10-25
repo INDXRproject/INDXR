@@ -48,10 +48,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/docs/reference/export-formats/json",
     "/docs/reference/accuracy",
     "/docs/reference/limits",
-    // Docs — Account
-    "/docs/account/credits",
-    "/docs/account/billing",
-    "/docs/account/settings",
+    // Docs — Account: noindex (growth-plan.md §6.2 Onderdeel E, 2026-10-25) — these pages trek
+    // crawl-aandacht weg van pagina's die tellen; account-settings-docs winnen niemand aan nieuwe
+    // bezoekers. Zie ook de `robots: { index: false }` op elke pagina zelf.
 
     // Articles
     "/articles",

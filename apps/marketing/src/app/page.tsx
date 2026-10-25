@@ -423,6 +423,14 @@ export default async function LandingPage() {
             and payment is handled by Stripe.
           </p>
 
+          {/* growth-plan.md §6.2 Onderdeel E: internal links to the three commercial articles. */}
+          <p className="mt-2 text-sm text-[var(--fg-muted)]">
+            More on{" "}
+            <Link href="/articles/video-to-text" className="underline hover:text-[var(--fg)]">converting video to text</Link>,{" "}
+            <Link href="/articles/audio-to-text" className="underline hover:text-[var(--fg)]">audio to text</Link>, and{" "}
+            <Link href="/articles/srt-generator" className="underline hover:text-[var(--fg)]">SRT subtitle generation</Link>.
+          </p>
+
           <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
             <Link href="/signup">
               <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">

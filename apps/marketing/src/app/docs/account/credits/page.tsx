@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs/account/credits" },
   title: "Credits — INDXR.AI Docs",
   description,
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: true },
 }
 
 export default function DocsCreditsPage() {

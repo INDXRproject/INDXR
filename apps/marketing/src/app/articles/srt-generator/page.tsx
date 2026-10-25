@@ -102,16 +102,16 @@ export default function SrtGeneratorPage() {
       </p>
 
       <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <Link href="/signup">
+        <Link href="/transcribe">
           <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
-            Create a free account
+            Try it now — no account needed
           </button>
         </Link>
         <Link
-          href="/pricing"
+          href="/signup"
           className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
         >
-          See pricing →
+          Or create a free account →
         </Link>
       </div>
 
@@ -308,16 +308,16 @@ begin with a story suppose you're the`}</DocsCodeBlock>
       </p>
 
       <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <Link href="/signup">
+        <Link href="/transcribe">
           <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
-            Create a free account
+            Try it now — no account needed
           </button>
         </Link>
         <Link
-          href="/pricing"
+          href="/signup"
           className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
         >
-          See pricing →
+          Or create a free account →
         </Link>
       </div>
     </ToolPageTemplate>
