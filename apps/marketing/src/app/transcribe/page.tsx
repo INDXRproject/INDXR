@@ -38,11 +38,16 @@ export default function FreeToolPage() {
     <>
       {/* Hero + tool */}
       <div className="container max-w-4xl py-24 px-4 mx-auto text-center">
+        {/* growth-plan.md §6.3 H7: the old headline led with "Free transcript generator" for every
+            path, including file uploads — which are now paid per file (the quick-checkout balie).
+            YouTube captions genuinely stay free; that's named explicitly instead of implied for
+            everything. */}
         <h1 className="text-4xl font-bold text-[var(--fg)] mb-6">
-          Free transcript generator for audio, video and YouTube
+          Transcribe audio, video, and YouTube — accurately, in minutes
         </h1>
         <p className="text-[var(--fg-muted)] mb-10 text-lg max-w-2xl mx-auto">
-          Upload an audio or video file, or paste a YouTube link. YouTube videos with captions are free; AI transcription handles everything else. Export as {exportFormatsProse("or")}. No extension needed.
+          YouTube videos with captions are free. Upload a file and see the price first — a free
+          3-minute preview before you pay, no account needed. Export as {exportFormatsProse("or")}.
         </p>
 
         <FreeToolEmbed />

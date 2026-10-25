@@ -205,6 +205,17 @@ export function pricePerMinute(pkg: PricingPackage): number {
   return pricePerCredit(pkg) * CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 }
 
+// Goedkoopste pakket dat minstens `creditsNeeded` credits bevat (groeiplan.md §6.3 H5 — de
+// snelle-balie-offerte toont dit alleen als het ECHT goedkoper is dan de offerte zelf). PACKAGES
+// is prijs/credits-monotoon oplopend, dus de eerste match (laagste credits ≥ nodig) is ook de
+// goedkoopste — geen apart sorteren nodig, maar defensief toch op prijs sorteren voor het geval
+// dat ooit wijzigt. Retourneert null als geen pakket genoeg credits bevat (zou niet voorkomen
+// zolang Power's 3.000 credits ruim boven elke realistische per-bestand-behoefte ligt).
+export function cheapestCoveringPackage(creditsNeeded: number): PricingPackage | null {
+  const covering = PACKAGES.filter((p) => p.credits >= creditsNeeded).sort((a, b) => a.priceEur - b.priceEur)
+  return covering[0] ?? null
+}
+
 // ---------------------------------------------------------------------------
 // Content helpers — render álle getoonde prijzen/credit-voorbeelden uit deze bron.
 // Nooit hardcoden in artikelen/pagina's. Credits-first (stabiel); euro-voorbeelden
