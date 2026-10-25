@@ -1567,12 +1567,28 @@ async def _finalize_quick_quote_emails(quote_id: str, email: Optional[str], job_
         await asyncio.to_thread(send_quick_checkout_ready_email, email, secure_links)
 
 
+def _pending_quick_quote_file_indices(files: list) -> list:
+    """Pure helper (growth-plan.md §6.3 H2): welke bestanden van een offerte nog GEEN job_id
+    hebben — dus nog nooit (succesvol) gedispatcht zijn. Dit IS de idempotentie-primitief van
+    dispatch_quick_quote: een herhaalde aanroep (Stripe-retry of de watchdog) slaat precies de
+    bestanden over die hier niet in staan en dispatcht alleen de rest, dus nooit een dubbele job
+    voor een al-gedispatcht bestand. Los getest in test_quick_quote_dispatch.py."""
+    return [idx for idx, qf in enumerate(files) if not qf.get('job_id')]
+
+
 @app.post("/api/quote/{quote_id}/dispatch")
 async def dispatch_quick_quote(quote_id: str, user_id: str = Form(...), _: None = Depends(verify_backend_secret)):
     """Interne endpoint (ALLEEN backend-secret — nooit anoniem aanroepbaar): dispatcht de
     transcriptie-jobs voor een BETAALDE offerte. Aangeroepen door de Next.js Stripe-webhook (na
-    credit-grant) of de 'betaal met credits'-route (na balanscheck). Idempotent op
-    quick_quotes.status — een tweede aanroep voor een al-'paid'/'failed' quote dispatcht niets opnieuw."""
+    credit-grant) of de 'betaal met credits'-route (na balanscheck).
+
+    Idempotent PER BESTAND op `job_id` (growth-plan.md §6.3 H2) — NIET (meer) op
+    `quick_quotes.status`. Vóór deze fix sloeg een tweede aanroep de HELE offerte over zodra de
+    status al 'paid' was, ook als de eerste aanroep halverwege crashte en sommige bestanden nooit
+    een job_id kregen. Nu wordt per aanroep alleen gekeken welke bestanden nog GEEN job_id hebben
+    (hun r2_key blijft intact tot ze succesvol gedispatcht zijn) — die worden gedispatcht; de rest
+    wordt overgeslagen. Dit maakt een herhaalde webhook-delivery (Stripe-retry) + de nieuwe
+    watchdog-pass allebei veilig: elke aanroep ruimt precies op wat nog openstaat."""
     supabase = get_supabase_client()
     result = await asyncio.to_thread(
         lambda: supabase.table('quick_quotes').select('*').eq('id', quote_id).single().execute()
@@ -1580,17 +1596,24 @@ async def dispatch_quick_quote(quote_id: str, user_id: str = Form(...), _: None 
     quote = result.data
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
-    if quote['status'] != 'pending':
-        return JSONResponse({"status": quote['status'], "already_dispatched": True})
 
-    await asyncio.to_thread(
-        lambda: supabase.table('quick_quotes').update({'status': 'paid', 'claimed_by_user_id': user_id}).eq('id', quote_id).execute()
-    )
+    quote_files = quote['files']
+    pending_indices = _pending_quick_quote_file_indices(quote_files)
+
+    if quote['status'] == 'pending':
+        await asyncio.to_thread(
+            lambda: supabase.table('quick_quotes').update({'status': 'paid', 'claimed_by_user_id': user_id}).eq('id', quote_id).execute()
+        )
+
+    if not pending_indices:
+        # Alles al gedispatcht door een eerdere aanroep — idempotente no-op, geen dubbele jobs.
+        existing_job_ids = [qf['job_id'] for qf in quote_files if qf.get('job_id')]
+        return JSONResponse({"status": "paid", "job_ids": existing_job_ids, "already_dispatched": True})
 
     job_index_map: Dict[str, int] = {}
     tasks: list = []
-    quote_files = quote['files']
-    for idx, qf in enumerate(quote_files):
+    for idx in pending_indices:
+        qf = quote_files[idx]
         content = await asyncio.to_thread(r2_read_bytes, QUICK_QUOTE_R2_BUCKET, qf['r2_key'])
         if content is None:
             logger.error(f"[quick-quote dispatch] R2 object missing for quote={quote_id} file={idx}: {qf['r2_key']}")

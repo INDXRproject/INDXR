@@ -210,10 +210,15 @@ export async function POST(req: Request) {
     if (session.payment_status !== 'paid') {
       return new NextResponse(null, { status: 200 })
     }
-    if (session.metadata?.productType === 'quick_purchase') {
-      await handleQuickPurchaseSession(session)
-    } else {
-      await grantCreditsForSession(session)
+    // growth-plan.md §6.3 H1: both handlers now return false on a RETRYABLE failure (DB error,
+    // dispatch error, etc.) — only a permanently-unrecoverable case (missing metadata) or a real
+    // success returns true. A retryable failure must get a 500 so Stripe retries the delivery;
+    // returning 200 on a transient error means a paid customer never gets their credits/transcript.
+    const ok = session.metadata?.productType === 'quick_purchase'
+      ? await handleQuickPurchaseSession(session)
+      : await grantCreditsForSession(session)
+    if (!ok) {
+      return new NextResponse('Retryable error — see Sentry', { status: 500 })
     }
   }
 
@@ -233,7 +238,12 @@ export async function POST(req: Request) {
 // Credit-grant-logica voor een betaalde checkout-sessie. Gedeeld tussen `checkout.session.completed`
 // (payment_status==='paid', de normale directe-betaalmethode-flow) en
 // `checkout.session.async_payment_succeeded` (delayed methods die na completed alsnog bevestigen).
-async function grantCreditsForSession(session: Stripe.Checkout.Session) {
+//
+// Retourneert `true` als Stripe met deze delivery klaar is (succes, al verwerkt, of permanent
+// onherstelbaar — retrien helpt dan niet), `false` bij een TIJDELIJKE fout (Stripe moet de
+// delivery opnieuw afleveren). growth-plan.md §6.3 H1: vóór deze fix gaf elke fout hier stilzwijgend
+// 200 terug — een tijdelijke DB-hik betekende dat een betaalde klant zijn credits nooit kreeg.
+async function grantCreditsForSession(session: Stripe.Checkout.Session): Promise<boolean> {
   // Service-role client: add_credits is locked to service_role (RPC privilege hardening).
   // The webhook has no user session anyway; it grants credits server-side.
   const supabase = createAdminClient()
@@ -243,7 +253,13 @@ async function grantCreditsForSession(session: Stripe.Checkout.Session) {
   const amountPaid = session.amount_total ? session.amount_total / 100 : 0
 
   if (!userId || !credits) {
-    return // Niets te doen; de aanroeper geeft hoe dan ook 200 terug om retries te stoppen.
+    // Permanent onherstelbaar — deze sessie zal nooit geldige metadata krijgen, retrien helpt niet.
+    // Dit wijst op een codefout bij sessie-aanmaak (checkout/route.ts), niet een normale flow.
+    Sentry.captureException(new Error('Stripe webhook: checkout.session.completed missing userId/credits metadata'), {
+      tags: { route: 'api/stripe/webhook', step: 'grant_missing_metadata' },
+      extra: { stripe_session_id: session.id },
+    })
+    return true
   }
 
   // Net-revenue capture (BTW + Stripe fee + EUR settlement) so net = gross − BTW − fee is exactly
@@ -293,20 +309,21 @@ async function grantCreditsForSession(session: Stripe.Checkout.Session) {
   })
 
   if (error) {
+    // Tijdelijk: een DB-hik, niet een permanent probleem — Stripe moet dit opnieuw afleveren.
     Sentry.captureException(new Error(`Stripe webhook: failed to add credits: ${error.message}`), {
       tags: { route: 'api/stripe/webhook', step: 'add_credits_rpc', user_id: userId ?? 'unknown' },
       extra: { stripe_session_id: session.id, credits, error },
     })
     await Sentry.flush(2000);
     console.error('Failed to add credits:', error)
-    return
+    return false
   }
 
   const alreadyProcessed = (data as { already_processed?: boolean } | null)?.already_processed === true
   if (alreadyProcessed) {
     // Deze sessie werd al eerder volledig verwerkt (vorige webhook-delivery) — balans is niet
     // opnieuw gemuteerd. Side-effects (has_ever_purchased, PostHog) zijn toen al gelopen; niet herhalen.
-    return
+    return true
   }
 
   // Betaald-status cachen (gemaksvlag; paid/free is altijd herafleidbaar uit credit_transactions).
@@ -343,6 +360,7 @@ async function grantCreditsForSession(session: Stripe.Checkout.Session) {
       }
   })
   await client.shutdown()
+  return true
 }
 
 // normalize_email mirror (supabase/migrations/20260712220428_welcome_reward_canonical_email_dedup.sql)
@@ -369,33 +387,41 @@ const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8
 // kan hier voor het EERST een account krijgen, op het e-mailadres dat Stripe Checkout verzamelde.
 // Eén grootboek: de guest krijgt een gewone user_credits-rij via de bestaande add_credits-RPC,
 // idempotent op stripe_session_id net als elke andere aankoop (Onderdeel A).
-async function handleQuickPurchaseSession(session: Stripe.Checkout.Session) {
+//
+// Zelfde true/false-contract als grantCreditsForSession (zie H1-comment daar). growth-plan.md
+// §6.3 H2: de dispatch-aanroep naar het backend is NIET langer gated op `alreadyProcessed` — een
+// Stripe-retry (credits al toegekend bij de eerste delivery) moet dispatch ALTIJD opnieuw proberen
+// als de eerste dispatch-poging zelf faalde (netwerkfout/backend-crash); het backend-endpoint is
+// zelf per-bestand-idempotent (zie backend/main.py dispatch_quick_quote), dus een herhaalde
+// aanroep is veilig. De vroege `quote.status !== 'pending'`-return is VERWIJDERD — die blokkeerde
+// precies dit retry-pad zodra de eerste dispatch de status al naar 'paid' had gezet.
+async function handleQuickPurchaseSession(session: Stripe.Checkout.Session): Promise<boolean> {
   const supabase = createAdminClient()
   const quoteId = session.metadata?.quoteId
   if (!quoteId) {
+    // Permanent onherstelbaar — deze sessie krijgt nooit een quoteId, retrien helpt niet.
     Sentry.captureMessage('Stripe webhook: quick_purchase session missing quoteId', {
       level: 'error',
       tags: { route: 'api/stripe/webhook', step: 'quick_purchase_missing_quote' },
       extra: { stripe_session_id: session.id },
     })
-    return
+    return true
   }
 
-  const { data: quote } = await supabase
+  const { data: quote, error: quoteErr } = await supabase
     .from('quick_quotes')
     .select('id,status,total_credits,email')
     .eq('id', quoteId)
     .single()
 
-  if (!quote) {
+  if (quoteErr || !quote) {
+    // Zou niet moeten gebeuren (de quote-rij bestaat al vóór Checkout) — behandel als tijdelijk
+    // (een leesfout of race) zodat Stripe retryt in plaats van de betaling te laten verdwijnen.
     Sentry.captureException(new Error(`Stripe webhook: quick_quotes row not found for ${quoteId}`), {
       tags: { route: 'api/stripe/webhook', step: 'quick_purchase_quote_missing' },
       extra: { stripe_session_id: session.id },
     })
-    return
-  }
-  if (quote.status !== 'pending') {
-    return // al verwerkt (herhaalde webhook-delivery) — dispatch is idempotent op quick_quotes.status
+    return false
   }
 
   const email = session.customer_details?.email ?? quote.email
@@ -403,10 +429,12 @@ async function handleQuickPurchaseSession(session: Stripe.Checkout.Session) {
 
   if (!userId) {
     if (!email) {
+      // Stripe Checkout verzamelt altijd een e-mailadres bij betaling — dit zou nooit mogen
+      // gebeuren. Toch tijdelijk behandelen (retry kan geen kwaad) i.p.v. de betaling te laten vallen.
       Sentry.captureException(new Error(`Stripe webhook: quick_purchase session ${session.id} has no email`), {
         tags: { route: 'api/stripe/webhook', step: 'quick_purchase_no_email' },
       })
-      return
+      return false
     }
     // ADR-024-canonicalisatie: bestaat er al een account (guest of echt) op dit canonieke adres?
     // Zo ja, crediteer DAT account — geen tweede account per +tag/puntjes-alias.
@@ -423,7 +451,7 @@ async function handleQuickPurchaseSession(session: Stripe.Checkout.Session) {
           tags: { route: 'api/stripe/webhook', step: 'quick_purchase_guest_create' },
           extra: { stripe_session_id: session.id, canonical_email: normalizeEmailMirror(email) },
         })
-        return
+        return false
       }
       userId = created.user.id
       await supabase.from('profiles').update({ is_guest: true }).eq('id', userId)
@@ -442,29 +470,41 @@ async function handleQuickPurchaseSession(session: Stripe.Checkout.Session) {
       tags: { route: 'api/stripe/webhook', step: 'quick_purchase_add_credits', user_id: userId },
       extra: { stripe_session_id: session.id, quote_id: quoteId },
     })
-    return
+    return false
   }
   const alreadyProcessed = (grantResult as { already_processed?: boolean } | null)?.already_processed === true
 
   await supabase.from('quick_quotes').update({ email }).eq('id', quoteId)
 
-  if (!alreadyProcessed) {
-    const dispatchForm = new FormData()
-    dispatchForm.append('user_id', userId)
-    try {
-      await fetch(`${PYTHON_BACKEND_URL}/api/quote/${quoteId}/dispatch`, {
-        method: 'POST',
-        headers: { 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' },
-        body: dispatchForm,
-      })
-    } catch (dispatchErr) {
-      Sentry.captureException(dispatchErr, {
+  // Dispatch ALTIJD proberen (niet gated op alreadyProcessed) — idempotent per bestand op het
+  // backend, dus een herhaalde aanroep na een eerder gelukte dispatch is een goedkope no-op, en
+  // een aanroep na een eerder MISLUKTE dispatch pakt precies de ontbrekende bestanden op.
+  const dispatchForm = new FormData()
+  dispatchForm.append('user_id', userId)
+  let dispatchOk = false
+  try {
+    const dispatchRes = await fetch(`${PYTHON_BACKEND_URL}/api/quote/${quoteId}/dispatch`, {
+      method: 'POST',
+      headers: { 'X-Backend-Secret': process.env.BACKEND_API_SECRET || '' },
+      body: dispatchForm,
+    })
+    dispatchOk = dispatchRes.ok
+    if (!dispatchRes.ok) {
+      Sentry.captureException(new Error(`Stripe webhook: quick_purchase dispatch non-ok status ${dispatchRes.status}`), {
         level: 'error',
         tags: { route: 'api/stripe/webhook', step: 'quick_purchase_dispatch', user_id: userId },
-        extra: { stripe_session_id: session.id, quote_id: quoteId },
+        extra: { stripe_session_id: session.id, quote_id: quoteId, status: dispatchRes.status },
       })
     }
+  } catch (dispatchErr) {
+    Sentry.captureException(dispatchErr, {
+      level: 'error',
+      tags: { route: 'api/stripe/webhook', step: 'quick_purchase_dispatch', user_id: userId },
+      extra: { stripe_session_id: session.id, quote_id: quoteId },
+    })
+  }
 
+  if (!alreadyProcessed) {
     const { PostHog } = require('posthog-node')
     const client = new PostHog(
       process.env.NEXT_PUBLIC_POSTHOG_KEY!,
@@ -488,4 +528,6 @@ async function handleQuickPurchaseSession(session: Stripe.Checkout.Session) {
     })
     await client.shutdown()
   }
+
+  return dispatchOk
 }

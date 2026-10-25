@@ -1875,6 +1875,56 @@ async def fetch_service_metrics(ctx: dict) -> str:
     return "ok"
 
 
+QUICK_QUOTE_STUCK_MINUTES = 5  # groeiplan.md §6.3 H2: hoe lang een betaalde offerte op dispatch mag wachten
+QUICK_QUOTE_DISPATCH_URL = os.getenv("QUICK_QUOTE_DISPATCH_URL") or os.getenv("PYTHON_BACKEND_URL") or "https://indxr-production.up.railway.app"
+
+
+async def watchdog_stuck_quick_quotes(ctx: dict) -> str:
+    """growth-plan.md §6.3 H2: een betaalde snelle-balie-offerte (`quick_quotes.status='paid'`)
+    mag nooit blijven hangen zonder ooit gedispatcht te zijn — dat betekent geld binnen, nooit een
+    transcript geleverd. De Next.js-webhook roept `/api/quote/{id}/dispatch` al bij elke
+    (ook herhaalde) delivery aan, maar als ALLE deliveries om een of andere reden nooit aankomen of
+    allemaal falen, is dit het laatste vangnet: elke 2 minuten opnieuw proberen voor offertes die
+    ouder zijn dan QUICK_QUOTE_STUCK_MINUTES en nog minstens één bestand zonder `job_id` hebben.
+    Het dispatch-endpoint is zelf per-bestand-idempotent (`dispatch_quick_quote`), dus een
+    herhaalde aanroep hier is altijd veilig — nooit een dubbele job/reservering."""
+    try:
+        sb = get_supabase_client()
+        cutoff = (datetime.now(timezone.utc) - timedelta(minutes=QUICK_QUOTE_STUCK_MINUTES)).isoformat()
+        res = await asyncio.to_thread(
+            lambda: sb.table('quick_quotes').select('id,claimed_by_user_id,files')
+                .eq('status', 'paid').lt('created_at', cutoff).execute()
+        )
+        stuck = [
+            row for row in (res.data or [])
+            if row.get('claimed_by_user_id') and any(not f.get('job_id') for f in (row.get('files') or []))
+        ]
+        if not stuck:
+            return "ok (none stuck)"
+
+        import httpx
+        redispatched = 0
+        async with httpx.AsyncClient(timeout=30) as client:
+            for row in stuck:
+                try:
+                    resp = await client.post(
+                        f"{QUICK_QUOTE_DISPATCH_URL}/api/quote/{row['id']}/dispatch",
+                        headers={"X-Backend-Secret": os.getenv("BACKEND_API_SECRET", "")},
+                        data={"user_id": row['claimed_by_user_id']},
+                    )
+                    if resp.status_code == 200:
+                        redispatched += 1
+                    else:
+                        logger.warning(f"[quick-quote watchdog] redispatch non-ok for {row['id']}: {resp.status_code}")
+                except Exception as e:
+                    logger.warning(f"[quick-quote watchdog] redispatch failed for {row['id']}: {e}")
+        logger.info(f"[quick-quote watchdog] {len(stuck)} stuck quote(s) found, {redispatched} redispatched")
+        return f"ok ({redispatched}/{len(stuck)} redispatched)"
+    except Exception as e:
+        logger.warning(f"[quick-quote watchdog] pass failed (non-fatal): {e}")
+        return "error"
+
+
 async def cleanup_idempotency_keys(ctx: dict) -> str:
     """Nightly: verwijder verlopen idempotentiesleutels (24u-TTL, ADR-019). Non-fataal."""
     try:
@@ -1894,12 +1944,15 @@ class WorkerSettings:
         arq_func(process_playlist_video, keep_result=0),
         arq_func(process_playlist_retries, keep_result=0),
         watchdog_interrupted_jobs,
+        watchdog_stuck_quick_quotes,
         fetch_service_metrics,
         cleanup_idempotency_keys,
     ]
     cron_jobs = [
         # Elke 2 minuten: detecteer crashed jobs en start crash-recovery.
         cron(watchdog_interrupted_jobs, minute=set(range(0, 60, 2))),
+        # Elke 2 minuten (offset +1): betaalde snelle-balie-offertes zonder dispatch (H2).
+        cron(watchdog_stuck_quick_quotes, minute=set(range(1, 60, 2))),
         # F17 nightly 02:00 UTC: Decodo billed traffic (Finance reconciliation). One run/day is enough —
         # Decodo settles within hours and the day-keyed upsert makes overlap free (see nightly-jobs.md).
         cron(fetch_service_metrics, hour={2}, minute={0}),
