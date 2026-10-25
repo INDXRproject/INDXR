@@ -118,3 +118,19 @@ offerte-flow (upload → prijs → "Total") slaagde op mobiel; op desktop blokke
 misbruik-limiet ("max 2 open onbetaalde offertes per IP") de 3e/4e poging vanaf hetzelfde
 testmachine-IP — correct gedrag, geen bug, en de dropzone/foutmelding-UI was in beide
 kleurschema's op desktop-breedte zichtbaar correct gestyled.
+
+## Addendum 2026-10-25 (later die dag) — koper-mail in huisstijl
+
+`backend/mailer.py`'s `send_quick_checkout_ready_email` stuurde tot nu toe platte tekst — de enige
+transactionele e-mail in de codebase zonder de huisstijl uit `docs/email-templates/` (zelfde
+tabel-layout/inline-styles/hex-brandkleuren als `confirm-signup.html`/`reset-password.html` en
+`apps/app/src/lib/mail.ts`'s `renderBroadcastEmailHtml`). Nu: een `_render_html`/`_render_text`-
+paar in `mailer.py` die exact dezelfde structuur hergebruiken (donkere headerbalk met het witte
+wordmark, amber accentstreepje, sentence-case kop, `#141414`-knoppen) — **één knop per transcript**
+(niet één knop met alle links erin, want de balie kan meerdere bestanden in één aankoop bevatten).
+De herroepingsrecht-bevestiging (H8, hierboven) staat nog steeds in zowel de HTML- als de
+tekstversie. `httpx.post`'s payload kreeg een `html`-veld naast het bestaande `text`-veld (Resend
+accepteert beide tegelijk — `text` is de fallback voor clients die HTML niet renderen).
+**Getest:** `py_compile` groen, een lokale render-smoke-test met 2 bestanden (2 knoppen, geen
+exceptions), en een echte testmail naar `contact@indxr.ai` via `railway run` tegen de live
+Railway-omgeving (geen foutlog → Resend accepteerde de payload).

@@ -304,3 +304,54 @@ sleutels (publishable + secret) daadwerkelijk in gebruik zijn, niet eerder.
 
 **Geen uitvoering in deze sessie** — dit is puur onderzoek, zoals gevraagd. Khidr beslist wanneer
 de publishable-key-overstap wordt ingepland.
+
+---
+
+## Stap 4 — Vervolgronde 2026-10-25 (later die dag): lokale token-hygiëne + publishable-key live
+
+### ✅ Stray RAILWAY_API_TOKEN in Khidr's `~/.bashrc` verwijderd
+De dode `RAILWAY_API_TOKEN` die deze hele sessie `railway whoami`/`railway status` liet falen met
+"Unauthorized" (zie Stap 1-aanleiding) kwam niet van een project-scoped Railway-token-bestand,
+maar van een losse `export RAILWAY_API_TOKEN=...`-regel die per ongeluk ná het
+`railway initialize`-blok in `~/.bashrc` stond (waarschijnlijk een eerdere handmatige
+debug-sessie die nooit is opgeruimd). Regel verwijderd, waarde nooit getoond. Geverifieerd met
+een volledig schone, nieuwe interactieve shell (`env -i ... bash -i -c 'railway whoami'`, dus
+los van deze sessie's eigen al-lopende procesomgeving die de oude waarde nog in het geheugen
+houdt tot de volgende herstart): `RAILWAY_API_TOKEN` is niet meer gezet, `railway whoami` werkt
+direct. Geen andere profielbestand (`.profile`, `.zshrc`, `.bash_profile`) bevatte deze variabele.
+
+### ✅ Stap 3 (publishable-key-overstap) nu uitgevoerd, niet langer alleen onderzoek
+Publishable key opgehaald via `get_publishable_keys` (publiek, geen geheim):
+`sb_publishable_wiakAipGpw-oJI-sXO9mCQ_cTS5XLKF`. Gezet als `NEXT_PUBLIC_SUPABASE_ANON_KEY` op
+Vercel **production** voor zowel `indxr-app` als `indxr-marketing` (de bestaande legacy-anon-
+waarde was daar als gewone "Encrypted"-variabele opgeslagen, dus — anders dan bij de sensitive
+Resend/Supabase-vondst — wel netjes te verwijderen en opnieuw toe te voegen). Dev/Preview staan
+nog op de legacy anon-JWT; dat is bewust zo gelaten (geen productierisico, beide sleuteltypes
+werken naast elkaar).
+
+**Repo-brede check op legacy-JWT-afhankelijkheden (alleen gelezen, niets aangepast):** elke plek
+die `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` of `SUPABASE_SERVICE_KEY` aanraakt
+(backend-tests, `credit_manager.py`, `turbo.json`, Playwright-helpers, `tests/test_suite.py`,
+losse scripts, `apps/app/src/lib/unsubscribe-token.ts`) leest de waarde als kale env-var-string
+door naar `create_client`/`createClient` — geen enkele plek decodeert of verifieert 'm als JWT
+(`grep` op `jwt.decode`/`PyJWT`/`SUPABASE_JWT_SECRET` in de hele repo: nul treffers). Er is dus
+geen code die specifiek op het OUDE sleutelformaat leunt.
+
+**Bijvangst — gevonden, niet in scope om te fixen:** `apps/app/src/lib/unsubscribe-token.ts` valt
+terug op `SUPABASE_SERVICE_ROLE_KEY` als HMAC-secret voor unsubscribe-tokens wanneer
+`UNSUBSCRIBE_SECRET` niet gezet is — en die laatste staat NIET op Vercel `indxr-app` production.
+Dat betekent dat de SERVICE_ROLE_KEY-rotatie van de vorige ronde (deze sessie) alle vóór die
+rotatie uitgegeven unsubscribe-links stil ongeldig heeft gemaakt (het secret waarmee ze
+ondertekend waren, bestaat niet meer). Geen gebroken beveiliging (een ongeldige token faalt
+gewoon, geen crash), maar wel een los eindje: zet op een moment een eigen `UNSUBSCRIBE_SECRET`
+zodat toekomstige SERVICE_ROLE_KEY-rotaties dit niet meer raken.
+
+**Herdeploy:** via de git-push van deze documentatie-/mailer-ronde (sanctioned pad, geen losse
+`vercel --prod`).
+
+**Live productietest na herdeploy:** zie LOG.md voor het resultaat (Google-login, e-mail-login,
+dashboard, balie-offerte) — uitgevoerd ná bevestigde groene deploy, niet hiervoor.
+
+**Conclusie legacy-sleutels:** zie het rapport aan Khidr voor het "klaar om uit te schakelen:
+ja/nee"-oordeel — dat hangt af van het resultaat van de live login-test hierboven, niet alleen
+van de code-analyse.
