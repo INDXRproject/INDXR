@@ -38,7 +38,7 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   // consistent met de zichtbare "Last updated" op /privacy én met LEGAL_VERSION=2026-08-30
   // (bundelversie, ADR-069/ADR-087). Wijzig deze data alleen samen met LEGAL_VERSION + de zichtbare datum.
   "/privacy": "2026-08-30",
-  "/terms": "2026-07-20",
+  "/terms": "2026-10-25",
 
   // Alternatives (commercial comparison pages — ADR-105). New page created 2026-09-07; for a brand-new
   // page the creation date IS its real last-content date (this is the one legitimate use of "today").

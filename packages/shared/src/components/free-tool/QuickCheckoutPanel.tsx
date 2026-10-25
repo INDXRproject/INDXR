@@ -266,6 +266,9 @@ export function QuickCheckoutPanel() {
             onChange={(e) => setAccepted(e.target.checked)}
             className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
           />
+          {/* growth-plan.md §6.3 H8 (akkoord Khidr, §7 punt 7): per-bestand-betaling levert
+              onmiddellijk, dus de afstand van het 14-dagen-herroepingsrecht moet letterlijk in dit
+              label staan — alleen verwijzen naar de voorwaarden is niet genoeg (ADR-069 addendum). */}
           <span>
             I agree to the{" "}
             <a href={marketingHref("/terms")} target="_blank" rel="noopener noreferrer" className="text-[var(--link)] hover:underline">
@@ -274,7 +277,9 @@ export function QuickCheckoutPanel() {
             and{" "}
             <a href={marketingHref("/privacy")} target="_blank" rel="noopener noreferrer" className="text-[var(--link)] hover:underline">
               Privacy Policy
-            </a>.
+            </a>
+            , and I ask INDXR to start right away. I understand I lose my 14-day right of
+            withdrawal once my transcript is delivered.
           </span>
         </label>
         {error && <p className="text-sm text-error mb-3">{error}</p>}

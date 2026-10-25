@@ -41,3 +41,32 @@ Drie vastgelegde regels:
 - **(c) Git is het versiearchief** van beide documenten (`apps/marketing/src/app/{privacy,terms}/page.tsx`) — elke `LEGAL_VERSION`-string is via de commit-historie terug te voeren op de exacte tekst die toen live stond. **Geen apart archiefmechanisme nodig** (geen versietabel, geen gearchiveerde HTML-snapshots).
 
 Enige code-consument van `LEGAL_VERSION` blijft `apps/app/src/app/api/stripe/checkout/route.ts` (Stripe `session.metadata.termsVersion` + de `terms_acceptances`-insert); de waarde wordt puur vastgelegd, geen logica vergelijkt of gate't erop.
+
+## Addendum 2026-10-25 — expliciete herroepingsrecht-afstand voor de snelle balie (H8, §7 punt 7)
+
+Lost het **restpunt** hierboven op, specifiek voor per-bestand-betaling (growth-plan.md §6.3 H8,
+**akkoord Khidr 2026-10-25**). Bij betalen per bestand is er — anders dan bij een creditpakket —
+geen "ongebruikt gedeelte" dat waarde behoudt: de hele aankoop wordt onmiddellijk en volledig
+uitgevoerd. Een incorporatie-per-referentie (het bestaande Terms-vinkje) is daarom niet genoeg
+voor dit pad.
+
+**Beslissing:** het label van de akkoord-checkbox op de balie-checkout
+(`packages/shared/src/components/free-tool/QuickCheckoutPanel.tsx`) bevat de afstandsverklaring
+**letterlijk in de tekst zelf** (niet alleen een link naar de voorwaarden):
+
+> "I agree to the Terms of Service and Privacy Policy, and I ask INDXR to start right away. I
+> understand I lose my 14-day right of withdrawal once my transcript is delivered."
+
+Dezelfde instemming wordt herhaald in de bevestigingsmail na betaling (`backend/mailer.py`,
+`send_quick_checkout_ready_email`) — een tweede, onafhankelijke vastlegging die de koper achteraf
+nog kan teruglezen. `apps/marketing/src/app/terms/page.tsx` §7 kreeg een extra bullet die het
+per-bestand-pad expliciet benoemt (hetzelfde principe als credits, toegepast op het moment dat de
+hele aankoop in één keer gebruikt is). `LEGAL_VERSION` → `2026-10-25` (regel (a) hierboven: bump
+bij elke inhoudelijke `/terms`-wijziging).
+
+**Dit is geen aparte tweede checkbox** — de afweging was tussen één checkbox met de volledige tekst
+in het label, of twee aparte vinkjes (Terms+Privacy, en los de herroepings-afstand). Eén checkbox
+met samengestelde tekst is gekozen: beide onderdelen zijn voorwaarden voor dezelfde handeling (nu
+betalen en leveren), en de tekst staat zelf al letterlijk in het label — de kern-eis uit art. 16(m)
+CRD/6:230p BW (expliciete bevestiging, niet alleen incorporatie-per-referentie) is daarmee gedekt
+zonder UI-frictie toe te voegen met een tweede vinkje.

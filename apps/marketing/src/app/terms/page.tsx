@@ -15,7 +15,7 @@ export default function TermsPage() {
           Terms of Service
         </h1>
         <p className="text-sm text-[var(--fg-muted)] mb-10">
-          Last updated: 2026-07-20
+          Last updated: 2026-10-25
         </p>
 
         <div className="prose-content text-[var(--fg-subtle)] leading-relaxed space-y-8">
@@ -110,6 +110,13 @@ export default function TermsPage() {
               <li>
                 We don’t issue cash refunds after 14 days, but because your credits never
                 expire, their value stays yours.
+              </li>
+              <li>
+                A quick-checkout purchase (paying for one file directly, without an account) is
+                different: there are no credits left over to hold value. At checkout you confirm
+                you ask us to start right away, and that you lose your 14-day right of withdrawal
+                on that purchase once the transcript is delivered — the same principle as above,
+                applied the moment the whole purchase is used.
               </li>
             </ul>
             <p>Refunds are returned to your original payment method.</p>

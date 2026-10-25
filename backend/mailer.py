@@ -28,7 +28,17 @@ def send_quick_checkout_ready_email(email: str, secure_links: list) -> None:
     lines = ["Your transcript" + ("s are" if len(secure_links) > 1 else " is") + " ready.", ""]
     for link in secure_links:
         lines.append(f"{link['filename']}: {link['url']}")
-    lines += ["", "These links are private to you — don't share them.", "", "— INDXR.AI"]
+    lines += [
+        "",
+        "These links are private to you — don't share them.",
+        "",
+        # growth-plan.md §6.3 H8 (akkoord Khidr, §7 punt 7): bevestig de bij checkout gegeven
+        # instemming ook in deze e-mail, naast het checkbox-label op de betaalpagina (ADR-069 addendum).
+        "As confirmed at checkout, you asked us to start right away, so your 14-day right of "
+        "withdrawal on this purchase ended once your transcript was delivered.",
+        "",
+        "— INDXR.AI",
+    ]
 
     try:
         resp = httpx.post(

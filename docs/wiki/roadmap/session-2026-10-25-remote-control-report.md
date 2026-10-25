@@ -70,8 +70,8 @@ expliciete akkoord, groeiplan.md §3).
 ## Addendum — herstelronde §6.3 (H1-H11, zelfde dag)
 
 Na een eigen anonieme browser-doorloop op `app.indxr.ai/transcribe` vond de piloot 11 gebreken,
-vastgelegd in `growth-plan.md` §6.3. H8 wacht op Khidr's akkoord (§7 punt 7 staat "open") →
-overgeslagen, niet gebouwd.
+vastgelegd in `growth-plan.md` §6.3. H8 wachtte op Khidr's akkoord (§7 punt 7) — **2026-10-25
+alsnog akkoord gegeven**, apart uitgevoerd en hieronder toegevoegd.
 
 | # | Punt | Status | Commit(s) |
 |---|------|--------|-----------|
@@ -82,7 +82,7 @@ overgeslagen, niet gebouwd.
 | H5 | Eerlijk goedkoopste-pakket-alternatief | ✅ done | `46e73b9` |
 | H6 | Dropzone-pariteit met AudioTab + paginatitel | ✅ done | `46e73b9` |
 | H7 | Marketing-copy "free" → eerlijk | ✅ done | `46e73b9` |
-| H8 | Apart herroepingsrecht-vinkje | ⏭️ OVERGESLAGEN | §7 punt 7 staat "open" — wacht op Khidr |
+| H8 | Herroepingsrecht-afstand in checkbox-label + mail | ✅ done (los, na akkoord) | zie commit hieronder |
 | H9 | "Claim this account"-knop | ✅ done | `7c941c3` |
 | H10 | Ontbrekend migratiebestand + 2 bijkomende versie-driften | ✅ done | `01612c2` |
 | H11 | Resend-env-vars + Stripe-configuratie — onderzoek | ✅ done (bevindingen hieronder) | — |
@@ -128,9 +128,19 @@ bestandsnaam-timestamp kwam niet overeen met de `version` die Supabase's `apply_
 er daadwerkelijk aan toekende. Beide hernoemd naar hun echte versie; zie `docs/LESSONS.md`
 2026-10-25 voor de regel ("controleer na elke apply_migration-call `list_migrations`").
 
+### H8 — toegevoegd na akkoord (los van de H1-H11-commits hierboven)
+Checkbox-label op de balie-checkout (`QuickCheckoutPanel.tsx`) bevat nu letterlijk: "I agree to
+the Terms of Service and Privacy Policy, and I ask INDXR to start right away. I understand I lose
+my 14-day right of withdrawal once my transcript is delivered." Dezelfde instemming herhaald in de
+bevestigingsmail (`backend/mailer.py`). `/terms` §7 kreeg een bullet die het per-bestand-pad expliciet
+benoemt; `LEGAL_VERSION` → `2026-10-25` (bundelversie-regel, ADR-069). Vastgelegd in ADR-069-addendum
+2026-10-25. **Bewust één checkbox met samengestelde tekst, geen tweede apart vinkje** — zie de
+rationale in het ADR-addendum.
+
 ### Open punten (ongewijzigd of nieuw)
-- H8 blijft open — Khidr's beslissing in §7 punt 7.
 - H11: Resend-env-vars op Railway en de Stripe-payment-method-discrepantie blijven open voor
   Khidr om zelf te bevestigen (zie bevindingen hierboven).
-- Geen volledige Stripe-testmodus-betaal-klikdoorloop (zou een echte testkaart-betaling vergen).
+- Geen volledige Stripe-testmodus-betaal-klikdoorloop (zou een echte testkaart-betaling vergen) —
+  dus ook H8's checkbox/mail-tekst is niet in een echte browser-aankoop gezien, alleen
+  code-/build-geverifieerd.
 - `is_guest→false`-claim-flow is nu gebouwd maar niet live doorlopen (zie H9-bewijs).
