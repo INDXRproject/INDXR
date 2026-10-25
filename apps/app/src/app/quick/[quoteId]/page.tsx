@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { Loader2, CheckCircle2 } from "lucide-react"
+import { trackPurchase } from "@indxr/shared/lib/gtag"
 
 // Snelle balie — statuspagina na Stripe-redirect of credits-betaling (growth-plan.md §6.2
 // Onderdeel B). Pollt het publieke backend-statusendpoint (beveiligd door access_token, geen
@@ -24,6 +25,7 @@ export default function QuickCheckoutStatusPage() {
   const [status, setStatus] = useState<string | null>(null)
   const [files, setFiles] = useState<QuoteFile[]>([])
   const [error, setError] = useState<string | null>(null)
+  const purchaseTrackedRef = useRef(false)
 
   useEffect(() => {
     if (!token) {
@@ -44,6 +46,13 @@ export default function QuickCheckoutStatusPage() {
         if (cancelled) return
         setStatus(data.status)
         setFiles(data.files ?? [])
+        // Google Ads "Purchase" conversion for balie-aankopen (growth-plan.md §6.2 Onderdeel D).
+        // transaction_id = quick_<quoteId> (one-per-quote, stable) → Google dedupes a re-fire on
+        // reload the same way trackPurchase's existing Stripe-session-id callers rely on.
+        if (data.status === "paid" && !purchaseTrackedRef.current) {
+          purchaseTrackedRef.current = true
+          trackPurchase({ valueEur: (data.total_price_cents ?? 0) / 100, transactionId: `quick_${params.quoteId}` })
+        }
         const allDone = (data.files ?? []).every(
           (f: QuoteFile) => f.job_status === "complete" || f.job_status === "error" || f.secure_url
         )

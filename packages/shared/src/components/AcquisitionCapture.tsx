@@ -52,6 +52,12 @@ export function AcquisitionCapture() {
       const wbraid = params.get('wbraid') || undefined
       const click_id_at = (gclid || gbraid || wbraid) ? new Date().toISOString() : undefined
 
+      // growth-plan.md §6.2 Onderdeel D: the Google Ads final-URL suffix (?via=ads&kw={keyword})
+      // for the new "Video & audio to text" campaign — kept alongside gclid, same first-touch
+      // persistence, so a balie purchase days later can still attribute to the ad group/keyword.
+      const via = params.get('via') || undefined
+      const kw = params.get('kw') || undefined
+
       // signup_source: utm_source wins; else the referrer host; else 'direct'.
       let signup_source = utm_source
       if (!signup_source && referrer) {
@@ -64,7 +70,7 @@ export function AcquisitionCapture() {
       signup_source = signup_source || 'direct'
 
       const data = { signup_source, utm_source, utm_medium, utm_campaign, referrer, landing_path,
-        gclid, gbraid, wbraid, click_id_at }
+        gclid, gbraid, wbraid, click_id_at, via, kw }
       pendingAcq = encodeURIComponent(JSON.stringify(data))
     } catch {
       /* best-effort — a layout-level capture must never throw */

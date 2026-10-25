@@ -480,6 +480,10 @@ async function handleQuickPurchaseSession(session: Stripe.Checkout.Session) {
         source: 'stripe_webhook',
         session_id: session.id,
         quote_id: quoteId,
+        // growth-plan.md §6.2 Onderdeel D: via/kw attribution, carried from the quick-checkout
+        // session metadata (set client-side from the indxr_acq cookie) through to this event.
+        via: session.metadata?.via,
+        kw: session.metadata?.kw,
       },
     })
     await client.shutdown()

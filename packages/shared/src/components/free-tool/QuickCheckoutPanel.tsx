@@ -1,11 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { UploadCloud, Loader2, AlertCircle } from "lucide-react"
+import posthog from "posthog-js"
 import { Button } from "../ui/button"
 import { marketingHref } from "../../lib/cross-host-links"
 import { PACKAGES, formatEur } from "../../lib/pricing"
 import { UPLOAD_ACCEPT_ATTR } from "../../lib/uploadFormats"
+
+// growth-plan.md §6.2 Onderdeel D: via/kw (+ gclid) are first-touch-captured into the indxr_acq
+// cookie by AcquisitionCapture — read them back out here so the balie's PostHog events and the
+// Stripe session metadata carry attribution through to quick_purchase_completed (webhook).
+function readAcquisitionCookie(): { via?: string; kw?: string; gclid?: string } {
+  if (typeof document === "undefined") return {}
+  try {
+    const raw = document.cookie.split("; ").find((c) => c.startsWith("indxr_acq="))?.split("=")[1]
+    if (!raw) return {}
+    const acq = JSON.parse(decodeURIComponent(raw)) as Record<string, unknown>
+    return {
+      via: typeof acq.via === "string" ? acq.via : undefined,
+      kw: typeof acq.kw === "string" ? acq.kw : undefined,
+      gclid: typeof acq.gclid === "string" ? acq.gclid : undefined,
+    }
+  } catch {
+    return {}
+  }
+}
 
 // Snelle balie (growth-plan.md §6.2 Onderdeel B): anonieme upload → offerte → gratis
 // voorproefje → betalen per bestand, geen account nodig. Vervangt de harde login-wall die
@@ -39,8 +59,19 @@ export function QuickCheckoutPanel() {
   const [loading, setLoading] = useState(false)
   const [payLoading, setPayLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const previewTrackedRef = useRef(false)
 
   const anchorPkg = PACKAGES.find((p) => p.mostPopular) ?? PACKAGES[0]
+
+  // preview_viewed fires once, the first time any file's free preview becomes ready while this
+  // quote is on screen — not on mount (nothing to view yet) and not once per file.
+  useEffect(() => {
+    if (previewTrackedRef.current || !quote) return
+    if (quote.files.some((f) => f.preview_status === "ready")) {
+      previewTrackedRef.current = true
+      posthog.capture("preview_viewed", { quote_id: quote.quote_id, ...readAcquisitionCookie() })
+    }
+  }, [quote])
 
   async function getQuote() {
     if (!files.length) return
@@ -56,6 +87,13 @@ export function QuickCheckoutPanel() {
         return
       }
       setQuote(data)
+      posthog.capture("quote_shown", {
+        quote_id: data.quote_id,
+        file_count: data.files?.length ?? 0,
+        total_credits: data.total_credits,
+        total_price_cents: data.total_price_cents,
+        ...readAcquisitionCookie(),
+      })
     } catch {
       setError("Something went wrong getting a price. Try again.")
     } finally {
@@ -67,11 +105,19 @@ export function QuickCheckoutPanel() {
     if (!quote || !accepted) return
     setPayLoading(true)
     setError(null)
+    const acq = readAcquisitionCookie()
+    posthog.capture("checkout_started", { quote_id: quote.quote_id, total_price_cents: quote.total_price_cents, ...acq })
     try {
       const res = await fetch("/api/quick-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quoteId: quote.quote_id, accessToken: quote.access_token, termsAccepted: true }),
+        body: JSON.stringify({
+          quoteId: quote.quote_id,
+          accessToken: quote.access_token,
+          termsAccepted: true,
+          via: acq.via,
+          kw: acq.kw,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
