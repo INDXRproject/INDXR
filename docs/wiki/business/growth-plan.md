@@ -23,11 +23,10 @@
 
 ## 2. De kern: eerst een betaalmoment, dan pas verkeer
 
-**Status: hersteld (2026-10-25, herstelronde §6.3, commits f293ddf…7c941c3, ADR-107).** Zie
+**Status: gebouwd (2026-10-25, commits f34a923…3348b75, ADR-107).** Zie
 [session-2026-10-25-remote-control-report.md](../roadmap/session-2026-10-25-remote-control-report.md)
-voor het volledige eindrapport (per-onderdeel bewijs + open punten). Live browser-geverifieerd
-(Playwright tegen `app.indxr.ai`, 375px+desktop, licht+donker) — nog geen volledige
-Stripe-testmodus-betaal-klikdoorloop.
+voor het volledige eindrapport (per-onderdeel bewijs + open punten). Live, nog niet geverifieerd
+met een echte browser-klikdoorloop in Stripe-testmodus.
 
 **De snelle balie (Khidr, 2026-10-24).** Naast het volledige product (account, library, credits voor terugkerende gebruikers) komt een snelle balie: één of een paar bestanden, geen account nodig, prijs zien, voorproefje van de eerste 3 minuten, afrekenen per bestand (€0,10/min, min. €2), transcript via veilige link + e-mail, met één klik alsnog een account. Het voorproefje beperkt zich tot 3 minuten zodat anoniem gebruik ons hooguit centen kost.
 
@@ -138,6 +137,10 @@ Beschrijvingen: "Upload a file, see the price, read the first 3 minutes free, th
 | Bij beslisregel (§3) | Advies + cijfers, Khidr beslist |
 
 **Voorwaarden voor geplande taken:** laptop aan, Claude desktop-app open, Chrome-venster "INDXR.ai" open (koppeling via `select_browser` op deviceId `992309b2-9227-434c-9913-7f4d74bd4753`).
+
+## 5a. Bewaking eerste balie-aankopen
+
+3. **RESEND_API_KEY/RESEND_FROM op Railway (api + worker) — NIET geverifieerd (2026-10-25).** `backend/mailer.py` verwacht exact deze twee namen (bevestigd tegen de code). Kon niet gecontroleerd worden: Railway-login lukt niet — Khidr's enige inlogmethode is Google, en die faalt herhaaldelijk (`GOOGLE_CONNECTION_FAILED`), zowel via de CLI-pairing-flow (3 pogingen, 2 browsers incl. guest-mode) als rechtstreeks op het Railway-dashboard. Railway's eigen statuspagina toont Google-login als 100% beschikbaar, dus dit lijkt account-specifiek, niet een platformbrede storing. Zonder deze twee variabelen verstuurt de balie geen bevestigingsmail na een aankoop (faalt stil, geen crash — zie `mailer.py`). **Actie Khidr:** opnieuw proberen in te loggen op Railway zodra mogelijk (evt. via een ander account-herstelpad bij Railway support), dan deze check herhalen.
 
 ## 6. Uitvoering via Claude Code
 
