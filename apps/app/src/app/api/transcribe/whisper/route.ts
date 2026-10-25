@@ -43,9 +43,15 @@ export async function POST(request: Request) {
 
     const rateLimit = await checkRateLimit(request, user.id, isPremium);
     if (!rateLimit.success) {
+      // At this point `user` is always authenticated (401 returned above otherwise) — this is
+      // never an anonymous caller. checkRateLimit bypasses entirely for isPremium, so the
+      // `isPremium` branch below is unreachable in practice; the free-tier message is what the
+      // only real caller (a logged-in, non-premium user) actually sees. The two messages were
+      // previously swapped — a free-tier user saw "Anonymous users: 10 requests/day" instead of
+      // their actual 50/hour limit (growth-plan.md §6.2 Onderdeel F).
       const message = isPremium
-        ? 'Free tier: 50 requests/hour. Upgrade to premium for unlimited extractions.'
-        : 'Anonymous users: 10 requests/day. Sign up free for 50 requests/hour.';
+        ? 'Anonymous users: 10 requests/day. Sign up free for 50 requests/hour.'
+        : 'Free tier: 50 requests/hour. Upgrade to premium for unlimited extractions.';
       return NextResponse.json(
         {
           success: false,
