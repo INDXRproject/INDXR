@@ -38,7 +38,7 @@ export default function PublicTranscribePage() {
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-semibold text-fg mb-2">Transcribe a file</h1>
       <p className="text-sm text-fg-muted mb-2">
-        No account needed — see the price, get a free 3-minute preview, then pay per file.
+        No account needed — see the price, get a free preview of the first part (up to 3 minutes), then pay per file.
       </p>
       <AudioTab />
     </div>

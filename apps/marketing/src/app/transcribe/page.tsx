@@ -47,7 +47,7 @@ export default function FreeToolPage() {
         </h1>
         <p className="text-[var(--fg-muted)] mb-10 text-lg max-w-2xl mx-auto">
           YouTube videos with captions are free. Upload a file and see the price first — a free
-          3-minute preview before you pay, no account needed. Export as {exportFormatsProse("or")}.
+          preview of the first part, up to 3 minutes, before you pay, no account needed. Export as {exportFormatsProse("or")}.
         </p>
 
         <FreeToolEmbed />

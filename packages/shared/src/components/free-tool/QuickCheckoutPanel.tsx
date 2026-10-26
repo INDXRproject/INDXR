@@ -163,9 +163,14 @@ export function QuickCheckoutPanel() {
         return
       }
       setQuote(data)
+      const totalDurationSeconds = (data.files ?? []).reduce(
+        (sum: number, f: QuoteFile) => sum + (f.duration_seconds ?? 0),
+        0,
+      )
       posthog.capture("quote_shown", {
         quote_id: data.quote_id,
         file_count: data.files?.length ?? 0,
+        duration_seconds: totalDurationSeconds,
         total_credits: data.total_credits,
         total_price_cents: data.total_price_cents,
         ...readAcquisitionCookie(),
@@ -196,6 +201,7 @@ export function QuickCheckoutPanel() {
           termsAccepted: true,
           via: acq.via,
           kw: acq.kw,
+          gclid: acq.gclid,
         }),
       })
       const data = await res.json()
@@ -241,7 +247,7 @@ export function QuickCheckoutPanel() {
               )}
               {f.preview_status === "ready" && f.preview_text && (
                 <div className="mt-2 rounded-md border border-border-subtle bg-surface-elevated/40 p-3 max-h-32 overflow-y-auto">
-                  <p className="text-xs text-fg-subtle mb-1">Free preview (first 3 minutes)</p>
+                  <p className="text-xs text-fg-subtle mb-1">Free preview (first part, up to 3 min)</p>
                   <p className="text-sm text-fg-muted leading-relaxed">{f.preview_text}</p>
                 </div>
               )}

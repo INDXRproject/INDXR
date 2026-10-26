@@ -1428,9 +1428,13 @@ async def create_quick_quote(request: Request, files: List[UploadFile] = File(..
             })
 
             # Gratis voorproefje: trim + submit in de achtergrond, blokkeert de offerte-response niet.
+            # Gecapt op 1/3 van de duur (naast het vaste QUICK_QUOTE_PREVIEW_SECONDS-plafond) zodat
+            # een kort bestand (bv. 1-2 min) niet gratis het VOLLEDIGE transcript krijgt — anders
+            # geeft ffmpeg's `-t` simpelweg het hele bestand terug zodra dat korter is dan het plafond.
+            preview_seconds = min(QUICK_QUOTE_PREVIEW_SECONDS, max(1, int(duration // 3)))
             preview_path = tmp_path + "_preview.ogg"
             try:
-                await asyncio.to_thread(extract_preview_clip, tmp_path, preview_path, QUICK_QUOTE_PREVIEW_SECONDS)
+                await asyncio.to_thread(extract_preview_clip, tmp_path, preview_path, preview_seconds)
                 preview_tasks.append(asyncio.create_task(_run_quick_quote_preview(quote_id, idx, preview_path)))
             except Exception as e:
                 logger.warning(f"[quick-quote] preview-clip extraction failed for {f.filename}: {e}")

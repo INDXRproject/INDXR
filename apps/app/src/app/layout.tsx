@@ -5,6 +5,7 @@ import { AuthProvider } from "@indxr/shared/contexts/AuthContext";
 import { PostHogProvider } from "@indxr/shared/providers/PostHogProvider";
 import { ThemeProvider } from "@indxr/shared/components/theme-provider";
 import { ConsentProvider } from "@indxr/shared/providers/ConsentProvider";
+import { AcquisitionCapture } from "@indxr/shared/components/AcquisitionCapture";
 import { regionFromCountry } from "@indxr/shared/lib/consent";
 import { createClient } from "@indxr/shared/utils/supabase/server";
 import { headers } from "next/headers";
@@ -85,6 +86,7 @@ export default async function RootLayout({
           <PostHogProvider>
             <ConsentProvider region={region}>
               <AuthProvider initialUser={user}>
+                <AcquisitionCapture />
                 {children}
               </AuthProvider>
             </ConsentProvider>

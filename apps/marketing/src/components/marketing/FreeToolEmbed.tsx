@@ -151,7 +151,7 @@ export function FreeToolEmbed() {
           ) : (
             <FrictionConversionCard
               headline="File transcription"
-              body={`Upload audio or video — MP3, MP4, MOV, MKV, WAV, M4A and more, no account needed. See the price and a free 3-minute preview before you pay. AI transcription runs at ${PER_MIN} credit per minute.`}
+              body={`Upload audio or video — MP3, MP4, MOV, MKV, WAV, M4A and more, no account needed. See the price and a free preview of the first part (up to 3 minutes) before you pay. AI transcription runs at ${PER_MIN} credit per minute.`}
               primaryCtaLabel="Try it now →"
               primaryCtaHref={appHref("/transcribe?mode=audio")}
               secondaryLabel="Or paste a YouTube URL"

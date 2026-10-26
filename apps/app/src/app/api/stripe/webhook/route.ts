@@ -524,6 +524,7 @@ async function handleQuickPurchaseSession(session: Stripe.Checkout.Session): Pro
         // session metadata (set client-side from the indxr_acq cookie) through to this event.
         via: session.metadata?.via,
         kw: session.metadata?.kw,
+        gclid: session.metadata?.gclid,
       },
     })
     await client.shutdown()

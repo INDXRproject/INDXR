@@ -18,7 +18,7 @@ const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || "http://localhost:8
 
 export async function POST(req: Request) {
   try {
-    const { quoteId, accessToken, termsAccepted, via, kw } = await req.json()
+    const { quoteId, accessToken, termsAccepted, via, kw, gclid } = await req.json()
 
     if (!quoteId || !accessToken) {
       return new NextResponse("Missing quoteId/accessToken", { status: 400 })
@@ -108,6 +108,7 @@ export async function POST(req: Request) {
         // quick_purchase_completed PostHog event in the webhook (no DB column needed for this).
         ...(via ? { via: String(via) } : {}),
         ...(kw ? { kw: String(kw) } : {}),
+        ...(gclid ? { gclid: String(gclid) } : {}),
       },
       success_url: `${appUrl}/quick/${quoteId}?token=${accessToken}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/quick/${quoteId}?token=${accessToken}&cancelled=1`,

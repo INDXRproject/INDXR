@@ -99,6 +99,69 @@ Beschrijvingen: "Upload a file, see the price, read the first 3 minutes free, th
 
 **Eerste week:** dagelijks zoektermen nakijken en uitsluiten (uitsluitingen veranderen het bieden niet).
 
+### 3a. Live-status (2026-10-25 ~23:45, Claude-piloot, met akkoord Khidr)
+
+Campagne **`US · Search · Balie (video/audio to text)`** (campaignId 24390731490) staat **aan**, status Eligible.
+- Bieden: **Handmatige CPC**, standaardbod **€1,50** in alle drie groepen. Let op: de wizard zette het groepsbod op €0,01; handmatig gecorrigeerd. Bij nieuwe groepen altijd het bod controleren.
+- €10/dag · alleen Google Search (geen Search Partners/Display) · VS, Presence · AI Max uit · advertenties roteren gelijk · suffix `via=ads&kw={keyword}`.
+- Groepen (alleen exact + phrase, 41 zoekwoorden totaal):
+  - **Video to text** (14) — landing `app.indxr.ai/transcribe?mode=audio`, pad /transcribe/video-to-text.
+  - **Audio to text** (14) — pad /transcribe/audio-to-text, eigen koppen (MP3 to Text Converter, Voice Memos to Text, MP3, WAV, M4A and More).
+  - **Captions and subtitles** (13) — pad /transcribe/subtitles, koppen Subtitle Generator for Video, Auto Captions for Any Video, SRT File Generator, Export SRT and VTT Subtitles.
+  - Elke groep: 15 koppen, 4 beschrijvingen. Google's AI-voorinvulling ("Get a Free Trial", "text to speech" e.d.) is overal verwijderd.
+- Sitelinks: Pricing → /pricing · Supported formats → /articles/supported-formats · How it works → /docs · **SRT subtitle generator** → /articles/srt-generator. Credit packs vervallen: dezelfde URL als Pricing. Alle vier gecontroleerd: laden.
+- Callouts: No subscription · Pay per file · Free 3-minute preview · No account needed · Processed in the EU · Credits never expire · Speaker labels. Oude callouts "50 free credits" en "No upload limits" bewust niet gebruikt (onjuist).
+- Uitsluitingen (campagne, breed): de lijst hierboven + realtime · translation · job · jobs · hiring · salary · work from home · course. Transcriptie-vacatures zijn veel gezocht. Er bestaat nog geen gedeelde uitsluitingslijst.
+- Google-schatting bij €10/dag: ~144 klikken/week, gem. CPC ~€0,49.
+- Geplande controles: dagelijks t/m 1 nov (09:13), weekrapport 2 nov, beslismoment 24 nov.
+
+### 3b. Meetfout + voorproefje-lek gevonden en gerepareerd (2026-10-26, Claude-piloot, PostHog-analyse)
+
+De eerste echte Ads-bezoeker (VS, iPhone) landde 5× op `app.indxr.ai/transcribe?mode=audio&via=ads&kw=…&gclid=…`,
+uploadde twee keer een clip van 1–2 min, zag €2 als prijs en vertrok. Twee fouten kwamen daarbij
+boven water:
+
+**Bug 1 — herkomst kwam niet in de events aan.** `quote_shown` had `via`/`kw` leeg terwijl de URL ze
+wel bevatte. Oorzaak: `AcquisitionCapture` (het component dat `?via=&kw=&gclid=` uit de landings-URL
+in de `indxr_acq`-cookie zet) stond alleen gemonteerd in `apps/marketing`'s root-layout — **niet** in
+`apps/app`'s root-layout. Omdat de Ads-campagne (§3a) direct naar `app.indxr.ai/transcribe` landt
+(niet naar de marketing-host), werd de cookie op die host dus nooit gezet: `QuickCheckoutPanel`'s
+`readAcquisitionCookie()` las een lege cookie, niet een lege URL — de fix moest bij de bron (de
+ontbrekende mount), niet als pleister in het panel. **Fix:** `AcquisitionCapture` ook gemonteerd in
+`apps/app/src/app/layout.tsx` (zelfde positie in de boom als marketing: binnen `ConsentProvider` +
+`AuthProvider`). `gclid` ontbrak bovendien in de keten van `checkout_started` naar de Stripe-metadata
+(alleen `via`/`kw` werden doorgegeven aan `/api/quick-checkout`) — toegevoegd op alle schakels:
+`QuickCheckoutPanel.pay()` → `/api/quick-checkout`-body → Stripe session-metadata →
+`quick_purchase_completed` in de webhook. `quote_shown` kreeg ook `duration_seconds` (som van alle
+bestanden) en had `file_count` al.
+
+**Bug 2 — kort bestand kreeg het VOLLEDIGE transcript gratis.** Het voorproefje knipt met ffmpeg
+`-t QUICK_QUOTE_PREVIEW_SECONDS` (180s) het begin van het bestand — maar `-t` op een bestand dat
+KORTER is dan 180s geeft gewoon het hele bestand terug. Een upload van 1–2 minuten (zoals deze
+eerste bezoeker deed) kreeg dus de volledige, gratis getranscribeerde tekst als "voorproefje",
+zonder dat er ooit een betaalmoment overbleef. **Fix** (`backend/main.py`,
+`create_quick_quote`): voorproefje-duur is nu `min(180s, duur/3)` — bij 1 min dus 20s, bij 10 min
+nog steeds het plafond van 180s (3 min) zoals bedoeld. Er bleek geen apart API-lek (geen veld
+retourneert meer tekst dan de getrimde clip bevat — `_run_quick_quote_preview` transcribeert alleen
+het getrimde preview-bestand, nooit het origineel); de ENIGE bron van het teveel was de trim-duur
+zelf. Copy die "first 3 minutes free" beloofde is overal herschreven naar "free preview of the
+first part, up to 3 minutes" (`QuickCheckoutPanel.tsx`, beide `/transcribe`-pagina's,
+`FreeToolEmbed.tsx`, `pricing.ts`-commentaar).
+
+**Nog open — niet door code op te lossen:** de live Ads-callouts/koppen in §3a/§3 ("Free 3-Minute
+Preview") beloven dezelfde onnauwkeurigheid in de advertentietekst zelf (Google Ads account, geen
+code) — moet de piloot in de browser bijwerken naar dezelfde "up to 3 minutes"-formulering.
+
+**Geverifieerd:**
+- `pnpm build` groen (2/2 apps).
+- Backend-baseline: `test_error_classification.py::test_connection_like_errors_are_retryable_timeout`
+  faalt zowel vóór als na deze wijziging (pre-existing, niet veroorzaakt door dit werk) — overige
+  20 pure-logica-tests ongewijzigd groen.
+- Lokale formule-check: 1 min → 20s preview, 2 min → 40s, 10 min → 180s (plafond), 30 min → 180s
+  (plafond) — exact zoals gevraagd.
+- Live productietest na deploy: zie `docs/LOG.md` voor de HogQL-query + het PostHog-resultaat en de
+  preview-lengtetest met een echte 1-min- en 10-min-upload.
+
 ## 4. SEO — parallel, kost niets
 
 1. **Indexering aanvragen** voor commerciële pagina's (quotum ~10/dag). *Gedaan 2026-10-24:* `/articles/video-to-text`, `/alternatives/otter-ai`, `/articles/supported-formats`. (`/articles/audio-to-text` staat al in Google.)

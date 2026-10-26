@@ -131,8 +131,8 @@ export function quickQuotePriceEur(durationSeconds: number): number {
 export const FREE_TIER = {
   // MUST match the grant literal in the claim_welcome_reward RPC (SQL cannot import this TS constant,
   // so the two are coupled by hand — change both together, see credit-system.md). Lowered 50 -> 10
-  // (growth-plan.md §6.2 Onderdeel C, 2026-10-25): the quick-checkout free preview (first 3 minutes,
-  // see QuickCheckoutPanel) is now the proof-of-quality for longer files, so the welcome grant only
+  // (growth-plan.md §6.2 Onderdeel C, 2026-10-25): the quick-checkout free preview (first part, up
+  // to 3 minutes, see QuickCheckoutPanel) is now the proof-of-quality for longer files, so the welcome grant only
   // needs to cover a short recording (e.g. a voice memo), not a full lecture.
   WELCOME_CREDITS: 10,
   PLAYLIST_FREE_VIDEOS: 3, // eerste 3 CAPTION-video's van elke playlist gratis (per-methode, ADR-081)
