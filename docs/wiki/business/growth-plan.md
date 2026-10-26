@@ -159,8 +159,21 @@ code) — moet de piloot in de browser bijwerken naar dezelfde "up to 3 minutes"
   20 pure-logica-tests ongewijzigd groen.
 - Lokale formule-check: 1 min → 20s preview, 2 min → 40s, 10 min → 180s (plafond), 30 min → 180s
   (plafond) — exact zoals gevraagd.
-- Live productietest na deploy: zie `docs/LOG.md` voor de HogQL-query + het PostHog-resultaat en de
-  preview-lengtetest met een echte 1-min- en 10-min-upload.
+- Live productietest na deploy (commit 3fd0afb, alle vier deploys groen): zie `docs/LOG.md` voor de
+  volledige resultaten — cookie-niveau bewijs van de attributie-fix (Playwright, echte browser) en
+  de preview-lengtetest met een echte 1-min- en 10-min-TTS-upload tegen productie. **De HogQL-query
+  zelf kon niet draaien** — geblokkeerd, geen codeprobleem: het lokale `scripts/.env.verify`
+  personal-API-key heeft wel `person:read`/`person:delete` (zie LESSONS 2026-09-02) maar mist
+  `query:read`, en er is geen tool om zelf een nieuw gescopet personal-key aan te maken zonder het
+  PostHog-dashboard (zelfde klasse blokkade als de Supabase-secret-key eerder deze week). **Correctie
+  op de opdracht:** het echte, geverifieerde PostHog-project is **298689** (EU-regio,
+  `NEXT_PUBLIC_POSTHOG_PROJECT_ID` in alle `.env.local`'s, bevestigd in LOG 2026-09-02) — niet 155180.
+  Extra, documentatie-bevestigde complicatie los van de keyscope: `scripts/verify-posthog-bridge.mjs`
+  legt vast dat posthog-js in een GEAUTOMATISEERDE browser (zoals deze Playwright-run) nul
+  capture-events verstuurt (bot-filtering, geldt voor alle events, niet alleen de alias-events uit
+  die eerdere sessie) — dus zelfs met een werkende key zou een HogQL-query op `quote_shown` uit déze
+  specifieke run waarschijnlijk niets gevonden hebben. Dat is een bestaande meetbeperking van de
+  tool, geen regressie van deze fix.
 
 ## 4. SEO — parallel, kost niets
 
