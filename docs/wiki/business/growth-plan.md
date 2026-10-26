@@ -165,15 +165,17 @@ code) — moet de piloot in de browser bijwerken naar dezelfde "up to 3 minutes"
   zelf kon niet draaien** — geblokkeerd, geen codeprobleem: het lokale `scripts/.env.verify`
   personal-API-key heeft wel `person:read`/`person:delete` (zie LESSONS 2026-09-02) maar mist
   `query:read`, en er is geen tool om zelf een nieuw gescopet personal-key aan te maken zonder het
-  PostHog-dashboard (zelfde klasse blokkade als de Supabase-secret-key eerder deze week). **Correctie
-  op de opdracht:** het echte, geverifieerde PostHog-project is **298689** (EU-regio,
-  `NEXT_PUBLIC_POSTHOG_PROJECT_ID` in alle `.env.local`'s, bevestigd in LOG 2026-09-02) — niet 155180.
-  Extra, documentatie-bevestigde complicatie los van de keyscope: `scripts/verify-posthog-bridge.mjs`
-  legt vast dat posthog-js in een GEAUTOMATISEERDE browser (zoals deze Playwright-run) nul
-  capture-events verstuurt (bot-filtering, geldt voor alle events, niet alleen de alias-events uit
-  die eerdere sessie) — dus zelfs met een werkende key zou een HogQL-query op `quote_shown` uit déze
-  specifieke run waarschijnlijk niets gevonden hebben. Dat is een bestaande meetbeperking van de
-  tool, geen regressie van deze fix.
+  PostHog-dashboard (zelfde klasse blokkade als de Supabase-secret-key eerder deze week). **Het echte
+  PostHog-project is 155180** (geverifieerd door Khidr via de ingelogde UI en het token dat de live
+  app laadt — `/api/projects/155180/` geeft "INDXR.AI", `/api/projects/298689/` 404't in dat account).
+  Dit herstelt een eerdere foute correctie van mij op basis van alleen de lokale
+  `scripts/.env.verify`-waarde (298689) — die hoorde bij een ander project/organisatie, niet bij de
+  live app. Een eind-tot-eind test is op 2026-10-26 opnieuw gedraaid (anoniem, schoon profiel) om
+  een echte `quote_shown` in project 155180 te produceren voor de piloot om te controleren — zie
+  `docs/LOG.md` voor het exacte tijdstip (UTC). De posthog-js-botfiltering uit
+  `scripts/verify-posthog-bridge.mjs` (geautomatiseerde browser verstuurt normaal nul
+  capture-events) blijft een kanttekening bij dat bewijs — of deze specifieke run alsnog captured
+  is, controleert de piloot zelf in PostHog.
 
 ## 4. SEO — parallel, kost niets
 
