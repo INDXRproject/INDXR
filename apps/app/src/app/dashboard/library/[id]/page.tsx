@@ -6,6 +6,7 @@ import { EditableSummaryView } from "@/components/library/EditableSummaryView";
 import { RagExportView } from "@/components/library/RagExportView";
 import { TranscriptTabs, ViewTab } from "@/components/library/TranscriptTabs";
 import { TranscriptHeader } from "@/components/library/TranscriptHeader";
+import { AlternativeToNudge } from "@/components/library/AlternativeToNudge";
 
 interface PageProps {
   params: Promise<{
@@ -142,6 +143,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
           speakerNames={transcript.speaker_names ?? null}
         />
       ) : null}
+      <AlternativeToNudge />
     </div>
   );
 }

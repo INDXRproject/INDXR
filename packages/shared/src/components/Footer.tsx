@@ -33,6 +33,33 @@ export function Footer() {
         ))}
         <CookieSettingsLink className="hover:text-fg transition-colors cursor-pointer" />
       </div>
+      {/* AlternativeTo badge (akkoord Khidr, 2026-10-27) — officiële code (link + SVG, geen JS),
+          lokaal gehost in /public/badges. Licht/donker via dezelfde dark:hidden/dark:block-toggle
+          als het logo in Header.tsx. */}
+      <div className="flex justify-center pb-6">
+        <a
+          href="https://alternativeto.net/software/indxr-ai/about/?utm_source=badge&utm_medium=referral"
+          target="_blank"
+          rel="noopener"
+        >
+          <img
+            src="/badges/alternativeto-badge-light.svg"
+            alt="INDXR.AI | AlternativeTo"
+            width={244}
+            height={79}
+            style={{ width: "244px", height: "79px" }}
+            className="dark:hidden"
+          />
+          <img
+            src="/badges/alternativeto-badge-dark.svg"
+            alt="INDXR.AI | AlternativeTo"
+            width={244}
+            height={79}
+            style={{ width: "244px", height: "79px" }}
+            className="hidden dark:block"
+          />
+        </a>
+      </div>
     </footer>
   );
 }

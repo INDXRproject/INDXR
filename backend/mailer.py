@@ -24,6 +24,9 @@ _WITHDRAWAL_NOTICE = (
     "As confirmed at checkout, you asked us to start right away, so your 14-day right of "
     "withdrawal on this purchase ended once your transcript was delivered."
 )
+# AlternativeTo like-request (akkoord Khidr, 2026-10-27) — one line, only after a successful
+# result, never a popup.
+_ALTERNATIVETO_URL = "https://alternativeto.net/software/indxr-ai/about/"
 
 
 def _render_html(secure_links: list) -> str:
@@ -87,7 +90,8 @@ def _render_html(secure_links: list) -> str:
         {buttons}
         <tr>
           <td style="padding:16px 32px 8px 32px;color:#27231f;font-family:{_EMAIL_FONT};font-size:14px;line-height:1.6;">
-            <p style="margin:0;">{_WITHDRAWAL_NOTICE}</p>
+            <p style="margin:0 0 12px 0;">{_WITHDRAWAL_NOTICE}</p>
+            <p style="margin:0;color:#77726d;">Did INDXR help? A <a href="{_ALTERNATIVETO_URL}" style="color:#643400;text-decoration:underline;">like or a short review on AlternativeTo</a> helps a solo developer get found.</p>
           </td>
         </tr>
         <tr>
@@ -122,6 +126,8 @@ def _render_text(secure_links: list) -> str:
         "These links are private to you — don't share them.",
         "",
         _WITHDRAWAL_NOTICE,
+        "",
+        f"Did INDXR help? A like or a short review on AlternativeTo helps a solo developer get found: {_ALTERNATIVETO_URL}",
         "",
         "— INDXR.AI",
     ]
