@@ -328,7 +328,7 @@ export function QuickCheckoutPanel() {
             <h3 className="text-xl font-semibold text-fg mb-2">No account needed</h3>
             <p className="text-fg-muted mb-2">Drag and drop your file here, or tap to choose a file</p>
             <p className="text-sm text-fg-muted">
-              See the price, get a free 3-minute preview, then pay per file (max {MAX_FILES} files)
+              See the price and read a free preview before you pay per file (max {MAX_FILES} files)
             </p>
           </label>
         ) : (
