@@ -23,10 +23,11 @@
 
 ## 2. De kern: eerst een betaalmoment, dan pas verkeer
 
-**Status: gebouwd (2026-10-25, commits f34a923…3348b75, ADR-107).** Zie
+**Status: hersteld (2026-10-25, herstelronde §6.3, commits f293ddf…7c941c3, ADR-107).** Zie
 [session-2026-10-25-remote-control-report.md](../roadmap/session-2026-10-25-remote-control-report.md)
-voor het volledige eindrapport (per-onderdeel bewijs + open punten). Live, nog niet geverifieerd
-met een echte browser-klikdoorloop in Stripe-testmodus.
+voor het volledige eindrapport (per-onderdeel bewijs + open punten). Live browser-geverifieerd
+(Playwright tegen `app.indxr.ai`, 375px+desktop, licht+donker) — nog geen volledige
+Stripe-testmodus-betaal-klikdoorloop.
 
 **De snelle balie (Khidr, 2026-10-24).** Naast het volledige product (account, library, credits voor terugkerende gebruikers) komt een snelle balie: één of een paar bestanden, geen account nodig, prijs zien, voorproefje van de eerste 3 minuten, afrekenen per bestand (€0,10/min, min. €2), transcript via veilige link + e-mail, met één klik alsnog een account. Het voorproefje beperkt zich tot 3 minuten zodat anoniem gebruik ons hooguit centen kost.
 
@@ -92,6 +93,14 @@ Beschrijvingen: "Upload a file, see the price, read the first 3 minutes free, th
 *Callouts:* No subscription · Pay per file · Free 3-minute preview · Processed in the EU
 *Landingspagina:* de balie, na herstel H7 (definitieve URL invullen zodra live).
 
+**Let op (2026-10-27):** de regels/callouts hierboven ("Free 3-Minute Preview", "read the first 3
+minutes free") beschrijven de advertentietekst zoals die op 2026-10-25/26 live gezet is — die tekst
+is historisch bewaard, niet aangepast. De PRODUCTREGEL veranderde op 2026-10-26 (commit `3fd0afb`)
+naar `min(3 min, 1/3 van de duur)`: bij een bestand van 1 min is het voorproefje nu ~20s, niet 3 min.
+Deze advertentietekst klopt dus sinds die commit niet meer voor korte bestanden en moet door de
+piloot in de Google Ads-UI bijgewerkt worden (geen code-wijziging mogelijk vanaf hier) — zie de
+nieuwe `## Open` in §3a.
+
 **Beslisregel (vooraf vast):** na €300 uitgave of 30 dagen:
 - ≥3 betalende klanten → doorgaan, budget naar €15.
 - 1–2 → niet opschalen; offerte-/betaalpagina verbeteren met de PostHog-funnel.
@@ -99,83 +108,26 @@ Beschrijvingen: "Upload a file, see the price, read the first 3 minutes free, th
 
 **Eerste week:** dagelijks zoektermen nakijken en uitsluiten (uitsluitingen veranderen het bieden niet).
 
-### 3a. Live-status (2026-10-25 ~23:45, Claude-piloot, met akkoord Khidr)
+### 3a. Live-status (bijgewerkt 2026-10-26, Claude-piloot)
 
-Campagne **`US · Search · Balie (video/audio to text)`** (campaignId 24390731490) staat **aan**, status Eligible.
-- Bieden: **Handmatige CPC**, standaardbod **€1,50** in alle drie groepen. Let op: de wizard zette het groepsbod op €0,01; handmatig gecorrigeerd. Bij nieuwe groepen altijd het bod controleren.
-- €10/dag · alleen Google Search (geen Search Partners/Display) · VS, Presence · AI Max uit · advertenties roteren gelijk · suffix `via=ads&kw={keyword}`.
-- Groepen (alleen exact + phrase, 41 zoekwoorden totaal):
-  - **Video to text** (14) — landing `app.indxr.ai/transcribe?mode=audio`, pad /transcribe/video-to-text.
-  - **Audio to text** (14) — pad /transcribe/audio-to-text, eigen koppen (MP3 to Text Converter, Voice Memos to Text, MP3, WAV, M4A and More).
-  - **Captions and subtitles** (13) — pad /transcribe/subtitles, koppen Subtitle Generator for Video, Auto Captions for Any Video, SRT File Generator, Export SRT and VTT Subtitles.
-  - Elke groep: 15 koppen, 4 beschrijvingen. Google's AI-voorinvulling ("Get a Free Trial", "text to speech" e.d.) is overal verwijderd.
-- Sitelinks: Pricing → /pricing · Supported formats → /articles/supported-formats · How it works → /docs · **SRT subtitle generator** → /articles/srt-generator. Credit packs vervallen: dezelfde URL als Pricing. Alle vier gecontroleerd: laden.
-- Callouts: No subscription · Pay per file · Free 3-minute preview · No account needed · Processed in the EU · Credits never expire · Speaker labels. Oude callouts "50 free credits" en "No upload limits" bewust niet gebruikt (onjuist).
-- Uitsluitingen (campagne, breed): de lijst hierboven + realtime · translation · job · jobs · hiring · salary · work from home · course. Transcriptie-vacatures zijn veel gezocht. Er bestaat nog geen gedeelde uitsluitingslijst.
-- Google-schatting bij €10/dag: ~144 klikken/week, gem. CPC ~€0,49.
-- Geplande controles: dagelijks t/m 1 nov (09:13), weekrapport 2 nov, beslismoment 24 nov.
+**Idee van de campagne:** we kopen alleen zoekopdrachten van mensen die nú één bestand hebben en daar tekst van willen. De advertentie belooft precies wat de balie doet: uploaden, prijs zien, 3 minuten gratis lezen, per bestand betalen, zonder account. Geen creators die ondertitels in beeld willen, geen gratis-zoekers, geen converters.
 
-### 3b. Meetfout + voorproefje-lek gevonden en gerepareerd (2026-10-26, Claude-piloot, PostHog-analyse)
+Campagne **`US · Search · Balie (video/audio to text)`** (campaignId 24390731490) staat **aan** sinds 2026-10-25 23:59.
+- Handmatige CPC €1,50 · €10/dag · alleen Google Search · VS (Presence) · AI Max uit · advertenties roteren gelijk · suffix `via=ads&kw={keyword}`. Let op: de wizard zette het groepsbod op €0,01; handmatig gecorrigeerd. Bij nieuwe groepen altijd het bod controleren.
+- **Video to text** (hoofdgroep): video to text · video transcription · transcribe video to text · enz., plus sinds 26-10 **mp4 to text** · mp4 to text converter · mp4 to transcript · transcribe mp4 · mov to text. Landing `app.indxr.ai/transcribe?mode=audio`.
+- **Audio to text**: mp3 to text · audio file to text · transcribe audio file · voice memo to text e.d. Khidr betwijfelt of voice memos opbrengen; meenemen in de evaluatie van week 1.
+- **Captions and subtitles**: op 26-10 **verwijderd** op aanwijzing van Khidr. Die zoekers willen ondertitels in beeld of een gratis tool, geen betaald transcript per bestand. De SRT-sitelink is ook weg.
+- Sitelinks: Pricing · Supported formats · How it works. Callouts: No subscription · Pay per file · Free 3-minute preview · No account needed · Processed in the EU · Credits never expire · Speaker labels.
+- Uitsluitingen (campagne, breed): de lijst hierboven + realtime · translation · job · jobs · hiring · salary · work from home · course.
+- Bekend: "transcribe video to text" staat op "Below first page bid (€1,51)". Biedwijziging alleen met akkoord.
+- Controles: dagelijks t/m 1 nov (09:13), weekrapport 2 nov, beslismoment 24 nov.
 
-De eerste echte Ads-bezoeker (VS, iPhone) landde 5× op `app.indxr.ai/transcribe?mode=audio&via=ads&kw=…&gclid=…`,
-uploadde twee keer een clip van 1–2 min, zag €2 als prijs en vertrok. Twee fouten kwamen daarbij
-boven water:
-
-**Bug 1 — herkomst kwam niet in de events aan.** `quote_shown` had `via`/`kw` leeg terwijl de URL ze
-wel bevatte. Oorzaak: `AcquisitionCapture` (het component dat `?via=&kw=&gclid=` uit de landings-URL
-in de `indxr_acq`-cookie zet) stond alleen gemonteerd in `apps/marketing`'s root-layout — **niet** in
-`apps/app`'s root-layout. Omdat de Ads-campagne (§3a) direct naar `app.indxr.ai/transcribe` landt
-(niet naar de marketing-host), werd de cookie op die host dus nooit gezet: `QuickCheckoutPanel`'s
-`readAcquisitionCookie()` las een lege cookie, niet een lege URL — de fix moest bij de bron (de
-ontbrekende mount), niet als pleister in het panel. **Fix:** `AcquisitionCapture` ook gemonteerd in
-`apps/app/src/app/layout.tsx` (zelfde positie in de boom als marketing: binnen `ConsentProvider` +
-`AuthProvider`). `gclid` ontbrak bovendien in de keten van `checkout_started` naar de Stripe-metadata
-(alleen `via`/`kw` werden doorgegeven aan `/api/quick-checkout`) — toegevoegd op alle schakels:
-`QuickCheckoutPanel.pay()` → `/api/quick-checkout`-body → Stripe session-metadata →
-`quick_purchase_completed` in de webhook. `quote_shown` kreeg ook `duration_seconds` (som van alle
-bestanden) en had `file_count` al.
-
-**Bug 2 — kort bestand kreeg het VOLLEDIGE transcript gratis.** Het voorproefje knipt met ffmpeg
-`-t QUICK_QUOTE_PREVIEW_SECONDS` (180s) het begin van het bestand — maar `-t` op een bestand dat
-KORTER is dan 180s geeft gewoon het hele bestand terug. Een upload van 1–2 minuten (zoals deze
-eerste bezoeker deed) kreeg dus de volledige, gratis getranscribeerde tekst als "voorproefje",
-zonder dat er ooit een betaalmoment overbleef. **Fix** (`backend/main.py`,
-`create_quick_quote`): voorproefje-duur is nu `min(180s, duur/3)` — bij 1 min dus 20s, bij 10 min
-nog steeds het plafond van 180s (3 min) zoals bedoeld. Er bleek geen apart API-lek (geen veld
-retourneert meer tekst dan de getrimde clip bevat — `_run_quick_quote_preview` transcribeert alleen
-het getrimde preview-bestand, nooit het origineel); de ENIGE bron van het teveel was de trim-duur
-zelf. Copy die "first 3 minutes free" beloofde is overal herschreven naar "free preview of the
-first part, up to 3 minutes" (`QuickCheckoutPanel.tsx`, beide `/transcribe`-pagina's,
-`FreeToolEmbed.tsx`, `pricing.ts`-commentaar).
-
-**Nog open — niet door code op te lossen:** de live Ads-callouts/koppen in §3a/§3 ("Free 3-Minute
-Preview") beloven dezelfde onnauwkeurigheid in de advertentietekst zelf (Google Ads account, geen
-code) — moet de piloot in de browser bijwerken naar dezelfde "up to 3 minutes"-formulering.
-
-**Geverifieerd:**
-- `pnpm build` groen (2/2 apps).
-- Backend-baseline: `test_error_classification.py::test_connection_like_errors_are_retryable_timeout`
-  faalt zowel vóór als na deze wijziging (pre-existing, niet veroorzaakt door dit werk) — overige
-  20 pure-logica-tests ongewijzigd groen.
-- Lokale formule-check: 1 min → 20s preview, 2 min → 40s, 10 min → 180s (plafond), 30 min → 180s
-  (plafond) — exact zoals gevraagd.
-- Live productietest na deploy (commit 3fd0afb, alle vier deploys groen): zie `docs/LOG.md` voor de
-  volledige resultaten — cookie-niveau bewijs van de attributie-fix (Playwright, echte browser) en
-  de preview-lengtetest met een echte 1-min- en 10-min-TTS-upload tegen productie. **De HogQL-query
-  zelf kon niet draaien** — geblokkeerd, geen codeprobleem: het lokale `scripts/.env.verify`
-  personal-API-key heeft wel `person:read`/`person:delete` (zie LESSONS 2026-09-02) maar mist
-  `query:read`, en er is geen tool om zelf een nieuw gescopet personal-key aan te maken zonder het
-  PostHog-dashboard (zelfde klasse blokkade als de Supabase-secret-key eerder deze week). **Het echte
-  PostHog-project is 155180** (geverifieerd door Khidr via de ingelogde UI en het token dat de live
-  app laadt — `/api/projects/155180/` geeft "INDXR.AI", `/api/projects/298689/` 404't in dat account).
-  Dit herstelt een eerdere foute correctie van mij op basis van alleen de lokale
-  `scripts/.env.verify`-waarde (298689) — die hoorde bij een ander project/organisatie, niet bij de
-  live app. Een eind-tot-eind test is op 2026-10-26 opnieuw gedraaid (anoniem, schoon profiel) om
-  een echte `quote_shown` in project 155180 te produceren voor de piloot om te controleren — zie
-  `docs/LOG.md` voor het exacte tijdstip (UTC). De posthog-js-botfiltering uit
-  `scripts/verify-posthog-bridge.mjs` (geautomatiseerde browser verstuurt normaal nul
-  capture-events) blijft een kanttekening bij dat bewijs — of deze specifieke run alsnog captured
-  is, controleert de piloot zelf in PostHog.
+**Open:**
+- **Balie-copy "3-minute preview" gecorrigeerd (2026-10-27, commit `8534489`).** Alle live app-copy die
+  een vaste "free 3-minute preview" beloofde (klopte niet meer na de `min(3 min, 1/3 duur)`-regel,
+  commit `3fd0afb`) is herschreven naar "see the price and read a free preview before you pay per
+  file" / "free preview of the first part of your file (up to 3 minutes)". De Ads-advertentietekst
+  zelf (zie hierboven) is NIET aangepast — dat vereist de piloot in de Google Ads-UI.
 
 ## 4. SEO — parallel, kost niets
 
@@ -216,27 +168,11 @@ code) — moet de piloot in de browser bijwerken naar dezelfde "up to 3 minutes"
 
 **Voorwaarden voor geplande taken:** laptop aan, Claude desktop-app open, Chrome-venster "INDXR.ai" open (koppeling via `select_browser` op deviceId `992309b2-9227-434c-9913-7f4d74bd4753`).
 
-## 5a. Bewaking eerste balie-aankopen
-
-3. **RESEND_API_KEY/RESEND_FROM op Railway (api + worker) — ✅ afgerond 2026-10-25**, zie
-   [incident-2026-10-railway-secrets.md](../operations/incident-2026-10-railway-secrets.md).
-   Beide namen ontbraken op `api` én `worker` — nooit "uitgelekt", gewoon nooit gezet, `mailer.py`
-   is pas deze sessie gebouwd. De bestaande Vercel-waarden waren niet terug te lezen (Vercel's
-   "sensitive"-variabeletype is write-only). Khidr heeft zelf een nieuwe Resend API-key aangemaakt
-   en doorgegeven; direct doorgezet naar Railway `api`+`worker` zonder ooit elders bewaard te
-   worden. `RESEND_FROM` is gezet op `INDXR.AI <no-reply@send.indxr.ai>` — hetzelfde adres dat de
-   Vercel-apps al gebruiken. Geverifieerd met een echte testmail via `backend/mailer.py` naar
-   `contact@indxr.ai` (geen fout gelogd → verzend geslaagd).
-4. **SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SERVICE_KEY — ✅ afgerond 2026-10-25.** De nieuwe
-   Supabase-sleutelsystemen (`sb_secret_...`) vereisten een eenmalige dashboard-actie om een
-   nieuwe secret key aan te maken (geen MCP-tool, geen CLI-device-flow voor Supabase). Khidr heeft
-   die zelf aangemaakt en doorgegeven; gezet op Railway `api`+`worker` (beide variabelenamen,
-   zie incident-doc) en op Vercel `indxr-app` production. Geverifieerd met een balie-offerte
-   (`POST /api/quote/create` + terug-lezen) en een credit-RPC-test (reserve+refund, netto nul op
-   een testaccount) tegen productie — beide geslaagd. De oude legacy service_role-sleutel staat
-   nog niet ingetrokken; dat kan pas nadat de frontend ook van de legacy anon-sleutel af is (zie
-   incident-doc §"Stap 3" voor het onderzoek — een pure env-var-wissel, geen codewijziging, nog
-   niet uitgevoerd).
+**Bewaking eerste balie-aankopen (besluit Khidr 2026-10-25: geen testbetaling vooraf).** Het pad ná de Stripe-betaling (gast-account, dispatch, Resend-mail) is nooit live gedraaid. Zodra de Ads-campagne aan gaat, controleert de piloot bij elke balie-aankoop (PostHog `quick_purchase_completed`) binnen het dagelijkse ritme:
+1. Sentry: geen errors op `api/stripe/webhook` stappen `quick_purchase_*` en geen `watchdog_stuck_quick_quotes`-meldingen.
+2. Het transcript is klaar (quote-status / job voltooid) binnen redelijke tijd.
+3. De mail met de link is verstuurd. **Open punt:** of `RESEND_API_KEY` op Railway (api + worker) staat is niet gecontroleerd — Railway-login via de browser loopt vast en de CLI-token van Claude Code is verlopen. Eerste balie-aankoop = de echte test; mislukt de mail, dan direct melden aan Khidr.
+4. Bij een fout: koper binnen dezelfde dag helpen (transcript handmatig leveren of credits/geld terug) en de oorzaak via Claude Code laten herstellen.
 
 ## 6. Uitvoering via Claude Code
 
