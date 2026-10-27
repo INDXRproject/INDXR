@@ -1,9 +1,11 @@
 import type { Metadata } from "next"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
   title: "Terms of Service — INDXR.AI",
   description: "INDXR.AI terms of service. Acceptable use, refund policy, and your rights as a user.",
+  ...pageOg("/terms"),
 }
 
 export default function TermsPage() {

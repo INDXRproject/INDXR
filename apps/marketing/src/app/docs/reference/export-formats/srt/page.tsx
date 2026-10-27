@@ -15,12 +15,15 @@ import {
   SUBTITLE_TARGET_CPS,
   SUBTITLE_CEIL_CPS,
 } from "@indxr/shared/lib/subtitleConfig"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats/srt" },
   title: "SRT Subtitle Export — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 201 chars). Keyword first.
   description:
-    "INDXR exports SubRip (.srt) subtitles: numbered cues with HH:MM:SS,mmm timestamps, re-segmented into readable blocks and wrapped to 42 characters per line so they load cleanly into editors and players.",
+    "Export a transcript as SRT subtitles — numbered cues with HH:MM:SS,mmm timestamps, wrapped to 42 characters a line for editors and players.",
+  ...pageOg("/docs/reference/export-formats/srt"),
 }
 
 // Real generateSrt() output — cues 3–4 of the fixture from video kBdfcR-8hEY ("Justice… Episode 01"),

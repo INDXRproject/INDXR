@@ -17,9 +17,9 @@ const EXAMPLE_CREDITS = EXAMPLE_MINUTES * CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 const EXAMPLE_SEGMENTS = 917
 const EXAMPLE_CONFIDENCE = "0.98"
 
+// 155-char budget (Ahrefs crawl 2026-10-27: was 171 chars). Keyword first.
 const metaDescription =
-  `YouTube shows captions in a language nobody spoke. INDXR works from the audio and gives you the ` +
-  `transcript in the language that was actually spoken, in up to ${TRANSCRIPTION_MODEL.totalLanguages} languages.`
+  `YouTube shows captions in the wrong language. INDXR transcribes from the audio in the language actually spoken, across ${TRANSCRIPTION_MODEL.totalLanguages} languages.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcript-non-english" },

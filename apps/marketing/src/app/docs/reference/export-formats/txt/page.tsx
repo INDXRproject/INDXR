@@ -8,12 +8,15 @@ import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats/txt" },
   title: "Plain Text (TXT) Export — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 194 chars). Keyword first.
   description:
-    "INDXR exports a transcript as plain text in two variants: continuous paragraphs, or one line per segment prefixed with an HH:MM:SS timestamp. TXT is the only format available without an account.",
+    "Export a transcript as plain text — continuous paragraphs, or one line per segment with a timestamp. The only format available without an account.",
+  ...pageOg("/docs/reference/export-formats/txt"),
 }
 
 // Real output of generateTxt() (packages/shared/src/utils/formatTranscript.ts).

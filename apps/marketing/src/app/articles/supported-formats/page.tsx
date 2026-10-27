@@ -11,9 +11,9 @@ import { FREE_TIER } from "@indxr/shared/lib/pricing"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 
+// 155-char budget (Ahrefs crawl 2026-10-27: was 163 chars). Keyword first.
 const metaDescription =
-  "M4A, WAV, OGG, OPUS, FLAC, MP4, MKV, MOV and seven more upload directly, with no converting step. " +
-  "What each format is, where it comes from, and what happens to it."
+  "M4A, WAV, OGG, OPUS, FLAC, MP4, MKV, MOV and seven more upload directly, no conversion needed — what each format is and does."
 
 // OG/hero image: recovered 2026-08-31 (git history — the editorial photo of the merged-away
 // "bulk-youtube-transcript" article, re-slugged to supported-formats): a receding row of clear

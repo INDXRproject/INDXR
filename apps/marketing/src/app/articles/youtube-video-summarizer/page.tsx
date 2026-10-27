@@ -14,17 +14,15 @@ import { summaryModelName } from "@indxr/shared/lib/models"
 // so the ArticleHero shows the hexagon fallback and the social card uses the product shot).
 const OG_IMAGE = "https://indxr.ai/docs/screenshots/summary-overview-light.png"
 
+// 155-char budget (Ahrefs crawl 2026-10-27: was 332 chars). Keyword first.
 const metaDescription =
-  `Summarize any YouTube video into chapter notes with clickable timestamps. INDXR reads the whole ` +
-  `transcript and writes worked-out notes under each chapter, a YouTube summary generator for material ` +
-  `you work through rather than a one-line video summarizer. From ${CREDIT_COSTS.AI_SUMMARY_PER_10MIN} credit per 10 minutes of video, ` +
-  `and a free account includes ${FREE_TIER.WELCOME_CREDITS} credits.`
+  `Summarize any YouTube video into chapter notes with clickable timestamps — worked-out notes per chapter, not a one-line summary. From ${CREDIT_COSTS.AI_SUMMARY_PER_10MIN} credit per 10 min.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-video-summarizer" },
   title: "YouTube Video Summarizer — Summarize Any Video into Chapter Notes | INDXR.AI",
   description: metaDescription,
-  openGraph: { type: "article", images: [{ url: OG_IMAGE, width: 2000, height: 1440 }] },
+  openGraph: { type: "article", url: "https://indxr.ai/articles/youtube-video-summarizer", images: [{ url: OG_IMAGE, width: 2000, height: 1440 }] },
   twitter: { card: "summary_large_image", images: [OG_IMAGE] },
 }
 

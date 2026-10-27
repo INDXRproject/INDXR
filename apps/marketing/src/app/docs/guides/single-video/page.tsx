@@ -9,15 +9,18 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
+import { pageOg } from "@/lib/pageOg"
 
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/single-video" },
   title: "Transcribe a single video — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 194 chars). Keyword first.
   description:
-    "Paste one YouTube link and get its transcript. INDXR pulls the video's captions in seconds — no account needed for plain text — and can transcribe the audio with AI when a video has no captions.",
+    "Paste a YouTube link and get its transcript in seconds — free captions, or AI transcription when the video has none, no account needed for plain text.",
   robots: { index: true, follow: true },
+  ...pageOg("/docs/guides/single-video"),
 }
 
 export default function DocsSingleVideoPage() {

@@ -6,13 +6,16 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/library" },
   title: "Your library — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 245 chars). Keyword first.
   description:
-    "Every transcript you make while signed in is saved to your library. You can edit a transcript without losing the original, group transcripts into collections, search by title, delete what you don't need, and see how much space your library uses.",
+    "Every transcript you make while signed in is saved to your library — edit, group into collections, search by title, and delete what you don't need.",
   robots: { index: true, follow: true },
+  ...pageOg("/docs/guides/library"),
 }
 
 export default function DocsLibraryPage() {

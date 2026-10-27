@@ -29,6 +29,23 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://indxr.ai'),
   title: "INDXR.AI — Accurate transcripts from audio, video and YouTube",
   description: "Upload a recording or paste a link. Get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
+  // Default OG/Twitter card (Ahrefs crawl 2026-10-27: 27 pages had neither). A page that sets its
+  // own `openGraph`/`twitter` REPLACES this wholesale (Next.js metadata merge is shallow per key,
+  // not deep) — this is only the fallback for pages that declare neither.
+  openGraph: {
+    type: "website",
+    url: "https://indxr.ai",
+    siteName: "INDXR.AI",
+    title: "INDXR.AI — Accurate transcripts from audio, video and YouTube",
+    description: "Upload a recording or paste a link. Get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
+    images: [{ url: "https://indxr.ai/og-default.jpg", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "INDXR.AI — Accurate transcripts from audio, video and YouTube",
+    description: "Upload a recording or paste a link. Get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
+    images: ["https://indxr.ai/og-default.jpg"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

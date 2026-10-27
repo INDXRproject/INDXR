@@ -10,8 +10,9 @@ import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/m
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcript-not-available" },
   title: "YouTube Transcript Not Available? Here's Why and How to Fix It | INDXR.AI",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 156 chars). Keyword first.
   description:
-    "YouTube transcript missing or not showing? Tell an interface glitch from a video that has no captions, and get the text anyway when there's nothing to show.",
+    "YouTube transcript missing or not showing? Tell an interface glitch from a video with no captions, and get the text anyway.",
   ...editorialOg("youtube-transcript-not-available"),
 }
 

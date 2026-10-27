@@ -1,21 +1,27 @@
 import type { Metadata } from "next"
-import { exportFormatsProse } from "@indxr/shared/lib/exportFormats"
 
 const title = "Transcript generator — audio, video & YouTube | INDXR.AI"
+// 155-char budget (Ahrefs crawl 2026-10-27: was 196 chars). Keyword first, no "first 3 minutes
+// free" promise (the preview is capped at min(3 min, 1/3 duration) — see QuickCheckoutPanel).
+const description =
+  "Upload audio, video, or a YouTube link and get an accurate transcript — free captions or AI transcription, exportable as TXT, SRT, VTT, JSON and more."
 
 export const metadata: Metadata = {
   alternates: { canonical: "/transcribe" },
   title,
-  description: `Upload an audio or video file or paste a YouTube link and get an accurate transcript. Free YouTube captions or premium AI transcription. Export to ${exportFormatsProse("and")}.`,
+  description,
   openGraph: {
     title,
-    description: "Upload an audio or video file or paste a YouTube link and get an accurate transcript. Free YouTube captions or premium AI transcription.",
+    description,
+    url: "https://indxr.ai/transcribe",
     type: "website",
+    images: [{ url: "https://indxr.ai/og-default.jpg", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title,
-    description: "Transcribe audio, video and YouTube links. Export to multiple formats.",
+    description,
+    images: ["https://indxr.ai/og-default.jpg"],
   },
 }
 

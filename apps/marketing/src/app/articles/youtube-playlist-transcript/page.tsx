@@ -18,11 +18,9 @@ const freeSlots = FREE_TIER.PLAYLIST_FREE_VIDEOS
 const perCaption = CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS
 const perAiMinute = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 
+// 155-char budget (Ahrefs crawl 2026-10-27: was 266 chars). Keyword first.
 const metaDescription =
-  `Extract transcripts from an entire YouTube playlist in one job. The first ${freeSlots} caption videos ` +
-  `are free, then ${perCaption} credit per video, with AI transcription at ${perAiMinute} credit per ` +
-  `minute for videos that have no captions. Up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job; a free account includes ` +
-  `${FREE_TIER.WELCOME_CREDITS} credits.`
+  `Extract transcripts from a whole YouTube playlist in one job — first ${freeSlots} caption videos free, then ${perCaption} credit per video or AI minute. Up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} per job.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-playlist-transcript" },

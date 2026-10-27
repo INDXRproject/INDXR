@@ -10,14 +10,19 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+import { pageOg } from "@/lib/pageOg"
 
 const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
+// 155-char budget (Ahrefs crawl 2026-10-27). Also fixes a pre-existing bug: this was a plain
+// string with literal backticks/`${...}` text, never a real template literal — EXPORT_FORMAT_COUNT
+// was never actually interpolated.
+const exportFormatsDescription = `INDXR exports every transcript in ${spellCount(EXPORT_FORMAT_COUNT)} formats — plain text, Markdown, CSV, SRT, VTT, JSON, and RAG JSON — each with its own spec page.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats" },
   title: "Export Formats — INDXR.AI Docs",
-  description:
-    "`INDXR exports every transcript in ${spellCount(EXPORT_FORMAT_COUNT)} formats — plain text, Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON. This page explains what each one is for; each format has its own spec page.`",
+  description: exportFormatsDescription,
+  ...pageOg("/docs/reference/export-formats"),
 }
 
 export default function DocsExportFormatsPage() {
@@ -25,8 +30,7 @@ export default function DocsExportFormatsPage() {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     headline: "Export Formats",
-    description:
-      "`INDXR exports every transcript in ${spellCount(EXPORT_FORMAT_COUNT)} formats — plain text, Markdown, CSV, SRT, VTT, JSON, and RAG-optimized JSON. What each one is for, and links to each format spec.`",
+    description: exportFormatsDescription,
     url: "https://indxr.ai/docs/reference/export-formats",
   }
 

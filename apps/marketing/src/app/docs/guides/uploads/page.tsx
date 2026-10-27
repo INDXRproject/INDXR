@@ -10,15 +10,18 @@ import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 import { UPLOAD_FORMAT_COUNT_WORD, UPLOAD_FORMATS_LIST } from "@indxr/shared/lib/uploadFormats"
+import { pageOg } from "@/lib/pageOg"
 
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/uploads" },
   title: "Audio & video uploads — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 219 chars). Keyword first.
   description:
-    "Upload an audio or video file you already have and INDXR transcribes it with AI. Fourteen formats, up to 500 MB and 10 hours per file, 1 credit per minute. The file is deleted from the server as soon as it is processed.",
+    "Upload an audio or video file and INDXR transcribes it with AI — 14 formats, up to 500 MB and 10 hours per file, at 1 credit per minute.",
   robots: { index: true, follow: true },
+  ...pageOg("/docs/guides/uploads"),
 }
 
 export default function DocsUploadsPage() {

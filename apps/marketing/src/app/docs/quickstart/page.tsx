@@ -9,6 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, EXPORT_MENU, spellCount } from "@indxr/shared/lib/exportFormats"
+import { pageOg } from "@/lib/pageOg"
 
 const formatCount = spellCount(EXPORT_FORMAT_COUNT)
 const downloadCount = spellCount(EXPORT_DOWNLOAD_COUNT)
@@ -19,8 +20,10 @@ const welcomeCredits = FREE_TIER.WELCOME_CREDITS
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/quickstart" },
   title: "Get your first transcript — INDXR.AI Docs",
-  description: `Turn a YouTube video, a playlist, or an uploaded file into a transcript with INDXR — free YouTube captions, or AI transcription at ${perMin} credit per minute. See the cost before you confirm, then export.`,
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 197 chars). Keyword first.
+  description: `Turn a YouTube video, playlist, or uploaded file into a transcript — free YouTube captions, or AI transcription at ${perMin} credit per minute. See the cost first.`,
   robots: { index: true, follow: true },
+  ...pageOg("/docs/quickstart"),
 }
 
 export default function GettingStartedPage() {

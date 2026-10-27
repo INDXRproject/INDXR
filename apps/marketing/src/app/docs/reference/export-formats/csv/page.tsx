@@ -8,12 +8,15 @@ import { DocsTable } from "@/components/docs/DocsTable"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats/csv" },
   title: "CSV Export — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 192 chars). Keyword first.
   description:
-    "INDXR exports transcripts as CSV: one row per segment with segment_index, start_time, end_time, duration, word_count and text, preceded by # metadata comment lines, with a UTF-8 BOM for Excel.",
+    "Export a transcript as CSV — one row per segment with timestamps, duration, word count and text, plus metadata comments and a UTF-8 BOM for Excel.",
+  ...pageOg("/docs/reference/export-formats/csv"),
 }
 
 // Real output of generateCsv() (packages/shared/src/utils/formatTranscript.ts).

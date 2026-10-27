@@ -3,7 +3,7 @@
 import { Button } from "@indxr/shared/components/ui/button"
 import { Input } from "@indxr/shared/components/ui/input"
 import { Label } from "@indxr/shared/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
 import { useState } from "react"
 import { resetPasswordAction } from "@indxr/shared/actions/auth-actions"
@@ -43,7 +43,10 @@ export default function ForgotPasswordPage() {
     <div className="auth-shell flex items-center justify-center min-h-screen bg-bg px-4">
       <Card className="w-full max-w-sm border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Reset Password</CardTitle>
+          {/* Ahrefs crawl 2026-10-27: page had no H1 — CardTitle renders a <div>, not a heading.
+              Native h1 here, same classes CardTitle would apply, instead of touching the shared
+              component (used across the whole codebase as a non-heading div by design). */}
+          <h1 className="text-2xl leading-none font-semibold" data-slot="card-title">Reset your password</h1>
           <CardDescription>
             {isSent
               ? "Check your email for the reset link"

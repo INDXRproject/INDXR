@@ -9,6 +9,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, summaryCreditCost } from "@indxr/shared/lib/pricing"
 import { summaryModelName } from "@indxr/shared/lib/models"
+import { pageOg } from "@/lib/pageOg"
 
 const perTenMin = CREDIT_COSTS.AI_SUMMARY_PER_10MIN
 const oneHourCost = summaryCreditCost(60 * 60)
@@ -16,9 +17,11 @@ const oneHourCost = summaryCreditCost(60 * 60)
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/summaries" },
   title: "Summaries — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 257 chars). Keyword first.
   description:
-    `Turn a transcript into an AI summary organised into chapters with clickable timestamps. A summary costs ${perTenMin} credit per 10 minutes of video (rounded up, minimum 1), is saved alongside the transcript, and can be regenerated — which replaces the current summary.`,
+    `Turn a transcript into an AI summary with chapters and clickable timestamps, at ${perTenMin} credit per 10 minutes of video — regenerate it any time.`,
   robots: { index: true, follow: true },
+  ...pageOg("/docs/guides/summaries"),
 }
 
 export default function DocsSummariesPage() {

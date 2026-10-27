@@ -10,6 +10,7 @@ import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 import { MAX_PLAYLIST_VIDEOS_PER_JOB, PLAYLIST_LARGE_JOB_WARN_AT } from "@indxr/shared/lib/limits"
+import { pageOg } from "@/lib/pageOg"
 
 const freeVideos = FREE_TIER.PLAYLIST_FREE_VIDEOS
 const perVideo = CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS
@@ -20,9 +21,11 @@ const warnAt = PLAYLIST_LARGE_JOB_WARN_AT
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/guides/playlists" },
   title: "Transcribe a playlist — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 295 chars). Keyword first.
   description:
-    `Turn a whole YouTube playlist into transcripts in one job. Choose per video whether to use captions or AI, the first three YouTube caption videos are free, credits are reserved up front and the unused part is returned, and the job keeps running after you close the tab. Up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job.`,
+    "Turn a whole YouTube playlist into transcripts in one job — pick captions or AI per video, credits reserved up front, unused credits returned.",
   robots: { index: true, follow: true },
+  ...pageOg("/docs/guides/playlists"),
 }
 
 export default function DocsPlaylistsPage() {

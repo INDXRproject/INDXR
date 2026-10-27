@@ -13,8 +13,9 @@ import {
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-to-notes" },
   title: "YouTube to notes: turn any video into notes you keep | INDXR.AI",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 171 chars). Keyword first.
   description:
-    "Turn a YouTube video into a structured summary with chapters and timestamps, edit it into your own version, and export it as Markdown for Obsidian, Notion or any note app.",
+    "Turn a YouTube video into a structured summary with chapters and timestamps, then export it as Markdown for Obsidian, Notion, or any note app.",
   ...editorialOg("youtube-to-notes"),
 }
 

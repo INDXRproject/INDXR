@@ -15,12 +15,15 @@ import {
   SUBTITLE_TARGET_CPS,
   SUBTITLE_CEIL_CPS,
 } from "@indxr/shared/lib/subtitleConfig"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats/vtt" },
   title: "VTT Subtitle Export — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 191 chars). Keyword first.
   description:
-    "INDXR exports WebVTT (.vtt) subtitles: a WEBVTT header, an optional NOTE block with title and language, and cues with HH:MM:SS.mmm timestamps — the web-native subtitle format for HTML5 video.",
+    "Export a transcript as WebVTT subtitles — a WEBVTT header, an optional NOTE block, and HH:MM:SS.mmm cues: the web-native subtitle format for HTML5 video.",
+  ...pageOg("/docs/reference/export-formats/vtt"),
 }
 
 // Real generateVtt() output — header + cues 3–4 of the fixture from video kBdfcR-8hEY ("Justice…

@@ -18,9 +18,9 @@ import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/m
 const anchor = getAnchorPackage()
 const ragPer10Min = CREDIT_COSTS.RAG_JSON_PER_10MIN
 
+// 155-char budget (Ahrefs crawl 2026-10-27: was 212 chars). Keyword first.
 const metaDescription =
-  `Upload a video file and get the full text back, punctuated, split by speaker and timestamped. ` +
-  `Runs on ${transcriptionModelName()} across ${TRANSCRIPTION_MODEL.totalLanguages} languages at one credit per minute; a free account includes ${FREE_TIER.WELCOME_CREDITS} credits.`
+  `Upload a video file and get the full text back — punctuated, split by speaker, timestamped, at one credit per minute. A free account includes ${FREE_TIER.WELCOME_CREDITS} credits.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/video-to-text" },

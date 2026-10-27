@@ -7,13 +7,17 @@ import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
+import { pageOg } from "@/lib/pageOg"
 
-const accDescription = `INDXR gives you two ways to produce text — reading a video's existing captions or transcribing the audio — and the accuracy of each differs. Captions are as accurate as their source; AI transcription runs on ${transcriptionModelName()}, which picks the best model for the detected language.`
+// 155-char budget (Ahrefs crawl 2026-10-27: was 264+ chars). Keyword first.
+const accDescription =
+  "How accurate INDXR is: captions are as accurate as their YouTube source; AI transcription auto-picks the best model for the detected language."
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/accuracy" },
   title: "Accuracy and Languages — INDXR.AI Docs",
   description: accDescription,
+  ...pageOg("/docs/reference/accuracy"),
 }
 
 export default function DocsAccuracyPage() {

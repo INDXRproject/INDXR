@@ -1,11 +1,15 @@
 import type { Metadata } from "next"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/about" },
-  title: "About INDXR.AI",
+  // 30-60 char budget (Ahrefs crawl 2026-10-27: was 14 chars, "About INDXR.AI").
+  title: "About INDXR.AI — who builds it and why",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 172 chars). Keyword first.
   description:
-    "INDXR.AI turns recordings into text you can work with — uploaded audio and video, YouTube links, or a whole playlist at once. Who runs it, why it exists, and where it runs.",
+    "INDXR.AI turns recordings into text — uploaded audio and video, YouTube links, or a whole playlist. Who runs it, why it exists, and where it runs.",
+  ...pageOg("/about"),
 }
 
 const schemas = [

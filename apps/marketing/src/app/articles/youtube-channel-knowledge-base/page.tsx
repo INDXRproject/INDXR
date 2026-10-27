@@ -10,8 +10,9 @@ const defaultChunk = RAG_CHUNK_DEFAULT
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-channel-knowledge-base" },
   title: "YouTube Channel Knowledge Base — Transcribe, Index & Search | INDXR.AI",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 178 chars). Keyword first.
   description:
-    "Extract transcripts from an entire YouTube channel, embed them in a vector database, and build a semantic search system over months or years of video content. Step-by-step guide.",
+    "Extract transcripts from a whole YouTube channel, embed them in a vector database, and build semantic search over years of video.",
   ...editorialOg("youtube-channel-knowledge-base"),
 }
 
@@ -348,7 +349,7 @@ print(answer)`}</code></pre>
 
       <p>
         For the full chunking research behind the {defaultChunk}-second default chunk size, see{" "}
-        <Link href="/blog/chunk-youtube-transcripts-for-rag">
+        <Link href="/articles/chunk-youtube-transcripts-for-rag">
           How to Chunk YouTube Transcripts for RAG
         </Link>
         . For credit packages, see <Link href="/pricing">pricing</Link>.

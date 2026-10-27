@@ -21,6 +21,11 @@ export const metadata: Metadata = {
       "Short answers to common questions about INDXR — captions versus AI transcription, formats, credits, and privacy.",
     type: "website",
     url: "https://indxr.ai/docs/faq",
+    images: [{ url: "https://indxr.ai/og-default.jpg", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["https://indxr.ai/og-default.jpg"],
   },
 }
 

@@ -5,11 +5,13 @@ import { SectionLabel } from "@indxr/shared/components/SectionLabel"
 import { ContentCard } from "@/components/content/ContentCard"
 import { EditorialImage } from "@/components/content/EditorialImage"
 import { editorialAlt, hasEditorialImage } from "@/lib/editorialAlts"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles" },
   title: "Articles — Audio, Video and YouTube Transcript Guides | INDXR.AI",
   description: "Guides, tutorials, and reference on transcribing audio, video and YouTube — formats, workflows, troubleshooting, and AI transcription.",
+  ...pageOg("/articles"),
 }
 
 // description = the article's own metadata description (opening line), not newly written.

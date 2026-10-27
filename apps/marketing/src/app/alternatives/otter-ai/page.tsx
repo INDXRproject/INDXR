@@ -27,20 +27,27 @@ const OTTER_PRICING_URL = "https://otter.ai/pricing"
 const perMinute = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
 const cheapest = cheapestPackage()
 
+// 155-char budget (Ahrefs crawl 2026-10-27: was 237 chars). Keyword ("Otter.ai alternative") first.
+const metaDescription =
+  "An Otter.ai alternative with no monthly plan — buy credits that never expire and pay only per " +
+  "minute, instead of a subscription allowance you can lose."
+
 export const metadata: Metadata = {
   alternates: { canonical: "/alternatives/otter-ai" },
   title: "An Otter.ai alternative without a monthly plan | INDXR.AI",
-  description:
-    "An Otter.ai alternative with no monthly plan: buy credits that never expire and pay per minute, " +
-    "instead of a subscription with a monthly allowance you can lose. INDXR is not a live meeting tool. " +
-    `Otter pricing checked on ${OTTER_PRICING_CHECKED}.`,
+  description: metaDescription,
   openGraph: {
     type: "website",
     url: "https://indxr.ai/alternatives/otter-ai",
     title: "An Otter.ai alternative without a monthly plan",
-    description:
-      "With a subscription you pay for the months you do not use, and the monthly allowance is set by " +
-      "the provider. With INDXR you buy credits that are yours and never expire, and pay per minute.",
+    description: metaDescription,
+    images: [{ url: "https://indxr.ai/og-default.jpg", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "An Otter.ai alternative without a monthly plan",
+    description: metaDescription,
+    images: ["https://indxr.ai/og-default.jpg"],
   },
 }
 

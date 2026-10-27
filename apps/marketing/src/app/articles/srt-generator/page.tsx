@@ -26,18 +26,15 @@ import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 // uses this product shot. Dimensions are the framed PNG's actual size.
 const OG_IMAGE = "https://indxr.ai/docs/screenshots/video-subtitles-srt-light.png"
 
+// 155-char budget (Ahrefs crawl 2026-10-27: was 341 chars). Keyword first.
 const metaDescription =
-  `Create an SRT or VTT subtitle file from a video, a link or an audio recording. ` +
-  `INDXR re-times the transcript per word and regroups it into readable, broadcast-standard cues ` +
-  `of at most ${SUBTITLE_MAX_LINE} characters a line, then hands you the file. Free with a free ` +
-  `account (${FREE_TIER.WELCOME_CREDITS} welcome credits). It makes the file; it does not burn ` +
-  `subtitles into the picture.`
+  `Create an SRT or VTT subtitle file from a video, link, or recording — re-timed per word into broadcast-standard cues. Free with ${FREE_TIER.WELCOME_CREDITS} welcome credits.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/srt-generator" },
   title: "SRT Generator — Create an SRT or VTT File from Video or Audio | INDXR.AI",
   description: metaDescription,
-  openGraph: { type: "article", images: [{ url: OG_IMAGE, width: 2000, height: 1248 }] },
+  openGraph: { type: "article", url: "https://indxr.ai/articles/srt-generator", images: [{ url: OG_IMAGE, width: 2000, height: 1248 }] },
   twitter: { card: "summary_large_image", images: [OG_IMAGE] },
 }
 

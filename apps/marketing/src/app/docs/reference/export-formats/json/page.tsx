@@ -10,6 +10,7 @@ import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { pageOg } from "@/lib/pageOg"
 import { CREDIT_COSTS, RAG_CHUNK_PRESETS } from "@indxr/shared/lib/pricing"
 
 const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
@@ -17,8 +18,10 @@ const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats/json" },
   title: "JSON & RAG JSON Export — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 189 chars). Keyword first.
   description:
-    "INDXR exports transcripts as standard JSON (raw segments with a metadata wrapper, free) and RAG-optimized JSON (chunked, with token estimates and per-chunk deep links for vector databases).",
+    "Export a transcript as JSON — raw segments with a metadata wrapper (free), or RAG-optimized JSON: chunked with token estimates for vector databases.",
+  ...pageOg("/docs/reference/export-formats/json"),
 }
 
 // Real output of the shared generators (packages/shared/src/utils/formatTranscript.ts —

@@ -21,12 +21,15 @@ import {
   MAX_CONCURRENT_JOBS,
   MAX_TRANSCRIPTION_HOURS,
 } from "@indxr/shared/lib/limits"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/limits" },
   title: "Limits — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 350+ chars). Keyword first.
   description:
-    `The hard limits INDXR enforces: AI transcription up to ${MAX_TRANSCRIPTION_HOURS} hours per file, uploads up to ${UPLOAD_MAX_FILE_MB} MB, a ${LIBRARY_STORAGE_BASE_MB} MB library that scales to ${LIBRARY_STORAGE_MAX_MB} MB, playlists up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job, ${MAX_CONCURRENT_JOBS} concurrent jobs, and request rate limits. Caption extraction has no length limit. There is no public REST API.`,
+    `INDXR's limits: AI transcription up to ${MAX_TRANSCRIPTION_HOURS} hours per file, uploads up to ${UPLOAD_MAX_FILE_MB} MB, library up to ${LIBRARY_STORAGE_MAX_MB} MB, playlists up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos, ${MAX_CONCURRENT_JOBS} concurrent jobs.`,
+  ...pageOg("/docs/reference/limits"),
 }
 
 export default function DocsLimitsPage() {

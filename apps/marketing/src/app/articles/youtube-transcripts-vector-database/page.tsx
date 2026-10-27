@@ -11,8 +11,9 @@ import { TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcripts-vector-database" },
   title: "YouTube Transcripts to Vector Database — Python Pipeline Guide | INDXR.AI",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 189 chars). Keyword first.
   description:
-    "Step-by-step guide to building a semantic search system over YouTube video content. Extract transcripts, generate embeddings, store in Pinecone or ChromaDB, and query with natural language.",
+    "Step-by-step: build semantic search over YouTube video content — extract transcripts, generate embeddings, store in Pinecone or ChromaDB.",
   ...editorialOg("youtube-transcripts-vector-database"),
 }
 
@@ -189,7 +190,7 @@ Semantic search + LLM-generated answers with timestamp citations`}</code></pre>
         Each chunk is {defaultChunk} seconds of speech by default (adjustable to 30, 90 or 120), which
         lands in the dense-retrieval range established by NVIDIA&apos;s chunking benchmark and the Vectara
         NAACL 2025 study. See{" "}
-        <Link href="/blog/chunk-youtube-transcripts-for-rag">
+        <Link href="/articles/chunk-youtube-transcripts-for-rag">
           How to Chunk YouTube Transcripts for RAG
         </Link>{" "}
         for the research behind these defaults.
@@ -436,7 +437,7 @@ if new_chunks:
       <p>
         To start: <Link href="/articles/transcript-export-formats">extract any YouTube video as RAG JSON</Link>.
         For the chunking research behind the {defaultChunk}-second default, see{" "}
-        <Link href="/blog/chunk-youtube-transcripts-for-rag">
+        <Link href="/articles/chunk-youtube-transcripts-for-rag">
           How to Chunk YouTube Transcripts for RAG
         </Link>
         .

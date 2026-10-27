@@ -9,16 +9,19 @@ import { DocsFigure } from "@/components/docs/DocsFigure"
 import { HowItWorksFlow } from "@/components/docs/HowItWorksFlow"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { EXPORT_FORMAT_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
+import { pageOg } from "@/lib/pageOg"
 
 const formatCount = spellCount(EXPORT_FORMAT_COUNT)
 
+// 155-char budget (Ahrefs crawl 2026-10-27: was 279 chars). Keyword first.
 const description =
-  "INDXR gets text out of a video in one of two ways: it copies the caption track the video already carries, or it sends the audio to a speech recognition model and writes the transcript from scratch. Which of the two you use decides the quality of everything you export afterwards."
+  "How INDXR turns a video into text: copy its existing captions, or send the audio to AI transcription when there are none — it decides export quality."
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/how-indxr-works" },
   title: "How INDXR works — INDXR.AI Docs",
   description,
+  ...pageOg("/docs/how-indxr-works"),
 }
 
 const P = "text-[var(--fg-subtle)] leading-relaxed mb-4"

@@ -19,8 +19,9 @@ const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/transcript-export-formats" },
   title: "Transcript export formats: which file to choose | INDXR.AI",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 186 chars). Keyword first.
   description:
-    "One transcript, several files: plain text, Markdown, CSV, SRT and VTT subtitles, standard JSON, and RAG JSON. A decision table plus a real example of each, so you can pick the right one.",
+    "One transcript, several files — plain text, Markdown, CSV, SRT, VTT, JSON, or RAG JSON. A decision table plus a real example of each format.",
   ...editorialOg("transcript-export-formats"),
 }
 

@@ -8,12 +8,15 @@ import { DocsTable } from "@/components/docs/DocsTable"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
+import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/reference/export-formats/markdown" },
   title: "Markdown Export — INDXR.AI Docs",
+  // 155-char budget (Ahrefs crawl 2026-10-27: was 226 chars). Keyword first.
   description:
-    "INDXR exports transcripts as Markdown with a YAML frontmatter block (title, url, channel, published, duration, language, transcript_source, created, type, tags) and optional timestamp headings that deep-link back to the video.",
+    "Export a transcript as Markdown with YAML frontmatter (title, channel, duration, language) and optional timestamp headings linking to the video.",
+  ...pageOg("/docs/reference/export-formats/markdown"),
 }
 
 // Real output of generateMarkdown(..., { includeYamlFrontmatter: true }) with timestamps

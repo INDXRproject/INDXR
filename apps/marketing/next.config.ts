@@ -38,6 +38,11 @@ const nextConfig: NextConfig = {
       { source: '/account/credits', destination: `${APP_URL}/dashboard/account`, permanent: true },
       { source: '/faq', destination: '/docs/faq', permanent: true },
 
+      // Ahrefs crawl 2026-10-27: /blog/chunk-youtube-transcripts-for-rag 404's (external inbound
+      // links + stale internal links used /blog/, the article has always lived at /articles/).
+      // Catch-all so any other external /blog/<slug> link lands on the matching article too.
+      { source: '/blog/:slug', destination: '/articles/:slug', permanent: true },
+
       // Bulk → Playlist (absorbed)
       { source: '/articles/bulk-youtube-transcript', destination: '/articles/youtube-playlist-transcript', permanent: true },
       // Access restrictions → Transcript Not Available (absorbed / dropped)

@@ -4,7 +4,7 @@ import { Button } from "@indxr/shared/components/ui/button"
 import { Input } from "@indxr/shared/components/ui/input"
 import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
@@ -82,7 +82,10 @@ export default function LoginPage() {
       <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
       <Card className="relative w-full max-w-sm border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          {/* Ahrefs crawl 2026-10-27: page had no H1 — CardTitle renders a <div>, not a heading.
+              Native h1 here, same classes CardTitle would apply, instead of touching the shared
+              component (used across the whole codebase as a non-heading div by design). */}
+          <h1 className="text-2xl leading-none font-semibold" data-slot="card-title">Log in to INDXR.AI</h1>
           <CardDescription>
             Enter your email below to login to your account
           </CardDescription>
