@@ -29,16 +29,30 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // (localStorage doet dat NIET). Zonder consent blijft het 'memory'.
       persistence: consented ? 'localStorage+cookie' : 'memory',
       cross_subdomain_cookie: true,
-      // Mobiele balie-bounce-onderzoek (growth-plan.md §6.3, LOG 2026-10-29): geen van deze drie
-      // remote-config-geladen extensies wordt ergens gebruikt (repo-brede grep op web_vital/
-      // dead_click/survey-gebruik: 0 treffers) — elke sessie downloadde en parste ze toch (surveys.js,
-      // dead-clicks-autocapture.js, web-vitals.js, ná `load` nog aangevraagd). Uitgezet: minder JS vóór
-      // de eerste interactie, geen functieverlies. De vier events die WEL blijven (quote_shown,
-      // preview_viewed, checkout_started, quick_purchase_completed) zijn expliciete posthog.capture()-
-      // aanroepen in QuickCheckoutPanel/de Stripe-webhook, niet afhankelijk van deze extensies.
+      // Mobiele balie-bounce-onderzoek (growth-plan.md §6.3, LOG 2026-10-29/30): geen van deze
+      // extensies wordt ergens gebruikt (repo-brede grep op web_vital/dead_click/survey-gebruik:
+      // 0 treffers) — elke sessie downloadde en parste ze toch (surveys.js, dead-clicks-
+      // autocapture.js, web-vitals.js, ná `load` nog aangevraagd). `disable_surveys` en
+      // `capture_performance:false` stopten surveys.js/web-vitals.js meteen (netwerktrace ná
+      // deploy, 2026-10-29), maar dead-clicks-autocapture.js bleef laden ondanks de correct
+      // gedeployde `capture_dead_clicks:false` — die flag bepaalt alleen of de detector zich
+      // ACTIVEERT, niet of het bestand wordt OPGEHAALD (posthog-js lazy-loadt elke externe
+      // extensie onvoorwaardelijk via `loadExternalDependency`, ongeacht de per-feature-flag; bron:
+      // @posthog/types posthog-config.d.ts, `disable_external_dependency_loading`-doc: "This will
+      // prevent PostHog from requesting any external scripts such as those needed for Session
+      // Replay, Surveys or Site Apps" — surveys/dead-clicks/web-vitals delen dat ene laadpad).
+      // `disable_external_dependency_loading:true` stopt dat laadpad helemaal — veilig hier, want
+      // we gebruiken geen enkele externe extensie (surveys/dead-clicks/web-vitals/site-apps); de
+      // kern-features die we WEL gebruiken (capture, autocapture, $pageview, identify) zijn
+      // ingebakken in de hoofdbundel, geen externe dependency, dus onaangetast (bevestigd:
+      // $autocapture/$pageview vuurden al zonder een extra scriptbestand te laden). De vier events
+      // die moeten blijven (quote_shown, preview_viewed, checkout_started, quick_purchase_completed)
+      // zijn expliciete posthog.capture()-aanroepen in QuickCheckoutPanel/de Stripe-webhook, niet
+      // afhankelijk van deze extensies.
       disable_surveys: true,
       capture_dead_clicks: false,
       capture_performance: false,
+      disable_external_dependency_loading: true,
       // Pageviews AAN (2026-09-01): losstaand event, raakt de cookieless keuze niet (persistence blijft
       // 'memory' — geen persistent device-id). Ingelogde gebruikers: identify stitcht de events; anonieme
       // bezoekers: aggregaten zonder persoon (person_profiles:'identified_only'). Zonder dit was de stap
