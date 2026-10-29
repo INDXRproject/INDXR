@@ -1,0 +1,27 @@
+{
+  "name": "pixel7",
+  "label": "after2",
+  "runs": [
+    {
+      "loadMs": 1602,
+      "visibleAtMs": 1735,
+      "tappableAtMs": 2389,
+      "fileChooserOpened": true
+    },
+    {
+      "loadMs": 1722,
+      "visibleAtMs": 2139,
+      "tappableAtMs": 2672,
+      "fileChooserOpened": true
+    },
+    {
+      "loadMs": 1391,
+      "visibleAtMs": 1606,
+      "tappableAtMs": 1863,
+      "fileChooserOpened": true
+    }
+  ],
+  "median_loadMs": 1602,
+  "median_visibleAtMs": 1735,
+  "median_tappableAtMs": 2389
+}

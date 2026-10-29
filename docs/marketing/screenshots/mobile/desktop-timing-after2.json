@@ -1,0 +1,27 @@
+{
+  "name": "desktop",
+  "label": "after2",
+  "runs": [
+    {
+      "loadMs": 519,
+      "visibleAtMs": 571,
+      "tappableAtMs": 615,
+      "fileChooserOpened": true
+    },
+    {
+      "loadMs": 564,
+      "visibleAtMs": 634,
+      "tappableAtMs": 681,
+      "fileChooserOpened": true
+    },
+    {
+      "loadMs": 553,
+      "visibleAtMs": 636,
+      "tappableAtMs": 671,
+      "fileChooserOpened": true
+    }
+  ],
+  "median_loadMs": 553,
+  "median_visibleAtMs": 634,
+  "median_tappableAtMs": 671
+}

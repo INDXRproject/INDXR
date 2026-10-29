@@ -1,0 +1,27 @@
+{
+  "name": "iphone14",
+  "label": "after2",
+  "runs": [
+    {
+      "loadMs": 1126,
+      "visibleAtMs": 1277,
+      "tappableAtMs": 1832,
+      "fileChooserOpened": true
+    },
+    {
+      "loadMs": 1495,
+      "visibleAtMs": 1643,
+      "tappableAtMs": 2024,
+      "fileChooserOpened": true
+    },
+    {
+      "loadMs": 950,
+      "visibleAtMs": 1037,
+      "tappableAtMs": 1234,
+      "fileChooserOpened": true
+    }
+  ],
+  "median_loadMs": 1126,
+  "median_visibleAtMs": 1277,
+  "median_tappableAtMs": 1832
+}
