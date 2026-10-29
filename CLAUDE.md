@@ -215,6 +215,15 @@ Auto-deploy: push naar `master` → Vercel + Railway deployen automatisch.
 
 ---
 
+## Browser (Claude in Chrome) — INDXR-profiel
+
+Browserwerk voor INDXR (Google Ads, Search Console, PostHog, enz.) gebeurt uitsluitend in het Chrome-profiel **"INDXR.ai"** (avatar kaas).
+
+- deviceId: `992309b2-9227-434c-9913-7f4d74bd4753` (Linux)
+- Koppelen: altijd `select_browser` met dit deviceId. **Niet** via het Connect-scherm / `switch_browser` — dat liet verbindingen vallen.
+- Controle na koppelen: `list_connected_browsers` moet dit id tonen; werk in een nieuw tabblad.
+- Ingelogd in dit profiel: Google Ads (INDXR-account, AW-18366544433).
+
 ## Codeerconventies
 
 ### Bestandsstructuur

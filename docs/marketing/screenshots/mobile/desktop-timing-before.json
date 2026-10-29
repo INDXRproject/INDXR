@@ -1,0 +1,8 @@
+{
+  "name": "desktop",
+  "label": "before",
+  "loadMs": 766,
+  "visibleAtMs": 1005,
+  "tappableAtMs": 1201,
+  "fileChooserOpened": true
+}
