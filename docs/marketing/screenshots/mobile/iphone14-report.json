@@ -1,0 +1,28 @@
+{
+  "name": "iphone14",
+  "finalUrl": "https://app.indxr.ai/transcribe?mode=audio&via=ads&kw=video%20to%20text&gclid=test123",
+  "mainResponseStatus": 200,
+  "loadTimeMs": 815,
+  "uploadVisibleAtMs": 1935,
+  "uploadSelectorUsed": "#quick-checkout-upload-input",
+  "lcpMs": 2023,
+  "cls": 0,
+  "overlayCount": 1,
+  "overlays": [
+    {
+      "selector": "DIV.fixed inset-x-0 bottom-0 z-[60] p-4 sm:p-5",
+      "rect": {
+        "top": 451,
+        "left": 0,
+        "width": 390,
+        "height": 213
+      },
+      "text": "We'd like to know which ad or link brought you here. That's the only thing these cookies do — we don't build a profile o"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "redirectChain": [],
+  "fileChooserOpened": false
+}

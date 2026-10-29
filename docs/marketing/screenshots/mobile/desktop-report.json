@@ -1,0 +1,28 @@
+{
+  "name": "desktop",
+  "finalUrl": "https://app.indxr.ai/transcribe?mode=audio&via=ads&kw=video%20to%20text&gclid=test123",
+  "mainResponseStatus": 200,
+  "loadTimeMs": 769,
+  "uploadVisibleAtMs": 1022,
+  "uploadSelectorUsed": "#quick-checkout-upload-input",
+  "lcpMs": 916,
+  "cls": 0.0864,
+  "overlayCount": 1,
+  "overlays": [
+    {
+      "selector": "DIV.fixed inset-x-0 bottom-0 z-[60] p-4 sm:p-5",
+      "rect": {
+        "top": 749.75,
+        "left": 0,
+        "width": 1440,
+        "height": 150.25
+      },
+      "text": "We'd like to know which ad or link brought you here. That's the only thing these cookies do — we don't build a profile o"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "redirectChain": [],
+  "fileChooserOpened": false
+}
