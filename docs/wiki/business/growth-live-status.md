@@ -7,15 +7,19 @@ doel: actuele stand van groei-uitvoering (Google Ads, AlternativeTo, Product Hun
 
 Dit bestand is van de Claude-piloot. Claude Code leest het wel, maar wijzigt het niet (zie CLAUDE.md). Wil Claude Code iets melden, dan in docs/LOG.md of in zijn eigen rapport.
 
-Laatst bijgewerkt: 2026-11-03 16:00.
+Laatst bijgewerkt: 2026-11-03 20:05.
 
-## 0. Strategie in één oogopslag (piloot, 3-11)
-- **Doel nu:** de eerste 3 betalende klanten. Pas daarna Product Hunt (begin december) en verder opschalen.
-- **Google Ads (balie = mensen met één bestand):** 26-10 t/m 2-11 mobiel + desktop: ~€77, 58 bezoekers, 12 offertes, 0 aankopen. 11 van de 12 offertes waren korte telefoonclips (€2-minimum); de enige lange (37 min) kwam van desktop. Daarom sinds 2-11 alleen desktop (goedkoper, ~€1–3/dag), test t/m 16-11. Geen aankoop op desktop → Ads stoppen.
-- **SEO:** 0 klikken in 28 dagen; trage route (maanden). 3-11 live: schemafouten weg, titels, noindex auth-pagina's, IndexNow. Ontbrekende artikelen worden aangemeld bij Google.
-- **Vindbaarheid:** AlternativeTo live (3 likes). Product Hunt-draft klaar, lancering alleen bij ≥3 betalende klanten.
-- **Site:** balie op desktop afgemaakt (logo, prijs vooraf, voorbeeld, credits-route). Volgende: volledige redesign van de hele site (audit + richtingsvoorstel, Khidr kiest).
-- **Pilot pusht sinds 3-11 zelf naar master** (Claude GitHub App geïnstalleerd, commits als Claude <noreply@anthropic.com>). Claude Code: eerst git pull vóór werk.
+## 0. Strategie (besluit Khidr 3-11 avond — leidend)
+- **Doel:** keihard geld verdienen; eerst de eerste betalende klanten.
+- **Geleerd (niet herhalen):** Ads aug–sep €463 (22 signups, 14 actief, 0 aankopen; 50 gratis credits dekten 100% van het gebruik) + balie okt–nov €77 (58 bezoekers, 12 offertes vooral korte clips, 0 aankopen). Gratis/YouTube-zoekers kopen niet. Meer gratis credits = weggeven. Zoekadvertenties op "video/audio to text" = eenmalige klus, gratis alternatieven (TurboScribe) winnen.
+- **Framing:** INDXR is de plek waar je uren video en audio (YouTube ook zonder captions, playlists, eigen opnames) omzet in tekst die je bewaart, doorzoekt en gebruikt. Per minuut, credits verlopen niet, geen abonnement.
+- **Klant:** verzamelaars — studenten/onderzoekers/kennisbank-bouwers, podcast-/videomakers, RAG-bouwers. Balie = zij-ingang voor één los bestand, niet het verhaal.
+- **Kanalen:** GEEN betaald verkeer (alle Ads-campagnes gepauzeerd 3-11). Communities (Claude schrijft, Khidr plaatst), directories, Product Hunt (na redesign), SEO.
+- **Welkomstcredits:** blijven 10.
+- **Kern-KPI:** terugkeer met een tweede bron binnen 30 dagen → betaling. Criterium: terugkerende gebruikers uiterlijk 15-12; anders is het een vraag naar het product.
+- **Werkblokken ingepland:** 4-11 communities (teksten in docs/marketing/community/), 4-11 redesign (audit + mockups, canvas), 5-11 meting + gebruikersanalyse, 6-11 directories + Product Hunt-voorbereiding, maandag weekrapport, 24-11 tussenstand, 25-11 Product Hunt-check.
+- **Werkwijze:** piloot pusht zelf naar master (commits als Claude <noreply@anthropic.com>); Claude Code eerst `git pull`. Khidr alleen bij strategische keuzes, geld, naar buiten, onomkeerbaar.
+- **Gedaan 3-11:** SEO-fixes live (Ahrefs 100/0 errors/9 warnings), balie desktop afgemaakt, Ads gepauzeerd.
 
 ## 1. Live-status (bijgewerkt 2026-10-27 16:30, Claude-piloot)
 
