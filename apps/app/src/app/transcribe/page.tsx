@@ -60,10 +60,18 @@ export default function PublicTranscribePage() {
             No account needed. See the price, read a free preview of the first part (up to 3 minutes), then pay per file.
           </p>
           <p className="text-sm text-fg">
-            {formatEurExact(PER_FILE_EUR_PER_MIN)} per minute, minimum {formatEurExact(PER_FILE_MIN_EUR)} per file
-            <span className="text-fg-muted"> — or from {formatEurExact(cheapestPerMin)} per minute with credits.</span>
+            {formatEurExact(PER_FILE_EUR_PER_MIN)} per minute, minimum {formatEurExact(PER_FILE_MIN_EUR)} per file.
           </p>
           <QuickCheckoutPanel />
+          {/* Cheapest route (credits), placed after the upload so it doesn't compete with the per-file price. */}
+          <div className="mt-8 rounded-2xl border border-border bg-surface p-5 text-sm">
+            <p className="font-semibold text-fg mb-1">Several or long files?</p>
+            <p className="text-fg-muted">
+              Create a free account and buy credits once — no subscription, they never expire. AI transcription then
+              costs from {formatEurExact(cheapestPerMin)} per minute.{" "}
+              <a href={marketingHref("/signup")} className="text-[var(--link)] hover:underline">Create a free account</a>
+            </p>
+          </div>
         </div>
 
         <aside className="mt-10 lg:mt-0 space-y-6">
