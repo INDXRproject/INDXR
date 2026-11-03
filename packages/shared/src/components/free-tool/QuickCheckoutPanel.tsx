@@ -305,7 +305,7 @@ export function QuickCheckoutPanel() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          ${files.length ? "p-5" : "p-12"} rounded-2xl border-2 border-dashed transition-all
+          ${files.length ? "p-5" : "p-6 sm:p-12"} rounded-2xl border-2 border-dashed transition-all
           ${isDragging
             ? "border-primary bg-accent/10 scale-105"
             : "border-border bg-surface-elevated/10 hover:bg-surface-elevated/20"
@@ -325,10 +325,10 @@ export function QuickCheckoutPanel() {
             <div className="p-4 bg-surface-elevated rounded-full mb-4">
               <UploadCloud className="h-8 w-8 text-fg-muted" />
             </div>
-            <h3 className="text-xl font-semibold text-fg mb-2">No account needed</h3>
-            <p className="text-fg-muted mb-2">Drag and drop your file here, or tap to choose a file</p>
+            <h3 className="text-xl font-semibold text-fg mb-2">Upload your file</h3>
+            <p className="text-fg-muted mb-2">Drag and drop your file here, or <span className="hidden md:inline">click</span><span className="md:hidden">tap</span> to choose a file</p>
             <p className="text-sm text-fg-muted">
-              See the price and read a free preview before you pay per file (max {MAX_FILES} files)
+              See the price and read a free preview before you pay (max {MAX_FILES} files)
             </p>
           </label>
         ) : (

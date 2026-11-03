@@ -1,4 +1,13 @@
 import { QuickCheckoutPanel } from "@indxr/shared/components/free-tool/QuickCheckoutPanel"
+import { marketingHref } from "@indxr/shared/lib/cross-host-links"
+import {
+  PACKAGES,
+  PER_FILE_EUR_PER_MIN,
+  PER_FILE_MIN_EUR,
+  formatEurExact,
+  pricePerMinute,
+} from "@indxr/shared/lib/pricing"
+import { EXPORT_MENU } from "@indxr/shared/lib/exportFormats"
 import { RedirectIfLoggedIn } from "./RedirectIfLoggedIn"
 
 // Public anonymous entry point for the snelle balie (growth-plan.md §6.2 Onderdeel B: "Bezoeker
@@ -7,26 +16,75 @@ import { RedirectIfLoggedIn } from "./RedirectIfLoggedIn"
 // anonymous quick-checkout path unreachable. Logged-in visitors are redirected to the full
 // workspace (/dashboard/transcribe) via RedirectIfLoggedIn, a client island that renders nothing.
 //
-// Server component (no "use client"): headline/subtext/QuickCheckoutPanel are in the server-
-// rendered HTML from the first response — visible at first paint even before any JS has loaded or
-// run, not just after hydration (growth-plan.md §6.3 mobile-bounce-onderzoek, LOG 2026-10-29/30).
-// Renders QuickCheckoutPanel directly instead of going through AudioTab (which this route used to
-// use): AudioTab is the shared, auth-aware component for BOTH this public page and the logged-in
-// /dashboard/transcribe workspace, and gates its content behind `useAuth().loading` — correct for
-// the dashboard (which needs to know credits/library before showing anything), but on this page
-// that gate is pure, avoidable delay: QuickCheckoutPanel itself doesn't use auth state at all (it's
-// the anonymous-only path), so rendering it directly removes the last client-side blocker between
-// first paint and a tappable upload box. The dashboard route is untouched — AudioTab's own
-// loading/user branching still runs there exactly as before.
+// Server component (no "use client"): brand bar, headline, price line and QuickCheckoutPanel are
+// in the server-rendered HTML from the first response — visible at first paint even before any JS
+// has loaded or run (growth-plan.md §6.3 mobile-bounce-onderzoek, LOG 2026-10-29/30). Renders
+// QuickCheckoutPanel directly, not via AudioTab, whose useAuth().loading gate would delay it.
+//
+// Desktop pass (2026-11-03, Google Ads is desktop-only since 2-11): the page used to be a bare
+// card with no brand and no price until after upload. Every number below renders from pricing.ts /
+// exportFormats.ts — never hardcode a price or format list here.
+
+// Cheapest route, always named next to the per-file price (growth-live-status.md: "altijd de
+// goedkoopste route noemen, nooit het balie-minimum als vanaf-prijs").
+const cheapestPerMin = Math.min(...PACKAGES.map(pricePerMinute))
+const formats = [...new Set(EXPORT_MENU.filter((i) => !i.paid).map((i) => i.format))].join(", ")
+
+// Illustrative sample, labelled as such on the page — shows the output format (speaker labels +
+// timestamps), not a claim about any customer's file.
+const SAMPLE = [
+  { t: "00:00:04", s: "Speaker A", text: "Thanks for joining. Can you tell me how your week usually starts?" },
+  { t: "00:00:09", s: "Speaker B", text: "Monday is planning. I block the morning and keep meetings for the afternoon." },
+  { t: "00:00:17", s: "Speaker A", text: "And when do you do the focused work?" },
+]
+
 export default function PublicTranscribePage() {
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10">
+    <div className="min-h-screen bg-bg">
       <RedirectIfLoggedIn />
-      <h1 className="text-2xl font-semibold text-fg mb-2">Transcribe a file</h1>
-      <p className="text-sm text-fg-muted mb-2">
-        No account needed — see the price, get a free preview of the first part (up to 3 minutes), then pay per file.
-      </p>
-      <QuickCheckoutPanel />
+      <header className="border-b border-border">
+        <div className="max-w-5xl mx-auto px-4 h-14 md:h-16 flex items-center">
+          <a href={marketingHref("/")} className="flex items-center gap-3" aria-label="INDXR.AI home">
+            <img src="/logo/indxr-mark-black-transparent.png" alt="" className="dark:hidden h-7 md:h-9 w-auto" />
+            <img src="/logo/indxr-mark-white-transparent.png" alt="" className="hidden dark:block h-7 md:h-9 w-auto" />
+            <img src="/logo/indxr-wordmark-black-transparent.png" alt="INDXR.AI" className="dark:hidden h-8 md:h-10 w-auto" />
+            <img src="/logo/indxr-wordmark-white-transparent.png" alt="INDXR.AI" className="hidden dark:block h-8 md:h-10 w-auto" />
+          </a>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 py-6 md:py-10 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold text-fg mb-2">Transcribe a file</h1>
+          <p className="text-sm text-fg-muted mb-1">
+            No account needed. See the price, read a free preview of the first part (up to 3 minutes), then pay per file.
+          </p>
+          <p className="text-sm text-fg">
+            {formatEurExact(PER_FILE_EUR_PER_MIN)} per minute, minimum {formatEurExact(PER_FILE_MIN_EUR)} per file
+            <span className="text-fg-muted"> — or from {formatEurExact(cheapestPerMin)} per minute with credits.</span>
+          </p>
+          <QuickCheckoutPanel />
+        </div>
+
+        <aside className="mt-10 lg:mt-0 space-y-6">
+          <div className="rounded-2xl border border-border bg-surface p-5">
+            <p className="text-xs uppercase tracking-wide text-fg-subtle mb-3">Example output</p>
+            <div className="space-y-3 font-mono text-xs leading-relaxed">
+              {SAMPLE.map((l) => (
+                <p key={l.t} className="text-fg">
+                  <span className="text-fg-subtle">[{l.t}]</span>{" "}
+                  <span className="font-semibold">{l.s}:</span> {l.text}
+                </p>
+              ))}
+            </div>
+          </div>
+          <ul className="space-y-2 text-sm text-fg-muted">
+            <li>Speaker labels and timestamps throughout</li>
+            <li>Download as {formats}</li>
+            <li>Audio is processed in the EU and deleted after transcription</li>
+          </ul>
+        </aside>
+      </main>
     </div>
   )
 }

@@ -48,8 +48,8 @@ for (const vp of VIEWPORTS) {
         await expect(page).toHaveURL(/\/transcribe/)
         await expect(page).toHaveTitle('Transcribe a file — INDXR.AI')
 
-        // H6: the dropzone + "No account needed" copy should be visible immediately.
-        await expect(page.getByRole('heading', { name: 'No account needed' })).toBeVisible({ timeout: 10_000 })
+        // H6: the dropzone ("Upload your file") copy should be visible immediately.
+        await expect(page.getByRole('heading', { name: 'Upload your file' })).toBeVisible({ timeout: 10_000 })
 
         await page.screenshot({ path: `tests/playwright-report/quick-checkout-empty-${vp.name}-${scheme}.png` })
 
