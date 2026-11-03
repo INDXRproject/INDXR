@@ -12,7 +12,7 @@ const t120 = RAG_CHUNK_PRESETS.find((p) => p.value === 120)!.tokens
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/chunk-youtube-transcripts-for-rag" },
-  title: "How to Chunk YouTube Transcripts for RAG — Research-Backed Guide | INDXR.AI",
+  title: "How to Chunk YouTube Transcripts for RAG | INDXR.AI",
   // 155-char budget (Ahrefs crawl 2026-10-27: was 175 chars). Keyword first.
   description:
     "The chunk size you pick matters more than your embedding model — optimal sizes, overlap, sentence-boundary snapping, and why 30 seconds is wrong.",

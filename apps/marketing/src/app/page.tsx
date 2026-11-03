@@ -18,8 +18,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 }
 
-// Homepage structured data. Two distinct @types (Organization + SoftwareApplication), never two of
-// the same type on this page. Both carry name "INDXR.AI" and a transcription-first description so
+// Homepage structured data. Two distinct @types (Organization + WebSite), never two of
+// the same type on this page. WebSite replaced SoftwareApplication on 2026-11-03: Google's Software App
+// rich result requires aggregateRating/review, which INDXR does not have on-site (Ahrefs: validation
+// error). WebSite carries the same name + description, so the ADR-102 brand disambiguation holds. Both carry name "INDXR.AI" and a transcription-first description so
 // Google's AI Overview stops conflating the brand with the unrelated open-source project
 // github.com/bahdotsh/indxr. See ADR-102.
 const homeSchemas: Record<string, unknown>[] = [
@@ -31,22 +33,17 @@ const homeSchemas: Record<string, unknown>[] = [
     logo: "https://indxr.ai/apple-touch-icon.png",
     description:
       "INDXR.AI turns audio, video and YouTube links into accurate, speaker-labelled transcripts you can edit, search and export.",
+    email: "support@indxr.ai",
+    contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "support@indxr.ai" },
+    sameAs: ["https://alternativeto.net/software/indxr-ai/about/"],
   },
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
+    "@type": "WebSite",
     name: "INDXR.AI",
-    applicationCategory: "UtilitiesApplication",
-    operatingSystem: "Web",
     url: "https://indxr.ai",
     description:
       "Upload a recording or paste a link and get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "EUR",
-      description: "Free for basic use. Credits required for AI transcription.",
-    },
     publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
   },
 ]

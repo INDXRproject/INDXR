@@ -20,7 +20,7 @@ const metaDescription =
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-video-summarizer" },
-  title: "YouTube Video Summarizer — Summarize Any Video into Chapter Notes | INDXR.AI",
+  title: "YouTube Video Summarizer: Chapter Notes | INDXR.AI",
   description: metaDescription,
   openGraph: { type: "article", url: "https://indxr.ai/articles/youtube-video-summarizer", images: [{ url: OG_IMAGE, width: 2000, height: 1440 }] },
   twitter: { card: "summary_large_image", images: [OG_IMAGE] },

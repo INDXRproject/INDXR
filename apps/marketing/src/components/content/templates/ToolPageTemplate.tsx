@@ -39,18 +39,13 @@ export function ToolPageTemplate({
   const schemas = [
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      name: "INDXR.AI",
+      // Article, not SoftwareApplication: Google's Software App rich result requires
+      // aggregateRating/review, which INDXR does not have on-site (Ahrefs crawl 2026-11-03:
+      // "rich results validation error" on every tool page). Never add invented ratings.
+      "@type": "Article",
+      headline: title,
       description: metaDescription,
-      applicationCategory: "UtilitiesApplication",
-      operatingSystem: "Web",
-      url: "https://indxr.ai",
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "EUR",
-        description: "Free for basic use. Credits required for AI transcription.",
-      },
+      ...(slug ? { url: `https://indxr.ai/articles/${slug}`, mainEntityOfPage: `https://indxr.ai/articles/${slug}` } : {}),
       author: { "@type": "Person", name: author.name },
       publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
       datePublished: publishedAt,

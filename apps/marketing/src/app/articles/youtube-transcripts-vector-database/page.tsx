@@ -10,7 +10,7 @@ import { TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-transcripts-vector-database" },
-  title: "YouTube Transcripts to Vector Database — Python Pipeline Guide | INDXR.AI",
+  title: "YouTube Transcripts to a Vector Database (Python) | INDXR.AI",
   // 155-char budget (Ahrefs crawl 2026-10-27: was 189 chars). Keyword first.
   description:
     "Step-by-step: build semantic search over YouTube video content — extract transcripts, generate embeddings, store in Pinecone or ChromaDB.",

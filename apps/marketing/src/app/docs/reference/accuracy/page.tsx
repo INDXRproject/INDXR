@@ -25,6 +25,8 @@ export default function DocsAccuracyPage() {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     headline: "Accuracy and languages",
+    author: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
+    publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai", logo: { "@type": "ImageObject", url: "https://indxr.ai/apple-touch-icon.png" } },
     description: accDescription,
     url: "https://indxr.ai/docs/reference/accuracy",
   }

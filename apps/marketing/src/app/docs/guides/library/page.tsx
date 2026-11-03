@@ -23,6 +23,8 @@ export default function DocsLibraryPage() {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     headline: "Your library",
+    author: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
+    publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai", logo: { "@type": "ImageObject", url: "https://indxr.ai/apple-touch-icon.png" } },
     description: metadata.description,
     url: "https://indxr.ai/docs/guides/library",
   }

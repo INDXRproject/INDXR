@@ -4,7 +4,7 @@ import { pageOg } from "@/lib/pageOg"
 export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
   title: "Terms of Service — INDXR.AI",
-  description: "INDXR.AI terms of service. Acceptable use, refund policy, and your rights as a user.",
+  description: "INDXR.AI terms of service: how credits and pay-per-file work, refunds, acceptable use, data handling and your rights as a user.",
   ...pageOg("/terms"),
 }
 

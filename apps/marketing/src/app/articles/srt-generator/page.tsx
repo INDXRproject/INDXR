@@ -32,7 +32,7 @@ const metaDescription =
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/srt-generator" },
-  title: "SRT Generator — Create an SRT or VTT File from Video or Audio | INDXR.AI",
+  title: "SRT Generator: Make SRT or VTT Files from Video | INDXR.AI",
   description: metaDescription,
   openGraph: { type: "article", url: "https://indxr.ai/articles/srt-generator", images: [{ url: OG_IMAGE, width: 2000, height: 1248 }] },
   twitter: { card: "summary_large_image", images: [OG_IMAGE] },

@@ -30,6 +30,8 @@ export default function DocsExportFormatsPage() {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     headline: "Export Formats",
+    author: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
+    publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai", logo: { "@type": "ImageObject", url: "https://indxr.ai/apple-touch-icon.png" } },
     description: exportFormatsDescription,
     url: "https://indxr.ai/docs/reference/export-formats",
   }

@@ -32,6 +32,8 @@ export default function DocsOverviewPage() {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     headline: "How INDXR works",
+    author: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
+    publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai", logo: { "@type": "ImageObject", url: "https://indxr.ai/apple-touch-icon.png" } },
     description,
     url: "https://indxr.ai/docs/how-indxr-works",
     dateModified: "2026-07-23",

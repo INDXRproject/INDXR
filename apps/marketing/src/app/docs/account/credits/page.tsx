@@ -23,7 +23,8 @@ const description =
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/account/credits" },
   title: "Credits — INDXR.AI Docs",
-  description,
+  // Meta description kept to 120–160 chars; the longer `description` stays for the schema.
+  description: "How INDXR credits work: captions are free, one credit is one minute of AI transcription, credits never expire and unused credits come back.",
   robots: { index: false, follow: true },
 }
 

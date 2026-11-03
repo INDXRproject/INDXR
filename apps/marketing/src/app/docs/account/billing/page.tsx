@@ -14,7 +14,8 @@ const description =
 export const metadata: Metadata = {
   alternates: { canonical: "/docs/account/billing" },
   title: "Billing and Invoices — INDXR.AI Docs",
-  description,
+  // Meta description kept to 120–160 chars; the longer `description` stays for the schema.
+  description: "One-time credit packages, no subscription. Stripe handles payment and you can download a VAT invoice for every purchase from your Account page.",
   robots: { index: false, follow: true },
 }
 
