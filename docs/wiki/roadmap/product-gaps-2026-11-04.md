@@ -2,7 +2,9 @@
 
 Twee gaten die de positionering ("elke lezing, interview en video waar je van leert, als tekst die je kunt doorzoeken, citeren en gebruiken") nu niet waarmaakt. Gecontroleerd tegen de broncode op 4-11.
 
-## Gat 1: de bibliotheek doorzoekt geen transcripttekst
+## Gat 1: de bibliotheek doorzoekt geen transcripttekst — LIVE sinds 2026-11-05
+
+**Status:** migratie `20261104150000` op prod (schema_migrations 173), code op master (`c6ea140`, `e24624f`). Geverifieerd in productie: zoeken op een woord dat alleen in de tekst staat vindt het transcript. Copy mag nu "search your transcripts" zeggen. Open vervolg: treffers markeren en naar het tijdstip springen (stap 3).
 
 **Nu (code):** `apps/app/src/components/library/filters.ts` → `applyLibraryFilters` zoekt per token met `ilike` op `title`, `channel` en `video_id` van de view `transcripts_list`. De tekst zelf (`transcripts.transcript` jsonb, array van `{text, offset, duration}`; bewerkingen in `edited_content` jsonb) wordt niet doorzocht. Wie twintig colleges heeft en "the moon" zoekt, vindt niets.
 

@@ -120,7 +120,7 @@ wat per rij beschikbaar is in de lijst:
 | `processing_method` | text \| null | bron-badge + source-filter (`youtube_captions` = CC, anders AI) |
 | `collection_id` | uuid \| null | collectie-filter + `CollectionBadge` |
 | `viewed_at` | timestamptz \| null | `null` → unread (NEW-dot); status-filter "Unread only" |
-| `channel` | text \| null | meegezocht (title/channel/video_id); niet als eigen kolom getoond |
+| `channel` | text \| null | meegezocht (title/channel/video_id + transcripttekst via `search_tsv`, sinds 2026-11-05); niet als eigen kolom getoond |
 | `has_summary` | boolean | `ai_summary IS NOT NULL` → SUM-badge + `has:summary`-filter |
 | `has_summary_edit` | boolean | `ai_summary ->> 'edited_html' IS NOT NULL` → SUM-badge in edited-variant |
 | `has_edit` | boolean | `edited_content IS NOT NULL` → potlood op de bron-badge + `has:edited`-filter |
