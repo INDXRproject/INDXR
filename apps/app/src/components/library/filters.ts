@@ -99,9 +99,21 @@ function addedCutoff(added: NonNullable<LibraryFilters["added"]>, now: Date): st
 type QueryBuilder = any;
 
 /**
+ * One search token → a prefix tsquery over the transcript text (`search_tsv`, 'simple' config).
+ * Only letters/digits survive, so tsquery operators (& | ! < > ' :) and PostgREST's quote can
+ * never reach the query; "don't" becomes "don:* & t:*", matching how to_tsvector split the text.
+ * Returns null when nothing searchable is left.
+ */
+export function ftsPrefixQuery(token: string): string | null {
+  const parts = token.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  return parts.length ? parts.map((p) => `${p.toLowerCase()}:*`).join(" & ") : null;
+}
+
+/**
  * Apply search + all content filters to a Supabase query over `transcripts_list`.
- * Search matches title/channel/video_id per whitespace token (each token AND-ed), exactly
- * as the old list did. Sort/range/count are applied by the caller.
+ * Search matches title/channel/video_id, or the transcript text itself (`search_tsv`, a
+ * generated tsvector over transcript + edited_content), per whitespace token (each token AND-ed).
+ * Sort/range/count are applied by the caller.
  */
 export function applyLibraryFilters(query: QueryBuilder, f: LibraryFilters, now: Date): QueryBuilder {
   let q = query;
@@ -110,7 +122,11 @@ export function applyLibraryFilters(query: QueryBuilder, f: LibraryFilters, now:
   if (search) {
     const tokens = search.split(/\s+/).filter(Boolean).slice(0, 6);
     for (const tok of tokens) {
-      q = q.or(`title.ilike.%${tok}%,channel.ilike.%${tok}%,video_id.ilike.%${tok}%`);
+      const fts = ftsPrefixQuery(tok);
+      q = q.or(
+        `title.ilike.%${tok}%,channel.ilike.%${tok}%,video_id.ilike.%${tok}%` +
+          (fts ? `,search_tsv.fts(simple)."${fts}"` : ""),
+      );
     }
   }
 
