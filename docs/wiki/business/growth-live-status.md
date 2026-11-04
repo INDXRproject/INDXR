@@ -20,6 +20,7 @@ Laatst bijgewerkt: 2026-11-03 20:05.
 - **Werkblokken ingepland:** 4-11 communities (teksten in docs/marketing/community/), 4-11 redesign (audit + mockups, canvas), 5-11 meting + gebruikersanalyse, 6-11 directories + Product Hunt-voorbereiding, maandag weekrapport, 24-11 tussenstand, 25-11 Product Hunt-check.
 - **Werkwijze:** piloot pusht zelf naar master (commits als Claude <noreply@anthropic.com>); Claude Code eerst `git pull`. Khidr alleen bij strategische keuzes, geld, naar buiten, onomkeerbaar.
 - **Communities (4-11):** teksten klaar in docs/marketing/community/ — volgorde Show HN → r/ObsidianMD → r/Rag → Indie Hackers, elk met utm_source-link. Wacht op Khidr (plaatst zelf, één per paar dagen, reacties de eerste uren beantwoorden).
+- **Redesign (4-11):** audit + richting in docs/marketing/redesign/audit-2026-11-04.md; mockups home/pricing/artikel (desktop+mobiel) in canvas 7Kvo4EhPYzn8mvUTHoGeLq. Wacht op akkoord Khidr op de richting; daarna bouwen in de volgorde uit de audit.
 - **Gedaan 3-11:** SEO-fixes live (Ahrefs 100/0 errors/9 warnings), balie desktop afgemaakt, Ads gepauzeerd.
 
 ## 1. Live-status (bijgewerkt 2026-10-27 16:30, Claude-piloot)
