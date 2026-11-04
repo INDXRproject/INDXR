@@ -123,9 +123,11 @@ export function applyLibraryFilters(query: QueryBuilder, f: LibraryFilters, now:
     const tokens = search.split(/\s+/).filter(Boolean).slice(0, 6);
     for (const tok of tokens) {
       const fts = ftsPrefixQuery(tok);
+      // A token of pure punctuation ("&", "-") matches nothing meaningful; skip it instead of
+      // AND-ing a literal title match that empties the list.
+      if (!fts) continue;
       q = q.or(
-        `title.ilike.%${tok}%,channel.ilike.%${tok}%,video_id.ilike.%${tok}%` +
-          (fts ? `,search_tsv.fts(simple)."${fts}"` : ""),
+        `title.ilike.%${tok}%,channel.ilike.%${tok}%,video_id.ilike.%${tok}%,search_tsv.fts(simple)."${fts}"`,
       );
     }
   }
