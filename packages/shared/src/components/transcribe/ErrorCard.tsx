@@ -1,5 +1,8 @@
-import type { ReactNode } from "react"
+"use client"
+
+import { useEffect, type ReactNode } from "react"
 import { AlertTriangle } from "lucide-react"
+import posthog from "posthog-js"
 
 import { cn } from "../../lib/utils"
 
@@ -43,6 +46,12 @@ export function ErrorCard({
   note?: ReactNode
   className?: string
 }) {
+  // Measurement (meting 2026-11-05): we had no signal for "user hit the credit wall", so we
+  // could not tell whether anyone ever needed to buy. Fires once per shown card.
+  useEffect(() => {
+    if (code === "insufficient_credits") posthog.capture("insufficient_credits_shown", { surface: "error_card" })
+  }, [code])
+
   return (
     <div
       className={cn(

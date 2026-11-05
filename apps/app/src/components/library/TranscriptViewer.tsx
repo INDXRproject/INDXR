@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from "posthog-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Download,
@@ -646,6 +647,7 @@ export function TranscriptViewer({
     setRagExportLoading(false);
     if (!result.success) {
       setRagInsufficientCredits(true);
+      posthog.capture("insufficient_credits_shown", { surface: "rag_export_viewer" });
       return;
     }
     triggerRagFileDownload(ragSelectedChunkSize);

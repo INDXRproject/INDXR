@@ -1,4 +1,7 @@
-import type { ReactNode } from "react"
+"use client"
+
+import { useEffect, useRef, type ReactNode } from "react"
+import posthog from "posthog-js"
 
 import { cn } from "../../lib/utils"
 import { METHOD_META, UNAVAILABLE_BAR, UNAVAILABLE_DOT } from "./method"
@@ -94,6 +97,16 @@ export function CostBreakdown({
  * (Deselect some / Buy credits), never a dead disabled button.
  */
 export function BalanceLine({ have, cost, className }: { have: number | null; cost: number; className?: string }) {
+  // Measurement (meting 2026-11-05): "short of credits" seen before starting a job — once per mount.
+  const reported = useRef(false)
+  const short = have != null && have - cost < 0
+  useEffect(() => {
+    if (short && !reported.current) {
+      reported.current = true
+      posthog.capture("insufficient_credits_shown", { surface: "balance_line", have, cost })
+    }
+  }, [short, have, cost])
+
   if (have == null) return null
   const left = have - cost
   if (left >= 0) {

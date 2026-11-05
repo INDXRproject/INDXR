@@ -235,6 +235,7 @@ export function TranscriptCard({
 
     if ((credits ?? 0) < ragCost) {
       setShowInsufficientCreditsForRag(true);
+      posthog.capture("insufficient_credits_shown", { surface: "rag_export_card", have: credits ?? 0, cost: ragCost });
       return;
     }
     setShowInsufficientCreditsForRag(false);
