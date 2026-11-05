@@ -18,12 +18,15 @@ Alles hieronder hoort bij de redesign. Een punt is pas af als het in productie i
 ## E-mails (opmaak + logo)
 - [x] `apps/app/src/lib/mail.ts`: transactionele mails via Resend.
 - [x] `backend/mailer.py`: mails die de backend verstuurt.
-- [~] `docs/email-templates/confirm-signup.html` en `reset-password.html` (repo bijgewerkt; Supabase-dashboard volgt). Dit zijn de Supabase Auth-templates: in de repo bijwerken én in Supabase Dashboard → Auth → Email Templates zetten.
+- [x] `docs/email-templates/confirm-signup.html` en `reset-password.html`: de repo en de Supabase Auth-templates zijn bijgewerkt via de Management API op 2026-11-05. Verder niets in de auth-config veranderd: autoconfirm staat nog uit en Resend-SMTP is intact. Dit zijn de Supabase Auth-templates: in de repo bijwerken én in Supabase Dashboard → Auth → Email Templates zetten.
 - [x] Mailopmaak naar stijl B. Gekozen: de donkere kopbalk blijft, met het witte horizontale logo erin, omdat dat in donkere modus het veiligst is. Verder een rand van 2px, geen radius, een amber accent en een vierkante zwarte knop. Gerenderd in licht en donker. Nog testen in Gmail, Outlook en Apple Mail met een echte verzending.
 
 ## Credit-icoon
 - [x] `packages/shared/src/components/icons/HexagonCreditIcon.tsx` en `apps/app/public/credit-coin.png` vervangen door het gekozen icoon (C1–C4).
 - [ ] Pakketafbeeldingen `public/packages/*.webp` (schatkisten) vervangen door een vormgeving in stijl B.
+
+## Hexagon-motief uit het oude merk (meenemen in de pagina-redesign)
+- [ ] Er staan nog hexagon-achtergronden en -illustraties in de app en op de marketingsite: de lege staat en het patroon in de bibliotheek, het dashboard, berichten, credits, transactiegeschiedenis, `HexField`/`ArticleHero`/`ContentCard`, DocsShell, het artikeloverzicht en signup. Gevonden met `grep -ril hexagon` op 2026-11-05. Vervangen door motieven uit stijl B (raster, regels, blokken).
 
 ## Opruimen
 - [x] AlternativeTo-badge uit de footer halen (`packages/shared/src/components/Footer.tsx`, `/badges/alternativeto-badge-*.svg`). Besluit Khidr 2026-11-05. De `sameAs`-link in het Organization-schema blijft staan.
