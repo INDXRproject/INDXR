@@ -19,7 +19,7 @@ logger = logging.getLogger("indxr-mailer")
 # apps/app/src/lib/mail.ts renderBroadcastEmailHtml) — hex translations of tokens.css
 # OKLCH light-mode values, web-safe font stack (email clients strip custom fonts/CSS).
 _EMAIL_FONT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-_LOGO_URL = "https://app.indxr.ai/logo/indxr-wordmark-white-transparent.png"
+_LOGO_URL = "https://app.indxr.ai/logo/indxr-horizontal-white-transparent.png"
 _WITHDRAWAL_NOTICE = (
     "As confirmed at checkout, you asked us to start right away, so your 14-day right of "
     "withdrawal on this purchase ended once your transcript was delivered."
@@ -49,8 +49,8 @@ def _render_html(secure_links: list) -> str:
           <td style="padding:8px 32px;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td align="center" bgcolor="#141414" style="border-radius:8px;">
-                  <a href="{url}" target="_blank" style="display:block;padding:13px 28px;font-family:{_EMAIL_FONT};font-size:15px;font-weight:600;line-height:1.3;color:#ffffff;text-decoration:none;border-radius:8px;">Download &mdash; {filename}</a>
+                <td align="center" bgcolor="#141414" style="border:2px solid #141414;">
+                  <a href="{url}" target="_blank" style="display:block;padding:13px 28px;font-family:{_EMAIL_FONT};font-size:15px;font-weight:600;line-height:1.3;color:#ffffff;text-decoration:none;">Download &mdash; {filename}</a>
                 </td>
               </tr>
             </table>
@@ -70,15 +70,15 @@ def _render_html(secure_links: list) -> str:
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fcfaf7;margin:0;padding:0;">
   <tr>
     <td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #dbd7d2;border-radius:12px;overflow:hidden;font-family:{_EMAIL_FONT};">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:2px solid #141414;overflow:hidden;font-family:{_EMAIL_FONT};">
         <tr>
-          <td style="padding:24px 32px;background-color:#141414;border-top-left-radius:12px;border-top-right-radius:12px;">
-            <img src="{_LOGO_URL}" alt="INDXR.AI" height="28" style="height:28px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
+          <td style="padding:24px 32px;background-color:#141414;">
+            <img src="{_LOGO_URL}" alt="INDXR.AI" height="44" style="height:44px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
           </td>
         </tr>
         <tr>
           <td style="padding:16px 32px 0 32px;">
-            <div style="height:3px;width:44px;background-color:#d79628;border-radius:2px;font-size:0;line-height:0;">&nbsp;</div>
+            <div style="height:4px;width:44px;background-color:#ffb000;font-size:0;line-height:0;">&nbsp;</div>
           </td>
         </tr>
         <tr>
@@ -106,7 +106,7 @@ def _render_html(secure_links: list) -> str:
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
         <tr>
           <td align="center" style="padding:16px 32px;color:#77726d;font-family:{_EMAIL_FONT};font-size:12px;line-height:1.5;">
-            INDXR.AI &mdash; YouTube transcripts &amp; summaries
+            INDXR.AI &mdash; Transcripts, done properly.
           </td>
         </tr>
       </table>

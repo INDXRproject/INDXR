@@ -84,7 +84,7 @@ function renderBroadcastEmailHtml(params: {
   // (light dark) — these tell Gmail/Apple Mail that dark mode is handled and damp
   // aggressive full-inversion. Images are never inverted by clients, so the logo
   // sits on a genuine-dark (#141414, not pure #000 which Apple Mail auto-flips)
-  // header bar with the WHITE wordmark — readable in both light and dark mode.
+  // header bar with the WHITE horizontal logo (mark + wordmark, style B) — readable in both light and dark mode.
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -97,15 +97,15 @@ function renderBroadcastEmailHtml(params: {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fcfaf7;margin:0;padding:0;">
   <tr>
     <td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid #dbd7d2;border-radius:12px;overflow:hidden;font-family:${EMAIL_FONT};">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border:2px solid #141414;overflow:hidden;font-family:${EMAIL_FONT};">
         <tr>
-          <td style="padding:24px 32px;background-color:#141414;border-top-left-radius:12px;border-top-right-radius:12px;">
-            <img src="${logoUrl}" alt="INDXR.AI" height="28" style="height:28px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
+          <td style="padding:24px 32px;background-color:#141414;">
+            <img src="${logoUrl}" alt="INDXR.AI" height="44" style="height:44px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
           </td>
         </tr>
         <tr>
           <td style="padding:16px 32px 0 32px;">
-            <div style="height:3px;width:44px;background-color:#d79628;border-radius:2px;font-size:0;line-height:0;">&nbsp;</div>
+            <div style="height:4px;width:44px;background-color:#ffb000;font-size:0;line-height:0;">&nbsp;</div>
           </td>
         </tr>
         <tr>
@@ -124,7 +124,7 @@ function renderBroadcastEmailHtml(params: {
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
         <tr>
           <td align="center" style="padding:16px 32px;color:#77726d;font-family:${EMAIL_FONT};font-size:12px;line-height:1.5;">
-            INDXR.AI &mdash; YouTube transcripts &amp; summaries
+            INDXR.AI &mdash; Transcripts, done properly.
           </td>
         </tr>
       </table>
@@ -161,12 +161,12 @@ export async function sendBroadcastEmails(params: {
   const BATCH = 100
   const THROTTLE_MS = 600
 
-  // Absolute asset URLs (email can't resolve relative paths). WHITE wordmark on a
+  // Absolute asset URLs (email can't resolve relative paths). WHITE horizontal logo on a
   // dark header bar so it reads in both light and dark mode (images aren't
   // inverted by clients). Same env fallbacks the send-route uses.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.indxr.ai"
   const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL ?? "https://indxr.ai"
-  const logoUrl = `${appUrl}/logo/indxr-wordmark-white-transparent.png`
+  const logoUrl = `${appUrl}/logo/indxr-horizontal-white-transparent.png`
   const privacyUrl = `${marketingUrl}/privacy`
 
   for (let i = 0; i < params.recipients.length; i += BATCH) {

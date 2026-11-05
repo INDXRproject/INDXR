@@ -5,24 +5,24 @@ Stijl gekozen: **B "Poster"**. Wit, zwart, amber `#ffb000`, Space Grotesk + IBM 
 Alles hieronder hoort bij de redesign. Een punt is pas af als het in productie is gecontroleerd.
 
 ## Logo (nieuw, overal vervangen)
-- [ ] Logo-bestanden: horizontaal, alleen het beeldmerk en alleen het woordmerk, elk in zwart op wit, wit op zwart en transparant. SVG met de tekst omgezet naar paden, en PNG. Gaat naar `apps/*/public/logo/`.
-- [ ] Favicons in beide apps: `favicon.ico`, `favicon.svg`, `favicon-96x96.png`, `apple-touch-icon.png`, `web-app-manifest-192/512.png`, en `site.webmanifest` controleren.
-- [ ] `packages/shared/src/components/Header.tsx` (marketing-header).
-- [ ] `apps/app/src/components/AppTopbar.tsx` (app-kopbalk).
-- [ ] `apps/app/src/app/transcribe/page.tsx` (merkbalk van de balie).
-- [ ] `apps/app/src/app/unsubscribe/page.tsx`.
-- [ ] `apps/marketing/src/app/signup/page.tsx`.
+- [x] Logo-bestanden: horizontaal, alleen het beeldmerk en alleen het woordmerk, elk in zwart op wit, wit op zwart en transparant. SVG met de tekst omgezet naar paden, en PNG. Gaat naar `apps/*/public/logo/`.
+- [x] Favicons in beide apps: `favicon.ico`, `favicon.svg`, `favicon-96x96.png`, `apple-touch-icon.png`, `web-app-manifest-192/512.png`, en `site.webmanifest` controleren.
+- [x] `packages/shared/src/components/Header.tsx` (marketing-header).
+- [x] `apps/app/src/components/AppTopbar.tsx` (app-kopbalk).
+- [x] `apps/app/src/app/transcribe/page.tsx` (merkbalk van de balie).
+- [x] `apps/app/src/app/unsubscribe/page.tsx`.
+- [x] `apps/marketing/src/app/signup/page.tsx`.
 - [ ] OG-afbeelding `apps/marketing/public/og-default.jpg`, plus de openGraph-verwijzingen in de layouts.
 - [ ] Organization-schema op de homepage: `logo` wijst nu naar `apple-touch-icon.png`. Na de wissel controleren met de Rich Results Test.
 
 ## E-mails (opmaak + logo)
-- [ ] `apps/app/src/lib/mail.ts`: transactionele mails via Resend.
-- [ ] `backend/mailer.py`: mails die de backend verstuurt.
+- [x] `apps/app/src/lib/mail.ts`: transactionele mails via Resend.
+- [x] `backend/mailer.py`: mails die de backend verstuurt.
 - [ ] `docs/email-templates/confirm-signup.html` en `reset-password.html`. Dit zijn de Supabase Auth-templates: in de repo bijwerken én in Supabase Dashboard → Auth → Email Templates zetten.
 - [ ] Mailopmaak naar stijl B: witte achtergrond, zwarte tekst, amber knop met zwarte rand. Testen in Gmail (web en mobiel), Outlook en Apple Mail.
 
 ## Credit-icoon
-- [ ] `packages/shared/src/components/icons/HexagonCreditIcon.tsx` en `apps/app/public/credit-coin.png` vervangen door het gekozen icoon (C1–C4).
+- [x] `packages/shared/src/components/icons/HexagonCreditIcon.tsx` en `apps/app/public/credit-coin.png` vervangen door het gekozen icoon (C1–C4).
 - [ ] Pakketafbeeldingen `public/packages/*.webp` (schatkisten) vervangen door een vormgeving in stijl B.
 
 ## Opruimen
