@@ -95,29 +95,31 @@
   --tabbar-h: 0rem;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
+  /* Stijl B (besluit Khidr 2026-11-05): white paper, ink #111, amber #ffb000 (fill behind ink text).
+     Neutral greys (chroma 0) instead of the old warm hue-70 tint. */
   /* Surfaces */
-  --bg: oklch(0.985 0.004 70);
-  --bg-subtle: oklch(0.972 0.005 70);
+  --bg: oklch(1 0 0);
+  --bg-subtle: oklch(0.970 0 0);
   --surface: oklch(1 0 0);
-  --surface-elevated: oklch(0.995 0.003 70);
-  --surface-sunken: oklch(0.955 0.006 70);
+  --surface-elevated: oklch(1 0 0);
+  --surface-sunken: oklch(0.961 0 0);
   /* Borders */
-  --border-subtle: oklch(0.925 0.006 70);
-  --border: oklch(0.880 0.008 70);
-  --border-strong: oklch(0.780 0.010 70);
+  --border-subtle: oklch(0.915 0 0);
+  --border: oklch(0.840 0 0);
+  --border-strong: oklch(0.178 0 0);
   /* Foreground */
-  --fg-muted: oklch(0.555 0.010 70);
-  --fg-subtle: oklch(0.420 0.012 70);
-  --fg: oklch(0.260 0.010 70);
-  --fg-strong: oklch(0.165 0.008 70);
-  --fg-on-accent: oklch(0.985 0.004 70);
+  --fg-muted: oklch(0.520 0 0);
+  --fg-subtle: oklch(0.420 0 0);
+  --fg: oklch(0.205 0 0);
+  --fg-strong: oklch(0.178 0 0);
+  --fg-on-accent: oklch(0.178 0 0);
   /* Accent */
-  --accent: oklch(0.720 0.140 75);
-  --accent-hover: oklch(0.680 0.145 75);
-  --accent-active: oklch(0.620 0.140 75);
-  --accent-subtle: oklch(0.955 0.030 80);
-  --accent-fg: oklch(0.380 0.090 60);
-  --accent-ring: oklch(0.720 0.140 75 / 0.45);
+  --accent: oklch(0.812 0.170 76);
+  --accent-hover: oklch(0.773 0.163 76);
+  --accent-active: oklch(0.723 0.152 76);
+  --accent-subtle: oklch(0.966 0.040 88);
+  --accent-fg: oklch(0.428 0.090 76);
+  --accent-ring: oklch(0.812 0.170 76 / 0.55);
   /* Inline link text. Distinct from --accent (a mid-amber FILL behind --fg-on-accent on buttons):
      --accent as link text on --bg is only 2.43:1 in light, below WCAG AA. --link is a darker amber
      that clears AA on --bg (measured 5.21:1 light) while staying recognisably the brand hue. Buttons
@@ -155,17 +157,18 @@
   --teal: oklch(0.470 0.150 185);
   --teal-subtle: oklch(0.935 0.050 185);
   /* Typography */
-  --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
-  /* Radius */
-  --radius-sm: 0.25rem;
-  --radius: 0.5rem;
-  --radius-lg: 0.75rem;
-  /* Shadows (warm-tinted in light) */
-  --shadow-xs: 0 1px 1px oklch(0.20 0.010 70 / 0.04);
-  --shadow-sm: 0 1px 2px oklch(0.20 0.010 70 / 0.06), 0 1px 1px oklch(0.20 0.010 70 / 0.04);
-  --shadow-md: 0 2px 4px oklch(0.20 0.010 70 / 0.06), 0 4px 8px oklch(0.20 0.010 70 / 0.05);
-  --shadow-lg: 0 4px 12px oklch(0.20 0.010 70 / 0.08), 0 12px 24px oklch(0.20 0.010 70 / 0.06);
+  /* Radius — stijl B (2026-11-06): hard, square corners. rounded-full (pills/avatars) is unaffected. */
+  --radius-sm: 0;
+  --radius: 0;
+  --radius-lg: 0;
+  /* Shadows — stijl B: no soft drop shadows; separation comes from borders. Floating layers
+     (popovers, dialogs) get a hard 2px ink outline instead of a blur. */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 0 0 1px var(--border);
+  --shadow-lg: 0 0 0 2px var(--border-strong);
   --shadow-focus: 0 0 0 3px var(--accent-ring);
   /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -186,32 +189,32 @@
 
 [data-theme="dark"] {
   /* Surfaces */
-  --bg: oklch(0.165 0.008 70);
-  --bg-subtle: oklch(0.195 0.009 70);
-  --surface: oklch(0.215 0.010 70);
-  --surface-elevated: oklch(0.250 0.011 70);
-  --surface-sunken: oklch(0.140 0.007 70);
+  --bg: oklch(0.160 0 0);
+  --bg-subtle: oklch(0.190 0 0);
+  --surface: oklch(0.205 0 0);
+  --surface-elevated: oklch(0.240 0 0);
+  --surface-sunken: oklch(0.135 0 0);
   /* Borders */
-  --border-subtle: oklch(0.275 0.011 70);
-  --border: oklch(0.330 0.012 70);
-  --border-strong: oklch(0.420 0.013 70);
+  --border-subtle: oklch(0.270 0 0);
+  --border: oklch(0.340 0 0);
+  --border-strong: oklch(0.920 0 0);
   /* Foreground */
-  --fg-muted: oklch(0.625 0.012 70);
-  --fg-subtle: oklch(0.730 0.010 70);
-  --fg: oklch(0.880 0.008 70);
-  --fg-strong: oklch(0.965 0.006 70);
-  --fg-on-accent: oklch(0.165 0.008 70);
+  --fg-muted: oklch(0.640 0 0);
+  --fg-subtle: oklch(0.750 0 0);
+  --fg: oklch(0.900 0 0);
+  --fg-strong: oklch(0.970 0 0);
+  --fg-on-accent: oklch(0.178 0 0);
   /* Accent */
-  --accent: oklch(0.760 0.150 78);
-  --accent-hover: oklch(0.800 0.145 78);
-  --accent-active: oklch(0.715 0.150 78);
-  --accent-subtle: oklch(0.290 0.060 78);
+  --accent: oklch(0.812 0.170 76);
+  --accent-hover: oklch(0.850 0.150 78);
+  --accent-active: oklch(0.773 0.163 76);
+  --accent-subtle: oklch(0.300 0.065 76);
   --accent-fg: oklch(0.880 0.110 80);
-  --accent-ring: oklch(0.760 0.150 78 / 0.55);
+  --accent-ring: oklch(0.812 0.170 76 / 0.55);
   /* Inline link text (see light block). In dark, --accent already clears AA as text on --bg
      (measured 8.79:1), so --link mirrors it; hover lifts lightness like --accent-hover. */
-  --link: oklch(0.760 0.150 78);
-  --link-hover: oklch(0.800 0.145 78);
+  --link: oklch(0.812 0.170 76);
+  --link-hover: oklch(0.850 0.150 78);
   /* Semantic — success */
   --success: oklch(0.700 0.150 150);
   --success-subtle: oklch(0.290 0.060 150);

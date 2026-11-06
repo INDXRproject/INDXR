@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@indxr/shared/contexts/AuthContext";
 import { PostHogProvider } from "@indxr/shared/providers/PostHogProvider";
@@ -10,9 +10,10 @@ import { regionFromCountry } from "@indxr/shared/lib/consent";
 import { createClient } from "@indxr/shared/utils/supabase/server";
 import { headers } from "next/headers";
 
-const ibmPlexSans = IBM_Plex_Sans({
+// Stijl B (2026-11-06): Space Grotesk for UI + headings, IBM Plex Mono for code/labels.
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-ibm-plex-sans",
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
@@ -74,7 +75,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} antialiased`}
+        className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} antialiased`}
       >
         <a
           href="#main-content"

@@ -266,10 +266,11 @@ Browserwerk voor INDXR (Google Ads, Search Console, PostHog, enz.) gebeurt uitsl
 - Token-bronbestand: `apps/app/src/app/styles/tokens.css` en `apps/marketing/src/app/styles/tokens.css` (identiek)
 - Alle waarden in **OKLCH** — geen hex in de token-files
 - Token-namen: `--bg`, `--bg-subtle`, `--surface`, `--surface-elevated`, `--surface-sunken`, `--border`, `--border-subtle`, `--border-strong`, `--fg`, `--fg-muted`, `--fg-subtle`, `--fg-strong`, `--fg-on-accent`, `--accent`, `--accent-hover`, `--accent-subtle`, `--link`, `--link-hover`, `--error`, `--warning`, `--success` (plus `-subtle`/`-fg`-varianten)
-- `--accent` is een **vlakvulling** (mid-amber, bedoeld ACHTER `--fg-on-accent` op knoppen). Voor **inline-linktekst** gebruik je `--link`/`--link-hover` — `--accent` als tekst op `--bg` haalt maar 2.43:1 in light (onder WCAG AA); `--link` is een donkerder amber die AA haalt (5.21:1 light, dark = `--accent` 8.79:1). Prose-links centraal via `.prose-content a` in beide `globals.css`. Zie [[docs/LESSONS.md]] 2026-09-07.
+- `--accent` is een **vlakvulling** (amber `#ffb000`, bedoeld ACHTER `--fg-on-accent` = inkt op knoppen). Voor **inline-linktekst** gebruik je `--link`/`--link-hover` — `--accent` als tekst op `--bg` haalt maar 2.43:1 in light (onder WCAG AA); `--link` is een donkerder amber die AA haalt (5.21:1 light, dark = `--accent` 8.79:1). Prose-links centraal via `.prose-content a` in beide `globals.css`. Zie [[docs/LESSONS.md]] 2026-09-07.
 - `@theme inline`-blok bridget Tailwind naar de custom properties (`--color-bg: var(--bg)` etc.)
 - Dark mode: `[data-theme="dark"]`-selector in tokens.css — dark-variant `@custom-variant dark (&:is([data-theme="dark"] *))`; themewissel via `ThemeProvider` uit `packages/shared`
-- Fonts: **IBM Plex Sans** + **IBM Plex Mono** via `next/font/google`, variabelen `--font-ibm-plex-sans` / `--font-ibm-plex-mono`
+- **Stijl B** (besluit Khidr 2026-11-05, live 2026-11-06): wit papier, inkt `#111` (`--fg-strong`/`--border-strong`), amber `#ffb000` (`--accent`) als vlak met **inkt-tekst** erop (`--fg-on-accent` is nu donker), neutrale grijzen (chroma 0), radius 0, geen zachte schaduwen. Zie `docs/marketing/redesign/rollout-checklist.md`.
+- Fonts: **Space Grotesk** + **IBM Plex Mono** via `next/font/google`, variabelen `--font-space-grotesk` / `--font-ibm-plex-mono`
 - Geen glassmorphism (`backdrop-blur` verwijderd)
 
 ### Tiptap editors

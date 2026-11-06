@@ -14,7 +14,7 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-surface-elevated text-fg-subtle [a&]:hover:bg-surface-elevated",
         destructive:
-          "border-transparent bg-error text-fg-on-accent [a&]:hover:bg-error focus-visible:ring-error/20 dark:focus-visible:ring-error/40",
+          "border-transparent bg-error text-white [a&]:hover:bg-error focus-visible:ring-error/20 dark:focus-visible:ring-error/40",
         outline:
           "border border-border text-fg-subtle [a&]:hover:bg-accent [a&]:hover:text-fg-on-accent [a&]:hover:border-transparent",
       },

@@ -77,7 +77,7 @@ export function Header() {
   // a fix — the cover has to be structural. Sacrifice: the header no longer floats transparently over
   // the top of the homepage hero; it is a solid band at all scroll positions.
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border bg-bg">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b-2 border-border-strong bg-bg">
       <div className="container flex h-16 items-center px-4 mx-auto">
 
         {/* Logo — left */}
@@ -110,13 +110,13 @@ export function Header() {
 
         {/* Desktop nav — centered */}
         <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
-          <a href={marketingHref('/pricing')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-accent">
+          <a href={marketingHref('/pricing')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-fg-strong">
             Pricing
           </a>
-          <a href={marketingHref('/docs')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-accent">
+          <a href={marketingHref('/docs')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-fg-strong">
             Docs
           </a>
-          <a href={marketingHref('/articles')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-accent">
+          <a href={marketingHref('/articles')} className="text-sm font-medium text-fg-subtle transition-colors hover:text-fg-strong">
             Articles
           </a>
           {/* "Try it free" is a signup nudge — hide it for a logged-in user, who already has "Go to app"

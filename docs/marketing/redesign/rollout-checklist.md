@@ -37,3 +37,8 @@ Alles hieronder hoort bij de redesign. Een punt is pas af als het in productie i
 - [ ] Google OAuth-toestemmingsscherm: logo.
 - [ ] Externe profielen met het oude logo (Khidr 2026-11-05: geen prio, maar niet vergeten): de afbeeldingen op AlternativeTo, Product Hunt, de X-pagina en het YouTube-kanaal (avatar en banner).
 - [ ] Resend: weergavenaam en logo van de afzender, indien ingesteld.
+
+## Pagina-redesign (bouwvolgorde uit audit-2026-11-04)
+- [x] **Fundament (6-11):** tokens in beide apps naar stijl B (wit/inkt/amber `#ffb000`, neutrale grijzen, radius 0, geen zachte schaduwen, `--fg-on-accent` = inkt), Space Grotesk i.p.v. IBM Plex Sans, header met 2px inktlijn, destructieve knop/badge witte tekst op rood.
+- [x] **Home (6-11):** geen foto meer; grote kop + mono-label, voor/na-blok (JFK), live tool, 01/02/03, video, "wat mensen meebrengen", "meer dan de woorden", bibliotheek (full-text search), prijsblok "Pay for minutes. Not months.". `HeroImage` + `public/hero/*` verwijderd (alleen home gebruikte ze).
+- [ ] Volgende blokken: pricing (schatkisten eruit) → artikel-template (TOC + CTA) → docs (placeholder-hexagons) → about → app (bibliotheek + tool volgens canvas "B — app"; `rounded-xl/2xl`-klassen die niet via `--radius` lopen) → footer → hexagon-motieven opruimen.

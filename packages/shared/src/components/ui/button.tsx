@@ -11,7 +11,7 @@ const buttonVariants = cva(
       variant: {
         default: "bg-accent text-fg-on-accent hover:bg-accent-hover active:scale-[0.97]",
         destructive:
-          "bg-error text-fg-on-accent hover:bg-error/90 focus-visible:ring-error/20 dark:bg-error/60 dark:focus-visible:ring-error/40",
+          "bg-error text-white hover:bg-error/90 focus-visible:ring-error/20 dark:bg-error/60 dark:focus-visible:ring-error/40",
         outline:
           "border border-border text-fg-subtle hover:bg-accent hover:text-fg-on-accent hover:border-transparent dark:border-border dark:bg-surface-elevated/30",
         secondary:
