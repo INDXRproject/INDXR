@@ -1,12 +1,5 @@
-// Article header. When the article has an editorial photo it shows a full-width 21:9 band
-// (srcset 800/1440, high priority as the LCP element) with the category eyebrow + title below
-// — so the photo carried on the /articles card is also shown on the article itself. The band
-// is 21:9 (not 16:9) so it reads as a strip and doesn't push the title far down; it stays
-// within the article column (never full-bleed — our mid-tone sand images would dominate as a
-// full-width band). When no photo exists the header falls back to the seeded hexagon field.
-// Categories carry no colour of their own: the eyebrow is always the brand accent.
+// Article header (stijl B). Editorial photo, when present, is the LCP element (priority, 800/1440).
 import { EditorialImage } from "./EditorialImage"
-import { HexField } from "./HexField"
 import { editorialAlt, hasEditorialImage } from "@/lib/editorialAlts"
 
 export type ArticleCategory = "Troubleshooting" | "Export Formats" | "Workflows" | "Deep Dives" | "Reference"
@@ -25,54 +18,40 @@ export function ArticleHero({
   title,
   category,
   slug,
+  readingMinutes,
 }: {
   title: string
   category?: ArticleCategory
   slug?: string
+  readingMinutes?: number
 }) {
+  // Stijl B (2026-11-06): mono label "Category · N min read" + big title; the editorial photo (when
+  // there is one) sits below as a ruled 21:9 band. No hexagon fallback any more.
   const eyebrowLabel = (category && CATEGORY_EYEBROW[category]) ?? "Article"
-  const eyebrow = (
-    <span className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">
-      {eyebrowLabel}
-    </span>
-  )
-  const heading = (
-    <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fg)]">{title}</h1>
-  )
-
-  if (hasEditorialImage(slug)) {
-    return (
-      <header className="mb-8">
-        {/* 21:9 band; article column is ~720px so 800 covers 1x, 1440 covers 2x. */}
-        <EditorialImage
-          slug={slug!}
-          alt={editorialAlt(slug!)}
-          widths={[800, 1440]}
-          sizes="(min-width: 768px) 720px, 92vw"
-          aspectClass="aspect-[21/9]"
-          priority
-          className="mb-6"
-        />
-        {eyebrow}
-        {heading}
-      </header>
-    )
-  }
-
-  // Fallback: seeded hexagon banner (no photo for this article).
   return (
-    <div
-      className="relative overflow-hidden rounded-xl border border-[var(--border)] px-6 sm:px-10 py-10 sm:py-14 mb-8"
-      style={{
-        background:
-          "radial-gradient(120% 160% at 12% 0%, color-mix(in oklch, var(--accent) 12%, transparent), transparent 55%)",
-      }}
-    >
-      <HexField seed={slug ?? title} color="var(--accent)" fade />
-      <div className="relative">
-        {eyebrow}
-        {heading}
-      </div>
-    </div>
+    <header className="mb-6">
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]">
+        {eyebrowLabel}
+        {readingMinutes ? ` · ${readingMinutes} min read` : ""}
+      </p>
+      <h1 className="mt-4 max-w-4xl text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] sm:text-6xl">
+        {title}
+      </h1>
+      {hasEditorialImage(slug) && (
+        <div className="mt-8 max-w-4xl border-2 border-[var(--fg-strong)]">
+          {/* 21:9 band; column is ~900px so 800/1440 cover 1x/2x. */}
+          <EditorialImage
+            slug={slug!}
+            alt={editorialAlt(slug!)}
+            widths={[800, 1440]}
+            sizes="(min-width: 1024px) 900px, 92vw"
+            aspectClass="aspect-[21/9]"
+            priority
+            rounded="rounded-none"
+            bordered={false}
+          />
+        </div>
+      )}
+    </header>
   )
 }

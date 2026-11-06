@@ -1,7 +1,4 @@
 import type { Metadata } from "next"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
-import { PageHeader } from "@indxr/shared/components/PageHeader"
-import { SectionLabel } from "@indxr/shared/components/SectionLabel"
 import { ContentCard } from "@/components/content/ContentCard"
 import { EditorialImage } from "@/components/content/EditorialImage"
 import { editorialAlt, hasEditorialImage } from "@/lib/editorialAlts"
@@ -57,22 +54,24 @@ const CARD_SIZES = "(min-width: 1024px) 325px, (min-width: 640px) 48vw, 92vw"
 
 export default function ArticlesPage() {
   return (
-    <div className="relative min-h-screen bg-[var(--bg)]">
-      {/* Same very-light honeycomb page texture as the Library, so the mid-tone photos sit on a
-          surface instead of floating on flat near-white / near-black. */}
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-
-      <main className="relative container mx-auto px-4 pb-20 max-w-5xl">
-        <PageHeader
-          eyebrow="Library"
-          title="Articles"
-          lead="Guides, tutorials, and reference on transcribing audio, video and YouTube — formats, workflows, troubleshooting, and AI transcription."
-        />
+    <div className="min-h-screen bg-[var(--bg)]">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-[104px] sm:px-6 lg:pt-[120px]">
+        {/* Stijl B (2026-11-06): mono label + big title, no page texture. */}
+        <header className="mb-14 border-b-2 border-[var(--fg-strong)] pb-10">
+          <p className="font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]">Articles</p>
+          <h1 className="mt-4 text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl">
+            Guides for everything you transcribe.
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--fg-subtle)]">
+            Guides, tutorials, and reference on transcribing audio, video and YouTube — formats, workflows,
+            troubleshooting, and AI transcription.
+          </p>
+        </header>
 
         <div className="space-y-14">
           {categories.map((category) => (
             <section key={category}>
-              <SectionLabel label={CATEGORY_LABEL[category] ?? category} />
+              <h2 className="mb-5 font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]">{CATEGORY_LABEL[category] ?? category}</h2>
               <ul className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {articles
                   .filter((a) => a.category === category)
@@ -110,7 +109,7 @@ export default function ArticlesPage() {
         {/* Comparisons live in the separate /alternatives namespace (ADR-105), not as articles. Linked
             here as a distinct line rather than a card so the article grid stays purely editorial while
             the comparison page still gets an inbound link from this well-crawled hub. */}
-        <div className="mt-14 border-t border-[var(--border)] pt-8 text-sm text-[var(--fg-muted)]">
+        <div className="mt-14 border-t-2 border-[var(--fg-strong)] pt-8 text-sm text-[var(--fg-muted)]">
           Comparing INDXR with another tool?{" "}
           <a href="/alternatives/otter-ai" className="text-[var(--link)] underline-offset-2 hover:underline">
             INDXR vs Otter.ai

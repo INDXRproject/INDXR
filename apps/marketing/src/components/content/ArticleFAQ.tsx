@@ -9,10 +9,10 @@ import { ChevronDown } from "lucide-react"
  */
 export function ArticleFAQ({ faqs }: { faqs: Array<{ q: string; a: ReactNode }> }) {
   return (
-    <div className="divide-y divide-[var(--border)] border-y border-[var(--border)]">
+    <div className="divide-y-2 divide-[var(--fg-strong)] border-y-2 border-[var(--fg-strong)]">
       {faqs.map(({ q, a }, i) => (
         <details key={i} className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-medium text-[var(--fg)] [&::-webkit-details-marker]:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-bold text-[var(--fg-strong)] [&::-webkit-details-marker]:hidden">
             <span>{q}</span>
             <ChevronDown
               aria-hidden

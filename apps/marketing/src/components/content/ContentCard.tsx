@@ -21,11 +21,11 @@ export function ContentCard({
   return (
     <Link
       href={href}
-      className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] transition-colors hover:border-[var(--accent)]"
+      className="group block h-full overflow-hidden border-2 border-[var(--fg-strong)] bg-[var(--bg)] transition-colors hover:bg-[var(--bg-subtle)]"
     >
       {media}
-      <div className="p-4">
-        <span className="block text-sm font-medium text-[var(--fg)] transition-colors group-hover:text-[var(--accent)]">
+      <div className="border-t-2 border-[var(--fg-strong)] p-4">
+        <span className="block text-base font-bold text-[var(--fg-strong)] underline-offset-4 group-hover:underline">
           {title}
         </span>
         {description && (

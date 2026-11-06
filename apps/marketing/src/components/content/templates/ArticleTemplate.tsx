@@ -1,9 +1,7 @@
 import type { ReactNode } from "react"
 import { JsonLd } from "@/components/seo/JsonLd"
-import { AuthorCard } from "@/components/content/AuthorCard"
-import { ArticleHero, type ArticleCategory } from "@/components/content/ArticleHero"
-import { ArticleFAQ } from "@/components/content/ArticleFAQ"
-import { RelatedArticles } from "@/components/content/RelatedArticles"
+import { type ArticleCategory } from "@/components/content/ArticleHero"
+import { ArticleShell } from "@/components/content/ArticleShell"
 import type { Author } from "@/lib/authors"
 import { reactNodeToText } from "@/lib/reactNodeToText"
 import { articlesBreadcrumb } from "@/lib/breadcrumbSchema"
@@ -70,45 +68,18 @@ export function ArticleTemplate({
   return (
     <>
       <JsonLd schemas={schemas} />
-      <div className="container mx-auto px-6 py-8 max-w-3xl">
-      <article className="max-w-3xl py-12">
-        <ArticleHero title={title} category={category} slug={slug} />
-        <AuthorCard author={author} publishedAt={publishedAt} updatedAt={updatedAt} />
-        <div className="mt-8 prose-content text-[var(--fg-subtle)] leading-relaxed">
-          {children}
-        </div>
-        {faqs.length > 0 && (
-          <section className="mt-12 border-t border-[var(--border)] pt-10">
-            <h2 className="text-xl font-semibold text-[var(--fg)] mb-6">
-              Frequently Asked Questions
-            </h2>
-            <ArticleFAQ faqs={faqs} />
-          </section>
-        )}
-        {sources.length > 0 && (
-          <section className="mt-10 border-t border-[var(--border)] pt-8">
-            <h2 className="text-sm font-semibold text-[var(--fg-muted)] uppercase tracking-wide mb-3">
-              Sources
-            </h2>
-            <ul className="space-y-1">
-              {sources.map(({ label, url }, i) => (
-                <li key={i} className="text-sm">
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[var(--link)] hover:underline"
-                  >
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-        <RelatedArticles slug={slug} />
-      </article>
-      </div>
+      <ArticleShell
+        title={title}
+        category={category}
+        slug={slug}
+        author={author}
+        publishedAt={publishedAt}
+        updatedAt={updatedAt}
+        faqs={faqs}
+        sources={sources}
+      >
+        {children}
+      </ArticleShell>
     </>
   )
 }
