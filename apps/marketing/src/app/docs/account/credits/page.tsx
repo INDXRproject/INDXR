@@ -48,7 +48,7 @@ export default function DocsCreditsPage() {
             { label: "Credits" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Credits</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Credits</h1>
         <DefinitionLeadOpening>
           Credits are how you pay for AI work in INDXR. Reading a video&apos;s existing captions is
           always free; the things that cost credits are AI transcription and AI summaries. One credit is

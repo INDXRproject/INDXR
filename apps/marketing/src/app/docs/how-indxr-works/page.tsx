@@ -50,7 +50,7 @@ export default function DocsOverviewPage() {
             { label: "How INDXR works" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">How INDXR works</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">How INDXR works</h1>
         <DefinitionLeadOpening>
           INDXR gets text out of a video in one of two ways: it copies the caption track the video
           already carries, or it sends the audio to a speech recognition model and writes the

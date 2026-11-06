@@ -50,7 +50,7 @@ export default function DocsPlaylistsPage() {
             { label: "Playlists" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Playlists</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Playlists</h1>
         <DefinitionLeadOpening>
           A playlist job transcribes a whole YouTube playlist in one go. You paste the playlist link,
           pick which videos to include and how to transcribe each one, and INDXR works through them in

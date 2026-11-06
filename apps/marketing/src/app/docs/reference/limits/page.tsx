@@ -54,7 +54,7 @@ export default function DocsLimitsPage() {
             { label: "Limits" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Limits</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Limits</h1>
         <DefinitionLeadOpening>
           INDXR enforces a few hard limits: AI transcription up to {MAX_TRANSCRIPTION_HOURS} hours per
           file, uploads up to {UPLOAD_MAX_FILE_MB} MB, playlists up to {MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job (a job

@@ -54,7 +54,7 @@ export default function DocsCsvPage() {
             { label: "CSV" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">CSV</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">CSV</h1>
         <DefinitionLeadOpening>
           The CSV export turns your transcript into a spreadsheet — one row per segment — so you can
           sort it, count words, filter by time, or load it into Excel, Google Sheets, or pandas. Each

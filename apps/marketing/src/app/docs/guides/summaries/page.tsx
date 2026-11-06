@@ -46,7 +46,7 @@ export default function DocsSummariesPage() {
             { label: "Summaries" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Summaries</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Summaries</h1>
         <DefinitionLeadOpening>
           A summary is an AI-written breakdown of a transcript: a short overview of the whole video,
           followed by chapters — each with its own heading, a clickable timestamp that jumps the player

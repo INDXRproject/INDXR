@@ -38,11 +38,11 @@ export function AnchorHeading({ as = "h2", children, id }: AnchorHeadingProps) {
 
   const sizeClass =
     as === "h2"
-      ? "text-xl font-semibold mt-10 mb-3"
-      : "text-base font-semibold mt-6 mb-2"
+      ? "text-2xl font-bold tracking-[-0.02em] mt-12 mb-3 sm:text-[1.75rem]"
+      : "text-lg font-bold mt-7 mb-2"
 
   return (
-    <Tag id={anchorId} className={`group scroll-mt-24 text-[var(--fg)] ${sizeClass}`}>
+    <Tag id={anchorId} className={`group scroll-mt-24 text-[var(--fg-strong)] ${sizeClass}`}>
       <a
         href={`#${anchorId}`}
         onClick={handleCopy}

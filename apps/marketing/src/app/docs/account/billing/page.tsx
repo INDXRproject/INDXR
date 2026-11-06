@@ -39,7 +39,7 @@ export default function DocsBillingPage() {
             { label: "Billing and invoices" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Billing and invoices</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Billing and invoices</h1>
         <DefinitionLeadOpening>
           You buy credits in one-time packages — there are no subscriptions and nothing recurring. Stripe,
           our payment processor, handles the payment, and you can download a proper VAT invoice — VAT being

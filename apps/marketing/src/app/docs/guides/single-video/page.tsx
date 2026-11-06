@@ -45,7 +45,7 @@ export default function DocsSingleVideoPage() {
             { label: "Single video" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Single video</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Single video</h1>
         <DefinitionLeadOpening>
           The single-video tab turns one YouTube link into a transcript. Paste the URL and INDXR reads
           the captions YouTube already has — the text track that plays as subtitles — usually in a

@@ -110,7 +110,7 @@ export default function DocsJsonPage() {
             { label: "JSON / RAG JSON" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">JSON &amp; RAG JSON</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">JSON &amp; RAG JSON</h1>
         <DefinitionLeadOpening>
           INDXR exports two kinds of JSON: <strong>standard JSON</strong> — the raw segments with a
           metadata wrapper, free — and <strong>RAG JSON</strong> — the transcript already cut into

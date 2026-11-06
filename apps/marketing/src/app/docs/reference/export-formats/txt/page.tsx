@@ -50,7 +50,7 @@ export default function DocsTxtPage() {
             { label: "Plain text (TXT)" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Plain text (TXT)</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Plain text (TXT)</h1>
         <DefinitionLeadOpening>
           The TXT export gives you the transcript as plain text in two variants: continuous
           paragraphs, or one line per segment — each short, timed chunk the transcript is split into —

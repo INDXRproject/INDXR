@@ -42,7 +42,7 @@ export default function DocsAccuracyPage() {
             { label: "Accuracy and languages" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Accuracy and languages</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Accuracy and languages</h1>
         <DefinitionLeadOpening>
           INDXR produces text two ways — by reading a video&apos;s existing captions, or by
           transcribing the audio — and how accurate the result is depends on which you pick. At

@@ -54,7 +54,7 @@ export function InPageTOC() {
 
   return (
     <nav aria-label="On this page">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)] mb-3">
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)] mb-3 border-t-2 border-[var(--fg-strong)] pt-4">
         On this page
       </p>
       <ul className="border-l border-[var(--border)]">
@@ -67,7 +67,7 @@ export function InPageTOC() {
                 "block -ml-px border-l-2 py-1 text-sm transition-colors",
                 h.level === 3 ? "pl-6" : "pl-3",
                 activeId === h.id
-                  ? "border-[var(--accent)] text-[var(--accent)] font-medium"
+                  ? "border-[var(--accent)] text-[var(--fg-strong)] font-bold"
                   : "border-transparent text-[var(--fg-muted)] hover:text-[var(--fg)] hover:border-[var(--border-strong)]"
               )}
             >

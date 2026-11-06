@@ -46,7 +46,7 @@ export default function DocsUploadsPage() {
             { label: "Audio & video uploads" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Audio &amp; video uploads</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Audio &amp; video uploads</h1>
         <DefinitionLeadOpening>
           Uploads let you transcribe a file you already have — a recorded call, a podcast, an interview —
           instead of a YouTube link. You pick a file, INDXR sends it to the transcription service, and

@@ -40,7 +40,7 @@ export default function DocsLibraryPage() {
             { label: "Library" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Library</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Library</h1>
         <DefinitionLeadOpening>
           Your library is where every transcript you make while signed in is saved. It&apos;s the home
           for your work — one place to find, edit, and organise transcripts long after you closed the

@@ -41,10 +41,10 @@ export function DocsSidebar() {
             <button
               onClick={() => toggleSection(section.label)}
               className={cn(
-                "w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-[var(--radius-sm)] transition-colors cursor-pointer",
+                "w-full flex items-center justify-between px-3 py-1.5 font-mono text-[11px] font-medium transition-colors cursor-pointer",
                 hasActivePage
-                  ? "text-[var(--fg)]"
-                  : "text-[var(--fg-subtle)] hover:text-[var(--fg)]"
+                  ? "text-[var(--fg-strong)]"
+                  : "text-[var(--fg-subtle)] hover:text-[var(--fg-strong)]"
               )}
               aria-expanded={isOpen}
             >
@@ -69,10 +69,10 @@ export function DocsSidebar() {
                         href={page.href}
                         style={{ paddingLeft: `calc(0.75rem + ${indentPx}px)` }}
                         className={cn(
-                          "block py-1.5 pr-3 text-sm rounded-[var(--radius-sm)] transition-colors",
+                          "block py-1.5 pr-3 text-sm transition-colors",
                           isActive
-                            ? "bg-[var(--accent-subtle)] text-[var(--accent)] font-medium"
-                            : "text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)]"
+                            ? "bg-[var(--accent)] text-[var(--fg-on-accent)] font-bold"
+                            : "text-[var(--fg-subtle)] hover:text-[var(--fg-strong)] hover:bg-[var(--bg-subtle)]"
                         )}
                         aria-current={isActive ? "page" : undefined}
                       >

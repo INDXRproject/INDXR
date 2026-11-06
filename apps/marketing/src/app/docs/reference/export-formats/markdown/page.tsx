@@ -59,7 +59,7 @@ export default function DocsMarkdownPage() {
             { label: "Markdown" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Markdown</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Markdown</h1>
         <DefinitionLeadOpening>
           The Markdown export is a <code>.md</code> file: an optional YAML frontmatter block with the
           video&apos;s metadata, an <code>H1</code> title, then the transcript as paragraphs — or, with

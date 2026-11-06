@@ -36,7 +36,7 @@ export default function DocsSettingsPage() {
             { label: "Settings" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Settings</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Settings</h1>
         <DefinitionLeadOpening>
           Settings is where you adjust how INDXR looks and behaves for you. Most of it you can leave on
           the defaults; the two worth knowing about are the RAG chunk size — which only matters if you

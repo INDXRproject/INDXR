@@ -58,7 +58,7 @@ export default function DocsSrtPage() {
             { label: "SRT" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">SRT</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">SRT</h1>
         <DefinitionLeadOpening>
           SRT — short for SubRip — is the subtitle format almost every video player and editor reads.
           An SRT export turns your transcript into timed, numbered subtitle cues you can drop straight

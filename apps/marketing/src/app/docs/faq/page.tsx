@@ -219,7 +219,7 @@ export default function DocsFaqPage() {
             { label: "FAQ" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Frequently asked questions</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Frequently asked questions</h1>
         <DefinitionLeadOpening>
           Short answers to the questions people ask before their first transcript. Each one points to
           the page that carries the full answer.

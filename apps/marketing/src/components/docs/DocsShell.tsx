@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { DocsSidebar } from "./DocsSidebar"
 import { DocsMobileNav } from "./DocsMobileNav"
 import { InPageTOC } from "./InPageTOC"
@@ -16,16 +15,12 @@ interface DocsShellProps {
 export function DocsShell({ children }: DocsShellProps) {
   return (
     <div className="relative flex min-h-screen bg-[var(--bg)] pt-16">
-      {/* Same very-light honeycomb texture as the Library and the /articles + /docs hubs, so
-          docs sit on one surface. Behind the columns; the sidebar's own surface covers it there. */}
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-
       {/* Left sidebar — hidden on mobile, visible lg+ */}
-      <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-[var(--border)] bg-[var(--surface)] sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
-        <div className="px-4 py-5 border-b border-[var(--border)]">
+      <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r-2 border-[var(--fg-strong)] bg-[var(--bg)] sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="px-4 py-5 border-b-2 border-[var(--fg-strong)]">
           <a
             href={marketingHref('/docs')}
-            className="text-sm font-semibold text-[var(--fg)] hover:text-[var(--accent)] transition-colors"
+            className="font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg-strong)] hover:underline"
           >
             Documentation
           </a>
@@ -38,7 +33,7 @@ export function DocsShell({ children }: DocsShellProps) {
       {/* Main content area */}
       <div className="flex-1 min-w-0">
         {/* Mobile nav row — sidebar is hidden below lg; open it in a drawer */}
-        <div className="lg:hidden border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 flex items-center justify-between">
+        <div className="lg:hidden border-b-2 border-[var(--fg-strong)] bg-[var(--bg)] px-4 py-2.5 flex items-center justify-between">
           <DocsMobileNav />
           <a
             href={marketingHref('/docs')}

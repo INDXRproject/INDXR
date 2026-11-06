@@ -98,7 +98,7 @@ export default function GettingStartedPage() {
             { label: "Quickstart" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Get your first transcript</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Get your first transcript</h1>
         <DefinitionLeadOpening>
           INDXR takes a YouTube link, a playlist, or an audio or video file you upload, and gives you
           back a transcript you can export — as plain text, Markdown, subtitles, or structured data.

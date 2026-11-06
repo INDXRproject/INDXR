@@ -64,7 +64,7 @@ export default function DocsVttPage() {
             { label: "VTT" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">VTT</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">VTT</h1>
         <DefinitionLeadOpening>
           VTT is the web-native subtitle format — it&apos;s what an HTML5 video player loads for
           on-screen captions through a <code>&lt;track&gt;</code> element. Reach for it when your video

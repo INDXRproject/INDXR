@@ -49,7 +49,7 @@ export default function DocsExportFormatsPage() {
             { label: "Export formats" },
           ]}
         />
-        <h1 className="text-2xl font-bold text-[var(--fg)] mb-4">Export formats</h1>
+        <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Export formats</h1>
         <DefinitionLeadOpening>
           Every transcript downloads in {spellCount(EXPORT_FORMAT_COUNT)} formats. The right one depends on what you&apos;ll do
           next — read it, drop it in a note app, load it into a spreadsheet, add subtitles to a video,

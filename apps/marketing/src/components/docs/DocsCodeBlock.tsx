@@ -6,7 +6,7 @@ import type { ReactNode } from "react"
  */
 export function DocsCodeBlock({ children }: { children: ReactNode }) {
   return (
-    <pre className="my-6 overflow-x-auto rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-sunken)] p-4 text-sm [scrollbar-width:thin]">
+    <pre className="my-6 overflow-x-auto border-2 border-[var(--fg-strong)] bg-[var(--bg-subtle)] p-4 text-sm [scrollbar-width:thin]">
       <code className="font-mono text-[var(--fg-subtle)]">{children}</code>
     </pre>
   )
