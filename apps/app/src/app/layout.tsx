@@ -72,10 +72,12 @@ export default async function RootLayout({
   // dynamic via getUser(), so reading headers() is free. Absent → 'eea' (safe default).
   const region = regionFromCountry((await headers()).get("x-vercel-ip-country"));
 
+  // Font variables on <html>, not <body>: tokens.css resolves --font-sans/--font-mono on :root, and a
+  // variable that only exists on <body> made them invalid there, so the webfonts never applied (found 2026-11-06).
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${spaceGrotesk.variable} ${ibmPlexMono.variable}`}>
       <body
-        className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} antialiased`}
+        className={`antialiased`}
       >
         <a
           href="#main-content"
