@@ -41,12 +41,12 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="auth-shell flex items-center justify-center min-h-screen bg-bg px-4">
-      <Card className="w-full max-w-sm border shadow-sm">
+      <Card className="w-full max-w-sm">
         <CardHeader>
           {/* Ahrefs crawl 2026-10-27: page had no H1 — CardTitle renders a <div>, not a heading.
               Native h1 here, same classes CardTitle would apply, instead of touching the shared
               component (used across the whole codebase as a non-heading div by design). */}
-          <h1 className="text-2xl leading-none font-semibold" data-slot="card-title">Reset your password</h1>
+          <h1 className="text-3xl leading-none font-bold tracking-[-0.03em] text-fg-strong" data-slot="card-title">Reset your password</h1>
           <CardDescription>
             {isSent
               ? "Check your email for the reset link"

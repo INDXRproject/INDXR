@@ -75,6 +75,14 @@
   --radius-sm: var(--radius-sm);
   --radius: var(--radius);
   --radius-lg: var(--radius-lg);
+  /* Stijl B: the radius steps Tailwind would otherwise take from its own defaults (rounded-md/xl/2xl…)
+     are squared too, so no component keeps soft corners. rounded-full is unaffected. */
+  --radius-xs: 0;
+  --radius-md: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
   /* Shadows */
   --shadow-xs: var(--shadow-xs);
   --shadow-sm: var(--shadow-sm);

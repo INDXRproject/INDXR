@@ -12,7 +12,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import posthog from "posthog-js"
 import { signupAction } from "@indxr/shared/actions/auth-actions"
 import { Alert, AlertDescription } from "@indxr/shared/components/ui/alert"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { GoogleSignInButton } from "@indxr/shared/components/auth/GoogleSignInButton"
 
 export default function SignupPage() {
@@ -83,8 +82,7 @@ export default function SignupPage() {
   // left the logo only ~16px below the navbar. Bottom stays pb-12 for scroll clearance.
   return (
     <div className="auth-shell relative min-h-screen flex items-center justify-center px-4 pt-20 pb-12 bg-bg overflow-hidden">
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-      <Card className="relative w-full max-w-md p-8 border shadow-sm">
+      <Card className="relative w-full max-w-md p-8">
 
         {/* Logo + Title */}
         <div className="text-center mb-8">
@@ -92,7 +90,7 @@ export default function SignupPage() {
             <img src="/logo/indxr-horizontal-black-transparent.png" alt="INDXR.AI" className="dark:hidden h-8 w-auto" style={{ height: '32px', width: 'auto', minWidth: '100px' }} />
             <img src="/logo/indxr-horizontal-white-transparent.png" alt="INDXR.AI" className="hidden dark:block h-8 w-auto" style={{ height: '32px', width: 'auto', minWidth: '100px' }} />
           </Link>
-          <h1 className="text-2xl font-semibold mb-2 text-fg">Create your account</h1>
+          <h1 className="text-3xl font-bold tracking-[-0.03em] mb-2 text-fg-strong">Create your account</h1>
           <p className="text-fg-muted">
             Start extracting transcripts in seconds
           </p>

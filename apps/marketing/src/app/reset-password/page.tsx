@@ -7,7 +7,6 @@ import { Button } from "@indxr/shared/components/ui/button"
 import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { mapPasswordError } from "@indxr/shared/lib/passwordErrors"
 
@@ -74,8 +73,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="auth-shell relative flex items-center justify-center min-h-screen bg-bg px-4 overflow-hidden">
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-      <Card className="relative w-full max-w-sm border shadow-sm">
+      <Card className="relative w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Set a new password</CardTitle>
           <CardDescription>

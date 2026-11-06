@@ -10,7 +10,6 @@ import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import posthog from "posthog-js"
 import { loginAction } from "@indxr/shared/actions/auth-actions"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { GoogleSignInButton } from "@indxr/shared/components/auth/GoogleSignInButton"
 
 export default function LoginPage() {
@@ -79,13 +78,12 @@ export default function LoginPage() {
 
   return (
     <div className="auth-shell relative flex items-center justify-center min-h-screen bg-bg px-4 overflow-hidden">
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-      <Card className="relative w-full max-w-sm border shadow-sm">
+      <Card className="relative w-full max-w-sm">
         <CardHeader>
           {/* Ahrefs crawl 2026-10-27: page had no H1 — CardTitle renders a <div>, not a heading.
               Native h1 here, same classes CardTitle would apply, instead of touching the shared
               component (used across the whole codebase as a non-heading div by design). */}
-          <h1 className="text-2xl leading-none font-semibold" data-slot="card-title">Log in to INDXR.AI</h1>
+          <h1 className="text-3xl leading-none font-bold tracking-[-0.03em] text-fg-strong" data-slot="card-title">Log in to INDXR.AI</h1>
           <CardDescription>
             Enter your email below to login to your account
           </CardDescription>

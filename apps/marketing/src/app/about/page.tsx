@@ -35,12 +35,13 @@ export default function AboutPage() {
       {/* pt-28 (7rem) clears the fixed h-16 (4rem) header and leaves a 3rem gap below it, matching the
           first-content offset on /articles and /pricing. Shared spacing across the standalone content
           pages (About/Compare/Privacy/Terms/Contact). */}
-      <main className="container mx-auto px-4 pt-28 pb-16 max-w-2xl">
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--fg)] mb-6">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-[104px] sm:px-6 lg:pt-[120px]">
+        <p className="mb-4 font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]">About</p>
+        <h1 className="mb-10 max-w-4xl border-b-2 border-[var(--fg-strong)] pb-10 text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl">
           About INDXR.AI
         </h1>
 
-        <section className="prose-content text-[var(--fg-subtle)] leading-relaxed space-y-6">
+        <section className="prose-content max-w-3xl text-lg text-[var(--fg-subtle)] leading-relaxed space-y-6">
           <p>
             INDXR.AI turns recordings into text you can work with: audio and video you upload, YouTube
             links, or a whole playlist at once. This page is about who runs it and how. For what the
@@ -48,7 +49,7 @@ export default function AboutPage() {
             <a href="/" className="text-[var(--link)] hover:underline">homepage</a>.
           </p>
 
-          <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Why it exists</h2>
+          <h2>Why it exists</h2>
           <p>
             There is more good material out there than anyone can get through. Podcasts, lectures, long
             interviews. I could not listen to all of it, but I still wanted to know what was in it.
@@ -72,7 +73,7 @@ export default function AboutPage() {
             other ones too, and I hope it grows to support more of them.
           </p>
 
-          <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Who builds it</h2>
+          <h2>Who builds it</h2>
           <p>
             I build it on my own. It is operated by Tiny Web Ventures, based in the Netherlands. Full
             company details are in our{" "}
@@ -89,7 +90,7 @@ export default function AboutPage() {
             all of it myself.
           </p>
 
-          <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Where it runs</h2>
+          <h2>Where it runs</h2>
           <p>
             Your account, your saved transcripts, and the transcription itself all run
             on servers inside the EU: the database and authentication are hosted on
@@ -98,7 +99,7 @@ export default function AboutPage() {
             Stripe. Dutch law applies, and prices include VAT.
           </p>
 
-          <h2 className="text-xl font-semibold text-[var(--fg)] mt-8">Contact</h2>
+          <h2>Contact</h2>
           <p>
             Questions? Use our <a href="/contact" className="text-[var(--link)] hover:underline">contact form</a>,
             or email us directly at{" "}
