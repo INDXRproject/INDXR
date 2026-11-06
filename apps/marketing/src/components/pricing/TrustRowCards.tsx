@@ -30,12 +30,15 @@ const trustItems = [
 
 export function TrustRowCards() {
   return (
-    <div className="grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto mt-12">
-      {trustItems.map(({ Icon, heading, body }) => (
-        <div key={heading} className="p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex gap-4">
-          <Icon className="h-5 w-5 text-[var(--accent)] shrink-0 mt-0.5" />
+    <div className="grid sm:grid-cols-3 max-w-5xl mx-auto mt-16 border-2 border-[var(--fg-strong)]">
+      {trustItems.map(({ Icon, heading, body }, i) => (
+        <div
+          key={heading}
+          className={`p-5 bg-[var(--bg)] flex gap-4 ${i < trustItems.length - 1 ? "border-b-2 sm:border-b-0 sm:border-r-2 border-[var(--fg-strong)]" : ""}`}
+        >
+          <Icon className="h-5 w-5 text-[var(--fg-strong)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-sm text-[var(--fg)] mb-1">{heading}</p>
+            <p className="font-bold text-sm text-[var(--fg-strong)] mb-1">{heading}</p>
             <p className="text-sm text-[var(--fg-muted)]">{body}</p>
           </div>
         </div>

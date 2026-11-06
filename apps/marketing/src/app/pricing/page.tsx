@@ -1,11 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { uploadFormatsProse, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
-import { FREE_TIER } from "@indxr/shared/lib/pricing"
+import { FREE_TIER, PER_FILE_EUR_PER_MIN, PER_FILE_MIN_EUR, formatEurExact, pricePerMinute } from "@indxr/shared/lib/pricing"
+import { marketingHref } from "@indxr/shared/lib/cross-host-links"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { FAQAccordion, FAQItem } from "@/components/marketing/FAQAccordion"
-import { PricingHero } from "@/components/pricing/PricingHero"
 import { PricingTiers } from "@indxr/shared/components/pricing/PricingTiers"
 import { BuyButton } from "@/components/pricing/BuyButton"
 import { CreditCostTable } from "@/components/pricing/CreditCostTable"
@@ -105,45 +104,95 @@ const faqSchema = {
   })),
 }
 
+// Break-even against a subscription (growth-live-status §0, positionering 4-11): a typical unlimited
+// transcription subscription costs $10/month billed yearly ($20 month-to-month, TurboScribe, checked
+// 2026-11-06). At our lowest per-minute rate, that monthly amount buys this many hours — below it,
+// credits are cheaper, and unused credits roll over forever. Derived, never typed.
+const cheapestPerMin = Math.min(...PACKAGES.map((p) => pricePerMinute(p)))
+const SUBSCRIPTION_EUR = 10
+const breakEvenHours = Math.round(SUBSCRIPTION_EUR / cheapestPerMin / 60)
+
+const INK = "border-[var(--fg-strong)]"
+const MONO_LABEL = "font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]"
+
 export default function PricingPage() {
   return (
     <>
       <JsonLd schemas={[aggregateOfferSchema, faqSchema]} />
 
-      <div className="relative min-h-screen bg-[var(--bg)]">
-        {/* Same very-light honeycomb texture as /articles and /docs. */}
-        <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
-        <div className="relative container px-4 sm:px-6 lg:px-8 mx-auto pb-24">
+      <div className="min-h-screen bg-[var(--bg)]">
+        <div className="container px-4 sm:px-6 lg:px-8 mx-auto pb-24">
 
-          {/* Section 2 — Hero */}
-          <PricingHero />
+          {/* Hero — stijl B: mono label + big type, left-aligned on the same max-w-5xl as the grid. */}
+          <div className="max-w-5xl mx-auto pt-[104px] lg:pt-[120px] pb-12">
+            <p className={`${MONO_LABEL} mb-5`}>Pricing</p>
+            <h1 className="text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl lg:text-[5.5rem]">
+              Pay for minutes. Not months.
+            </h1>
+            <p className="mt-8 max-w-2xl text-lg leading-relaxed text-[var(--fg-subtle)]">
+              YouTube caption extraction is always free. Credits apply only when you use AI transcription,
+              playlist caption processing beyond the first three videos, AI summaries, or RAG JSON export.
+              1 credit is 1 minute, and credits never expire.
+            </p>
+          </div>
 
-          {/* Section 4+5 — 3 main tier cards (Starter / Plus★ / Power) + Try secondary strip.
-              Gedeelde presentatie met app-billing; CTA = auth-aware marketing BuyButton. */}
+          {/* Tier grid (shared with app billing). CTA = auth-aware marketing BuyButton. */}
           <PricingTiers
             renderCta={(pkg, opts) => (
               <BuyButton pkg={pkg} featured={pkg.mostPopular} compact={opts?.compact} />
             )}
           />
 
-          {/* Section 6 — Credit-cost table with tier toggle */}
+          {/* Credits vs a subscription + the single-file side door */}
+          <div className={`max-w-5xl mx-auto mt-16 grid md:grid-cols-2 border-2 ${INK}`}>
+            <div className={`p-6 sm:p-8 border-b-2 md:border-b-0 md:border-r-2 ${INK}`}>
+              <p className={`${MONO_LABEL} mb-3`}>Credits or a subscription?</p>
+              <h2 className="text-2xl font-bold tracking-[-0.02em] text-[var(--fg-strong)] sm:text-3xl">
+                Cheaper unless you transcribe more than about {breakEvenHours} hours a month.
+              </h2>
+              <p className="mt-4 leading-relaxed text-[var(--fg-subtle)]">
+                Unlimited transcription subscriptions typically cost around ${SUBSCRIPTION_EUR} a month when
+                billed yearly. At {formatEurExact(cheapestPerMin)} a minute, the same amount buys about{" "}
+                {breakEvenHours} hours of AI transcription here, and whatever you don&apos;t use this month is
+                still yours next year.
+              </p>
+            </div>
+            <div className="p-6 sm:p-8 bg-[var(--bg-subtle)]">
+              <p className={`${MONO_LABEL} mb-3`}>Just one file?</p>
+              <h2 className="text-2xl font-bold tracking-[-0.02em] text-[var(--fg-strong)] sm:text-3xl">
+                {formatEurExact(PER_FILE_EUR_PER_MIN)} a minute, no account.
+              </h2>
+              <p className="mt-4 leading-relaxed text-[var(--fg-subtle)]">
+                Upload a single recording, see the price and a free preview of the first minutes, then pay for
+                that file only (minimum {formatEurExact(PER_FILE_MIN_EUR)} per file). No account, no credits.
+              </p>
+              <a
+                href={marketingHref("/transcribe")}
+                className={`mt-6 inline-flex items-center border-2 ${INK} bg-[var(--bg)] px-5 py-3 text-sm font-bold text-[var(--fg-strong)] hover:bg-[var(--bg-subtle)]`}
+              >
+                Transcribe one file →
+              </a>
+            </div>
+          </div>
+
+          {/* Credit-cost table with tier toggle */}
           <CreditCostTable />
 
-          {/* Section 7 — Trust row */}
+          {/* Trust row */}
           <TrustRowCards />
 
-          {/* Section 8 — VAT line */}
+          {/* VAT line */}
           <VatLine />
 
           {/* Country availability — surfaced BEFORE checkout so nobody runs the whole funnel only to be
               declined at the till (ADR-062: a Stripe Radar rule blocks a few countries pre-charge). */}
-          <p className="mt-4 text-center text-sm text-[var(--fg-muted)]">
+          <p className="mt-4 max-w-5xl mx-auto text-sm text-[var(--fg-muted)]">
             Payment isn&apos;t available in every country yet.{" "}
             <a href="#faq" className="text-[var(--link)] hover:underline">See who can buy</a>.
           </p>
 
           {/* Comparison landing page — surfaced for people weighing INDXR against another tool (ADR-105). */}
-          <p className="mt-2 text-center text-sm text-[var(--fg-muted)]">
+          <p className="mt-2 max-w-5xl mx-auto text-sm text-[var(--fg-muted)]">
             Coming from another tool?{" "}
             <Link href="/alternatives/otter-ai" className="text-[var(--link)] hover:underline">
               INDXR vs Otter.ai
@@ -151,15 +200,14 @@ export default function PricingPage() {
             .
           </p>
 
-          {/* Section 9 — FAQ */}
-          <div id="faq" className="mt-16 max-w-3xl mx-auto border-t border-[var(--border)] pt-12">
-            <h2 className="text-2xl font-bold text-[var(--fg)] mb-6">Frequently asked questions</h2>
+          {/* FAQ */}
+          <div id="faq" className={`mt-20 max-w-5xl mx-auto border-t-2 ${INK} pt-12`}>
+            <h2 className="text-3xl font-bold tracking-[-0.035em] text-[var(--fg-strong)] mb-6 sm:text-4xl">Frequently asked questions</h2>
             <FAQAccordion items={faqItems} />
           </div>
 
         </div>
       </div>
-
     </>
   )
 }

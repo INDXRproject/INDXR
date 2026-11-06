@@ -33,21 +33,21 @@ export function CreditCostTable() {
   const selectedPkg = PACKAGES.find((p) => p.id === selectedId) ?? defaultPkg
 
   return (
-    <div className="max-w-3xl mx-auto mt-16">
-      <h2 className="text-2xl font-bold text-[var(--fg)] mb-4 text-center">
+    <div className="max-w-5xl mx-auto mt-20">
+      <h2 className="text-3xl font-bold tracking-[-0.035em] text-[var(--fg-strong)] mb-5 sm:text-4xl">
         What does it actually cost?
       </h2>
 
       {/* Tier selector */}
-      <div className="flex flex-wrap justify-center gap-2 mb-6">
+      <div className="flex flex-wrap mb-6">
         {PACKAGES.map((pkg) => (
           <button
             key={pkg.id}
             onClick={() => setSelectedId(pkg.id)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+            className={`-ml-[2px] first:ml-0 px-4 py-2 text-sm font-bold border-2 border-[var(--fg-strong)] transition-colors ${
               selectedId === pkg.id
-                ? "bg-[var(--accent)] text-[var(--fg-on-accent)] border-[var(--accent)]"
-                : "border-[var(--border)] text-[var(--fg-subtle)] hover:border-[var(--accent)]"
+                ? "bg-[var(--accent)] text-[var(--fg-on-accent)]"
+                : "bg-[var(--bg)] text-[var(--fg-strong)] hover:bg-[var(--bg-subtle)]"
             }`}
           >
             {pkg.name}
@@ -56,23 +56,23 @@ export function CreditCostTable() {
       </div>
 
       {/* Cost table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto border-2 border-[var(--fg-strong)]">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="border-b border-[var(--border)]">
-              <th className="text-left py-3 pr-4 font-semibold text-[var(--fg)]">Task</th>
-              <th className="text-right py-3 px-4 font-semibold text-[var(--fg)]">Credits</th>
-              <th className="text-right py-3 pl-4 font-semibold text-[var(--fg)]">
+            <tr className="border-b-2 border-[var(--fg-strong)] bg-[var(--fg-strong)] text-[var(--bg)]">
+              <th className="text-left py-3 px-4 font-mono text-xs uppercase font-medium">Task</th>
+              <th className="text-right py-3 px-4 font-mono text-xs uppercase font-medium">Credits</th>
+              <th className="text-right py-3 px-4 font-mono text-xs uppercase font-medium">
                 Cost ({selectedPkg.name})
               </th>
             </tr>
           </thead>
           <tbody className="text-[var(--fg-subtle)]">
             {TASKS.map(({ name, credits }) => (
-              <tr key={name} className="border-b border-[var(--border)] last:border-0">
-                <td className="py-3 pr-4">{name}</td>
+              <tr key={name} className="border-b-2 border-[var(--fg-strong)] last:border-0">
+                <td className="py-3 px-4">{name}</td>
                 <td className="text-right py-3 px-4 tabular-nums">{credits}</td>
-                <td className="text-right py-3 pl-4 tabular-nums font-medium text-[var(--fg)]">
+                <td className="text-right py-3 px-4 tabular-nums font-bold text-[var(--fg-strong)]">
                   {formatCost(credits, selectedPkg)}
                 </td>
               </tr>
@@ -80,7 +80,7 @@ export function CreditCostTable() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-[var(--fg-muted)] mt-3 text-center">
+      <p className="text-xs text-[var(--fg-muted)] mt-3">
         Playlist: first 3 caption videos free, then 1 credit/video. AI transcription is {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/min (no free videos). AI summary is {CREDIT_COSTS.AI_SUMMARY_PER_10MIN} credit per 10 min of video (rounded up, minimum 1). Every account starts with 100 MB of library storage free; the row above is for buying more. All prices VAT included.
       </p>
     </div>
