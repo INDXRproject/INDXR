@@ -23,7 +23,7 @@ Alles hieronder hoort bij de redesign. Een punt is pas af als het in productie i
 
 ## Credit-icoon
 - [x] `packages/shared/src/components/icons/HexagonCreditIcon.tsx` en `apps/app/public/credit-coin.png` vervangen door het gekozen icoon (C1–C4).
-- [ ] Pakketafbeeldingen `public/packages/*.webp` (schatkisten) vervangen door een vormgeving in stijl B.
+- [x] Pakketafbeeldingen `public/packages/*.webp` (schatkisten) vervangen door een vormgeving in stijl B (6-11, 640×640, zelfde bestandsnamen).
 
 ## Hexagon-motief uit het oude merk (meenemen in de pagina-redesign)
 - [ ] Er staan nog hexagon-achtergronden en -illustraties in de app en op de marketingsite: de lege staat en het patroon in de bibliotheek, het dashboard, berichten, credits, transactiegeschiedenis, `HexField`/`ArticleHero`/`ContentCard`, DocsShell, het artikeloverzicht en signup. Gevonden met `grep -ril hexagon` op 2026-11-05. Vervangen door motieven uit stijl B (raster, regels, blokken).
@@ -41,5 +41,5 @@ Alles hieronder hoort bij de redesign. Een punt is pas af als het in productie i
 ## Pagina-redesign (bouwvolgorde uit audit-2026-11-04)
 - [x] **Fundament (6-11):** tokens in beide apps naar stijl B (wit/inkt/amber `#ffb000`, neutrale grijzen, radius 0, geen zachte schaduwen, `--fg-on-accent` = inkt), Space Grotesk i.p.v. IBM Plex Sans, header met 2px inktlijn, destructieve knop/badge witte tekst op rood.
 - [x] **Home (6-11):** geen foto meer; grote kop + mono-label, voor/na-blok (JFK), live tool, 01/02/03, video, "wat mensen meebrengen", "meer dan de woorden", bibliotheek (full-text search), prijsblok "Pay for minutes. Not months.". `HeroImage` + `public/hero/*` verwijderd (alleen home gebruikte ze).
-- [x] **Pricing (6-11):** hero "Pay for minutes. Not months.", gedeelde `PricingTiers` als liniaal-raster (Plus amber; in de app-billing = geselecteerd pakket amber), geen schatkist-afbeeldingen meer, blok credits-vs-abonnement (break-even ≈8 u/mnd, afgeleid uit `pricePerMinute`), balie-zijdeur (€0,10/min, min €2), kostentabel/trust-rij/FAQ in stijl B. `PricingHero` verwijderd (verweesd). **De `public/packages/*.webp` worden nog gebruikt door de app** (check vóór verwijderen).
+- [x] **Pricing (6-11):** hero "Pay for minutes. Not months.", gedeelde `PricingTiers` als liniaal-raster (Plus amber; in de app-billing = geselecteerd pakket amber), geen schatkist-afbeeldingen meer, blok credits-vs-abonnement (break-even ≈8 u/mnd, afgeleid uit `pricePerMinute`), balie-zijdeur (€0,10/min, min €2), kostentabel/trust-rij/FAQ in stijl B. `PricingHero` verwijderd (verweesd). De pakketafbeeldingen `public/packages/*.webp` worden alleen nog als productafbeelding in Stripe Checkout gebruikt (`checkout/route.ts`, `pkg.image`) en zijn vervangen door versies in stijl B (zelfde bestandsnamen, de code is niet aangeraakt).
 - [ ] Volgende blokken: artikel-template (TOC + CTA) → docs (placeholder-hexagons) → about → app (bibliotheek + tool volgens canvas "B — app"; `rounded-xl/2xl`-klassen die niet via `--radius` lopen) → footer → hexagon-motieven opruimen.
