@@ -1,0 +1,38 @@
+# Product Hunt: concept-launch "INDXR" (account @sinbadbuilds), stand 2026-11-06
+
+**Status:** draft, er staat niets ingepland of gepubliceerd. PH toont nu "Schedule launch" omdat alle verplichte velden gevuld zijn. **Inplannen alleen na akkoord van Khidr.**
+
+## Copy (bijgewerkt 6-11 naar de positionering van 4-11; de draft slaat automatisch op)
+- **Tagline** (oud: "See what's in a podcast or lecture before you spend hours") → **"Lectures, interviews & YouTube as text you can search"** (53 tekens).
+- **Description** (max. 500 tekens, nu 464), leidend met de positionering, gevolgd door de bibliotheek met full-text search (live sinds 5-11), de exports en de prijs:
+  > Every lecture, interview and video you learn from, as text you can search, quote and use. Paste a YouTube link or playlist, or upload a recording: you get a transcript with speakers and timestamps, plus a summary, so you see the core in minutes and decide what deserves your hours.
+  >
+  > All of it lands in one library with full-text search and collections, or export it: Markdown, SRT/VTT, JSON for RAG.
+  >
+  > YouTube captions free. AI from €0.02 a minute, no subscription.
+- De oude beschrijving staat hieronder, zodat Khidr kan terugzetten:
+  > There is more worth hearing than anyone has time for. INDXR turns a podcast, lecture, interview or YouTube video into a transcript and a summary, so you see the core in minutes and decide: listen to it, skip it, or keep the parts that matter. / It fits whatever your workflow is. Keep your sources in a searchable library, or export them: Markdown for your notes, SRT or VTT subtitles if you make videos, JSON for RAG. / For anyone learning anything. Credits from €0.02 a minute, no subscription.
+- **First comment:** niet aangeraakt. Het is Khidrs eigen stem en past bij de positionering (Obsidian-workflow, bibliotheek, "for anyone learning anything"). De feiten erin kloppen: 10 credits, captions gratis, credits verlopen niet.
+- **Pricing-veld:** "Free Options". Laten staan of "Freemium" kiezen.
+
+## Galerij (1270×760, stijl B): `gallery/01–05.png`
+1. Titelkaart met logo, "Every lecture, interview and video you learn from. As text." en "Transcripts, done properly."
+2. Captions tegenover INDXR (JFK, Rice 1962, publiek domein).
+3. De bibliotheek met zoeken in titels en transcripttekst. **Mockup in stijl B met verzonnen titels.** Na de redesign vervangen door een echte screenshot.
+4. Zeven exportformaten.
+5. Prijs: "Pay for minutes. Not months."
+
+De huidige galerij in de draft bestaat uit oude screenshots in de vorige stijl ("Customer interview — remote work habits"). **Vervangen pas na akkoord van Khidr.** Uploaden kan ik zelf zodra hij ja zegt.
+
+## Video (optioneel, maar PH weegt hem mee)
+Plan: een schermopname van 45–60 sec. **Na de redesign**, anders toont hij de oude stijl. Script:
+- 0–5 s: titelkaart
+- 5–15 s: YouTube-playlist plakken, gevolgd door de offerte (gratis captions plus AI-optie)
+- 15–30 s: een transcript met sprekers en tijdstempels, plus de samenvatting
+- 30–40 s: zoeken in de bibliotheek op een woord dat alleen in de tekst staat
+- 40–50 s: Markdown exporteren naar Obsidian
+- 50–60 s: de prijskaart
+Opnemen met Playwright tegen een e2e-account (geen echte klantdata) en monteren met ffmpeg.
+
+## Volgorde
+Eerst de redesign naar stijl B live, dan kaart 3 en de video vervangen door echte beelden, dan de launchdatum kiezen (Khidr). PH-check staat ingepland op 25-11.
