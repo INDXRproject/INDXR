@@ -1071,6 +1071,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       <div className="flex flex-col gap-4 max-w-2xl mx-auto mb-6">
         {!hasResult && (<>
+        <p className="-mb-2 px-0.5 font-mono text-xs uppercase tracking-[0.08em] text-fg">01 — Link</p>
         <div className="flex gap-3">
           <div className="relative flex-1 min-w-0">
             <Input
@@ -1141,7 +1142,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           const known = pendingWhisperData.duration > 0
           const enough = credits == null || credits >= cost
           return (
-            <div className="overflow-hidden rounded-xl border border-border bg-surface animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="overflow-hidden border-2 border-border-strong bg-bg animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-start gap-3 p-4">
                 <div className="min-w-0 flex-1">
                   {/* wraps to two lines instead of hard-truncating on 390px (point 4) */}
@@ -1150,13 +1151,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 </div>
                 <MethodBadge method="ai" className="mt-0.5 shrink-0">AI transcription</MethodBadge>
               </div>
-              <div className="flex items-baseline justify-between border-t border-border px-4 py-3">
-                <span className="font-medium">Total</span>
+              <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
+                <span className="font-bold">Total</span>
                 <span className="text-[22px] font-semibold tabular-nums text-fg-strong">{known ? `${cost} credits` : `${cost}+ credits`}</span>
               </div>
               {/* balance on its own line; actions fill the width and stack on mobile (primary on top
                   via col-reverse), sit right on desktop — no cramped right-aligned cluster (point 4) */}
-              <div className="flex flex-col gap-3 border-t border-border bg-surface-elevated px-4 py-3">
+              <div className="flex flex-col gap-3 border-t-2 border-border-strong bg-bg-subtle px-4 py-3">
                 <BalanceLine have={credits} cost={cost} />
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <Button variant="ghost" onClick={handleWhisperCancel} disabled={loading} className="h-10 w-full sm:w-auto">

@@ -2,7 +2,7 @@
 
 import { cn } from "../../lib/utils"
 import { CREDIT_COSTS } from "../../lib/pricing"
-import { METHOD_META, type TranscribeMethod } from "./method"
+import { type TranscribeMethod } from "./method"
 
 /**
  * Transcription-method chooser as a real radio group (ADR-080) — NOT a segmented
@@ -13,6 +13,9 @@ import { METHOD_META, type TranscribeMethod } from "./method"
  * plus a 1.5px border in the same colour; both cards keep a 1.5px border so the
  * selection causes no layout shift. No shared track — that shape belongs to the mode
  * strip alone.
+ *
+ * Stijl B (2026-11-06): the selected card is an amber block with a 2px ink border and ink text
+ * (was: method-colour tint); unselected cards keep the same 2px border, so no layout shift.
  *
  * Note: the brief's "--fg-secondary" maps to the existing --fg-subtle token (more
  * prominent than --fg-muted); there is no --fg-secondary in tokens.css.
@@ -44,15 +47,14 @@ export function MethodRadioCards({
 
   return (
     <div className={className}>
-      <p className="mb-2 px-0.5 text-xs text-fg-subtle">Transcription method</p>
+      <p className="mb-2 px-0.5 font-mono text-xs uppercase tracking-[0.08em] text-fg">02 — Method</p>
       <div
         role="radiogroup"
         aria-label="Transcription method"
         onKeyDown={onKeyDown}
-        className="flex flex-col sm:flex-row gap-2.5"
+        className="flex flex-col sm:flex-row gap-0"
       >
         {ORDER.map((m) => {
-          const meta = METHOD_META[m]
           const selected = value === m
           return (
             <button
@@ -64,39 +66,39 @@ export function MethodRadioCards({
               tabIndex={selected ? 0 : -1}
               onClick={() => !disabled && onChange(m)}
               className={cn(
-                "flex flex-1 items-start gap-2.5 rounded-lg p-3 text-left min-h-[44px] cursor-pointer transition-colors",
-                "border-[1.5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring",
+                "flex flex-1 items-start gap-2.5 p-3 text-left min-h-[44px] cursor-pointer transition-colors",
+                "border-2 border-border-strong -mt-[2px] sm:mt-0 sm:-ml-[2px] first:mt-0 first:ml-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring",
                 selected
-                  ? cn(meta.tint, meta.border)
-                  : "bg-surface border-border hover:border-border-strong",
+                  ? "bg-accent"
+                  : "bg-bg hover:bg-bg-subtle",
                 disabled && "opacity-60 cursor-not-allowed"
               )}
             >
               <span
                 className={cn(
                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px]",
-                  selected ? meta.border : "border-border-strong"
+                  "border-border-strong"
                 )}
               >
-                {selected && <span className={cn("h-2 w-2 rounded-full", meta.indicator)} />}
+                {selected && <span className="h-2 w-2 rounded-full bg-fg-on-accent" />}
               </span>
 
               {m === "captions" ? (
                 <span className="min-w-0">
-                  <span className={cn("flex items-center gap-1.5 font-medium", selected ? "text-sky" : "text-fg")}>
+                  <span className={cn("flex items-center gap-1.5 font-medium", selected ? "text-fg-on-accent font-bold" : "text-fg-strong")}>
                     YouTube captions
                     <span className="rounded-sm bg-success-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
                       Free
                     </span>
                   </span>
-                  <span className={cn("mt-0.5 block text-xs", selected ? "text-sky" : "text-fg-muted")}>
+                  <span className={cn("mt-0.5 block text-xs", selected ? "text-fg-on-accent" : "text-fg-muted")}>
                     Existing captions from YouTube
                   </span>
                 </span>
               ) : (
                 <span className="min-w-0">
-                  <span className={cn("font-medium", selected ? "text-indigo" : "text-fg")}>AI transcription</span>
-                  <span className={cn("mt-0.5 block text-xs", selected ? "text-indigo" : "text-fg-muted")}>
+                  <span className={cn("font-medium", selected ? "text-fg-on-accent font-bold" : "text-fg-strong")}>AI transcription</span>
+                  <span className={cn("mt-0.5 block text-xs", selected ? "text-fg-on-accent" : "text-fg-muted")}>
                     {perMin} credit per minute
                     {availableCredits != null ? ` · ${availableCredits} available` : ""}
                   </span>

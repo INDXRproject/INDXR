@@ -20,12 +20,13 @@ const HEX_PROPS = {
   fill: "none",
   stroke: "currentColor",
   strokeWidth: 1.75,
-  strokeLinejoin: "round" as const,
+  strokeLinejoin: "miter" as const,
   strokeLinecap: "round" as const,
 }
 
-// Pointy-top hexagon outline, centred in a 24×24 box (matches the house geometry).
-const HEX_OUTLINE = "M12 2.8 L20 7.4 L20 16.6 L12 21.2 L4 16.6 L4 7.4 Z"
+// Stijl B (2026-11-06): a square frame replaces the old pointy-top hexagon outline (the hexagon
+// motif is retired); the inner glyphs are unchanged. Name kept so the glyph code stays untouched.
+const HEX_OUTLINE = "M4 4 H20 V20 H4 Z"
 
 function Svg({ className, children }: { className?: string; children: React.ReactNode }) {
   return (

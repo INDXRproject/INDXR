@@ -53,7 +53,7 @@ export function CostBreakdown({
   const total = shown.reduce((a, s) => a + s.count, 0) || 1
 
   return (
-    <div className={cn("overflow-hidden rounded-xl border border-border bg-surface", className)}>
+    <div className={cn("overflow-hidden border-2 border-border-strong bg-bg", className)}>
       <div className="p-4">
         {shown.length > 0 && (
           <div className="mb-3 flex h-2 overflow-hidden rounded-full bg-surface-sunken">
@@ -81,12 +81,12 @@ export function CostBreakdown({
         </div>
       </div>
 
-      <div className="flex items-baseline justify-between border-t border-border px-4 py-3">
+      <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
         <span className="font-medium">{totalLabel}</span>
         <span className="text-[20px] font-semibold tabular-nums text-fg-strong">{totalAmount}</span>
       </div>
 
-      {footer && <div className="border-t border-border bg-surface-elevated px-4 py-3">{footer}</div>}
+      {footer && <div className="border-t-2 border-border-strong bg-bg-subtle px-4 py-3">{footer}</div>}
     </div>
   )
 }

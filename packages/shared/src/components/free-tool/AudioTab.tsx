@@ -703,7 +703,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       {/* Credit cost (ADR-080) — indigo AI method (uploads always go via AssemblyAI), the
           total is the biggest number here, the balance reads as secondary, never amber. */}
       {file && !transcript && (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="overflow-hidden border-2 border-border-strong bg-bg">
           <div className="flex items-center gap-3 p-4">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-fg">{file.name}</p>
@@ -713,8 +713,8 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             </div>
             <MethodBadge method="ai">AI transcription</MethodBadge>
           </div>
-          <div className="flex items-baseline justify-between border-t border-border px-4 py-3">
-            <span className="font-medium">Total</span>
+          <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
+            <span className="font-bold">Total</span>
             {estimatedCredits !== null ? (
               <span className="text-[20px] font-semibold tabular-nums text-fg-strong">
                 {estimatedCredits} credit{estimatedCredits === 1 ? "" : "s"}
@@ -723,7 +723,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               <span className="text-sm text-fg-muted">Calculated from length after upload</span>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-3 border-t border-border bg-surface-elevated px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3 border-t-2 border-border-strong bg-bg-subtle px-4 py-3">
             {estimatedCredits !== null ? (
               <>
                 <BalanceLine have={credits} cost={estimatedCredits} />
