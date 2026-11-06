@@ -46,7 +46,7 @@ export function AnchorHeading({ as = "h2", children, id }: AnchorHeadingProps) {
       <a
         href={`#${anchorId}`}
         onClick={handleCopy}
-        className="inline-flex items-center gap-2 no-underline hover:text-[var(--accent)] transition-colors"
+        className="inline-flex items-center gap-2 no-underline hover:text-[var(--accent-fg)] transition-colors"
       >
         <span>{children}</span>
         <span

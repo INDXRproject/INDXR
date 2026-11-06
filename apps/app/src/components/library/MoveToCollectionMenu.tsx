@@ -100,7 +100,7 @@ export function MoveToCollectionMenu({
               <span className="flex-1 truncate" dir="auto">
                 {c.name}
               </span>
-              {allIn && <Check className="h-3.5 w-3.5 text-accent shrink-0" />}
+              {allIn && <Check className="h-3.5 w-3.5 text-accent-fg shrink-0" />}
               {someIn && (
                 <span className="text-[10px] rounded-full bg-surface-sunken px-1.5 py-0.5 text-fg-muted shrink-0">
                   some

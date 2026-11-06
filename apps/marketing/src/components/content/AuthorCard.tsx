@@ -38,7 +38,7 @@ export function AuthorCard({ author, publishedAt, updatedAt }: AuthorCardProps) 
             onError={() => setImgError(true)}
           />
         ) : (
-          <span className="text-xs font-semibold text-[var(--accent)]">
+          <span className="text-xs font-semibold text-[var(--accent-fg)]">
             {initials(author.name)}
           </span>
         )}

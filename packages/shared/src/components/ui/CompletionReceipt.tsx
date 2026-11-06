@@ -130,7 +130,7 @@ export function CompletionReceipt({
 
   const overshootStrip = isOvershoot && (
     <div className="mt-3 flex items-start gap-2 rounded-lg border border-accent/20 bg-accent-subtle px-3 py-2 text-xs text-fg-muted">
-      <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-accent" />
+      <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-accent-fg" />
       <span>{overshootCopy(reserved!, used, back)}</span>
     </div>
   )
@@ -142,7 +142,7 @@ export function CompletionReceipt({
         <div className="flex items-start justify-between gap-3">
           <p className="text-xs text-fg-muted tabular-nums">{creditLine}</p>
           {libraryHref && (
-            <a href={libraryHref} className="shrink-0 text-xs font-medium text-accent hover:underline">
+            <a href={libraryHref} className="shrink-0 text-xs font-medium text-accent-fg hover:underline">
               View in Library
             </a>
           )}

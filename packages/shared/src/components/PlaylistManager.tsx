@@ -623,7 +623,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
                                     <div key={e.id} className="flex items-center gap-2.5 bg-surface px-3 py-2 text-[13px]">
                                         <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                                             {st === 'success' ? <span className="text-success">✓</span>
-                                              : st === 'extracting' ? <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                                              : st === 'extracting' ? <Loader2 className="h-3.5 w-3.5 animate-spin text-accent-fg" />
                                               : st === 'pending' ? <span className="text-fg-muted">○</span>
                                               : <span className="text-error">✕</span>}
                                         </span>
@@ -670,7 +670,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
               a long title. */}
           <div className="p-6 border-b border-border bg-surface-elevated/30 flex flex-col gap-4">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
+              <div className="p-2 bg-accent/10 rounded-lg text-accent-fg shrink-0">
                 <ListMusic className="h-6 w-6" />
               </div>
               <div className="min-w-0">
@@ -779,7 +779,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
                           {(videoStatuses[entry.id] === 'age_restricted' || videoStatuses[entry.id] === 'members_only') && <XCircle className="h-4 w-4 text-error-fg shrink-0" />}
                           {videoStatuses[entry.id] === 'extracting' && (
                             whisperVideoIds?.has(entry.id) ? (
-                              <span className="flex items-center gap-1 text-[10px] font-semibold text-accent shrink-0">
+                              <span className="flex items-center gap-1 text-[10px] font-semibold text-accent-fg shrink-0">
                                 <span className="relative flex h-2 w-2">
                                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
                                   <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
@@ -787,7 +787,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
                                 Transcribing with AI
                               </span>
                             ) : (
-                              <Loader2 className="h-3 w-3 animate-spin text-accent shrink-0" />
+                              <Loader2 className="h-3 w-3 animate-spin text-accent-fg shrink-0" />
                             )
                           )}
                         </div>

@@ -356,11 +356,11 @@ export function TranscriptCard({
                           className={cn("gap-3 cursor-pointer", gated && "opacity-60")}
                           onClick={gated ? () => setShowSignupPrompt(true) : EXPORT_HANDLERS[item.id]}
                         >
-                          <Icon className={cn("size-4", item.paid && !gated ? "text-accent" : "text-fg-muted")} />
+                          <Icon className={cn("size-4", item.paid && !gated ? "text-accent-fg" : "text-fg-muted")} />
                           <div className="flex-1">
                             <div className="font-medium flex items-center gap-1.5">
                               {item.label}
-                              {item.paid && <span className="text-[10px] text-accent font-bold">✦</span>}
+                              {item.paid && <span className="text-[10px] text-accent-fg font-bold">✦</span>}
                             </div>
                             <div className="text-xs text-fg-muted">{gated ? "Sign in to export" : item.sub}</div>
                           </div>
@@ -403,7 +403,7 @@ export function TranscriptCard({
       {showSignupPrompt && (
         <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-accent/5 px-4 py-3 text-sm">
           <div className="flex items-center gap-2">
-            <LogIn className="size-4 text-accent shrink-0" />
+            <LogIn className="size-4 text-accent-fg shrink-0" />
             <span className="text-fg"><strong>Sign up or log in</strong> to export as CSV, SRT, VTT, JSON, or Markdown.</span>
           </div>
           <a href={marketingHref('/login')} className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors">
@@ -455,7 +455,7 @@ export function TranscriptCard({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Export as RAG-Optimized JSON
-            <span className="text-xs text-accent font-bold">✦</span>
+            <span className="text-xs text-accent-fg font-bold">✦</span>
           </DialogTitle>
           <DialogDescription className="sr-only">
             Confirm credit deduction for RAG JSON export

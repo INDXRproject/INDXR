@@ -780,14 +780,14 @@ export function TranscriptViewer({
               <button
                 onClick={() => setShowTimestamps(false)}
                 aria-pressed={!showTimestamps}
-                className={cn("rounded px-2 py-1 transition-colors", !showTimestamps ? "bg-accent-subtle text-accent font-medium" : "text-fg-muted hover:text-fg")}
+                className={cn("rounded px-2 py-1 transition-colors", !showTimestamps ? "bg-accent-subtle text-accent-fg font-medium" : "text-fg-muted hover:text-fg")}
               >
                 Paragraphs
               </button>
               <button
                 onClick={() => setShowTimestamps(true)}
                 aria-pressed={showTimestamps}
-                className={cn("rounded px-2 py-1 transition-colors", showTimestamps ? "bg-accent-subtle text-accent font-medium" : "text-fg-muted hover:text-fg")}
+                className={cn("rounded px-2 py-1 transition-colors", showTimestamps ? "bg-accent-subtle text-accent-fg font-medium" : "text-fg-muted hover:text-fg")}
               >
                 Timestamps
               </button>
@@ -807,7 +807,7 @@ export function TranscriptViewer({
                     <button
                       key={sz}
                       onClick={() => setTextSize(sz)}
-                      className={cn("flex-1 rounded-md border py-1 text-xs", textSize === sz ? "border-accent text-accent" : "border-border text-fg-muted hover:text-fg")}
+                      className={cn("flex-1 rounded-md border py-1 text-xs", textSize === sz ? "border-accent text-accent-fg" : "border-border text-fg-muted hover:text-fg")}
                     >
                       {sz === "s" ? "Small" : sz === "m" ? "Default" : "Large"}
                     </button>

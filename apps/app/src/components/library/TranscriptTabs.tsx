@@ -77,7 +77,7 @@ export function TranscriptTabs({ tabs, activeId, transcriptId }: { tabs: ViewTab
                 }}
                 className={cn(
                   "w-full flex items-center gap-3 rounded-md px-2 min-h-[44px] text-sm transition-colors",
-                  t.id === activeId ? "bg-accent-subtle text-accent font-medium" : "text-fg hover:bg-surface-elevated/60",
+                  t.id === activeId ? "bg-accent-subtle text-accent-fg font-medium" : "text-fg hover:bg-surface-elevated/60",
                 )}
               >
                 <span className="flex-1 text-left">{t.label}</span>

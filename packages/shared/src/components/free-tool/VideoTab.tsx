@@ -1037,7 +1037,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
+            <div className="p-2 bg-accent/10 rounded-lg text-accent-fg shrink-0">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
@@ -1189,7 +1189,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             <div className="flex items-center gap-2 pl-5">
               <a
                 href={appHref(`/dashboard/library/${existingTranscriptId}`)}
-                className="text-sm font-medium text-accent hover:underline"
+                className="text-sm font-medium text-accent-fg hover:underline"
               >
                 View in Library
               </a>
@@ -1236,7 +1236,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    <p className="text-sm text-fg/80">
                      Your transcript is still being processed. Check your Library in a few minutes — it will appear there when ready.
                    </p>
-                   <a href={appHref('/dashboard/library')} className="text-xs text-accent hover:underline mt-1 inline-block">
+                   <a href={appHref('/dashboard/library')} className="text-xs text-accent-fg hover:underline mt-1 inline-block">
                      Go to Library →
                    </a>
                  </div>
@@ -1324,7 +1324,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       {isPlaylistUrl && (
         <div className="mb-8 p-4 bg-accent/10 border border-primary/20 rounded-xl flex items-center justify-between text-left animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/20 rounded-lg text-accent">
+            <div className="p-2 bg-accent/20 rounded-lg text-accent-fg">
               <AlertCircle className="h-5 w-5" />
             </div>
             <div>
@@ -1353,7 +1353,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             <ResultCardShell
               header={
                 <div className="flex items-center gap-2 min-w-0">
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--accent)]" />
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--accent-fg)]" />
                   <p className="truncate text-sm font-semibold text-[var(--fg-strong)]">Fetching captions</p>
                   <span className="ml-auto shrink-0"><MethodBadge method="captions">YouTube captions</MethodBadge></span>
                 </div>

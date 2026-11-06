@@ -24,7 +24,7 @@ export function MicroTrustRow({ signals, className }: MicroTrustRowProps) {
     <div className={`flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4 ${className ?? ""}`}>
       {items.map((s) => (
         <span key={s.label} className="flex items-center gap-1.5 text-xs text-[var(--fg-muted)]">
-          <span className="text-[var(--accent)] font-semibold">{s.icon}</span>
+          <span className="text-[var(--accent-fg)] font-semibold">{s.icon}</span>
           {s.label}
         </span>
       ))}

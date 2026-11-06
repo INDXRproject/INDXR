@@ -1,9 +1,9 @@
 import type { ReactNode } from "react"
 
-import { HexagonPattern } from "./icons/HexagonPattern"
 
 /**
- * Per-page honeycomb backdrop — the explicit opt-in that replaces the blanket wash
+ * Stijl B (2026-11-06): the honeycomb texture is gone; the wrapper keeps the min-h-full chain so
+ * pages that fill the viewport keep their layout. (Was: per-page honeycomb backdrop — the explicit opt-in that replaces the blanket wash
  * the dashboard layout used to paint behind every page (ADR-079). system.md §5
  * allows the pattern on empty states / marketing / auth / 404 / footer, not on
  * working dashboard pages, so each page now decides for itself by rendering (or not
@@ -25,7 +25,6 @@ export function DashboardBackdrop({
   // full-height chain and the texture reaches the bottom exactly as the old layout wash did.
   return (
     <div className={`relative min-h-full ${className ?? ""}`}>
-      <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
       <div className="relative min-h-full">{children}</div>
     </div>
   )

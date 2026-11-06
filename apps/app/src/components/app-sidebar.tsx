@@ -344,7 +344,7 @@ export function AppSidebar() {
                           className={cn(
                             "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                             isActive 
-                              ? "bg-accent-subtle text-accent [&_svg]:text-accent" 
+                              ? "bg-accent text-fg-on-accent font-bold [&_svg]:text-fg-on-accent" 
                               : "text-fg-subtle [&_svg]:text-fg-muted hover:bg-surface-elevated hover:text-fg",
                             collapsed && "justify-center"
                           )}
@@ -382,7 +382,7 @@ export function AppSidebar() {
                         className={cn(
                           "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                           pathname === "/dashboard/library" || pathname?.startsWith("/dashboard/library/")
-                            ? "bg-accent-subtle text-accent [&_svg]:text-accent" 
+                            ? "bg-accent text-fg-on-accent font-bold [&_svg]:text-fg-on-accent" 
                             : "text-fg-subtle [&_svg]:text-fg-muted hover:bg-surface-elevated hover:text-fg",
                           collapsed && "justify-center"
                         )}
@@ -443,7 +443,7 @@ export function AppSidebar() {
                           className={cn(
                             "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors cursor-pointer",
                             isLibraryPage && !selectedId
-                              ? "bg-accent-subtle text-accent font-medium"
+                              ? "bg-accent text-fg-on-accent font-bold"
                               : "text-fg-muted hover:text-fg hover:bg-accent/50",
                             dragOverId === "all" && dropHighlight
                           )}
@@ -483,7 +483,7 @@ export function AppSidebar() {
                                 className={cn(
                                   "group/col flex items-center gap-1 px-2 py-1.5 rounded-md text-xs transition-colors",
                                   isSelected
-                                    ? "bg-accent-subtle text-accent font-medium"
+                                    ? "bg-accent text-fg-on-accent font-bold"
                                     : "text-fg-muted hover:text-fg hover:bg-accent/50",
                                   isDragging && dropHighlight
                                 )}
@@ -670,7 +670,7 @@ export function AppSidebar() {
                       className={cn(
                         "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150",
                         isActive 
-                          ? "bg-accent-subtle text-accent [&_svg]:text-accent" 
+                          ? "bg-accent text-fg-on-accent font-bold [&_svg]:text-fg-on-accent" 
                           : "text-fg-subtle [&_svg]:text-fg-muted hover:bg-surface-elevated hover:text-fg",
                         collapsed && "justify-center"
                       )}

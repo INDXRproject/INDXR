@@ -25,7 +25,7 @@ export default async function AdminLayout({
       <nav className="border-b bg-bg sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 flex items-center gap-3 h-14">
           <Link href="/admin" className="flex items-center gap-1.5 shrink-0 text-fg" aria-label="INDXR admin">
-            <Logo className="size-6 text-accent" />
+            <Logo className="size-6 text-accent-fg" />
             <span className="font-semibold text-sm text-fg-muted">Admin</span>
           </Link>
           <AdminNav />

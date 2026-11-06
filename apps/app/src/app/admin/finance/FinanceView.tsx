@@ -383,7 +383,7 @@ function IncomeStatement({ s, r, enteredLines, isExternal }: { s: FinanceScope; 
       <Op text={`− COR ${eur(cor.against_revenue, true)}`} />
 
       <StatementLine label="Cost of revenue" value={eur(cor.against_revenue, true)} accent="cost">
-        <button onClick={() => setCorOpen((v) => !v)} className="text-xs text-accent hover:underline">
+        <button onClick={() => setCorOpen((v) => !v)} className="text-xs text-accent-fg hover:underline">
           {corOpen ? "Hide breakdown" : "Show breakdown per method"}
         </button>
         {corOpen && <CorTable s={s} r={r} />}
@@ -398,7 +398,7 @@ function IncomeStatement({ s, r, enteredLines, isExternal }: { s: FinanceScope; 
       <Op text={`− OPEX ${eur(opexTotal)}`} />
 
       <StatementLine label="Operating expenses" value={eur(opexTotal)} accent="cost">
-        <button onClick={() => setOpexOpen((v) => !v)} className="text-xs text-accent hover:underline">
+        <button onClick={() => setOpexOpen((v) => !v)} className="text-xs text-accent-fg hover:underline">
           {opexOpen ? "Hide breakdown" : "Show breakdown"}
         </button>
         {opexOpen && <OpexTable s={s} r={r} enteredLines={enteredLines} isExternal={isExternal} />}
@@ -738,13 +738,13 @@ function PeriodPicker({ period, nowISO }: { period: PeriodProp; nowISO: string }
           return (
             <button key={p.key}
               onClick={() => { setCustomOpen(false); go({ period: p.kind, ...(p.anchorISO ? { anchor: p.anchorISO } : {}) }) }}
-              className={`rounded-md border px-2.5 py-1 ${active ? "bg-accent-subtle font-medium text-accent" : "text-fg-muted hover:bg-surface-elevated"}`}>
+              className={`rounded-md border px-2.5 py-1 ${active ? "bg-accent-subtle font-medium text-accent-fg" : "text-fg-muted hover:bg-surface-elevated"}`}>
               {p.label}
             </button>
           )
         })}
         <button onClick={() => setCustomOpen((v) => !v)}
-          className={`rounded-md border px-2.5 py-1 ${period.kind === "custom" ? "bg-accent-subtle font-medium text-accent" : "text-fg-muted hover:bg-surface-elevated"}`}>
+          className={`rounded-md border px-2.5 py-1 ${period.kind === "custom" ? "bg-accent-subtle font-medium text-accent-fg" : "text-fg-muted hover:bg-surface-elevated"}`}>
           Custom
         </button>
       </div>
@@ -842,7 +842,7 @@ export function FinanceView(props: Props) {
           <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">Net profit</span>
           <div className="mt-1 flex items-baseline gap-2">
             <span className={`text-3xl font-bold tabular-nums ${profitTone(scope.net_profit)}`}>{eur(scope.net_profit)}</span>
-            {netDelta && <span className={`text-sm font-medium ${netDelta.up ? "text-accent" : "text-error"}`}>{netDelta.txt}</span>}
+            {netDelta && <span className={`text-sm font-medium ${netDelta.up ? "text-accent-fg" : "text-error"}`}>{netDelta.txt}</span>}
           </div>
           <p className="mt-1 text-xs text-fg-muted">{deltaCaption}</p>
         </div>
@@ -850,7 +850,7 @@ export function FinanceView(props: Props) {
           <span className="text-xs font-medium uppercase tracking-wider text-fg-muted">Revenue</span>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-3xl font-bold tabular-nums text-fg-strong">{eur(scope.revenue_delivered)}</span>
-            {revDelta && <span className={`text-sm font-medium ${revDelta.up ? "text-accent" : "text-error"}`}>{revDelta.txt}</span>}
+            {revDelta && <span className={`text-sm font-medium ${revDelta.up ? "text-accent-fg" : "text-error"}`}>{revDelta.txt}</span>}
           </div>
           <p className="mt-1 text-xs text-fg-muted">delivered this period · {deltaCaption}</p>
           {/* Deferred is a stock (stand-now), not part of this period's flow — shown as a standing, never summed into the hero. */}

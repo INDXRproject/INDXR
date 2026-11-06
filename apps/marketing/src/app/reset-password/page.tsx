@@ -92,7 +92,7 @@ export default function ResetPasswordPage() {
                 <Button className="w-full">Request a new link</Button>
               </Link>
               <p className="text-center text-sm text-fg-muted">
-                <Link href="/login" className="underline text-fg hover:text-accent">Back to login</Link>
+                <Link href="/login" className="underline text-fg hover:text-accent-fg">Back to login</Link>
               </p>
             </div>
           ) : (
@@ -132,7 +132,7 @@ export default function ResetPasswordPage() {
                 </Button>
               </form>
               <p className="text-center text-sm text-fg-muted mt-4">
-                <Link href="/login" className="underline text-fg hover:text-accent">Back to login</Link>
+                <Link href="/login" className="underline text-fg hover:text-accent-fg">Back to login</Link>
               </p>
             </>
           )}

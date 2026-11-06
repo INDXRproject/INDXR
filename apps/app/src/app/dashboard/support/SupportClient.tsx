@@ -163,7 +163,7 @@ export function SupportClient({ transcripts }: Props) {
                   className={cn(
                     "text-left px-4 py-3 rounded-lg border transition-colors",
                     category === cat.value
-                      ? "border-accent bg-accent-subtle text-accent"
+                      ? "border-accent bg-accent-subtle text-accent-fg"
                       : "border-border bg-surface text-fg hover:bg-surface-elevated"
                   )}
                 >

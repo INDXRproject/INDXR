@@ -459,7 +459,7 @@ export function TranscriptList({
   if (transcripts.length === 0) {
     if (narrowed) {
       return (
-        <div className="rounded-xl border border-dashed border-border py-20 text-center">
+        <div className="border-2 border-dashed border-border-strong py-20 text-center">
           <div className="flex flex-col items-center">
             <HexagonEmptyState className="mb-4" />
             <h3 className="text-lg font-medium text-fg">No transcripts match</h3>
@@ -472,7 +472,7 @@ export function TranscriptList({
       );
     }
     return (
-      <div className="rounded-xl border border-dashed border-border py-20 text-center">
+      <div className="border-2 border-dashed border-border-strong py-20 text-center">
         <div className="flex flex-col items-center">
           <HexagonEmptyState className="mb-4" />
           <h3 className="text-lg font-medium text-fg">Library is empty</h3>
@@ -607,9 +607,9 @@ export function TranscriptList({
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="overflow-hidden border-2 border-border-strong bg-bg">
         {/* Header row (desktop) */}
-        <div className="hidden sm:flex items-center gap-3 border-b border-border-subtle bg-surface-elevated/50 px-4 py-2.5 text-xs font-medium text-fg-muted">
+        <div className="hidden sm:flex items-center gap-3 border-b-2 border-border-strong bg-fg-strong px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.06em] text-bg">
           <button onClick={toggleSelectAll} aria-label="Select all on page">
             <TriBox checked={allSelected} indeterminate={someSelected} />
           </button>
@@ -622,7 +622,7 @@ export function TranscriptList({
           <span className="w-16 shrink-0" aria-hidden />
         </div>
 
-        <div className="divide-y divide-border-subtle">
+        <div className="divide-y divide-border">
           {transcripts.map((t) => {
             const badges = transcriptBadges(t);
             const colName = collectionName(t.collection_id);
@@ -678,7 +678,7 @@ export function TranscriptList({
                         dir="auto"
                         title={titleOf(t)}
                         className={cn(
-                          "text-fg text-[15px] leading-snug truncate hover:text-accent transition-colors",
+                          "text-fg text-[15px] leading-snug truncate hover:text-accent-fg transition-colors",
                           unread ? "font-medium" : "font-normal",
                           compact ? "max-w-full" : "",
                         )}

@@ -10,7 +10,7 @@ const CONFIG: Record<CalloutVariant, { icon: typeof Coins; label: string; box: s
     icon: Coins,
     label: "Costs credits",
     box: "bg-[var(--accent-subtle)] border-[var(--accent)]",
-    accent: "text-[var(--accent)]",
+    accent: "text-[var(--accent-fg)]",
   },
   careful: {
     icon: AlertTriangle,

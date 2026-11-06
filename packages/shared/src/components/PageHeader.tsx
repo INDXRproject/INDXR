@@ -22,7 +22,7 @@ export function PageHeader({
   return (
     <header className={`${compact ? "pt-2" : "pt-24 sm:pt-28"} pb-8 mb-10 border-b border-[var(--border)]`}>
       {eyebrow && (
-        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)] mb-3">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent-fg)] mb-3">
           {eyebrow}
         </p>
       )}

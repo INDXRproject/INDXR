@@ -51,7 +51,7 @@ export function ModeStrip({ className }: { className?: string }) {
             "data-[state=active]:text-[var(--fg-strong)] data-[state=active]:shadow-xs"
           )}
         >
-          <Icon className="size-[18px] text-[var(--fg-muted)] group-hover:text-[var(--fg)] group-data-[state=active]:text-[var(--accent)] transition-colors duration-150" />
+          <Icon className="size-[18px] text-[var(--fg-muted)] group-hover:text-[var(--fg)] group-data-[state=active]:text-[var(--accent-fg)] transition-colors duration-150" />
           {label}
         </TabsPrimitive.Trigger>
       ))}

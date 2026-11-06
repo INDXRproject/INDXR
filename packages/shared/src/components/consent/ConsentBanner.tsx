@@ -40,7 +40,7 @@ export function ConsentBanner({
               you around the web.{" "}
               <a
                 href={marketingHref("/privacy")}
-                className="underline text-[var(--fg)] hover:text-[var(--accent)]"
+                className="underline text-[var(--fg)] hover:text-[var(--accent-fg)]"
               >
                 Privacy Policy
               </a>

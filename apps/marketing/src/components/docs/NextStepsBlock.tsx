@@ -24,9 +24,9 @@ export function NextStepsBlock({ steps }: NextStepsBlockProps) {
               href={step.href}
               className="flex items-start gap-3 group text-sm"
             >
-              <ArrowRight className="h-4 w-4 text-[var(--accent)] shrink-0 mt-0.5 group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="h-4 w-4 text-[var(--accent-fg)] shrink-0 mt-0.5 group-hover:translate-x-0.5 transition-transform" />
               <span>
-                <span className="font-medium text-[var(--fg)] group-hover:text-[var(--accent)] transition-colors">
+                <span className="font-medium text-[var(--fg)] group-hover:text-[var(--accent-fg)] transition-colors">
                   {step.label}
                 </span>
                 {step.description && (

@@ -76,7 +76,7 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
           Smaller chunks improve precision; larger chunks preserve more context per embedding.{" "}
           <a
             href={marketingHref("/articles/chunk-youtube-transcripts-for-rag")}
-            className="text-accent hover:underline"
+            className="text-accent-fg hover:underline"
           >
             Learn about RAG chunking →
           </a>

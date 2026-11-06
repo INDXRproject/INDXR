@@ -9,7 +9,7 @@ export function SectionLabel({ label, action }: { label: string; action?: ReactN
   return (
     <div className="flex items-center gap-3 mb-5">
       <span className="h-2 w-2 rounded-full shrink-0 bg-[var(--accent)]" />
-      <h2 className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">{label}</h2>
+      <h2 className="text-xs font-semibold uppercase tracking-widest text-[var(--accent-fg)]">{label}</h2>
       <span className="h-px flex-1 bg-[var(--border)]" />
       {action && <div className="shrink-0">{action}</div>}
     </div>

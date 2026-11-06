@@ -93,7 +93,7 @@ export function FinanceSettings({
               {[30, 60, 90].map((d) => (
                 <button key={d} disabled={pending}
                   onClick={() => run(() => updateFinanceSetting("deferred_window_days", d))}
-                  className={`rounded-md border px-3 py-1.5 text-sm ${deferredWindowDays === d ? "bg-accent-subtle text-accent font-medium" : "hover:bg-surface-elevated"}`}>
+                  className={`rounded-md border px-3 py-1.5 text-sm ${deferredWindowDays === d ? "bg-accent-subtle text-accent-fg font-medium" : "hover:bg-surface-elevated"}`}>
                   {d} days
                 </button>
               ))}
@@ -122,7 +122,7 @@ function ExpenseItem({
           <div className="text-xs text-fg-muted">
             {eur(e.amount)} · {e.recurrence === "monthly" ? "monthly" : e.recurrence === "yearly" ? "yearly" : "one-off"} · {e.spread} · from {e.effective_from}
             {e.effective_to ? ` to ${e.effective_to}` : ""}
-            {fraction && <> · <span className="text-accent">{fraction}</span></>}
+            {fraction && <> · <span className="text-accent-fg">{fraction}</span></>}
           </div>
         </div>
         <div className="flex shrink-0 gap-1">

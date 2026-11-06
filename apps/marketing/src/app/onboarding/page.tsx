@@ -109,7 +109,7 @@ export default function OnboardingPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="h-6 w-6 rounded-full border-2 border-[var(--accent)] flex items-center justify-center mt-0.5 text-xs font-bold text-[var(--accent)] shrink-0">
+                <div className="h-6 w-6 rounded-full border-2 border-[var(--accent)] flex items-center justify-center mt-0.5 text-xs font-bold text-[var(--accent-fg)] shrink-0">
                   2
                 </div>
                 <div>

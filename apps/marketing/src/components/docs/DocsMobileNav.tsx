@@ -19,7 +19,7 @@ export function DocsMobileNav() {
       <SheetTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--fg)] hover:text-[var(--accent)] transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--fg)] hover:text-[var(--accent-fg)] transition-colors"
           aria-label="Open documentation navigation"
         >
           <Menu className="h-4 w-4" />

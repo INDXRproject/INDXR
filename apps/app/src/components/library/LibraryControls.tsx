@@ -209,7 +209,7 @@ function SortPanel({
 
 function DensityToggle({ density, onDensityChange }: Pick<LibraryControlsProps, "density" | "onDensityChange">) {
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5 bg-surface">
+    <div className="flex items-center gap-0.5 border-2 border-border-strong p-0.5 bg-bg">
       <Button
         variant="ghost"
         size="icon"
@@ -269,11 +269,11 @@ export function LibraryControls(props: LibraryControlsProps) {
     <div className="mb-4 space-y-2">
       <div className="flex items-center gap-2">
         {/* Search — always visible */}
-        <div className="relative w-full md:w-64">
+        <div className="relative w-full md:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted" />
           <Input
-            placeholder="Search…"
-            className="pl-8 h-9 rounded-lg border-border bg-surface text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent-subtle transition-all duration-150"
+            placeholder="Search titles and transcript text…"
+            className="pl-8 h-10 border-2 border-border-strong bg-bg text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent-subtle transition-all duration-150"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             dir="auto"
@@ -289,7 +289,7 @@ export function LibraryControls(props: LibraryControlsProps) {
                 variant="ghost"
                 className={cn(
                   "h-9 gap-2 rounded-lg border px-3 text-sm",
-                  activeCount > 0 ? "border-accent text-accent" : "border-border text-fg-muted hover:text-fg",
+                  activeCount > 0 ? "border-accent text-accent-fg" : "border-border text-fg-muted hover:text-fg",
                 )}
                 data-testid="library-filter"
               >
@@ -331,7 +331,7 @@ export function LibraryControls(props: LibraryControlsProps) {
           variant="ghost"
           className={cn(
             "md:hidden h-9 gap-2 rounded-lg border px-3 text-sm shrink-0",
-            activeCount > 0 ? "border-accent text-accent" : "border-border text-fg-muted",
+            activeCount > 0 ? "border-accent text-accent-fg" : "border-border text-fg-muted",
           )}
           onClick={() => setMobileFilterOpen(true)}
           aria-label="Filters and sort"
@@ -410,7 +410,7 @@ export function LibraryControls(props: LibraryControlsProps) {
               }}
               className={cn(
                 "w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm",
-                !selectedCollectionId ? "bg-accent-subtle text-accent font-medium" : "text-fg-muted hover:text-fg",
+                !selectedCollectionId ? "bg-accent-subtle text-accent-fg font-medium" : "text-fg-muted hover:text-fg",
               )}
             >
               <BookOpen className="h-4 w-4 shrink-0" />
@@ -425,7 +425,7 @@ export function LibraryControls(props: LibraryControlsProps) {
                 }}
                 className={cn(
                   "w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm",
-                  selectedCollectionId === c.id ? "bg-accent-subtle text-accent font-medium" : "text-fg-muted hover:text-fg",
+                  selectedCollectionId === c.id ? "bg-accent-subtle text-accent-fg font-medium" : "text-fg-muted hover:text-fg",
                 )}
               >
                 <Folder className="h-4 w-4 shrink-0" />

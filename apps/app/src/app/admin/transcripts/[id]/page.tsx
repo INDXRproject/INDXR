@@ -69,7 +69,7 @@ export default async function AdminTranscriptViewPage({
             href={`https://youtube.com/watch?v=${transcript.video_id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-accent underline underline-offset-2"
+            className="text-accent-fg underline underline-offset-2"
           >
             {transcript.video_id}
           </a>

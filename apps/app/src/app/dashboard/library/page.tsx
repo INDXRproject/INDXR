@@ -288,9 +288,9 @@ function LibraryContent() {
         <div className="flex flex-col flex-1 space-y-0">
           {/* Header */}
           <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
-            <h1 className="text-2xl font-semibold text-fg wrap-break-word">
+            <h1 className="text-4xl font-bold tracking-[-0.04em] text-fg-strong wrap-break-word sm:text-5xl">
               {pageTitle}
-              <span className="text-fg-muted font-normal text-base ml-2.5 whitespace-nowrap tabular-nums">
+              <span className="font-mono text-fg-muted font-normal text-sm tracking-normal ml-3 whitespace-nowrap tabular-nums">
                 · {narrowed ? `${filteredCount} of ${totalCount}` : totalCount}
                 {" "}transcript{(narrowed ? totalCount : totalCount) !== 1 ? "s" : ""}
               </span>
@@ -317,7 +317,7 @@ function LibraryContent() {
               {selectedCollectionId && (
                 <button
                   onClick={() => selectCollection(null)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-elevated pl-3 pr-2 py-1 text-xs text-fg-subtle hover:text-fg hover:border-border-strong transition-colors duration-150 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 border-2 border-border-strong bg-accent pl-3 pr-2 py-1 text-xs font-bold text-fg-on-accent transition-colors duration-150 cursor-pointer"
                 >
                   Collection: <span className="font-medium text-fg" dir="auto">{selectedCollectionName}</span>
                   <X className="h-3 w-3 ml-0.5" />
@@ -327,7 +327,7 @@ function LibraryContent() {
                 <button
                   key={chip.id}
                   onClick={() => chip.clear.forEach((c) => clearFilter(c.param, c.value))}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface pl-3 pr-2 py-1 text-xs text-fg-subtle hover:text-fg hover:border-border-strong transition-colors duration-150 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 border-2 border-border-strong bg-bg pl-3 pr-2 py-1 text-xs font-bold text-fg-strong hover:bg-bg-subtle transition-colors duration-150 cursor-pointer"
                 >
                   {chip.label}
                   <X className="h-3 w-3 ml-0.5" />

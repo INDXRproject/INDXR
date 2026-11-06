@@ -174,11 +174,11 @@ export default function SignupPage() {
             
             <p className="text-xs text-center text-fg-muted mt-4">
             By signing up, you agree to our{" "}
-            <Link href="/terms" className="text-accent hover:underline">
+            <Link href="/terms" className="text-accent-fg hover:underline">
                 Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-accent hover:underline">
+            <Link href="/privacy" className="text-accent-fg hover:underline">
                 Privacy Policy
             </Link>
             </p>
@@ -187,7 +187,7 @@ export default function SignupPage() {
         {/* Log in link */}
         <p className="text-center text-sm text-fg-muted mt-6">
             Already have an account?{" "}
-            <Link href={nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"} className="text-accent hover:text-accent/90 font-medium hover:underline transition-all">
+            <Link href={nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"} className="text-accent-fg hover:text-accent/90 font-medium hover:underline transition-all">
             Log in
             </Link>
         </p>

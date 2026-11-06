@@ -164,17 +164,17 @@ export function Header() {
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <nav className="mt-10 flex flex-col">
                 <SheetClose asChild>
-                  <a href={marketingHref('/pricing')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent">
+                  <a href={marketingHref('/pricing')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent-fg">
                     Pricing
                   </a>
                 </SheetClose>
                 <SheetClose asChild>
-                  <a href={marketingHref('/docs')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent">
+                  <a href={marketingHref('/docs')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent-fg">
                     Docs
                   </a>
                 </SheetClose>
                 <SheetClose asChild>
-                  <a href={marketingHref('/articles')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent">
+                  <a href={marketingHref('/articles')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent-fg">
                     Articles
                   </a>
                 </SheetClose>
@@ -197,7 +197,7 @@ export function Header() {
                 ) : (
                   <>
                     <SheetClose asChild>
-                      <a href={marketingHref('/login')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent">
+                      <a href={marketingHref('/login')} className="flex items-center min-h-[44px] text-lg font-medium text-fg transition-colors hover:text-accent-fg">
                         Log in
                       </a>
                     </SheetClose>

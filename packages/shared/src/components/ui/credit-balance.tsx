@@ -20,8 +20,8 @@ export function CreditBalance({ credits, className }: CreditBalanceProps) {
         className
       )}
     >
-      <Sparkles className="size-4 text-accent" />
-      <span className="text-sm font-medium text-accent">
+      <Sparkles className="size-4 text-accent-fg" />
+      <span className="text-sm font-medium text-accent-fg">
         {credits} credits
       </span>
     </Link>

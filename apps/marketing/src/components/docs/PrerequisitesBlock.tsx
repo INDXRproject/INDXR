@@ -11,7 +11,7 @@ export function PrerequisitesBlock({ items }: PrerequisitesBlockProps) {
       <ul className="space-y-1.5">
         {items.map((item, i) => (
           <li key={i} className="text-sm text-[var(--fg-muted)] flex gap-2">
-            <span className="text-[var(--accent)] mt-0.5">✓</span>
+            <span className="text-[var(--accent-fg)] mt-0.5">✓</span>
             <span>{item}</span>
           </li>
         ))}

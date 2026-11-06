@@ -17,7 +17,7 @@ export function InvoiceButton({ transactionId, initialUrl }: { transactionId: st
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline whitespace-nowrap"
+        className="inline-flex items-center gap-1 text-xs font-medium text-accent-fg hover:underline whitespace-nowrap"
       >
         Download invoice <ExternalLink className="h-3 w-3" />
       </a>

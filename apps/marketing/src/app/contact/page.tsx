@@ -87,7 +87,7 @@ export default function ContactPage() {
                 className="group text-left p-6 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-elevated)] hover:border-[var(--border-strong)] transition-all cursor-pointer"
               >
                 <div className="h-10 w-10 rounded-[var(--radius)] bg-[var(--accent-subtle)] flex items-center justify-center mb-4">
-                  <c.icon className="h-5 w-5 text-[var(--accent)]" />
+                  <c.icon className="h-5 w-5 text-[var(--accent-fg)]" />
                 </div>
                 <h2 className="text-base font-semibold text-[var(--fg)] mb-2">{c.title}</h2>
                 <p className="text-sm text-[var(--fg-muted)] leading-relaxed">{c.blurb}</p>
@@ -100,7 +100,7 @@ export default function ContactPage() {
         {active && !submitted && (
           <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-6">
-              <active.icon className="h-5 w-5 text-[var(--accent)]" />
+              <active.icon className="h-5 w-5 text-[var(--accent-fg)]" />
               <h2 className="text-base font-semibold text-[var(--fg)]">{active.title}</h2>
               <button
                 onClick={() => { setCategory(null); setError(null) }}

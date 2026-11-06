@@ -48,7 +48,7 @@ export function JobProgressCard({
       className={cn("w-full", className)}
       header={
         <div className="flex items-start gap-2 min-w-0">
-          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--accent)]" />
+          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--accent-fg)]" />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[var(--fg-strong)]">{STATUS_LABEL[status]}</p>
             {title?.trim() && (

@@ -572,7 +572,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           className="p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
+            <div className="p-2 bg-accent/10 rounded-lg text-accent-fg shrink-0">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
@@ -643,7 +643,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           {isUploading ? (
             <>
               <div className="p-4 bg-accent/10 rounded-full mb-4">
-                <Loader2 className="h-8 w-8 text-accent animate-spin" />
+                <Loader2 className="h-8 w-8 text-accent-fg animate-spin" />
               </div>
               <h3 className="text-xl font-semibold text-fg mb-2">Processing file...</h3>
               <p className="text-fg-muted">Reading duration</p>

@@ -106,7 +106,7 @@ export function EditableSummaryView({ id, generatedSummary, editedContent, edite
 
   const btn = (active: boolean) =>
     cn("h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors",
-      active ? "bg-accent-subtle text-accent" : "text-fg-muted hover:text-fg hover:bg-surface-elevated/60");
+      active ? "bg-accent-subtle text-accent-fg" : "text-fg-muted hover:text-fg hover:bg-surface-elevated/60");
 
   return (
     <div className="max-w-4xl mx-auto px-6 lg:px-12 py-12 w-full">

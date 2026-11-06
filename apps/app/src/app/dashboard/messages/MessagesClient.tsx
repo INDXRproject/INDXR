@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation"
 import { Inbox, Archive, ArchiveRestore, CheckCheck, ChevronLeft, ChevronDown, ChevronRight, Send } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import { cn } from "@indxr/shared/lib/utils"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { SupportClient } from "../support/SupportClient"
 
@@ -261,7 +260,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
           )}
         >
           Inbox
-          {unreadCount > 0 && <span className="text-xs text-accent">({unreadCount})</span>}
+          {unreadCount > 0 && <span className="text-xs text-accent-fg">({unreadCount})</span>}
         </button>
         <button
           onClick={() => switchTopTab("support")}
@@ -283,7 +282,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
             <button
               onClick={() => { setShowArchived(false); setSelectedId(null); setMobileDetail(false) }}
               className={cn("px-2.5 py-1 text-xs rounded-full border transition-colors",
-                !showArchived ? "border-accent bg-accent-subtle text-accent" : "border-border text-fg-muted hover:text-fg"
+                !showArchived ? "border-accent bg-accent-subtle text-accent-fg" : "border-border text-fg-muted hover:text-fg"
               )}
             >
               Active
@@ -291,7 +290,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
             <button
               onClick={() => { setShowArchived(true); setSelectedId(null); setMobileDetail(false) }}
               className={cn("px-2.5 py-1 text-xs rounded-full border transition-colors",
-                showArchived ? "border-accent bg-accent-subtle text-accent" : "border-border text-fg-muted hover:text-fg"
+                showArchived ? "border-accent bg-accent-subtle text-accent-fg" : "border-border text-fg-muted hover:text-fg"
               )}
             >
               Archived
@@ -304,9 +303,6 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
             <div className={cn("flex flex-col gap-1 w-full lg:w-80 shrink-0", mobileDetail && "hidden md:flex")}>
               {visible.length === 0 ? (
                 <div className="relative overflow-hidden rounded-lg text-center py-12 text-fg-muted">
-                  {/* Empty states keep the honeycomb (system.md §5), even though the working
-                      Messages page no longer carries the blanket wash (ADR-079). */}
-                  <HexagonPattern className="opacity-[0.04] dark:opacity-[0.06]" />
                   <div className="relative">
                     <Inbox className="h-8 w-8 mx-auto mb-3 opacity-40" />
                     <p className="text-sm">{showArchived ? "No archived messages." : "No messages — we'll write when something matters."}</p>
@@ -328,7 +324,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <span className={cn(
                         "text-sm font-medium truncate",
-                        selectedId === msg.id ? "text-accent" : "text-fg"
+                        selectedId === msg.id ? "text-accent-fg" : "text-fg"
                       )}>
                         {msg.title}
                       </span>
@@ -418,7 +414,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
                         </span>
                         <span className={cn(
                           "shrink-0 text-xs px-2 py-0.5 rounded-full",
-                          ticket.status === "open" ? "bg-accent-subtle text-accent" : "bg-surface-elevated text-fg-muted"
+                          ticket.status === "open" ? "bg-accent-subtle text-accent-fg" : "bg-surface-elevated text-fg-muted"
                         )}>
                           {ticket.status === "open" ? "Open" : "Closed"}
                         </span>
@@ -460,7 +456,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
                                 <div className="flex items-center gap-2 mb-1.5">
                                   <span className={cn(
                                     "text-xs font-medium",
-                                    isUserReply ? "text-fg" : "text-accent"
+                                    isUserReply ? "text-fg" : "text-accent-fg"
                                   )}>
                                     {isUserReply ? "You" : "INDXR Support"}
                                   </span>

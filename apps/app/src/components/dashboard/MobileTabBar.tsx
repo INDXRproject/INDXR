@@ -51,7 +51,7 @@ export function MobileTabBar({ messagesUnread = 0 }: MobileTabBarProps) {
               className={cn(
                 "flex-1 flex flex-col items-center justify-center gap-0.5 relative transition-colors",
                 active
-                  ? "text-accent border-t-2 border-accent"
+                  ? "text-accent-fg border-t-2 border-accent"
                   : "text-fg-muted border-t-2 border-transparent hover:text-fg"
               )}
               aria-current={active ? "page" : undefined}

@@ -371,7 +371,8 @@ export default function TranscribePage() {
   return (
     <div className="mx-auto w-full max-w-[640px] space-y-6">
       <div>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-fg">Transcribe</h1>
+        <p className="mb-3 font-mono text-xs uppercase tracking-[0.08em] text-fg">New transcript</p>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-[-0.04em] text-fg-strong">Transcribe</h1>
         <p className="mt-2 text-fg-muted">Turn an uploaded audio or video file, a YouTube link, or a playlist into a transcript.</p>
       </div>
 
@@ -383,8 +384,8 @@ export default function TranscribePage() {
             <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full — this transcript wasn&apos;t saved.</p>
             <p className="text-sm text-fg-subtle mt-1">
               You can still copy or export it above. To save new transcripts, delete some from your{" "}
-              <a href="/dashboard/library" className="text-accent hover:underline">library</a>, or buy more space on your{" "}
-              <a href="/dashboard/account" className="text-accent hover:underline">account page</a>. Your existing transcripts are safe.
+              <a href="/dashboard/library" className="text-accent-fg hover:underline">library</a>, or buy more space on your{" "}
+              <a href="/dashboard/account" className="text-accent-fg hover:underline">account page</a>. Your existing transcripts are safe.
             </p>
           </div>
           <button onClick={() => setStorageFull(false)} className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none" aria-label="Dismiss">✕</button>

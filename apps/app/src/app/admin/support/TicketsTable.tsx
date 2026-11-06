@@ -192,7 +192,7 @@ export function TicketsTable({ initialTickets, initialRepliesByTicket }: Props) 
               onClick={() => setFilter(f)}
               className={cn("px-2.5 py-1 text-xs rounded-full border transition-colors",
                 filter === f
-                  ? "border-accent bg-accent-subtle text-accent"
+                  ? "border-accent bg-accent-subtle text-accent-fg"
                   : "border-border text-fg-muted hover:text-fg"
               )}
             >
@@ -232,7 +232,7 @@ export function TicketsTable({ initialTickets, initialRepliesByTicket }: Props) 
 
               <span className={cn(
                 "text-xs px-2 py-0.5 rounded-full shrink-0",
-                ticket.status === "open" ? "bg-accent-subtle text-accent" : "bg-surface-elevated text-fg-muted"
+                ticket.status === "open" ? "bg-accent-subtle text-accent-fg" : "bg-surface-elevated text-fg-muted"
               )}>
                 {ticket.status}
               </span>
@@ -280,7 +280,7 @@ export function TicketsTable({ initialTickets, initialRepliesByTicket }: Props) 
                       className={cn("px-4 py-3 border-t border-border/50", isUser ? "bg-bg" : "bg-surface")}
                     >
                       <div className="flex items-center gap-2 mb-1.5">
-                        <span className={cn("text-xs font-semibold", isUser ? "text-fg" : "text-accent")}>
+                        <span className={cn("text-xs font-semibold", isUser ? "text-fg" : "text-accent-fg")}>
                           {isUser ? (ticket.user_email ?? "User") : "INDXR Support"}
                         </span>
                         <span className="text-xs text-fg-muted">{fmtDate(reply.created_at)}</span>

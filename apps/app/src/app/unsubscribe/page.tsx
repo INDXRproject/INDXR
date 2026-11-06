@@ -53,7 +53,7 @@ export default async function UnsubscribePage({
               <p className="text-sm text-fg-muted">
                 This unsubscribe link is invalid or has expired. If you keep receiving
                 unwanted emails, reach out to{" "}
-                <a href="mailto:support@indxr.ai" className="text-accent hover:underline">
+                <a href="mailto:support@indxr.ai" className="text-accent-fg hover:underline">
                   support@indxr.ai
                 </a>
                 .

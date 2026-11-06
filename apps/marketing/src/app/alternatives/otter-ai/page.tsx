@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Fragment } from "react"
 import Link from "next/link"
-import { HexagonPattern } from "@indxr/shared/components/icons/HexagonPattern"
 import { JsonLd } from "@/components/seo/JsonLd"
 import {
   PACKAGES,
@@ -165,7 +164,6 @@ export default function OtterAlternativePage() {
       <JsonLd schemas={[breadcrumbSchema]} />
 
       <div className="relative min-h-screen bg-[var(--bg)]">
-        <HexagonPattern className="opacity-[0.03] dark:opacity-[0.045]" />
 
         {/* pt-28 clears the fixed h-16 header + a 3rem gap (matches About/Privacy/Terms/Contact). */}
         <div className="relative container mx-auto px-4 pb-24 pt-28 sm:px-6 lg:px-8">

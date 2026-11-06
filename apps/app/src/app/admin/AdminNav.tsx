@@ -30,7 +30,7 @@ export function AdminNav() {
             aria-current={active ? "page" : undefined}
             className={`whitespace-nowrap px-3 py-1.5 text-sm rounded-md transition-colors ${
               active
-                ? "bg-accent-subtle text-accent font-medium"
+                ? "bg-accent-subtle text-accent-fg font-medium"
                 : "text-fg-muted hover:bg-surface-elevated hover:text-fg"
             }`}
           >

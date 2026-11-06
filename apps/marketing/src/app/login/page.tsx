@@ -153,7 +153,7 @@ export default function LoginPage() {
             Don&apos;t have an account?{" "}
             <Link
               href={nextParam ? `/signup?next=${encodeURIComponent(nextParam)}` : "/signup"}
-              className="underline text-fg hover:text-accent"
+              className="underline text-fg hover:text-accent-fg"
             >
               Sign up
             </Link>

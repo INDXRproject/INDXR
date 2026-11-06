@@ -19,7 +19,7 @@ export function ThemeToggle() {
       className="cursor-pointer"
     >
       {mounted && resolvedTheme === "dark" ? (
-        <Moon className="size-5 text-accent" />
+        <Moon className="size-5 text-accent-fg" />
       ) : (
         <Sun className="size-5 text-warning" />
       )}
