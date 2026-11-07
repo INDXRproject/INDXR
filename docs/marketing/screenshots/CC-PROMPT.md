@@ -1,4 +1,4 @@
-# Prompt voor Claude Code op de laptop: demo-account + marketing-screenshots (2026-11-07)
+# Prompt voor Claude Code op de laptop: demo-account + marketing-screenshots (2026-11-07, ronde 2)
 
 Waarom op de laptop: de schermafbeeldingen vanuit de cloud-sessie komen maar 1092 px breed uit Chrome, en dat is te klein voor Product Hunt en de site. Playwright op de laptop maakt ze scherp (2×). Daarnaast staan daar de service-role-sleutels al in `.env.local`, die de cloud-sessie niet heeft.
 
@@ -6,11 +6,11 @@ Kopieer alles tussen de lijnen in Claude Code (in de map `INDXR.AI V2`).
 
 ---
 
-Maak een schone demo-bibliotheek in een apart intern account en maak daarvan marketing-screenshots met Playwright. Raak het account van Khidr niet aan: je mag het alleen lezen als bron.
+Eerst `git pull` (de app heeft sinds ronde 1 een nieuwe werkbalk en een bronkaart). Maak een schone demo-bibliotheek in een apart intern account en maak daarvan marketing-screenshots met Playwright. Raak het account van Khidr niet aan: je mag het alleen lezen als bron.
 
 **1. Demo-account**
 - Maak `demo@indxr.ai` aan via `admin.createUser`, met `email_confirm: true` en `profiles.is_internal = true`, op dezelfde manier als de e2e-pool in `tests/playwright/helpers/provision.ts`.
-- Genereer het wachtwoord per run en bewaar het nergens duurzaam, net als bij de e2e-pool.
+- Genereer het wachtwoord per run en bewaar het nergens duurzaam, net als bij de e2e-pool. Zet het ook bij een bestaand account opnieuw (het vorige wachtwoord stond in een terminal-log). Toon het nergens in je output.
 - Bestaat het account al, hergebruik het dan en zet de staat terug: verwijder de transcripten en collecties van dit account.
 
 **2. Inhoud kopiëren**
@@ -42,7 +42,10 @@ Maak een schone demo-bibliotheek in een apart intern account en maak daarvan mar
   8. `dashboard-home.png`: Home.
   9. `transcribe-youtube.png`: Transcribe → YouTube, met de URL van Justice 07 (`KqzW0eHzDSQ`) ingevuld. Niet op Extract klikken.
   10. `mobile-library.png` en `mobile-transcript.png`: mobiel, bibliotheek en "Justice 01".
-- Controleer elke afbeelding door hem te openen: geen cookiebanner, geen laadstatus, geen foutmelding.
+  11. `transcript-source-card.png`: desktop, "Justice 01", met rechts de bronkaart (thumbnail, gegevens, citaat met datum 2009).
+  12. `mobile-transcript-toolbar.png`: mobiel, "Justice 01", ingezoomd op titel + bronregel + werkbalk.
+- Overschrijf de PNG's van ronde 1 (die tonen nog de oude werkbalk).
+- Controleer elke afbeelding door hem te openen: geen cookiebanner, geen laadstatus, geen foutmelding, geen zinnen die midden in een regel afbreken, en op mobiel niets dat buiten het scherm valt.
 
 **4. Afronden — de cloud-Claude moet erbij kunnen**
 - De PNG's staan in `docs/marketing/screenshots/2026-11/` in de repo. Daar leest de cloud-sessie ze uit via `git pull`. Zet ze dus nergens anders neer, ook niet in `test-results/` of `/tmp`.
