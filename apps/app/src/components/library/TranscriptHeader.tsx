@@ -2,10 +2,9 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Clock, FileText, Calendar, Languages } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { createClient } from "@indxr/shared/utils/supabase/client";
-import { cn } from "@indxr/shared/lib/utils";
-import { Badge, CollectionBadge, transcriptBadges } from "./badges";
+import { Badge, transcriptBadges } from "./badges";
 import type { Transcript } from "./TranscriptList";
 
 /** Detail-page date — Today / Yesterday / "28 Jul" (never "4h ago"; that's the list's style). */
@@ -18,26 +17,6 @@ export function formatDetailDate(dateString: string): string {
   if (days === 1) return "Yesterday";
   const sameYear = d.getFullYear() === now.getFullYear();
   return d.toLocaleDateString("en-US", sameYear ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" });
-}
-
-function formatDuration(seconds: number) {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-/** ISO code → full English language name ("ru" → "Russian"). Returns null for a missing or unknown
- *  code so the caller omits the field rather than showing a bare code or "Unknown". */
-function languageName(code: string | null | undefined): string | null {
-  if (!code) return null;
-  try {
-    const name = new Intl.DisplayNames(["en"], { type: "language", fallback: "none" }).of(code);
-    return name && name.toLowerCase() !== code.toLowerCase() ? name : null;
-  } catch {
-    return null;
-  }
 }
 
 interface TranscriptHeaderProps {
@@ -53,12 +32,12 @@ interface TranscriptHeaderProps {
   duration: number | null;
   characterCount: number | null;
   createdAt: string;
-  /** Detected language code (ISO 639-1), or null when none is stored. Shown as the full name. */
+  /** Detected language code (ISO 639-1), or null when none is stored. */
   language: string | null;
 }
 
 /**
- * Page header for the transcript detail view: breadcrumb → title → one fact line. Consistent
+ * Page header for the transcript detail view: breadcrumb → title → badges (facts: SourceCard). Consistent
  * across every tab (it lives above the tabs). Title is editable inline; the badges, tokens and
  * date match the Library so the page reads as the same product.
  */
@@ -87,8 +66,6 @@ export function TranscriptHeader(props: TranscriptHeaderProps) {
     has_rag: props.hasRag,
   } as unknown as Transcript;
   const badges = transcriptBadges(badgeRow);
-  const words = props.characterCount ? Math.round(props.characterCount / 5).toLocaleString() : null;
-  const langName = languageName(props.language);
 
   return (
     <div className="mb-5">
@@ -135,36 +112,11 @@ export function TranscriptHeader(props: TranscriptHeaderProps) {
         </h1>
       )}
 
-      {/* Fact line */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-xs text-fg">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {badges.map((b) => (
-            <Badge key={b.key} label={b.label} variant={b.variant} pencil={b.pencil} title={b.title} />
-          ))}
-          {props.collectionName && <CollectionBadge name={props.collectionName} />}
-        </div>
-        {props.duration != null && (
-          <span className="inline-flex items-center gap-1 tabular-nums">
-            <Clock className={cn("h-3.5 w-3.5", "text-fg-subtle")} />
-            {formatDuration(props.duration)}
-          </span>
-        )}
-        {words && (
-          <span className="inline-flex items-center gap-1 tabular-nums">
-            <FileText className="h-3.5 w-3.5 text-fg-subtle" />
-            {words} words
-          </span>
-        )}
-        {langName && (
-          <span className="inline-flex items-center gap-1">
-            <Languages className="h-3.5 w-3.5 text-fg-subtle" />
-            {langName}
-          </span>
-        )}
-        <span className="inline-flex items-center gap-1 tabular-nums">
-          <Calendar className="h-3.5 w-3.5 text-fg-subtle" />
-          {formatDetailDate(props.createdAt)}
-        </span>
+      {/* Badges only — the facts (length, words, language, date, source) live in the SourceCard. */}
+      <div className="mt-4 flex flex-wrap items-center gap-1.5">
+        {badges.map((b) => (
+          <Badge key={b.key} label={b.label} variant={b.variant} pencil={b.pencil} title={b.title} />
+        ))}
       </div>
     </div>
   );

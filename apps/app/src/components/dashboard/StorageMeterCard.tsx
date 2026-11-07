@@ -67,9 +67,9 @@ export function StorageMeterCard({
         </>
       )}
 
-      <div className="flex justify-between items-end mb-2">
-        <span className="text-sm font-medium text-fg tabular-nums">{fmt(usedMB)} MB</span>
-        <span className="text-xs text-fg-muted tabular-nums">of {fmt(capMB)} MB</span>
+      <div className="flex justify-between items-baseline mb-2">
+        <span className="text-2xl font-bold tracking-[-0.03em] text-fg-strong tabular-nums">{fmt(usedMB)} MB</span>
+        <span className="font-mono text-xs text-fg tabular-nums">of {fmt(capMB)} MB</span>
       </div>
       <div className="h-3 w-full border-2 border-border-strong bg-bg overflow-hidden">
         <div
@@ -79,7 +79,7 @@ export function StorageMeterCard({
       </div>
 
       {over ? (
-        <div className="mt-4 rounded-lg border border-error/20 bg-error-subtle px-4 py-3">
+        <div className="mt-4 border-2 border-error bg-error-subtle px-4 py-3">
           <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full.</p>
           <p className="text-sm text-fg-subtle mt-1">
             New transcripts are paused until you free up space. Delete some transcripts from your{" "}
@@ -87,27 +87,22 @@ export function StorageMeterCard({
             {atMax ? "" : ", or buy more room below"}. Your existing transcripts are safe.
           </p>
         </div>
-      ) : (
-        <p className="text-xs text-fg-muted mt-3">
-          When you hit the limit, new transcripts pause until you free up space or buy more. Existing
-          transcripts are never touched.
-        </p>
-      )}
+      ) : null}
 
       {atMax ? (
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Button disabled variant="outline" size="sm">
-            Buy +{STORAGE_BLOCK_MB} MB — {STORAGE_BLOCK_COST_CREDITS} credits
+          <Button disabled variant="outline" size="sm" className="h-8">
+            +{STORAGE_BLOCK_MB} MB
           </Button>
           <span className="text-xs text-fg-muted">
             You&apos;ve reached the maximum library storage ({LIBRARY_STORAGE_MAX_MB} MB). Delete transcripts to free space.
           </span>
         </div>
       ) : confirming ? (
-        <div className="mt-4 rounded-lg border border-border bg-surface-elevated/40 px-4 py-3">
+        <div className="mt-4 border-2 border-border-strong px-4 py-3">
           <p className="text-sm text-fg">
             Spend <strong>{STORAGE_BLOCK_COST_CREDITS} credits</strong> for a permanent{" "}
-            <strong>+{STORAGE_BLOCK_MB} MB</strong> of library storage?
+            <strong>+{STORAGE_BLOCK_MB} MB</strong> of library storage? Extra space never expires, like your credits.
           </p>
           <div className="mt-3 flex gap-2">
             <Button onClick={buy} disabled={buying} size="sm">
@@ -119,15 +114,21 @@ export function StorageMeterCard({
           </div>
         </div>
       ) : (
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        // Stijl B (2026-11-07): one short button, one short line — the details (cost, permanence)
+        // are in the confirm step, not in the button label.
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <span className="text-xs text-fg-muted">
+            {over ? "Add room to keep transcribing." : "Full? New transcripts pause; saved ones stay."}
+          </span>
           <Button
             onClick={() => { setMsg(null); setConfirming(true) }}
             variant={over ? "default" : "outline"}
             size="sm"
+            className="h-8 shrink-0 gap-1.5"
           >
-            Buy +{STORAGE_BLOCK_MB} MB — {STORAGE_BLOCK_COST_CREDITS} credits
+            +{STORAGE_BLOCK_MB} MB
+            <span className="font-mono text-[11px] font-normal opacity-70">{STORAGE_BLOCK_COST_CREDITS} cr</span>
           </Button>
-          <span className="text-xs text-fg-muted">Extra space is permanent, like your credits.</span>
         </div>
       )}
 

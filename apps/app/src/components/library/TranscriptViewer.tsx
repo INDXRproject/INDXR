@@ -20,7 +20,6 @@ import {
   Save,
   AlertCircle,
   MoreHorizontal,
-  SlidersHorizontal,
   RotateCcw,
   Play,
   Pencil,
@@ -335,13 +334,6 @@ export function TranscriptViewer({
   const [isSaving, setIsSaving] = useState(false);
   // True when an edited version has been persisted in Supabase
   const [hasSavedEdits, setHasSavedEdits] = useState(editedContent !== null);
-
-  // The ⋯ overflow can degrade to a single item: with no video (no "Watch on YouTube") and without
-  // saved edits (no "Revert"), only "Delete" remains. Rather than a ⋯ that opens one item, show Delete
-  // directly then (same rule as the bulk bar / AiSummaryView).
-  const overflowActionCount =
-    (hasVideo ? 1 : 0) + (hasSavedEdits && isEditedMode ? 1 : 0) + 1; // +1 = Delete (always)
-  const collapseOverflowToDelete = overflowActionCount <= 1;
 
   // Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -766,78 +758,74 @@ export function TranscriptViewer({
     <>
       <div className="bg-bg">
         <div className="max-w-3xl mx-auto px-6 lg:px-12 pb-20 pt-2 space-y-4">
-          {/* Toolbar — read tools, right-aligned; wraps on mobile so nothing falls off screen */}
-          <div className="sticky top-0 z-10 -mx-6 lg:-mx-12 px-6 lg:px-12 bg-bg flex items-center justify-end gap-1 flex-wrap py-2 border-b border-border-subtle">
-            {/* Find */}
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" onClick={() => setShowSearch((s) => !s)} aria-label="Find" title="Find (Ctrl/Cmd+F)">
-              <Search className="h-4 w-4" />
-            </Button>
-
-            {/* View option — Paragraphs | Timestamps. A display toggle for the SAME content, so it is a
-                visible segmented control near the transcript (not buried in a menu, not a tab, not an
-                action). Stays reachable on mobile (short labels, the row wraps). */}
-            <div className="inline-flex items-center border-2 border-border-strong text-xs font-bold" role="group" aria-label="View">
+          {/* Toolbar (stijl B, 2026-11-07) — two zones in one bar. Left = how you READ (view, find, text
+              size). Right = what you DO (copy, export, edit) as three equal ink buttons, then ONE overflow
+              menu for the rare rest. Desktop: one row. Mobile: the read zone on top, the three actions as
+              an even grid below — never a wrapped jumble. */}
+          <div className="sticky top-0 z-10 -mx-6 lg:-mx-12 px-6 lg:px-12 bg-bg py-3 border-b-2 border-border-strong flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              {/* View — Paragraphs | Timestamps: same content, two readings. */}
+              <div className="inline-flex h-9 items-stretch border-2 border-border-strong text-xs font-bold" role="group" aria-label="View">
+                <button
+                  onClick={() => setShowTimestamps(false)}
+                  aria-pressed={!showTimestamps}
+                  className={cn("px-3 transition-colors", !showTimestamps ? "bg-fg-strong text-bg" : "text-fg-strong hover:bg-bg-subtle")}
+                >
+                  Paragraphs
+                </button>
+                <button
+                  onClick={() => setShowTimestamps(true)}
+                  aria-pressed={showTimestamps}
+                  className={cn("border-l-2 border-border-strong px-3 transition-colors", showTimestamps ? "bg-fg-strong text-bg" : "text-fg-strong hover:bg-bg-subtle")}
+                >
+                  Timestamps
+                </button>
+              </div>
               <button
-                onClick={() => setShowTimestamps(false)}
-                aria-pressed={!showTimestamps}
-                className={cn("px-2.5 py-1 transition-colors", !showTimestamps ? "bg-fg-strong text-bg" : "text-fg-strong hover:bg-bg-subtle")}
+                onClick={() => setShowSearch((s) => !s)}
+                aria-label="Find in transcript"
+                aria-pressed={showSearch}
+                title="Find (Ctrl/Cmd+F)"
+                className={cn("inline-flex h-9 w-9 items-center justify-center border-2 border-border-strong transition-colors", showSearch ? "bg-fg-strong text-bg" : "text-fg-strong hover:bg-bg-subtle")}
               >
-                Paragraphs
+                <Search className="h-4 w-4" />
               </button>
-              <button
-                onClick={() => setShowTimestamps(true)}
-                aria-pressed={showTimestamps}
-                className={cn("border-l-2 border-border-strong px-2.5 py-1 transition-colors", showTimestamps ? "bg-fg-strong text-bg" : "text-fg-strong hover:bg-bg-subtle")}
-              >
-                Timestamps
-              </button>
+              {/* Text size — labelled "Aa", so it never reads as a second "more" menu. */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button aria-label="Text size" title="Text size" className="inline-flex h-9 w-9 items-center justify-center border-2 border-border-strong text-sm font-bold text-fg-strong hover:bg-bg-subtle">
+                    Aa
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-52">
+                  <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text size</DropdownMenuLabel>
+                  <div className="flex items-center gap-1 px-2 pb-1.5">
+                    {(["s", "m", "l"] as const).map((sz) => (
+                      <button
+                        key={sz}
+                        onClick={() => setTextSize(sz)}
+                        className={cn("flex-1 border-2 py-1 text-xs font-bold", textSize === sz ? "border-fg-strong bg-fg-strong text-bg" : "border-border-strong text-fg-strong hover:bg-bg-subtle")}
+                      >
+                        {sz === "s" ? "Small" : sz === "m" ? "Default" : "Large"}
+                      </button>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
-            {/* Text size — a rarely-changed display preference, kept in a compact menu. */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" aria-label="Text size">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Text size</DropdownMenuLabel>
-                <div className="flex items-center gap-1 px-2 pb-1.5">
-                  {(["s", "m", "l"] as const).map((sz) => (
-                    <button
-                      key={sz}
-                      onClick={() => setTextSize(sz)}
-                      className={cn("flex-1 rounded-md border py-1 text-xs", textSize === sz ? "border-accent text-accent-fg" : "border-border text-fg-muted hover:text-fg")}
-                    >
-                      {sz === "s" ? "Small" : sz === "m" ? "Default" : "Large"}
-                    </button>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Copy — a core task, its own button */}
-            <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8 gap-1.5 text-fg-muted hover:text-fg">
-              {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
-            </Button>
-
-            {/* Speakers — rename diarisation labels (only when the transcript has speakers) */}
-            {hasSpeakers && (
-              <Button variant="ghost" size="sm" onClick={openSpeakerDialog} className="h-8 gap-1.5 text-fg-muted hover:text-fg" title="Rename speakers">
-                <Users className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Speakers</span>
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 sm:flex sm:items-center">
+              <Button variant="outline" size="sm" onClick={handleCopy} className="h-9 gap-1.5">
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied" : "Copy"}
               </Button>
-            )}
-
-            {/* Export */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1.5">
-                  <Download className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Export</span>
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 {hasSavedEdits && (
                   <>
@@ -871,74 +859,64 @@ export function TranscriptViewer({
                   )}
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Edit routes to the Edited tab (in edit mode) — never edits the original in place. */}
-            {isOriginalMode && (
-              <Button size="sm" className="h-8 gap-1.5 px-3" onClick={() => router.push(`/dashboard/library/${id}?tab=edited`)}>
-                <Pencil className="h-3.5 w-3.5" /> Edit
-              </Button>
-            )}
-            {isEditedMode && (
-              <Button size="sm" className="h-8 gap-1.5 px-3" onClick={handleSave} disabled={isSaving || !editor || !isDirty}>
-                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save
-              </Button>
-            )}
-
-            {/* Overflow — rare & paid actions, so they never crowd the row on mobile.
-                Collapses to a direct Delete button when it would otherwise hold only Delete. */}
-            {collapseOverflowToDelete ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-3 text-error hover:text-error hover:bg-error/10"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={isDeleting}
-                aria-label="Delete transcript"
-              >
-                <Trash2 className="h-4 w-4" /> Delete
-              </Button>
-            ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted hover:text-fg" aria-label="More actions">
-                  <MoreHorizontal className="h-4 w-4" />
+              </DropdownMenu>
+              {/* Edit routes to the Edited tab (in edit mode) — never edits the original in place. */}
+              {isOriginalMode && (
+                <Button size="sm" className="h-9 gap-1.5 px-3" onClick={() => router.push(`/dashboard/library/${id}?tab=edited`)}>
+                  <Pencil className="h-4 w-4" /> Edit
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {hasVideo && (
-                  <DropdownMenuItem asChild>
-                    <a href={`https://youtu.be/${videoId}`} target="_blank" rel="noopener noreferrer">
-                      <Play className="mr-2 h-4 w-4" /> Watch on YouTube
-                    </a>
+              )}
+              {isEditedMode && (
+                <Button size="sm" className="h-9 gap-1.5 px-3" onClick={handleSave} disabled={isSaving || !editor || !isDirty}>
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+                </Button>
+              )}
+              {/* The one overflow menu: speakers, watch, revert, delete. */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button aria-label="More actions" className="inline-flex h-9 w-9 items-center justify-center border-2 border-border-strong text-fg-strong hover:bg-bg-subtle">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {hasSpeakers && (
+                    <DropdownMenuItem onClick={openSpeakerDialog}>
+                      <Users className="mr-2 h-4 w-4" /> Rename speakers
+                    </DropdownMenuItem>
+                  )}
+                  {hasVideo && (
+                    <DropdownMenuItem asChild>
+                      <a href={`https://youtu.be/${videoId}`} target="_blank" rel="noopener noreferrer">
+                        <Play className="mr-2 h-4 w-4" /> Watch on YouTube
+                      </a>
+                    </DropdownMenuItem>
+                  )}
+                  {hasSavedEdits && isEditedMode && (
+                    <DropdownMenuItem onClick={() => editor?.commands.setContent(originalJSON)}>
+                      <RotateCcw className="mr-2 h-4 w-4" /> Revert to original
+                    </DropdownMenuItem>
+                  )}
+                  {(hasSpeakers || hasVideo || (hasSavedEdits && isEditedMode)) && <DropdownMenuSeparator />}
+                  <DropdownMenuItem className="text-error focus:text-error focus:bg-error/10" onClick={() => setShowDeleteDialog(true)} disabled={isDeleting}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete transcript
                   </DropdownMenuItem>
-                )}
-                {hasSavedEdits && isEditedMode && (
-                  <DropdownMenuItem onClick={() => editor?.commands.setContent(originalJSON)}>
-                    <RotateCcw className="mr-2 h-4 w-4" /> Revert to original
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-error focus:text-error focus:bg-error/10" onClick={() => setShowDeleteDialog(true)} disabled={isDeleting}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete transcript
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Video — zero pixels when closed; nocookie player, sticky under the tabs, when open.
               Only for YouTube sources; uploaded audio has no video to show. */}
           {hasVideo && (!showVideo ? (
-            <button onClick={() => setShowVideo(true)} className="flex items-center gap-2 text-sm text-fg-muted hover:text-fg transition-colors" aria-label="Watch video">
+            <button onClick={() => setShowVideo(true)} className="inline-flex items-center gap-2 border-2 border-border-strong px-3 py-1.5 text-sm font-bold text-fg-strong hover:bg-accent hover:text-fg-on-accent transition-colors" aria-label="Play the video here (loads YouTube)">
               <Play className="h-4 w-4 fill-current" />
-              Watch video
-              {derivedDuration > 0 && <span className="text-fg-subtle tabular-nums font-mono text-xs">· {formatUITimestamp(derivedDuration).replace(/^00:/, "")}</span>}
-              <span className="text-[10px] text-fg-subtle">(loads YouTube)</span>
+              Play video here
+              {derivedDuration > 0 && <span className="tabular-nums font-mono text-xs font-normal">{formatUITimestamp(derivedDuration).replace(/^00:/, "")}</span>}
+              <span className="text-[10px] font-normal opacity-70">loads YouTube</span>
             </button>
           ) : (
             <div className="sticky top-12 z-[9] space-y-1.5">
-              <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-elevated">
+              <div className="aspect-video w-full overflow-hidden border-2 border-border-strong bg-surface-elevated">
                 <NocookieYouTubePlayer ref={playerRef} videoId={videoId} className="h-full w-full" />
               </div>
               <button onClick={() => setShowVideo(false)} className="flex items-center gap-1.5 text-xs text-fg-muted hover:text-fg">

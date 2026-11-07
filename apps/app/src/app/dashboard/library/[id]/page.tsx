@@ -7,6 +7,7 @@ import { RagExportView } from "@/components/library/RagExportView";
 import { TranscriptTabs, ViewTab } from "@/components/library/TranscriptTabs";
 import { TranscriptHeader } from "@/components/library/TranscriptHeader";
 import { AlternativeToNudge } from "@/components/library/AlternativeToNudge";
+import { SourceCard } from "@/components/library/SourceCard";
 
 interface PageProps {
   params: Promise<{
@@ -68,8 +69,23 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
     collectionName = (col as { name?: string } | null)?.name ?? null;
   }
 
+  // The source, shown as a citation card: sticky right column on desktop, one compact row on mobile.
+  const sourceProps = {
+    title: transcript.title || "Untitled Transcript",
+    channel: transcript.channel ?? null,
+    videoId: transcript.video_id ?? null,
+    thumbnailUrl: transcript.thumbnail_url ?? null,
+    duration: transcript.duration ?? null,
+    characterCount: transcript.character_count ?? null,
+    language: transcript.language ?? null,
+    createdAt: transcript.created_at,
+    collectionName,
+    isAi: !!transcript.processing_method && transcript.processing_method !== "youtube_captions",
+  };
+
   return (
-    <div className="flex flex-col overflow-x-hidden max-w-7xl mx-auto w-full">
+    <div className="mx-auto grid w-full max-w-7xl gap-x-10 overflow-x-hidden lg:grid-cols-[minmax(0,1fr)_288px]">
+      <div className="flex min-w-0 flex-col">
       <TranscriptHeader
         id={transcript.id}
         title={transcript.title || "Untitled Transcript"}
@@ -85,6 +101,9 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
         createdAt={transcript.created_at}
         language={transcript.language ?? null}
       />
+      <div className="lg:hidden">
+        <SourceCard {...sourceProps} compact />
+      </div>
       <div className="mb-6">
         <TranscriptTabs tabs={tabs} activeId={activeTab} transcriptId={id} />
       </div>
@@ -144,6 +163,12 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
         />
       ) : null}
       <AlternativeToNudge />
+      </div>
+      <aside className="hidden lg:block">
+        <div className="sticky top-6 pt-8">
+          <SourceCard {...sourceProps} />
+        </div>
+      </aside>
     </div>
   );
 }

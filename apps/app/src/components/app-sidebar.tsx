@@ -7,9 +7,8 @@ import Link from "next/link"
 import {
   Library, AudioLines, MessageSquare, BookOpen, Settings, User, LogOut,
   ChevronRight, Plus, Folder, FolderOpen, Pencil, Check, X, Trash2, Search,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, House,
 } from "lucide-react"
-import { Beehive } from "@/components/icons/Beehive"
 import { useUnreadMessages } from "../hooks/useUnreadMessages"
 
 import {
@@ -47,7 +46,7 @@ interface SimplifiedTranscript {
 }
 
 const topNavItems = [
-  { title: "Home",      url: "/dashboard",            icon: Beehive     },
+  { title: "Home",      url: "/dashboard",            icon: House       },
   { title: "Transcribe", url: "/dashboard/transcribe", icon: AudioLines  },
   { title: "Messages",  url: "/dashboard/messages",   icon: MessageSquare },
 ]

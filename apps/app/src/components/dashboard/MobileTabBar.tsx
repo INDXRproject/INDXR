@@ -2,9 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { AudioLines, Library, MessageSquare } from "lucide-react"
+import { AudioLines, House, Library, MessageSquare } from "lucide-react"
 import { cn } from "@indxr/shared/lib/utils"
-import { Beehive } from "@/components/icons/Beehive"
 
 // TODO: Account + Settings via avatar-tap rechtsboven → drawer slide van rechts (Claude Design fase)
 
@@ -16,7 +15,7 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { href: "/dashboard",            label: "Home",      icon: Beehive,    matchPrefix: undefined },
+  { href: "/dashboard",            label: "Home",      icon: House,      matchPrefix: undefined },
   { href: "/dashboard/transcribe", label: "Transcribe", icon: AudioLines  },
   { href: "/dashboard/library",    label: "Library",   icon: Library,    matchPrefix: "/dashboard/library" },
   { href: "/dashboard/messages",   label: "Messages",  icon: MessageSquare },
@@ -36,7 +35,7 @@ export function MobileTabBar({ messagesUnread = 0 }: MobileTabBarProps) {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-border"
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-bg border-t-2 border-border-strong"
       style={{ paddingBottom: "var(--safe-bottom)" }}
       aria-label="Mobile navigation"
     >
@@ -50,16 +49,17 @@ export function MobileTabBar({ messagesUnread = 0 }: MobileTabBarProps) {
               href={tab.href}
               className={cn(
                 "flex-1 flex flex-col items-center justify-center gap-0.5 relative transition-colors",
+                // Stijl B (2026-11-07): active tab = amber block with ink, like the desktop sidebar.
                 active
-                  ? "text-accent-fg border-t-2 border-accent"
-                  : "text-fg-muted border-t-2 border-transparent hover:text-fg"
+                  ? "bg-accent text-fg-on-accent font-bold"
+                  : "text-fg-strong hover:bg-bg-subtle"
               )}
               aria-current={active ? "page" : undefined}
             >
               <div className="relative">
                 <Icon className="h-5 w-5" />
                 {tab.label === "Messages" && messagesUnread > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-accent text-fg-on-accent text-[10px] font-medium flex items-center justify-center leading-none">
+                  <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 px-0.5 border border-fg-strong bg-accent text-fg-on-accent text-[10px] font-medium flex items-center justify-center leading-none">
                     {messagesUnread > 9 ? "9+" : messagesUnread}
                   </span>
                 )}
